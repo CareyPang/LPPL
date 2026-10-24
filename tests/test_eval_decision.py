@@ -13,9 +13,11 @@ def test_target_position_steps_and_restores():
 
 def test_execution_lag_and_costs():
     tgt = np.array([1.0, 1 / 3, 1 / 3, 1 / 3])
-    r = np.zeros(4)
+    r = np.full(4, 0.001)
     pos = execute(tgt, r)
     assert pos[1] == 1.0 and np.isclose(pos[2], 1 / 3)
+    halted = execute(tgt, np.array([0.001, 0.001, 0.0, 0.001]))  # §16.3：收益精确为 0 视为停牌，顺延
+    assert halted[2] == 1.0 and np.isclose(halted[3], 1 / 3)
     s = strategy_returns(pos, r)
     assert s[2] < 0 and s[1] == 0 and s[3] == 0  # 卖出当日付成本
 
