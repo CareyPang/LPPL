@@ -32,7 +32,8 @@ def run(tag: str = "hazard_dev"):
     ref = pd.read_parquet(REF)
     key = ["symbol", "date", "path"] if "path" in oof.columns and "path" in ref.columns else ["symbol", "date"]
     m = oof.merge(ref[key + ["p", "y"]], on=key, suffixes=("", "_ref"))
-    a, b = m[["symbol", "date", "y", "p"]], m[["symbol", "date", "y", "p"]].assign(p=m.p_ref)
+    cols = key + ["y", "p"]
+    a, b = m[cols], m[cols].assign(p=m.p_ref)
     d, lo, hi = paired_delta_brier(a, b)
     b_h, b_ref = float(((a.p - a.y) ** 2).mean()), float(((b.p - b.y) ** 2).mean())
     tab = pd.DataFrame([dict(n=len(m), brier_hazard=b_h, brier_binary=b_ref, dbrier=d, ci_lo=lo, ci_hi=hi, not_worse=lo <= 0)])
