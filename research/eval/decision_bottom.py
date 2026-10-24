@@ -12,7 +12,7 @@ import pandas as pd
 
 from ..labels.run_bottom import OUT as LABELS
 from .dataset import price_series
-from .decision import COMM, SLIP, STAMP
+from .decision import COMM, LIMIT, SLIP, STAMP
 from .ladder import OOF_DIR
 
 P1 = OOF_DIR / "ladder_bottom_dev_B3_omori25_C0.1.parquet"
@@ -24,11 +24,17 @@ def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: n
              confirm_exit: bool, d_up: np.ndarray | None = None, model_exit: np.ndarray | None = None) -> list[dict]:
     """entry: 入场信号(bool, 在 t 收盘判定, t+1 成交)；size: 初始仓位；upgrade: 加仓到满仓的信号；返回逐笔记录。"""
     n, out, t = len(lp), [], 0
+    r = np.diff(lp, prepend=lp[0])
+    tradable = (np.abs(np.expm1(r)) < LIMIT) & (r != 0)  # §16.3：涨跌停或停牌（收益精确为 0）日不可成交，顺延
     while t < n - 2:
         if not entry[t]:
             t += 1
             continue
         e = t + 1  # T+1 成交
+        while e < n - 1 and not tradable[e]:
+            e += 1
+        if e >= n - 1:
+            break
         target = float(d_up[t]) if d_up is not None and np.isfinite(d_up[t]) else TARGET
         stop = -0.5 * target
         pos, cost = float(size[t]), (COMM + SLIP) * float(size[t])
@@ -54,6 +60,8 @@ def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: n
                 break
             k += 1
         k = min(k, n - 1)
+        while k < n - 1 and not tradable[k]:
+            k += 1
         gross = pos * (np.exp(lp[k] - lp[e]) - 1)
         cost += (COMM + STAMP + SLIP) * pos
         out.append(dict(entry_date=dates[e], days=k - e, capdays=max(capdays, 1e-9), ret=gross - cost, outcome=outcome,

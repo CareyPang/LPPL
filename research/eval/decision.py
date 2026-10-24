@@ -34,9 +34,10 @@ def target_position(p: np.ndarray, p1: float, p2: float, mode: str) -> np.ndarra
 
 
 def execute(tgt: np.ndarray, r: np.ndarray) -> np.ndarray:
-    """目标仓位（t 收盘决定）→ 实际持仓（t+1 收盘成交；涨跌停日顺延）。返回每日收益计算用的持仓（期初仓位）。"""
+    """目标仓位（t 收盘决定）→ 实际持仓（t+1 收盘成交；涨跌停日与停牌日顺延，§16.3）。返回每日收益计算用的持仓（期初仓位）。
+    停牌代理 = 当日收益精确为 0（冻结数据无成交量时的近似；指数不受影响）。"""
     pos = pd.Series(tgt).shift(1)
-    lim = np.abs(r) >= LIMIT
+    lim = (np.abs(r) >= LIMIT) | (r == 0)
     pos[lim] = np.nan
     return pos.ffill().fillna(1.0).to_numpy()
 
