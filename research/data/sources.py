@@ -123,13 +123,15 @@ class _LimitedRequests:
         return getattr(self._original, name)
 
 
-def _ak_call(function: Callable[..., pd.DataFrame], timeout: float, **kwargs: Any) -> pd.DataFrame:
+def _ak_call(
+    function: Callable[..., pd.DataFrame], request_timeout: float, **kwargs: Any
+) -> pd.DataFrame:
     """Call AkShare with request-level throttling and a bounded HTTP timeout."""
     namespace = function.__globals__
     with _ak_lock:
         original = namespace.get("requests")
         if original is not None and hasattr(original, "get"):
-            namespace["requests"] = _LimitedRequests(original, timeout)
+            namespace["requests"] = _LimitedRequests(original, request_timeout)
         try:
             return function(**kwargs)
         finally:

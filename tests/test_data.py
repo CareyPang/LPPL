@@ -108,6 +108,58 @@ def test_default_source_orders_are_market_specific():
     )
 
 
+@pytest.mark.parametrize(
+    ("function_name", "fetcher", "expected_kwargs"),
+    [
+        (
+            "stock_zh_a_hist",
+            sources.fetch_ak_em_stock,
+            {"symbol": "600519", "period": "daily", "adjust": "qfq"},
+        ),
+        (
+            "stock_zh_a_hist_tx",
+            sources.fetch_ak_tx_stock,
+            {"symbol": "sh600519", "adjust": "qfq"},
+        ),
+    ],
+)
+def test_ak_stock_fetchers_forward_timeout_and_normalize(
+    monkeypatch, function_name, fetcher, expected_kwargs
+):
+    import akshare as ak
+
+    calls = []
+
+    def fake_ak_fetcher(**kwargs):
+        calls.append(kwargs)
+        return pd.DataFrame(
+            {
+                "date": ["2024-01-02"],
+                "open": ["1.0"],
+                "high": ["2.0"],
+                "low": ["0.5"],
+                "close": ["1.5"],
+                "volume": ["10"],
+                "amount": ["15"],
+            }
+        )
+
+    monkeypatch.setattr(ak, function_name, fake_ak_fetcher)
+    result = fetcher("sh", "600519", False, adjust="qfq")
+
+    assert calls == [{**expected_kwargs, "timeout": 15}]
+    assert list(result.columns) == sources.COLS
+    assert result.iloc[0].to_dict() == {
+        "date": pd.Timestamp("2024-01-02"),
+        "open": 1.0,
+        "high": 2.0,
+        "low": 0.5,
+        "close": 1.5,
+        "volume": 10.0,
+        "amount": 15.0,
+    }
+
+
 def test_rate_limit_enforces_interval(monkeypatch):
     clock = [100.0]
     sleeps = []
