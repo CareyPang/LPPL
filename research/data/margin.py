@@ -45,7 +45,8 @@ def run() -> None:
     CACHE.mkdir(parents=True, exist_ok=True)
     sse = fetch_sse()
     sse.to_parquet(CACHE / "sse_margin.parquet")
-    manifest = dict(downloaded_at=datetime.now(timezone.utc).isoformat()  # noqa: UP017, source="akshare.stock_margin_sse",
+    now = datetime.now(timezone.utc).isoformat()  # noqa: UP017
+    manifest = dict(downloaded_at=now, source="akshare.stock_margin_sse",
                     rows=len(sse), first=str(sse.date.min().date()), last=str(sse.date.max().date()),
                     pit_lag_days=1, szse="pending")
     json.dump(manifest, open(CACHE / "manifest.json", "w"), indent=1, ensure_ascii=False)
