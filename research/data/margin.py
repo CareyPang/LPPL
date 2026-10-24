@@ -105,3 +105,22 @@ if __name__ == "__main__":
     import sys
 
     run_extra() if len(sys.argv) > 1 and sys.argv[1] == "extra" else run()
+
+
+SZSE_RENAME = {"融资余额": "fin_balance", "融资买入额": "fin_buy", "融券余量": "sec_qty",
+               "融券余额": "sec_balance", "融券卖出量": "sec_sell_qty", "融资融券余额": "total_balance"}
+
+
+def load_margin(cache: Path = CACHE) -> pd.DataFrame:
+    """沪深融资日报合并（宽表，列后缀 _sse/_szse/_all），`avail_date` = 数据日的下一行日期（PIT 滞后 1 个交易日）。
+
+    深交所缺失日按 NaN 保留；_all 列在任一所缺失时为 NaN，调用方自行决定回退到上交所。
+    """
+    sse = pd.read_parquet(cache / "sse_margin.parquet").set_index("date").add_suffix("_sse")
+    szse = pd.read_parquet(cache / "szse_margin.parquet").rename(columns=SZSE_RENAME).set_index("date").add_suffix("_szse")
+    df = sse.join(szse, how="outer").sort_index()
+    for c in ("fin_balance", "fin_buy", "total_balance"):
+        df[f"{c}_all"] = df[f"{c}_sse"] + df[f"{c}_szse"]
+    df.index.name = "date"
+    df["avail_date"] = df.index.to_series().shift(-1)
+    return df.reset_index()
