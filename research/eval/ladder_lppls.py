@@ -136,6 +136,8 @@ def run(split: str = "dev", rule: str = "ci"):
     prev_json = "reports/ladder_dev.json" if rule == "ci" else f"reports/ladder_dev_{rule}.json"
     df = assemble_sparse(split)
     prev_name, prev_feats, prev_C = prev_features(prev_json)
+    if prev_feats:
+        df = df.dropna(subset=prev_feats).reset_index(drop=True)
     tdays = price_series("sh000001").index
     tdays = tdays[(tdays >= df.date.min()) & (tdays <= df.date.max())]
     print(f"{split} sparse: n={len(df)} pos={int(df.y.sum())} symbols={df.symbol.nunique()} prev={prev_name}", flush=True)
