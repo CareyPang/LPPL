@@ -9,8 +9,8 @@
    - TOP_RULE 的阻尼门槛（D ≥ 0.3）比我核实到的所有文献都松；
    - TOP_RULE 的 R² ≥ 0.8 在我核实的文献过滤器里都没有出现；
    - ds 规则把"距今天数"压在 max(5, 0.1n) 以内，比 Shu & Zhu（2020）的 dt/5 窄约一半；
-   - 振荡数门槛的口径不统一（"整周期"和"半周期"差一倍）。
-3. **原型缺少文献要求的残差检验**：Lomb 对数周期显著性检验、残差单位根或 AR(1) 检验、最大相对误差上限。Jiang 等（2010）和 Shu & Zhu（2020）都把这几项当作合格条件。
+   - 振荡数口径：Sornette 团队的 DS LPPLS（E7）和 E6 都用 (ω/2)·ln[…] ≥ 2.5，约等于 0.8 个整周期；E4 按整周期计 ≥ 2.5。原型 ds 和 strict 按整周期计 ≥ 2.5，比 DS 口径严约 π 倍。
+3. **原型缺少文献过滤器里的几项条件**：Shu & Zhu（2020）把 Lomb 检验、残差 AR(1) 检验和最大相对误差 ≤ 0.15 当作合格条件；Sornette 团队的 E7 把相对误差 ≤ 0.035 或 0.14 当作合格条件。原型一项都没有。（更正：Jiang 等（2010）只用 t_c > t₂、B < 0、0 < m < 1 三项过滤，Lomb 检验和单位根检验在该文里只是补充诊断。见第 8 节。）
 4. **原型给 t_c 定区间的方法不是文献推荐的。** 文献给 t_c 定区间用修正 profile likelihood（Filimonov, Demos & Sornette 2017），原型用的是残差块 bootstrap。Brée、Challet & Peirano 指出，现有方法给出的崩盘时间窗口很可能偏乐观。
 5. **窗口起点的选法**：文献用 Lagrange 正则化（Demos & Sornette 2019），原型的顶部扫描用的是 ZigZag 低点锚定。`engine.js` 里其实已有 `lagrangeBest`，但顶部扫描没有用它。
 6. **批评文献集中在三点：**
@@ -22,7 +22,7 @@
 7. **底部建模**：Sornette 团队有"反泡沫/负泡沫"和"反弹诊断"的文献，原型当时决定不用对 −ln P 做 LPPLS 拟合来找底。文献允许把负泡沫置信度当作一个特征，但我没有找到证据表明它单独就能精确择时抄底，所以支持"多条件共振 + 三重障碍标签"的重写方案。
 8. **建议**：在模型阶梯里加一个"文献版"对照组。注意：其中的 E6 是 Shu & Zhu 的后续工作，不是 Sornette 团队本人的论文；E4 才是 Sornette 团队的。它采用 Shu & Zhu（2020）的完整过滤器加残差检验、Gerlach 等（2019）的三尺度置信度、Lagrange 起点和 MPL 区间，和原型的三套规则一起，按样本外结果决定去留。
 
-> 核实程度说明：标 **[全文]** 的，是我下载了 arXiv 全文并检索过相关段落；标 **[书目]** 的，只核对了题目、作者、期刊和 DOI，没有读到正文，本文不引用这些文献的具体结论。Sornette 等（2015）的上证 2015 论文没有找到开放全文，所以 `engine.js` 注释里"ds = Sornette DS LPPLS（2015 上证研究）"这组参数**我无法核实**。
+> 核实程度说明：标 **[全文]** 的，是我下载了 arXiv 全文并检索过相关段落；标 **[书目]** 的，只核对了题目、作者、期刊和 DOI，没有读到正文，本文不引用这些文献的具体结论。Sornette 等（2015）的上证 2015 论文没有找到开放全文，所以 `engine.js` 注释里"ds = Sornette DS LPPLS（2015 上证研究）"这组参数**我当时无法核实**。独立复审后，用同一团队的 E7 已能判定：ds 参数和 DS LPPLS 不一致，见第 8 节。
 
 ---
 
@@ -57,7 +57,7 @@
 | E4 | Gerlach, Demos & Sornette (2019). Dissection of Bitcoin's multiscale bubble history. *R. Soc. Open Sci.*（arXiv 1804.06261） | 全文 |
 | E5 | Jiang, Zhou, Sornette, Woodard, Bastiaensen & Cauwels (2010). Bubble diagnosis and prediction of the 2005–2007 and 2008–2009 Chinese stock market bubbles. *JEBO*. doi:10.1016/j.jebo.2010.02.007（arXiv 0909.1007） | 全文 |
 | E6 | Shu & Zhu (2020). Detection of Chinese stock market bubbles with LPPLS confidence indicator. *Physica A*. doi:10.1016/j.physa.2020.124892（arXiv 1905.09640） | 全文 |
-| E7 | Zhang, Zhang & Sornette (2016). Early warning signals of financial crises with multi-scale quantile regressions of LPPLS. *PLoS ONE*. doi:10.1371/journal.pone.0165819 | 书目 |
+| E7 | Zhang, Zhang & Sornette (2016). Early warning signals of financial crises with multi-scale quantile regressions of LPPLS. *PLoS ONE*. doi:10.1371/journal.pone.0165819 | 全文（独立复审读过；表 3 我核对过渲染图） |
 | E8 | Sornette, Cauwels & Smilyanov (2018). Can we use volatility to diagnose financial bubbles? Lessons from 40 historical bubbles. *QFE*. doi:10.3934/qfe.2018.1.486 | 书目 |
 | E9 | Demos & Sornette (2017). Birth or burst of financial bubbles: which one is easier to diagnose? *Quant. Finance*. doi:10.1080/14697688.2016.1231417 | 书目 |
 
@@ -113,7 +113,7 @@
 | ω 范围 | M1：[6, 13]；E4：[4, 25]；E6 搜索 [1, 50]，过滤 [2, 25] | 搜索 [2, 25]；ds：[2, 15]；strict：(6, 13)；TOP_RULE：[4, 15]；顶部扫描搜索 [3, 16] | 顶部扫描的搜索上限 16 **截掉了**文献允许的 16–25 区间 |
 | t_c 范围 | E6：搜索 [t₂, t₂ + dt/3]，过滤 [t₂, t₂ + dt/5] | 搜索 [t₂+0.5, t₂ + min(252, max(20, 0.3n))]；ds：距今 ≤ max(5, 0.1n)；strict：≤ 90 日；TOP_RULE：1–115 日 | ds 约为 E6 的一半，**更窄**；TOP_RULE 是固定天数，**不随窗口缩放** |
 | 阻尼 D = m\|B\|/(ω\|C\|) | E4：≥ 0.5；E6：≥ 1（写进搜索约束） | ds ≥ 0.5；strict ≥ 1；TOP_RULE **≥ 0.3** | TOP_RULE **比文献松** |
-| 振荡数 O | E4：(ω/2π)·ln[(t_c−t₁)/(t_c−t₂)] ≥ 2.5 个整周期，且只在 \|C/B\| ≥ 0.05 时才检查；E6 **自相矛盾**：式 (12) 写的是 (ω/2)·ln[…] ≥ 2.5（核对过 PDF 渲染图），正文写的是"半周期" (ω/π)·ln[…] ≥ 2.5，分别相当于约 0.80 和 1.25 个整周期 | 原型按整周期计数：ds 和 strict ≥ 2.5；TOP_RULE ≥ 1.5 | 口径不一：按 E6 的两种读法，ds 都比它严 2–3 倍；E4 和 ds 相同；原型没有 \|C/B\| 前提 |
+| 振荡数 O | E7（DS LPPLS）和 E6：(ω/2)·ln[(t_c−t₁)/(t_c−t₂)] ≥ 2.5，约等于 0.8 个整周期；E4：(ω/2π)·ln[…] ≥ 2.5 个整周期，且只在 \|C/B\| ≥ 0.05 时才检查 | 原型按整周期计：ds 和 strict ≥ 2.5；TOP_RULE ≥ 1.5 | ds 和 strict 比 DS 口径严约 π 倍；TOP_RULE 严约 1.9 倍 |
 | R² 门槛 | 我核实的文献过滤器里都没有 | strict ≥ 0.9；TOP_RULE ≥ 0.8 | **没有文献依据**，需实测 |
 | 最大相对误差 | E6：≤ 0.15 | 没有 | **缺失** |
 | Lomb 对数周期检验 | E5、E6 要求 | 没有，原型用和纯幂律的嵌套 F 检验代替（自己也承认 iid 假设偏乐观） | **缺失**；F 检验应换成 bootstrap 零分布 |
@@ -123,7 +123,7 @@
 | 起点 t₁ | Lagrange 正则化（M3、E4） | `critical.js` 的顶部扫描用 ZigZag 低点锚定；`lagrangeBest` 只在 `engine.js` 的 `OD.analyze` 里用于挑选最佳窗口，顶部扫描没有用 | **偏离** |
 | t_c 区间 | 修正 profile likelihood（M2）；C2 认为现有的时间窗口估计偏乐观 | 残差块 bootstrap | **偏离**，需比较区间覆盖率 |
 | t_c 的含义 | t_c 是风险率奇点，不是崩盘日（S1） | 原型的说明里写了 "t_c ≠ 峰值日" | **一致** |
-| 底部 | 反泡沫（B1、B2）、负泡沫置信度（E6）、反弹诊断（B3） | 旧版用 6 项共振；新方案改为多条件共振加三重障碍标签 | 新方案不属于 Sornette 体系；可以把负泡沫置信度作为一个候选特征 |
+| 底部 | 反泡沫（B1、B2）、负泡沫置信度（E6）、反弹诊断（B3） | 代码里**仍然**对 −ln P 做 LPPLS 拟合（`engine.js` 的 `OD.analyze` 做底部多窗口扫描；`critical.js:268-274` 的"反泡沫结构"是 6 项共振中的一项）；新方案改为多条件共振加三重障碍标签 | 新方案不属于 Sornette 体系；可以把负泡沫置信度作为一个候选特征 |
 | 验证方式 | E1 和 E5 是实时预测和事后复盘；E2、E3 是长样本研究（结论我未读） | 计划用 PIT 数据、模型阶梯、Purged K-Fold/CPCV 和校准 | 计划中的验证比我核实到的文献更严，但目前还没有执行，不能算作结果 |
 
 ---
@@ -141,7 +141,7 @@
 ## 5. 建议对后续方案的调整（待你确认后执行）
 
 1. **模型阶梯里加一个"文献版"对照组 LIT**（E6 的作者不是 Sornette 团队，见第 7 节）：
-   - 过滤器用 E6 的完整版：m ∈ [0.01, 0.99]，ω ∈ [2, 25]，t_c ∈ [t₂, t₂ + dt/5]，振荡数按 E6 的两种读法各跑一个版本，D ≥ 1，最大相对误差 ≤ 0.15，Lomb 检验显著，残差为 AR(1)；
+   - 过滤器用 E6 的完整版：m ∈ [0.01, 0.99]，ω ∈ [2, 25]，t_c ∈ [t₂, t₂ + dt/5]，振荡数用 DS 口径 (ω/2)·ln ≥ 2.5，D ≥ 1，最大相对误差 ≤ 0.15，Lomb 检验显著，残差为 AR(1)；
    - 加上 E4 的三尺度置信度；
    - 窗口起点用 M3 的 Lagrange 方法；
    - t_c 区间用 M2 的修正 profile likelihood。
@@ -182,3 +182,18 @@
 - TOP_RULE 和 `TOP_OPT` 的代码数值（`critical.js:89-92`）。
 
 这次自查没有覆盖的部分：标为"书目"的文献；`docs/framework_v2588.txt` 里的说法。同一个作者复核自己的结论仍有偏差，建议另开独立会话复审。
+
+## 8. 独立复审后的修正（2026-10-24）
+
+独立复审报告：PR #2 中的 `reports/red_team_literature_review.md`。下表中的 1–3、5 条我已对照原文 PDF 或代码亲自核实，第 4 条部分同意，第 6 条尚未核实。
+
+| # | 复审发现 | 我的核实 | 结论 |
+|---|---|---|---|
+| 1 | (ω/2)·ln ≥ 2.5 是 DS LPPLS 的标准口径，不是 E6 的笔误 | E7 第 21 页表 3 的渲染图写的正是 (ω/2)·ln\|(t_c−t_start)/(t_end−t_start)\| | **成立**。第 7 节第 1 条的修正本身就错了；原型 ds 比 DS 口径严约 π 倍 |
+| 2 | Jiang 等（2010）只用三项过滤 | 第 4 页原文："We filter on three parameters: tc > t2, B < 0, 0 < m < 1"；拟合方法是禁忌搜索加 LM | **成立**，已改正第 0 节第 3 条 |
+| 3 | E7 是开放获取，可以直接核对 DS LPPLS | 表 3：搜索空间 m ∈ [0, 2]、ω ∈ [1, 50]、t_c ∈ [t_end−0.2dt, t_end+0.2dt]；条件 1：m ∈ [0.1, 0.9]、ω ∈ [6, 13]、t_c ∈ [t_end−0.15dt, t_end+0.13dt]、O ≥ 2.5、D ≥ 1.2、相对误差 ≤ 0.035；条件 2 用于 Trust 指标：t_c ∈ [t_end−0.2dt, t_end+0.12dt]、D ≥ 1、相对误差 ≤ 0.14；共 126 个窗口（125–750 日，步长 5） | **成立**。原型 ds（ω ∈ [2, 15]、D ≥ 0.5、t_c 只能在 t₂ 之后、没有相对误差条件）**不是** DS LPPLS 的参数。另外 DS LPPLS 允许 t_c 落在 t_end **之前** |
+| 4 | 验证计划存在标签泄漏 | `CP.evaluate`（`critical.js:433-437`）用全样本 ZigZag 加全样本阈值定义顶部事件。标签本来就需要未来数据，这一点本身不算泄漏；但阈值 `zzThreshold(close, N−1)` 用了全样本波动率，确实会让未来信息渗进标签定义 | **部分成立**：严重程度定为中。新标签必须改用只依赖 t+H 以内数据的规则；"事件太少"和"多重比较"两点成立 |
+| 5 | "原型不用 −ln P 找底"与代码不符 | `engine.js` 的 `OD.analyze` 有底部扫描；`critical.js:268-274` 有反泡沫这一项 | **成立**，已改表 |
+| 6 | 漏掉了误报率和样本外检验方面的文献（Sornette & Zhou 2006，cond-mat/0304601；Yan 等 2012，arXiv 1108.0077；Zhou & Sornette 2002，cond-mat/0110445；Zhou & Sornette 2003，cond-mat/0310092；Laloux 等 1999，cond-mat/9804111） | 我还没读 | 待读，列入下一步 |
+
+**据此调整第 5 节建议 1**：LIT 对照组改用 Sornette 团队自己的 DS LPPLS 过滤器（E7 表 3 的条件 1，同时用条件 2 计算 Trust 指标）作为主版本；E6 的 Lomb 检验和 AR(1) 检验作为可开关的附加项。
