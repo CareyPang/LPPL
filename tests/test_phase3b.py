@@ -44,3 +44,22 @@ def test_bootstrap_interval_small_B_runs():
     lo, hi = default_bounds(tr.n, (1, 60))
     a, b, hat = bootstrap_interval(t, y, lo, hi, level=0.9, B=4, block=10)
     assert a <= b and lo[0] <= hat <= hi[0]
+
+
+def test_grid_profile_matches_lin_fit():
+    import numpy as np
+
+    from research.lppls.core import K_POWER, lin_fit
+    from research.optim.optimizers import grid_profile
+
+    rng = np.random.default_rng(1)
+    t = np.arange(200.0)
+    y = 0.001 * t + 0.02 * rng.standard_normal(200)
+    tcs, ms, ws = [210.0, 240.0], [0.3, 0.8], [6.0, 12.0]
+    g = grid_profile(t, y, tcs, ms, ws)
+    for i, tc in enumerate(tcs):
+        for j, m in enumerate(ms):
+            for k, w in enumerate(ws):
+                assert abs(g[i, j, k] - lin_fit(t, y, tc, m, w)[0]) < 1e-9
+    gp = grid_profile(t, y, tcs, ms, None, K_POWER)
+    assert abs(gp[0, 0, 0] - lin_fit(t, y, tcs[0], ms[0], 0.0, K_POWER)[0]) < 1e-9

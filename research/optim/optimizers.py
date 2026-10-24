@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from scipy.optimize import differential_evolution, least_squares, minimize
 
-from ..lppls.core import K_LPPLS, design, lin_fit
+from ..lppls.core import K_LPPLS, K_POWER, design, lin_fit
 
 
 @dataclass
@@ -88,24 +88,50 @@ def ms_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
     return Result(best[0], best[1], nfev, time.perf_counter() - t0, "ms_lm", f"converged {conv}/{budget['starts']}")
 
 
+def grid_profile(t, y, tcs, ms, ws, k=K_LPPLS):
+    """批量计算 (tc, m, w) 网格上的 SSE（批量 SVD，与 lin_fit 的 lstsq 同解）。
+
+    返回 sse 数组，形状 (n_tc, n_m, n_w)；k=K_POWER 时 n_w 维为 1。不可行点为 inf。
+    """
+    yy = float(y @ y)
+    ms = np.asarray(ms, float)
+    ws = np.asarray(ws, float) if k == K_LPPLS else np.zeros(1)
+    out = np.full((len(tcs), len(ms), len(ws)), np.inf)
+    ones = np.ones_like(t)
+    for i, tc in enumerate(tcs):
+        dt = tc - t
+        if np.any(dt <= 0):
+            continue
+        L = np.log(dt)
+        f = np.exp(np.outer(ms, L))  # (n_m, n)
+        if k == K_POWER:
+            X = np.stack([np.broadcast_to(ones, f.shape), f], axis=-1)[:, None]  # (n_m,1,n,2)
+        else:
+            ph = np.outer(ws, L)  # (n_w, n)
+            c, s_ = np.cos(ph), np.sin(ph)
+            fm = f[:, None, :]
+            X = np.stack(
+                [np.broadcast_to(ones, (len(ms), len(ws), len(t))), np.broadcast_to(fm, (len(ms), len(ws), len(t))),
+                 fm * c[None], fm * s_[None]], axis=-1)  # (n_m,n_w,n,4)
+        U, sv, _ = np.linalg.svd(X, full_matrices=False)
+        rank_ok = sv[..., -1] > sv[..., 0] * len(t) * np.finfo(float).eps
+        uy = np.einsum("...nk,n->...k", U, y)
+        sse = yy - np.einsum("...k,...k->...", uy, uy)
+        sse = np.where(rank_ok & np.isfinite(sse), np.maximum(sse, 0.0), np.inf)
+        out[i] = sse
+    return out
+
+
 def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
     budget = budget or dict(n_tc=40, n_m=12, n_w=16, topk=5)
     t0 = time.perf_counter()
     tcs = np.linspace(lo[0], hi[0], budget["n_tc"])
     ms = np.linspace(lo[1], hi[1], budget["n_m"])
     if k != K_LPPLS:
-        prof = np.empty(len(tcs))
-        arg = []
-        nfev = 0
-        for i, tc in enumerate(tcs):
-            bestf, bestm = np.inf, ms[0]
-            for m in ms:
-                f = lin_fit(t, y, tc, m, 0.0, k)[0]
-                nfev += 1
-                if f < bestf:
-                    bestf, bestm = f, m
-            prof[i] = bestf
-            arg.append(bestm)
+        grid = grid_profile(t, y, tcs, ms, None, k)[:, :, 0]
+        nfev = grid.size
+        prof = grid.min(axis=1)
+        arg = [ms[int(np.argmin(grid[i]))] for i in range(len(tcs))]
         order = np.argsort(prof)[: budget["topk"]]
         best = None
         for i in order:
@@ -119,19 +145,13 @@ def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
         return Result(best[0], best[1], nfev, time.perf_counter() - t0, "tcgrid_lm", "",
                       dict(profile=prof, tcs=tcs))
     ws = np.linspace(lo[2], hi[2], budget["n_w"])
-    prof = np.empty(len(tcs))
+    grid = grid_profile(t, y, tcs, ms, ws, k)
+    nfev = grid.size
+    prof = grid.reshape(len(tcs), -1).min(axis=1)
     arg = []
-    nfev = 0
-    for i, tc in enumerate(tcs):
-        bestf, bestmw = np.inf, (ms[0], ws[0])
-        for m in ms:
-            for w in ws:
-                f = lin_fit(t, y, tc, m, w, k)[0]
-                nfev += 1
-                if f < bestf:
-                    bestf, bestmw = f, (m, w)
-        prof[i] = bestf
-        arg.append(bestmw)
+    for i in range(len(tcs)):
+        j, l_ = np.unravel_index(np.argmin(grid[i]), grid[i].shape)
+        arg.append((ms[j], ws[l_]))
     order = np.argsort(prof)[: budget["topk"]]
     best = None
     for i in order:
