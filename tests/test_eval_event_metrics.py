@@ -25,3 +25,13 @@ def test_late_alert_short_lead_and_miss():
     oof.loc[0:17, "p"] = 0.5  # 段外报警
     m = event_metrics(oof, alert_rate=0.2)
     assert m["hit_rate"] == 0.5 and m["lead_med"] == 1 and m["false_alarm_rate"] > 0
+
+
+def test_paths_are_not_merged_into_long_segments():
+    import pandas as pd
+
+    base = _oof()
+    oof = pd.concat([base.assign(path=0), base.assign(path=1)], ignore_index=True)
+    oof.loc[oof.y == 1, "p"] = 1.0
+    m = event_metrics(oof)
+    assert m["n_events"] == 2 and m["lead_med"] == 9
