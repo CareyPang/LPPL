@@ -71,4 +71,40 @@ def run(rule: str = "ci", split: str = "dev"):
 
 
 if __name__ == "__main__":
-    run(rule=sys.argv[1] if len(sys.argv) > 1 else "ci")
+    _rule = sys.argv[1] if len(sys.argv) > 1 else "ci"
+    if len(sys.argv) > 2 and sys.argv[2] == "margin":
+        run_margin(rule=_rule)
+    else:
+        run(rule=_rule)
+
+
+MARGIN_START = "2010-06-30"  # 融资日报 2010-03-31 起，留 60 日算变化率
+
+
+def margin_features() -> pd.DataFrame:
+    """市场级融资特征，按 avail_date（T+1 可得）对齐：沪深融资余额 20/60 日对数变化、20 日变化的 20 日差分（去化减速）。"""
+    from ..data.margin import load_margin
+
+    m = load_margin().dropna(subset=["avail_date"]).set_index("avail_date").sort_index()
+    bal = m.fin_balance_all.fillna(m.fin_balance_sse)
+    f = pd.DataFrame(dict(lev_d20=np.log(bal / bal.shift(20)), lev_d60=np.log(bal / bal.shift(60))))
+    f["lev_dd20"] = f.lev_d20 - f.lev_d20.shift(20)
+    return f
+
+
+def run_margin(rule: str = "ci", split: str = "dev"):
+    """B5 杠杆去化：2010 起子样本单独阶梯（prereg §15）。前级只保留主链已选配置，在子样本上重拟合作对照。"""
+    prev = {"B1": {"dd_nodur": LEVELS_B["B1"]["dd_nodur"]}, "B2": {"amt_only": LEVELS_B["B2"]["amt_only"]},
+            "B3": {"omori25": LEVELS_B["B3"]["omori25"]}}
+    levels = with_z_variants({**prev, "B5": {"lev": ["lev_d20", "lev_d60", "lev_dd20"]}})
+    base = assemble_bottom(split, with_z_variants(prev))
+    mf = margin_features()
+    df = base[base.date >= pd.Timestamp(MARGIN_START)].merge(mf, left_on="date", right_index=True, how="inner")
+    df = pd.concat([df, rolling_z(df.set_index("date")[["lev_d20", "lev_d60", "lev_dd20"]], ["lev_d20", "lev_d60", "lev_dd20"]).reset_index(drop=True)], axis=1)
+    df = df.dropna(subset=["lev_d20", "lev_d60", "lev_dd20"]).reset_index(drop=True)
+    tag = "ladder_bottom_margin_dev" if rule == "ci" else f"ladder_bottom_margin_dev_{rule}"
+    tab, kept = run_ladder(levels, split=split, tag=tag, rule=rule, df=df,
+                           title=f"阶段 5 B5 杠杆去化子样本阶梯（{MARGIN_START} 起；前级 = 主链已选配置在子样本重拟合）")
+    with open(f"reports/{tag}.md", "a") as f:
+        f.write("\n融资特征为市场级（沪深合计融资余额，T+1 可得），对所有标的相同；滚动 z 按全市场序列计算。开发段子样本结果，不是样本外。\n")
+    return tab, kept
