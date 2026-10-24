@@ -36,6 +36,8 @@ def assemble_dd(split: str = "dev") -> pd.DataFrame:
 
 def fit_quantile(features: list[str], C: float):
     def fp(tr, te):
+        if len(te) == 0:
+            return np.empty(0)
         tr = tr.iloc[::SUB]
         m = QuantileRegressor(quantile=TAU, alpha=1 / (C * len(tr)), solver="highs")
         m.fit(tr[features].to_numpy(), tr.y.to_numpy())
