@@ -207,3 +207,16 @@
 | Zhou & Sornette（arXiv cond-mat/0110445） | Lomb 周期图的误报概率**强烈依赖噪声类型**（重尾、相关性）；独立高斯噪声下的公式不能直接套用 | 如果用 Lomb 过滤，显著性门槛必须用**模拟零分布**来定：先拟合残差的分布和相关性，再生成替代序列；不能用标准 p 值 |
 | Zhou & Sornette（arXiv cond-mat/0310092） | 检验 2000 年美股反泡沫：确认反泡沫已结束需要在新状态里待 **3–6 个月**；以美元、英镑、欧元或黄金计价，结论不同 | 底部识别有固有滞后，支持用"多条件 + 确认"的方式抄底，并提醒我们：要预先规定检验对象用名义价格还是通胀调整价格 |
 | Laloux, Potters, Cont, Aguilar & Bouchaud（arXiv cond-mat/9804111，5 页） | 批评对数周期预测：1997 年 10 月的回调并不是一列几何级数局部低点的聚点；质疑相关研究的科学严谨性 | 作为怀疑派基线：任何"成功预测"都要在预先登记的规则下复现 |
+
+## §16.11 补读状态（2026-10-24 夜；限速逐篇获取，三档核实标注）
+
+| 文献 | 核实程度 | 来源 / 说明 |
+|---|---|---|
+| Lo–Mamaysky–Wang 2000, *Foundations of Technical Analysis*, J. Finance | **[全文]** | NBER WP w7613 全文（本地 `lit/nber_lo_mamaysky_wang.pdf`）。核回归平滑 + 10 类形态的条件收益分布检验（Kolmogorov–Smirnov），与本项目"起涨确认 = 成分股宽度"方向一致：形态本身只有弱信息，必须经分布检验，不可直接当交易规则。 |
+| Harding–Pagan 2002, *Dissecting the cycle*, JME 49(2) | **[题录核实]** | DOI 10.1016/S0304-3932(01)00108-8，Elsevier 闭源，Unpaywall 无 OA 版本；此前下载到的 `harding_pagan_2002_wp.pdf` 实为天文学论文（arXiv:0805.4296），已删除。算法要点（BBQ：窗口 ±5 季、最短阶段 2 季、最短周期 5 季、峰谷交替）据公开摘要与 Pagan–Sossounov 2003 转述实现于 `research/eval/alt_labels.py::ps_turns`（日频参数 ±168/84/336 日）。 |
+| Pagan–Sossounov 2003, *A simple framework for analysing bull and bear markets*, J. Applied Econometrics | **[摘要]** | OpenAlex 摘要（`lit/oa_A_simple_framework_...json`）；月频窗口 8 月、阶段 4 月、周期 16 月。 |
+| Lunde–Timmermann 2004, *Duration dependence in stock prices*, JBES | **[摘要]** | OpenAlex 摘要；λ1=20%/λ2=15% 停时法实现于 `alt_labels.py::lt_turns`。 |
+| Sornette–Demos–Zhang–Cauwels–Zhang 2015, *Real-time prediction and post-mortem analysis of the Shanghai 2015 stock market bubble and crash*, J. Investment Strategies 4(4) | **[题录核实]** | DOI 10.21314/jois.2015.063（付费）；SSRN 2647354（Unpaywall 标 OA，但 SSRN 对脚本下载返回 403）；此前误下的 arXiv:1508.01217 是另一篇（Bayesian kernel regression），已删除。本项目"7 指数 LPPLS 无增量"与其"实时预警命中"的差异（评价标准不同）见设计文档，正面对照待拿到全文后补。 |
+| Harvey–Liu 2015, *Backtesting*, J. Portfolio Management 42(1) | **[题录核实]** | SSRN 2345489；多重检验下的 t 值门槛（Bonferroni/Holm/BHY），最终报告的多重比较将引用其框架；全文未获取。 |
+
+未获取全文的，不在正文引用具体数值或页码。
