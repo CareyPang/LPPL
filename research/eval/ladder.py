@@ -27,6 +27,17 @@ LEVELS: dict[str, dict[str, list[str]]] = {
     "R7": {f"sp{w}": [f"var{w}", f"ar1_{w}", f"dfa{w}", f"pe{w}", f"tau{w}"] for w in (60, 120, 250)},
 }
 CS = (0.1, 1.0)
+Z_WINDOW = 1250  # v1.2 §12.6：按标的过去 5 年滚动 z 分数（PIT）
+
+
+def with_z_variants(levels: dict[str, dict[str, list[str]]]) -> dict[str, dict[str, list[str]]]:
+    return {lv: {**cfgs, **{f"{c}_z": [f"{f}_z" for f in fs] for c, fs in cfgs.items()}} for lv, cfgs in levels.items()}
+
+
+def rolling_z(df: pd.DataFrame, cols: list[str], window: int = Z_WINDOW, min_periods: int = 250) -> pd.DataFrame:
+    r = df[cols].rolling(window, min_periods=min_periods)
+    z = (df[cols] - r.mean()) / r.std()
+    return z.add_suffix("_z")
 
 
 def assemble(split: str, variant: str = "main") -> pd.DataFrame:
@@ -44,6 +55,8 @@ def assemble(split: str, variant: str = "main") -> pd.DataFrame:
             if group == "stock":
                 logp = price_series(sym)
                 lo = max(lo, pd.Timestamp(entry), logp.index[0] + pd.DateOffset(years=5))
+            feats = [c for lv in LEVELS.values() for cfg in lv.values() for c in cfg if c in df.columns]
+            df = pd.concat([df, rolling_z(df, sorted(set(feats)))], axis=1)
             df["y"] = lab[f"{variant}__y"].reindex(df.index)
             df = df[(df.index >= lo) & (df.index <= pd.Timestamp(b))].dropna(subset=["y", "rv120"])
             df["symbol"] = sym
