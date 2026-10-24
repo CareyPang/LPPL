@@ -18,6 +18,8 @@ VARIANTS = {
     "dn33": dict(dn_ratio=1 / 3),
     "dn67": dict(dn_ratio=2 / 3),
     "fixed15": dict(floor=0.15, quant=None),
+    "fast20": dict(look=20),  # v1.5 §15.1 快底：上障碍须在 20 日内触及
+    "fast30": dict(look=30),
 }
 
 
@@ -97,7 +99,7 @@ def main(procs: int = 3):
     sens = tab.pivot_table(index=["split", "group"], columns="variant", values=["events", "halfway_share"])
     (ROOT / "reports" / "bottom_label_events.md").write_text(
         "# 底部三重障碍标签事件统计（预登记 v1.3 §13 / v1.5 §15；只统计事件数，未看特征）\n\n"
-        "候选底 = 对 −ln P 的 ε-回撤共识扫描；上障碍 = PIT 5 年 Q90（≥10%），下障碍 = 上障碍 × 50%，时间障碍 60 日；"
+        "候选底 = 对 −ln P 的 ε-回撤共识扫描；上障碍 = PIT 5 年 Q90（≥10%），下障碍 = 上障碍 × 50%，时间障碍 60 日（fast20/fast30 变体为 20/30 日，§15.1 快底）；"
         "标签 y_t = 未来 20 日内出现有效底（先触上障碍），成熟期 80 日。cand_* 为候选底按结局分类：valid 有效底、halfway 先触下障碍（半山腰）、expired 到期未触。"
         "事件按**事件段**计。个股只计入所属快照、上市满 5 年之后的 as-of 时点。**校准段/测试段只报事件数，不做任何建模。**\n\n"
         "## 主标签\n" + main_tab.round(4).to_markdown()

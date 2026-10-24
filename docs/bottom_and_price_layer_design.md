@@ -129,3 +129,8 @@ Hawkes、Ising、月频宏观牛熊指标进阶梯、再比较优化器、具体
 摘要（OpenAlex/arXiv/PLoS）：Lunde–Timmermann 2004 JBES；Maheu–McCurdy–Song 2012；Cooper–Gutierrez–Hameed 2004 JF doi:10.1111/j.1540-6261.2004.00665.x；Moreira–Muir 2017 JF；Bian–He–Shue–Zhou 2018 NBER w25040；Hansman 等 2018 NBER w24586；Huang–Jiang–Tu–Zhou 2015 RFS doi:10.1093/rfs/hhu080；Rapach–Strauss–Zhou 2010 RFS；Pagan–Sossounov 2003 JAE doi:10.1002/jae.664；Demos–Sornette 2017 QF doi:10.1080/14697688.2016.1231417；Diks–Hommes–Wang 2018 Emp. Econ. doi:10.1007/s00181-018-1527-3；Moskowitz–Ooi–Pedersen 2012 JFE；De Bondt–Thaler 1985 JF；Johansen–Sornette 1999/2001、Zhou–Sornette 2003、Filimonov–Sornette 2012、Hardiman 等 2013、Filimonov–Demos–Sornette 2017、Deep LPPLS 2024（arXiv）。
 出处已核（Crossref）、内容据记忆：Amihud 2002 JFM；Daniel–Moskowitz 2016 JFE；Grossman–Zhou 1993 MF；Ang–Bekaert 2002 RFS；Sornette–Zhou 2006。
 接口限制记录：Semantic Scholar 全天 429；arXiv 搜索 API 间歇 429（PDF 直链正常）；OpenAlex 20 次后 429；SSRN 403。后续查询一律限速（≥3 s/次）并分批。
+
+## 6.6 "即将拉升的底部" vs 横盘底（用户 2026-10-24 补充需求；登记见 prereg §15.1）
+问题：预测对了底但横盘数十日，资金时间成本高。开发段 78% 候选底为横盘到期，所以这是主要矛盾。
+设计：(1) 快底标签 fast20/fast30；(2) 两阶段：底部状态概率 → 起涨风险率（确认型特征：放量、自算宽度推进、余震结束后首个正向冲击、融资由降转升）；(3) D-BOT 以单位资金·天收益评分，试探仓 + 确认加仓 + 20 日未确认退出。
+限制：外生冲击日不可预测，目标是起涨后 1–3 日确认，用首日涨幅换横盘成本，是否划算由数据决定。
