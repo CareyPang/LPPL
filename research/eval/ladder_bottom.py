@@ -70,12 +70,6 @@ def run(rule: str = "ci", split: str = "dev"):
     return tab, kept
 
 
-if __name__ == "__main__":
-    _rule = sys.argv[1] if len(sys.argv) > 1 else "ci"
-    if len(sys.argv) > 2 and sys.argv[2] == "margin":
-        run_margin(rule=_rule)
-    else:
-        run(rule=_rule)
 
 
 MARGIN_START = "2010-06-30"  # 融资日报 2010-03-31 起，留 60 日算变化率
@@ -108,3 +102,11 @@ def run_margin(rule: str = "ci", split: str = "dev"):
     with open(f"reports/{tag}.md", "a") as f:
         f.write("\n融资特征为市场级（沪深合计融资余额，T+1 可得），对所有标的相同；滚动 z 按全市场序列计算。开发段子样本结果，不是样本外。\n")
     return tab, kept
+
+
+if __name__ == "__main__":
+    _rule = sys.argv[1] if len(sys.argv) > 1 else "ci"
+    if len(sys.argv) > 2 and sys.argv[2] == "margin":
+        run_margin(rule=_rule)
+    else:
+        run(rule=_rule)
