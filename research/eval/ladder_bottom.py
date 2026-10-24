@@ -58,12 +58,14 @@ def assemble_bottom(split: str, levels: dict, variant: str = "main") -> pd.DataF
     return out.sort_values(["date", "symbol"]).reset_index(drop=True)
 
 
-def run(rule: str = "ci", split: str = "dev"):
+def run(rule: str = "ci", split: str = "dev", variant: str = "main"):
     levels = with_z_variants(LEVELS_B)
-    df = assemble_bottom(split, levels)
+    df = assemble_bottom(split, levels, variant=variant)
     tag = "ladder_bottom_dev" if rule == "ci" else f"ladder_bottom_dev_{rule}"
+    if variant != "main":
+        tag += f"_{variant}"
     tab, kept = run_ladder(levels, split=split, tag=tag, rule=rule, df=df,
-                           title="阶段 5 底部阶梯（B0→B1→B2→B3→B4→B7well→B8；B5 子样本另报，B6/B7 反泡沫待 −ln P 扫描）")
+                           title=f"阶段 5 底部阶梯（标签变体 {variant}；B0→B1→B2→B3→B4→B7well→B8；B5 子样本另报，B6/B7 反泡沫待 −ln P 扫描）")
     with open(f"reports/{tag}.md", "a") as f:
         f.write("\nB5 杠杆去化只能在 2010 起子样本上单独比较（另报）；B6 负泡沫 LPPLS 与 B7 原型反泡沫部分未参与（需对 −ln P 做 LPPLS 扫描，排在顶部扫描与 §12.2 算力门之后）。"
                 "标签 = 三重障碍 main 变体；事件级指标为底部事件段。开发段结果，不是样本外。\n")
@@ -109,4 +111,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[2] == "margin":
         run_margin(rule=_rule)
     else:
-        run(rule=_rule)
+        run(rule=_rule, variant=sys.argv[2] if len(sys.argv) > 2 else "main")
