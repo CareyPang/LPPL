@@ -53,5 +53,55 @@ def run() -> None:
     print(manifest, flush=True)
 
 
+
+
+def fetch_account_info() -> pd.DataFrame:
+    """中证金融/东方财富两融账户统计（2012-09 起，日度；含平均维持担保比例）。"""
+    import akshare as ak
+
+    d = ak.stock_margin_account_info()
+    d["date"] = pd.to_datetime(d["日期"])
+    d = d.rename(columns={"融资余额": "fin_balance_all", "融券余额": "sec_balance_all", "融资买入额": "fin_buy_all",
+                          "融券卖出额": "sec_sell_all", "平均维持担保比例": "avg_maint_ratio"})
+    cols = ["date", "fin_balance_all", "sec_balance_all", "fin_buy_all", "sec_sell_all", "avg_maint_ratio"]
+    return d[cols].sort_values("date").drop_duplicates("date").reset_index(drop=True)
+
+
+def fetch_szse(dates: pd.DatetimeIndex, out: Path, pause: float = 0.8) -> None:
+    """深交所按日查询，增量写入 out（parquet）；失败日期跳过并记录。"""
+    import akshare as ak
+
+    done = pd.read_parquet(out) if out.exists() else pd.DataFrame()
+    have = set(done.date) if len(done) else set()
+    rows, failed = [], []
+    for i, d in enumerate(dates):
+        if d in have:
+            continue
+        try:
+            x = ak.stock_margin_szse(date=d.strftime("%Y%m%d"))
+            x["date"] = d
+            rows.append(x)
+        except Exception as e:  # noqa: BLE001
+            failed.append((str(d.date()), type(e).__name__))
+            time.sleep(3)
+        time.sleep(pause)
+        if rows and (i % 50 == 0):
+            pd.concat([done, *rows], ignore_index=True).to_parquet(out)
+    if rows:
+        pd.concat([done, *rows], ignore_index=True).to_parquet(out)
+    json.dump(failed, open(out.with_suffix(".failed.json"), "w"))
+    print("szse done", len(rows), "failed", len(failed), flush=True)
+
+
+def run_extra() -> None:
+    acc = fetch_account_info()
+    acc.to_parquet(CACHE / "margin_account_info.parquet")
+    print("account_info", len(acc), acc.date.min().date(), acc.date.max().date(), flush=True)
+    sse = pd.read_parquet(CACHE / "sse_margin.parquet")
+    fetch_szse(pd.DatetimeIndex(sse.date), CACHE / "szse_margin.parquet")
+
+
 if __name__ == "__main__":
-    run()
+    import sys
+
+    run_extra() if len(sys.argv) > 1 and sys.argv[1] == "extra" else run()
