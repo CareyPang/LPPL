@@ -81,6 +81,8 @@ def run_full(split: str = "dev", rule: str = "ci"):
     """按预登记顺序 R1→R2→R3→R4→R5→R7 在稀疏时点上从 R0 起完整重算（§12.2 后、§5 顺序；R6 待特征实现后插入 R5 与 R7 之间）。"""
     tag = "ladder_dev_full" if rule == "ci" else f"ladder_dev_full_{rule}"
     df = assemble_sparse(split)
+    daily_feats = sorted({c for lv in DAILY_LEVELS.values() for cfg in lv.values() for c in cfg})
+    df = df.dropna(subset=daily_feats).reset_index(drop=True)
     tdays = price_series("sh000001").index
     tdays = tdays[(tdays >= df.date.min()) & (tdays <= df.date.max())]
     from .baselines import r0_predict
