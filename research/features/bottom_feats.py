@@ -33,7 +33,7 @@ def omori(logp: pd.Series, k_sigma: float = 2.0) -> pd.DataFrame:
     last, base_at = -1, np.nan
     sv = shock.to_numpy()
     for t in range(n):
-        if sv[t]:
+        if sv[t] and (last < 0 or t - last >= SHOCK_LOOK):  # 同一轮下跌 60 日内只记一次主震
             last, base_at = t, base_rate[t - 1] if t > 0 else np.nan
         if last < 0 or t - last > MAX_DAYS:
             continue
