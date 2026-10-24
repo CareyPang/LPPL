@@ -14,11 +14,10 @@ def run(losses_path: str, tag: str) -> dict:
     base = L["R0"].to_numpy()
     cands = [c for c in L.columns if c != "R0"]
     M = -L[cands].to_numpy()  # 得分 = −损失，越大越好
-    res = pbo(M, S=16, metric=lambda x: -x.mean(0))  # CSCV 以 IS 平均损失最小选配置
+    res = pbo(M, S=16, metric=lambda x: x.mean(0))  # CSCV 以 IS 平均损失最小（得分最大）选配置
     d = base[:, None] - L[cands].to_numpy()  # 正为候选优于 R0
     p, best = spa_pvalue(d, block=80, B=2000)
-    out = dict(n_days=len(L), n_configs=len(cands), pbo=res["pbo"], spa_p_vs_R0=p, spa_best=cands[best],
-               mean_oos_rank_of_is_best=res.get("mean_oos_rank"))
+    out = dict(n_days=len(L), n_configs=len(cands), pbo=res["pbo"], spa_p_vs_R0=p, spa_best=cands[best], logit_mean=res["logit_mean"])
     with open(f"reports/{tag}_mt.md", "w") as f:
         f.write(f"# 多重比较诊断（{tag}；开发段，不是样本外）\n\n")
         f.write(f"- 逐日损失矩阵：{len(L)} 日 × {len(cands)} 配置（来源 `{losses_path}`）\n")
