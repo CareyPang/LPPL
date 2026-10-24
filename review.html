@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>V2588 框架深度评审与升级方案</title>
+<style>
+:root {
+  --bg: #0d1013; --panel: #151a1f; --line: #242b33; --ink: #e4e8ec; --ink-2: #b3bcc5; --ink-3: #7d8893;
+  --cyan: #4fd1c5; --amber: #f2a541; --red: #ef6461; --green: #5fc48a;
+  --f-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", Georgia, serif;
+  --f-ui: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.75 var(--f-ui); }
+a { color: var(--cyan); }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.wrap { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
+nav.toc { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+nav.toc p { color: var(--ink-3); font-size: 12px; letter-spacing: .1em; margin: 0 0 8px; }
+nav.toc ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+nav.toc a { color: var(--ink-2); text-decoration: none; }
+nav.toc a:hover { color: var(--ink); text-decoration: underline; }
+article { max-width: 76ch; min-width: 0; }
+h1 { font: 600 clamp(28px, 3vw, 40px)/1.25 var(--f-display); margin: 0 0 16px; }
+h2 { font: 600 24px/1.35 var(--f-display); margin: 56px 0 16px; padding-top: 24px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
+h3 { font: 600 18px/1.4 var(--f-ui); margin: 32px 0 8px; }
+p, li { color: var(--ink-2); }
+strong { color: var(--ink); }
+.lede { font-size: 18px; color: var(--ink); }
+.meta { color: var(--ink-3); font-size: 14px; }
+code, .m { font-family: var(--f-mono); font-size: .92em; color: var(--ink); }
+.eq { font-family: var(--f-mono); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; overflow-x: auto; color: var(--ink); white-space: pre; font-size: 14px; line-height: 1.6; }
+.tw { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
+caption { text-align: left; color: var(--ink-3); font-size: 13px; padding-bottom: 8px; }
+th, td { border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+th { color: var(--ink-3); font-weight: 500; font-size: 13px; }
+td { color: var(--ink-2); }
+.v { font: 600 12px/1 var(--f-mono); padding: 4px 6px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; display: inline-block; }
+.keep { color: var(--green); } .fix { color: var(--amber); } .drop { color: var(--red); }
+.sum { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 20px; margin: 24px 0; }
+.sum h3 { margin-top: 0; }
+.ref { font-size: 14px; }
+.ref li { margin-bottom: 6px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; } nav.toc { position: static; } }
+@media print {
+  body { background: #fff; color: #111; } p, li, td { color: #222; } nav.toc { display: none; }
+  .wrap { display: block; padding: 0; } h2 { break-before: auto; break-after: avoid; } table, .eq { break-inside: avoid; }
+  .eq, .sum { background: #f5f5f5; border-color: #ccc; color: #111; } thead { display: table-header-group; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="目录">
+  <p>目录</p>
+  <ol>
+    <li><a href="#s1">结论先行</a></li>
+    <li><a href="#s2">与 Sornette 原版逐项对照</a></li>
+    <li><a href="#s3">时间层：问题与升级</a></li>
+    <li><a href="#s4">价格层：问题与升级</a></li>
+    <li><a href="#s5">统计物理第三支柱</a></li>
+    <li><a href="#s6">事件层与校准</a></li>
+    <li><a href="#s7">华尔街级验证方法</a></li>
+    <li><a href="#s8">从概率到仓位</a></li>
+    <li><a href="#s9">关于“高额收益”的现实边界</a></li>
+    <li><a href="#s10">工程路线图</a></li>
+    <li><a href="#s11">原型中已实现的部分</a></li>
+    <li><a href="#s12">2026 上证复现与精度提升</a></li>
+    <li><a href="#s13">参考文献</a></li>
+  </ol>
+</nav>
+
+<article>
+<h1>V2588 框架深度评审与升级方案</h1>
+<p class="meta">评审对象：用户上传的《V2588 长期记忆金融框架完整版》（V3.0 / V4.8-R2 / PPE-U2-R5.1 / V5.0 / S4）· 对照基准：Sornette 团队一手文献 · 2026-10-23</p>
+<p class="lede">这套框架的工程纪律已经达到机构水准，但预测内核有三处结构性缺口，所以目前还推不出“稳定预测顶底”。本文逐项说明哪些该保留，哪些要改，哪些应删除，并给出可以执行的升级路线。</p>
+
+<h2 id="s1">1. 结论先行</h2>
+<div class="sum">
+<h3>五条核心判断</h3>
+<ol>
+  <li><strong>数据治理和证伪纪律是这套框架最有价值的部分，应当原样保留。</strong>包括 Point-in-Time 数据、t_c 不等于峰值日期、参数 A 不是目标价、竞争首达的三分法、保留负结果、和 BASE / POWER 竞争比较。这些在公开的 LPPLS 研究里都少见。</li>
+  <li><strong>时间层还停留在“单窗口拟合 + 硬门槛”的范式。</strong>Sornette 团队 2015 年之后的标准做法是：多窗口置信度（DS LPPLS Confidence）、Lagrange 正则选窗、修正似然 profile（MPL），再加上下一节讲的嵌套模型检验。框架里的 <span class="m">R² ≥ 0.90</span> 和 <span class="m">ω∈(6,13)</span> 等门槛，比原版过滤器更窄、更脆弱。</li>
+  <li><strong>价格层（PPE）在物理上自洽，但没有接入任何“状态变量”。</strong>它描述了价格在哪里停留过，却没有回答系统正在变得更不稳定还是更稳定。缺的是统计物理的第三支柱：临界慢化、标度指数、熵、自激强度。</li>
+  <li><strong>事件桥接层（Event Bridge）是对的方向，却从未被真正运行过。</strong>附件记录的完成率是 0.104%，日期模型的数量是 0。V5.1 唯一跑完的事件实验，Brier 0.1015 输给了基率 0.0930。所以在这一层被证明有效之前，任何“预测顶底”的结论都没有依据。</li>
+  <li><strong>华尔街顶尖机构的做法不是追求更准的点预测，而是三件事：</strong>多个弱而稳定的信号；严格的过拟合校正（CPCV、Deflated Sharpe、PBO）；把概率转换成仓位的风险预算。在这三件事上，框架还没有覆盖执行层。</li>
+</ol>
+</div>
+
+<h2 id="s2">2. 与 Sornette 原版逐项对照</h2>
+<div class="tw"><table>
+<caption>表 1：V2588 各组件与 Sornette 团队一手方法的对照</caption>
+<thead><tr><th>组件</th><th>V2588 做法</th><th>Sornette 原版 / 后续标准</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td>模型形式</td><td>LPPLS 七参数，C₁/C₂ 线性化</td><td>Filimonov &amp; Sornette (2013)：同样线性化为 C₁=C·cosφ、C₂=C·sinφ，只剩 3 个非线性参数</td><td><span class="v keep">保留</span></td></tr>
+<tr><td>线性消元</td><td>QR/SVD，禁止显式求逆</td><td>原版用正规方程；V2588 的数值处理更稳</td><td><span class="v keep">保留（优于原版）</span></td></tr>
+<tr><td>优化器</td><td>SciPy DE 多 seed，再用 L-BFGS-B 精修</td><td>原版用禁忌搜索（Tabu）加 Levenberg–Marquardt；之后普遍采用多起点局部搜索</td><td><span class="v fix">保留但降级</span>，见 3.1</td></tr>
+<tr><td>过滤条件</td><td>m∈(0.1,0.9)，ω∈(6,13)，D≥1，振荡数≥2.5，R²≥0.9</td><td>DS LPPLS（Sornette et al. 2015，上证 2015 泡沫）：m∈[0.01,0.99]，ω∈[2,15]，t_c 距今 ≤ max(5, 0.1·窗口)，振荡数≥2.5，D≥0.5，并做残差 Lomb 检验</td><td><span class="v fix">修改</span>：R² 门删除，其余放宽到原版</td></tr>
+<tr><td>多窗口</td><td>40 个固定窗口 + FULL_HISTORY，逐个判断</td><td>同一 as-of 下用 125 个窗口（从 750 到 125 日），把通过过滤的比例作为置信度指标，不对单个窗口下结论</td><td><span class="v fix">修改</span>：从“逐窗口判断”改为“比例指标”</td></tr>
+<tr><td>选窗</td><td>未规定，倾向保留全部</td><td>Demos &amp; Sornette (2017)：Lagrange 正则化，消除 χ² 随样本长度的系统漂移后，内生选出泡沫起点 t₁</td><td><span class="v fix">新增</span></td></tr>
+<tr><td>t_c 不确定性</td><td>profile cost、block bootstrap</td><td>Filimonov, Demos &amp; Sornette (2017)：修正 profile 似然（MPL），给出 t_c 的似然区间，比 bootstrap 窄而稳定</td><td><span class="v fix">升级</span>：用 MPL 替代 profile cost</td></tr>
+<tr><td>底部</td><td>对 −ln P 做相同拟合</td><td>Yan, Woodard &amp; Sornette (2012)：反泡沫（negative bubble）形式相同；作者明确说底部信号比顶部弱</td><td><span class="v keep">保留</span>，但要单独验证</td></tr>
+<tr><td>理论连接</td><td>t_c 不等于崩盘日期</td><td>JLS (1999)：t_c 是理性预期下崩盘风险率（hazard）的奇点，崩盘可以在 t_c 之前任何时刻发生，也可能不发生</td><td><span class="v keep">保留</span>：这是对原版的正确解读</td></tr>
+<tr><td>泡沫定量</td><td>无</td><td>Sornette 团队 FCO（金融危机观测站）：同时用 DS LPPLS Confidence 与 Trust（bootstrap 后的稳定性）两个指标</td><td><span class="v fix">新增 Trust 指标</span></td></tr>
+<tr><td>价格层</td><td>Range-Aware KDE，自由能井，首达竞争风险</td><td>不属于 Sornette 体系。思路接近统计物理的 Kramers 逃逸问题，但没有接入原版</td><td><span class="v keep">保留</span>，需证明增量</td></tr>
+<tr><td>窗口规模</td><td>四尺度 40 窗口 × 多 seed × 多 as-of，约 600 万次拟合</td><td>原版用 125 窗口、每窗口一次多起点搜索。真正的瓶颈是信号的统计效力，不是优化精度</td><td><span class="v drop">删减</span>：算力应投向样本外验证</td></tr>
+</tbody>
+</table></div>
+<p>归纳：V2588 在“如何不自欺”上比原版文献更严，但在“如何提取信号”上落后于原版 2015 年以后的标准做法。这两块应该分开评价。</p>
+
+<h2 id="s3">3. 时间层：问题与升级</h2>
+<h3>3.1 优化精度不是瓶颈</h3>
+<p>线性消元以后，目标函数只有 (t_c, m, ω) 三个维度。Filimonov–Sornette 已经证明，在 (t_c, m) 平面上它通常只剩少数几个局部极小值。因此 DE 跑完整的多 seed 预算，主要成本花在把一个本来就不确定的 t_c 估得“数值上更精确”。</p>
+<p>但附件 12.4 的失败案例全部来自识别问题：NDX 的 bootstrap 区间几乎占满整个允许时域，XAU/XAG 的日期重复率高却结构不合格。这些都不是优化器没收敛。<strong>建议</strong>：保留 DE 加精修作为数值基线，另外用一个简单的检验固定规则：同一窗口跑 5 个 seed，t_c 差异小于 1 个交易日的窗口比例达到 95% 以上，就认为优化已经足够。剩下的算力投到样本外验证上。</p>
+
+<h3>3.2 用嵌套检验回答“对数周期是否真实存在”</h3>
+<p>LPPLS 和纯幂律是嵌套模型（令 C₁=C₂=0 即可得到纯幂律）。在同一个窗口、同一个 t_c 搜索域下，可以计算</p>
+<div class="eq">F = [(SSE_pow − SSE_lppls) / 2] / [SSE_lppls / (n − 7)]</div>
+<p>这个检验每个窗口都能直接算，是 S4 方案中“B → C”比较在单窗口层面的版本。原型已经实现。注意两点：日线残差有自相关，F 分布假设的 p 值偏乐观；正式版应改用残差块 bootstrap 来构造零分布。</p>
+
+<h3>3.3 从门槛判断改为连续指标</h3>
+<p>硬门槛会让信号在门槛附近频繁翻转。建议输出三个连续量，再交给事件层去学习它们和真实事件的关系：</p>
+<ul>
+  <li><strong>DS 置信度</strong>：通过原版过滤器的窗口比例，在 0 到 1 之间。</li>
+  <li><strong>Trust</strong>：对最优窗口的残差做 bootstrap，通过过滤器的比例。</li>
+  <li><strong>t_c 聚集度</strong>：合格窗口的 t_c 四分位距除以中位距今。数值越小，说明不同窗口指向同一个临界区。</li>
+</ul>
+
+<h3>3.4 窗口设计</h3>
+<p>四尺度 40 窗口中的 ULTRA 档（2500–7000 日）跨越了 A 股多次制度变化（股权分置改革、涨跌停调整、注册制）。在这么长的样本上要求同一个幂律过程成立，不符合 LPPLS 的局部假设。<strong>建议</strong>：主信号用 60–750 日的密集窗口（原型用 16 个，正式版建议 40 个以上）；超长窗口只用来描述长期状态，不进入事件模型。</p>
+
+<h2 id="s4">4. 价格层：问题与升级</h2>
+<h3>4.1 PPE 要保留的部分</h3>
+<p>Range-Aware KDE（把日内振幅计入核宽）、F = −ln ρ 的自由能表示、明确说明“经验井不等于动力学势能井”、竞争首达的四种结局（包括同 bar 歧义和右删失），这些在物理和统计上都是正确的。</p>
+
+<h3>4.2 PPE 的核心缺口：从静态地形到动力学</h3>
+<p>经验密度只给出一个“地形”，并不决定在地形上怎么运动。附件 6.3 也承认：只看 KDE 地形，无法唯一恢复未来的触达时间。升级方向是直接估计 Langevin 方程的漂移项和扩散项：</p>
+<div class="eq">dX = f(X) dt + √(2D(X)) dW
+f(x) ≈ E[ΔX | X=x] / Δt         （Kramers–Moyal 一阶系数）
+D(x) ≈ E[(ΔX)² | X=x] / (2Δt)   （二阶系数）</div>
+<p>估出 f 和 D 以后，有效势能是 <span class="m">U(x) = −∫ f/D dx + ln D</span>，首达时间可以通过求解后向 Fokker–Planck 方程得到，或直接用 f、D 做模拟，不再依赖平稳 bootstrap。这样价格层就真正变成“动力学”模型。代价是 f 和 D 在稀疏价格区域估计噪声很大，需要核平滑和带宽交叉验证。</p>
+
+<h3>4.3 首达基线必须足够强</h3>
+<p>附件 12.2 显示：首达模型的 Brier 改善全部来自“是否触达”，方向判断反而略差（0.2420 → 0.2447）。这说明 PPE 的方向信息目前不比波动率加距离的基线更好。原型同时输出平稳块 bootstrap 和 iid bootstrap 两套概率；正式验收时还应加入 GARCH 或 HAR-RV 的波动率基线，PPE 必须胜过这个基线才能作为增量。</p>
+
+<h2 id="s5">5. 统计物理第三支柱：系统稳定性指标</h2>
+<p>这是你要求的“用非线性动力学和统计物理看数据”的核心，也是框架目前完全缺失的部分。这些指标都不依赖均线类的滞后平滑，度量的是系统本身的状态。</p>
+<div class="tw"><table>
+<caption>表 2：建议加入的状态变量</caption>
+<thead><tr><th>指标</th><th>物理含义</th><th>与顶底的关系</th><th>原型</th></tr></thead>
+<tbody>
+<tr><td>临界慢化：收益 AR(1) 与方差的 Kendall τ 趋势</td><td>接近分岔点时，系统恢复力下降，扰动衰减变慢（Scheffer et al. 2009）</td><td>AR(1) 和方差同时上升，是临界转变的通用预警信号；单独一项的误报率高</td><td>已实现</td></tr>
+<tr><td>DFA 标度指数 α</td><td>长程相关性。0.5 为无记忆，大于 0.5 为持续，小于 0.5 为反持续</td><td>泡沫后期 α 偏高，表示羊群效应；α 突然回落可能代表结构破坏</td><td>已实现</td></tr>
+<tr><td>Bandt–Pompe 排列熵</td><td>序列复杂度。低熵表示有序、可预测</td><td>单边加速阶段熵下降；熵回升代表趋势结构瓦解</td><td>已实现</td></tr>
+<tr><td>Hawkes 分支比 n</td><td>自激强度。n 趋近 1 是临界状态，事件会内生地引发更多事件（Filimonov &amp; Sornette 2012）</td><td>直接度量“内生性”。崩盘前 n 常接近 1</td><td>下一阶段，需要分钟级或逐笔数据</td></tr>
+<tr><td>多重分形谱宽 Δα（MF-DFA）</td><td>波动的异质程度</td><td>谱宽扩大表示极端波动的结构在改变</td><td>下一阶段</td></tr>
+<tr><td>北向资金和融资余额的偏离（ΔI / I）</td><td>外部驱动和杠杆。在 Ising 类模型里对应外场和耦合强度</td><td>2015 年 A 股泡沫的核心驱动是融资杠杆</td><td>下一阶段，需要额外数据源</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="s6">6. 事件层与概率校准</h2>
+<p>这是整个框架里最需要先做完的一层，因为它决定所有模型“好不好”。建议这样执行：</p>
+<ol>
+  <li><strong>标签</strong>：沿用 <span class="m">top10_20_60</span>，同时加入对称的 <span class="m">bot10_20_60</span>。另外加入一个波动率调整版：回撤阈值用 2.5σ√60 代替固定的 10%，避免高波动股票的标签过多。</li>
+  <li><strong>特征</strong>：时间层的 DS 置信度、Trust、t_c 聚集度、中位 t_c 距今；价格层的首达活动概率、所在井的深度；统计物理层的 α、熵、AR(1) 和方差的 τ。所有特征都在 as-of 时点计算。</li>
+  <li><strong>模型阶梯</strong>：BASE（基率）→ BASE+波动 → +幂律 → +LPPLS → +物理状态。每一级都必须在样本外胜过上一级，否则那一层的特征就从模型里删掉。</li>
+  <li><strong>模型形式</strong>：先用带 L2 正则的逻辑回归，不用复杂模型。在单只股票、几百个高度重叠的样本上，梯度提升树一定过拟合。</li>
+  <li><strong>校准</strong>：在单独的校准期做 isotonic 或 Platt 校准，然后报告可靠性曲线和 ECE（期望校准误差）。</li>
+  <li><strong>横截面</strong>：单只股票的顶部事件只有几个，统计效力极低。正式版必须在全 A 股（至少沪深 300 加中证 500 成分）上训练一个横截面模型，这是机构做法和个人研究的根本差别。</li>
+</ol>
+
+<h2 id="s7">7. 华尔街级验证方法</h2>
+<p>顶尖量化机构的优势主要不在模型本身，而在“如何知道一个模型不是过拟合”。下面这几项建议直接引入：</p>
+<div class="tw"><table>
+<caption>表 3：验证工具</caption>
+<thead><tr><th>方法</th><th>解决的问题</th><th>用在哪里</th></tr></thead>
+<tbody>
+<tr><td>三重障碍标签（Triple-Barrier，López de Prado 2018）</td><td>固定期限的收益标签忽略了路径；三重障碍同时考虑止盈、止损和时间上限</td><td>和 PPE 的竞争首达完全同构，可以统一成一套标签</td></tr>
+<tr><td>元标签（Meta-labeling）</td><td>主模型决定方向，次级模型决定“这次要不要做、做多大”</td><td>LPPLS 负责方向（顶或底），物理状态和首达概率负责过滤与仓位</td></tr>
+<tr><td>清洗加禁区交叉验证（Purged K-Fold + Embargo）</td><td>标签跨越 80 日，相邻样本互相泄漏</td><td>训练集剔除标签区间和测试集重叠的样本，并在测试集之后留出禁区</td></tr>
+<tr><td>组合清洗交叉验证（CPCV）</td><td>单一路径的回测只是一种结果，偶然性很大</td><td>生成多条回测路径，得到夏普比率的分布，而不是一个点</td></tr>
+<tr><td>折减夏普比率（Deflated Sharpe，Bailey &amp; López de Prado 2014）</td><td>试了很多参数组合，最好的夏普比率必然虚高</td><td>按试验次数校正。附件里的 40 窗口、多门槛、多事件定义，都会计入试验次数</td></tr>
+<tr><td>回测过拟合概率（PBO）</td><td>样本内最优的方案在样本外排第几</td><td>决定是否允许上线</td></tr>
+<tr><td>反事实执行</td><td>数学上触达不等于真的能成交</td><td>A 股 T+1、涨跌停、停牌、印花税（原型已实现基础版）</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="s8">8. 从概率到仓位</h2>
+<p>即使事件概率已经校准，“在顶部卖出、在底部买入”也不是最优用法。机构的做法是：</p>
+<ul>
+  <li><strong>分数 Kelly</strong>：仓位 f = κ·(p·b − (1−p)) / b，κ 通常取 0.25 到 0.5，用来抵消概率本身的估计误差。</li>
+  <li><strong>波动目标</strong>：仓位乘以 σ_target / σ_realized，在高波动区（往往就是临界区）自动减仓。</li>
+  <li><strong>非对称处理</strong>：顶部信号用来降低风险敞口，比用来做空更可靠（A 股融券约束也很多）；底部信号只用来分批建仓，不用来一次性满仓。</li>
+  <li><strong>Governor 状态和仓位上限一一对应</strong>：WATCH 时 0 新增仓位，PROBE 时不超过 1/4 目标仓位，CONFIRM 只有在事件层校准通过以后才启用。</li>
+</ul>
+
+<h2 id="s9">9. 关于“高额收益”的现实边界</h2>
+<p>坦白说明以下几点，避免投入方向出错：</p>
+<ul>
+  <li>公开文献中，LPPLS 最好的样本外结果是：作为泡沫存在的预警有用，作为崩盘日期预测弱，作为交易择时信号的费后收益不稳定。Sornette 团队 FCO 的公开报告也只把它定位为“诊断工具”。</li>
+  <li>附件中唯一跑完的事件实验，已经输给了基率。在完成第 6、7 节的验证之前，任何收益预期都没有依据。</li>
+  <li>在单只股票上，一次泡沫只给一个独立样本。“预测准确”至少需要几十个独立事件才能在统计上区分运气和能力，所以必须做横截面。</li>
+  <li>更现实的目标是：<strong>在临界区降低回撤，在非临界区保持持有。</strong>这种风险控制型收益改善更容易被验证，也更能稳定存在。</li>
+</ul>
+
+<h2 id="s10">10. 工程路线图</h2>
+<div class="tw"><table>
+<caption>表 4：建议分阶段推进</caption>
+<thead><tr><th>阶段</th><th>内容</th><th>验收标准</th></tr></thead>
+<tbody>
+<tr><td>P0（本次原型）</td><td>浏览器端完整流程：数据、LPPLS 多窗口、物理指标、PPE、首达、滚动回测、两套界面</td><td>流程能跑通；所有输出都标明“未经校准”</td></tr>
+<tr><td>P1：Python 后端</td><td>FastAPI + NumPy/SciPy；AkShare 或 Tushare 数据，带 PIT 复权因子；DE 加 L-BFGS-B；MPL profile；结果缓存</td><td>与原型数值对齐，单只股票完整分析在 10 秒以内</td></tr>
+<tr><td>P2：横截面事件层</td><td>全 A 股每周 as-of；按第 6 节的模型阶梯训练；CPCV、Deflated Sharpe、PBO</td><td>LPPLS 一级在样本外 Brier 显著优于 POWER 一级（块 bootstrap 95% 区间不跨 0）</td></tr>
+<tr><td>P3：动力学价格层</td><td>Kramers–Moyal 估计 f 和 D；Fokker–Planck 首达；Hawkes 分支比</td><td>方向 Brier 胜过 HAR-RV 基线</td></tr>
+<tr><td>P4：执行与 APK</td><td>分数 Kelly 加波动目标；Capacitor 打包手机版；推送预警</td><td>前推模拟盘 6 个月，费后回撤低于基准</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="s11">11. 原型中已实现的部分</h2>
+<ul>
+  <li><strong>时间层</strong>：线性消元（改进 Gram–Schmidt QR）；DE 加 Nelder–Mead 精修（浏览器端替代 L-BFGS-B）；16 个窗口的顶部和底部拟合；DS 和严格两套过滤器；Lagrange 选窗；残差块 bootstrap 估计 t_c 分布；纯幂律嵌套 F 检验。</li>
+  <li><strong>价格层</strong>：Range-Aware KDE（HLC3，时间半衰期 120 日，成交量平方根加权）；自由能井的质量、深度和三档带宽持续度；竞争首达分四种结局，平稳块 bootstrap 与 iid 双基线；上下边界可以手动调整。</li>
+  <li><strong>统计物理</strong>：DFA-1 标度指数、排列熵、AR(1) 与方差，以及它们的 Kendall τ 趋势。</li>
+  <li><strong>验证</strong>：滚动 as-of；只用已成熟的标签做前推逻辑回归；BASE、+LPPLS、+LPPLS+物理三级 Brier 对比；A 股规则交易回测。</li>
+  <li><strong>与正式规范的差距</strong>：优化预算远小于规范；没有 PIT 复权回放；没有 MPL；Brier 只有点估计，没有区块置信区间；只做单只股票，没有横截面。这些都列在 P1、P2 中。</li>
+</ul>
+
+<h2 id="s12">12. 2026 上证复现与精度提升</h2>
+<p>“临界点 2.0”（<a href="index.html">桌面版</a> / <a href="mobile.html">手机版</a>）把顶部和底部拆成两套独立引擎，界面只输出见顶时间、逃顶动作、抄底区间和二波目标。下面是用两个历史截止日做的严格回放：只使用截止日及之前的数据，规则事先固定，没有针对这两个日期调参。</p>
+
+<h3>12.1 为什么顶底要分开</h3>
+<ul>
+  <li><strong>顶部</strong>：用 LPPLS 做多尺度扫描（38 个窗口，30–700 日，并锚定截止日前最近两个 ZigZag 低点）。合格条件为 B&lt;0、0.1≤m≤0.95、4≤ω≤15、距今 1–115 日、振荡数≥1.5、阻尼≥0.3、R²≥0.8。合格窗口的 t_c 用核密度聚类；至少 4 个尺度、一致度≥6% 才输出“见顶窗口”。</li>
+  <li><strong>底部</strong>：不再对 −ln P 做 LPPLS 拟合。正如用户所说，那样常常抄在半山腰。现在改为 6 项共振检查：跌幅到位、时间到位、止跌企稳为必要项，另有恐慌释放、落入价格井、反泡沫结构三项；必要项全满足且总分≥4 才买第一批。跌幅和时间的参照来自该标的过去 24 次同级别回撤（ZigZag 阈值 1.6σ√20）的分位数。</li>
+  <li><strong>二波</strong>：底部确认后分三批建仓，收复一半跌幅后加满；目标价参照历史反弹比例。</li>
+</ul>
+
+<h3>12.2 两个案例的真实结果</h3>
+<div class="tw"><table>
+<caption>表 5：上证指数回放（真实后续：3/02 收盘 4182.59 见顶 → 3/23 低点 → 5/13 收盘 4242.57 二次见顶 → 7/17 收盘 3764.15 → 8/18 收盘 3990.3 → 10/23 收盘 3690.48）</caption>
+<thead><tr><th>项目</th><th>截止 2026-02-27</th><th>截止 2026-04-30</th></tr></thead>
+<tbody>
+<tr><td>模型状态</td><td>临界区，52% 的尺度一致</td><td>平稳期，没有合格的聚类</td></tr>
+<tr><td>见顶时间</td><td>预测 3/02–3/16，真实 3/02，<strong>命中</strong></td><td>无窗口；真实顶 5/13，<strong>漏报</strong>（见顶当天才出现结构）</td></tr>
+<tr><td>底部时间</td><td>预测 3/13–4/28，真实 3/23，<strong>命中</strong></td><td>—</td></tr>
+<tr><td>底部价格</td><td>预测 3539–3794，真实 3813（回撤 8.8%），按回撤区间判定<strong>命中</strong></td><td>—</td></tr>
+<tr><td>二波高点</td><td>预测 4110，真实 4243，误差 +3.2%</td><td>—</td></tr>
+<tr><td>按计划操作</td><td>3/02 以 4151.8 减半 → 3/05 以 4109.8 清仓 → 3/26、4/02、4/15 分三批买回</td><td>6/09 以 3977.5 破位清仓 → 7/27、8/03 分两批买入 → 10/16 止损</td></tr>
+<tr><td>收益：计划 / 持有</td><td>到 10/23：−2.5% / −6.2%；最大回撤 11.3% / 11.3%</td><td>到 10/23：−5.0% / −10.3%；最大回撤 8.1% / 13.8%</td></tr>
+</tbody>
+</table></div>
+<p>结论如实列出：第一个顶抓得准，第二个顶没有抓到。原因是 3/23 到 5/13 的反弹只有约 7 周，结构太短，不是 LPPLS 意义上的加速泡沫，模型天生看不到；两次计划都只是少亏，因为在二波中途没有退出机制。</p>
+
+<h3>12.3 全样本：准，但覆盖率低</h3>
+<div class="tw"><table>
+<caption>表 6：2015-03 起每 5 日滚动一次的顶部预警（一致度≥15% 且见顶窗口在 10 日内）</caption>
+<thead><tr><th>指数</th><th>预警后确实见顶</th><th>随机放置的基线</th><th>真实顶被提前抓到</th><th>2016 年起 计划 / 持有</th><th>最大回撤 计划 / 持有</th></tr></thead>
+<tbody>
+<tr><td>上证指数</td><td>57%（7 段）</td><td>23%</td><td>18%（22 个顶）</td><td>+9% / +12%</td><td>31% / 31%</td></tr>
+<tr><td>沪深300</td><td>88%（8 段）</td><td>15%</td><td>21%（14 个顶）</td><td>+49% / +18%</td><td>37% / 46%</td></tr>
+<tr><td>创业板指</td><td>86%（7 段）</td><td>13%</td><td>14%（21 个顶）</td><td>+69% / +11%</td><td>57% / 57%</td></tr>
+</tbody>
+</table></div>
+<p>这验证了“LPPLS 顶部相对准”：精确率是随机基线的 2.5–6.6 倍。但它只能覆盖 14–21% 的真实顶部，上证全样本收益也没有跑赢持有。样本只有 7–8 段，置信区间很宽，不能当作稳定优势。</p>
+
+<h3>12.4 如何继续提高精度和收益（按预期收益排序）</h3>
+<ol>
+  <li><strong>补上非泡沫型顶部，提高覆盖率。</strong>覆盖率低是最大短板，像 5/13 这样的短周期顶部需要别的信号：融资余额与成交额的二阶导数（杠杆加速）、Hawkes 分支比（需要分钟线）、换手率分位数、上涨家数的背离。任一信号触发都只做减仓，不做清仓。</li>
+  <li><strong>二波加退出机制。</strong>两次回放都在二波中途回吐利润。建议在二波目标价附近减半，并对剩余仓位使用 1.5σ√3 的移动止盈；目标价改为历史反弹比例的分位区间，不再用单点。</li>
+  <li><strong>横截面训练。</strong>单只指数十年只有 7–8 次预警，统计效力不足。在中证 800 成分股上做相同扫描，事件数会增加两个数量级，才能可靠估计阈值（一致度、窗口距离）和校准曲线。</li>
+  <li><strong>滚动再标定。</strong>每月用截至当时的数据，在 CPCV 下重估 alertConf、m/ω 范围和 ZigZag 阈值，并用 Deflated Sharpe 校正试验次数。禁止用全样本调参。</li>
+  <li><strong>底部换成动力学模型。</strong>用 Kramers–Moyal 方法估计回撤段的漂移 f(x) 和扩散 D(x)；当 f 由负转正、D 开始回落时，才算“动力学止跌”。它可以替代目前的“止跌企稳”项，从而减少 2015 年 7 月那样的第一批过早买入。</li>
+  <li><strong>仓位用分数 Kelly 加波动目标。</strong>把一致度映射成校准后的见顶概率 p，减仓比例取 κ·p（κ=0.5），再乘以 σ_target/σ。这样比固定“减一半”更平滑，也减少假警报的成本。</li>
+</ol>
+
+<h2 id="s13">13. 参考文献</h2>
+<ol class="ref">
+  <li>Johansen, A., Ledoit, O., &amp; Sornette, D. (2000). Crashes as critical points. <em>International Journal of Theoretical and Applied Finance</em>, 3(2), 219–255.</li>
+  <li>Sornette, D. (2003). <em>Why Stock Markets Crash: Critical Events in Complex Financial Systems</em>. Princeton University Press.</li>
+  <li>Filimonov, V., &amp; Sornette, D. (2013). A stable and robust calibration scheme of the log-periodic power law model. <em>Physica A</em>, 392(17), 3698–3707.</li>
+  <li>Sornette, D., Demos, G., Zhang, Q., Cauwels, P., Filimonov, V., &amp; Zhang, Q. (2015). Real-time prediction and post-mortem analysis of the Shanghai 2015 stock market bubble and crash. <em>Journal of Investment Strategies</em>, 4(4), 77–95.</li>
+  <li>Demos, G., &amp; Sornette, D. (2017). Lagrange regularisation approach to compare nested data sets and determine objectively financial bubbles' inceptions. arXiv:1707.07162.</li>
+  <li>Filimonov, V., Demos, G., &amp; Sornette, D. (2017). Modified profile likelihood inference and interval forecast of the burst of financial bubbles. <em>Quantitative Finance</em>, 17(8), 1167–1186.</li>
+  <li>Yan, W., Woodard, R., &amp; Sornette, D. (2012). Diagnosis and prediction of rebounds in financial markets. <em>Physica A</em>, 391(4), 1361–1380.</li>
+  <li>Filimonov, V., &amp; Sornette, D. (2012). Quantifying reflexivity in financial markets: Toward a prediction of flash crashes. <em>Physical Review E</em>, 85(5), 056108.</li>
+  <li>Scheffer, M., et al. (2009). Early-warning signals for critical transitions. <em>Nature</em>, 461, 53–59.</li>
+  <li>Peng, C.-K., et al. (1994). Mosaic organization of DNA nucleotides. <em>Physical Review E</em>, 49, 1685.（DFA 方法）</li>
+  <li>Bandt, C., &amp; Pompe, B. (2002). Permutation entropy: A natural complexity measure for time series. <em>Physical Review Letters</em>, 88, 174102.</li>
+  <li>López de Prado, M. (2018). <em>Advances in Financial Machine Learning</em>. Wiley.</li>
+  <li>Bailey, D. H., &amp; López de Prado, M. (2014). The deflated Sharpe ratio. <em>Journal of Portfolio Management</em>, 40(5), 94–107.</li>
+</ol>
+<p class="meta">以上文献信息根据评审者的已有知识整理，本次没有在线核对。引用前请对照原文确认卷期页码。</p>
+</article>
+</div>
+</body>
+</html>

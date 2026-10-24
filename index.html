@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>临界点 2.0 · 见顶窗口与二波路线图</title>
+<style>
+/* OD-LAYOUT-PRIMITIVES v1 — structure only */
+@layer od-layout {
+  [hidden]:not([hidden="until-found" i]) { display: none !important; }
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid) > :where(*) { min-width: 0; }
+  .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-grid    { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
+  .od-icon { display: inline-block; inline-size: var(--od-icon-size, 1em); block-size: var(--od-icon-size, 1em); flex: none; }
+  .od-nowrap  { white-space: nowrap; }
+}
+[hidden]:not([hidden="until-found" i]) { display: none !important; }
+
+:root {
+  --bg: #07090b; --bg-2: #0c1014; --panel: #10151a; --panel-2: #151b21; --line: #1f272f; --line-2: #2c3640;
+  --ink: #eef1f3; --ink-2: #b6bfc7; --ink-3: #7a8691;
+  --top: #ff5b4f;    /* 见顶 / 风险：A 股红 */
+  --bot: #2fd29a;    /* 底部 / 进场：A 股绿 */
+  --wave: #f6c24a;   /* 二波 */
+  --real: #8fb6ff;   /* 截止日后的真实走势 */
+  --f-d: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", Georgia, serif;
+  --f-u: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, monospace;
+  --r: 14px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--f-u); -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--wave); outline-offset: 2px; }
+.m { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+
+/* 顶栏 */
+.bar { position: sticky; top: 0; z-index: 10; background: rgba(7,9,11,.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.bar .wrap { --od-gap: 20px; height: 60px; }
+.brand { --od-gap: 10px; font: 700 17px/1 var(--f-d); letter-spacing: .04em; }
+.brand-mark { width: 26px; height: 26px; }
+.brand small { font: 500 11px/1 var(--f-m); color: var(--ink-3); letter-spacing: .12em; margin-left: 4px; }
+.nav { --od-gap: 4px; margin-left: auto; }
+.nav a { color: var(--ink-2); text-decoration: none; font-size: 14px; padding: 8px 12px; border-radius: 8px; }
+.nav a:hover { color: var(--ink); background: var(--panel); }
+
+/* 输入区 */
+.hero { padding: 56px 0 28px; }
+.eyebrow { font: 600 12px/1 var(--f-m); letter-spacing: .18em; color: var(--wave); margin: 0 0 14px; }
+.h1 { font: 700 clamp(34px, 4.2vw, 56px)/1.12 var(--f-d); margin: 0; letter-spacing: .01em; max-width: 18ch; }
+.h1 em { font-style: normal; color: var(--top); }
+.h1 b { font-weight: 700; color: var(--bot); }
+.lede { color: var(--ink-2); font-size: 17px; max-width: 62ch; margin: 18px 0 0; }
+.ask { margin-top: 32px; padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); --od-gap: 12px; }
+.fld { display: grid; gap: 6px; }
+.fld label { font-size: 12px; color: var(--ink-3); letter-spacing: .06em; }
+.in { height: 48px; padding: 0 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line-2); font-family: var(--f-m); font-size: 17px; min-width: 0; width: 100%; }
+.in:focus { outline: none; border-color: var(--wave); }
+.go { height: 48px; padding: 0 26px; border: 0; border-radius: 10px; background: var(--ink); color: var(--bg); font-weight: 700; cursor: pointer; white-space: nowrap; }
+.go:hover { background: #fff; }
+.go[disabled] { opacity: .5; cursor: wait; }
+.chips { --od-gap: 8px; margin-top: 14px; }
+.chips span { font-size: 13px; color: var(--ink-3); }
+.chip { height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); font-size: 13px; cursor: pointer; }
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip-hot { border-color: rgba(246,194,74,.5); color: var(--wave); }
+.err { color: var(--top); font-size: 14px; margin: 10px 0 0; }
+
+/* 加载 */
+.load { padding: 80px 0; text-align: center; }
+.load-t { font: 600 20px/1.4 var(--f-d); margin: 0 0 18px; }
+.load-track { height: 3px; max-width: 420px; margin: 0 auto; background: var(--line); border-radius: 2px; overflow: hidden; }
+.load-fill { height: 100%; background: var(--wave); transform-origin: left; transform: scaleX(0); transition: transform .2s; }
+.load-s { color: var(--ink-3); font: 13px/1.4 var(--f-m); margin-top: 12px; }
+
+/* 结论首屏 */
+.res { padding-bottom: 80px; }
+.verdict { padding: 36px 0 20px; --od-gap: 32px; align-items: flex-end; }
+.v-sym { font: 500 13px/1 var(--f-m); color: var(--ink-3); letter-spacing: .08em; margin: 0 0 12px; }
+.v-head { font: 700 clamp(32px, 3.8vw, 50px)/1.1 var(--f-d); margin: 0; }
+.v-head.t-top { color: var(--top); } .v-head.t-bot { color: var(--bot); } .v-head.t-wave { color: var(--wave); }
+.v-sub { font-size: 18px; color: var(--ink-2); margin: 12px 0 0; max-width: 56ch; }
+.v-px { text-align: right; }
+.v-px .p { font: 600 40px/1 var(--f-m); }
+.v-px .d { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+.notice { font-size: 13px; color: var(--ink-3); border: 1px dashed var(--line-2); border-radius: 10px; padding: 10px 14px; margin: 0 0 16px; }
+.notice b { color: var(--wave); font-weight: 600; }
+
+/* 周期 */
+.phases { list-style: none; margin: 0 0 20px; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 6px; }
+.ph { position: relative; padding: 12px 14px 14px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); color: var(--ink-3); }
+.ph-n { font: 600 11px/1 var(--f-m); display: block; margin-bottom: 8px; }
+.ph-name { font: 700 17px/1.2 var(--f-d); display: block; color: var(--ink-2); }
+.ph-tip { font-size: 12px; display: block; margin-top: 4px; line-height: 1.45; }
+.ph-past { opacity: .55; }
+.ph-on { background: var(--panel-2); border-color: var(--ink-3); color: var(--ink-2); }
+.ph-on .ph-name { color: var(--ink); }
+.ph-on::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 3px; border-radius: 2px 2px 0 0; background: var(--ink); }
+.ph-on.ph-crit::after, .ph-on.ph-crash::after { background: var(--top); }
+.ph-on.ph-base::after { background: var(--bot); }
+.ph-on.ph-wave2::after, .ph-on.ph-accel::after { background: var(--wave); }
+
+/* 路线图 */
+.board { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 18px 10px; }
+.board-h { --od-gap: 16px; margin-bottom: 6px; }
+.board-t { font: 700 18px/1.3 var(--f-d); margin: 0; }
+.legend { --od-gap: 16px; margin-left: auto; font-size: 12px; color: var(--ink-3); }
+.lg { --od-gap: 6px; }
+.sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+.rm-svg { display: block; width: 100%; height: 440px; }
+.rm-grid { stroke: var(--line); stroke-width: 1; }
+.rm-grid-v { stroke-dasharray: 2 4; }
+.rm-tick { fill: var(--ink-3); font: 11px var(--f-m); }
+.rm-px { fill: none; stroke: var(--ink); stroke-width: 1.8; }
+.rm-real { fill: none; stroke: var(--real); stroke-width: 1.6; stroke-dasharray: 5 3; opacity: .95; }
+.rm-topband { fill: var(--top); opacity: .13; }
+.rm-altband { fill: var(--top); opacity: .05; }
+.rm-toppx { fill: none; stroke: var(--top); stroke-width: 1.4; stroke-dasharray: 3 3; }
+.rm-botbox { fill: var(--bot); fill-opacity: .14; stroke: var(--bot); stroke-width: 1.4; }
+.rm-arrow { fill: none; stroke-width: 1.6; stroke-dasharray: 2 5; stroke-linecap: round; }
+.rm-arrow-dn { stroke: var(--top); } .rm-arrow-up { stroke: var(--wave); }
+.rm-w2 { stroke: var(--wave); stroke-width: 2; }
+.rm-lbl { font: 600 12px var(--f-u); }
+.rm-lbl-top { fill: var(--top); } .rm-lbl-bot { fill: var(--bot); } .rm-lbl-wave { fill: var(--wave); } .rm-lbl-real { fill: var(--real); font-weight: 500; } .rm-lbl-now { fill: var(--ink-2); font-weight: 500; }
+.rm-now { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
+.rm-nowdot { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
+.rm-dot { stroke: var(--bg); stroke-width: 2; }
+.rm-dot-top { fill: var(--top); } .rm-dot-bot { fill: var(--bot); }
+.rm-buy { fill: var(--bot); } .rm-sell { fill: var(--top); }
+
+/* 时间轴卡片 */
+.steps { --od-cols: 4; --od-gap: 12px; margin-top: 14px; }
+.stp { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
+.stp::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink-3); }
+.stp.s-top::before { background: var(--top); } .stp.s-bot::before { background: var(--bot); } .stp.s-wave::before { background: var(--wave); }
+.stp-k { font-size: 12px; color: var(--ink-3); letter-spacing: .06em; }
+.stp-v { font: 700 22px/1.25 var(--f-d); margin: 6px 0 4px; }
+.stp-d { font-size: 13px; color: var(--ink-2); }
+.s-top .stp-v { color: var(--top); } .s-bot .stp-v { color: var(--bot); } .s-wave .stp-v { color: var(--wave); }
+
+/* 区块 */
+.sec { margin-top: 56px; }
+.sec-h { --od-gap: 14px; align-items: baseline; margin-bottom: 16px; }
+.sec-n { font: 600 12px/1 var(--f-m); color: var(--ink-3); letter-spacing: .12em; }
+.sec-t { font: 700 26px/1.25 var(--f-d); margin: 0; }
+.sec-d { color: var(--ink-2); max-width: 70ch; margin: -6px 0 18px; }
+
+/* 计划卡 */
+.plans { --od-cols: 3; --od-gap: 14px; }
+.plan { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; }
+.plan-t { font: 600 13px/1 var(--f-u); letter-spacing: .1em; margin: 0; }
+.p-top .plan-t { color: var(--top); } .p-bot .plan-t { color: var(--bot); } .p-wave .plan-t { color: var(--wave); }
+.plan-lead { font: 700 22px/1.3 var(--f-d); margin: 12px 0 6px; }
+.plan-meta { font-size: 13px; color: var(--ink-3); margin: 0 0 14px; }
+.plan ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.plan li { padding: 11px 0; border-bottom: 1px solid var(--line); display: grid; gap: 2px; }
+.plan li:last-child { border-bottom: 0; }
+.plan li b { font-size: 13px; font-weight: 600; color: var(--ink); }
+.plan li span { font-size: 14px; color: var(--ink-2); }
+
+/* 底部检查 */
+.checks { --od-cols: 3; --od-gap: 10px; }
+.ck { --od-gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.ck-i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 700 13px/1 var(--f-m); background: var(--line); color: var(--ink-3); }
+.ck.ok .ck-i { background: rgba(47,210,154,.16); color: var(--bot); }
+.ck-n { font-weight: 600; font-size: 15px; }
+.ck-n small { font-weight: 500; font-size: 11px; color: var(--ink-3); margin-left: 6px; border: 1px solid var(--line-2); border-radius: 3px; padding: 1px 4px; }
+.ck-d { font-size: 13px; color: var(--ink-3); }
+.ck-sum { margin-top: 12px; font-size: 14px; color: var(--ink-2); }
+
+/* 回放 */
+.rp { --od-cols: 2; --od-gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; }
+.card-t { font: 700 17px/1.3 var(--f-d); margin: 0 0 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink-3); font-weight: 500; font-size: 12px; }
+td.ok { color: var(--bot); } td.no { color: var(--top); }
+.kpis { --od-cols: 4; --od-gap: 1px; background: var(--line); border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.kpi { background: var(--panel); padding: 14px 16px; }
+.kpi-k { font-size: 12px; color: var(--ink-3); }
+.kpi-v { font: 600 24px/1.2 var(--f-m); margin-top: 4px; }
+.up { color: var(--top); } .dn { color: var(--bot); }
+.acts { list-style: none; margin: 12px 0 0; padding: 0; font-size: 13px; }
+.acts li { --od-gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.acts .ad { color: var(--ink-3); width: 92px; }
+.acts .ap { width: 70px; text-align: right; }
+.acts .aw { color: var(--ink-2); }
+.tag { font: 600 11px/1 var(--f-m); padding: 4px 6px; border-radius: 4px; }
+.tag-b { background: rgba(47,210,154,.14); color: var(--bot); } .tag-s { background: rgba(255,91,79,.14); color: var(--top); }
+
+.tp-svg { display: block; width: 100%; height: 220px; }
+.tp-px { fill: none; stroke: var(--ink-2); stroke-width: 1.3; }
+.tp-bar { fill: var(--ink-3); opacity: .45; }
+.tp-bar-hot { fill: var(--top); }
+.tp-th { stroke: var(--top); stroke-dasharray: 3 3; opacity: .6; }
+.tp-hit { fill: var(--bot); stroke: var(--bg); stroke-width: 1.5; }
+.tp-miss { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+
+.bench { margin-top: 14px; }
+.fine { font-size: 13px; color: var(--ink-3); margin: 10px 0 0; }
+.honest { border-left: 3px solid var(--wave); padding: 4px 0 4px 16px; margin: 16px 0 0; color: var(--ink-2); font-size: 15px; }
+
+details.expert { margin-top: 56px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+details.expert summary { cursor: pointer; padding: 16px 20px; font-weight: 600; list-style: none; }
+details.expert summary::-webkit-details-marker { display: none; }
+details.expert summary::after { content: " +"; color: var(--ink-3); }
+details.expert[open] summary::after { content: " −"; }
+.exp-b { padding: 0 20px 20px; overflow-x: auto; }
+.exp-b table { font-family: var(--f-m); font-size: 12px; min-width: 760px; }
+.exp-b td.q { color: var(--bot); }
+
+footer { border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--ink-3); font-size: 13px; }
+
+@media (max-width: 1000px) {
+  .steps { --od-cols: 2; } .plans, .rp { --od-cols: 1; } .checks { --od-cols: 2; }
+  .phases { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .verdict { flex-direction: column; align-items: flex-start; } .v-px { text-align: left; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; } .steps, .checks { --od-cols: 1; } .kpis { --od-cols: 2; }
+  .ask { flex-direction: column; align-items: stretch; } .rm-svg { height: 320px; }
+  .nav a:not(.nav-keep) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .load-fill { transition: none; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap od-row">
+    <div class="brand od-row">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><path d="M2 22 C 9 21, 14 16, 17 5" fill="none" stroke="#eef1f3" stroke-width="2" stroke-linecap="round"/><circle cx="17.5" cy="4.5" r="2.6" fill="#ff5b4f"/><path d="M17.5 7 Q 19 17, 24 19" fill="none" stroke="#2fd29a" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 3"/></svg>
+      <span>临界点 <small>2.0</small></span>
+    </div>
+    <nav class="nav od-row" aria-label="页面">
+      <a href="#s-plan">操作计划</a>
+      <a href="#s-replay">回放验证</a>
+      <a href="#s-bench">准确率</a>
+      <a class="nav-keep" href="mobile.html">手机版</a>
+      <a href="review.html">评审与方案</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap hero" id="hero">
+    <p class="eyebrow">LPPLS 顶部引擎 · 底部共振引擎 · 历史回放</p>
+    <h1 class="h1">什么时候<em>见顶</em>，跌到哪里<b>再进场</b>。</h1>
+    <p class="lede">顶部和底部分开计算。顶部用多尺度 LPPLS 找临界时间窗口；底部不单靠拟合，要跌幅、时间、止跌等条件同时到位才分批进场，避免抄在半山腰。可以选任意历史截止日，只用当时的数据预测，再和真实走势对照。</p>
+
+    <form class="ask od-row" id="f" autocomplete="off">
+      <div class="fld od-fill"><label for="code">股票代码或指数</label><input class="in" id="code" value="上证指数" placeholder="600519 / 上证指数 / 沪深300 / 创业板指" /></div>
+      <div class="fld od-fixed" style="width:200px"><label for="asof">分析截止日（留空为最新）</label><input class="in" id="asof" type="date" /></div>
+      <div class="fld od-fixed"><label>&nbsp;</label><button class="go" id="go" type="submit">开始分析</button></div>
+    </form>
+    <div class="chips od-cluster">
+      <span>复现你的两个案例：</span>
+      <button class="chip chip-hot" type="button" data-c="上证指数" data-d="2026-02-27">上证 · 截止 2026-02-27</button>
+      <button class="chip chip-hot" type="button" data-c="上证指数" data-d="2026-04-30">上证 · 截止 2026-04-30</button>
+      <span style="margin-left:8px">其他：</span>
+      <button class="chip" type="button" data-c="上证指数" data-d="">上证 · 最新</button>
+      <button class="chip" type="button" data-c="创业板指" data-d="2026-06-19">创业板 · 2026-06-19</button>
+      <button class="chip" type="button" data-c="沪深300" data-d="2015-05-29">沪深300 · 2015-05-29</button>
+      <button class="chip" type="button" data-c="600519" data-d="">贵州茅台 600519</button>
+    </div>
+    <p class="err" id="err" role="alert" hidden></p>
+  </section>
+
+  <section class="wrap load" id="load" hidden aria-live="polite">
+    <p class="load-t" id="load-t">正在分析</p>
+    <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+    <p class="load-s" id="load-s">准备中</p>
+  </section>
+
+  <section class="wrap res" id="res" hidden>
+    <div class="verdict od-row">
+      <div class="od-fill">
+        <p class="v-sym" id="v-sym"></p>
+        <h2 class="v-head" id="v-head"></h2>
+        <p class="v-sub" id="v-sub"></p>
+      </div>
+      <div class="v-px od-fixed"><div class="p m" id="v-px"></div><div class="d" id="v-pxd"></div></div>
+    </div>
+    <p class="notice" id="notice"></p>
+    <ol class="phases" id="phases" aria-label="所处周期阶段"></ol>
+
+    <div class="board">
+      <div class="board-h od-row">
+        <h3 class="board-t">未来路线图</h3>
+        <div class="legend od-cluster">
+          <span class="lg od-row"><i class="sw" style="background:rgba(255,91,79,.35)"></i>见顶窗口</span>
+          <span class="lg od-row"><i class="sw" style="background:rgba(47,210,154,.35);border:1px solid #2fd29a"></i>预计回落区</span>
+          <span class="lg od-row"><i class="sw" style="background:#f6c24a;height:3px"></i>二波参考</span>
+          <span class="lg od-row" id="lg-real"><i class="sw" style="background:#8fb6ff;height:3px"></i>真实后续</span>
+        </div>
+      </div>
+      <div id="rm"></div>
+    </div>
+    <div class="steps od-grid" id="steps"></div>
+
+    <section class="sec" id="s-plan">
+      <div class="sec-h od-row"><span class="sec-n">01</span><h2 class="sec-t">操作计划</h2></div>
+      <p class="sec-d">三段计划的规则事先写死，没有按任何日期调参。逃顶分两步卖，是因为见顶窗口有宽度；抄底分三批买，是为了不在半山腰一次打满。</p>
+      <div class="plans od-grid" id="plans"></div>
+    </section>
+
+    <section class="sec" id="s-bottom">
+      <div class="sec-h od-row"><span class="sec-n">02</span><h2 class="sec-t">底部共振检查</h2></div>
+      <p class="sec-d" id="ck-d"></p>
+      <div class="checks od-grid" id="checks"></div>
+      <p class="ck-sum" id="ck-sum"></p>
+    </section>
+
+    <section class="sec" id="s-replay">
+      <div class="sec-h od-row"><span class="sec-n">03</span><h2 class="sec-t">回放验证</h2></div>
+      <p class="sec-d" id="rp-d"></p>
+      <div class="rp od-grid" id="rp"></div>
+    </section>
+
+    <section class="sec" id="s-bench">
+      <div class="sec-h od-row"><span class="sec-n">04</span><h2 class="sec-t">这套方法到底准不准</h2></div>
+      <p class="sec-d">两个案例说明不了问题。下面把截止日每 5 个交易日滚动一次，统计每一次“见顶预警”事后是否真的见顶，以及真实顶部有多少被提前抓到。</p>
+      <div class="board"><div class="board-h od-row"><h3 class="board-t">顶部信号带</h3>
+        <div class="legend od-cluster"><span class="lg od-row"><i class="sw" style="background:#ff5b4f"></i>预警（一致度 ≥15%，窗口 10 日内开启）</span><span class="lg od-row"><i class="sw" style="background:#2fd29a;border-radius:50%;width:10px"></i>被提前命中的真实顶</span><span class="lg od-row"><i class="sw" style="border:1.5px solid #7a8691;border-radius:50%;width:10px"></i>漏掉的真实顶</span></div></div>
+        <div id="tape"></div>
+      </div>
+      <div class="kpis od-grid bench" id="ev"></div>
+      <div class="card bench"><h3 class="card-t">三个指数的整体结果（2015 年 4 月起，每 5 日一个截止日）</h3><div id="bench" style="overflow-x:auto"></div>
+        <p class="honest" id="honest"></p></div>
+    </section>
+
+    <details class="expert" id="expert">
+      <summary>专家模式：各时间尺度的 LPPLS 拟合参数</summary>
+      <div class="exp-b" id="exp"></div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>研究原型，不构成投资建议。见顶窗口是对“临界时间”的统计估计，真实顶部可能提前、延后或不出现。回落区和二波参考来自该标的历史同类回撤的分布，不是目标价。数据来自东方财富公开接口；浏览器无法直连时，三个指数使用内置快照（截至 2026-10-23）。</p>
+  </div>
+</footer>
+
+<script src="app/engine.js"></script>
+<script src="app/data-snapshot.js"></script>
+<script src="app/tape-snapshot.js"></script>
+<script src="app/critical.js"></script>
+<script src="app/ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const U = CPUI, E = U.esc;
+  let busy = false;
+
+  function view(v) { $('hero').hidden = false; $('load').hidden = v !== 'load'; $('res').hidden = v !== 'res'; }
+  function err(m) { $('err').textContent = m || ''; $('err').hidden = !m; }
+
+  async function run() {
+    if (busy) return;
+    const code = $('code').value.trim(), asof = $('asof').value;
+    if (!CP.resolve(code)) { err('无法识别：请输入 6 位 A 股代码（如 600519），或“上证指数 / 沪深300 / 创业板指”。'); $('code').focus(); return; }
+    err(''); busy = true; $('go').disabled = true;
+    view('load');
+    $('load-t').textContent = '正在分析 ' + code + (asof ? '（截止 ' + asof + '）' : '');
+    try {
+      const R = await CP.run(code, asof, (s, p) => { $('load-fill').style.transform = 'scaleX(' + p + ')'; $('load-s').textContent = s + ' · ' + Math.round(p * 100) + '%'; });
+      render(R); view('res');
+      $('res').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { view('none'); err(e.message || String(e)); }
+    busy = false; $('go').disabled = false;
+  }
+
+  function render(R) {
+    const rm = R.rm, last = R.bars[R.bars.length - 1].date;
+    const V = U.verdict(R);
+    const name = R.sym.isIndex ? R.sym.label : (R.data.name || R.sym.label);
+    $('v-sym').textContent = name + ' · ' + R.sym.code + ' · ' + (R.latest ? '最新交易日 ' : '截止 ') + R.asof;
+    $('v-head').textContent = V.head;
+    $('v-head').className = 'v-head ' + ({ crit: 't-top', crash: 't-top', base: 't-bot', wave2: 't-wave', accel: 't-wave' }[R.phase.k] || '');
+    $('v-sub').textContent = V.sub;
+    $('v-px').textContent = U.px(rm.close);
+    $('v-pxd').textContent = (R.latest ? '最新收盘' : '截止日收盘') + ' · 日波动 ' + U.pct(rm.sigma, 2);
+    $('notice').innerHTML = (R.latest ? '' : '<b>回放模式</b>：下面的预测只用了 ' + E(R.asof) + ' 及之前的数据；蓝色虚线是之后的真实走势，模型没有看到。') +
+      ' 数据：' + E(R.data.source) + (R.data.fetchError ? '（实时接口不可达：' + E(R.data.fetchError) + '）' : '') + '。';
+    $('phases').innerHTML = U.phaseHTML(R.phase.k);
+    $('rm').innerHTML = U.roadmapSVG(R, { label: name + ' 未来路线图' });
+    $('lg-real').hidden = !R.replay;
+
+    const steps = [];
+    steps.push({ c: '', k: R.latest ? '现在' : '截止日', v: V.phase.name + '期', d: U.md(R.asof) + ' · ' + U.px(rm.close) });
+    steps.push(rm.topW ? { c: 's-top', k: '见顶窗口 · 可信度' + U.LEVEL[rm.level], v: U.range(rm.topW.loDate, rm.topW.hiDate, R.asof, last), d: rm.topW.n + ' 个尺度一致（' + U.pct(rm.conf, 0) + '）' + (rm.topPx ? ' · 参考 ' + U.px(rm.topPx[0]) + '–' + U.px(rm.topPx[1]) : '') } : { c: 's-top', k: '见顶窗口', v: '暂无', d: '合格尺度 ' + R.scan.nq + '/' + R.scan.total });
+    steps.push(rm.crash ? { c: 's-bot', k: '预计回落区', v: U.px(rm.crash.pxLo) + ' – ' + U.px(rm.crash.pxHi), d: U.range(rm.crash.botLoDate, rm.crash.botHiDate, R.asof, last) } : { c: 's-bot', k: '预计回落区', v: '—', d: '需要先出现见顶窗口' });
+    steps.push(rm.crash ? { c: 's-wave', k: '二波参考', v: U.px(rm.crash.wave2), d: '较回落区中值 ' + U.sp(rm.crash.wave2 / rm.crash.pxMid - 1) } : { c: 's-wave', k: '二波参考', v: '—', d: '收复一半跌幅后再确认' });
+    $('steps').innerHTML = steps.map((s) => '<div class="stp ' + s.c + '"><div class="stp-k">' + E(s.k) + '</div><div class="stp-v">' + E(s.v) + '</div><div class="stp-d">' + E(s.d) + '</div></div>').join('');
+
+    $('plans').innerHTML = U.plans(R).map((p) => '<article class="plan p-' + p.tone + '"><h3 class="plan-t">' + E(p.title) + '</h3><p class="plan-lead">' + E(p.lead) + '</p><p class="plan-meta">' + E(p.meta || '') + '</p><ol>' + p.rows.map((r) => '<li><b>' + E(r[0]) + '</b><span>' + E(r[1]) + '</span></li>').join('') + '</ol></article>').join('');
+
+    const ck = R.chk;
+    if (ck) {
+      $('ck-d').textContent = '以截止日前 60 日内的最高点（' + R.bars[ck.peakI].date + '，' + U.px(R.bars[ck.peakI].close) + '）为起点检查。带“必要”标签的三项必须全部满足，且 6 项里至少 4 项通过，才允许买第一批。';
+      $('checks').innerHTML = ck.items.map((it) => '<div class="ck od-row-top' + (it.ok ? ' ok' : '') + '"><span class="ck-i od-fixed" aria-hidden="true">' + (it.ok ? '✓' : '–') + '</span><div class="od-fill"><div class="ck-n">' + E(it.name) + (it.need ? '<small>必要</small>' : '') + '</div><div class="ck-d">' + E(it.detail) + '</div></div></div>').join('');
+      $('ck-sum').innerHTML = '通过 <b class="m">' + ck.score + '/' + ck.max + '</b> · ' + (ck.pass ? '<span class="dn">满足进场条件，可以买第一批 1/3</span>' : '不满足进场条件，继续等待');
+    } else {
+      $('ck-d').textContent = '截止日就是近 60 日最高点，还没有开始调整，底部检查暂不适用。';
+      $('checks').innerHTML = ''; $('ck-sum').textContent = '';
+    }
+
+    renderReplay(R);
+    renderBench(R);
+    renderExpert(R);
+  }
+
+  function renderReplay(R) {
+    const rp = R.replay;
+    if (!rp) {
+      $('rp-d').textContent = '当前是最新交易日，没有“之后的走势”可以对照。在上方选一个历史截止日（例如 2026-02-27 或 2026-04-30）即可回放。';
+      $('rp').innerHTML = '';
+      return;
+    }
+    $('rp-d').textContent = '把 ' + R.asof + ' 当成“今天”，下面是预测和之后真实走势的逐项对照，以及按操作计划执行的结果（从满仓开始，次日开盘成交，含佣金、印花税和滑点）。';
+    const sc = U.score(R);
+    const s = rp.sim;
+    let left = '<div class="card"><h3 class="card-t">预测 vs 真实</h3><table><thead><tr><th>项目</th><th>当时的预测</th><th>真实结果</th><th>判定</th></tr></thead><tbody>' +
+      sc.map((r) => '<tr><td>' + E(r.k) + '</td><td>' + E(r.pred) + '</td><td>' + E(r.real) + '</td><td class="' + (r.ok ? 'ok' : 'no') + '">' + E(r.note) + '</td></tr>').join('') + '</tbody></table>';
+    if (rp.firstSig && !rp.topHit) left += '<p class="fine">截止日之后，模型在 ' + E(rp.firstSig.date) + ' 首次指向这个真实顶部（提前 ' + rp.firstSig.lead + ' 个交易日，一致度 ' + U.pct(rp.firstSig.conf, 0) + '）。</p>';
+    left += '</div>';
+    let right = '<div class="card"><h3 class="card-t">按计划操作的结果（' + E(R.asof) + ' 至 ' + E(s.dates[s.dates.length - 1]) + '）</h3>' +
+      '<div class="kpis od-grid">' +
+      '<div class="kpi"><div class="kpi-k">计划收益</div><div class="kpi-v ' + (s.ret >= 0 ? 'up' : 'dn') + '">' + U.sp(s.ret) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-k">一直持有</div><div class="kpi-v ' + (s.bhRet >= 0 ? 'up' : 'dn') + '">' + U.sp(s.bhRet) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-k">计划最大回撤</div><div class="kpi-v">' + U.pct(s.mdd) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-k">持有最大回撤</div><div class="kpi-v">' + U.pct(s.bhMdd) + '</div></div></div>' +
+      '<ul class="acts">' + (s.acts.length ? s.acts.map((a) => '<li class="od-row"><span class="ad m">' + E(a.date) + '</span><span class="tag ' + (a.to > a.from ? 'tag-b' : 'tag-s') + '">' + (a.to > a.from ? '买' : '卖') + '</span><span class="ap m">' + U.px(a.px) + '</span><span class="aw od-fill">' + E(a.why) + ' · 仓位 ' + Math.round(a.from * 100) + '% → ' + Math.round(a.to * 100) + '%</span></li>').join('') : '<li>期间没有触发任何操作</li>') + '</ul></div>';
+    $('rp').innerHTML = left + right;
+  }
+
+  function renderBench(R) {
+    $('tape').innerHTML = U.tapeSVG(R, { span: R.sym.isIndex ? 700 : 500 });
+    const ev = R.evalr;
+    $('ev').innerHTML =
+      '<div class="kpi"><div class="kpi-k">预警段数（本标的）</div><div class="kpi-v">' + ev.nEp + '</div></div>' +
+      '<div class="kpi"><div class="kpi-k">预警后确实见顶</div><div class="kpi-v">' + U.pct(ev.precision, 0) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-k">随机预警的命中率</div><div class="kpi-v">' + U.pct(ev.randPrecision, 0) + '</div></div>' +
+      '<div class="kpi"><div class="kpi-k">真实顶被提前抓到</div><div class="kpi-v">' + U.pct(ev.recall, 0) + '<span style="font-size:13px;color:var(--ink-3)"> / ' + ev.nEv + ' 个</span></div></div>';
+    const B = CP.indexBench();
+    $('bench').innerHTML = '<table><thead><tr><th>指数</th><th>预警后确实见顶</th><th>随机基线</th><th>真实顶被提前抓到</th><th>2016 年起 计划 / 持有</th><th>最大回撤 计划 / 持有</th><th>2024 年起 计划 / 持有</th></tr></thead><tbody>' +
+      B.map((b) => '<tr><td>' + E(b.label) + '</td><td class="m">' + U.pct(b.ev.precision, 0) + '（' + b.ev.nEp + ' 段）</td><td class="m">' + U.pct(b.ev.randPrecision, 0) + '</td><td class="m">' + U.pct(b.ev.recall, 0) + '（' + b.ev.nEv + ' 个顶）</td><td class="m">' + U.sp(b.s16.ret, 0) + ' / ' + U.sp(b.s16.bh, 0) + '</td><td class="m">' + U.pct(b.s16.mdd, 0) + ' / ' + U.pct(b.s16.bhMdd, 0) + '</td><td class="m">' + U.sp(b.s24.ret, 0) + ' / ' + U.sp(b.s24.bh, 0) + '</td></tr>').join('') + '</tbody></table>';
+    $('honest').textContent = '结论：预警一旦出现，事后大多确实见顶（沪深300、创业板约 85%，上证约 57%，明显高于随机放置窗口的 13–23%），这和“LPPLS 顶部相对准”的判断一致。但它只能抓到约 15–20% 的真实顶部：大多数顶部并不是加速泡沫形成的，LPPLS 天生看不到。所以它适合作为“出现就要重视”的逃顶警报，而不是唯一的卖出依据。';
+  }
+
+  function renderExpert(R) {
+    const fits = R.scan.fits;
+    $('exp').innerHTML = '<p class="fine" style="margin:0 0 10px">合格条件：' + E(CP.TOP_RULE) + '。绿色为合格拟合。“距今”是临界时间 t_c 距截止日的交易日数。</p><table><thead><tr><th>窗口</th><th>起点</th><th>距今</th><th>指向日期</th><th>m 幂指数</th><th>ω 频率</th><th>振荡数</th><th>阻尼</th><th>R²</th><th>合格</th></tr></thead><tbody>' +
+      fits.map((f) => '<tr><td>' + f.n + '</td><td>' + R.bars[R.T + 1 - f.n].date + '</td><td>' + f.ahead.toFixed(1) + '</td><td>' + CP.dateAt(R.bars, R.T + Math.round(f.ahead)) + '</td><td>' + f.m.toFixed(2) + '</td><td>' + f.w.toFixed(2) + '</td><td>' + f.O.toFixed(2) + '</td><td>' + f.D.toFixed(2) + '</td><td>' + f.R2.toFixed(3) + '</td><td class="' + (f.q ? 'q' : '') + '">' + (f.q ? '是' : '—') + '</td></tr>').join('') + '</tbody></table>';
+  }
+
+  $('f').addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  document.querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => { $('code').value = b.dataset.c; $('asof').value = b.dataset.d; run(); }));
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('code')) { $('code').value = qs.get('code'); $('asof').value = qs.get('asof') || ''; run(); }
+  else { $('asof').value = '2026-02-27'; run(); }
+})();
+</script>
+</body>
+</html>
