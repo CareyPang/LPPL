@@ -78,8 +78,10 @@ MIN_EFFECT = 0.001  # v1.3 §13.2 次要链：ΔBrier 点估计 < −0.001 即�
 
 
 def keep_rule(rule: str, d: float, hi: float) -> bool:
-    return hi < 0 if rule == "ci" else d < -MIN_EFFECT
-
+    """ci：90% 区间上界 < 0；point：点估计 < −0.001。两者都要求 d < −1e-6，排除特征恒定导致的 ΔBrier = −0.0 退化情形。"""
+    if not (d < -1e-6):
+        return False
+    return hi < 0 if rule == "ci" else d < -0.001
 
 def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev", rule: str = "ci", df: pd.DataFrame | None = None,
                title: str = "开发段模型阶梯"):
