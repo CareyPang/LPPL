@@ -76,18 +76,26 @@ def event_windows(y: np.ndarray) -> list[int]:
     return [int(e) for e in ends]
 
 
-def evaluate_series(g: pd.DataFrame, logp: pd.Series, rng: np.random.Generator) -> list[dict]:
-    """g：单一 (symbol, path, 连续块) 的 OOF；返回每个事件段 × 策略的事件后 60 日回撤改善量。"""
+def aux_stats(ret: np.ndarray, pos: np.ndarray) -> dict:
+    return dict(logret=float(np.log1p(ret).sum()), days=len(ret), turnover=float(np.abs(np.diff(pos, prepend=1.0)).sum()),
+                mdd=max_drawdown(ret), pos_mean=float(pos.mean()))
+
+
+def evaluate_series(g: pd.DataFrame, logp: pd.Series, rng: np.random.Generator) -> tuple[list[dict], list[dict]]:
+    """g：单一 (symbol, path, 连续块) 的 OOF；返回 (每个事件段 × 策略的事件后 60 日回撤改善量, 全块辅助统计)。"""
     lp = logp.reindex(g.date).to_numpy()
     r = np.diff(lp, prepend=lp[0])
     r = np.expm1(r)
     y, p = g.y.to_numpy(), g.p.to_numpy()
-    strat = {name: strategy_returns(execute(target_position(p, *cfg), r), r) for name, cfg in RULES.items()}
+    pos = {name: execute(target_position(p, *cfg), r) for name, cfg in RULES.items()}
     vt = vol_target_position(r)
     c1 = np.clip(1 - p / P_MAX, 1 / 3, 1.0)
-    strat["c1_linear"] = strategy_returns(execute(c1, r), r)
-    strat["c2_linear_x_vol"] = strategy_returns(execute(np.minimum(vt, c1), r), r)
-    strat["vol_target"] = strategy_returns(execute(vt, r), r)
+    pos["c1_linear"] = execute(c1, r)
+    pos["c2_linear_x_vol"] = execute(np.minimum(vt, c1), r)
+    pos["vol_target"] = execute(vt, r)
+    pos["buy_hold"] = np.ones(len(r))
+    strat = {name: strategy_returns(q, r) for name, q in pos.items()}
+    aux = [dict(strategy=name, **aux_stats(strat[name], pos[name])) for name in pos]
     freq = float(np.mean([np.mean(target_position(p, *cfg) < 1) for cfg in RULES.values()]))
     month_freq = min(1.0, freq * 21 / RESTORE)
     pl = placebo_positions(len(r), pd.DatetimeIndex(g.date), month_freq, rng)
@@ -103,7 +111,10 @@ def evaluate_series(g: pd.DataFrame, logp: pd.Series, rng: np.random.Generator) 
             row[name] = (max_drawdown(s[a:b]) - bh) * 100
         row["placebo"] = float(np.mean([(max_drawdown(pl_ret[a:b, j]) - bh) * 100 for j in range(N_PLACEBO)]))
         out.append(row)
-    return out
+    aux.append(dict(strategy="placebo", logret=float(np.log1p(pl_ret).sum(0).mean()), days=len(r),
+                    turnover=float(np.abs(np.diff(pl, axis=0, prepend=1.0)).sum(0).mean()),
+                    mdd=float(np.mean([max_drawdown(pl_ret[:, j]) for j in range(N_PLACEBO)])), pos_mean=float(pl.mean())))
+    return out, aux
 
 
 def block_ci(delta: np.ndarray, dates: pd.Series, cal: pd.DatetimeIndex, block_days: int = 80, B: int = 1000,
@@ -120,7 +131,7 @@ def run(oof_path: str, tag: str = "dtop_dev") -> pd.DataFrame:
     oof = pd.read_parquet(oof_path).sort_values(["symbol", "path", "date"])
     cal = price_series("sh000001").index
     rng = np.random.default_rng(0)
-    rows = []
+    rows, auxs = [], []
     for sym, gs in oof.groupby("symbol", sort=False):
         logp = price_series(sym)
         for _, g in gs.groupby("path", sort=False):
@@ -128,8 +139,17 @@ def run(oof_path: str, tag: str = "dtop_dev") -> pd.DataFrame:
             blk = np.cumsum(np.diff(idx, prepend=idx[0]) > 10)
             for _, gb in g.groupby(blk):
                 if len(gb) > 60:
-                    rows.append(pd.DataFrame(evaluate_series(gb.reset_index(drop=True), logp, rng)))
+                    ev_rows, aux = evaluate_series(gb.reset_index(drop=True), logp, rng)
+                    rows.append(pd.DataFrame(ev_rows))
+                    auxs.append(pd.DataFrame(aux))
     ev = pd.concat([x for x in rows if len(x)], ignore_index=True)
+    ax = pd.concat(auxs, ignore_index=True).groupby("strategy").agg(
+        logret=("logret", "sum"), days=("days", "sum"), turnover=("turnover", "sum"), mdd_worst=("mdd", "min"),
+        mdd_mean=("mdd", "mean"), pos_mean=("pos_mean", "mean"))
+    ax["ann_return"] = np.expm1(ax.logret / ax.days * 250)
+    ax["ann_turnover"] = ax.turnover / ax.days * 250
+    ax["calmar_mean"] = ax.ann_return / ax.mdd_mean.abs()
+    ax = ax[["ann_return", "ann_turnover", "mdd_mean", "mdd_worst", "calmar_mean", "pos_mean"]]
     res = []
     names = list(RULES) + ["c1_linear", "c2_linear_x_vol", "vol_target", "placebo"]
     for name in names:
@@ -140,10 +160,15 @@ def run(oof_path: str, tag: str = "dtop_dev") -> pd.DataFrame:
     tab = pd.DataFrame(res)
     ev.to_csv(f"reports/{tag}_events.csv", index=False)
     tab.to_csv(f"reports/{tag}.csv", index=False)
+    ax.to_csv(f"reports/{tag}_aux.csv")
+    by_year = ev.groupby(ev.date.dt.year).size()
     with open(f"reports/{tag}.md", "w") as f:
         f.write("# D-TOP 决策层开发段回测（§12.4；输入为未校准 OOF 概率；值为事件后 60 日最大回撤相对买入持有的减少量，百分点，正为改善）\n\n")
         f.write(f"事件段 {len(ev)}（含 CPCV 多路径重复），标的 {ev.symbol.nunique()}；买入持有事件后平均最大回撤 {ev.bh_dd.mean()*100:.2f}%。\n\n")
-        f.write(tab.round(4).to_markdown(index=False) + "\n\n淘汰规则：相对波动率目标与相对安慰剂的改善量 90% 块 bootstrap 区间下界均 > 0 才保留。\n")
+        f.write(tab.round(4).to_markdown(index=False) + "\n\n淘汰规则：相对波动率目标与相对安慰剂的改善量 90% 块 bootstrap 区间下界均 > 0 才保留。\n\n")
+        f.write("## 辅助指标（全部 OOF 块合并；年化收益按费后对数收益、年化换手按 |Δ仓位| 之和；mdd 为各块最大回撤的均值/最差；pos_mean 为平均仓位）\n\n")
+        f.write(ax.round(4).to_markdown() + "\n\n## 事件段按年份分布（含 CPCV 路径重复）\n\n")
+        f.write(by_year.to_frame("n_events").T.to_markdown() + "\n")
     print(tab.round(4).to_string(), flush=True)
     return tab
 
