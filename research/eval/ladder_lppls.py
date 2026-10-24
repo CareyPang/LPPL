@@ -16,7 +16,7 @@ from ..features.lppls_rules import scores
 from ..features.lppls_scan import OUT as SCAN
 from .baselines import cpcv_oof, paired_delta_brier
 from .dataset import price_series
-from .ladder import CS, LEVELS, OOF_DIR, assemble, fit_logit, with_z_variants
+from .ladder import CS, LEVELS, OOF_DIR, assemble, fit_logit, keep_rule, with_z_variants
 from .metrics import score_table
 
 DAILY_LEVELS = with_z_variants(LEVELS)
@@ -59,7 +59,7 @@ def assemble_sparse(split: str = "dev") -> pd.DataFrame:
 
 def prev_features(prev_json: str = "reports/ladder_dev.json") -> tuple[str, list[str], float]:
     kept = json.load(open(prev_json))["kept"]
-    tab = pd.read_csv("reports/ladder_dev.csv")
+    tab = pd.read_csv(prev_json.replace(".json", ".csv"))
     feats: list[str] = []
     C = 1.0
     for lv in kept[1:]:
@@ -69,9 +69,11 @@ def prev_features(prev_json: str = "reports/ladder_dev.json") -> tuple[str, list
     return kept[-1], sorted(set(feats)), C
 
 
-def run(split: str = "dev", tag: str = "ladder_dev_lppls"):
+def run(split: str = "dev", rule: str = "ci"):
+    tag = "ladder_dev_lppls" if rule == "ci" else f"ladder_dev_lppls_{rule}"
+    prev_json = "reports/ladder_dev.json" if rule == "ci" else f"reports/ladder_dev_{rule}.json"
     df = assemble_sparse(split)
-    prev_name, prev_feats, prev_C = prev_features()
+    prev_name, prev_feats, prev_C = prev_features(prev_json)
     tdays = price_series("sh000001").index
     tdays = tdays[(tdays >= df.date.min()) & (tdays <= df.date.max())]
     print(f"{split} sparse: n={len(df)} pos={int(df.y.sum())} symbols={df.symbol.nunique()} prev={prev_name}", flush=True)
@@ -102,7 +104,7 @@ def run(split: str = "dev", tag: str = "ladder_dev_lppls"):
                     best = (sc["brier"], cfg, C, feats, oof)
         _, cfg, C, feats, oof = best
         d, lo, hi = paired_delta_brier(oof, po)
-        keep = hi < 0
+        keep = keep_rule(rule, d, hi)
         oof.to_parquet(OOF_DIR / f"{tag}_{name}_{cfg}_C{C}.parquet")
         rows.append(dict(level=name, config=f"{cfg} (chosen)", C=C, kept=keep, vs=pn, dbrier=d, ci_lo=lo, ci_hi=hi,
                          **score_table(oof.y, oof.p, p_ref)))
@@ -115,9 +117,11 @@ def run(split: str = "dev", tag: str = "ladder_dev_lppls"):
         f.write(f"# 开发段 LPPLS 类候选阶梯（{split}，稀疏时点，CPCV 6/2=15 路，purge/embargo 80）\n\n")
         f.write(f"稀疏样本 n={len(df)}，正标签 {int(df.y.sum())}，标的 {df.symbol.nunique()}；本阶段试过的配置数 {n_configs}。\n\n")
         f.write(tab.round(5).to_markdown(index=False) + "\n\n保留链：" + " → ".join(k[0] for k in kept) + "\n")
-    json.dump(dict(kept=[k[0] for k in kept], n_configs=n_configs), open(Path(f"reports/{tag}.json"), "w"))
+    json.dump(dict(kept=[k[0] for k in kept], n_configs=n_configs, rule=rule), open(Path(f"reports/{tag}.json"), "w"))
     return tab
 
 
 if __name__ == "__main__":
-    run()
+    import sys
+
+    run(rule=sys.argv[1] if len(sys.argv) > 1 else "ci")

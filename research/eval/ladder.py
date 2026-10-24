@@ -74,7 +74,15 @@ def fit_logit(features: list[str], C: float):
     return fp
 
 
-def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev"):
+MIN_EFFECT = 0.001  # v1.3 §13.2 次要链：ΔBrier 点估计 < −0.001 即保留
+
+
+def keep_rule(rule: str, d: float, hi: float) -> bool:
+    return hi < 0 if rule == "ci" else d < -MIN_EFFECT
+
+
+def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev", rule: str = "ci"):
+    """rule="ci"：主链（§6，90% 区间不含 0）；rule="point"：次要链（§13.2，点估计 < −0.001）。"""
     levels = with_z_variants(LEVELS) if levels is None else levels
     OOF_DIR.mkdir(parents=True, exist_ok=True)
     df = assemble(split)
@@ -104,7 +112,7 @@ def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev"):
                     best = (sc["brier"], cfg, C, feats, oof)
         _, cfg, C, feats, oof = best
         d, lo, hi = paired_delta_brier(oof, prev_oof)
-        keep = hi < 0
+        keep = keep_rule(rule, d, hi)
         oof.to_parquet(OOF_DIR / f"{tag}_{name}_{cfg}_C{C}.parquet")
         rows.append(dict(level=name, config=f"{cfg} (chosen)", C=C, kept=keep, vs=prev_name,
                          dbrier=d, ci_lo=lo, ci_hi=hi, **score_table(oof.y, oof.p, p_ref), **event_metrics(oof)))
@@ -115,13 +123,16 @@ def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev"):
     Path("reports").mkdir(exist_ok=True)
     tab.to_csv(f"reports/{tag}.csv", index=False)
     with open(f"reports/{tag}.md", "w") as f:
-        f.write(f"# 开发段模型阶梯（{split}，CPCV 6/2=15 路，purge/embargo 80）\n\n")
+        f.write(f"# 开发段模型阶梯（{split}，CPCV 6/2=15 路，purge/embargo 80；判定规则 {rule}：{'90% 区间不含 0（主链 §6）' if rule == 'ci' else '点估计 < −0.001（次要链 §13.2）'}）\n\n")
         f.write(f"样本 n={len(df)}，正标签 {int(df.y.sum())}，标的 {df.symbol.nunique()}；试过的配置总数 {n_configs}（多重比较）。\n\n")
         f.write(tab.round(5).to_markdown(index=False) + "\n\n")
         f.write("保留链：" + " → ".join(k[0] for k in kept) + "\n")
-    json.dump(dict(kept=[k[0] for k in kept], n_configs=n_configs), open(f"reports/{tag}.json", "w"))
+    json.dump(dict(kept=[k[0] for k in kept], n_configs=n_configs, rule=rule), open(f"reports/{tag}.json", "w"))
     return tab, kept
 
 
 if __name__ == "__main__":
-    run_ladder()
+    import sys
+
+    _rule = sys.argv[1] if len(sys.argv) > 1 else "ci"
+    run_ladder(rule=_rule, tag="ladder_dev" if _rule == "ci" else f"ladder_dev_{_rule}")
