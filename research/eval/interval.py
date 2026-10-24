@@ -46,7 +46,8 @@ def intervals_by_date(d: pd.DataFrame, mask: pd.Series, half_width_scale: float 
                 a, b = mid - half_width_scale * (mid - a), mid + half_width_scale * (b - mid)
             row[f"{name}_L"], row[f"{name}_U"] = a, b
         rows.append(row)
-    return pd.DataFrame(rows)
+    cols = ["date", "n_ok"] + [f"{n}_{e}" for n in CONFIGS for e in ("L", "U")]
+    return pd.DataFrame(rows, columns=cols)
 
 
 def evaluate(iv: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:

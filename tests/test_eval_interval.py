@@ -36,3 +36,13 @@ def test_evaluate_prefers_sharp_covering_interval():
     tab = evaluate(iv, ev)
     base = tab[tab.config == "baseline_1-20"].IS.iloc[0]
     assert (tab[tab.config != "baseline_1-20"].IS < base).all()
+
+
+def test_intervals_by_date_empty_mask_keeps_columns():
+    import pandas as pd
+
+    from research.eval.interval import CONFIGS, intervals_by_date
+
+    d = pd.DataFrame(dict(date=pd.to_datetime(["2020-01-01"] * 6), ahead=range(6), sse=[1.0] * 6))
+    iv = intervals_by_date(d, pd.Series(False, index=d.index))
+    assert len(iv) == 0 and "date" in iv.columns and f"{next(iter(CONFIGS))}_L" in iv.columns
