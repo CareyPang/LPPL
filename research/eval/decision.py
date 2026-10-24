@@ -2,6 +2,7 @@
 
 输入：保留链末级的 CPCV OOF 概率（开发段用未校准的 OOF p，校准段以后用 Platt 后的 p）。
 规则：阈值 (p1, p2) × {一步减至 1/3；两步 2/3 → 1/3}；p 连续 20 日 < p1 后恢复满仓。
+v1.4 §14.1 连续规则：c1 仓位 = clip(1 − p/0.5, 1/3, 1)；c2 = min(波动率目标仓位, c1)。
 执行：T+1（次日收盘成交，保守）；涨跌停日（|日收益| ≥ 9.5%）顺延一日。
 成本：佣金 0.025% 双边、印花税 0.1% 卖出、滑点 0.1%。
 主评分：每个事件段结束后 60 日内策略最大回撤相对买入持有的减少量（百分点，正为改善），跨事件段平均。
@@ -17,6 +18,7 @@ from .dataset import price_series
 
 RULES = {f"p{int(p1*100)}-{int(p2*100)}_{mode}": (p1, p2, mode)
          for p1, p2 in ((0.15, 0.30), (0.20, 0.40), (0.25, 0.50)) for mode in ("one", "two")}
+P_MAX = 0.5  # v1.4 §14.1 连续规则
 COMM, STAMP, SLIP = 0.00025, 0.001, 0.001
 LIMIT, RESTORE, VOL_TARGET, AFTER = 0.095, 20, 0.20, 60
 N_PLACEBO = 200
@@ -81,7 +83,11 @@ def evaluate_series(g: pd.DataFrame, logp: pd.Series, rng: np.random.Generator) 
     r = np.expm1(r)
     y, p = g.y.to_numpy(), g.p.to_numpy()
     strat = {name: strategy_returns(execute(target_position(p, *cfg), r), r) for name, cfg in RULES.items()}
-    strat["vol_target"] = strategy_returns(execute(vol_target_position(r), r), r)
+    vt = vol_target_position(r)
+    c1 = np.clip(1 - p / P_MAX, 1 / 3, 1.0)
+    strat["c1_linear"] = strategy_returns(execute(c1, r), r)
+    strat["c2_linear_x_vol"] = strategy_returns(execute(np.minimum(vt, c1), r), r)
+    strat["vol_target"] = strategy_returns(execute(vt, r), r)
     freq = float(np.mean([np.mean(target_position(p, *cfg) < 1) for cfg in RULES.values()]))
     month_freq = min(1.0, freq * 21 / RESTORE)
     pl = placebo_positions(len(r), pd.DatetimeIndex(g.date), month_freq, rng)
@@ -125,11 +131,12 @@ def run(oof_path: str, tag: str = "dtop_dev") -> pd.DataFrame:
                     rows.append(pd.DataFrame(evaluate_series(gb.reset_index(drop=True), logp, rng)))
     ev = pd.concat([x for x in rows if len(x)], ignore_index=True)
     res = []
-    for name in list(RULES) + ["vol_target", "placebo"]:
+    names = list(RULES) + ["c1_linear", "c2_linear_x_vol", "vol_target", "placebo"]
+    for name in names:
         d_vt, lo_vt, hi_vt = block_ci((ev[name] - ev.vol_target).to_numpy(), ev.date, cal)
         d_pl, lo_pl, hi_pl = block_ci((ev[name] - ev.placebo).to_numpy(), ev.date, cal)
         res.append(dict(rule=name, dd_improve_pp=ev[name].mean(), vs_voltarget=d_vt, vt_lo=lo_vt, vt_hi=hi_vt,
-                        vs_placebo=d_pl, pl_lo=lo_pl, pl_hi=hi_pl, kept=(lo_vt > 0) & (lo_pl > 0) if name in RULES else np.nan))
+                        vs_placebo=d_pl, pl_lo=lo_pl, pl_hi=hi_pl, kept=(lo_vt > 0) & (lo_pl > 0) if name not in ("vol_target", "placebo") else np.nan))
     tab = pd.DataFrame(res)
     ev.to_csv(f"reports/{tag}_events.csv", index=False)
     tab.to_csv(f"reports/{tag}.csv", index=False)
