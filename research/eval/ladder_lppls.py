@@ -69,6 +69,66 @@ def prev_features(prev_json: str = "reports/ladder_dev.json") -> tuple[str, list
     return kept[-1], sorted(set(feats)), C
 
 
+def daily_loss(oof: pd.DataFrame) -> pd.Series:
+    """逐日平均 Brier（跨标的与 CPCV 路径），供 PBO/SPA 使用。"""
+    return ((oof.p - oof.y) ** 2).groupby(oof.date.to_numpy()).mean()
+
+
+FULL_ORDER = ["R1", "R2", "R3", "R4", "R5proxy", "R7"]
+
+
+def run_full(split: str = "dev", rule: str = "ci"):
+    """按预登记顺序 R1→R2→R3→R4→R5→R7 在稀疏时点上从 R0 起完整重算（§12.2 后、§5 顺序；R6 待特征实现后插入 R5 与 R7 之间）。"""
+    tag = "ladder_dev_full" if rule == "ci" else f"ladder_dev_full_{rule}"
+    df = assemble_sparse(split)
+    tdays = price_series("sh000001").index
+    tdays = tdays[(tdays >= df.date.min()) & (tdays <= df.date.max())]
+    from .baselines import r0_predict
+
+    oof0 = cpcv_oof(df, tdays, lambda tr, te: r0_predict(tr.y.to_numpy(), len(te)))
+    p_ref = oof0.p.to_numpy()
+    print(f"{split} sparse full-order: n={len(df)} pos={int(df.y.sum())} symbols={df.symbol.nunique()}", flush=True)
+    rows = [dict(level="R0", config="base", C=np.nan, kept=True, vs="-", **score_table(oof0.y, oof0.p, p_ref))]
+    kept = [("R0", [], oof0)]
+    losses = {"R0": daily_loss(oof0)}
+    n_configs = 0
+    all_levels = {**DAILY_LEVELS, **LPPLS_LEVELS}
+    for name in FULL_ORDER:
+        pn, pf, po = kept[-1]
+        best = None
+        for cfg, feats in all_levels[name].items():
+            for C in CS:
+                n_configs += 1
+                oof = cpcv_oof(df, tdays, fit_logit(sorted(set(pf) | set(feats)), C))
+                sc = score_table(oof.y, oof.p, p_ref)
+                losses[f"{name}_{cfg}_C{C}"] = daily_loss(oof)
+                rows.append(dict(level=name, config=cfg, C=C, kept=False, vs=pn, **sc))
+                print(f"{name} {cfg} C={C} brier={sc['brier']:.5f}", flush=True)
+                if best is None or sc["brier"] < best[0]:
+                    best = (sc["brier"], cfg, C, feats, oof)
+        _, cfg, C, feats, oof = best
+        d, lo, hi = paired_delta_brier(oof, po)
+        keep = keep_rule(rule, d, hi)
+        oof.to_parquet(OOF_DIR / f"{tag}_{name}_{cfg}_C{C}.parquet")
+        rows.append(dict(level=name, config=f"{cfg} (chosen)", C=C, kept=keep, vs=pn, dbrier=d, ci_lo=lo, ci_hi=hi,
+                         **score_table(oof.y, oof.p, p_ref)))
+        print(f"{name}: chosen {cfg} C={C} dBrier={d:.6f} 90%CI=[{lo:.6f},{hi:.6f}] keep={keep}", flush=True)
+        if keep:
+            kept.append((name, sorted(set(pf) | set(feats)), oof))
+    pd.DataFrame(losses).to_parquet(OOF_DIR / f"{tag}_losses.parquet")
+    tab = pd.DataFrame(rows)
+    tab.to_csv(f"reports/{tag}.csv", index=False)
+    with open(f"reports/{tag}.md", "w") as f:
+        f.write(f"# 开发段完整顺序阶梯（{split}，稀疏时点，R1→R2→R3→R4→R5proxy→R7，CPCV 6/2=15 路，purge/embargo 80；规则 {rule}）\n\n")
+        f.write(f"稀疏样本 n={len(df)}，正标签 {int(df.y.sum())}，标的 {df.symbol.nunique()}；配置总数 {n_configs}（多重比较）。"
+                "R6 资金面特征尚未实现，未参与。\n\n")
+        f.write(tab.round(5).to_markdown(index=False) + "\n\n保留链：" + " → ".join(k[0] for k in kept) + "\n")
+    json.dump(dict(kept=[k[0] for k in kept], n_configs=n_configs, rule=rule,
+                   last_oof=str(OOF_DIR / f"{tag}_{kept[-1][0]}_{cfg}_C{C}.parquet") if len(kept) > 1 else None),
+              open(Path(f"reports/{tag}.json"), "w"))
+    return tab
+
+
 def run(split: str = "dev", rule: str = "ci"):
     tag = "ladder_dev_lppls" if rule == "ci" else f"ladder_dev_lppls_{rule}"
     prev_json = "reports/ladder_dev.json" if rule == "ci" else f"reports/ladder_dev_{rule}.json"
@@ -124,4 +184,8 @@ def run(split: str = "dev", rule: str = "ci"):
 if __name__ == "__main__":
     import sys
 
-    run(rule=sys.argv[1] if len(sys.argv) > 1 else "ci")
+    _rule = sys.argv[1] if len(sys.argv) > 1 else "ci"
+    if len(sys.argv) > 2 and sys.argv[2] == "full":
+        run_full(rule=_rule)
+    else:
+        run(rule=_rule)
