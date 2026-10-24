@@ -21,7 +21,7 @@ TARGET, STOP, MAXD, CONFIRM_D, VOL_TARGET, N_PLACEBO = 0.10, -0.05, 60, 20, 0.20
 
 
 def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: np.ndarray, upgrade: np.ndarray | None,
-             confirm_exit: bool, d_up: np.ndarray | None = None) -> list[dict]:
+             confirm_exit: bool, d_up: np.ndarray | None = None, model_exit: np.ndarray | None = None) -> list[dict]:
     """entry: 入场信号(bool, 在 t 收盘判定, t+1 成交)；size: 初始仓位；upgrade: 加仓到满仓的信号；返回逐笔记录。"""
     n, out, t = len(lp), [], 0
     while t < n - 2:
@@ -41,6 +41,9 @@ def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: n
                 pos, confirmed = 1.0, True
             if upgrade is not None and not confirmed and confirm_exit and k - e >= CONFIRM_D:
                 outcome = "no_confirm"
+                break
+            if model_exit is not None and k - e >= 10 and model_exit[k]:
+                outcome = "model_exit"
                 break
             ret = np.exp(lp[k + 1] - lp[e]) - 1
             if ret >= target:
@@ -70,7 +73,7 @@ def run(tag: str = "dbot_dev"):
     df["p2"] = df.p2.fillna(0.0)
     cal = price_series("sh000001").index
     rng = np.random.default_rng(0)
-    recs: dict[str, list] = {k: [] for k in ("state_full", "confirm_full", "two_stage", "vol_target", "placebo")}
+    recs: dict[str, list] = {k: [] for k in ("state_full", "confirm_full", "two_stage", "two_stage_exit", "vol_target", "placebo")}
     for sym, g in df.groupby("symbol"):
         logp = price_series(sym)
         g = g.set_index("date").reindex(logp.index)
@@ -83,6 +86,8 @@ def run(tag: str = "dbot_dev"):
         recs["confirm_full"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s2, ones, None, False, d_up)]
         two = episodes(lp, dates, s1, np.full(len(lp), 1 / 3), s2, True, d_up)
         recs["two_stage"] += [dict(symbol=sym, **r) for r in two]
+        low10 = pd.Series(~s2).rolling(10).sum().fillna(0).to_numpy() >= 10  # p2 连续 10 日 < τ2（§15.2 模型退出）
+        recs["two_stage_exit"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s1, np.full(len(lp), 1 / 3), s2, True, d_up, low10)]
         rv20 = pd.Series(np.diff(lp, prepend=lp[0])).rolling(20).std().to_numpy() * np.sqrt(250)
         vt = np.clip(VOL_TARGET / np.where(np.isnan(rv20) | (rv20 == 0), VOL_TARGET, rv20), 0, 1)
         recs["vol_target"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s1, vt, None, False, d_up)]
@@ -100,7 +105,7 @@ def run(tag: str = "dbot_dev"):
             continue
         rows.append(dict(strategy=name, episodes=len(e), ret_per_capday_ann=float(e.ret.sum() / e.capdays.sum() * 250),
                          hit20=float(e.hit20.mean()), target=float((e.outcome == "target").mean()), stop=float((e.outcome == "stop").mean()),
-                         flat=float(e.outcome.isin(["time", "no_confirm"]).mean()), mean_days=float(e.days.mean()),
+                         flat=float(e.outcome.isin(["time", "no_confirm", "model_exit"]).mean()), mean_days=float(e.days.mean()),
                          mean_ret=float(e.ret.mean())))
     tab = pd.DataFrame(rows).set_index("strategy")
     # 区间：各策略按入场日做 80 日块 bootstrap（独立重抽样），差值区间由两组抽样差得到
@@ -119,7 +124,7 @@ def run(tag: str = "dbot_dev"):
 
     draws = {k: boot(e) for k, e in ep.items() if len(e) >= 30}
     ci_rows = []
-    for name in ("state_full", "confirm_full", "two_stage"):
+    for name in ("state_full", "confirm_full", "two_stage", "two_stage_exit"):
         for base in ("vol_target", "placebo"):
             if name not in draws or base not in draws:
                 continue
@@ -134,7 +139,7 @@ def run(tag: str = "dbot_dev"):
     pd.concat(ep, names=["strategy"]).reset_index(level=0).to_csv(f"reports/{tag}_episodes.csv", index=False)
     with open(f"reports/{tag}.md", "w") as f:
         f.write("# D-BOT 底部决策层回测（prereg §15.1；开发段 OOF 概率，不是样本外）\n\n")
-        f.write(f"τ1（底部状态）= {tau1:.4f}，τ2（起涨确认，宽度）= {tau2:.4f}，均为开发段正标签率，不调参。目标 = PIT 障碍 d_up（≥10%）/ 止损 = −0.5·d_up / 60 日；two_stage 20 日未确认退出。"
+        f.write(f"τ1（底部状态）= {tau1:.4f}，τ2（起涨确认，宽度）= {tau2:.4f}，均为开发段正标签率，不调参。目标 = PIT 障碍 d_up（≥10%）/ 止损 = −0.5·d_up / 60 日；two_stage 20 日未确认退出；two_stage_exit 另加 §15.2 模型退出（p2 连续 10 日 < τ2）。"
                 "成本：佣金 0.025%、印花税 0.1%（卖出）、滑点 0.1%，T+1。\n\n## 主表\n\n")
         f.write(tab.round(4).to_markdown() + "\n\nret_per_capday_ann = 费后收益 / 资金·天 × 250；hit20 = 20 日内触及目标比例；flat = 到期/未确认退出（横盘）比例；stop = 假底比例。\n\n")
         f.write("## 相对基线（80 日块独立 bootstrap 90% 区间；kept 需收益与 hit20 两项下界均 > 0）\n\n" + ci.round(4).to_markdown(index=False) + "\n")
