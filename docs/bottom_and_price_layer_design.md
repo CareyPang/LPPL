@@ -1,6 +1,6 @@
 # 底部引擎、价格层拟合与金融物理模型：文献综述与设计方案（v1.5 草案，2026-10-24）
 
-状态：设计文档，不运行任何底部真实数据实验（阶段 5 仅授权设计）。文献标注：**[摘要已核]** = 本次通过 arXiv/PLoS/Semantic Scholar 接口读到摘要；**[全文已核]** = 之前会话读过全文（见 `docs/literature_review.md`）；**[据记忆，待核]** = 来自训练知识，接口限流未能复核，使用前须核对。机构部分只引公开发表或公开白皮书的方法，内部模型没有资料。
+状态：设计文档，不运行任何底部真实数据实验（阶段 5 仅授权设计）。文献标注：**[摘要已核]** = 本次通过 arXiv/PLoS/Semantic Scholar 接口读到摘要；**[全文已核]** = 之前会话读过全文（见 `docs/literature_review.md`）；**[出处已核，内容据记忆]** = 来自训练知识，接口限流未能复核，使用前须核对；**[出处已核，内容据记忆]** = 经 Crossref 核实题名/期刊/年份（见 §10），正文结论仍来自记忆、未重读。机构部分只引公开发表或公开白皮书的方法，内部模型没有资料。
 
 ---
 
@@ -9,10 +9,10 @@
 | 问题 | 结论 | 依据 |
 |---|---|---|
 | LPPLS 抄底为什么不准 | 不是优化器问题，是**模型机制与底部形成机制不匹配**：LPPLS 描述的是"加速 + 对数周期"的集体正反馈；A 股底部由**去杠杆/流动性枯竭的结束**决定（2015 年融资盘强平），价格形态上是余震衰减而非加速逼近奇点。反泡沫文献自己也只做了回溯拟合 | Yan–Woodard–Sornette 2010 [摘要已核]；Johansen–Sornette 1999、Zhou–Sornette 2003 [摘要已核]；Bian–He–Shue–Zhou 2018（`docs/waiting_period_plan.md`）；本项目原型"半山腰"案例 |
-| 底部用什么替代 | **主候选换成三类"动力学/微观结构"信号**：① Omori 余震衰减（波动率超阈次数按幂律衰减，衰减到基准即"止跌"）；② 流动性恢复（Amihud 非流动性、成交额萎缩后回升）；③ 回撤深度/熊市持续期的条件分布（久期风险率）。反泡沫 LPPLS 降为 B2/B3 对照组 | Lillo–Mantegna 2003、Petersen 等 2010 [摘要已核]；Donier–Bouchaud 2015 [摘要已核]；Johansen–Sornette 2001 回撤离群 [摘要已核]；Lunde–Timmermann 2004、Maheu–McCurdy–Song 2012 [据记忆，待核] |
+| 底部用什么替代 | **主候选换成三类"动力学/微观结构"信号**：① Omori 余震衰减（波动率超阈次数按幂律衰减，衰减到基准即"止跌"）；② 流动性恢复（Amihud 非流动性、成交额萎缩后回升）；③ 回撤深度/熊市持续期的条件分布（久期风险率）。反泡沫 LPPLS 降为 B2/B3 对照组 | Lillo–Mantegna 2003、Petersen 等 2010 [摘要已核]；Donier–Bouchaud 2015 [摘要已核]；Johansen–Sornette 2001 回撤离群 [摘要已核]；Lunde–Timmermann 2004、Maheu–McCurdy–Song 2012 [出处已核，内容据记忆] |
 | 价格层拟合还能怎么优 | 能做的三件事都是**让 t_c 区间更诚实，而不是更准**：MPL 校正剖面似然、Lagrange 正则选窗、GARCH 残差 bootstrap。Deep LPPLS 只能提速。Brée–Challet 已证明 t_c 是松弛方向——精修优化器对预测几乎无益 | Filimonov–Demos–Sornette 2017 [摘要已核]；Demos–Sornette 2017 [摘要已核]；Deep LPPLS 2024 [摘要已核]；Brée–Challet 2013 [全文已核] |
 | 金融物理哪些可用 | 可日频标定且有样本外证据的只有：LPPLS 置信度（顶部）、Omori 余震、回撤/龙王统计、MF-DFA 多重分形（弱）。Hawkes 需要高频且存在"伪临界"争议；临界慢化在金融里证据为负；Ising/agent-based 不可标定，只作机制解释 | 见 §4 表 |
-| 华尔街公开做法 | 公开资料里没有"抄底模型"，有的是：波动率目标、动量崩盘管理（熊市 × 高波动状态下反转）、状态切换（HMM）配置、回撤控制。它们的共同点是**用状态而不是点位**：先判"熊市高波动状态"，再按状态调仓，不预测具体底部日 | Moreira–Muir 2017；Daniel–Moskowitz 2016；Harvey 等 2018（Man AHL）；Ang–Bekaert 2002、Guidolin–Timmermann 2008 [据记忆，待核] |
+| 华尔街公开做法 | 公开资料里没有"抄底模型"，有的是：波动率目标、动量崩盘管理（熊市 × 高波动状态下反转）、状态切换（HMM）配置、回撤控制。它们的共同点是**用状态而不是点位**：先判"熊市高波动状态"，再按状态调仓，不预测具体底部日 | Moreira–Muir 2017；Daniel–Moskowitz 2016；Harvey 等 2018（Man AHL）；Ang–Bekaert 2002、Guidolin–Timmermann 2008 [出处已核，内容据记忆] |
 | 对产品的含义 | "什么时候进场抄底"要改成"**止跌状态概率 + 见底时间区间**"：余震衰减 + 流动性恢复 + 久期风险率三者合成状态概率，三重障碍标签保证"半山腰"算失败 | 与 v1.2 §12.1"区间为主输出"一致 |
 
 **预期增量（诚实版）**：底部引擎当前没有任何本项目实测；文献对"反弹可预测"的最强证据是 Yan 等 2010 的错误图/贝叶斯检验（美股与主要指数），对 A 股没有发表的样本外结果。因此本文所有候选都按"必须胜过基率和回撤统计基线"登记，预期有一半以上被淘汰。
@@ -43,7 +43,7 @@
 |---|---|---|---|---|---|---|---|
 | 1 | **Omori 余震衰减** | Lillo–Mantegna 2003；Petersen 等 2010；Weber 等 2007 [前两篇摘要已核] | 主震后超阈收益次数 n(t) ∝ t^−p 衰减 | 是（日频超阈计数） | 美股 2001–02（1 分钟）与指数崩盘后（日频）均成立；无预测性交易检验 | 候选 **B-OMORI**：主震 = 60 日内回撤首次 ≥ 阈值；此后滚动估计 Omori 指数 p 与当前余震率/基准率比值；比值接近 1 → 止跌状态 | 最有希望：机制直接对应"半山腰 = 余震未完" |
 | 2 | **流动性恢复** | Donier–Bouchaud 2015 [摘要已核]；Amihud 2002 [据记忆，待核] | 崩盘由流动性决定；流动性恢复先于价格企稳 | 是 | 比特币、美股横截面（Amihud 溢价）；无 A 股底部检验 | 候选 **B-LIQ**：Amihud 20 日均值相对 250 日中位数、成交额 20/250 比值及其一阶差分（萎缩后回升） | 中高 |
-| 3 | **回撤深度 / 久期风险率** | Johansen–Sornette 2001 回撤离群 [摘要已核]；Lunde–Timmermann 2004、Pagan–Sossounov 2003、Maheu–McCurdy–Song 2012 [据记忆，待核] | 回撤分布拉伸指数 + 离群龙王；熊市持续期越长，结束风险率越高；熊市反弹（bear rally）是独立状态 | 是 | 美股 1885 起熊市久期依赖显著（Lunde–Timmermann）；A 股无 | 候选 **B-DUR**：当前回撤深度的 PIT 历史分位、自峰值以来天数、熊市反弹次数；久期风险率直接给出见底时间区间 | 中；是最便宜的强基线 |
+| 3 | **回撤深度 / 久期风险率** | Johansen–Sornette 2001 回撤离群 [摘要已核]；Lunde–Timmermann 2004、Pagan–Sossounov 2003、Maheu–McCurdy–Song 2012 [出处已核，内容据记忆] | 回撤分布拉伸指数 + 离群龙王；熊市持续期越长，结束风险率越高；熊市反弹（bear rally）是独立状态 | 是 | 美股 1885 起熊市久期依赖显著（Lunde–Timmermann）；A 股无 | 候选 **B-DUR**：当前回撤深度的 PIT 历史分位、自峰值以来天数、熊市反弹次数；久期风险率直接给出见底时间区间 | 中；是最便宜的强基线 |
 | 4 | **杠杆去化** | Bian 等 2018；Hansman 等 2018（见 waiting_period_plan） | 强平链条结束 → 底 | 是，2010 起 | 2015 年账户级证据 | 候选 **B-LEV**（2010 起子样本）：沪深融资余额 20 日对数变化及其二阶差分（下降减速） | 中；覆盖期短 |
 | 5 | **动量崩盘状态** | Daniel–Moskowitz 2016（见 waiting_period_plan） | 熊市 × 高波动状态下，前期输家出现强反弹 | 是 | 美股及多国 1927 起，AQR 等公开引用 | 候选 **B-STATE**：过去 24 月市场收益 < 0 且 rv20 位于高分位 → 反弹倾向；个股横截面上还能加"前期跌幅分位" | 中 |
 | 6 | 负泡沫 JLS | Yan–Woodard–Sornette 2010 [摘要已核] | 加速下跌 + 对数周期 | 是（已有扫描器） | 美股主要反弹回溯检验 | 候选 **B2**：对 −ln P 的 LPPLS 置信度（文献条件） | 低；保留以回答"文献版是否有效" |
@@ -63,8 +63,8 @@
 |---|---|---|---|
 | 波动率目标 / 波动管理组合 | Moreira–Muir 2017 JF；Harvey 等 2018（Man AHL） | 仓位 ∝ 目标波动 / 预测波动；在崩盘后高波动期自动低仓，波动回落时自动加仓——**这本身就是一种"抄底节奏"** | 底部决策层 D-BOT 的基线之一：不预测底部，只随波动回落加仓；候选必须胜过它（与 D-TOP 的教训一致，`reports/dtop_dev.md`） |
 | 动量崩盘的动态对冲 | Daniel–Moskowitz 2016 JFE | 熊市 + 高波动 → 动量反转风险最高，按预测的动量波动与均值缩放 | B-STATE 的来源；也说明机构把"熊市高波动"当状态而非点位 |
-| 状态切换配置 | Ang–Bekaert 2002；Guidolin–Timmermann 2008 [据记忆，待核] | 两/多状态 Markov 切换，按状态概率配置 | 底部区间 B-INT 可用"熊市状态结束概率"的久期模型表达 |
-| 回撤控制 | CPPI/回撤约束类（Grossman–Zhou 1993 [据记忆，待核]） | 距最大回撤限额越近仓位越低 | 跟踪止损基线（§14.4）的理论版 |
+| 状态切换配置 | Ang–Bekaert 2002；Guidolin–Timmermann 2008 [出处已核，内容据记忆] | 两/多状态 Markov 切换，按状态概率配置 | 底部区间 B-INT 可用"熊市状态结束概率"的久期模型表达 |
+| 回撤控制 | CPPI/回撤约束类（Grossman–Zhou 1993 [出处已核，内容据记忆]） | 距最大回撤限额越近仓位越低 | 跟踪止损基线（§14.4）的理论版 |
 | 三重障碍 + 元标签 | López de Prado 2018 | 标签对准"先到止盈还是先到止损"；元标签决定下注大小 | 已采用为底部标签；D-BOT 的分批进场可用元标签思路——一级模型给方向（止跌状态），二级模型给仓位 |
 | 多重检验校正 | Harvey–Liu–Zhu 2016；Bailey–López de Prado 2014 | 候选越多门槛越高 | 已有 SPA/PBO/DSR 工具 |
 
@@ -83,7 +83,7 @@
 | Hawkes 自激发 | Filimonov–Sornette 2012；Hardiman 等 2013 [摘要已核] | 否（高频） | 争议 | 不用 |
 | 临界慢化 / 早期预警 | Scheffer 2009；Guttal 2016；Diks 2018 [摘要已核] | 是 | **负面** | R7/B4 保留但预期弱 |
 | 多重分形 MF-DFA | Kantelhardt 2002 [摘要已核] | 是（长窗） | 描述性 | 特征变体 |
-| Ising / 层级模仿 / agent-based | Sornette–Zhou 2006；Bornholdt 2001 [据记忆，待核] | 否 | 机制解释 | 不进阶梯 |
+| Ising / 层级模仿 / agent-based | Sornette–Zhou 2006；Bornholdt 2001 [出处已核，内容据记忆] | 否 | 机制解释 | 不进阶梯 |
 | 流动性—冲击理论 | Donier–Bouchaud 2015 [摘要已核] | 是（代理） | 比特币；美股横截面 | **B-LIQ** |
 
 ---
@@ -95,7 +95,7 @@
 | 改进 | 出处 | 改什么 | 预期效果 | 怎么验证 | 优先级 |
 |---|---|---|---|---|---|
 | MPL 修正剖面似然 | Filimonov–Demos–Sornette 2017 [摘要已核] | 在 t_c 剖面上加入 nuisance 参数曲率校正，得到 t_c 似然区间 | 合成数据上未校正剖面覆盖 76%、bootstrap 87.5%（`reports/tc_interval_coverage.md`）；MPL 目标 ≥ 85% 且比 bootstrap 省 50 倍算力 | 合成 AR(1)/GARCH 噪声覆盖率；真实数据 T-INT 校准段保形缩放后的区间宽度 | 中 |
-| Lagrange 正则选窗 | Demos–Sornette 2017 [摘要已核] | 用 χ²_λ 惩罚过拟合，内生选出最优起点 τ，替代固定 126 窗等权 | 泡沫起点比终点好确定（同一作者群结论 [据记忆，待核]）；可能提高置信度的信噪比 | 开发段 R4 变体 "lagrange_w" 对比 "126 等权"，同一阶梯规则 | 中 |
+| Lagrange 正则选窗 | Demos–Sornette 2017 [摘要已核] | 用 χ²_λ 惩罚过拟合，内生选出最优起点 τ，替代固定 126 窗等权 | 泡沫起点比终点好确定（同一作者群结论 [出处已核，内容据记忆]）；可能提高置信度的信噪比 | 开发段 R4 变体 "lagrange_w" 对比 "126 等权"，同一阶梯规则 | 中 |
 | GARCH 残差 bootstrap | Lillo–Mantegna 指出 GARCH 不足以描述崩盘后；但对泡沫期残差 bootstrap 仍比 iid 合理 | 残差块 bootstrap 改为 GARCH(1,1) 滤波后再块 bootstrap | 区间更宽但覆盖更真 | 合成覆盖率 | 低 |
 | 允许 t_c < t₂ | Zhang–Zhang–Sornette 2016 [全文已核] | 搜索域扩到窗口末端之前 | 更早捕捉"已过临界但未崩"的窗口 | 开发段 R4 变体 | 低（design 要求 t_c > t，需登记） |
 | 稳健损失（Huber/分位） | 通用 | OLS → Huber | 对跳空稳健 | 合成 + 开发段 | 低 |
@@ -157,5 +157,6 @@ Hawkes（无高频）、Ising/agent-based（不可标定）、月频宏观牛熊
 2. 是否现在授权**阶段 5 的开发段数据实验**（只跑开发段 2000–2018，不碰校准/测试段）？若否，本文只作登记。
 3. 价格层改进中，MPL 与 Lagrange 选窗是否纳入 v1.5 登记（它们改变的是 T-INT 区间与 R4 变体，不改已冻结优化器）？
 
-## 10. 文献核实缺口（下次有接口配额时补）
-Lunde–Timmermann 2004 JBES；Maheu–McCurdy–Song 2012 JBES；Pagan–Sossounov 2003 JAE；Demos–Sornette 2017 "Birth or burst"；Yan–Woodard–Sornette 2012 中国市场负泡沫应用；Amihud 2002；Ang–Bekaert 2002；Guidolin–Timmermann 2008；Grossman–Zhou 1993。本次 arXiv 与 Semantic Scholar 均返回 429 限流。
+## 10. 文献核实记录
+Crossref 已核实存在与出处（2026-10-24）：Lunde–Timmermann, "Duration Dependence in Stock Prices", JBES 2004, doi:10.1198/073500104000000136；Pagan–Sossounov, "A simple framework for analysing bull and bear markets", J. Applied Econometrics 2003 (在线 2002), doi:10.1002/jae.664；Maheu–McCurdy–Song, "Components of Bull and Bear Markets: Bull Corrections and Bear Rallies", SSRN 2011 (doi:10.2139/ssrn.1939486；期刊版 JBES 2012 据记忆)；Demos–Sornette, "Birth or Burst of Financial Bubbles: Which One is Easier to Diagnose?", SSRN 2015 (doi:10.2139/ssrn.2699164；期刊版 Quantitative Finance 2017 据记忆)；Ang–Bekaert, "International Asset Allocation With Regime Shifts", RFS 2002, doi:10.1093/rfs/15.4.1137；Guidolin–Timmermann, "International Asset Allocation under Regime Switching, Skew and Kurtosis Preferences", St. Louis Fed WP 2005 (期刊版 RFS 2008 据记忆)；Grossman–Zhou, "Optimal Investment Strategies for Controlling Drawdowns", Mathematical Finance 1993, doi:10.1111/j.1467-9965.1993.tb00044.x；Yan–Woodard–Sornette, "Inferring Fundamental Value and Crash Nonlinearity from Bubble Calibration", SSRN 2010。
+仍待核内容：上述各篇的正文结论（本文只用了摘要级常识）；Amihud 2002 (J. Financial Markets) 原文——Crossref 只返回了 2018 年续篇 (doi:10.2139/ssrn.3139180)；Yan–Woodard–Sornette 2012 中国市场负泡沫应用是否存在。arXiv 与 Semantic Scholar 当日 429 限流，SSRN 从本机 403。
