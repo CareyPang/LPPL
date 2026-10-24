@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 
 from .dataset import price_series
+from .ladder import INDEXES
 
 RULES = {f"p{int(p1*100)}-{int(p2*100)}_{mode}": (p1, p2, mode)
          for p1, p2 in ((0.15, 0.30), (0.20, 0.40), (0.25, 0.50)) for mode in ("one", "two")}
@@ -57,6 +58,16 @@ def vol_target_position(r: np.ndarray) -> np.ndarray:
     return np.minimum(1.0, VOL_TARGET / rv).fillna(1.0).to_numpy()
 
 
+def trailing_stop_position(lp: np.ndarray, look: int = 60, dd: float = 0.10) -> np.ndarray:
+    """基线：收盘低于 60 日最高收盘 10% → 1/3 仓；收复 60 日新高后恢复满仓。"""
+    s = pd.Series(lp)
+    hi = s.rolling(look, min_periods=1).max()
+    below = (s < hi + np.log(1 - dd)).to_numpy()
+    new_high = (s >= hi).to_numpy()
+    tgt = np.where(below, 1 / 3, np.where(new_high, 1.0, np.nan))
+    return pd.Series(tgt).ffill().fillna(1.0).to_numpy()
+
+
 def placebo_positions(n: int, dates: pd.DatetimeIndex, freq: float, rng: np.random.Generator) -> np.ndarray:
     """月末以概率 freq 减至 1/3，持续 RESTORE 日后恢复；返回 (n, N_PLACEBO)。"""
     me = np.flatnonzero(pd.Series(dates).dt.month.diff().fillna(0).ne(0).to_numpy())
@@ -84,15 +95,21 @@ def aux_stats(ret: np.ndarray, pos: np.ndarray) -> dict:
 def evaluate_series(g: pd.DataFrame, logp: pd.Series, rng: np.random.Generator) -> tuple[list[dict], list[dict]]:
     """g：单一 (symbol, path, 连续块) 的 OOF；返回 (每个事件段 × 策略的事件后 60 日回撤改善量, 全块辅助统计)。"""
     lp = logp.reindex(g.date).to_numpy()
-    r = np.diff(lp, prepend=lp[0])
-    r = np.expm1(r)
+    r = np.expm1(np.diff(lp, prepend=lp[0]))
     y, p = g.y.to_numpy(), g.p.to_numpy()
     pos = {name: execute(target_position(p, *cfg), r) for name, cfg in RULES.items()}
     vt = vol_target_position(r)
     c1 = np.clip(1 - p / P_MAX, 1 / 3, 1.0)
     pos["c1_linear"] = execute(c1, r)
     pos["c2_linear_x_vol"] = execute(np.minimum(vt, c1), r)
+    rv20 = pd.Series(r).rolling(20, min_periods=20).std()
+    hi_vol = (rv20 > rv20.rolling(250, min_periods=120).median()).to_numpy()
+    for p1 in (0.15, 0.25):
+        pos[f"d1_dual_p{int(p1*100)}"] = execute(np.where((p >= p1) & hi_vol, 1 / 3, 1.0), r)
+        pos[f"d2_tiered_vt_p{int(p1*100)}"] = execute(np.minimum(1.0, np.where(p >= p1, 0.10, VOL_TARGET) / (rv20 * np.sqrt(250))).fillna(1.0).to_numpy(), r)
+    pos["d3_vt_x_linear_to0"] = execute(vt * np.clip(1 - p / P_MAX, 0.0, 1.0), r)
     pos["vol_target"] = execute(vt, r)
+    pos["trailing_stop"] = execute(trailing_stop_position(lp), r)
     pos["buy_hold"] = np.ones(len(r))
     strat = {name: strategy_returns(q, r) for name, q in pos.items()}
     aux = [dict(strategy=name, **aux_stats(strat[name], pos[name])) for name in pos]
@@ -151,24 +168,38 @@ def run(oof_path: str, tag: str = "dtop_dev") -> pd.DataFrame:
     ax["calmar_mean"] = ax.ann_return / ax.mdd_mean.abs()
     ax = ax[["ann_return", "ann_turnover", "mdd_mean", "mdd_worst", "calmar_mean", "pos_mean"]]
     res = []
-    names = list(RULES) + ["c1_linear", "c2_linear_x_vol", "vol_target", "placebo"]
+    cands = list(RULES) + ["c1_linear", "c2_linear_x_vol", "d1_dual_p15", "d1_dual_p25", "d2_tiered_vt_p15", "d2_tiered_vt_p25", "d3_vt_x_linear_to0"]
+    names = cands + ["vol_target", "trailing_stop", "placebo"]
+    ev["period"] = pd.cut(ev.date.dt.year, [2000, 2009, 2014, 2015, 2018], labels=["2001-09", "2010-14", "2015", "2016-18"])
+    ev["grp"] = np.where(ev.symbol.isin(INDEXES), "index", "stock")
+    ex15 = ev[ev.period != "2015"]
     for name in names:
         d_vt, lo_vt, hi_vt = block_ci((ev[name] - ev.vol_target).to_numpy(), ev.date, cal)
         d_pl, lo_pl, hi_pl = block_ci((ev[name] - ev.placebo).to_numpy(), ev.date, cal)
+        d_ts, lo_ts, hi_ts = block_ci((ev[name] - ev.trailing_stop).to_numpy(), ev.date, cal)
+        x_vt, xlo_vt, _ = block_ci((ex15[name] - ex15.vol_target).to_numpy(), ex15.date, cal)
+        x_pl, xlo_pl, _ = block_ci((ex15[name] - ex15.placebo).to_numpy(), ex15.date, cal)
         res.append(dict(rule=name, dd_improve_pp=ev[name].mean(), vs_voltarget=d_vt, vt_lo=lo_vt, vt_hi=hi_vt,
-                        vs_placebo=d_pl, pl_lo=lo_pl, pl_hi=hi_pl, kept=(lo_vt > 0) & (lo_pl > 0) if name not in ("vol_target", "placebo") else np.nan))
+                        vs_placebo=d_pl, pl_lo=lo_pl, pl_hi=hi_pl, vs_trailstop=d_ts, ts_lo=lo_ts,
+                        ex2015_vs_vt=x_vt, ex2015_vt_lo=xlo_vt, ex2015_vs_pl=x_pl, ex2015_pl_lo=xlo_pl,
+                        kept=(lo_vt > 0) & (lo_pl > 0) if name in cands else np.nan))
     tab = pd.DataFrame(res)
     ev.to_csv(f"reports/{tag}_events.csv", index=False)
     tab.to_csv(f"reports/{tag}.csv", index=False)
     ax.to_csv(f"reports/{tag}_aux.csv")
     by_year = ev.groupby(ev.date.dt.year).size()
+    by_period = ev.groupby("period", observed=True)[names].mean()
+    by_period["n"] = ev.groupby("period", observed=True).size()
+    by_grp = ev.groupby("grp")[names].mean()
+    by_grp["n"] = ev.groupby("grp").size()
     with open(f"reports/{tag}.md", "w") as f:
         f.write("# D-TOP 决策层开发段回测（§12.4；输入为未校准 OOF 概率；值为事件后 60 日最大回撤相对买入持有的减少量，百分点，正为改善）\n\n")
         f.write(f"事件段 {len(ev)}（含 CPCV 多路径重复），标的 {ev.symbol.nunique()}；买入持有事件后平均最大回撤 {ev.bh_dd.mean()*100:.2f}%。\n\n")
         f.write(tab.round(4).to_markdown(index=False) + "\n\n淘汰规则：相对波动率目标与相对安慰剂的改善量 90% 块 bootstrap 区间下界均 > 0 才保留。\n\n")
         f.write("## 辅助指标（全部 OOF 块合并；年化收益按费后对数收益、年化换手按 |Δ仓位| 之和；mdd 为各块最大回撤的均值/最差；pos_mean 为平均仓位）\n\n")
         f.write(ax.round(4).to_markdown() + "\n\n## 事件段按年份分布（含 CPCV 路径重复）\n\n")
-        f.write(by_year.to_frame("n_events").T.to_markdown() + "\n")
+        f.write(by_year.to_frame("n_events").T.to_markdown() + "\n\n## 分时期主评分（§14.4；事件后 60 日回撤减少 pp）\n\n")
+        f.write(by_period.round(2).to_markdown() + "\n\n## 分组主评分\n\n" + by_grp.round(2).to_markdown() + "\n")
     print(tab.round(4).to_string(), flush=True)
     return tab
 
