@@ -21,6 +21,13 @@ LOCO = {"ex2007_08": (2007, 2008), "ex2015": (2015,), "ex2018": (2018,)}
 def _data(side: str):
     if side == "top":
         return assemble("dev"), with_z_variants(LEVELS), CHOSEN, "ladder_dev"
+    if side == "r8":
+        from .ladder_r8 import R8, market_features
+        df = assemble("dev")
+        df = df.merge(market_features(df), on="date", how="left").dropna(subset=["br_hi20", "share_alarm"]).reset_index(drop=True)
+        chosen = dict(CHOSEN)
+        chosen["R8"] = {"breadth_alarm": R8["breadth_alarm"]}
+        return df, None, chosen, "ladder_dev_r8"
     levels = with_z_variants(LEVELS_B)
     return assemble_bottom("dev", levels), levels, CHOSEN_B, "ladder_bottom_dev"
 
