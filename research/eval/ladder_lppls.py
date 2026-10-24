@@ -92,6 +92,7 @@ def run_full(split: str = "dev", rule: str = "ci"):
     print(f"{split} sparse full-order: n={len(df)} pos={int(df.y.sum())} symbols={df.symbol.nunique()}", flush=True)
     rows = [dict(level="R0", config="base", C=np.nan, kept=True, vs="-", **score_table(oof0.y, oof0.p, p_ref))]
     kept = [("R0", [], oof0)]
+    kept_path = {"R0": None}
     losses = {"R0": daily_loss(oof0)}
     n_configs = 0
     all_levels = {**DAILY_LEVELS, **LPPLS_LEVELS}
@@ -117,6 +118,7 @@ def run_full(split: str = "dev", rule: str = "ci"):
         print(f"{name}: chosen {cfg} C={C} dBrier={d:.6f} 90%CI=[{lo:.6f},{hi:.6f}] keep={keep}", flush=True)
         if keep:
             kept.append((name, sorted(set(pf) | set(feats)), oof))
+            kept_path[name] = str(OOF_DIR / f"{tag}_{name}_{cfg}_C{C}.parquet")
     pd.DataFrame(losses).to_parquet(OOF_DIR / f"{tag}_losses.parquet")
     tab = pd.DataFrame(rows)
     tab.to_csv(f"reports/{tag}.csv", index=False)
@@ -126,7 +128,7 @@ def run_full(split: str = "dev", rule: str = "ci"):
                 "R6 资金面特征尚未实现，未参与。\n\n")
         f.write(tab.round(5).to_markdown(index=False) + "\n\n保留链：" + " → ".join(k[0] for k in kept) + "\n")
     json.dump(dict(kept=[k[0] for k in kept], n_configs=n_configs, rule=rule,
-                   last_oof=str(OOF_DIR / f"{tag}_{kept[-1][0]}_{cfg}_C{C}.parquet") if len(kept) > 1 else None),
+                   last_oof=kept_path[kept[-1][0]]),
               open(Path(f"reports/{tag}.json"), "w"))
     return tab
 
