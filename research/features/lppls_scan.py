@@ -74,7 +74,7 @@ def _task(args):
     return sym, scan_dates(sym, dates, windows, cal)
 
 
-def asof_dates(sym: str, group: str, cal: pd.DatetimeIndex) -> list[pd.Timestamp]:
+def asof_dates(sym: str, group: str, cal: pd.DatetimeIndex, splits: tuple[str, ...] = ("dev", "cal", "test")) -> list[pd.Timestamp]:
     """全局日历上 step 的整数倍位置，限制在该标的所属样本段内。"""
     logp = price_series(sym)
     step = IDX_STEP if group == "index" else STK_STEP
@@ -84,24 +84,25 @@ def asof_dates(sym: str, group: str, cal: pd.DatetimeIndex) -> list[pd.Timestamp
         ok = lambda d: lo <= d <= hi  # noqa: E731
     else:
         spans = []
-        for a, b, csv, entry in SPLITS.values():
-            if sym in _snapshot(csv):
+        for name, (a, b, csv, entry) in SPLITS.items():
+            if name in splits and sym in _snapshot(csv):
                 lo = max(pd.Timestamp(a), pd.Timestamp(entry), logp.index[0] + pd.DateOffset(years=5))
                 spans.append((lo, pd.Timestamp(b)))
         ok = lambda d: any(lo <= d <= hi for lo, hi in spans)  # noqa: E731
     return [d for d in logp.index if d in grid and ok(d)]
 
 
-def run(group: str, procs: int = 8, chunk: int = 10):
+def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = ("dev", "cal", "test")):
+    """splits：个股只扫这些样本段（§12.2 算力门触发后只扫 dev）。"""
     OUT.mkdir(parents=True, exist_ok=True)
     cal = calendar()
-    syms = list(INDEXES) if group == "index" else sorted({s for *_, csv, _ in SPLITS.values() for s in _snapshot(csv)})
+    syms = list(INDEXES) if group == "index" else sorted({s for n, (*_, csv, _) in SPLITS.items() if n in splits for s in _snapshot(csv)})
     windows = IDX_WINDOWS if group == "index" else STK_WINDOWS
     tasks, parts = [], {}
     for sym in syms:
         if (OUT / f"{sym}.parquet").exists():
             continue
-        ds = asof_dates(sym, group, cal)
+        ds = asof_dates(sym, group, cal, splits)
         parts[sym] = [None] * ((len(ds) + chunk - 1) // chunk)
         for j in range(0, len(ds), chunk):
             tasks.append((sym, ds[j : j + chunk], windows, cal))
@@ -120,4 +121,4 @@ def run(group: str, procs: int = 8, chunk: int = 10):
 
 
 if __name__ == "__main__":
-    run(sys.argv[1] if len(sys.argv) > 1 else "index")
+    run(sys.argv[1] if len(sys.argv) > 1 else "index", splits=tuple(sys.argv[2].split(",")) if len(sys.argv) > 2 else ("dev", "cal", "test"))
