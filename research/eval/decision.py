@@ -4,7 +4,7 @@
 规则：阈值 (p1, p2) × {一步减至 1/3；两步 2/3 → 1/3}；p 连续 20 日 < p1 后恢复满仓。
 执行：T+1（次日收盘成交，保守）；涨跌停日（|日收益| ≥ 9.5%）顺延一日。
 成本：佣金 0.025% 双边、印花税 0.1% 卖出、滑点 0.1%。
-主评分：每个事件段结束后 60 日内策略最大回撤相对买入持有的减少量（百分点），跨事件段平均。
+主评分：每个事件段结束后 60 日内策略最大回撤相对买入持有的减少量（百分点，正为改善），跨事件段平均。
 基线：买入持有（恒为 0）、波动率目标（年化 20%，20 日已实现波动）、安慰剂（月末随机减仓，频率同规则，200 个种子取均值）。
 淘汰：相对波动率目标与相对安慰剂的改善量，80 日块 bootstrap 90% 区间都不含 0。
 """
@@ -129,14 +129,14 @@ def run(oof_path: str, tag: str = "dtop_dev") -> pd.DataFrame:
         d_vt, lo_vt, hi_vt = block_ci((ev[name] - ev.vol_target).to_numpy(), ev.date, cal)
         d_pl, lo_pl, hi_pl = block_ci((ev[name] - ev.placebo).to_numpy(), ev.date, cal)
         res.append(dict(rule=name, dd_improve_pp=ev[name].mean(), vs_voltarget=d_vt, vt_lo=lo_vt, vt_hi=hi_vt,
-                        vs_placebo=d_pl, pl_lo=lo_pl, pl_hi=hi_pl, kept=(hi_vt < 0) & (hi_pl < 0) if name in RULES else np.nan))
+                        vs_placebo=d_pl, pl_lo=lo_pl, pl_hi=hi_pl, kept=(lo_vt > 0) & (lo_pl > 0) if name in RULES else np.nan))
     tab = pd.DataFrame(res)
     ev.to_csv(f"reports/{tag}_events.csv", index=False)
     tab.to_csv(f"reports/{tag}.csv", index=False)
     with open(f"reports/{tag}.md", "w") as f:
-        f.write("# D-TOP 决策层开发段回测（§12.4；输入为未校准 OOF 概率；值为事件后 60 日最大回撤相对买入持有的变化，百分点，负为改善）\n\n")
+        f.write("# D-TOP 决策层开发段回测（§12.4；输入为未校准 OOF 概率；值为事件后 60 日最大回撤相对买入持有的减少量，百分点，正为改善）\n\n")
         f.write(f"事件段 {len(ev)}（含 CPCV 多路径重复），标的 {ev.symbol.nunique()}；买入持有事件后平均最大回撤 {ev.bh_dd.mean()*100:.2f}%。\n\n")
-        f.write(tab.round(4).to_markdown(index=False) + "\n\n淘汰规则：相对波动率目标与相对安慰剂的 90% 块 bootstrap 区间上界均 < 0 才保留。\n")
+        f.write(tab.round(4).to_markdown(index=False) + "\n\n淘汰规则：相对波动率目标与相对安慰剂的改善量 90% 块 bootstrap 区间下界均 > 0 才保留。\n")
     print(tab.round(4).to_string(), flush=True)
     return tab
 
