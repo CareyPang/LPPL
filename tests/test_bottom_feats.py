@@ -6,7 +6,7 @@ from research.features.bottom_feats import bear_state, liquidity, omori
 
 def _series(n=900, seed=0):
     rng = np.random.default_rng(seed)
-    r = rng.standard_normal(n) * 0.01
+    r = rng.standard_normal(n) * 0.003  # 主震前低波动，确保无其他主震
     r[600] = -0.12  # 主震
     r[601:640] = rng.standard_normal(39) * 0.04  # 余震密集
     idx = pd.bdate_range("2010-01-01", periods=n)

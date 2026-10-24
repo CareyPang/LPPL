@@ -20,7 +20,10 @@ def inputs(sym: str) -> tuple[pd.Series, pd.Series]:
     if sym in INDEXES:
         d = pd.read_parquet(FROZEN / f"{sym}_qfq.parquet")
         idx = pd.DatetimeIndex(d.date)
-        return pd.Series(np.log(d.close.to_numpy(float)), idx), pd.Series(d.amount.to_numpy(float), idx)
+        amt = pd.Series(d.amount.to_numpy(float), idx)
+        if not (amt > 0).any():  # 冻结指数数据 amount 为空时退回 volume × close（prereg §14.2 近似）
+            amt = pd.Series((d.volume * d.close).to_numpy(float), idx)
+        return pd.Series(np.log(d.close.to_numpy(float)), idx), amt
     d = pd.read_parquet(CACHE / f"{sym}.parquet")
     d = d[d.close_hfq > 0]
     idx = pd.DatetimeIndex(d.date)
