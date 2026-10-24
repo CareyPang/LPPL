@@ -2,7 +2,7 @@
 规则（阈值固定为各自开发段正标签率，不调参）：
   state_full   p1 ≥ τ1 → 满仓；confirm_full  p2 ≥ τ2 → 满仓；
   two_stage    p1 ≥ τ1 → 1/3 仓，p2 ≥ τ2 → 满仓，20 日内未确认 → 退出。
-退出：目标 +10%（上障碍下限）、止损 −5%、时间 60 日。基线：随机进场（频率匹配 two_stage）、波动率目标（在 state 窗口内）。
+退出：目标/止损 = 标签的 PIT 障碍（d_up = max(10%, 5 年 Q90)，止损 = −0.5·d_up，按最近一个候选底的值前向填充）、时间 60 日。基线：随机进场（频率匹配 two_stage）、波动率目标（在 state 窗口内）。
 主评分：单位资金·天的费后收益（年化）与 20 日内触及目标比例；并报横盘率、假底率。T+1、佣金/印花税/滑点同 D-TOP。
 python -m research.eval.decision_bottom"""
 from __future__ import annotations
@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ..labels.run_bottom import OUT as LABELS
 from .dataset import price_series
 from .decision import COMM, SLIP, STAMP
 from .ladder import OOF_DIR
@@ -20,7 +21,7 @@ TARGET, STOP, MAXD, CONFIRM_D, VOL_TARGET, N_PLACEBO = 0.10, -0.05, 60, 20, 0.20
 
 
 def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: np.ndarray, upgrade: np.ndarray | None,
-             confirm_exit: bool) -> list[dict]:
+             confirm_exit: bool, d_up: np.ndarray | None = None) -> list[dict]:
     """entry: 入场信号(bool, 在 t 收盘判定, t+1 成交)；size: 初始仓位；upgrade: 加仓到满仓的信号；返回逐笔记录。"""
     n, out, t = len(lp), [], 0
     while t < n - 2:
@@ -28,6 +29,8 @@ def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: n
             t += 1
             continue
         e = t + 1  # T+1 成交
+        target = float(d_up[t]) if d_up is not None and np.isfinite(d_up[t]) else TARGET
+        stop = -0.5 * target
         pos, cost = float(size[t]), (COMM + SLIP) * float(size[t])
         confirmed = upgrade is None
         capdays, k, outcome = 0.0, e, "time"
@@ -40,10 +43,10 @@ def episodes(lp: np.ndarray, dates: pd.DatetimeIndex, entry: np.ndarray, size: n
                 outcome = "no_confirm"
                 break
             ret = np.exp(lp[k + 1] - lp[e]) - 1
-            if ret >= TARGET:
+            if ret >= target:
                 outcome, k = "target", k + 1
                 break
-            if ret <= STOP:
+            if ret <= stop:
                 outcome, k = "stop", k + 1
                 break
             k += 1
@@ -72,23 +75,24 @@ def run(tag: str = "dbot_dev"):
         logp = price_series(sym)
         g = g.set_index("date").reindex(logp.index)
         lp, dates = logp.to_numpy(), logp.index
+        d_up = pd.read_parquet(LABELS / f"{sym}.parquet")["main__d_up"].reindex(logp.index).ffill().to_numpy()
         s1 = (g.p1 >= tau1).fillna(False).to_numpy()
         s2 = (g.p2 >= tau2).fillna(False).to_numpy()
         ones = np.ones(len(lp))
-        recs["state_full"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s1, ones, None, False)]
-        recs["confirm_full"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s2, ones, None, False)]
-        two = episodes(lp, dates, s1, np.full(len(lp), 1 / 3), s2, True)
+        recs["state_full"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s1, ones, None, False, d_up)]
+        recs["confirm_full"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s2, ones, None, False, d_up)]
+        two = episodes(lp, dates, s1, np.full(len(lp), 1 / 3), s2, True, d_up)
         recs["two_stage"] += [dict(symbol=sym, **r) for r in two]
         rv20 = pd.Series(np.diff(lp, prepend=lp[0])).rolling(20).std().to_numpy() * np.sqrt(250)
         vt = np.clip(VOL_TARGET / np.where(np.isnan(rv20) | (rv20 == 0), VOL_TARGET, rv20), 0, 1)
-        recs["vol_target"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s1, vt, None, False)]
+        recs["vol_target"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, s1, vt, None, False, d_up)]
         n_ep = len(two)
         if n_ep:
             for _ in range(max(1, N_PLACEBO // 10)):
                 idx = rng.choice(np.arange(250, len(lp) - 2), n_ep, replace=False)
                 ent = np.zeros(len(lp), bool)
                 ent[idx] = True
-                recs["placebo"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, ent, np.full(len(lp), 1 / 3), None, False)]
+                recs["placebo"] += [dict(symbol=sym, **r) for r in episodes(lp, dates, ent, np.full(len(lp), 1 / 3), None, False, d_up)]
     rows = []
     ep = {k: pd.DataFrame(v) for k, v in recs.items()}
     for name, e in ep.items():
@@ -130,7 +134,7 @@ def run(tag: str = "dbot_dev"):
     pd.concat(ep, names=["strategy"]).reset_index(level=0).to_csv(f"reports/{tag}_episodes.csv", index=False)
     with open(f"reports/{tag}.md", "w") as f:
         f.write("# D-BOT 底部决策层回测（prereg §15.1；开发段 OOF 概率，不是样本外）\n\n")
-        f.write(f"τ1（底部状态）= {tau1:.4f}，τ2（起涨确认，宽度）= {tau2:.4f}，均为开发段正标签率，不调参。目标 +10% / 止损 −5% / 60 日；two_stage 20 日未确认退出。"
+        f.write(f"τ1（底部状态）= {tau1:.4f}，τ2（起涨确认，宽度）= {tau2:.4f}，均为开发段正标签率，不调参。目标 = PIT 障碍 d_up（≥10%）/ 止损 = −0.5·d_up / 60 日；two_stage 20 日未确认退出。"
                 "成本：佣金 0.025%、印花税 0.1%（卖出）、滑点 0.1%，T+1。\n\n## 主表\n\n")
         f.write(tab.round(4).to_markdown() + "\n\nret_per_capday_ann = 费后收益 / 资金·天 × 250；hit20 = 20 日内触及目标比例；flat = 到期/未确认退出（横盘）比例；stop = 假底比例。\n\n")
         f.write("## 相对基线（80 日块独立 bootstrap 90% 区间；kept 需收益与 hit20 两项下界均 > 0）\n\n" + ci.round(4).to_markdown(index=False) + "\n")
