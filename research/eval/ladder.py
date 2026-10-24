@@ -74,7 +74,8 @@ def fit_logit(features: list[str], C: float):
     return fp
 
 
-def run_ladder(levels=LEVELS, split: str = "dev", tag: str = "ladder_dev"):
+def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev"):
+    levels = with_z_variants(LEVELS) if levels is None else levels
     OOF_DIR.mkdir(parents=True, exist_ok=True)
     df = assemble(split)
     all_feats = sorted({c for lv in levels.values() for cfg in lv.values() for c in cfg})

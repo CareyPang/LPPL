@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from .metrics import brier, score_table
 from .splits import cpcv_paths
 
-R1_FEATURES = ["rv20", "rv60", "rv120", "rv_ratio"]
+R1_FEATURES = ["ret20", "ret60", "ret120", "rv20", "rv60", "rv120", "rv_ratio"]
 
 
 def r0_predict(y_train: np.ndarray, n_test: int) -> np.ndarray:
