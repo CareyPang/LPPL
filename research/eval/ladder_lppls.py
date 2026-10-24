@@ -1,6 +1,6 @@
 """LPPLS 类候选（R3、R4a–R4f、R5 代理）的开发段阶梯（预登记 v1.1 §11：稀疏时点上配对比较）。
 
-前一保留级别（由 ladder_dev.json 给出，当前 R0 → R7 sp60）在同一组稀疏时点上用同一 CPCV 重新拟合作为对照；
+前一保留级别（由 ladder_dev.json 给出的保留链末级及其选中配置/C）在同一组稀疏时点上用同一 CPCV 重新拟合作为对照；
 本级模型 = 逻辑回归(前一保留级特征 + 本级 LPPLS 分数)。
 R5 这里只用 LPPLS/纯幂律 SSE 比值的中位数作为代理特征（预登记要求的块 bootstrap 零分布尚未实现，记为代理）。
 """
@@ -16,9 +16,10 @@ from ..features.lppls_rules import scores
 from ..features.lppls_scan import OUT as SCAN
 from .baselines import cpcv_oof, paired_delta_brier
 from .dataset import price_series
-from .ladder import CS, OOF_DIR, assemble, fit_logit
-from .ladder import LEVELS as DAILY_LEVELS
+from .ladder import CS, LEVELS, OOF_DIR, assemble, fit_logit, with_z_variants
 from .metrics import score_table
+
+DAILY_LEVELS = with_z_variants(LEVELS)
 
 LPPLS_LEVELS: dict[str, dict[str, list[str]]] = {
     "R3": {"power": ["s_power"]},
@@ -56,24 +57,26 @@ def assemble_sparse(split: str = "dev") -> pd.DataFrame:
     return df.sort_values(["date", "symbol"]).reset_index(drop=True)
 
 
-def prev_features(prev_json: str = "reports/ladder_dev.json") -> tuple[str, list[str]]:
+def prev_features(prev_json: str = "reports/ladder_dev.json") -> tuple[str, list[str], float]:
     kept = json.load(open(prev_json))["kept"]
     tab = pd.read_csv("reports/ladder_dev.csv")
     feats: list[str] = []
+    C = 1.0
     for lv in kept[1:]:
-        cfg = tab[(tab.level == lv) & tab.config.str.endswith("(chosen)")].config.iloc[0].replace(" (chosen)", "")
-        feats += DAILY_LEVELS[lv][cfg]
-    return kept[-1], sorted(set(feats))
+        row = tab[(tab.level == lv) & tab.config.str.endswith("(chosen)")].iloc[0]
+        feats += DAILY_LEVELS[lv][row.config.replace(" (chosen)", "")]
+        C = float(row.C)
+    return kept[-1], sorted(set(feats)), C
 
 
 def run(split: str = "dev", tag: str = "ladder_dev_lppls"):
     df = assemble_sparse(split)
-    prev_name, prev_feats = prev_features()
+    prev_name, prev_feats, prev_C = prev_features()
     tdays = price_series("sh000001").index
     tdays = tdays[(tdays >= df.date.min()) & (tdays <= df.date.max())]
     print(f"{split} sparse: n={len(df)} pos={int(df.y.sum())} symbols={df.symbol.nunique()} prev={prev_name}", flush=True)
     if prev_feats:
-        prev_oof = cpcv_oof(df, tdays, fit_logit(prev_feats, 1.0))
+        prev_oof = cpcv_oof(df, tdays, fit_logit(prev_feats, prev_C))
     else:
         from .baselines import r0_predict
 
@@ -81,7 +84,7 @@ def run(split: str = "dev", tag: str = "ladder_dev_lppls"):
     from .baselines import r0_predict
 
     p_ref = cpcv_oof(df, tdays, lambda tr, te: r0_predict(tr.y.to_numpy(), len(te))).p.to_numpy()
-    rows = [dict(level=prev_name, config="prev (refit on sparse grid)", C=np.nan, kept=True, vs="-",
+    rows = [dict(level=prev_name, config="prev (refit on sparse grid)", C=prev_C, kept=True, vs="-",
                  **score_table(prev_oof.y, prev_oof.p, p_ref))]
     kept = [(prev_name, prev_feats, prev_oof)]
     n_configs = 0
