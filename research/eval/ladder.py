@@ -15,7 +15,7 @@ import pandas as pd
 from ..features.run_daily import OUT as FEAT
 from .baselines import R1_FEATURES, cpcv_oof, logit_model, paired_delta_brier, r0_predict
 from .dataset import LABELS, SPLITS, _snapshot, price_series
-from .metrics import score_table
+from .metrics import event_metrics, score_table
 
 OOF_DIR = Path("data/oof")
 INDEXES = ("sh000001", "sh000016", "sh000300", "sh000905", "sh000688", "sz399001", "sz399006")
@@ -107,7 +107,7 @@ def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev"):
         keep = hi < 0
         oof.to_parquet(OOF_DIR / f"{tag}_{name}_{cfg}_C{C}.parquet")
         rows.append(dict(level=name, config=f"{cfg} (chosen)", C=C, kept=keep, vs=prev_name,
-                         dbrier=d, ci_lo=lo, ci_hi=hi, **score_table(oof.y, oof.p, p_ref)))
+                         dbrier=d, ci_lo=lo, ci_hi=hi, **score_table(oof.y, oof.p, p_ref), **event_metrics(oof)))
         print(f"{name}: chosen {cfg} C={C} dBrier={d:.6f} 90%CI=[{lo:.6f},{hi:.6f}] keep={keep}", flush=True)
         if keep:
             kept.append((name, sorted(set(prev_feats) | set(feats)), oof))
