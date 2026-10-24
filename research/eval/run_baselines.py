@@ -55,7 +55,7 @@ def main():
         f"样本 {len(df)}，正标签 {int(df.y.sum())}，标的 {df.symbol.nunique()}，"
         f"as-of {df.date.min().date()} 至 {df.date.max().date()}；CPCV N=6,k=2，purge/embargo 80 日。\n\n"
         + tab.round(5).to_markdown()
-        + f"\n\nR1 同级选择（开发段 Brier 最低）：**{chosen}**；ΔBrier 95% 区间上界 < 0 → "
+        + f"\n\nR1 同级选择（开发段 Brier 最低）：**{chosen}**；ΔBrier 90% 区间上界 < 0 → "
         + ("**保留 R1**" if keep else "**R1 不优于 R0，按规则淘汰**") + "\n")
     json.dump(dict(chosen_R1=chosen, keep_R1=keep, n=len(df), pos=int(df.y.sum())),
               open(ROOT / "reports" / "ladder_dev_baselines.json", "w"))

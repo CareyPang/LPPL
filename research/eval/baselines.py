@@ -31,8 +31,8 @@ def cpcv_oof(df: pd.DataFrame, trading_days: pd.DatetimeIndex, fit_predict, gap:
     return pd.concat(out, ignore_index=True)
 
 
-def paired_delta_brier(oof_a: pd.DataFrame, oof_b: pd.DataFrame, block_days: int = 20, B: int = 1000, seed: int = 0):
-    """ΔBrier = Brier(a) − Brier(b)，按日期块（block_days 个交易日）bootstrap；返回 (delta, lo95, hi95)。"""
+def paired_delta_brier(oof_a: pd.DataFrame, oof_b: pd.DataFrame, block_days: int = 80, B: int = 1000, seed: int = 0, level: float = 0.9):
+    """ΔBrier = Brier(a) − Brier(b)，按日期块（block_days 个交易日）bootstrap；返回 (delta, lo, hi)，默认 90% 区间、块长 80 日（预登记 §6）。"""
     m = oof_a.merge(oof_b, on=["date", "symbol", "path"], suffixes=("_a", "_b"))
     d = (m.p_a - m.y_a) ** 2 - (m.p_b - m.y_b) ** 2
     days = np.sort(m.date.unique())
@@ -43,7 +43,8 @@ def paired_delta_brier(oof_a: pd.DataFrame, oof_b: pd.DataFrame, block_days: int
     for _ in range(B):
         pick = rng.integers(0, len(g), len(g))
         vals.append(g["sum"].to_numpy()[pick].sum() / g["size"].to_numpy()[pick].sum())
-    return float(d.mean()), float(np.quantile(vals, 0.025)), float(np.quantile(vals, 0.975))
+    a = (1 - level) / 2
+    return float(d.mean()), float(np.quantile(vals, a)), float(np.quantile(vals, 1 - a))
 
 
 def evaluate(oof: pd.DataFrame, oof_ref: pd.DataFrame) -> dict:
