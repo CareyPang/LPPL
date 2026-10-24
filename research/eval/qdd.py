@@ -63,7 +63,7 @@ def block_ci(d: pd.Series, dates: pd.Series, block_days: int = 80, B: int = 1000
 
 def run(split: str = "dev", tag: str = "qdd_dev") -> pd.DataFrame:
     prev, feats, _ = prev_features("reports/ladder_dev.json")
-    df = assemble_dd(split).rename(columns={"dd": "y"})
+    df = assemble_dd(split).drop(columns=["y"]).rename(columns={"dd": "y"})
     df = df.dropna(subset=feats).reset_index(drop=True)
     cal = price_series("sh000001").index
     base = cpcv_oof(df, cal, fit_unconditional)
