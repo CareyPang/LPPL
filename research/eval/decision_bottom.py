@@ -7,6 +7,8 @@
 python -m research.eval.decision_bottom"""
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 import pandas as pd
 
@@ -157,4 +159,4 @@ def run(tag: str = "dbot_dev"):
 
 
 if __name__ == "__main__":
-    run()
+    run(sys.argv[1] if len(sys.argv) > 1 else "dbot_dev")
