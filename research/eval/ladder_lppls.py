@@ -39,6 +39,9 @@ LPPLS_LEVELS: dict[str, dict[str, list[str]]] = {
         "k_grid_strict": ["s_g_D1.0_w6_13_m01_09_e014"],
         "l_jiang": ["s_g_jiang"],
         "m_lagrange": ["lag_box", "lag_ahead"],
+        "n_combo_mean": ["s_combo_mean"],
+        "o_combo_max": ["s_combo_max"],
+        "p_combo_n2": ["s_combo_n2"],
     },
     "R5proxy": {"sse_ratio": ["s_ratio_lppls_pow"]},
 }

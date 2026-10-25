@@ -142,6 +142,11 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
     for sc_, (lo, hi) in SCALES.items():
         msk = d.n.between(lo, hi)
         out[f"s_box__{sc_}"] = r.box[msk].groupby(d.date[msk]).mean() if msk.any() else np.nan
+    ms_cols = [f"s_box__{k}" for k in SCALES]
+    ms = out[ms_cols].fillna(0.0)
+    out["s_combo_mean"] = ms.mean(axis=1)
+    out["s_combo_max"] = ms.max(axis=1)
+    out["s_combo_n2"] = ((ms >= 0.1).sum(axis=1) >= 2).astype(float)
     pick = lagrange_pick(d)
     lagf = d.loc[pick.to_numpy()].set_index(pick.index)
     lagr = r.loc[pick.to_numpy()].set_index(pick.index)

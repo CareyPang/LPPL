@@ -47,6 +47,40 @@ def top_dates(sym: str) -> pd.DatetimeIndex:
     return pd.DatetimeIndex(out)
 
 
+def regime_changes(sym: str) -> dict[str, np.ndarray]:
+    """§17.6-1 FBE 式体制改变日期（交易日序号）：
+    top = 合格顶（现有标签）；updays = 60 日上涨天数占比由 >0.5 跌到 <0.5 的首日；
+    sg = Savitzky–Golay（三阶、窗 21）对数价一阶导由正转负的首日。"""
+    from scipy.signal import savgol_filter
+
+    logp = price_series(sym)
+    cal = logp.index
+    lp = logp.to_numpy()
+    out = {"top": np.sort(cal.get_indexer(top_dates(sym)))}
+    up = pd.Series((np.diff(lp, prepend=lp[0]) > 0).astype(float)).rolling(60).mean().to_numpy()
+    cross = np.where((up[1:] < 0.5) & (up[:-1] >= 0.5))[0] + 1
+    out["updays"] = cross
+    der = savgol_filter(lp, 21, 3, deriv=1)
+    out["sg"] = np.where((der[1:] < 0) & (der[:-1] >= 0))[0] + 1
+    return out
+
+
+def stability(windows: pd.DataFrame, k: int = 3) -> pd.Series:
+    """§17.6-2 t_c 分布稳定性：连续 k 个 as-of 日期的 20/80 分位窗（折算到交易日序号）两两重叠度的最小值。
+    windows：index=date，列 lo/hi 为交易日序号。"""
+    lo, hi = windows.lo.to_numpy(float), windows.hi.to_numpy(float)
+    vals = np.full(len(windows), np.nan)
+    for i in range(k - 1, len(windows)):
+        ov = []
+        for a in range(i - k + 1, i + 1):
+            for b in range(a + 1, i + 1):
+                inter = max(0.0, min(hi[a], hi[b]) - max(lo[a], lo[b]))
+                union = max(hi[a], hi[b]) - min(lo[a], lo[b])
+                ov.append(inter / union if union > 0 else 0.0)
+        vals[i] = min(ov) if ov else np.nan
+    return pd.Series(vals, index=windows.index)
+
+
 def load(sym: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     sc = pd.read_parquet(SCAN / f"{sym}.parquet")
     sc = sc[sc.date <= DEV_END]
@@ -107,16 +141,22 @@ def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame
     d = _derived(sc)
     r = pd.concat([rules(d), grid_rules(d)], axis=1)
     win_rows = []
+    rc = regime_changes(sym)
+    rng_w = np.random.default_rng(seed + 1)
     for rule in ("box", "g_D0.8_w4_25_m0_1_e014", "g_D1.0_w6_13_m01_09_e014"):
+        stab_rows = {}
         for date, idx in d.groupby("date").indices.items():
             f = d.iloc[idx][r[rule].to_numpy()[idx]]
             if len(f) < 3:
                 continue
             tp = cal.get_indexer([date])[0]
+            q20a, q80a = np.quantile(f.ahead, [0.2, 0.8])
+            stab_rows[date] = (tp + q20a, tp + q80a)
             nxt = tpos[tpos > tp]
             if len(nxt) == 0:
                 continue
             gap = nxt[0] - tp
+            gaps = {k: (v[v > tp][0] - tp if (v > tp).any() else np.nan) for k, v in rc.items()}
             per = {sc_: f[f.n.between(lo, hi)] for sc_, (lo, hi) in SCALES.items()}
             cands = [(f"scale_{k}", v) for k, v in per.items() if len(v) >= 3]
             scn = scenarios(f)
@@ -128,8 +168,20 @@ def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame
                 else:
                     q20, q80 = np.quantile(ff.ahead, [0.2, 0.8])
                 width = max(1.0, q80 - q20)
-                win_rows.append(dict(symbol=sym, rule=rule, date=date, kind=name, q20=q20, q80=q80, width=width,
-                                     gap=gap, cover=bool(q20 <= gap <= q80), cover_naive=bool(1 <= gap <= 1 + width)))
+                rnd_lo = rng_w.integers(1, max(2, int(max(HORIZONS) - width)))
+                row = dict(symbol=sym, rule=rule, date=date, kind=name, q20=q20, q80=q80, width=width,
+                           gap=gap, cover=bool(q20 <= gap <= q80), cover_naive=bool(1 <= gap <= 1 + width),
+                           cover_random=bool(rnd_lo <= gap <= rnd_lo + width))
+                for k, g in gaps.items():
+                    row[f"cover_{k}"] = bool(np.isfinite(g) and q20 <= g <= q80)
+                    row[f"random_{k}"] = bool(np.isfinite(g) and rnd_lo <= g <= rnd_lo + width)
+                win_rows.append(row)
+        if stab_rows:
+            sw = pd.DataFrame(stab_rows, index=["lo", "hi"]).T
+            st = stability(sw, 3)
+            for row in win_rows:
+                if row["rule"] == rule and row["date"] in st.index:
+                    row["stab3"] = st[row["date"]]
     return tab, pd.DataFrame(win_rows)
 
 
@@ -160,6 +212,15 @@ def main(symbols: list[str]) -> None:
                                               n_near=("near", "sum")).reset_index())
     near = win[win.near].groupby(["rule", "kind"]).agg(cover_near=("cover", "mean"), cover_naive_near=("cover_naive", "mean")).reset_index()
     wagg = wagg.merge(near, on=["rule", "kind"], how="left")
+    fbe_cols = [c for c in win.columns if c.startswith("cover_") or c.startswith("random_")]
+    fbe = win.groupby(["rule", "kind"])[fbe_cols].mean().reset_index()
+    if "stab3" in win:
+        win["stab_hi"] = win.stab3 >= 0.5
+        fbe_stab = (win.dropna(subset=["stab3"]).groupby(["rule", "kind", "stab_hi"])
+                    .agg(n=("cover", "size"), cover=("cover", "mean"), cover_updays=("cover_updays", "mean"),
+                         cover_sg=("cover_sg", "mean")).reset_index())
+    else:
+        fbe_stab = pd.DataFrame()
     with open(REPORT / "summary.md", "w") as f:
         f.write(f"# 原版标准评分（开发段 2000–2018，{len(symbols)} 指数；扫描 {SCAN.name}）\n\n")
         f.write(f"组合总数 {len(agg)}；稳健区域（A1、A2 的中位 p ≤ 0.05 且 ≥4 指数）{int(agg.robust.sum())} 个。\n\n")
@@ -170,7 +231,10 @@ def main(symbols: list[str]) -> None:
         agg["scale"] = agg.indicator.str.split("__").str[-1]
         f.write(agg.groupby(["scale", "H"]).agg(A1=("A1", "median"), A1_null=("A1_null", "median"), A2=("A2", "median"),
                                                 A2_null=("A2_null", "median"), robust=("robust", "sum")).round(3).to_markdown() + "\n\n")
-        f.write("## 分位窗覆盖（Jiang 2010 口径）\n\n" + wagg.round(3).to_markdown(index=False) + "\n")
+        f.write("## 分位窗覆盖（Jiang 2010 口径）\n\n" + wagg.round(3).to_markdown(index=False) + "\n\n")
+        f.write("## FBE 式成功判据（§17.6-1）：分位窗覆盖三种体制改变 vs 同宽随机窗\n\n" + fbe.round(3).to_markdown(index=False) + "\n\n")
+        if len(fbe_stab):
+            f.write("## t_c 分布稳定性分层（§17.6-2，连续 3 期分位窗最小重叠 ≥0.5）\n\n" + fbe_stab.round(3).to_markdown(index=False) + "\n")
     print(open(REPORT / "summary.md").read())
 
 
