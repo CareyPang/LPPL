@@ -187,7 +187,8 @@ def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame
                                  A2=a2, A2_null=np.nanmean(nul[:, 1]), A2_p=float(np.nanmean(nul[:, 1] >= a2))))
     # §17.6-5 价值分数分层：泡沫信号在"高估"（PE PIT 分位 ≥0.8）与非高估时的 A1 分别报告（两维度分开，不合并）
     try:
-        from ..data.valuation import load as load_pe, value_score
+        from ..data.valuation import load as load_pe
+        from ..data.valuation import value_score
 
         vp = value_score(load_pe(sym), cal).reindex(ms.index).to_numpy()
         for c in [c for c in conf_cols if c.startswith("box__")]:
