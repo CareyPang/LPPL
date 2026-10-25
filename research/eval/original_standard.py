@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -25,15 +26,18 @@ from ..labels.run_top import INDEXES
 from ..labels.top import event_segments
 from ..lppls.scenarios import scenarios
 
+# OS_TARGET=top（默认，顶部标签）或 bottom（底部标签；用于反泡沫扫描 lppls_v2_neg / lppls_v2_ab 的评价，§17.4-7）
+TARGET = os.environ.get("OS_TARGET", "top")
+LABEL_DIR = Path("data/labels/top_v1" if TARGET == "top" else "data/labels/bottom_v1")
 DEV_END = pd.Timestamp("2018-12-31")
 THRESHOLDS = (0.05, 0.10, 0.20)
 HORIZONS = (60, 120)
 N_PERM, MIN_SHIFT = 1000, 250
-REPORT = Path("reports/original_standard_dev")
+REPORT = Path(f"reports/original_standard_dev_{SCAN.name.removeprefix('lppls_')}" + ("" if TARGET == "top" else "_bottom"))
 
 
 def top_dates(sym: str) -> pd.DatetimeIndex:
-    lab = pd.read_parquet(f"data/labels/top_v1/{sym}.parquet")["main__y"]
+    lab = pd.read_parquet(LABEL_DIR / f"{sym}.parquet")["main__y"]
     cal = price_series(sym).index
     out = []
     for _, end in event_segments(lab):

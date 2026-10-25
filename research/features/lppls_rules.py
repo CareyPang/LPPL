@@ -149,4 +149,4 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
     out["lag_ahead"] = lagf.ahead.reindex(out.index)
     for c in ("box", "p_strict", "lit1", "lit2"):
         out[f"lag_{c}"] = lagr[c].astype(float).reindex(out.index)
-    return out
+    return out.astype(float)

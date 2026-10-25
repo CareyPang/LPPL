@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>临界点 · 顶部主卡片修订样稿（证据等级 / 三尺度置信度 / 情景簇）</title>
+<style>
+  :root{--bg:#0e1116;--panel:#161b22;--line:#2a313b;--fg:#e6edf3;--mute:#8b949e;--red:#f85149;--amb:#d29922;--grn:#3fb950;--blu:#58a6ff;--none:#484f58}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:980px;margin:24px auto;padding:0 16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+  h1{font-size:18px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px;color:var(--fg)}
+  .sub{color:var(--mute);font-size:12px}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .kv{flex:1;min-width:200px}
+  .big{font-size:30px;font-weight:700;line-height:1.1}
+  .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid;margin-left:6px;vertical-align:middle}
+  .b-dev{color:var(--amb);border-color:var(--amb)}.b-cal{color:var(--blu);border-color:var(--blu)}.b-test{color:var(--grn);border-color:var(--grn)}.b-none{color:var(--none);border-color:var(--none)}
+  .bar{height:10px;background:#21262d;border-radius:5px;overflow:hidden;margin:4px 0 8px}
+  .bar>i{display:block;height:100%;background:var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mute);font-weight:500}
+  .scen{display:flex;gap:10px;flex-wrap:wrap}.scen>div{flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:10px}
+  .scen b{font-size:16px}
+  .muted{color:var(--mute)}
+  .warn{border-left:3px solid var(--amb);padding-left:10px;color:var(--mute);font-size:12px}
+  .legend{font-size:12px;color:var(--mute);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>上证指数 000001 · 顶部风险 <span class="sub">as-of 2015-06-12（收盘）· 数据冻结 v20261024 · 样稿数据为开发段回放，非实时</span></h1>
+    <div class="row" style="margin-top:10px">
+      <div class="kv">
+        <div class="sub">未来 20 个交易日内见顶概率（校准后）<span class="badge b-dev">开发段</span></div>
+        <div class="big" style="color:var(--red)">52%</div>
+        <div class="sub">历史同等级命中率 50%，段外误报 4%；证据依赖 2015 型杠杆牛，剔除 2015 后无增量</div>
+      </div>
+      <div class="kv">
+        <div class="sub">LPPLS 多尺度置信度 <span class="badge b-dev">开发段·评估中</span></div>
+        <div class="sub">短（30–120 日）<span style="float:right">41%</span></div><div class="bar"><i style="width:41%"></i></div>
+        <div class="sub">中（100–240 日）<span style="float:right">67%</span></div><div class="bar"><i style="width:67%"></i></div>
+        <div class="sub">长（200–720 日）<span style="float:right">24%</span></div><div class="bar"><i style="width:24%"></i></div>
+        <div class="legend">置信度 = 该尺度窗口中通过形态过滤的比例；三条不合并。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>临界时间情景（合格拟合按窗口长度 × t_c 聚类，簇间不平均）<span class="badge b-dev">开发段·评估中</span></h2>
+    <div class="scen">
+      <div><div class="sub">情景 A · 占比 40% · 窗口 185–260 日</div><b>约 42 ± 5 个交易日后</b><div class="muted">20/80 分位：39–47 日（2015-08-07 – 08-19）</div></div>
+      <div><div class="sub">情景 B · 占比 30% · 窗口 125–180 日</div><b>约 27 ± 6 个交易日后</b><div class="muted">20/80 分位：21–34 日（2015-07-14 – 07-31）</div></div>
+      <div><div class="sub">情景 C · 占比 30% · 窗口 265–320 日</div><b>约 12 ± 6 个交易日后</b><div class="muted">20/80 分位：8–16 日（2015-06-24 – 07-06）</div></div>
+    </div>
+    <p class="warn" style="margin:10px 0 0">t_c 是失稳的临界时间，不是峰值日；情景只给区间，不给单日。多情景并存表示不同时间尺度的泡沫叠加，不要取平均。</p>
+  </div>
+
+  <div class="card">
+    <h2>结论与操作</h2>
+    <table>
+      <tr><th style="width:28%">项目</th><th>输出</th><th style="width:22%">证据等级</th></tr>
+      <tr><td>顶部区间</td><td>概率首次 ≥ 阈值起 20 个交易日：2015-06-12 – 2015-07-10</td><td><span class="badge b-dev">开发段</span></td></tr>
+      <tr><td>分批减仓</td><td>按波动率目标节奏执行；概率仅作小幅调整（±10% 仓位）</td><td><span class="badge b-dev">开发段</span></td></tr>
+      <tr><td>失效条件</td><td>概率连续 10 日 &lt; 阈值，或三尺度置信度均 &lt; 5%</td><td class="muted">规则，非预测</td></tr>
+      <tr><td>预计回落区（价格）</td><td class="muted">无有效预测；仅供参考的历史无条件分位：−18% ~ −35%</td><td><span class="badge b-none">无证据</span></td></tr>
+      <tr><td>回落时间</td><td class="muted">无有效预测</td><td><span class="badge b-none">无证据</span></td></tr>
+      <tr><td>二波参考</td><td class="muted">无有效预测</td><td><span class="badge b-none">无证据</span></td></tr>
+    </table>
+    <div class="legend">证据等级：开发段 = 2000–2018 CPCV 通过；校准段 = 2019–2021 固定校准后仍成立；最终测试 = 2022–2025 一次性测试通过；无证据 = 预登记检验未通过，只做描述不做预测。</div>
+  </div>
+
+  <div class="card">
+    <h2>历史验证（样本外汇总，不是单案例）</h2>
+    <table>
+      <tr><th>样本段</th><th>事件数</th><th>命中率</th><th>误报率</th><th>Brier 相对基率</th><th>状态</th></tr>
+      <tr><td>开发段 2000–2018</td><td>335（指数）</td><td>50%</td><td>4%</td><td>−x.xx%</td><td><span class="badge b-dev">已评估</span></td></tr>
+      <tr><td>校准段 2019–2021</td><td>16</td><td colspan="3" class="muted">未运行（等待授权）</td><td><span class="badge b-cal">待运行</span></td></tr>
+      <tr><td>最终测试 2022–2025.08</td><td>—</td><td colspan="3" class="muted">锁定后只运行一次</td><td><span class="badge b-test">未开启</span></td></tr>
+    </table>
+    <div class="legend">"预测 vs 真实"的单案例回放保留在图表工作台中，但不作为准确率依据。</div>
+  </div>
+</div>
+</body>
+</html>
