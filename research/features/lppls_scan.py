@@ -131,7 +131,9 @@ def asof_dates(sym: str, group: str, cal: pd.DatetimeIndex, splits: tuple[str, .
     step = IDX_STEP if group == "index" else STK_STEP
     grid = set(cal[::step])
     if group == "index":
-        lo, hi = pd.Timestamp("2000-01-01"), pd.Timestamp("2025-08-31")
+        sel = [(pd.Timestamp(a), pd.Timestamp(b)) for name, (a, b, *_) in SPLITS.items() if name in splits]
+        lo = max(pd.Timestamp("2000-01-01"), min(a for a, _ in sel))
+        hi = min(pd.Timestamp("2025-08-31"), max(b for _, b in sel))
         ok = lambda d: lo <= d <= hi  # noqa: E731
     else:
         spans = []
