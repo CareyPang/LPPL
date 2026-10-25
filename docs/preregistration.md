@@ -365,3 +365,8 @@ Harding–Pagan 2002（JME）、Pagan–Sossounov 2003、Lunde–Timmermann 2004
 - 负泡沫/反泡沫指数扫描用减配模式（`LPPLS_WINDOWS=lite`：窗口步长 10、随机起点 3），评价用底部标签 + 同一 A1/A2/FBE 口径；队列脚本 `scripts/post_scan_pipeline_v2b.sh`。
 - FBE bootstrap 拟合：报警日（box 置信度 ≥10%）的 Lagrange 选中窗口做残差区块 bootstrap B=30，每指数最多 100 个日期等距抽样，分位窗 kind=`lagrange_boot`。
 - 价值分数：乐咕乐股月频 PE（上证/深证 1999/1997 起；上证50/沪深300/中证500/创业板 2005–2009 起），10 年滚动 PIT 分位 + 1 个月发布滞后；限制：序列由数据商事后整理，非严格 PIT。只作"高估/非高估"分层报告 A1/A2，不与泡沫信号合并成单一分数。
+
+### 17.8 FCO 月报方法附录对照后的补项（2026-10-25）
+- 情景概率 = 最大簇拟合数 / 全部合格拟合数（scenarios 表 share 列即是；产品字段 `scenario_prob`）。
+- 泡沫大小与持续时间：以 Lagrange 选中窗口为准，size = exp(ln P_t₂ − ln P_t₁) − 1，duration = dt；写入 scores（`lag_size`、`lag_dt`）。
+- 横截面排名口径（R8 LPPLS 版）：geometric_mean(|size|, confidence)，正/负泡沫分表；只在个股负泡沫扫描后实施。

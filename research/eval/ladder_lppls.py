@@ -54,6 +54,8 @@ def load_scores(sym: str) -> pd.DataFrame:
     lp = logp.to_numpy()
     end = pos.reindex(sc.date).to_numpy()
     sc["y_std"] = [lp[e + 1 - n : e + 1].std() for e, n in zip(end, sc.n, strict=True)]
+    sc["y_first"] = lp[end + 1 - sc.n.to_numpy()]
+    sc["y_last"] = lp[end]
     s = scores(sc)
     s["symbol"] = sym
     return s

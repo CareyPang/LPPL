@@ -244,3 +244,7 @@
 - Woodard–Sornette–Fedorovsky 2010/2011, *The Financial Bubble Experiment Vol. III*, arXiv 1011.2882 [全文]：H1 = 泡沫可实时诊断；H2 = 泡沫终结可用概率窗口包住且优于随机。预测发布 t_c 的 20/80 与 5/95 分位（原拟合 + bootstrap 拟合集合）、最后观测日、拟合数；事后用 t₂ 后最大回撤、30/60/90 日上涨天数占比、Savitzky–Golay 局部增速判断体制改变；承诺公开全部成败案例。
 - sornette.finance 公开页面（2026-10-25 抓取）：多尺度置信度（2–4 周至数年）、Combo 指标、每日正/负泡沫 Top-12、情景与 t_c 概率分布、"电影"功能（t_c 分布随新数据演化；案例以"分布稳定"作确认）、月报（约 450 系统性资产 + 850 个股）、Dragon King Protocol。"5 年实时 89% 成功率"为 FBE 自报口径，无对照组。内部实现不可知，不引用。
 - Sornette–Cauwels 2015 §3.6 [全文]：正/负泡沫与高估/低估是两个维度，须分开表述。
+
+### 16.15 FCO 月报方法附录与 sornette.finance 里程碑（2026-10-25）
+- *The FCO Cockpit – Global Bubble Status Report, December 2019, Appendix: Methodology*（ETH Zurich × SIMAG，10 页，Internet Archive 存档，[全文]）：泡沫起点用 Lagrange 正则（Demos–Sornette 2019）；成熟度用 DS LPPLS 置信度（引 Johansen–Sornette 2010 综述）；可靠性用 k-means（Gerlach 等 2019），报告最大簇的 t_c 均值/标准差与"情景概率"（最大簇拟合数/总拟合数）；表格分正/负泡沫，列泡沫大小、持续时间、置信度，**按 |泡沫大小| 与置信度的几何平均排名**；个股按"泡沫信号 × 基本面"四象限。附录未给出过滤阈值、Trust、Bubble Score 定义。
+- sornette.finance/milestones（2026-10-25 抓取）：2007 成立、2022 ETH 关停、2024 私有化重启；进行中 Dragon-King Protection Protocol（对冲/不对冲切换，对应 Sornette 2009 Dragon-King 概念，无方法论文）、规则化策略；下一步 Deep LPPLS（对应 Nielsen–Sornette–Raissi 2024，M5）。

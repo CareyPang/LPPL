@@ -152,6 +152,8 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
     lagf = d.loc[pick.to_numpy()].set_index(pick.index)
     lagr = r.loc[pick.to_numpy()].set_index(pick.index)
     out["lag_dt"] = lagf.n.reindex(out.index)
+    if "y_first" in lagf and "y_last" in lagf:
+        out["lag_size"] = (np.exp(lagf.y_last - lagf.y_first) - 1).reindex(out.index)
     out["lag_ahead"] = lagf.ahead.reindex(out.index)
     for c in ("box", "p_strict", "lit1", "lit2"):
         out[f"lag_{c}"] = lagr[c].astype(float).reindex(out.index)
