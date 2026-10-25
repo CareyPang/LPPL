@@ -22,12 +22,13 @@
     "drawdown_time": {"value": null, "evidence": "none"},
     "second_wave": {"value": null, "evidence": "none"}
   },
+  "regime_band": {"month": "2015-05", "state": "RALLY", "channel": null, "rule": "FCO 公开定义：月收益/月内最大回撤相对自身前 60 个月的分位（§16.16）", "evidence": "descriptive"},
   "bottom": {
     "state_p": {"value": 0.31, "evidence": "dev", "notes": ["B1 回撤深度在留出年/分层下稳健"]},
     "thrust_p": {"value": 0.12, "evidence": "dev", "notes": ["宽度确认；未做完整留出年"]},
     "entry_rule": {"value": null, "evidence": "none", "fallback": "波动率目标加仓节奏"}
   },
-  "evidence_levels": {"dev": "开发段 2000–2018 CPCV 通过", "cal": "校准段 2019–2021 固定校准后成立", "test": "最终测试 2022–2025.08 一次性通过", "none": "预登记检验未通过，仅描述", "rule": "执行规则，非预测", "dev_pending": "开发段评估进行中"}
+  "evidence_levels": {"dev": "开发段 2000–2018 CPCV 通过", "cal": "校准段 2019–2021 固定校准后成立", "test": "最终测试 2022–2025.08 一次性通过", "none": "预登记检验未通过，仅描述", "rule": "执行规则，非预测", "dev_pending": "开发段评估进行中", "descriptive": "描述已完成月份的状态，非预测"}
 }
 ```
 
@@ -35,3 +36,5 @@
 1. `asof` 之后的数据不得参与任何字段；前端显示 as-of 与数据冻结版本。
 2. 校准段/最终测试段字段在授权运行前一律为 `null` + `evidence: "pending"`。
 3. 历史验证面板只展示按样本段汇总的命中率/误报率/Brier；单案例"预测 vs 真实"只能作为图表回放。
+
+4. `regime_band` 只描述上一个已完成月，前端必须标注“描述性、非预测”，不得与顶部/底部概率合并成一个分数（研究层 `research/features/regime_bands.py`）。
