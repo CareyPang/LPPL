@@ -42,6 +42,12 @@ def rules(d: pd.DataFrame) -> pd.DataFrame:
                   & (d.n_osc >= tr["n_osc"]) & (d.D >= tr["damping"]) & (d.r2 >= tr["r2"]))
     r["lit1"] = ((d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & (d.ahead <= 0.13 * d.dt)
                  & (d.osc >= 2.5) & (d.D >= 1.2) & (d.rel_err <= 0.035))
+    # §17.2 阻尼阈值变体（1.2 为 E7 表 3 条件 1；0.8/1.0 为文献另两档）与"纯形态框"（无阻尼/误差条件）
+    r["lit1_d10"] = ((d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & (d.ahead <= 0.13 * d.dt)
+                     & (d.osc >= 2.5) & (d.D >= 1.0) & (d.rel_err <= 0.035))
+    r["lit1_d08"] = ((d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & (d.ahead <= 0.13 * d.dt)
+                     & (d.osc >= 2.5) & (d.D >= 0.8) & (d.rel_err <= 0.035))
+    r["box"] = (d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & d.ahead.between(0, 90)
     r["lit2"] = ((d.B < 0) & d.m.between(0.01, 1.2) & d.w.between(2, 25) & (d.ahead <= 0.1 * d.dt)
                  & (d.osc >= 2.5) & (d.D >= 0.8) & (d.rel_err <= 0.14))
     return r

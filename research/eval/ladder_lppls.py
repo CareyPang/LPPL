@@ -30,6 +30,9 @@ LPPLS_LEVELS: dict[str, dict[str, list[str]]] = {
         "d_lit1": ["s_lit1"],
         "d_lit2": ["s_lit2"],
         "f_lit_ms": ["s_lit1_s", "s_lit1_m", "s_lit1_l"],
+        "g_lit1_d10": ["s_lit1_d10"],
+        "g_lit1_d08": ["s_lit1_d08"],
+        "h_box": ["s_box"],
     },
     "R5proxy": {"sse_ratio": ["s_ratio_lppls_pow"]},
 }

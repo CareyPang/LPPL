@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+import os
 import sys
 from multiprocessing import Pool
 from pathlib import Path
@@ -22,7 +23,15 @@ from ..labels.run_top import INDEXES
 from ..lppls.core import K_POWER, lin_fit
 from ..optim.optimizers import tcgrid_lm
 
-OUT = Path("data/features/lppls_v1")
+# 搜索域版本（预登记 v1.7 §17.1）：v1 = 宽域（v1.1 登记：m∈[0.01,2]、ω∈[1,50]、t_c≤t₂+0.2dt）；
+# v2 = 原型 engine.js / Filimonov–Sornette 2013 域（m∈[0.01,0.99]、ω∈[2,25]、t_c≤t₂+min(0.2dt,115)）。
+# 由环境变量 LPPLS_BOX 选择，输出目录随版本分开，v1 结果保留为失败记录不覆盖。
+BOX = os.environ.get("LPPLS_BOX", "v1")
+BOXES = {
+    "v1": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc_cap=None),
+    "v2": dict(m=(0.01, 0.99), w=(2.0, 25.0), tc_cap=115.0),
+}
+OUT = Path(f"data/features/lppls_{BOX}")
 IDX_STEP, STK_STEP = 5, 20
 IDX_WINDOWS = tuple(range(125, 751, 5))
 STK_WINDOWS = tuple(range(125, 751, 25))
@@ -38,8 +47,10 @@ def fit_one(y: np.ndarray) -> tuple:
     n = len(y)
     t = np.arange(n, dtype=float)
     dt = n - 1
-    lo = np.array([dt + 0.5, 0.01, 1.0])
-    hi = np.array([dt + 0.2 * dt, 2.0, 50.0])
+    bx = BOXES[BOX]
+    ahead_hi = 0.2 * dt if bx["tc_cap"] is None else min(0.2 * dt, bx["tc_cap"])
+    lo = np.array([dt + 0.5, bx["m"][0], bx["w"][0]])
+    hi = np.array([dt + ahead_hi, bx["m"][1], bx["w"][1]])
     r = tcgrid_lm(t, y, lo, hi, seed=0)
     s, beta = lin_fit(t, y, *r.theta)
     sst = float(((y - y.mean()) ** 2).sum())
