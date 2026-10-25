@@ -53,6 +53,21 @@ def main(box: str = "v2") -> None:
     mt = Path(f"reports/{f'ladder_dev_full_{box}'}_mt.md")
     if mt.exists():
         out.append("## 5. 多重比较（PBO/SPA）\n\n" + mt.read_text().strip()[:3000] + "\n")
+    # §17.9/§17.10/§17.6 补充段：按年拆分、FCO 四套过滤集、XS 探索尺度、负泡沫/反泡沫底部评价（文件存在才写）
+    extras = [
+        ("按年 / 留出年拆分与估值对照", osd / "by_year.md"),
+        ("FCO 四套公开过滤集（§17.10）", osd / "fco_sets.md"),
+        ("XS 15–30 日探索尺度（只作参考）", Path(f"reports/original_standard_dev_{box}_xs/summary.md")),
+        ("负泡沫 Yan 2010（−ln P，lite 扫描，底部标签）", Path(f"reports/original_standard_dev_{box}_neg_lite_bottom/summary.md")),
+        ("反泡沫 JS 1999（t_c 在窗口起点前，lite 扫描，底部标签）", Path(f"reports/original_standard_dev_{box}_ab_lite_bottom/summary.md")),
+    ]
+    for title, f in extras:
+        out.append(f"\n## {title}\n")
+        if f.exists():
+            txt = f.read_text()
+            out.append(txt if len(txt) < 6000 else txt[:6000] + f"\n\n…（截断，全文见 {f}）")
+        else:
+            out.append(f"（尚未产出：{f}）")
     out.append("\n说明：全部为开发段结果，不是样本外结论；校准段、最终测试段未运行。v1 结果保留在 reports/ladder_dev_lppls.md 等文件作为失败记录。\n")
     Path(f"reports/lppls_{box}_summary.md").write_text("\n".join(out))
     print("\n".join(out)[:4000])
