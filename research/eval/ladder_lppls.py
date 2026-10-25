@@ -7,6 +7,7 @@ R5 这里只用 LPPLS/纯幂律 SSE 比值的中位数作为代理特征（预�
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +34,11 @@ LPPLS_LEVELS: dict[str, dict[str, list[str]]] = {
         "g_lit1_d10": ["s_lit1_d10"],
         "g_lit1_d08": ["s_lit1_d08"],
         "h_box": ["s_box"],
+        "i_box_ms": ["s_box__S", "s_box__M", "s_box__L"],
+        "j_grid_mid": ["s_g_D0.8_w4_25_m0_1_e014"],
+        "k_grid_strict": ["s_g_D1.0_w6_13_m01_09_e014"],
+        "l_jiang": ["s_g_jiang"],
+        "m_lagrange": ["lag_box", "lag_ahead"],
     },
     "R5proxy": {"sse_ratio": ["s_ratio_lppls_pow"]},
 }
@@ -50,12 +56,18 @@ def load_scores(sym: str) -> pd.DataFrame:
     return s
 
 
+# §17.4-6：标签视窗变体（main=20 日，h60=60 日）与扫描版本写进报告标签，避免覆盖 v1 结果
+LABEL_VARIANT = os.environ.get("LABEL_VARIANT", "main")
+_SUF = ("" if SCAN.name == "lppls_v1" else f"_{SCAN.name.removeprefix('lppls_')}") + ("" if LABEL_VARIANT == "main" else f"_{LABEL_VARIANT}")
+
+
 def assemble_sparse(split: str = "dev") -> pd.DataFrame:
-    daily = assemble(split)
+    daily = assemble(split, LABEL_VARIANT)
     parts = [load_scores(p.stem) for p in SCAN.glob("*.parquet")]
     sc = pd.concat(parts).rename_axis("date").reset_index()
     df = daily.merge(sc, on=["date", "symbol"], how="inner")
-    df[[c for c in df.columns if c.startswith("s_")]] = df[[c for c in df.columns if c.startswith("s_")]].fillna(0.0)
+    sc_cols = [c for c in df.columns if c.startswith("s_") or c.startswith("lag_")]
+    df[sc_cols] = df[sc_cols].fillna(0.0)
     df["top_tc_iqr_rel"] = df.top_tc_iqr_rel.fillna(df.top_tc_iqr_rel.max() if df.top_tc_iqr_rel.notna().any() else 1.0)
     return df.sort_values(["date", "symbol"]).reset_index(drop=True)
 
@@ -82,7 +94,7 @@ FULL_ORDER = ["R1", "R2", "R3", "R4", "R5proxy", "R7"]
 
 def run_full(split: str = "dev", rule: str = "ci"):
     """按预登记顺序 R1→R2→R3→R4→R5→R7 在稀疏时点上从 R0 起完整重算（§12.2 后、§5 顺序；R6 待特征实现后插入 R5 与 R7 之间）。"""
-    tag = "ladder_dev_full" if rule == "ci" else f"ladder_dev_full_{rule}"
+    tag = ("ladder_dev_full" if rule == "ci" else f"ladder_dev_full_{rule}") + _SUF
     df = assemble_sparse(split)
     daily_feats = sorted({c for lv in DAILY_LEVELS.values() for cfg in lv.values() for c in cfg})
     df = df.dropna(subset=daily_feats).reset_index(drop=True)
@@ -137,7 +149,7 @@ def run_full(split: str = "dev", rule: str = "ci"):
 
 
 def run(split: str = "dev", rule: str = "ci"):
-    tag = "ladder_dev_lppls" if rule == "ci" else f"ladder_dev_lppls_{rule}"
+    tag = ("ladder_dev_lppls" if rule == "ci" else f"ladder_dev_lppls_{rule}") + _SUF
     prev_json = "reports/ladder_dev.json" if rule == "ci" else f"reports/ladder_dev_{rule}.json"
     df = assemble_sparse(split)
     prev_name, prev_feats, prev_C = prev_features(prev_json)

@@ -135,6 +135,13 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
         m = scale == sc
         out[f"s_lit1_{sc}"] = r.lit1[m].groupby(d.date[m]).mean()
     out["s_ratio_lppls_pow"] = (d.sse / d.pow_sse).groupby(d.date).median()
+    gr = grid_rules(d)
+    for c in ("g_jiang", "g_jiang_strict", "g_D0.8_w4_25_m0_1_e014", "g_D1.0_w6_13_m01_09_e014"):
+        if c in gr:
+            out[f"s_{c}"] = gr[c].groupby(d.date).mean()
+    for sc_, (lo, hi) in SCALES.items():
+        msk = d.n.between(lo, hi)
+        out[f"s_box__{sc_}"] = r.box[msk].groupby(d.date[msk]).mean() if msk.any() else np.nan
     pick = lagrange_pick(d)
     lagf = d.loc[pick.to_numpy()].set_index(pick.index)
     lagr = r.loc[pick.to_numpy()].set_index(pick.index)
