@@ -85,7 +85,7 @@ def record(sym: str, asof: str) -> dict:
         "bottom": {"state_p": {"value": None, "evidence": "dev_pending"}, "thrust_p": {"value": None, "evidence": "dev_pending"},
                    "entry_rule": {"value": None, "evidence": "none"}},
         "validation": [
-            {"split": "开发段 2000–2018（6 指数）", "events": 74, "hit": 0.50, "false_alarm": 0.70,
+            {"split": "开发段 2000–2018（6 指数）", "events": 74, "hit": 0.50, "false_alarm": 0.70, "brier": "ΔBrier −0.0053 [−0.0116, 0.0000]", "status": "dev",
              "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"},
             {"split": "校准段 2019–2021", "events": None, "hit": None, "status": "pending_cal"},
             {"split": "最终测试 2022–2025.08", "events": None, "hit": None, "status": "pending_test"},

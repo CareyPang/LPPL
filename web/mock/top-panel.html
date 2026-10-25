@@ -189,6 +189,8 @@
    "events": 74,
    "hit": 0.5,
    "false_alarm": 0.7,
+   "brier": "ΔBrier −0.0053 [−0.0116, 0.0000]",
+   "status": "dev",
    "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"
   },
   {
@@ -730,7 +732,7 @@
       D.movie.filter((f,i) => i % 2 === 0 || i === D.movie.length - 1).map(f => `<tr><td>${f.asof}</td><td>${pct(f.confidence.S)}</td><td>${pct(f.confidence.M)}</td><td>${pct(f.confidence.L)}</td><td>${f.tc_windows.L ? f.tc_windows.L[0] + ' – ' + f.tc_windows.L[2] : '—'}</td></tr>`).join('') + `</table>`;
     $('valid').closest('table').parentNode.insertBefore(mv, $('valid').closest('table'));
   }
-  $('valid').innerHTML = D.validation.map(v => `<tr><td>${v.split}</td><td>${v.events ?? '—'}</td>${v.hit != null ? `<td>${pct(v.hit)}</td><td>${pct(v.false_alarm)}</td>` : `<td colspan="2" class="muted">${v.status === 'pending_cal' ? '未运行（等待授权）' : '锁定后只运行一次'}</td>`}<td>${badge(v.status)}</td></tr>`).join('');
+  $('valid').innerHTML = D.validation.map(v => `<tr><td>${v.split}</td><td>${v.events ?? '—'}</td>${v.hit != null ? `<td>${pct(v.hit)}</td><td>${pct(v.false_alarm)}</td><td>${v.brier ?? '—'}</td>` : `<td colspan="3" class="muted">${v.status === 'pending_cal' ? '未运行（等待授权）' : '锁定后只运行一次'}</td>`}<td>${badge(v.status || 'none')}</td></tr>`).join('');
 })();
 </script>
 </body>
