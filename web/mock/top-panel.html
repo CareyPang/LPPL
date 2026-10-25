@@ -28,57 +28,70 @@
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>上证指数 000001 · 顶部风险 <span class="sub">as-of 2015-06-12（收盘）· 数据冻结 v20261024 · 样稿数据为开发段回放，非实时</span></h1>
+    <h1 id="hd"></h1>
     <div class="row" style="margin-top:10px">
-      <div class="kv">
-        <div class="sub">未来 20 个交易日内见顶概率（校准后）<span class="badge b-dev">开发段</span></div>
-        <div class="big" style="color:var(--red)">52%</div>
-        <div class="sub">历史同等级命中率 50%，段外误报 4%；证据依赖 2015 型杠杆牛，剔除 2015 后无增量</div>
-      </div>
-      <div class="kv">
-        <div class="sub">LPPLS 多尺度置信度 <span class="badge b-dev">开发段·评估中</span></div>
-        <div class="sub">短（30–120 日）<span style="float:right">41%</span></div><div class="bar"><i style="width:41%"></i></div>
-        <div class="sub">中（100–240 日）<span style="float:right">67%</span></div><div class="bar"><i style="width:67%"></i></div>
-        <div class="sub">长（200–720 日）<span style="float:right">24%</span></div><div class="bar"><i style="width:24%"></i></div>
-        <div class="legend">置信度 = 该尺度窗口中通过形态过滤的比例；三条不合并。</div>
-      </div>
+      <div class="kv" id="p20"></div>
+      <div class="kv" id="conf"></div>
     </div>
   </div>
 
   <div class="card">
     <h2>临界时间情景（合格拟合按窗口长度 × t_c 聚类，簇间不平均）<span class="badge b-dev">开发段·评估中</span></h2>
-    <div class="scen">
-      <div><div class="sub">情景 A · 占比 40% · 窗口 185–260 日</div><b>约 42 ± 5 个交易日后</b><div class="muted">20/80 分位：39–47 日（2015-08-07 – 08-19）</div></div>
-      <div><div class="sub">情景 B · 占比 30% · 窗口 125–180 日</div><b>约 27 ± 6 个交易日后</b><div class="muted">20/80 分位：21–34 日（2015-07-14 – 07-31）</div></div>
-      <div><div class="sub">情景 C · 占比 30% · 窗口 265–320 日</div><b>约 12 ± 6 个交易日后</b><div class="muted">20/80 分位：8–16 日（2015-06-24 – 07-06）</div></div>
-    </div>
+    <div class="scen" id="scen"></div>
     <p class="warn" style="margin:10px 0 0">t_c 是失稳的临界时间，不是峰值日；情景只给区间，不给单日。多情景并存表示不同时间尺度的泡沫叠加，不要取平均。</p>
   </div>
 
   <div class="card">
     <h2>结论与操作</h2>
     <table>
-      <tr><th style="width:28%">项目</th><th>输出</th><th style="width:22%">证据等级</th></tr>
-      <tr><td>顶部区间</td><td>概率首次 ≥ 阈值起 20 个交易日：2015-06-12 – 2015-07-10</td><td><span class="badge b-dev">开发段</span></td></tr>
-      <tr><td>分批减仓</td><td>按波动率目标节奏执行；概率仅作小幅调整（±10% 仓位）</td><td><span class="badge b-dev">开发段</span></td></tr>
-      <tr><td>失效条件</td><td>概率连续 10 日 &lt; 阈值，或三尺度置信度均 &lt; 5%</td><td class="muted">规则，非预测</td></tr>
-      <tr><td>预计回落区（价格）</td><td class="muted">无有效预测；仅供参考的历史无条件分位：−18% ~ −35%</td><td><span class="badge b-none">无证据</span></td></tr>
-      <tr><td>回落时间</td><td class="muted">无有效预测</td><td><span class="badge b-none">无证据</span></td></tr>
-      <tr><td>二波参考</td><td class="muted">无有效预测</td><td><span class="badge b-none">无证据</span></td></tr>
-    </table>
+      <tr><th style="width:28%">项目</th><th>输出</th><th style="width:22%">证据等级</th></tr><tbody id="concl"></tbody></table>
     <div class="legend">证据等级：开发段 = 2000–2018 CPCV 通过；校准段 = 2019–2021 固定校准后仍成立；最终测试 = 2022–2025 一次性测试通过；无证据 = 预登记检验未通过，只做描述不做预测。</div>
   </div>
 
   <div class="card">
     <h2>历史验证（样本外汇总，不是单案例）</h2>
     <table>
-      <tr><th>样本段</th><th>事件数</th><th>命中率</th><th>误报率</th><th>Brier 相对基率</th><th>状态</th></tr>
-      <tr><td>开发段 2000–2018</td><td>335（指数）</td><td>50%</td><td>4%</td><td>−x.xx%</td><td><span class="badge b-dev">已评估</span></td></tr>
-      <tr><td>校准段 2019–2021</td><td>16</td><td colspan="3" class="muted">未运行（等待授权）</td><td><span class="badge b-cal">待运行</span></td></tr>
-      <tr><td>最终测试 2022–2025.08</td><td>—</td><td colspan="3" class="muted">锁定后只运行一次</td><td><span class="badge b-test">未开启</span></td></tr>
-    </table>
+      <tr><th>样本段</th><th>事件数</th><th>命中率</th><th>误报率</th><th>Brier 相对基率</th><th>状态</th></tr><tbody id="valid"></tbody></table>
     <div class="legend">"预测 vs 真实"的单案例回放保留在图表工作台中，但不作为准确率依据。</div>
   </div>
 </div>
+<script id="cp-output" type="application/json">
+{"symbol":"sh000001","name":"上证指数","asof":"2015-06-12","data_version":"frozen_v20261024","model_version":"prereg_v1.7",
+ "top":{"p20":{"value":0.52,"evidence":"dev","notes":["历史同等级命中率 50%，段外误报 4%","依赖 2015 型杠杆牛，剔除 2015 后无增量"]},
+        "window":{"start":"2015-06-12","end":"2015-07-10","rule":"p20 首次≥阈值起 20 个交易日","evidence":"dev"},
+        "lppls_confidence":{"S":0.11,"M":0.86,"L":0.24,"evidence":"dev_pending"},
+        "scenarios":[{"share":0.40,"dt_range":[185,260],"ahead_mean":42,"ahead_sd":5,"q20":39,"q80":47,"q20_date":"2015-08-07","q80_date":"2015-08-19"},
+                     {"share":0.30,"dt_range":[125,180],"ahead_mean":27,"ahead_sd":6,"q20":21,"q80":34,"q20_date":"2015-07-14","q80_date":"2015-07-31"},
+                     {"share":0.30,"dt_range":[265,320],"ahead_mean":12,"ahead_sd":6,"q20":8,"q80":16,"q20_date":"2015-06-24","q80_date":"2015-07-06"}],
+        "invalidation":{"rule":"p20 连续 10 日 < 阈值，或三尺度置信度均 < 5%","evidence":"rule"},
+        "drawdown_price":{"value":null,"descriptive":[-0.18,-0.35],"evidence":"none"},
+        "drawdown_time":{"value":null,"evidence":"none"},
+        "second_wave":{"value":null,"evidence":"none"}},
+ "validation":[{"split":"开发段 2000–2018","events":335,"hit":0.50,"false_alarm":0.04,"status":"dev"},
+               {"split":"校准段 2019–2021","events":16,"status":"pending_cal"},{"split":"最终测试 2022–2025.08","events":null,"status":"pending_test"}]}
+</script>
+<script>
+(function(){
+  const D = JSON.parse(document.getElementById('cp-output').textContent);
+  const EV = {dev:['开发段','b-dev'],cal:['校准段','b-cal'],test:['最终测试','b-test'],none:['无证据','b-none'],rule:['规则，非预测','b-none'],dev_pending:['开发段·评估中','b-dev'],pending_cal:['待运行','b-cal'],pending_test:['未开启','b-test']};
+  const badge = e => { const [t,c] = EV[e] || [e,'b-none']; return `<span class="badge ${c}">${t}</span>`; };
+  const pct = x => x == null ? '—' : Math.round(x*100) + '%';
+  const $ = id => document.getElementById(id);
+  $('hd').innerHTML = `${D.name} ${D.symbol.replace(/^s[hz]/,'')} · 顶部风险 <span class="sub">as-of ${D.asof}（收盘）· 数据 ${D.data_version} · 模型 ${D.model_version}</span>`;
+  const T = D.top;
+  $('p20').innerHTML = `<div class="sub">未来 20 个交易日内见顶概率（校准后）${badge(T.p20.evidence)}</div><div class="big" style="color:var(--red)">${pct(T.p20.value)}</div><div class="sub">${(T.p20.notes||[]).join('；')}</div>`;
+  const L = T.lppls_confidence, names = {S:'短（30–120 日）',M:'中（100–240 日）',L:'长（200–720 日）'};
+  $('conf').innerHTML = `<div class="sub">LPPLS 多尺度置信度 ${badge(L.evidence)}</div>` + ['S','M','L'].map(k => `<div class="sub">${names[k]}<span style="float:right">${pct(L[k])}</span></div><div class="bar"><i style="width:${Math.round((L[k]||0)*100)}%"></i></div>`).join('') + `<div class="legend">置信度 = 该尺度窗口中通过形态过滤的比例；三条不合并。</div>`;
+  $('scen').innerHTML = T.scenarios.map((s,i) => `<div><div class="sub">情景 ${'ABCD'[i]} · 占比 ${pct(s.share)} · 窗口 ${s.dt_range[0]}–${s.dt_range[1]} 日</div><b>约 ${s.ahead_mean} ± ${s.ahead_sd} 个交易日后</b><div class="muted">20/80 分位：${s.q20}–${s.q80} 日（${s.q20_date} – ${s.q80_date}）</div></div>`).join('');
+  const rows = [
+    ['顶部区间', `${T.window.rule}：${T.window.start} – ${T.window.end}`, badge(T.window.evidence)],
+    ['失效条件', T.invalidation.rule, badge(T.invalidation.evidence)],
+    ['预计回落区（价格）', T.drawdown_price.value == null ? `<span class="muted">无有效预测；仅供参考的历史无条件分位：${pct(T.drawdown_price.descriptive[0])} ~ ${pct(T.drawdown_price.descriptive[1])}</span>` : T.drawdown_price.value, badge(T.drawdown_price.evidence)],
+    ['回落时间', '<span class="muted">无有效预测</span>', badge(T.drawdown_time.evidence)],
+    ['二波参考', '<span class="muted">无有效预测</span>', badge(T.second_wave.evidence)]];
+  $('concl').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  $('valid').innerHTML = D.validation.map(v => `<tr><td>${v.split}</td><td>${v.events ?? '—'}</td>${v.hit != null ? `<td>${pct(v.hit)}</td><td>${pct(v.false_alarm)}</td>` : `<td colspan="2" class="muted">${v.status === 'pending_cal' ? '未运行（等待授权）' : '锁定后只运行一次'}</td>`}<td>${badge(v.status)}</td></tr>`).join('');
+})();
+</script>
 </body>
 </html>
