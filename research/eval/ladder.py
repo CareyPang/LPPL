@@ -57,6 +57,8 @@ def assemble(split: str, variant: str = "main") -> pd.DataFrame:
                 lo = max(lo, pd.Timestamp(entry), logp.index[0] + pd.DateOffset(years=5))
             feats = [c for lv in LEVELS.values() for cfg in lv.values() for c in cfg if c in df.columns]
             df = pd.concat([df, rolling_z(df, sorted(set(feats)))], axis=1)
+            if f"{variant}__y" not in lab:
+                continue  # 该标的的标签文件没有此变体（如 h60 仅为指数生成）
             df["y"] = lab[f"{variant}__y"].reindex(df.index)
             df = df[(df.index >= lo) & (df.index <= pd.Timestamp(b))].dropna(subset=["y", "rv120"])
             df["symbol"] = sym
