@@ -122,9 +122,13 @@ def grid_profile(t, y, tcs, ms, ws, k=K_LPPLS):
     return out
 
 
-def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
+def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS, n_random: int = 0) -> Result:
+    """tc 网格剖面 + 前 topk 起点 LM。n_random>0 时额外加 n_random 个均匀随机起点（§17.4 多起点，
+    对应 Jiang 2010 的"多候选 + LM 取最小 SSE"），仍取全局最小 SSE。"""
     budget = budget or dict(n_tc=40, n_m=12, n_w=16, topk=5)
     t0 = time.perf_counter()
+    rng = np.random.default_rng(seed)
+    extra = [lo + rng.random(len(lo)) * (hi - lo) for _ in range(n_random)]
     tcs = np.linspace(lo[0], hi[0], budget["n_tc"])
     ms = np.linspace(lo[1], hi[1], budget["n_m"])
     if k != K_LPPLS:
@@ -134,8 +138,7 @@ def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
         arg = [ms[int(np.argmin(grid[i]))] for i in range(len(tcs))]
         order = np.argsort(prof)[: budget["topk"]]
         best = None
-        for i in order:
-            x0 = np.array([tcs[i], arg[i]])
+        for x0 in [np.array([tcs[i], arg[i]]) for i in order] + extra:
             r = least_squares(_resid, x0, args=(t, y, k), bounds=(lo, hi), method="trf",
                               x_scale="jac", ftol=1e-12, xtol=1e-12, gtol=1e-10, max_nfev=400)
             nfev += int(r.nfev)
@@ -154,8 +157,7 @@ def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
         arg.append((ms[j], ws[l_]))
     order = np.argsort(prof)[: budget["topk"]]
     best = None
-    for i in order:
-        x0 = np.array([tcs[i], *arg[i]])
+    for x0 in [np.array([tcs[i], *arg[i]]) for i in order] + extra:
         r = least_squares(_resid, x0, args=(t, y, k), bounds=(lo, hi), method="trf", x_scale="jac",
                           ftol=1e-12, xtol=1e-12, gtol=1e-10, max_nfev=400)
         nfev += int(r.nfev)

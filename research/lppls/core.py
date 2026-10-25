@@ -19,9 +19,17 @@ import numpy as np
 K_LPPLS, K_POWER = 4, 2
 
 
-def design(t: np.ndarray, tc: float, m: float, w: float, k: int = K_LPPLS) -> np.ndarray | None:
+MIN_DT = 1e-3
+# §17.4：True 时设计矩阵用 |t_c−t|，允许 t_c 落在样本内（E7 表 3 的 t_c∈[t₂−0.2dt, t₂+0.2dt]）。
+# 默认 False = v1 行为（t_c 必须在样本之后，不可行点 SSE=inf）。扫描 v2 在建进程池前置 True。
+ALLOW_INSIDE = False
+
+
+def design(t: np.ndarray, tc: float, m: float, w: float, k: int = K_LPPLS, allow_inside: bool | None = None) -> np.ndarray | None:
     dt = tc - t
-    if np.any(dt <= 0):
+    if ALLOW_INSIDE if allow_inside is None else allow_inside:
+        dt = np.maximum(np.abs(dt), MIN_DT)
+    elif np.any(dt <= 0):
         return None
     L = np.log(dt)
     f = np.exp(m * L)

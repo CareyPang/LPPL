@@ -20,7 +20,8 @@ import pandas as pd
 
 from ..eval.dataset import SPLITS, _snapshot, price_series
 from ..labels.run_top import INDEXES
-from ..lppls.core import K_POWER, lin_fit
+from ..lppls import core as _core
+from ..lppls.core import K_POWER, design, lin_fit
 from ..optim.optimizers import tcgrid_lm
 
 # 搜索域版本（预登记 v1.7 §17.1）：v1 = 宽域（v1.1 登记：m∈[0.01,2]、ω∈[1,50]、t_c≤t₂+0.2dt）；
@@ -28,15 +29,52 @@ from ..optim.optimizers import tcgrid_lm
 # 由环境变量 LPPLS_BOX 选择，输出目录随版本分开，v1 结果保留为失败记录不覆盖。
 BOX = os.environ.get("LPPLS_BOX", "v1")
 BOXES = {
-    "v1": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc_cap=None),
-    "v2": dict(m=(0.01, 0.99), w=(2.0, 25.0), tc_cap=115.0),
+    # v1：E7 表 3 搜索域，但 t_c 只能在 t₂ 之后、无短尺度、单起点（v1.1 登记）
+    "v1": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(0.5, 0.2), inside=False, n_random=0, short=False),
+    # proto：原型 engine.js 搜索域（预登记 §17.1 的变体，非主版本）
+    "proto": dict(m=(0.01, 0.99), w=(2.0, 25.0), tc=(0.5, 0.2), inside=False, n_random=0, short=False, tc_cap=115.0),
+    # v2：§17.4 原版复现——E7 搜索域 + t_c∈[t₂−0.2dt, t₂+0.2dt] + 10 随机起点 + 短尺度 30–120 日窗口
+    "v2": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),
 }
 OUT = Path(f"data/features/lppls_{BOX}")
+LOMB_W = np.arange(1.0, 50.01, 0.25)
 IDX_STEP, STK_STEP = 5, 20
 IDX_WINDOWS = tuple(range(125, 751, 5))
 STK_WINDOWS = tuple(range(125, 751, 25))
 MAX_GAP_SHARE = 0.10
-COLS = ["date", "n", "tc", "m", "w", "A", "B", "C1", "C2", "sse", "r2", "pow_tc", "pow_m", "pow_B", "pow_sse"]
+COLS = ["date", "n", "tc", "m", "w", "A", "B", "C1", "C2", "sse", "r2", "pow_tc", "pow_m", "pow_B", "pow_sse",
+        "lomb_w", "lomb_pn", "df_t"]
+SHORT_WINDOWS = tuple(range(30, 121, 5))
+
+
+def residual_tests(t: np.ndarray, y: np.ndarray, tc: float, m: float, w: float, beta: np.ndarray) -> tuple[float, float, float]:
+    """Jiang 2010 §2.3–2.4 的两项：去趋势残差 r=(y−A−B f)/f 对 ln|t_c−t| 的 Lomb 峰频与归一化峰功率；
+    拟合残差的 DF 回归 t 统计量（Δe_t = c + ρ e_{t−1}，t_ρ；越负越平稳，渐近 5% 临界值约 −2.86）。"""
+    from scipy.signal import lombscargle
+
+    dtt = np.maximum(np.abs(tc - t), _core.MIN_DT)
+    f = dtt ** m
+    r = (y - beta[0] - beta[1] * f) / f
+    x = np.log(dtt)
+    try:
+        pn = lombscargle(x, r - r.mean(), LOMB_W, normalize=True)
+        j = int(np.argmax(pn))
+        lomb_w, lomb_pn = float(LOMB_W[j]), float(pn[j])
+    except Exception:
+        lomb_w, lomb_pn = np.nan, np.nan
+    X = design(t, tc, m, w)
+    e = y - X @ beta if X is not None else np.full_like(y, np.nan)
+    de, e1 = np.diff(e), e[:-1]
+    Z = np.column_stack([np.ones_like(e1), e1])
+    try:
+        coef, *_ = np.linalg.lstsq(Z, de, rcond=None)
+        res = de - Z @ coef
+        s2 = float(res @ res) / max(1, len(de) - 2)
+        cov = s2 * np.linalg.inv(Z.T @ Z)
+        df_t = float(coef[1] / np.sqrt(cov[1, 1]))
+    except Exception:
+        df_t = np.nan
+    return lomb_w, lomb_pn, df_t
 
 
 def calendar() -> pd.DatetimeIndex:
@@ -48,16 +86,18 @@ def fit_one(y: np.ndarray) -> tuple:
     t = np.arange(n, dtype=float)
     dt = n - 1
     bx = BOXES[BOX]
-    ahead_hi = 0.2 * dt if bx["tc_cap"] is None else min(0.2 * dt, bx["tc_cap"])
-    lo = np.array([dt + 0.5, bx["m"][0], bx["w"][0]])
+    tc_lo, tc_hi = bx["tc"]
+    ahead_hi = 0.2 * dt if bx.get("tc_cap") is None else min(0.2 * dt, bx["tc_cap"])
+    lo = np.array([dt + (tc_lo if tc_lo >= 0.5 else tc_lo * dt), bx["m"][0], bx["w"][0]])
     hi = np.array([dt + ahead_hi, bx["m"][1], bx["w"][1]])
-    r = tcgrid_lm(t, y, lo, hi, seed=0)
+    r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=bx["n_random"])
     s, beta = lin_fit(t, y, *r.theta)
     sst = float(((y - y.mean()) ** 2).sum())
-    rp = tcgrid_lm(t, y, lo[:2], hi[:2], seed=0, k=K_POWER)
+    rp = tcgrid_lm(t, y, lo[:2], hi[:2], seed=0, k=K_POWER, n_random=bx["n_random"])
     sp, bp = lin_fit(t, y, rp.theta[0], rp.theta[1], 0.0, K_POWER)
     return (n, *map(float, r.theta), *map(float, beta), float(s), 1 - s / sst,
-            float(rp.theta[0]), float(rp.theta[1]), float(bp[1]), float(sp))
+            float(rp.theta[0]), float(rp.theta[1]), float(bp[1]), float(sp),
+            *residual_tests(t, y, *r.theta, beta))
 
 
 def scan_dates(sym: str, dates: list[pd.Timestamp], windows: tuple[int, ...], cal: pd.DatetimeIndex) -> pd.DataFrame:
@@ -106,9 +146,12 @@ def asof_dates(sym: str, group: str, cal: pd.DatetimeIndex, splits: tuple[str, .
 def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = ("dev", "cal", "test")):
     """splits：个股只扫这些样本段（§12.2 算力门触发后只扫 dev）。"""
     OUT.mkdir(parents=True, exist_ok=True)
+    _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])
     cal = calendar()
     syms = list(INDEXES) if group == "index" else sorted({s for n, (*_, csv, _) in SPLITS.items() if n in splits for s in _snapshot(csv)})
     windows = IDX_WINDOWS if group == "index" else STK_WINDOWS
+    if BOXES[BOX]["short"]:
+        windows = SHORT_WINDOWS + windows
     tasks, parts = [], {}
     for sym in syms:
         if (OUT / f"{sym}.parquet").exists():
