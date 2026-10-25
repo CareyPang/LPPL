@@ -26,6 +26,8 @@ VARIANTS = {
     "share70": dict(share=0.7, kw=dict()),
     "fixed15": dict(share=0.5, kw=dict(floor=0.15, quant=None)),
     "sigma1.5": dict(share=0.5, kw=dict(quant=None, fixed_sigma_k=1.5)),
+    # §17.4-6 次要检验：60 日视窗（LPPLS 提前量 1–3 个月，20 日视窗把提前报警记为误报）
+    "h60": dict(share=0.5, kw=dict(horizon=60)),
 }
 
 

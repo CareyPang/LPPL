@@ -103,6 +103,7 @@ def drawdown_after(logp: np.ndarray, idx: int, look: int = LOOK) -> float:
 def label_top(
     dates: pd.DatetimeIndex, logp: np.ndarray, tops: np.ndarray,
     floor: float = FLOOR, quant: float | None = QUANT, fixed_sigma_k: float | None = None,
+    horizon: int = HORIZON,
 ) -> pd.DataFrame:
     """返回 DataFrame(index=dates)：y（0/1/NaN）、d_t、n_hist_tops、dd_ahead（辅助连续标签）。
     quant=None 且 fixed_sigma_k=None → 固定门槛 floor；fixed_sigma_k=k → d_t = max(floor, k·σ_t·√20)。"""
@@ -124,11 +125,11 @@ def label_top(
             q = np.quantile(dd[m], quant) if nh[t] >= MIN_TOPS_FOR_Q else -np.inf
             thr = max(floor, q)
         elif fixed_sigma_k is not None:
-            thr = max(floor, fixed_sigma_k * sig20[t] * np.sqrt(HORIZON)) if np.isfinite(sig20[t]) else floor
+            thr = max(floor, fixed_sigma_k * sig20[t] * np.sqrt(horizon)) if np.isfinite(sig20[t]) else floor
         else:
             thr = floor
         d_t[t] = thr
-        m2 = (tops > t) & (tops <= t + HORIZON)
+        m2 = (tops > t) & (tops <= t + horizon)
         y[t] = float(np.any(dd[m2] >= thr)) if m2.any() else 0.0
     ahead = np.full(n, np.nan)
     for t in range(n - LOOK):
