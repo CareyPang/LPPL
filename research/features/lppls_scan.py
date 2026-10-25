@@ -42,9 +42,10 @@ BOXES = {
 WINDOWS_MODE = os.environ.get("LPPLS_WINDOWS", "full")
 SIGN = os.environ.get("LPPLS_SIGN", "pos")
 ANCHOR = os.environ.get("LPPLS_ANCHOR", "end")
+STOCK_SAMPLE = int(os.environ.get("LPPLS_STOCK_SAMPLE", "0"))
 SUFFIX = ("_neg" if SIGN == "neg" else "") + ("_ab" if ANCHOR == "start" else "") + ("" if WINDOWS_MODE == "full" else f"_{WINDOWS_MODE}")
 XS_WINDOWS = (15, 20, 25, 30)
-OUT = Path(f"data/features/lppls_{BOX}{SUFFIX}")
+OUT = Path(f"data/features/lppls_{BOX}{SUFFIX}" + (f"_stk{STOCK_SAMPLE}" if STOCK_SAMPLE else ""))
 LOMB_W = np.arange(1.0, 50.01, 0.25)
 IDX_STEP, STK_STEP = 5, 20
 IDX_WINDOWS = tuple(range(125, 751, 5))
@@ -166,6 +167,15 @@ def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = (
     _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])
     cal = calendar()
     syms = list(INDEXES) if group == "index" else sorted({s for n, (*_, csv, _) in SPLITS.items() if n in splits for s in _snapshot(csv)})
+    if group != "index" and STOCK_SAMPLE:
+        # §17.11 个股样本：按市场（sh/sz）分层、固定种子抽 STOCK_SAMPLE 只，先判断横截面排名值不值得全跑
+        rng = np.random.default_rng(20261025)
+        by_mkt = {m: sorted(x for x in syms if x.startswith(m)) for m in ("sh", "sz")}
+        picked = []
+        for xs in by_mkt.values():
+            k = round(STOCK_SAMPLE * len(xs) / len(syms))
+            picked += list(rng.choice(xs, size=min(k, len(xs)), replace=False))
+        syms = sorted(picked)
     windows = IDX_WINDOWS if group == "index" else STK_WINDOWS
     if BOXES[BOX]["short"]:
         windows = SHORT_WINDOWS + windows
