@@ -164,3 +164,14 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
     for c in ("box", "p_strict", "lit1", "lit2"):
         out[f"lag_{c}"] = lagr[c].astype(float).reindex(out.index)
     return out.astype(float)
+
+
+def rules_ab(d: pd.DataFrame) -> pd.DataFrame:
+    """§17.4-7 Johansen–Sornette 1999 反泡沫合格条件（LPPLS_ANCHOR=start 扫描；t_c 在窗口起点之前，t₁=0）：
+    t_c<0、B<0（峰后衰减）、m∈(0,1)、ω∈[2,25]、D≥0.5、振荡数 (ω/2)·ln((t₂−t_c)/(t₁−t_c))≥2.5；
+    ab_strict 另加 m∈[0.1,0.9]、ω∈[5,13]（对应 FCO PURE 的窄域）。"""
+    t2 = d.n - 1
+    osc_ab = d.w / 2 * np.log(np.maximum(t2 - d.tc, 1e-3) / np.maximum(-d.tc, 1e-3))
+    base = (d.tc < 0) & (d.B < 0) & d.m.between(0.01, 0.99) & (d.D >= 0.5) & (osc_ab >= 2.5)
+    return pd.DataFrame({"ab": base & d.w.between(2, 25), "ab_strict": base & d.m.between(0.1, 0.9) & d.w.between(5, 13),
+                         "ab_loose": (d.tc < 0) & (d.B < 0) & d.m.between(0.01, 0.99) & d.w.between(2, 25)}, index=d.index)

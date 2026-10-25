@@ -276,6 +276,8 @@ def main(symbols: list[str]) -> None:
     val = agg[agg.indicator.str.contains(r"\|value_")]
     agg = agg[~agg.indicator.str.contains(r"\|value_")]
     agg.to_csv(REPORT / "alarm_grid_agg.csv", index=False)
+    if "gap" not in win:  # 反泡沫（ANCHOR=start）等情形下无合格分位窗
+        win = pd.DataFrame(columns=["rule", "kind", "cover", "cover_naive", "width", "gap"])
     win["near"] = win.gap <= max(HORIZONS)
     wagg = (win.groupby(["rule", "kind"]).agg(n=("cover", "size"), cover=("cover", "mean"), cover_naive=("cover_naive", "mean"),
                                               width_med=("width", "median"), gap_med=("gap", "median"),
