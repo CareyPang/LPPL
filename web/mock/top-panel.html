@@ -58,6 +58,7 @@
 <script id="cp-output" type="application/json">
 {
  "symbol": "sh000001",
+ "name": "上证指数",
  "asof": "2015-06-12",
  "data_version": "frozen_v20261024",
  "model_version": "prereg_v1.7_v2",
@@ -70,6 +71,8 @@
    ]
   },
   "window": {
+   "start": "2015-06-12",
+   "end": "2015-07-13",
    "rule": "p20 首次≥阈值起 20 个交易日",
    "evidence": "dev"
   },
@@ -93,8 +96,8 @@
     "ahead_sd": 5.3,
     "q20": 35.6,
     "q80": 46.0,
-    "tc_q20_date": "2015-08-04",
-    "tc_q80_date": "2015-08-18"
+    "q20_date": "2015-08-04",
+    "q80_date": "2015-08-18"
    },
    {
     "share": 0.29,
@@ -106,8 +109,8 @@
     "ahead_sd": 6.1,
     "q20": 7.7,
     "q80": 16.1,
-    "tc_q20_date": "2015-06-25",
-    "tc_q80_date": "2015-07-07"
+    "q20_date": "2015-06-25",
+    "q80_date": "2015-07-07"
    },
    {
     "share": 0.24,
@@ -119,8 +122,8 @@
     "ahead_sd": 7.6,
     "q20": 19.7,
     "q80": 25.3,
-    "tc_q20_date": "2015-07-13",
-    "tc_q80_date": "2015-07-20"
+    "q20_date": "2015-07-13",
+    "q80_date": "2015-07-20"
    }
   ],
   "scenarios_note": "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
@@ -144,6 +147,10 @@
   },
   "drawdown_price": {
    "value": null,
+   "descriptive": [
+    -0.18,
+    -0.35
+   ],
    "evidence": "none"
   },
   "drawdown_time": {
@@ -176,6 +183,27 @@
    "evidence": "none"
   }
  },
+ "validation": [
+  {
+   "split": "开发段 2000–2018（6 指数）",
+   "events": 74,
+   "hit": 0.5,
+   "false_alarm": 0.7,
+   "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"
+  },
+  {
+   "split": "校准段 2019–2021",
+   "events": null,
+   "hit": null,
+   "status": "pending_cal"
+  },
+  {
+   "split": "最终测试 2022–2025.08",
+   "events": null,
+   "hit": null,
+   "status": "pending_test"
+  }
+ ],
  "evidence_levels": {
   "dev": "开发段 2000–2018",
   "cal": "校准段未运行",
@@ -692,8 +720,16 @@
     ['失效条件', T.invalidation.rule, badge(T.invalidation.evidence)],
     ['预计回落区（价格）', T.drawdown_price.value == null ? `<span class="muted">无有效预测；仅供参考的历史无条件分位：${pct(T.drawdown_price.descriptive[0])} ~ ${pct(T.drawdown_price.descriptive[1])}</span>` : T.drawdown_price.value, badge(T.drawdown_price.evidence)],
     ['回落时间', '<span class="muted">无有效预测</span>', badge(T.drawdown_time.evidence)],
-    ['二波参考', '<span class="muted">无有效预测</span>', badge(T.second_wave.evidence)]];
+    ['二波参考', '<span class="muted">无有效预测</span>', badge(T.second_wave.evidence)],
+    ['上月体制带（描述性）', D.regime_band && D.regime_band.state ? `${D.regime_band.month}：${D.regime_band.state}${D.regime_band.channel ? '（通道 ' + D.regime_band.channel + '）' : ''} <span class="muted">${D.regime_band.rule}</span>` : '<span class="muted">数据不足</span>', badge(D.regime_band ? D.regime_band.evidence : 'none')]];
   $('concl').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  if (D.movie && D.movie.length) {
+    const mv = document.createElement('div'); mv.className = 'card';
+    mv.innerHTML = `<div class="sub">t_c 分位窗随 as-of 演化（"电影"；长尺度 20/50/80 分位日期；分布连续稳定才作确认条件）${badge('dev')}</div>` +
+      `<table><tr><th>as-of</th><th>短</th><th>中</th><th>长</th><th>长尺度 t_c 20–80 分位</th></tr>` +
+      D.movie.filter((f,i) => i % 2 === 0 || i === D.movie.length - 1).map(f => `<tr><td>${f.asof}</td><td>${pct(f.confidence.S)}</td><td>${pct(f.confidence.M)}</td><td>${pct(f.confidence.L)}</td><td>${f.tc_windows.L ? f.tc_windows.L[0] + ' – ' + f.tc_windows.L[2] : '—'}</td></tr>`).join('') + `</table>`;
+    $('valid').closest('table').parentNode.insertBefore(mv, $('valid').closest('table'));
+  }
   $('valid').innerHTML = D.validation.map(v => `<tr><td>${v.split}</td><td>${v.events ?? '—'}</td>${v.hit != null ? `<td>${pct(v.hit)}</td><td>${pct(v.false_alarm)}</td>` : `<td colspan="2" class="muted">${v.status === 'pending_cal' ? '未运行（等待授权）' : '锁定后只运行一次'}</td>`}<td>${badge(v.status)}</td></tr>`).join('');
 })();
 </script>

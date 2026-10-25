@@ -1,5 +1,6 @@
 {
  "symbol": "sh000001",
+ "name": "上证指数",
  "asof": "2015-06-12",
  "data_version": "frozen_v20261024",
  "model_version": "prereg_v1.7_v2",
@@ -12,6 +13,8 @@
    ]
   },
   "window": {
+   "start": "2015-06-12",
+   "end": "2015-07-13",
    "rule": "p20 首次≥阈值起 20 个交易日",
    "evidence": "dev"
   },
@@ -35,8 +38,8 @@
     "ahead_sd": 5.3,
     "q20": 35.6,
     "q80": 46.0,
-    "tc_q20_date": "2015-08-04",
-    "tc_q80_date": "2015-08-18"
+    "q20_date": "2015-08-04",
+    "q80_date": "2015-08-18"
    },
    {
     "share": 0.29,
@@ -48,8 +51,8 @@
     "ahead_sd": 6.1,
     "q20": 7.7,
     "q80": 16.1,
-    "tc_q20_date": "2015-06-25",
-    "tc_q80_date": "2015-07-07"
+    "q20_date": "2015-06-25",
+    "q80_date": "2015-07-07"
    },
    {
     "share": 0.24,
@@ -61,8 +64,8 @@
     "ahead_sd": 7.6,
     "q20": 19.7,
     "q80": 25.3,
-    "tc_q20_date": "2015-07-13",
-    "tc_q80_date": "2015-07-20"
+    "q20_date": "2015-07-13",
+    "q80_date": "2015-07-20"
    }
   ],
   "scenarios_note": "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
@@ -86,6 +89,10 @@
   },
   "drawdown_price": {
    "value": null,
+   "descriptive": [
+    -0.18,
+    -0.35
+   ],
    "evidence": "none"
   },
   "drawdown_time": {
@@ -118,6 +125,27 @@
    "evidence": "none"
   }
  },
+ "validation": [
+  {
+   "split": "开发段 2000–2018（6 指数）",
+   "events": 74,
+   "hit": 0.5,
+   "false_alarm": 0.7,
+   "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"
+  },
+  {
+   "split": "校准段 2019–2021",
+   "events": null,
+   "hit": null,
+   "status": "pending_cal"
+  },
+  {
+   "split": "最终测试 2022–2025.08",
+   "events": null,
+   "hit": null,
+   "status": "pending_test"
+  }
+ ],
  "evidence_levels": {
   "dev": "开发段 2000–2018",
   "cal": "校准段未运行",
