@@ -248,3 +248,14 @@
 ### 16.15 FCO 月报方法附录与 sornette.finance 里程碑（2026-10-25）
 - *The FCO Cockpit – Global Bubble Status Report, December 2019, Appendix: Methodology*（ETH Zurich × SIMAG，10 页，Internet Archive 存档，[全文]）：泡沫起点用 Lagrange 正则（Demos–Sornette 2019）；成熟度用 DS LPPLS 置信度（引 Johansen–Sornette 2010 综述）；可靠性用 k-means（Gerlach 等 2019），报告最大簇的 t_c 均值/标准差与"情景概率"（最大簇拟合数/总拟合数）；表格分正/负泡沫，列泡沫大小、持续时间、置信度，**按 |泡沫大小| 与置信度的几何平均排名**；个股按"泡沫信号 × 基本面"四象限。附录未给出过滤阈值、Trust、Bubble Score 定义。
 - sornette.finance/milestones（2026-10-25 抓取）：2007 成立、2022 ETH 关停、2024 私有化重启；进行中 Dragon-King Protection Protocol（对冲/不对冲切换，对应 Sornette 2009 Dragon-King 概念，无方法论文）、规则化策略；下一步 Deep LPPLS（对应 Nielsen–Sornette–Raissi 2024，M5）。
+
+### 16.16 FCO 平台公开前端文字与公开 OpenAPI 文档中的方法披露（2026-10-25；来源：sornette.finance 前端 JS 包内的界面说明文字、api.sornette.finance/v3/api-docs 公开 schema；均为未登录可见的公开内容，未访问任何需授权的数据）
+- 四套拟合合格过滤集（前端 "Fit qualification" 原文）：STANDARD（参考集）damping ≥0.5、m ≤1、oscillations ≥2.5、2≤ω≤25；EARLY（实验）damping ≥0、m ≤1、oscillations ≥1.5、2≤ω≤25；END（实验）damping ≥0.8、m ≤1、oscillations ≥2.5、2≤ω≤25；PURE damping ≥0.5、m ≤0.9、oscillations ≥2.5、5≤ω≤13。前端把"哪几套合格"解读为阶段：仅 EARLY=forming，STANDARD=confirmed，+END=late，+PURE=late-narrow，并注明"这是过滤器不是泡沫年龄测量"。
+- 置信度类型 confidenceType ∈ {WINDOWS, FITS, ALL}；每个指标（尺度）给 positiveConfidence / negativeConfidence 与 bestPositiveT1 / bestNegativeT1（最佳起点）及 T1Qualified 标志。
+- Combo(p)：跨尺度置信度的幂平均，p=0 几何均值、p=1 算术均值、p 大→趋向最大值；默认 p=0.1；字段 combo01 / combo1 / combo10。前端"最佳信号"按 combo01（几何均值）排序；板块强度 = |bubbleScore| + combo10。
+- BubbleScores 字段：bubbleScore、bubbleMultiScaleScore、bubbleSize、bubbleProgress、bubbleDuration、tc、scale（最长合格尺度）、confidenceIntervalFrom/To；正负泡沫各一组；positiveScales 计数。
+- Scenario 字段：probability、tc 2.5%/97.5% 分位、tcMode、t1/t2、loss、adjustedLoss（按其排序选代表拟合）、closenessOfTcToT2、damping、oscillations、valid、indicatorType（四套过滤集之一）。
+- 泡沫大小定义（FAQ 原文）：从泡沫形成起点到 t_c 处模型预测价格的轨迹幅度；"崩盘幅度通常是泡沫大小的一部分"。
+- 月度体制带（描述性、非预测）：以资产自身前 60 个月为参照，月收益 <40 分位 Bearish、40–60 Neutral、60–80 Bullish、≥80 Rally；High risk 三通道：月收益 <5 分位；收益 <25 分位且日内波幅 excursion >40 分位；excursion >95 分位且收益 <60 分位。
+- 仍未公开：窗口集合与尺度切分的具体数值、bubbleScore / bubbleProgress 的计算式、Dragon-King Protection Protocol 规则、Deep LPPLS 生产实现、校准方式。
+- 对本项目：STANDARD 集（D≥0.5、ω∈[2,25]、m≤1、O≥2.5）落在 §17.4 网格附近（最近格点 D0.5 / w4_25 / m0_1，ω 下界 2 vs 4 有差）；建议把这四套原样加为网格点（提案，待确认）。
