@@ -36,7 +36,12 @@ BOXES = {
     # v2：§17.4 原版复现——E7 搜索域 + t_c∈[t₂−0.2dt, t₂+0.2dt] + 10 随机起点 + 短尺度 30–120 日窗口
     "v2": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),
 }
-OUT = Path(f"data/features/lppls_{BOX}")
+# §17.4-7 反泡沫两种形式：SIGN=neg → 对 −ln P 拟合（Yan–Woodard–Sornette 2010 负泡沫，t_c 在未来）；
+# ANCHOR=start → t_c 搜索域改为窗口起点之前 [t₁−0.2dt, t₁]（Johansen–Sornette 1999 反泡沫，描述峰后衰减振荡）。
+SIGN = os.environ.get("LPPLS_SIGN", "pos")
+ANCHOR = os.environ.get("LPPLS_ANCHOR", "end")
+SUFFIX = ("_neg" if SIGN == "neg" else "") + ("_ab" if ANCHOR == "start" else "")
+OUT = Path(f"data/features/lppls_{BOX}{SUFFIX}")
 LOMB_W = np.arange(1.0, 50.01, 0.25)
 IDX_STEP, STK_STEP = 5, 20
 IDX_WINDOWS = tuple(range(125, 751, 5))
@@ -88,8 +93,14 @@ def fit_one(y: np.ndarray) -> tuple:
     bx = BOXES[BOX]
     tc_lo, tc_hi = bx["tc"]
     ahead_hi = 0.2 * dt if bx.get("tc_cap") is None else min(0.2 * dt, bx["tc_cap"])
-    lo = np.array([dt + (tc_lo if tc_lo >= 0.5 else tc_lo * dt), bx["m"][0], bx["w"][0]])
-    hi = np.array([dt + ahead_hi, bx["m"][1], bx["w"][1]])
+    if ANCHOR == "start":
+        lo = np.array([-0.2 * dt, bx["m"][0], bx["w"][0]])
+        hi = np.array([-0.5, bx["m"][1], bx["w"][1]])
+    else:
+        lo = np.array([dt + (tc_lo if tc_lo >= 0.5 else tc_lo * dt), bx["m"][0], bx["w"][0]])
+        hi = np.array([dt + ahead_hi, bx["m"][1], bx["w"][1]])
+    if SIGN == "neg":
+        y = -y
     r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=bx["n_random"])
     s, beta = lin_fit(t, y, *r.theta)
     sst = float(((y - y.mean()) ** 2).sum())
