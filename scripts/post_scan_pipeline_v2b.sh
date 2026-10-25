@@ -13,3 +13,4 @@ LPPLS_SIGN=neg LPPLS_WINDOWS=lite OS_TARGET=bottom run /usr/bin/python3 -m resea
 LPPLS_ANCHOR=start LPPLS_WINDOWS=lite run /usr/bin/python3 -m research.features.lppls_scan index dev
 LPPLS_ANCHOR=start LPPLS_WINDOWS=lite OS_TARGET=bottom run /usr/bin/python3 -m research.eval.original_standard
 echo "[$(date +%T)] queue b done"
+run /usr/bin/python3 -m research.eval.summary_v2 v2
