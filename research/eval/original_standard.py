@@ -185,6 +185,23 @@ def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame
                 rows.append(dict(symbol=sym, indicator=c, q=q, H=H, n_alarm=int(alarm.sum()), alarm_rate=alarm.mean(),
                                  A1=a1, A1_null=np.nanmean(nul[:, 0]), A1_p=float(np.nanmean(nul[:, 0] >= a1)),
                                  A2=a2, A2_null=np.nanmean(nul[:, 1]), A2_p=float(np.nanmean(nul[:, 1] >= a2))))
+    # §17.6-5 价值分数分层：泡沫信号在"高估"（PE PIT 分位 ≥0.8）与非高估时的 A1 分别报告（两维度分开，不合并）
+    try:
+        from ..data.valuation import load as load_pe, value_score
+
+        vp = value_score(load_pe(sym), cal).reindex(ms.index).to_numpy()
+        for c in [c for c in conf_cols if c.startswith("box__")]:
+            x = ms[c].fillna(0).to_numpy()
+            for H in HORIZONS:
+                for tag_, msk in (("value_hi", vp >= 0.8), ("value_lo", vp < 0.8)):
+                    alarm = (x >= 0.10) & msk
+                    if alarm.sum() < 3:
+                        continue
+                    a1, a2 = _alarm_metrics(alarm, tpos, gpos, H)
+                    rows.append(dict(symbol=sym, indicator=f"{c}|{tag_}", q=0.10, H=H, n_alarm=int(alarm.sum()),
+                                     alarm_rate=alarm.mean(), A1=a1, A1_null=np.nan, A1_p=np.nan, A2=a2, A2_null=np.nan, A2_p=np.nan))
+    except Exception as e:  # noqa: BLE001
+        print("value score skipped:", sym, type(e).__name__, flush=True)
     tab = pd.DataFrame(rows)
     # 分位窗（Jiang 2010）：用 box 规则与 E7 条件 1 的网格中位配置，按尺度与按最大簇
     d = _derived(sc)
@@ -255,6 +272,8 @@ def main(symbols: list[str]) -> None:
                 A1_p_med=("A1_p", "median"), A2=("A2", "mean"), A2_null=("A2_null", "mean"), A2_p_med=("A2_p", "median"))
            .reset_index())
     agg["robust"] = (agg.A1_p_med <= 0.05) & (agg.A2_p_med <= 0.05) & (agg.n_sym >= 4)
+    val = agg[agg.indicator.str.contains(r"\|value_")]
+    agg = agg[~agg.indicator.str.contains(r"\|value_")]
     agg.to_csv(REPORT / "alarm_grid_agg.csv", index=False)
     win["near"] = win.gap <= max(HORIZONS)
     wagg = (win.groupby(["rule", "kind"]).agg(n=("cover", "size"), cover=("cover", "mean"), cover_naive=("cover_naive", "mean"),
@@ -281,6 +300,8 @@ def main(symbols: list[str]) -> None:
         agg["scale"] = agg.indicator.str.split("__").str[-1]
         f.write(agg.groupby(["scale", "H"]).agg(A1=("A1", "median"), A1_null=("A1_null", "median"), A2=("A2", "median"),
                                                 A2_null=("A2_null", "median"), robust=("robust", "sum")).round(3).to_markdown() + "\n\n")
+        if len(val):
+            f.write("## 价值分数分层（§17.6-5：PE PIT 分位 ≥0.8 为高估；泡沫与高估两维度分开报告）\n\n" + val[["indicator", "H", "n_sym", "n_alarm", "A1", "A2"]].round(3).to_markdown(index=False) + "\n\n")
         f.write("## 分位窗覆盖（Jiang 2010 口径）\n\n" + wagg.round(3).to_markdown(index=False) + "\n\n")
         f.write("## FBE 式成功判据（§17.6-1）：分位窗覆盖三种体制改变 vs 同宽随机窗\n\n" + fbe.round(3).to_markdown(index=False) + "\n\n")
         if len(fbe_stab):
