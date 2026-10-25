@@ -81,6 +81,12 @@ def grid_rules(d: pd.DataFrame) -> pd.DataFrame:
                  & ((d.lomb_w - d.w).abs() / d.w <= JIANG_TOL) & (d.df_t <= JIANG_DF))
         r["g_jiang"] = jiang
         r["g_jiang_strict"] = jiang & d.m.between(0.1, 0.9) & d.w.between(6, 13)
+    # FCO 平台公开的四套合格过滤集（文献 §16.16，前端原文数值）；公开文字未给 t_c 范围，故只用 B<0 与 m∈(0,1]
+    fco = (d.B < 0) & (d.m > 0)
+    r["g_fco_standard"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)
+    r["g_fco_early"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.0) & (d.osc >= 1.5)
+    r["g_fco_end"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.8) & (d.osc >= 2.5)
+    r["g_fco_pure"] = fco & (d.m <= 0.9) & d.w.between(5, 13) & (d.D >= 0.5) & (d.osc >= 2.5)
     return pd.DataFrame(r, index=d.index)
 
 
