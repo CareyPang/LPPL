@@ -18,7 +18,7 @@ from ..lppls.core import TOP_RULE
 
 
 def _derived(df: pd.DataFrame) -> pd.DataFrame:
-    d = df.copy()
+    d = df.reset_index(drop=True)
     t2 = d.n - 1
     d["ahead"] = d.tc - t2
     d["dt"] = t2
@@ -83,6 +83,22 @@ def grid_rules(d: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(r, index=d.index)
 
 
+def lagrange_pick(d: pd.DataFrame, p: int = 7) -> pd.Series:
+    """§17.4-5 Lagrange 正则选窗（Demos–Sornette 2019 式 (4)）：对固定 t₂ 的全部窗口，
+    χ²_np = SSE/(dt−p)，λ = χ²_np 对 dt 的 OLS 斜率（经验估计的"过拟合倾向"），
+    χ²_λ = χ²_np − λ·dt；返回每个 as-of 日期 χ²_λ 最小窗口的行索引。"""
+    chi = d.sse / (d.n - p).clip(lower=1)
+    picks = {}
+    for date, idx in d.groupby("date").indices.items():
+        x, c = d.n.to_numpy(float)[idx], chi.to_numpy(float)[idx]
+        if len(idx) < 3:
+            picks[date] = d.index[idx[int(np.argmin(c))]]
+            continue
+        lam = np.polyfit(x, c, 1)[0]
+        picks[date] = d.index[idx[int(np.argmin(c - lam * x))]]
+    return pd.Series(picks)
+
+
 def multiscale_scores(scan: pd.DataFrame) -> pd.DataFrame:
     """每个 as-of 日期、每个尺度一行一组列：置信度 = 该尺度窗口中合格比例（E4 定义）。
     列名 <rule>__<S|M|L>；另给 n_<scale>。"""
@@ -119,4 +135,11 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
         m = scale == sc
         out[f"s_lit1_{sc}"] = r.lit1[m].groupby(d.date[m]).mean()
     out["s_ratio_lppls_pow"] = (d.sse / d.pow_sse).groupby(d.date).median()
+    pick = lagrange_pick(d)
+    lagf = d.loc[pick.to_numpy()].set_index(pick.index)
+    lagr = r.loc[pick.to_numpy()].set_index(pick.index)
+    out["lag_dt"] = lagf.n.reindex(out.index)
+    out["lag_ahead"] = lagf.ahead.reindex(out.index)
+    for c in ("box", "p_strict", "lit1", "lit2"):
+        out[f"lag_{c}"] = lagr[c].astype(float).reindex(out.index)
     return out
