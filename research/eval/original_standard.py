@@ -20,11 +20,21 @@ import numpy as np
 import pandas as pd
 
 from ..eval.dataset import price_series
-from ..features.lppls_rules import SCALES, _derived, grid_rules, multiscale_scores, rules
+from ..features.lppls_rules import (
+    SCALES,
+    _derived,
+    grid_rules,
+    lagrange_pick,
+    multiscale_scores,
+    rules,
+)
+from ..features.lppls_scan import BOX, BOXES
 from ..features.lppls_scan import OUT as SCAN
 from ..labels.run_top import INDEXES
 from ..labels.top import event_segments
+from ..lppls import core as _core
 from ..lppls.scenarios import scenarios
+from ..lppls.tc_bootstrap import tc_interval
 
 # OS_TARGET=top（默认，顶部标签）或 bottom（底部标签；用于反泡沫扫描 lppls_v2_neg / lppls_v2_ab 的评价，§17.4-7）
 TARGET = os.environ.get("OS_TARGET", "top")
@@ -33,6 +43,7 @@ DEV_END = pd.Timestamp("2018-12-31")
 THRESHOLDS = (0.05, 0.10, 0.20)
 HORIZONS = (60, 120)
 N_PERM, MIN_SHIFT = 1000, 250
+BOOT_RULE, BOOT_THR, BOOT_MAX, BOOT_B = "box", 0.10, int(os.environ.get("OS_BOOT_MAX", "100")), 30
 REPORT = Path(f"reports/original_standard_dev_{SCAN.name.removeprefix('lppls_')}" + ("" if TARGET == "top" else "_bottom"))
 
 
@@ -115,6 +126,44 @@ def _null(alarm: np.ndarray, top_pos: np.ndarray, grid_pos: np.ndarray, H: int, 
     return out
 
 
+def bootstrap_windows(sym: str, d: pd.DataFrame, r: pd.DataFrame, tpos: np.ndarray, cal: pd.DatetimeIndex) -> list[dict]:
+    """§17.6-1 FBE 要求的 bootstrap 拟合：报警日（BOOT_RULE 置信度 ≥ BOOT_THR）的 Lagrange 选中窗口，
+    残差区块 bootstrap B=30 次重拟合，取 t_c−t₂ 的 20/80 分位作为分位窗；最多 BOOT_MAX 个日期（等距抽样）。"""
+    conf = r[BOOT_RULE].groupby(d.date).mean()
+    days = conf.index[conf >= BOOT_THR]
+    if len(days) > BOOT_MAX:
+        days = days[np.linspace(0, len(days) - 1, BOOT_MAX).astype(int)]
+    if len(days) == 0:
+        return []
+    picks = lagrange_pick(d[d.date.isin(days)])
+    logp = price_series(sym).to_numpy()
+    bx = BOXES[BOX]
+    _core.ALLOW_INSIDE = bool(bx["inside"])
+    rows = []
+    for date, ridx in picks.items():
+        f = d.loc[ridx]
+        tp = cal.get_indexer([date])[0]
+        n = int(f.n)
+        y = logp[tp + 1 - n : tp + 1]
+        dt = n - 1
+        tc_lo, _ = bx["tc"]
+        lo = np.array([dt + (tc_lo if tc_lo >= 0.5 else tc_lo * dt), bx["m"][0], bx["w"][0]])
+        hi = np.array([dt + 0.2 * dt, bx["m"][1], bx["w"][1]])
+        try:
+            bi = tc_interval(y, np.array([f.tc, f.m, f.w]), lo, hi, B=BOOT_B, seed=tp)
+        except Exception:  # noqa: BLE001
+            continue
+        nxt = tpos[tpos > tp]
+        if len(nxt) == 0:
+            continue
+        gap = nxt[0] - tp
+        width = max(1.0, bi["q80"] - bi["q20"])
+        rows.append(dict(symbol=sym, rule=BOOT_RULE, date=date, kind="lagrange_boot", q20=bi["q20"], q80=bi["q80"], width=width,
+                         gap=gap, cover=bool(bi["q20"] <= gap <= bi["q80"]), cover_naive=bool(1 <= gap <= 1 + width),
+                         cover_random=np.nan, dt=n, ahead_hat=bi["ahead_hat"], boot_sd=bi["sd"]))
+    return rows
+
+
 def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame]:
     sc, ms = load(sym)
     cal = price_series(sym).index
@@ -182,6 +231,7 @@ def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame
             for row in win_rows:
                 if row["rule"] == rule and row["date"] in st.index:
                     row["stab3"] = st[row["date"]]
+    win_rows += bootstrap_windows(sym, d, r, tpos, cal)
     return tab, pd.DataFrame(win_rows)
 
 

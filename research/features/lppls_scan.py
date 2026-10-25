@@ -38,9 +38,12 @@ BOXES = {
 }
 # §17.4-7 反泡沫两种形式：SIGN=neg → 对 −ln P 拟合（Yan–Woodard–Sornette 2010 负泡沫，t_c 在未来）；
 # ANCHOR=start → t_c 搜索域改为窗口起点之前 [t₁−0.2dt, t₁]（Johansen–Sornette 1999 反泡沫，描述峰后衰减振荡）。
+# §17.6 补齐：LPPLS_WINDOWS=full（默认）| xs（探索尺度 15–30 日，样本点少，只作参考）| lite（步长 10、随机起点 3，用于负泡沫/反泡沫减配扫描）
+WINDOWS_MODE = os.environ.get("LPPLS_WINDOWS", "full")
 SIGN = os.environ.get("LPPLS_SIGN", "pos")
 ANCHOR = os.environ.get("LPPLS_ANCHOR", "end")
-SUFFIX = ("_neg" if SIGN == "neg" else "") + ("_ab" if ANCHOR == "start" else "")
+SUFFIX = ("_neg" if SIGN == "neg" else "") + ("_ab" if ANCHOR == "start" else "") + ("" if WINDOWS_MODE == "full" else f"_{WINDOWS_MODE}")
+XS_WINDOWS = (15, 20, 25, 30)
 OUT = Path(f"data/features/lppls_{BOX}{SUFFIX}")
 LOMB_W = np.arange(1.0, 50.01, 0.25)
 IDX_STEP, STK_STEP = 5, 20
@@ -101,10 +104,11 @@ def fit_one(y: np.ndarray) -> tuple:
         hi = np.array([dt + ahead_hi, bx["m"][1], bx["w"][1]])
     if SIGN == "neg":
         y = -y
-    r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=bx["n_random"])
+    n_random = 3 if WINDOWS_MODE == "lite" else bx["n_random"]
+    r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)
     s, beta = lin_fit(t, y, *r.theta)
     sst = float(((y - y.mean()) ** 2).sum())
-    rp = tcgrid_lm(t, y, lo[:2], hi[:2], seed=0, k=K_POWER, n_random=bx["n_random"])
+    rp = tcgrid_lm(t, y, lo[:2], hi[:2], seed=0, k=K_POWER, n_random=n_random)
     sp, bp = lin_fit(t, y, rp.theta[0], rp.theta[1], 0.0, K_POWER)
     return (n, *map(float, r.theta), *map(float, beta), float(s), 1 - s / sst,
             float(rp.theta[0]), float(rp.theta[1]), float(bp[1]), float(sp),
@@ -165,6 +169,10 @@ def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = (
     windows = IDX_WINDOWS if group == "index" else STK_WINDOWS
     if BOXES[BOX]["short"]:
         windows = SHORT_WINDOWS + windows
+    if WINDOWS_MODE == "xs":
+        windows = XS_WINDOWS
+    elif WINDOWS_MODE == "lite":
+        windows = tuple(w for w in windows if w % 10 == 0)
     tasks, parts = [], {}
     for sym in syms:
         if (OUT / f"{sym}.parquet").exists():
