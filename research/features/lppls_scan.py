@@ -45,7 +45,8 @@ ANCHOR = os.environ.get("LPPLS_ANCHOR", "end")
 STOCK_SAMPLE = int(os.environ.get("LPPLS_STOCK_SAMPLE", "0"))
 SUFFIX = ("_neg" if SIGN == "neg" else "") + ("_ab" if ANCHOR == "start" else "") + ("" if WINDOWS_MODE == "full" else f"_{WINDOWS_MODE}")
 XS_WINDOWS = (15, 20, 25, 30)
-OUT = Path(f"data/features/lppls_{BOX}{SUFFIX}" + (f"_stk{STOCK_SAMPLE}" if STOCK_SAMPLE else ""))
+OUT_TAG = os.environ.get("LPPLS_OUT_TAG", "")  # 样本段分目录（如 _cal），避免 run() 因开发段 parquet 已存在而跳过
+OUT = Path(f"data/features/lppls_{BOX}{SUFFIX}" + (f"_stk{STOCK_SAMPLE}" if STOCK_SAMPLE else "") + OUT_TAG)
 LOMB_W = np.arange(1.0, 50.01, 0.25)
 IDX_STEP, STK_STEP = 5, 20
 IDX_WINDOWS = tuple(range(125, 751, 5))
