@@ -11,13 +11,13 @@
   "top": {
     "p20": {"value": 0.52, "evidence": "dev", "notes": ["依赖 2015 型杠杆牛", "剔除 2015 后无增量"]},
     "window": {"start": "2015-06-12", "end": "2015-07-10", "rule": "p20 首次≥阈值起 20 个交易日", "evidence": "dev"},
-    "lppls_confidence": {"S": 0.41, "M": 0.67, "L": 0.24, "evidence": "dev_pending"},
+    "lppls_confidence": {"1-3m": 0.41, "6-12m": 0.67, "12-24m": 0.24, "evidence": "dev", "scale_evidence": {"1-3m": "none", "6-12m": "dev", "12-24m": "dev"}},  // §17.14 FCO 标签档；1–3 月仅描述性
     "scenarios": [
       {"share": 0.40, "dt_range": [185, 260], "ahead_mean": 42, "ahead_sd": 5, "q20": 39, "q80": 47},
       {"share": 0.30, "dt_range": [125, 180], "ahead_mean": 27, "ahead_sd": 6, "q20": 21, "q80": 34}
     ],
     "scenarios_note": "簇间不平均；簇占比<5% 不列",
-    "invalidation": {"rule": "p20 连续 10 日<阈值 或 三尺度置信度均<5%", "evidence": "rule"},
+    "invalidation": {"rule": "p20 连续 10 日<阈值 或 6–12 月与 12–24 月档置信度均<5%", "evidence": "rule"},
     "drawdown_price": {"value": null, "descriptive": [-0.18, -0.35], "evidence": "none"},
     "drawdown_time": {"value": null, "evidence": "none"},
     "second_wave": {"value": null, "evidence": "none"}

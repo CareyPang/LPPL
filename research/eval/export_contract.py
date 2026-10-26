@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ..features.lppls_rules import SCALES, _derived, rules
+from ..features.lppls_rules import SCALE_EVIDENCE, SCALES_FCO, _derived, rules
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
 from .dataset import price_series
@@ -23,7 +23,7 @@ FROZEN = Path("data/frozen/v20261024")
 
 def _conf(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp) -> dict:
     out = {}
-    for sc, (lo, hi) in SCALES.items():
+    for sc, (lo, hi) in SCALES_FCO.items():
         m = (d.date == date) & d.n.between(lo, hi)
         out[sc] = round(float(r.box[m].mean()), 3) if m.any() else None
     return out
@@ -43,7 +43,7 @@ def record(sym: str, asof: str) -> dict:
     date = pd.Timestamp(asof)
     q = d[(d.date == date) & r.box]
     scen = scenarios(q[["n", "ahead"]]) if len(q) else pd.DataFrame()
-    sw = scale_windows(q[["n", "ahead"]], SCALES) if len(q) else pd.DataFrame()
+    sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
     p20 = None
     if OOF_P20.exists():
         o = pd.read_parquet(OOF_P20)
@@ -60,8 +60,9 @@ def record(sym: str, asof: str) -> dict:
         "top": {
             "p20": {"value": p20, "evidence": "dev", "notes": ["R4 三尺度形态框 CPCV OOF；开发段，非样本外"]},
             "window": {"start": asof, "end": win_end, "rule": "p20 首次≥阈值起 20 个交易日", "evidence": "dev"},
-            "lppls_confidence": {**_conf(d, r, date), "evidence": "dev",
-                                 "notes": ["长尺度报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md）"]},
+            "lppls_confidence": {**_conf(d, r, date), "evidence": "dev", "scale_evidence": SCALE_EVIDENCE,
+                                 "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–6 年档未扫、不显示",
+                                 "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
             "scenarios": [
                 {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
                  "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
@@ -74,7 +75,7 @@ def record(sym: str, asof: str) -> dict:
                 {"scale": x.scale, "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80), "n": int(x.n)}
                 for x in sw.itertuples()
             ],
-            "invalidation": {"rule": "p20 连续 10 日<阈值 或 三尺度置信度均<5%", "evidence": "rule"},
+            "invalidation": {"rule": "p20 连续 10 日<阈值 或 6–12 月与 12–24 月档置信度均<5%", "evidence": "rule"},
             "drawdown_price": {"value": None, "descriptive": [-0.18, -0.35], "evidence": "none"},
             "drawdown_time": {"value": None, "evidence": "none"},
             "second_wave": {"value": None, "evidence": "none"},
@@ -104,7 +105,7 @@ def movie(sym: str, a: str, b: str) -> list[dict]:
     frames = []
     for date in sorted(x for x in d.date.unique() if pd.Timestamp(a) <= x <= pd.Timestamp(b)):
         q = d[(d.date == date) & r.box]
-        sw = scale_windows(q[["n", "ahead"]], SCALES) if len(q) else pd.DataFrame()
+        sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
         frames.append({"asof": str(pd.Timestamp(date).date()), "confidence": _conf(d, r, date),
                        "tc_windows": {x.scale: [_to_cal(cal, date, x.q20), _to_cal(cal, date, x.q50), _to_cal(cal, date, x.q80)] for x in sw.itertuples()}})
     return frames
