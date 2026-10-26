@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 
 MIN_SHARE, MIN_FITS, K_MAX = 0.05, 3, 4
-QS = (0.05, 0.2, 0.5, 0.8, 0.95)
+QS = (0.025, 0.05, 0.2, 0.5, 0.8, 0.95, 0.975)
+LOSS_P = 7  # 损失 = SSE/(dt−p)，p 为参数个数（FCO 的 adjustedLoss 口径未公开，此处用 Demos–Sornette 2019 的 χ²_np）
 
 
 def _kmeans(X: np.ndarray, k: int, seed: int = 0) -> np.ndarray:
@@ -40,8 +41,12 @@ def choose_k(X: np.ndarray) -> tuple[int, np.ndarray, float]:
 
 def _summ(ahead: np.ndarray) -> dict:
     q = np.quantile(ahead, QS)
-    return dict(n=len(ahead), ahead_mean=float(ahead.mean()), ahead_std=float(ahead.std(ddof=0)),
-                q05=q[0], q20=q[1], q50=q[2], q80=q[3], q95=q[4])
+    # 众数：5 日分箱直方图最高箱中点（FCO 的 tcMode 口径未公开，此处明示定义）
+    edges = np.arange(np.floor(ahead.min()) - 2.5, np.ceil(ahead.max()) + 7.5, 5.0)
+    h, e = np.histogram(ahead, bins=edges)
+    mode = float((e[int(np.argmax(h))] + e[int(np.argmax(h)) + 1]) / 2)
+    return dict(n=len(ahead), ahead_mean=float(ahead.mean()), ahead_std=float(ahead.std(ddof=0)), tc_mode=mode,
+                q025=q[0], q05=q[1], q20=q[2], q50=q[3], q80=q[4], q95=q[5], q975=q[6])
 
 
 def scenarios(fits: pd.DataFrame) -> pd.DataFrame:
@@ -57,8 +62,9 @@ def scenarios(fits: pd.DataFrame) -> pd.DataFrame:
         share = len(f) / len(fits)
         if len(f) < MIN_FITS or share < MIN_SHARE:
             continue
+        loss = (f.sse / (f.n - LOSS_P).clip(lower=1)) if "sse" in f.columns else f.n * 0
         rows.append(dict(cluster=c, k=k, silhouette=sil, share=share, dt_min=int(f.n.min()), dt_max=int(f.n.max()),
-                         **_summ(f.ahead.to_numpy(float))))
+                         rep_idx=f.index[int(np.argmin(loss.to_numpy(float)))], **_summ(f.ahead.to_numpy(float))))
     return pd.DataFrame(rows).sort_values("share", ascending=False).reset_index(drop=True)
 
 

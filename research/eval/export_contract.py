@@ -11,7 +11,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ..features.lppls_rules import SCALE_EVIDENCE, SCALES_FCO, _derived, rules
+from ..features.lppls_rules import (
+    SCALE_EVIDENCE,
+    SCALES_FCO,
+    _derived,
+    grid_rules,
+    lagrange_pick,
+    rules,
+)
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
 from .dataset import price_series
@@ -50,23 +57,118 @@ def record(sym: str, asof: str) -> dict:
     return build_record(sym, asof, d, r, cal, pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"), p20)
 
 
-def _bubble(q: pd.DataFrame, date: pd.Timestamp, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
-    """原版口径的泡沫大小/持续时间（描述性，不预测）：取 as-of 日通过 box 过滤的最长窗口 n_max，
-    大小 = P(as-of)/P(窗口起点) − 1，持续时间 = n_max 个交易日；另给合格窗口数与各合格窗口大小的中位数。"""
-    if not len(q):
-        return {"size": None, "duration_days": None, "start": None, "n_qualified": 0, "evidence": "descriptive"}
-    close = ohlc["close"] if isinstance(ohlc.index, pd.DatetimeIndex) else ohlc.set_index("date")["close"]
-    close = close.reindex(cal).ffill()
+FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
+NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
+
+
+def _close(ohlc: pd.DataFrame, cal: pd.DatetimeIndex) -> pd.Series:
+    c = ohlc["close"] if isinstance(ohlc.index, pd.DatetimeIndex) else ohlc.set_index("date")["close"]
+    return c.reindex(cal).ffill()
+
+
+def _fit_params(row: pd.Series, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+    """FCO Scenario/F11 字段：t1、t2、tc、m、ω、D、振荡、loss、属于哪些过滤集。"""
     i0 = cal.get_indexer([date])[0]
-    p0 = float(close.iloc[i0])
+    return {"t1": str(cal[max(i0 - int(row.n) + 1, 0)].date()), "t2": str(date.date()), "tc": _to_cal(cal, date, float(row.ahead)),
+            "m": round(float(row.m), 3), "omega": round(float(row.w), 2), "damping": round(float(row.D), 2),
+            "oscillations_half": round(float(row.osc), 2), "oscillations_cycles": round(float(row.n_osc), 2),
+            "loss": round(float(row.sse / max(int(row.n) - 7, 1)), 6),
+            "sets": [k for k, c in FCO_SETS.items() if bool(gg.loc[row.name, c])]}
 
-    def size(n: int) -> float:
-        return p0 / float(close.iloc[max(i0 - int(n) + 1, 0)]) - 1
 
-    nmax = int(q.n.max())
-    return {"size": round(size(nmax), 3), "duration_days": nmax, "start": str(cal[max(i0 - nmax + 1, 0)].date()),
-            "size_median": round(float(np.median([size(n) for n in q.n])), 3), "n_qualified": int(len(q)),
-            "rule": "FCO 口径：最长合格窗口起点至 as-of 的涨幅与交易日数", "evidence": "descriptive"}
+def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+    """每尺度：各过滤集置信度（合格窗口比例，E1/E4 定义）、最佳起点 t1（Lagrange 正则选窗）及其是否合格、signal_status。"""
+    out = {}
+    for sc, (lo, hi) in SCALES_FCO.items():
+        m = dd.n.between(lo, hi)
+        if not m.any():
+            out[sc] = {"signal_status": "not_computed", "direction": "positive"}
+            continue
+        sub = dd[m]
+        pick = lagrange_pick(sub)
+        i = pick.iloc[0] if len(pick) else None
+        conf = {"box": round(float(rr.box[m].mean()), 3), **{k: round(float(gg[c][m].mean()), 3) for k, c in FCO_SETS.items()}}
+        nq = int(gg["g_fco_standard"][m].sum())
+        out[sc] = {"direction": "positive", "n_windows": int(m.sum()), "confidence": conf, "n_qualified_standard": nq,
+                   "best_t1": str(cal[max(cal.get_indexer([date])[0] - int(sub.loc[i].n) + 1, 0)].date()) if i is not None else None,
+                   "t1_qualified": bool(gg.loc[i, "g_fco_standard"]) if i is not None else None,
+                   "signal_status": "signal" if nq > 0 else "no_qualified_fit"}
+    return out
+
+
+def _tc_distribution(dd: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+    """F09：合格（STANDARD）拟合的 t_c 数量分布，按尺度，5 交易日分箱；n 与直方图合计一致。"""
+    out = {}
+    for sc, (lo, hi) in SCALES_FCO.items():
+        f = dd[dd.n.between(lo, hi) & gg["g_fco_standard"]]
+        if not len(f):
+            out[sc] = {"n": 0, "bins": []}
+            continue
+        a = f.ahead.to_numpy(float)
+        edges = np.arange(np.floor(a.min() / 5) * 5, np.ceil(a.max() / 5) * 5 + 5.1, 5.0)
+        h, e = np.histogram(a, bins=edges)
+        out[sc] = {"n": int(len(a)), "bin_days": 5,
+                   "bins": [[_to_cal(cal, date, float(e[k])), _to_cal(cal, date, float(e[k + 1])), int(h[k])] for k in range(len(h)) if h[k] > 0]}
+    return out
+
+
+def _combo(ind: dict, set_name: str = "standard") -> dict:
+    """FCO Combo(p)：跨尺度置信度幂平均（p=0.1≈几何、1 算术、10 趋向最大）。展示口径，开发段无报警证据（§17.14）。"""
+    c = np.array([v["confidence"][set_name] for v in ind.values() if "confidence" in v], float)
+    if not len(c):
+        return {"evidence": "none"}
+    out = {}
+    for p_ in (0.1, 1.0, 10.0):
+        out[f"p{p_:g}"] = round(float(np.mean(np.maximum(c, 1e-9) ** p_) ** (1 / p_)), 3)
+    return {**out, "set": set_name, "scales": [k for k, v in ind.items() if "confidence" in v], "evidence": "none",
+            "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"}
+
+
+def _negative(sym: str, date: pd.Timestamp, cal: pd.DatetimeIndex, logp: pd.Series) -> dict:
+    """负泡沫置信度（对 −ln P 拟合，Yan 2010）；开发段 0/424 稳健 → 只展示、标无证据。"""
+    p = NEG_SCAN / f"{sym}.parquet"
+    if not p.exists():
+        return {"evidence": "none", "signal_status": "not_computed"}
+    sc = pd.read_parquet(p)
+    sc = sc[sc.date == date]
+    if not len(sc):
+        return {"evidence": "none", "signal_status": "not_computed"}
+    pos = cal.get_indexer([date])[0]
+    lp = logp.to_numpy()
+    sc = sc.assign(y_std=[lp[pos + 1 - n : pos + 1].std() for n in sc.n])
+    dn = _derived(sc)
+    gn = pd.DataFrame(grid_rules(dn))
+    gn.index = dn.index
+    out = {}
+    for s_, (lo, hi) in SCALES_FCO.items():
+        m = dn.n.between(lo, hi)
+        out[s_] = round(float(gn["g_fco_standard"][m].mean()), 3) if m.any() else None
+    return {"direction": "negative", "confidence_standard": out, "n_windows": int(len(dn)), "evidence": "none",
+            "note": "开发段负泡沫 0/424 组合稳健、A1≈随机（§17.12）；仅作镜像展示"}
+
+
+def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
+    """FCO 口径泡沫大小/持续时间（描述性）：起点 t1 = Lagrange 正则选窗（Demos–Sornette 2019，FCO 方法附录同）；
+    size_model = P̂(t_c)/P(t1) − 1 = exp(A)/P(t1) − 1（FAQ："从泡沫起点到 t_c 处模型预测价格的轨迹幅度"）；
+    size_realized = P(as-of)/P(t1) − 1（补充，非原版字段）；duration = t1 → as-of 交易日数；scale = 选中窗口所属尺度。
+    bubbleProgress 公式未公开，置 null。"""
+    if not len(dd):
+        return {"size_model": None, "size_realized": None, "duration_days": None, "start": None, "evidence": "descriptive",
+                "signal_status": "not_computed"}
+    close = _close(ohlc, cal)
+    i0 = cal.get_indexer([date])[0]
+    pick = lagrange_pick(dd)
+    row = dd.loc[pick.iloc[0]]
+    n = int(row.n)
+    p1 = float(close.iloc[max(i0 - n + 1, 0)])
+    scale = next((k for k, (lo, hi) in SCALES_FCO.items() if lo <= n <= hi), "other")
+    qualified = bool(gg.loc[row.name, "g_fco_standard"])
+    longest = [k for k, (lo, hi) in SCALES_FCO.items() if (dd.n.between(lo, hi) & gg["g_fco_standard"]).any()]
+    return {"start": str(cal[max(i0 - n + 1, 0)].date()), "duration_days": n, "scale": scale, "t1_qualified_standard": qualified,
+            "size_model": round(float(np.exp(row.A) / p1 - 1), 3), "size_realized": round(float(close.iloc[i0]) / p1 - 1, 3),
+            "tc": _to_cal(cal, date, float(row.ahead)), "progress": None, "longest_qualified_scale": longest[-1] if longest else None,
+            "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
+            "evidence": "descriptive", "signal_status": "signal" if qualified else "t1_not_qualified"}
 
 
 def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
@@ -80,7 +182,11 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     prev_month = (date - pd.offsets.MonthBegin(1) - pd.Timedelta(days=1)).strftime("%Y-%m")
     band = rb.loc[prev_month] if prev_month in rb.index else None
     names = {"sh000001": "上证指数", "sh000016": "上证50", "sh000300": "沪深300", "sh000905": "中证500", "sz399001": "深证成指", "sz399006": "创业板指"}
-    bubble = _bubble(q, date, cal, ohlc)
+    dd = d[d.date == date]
+    rr = r.loc[dd.index]
+    gg = grid_rules(dd)
+    ind = _indicators(dd, rr, gg, cal, date)
+    bubble = _bubble(dd, gg, date, cal, ohlc)
     w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
     window = ({"start": _to_cal(cal, date, float(w612.q20.iloc[0])), "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
                "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}
@@ -92,6 +198,13 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                     "notes": ["冻结 p20=R2（GSADF）；校准段 2019–2021 前推 ΔBrier +0.00077 [−0.0013, +0.0030]，判据(i)未通过，不显示概率",
                               f"研究层 OOF（仅开发段回放）：{p20}" if p20 is not None else "日更无 p20"]},
             "bubble": bubble,
+            "indicators": {**ind, "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），"
+                           "standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），"
+                           "FCO 'oscillations≥2.5' 的口径未公开核验"},
+            "combo": _combo(ind),
+            "tc_distribution": _tc_distribution(dd, gg, cal, date),
+            "negative_bubble": _negative(sym, date, cal, np.log(_close(ohlc, cal))),
+            "signal_status": "signal" if any(v.get("signal_status") == "signal" for v in ind.values()) else "no_qualified_fit",
             "window": window,
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev", "scale_evidence": SCALE_EVIDENCE,
                                  "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–6 年档未扫、不显示",
@@ -100,7 +213,9 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                 {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
                  "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
                  "q20": round(float(x.q20), 1), "q80": round(float(x.q80), 1),
-                 "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80)}
+                 "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
+                 "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975), "tc_mode_date": _to_cal(cal, date, x.tc_mode),
+                 "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
                 for x in scen.itertuples()
             ],
             "scenarios_note": "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",

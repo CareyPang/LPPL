@@ -14,14 +14,242 @@
    ]
   },
   "bubble": {
-   "size": 1.655,
-   "duration_days": 200,
-   "start": "2006-12-13",
-   "size_median": 1.108,
-   "n_qualified": 14,
-   "rule": "FCO 口径：最长合格窗口起点至 as-of 的涨幅与交易日数",
-   "evidence": "descriptive"
+   "start": "2004-09-20",
+   "duration_days": 740,
+   "scale": "other",
+   "t1_qualified_standard": false,
+   "size_model": 2.898,
+   "size_realized": 3.034,
+   "tc": "2008-05-09",
+   "progress": null,
+   "longest_qualified_scale": "12-24m",
+   "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
+   "evidence": "descriptive",
+   "signal_status": "t1_not_qualified"
   },
+  "indicators": {
+   "1-3m": {
+    "direction": "positive",
+    "n_windows": 7,
+    "confidence": {
+     "box": 0.143,
+     "standard": 0.286,
+     "early": 0.714,
+     "end": 0.286,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 2,
+    "best_t1": "2007-08-20",
+    "t1_qualified": false,
+    "signal_status": "signal"
+   },
+   "6-12m": {
+    "direction": "positive",
+    "n_windows": 25,
+    "confidence": {
+     "box": 0.52,
+     "standard": 0.72,
+     "early": 0.72,
+     "end": 0.2,
+     "pure": 0.6
+    },
+    "n_qualified_standard": 18,
+    "best_t1": "2007-01-08",
+    "t1_qualified": true,
+    "signal_status": "signal"
+   },
+   "12-24m": {
+    "direction": "positive",
+    "n_windows": 50,
+    "confidence": {
+     "box": 0.0,
+     "standard": 0.74,
+     "early": 0.74,
+     "end": 0.74,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 37,
+    "best_t1": "2005-11-24",
+    "t1_qualified": true,
+    "signal_status": "signal"
+   },
+   "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
+  },
+  "combo": {
+   "p0.1": 0.539,
+   "p1": 0.582,
+   "p10": 0.702,
+   "set": "standard",
+   "scales": [
+    "1-3m",
+    "6-12m",
+    "12-24m"
+   ],
+   "evidence": "none",
+   "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"
+  },
+  "tc_distribution": {
+   "1-3m": {
+    "n": 2,
+    "bin_days": 5,
+    "bins": [
+     [
+      "2007-10-12",
+      "2007-10-19",
+      1
+     ],
+     [
+      "2007-10-19",
+      "2007-10-26",
+      1
+     ]
+    ]
+   },
+   "6-12m": {
+    "n": 18,
+    "bin_days": 5,
+    "bins": [
+     [
+      "2007-09-28",
+      "2007-10-12",
+      1
+     ],
+     [
+      "2007-10-12",
+      "2007-10-19",
+      1
+     ],
+     [
+      "2007-10-19",
+      "2007-10-26",
+      1
+     ],
+     [
+      "2007-11-02",
+      "2007-11-09",
+      3
+     ],
+     [
+      "2007-11-09",
+      "2007-11-16",
+      2
+     ],
+     [
+      "2007-11-16",
+      "2007-11-23",
+      1
+     ],
+     [
+      "2007-11-23",
+      "2007-11-30",
+      6
+     ],
+     [
+      "2007-11-30",
+      "2007-12-07",
+      3
+     ]
+    ]
+   },
+   "12-24m": {
+    "n": 37,
+    "bin_days": 5,
+    "bins": [
+     [
+      "2007-09-28",
+      "2007-10-12",
+      2
+     ],
+     [
+      "2007-10-12",
+      "2007-10-19",
+      1
+     ],
+     [
+      "2007-10-19",
+      "2007-10-26",
+      13
+     ],
+     [
+      "2007-10-26",
+      "2007-11-02",
+      3
+     ],
+     [
+      "2007-11-02",
+      "2007-11-09",
+      1
+     ],
+     [
+      "2007-11-09",
+      "2007-11-16",
+      1
+     ],
+     [
+      "2007-11-23",
+      "2007-11-30",
+      1
+     ],
+     [
+      "2007-11-30",
+      "2007-12-07",
+      3
+     ],
+     [
+      "2007-12-07",
+      "2007-12-14",
+      2
+     ],
+     [
+      "2007-12-14",
+      "2007-12-21",
+      1
+     ],
+     [
+      "2007-12-21",
+      "2007-12-28",
+      1
+     ],
+     [
+      "2007-12-28",
+      "2008-01-08",
+      1
+     ],
+     [
+      "2008-01-08",
+      "2008-01-15",
+      2
+     ],
+     [
+      "2008-01-15",
+      "2008-01-22",
+      1
+     ],
+     [
+      "2008-01-22",
+      "2008-01-29",
+      1
+     ],
+     [
+      "2008-01-29",
+      "2008-02-05",
+      3
+     ]
+    ]
+   }
+  },
+  "negative_bubble": {
+   "direction": "negative",
+   "confidence_standard": {
+    "1-3m": 0.0,
+    "6-12m": 0.0,
+    "12-24m": 0.0
+   },
+   "n_windows": 73,
+   "evidence": "none",
+   "note": "开发段负泡沫 0/424 组合稳健、A1≈随机（§17.12）；仅作镜像展示"
+  },
+  "signal_status": "signal",
   "window": {
    "start": "2007-11-16",
    "end": "2007-11-30",
@@ -55,7 +283,26 @@
     "q20": 25.4,
     "q80": 35.4,
     "q20_date": "2007-11-16",
-    "q80_date": "2007-11-30"
+    "q80_date": "2007-11-30",
+    "q025_date": "2007-11-09",
+    "q975_date": "2007-12-05",
+    "tc_mode_date": "2007-11-28",
+    "representative": {
+     "t1": "2007-03-19",
+     "t2": "2007-10-12",
+     "tc": "2007-11-08",
+     "m": 0.86,
+     "omega": 6.6,
+     "damping": 0.7,
+     "oscillations_half": 7.02,
+     "oscillations_cycles": 2.24,
+     "loss": 0.000853,
+     "sets": [
+      "standard",
+      "early",
+      "pure"
+     ]
+    }
    }
   ],
   "scenarios_note": "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
