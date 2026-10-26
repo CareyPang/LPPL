@@ -84,8 +84,8 @@ def platt_fit(oof: pd.DataFrame, name: str, store: dict) -> dict:
     return res
 
 
-def top_sparse(split: str) -> pd.DataFrame:
-    df = assemble(split)
+def top_sparse(split: str, variant: str = "main") -> pd.DataFrame:
+    df = assemble(split, variant)
     cal = calendar()
     grid = {s: set(asof_dates(s, "index", cal, (split,))) for s in INDEXES}
     keep = [d in grid.get(s, ()) for d, s in zip(df.date, df.symbol, strict=True)]
@@ -93,8 +93,13 @@ def top_sparse(split: str) -> pd.DataFrame:
     return df
 
 
-def run_top(store: dict) -> None:
-    dev, cal = top_sparse("dev"), top_sparse("cal")
+def run_top(store: dict, variant: str = "main") -> None:
+    """variant≠main：§3 步骤 5 标签稳健性（share30/share70/fixed15/sigma1.5 替代顶部标签），只写 top_chain_<variant>.csv。"""
+    dev, cal = top_sparse("dev", variant), top_sparse("cal", variant)
+    if variant != "main":
+        tab, _ = forward_chain(dev, cal, TOP_CHAIN, f"top_{variant}")
+        tab.to_csv(OUT / f"top_chain_{variant}.csv", index=False)
+        return
     print(f"[top] dev n={len(dev)} pos={int(dev.y.sum())}; cal n={len(cal)} pos={int(cal.y.sum())} symbols={cal.symbol.nunique()}", flush=True)
     tab, oofs = forward_chain(dev, cal, TOP_CHAIN, "top")
     tab.to_csv(OUT / "top_chain.csv", index=False)
@@ -128,6 +133,9 @@ def main(which: str = "all") -> None:
     store = json.load(open(pj)) if pj.exists() else {}
     if which in ("top", "all"):
         run_top(store)
+    if which == "variants":
+        for v in ("share30", "share70", "fixed15", "sigma1.5"):
+            run_top(store, v)
     if which in ("bottom", "all"):
         run_bottom(store)
     json.dump(store, open(pj, "w"), indent=1)
