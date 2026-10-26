@@ -36,27 +36,35 @@ def _to_cal(cal: pd.DatetimeIndex, date: pd.Timestamp, ahead: float) -> str:
 
 
 def record(sym: str, asof: str) -> dict:
+    """开发段回放：从 v2 扫描 parquet 取 as-of 日拟合与 CPCV OOF p20。"""
     sc, _ = load(sym)
     d = _derived(sc)
     r = rules(d)
     cal = price_series(sym).index
     date = pd.Timestamp(asof)
-    q = d[(d.date == date) & r.box]
-    scen = scenarios(q[["n", "ahead"]]) if len(q) else pd.DataFrame()
-    sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
     p20 = None
     if OOF_P20.exists():
         o = pd.read_parquet(OOF_P20)
         o = o[(o.symbol == sym) & (o.date == date)]
         p20 = round(float(o.p.iloc[0]), 3) if len(o) else None
-    rb = regime_bands(pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"))
+    return build_record(sym, asof, d, r, cal, pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"), p20)
+
+
+def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
+                 p20: float | None = None, data_version: str = "frozen_v20261024") -> dict:
+    """由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
+    date = pd.Timestamp(asof)
+    q = d[(d.date == date) & r.box]
+    scen = scenarios(q[["n", "ahead"]]) if len(q) else pd.DataFrame()
+    sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
+    rb = regime_bands(ohlc)
     prev_month = (date - pd.offsets.MonthBegin(1) - pd.Timedelta(days=1)).strftime("%Y-%m")
     band = rb.loc[prev_month] if prev_month in rb.index else None
     names = {"sh000001": "上证指数", "sh000016": "上证50", "sh000300": "沪深300", "sh000905": "中证500", "sz399001": "深证成指", "sz399006": "创业板指"}
     i0 = cal.get_indexer([date])[0]
     win_end = str(cal[min(i0 + 20, len(cal) - 1)].date())
     rec = {
-        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": "frozen_v20261024", "model_version": "prereg_v1.7_v2",
+        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": "prereg_v1.7_v2",
         "top": {
             "p20": {"value": p20, "evidence": "dev", "notes": ["R4 三尺度形态框 CPCV OOF；开发段，非样本外"]},
             "window": {"start": asof, "end": win_end, "rule": "p20 首次≥阈值起 20 个交易日", "evidence": "dev"},
