@@ -435,4 +435,4 @@ Harding–Pagan 2002（JME）、Pagan–Sossounov 2003、Lunde–Timmermann 2004
 ## 18. 校准段打开记录（2026-10-26，用户授权）
 - 冻结文件：`docs/dev_freeze.md`（生效版）。用户裁决：p20 来源 = 阶梯保留链 R2（GSADF）；LPPLS 置信度独立分级显示；接受 §4 三条通过判据。
 - 校准段操作仅限 `dev_freeze.md` §3 六步：as-of 扫描（`LPPLS_BOX=v2 LPPLS_OUT_TAG=_cal`，输出 `data/features/lppls_v2_cal/`）、固定 Platt、保形覆盖率核对、CSCV-PBO/SPA、对抗性检查、照实报告；不做模型选择。
-- 打开校准段的代码 commit：见本节下一条（提交后补）。
+- 打开校准段的代码 commit：4e0eaa8（lppls_scan、规则、标签、评价代码自此不再变更，直到最终测试段结束）。
