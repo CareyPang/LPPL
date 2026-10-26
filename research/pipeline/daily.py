@@ -61,7 +61,6 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     ws = windows or (SHORT_WINDOWS + IDX_WINDOWS)
     d = _derived(fit_asof(logp, date, ws))
     rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc_pit, None, data_version=version)
-    rec["top"]["p20"] = {"value": None, "evidence": "pending_cal", "notes": ["p20 前推概率待校准段 Platt 后接入；日更暂不输出"]}
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{sym}_{'latest' if asof is None else asof}.json"
     path.write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str))

@@ -13,5 +13,6 @@ def test_daily_frozen_smoke(tmp_path, monkeypatch):
     rec = json.loads(p.read_text())
     conf = rec["top"]["lppls_confidence"]
     assert set(["1-3m", "6-12m", "12-24m"]) <= set(conf)
-    assert rec["top"]["p20"]["evidence"] == "pending_cal"
+    assert rec["top"]["p20"]["evidence"] == "dev_failed"
+    assert rec["top"]["bubble"]["evidence"] == "descriptive"
     assert rec["data_version"].startswith("frozen_")
