@@ -18,7 +18,8 @@ import pandas as pd
 from ..data import cache
 from ..eval.export_contract import build_record
 from ..features.lppls_rules import _derived, rules
-from ..features.lppls_scan import COLS, IDX_WINDOWS, SHORT_WINDOWS, fit_one
+from ..features.lppls_scan import BOX, BOXES, COLS, IDX_WINDOWS, SHORT_WINDOWS, fit_one
+from ..lppls import core as _core
 
 FROZEN = "v20261024"
 OUT = Path("web/mock/data")
@@ -50,6 +51,7 @@ def fit_asof(logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]) -> p
 
 def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[int, ...] | None = None,
         out: Path = OUT) -> Path:
+    _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])  # 与 lppls_scan.run 一致：v2 允许 t_c 落在窗内
     ohlc, version = load_ohlc(sym, frozen)
     ohlc = ohlc.sort_values("date").reset_index(drop=True)
     logp = pd.Series(np.log(ohlc.close.to_numpy(float)), index=pd.DatetimeIndex(ohlc.date))
