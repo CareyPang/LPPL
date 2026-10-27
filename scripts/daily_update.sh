@@ -7,3 +7,4 @@ export LPPLS_BOX=v2
 for s in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
   python -m research.pipeline.daily "$s" "$@"
 done
+python -m research.pipeline.forward_log seal

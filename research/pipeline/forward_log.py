@@ -13,11 +13,13 @@ import argparse
 import hashlib
 import json
 import shutil
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+UTC = timezone.utc  # noqa: UP017 — 运行环境 Python 3.10
 
 ROOT = Path("forward_log")
 LEDGER = ROOT / "ledger.jsonl"
