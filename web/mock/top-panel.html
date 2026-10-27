@@ -263,7 +263,7 @@
    "1-3m": 0.143,
    "6-12m": 1.0,
    "12-24m": 0.28,
-   "evidence": "dev",
+   "evidence": "cal_fragile",
    "scale_evidence": {
     "1-3m": "none",
     "6-12m": "dev",
@@ -444,7 +444,7 @@
    "hit": null,
    "status": "fail_i",
    "brier": "p20(R2) ΔBrier +0.00077 [−0.0013, +0.0030]；底部 B1/B2/B3 +0.0012～+0.0014，区间含 0",
-   "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii) LPPLS 置信度 A1/A2 待校准段扫描完成"
+   "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii)：仅 box 6–12 月 H=120 名义通过（4/7 指数 A1 显著且 A2≥0.5，A1 中位 0.47 vs 随机 0.23），Holm 后 3/7、留出任一指数后 3/6 → 判据(iii)不满足；FCO END/STANDARD 全部不过。LPPLS 置信度证据等级 cal_fragile"
   },
   {
    "split": "最终测试 2022–2025.08",
@@ -460,6 +460,7 @@
   "none": "无证据，仅描述",
   "rule": "执行规则",
   "dev_failed": "开发段模型，校准段未通过",
+  "cal_fragile": "校准段部分通过（4/7 指数），留出/多重比较后不满足，不升级",
   "descriptive_bubble": "原版口径描述量",
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
@@ -661,7 +662,7 @@
 <script>
 (function(){
   const D = JSON.parse(document.getElementById('cp-output').textContent);
-  const EV = {dev:['开发段','b-dev'],cal:['校准段','b-cal'],test:['最终测试','b-test'],none:['无证据','b-none'],rule:['规则，非预测','b-none'],dev_failed:['开发段模型·校准未通过','b-none'],descriptive:['描述性','b-none'],dev_pending:['开发段·评估中','b-dev'],pending_cal:['待运行','b-cal'],pending_test:['未开启','b-test']};
+  const EV = {dev:['开发段','b-dev'],cal:['校准段','b-cal'],test:['最终测试','b-test'],none:['无证据','b-none'],rule:['规则，非预测','b-none'],dev_failed:['开发段模型·校准未通过','b-none'],cal_fragile:['校准段部分通过·不稳健','b-cal'],descriptive:['描述性','b-none'],dev_pending:['开发段·评估中','b-dev'],pending_cal:['待运行','b-cal'],pending_test:['未开启','b-test']};
   const badge = e => { const [t,c] = EV[e] || [e,'b-none']; return `<span class="badge ${c}">${t}</span>`; };
   const pct = x => x == null ? '—' : Math.round(x*100) + '%';
   const $ = id => document.getElementById(id);

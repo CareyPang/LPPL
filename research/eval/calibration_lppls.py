@@ -88,8 +88,11 @@ def main() -> pd.DataFrame:
     pd.DataFrame(by_year).to_csv(OUT / "lppls_by_year.csv", index=False)
     summ = []
     for (c, H), g in tab.groupby(["indicator", "H"]):
-        ok = ((g.A1_p <= 0.05) & (g.A2 >= 0.5)).sum()
+        okm = (g.A1_p <= 0.05) & (g.A2 >= 0.5)
+        ok = okm.sum()
+        loco = [int(okm[g.symbol != s_].sum()) for s_ in g.symbol]  # 判据 (iii)：留出任一指数后 n_pass 仍 ≥4
         summ.append(dict(indicator=c, H=H, n_symbols=len(g), n_pass=int(ok), pass_ii=bool(ok >= 4),
+                         loco_min=min(loco), pass_iii_loco=bool(all(x >= 4 for x in loco)),
                          A1_med=g.A1.median(), A1_null_med=g.A1_null.median(), A2_med=g.A2.median(), n_alarm_total=int(g.n_alarm.sum())))
     s = pd.DataFrame(summ)
     s.to_csv(OUT / "lppls_summary.csv", index=False)

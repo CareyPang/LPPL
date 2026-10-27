@@ -53,7 +53,14 @@ def main() -> None:
     if ls is None:
         md.append("**待校准段扫描完成后运行 `research.eval.calibration_lppls`。**")
     else:
-        md += ["按指标 × H 汇总（n_pass = A1 p≤0.05 且 A2≥0.5 的指数数；pass_ii = n_pass≥4）：", _tab(ls)]
+        md += ["按指标 × H 汇总（n_pass = A1 p≤0.05 且 A2≥0.5 的指数数；pass_ii = n_pass≥4；loco_min = 留出任一指数后的最小 n_pass，pass_iii_loco = 留出后仍 ≥4）：", _tab(ls)]
+        w = ls[(ls.H == 120) & ls.pass_ii]
+        if len(w):
+            md += ["**判据 (ii) 名义通过的组合（H=120）：** " + "、".join(f"{r.indicator}（n_pass {r.n_pass}，留出后最小 {r.loco_min}，(iii) {'通过' if r.pass_iii_loco else '不通过'}）" for r in w.itertuples()),
+                   "校准段每指数仅 1–5 个合格顶、报警日 60–250 个，4/7 恰好过线且留出任一通过指数即跌到 3/6，属脆弱结果；FCO END/STANDARD 在校准段全部不过，"
+                   "与开发段六档重测（END 最强、box≈随机）相反——开发段与校准段的强弱互换本身说明过滤集之间没有稳健的优劣。"]
+        else:
+            md += ["**判据 (ii)：无组合通过。**"]
         if la is not None:
             # Holm 修正（补充）：对同一指标跨 7 指数的 A1 p 做 Holm，看 n_pass 变化
             rows = []
@@ -78,7 +85,8 @@ def main() -> None:
            "\n## 6. 结论与产品处置",
            f"- 顶部 p20（R2）：判据 (i) **{'通过' if pass_i_top else '未通过'}** → 契约 `top.p20` 证据等级 `dev_failed`，不显示概率。",
            f"- 底部概率链 B1/B2/B3：判据 (i) **{'全部未通过' if not any(pass_i_bot.values()) else '部分通过'}** → `bottom.state_p/thrust_p` 不显示概率。",
-           "- LPPLS 置信度（泡沫状态）：按 §3 判据 (ii) 结果定证据等级；无论结果如何，只作状态分级显示，不作概率。",
+           "- LPPLS 置信度（泡沫状态）：判据 (ii) 仅 box 6–12 月档 H=120 名义通过（4/7），判据 (iii) 留出不满足，Holm 后 3/7；FCO END/STANDARD 不过 → "
+           "证据等级 `cal_fragile`（校准段部分通过、不稳健），只作状态分级显示，不作概率、不升级。",
            "- 产品层按用户裁决改为原版输出形式：DS 置信度 / t_c 情景 / 泡沫大小与持续时间（`docs/dev_freeze.md` §6）。",
            "- 最终测试段 2022-01–2025-08：按冻结只跑一次、只报告；未通过模块不因测试段结果升级。是否运行待用户决定。"]
     OUT.write_text("\n".join(md), encoding="utf-8")

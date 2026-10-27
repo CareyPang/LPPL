@@ -206,7 +206,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "negative_bubble": _negative(sym, date, cal, np.log(_close(ohlc, cal))),
             "signal_status": "signal" if any(v.get("signal_status") == "signal" for v in ind.values()) else "no_qualified_fit",
             "window": window,
-            "lppls_confidence": {**_conf(d, r, date), "evidence": "dev", "scale_evidence": SCALE_EVIDENCE,
+            "lppls_confidence": {**_conf(d, r, date), "evidence": "cal_fragile", "scale_evidence": SCALE_EVIDENCE,
                                  "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–6 年档未扫、不显示",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
             "scenarios": [
@@ -238,11 +238,12 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
              "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"},
             {"split": "校准段 2019–2021（7 指数，开发段模型前推）", "events": 12, "hit": None, "status": "fail_i",
              "brier": "p20(R2) ΔBrier +0.00077 [−0.0013, +0.0030]；底部 B1/B2/B3 +0.0012～+0.0014，区间含 0",
-             "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii) LPPLS 置信度 A1/A2 待校准段扫描完成"},
+             "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii)：仅 box 6–12 月 H=120 名义通过（4/7 指数 A1 显著且 A2≥0.5，"
+                     "A1 中位 0.47 vs 随机 0.23），Holm 后 3/7、留出任一指数后 3/6 → 判据(iii)不满足；FCO END/STANDARD 全部不过。LPPLS 置信度证据等级 cal_fragile"},
             {"split": "最终测试 2022–2025.08", "events": None, "hit": None, "status": "pending_test"},
         ],
         "evidence_levels": {"dev": "开发段 2000–2018", "cal": "校准段未运行", "test": "最终测试未运行", "none": "无证据，仅描述",
-                            "rule": "执行规则", "dev_failed": "开发段模型，校准段未通过", "descriptive_bubble": "原版口径描述量", "dev_pending": "开发段评估进行中", "descriptive": "描述已完成月份，非预测"},
+                            "rule": "执行规则", "dev_failed": "开发段模型，校准段未通过", "cal_fragile": "校准段部分通过（4/7 指数），留出/多重比较后不满足，不升级", "descriptive_bubble": "原版口径描述量", "dev_pending": "开发段评估进行中", "descriptive": "描述已完成月份，非预测"},
     }
     return rec
 
