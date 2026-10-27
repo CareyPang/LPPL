@@ -38,7 +38,7 @@ def _ledger() -> pd.DataFrame:
 
 def seal(syms: tuple[str, ...] = SYMS) -> list[dict]:
     led = _ledger()
-    done = set(zip(led.asof, led.symbol, strict=True)) if len(led) else set()
+    done = set(zip(led["asof"], led["symbol"], strict=True)) if len(led) else set()
     out = []
     for s in syms:
         p = SRC / f"{s}_latest.json"
@@ -74,7 +74,7 @@ def review(since: str = "2026-01-01") -> pd.DataFrame:
     from ..labels.run_top import build
 
     led = verify()
-    led = led[(led.asof >= since) & led.ok]
+    led = led[(led["asof"] >= since) & led["ok"]]
     rows = []
     for s, g in led.groupby("symbol"):
         ohlc = cache.load(s, auto_refresh=False)
