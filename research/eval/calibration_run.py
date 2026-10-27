@@ -10,6 +10,7 @@ Platt (a,b) 一次拟合并固定（写 data/oof/calibration_platt.json）。LPP
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -24,7 +25,8 @@ from .ladder import assemble, with_z_variants
 from .ladder_bottom import LEVELS_B, assemble_bottom
 from .metrics import ece, event_metrics, score_table
 
-OUT = Path("reports/calibration_2019_2021")
+SPLIT = os.environ.get("CP_EVAL_SPLIT", "cal")  # cal=校准段 2019–2021；test=最终测试段 2022-01–2025-08（只跑一次）
+OUT = Path("reports/calibration_2019_2021" if SPLIT == "cal" else "reports/final_test_2022_2025")
 OOF = Path("data/oof")
 TOP_CHAIN = [("R2", ["bsadf500_psy"], 1.0)]
 BOT_CHAIN = [("B1", [f"{c}_z" for c in LEVELS_B["B1"]["dd_nodur"]], 0.1),
@@ -76,11 +78,17 @@ def holdouts(oofs: dict, chain_names: list[str], tag: str) -> pd.DataFrame:
 
 
 def platt_fit(oof: pd.DataFrame, name: str, store: dict) -> dict:
-    pl = Platt().fit(oof.p.to_numpy(), oof.y.to_numpy())
+    """cal：一次拟合并写入 store；test：只套用 store 中校准段固定的 (a,b)，不重拟合。"""
+    if SPLIT != "cal":
+        pl = Platt()
+        pl.a, pl.b = float(store[name]["a"]), float(store[name]["b"])
+    else:
+        pl = Platt().fit(oof.p.to_numpy(), oof.y.to_numpy())
     q = pl.transform(oof.p.to_numpy())
     res = dict(level=name, a=pl.a, b=pl.b, brier_raw=float(np.mean((oof.p - oof.y) ** 2)), brier_platt=float(np.mean((q - oof.y) ** 2)),
                ece_raw=float(ece(oof.y, oof.p)), ece_platt=float(ece(oof.y, q)), n=len(oof), pos=int(oof.y.sum()))
-    store[name] = dict(a=pl.a, b=pl.b, fitted_on="cal_2019_2021", n=len(oof), pos=int(oof.y.sum()))
+    if SPLIT == "cal":
+        store[name] = dict(a=pl.a, b=pl.b, fitted_on="cal_2019_2021", n=len(oof), pos=int(oof.y.sum()))
     return res
 
 
@@ -95,7 +103,7 @@ def top_sparse(split: str, variant: str = "main") -> pd.DataFrame:
 
 def run_top(store: dict, variant: str = "main") -> None:
     """variant≠main：§3 步骤 5 标签稳健性（share30/share70/fixed15/sigma1.5 替代顶部标签），只写 top_chain_<variant>.csv。"""
-    dev, cal = top_sparse("dev", variant), top_sparse("cal", variant)
+    dev, cal = top_sparse("dev", variant), top_sparse(SPLIT, variant)
     if variant != "main":
         tab, _ = forward_chain(dev, cal, TOP_CHAIN, f"top_{variant}")
         tab.to_csv(OUT / f"top_chain_{variant}.csv", index=False)
@@ -109,7 +117,7 @@ def run_top(store: dict, variant: str = "main") -> None:
 
 def run_bottom(store: dict) -> None:
     levels = with_z_variants(LEVELS_B)
-    dev, cal = assemble_bottom("dev", levels), assemble_bottom("cal", levels)
+    dev, cal = assemble_bottom("dev", levels), assemble_bottom(SPLIT, levels)
     feats = sorted({c for _, fs, _ in BOT_CHAIN for c in fs})
     dev, cal = dev.dropna(subset=feats).reset_index(drop=True), cal.dropna(subset=feats).reset_index(drop=True)
     print(f"[bottom] dev n={len(dev)} pos={int(dev.y.sum())}; cal n={len(cal)} pos={int(cal.y.sum())} symbols={cal.symbol.nunique()}", flush=True)
@@ -138,7 +146,8 @@ def main(which: str = "all") -> None:
             run_top(store, v)
     if which in ("bottom", "all"):
         run_bottom(store)
-    json.dump(store, open(pj, "w"), indent=1)
+    if SPLIT == "cal":
+        json.dump(store, open(pj, "w"), indent=1)
 
 
 if __name__ == "__main__":

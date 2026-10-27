@@ -2,12 +2,15 @@
 python -m research.eval.calibration_report"""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pandas as pd
 
-D = Path("reports/calibration_2019_2021")
-OUT = Path("reports/calibration_2019_2021.md")
+SPLIT = os.environ.get("CP_EVAL_SPLIT", "cal")
+D = Path("reports/calibration_2019_2021" if SPLIT == "cal" else "reports/final_test_2022_2025")
+OUT = Path("reports/calibration_2019_2021.md" if SPLIT == "cal" else "reports/final_test_2022_2025.md")
+SEG = "校准段 2019–2021" if SPLIT == "cal" else "最终测试段 2022-01–2025-08（只跑一次）"
 VARIANTS = ("share30", "share70", "fixed15", "sigma1.5")
 
 
@@ -29,7 +32,7 @@ def main() -> None:
     r2 = top[top.level == "R2"].iloc[0]
     pass_i_top = bool(r2.pass_i_vs_R0)
     pass_i_bot = {lv: bool(x) for lv, x in zip(bot.level, bot.pass_i_vs_R0, strict=True) if lv != "R0"}
-    md = ["# 校准段报告 2019–2021（只报告，不选择；冻结见 docs/dev_freeze.md）\n",
+    md = [f"# {SEG} 报告（只报告，不选择；冻结见 docs/dev_freeze.md）\n",
           "开发段 2000–2018 一次拟合 → 校准段前推。基线 R0 = 开发段基率。ΔBrier 为负=优于基率；90% 区间为 80 日块 bootstrap。",
           "判据（用户 2026-10-26 接受）：(i) ΔBrier 区间上界<0；(ii) ≥4/6 指数 A1 循环平移 p≤0.05 且 A2≥0.5（H=120）；(iii) 留出任一指数/年份不翻转。\n",
           "## 1. 样本", f"- 顶部（稀疏 as-of 网格，R2 特征）：校准段 n={int(r2.n)}，正标签 {int(r2.events_pos)}，指数 7（含科创50 自 2020）。",
@@ -37,7 +40,7 @@ def main() -> None:
           "## 2. 判据 (i)：概率模块\n### 2.1 顶部 p20 = R2（GSADF bsadf500_psy）",
           _tab(top, ["level", "features", "brier", "log_loss", "ece", "bss", "pr_auc", "dbrier_vs_R0", "ci_lo_R0", "ci_hi_R0", "pass_i_vs_R0", "n_events", "hit_rate", "false_alarm_rate"]),
           f"**结论：判据 (i) {'通过' if pass_i_top else '未通过'}**（点估计 {r2.dbrier_vs_R0:+.5f}，上界 {r2.ci_hi_R0:+.5f}）。",
-          "Platt（校准段一次拟合，仅记录）：", _tab(topp),
+          ("Platt（校准段一次拟合，仅记录）：" if SPLIT == "cal" else "Platt（套用校准段固定 (a,b)，不重拟合）："), _tab(topp),
           "斜率 a<0 表示校准段内 R2 概率与结果方向相反。\n",
           "留出（LOCO / 留出年）：", _tab(toph),
           "标签变体（§3 步骤 5；冻结标签为 main，变体只报告不替换）："]

@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -14,9 +15,11 @@ from ..features.lppls_rules import SCALES_FCO, _derived, grid_rules, rules
 from .dataset import price_series
 from .original_standard import N_PERM, _alarm_metrics, top_dates
 
-SCAN = Path("data/features/lppls_v2_cal")
-OUT = Path("reports/calibration_2019_2021")
-CAL = (pd.Timestamp("2019-01-01"), pd.Timestamp("2021-12-31"))
+SPLIT = os.environ.get("CP_EVAL_SPLIT", "cal")
+SCAN = Path("data/features/lppls_v2_cal" if SPLIT == "cal" else "data/features/lppls_v2_test")
+OUT = Path("reports/calibration_2019_2021" if SPLIT == "cal" else "reports/final_test_2022_2025")
+CAL = ((pd.Timestamp("2019-01-01"), pd.Timestamp("2021-12-31")) if SPLIT == "cal"
+       else (pd.Timestamp("2022-01-01"), pd.Timestamp("2025-08-31")))
 Q = 0.05
 HS = (60, 120)
 MAIN_SCALES = ("6-12m", "12-24m")
