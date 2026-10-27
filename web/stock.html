@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>临界点 2.0 · 个股入口（映射到所属指数）</title>
+<style>:root{--bg:#0e1116;--panel:#161b22;--line:#2a313b;--fg:#e6edf3;--mute:#8b949e;--red:#f85149;--amb:#d29922;--none:#484f58}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:980px;margin:24px auto;padding:0 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px}.sub{color:var(--mute);font-size:12px}.muted{color:var(--mute)}
+input{background:#0e1116;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:15px;width:140px}button{background:#21262d;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 12px}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--none);color:var(--none);margin-left:6px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mute);font-weight:500}
+.warn{border-left:3px solid var(--amb);padding-left:10px;color:var(--mute);font-size:12px}iframe{width:100%;height:1600px;border:0;border-radius:10px}</style></head><body><div class="wrap">
+<div class="card"><h2 style="margin:0 0 8px">个股输入 → 所属指数的顶部风险</h2>
+<input id="code" placeholder="6 位代码，如 600519" maxlength="6"> <button id="go">查看</button>
+<div class="sub" style="margin-top:8px">个股层面的 LPPLS 置信度/排名在开发段横截面（100 只 PIT 成分股）中<b>无预测信息</b>，产品不对个股本身给泡沫结论；这里只显示它所属指数的风险状态，个股自身的描述性曲线留在图表工作台并标"无证据"。</div></div>
+<div class="card" id="map" style="display:none"><table><tbody id="rows"></tbody></table><p class="warn" style="margin:10px 0 0" id="note"></p></div>
+<iframe id="frame" style="display:none"></iframe>
+</div><script>
+const NAMES={sh000001:'上证指数',sh000016:'上证50',sh000300:'沪深300',sh000905:'中证500',sz399001:'深证成指',sz399006:'创业板指'};
+let U=null;
+async function resolve(c){
+  if(!U){ try{ U=await (await fetch('mock/data/universe_csi300.json',{cache:'no-store'})).json(); }catch(e){ U={codes:[]}; } }
+  const r=[]; let primary=null;
+  if(U.codes.includes(c)){ r.push(['沪深300 成分（快照 '+U.snapshot+'，非当前成分）','sh000300']); primary='sh000300'; }
+  if(/^30/.test(c)){ r.push(['创业板（按代码段）','sz399006']); primary=primary||'sz399006'; }
+  else if(/^68/.test(c)){ r.push(['科创板（科创50 不在日更 6 指数内，退回上证指数）','sh000001']); primary=primary||'sh000001'; }
+  else if(/^(60|90)/.test(c)){ r.push(['沪市主板（按代码段）','sh000001']); primary=primary||'sh000001'; }
+  else if(/^(00|20)/.test(c)){ r.push(['深市主板（按代码段）','sz399001']); primary=primary||'sz399001'; }
+  return {rows:r, primary};
+}
+async function go(){
+  const c=document.getElementById('code').value.trim();
+  if(!/^\d{6}$/.test(c)){ alert('请输入 6 位代码'); return; }
+  const {rows,primary}=await resolve(c);
+  document.getElementById('map').style.display='';
+  document.getElementById('rows').innerHTML=`<tr><th style="width:28%">个股</th><td>${c}</td></tr>`+rows.map(x=>`<tr><th>${x[0]}</th><td>${NAMES[x[1]]} ${x[1]} <a class="sub" href="dashboard.html" style="color:#58a6ff">在仪表盘中打开</a></td></tr>`).join('')+`<tr><th>个股自身 LPPLS</th><td class="muted">不给结论 <span class="badge">无证据</span></td></tr>`;
+  document.getElementById('note').textContent='成分映射用的是仓库里的 PIT 快照（最新 2021-12-31），不是实时成分；中证500/上证50 成分映射待接入。指数风险状态的证据等级以仪表盘各 badge 为准。';
+  const f=document.getElementById('frame'); f.style.display=''; f.src=`dashboard.html?sym=${primary}_latest`;
+}
+document.getElementById('go').onclick=go; document.getElementById('code').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+</script></body></html>

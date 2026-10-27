@@ -120,6 +120,7 @@ async function load(){
   if (!r.ok) { document.getElementById('hd').textContent = `加载失败：${f}.json（${r.status}）`; return; }
   const D = await r.json(); document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
 }
+const q = new URLSearchParams(location.search).get('sym'); if (q && [...document.getElementById('sym').options].some(o => o.value === q)) document.getElementById('sym').value = q;
 document.getElementById('sym').addEventListener('change', load); load();
 </script>
 </body>
