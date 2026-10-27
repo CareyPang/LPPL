@@ -72,6 +72,7 @@ def test_download_falls_back_when_source_raises(monkeypatch):
         return good
 
     monkeypatch.setitem(sources.SOURCES, "ak_em_stock", fail)
+    monkeypatch.setitem(sources.SOURCES, "tencent_sina", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("offline")))
     monkeypatch.setitem(sources.SOURCES, "ak_sina_stock", succeed)
     df, src = cache.download("600519", retries=1, backoff=0)
     assert src == "ak_sina_stock"
@@ -94,6 +95,7 @@ def test_tencent_negative_stock_prices_fail_quality_gate_and_fallback(monkeypatc
 def test_default_source_orders_are_market_specific():
     assert sources.DEFAULT_ORDER == (
         "ak_em_index",
+        "tencent_sina",
         "ak_tx_index",
         "ak_sina_index",
         "eastmoney",
@@ -101,6 +103,7 @@ def test_default_source_orders_are_market_specific():
     )
     assert sources.STOCK_ORDER == (
         "ak_em_stock",
+        "tencent_sina",
         "ak_sina_stock",
         "eastmoney",
         "ak_tx_stock",

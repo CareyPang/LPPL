@@ -311,6 +311,12 @@ def fetch_sina(
     return fetch_ak_sina_stock(market, six, is_index, adjust, timeout)
 
 
+def _tencent_sina(market: str, six: str, is_index: bool, adjust: str = "qfq", timeout: float = 15) -> pd.DataFrame:
+    from .tencent_sina import fetch_tencent_sina
+
+    return fetch_tencent_sina(market, six, is_index, adjust, timeout)
+
+
 SOURCES: dict[str, Callable[..., pd.DataFrame]] = {
     "ak_em_index": fetch_ak_em_index,
     "ak_tx_index": fetch_ak_tx_index,
@@ -320,7 +326,10 @@ SOURCES: dict[str, Callable[..., pd.DataFrame]] = {
     "ak_tx_stock": fetch_ak_tx_stock,
     "eastmoney": fetch_eastmoney,
     "tencent": fetch_tencent,
+    "tencent_sina": _tencent_sina,
     "sina": fetch_sina,
 }
-DEFAULT_ORDER = ("ak_em_index", "ak_tx_index", "ak_sina_index", "eastmoney", "tencent")
-STOCK_ORDER = ("ak_em_stock", "ak_sina_stock", "eastmoney", "ak_tx_stock", "tencent")
+# tencent_sina（腾讯不复权 + 新浪比例复权因子，见 tencent_sina.py）排第二：不触东财风控、复权口径正确；
+# 旧 "tencent"（腾讯等差 qfq）降为末位，仅指数可靠。
+DEFAULT_ORDER = ("ak_em_index", "tencent_sina", "ak_tx_index", "ak_sina_index", "eastmoney", "tencent")
+STOCK_ORDER = ("ak_em_stock", "tencent_sina", "ak_sina_stock", "eastmoney", "ak_tx_stock", "tencent")
