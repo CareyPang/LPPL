@@ -439,3 +439,11 @@ Harding–Pagan 2002（JME）、Pagan–Sossounov 2003、Lunde–Timmermann 2004
 - 2026-10-26 晚：校准段判据 (i) 结果（p20=R2、底部 B1–B3 均未通过，见 `reports/calibration_2019_2021/`）；用户裁决产品层改为原版
   输出形式（DS 置信度 / t_c 情景 / 泡沫大小与持续时间），p20 标 `dev_failed` 不显示，详见 `docs/dev_freeze.md` §6。
   评价规则不变，判据 (ii) 待扫描完成后照实报告。
+
+## 19. 最终测试段打开记录（2026-10-27，用户授权"跑测试"）
+- 校准段结果已锁定（`reports/calibration_2019_2021.md`，commit a0dbc6a）；测试段 2022-01-01 至 2025-08-31，**只跑一次、只报告**；
+  未通过模块不因测试段结果升级；2026 年案例不入测试。
+- 操作：as-of 扫描 `LPPLS_BOX=v2 LPPLS_OUT_TAG=_test lppls_scan index test` → `data/features/lppls_v2_test/`；
+  `CP_EVAL_SPLIT=test calibration_run all`（开发段固定模型前推；Platt 用校准段固定参数 data/oof/calibration_platt.json，不重拟合）；
+  `CP_EVAL_SPLIT=test calibration_lppls`（box/STANDARD/END × 6–12m/12–24m × H60/120，q=0.05）；报告 `reports/final_test_2022_2025.md`。
+- 打开 commit：fcbee17（本条登记随后一次 commit 提交）。
