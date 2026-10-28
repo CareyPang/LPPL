@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ..data.cache import download
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw
 from ..eval.export_contract import build_record
 from ..features.lppls_rules import _derived, rules
@@ -44,20 +45,25 @@ def one(args) -> dict:
     t0 = time.time()
     try:
         start = str((pd.Timestamp.today() - pd.DateOffset(years=YEARS)).date())
-        raw = tencent_raw(sym, start=start)
-        if typ == "stock":
-            raw = apply_factors(raw, sina_factors(sym, "qfq"), "qfq")
+        src = "tencent_sina_lite"
+        try:
+            raw = tencent_raw(sym, start=start)
+            if typ == "stock":
+                raw = apply_factors(raw, sina_factors(sym, "qfq"), "qfq")
+        except Exception:  # noqa: BLE001 —— 腾讯限并发（501/空返回）时走数据层的备用来源链（东财/新浪/腾讯分段）
+            raw, src = download(sym, "qfq" if typ == "stock" else "")
+            raw = raw[pd.to_datetime(raw.date) >= pd.Timestamp(start)]
         ohlc = raw.assign(date=pd.to_datetime(raw.date)).sort_values("date").reset_index(drop=True)
         ohlc = ohlc[ohlc.close > 0]
         logp = pd.Series(np.log(ohlc.close.to_numpy(float)), index=pd.DatetimeIndex(ohlc.date))
         date = logp.index[-1]
         _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])
         d = _derived(fit_asof(logp, date, WINDOWS))
-        rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc, None, data_version=f"vintage_{date:%Y%m%d}_tencent_sina_lite")
+        rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc, None, data_version=f"vintage_{date:%Y%m%d}_{src}")
         T = rec["top"]
         ind = {k: v for k, v in T["indicators"].items() if k in ("6-12m", "12-24m")}
         sc612 = next((s for s in T["scenarios"]), None)
-        row = {"symbol": sym, "name": name, "type": typ, "latest": str(date.date()), "close": round(float(ohlc.close.iloc[-1]), 3),
+        row = {"symbol": sym, "name": name, "type": typ, "source": src, "latest": str(date.date()), "close": round(float(ohlc.close.iloc[-1]), 3),
                "ret_5d": _ret(ohlc.close, 5), "ret_21d": _ret(ohlc.close, 21), "ret_252d": _ret(ohlc.close, 252),
                "conf": {k: (v.get("confidence") or {}) for k, v in ind.items()},
                "n_qualified": {k: v.get("n_qualified_standard", 0) for k, v in ind.items()},
@@ -97,7 +103,7 @@ def _write(rows: list[dict]) -> Path:
     return OUT
 
 
-def run(procs: int = 6, limit: int | None = None, names_path: Path = Path("web/mock/data/stock_names.json"), retry_procs: int = 2) -> Path:
+def run(procs: int = 2, limit: int | None = None, names_path: Path = Path("web/mock/data/stock_names.json"), retry_procs: int = 2) -> Path:
     """第一遍并行；腾讯接口对并发敏感（501/空返回），失败的资产第二遍低并发重试，仍失败的保留 error 状态（不填 0）。"""
     names = json.loads(names_path.read_text()) if names_path.exists() else {}
     todo = assets(names=names)[:limit]
