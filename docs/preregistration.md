@@ -447,3 +447,11 @@ Harding–Pagan 2002（JME）、Pagan–Sossounov 2003、Lunde–Timmermann 2004
   `CP_EVAL_SPLIT=test calibration_run all`（开发段固定模型前推；Platt 用校准段固定参数 data/oof/calibration_platt.json，不重拟合）；
   `CP_EVAL_SPLIT=test calibration_lppls`（box/STANDARD/END × 6–12m/12–24m × H60/120，q=0.05）；报告 `reports/final_test_2022_2025.md`。
 - 打开 commit：fcbee17（本条登记随后一次 commit 提交）。
+
+### 19.1 最终测试段结果登记（2026-10-28，唯一一次运行；报告 `reports/final_test_2022_2025.md`）
+- 顶部 p20（R2）：ΔBrier −0.00158，90% 区间 [−0.00231, −0.00003]——判据 (i) 点估计过线；留出任一指数 7 次中 4 次（上证、中证500、深证成指、创业板指）区间上界转正，留出年份不翻转 → 判据 (iii) **不满足**。校准段固定 Platt（a=−0.866）套用后 Brier 0.04808→0.04855 变差。处置：`top.p20` 证据等级 `fail_i_iii`，不显示概率。
+- 底部 B1/B2/B3：ΔBrier +0.00349 / +0.00468 / +0.00461，区间整体高于 0 → 判据 (i) **未通过**（比校准段更差）。处置：`fail_i`，不显示。
+- LPPLS 置信度（判据 ii，q=0.05，H=60/120，box/STANDARD/END × 6–12m/12–24m）：**无组合通过**。box 6–12m H=120：1/7 指数（仅上证 A1 0.20 vs 随机 0.003），A1 中位 0 vs 随机 0.14，共 74 报警日；STANDARD 6–12m 24 报警日 A1=0；END 两档 0 报警日。Holm 后 0；LOCO 最小 0。测试段 7 指数共 15 个合格顶（每指数 1–3 个）；2025 年报警（2025-09 起上涨）在 H=120 内无标签顶。
+- 三段合并裁决（不改规则）：LPPLS 置信度 = 开发段有信号、校准段脆弱（box 4/7 名义过、LOCO 不满足）、测试段未通过 → 证据等级 `dev_only`，只作泡沫状态描述性分级，不作预测证据；p20 与底部概率链不显示。任何模块不因测试段结果升级；本轮历史段评价到此关闭，后续证据只来自前瞻日志。
+- 扫描/评价 commit：以本条登记所在 commit 为准；特征 `data/features/lppls_v2_test/`（7 指数）。
+

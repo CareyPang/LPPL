@@ -31,17 +31,21 @@ def main() -> None:
     ls, la, ly = _rd("lppls_summary.csv"), _rd("lppls_a1a2.csv"), _rd("lppls_by_year.csv")
     r2 = top[top.level == "R2"].iloc[0]
     pass_i_top = bool(r2.pass_i_vs_R0)
+    th = _rd("top_holdouts.csv")
+    flips = int((~th.pass_i.astype(bool)).sum()) if th is not None and pass_i_top else 0
+    pass_iii_top = pass_i_top and flips == 0
     pass_i_bot = {lv: bool(x) for lv, x in zip(bot.level, bot.pass_i_vs_R0, strict=True) if lv != "R0"}
     md = [f"# {SEG} 报告（只报告，不选择；冻结见 docs/dev_freeze.md）\n",
-          "开发段 2000–2018 一次拟合 → 校准段前推。基线 R0 = 开发段基率。ΔBrier 为负=优于基率；90% 区间为 80 日块 bootstrap。",
+          f"开发段 2000–2018 一次拟合 → {SEG}前推。基线 R0 = 开发段基率。ΔBrier 为负=优于基率；90% 区间为 80 日块 bootstrap。",
           "判据（用户 2026-10-26 接受）：(i) ΔBrier 区间上界<0；(ii) ≥4/6 指数 A1 循环平移 p≤0.05 且 A2≥0.5（H=120）；(iii) 留出任一指数/年份不翻转。\n",
-          "## 1. 样本", f"- 顶部（稀疏 as-of 网格，R2 特征）：校准段 n={int(r2.n)}，正标签 {int(r2.events_pos)}，指数 7（含科创50 自 2020）。",
-          f"- 底部（逐日，指数+个股）：校准段 n={int(bot.n.iloc[0])}，正标签 {int(bot.events_pos.iloc[0])}。\n",
+          "## 1. 样本", f"- 顶部（稀疏 as-of 网格，R2 特征）：{SEG} n={int(r2.n)}，正标签 {int(r2.events_pos)}，指数 7（含科创50 自 2020）。",
+          f"- 底部（逐日，指数+个股）：{SEG} n={int(bot.n.iloc[0])}，正标签 {int(bot.events_pos.iloc[0])}。\n",
           "## 2. 判据 (i)：概率模块\n### 2.1 顶部 p20 = R2（GSADF bsadf500_psy）",
           _tab(top, ["level", "features", "brier", "log_loss", "ece", "bss", "pr_auc", "dbrier_vs_R0", "ci_lo_R0", "ci_hi_R0", "pass_i_vs_R0", "n_events", "hit_rate", "false_alarm_rate"]),
-          f"**结论：判据 (i) {'通过' if pass_i_top else '未通过'}**（点估计 {r2.dbrier_vs_R0:+.5f}，上界 {r2.ci_hi_R0:+.5f}）。",
+          f"**结论：判据 (i) {'通过' if pass_i_top else '未通过'}**（点估计 {r2.dbrier_vs_R0:+.5f}，上界 {r2.ci_hi_R0:+.5f}）"
+          + (f"；判据 (iii) **不满足**：留出表中 {flips} 个留出子集的区间上界回到 0 以上。" if pass_i_top and flips else "。"),
           ("Platt（校准段一次拟合，仅记录）：" if SPLIT == "cal" else "Platt（套用校准段固定 (a,b)，不重拟合）："), _tab(topp),
-          "斜率 a<0 表示校准段内 R2 概率与结果方向相反。\n",
+          ("斜率 a<0 表示校准段内 R2 概率与结果方向相反。\n" if SPLIT == "cal" else "校准段固定的 a<0（方向反转）套到测试段使 Brier 变差（brier_platt > brier_raw）：校准段学到的反向关系不可迁移。\n"),
           "留出（LOCO / 留出年）：", _tab(toph),
           "标签变体（§3 步骤 5；冻结标签为 main，变体只报告不替换）："]
     for v in VARIANTS:
@@ -80,18 +84,23 @@ def main() -> None:
     md += ["\n## 4. 多重比较（§3 步骤 4）",
            "- 开发段阶梯 70 配置：CSCV-PBO 0.503、SPA p 0.1615（`reports/ladder_dev_full_v2_mt.md`）——开发段的配置选择本身接近运气水平，与校准段 R2 未通过一致。",
            "- 开发段候选总数：阶梯 70 + 原版标准网格 108 + 尺度敏感性 162 = 340；原版标准/尺度敏感性的 A1 p 值在开发段未做多重比较修正，报告中已声明为开发段描述。",
-           "- 校准段只评价冻结配置（R2 一个；LPPLS 2 尺度 × 3 规则 × 2 H），不再选择；§3 给出 Holm 修正作为补充。",
+           f"- {SEG}只评价冻结配置（R2 一个；LPPLS 2 尺度 × 3 规则 × 2 H），不再选择；§3 给出 Holm 修正作为补充。",
            "\n## 5. 对抗性检查（§3 步骤 5）",
            "- 标签扰动：见 §2.1 标签变体——share30/share70 与主标签同向（未通过），fixed15/sigma1.5 为负；结论依赖标签定义，按冻结以 main 为准。",
            "- 安慰剂：LPPLS A1/A2 的零分布即报警序列循环平移（§3）；R2 概率模块的对照为开发段基率 R0。",
-           "- 留出指数 / 留出年：§2.1、§2.2 表，顶部与底部均不翻转（全部未通过）。",
+           ("- 留出指数 / 留出年：§2.1、§2.2 表，顶部与底部均不翻转（全部未通过）。" if SPLIT == "cal" else f"- 留出指数 / 留出年：§2.1 顶部 R2 留出后 {flips} 个子集上界转正（判据 iii 不满足）；§2.2 底部全部未通过且不翻转。"),
            "\n## 6. 结论与产品处置",
-           f"- 顶部 p20（R2）：判据 (i) **{'通过' if pass_i_top else '未通过'}** → 契约 `top.p20` 证据等级 `dev_failed`，不显示概率。",
+           (f"- 顶部 p20（R2）：判据 (i) {'通过' if pass_i_top else '未通过'}、判据 (iii) {'满足' if pass_iii_top else '不满足'} → "
+            f"契约 `top.p20` 证据等级 `{'dev_failed' if SPLIT == 'cal' else 'fail_i_iii'}`，不显示概率。"),
            f"- 底部概率链 B1/B2/B3：判据 (i) **{'全部未通过' if not any(pass_i_bot.values()) else '部分通过'}** → `bottom.state_p/thrust_p` 不显示概率。",
-           "- LPPLS 置信度（泡沫状态）：判据 (ii) 仅 box 6–12 月档 H=120 名义通过（4/7），判据 (iii) 留出不满足，Holm 后 3/7；FCO END/STANDARD 不过 → "
-           "证据等级 `cal_fragile`（校准段部分通过、不稳健），只作状态分级显示，不作概率、不升级。",
+           ("- LPPLS 置信度（泡沫状态）：判据 (ii) 仅 box 6–12 月档 H=120 名义通过（4/7），判据 (iii) 留出不满足，Holm 后 3/7；FCO END/STANDARD 不过 → "
+            "证据等级 `cal_fragile`（校准段部分通过、不稳健），只作状态分级显示，不作概率、不升级。" if SPLIT == "cal" else
+            "- LPPLS 置信度（泡沫状态）：判据 (ii) **无组合通过**（box 6–12 月 1/7，A1 中位 0 vs 随机 0.14；STANDARD 24 个报警日 A1=0；END 0 个报警日）。"
+            "测试段每指数仅 1–3 个合格顶，2025 年报警（箱体后 2025-09 起的上涨）在 H=120 内未出现标签顶；三段合并：开发段有信号、校准段脆弱、测试段未通过 → "
+            "证据等级 `dev_only`，只作泡沫状态描述性分级显示，不作预测证据。"),
            "- 产品层按用户裁决改为原版输出形式：DS 置信度 / t_c 情景 / 泡沫大小与持续时间（`docs/dev_freeze.md` §6）。",
-           "- 最终测试段 2022-01–2025-08：按冻结只跑一次、只报告；未通过模块不因测试段结果升级。是否运行待用户决定。"]
+           ("- 最终测试段 2022-01–2025-08：按冻结只跑一次、只报告；未通过模块不因测试段结果升级。是否运行待用户决定。" if SPLIT == "cal" else
+            "- 本报告为最终测试段唯一一次运行的结果；不据此重选模型、标签或阈值。后续证据只来自 2026 起的前瞻日志（`forward_log/`）。")]
     OUT.write_text("\n".join(md), encoding="utf-8")
     print(OUT, len(md))
 

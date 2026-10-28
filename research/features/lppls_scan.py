@@ -55,6 +55,9 @@ MAX_GAP_SHARE = 0.10
 COLS = ["date", "n", "tc", "m", "w", "A", "B", "C1", "C2", "sse", "r2", "pow_tc", "pow_m", "pow_B", "pow_sse",
         "lomb_w", "lomb_pn", "df_t"]
 SHORT_WINDOWS = tuple(range(30, 121, 5))
+# 仅日更/产品显示用的补充窗口（FCO 六档中的 2–4 周与 2–6 年）；不进入开发/校准/测试段扫描与评价
+XS_WINDOWS = tuple(range(10, 21, 2))
+XL_WINDOWS = tuple(range(525, 1501, 25))
 
 
 def residual_tests(t: np.ndarray, y: np.ndarray, tc: float, m: float, w: float, beta: np.ndarray) -> tuple[float, float, float]:

@@ -14,6 +14,7 @@ import pandas as pd
 from ..features.lppls_rules import (
     SCALE_EVIDENCE,
     SCALES_FCO,
+    SCALES_FCO6,
     _derived,
     grid_rules,
     lagrange_pick,
@@ -30,7 +31,7 @@ FROZEN = Path("data/frozen/v20261024")
 
 def _conf(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp) -> dict:
     out = {}
-    for sc, (lo, hi) in SCALES_FCO.items():
+    for sc, (lo, hi) in SCALES_FCO6.items():
         m = (d.date == date) & d.n.between(lo, hi)
         out[sc] = round(float(r.box[m].mean()), 3) if m.any() else None
     return out
@@ -106,7 +107,7 @@ def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: i
 def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
     """每尺度：各过滤集置信度（合格窗口比例，E1/E4 定义）、最佳起点 t1（Lagrange 正则选窗）及其是否合格、signal_status。"""
     out = {}
-    for sc, (lo, hi) in SCALES_FCO.items():
+    for sc, (lo, hi) in SCALES_FCO6.items():
         m = dd.n.between(lo, hi)
         if not m.any():
             out[sc] = {"signal_status": "not_computed", "direction": "positive"}
@@ -126,7 +127,7 @@ def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.Da
 def _tc_distribution(dd: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
     """F09：合格（STANDARD）拟合的 t_c 数量分布，按尺度，5 交易日分箱；n 与直方图合计一致。"""
     out = {}
-    for sc, (lo, hi) in SCALES_FCO.items():
+    for sc, (lo, hi) in SCALES_FCO6.items():
         f = dd[dd.n.between(lo, hi) & gg["g_fco_standard"]]
         if not len(f):
             out[sc] = {"n": 0, "bins": []}
@@ -167,7 +168,7 @@ def _negative(sym: str, date: pd.Timestamp, cal: pd.DatetimeIndex, logp: pd.Seri
     gn = pd.DataFrame(grid_rules(dn))
     gn.index = dn.index
     out = {}
-    for s_, (lo, hi) in SCALES_FCO.items():
+    for s_, (lo, hi) in SCALES_FCO6.items():
         m = dn.n.between(lo, hi)
         out[s_] = round(float(gn["g_fco_standard"][m].mean()), 3) if m.any() else None
     return {"direction": "negative", "confidence_standard": out, "n_windows": int(len(dn)), "evidence": "none",
@@ -228,8 +229,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     rec = {
         "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": "prereg_v1.7_v2",
         "top": {
-            "p20": {"value": None, "evidence": "dev_failed",
-                    "notes": ["冻结 p20=R2（GSADF）；校准段 2019–2021 前推 ΔBrier +0.00077 [−0.0013, +0.0030]，判据(i)未通过，不显示概率",
+            "p20": {"value": None, "evidence": "fail_i_iii",
+                    "notes": ["冻结 p20=R2（GSADF）；校准段 ΔBrier +0.00077 [−0.0013, +0.0030] 未通过；测试段 −0.00158 [−0.00231, −0.00003] 点过线但留出 4/7 翻转（判据 iii 不满足），不显示概率",
                               f"研究层 OOF（仅开发段回放）：{p20}" if p20 is not None else "日更无 p20"]},
             "bubble": bubble,
             "indicators": {**ind, "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），"
@@ -240,8 +241,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "negative_bubble": _negative(sym, date, cal, np.log(_close(ohlc, cal))),
             "signal_status": "signal" if any(v.get("signal_status") == "signal" for v in ind.values()) else "no_qualified_fit",
             "window": window,
-            "lppls_confidence": {**_conf(d, r, date), "evidence": "cal_fragile", "scale_evidence": SCALE_EVIDENCE,
-                                 "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–6 年档未扫、不显示",
+            "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
+                                 "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
             "scenarios": [
                 {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
@@ -278,9 +279,13 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
              "brier": "p20(R2) ΔBrier +0.00077 [−0.0013, +0.0030]；底部 B1/B2/B3 +0.0012～+0.0014，区间含 0",
              "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii)：仅 box 6–12 月 H=120 名义通过（4/7 指数 A1 显著且 A2≥0.5，"
                      "A1 中位 0.47 vs 随机 0.23），Holm 后 3/7、留出任一指数后 3/6 → 判据(iii)不满足；FCO END/STANDARD 全部不过。LPPLS 置信度证据等级 cal_fragile"},
-            {"split": "最终测试 2022–2025.08", "events": None, "hit": None, "status": "pending_test"},
+            {"split": "最终测试 2022-01–2025-08（7 指数，开发段模型前推，只跑一次）", "events": 15, "hit": None, "status": "fail",
+             "brier": "p20(R2) ΔBrier −0.00158 [−0.00231, −0.00003]；固定 Platt 使 Brier 0.04808→0.04855；底部 B1/B2/B3 +0.0035～+0.0047，区间高于 0",
+             "note": "判据(i)：R2 点估计过线但留出 7 指数中 4 次上界转正 → 判据(iii)不满足；底部链全部未通过。判据(ii)：LPPLS 置信度无组合通过"
+                     "（box 6–12 月 1/7，A1 中位 0 vs 随机 0.14；STANDARD 24 报警日 A1=0；END 0 报警日），每指数仅 1–3 个合格顶。"
+                     "三段合并：开发段有信号、校准段脆弱、测试段未通过 → LPPLS 置信度证据等级 dev_only；不据此重选模型/标签/阈值。"},
         ],
-        "evidence_levels": {"dev": "开发段 2000–2018", "cal": "校准段未运行", "test": "最终测试未运行", "none": "无证据，仅描述",
+        "evidence_levels": {"dev": "开发段 2000–2018", "cal": "校准段 2019–2021（未通过）", "test": "最终测试 2022–2025.08（未通过）", "dev_only": "开发段有信号；校准段脆弱、测试段未通过（只描述）", "fail_i_iii": "判据(i)测试段点过线但留出翻转，校准段未通过；不显示概率", "none": "无证据，仅描述",
                             "rule": "执行规则", "dev_failed": "开发段模型，校准段未通过", "fail_i": "判据(i)校准段与测试段均未通过，不显示概率", "cal_fragile": "校准段部分通过（4/7 指数），留出/多重比较后不满足，不升级", "descriptive_bubble": "原版口径描述量", "dev_pending": "开发段评估进行中", "descriptive": "描述已完成月份，非预测"},
     }
     return rec

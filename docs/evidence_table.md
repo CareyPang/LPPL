@@ -9,10 +9,10 @@
 | 底部 B1 dd_nodur_z | `bottom.p_*` | ΔBrier −0.00914，上界 −0.00531 ✔ | +0.0012 含 0 ✘ | +0.00349 区间 >0 ✘ | **fail_i** | 不显示 |
 | 底部 B2 amt_only_z | 同上 | −0.00081，上界 −0.0005 ✔ | +0.0013 ✘ | +0.00468 ✘ | **fail_i** | 不显示 |
 | 底部 B3 omori25 | 同上 | −0.00059，上界 −0.00001 ✔ | +0.0014 ✘ | +0.00461 ✘ | **fail_i** | 不显示 |
-| LPPLS 置信度 END 6–12m（报警 q=5%） | `top.indicators.6-12m.confidence.end` | A1 0.87 vs 随机 0.24（6 档重测，最强） | 1/7 指数，A1 0.31 vs 0.28 ✘(ii) | 待扫描完成 | 待定 | 泡沫状态分级显示，标证据等级 |
-| LPPLS 置信度 STANDARD 6–12m | `…confidence.standard` | A1 0.56 | ✘(ii) | 待 | 待定 | 同上 |
-| LPPLS 置信度 box 6–12m | `…confidence.box` | ≈随机（0.31 vs 0.23） | 4/7 名义过 (ii)；Holm 后 3/7；LOCO 最小 3 ✘(iii) | 待 | 待定（当前 cal_fragile） | 同上 |
-| LPPLS 12–24m 各集 | `…12-24m` | 部分报警有效 | 全部 ✘(ii) | 待 | 待定 | 同上 |
+| LPPLS 置信度 END 6–12m（报警 q=5%） | `top.indicators.6-12m.confidence.end` | A1 0.87 vs 随机 0.24（6 档重测，最强） | 1/7 指数，A1 0.31 vs 0.28 ✘(ii) | 0 报警日（无法评价）✘ | **dev_only** | 泡沫状态分级显示，标开发段证据 |
+| LPPLS 置信度 STANDARD 6–12m | `…confidence.standard` | A1 0.56 | ✘(ii) | 24 报警日 A1=0 ✘ | **dev_only** | 同上 |
+| LPPLS 置信度 box 6–12m | `…confidence.box` | ≈随机（0.31 vs 0.23） | 4/7 名义过 (ii)；Holm 后 3/7；LOCO 最小 3 ✘(iii) | 1/7（A1 中位 0 vs 0.14）✘(ii) | **dev_only** | 同上 |
+| LPPLS 12–24m 各集 | `…12-24m` | 部分报警有效 | 全部 ✘(ii) | 全部 ✘(ii)（box 1/7，END 0 报警） | **dev_only** | 同上 |
 | LPPLS 1–3m | `…1-3m` | 无证据 | 未评价 | 未评价 | **descriptive** | 显示但标无证据 |
 | t_c 20–80% 分位窗 | `top.window` | 覆盖率低（见 fco_indicator_audit） | 未单独评价 | 未单独评价 | **descriptive** | 标"情景，非时点" |
 | 泡沫大小（模型/实际）、持续时间、进度 | `top.bubble.*` | 定义核对一致 | — | — | **descriptive** | 标"模型外推非目标价" |
@@ -24,5 +24,5 @@
 | 个股自身 LPPLS 排名 | stock.html | 横截面无信息 | — | — | **no_evidence** | 不显示排名信号 |
 | EFE 支撑阱 / 临界慢化 / 首达概率 / 二波 | 老版模块 | 无证据 | — | — | **no_evidence** | 产品层不给结论 |
 
-等级定义（契约 `evidence_levels`）：`pass`（三段均过）、`dev_only`、`cal_fragile`、`fail_i`、`fail_i_iii`、`dev_rule`、`descriptive`、`no_evidence`。
-**待补**：最终测试段 LPPLS 行（A1/A2、Holm、LOCO、按年）在 `calibration_lppls` 测试段运行后填入；之后 `export_contract.py` 的 validation 与 dashboard badge 改为读本表（机器可读版 `docs/evidence_table.json`）。
+等级定义（契约 `evidence_levels`）：`pass`（三段均过）、`dev_only`（开发段有信号，校准/测试未通过）、`cal_fragile`（历史：校准段名义过但不稳健）、`fail_i`、`fail_i_iii`、`dev_rule`、`descriptive`、`no_evidence`。
+最终测试段 LPPLS 行已于 2026-10-28 填入（`reports/final_test_2022_2025.md` §3）。本表为契约 `validation`/`evidence_levels` 与 dashboard badge 的依据；三段历史评价关闭，后续只由前瞻日志更新。

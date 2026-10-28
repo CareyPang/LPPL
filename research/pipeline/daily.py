@@ -18,7 +18,17 @@ import pandas as pd
 from ..data import cache
 from ..eval.export_contract import build_record
 from ..features.lppls_rules import _derived, rules
-from ..features.lppls_scan import BOX, BOXES, COLS, IDX_WINDOWS, SHORT_WINDOWS, fit_one
+from ..features.lppls_scan import (
+    BOX,
+    BOXES,
+    COLS,
+    IDX_WINDOWS,
+    SHORT_WINDOWS,
+    STK_WINDOWS,
+    XL_WINDOWS,
+    XS_WINDOWS,
+    fit_one,
+)
 from ..lppls import core as _core
 
 FROZEN = "v20261024"
@@ -50,7 +60,7 @@ def fit_asof(logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]) -> p
 
 
 def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[int, ...] | None = None,
-        out: Path = OUT) -> Path:
+        out: Path = OUT, trust_boot: int = 100) -> Path:
     _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])  # 与 lppls_scan.run 一致：v2 允许 t_c 落在窗内
     ohlc, version = load_ohlc(sym, frozen)
     ohlc = ohlc.sort_values("date").reset_index(drop=True)
@@ -58,9 +68,12 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     date = pd.Timestamp(asof) if asof else logp.index[-1]
     ohlc_pit = ohlc[ohlc.date <= date]
     logp = logp[logp.index <= date]
-    ws = windows or (SHORT_WINDOWS + IDX_WINDOWS)
+    ws = windows or (XS_WINDOWS + SHORT_WINDOWS + IDX_WINDOWS + XL_WINDOWS)
     d = _derived(fit_asof(logp, date, ws))
     rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc_pit, None, data_version=version)
+    if trust_boot:
+        from ..lppls.trust import trust
+        rec["top"]["trust"] = trust(logp, date, d[d.n.isin(STK_WINDOWS)], b=trust_boot)
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{sym}_{'latest' if asof is None else asof}.json"
     path.write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str))
