@@ -1,0 +1,59 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>临界点 2.0 · 工作台（排行 / 汇总 / 高级列表）</title>
+<style>
+  :root{--bg:#0e1116;--panel:#161b22;--line:#2a313b;--fg:#e6edf3;--mute:#8b949e;--red:#f85149;--amb:#d29922;--grn:#3fb950;--blu:#58a6ff}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
+  .sub{color:var(--mute);font-size:12px} .muted{color:var(--mute)}
+  .badge{display:inline-block;border:1px solid var(--amb);color:var(--amb);border-radius:10px;padding:0 8px;font-size:11px;margin-left:6px}
+  .tabs button{background:none;border:1px solid var(--line);color:var(--fg);padding:6px 14px;border-radius:6px;cursor:pointer;margin-right:6px}
+  .tabs button.on{border-color:var(--blu);color:var(--blu)}
+  table{width:100%;border-collapse:collapse;font-size:13px} th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{color:var(--mute);cursor:pointer;user-select:none} th.sorted{color:var(--blu)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .tile{border:1px solid var(--line);border-radius:6px;padding:10px;cursor:pointer} .tile:hover{border-color:var(--blu)}
+  .big{font-size:22px;font-weight:600} .pos{color:var(--grn)} .neg{color:var(--red)}
+  input,select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+  a{color:var(--blu);text-decoration:none}
+</style></head><body><div class="wrap">
+<div class="card"><h1 style="margin:0 0 6px;font-size:18px">临界点 2.0 · 工作台 <span class="badge">描述性 · 无预测证据</span></h1>
+  <div class="sub" id="meta">加载中…</div>
+  <div class="sub" style="margin-top:6px">原站 F01 泡沫排行 / F02 汇总 / F04 高级列表的 A 股版。排行键只用原版量（Combo p=0.1、最长合格尺度、代表 t_c）；个股 LPPLS 横截面排名在开发段**无预测信息**（§17.11），本页只回答"哪些标的现在有泡沫形态的合格拟合"，不回答"哪只会跌"。成分为中证最近公布名单（非 PIT）。<a href="dashboard.html">← 单资产仪表盘</a></div>
+  <div class="tabs" style="margin-top:10px"><button data-t="rank" class="on">泡沫排行</button><button data-t="summary">汇总</button><button data-t="adv">高级列表</button>
+    <select id="typ" style="margin-left:12px"><option value="">全部类型</option><option value="index">宽基指数</option><option value="industry">行业指数</option><option value="stock">沪深300 成分股</option></select>
+    <input id="q" placeholder="搜索代码/名称" style="margin-left:8px;width:160px"></div></div>
+<div class="card" id="panel"></div>
+<script>
+let DATA=null, TAB='rank', SORT={k:'combo_p01',d:-1};
+const pct=x=>x==null?'—':(x*100).toFixed(x<0.1&&x>-0.1?1:0)+'%', sgn=x=>x==null?'—':`<span class="${x>=0?'pos':'neg'}">${(x>=0?'+':'')+(x*100).toFixed(1)}%</span>`;
+const TN={index:'宽基指数',industry:'行业指数',stock:'沪深300 成分股'};
+const code=s=>s.replace(/^s[hz]/,'');
+function rows(){const t=document.getElementById('typ').value,q=document.getElementById('q').value.trim().toLowerCase();
+  return DATA.rows.filter(r=>(!t||r.type===t)&&(!q||r.symbol.includes(q)||(r.name||'').toLowerCase().includes(q)));}
+function render(){const el=document.getElementById('panel'); if(!DATA){el.textContent='…';return;}
+  document.getElementById('meta').innerHTML=`as-of ${DATA.asof} · 生成 ${DATA.generated} · ${DATA.n_assets} 个标的 · 窗口 ${DATA.windows[0]}–${DATA.windows[DATA.windows.length-1]} 日 ×${DATA.windows.length}（只覆盖 6–12 月 / 12–24 月） · <span class="muted">${DATA.note}</span>`;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB));
+  const R=rows().filter(r=>r.signal_status!=='error'), E=rows().filter(r=>r.signal_status==='error');
+  if(TAB==='rank'){const S=R.filter(r=>r.signal_status==='signal').sort((a,b)=>(b.combo_p01??-1)-(a.combo_p01??-1)||(b.n_qualified?.['6-12m']??0)-(a.n_qualified?.['6-12m']??0));
+    el.innerHTML=`<div class="sub">有合格拟合（STANDARD）的标的 ${S.length} / ${R.length}；按 Combo(p=0.1) 排序，并列再按 6–12 月合格窗口数。未完成计算的 ${E.length} 个标的不填 0、单列在下方。</div>
+      <div class="grid" style="margin-top:10px">${S.map(r=>`<div class="tile" onclick="location.href='dashboard.html?sym=${r.symbol}_latest'"><div class="sub">${TN[r.type]} · ${code(r.symbol)}</div><div><b>${r.name}</b></div>
+        <div class="big">${pct(r.combo_p01)}</div><div class="sub">Combo p=0.1 · 最长合格尺度 ${r.longest_qualified_scale??'—'} · 6–12 月 STANDARD ${pct(r.conf?.['6-12m']?.standard)} · 12–24 月 ${pct(r.conf?.['12-24m']?.standard)}</div>
+        <div class="sub">代表 t_c ${r.tc_representative??'—'}${r.tc_q20_q80?`（20–80 分位 ${r.tc_q20_q80[0]} – ${r.tc_q20_q80[1]}）`:''} · 模型泡沫大小 ${r.bubble_size_model==null?'—':sgn(r.bubble_size_model)}</div></div>`).join('')||'<div class="muted">当前没有任何标的有合格拟合。</div>'}</div>
+      ${E.length?`<div class="sub" style="margin-top:12px">未完成：${E.map(r=>`${r.name}（${r.error}）`).join('；')}</div>`:''}`;}
+  else if(TAB==='summary'){const S=DATA.summary; el.innerHTML=`<div class="sub">按类型汇总（F02）。"正泡沫"= 该标的在 6–12 月或 12–24 月档至少有一个 STANDARD 合格窗口（signal）；分母 = 成功计算的标的数；负泡沫未计算。</div>
+      <table style="margin-top:8px"><tr><th>类型</th><th>已分析</th><th>失败</th><th>正泡沫信号数</th><th>正泡沫占比</th><th>负泡沫</th></tr>
+      ${Object.entries(S).map(([k,v])=>`<tr><td>${TN[k]}</td><td>${v.analysed}</td><td>${v.failed}</td><td>${v.positive_signal}</td><td>${pct(v.positive_share)}</td><td class="muted">${v.negative}</td></tr>`).join('')}
+      <tr><td><b>合计</b></td><td>${Object.values(S).reduce((a,v)=>a+v.analysed,0)}</td><td>${Object.values(S).reduce((a,v)=>a+v.failed,0)}</td><td>${Object.values(S).reduce((a,v)=>a+v.positive_signal,0)}</td><td></td><td></td></tr></table>`;}
+  else {const cols=[['symbol','代码',r=>code(r.symbol)],['name','名称',r=>r.name],['type','类型',r=>TN[r.type]],['latest','最新日',r=>r.latest],['close','收盘',r=>r.close],['ret_5d','5 日',r=>sgn(r.ret_5d)],['ret_21d','21 日',r=>sgn(r.ret_21d)],['ret_252d','252 日',r=>sgn(r.ret_252d)],
+      ['combo_p01','Combo 0.1',r=>pct(r.combo_p01)],['c612','6–12 月 STD',r=>pct(r.conf?.['6-12m']?.standard)],['c1224','12–24 月 STD',r=>pct(r.conf?.['12-24m']?.standard)],['longest_qualified_scale','尺度',r=>r.longest_qualified_scale??'—'],['tc_representative','代表 t_c',r=>r.tc_representative??'—'],['signal_status','状态',r=>r.signal_status]];
+    const val=(r,k)=>k==='c612'?r.conf?.['6-12m']?.standard:k==='c1224'?r.conf?.['12-24m']?.standard:r[k];
+    const S=R.slice().sort((a,b)=>{const x=val(a,SORT.k),y=val(b,SORT.k); if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1; return (typeof x==='number'?x-y:String(x).localeCompare(String(y)))*SORT.d;});
+    el.innerHTML=`<div class="sub">高级列表（F04）：点列头排序（按数值）。收益期为交易日数；有行情但无合格拟合的行保留（原站 S04）。</div>
+      <table style="margin-top:8px"><tr>${cols.map(c=>`<th data-k="${c[0]}" class="${SORT.k===c[0]?'sorted':''}">${c[1]}${SORT.k===c[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('')}</tr>
+      ${S.map(r=>`<tr>${cols.map(c=>`<td>${c[2](r)}</td>`).join('')}</tr>`).join('')}</table>
+      ${E.length?`<div class="sub" style="margin-top:12px">未完成 ${E.length}：${E.map(r=>`${r.name}（${r.error}）`).join('；')}</div>`:''}`;
+    el.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k; SORT=SORT.k===k?{k,d:-SORT.d}:{k,d:-1}; render();});}}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;render();});
+document.getElementById('typ').onchange=render; document.getElementById('q').oninput=render;
+fetch('mock/data/universe_latest.json',{cache:'no-store'}).then(r=>r.json()).then(d=>{DATA=d;render();}).catch(e=>{document.getElementById('meta').textContent='加载失败：'+e;});
+</script></div></body></html>

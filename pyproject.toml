@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "critical-point-research"
+version = "0.1.0"
+description = "临界点 2.0 研究层：A 股 LPPLS 顶部 / 多条件底部的数据、拟合、验证"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pandas>=2.0",
+  "pyarrow>=14",
+  "akshare>=1.12",
+  "cma>=3.3",
+  "requests>=2.31",
+  "scikit-learn>=1.3",
+  "tabulate>=0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.4", "matplotlib>=3.7"]
+
+[tool.setuptools.packages.find]
+include = ["research*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "network: tests that require outbound network access",
+]

@@ -1,0 +1,213 @@
+{
+ "symbol": "sh000001",
+ "name": "上证指数",
+ "asof": "2026-10-27",
+ "data_version": "vintage_20261027_tencent_sina",
+ "model_version": "prereg_v1.7_v2",
+ "top": {
+  "p20": {
+   "value": null,
+   "evidence": "dev_failed",
+   "notes": [
+    "冻结 p20=R2（GSADF）；校准段 2019–2021 前推 ΔBrier +0.00077 [−0.0013, +0.0030]，判据(i)未通过，不显示概率",
+    "日更无 p20"
+   ]
+  },
+  "bubble": {
+   "start": "2024-10-21",
+   "duration_days": 490,
+   "scale": "12-24m",
+   "t1_qualified_standard": false,
+   "size_model": 0.173,
+   "size_realized": 0.116,
+   "tc": "2026-10-27",
+   "progress": null,
+   "longest_qualified_scale": null,
+   "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
+   "evidence": "descriptive",
+   "signal_status": "t1_not_qualified"
+  },
+  "indicators": {
+   "1-3m": {
+    "direction": "positive",
+    "n_windows": 7,
+    "confidence": {
+     "box": 0.0,
+     "standard": 0.0,
+     "early": 0.0,
+     "end": 0.0,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 0,
+    "best_t1": "2026-09-08",
+    "t1_qualified": false,
+    "signal_status": "no_qualified_fit"
+   },
+   "6-12m": {
+    "direction": "positive",
+    "n_windows": 25,
+    "confidence": {
+     "box": 0.0,
+     "standard": 0.0,
+     "early": 0.0,
+     "end": 0.0,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 0,
+    "best_t1": "2026-01-05",
+    "t1_qualified": false,
+    "signal_status": "no_qualified_fit"
+   },
+   "12-24m": {
+    "direction": "positive",
+    "n_windows": 50,
+    "confidence": {
+     "box": 0.0,
+     "standard": 0.0,
+     "early": 0.0,
+     "end": 0.0,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 0,
+    "best_t1": "2025-04-10",
+    "t1_qualified": false,
+    "signal_status": "no_qualified_fit"
+   },
+   "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
+  },
+  "combo": {
+   "p0.1": 0.0,
+   "p1": 0.0,
+   "p10": 0.0,
+   "set": "standard",
+   "scales": [
+    "1-3m",
+    "6-12m",
+    "12-24m"
+   ],
+   "evidence": "none",
+   "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"
+  },
+  "tc_distribution": {
+   "1-3m": {
+    "n": 0,
+    "bins": []
+   },
+   "6-12m": {
+    "n": 0,
+    "bins": []
+   },
+   "12-24m": {
+    "n": 0,
+    "bins": []
+   }
+  },
+  "negative_bubble": {
+   "evidence": "none",
+   "signal_status": "not_computed"
+  },
+  "signal_status": "no_qualified_fit",
+  "window": {
+   "start": null,
+   "end": null,
+   "rule": "6–12 月档无合格拟合",
+   "evidence": "dev"
+  },
+  "lppls_confidence": {
+   "1-3m": 0.0,
+   "6-12m": 0.0,
+   "12-24m": 0.0,
+   "evidence": "cal_fragile",
+   "scale_evidence": {
+    "1-3m": "none",
+    "6-12m": "dev",
+    "12-24m": "dev"
+   },
+   "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–6 年档未扫、不显示",
+   "notes": [
+    "6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"
+   ]
+  },
+  "scenarios": [],
+  "scenarios_note": "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
+  "scale_windows": [],
+  "invalidation": {
+   "rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）",
+   "evidence": "rule"
+  },
+  "drawdown_price": {
+   "value": null,
+   "descriptive": [
+    -0.18,
+    -0.35
+   ],
+   "evidence": "none"
+  },
+  "drawdown_time": {
+   "value": null,
+   "evidence": "none"
+  },
+  "second_wave": {
+   "value": null,
+   "evidence": "none"
+  }
+ },
+ "regime_band": {
+  "month": "2026-09",
+  "state": "HIGH_RISK",
+  "channel": "2",
+  "rule": "FCO 公开定义：相对自身前 60 个月分位",
+  "evidence": "descriptive"
+ },
+ "bottom": {
+  "state_p": {
+   "value": null,
+   "evidence": "dev_pending"
+  },
+  "thrust_p": {
+   "value": null,
+   "evidence": "dev_pending"
+  },
+  "entry_rule": {
+   "value": null,
+   "evidence": "none"
+  }
+ },
+ "validation": [
+  {
+   "split": "开发段 2000–2018（6 指数）",
+   "events": 74,
+   "hit": 0.5,
+   "false_alarm": 0.7,
+   "brier": "ΔBrier −0.0053 [−0.0116, 0.0000]",
+   "status": "dev",
+   "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"
+  },
+  {
+   "split": "校准段 2019–2021（7 指数，开发段模型前推）",
+   "events": 12,
+   "hit": null,
+   "status": "fail_i",
+   "brier": "p20(R2) ΔBrier +0.00077 [−0.0013, +0.0030]；底部 B1/B2/B3 +0.0012～+0.0014，区间含 0",
+   "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii)：仅 box 6–12 月 H=120 名义通过（4/7 指数 A1 显著且 A2≥0.5，A1 中位 0.47 vs 随机 0.23），Holm 后 3/7、留出任一指数后 3/6 → 判据(iii)不满足；FCO END/STANDARD 全部不过。LPPLS 置信度证据等级 cal_fragile"
+  },
+  {
+   "split": "最终测试 2022–2025.08",
+   "events": null,
+   "hit": null,
+   "status": "pending_test"
+  }
+ ],
+ "evidence_levels": {
+  "dev": "开发段 2000–2018",
+  "cal": "校准段未运行",
+  "test": "最终测试未运行",
+  "none": "无证据，仅描述",
+  "rule": "执行规则",
+  "dev_failed": "开发段模型，校准段未通过",
+  "cal_fragile": "校准段部分通过（4/7 指数），留出/多重比较后不满足，不升级",
+  "descriptive_bubble": "原版口径描述量",
+  "dev_pending": "开发段评估进行中",
+  "descriptive": "描述已完成月份，非预测"
+ }
+}
