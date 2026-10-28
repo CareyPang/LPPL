@@ -7,9 +7,9 @@
  "top": {
   "p20": {
    "value": null,
-   "evidence": "dev_failed",
+   "evidence": "fail_i_iii",
    "notes": [
-    "冻结 p20=R2（GSADF）；校准段 2019–2021 前推 ΔBrier +0.00077 [−0.0013, +0.0030]，判据(i)未通过，不显示概率",
+    "冻结 p20=R2（GSADF）；校准段 ΔBrier +0.00077 [−0.0013, +0.0030] 未通过；测试段 −0.00158 [−0.00231, −0.00003] 点过线但留出 4/7 翻转（判据 iii 不满足），不显示概率",
     "研究层 OOF（仅开发段回放）：0.463"
    ]
   },
@@ -28,6 +28,10 @@
    "signal_status": "t1_not_qualified"
   },
   "indicators": {
+   "2-4w": {
+    "signal_status": "not_computed",
+    "direction": "positive"
+   },
    "1-3m": {
     "direction": "positive",
     "n_windows": 7,
@@ -41,6 +45,21 @@
     "n_qualified_standard": 2,
     "best_t1": "2007-08-20",
     "t1_qualified": false,
+    "signal_status": "signal"
+   },
+   "3-6m": {
+    "direction": "positive",
+    "n_windows": 13,
+    "confidence": {
+     "box": 0.0,
+     "standard": 0.385,
+     "early": 0.385,
+     "end": 0.154,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 5,
+    "best_t1": "2007-07-09",
+    "t1_qualified": true,
     "signal_status": "signal"
    },
    "6-12m": {
@@ -73,22 +92,43 @@
     "t1_qualified": true,
     "signal_status": "signal"
    },
+   "2-6y": {
+    "direction": "positive",
+    "n_windows": 50,
+    "confidence": {
+     "box": 0.0,
+     "standard": 0.46,
+     "early": 0.46,
+     "end": 0.46,
+     "pure": 0.0
+    },
+    "n_qualified_standard": 23,
+    "best_t1": "2004-09-20",
+    "t1_qualified": false,
+    "signal_status": "signal"
+   },
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
   "combo": {
-   "p0.1": 0.539,
-   "p1": 0.582,
-   "p10": 0.702,
+   "p0.1": 0.489,
+   "p1": 0.518,
+   "p10": 0.667,
    "set": "standard",
    "scales": [
     "1-3m",
+    "3-6m",
     "6-12m",
-    "12-24m"
+    "12-24m",
+    "2-6y"
    ],
    "evidence": "none",
    "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"
   },
   "tc_distribution": {
+   "2-4w": {
+    "n": 0,
+    "bins": []
+   },
    "1-3m": {
     "n": 2,
     "bin_days": 5,
@@ -102,6 +142,22 @@
       "2007-10-19",
       "2007-10-26",
       1
+     ]
+    ]
+   },
+   "3-6m": {
+    "n": 5,
+    "bin_days": 5,
+    "bins": [
+     [
+      "2007-10-12",
+      "2007-10-19",
+      1
+     ],
+     [
+      "2007-10-26",
+      "2007-11-02",
+      4
      ]
     ]
    },
@@ -236,14 +292,48 @@
       3
      ]
     ]
+   },
+   "2-6y": {
+    "n": 23,
+    "bin_days": 5,
+    "bins": [
+     [
+      "2007-09-14",
+      "2007-09-21",
+      7
+     ],
+     [
+      "2007-09-21",
+      "2007-09-28",
+      4
+     ],
+     [
+      "2007-09-28",
+      "2007-10-12",
+      10
+     ],
+     [
+      "2007-12-21",
+      "2007-12-28",
+      1
+     ],
+     [
+      "2007-12-28",
+      "2008-01-08",
+      1
+     ]
+    ]
    }
   },
   "negative_bubble": {
    "direction": "negative",
    "confidence_standard": {
+    "2-4w": null,
     "1-3m": 0.0,
+    "3-6m": 0.0,
     "6-12m": 0.0,
-    "12-24m": 0.0
+    "12-24m": 0.0,
+    "2-6y": 0.0
    },
    "n_windows": 73,
    "evidence": "none",
@@ -257,16 +347,22 @@
    "evidence": "dev"
   },
   "lppls_confidence": {
+   "2-4w": null,
    "1-3m": 0.143,
+   "3-6m": 0.0,
    "6-12m": 0.52,
    "12-24m": 0.0,
-   "evidence": "cal_fragile",
+   "2-6y": 0.0,
+   "evidence": "dev_only",
    "scale_evidence": {
+    "2-4w": "none",
     "1-3m": "none",
+    "3-6m": "none",
     "6-12m": "dev",
-    "12-24m": "dev"
+    "12-24m": "dev",
+    "2-6y": "none"
    },
-   "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–6 年档未扫、不显示",
+   "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
    "notes": [
     "6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"
    ]
@@ -2090,16 +2186,20 @@
    "note": "判据(i)未通过：概率模型不优于历史基率；留出任一指数/年份不翻转。判据(ii)：仅 box 6–12 月 H=120 名义通过（4/7 指数 A1 显著且 A2≥0.5，A1 中位 0.47 vs 随机 0.23），Holm 后 3/7、留出任一指数后 3/6 → 判据(iii)不满足；FCO END/STANDARD 全部不过。LPPLS 置信度证据等级 cal_fragile"
   },
   {
-   "split": "最终测试 2022–2025.08",
-   "events": null,
+   "split": "最终测试 2022-01–2025-08（7 指数，开发段模型前推，只跑一次）",
+   "events": 15,
    "hit": null,
-   "status": "pending_test"
+   "status": "fail",
+   "brier": "p20(R2) ΔBrier −0.00158 [−0.00231, −0.00003]；固定 Platt 使 Brier 0.04808→0.04855；底部 B1/B2/B3 +0.0035～+0.0047，区间高于 0",
+   "note": "判据(i)：R2 点估计过线但留出 7 指数中 4 次上界转正 → 判据(iii)不满足；底部链全部未通过。判据(ii)：LPPLS 置信度无组合通过（box 6–12 月 1/7，A1 中位 0 vs 随机 0.14；STANDARD 24 报警日 A1=0；END 0 报警日），每指数仅 1–3 个合格顶。三段合并：开发段有信号、校准段脆弱、测试段未通过 → LPPLS 置信度证据等级 dev_only；不据此重选模型/标签/阈值。"
   }
  ],
  "evidence_levels": {
   "dev": "开发段 2000–2018",
-  "cal": "校准段未运行",
-  "test": "最终测试未运行",
+  "cal": "校准段 2019–2021（未通过）",
+  "test": "最终测试 2022–2025.08（未通过）",
+  "dev_only": "开发段有信号；校准段脆弱、测试段未通过（只描述）",
+  "fail_i_iii": "判据(i)测试段点过线但留出翻转，校准段未通过；不显示概率",
   "none": "无证据，仅描述",
   "rule": "执行规则",
   "dev_failed": "开发段模型，校准段未通过",

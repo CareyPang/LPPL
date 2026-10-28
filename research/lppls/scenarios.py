@@ -65,6 +65,8 @@ def scenarios(fits: pd.DataFrame) -> pd.DataFrame:
         loss = (f.sse / (f.n - LOSS_P).clip(lower=1)) if "sse" in f.columns else f.n * 0
         rows.append(dict(cluster=c, k=k, silhouette=sil, share=share, dt_min=int(f.n.min()), dt_max=int(f.n.max()),
                          rep_idx=f.index[int(np.argmin(loss.to_numpy(float)))], **_summ(f.ahead.to_numpy(float))))
+    if not rows:
+        return pd.DataFrame()
     return pd.DataFrame(rows).sort_values("share", ascending=False).reset_index(drop=True)
 
 
