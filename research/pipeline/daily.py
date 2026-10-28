@@ -75,6 +75,8 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
         from ..lppls.trust import trust
         rec["top"]["trust"] = trust(logp, date, d[d.n.isin(STK_WINDOWS)], b=trust_boot)
     out.mkdir(parents=True, exist_ok=True)
+    (out / "fits").mkdir(exist_ok=True)
+    d.to_parquet(out / "fits" / f"{sym}_{'latest' if asof is None else asof}.parquet")  # 缓存拟合表，便于只改契约时重导
     path = out / f"{sym}_{'latest' if asof is None else asof}.json"
     path.write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str))
     return path

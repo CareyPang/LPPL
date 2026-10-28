@@ -79,11 +79,7 @@ def assets(universe: Path = Path("web/mock/data/universe_current.json"), names: 
     return out
 
 
-def run(procs: int = 6, limit: int | None = None, names_path: Path = Path("web/mock/data/stock_names.json")) -> Path:
-    names = json.loads(names_path.read_text()) if names_path.exists() else {}
-    todo = assets(names=names)[:limit]
-    with Pool(procs) as pool:
-        rows = pool.map(one, todo, chunksize=1)
+def _write(rows: list[dict]) -> Path:
     ok = [r for r in rows if r["signal_status"] != "error"]
     asof = max((r["latest"] for r in ok), default=None)
     summary = {}
@@ -101,8 +97,32 @@ def run(procs: int = 6, limit: int | None = None, names_path: Path = Path("web/m
     return OUT
 
 
+def run(procs: int = 6, limit: int | None = None, names_path: Path = Path("web/mock/data/stock_names.json"), retry_procs: int = 2) -> Path:
+    """第一遍并行；腾讯接口对并发敏感（501/空返回），失败的资产第二遍低并发重试，仍失败的保留 error 状态（不填 0）。"""
+    names = json.loads(names_path.read_text()) if names_path.exists() else {}
+    todo = assets(names=names)[:limit]
+    with Pool(procs) as pool:
+        rows = pool.map(one, todo, chunksize=1)
+    return retry(rows, todo, retry_procs)
+
+
+def retry(rows: list[dict], todo: list[tuple] | None = None, procs: int = 2) -> Path:
+    by = {r["symbol"]: r for r in rows}
+    todo = todo or assets(names={r["symbol"][2:]: r["name"] for r in rows})
+    bad = [a for a in todo if by.get(a[0], {}).get("signal_status") == "error"]
+    if bad:
+        time.sleep(3)
+        with Pool(procs) as pool:
+            for r in pool.map(one, bad, chunksize=1):
+                by[r["symbol"]] = r
+    return _write([by[a[0]] for a in todo if a[0] in by])
+
+
 if __name__ == "__main__":
-    lim = int(sys.argv[1]) if len(sys.argv) > 1 else None
-    p = run(limit=lim)
+    if len(sys.argv) > 1 and sys.argv[1] == "retry":
+        p = retry(json.loads(OUT.read_text())["rows"])
+    else:
+        lim = int(sys.argv[1]) if len(sys.argv) > 1 else None
+        p = run(limit=lim)
     d = json.loads(p.read_text())
     print(p, d["asof"], d["summary"], "secs/asset", round(float(np.mean([r["secs"] for r in d["rows"]])), 1))

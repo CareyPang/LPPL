@@ -221,7 +221,9 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     rr = r.loc[dd.index]
     gg = grid_rules(dd)
     ind = _indicators(dd, rr, gg, cal, date)
-    bubble = _bubble(dd, gg, date, cal, ohlc)
+    nmax = max(hi for _, hi in SCALES_FCO.values())
+    m_eval = dd.n <= nmax  # 泡沫状态与总信号只用评价过的三档（≤504 日）；六档补充窗口仅作显示
+    bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc)
     w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
     window = ({"start": _to_cal(cal, date, float(w612.q20.iloc[0])), "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
                "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}
@@ -239,7 +241,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "combo": _combo(ind),
             "tc_distribution": _tc_distribution(dd, gg, cal, date),
             "negative_bubble": _negative(sym, date, cal, np.log(_close(ohlc, cal))),
-            "signal_status": "signal" if any(v.get("signal_status") == "signal" for v in ind.values()) else "no_qualified_fit",
+            "signal_status": "signal" if any(v.get("signal_status") == "signal" for k, v in ind.items() if k in SCALES_FCO) else "no_qualified_fit",
             "window": window,
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
                                  "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
