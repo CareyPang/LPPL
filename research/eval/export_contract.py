@@ -73,7 +73,34 @@ def _fit_params(row: pd.Series, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: p
             "m": round(float(row.m), 3), "omega": round(float(row.w), 2), "damping": round(float(row.D), 2),
             "oscillations_half": round(float(row.osc), 2), "oscillations_cycles": round(float(row.n_osc), 2),
             "loss": round(float(row.sse / max(int(row.n) - 7, 1)), 6),
-            "sets": [k for k, c in FCO_SETS.items() if bool(gg.loc[row.name, c])]}
+            "sets": [k for k, c in FCO_SETS.items() if bool(gg.loc[row.name, c])],
+            "curve": _curve(row, cal, date)}
+
+
+def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: int = 120) -> dict:
+    """F11：代表拟合的模型价格曲线。fit = [t1, t2] 拟合段；extrapolation = (t2, t_c) 外推段（虚线，t_c 处奇点不画）。
+    ln P(t) = A + B·(t_c−t)^m + C1·(t_c−t)^m cos(ω ln(t_c−t)) + C2·(t_c−t)^m sin(ω ln(t_c−t))，t 以窗口首日为 0。"""
+    from ..lppls.core import design
+    n, tc, m, w = int(row.n), float(row.tc), float(row.m), float(row.w)
+    theta = np.array([row.A, row.B, row.C1, row.C2], float)
+    i0 = cal.get_indexer([date])[0]
+    start = i0 - n + 1
+
+    def seg(t: np.ndarray, allow_inside: bool) -> dict:
+        if len(t) == 0:
+            return {"dates": [], "price": []}
+        X = design(t, tc, m, w, allow_inside=allow_inside)
+        if X is None:
+            return {"dates": [], "price": []}
+        y = np.exp(X @ theta)
+        step = max(1, int(np.ceil(len(t) / max_pts)))
+        idx = np.unique(np.r_[np.arange(0, len(t), step), len(t) - 1])
+        return {"dates": [_to_cal(cal, date, float(start + k - i0)) for k in t[idx]], "price": [round(float(v), 4) for v in y[idx]]}
+
+    fit = seg(np.arange(n, dtype=float), True)
+    ext_end = int(np.floor(tc)) if tc > n else n - 1
+    ext = seg(np.arange(n, ext_end + 1, dtype=float), False) if ext_end >= n else {"dates": [], "price": []}
+    return {"fit": fit, "extrapolation": ext, "note": "外推段为模型曲线延伸至 t_c 前，不是价格目标"}
 
 
 def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
@@ -147,6 +174,13 @@ def _negative(sym: str, date: pd.Timestamp, cal: pd.DatetimeIndex, logp: pd.Seri
             "note": "开发段负泡沫 0/424 组合稳健、A1≈随机（§17.12）；仅作镜像展示"}
 
 
+def _price_history(ohlc: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp, n: int = 756) -> dict:
+    """F05：as-of 日前 n 个交易日收盘（PIT：不含 as-of 之后），供价格叠加置信度/情景曲线图。"""
+    c = _close(ohlc, cal)
+    c = c[c.index <= date].dropna().tail(n)
+    return {"dates": [str(x.date()) for x in c.index], "close": [round(float(v), 3) for v in c.to_numpy()], "note": "对数轴显示；仅到 as-of 日"}
+
+
 def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
     """FCO 口径泡沫大小/持续时间（描述性）：起点 t1 = Lagrange 正则选窗（Demos–Sornette 2019，FCO 方法附录同）；
     size_model = P̂(t_c)/P(t1) − 1 = exp(A)/P(t1) − 1（FAQ："从泡沫起点到 t_c 处模型预测价格的轨迹幅度"）；
@@ -218,7 +252,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                  "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
                 for x in scen.itertuples()
             ],
-            "scenarios_note": "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
+            "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
+                              "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
             "scale_windows": [
                 {"scale": x.scale, "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80), "n": int(x.n)}
                 for x in sw.itertuples()
@@ -228,6 +263,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "drawdown_time": {"value": None, "evidence": "none"},
             "second_wave": {"value": None, "evidence": "none"},
         },
+        "price_history": _price_history(ohlc, cal, date),
         "regime_band": ({"month": prev_month, "state": band.state, "channel": band.channel,
                          "rule": "FCO 公开定义：相对自身前 60 个月分位", "evidence": "descriptive"}
                         if band is not None and isinstance(band.state, str) else {"month": prev_month, "state": None, "evidence": "descriptive"}),
@@ -259,7 +295,9 @@ def movie(sym: str, a: str, b: str) -> list[dict]:
     for date in sorted(x for x in d.date.unique() if pd.Timestamp(a) <= x <= pd.Timestamp(b)):
         q = d[(d.date == date) & r.box]
         sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
+        dd = d[d.date == date]
         frames.append({"asof": str(pd.Timestamp(date).date()), "confidence": _conf(d, r, date),
+                       "tc_distribution": _tc_distribution(dd, grid_rules(dd), cal, date),
                        "tc_windows": {x.scale: [_to_cal(cal, date, x.q20), _to_cal(cal, date, x.q50), _to_cal(cal, date, x.q80)] for x in sw.itertuples()}})
     return frames
 
