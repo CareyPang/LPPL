@@ -1,8 +1,8 @@
 {
  "symbol": "sz399001",
  "name": "深证成指",
- "asof": "2026-10-27",
- "data_version": "vintage_20261027_tencent_sina",
+ "asof": "2026-10-28",
+ "data_version": "vintage_20261028_tencent_sina",
  "model_version": "prereg_v1.7_v2",
  "top": {
   "p20": {
@@ -14,12 +14,12 @@
    ]
   },
   "bubble": {
-   "start": "2024-08-08",
-   "duration_days": 535,
+   "start": "2024-08-02",
+   "duration_days": 540,
    "scale": "other",
    "t1_qualified_standard": false,
-   "size_model": 0.827,
-   "size_realized": 0.331,
+   "size_model": 0.811,
+   "size_realized": 0.341,
    "tc": "2026-05-20",
    "progress": null,
    "longest_qualified_scale": null,
@@ -39,7 +39,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-08-11",
+    "best_t1": "2026-08-12",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -54,7 +54,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-04-15",
+    "best_t1": "2026-04-16",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -69,7 +69,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-10-21",
+    "best_t1": "2025-04-03",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -162,15 +162,18 @@
  "bottom": {
   "state_p": {
    "value": null,
-   "evidence": "dev_pending"
+   "evidence": "fail_i",
+   "note": "底部概率链 B1/B2/B3：校准段 ΔBrier +0.0012～+0.0014、测试段 +0.0035～+0.0047，区间含/高于 0，判据(i)三段未通过；不显示概率"
   },
   "thrust_p": {
    "value": null,
-   "evidence": "dev_pending"
+   "evidence": "fail_i",
+   "note": "同上；负泡沫/反泡沫 LPPLS 在开发段亦无预测信息"
   },
   "entry_rule": {
    "value": null,
-   "evidence": "none"
+   "evidence": "none",
+   "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
   }
  },
  "validation": [
@@ -205,6 +208,7 @@
   "none": "无证据，仅描述",
   "rule": "执行规则",
   "dev_failed": "开发段模型，校准段未通过",
+  "fail_i": "判据(i)校准段与测试段均未通过，不显示概率",
   "cal_fragile": "校准段部分通过（4/7 指数），留出/多重比较后不满足，不升级",
   "descriptive_bubble": "原版口径描述量",
   "dev_pending": "开发段评估进行中",
