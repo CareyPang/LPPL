@@ -115,7 +115,7 @@ def run(procs: int = 2, limit: int | None = None, names_path: Path = Path("web/m
 def retry(rows: list[dict], todo: list[tuple] | None = None, procs: int = 2) -> Path:
     by = {r["symbol"]: r for r in rows}
     todo = todo or assets(names={r["symbol"][2:]: r["name"] for r in rows})
-    bad = [a for a in todo if by.get(a[0], {}).get("signal_status") == "error"]
+    bad = [a for a in todo if by.get(a[0], {}).get("signal_status") == "error" or "source" not in by.get(a[0], {})]
     if bad:
         time.sleep(3)
         with Pool(procs) as pool:
