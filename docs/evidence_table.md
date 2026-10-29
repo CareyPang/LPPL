@@ -15,6 +15,7 @@
 | LPPLS 12–24m 各集 | `…12-24m` | 部分报警有效 | 全部 ✘(ii) | 全部 ✘(ii)（box 1/7，END 0 报警） | **dev_only** | 同上 |
 | LPPLS 1–3m | `…1-3m` | 无证据 | 未评价 | 未评价 | **descriptive** | 显示但标无证据 |
 | t_c 20–80% 分位窗 | `top.window` | 覆盖率低（见 fco_indicator_audit） | 未单独评价 | 未单独评价 | **descriptive** | 标"情景，非时点" |
+| t_c 分布稳定性（收敛/不再后漂，§17.6-2 stab3 与漂移速度两种定义） | 未进契约 | 叠加在 box 6–12m ≥50% 之上无增量：A1 0.58 vs 单独 0.61、严格同报警数对照 0.67，A2 0.44→0.19；收敛出现在顶当日或之后（2015-06-12/19、2007-10-19），见 `reports/tc_stability_dev.md` | 未评价 | 未评价 | **dev_only / no_increment** | 不显示，不加入顶部卡 |
 | 泡沫大小（模型/实际）、持续时间、进度 | `top.bubble.*` | 定义核对一致 | — | — | **descriptive** | 标"模型外推非目标价" |
 | Combo p=0.1/1/10 | `top.combo` | 未评价 | — | — | **descriptive / 研究版** | 显示，标研究版 |
 | 负泡沫置信度 | `top.negative_bubble` | 开发段无效 | — | — | **no_evidence** | 不显示或标无证据 |
