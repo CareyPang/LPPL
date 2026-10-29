@@ -42,19 +42,21 @@ def per_date(sym: str) -> tuple[pd.DataFrame, pd.DatetimeIndex]:
     tab["lo"] = tab.pos + tab.q20
     tab["hi"] = tab.pos + tab.q80
     tab["tc_pos"] = tab.pos + tab.med
+    # 稳定性/漂移都在完整 as-of 网格上判定：所用的 3（或 2）个 as-of 必须是网格上相邻的扫描日且都有 ≥3 个合格拟合，
+    # 中间缺一周（无拟合）即视为缺失，不能跨过缺口拼接。
     w = tab.dropna(subset=["lo"])
-    st = stability(w[["lo", "hi"]], 3)
-    span = pd.Series(w.index, index=w.index).diff(2).dt.days
-    st[span > SPAN_MAX_DAYS] = np.nan
-    tab["stab3"] = st.reindex(tab.index)
-    tcp = w.tc_pos
-    drift = tcp.diff() / w.pos.diff()
-    gap = pd.Series(w.index, index=w.index).diff().dt.days
-    drift[gap > 14] = np.nan
-    tab["drift"] = drift.reindex(tab.index)
-    drift2 = tcp.diff(2) / w.pos.diff(2)
-    drift2[pd.Series(w.index, index=w.index).diff(2).dt.days > SPAN_MAX_DAYS] = np.nan
-    tab["drift2"] = drift2.reindex(tab.index)
+    has = tab.lo.notna()
+    ok2 = has & has.shift(1, fill_value=False)
+    ok3 = ok2 & has.shift(2, fill_value=False)
+    idx = pd.Series(tab.index, index=tab.index)
+    gap1 = idx.diff().dt.days
+    gap2 = idx.diff(2).dt.days
+    st = stability(w[["lo", "hi"]], 3).reindex(tab.index)
+    tab["stab3"] = st.where(ok3 & (gap2 <= SPAN_MAX_DAYS))
+    drift = (w.tc_pos.diff() / w.pos.diff()).reindex(tab.index)
+    tab["drift"] = drift.where(ok2 & (gap1 <= 14))
+    drift2 = (w.tc_pos.diff(2) / w.pos.diff(2)).reindex(tab.index)
+    tab["drift2"] = drift2.where(ok3 & (gap2 <= SPAN_MAX_DAYS))
     return tab, cal
 
 
@@ -77,8 +79,12 @@ def alarms(tab: pd.DataFrame) -> dict[str, np.ndarray]:
         for name in (f"conf>={q}&stab3", f"conf>={q}&stab3>=0.25", f"conf>={q}&drift<={DRIFT_MAX}", f"conf>={q}&drift2<={DRIFT_MAX}"):
             n = int(out[name].sum())
             if n:
-                thr = np.sort(c[base])[::-1][min(n, base.sum()) - 1]
-                out[f"{name}|matched"] = base & (c >= thr)
+                # 严格取 n 个：置信度降序，平手按日期先后（确定性），保证对照与被比较报警集同大小
+                order = np.lexsort((np.arange(len(c)), -c))
+                pick = order[base[order]][:n]
+                mt = np.zeros(len(c), dtype=bool)
+                mt[pick] = True
+                out[f"{name}|matched"] = mt
     return out
 
 
