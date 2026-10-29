@@ -1,7 +1,7 @@
 """开发段探索（dev_only）：置信度报警之后的**执行规则**对比——不是新预测指标，不改任何冻结判据。
 
 输入：reports/tc_stability_dev/per_date.csv（box 6–12m 置信度，周网格 as-of）+ 冻结价格。
-报警事件：置信度首次 ≥0.5 的 as-of 日 d50（事件内上一次 ≥0.2 的首日记 d20）；事件结束 = 置信度连续 8 周 <0.2。
+报警事件：置信度首次 ≥0.5 的 as-of 日 d50（事件内上一次 ≥0.2 的首日记 d20）；事件结束 = 置信度连续 8 周 <0.2 的第 8 周（确认日，之前不可知）。
 参考量（事后，仅用于评价）：d50 后 250 交易日内最高收盘 peak、peak 后 250 交易日内最低收盘 trough。
 规则（d50 起对剩余仓位执行，之前 ≥0.2 时是否先减 1/3 由 tiered 决定）：
   sell_at_50      d50 当日清仓（现行指南的保守读法）
@@ -32,7 +32,7 @@ H = 250
 
 
 def episodes(tab: pd.DataFrame) -> list[tuple[pd.Timestamp, pd.Timestamp | None, pd.Timestamp | None]]:
-    """返回 (d20, d50, end)；d20 为本事件内首个 ≥0.2 的 as-of，end 为连续 8 周 <0.2 的首日（None=开发段内未结束）。"""
+    """返回 (d20, d50, end)；d20 为本事件内首个 ≥0.2 的 as-of，end 为连续 8 周 <0.2 的**第 8 周（确认日）**，只能在确认日之后行动（None=开发段内未结束）。"""
     c = tab.conf.fillna(0).to_numpy()
     idx = tab.index
     out, i, n = [], 0, len(c)
@@ -46,7 +46,7 @@ def episodes(tab: pd.DataFrame) -> list[tuple[pd.Timestamp, pd.Timestamp | None,
                 d50 = idx[j]
             below = below + 1 if c[j] < 0.2 else 0
             if below >= END_WEEKS:
-                end = idx[j - END_WEEKS + 1]
+                end = idx[j]
                 break
             j += 1
         if d50 is not None:
@@ -104,7 +104,8 @@ def evaluate(sym: str, per_date: pd.DataFrame) -> list[dict]:
                 tail = px[px.index >= ex].iloc[: H + 1]
                 if tiered:
                     # 三分法：≥20% 时卖 1/3（d20 收盘），≥50% 时再卖 1/3（d50 收盘），剩 1/3 按规则
-                    ret = ((px.asof(d20) + p0 + pe) / 3) / p0 - 1
+                    # d50 之后的收益：按 d50 当日组合实际价值归一（1/3 已在 d20 变现）
+                    ret = (px.asof(d20) + p0 + pe) / (px.asof(d20) + 2 * p0) - 1
                 else:
                     ret = pe / p0 - 1
                 rows.append(
