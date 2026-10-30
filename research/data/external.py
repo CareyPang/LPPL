@@ -1,6 +1,7 @@
 """外部市场数据冻结（Round 2 §2.0；只冻结不评价）。
 
 源：Yahoo Finance v8 chart（日线，period1=1980）；备用 AkShare 东财全球指数（VM 上不稳）。
+已有版本目录只校验哈希、不覆写；抓取当日的 bar 一律剔除（可能未收盘）。
 输出：data/frozen/ext_<版本>/<sym>.parquet（date, open, high, low, close, adj_close, volume）+ MANIFEST.json（行数、起止、sha256）。
 python -m research.data.external [version]   默认版本 = 今天 vYYYYMMDD
 """
@@ -51,12 +52,30 @@ def fetch_yahoo(ticker: str) -> pd.DataFrame:
         .sort_values("date")
         .reset_index(drop=True)
     )
-    return df
+    # 只保留已完成的交易日：抓取当日（UTC）的 bar 可能仍在盘中，一律剔除
+    today = pd.Timestamp(dt.datetime.now(dt.timezone.utc).date())  # noqa: UP017
+    return df[df.date < today].reset_index(drop=True)
+
+
+def verify(out: Path) -> bool:
+    """已有版本目录：逐文件比对 MANIFEST 哈希，只报告一致 / 冲突，不改写。"""
+    man = json.loads((out / "MANIFEST.json").read_text())
+    ok = True
+    for sym, m in man["symbols"].items():
+        f = out / f"{sym}.parquet"
+        h = hashlib.sha256(f.read_bytes()).hexdigest() if f.exists() else None
+        same = h == m["sha256"]
+        ok &= same
+        print(sym, "OK" if same else f"MISMATCH/MISSING (have {h}, manifest {m['sha256']})")
+    return ok
 
 
 def main(version: str | None = None) -> None:
     version = version or dt.date.today().strftime("v%Y%m%d")
     out = ROOT / "data/frozen" / f"ext_{version}"
+    if (out / "MANIFEST.json").exists():
+        print(f"{out.name} 已存在：只校验不覆写（新数据请用新版本号）")
+        sys.exit(0 if verify(out) else 1)
     out.mkdir(parents=True, exist_ok=True)
     manifest = {
         "version": version,
