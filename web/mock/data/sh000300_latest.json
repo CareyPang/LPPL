@@ -1,8 +1,8 @@
 {
  "symbol": "sh000300",
  "name": "沪深300",
- "asof": "2026-10-29",
- "data_version": "vintage_20261029_tencent_sina",
+ "asof": "2026-10-30",
+ "data_version": "vintage_20261030_tencent_sina",
  "model_version": "prereg_v1.7_v2",
  "top": {
   "p20": {
@@ -14,13 +14,13 @@
    ]
   },
   "bubble": {
-   "start": "2024-10-09",
-   "duration_days": 500,
+   "start": "2025-08-25",
+   "duration_days": 285,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.14,
-   "size_realized": 0.022,
-   "tc": "2026-10-29",
+   "size_model": -0.999,
+   "size_realized": -0.108,
+   "tc": "2026-10-30",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -39,7 +39,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-10-16",
+    "best_t1": "2026-09-28",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -54,7 +54,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-08-06",
+    "best_t1": "2026-08-07",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -69,7 +69,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-06-17",
+    "best_t1": "2026-06-18",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -84,7 +84,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-04-17",
+    "best_t1": "2026-04-20",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -94,12 +94,12 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.0,
+     "early": 0.02,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-08-22",
+    "best_t1": "2025-08-25",
     "t1_qualified": false,
     "signal_status": "no_qualified_fit"
    },
@@ -108,22 +108,22 @@
     "n_windows": 90,
     "confidence": {
      "box": 0.0,
-     "standard": 0.011,
-     "early": 0.456,
+     "standard": 0.0,
+     "early": 0.478,
      "end": 0.0,
      "pure": 0.0
     },
-    "n_qualified_standard": 1,
-    "best_t1": "2024-09-25",
+    "n_qualified_standard": 0,
+    "best_t1": "2024-09-26",
     "t1_qualified": false,
-    "signal_status": "signal"
+    "signal_status": "no_qualified_fit"
    },
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
   "combo": {
    "p0.1": 0.0,
-   "p1": 0.002,
-   "p10": 0.009,
+   "p1": 0.0,
+   "p10": 0.0,
    "set": "standard",
    "scales": [
     "2-4w",
@@ -158,15 +158,8 @@
     "bins": []
    },
    "2-6y": {
-    "n": 1,
-    "bin_days": 5,
-    "bins": [
-     [
-      "2026-05-12",
-      "2026-05-19",
-      1
-     ]
-    ]
+    "n": 0,
+    "bins": []
    }
   },
   "negative_bubble": {
@@ -263,7 +256,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-11",
    "2023-09-12",
    "2023-09-13",
    "2023-09-14",
@@ -1018,10 +1010,10 @@
    "2026-10-26",
    "2026-10-27",
    "2026-10-28",
-   "2026-10-29"
+   "2026-10-29",
+   "2026-10-30"
   ],
   "close": [
-   3767.54,
    3760.6,
    3736.65,
    3733.51,
@@ -1776,7 +1768,8 @@
    4103.54,
    4049.55,
    4083.87,
-   4041.84
+   4041.84,
+   3985.5
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
