@@ -38,4 +38,5 @@ async function go(){
   const f=document.getElementById('frame'); f.style.display=''; f.src=`dashboard.html?sym=${primary}_latest`;
 }
 document.getElementById('go').onclick=go; document.getElementById('code').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+{ const qc=new URLSearchParams(location.search).get('code'); if(qc&&/^\d{6}$/.test(qc)){ document.getElementById('code').value=qc; go(); } }
 </script></body></html>

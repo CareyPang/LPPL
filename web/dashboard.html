@@ -14,6 +14,7 @@
   .kv{flex:1;min-width:200px}
   .big{font-size:30px;font-weight:700;line-height:1.1}
   .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid;margin-left:6px;vertical-align:middle}
+  .selbtn{background:none;border:1px solid var(--line);color:var(--fg);padding:2px 9px;border-radius:6px;cursor:pointer;font-size:12px}.selbtn.on{border-color:var(--blu);color:var(--blu)}.selrow td{background:rgba(88,166,255,.08)}
   .b-dev{color:var(--amb);border-color:var(--amb)}.b-cal{color:var(--blu);border-color:var(--blu)}.b-test{color:var(--grn);border-color:var(--grn)}.b-none{color:var(--none);border-color:var(--none)}
   .bar{height:10px;background:#21262d;border-radius:5px;overflow:hidden;margin:4px 0 8px}
   .bar>i{display:block;height:100%;background:var(--red)}
@@ -70,7 +71,16 @@
 </div>
 </div>
 <script>
+const SCALES = ['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'], SHORT = {'2-4w':'2–4 周','1-3m':'1–3 月','3-6m':'3–6 月','6-12m':'6–12 月','12-24m':'12–24 月','2-6y':'2–6 年'};
+let SEL = {scale: 'all', dir: 'pos'}, LAST = null;
+{ const u = new URLSearchParams(location.search); if (SCALES.includes(u.get('scale'))) SEL.scale = u.get('scale'); if (u.get('dir') === 'neg') SEL.dir = 'neg'; }
+function syncUrl(){ const u = new URLSearchParams(location.search); u.set('sym', document.getElementById('sym').value); if (SEL.scale === 'all') u.delete('scale'); else u.set('scale', SEL.scale); if (SEL.dir === 'pos') u.delete('dir'); else u.set('dir', SEL.dir); history.replaceState(null, '', '?' + u.toString()); }
+function setSel(k, v){ SEL[k] = v; syncUrl(); if (LAST) render(LAST); }
+const selBar = () => `<div class="sub" style="margin:6px 0 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="muted">尺度（原站 F06）</span>` +
+  ['all', ...SCALES].map(k => `<button class="selbtn ${SEL.scale === k ? 'on' : ''}" onclick="setSel('scale','${k}')">${k === 'all' ? '全部' : SHORT[k]}</button>`).join('') +
+  `<span class="muted" style="margin-left:10px">方向</span><button class="selbtn ${SEL.dir === 'pos' ? 'on' : ''}" onclick="setSel('dir','pos')">正泡沫</button><button class="selbtn ${SEL.dir === 'neg' ? 'on' : ''}" onclick="setSel('dir','neg')">负泡沫</button></div>`;
 function render(D){
+  LAST = D;
   document.querySelectorAll('.card.dyn').forEach(e => e.remove());
   const EV = {dev:['开发段','b-dev'],cal:['校准段','b-cal'],test:['最终测试','b-test'],none:['无证据','b-none'],rule:['规则，非预测','b-none'],dev_failed:['开发段模型·校准未通过','b-none'],dev_only:['开发段有信号·校准/测试未通过','b-none'],fail_i_iii:['测试段点过线·留出翻转·不显示','b-none'],fail_i:['校准/测试段未通过','b-none'],cal_fragile:['校准段部分通过·不稳健','b-cal'],descriptive:['描述性','b-none'],dev_pending:['开发段·评估中','b-dev'],pending_cal:['待运行','b-cal'],pending_test:['未开启','b-test']};
   const badge = e => { const [t,c] = EV[e] || [e,'b-none']; return `<span class="badge ${c}">${t}</span>`; };
@@ -84,18 +94,21 @@ function render(D){
   const SCALES6 = ['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'].filter(k => (T.indicators || {})[k]);
   const I = T.indicators || {}, SETS = ['standard','end','pure','early','box'], SN = {standard:'STANDARD',end:'END',pure:'PURE',early:'EARLY',box:'box(本项目)'};
   const bar = v => `<span style="display:inline-block;width:${Math.round((v||0)*60)}px;height:8px;background:var(--red);vertical-align:middle;margin-right:4px"></span>${pct(v)}`;
-  $('conf').innerHTML = `<div class="sub">DS LPPLS 置信度 = 该尺度窗口中通过过滤集的比例 ${badge(L.evidence)}</div>` +
+  const NB = T.negative_bubble || {}, NBC = NB.confidence_standard || null;
+  const negHtml = `<div class="sub">负泡沫置信度（对 −ln P 拟合，STANDARD）${badge('none')} <span class="muted">A 股六指数开发段 0/424 稳健（§17.12），仅描述，不预测底部</span></div>` +
+    (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${NBC[k] == null ? '<span class="muted">未计算</span>' : bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
+  $('conf').innerHTML = selBar() + (SEL.dir === 'neg' ? negHtml : `<div class="sub">DS LPPLS 置信度 = 该尺度窗口中通过过滤集的比例 ${badge(L.evidence)}</div>` +
     `<table><tr><th>尺度</th>${SETS.map(k => `<th>${SN[k]}</th>`).join('')}<th>最佳起点 t1（Lagrange）</th><th>状态</th></tr>` +
-    SCALES6.map(k => { const v = I[k] || {}, c = v.confidence || {}; if (v.signal_status === 'not_computed') return `<tr><td>${names[k]} ${badge('none')}</td><td colspan="${SETS.length + 2}" class="muted">历史不足或未计算（原站 F06：长尺度数据不足时显示"不足以计算"）</td></tr>`; return `<tr><td>${names[k]} ${SE[k] ? badge(SE[k]) : ''}</td>${SETS.map(st => `<td>${c[st] == null ? '—' : bar(c[st])}</td>`).join('')}<td>${v.best_t1 ?? '—'}${v.t1_qualified == null ? '' : v.t1_qualified ? ' ✓' : ' ✗'}</td><td class="muted">${v.signal_status ?? '—'}</td></tr>`; }).join('') + `</table>` +
+    SCALES6.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => { const v = I[k] || {}, c = v.confidence || {}; if (v.signal_status === 'not_computed') return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${badge('none')}</td><td colspan="${SETS.length + 2}" class="muted">历史不足或未计算（原站 F06：长尺度数据不足时显示"不足以计算"）</td></tr>`; return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${SE[k] ? badge(SE[k]) : ''}</td>${SETS.map(st => `<td>${c[st] == null ? '—' : bar(c[st])}</td>`).join('')}<td>${v.best_t1 ?? '—'}${v.t1_qualified == null ? '' : v.t1_qualified ? ' ✓' : ' ✗'}</td><td class="muted">${v.signal_status ?? '—'}</td></tr>`; }).join('') + `</table>` +
     `<div class="sub muted">${I.rule_note || ''}</div>` +
     (T.trust && T.trust.trust != null ? `<div class="sub">DS LPPLS Trust（Zhang–Zhang–Sornette 2016：残差 bootstrap ${T.trust.n_boot} 次重拟合通过条件 2 的比例，${T.trust.n_windows} 窗中位数）${badge('descriptive')}：<b>${pct(T.trust.trust)}</b> <span class="muted">${T.trust.note}</span></div>` : '') +
     (T.combo && T.combo.p1 != null ? `<div class="sub">Combo（STANDARD，跨尺度幂平均）${badge(T.combo.evidence)}：p=0.1 ${pct(T.combo['p0.1'])} · p=1 ${pct(T.combo.p1)} · p=10 ${pct(T.combo.p10)} <span class="muted">${T.combo.note}</span></div>` : '') +
-    (T.negative_bubble && T.negative_bubble.confidence_standard ? `<div class="sub">负泡沫置信度（STANDARD，对 −ln P）${badge('none')}：${Object.keys(T.negative_bubble.confidence_standard).map(k => `${k} ${pct(T.negative_bubble.confidence_standard[k])}`).join(' · ')} <span class="muted">${T.negative_bubble.note}</span></div>` : '');
+    (T.negative_bubble && T.negative_bubble.confidence_standard ? `<div class="sub">负泡沫置信度（STANDARD，对 −ln P）${badge('none')}：${Object.keys(T.negative_bubble.confidence_standard).map(k => `${k} ${pct(T.negative_bubble.confidence_standard[k])}`).join(' · ')} <span class="muted">${T.negative_bubble.note}</span></div>` : ''));
   $('scen').innerHTML = T.scenarios.map((s,i) => { const R = s.representative || {}; return `<div><div class="sub">情景 ${'ABCD'[i]} · 占比 ${pct(s.share)} · 窗口 ${s.dt_range[0]}–${s.dt_range[1]} 日</div><b>约 ${s.ahead_mean} ± ${s.ahead_sd} 个交易日后</b><div class="sub">20/80 分位 ${s.q20}–${s.q80} 日：${s.q20_date} – ${s.q80_date}</div><div class="sub">2.5/97.5 分位：${s.q025_date} – ${s.q975_date} · 众数 ${s.tc_mode_date}</div><div class="sub muted">代表拟合（最小 loss）：t1 ${R.t1} · t_c ${R.tc} · m ${R.m} · ω ${R.omega} · D ${R.damping} · 振荡 ${R.oscillations_cycles} 周期 · loss ${R.loss} · 过滤集 ${(R.sets||[]).join('/') || '无'}</div></div>`; }).join('');
   renderChart(D);
   const TD = T.tc_distribution || {};
-  const tdHtml = ['6-12m','12-24m','3-6m','1-3m','2-6y','2-4w'].filter(k => TD[k]).map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2])); return `<div class="sub">${names[k]} · 合格拟合 ${v.n} 个（STANDARD），5 交易日分箱</div>` + v.bins.map(b => `<div class="sub"><span style="display:inline-block;width:150px">${b[0]} – ${b[1]}</span><span style="display:inline-block;width:${Math.round(b[2]/mx*200)}px;height:8px;background:var(--red);vertical-align:middle"></span> ${b[2]}</div>`).join(''); }).join('');
-  const td = document.createElement('div'); td.className = 'card dyn'; td.innerHTML = `<div class="sub">t_c 数量分布（原站 F09 "Distribution of critical time tc"；密度曲线=同一集合的平滑，不另作预测）${badge('dev')}</div>` + tdHtml;
+  const tdHtml = ['6-12m','12-24m','3-6m','1-3m','2-6y','2-4w'].filter(k => TD[k] && (SEL.scale === 'all' || SEL.scale === k)).map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2])); return `<div class="sub">${names[k]} · 合格拟合 ${v.n} 个（STANDARD），5 交易日分箱</div>` + v.bins.map(b => `<div class="sub"><span style="display:inline-block;width:150px">${b[0]} – ${b[1]}</span><span style="display:inline-block;width:${Math.round(b[2]/mx*200)}px;height:8px;background:var(--red);vertical-align:middle"></span> ${b[2]}</div>`).join(''); }).join('');
+  const td = document.createElement('div'); td.className = 'card dyn'; td.innerHTML = `<div class="sub">t_c 数量分布（原站 F09 "Distribution of critical time tc"；密度曲线=同一集合的平滑，不另作预测）${badge('dev')}${SEL.scale === 'all' ? '' : ` <span class="muted">· 仅 ${SHORT[SEL.scale]} 档</span>`}</div>` + (tdHtml || '<div class="sub muted">该档无 t_c 分布</div>');
   $('scen').closest('.card').parentNode.insertBefore(td, $('scen').closest('.card').nextSibling);
   const rows = [
     ['顶部区间（情景）', T.window.start ? `${T.window.start} – ${T.window.end}<div class="sub muted">${T.window.rule}</div>` : `<span class="muted">${T.window.rule}</span>`, badge(T.window.evidence)],
@@ -196,7 +209,7 @@ async function load(){
   const D = await r.json(); document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
 }
 const q = new URLSearchParams(location.search).get('sym'); if (q && [...document.getElementById('sym').options].some(o => o.value === q)) document.getElementById('sym').value = q;
-document.getElementById('sym').addEventListener('change', load); load();
+document.getElementById('sym').addEventListener('change', () => { syncUrl(); load(); }); load();
 </script>
 </body>
 </html>

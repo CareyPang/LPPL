@@ -18,21 +18,29 @@
 </style></head><body><div class="wrap">
 <div class="card"><h1 style="margin:0 0 6px;font-size:18px">临界点 2.0 · 工作台 <span class="badge">描述性 · 无预测证据</span></h1>
   <div class="sub" id="meta">加载中…</div>
-  <div class="sub" style="margin-top:6px">原站 F01 泡沫排行 / F02 汇总 / F04 高级列表的 A 股版。排行键只用原版量（Combo p=0.1、最长合格尺度、代表 t_c）；个股 LPPLS 横截面排名在开发段**无预测信息**（§17.11），本页只回答"哪些标的现在有泡沫形态的合格拟合"，不回答"哪只会跌"。成分为中证最近公布名单（非 PIT）。<a href="dashboard.html">← 单资产仪表盘</a></div>
-  <div class="tabs" style="margin-top:10px"><button data-t="rank" class="on">泡沫排行</button><button data-t="summary">汇总</button><button data-t="adv">高级列表</button>
+  <div class="sub" style="margin-top:6px">原站 F01 泡沫排行 / F02 汇总 / F03 资产目录 / F04 高级列表的 A 股版。排行键只用原版量（Combo p=0.1、最长合格尺度、代表 t_c）；个股 LPPLS 横截面排名在开发段**无预测信息**（§17.11），本页只回答"哪些标的现在有泡沫形态的合格拟合"，不回答"哪只会跌"。成分为中证最近公布名单（非 PIT）。<a href="dashboard.html">← 单资产仪表盘</a></div>
+  <div class="tabs" style="margin-top:10px"><button data-t="rank" class="on">泡沫排行</button><button data-t="summary">汇总</button><button data-t="adv">高级列表</button><button data-t="cat">资产目录</button>
     <select id="typ" style="margin-left:12px"><option value="">全部类型</option><option value="index">宽基指数</option><option value="industry">行业指数</option><option value="stock">沪深300 成分股</option></select>
     <input id="q" placeholder="搜索代码/名称" style="margin-left:8px;width:160px"></div></div>
 <div class="card" id="panel"></div>
 <script>
-let DATA=null, TAB='rank', SORT={k:'combo_p01',d:-1};
+let DATA=null, CAT=null, TAB='rank', SORT={k:'combo_p01',d:-1};
 const pct=x=>x==null?'—':(x*100).toFixed(x<0.1&&x>-0.1?1:0)+'%', sgn=x=>x==null?'—':`<span class="${x>=0?'pos':'neg'}">${(x>=0?'+':'')+(x*100).toFixed(1)}%</span>`;
 const TN={index:'宽基指数',industry:'行业指数',stock:'沪深300 成分股'};
 const code=s=>s.replace(/^s[hz]/,'');
 function rows(){const t=document.getElementById('typ').value,q=document.getElementById('q').value.trim().toLowerCase();
   return DATA.rows.filter(r=>(!t||r.type===t)&&(!q||r.symbol.includes(q)||(r.name||'').toLowerCase().includes(q)));}
+function renderCat(el){if(!CAT){el.textContent='目录加载中…';return;}
+  const t=document.getElementById('typ').value,q=document.getElementById('q').value.trim().toLowerCase(), IN=CAT.index_names||{};
+  const R=CAT.rows.filter(r=>(!t||r.type===t)&&(!q||r.code.includes(q)||r.symbol.includes(q)||r.name.toLowerCase().includes(q)||r.member_of.some(m=>(IN[m]||'').toLowerCase().includes(q))));
+  const link=r=>r.dashboard?`<a href="dashboard.html?sym=${r.symbol}_latest">仪表盘</a>`:r.type==='stock'?`<a href="stock.html?code=${r.code}">个股页</a>`:'<span class="muted">工作台行</span>';
+  el.innerHTML=`<div class="sub">资产目录（原站 F03）：${R.length} / ${CAT.n} 个标的；搜索支持代码 / 名称 / 所属指数名。所属指数为中证最近公布成分（${CAT.generated}，非 PIT）。目录只是主数据表，不含任何模型量。</div>
+    <table style="margin-top:8px"><tr><th>代码</th><th>名称</th><th>类型</th><th>交易所 / 板块</th><th>所属指数</th><th>页面</th></tr>
+    ${R.map(r=>`<tr><td>${r.code}</td><td><b>${r.name}</b></td><td>${TN[r.type]}</td><td>${r.exchange}${r.board?' · '+r.board:''}</td><td>${r.member_of.map(m=>IN[m]||m).join('、')||'—'}</td><td>${link(r)}</td></tr>`).join('')}</table>`;}
 function render(){const el=document.getElementById('panel'); if(!DATA){el.textContent='…';return;}
   document.getElementById('meta').innerHTML=`as-of ${DATA.asof} · 生成 ${DATA.generated} · ${DATA.n_assets} 个标的 · 窗口 ${DATA.windows[0]}–${DATA.windows[DATA.windows.length-1]} 日 ×${DATA.windows.length}（只覆盖 6–12 月 / 12–24 月） · <span class="muted">${DATA.note}</span>`;
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB));
+  if(TAB==='cat'){renderCat(el);return;}
   const R=rows().filter(r=>r.signal_status!=='error'), E=rows().filter(r=>r.signal_status==='error');
   if(TAB==='rank'){const S=R.filter(r=>r.signal_status==='signal').sort((a,b)=>(b.combo_p01??-1)-(a.combo_p01??-1)||(b.n_qualified?.['6-12m']??0)-(a.n_qualified?.['6-12m']??0));
     el.innerHTML=`<div class="sub">有合格拟合（STANDARD）的标的 ${S.length} / ${R.length}；按 Combo(p=0.1) 排序，并列再按 6–12 月合格窗口数。未完成计算的 ${E.length} 个标的不填 0、单列在下方。</div>
@@ -55,5 +63,7 @@ function render(){const el=document.getElementById('panel'); if(!DATA){el.textCo
     el.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k; SORT=SORT.k===k?{k,d:-SORT.d}:{k,d:-1}; render();});}}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;render();});
 document.getElementById('typ').onchange=render; document.getElementById('q').oninput=render;
+fetch('mock/data/catalog.json',{cache:'no-store'}).then(r=>r.json()).then(d=>{CAT=d;if(TAB==='cat')render();}).catch(()=>{});
+if(new URLSearchParams(location.search).get('tab')==='cat')TAB='cat';
 fetch('mock/data/universe_latest.json',{cache:'no-store'}).then(r=>r.json()).then(d=>{DATA=d;render();}).catch(e=>{document.getElementById('meta').textContent='加载失败：'+e;});
 </script></div></body></html>
