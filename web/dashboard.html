@@ -189,7 +189,7 @@ function renderChart(D, range){
   svgEl.addEventListener('mousemove', ev => { const b = svgEl.getBoundingClientRect(); const x = (ev.clientX - b.left) * W / b.width; const i = Math.round((x - ml) / (W - ml - mr) * (xs.length - 1)); if (i < 0 || i >= xs.length) return;
     const d = xs[i], px = X(d); vl.setAttribute('x1', px); vl.setAttribute('x2', px); vl.style.display = '';
     const pi = pIdx.get(d); let txt = `${d}`; if (pi != null) { const v = P.close[pi]; hl.setAttribute('y1', Y(v)); hl.setAttribute('y2', Y(v)); hl.style.display = ''; dot.setAttribute('cx', px); dot.setAttribute('cy', Y(v)); dot.style.display = ''; txt += ` · 收盘 ${v}`; } else { hl.style.display = 'none'; dot.style.display = 'none'; }
-    scen.forEach((s,i2) => { const c = s.representative.curve; const k = c.fit.dates.indexOf(d), k2 = c.extrapolation.dates.indexOf(d); const mv = k >= 0 ? c.fit.price[k] : (k2 >= 0 ? c.extrapolation.price[k2] : null); if (mv != null) txt += ` · 情景${'ABCDEFGHI'[i2]} 模型 ${mv.toFixed(1)}${k2 >= 0 ? '(外推)' : ''}`; });
+    scen.forEach(s => { const i2 = s._i; const c = s.representative.curve; const k = c.fit.dates.indexOf(d), k2 = c.extrapolation.dates.indexOf(d); const mv = k >= 0 ? c.fit.price[k] : (k2 >= 0 ? c.extrapolation.price[k2] : null); if (mv != null) txt += ` · 情景${'ABCDEFGHI'[i2]} 模型 ${mv.toFixed(1)}${k2 >= 0 ? '(外推)' : ''}`; });
     $('xh').textContent = txt; });
   svgEl.addEventListener('mouseleave', () => { vl.style.display = hl.style.display = dot.style.display = 'none'; $('xh').textContent = ''; });
   svgEl.addEventListener('wheel', ev => { ev.preventDefault(); const span = r1 - r0 + 1, k = ev.deltaY > 0 ? 1.25 : 0.8; const ns2 = Math.max(60, Math.min(n0, Math.round(span * k))); const c = Math.round((r0 + r1) / 2); let a = Math.max(0, c - Math.floor(ns2 / 2)), b2 = Math.min(n0 - 1, a + ns2 - 1); a = Math.max(0, b2 - ns2 + 1); renderChart(D, [a, b2]); }, {passive: false});
@@ -223,7 +223,7 @@ async function load(){
   const f = document.getElementById('sym').value;
   const r = await fetch(`mock/data/${f}.json`, {cache:'no-store'});
   if (!r.ok) { document.getElementById('hd').textContent = `加载失败：${f}.json（${r.status}）`; return; }
-  const D = await r.json(); document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
+  const D = await r.json(); if (LAST && LAST._file !== f) { HID.clear(); RANGE = null; } D._file = f; document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
 }
 const q = new URLSearchParams(location.search).get('sym'); if (q && [...document.getElementById('sym').options].some(o => o.value === q)) document.getElementById('sym').value = q;
 document.getElementById('sym').addEventListener('change', () => { syncUrl(); load(); }); load();
