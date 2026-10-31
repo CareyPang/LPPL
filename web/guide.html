@@ -20,7 +20,7 @@
 <script>
 // 极简 Markdown 渲染（标题/段落/列表/表格/引用/粗体/行内代码/链接），够用于 user_guide.md；不引外部库。
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
-function href(u){u=u.trim();return /^(https?:\/\/|mailto:|#|\.{0,2}\/|[\w.-]+(\.html|\.md)(#|$))/i.test(u)&&!/^javascript:/i.test(u)?esc(u):'#'}
+function href(u){u=u.trim();return /^[a-z][a-z0-9+.-]*:/i.test(u)&&!/^(https?:|mailto:)/i.test(u)?'#':u}
 function inl(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>`<a href="${href(u)}">${t}</a>`)}
 function md(src){
   const L=src.split('\n'),out=[];let i=0;
