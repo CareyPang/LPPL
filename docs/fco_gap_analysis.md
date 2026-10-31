@@ -26,7 +26,7 @@
 
 ## 2. 工作台层：原站有、本项目没有（全部是"本项目设计 = 工程"，不涉及证据）
 - F01 泡沫排行、F02 汇总、F03 资产目录、F04 高级资产列表：需要**多资产批量扫描**。A 股可行范围：六指数 + 行业指数 + 沪深 300 成分（已有 PIT 成分与 100 只横截面扫描经验）。注意开发段已证明**个股 LPPLS 横截面排名无预测信息**——排行可以做，但必须标"描述性，开发段无预测信息"。
-- F06 六尺度选择器、F07 权重滑块、F11 情景多选、F12 报告/教育、F13 主题设置：纯前端。**已补：F03 资产目录（workbench「资产目录」页，`research/pipeline/catalog.py` → `catalog.json`，316 标的：代码/名称/交易所/板块/所属指数，非 PIT）；F06 六尺度选择器 + 正/负方向切换（dashboard 置信度卡，`?scale=&dir=` 可分享；负方向只在含 `negative_bubble.confidence_standard` 的契约显示，日更契约显示「未计算」）。**
+- F06 六尺度选择器、F07 权重滑块、F11 情景多选、F12 报告/教育、F13 主题设置：纯前端。**已补：F03 资产目录（workbench「资产目录」页，`research/pipeline/catalog.py` → `catalog.json`，316 标的：代码/名称/交易所/板块/所属指数，非 PIT）；F06 六尺度选择器 + 正/负方向切换（dashboard 置信度卡，`?scale=&dir=` 可分享；负方向只在含 `negative_bubble.confidence_standard` 的契约显示，日更契约显示「未计算」）；F11 情景多选（图例复选框隐藏/显示情景曲线、t_c 线并淡化情景卡）；F07 Combo 权重滑块（p 对数滑块 0.1–10 + 过滤集选择，前端按公开幂平均公式从六档置信度重算，与契约 p=0.1/1/10 参考值并列）；F12 教育页（`web/guide.html` 渲染 `docs/user_guide.md`，`report.py` 同步到 `mock/guide.md`）；F10 Movie 双面板独立日期（A 播放 / B 固定对照）；F13 主题（`web/theme.js`，深/浅色，localStorage 记忆，覆盖 dashboard / workbench / stock / guide；index / mobile 另有配色体系未纳入）。**
 - 资产主数据（唯一 ID、交易所、币种、日历）：`astock-lite` 已有交易日历与成分接口；需建资产表。
 - 算力：原站六尺度 × 1,087 资产每日；我们 1 指数 1 as-of 约 1 分钟（145 窗×10 起点），六尺度后约 2.5 分钟/资产/日 → 50 资产日更约 2 小时单机，可接受；历史回算须按 as-of 增量。
 
