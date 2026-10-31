@@ -25,6 +25,7 @@
   .warn{border-left:3px solid var(--amb);padding-left:10px;color:var(--mute);font-size:12px}
   .legend{font-size:12px;color:var(--mute);margin-top:6px}
 </style>
+<script src="theme.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -40,7 +41,7 @@
   </div>
   <div id="root">
   <div class="card">
-    <h1 id="hd"></h1>
+    <h1 id="hd"></h1><div class="sub" style="margin-bottom:6px"><a href="workbench.html">工作台</a> · <a href="guide.html">使用指南（原站 F12）</a></div>
     <div class="row" style="margin-top:10px">
       <div class="kv" id="p20"></div>
       <div class="kv" id="conf"></div>
@@ -199,25 +200,27 @@ function renderMovie(D){
   const $ = id => document.getElementById(id), M = D.movie, names = {'1-3m':'1–3 月','6-12m':'6–12 月','12-24m':'12–24 月'};
   const card = document.createElement('div'); card.className = 'card dyn';
   const opts = M.map((f,i) => `<option value="${i}">${f.asof}</option>`).join('');
-  card.innerHTML = `<div class="sub">t_c 数量分布 Movie（原站 F10：From / To / Delay / Play；分布随 as-of 推进而变化，连续稳定才作确认条件）<span class="badge b-dev">开发段</span></div>
+  const panel = (id, title) => `<div style="flex:1;min-width:280px;border:1px solid var(--line);border-radius:8px;padding:8px 10px"><div class="sub" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b>${title}</b> 日期 <select id="mvSel${id}">${opts}</select> <span id="mvInfo${id}" class="muted"></span></div><div id="mvFrame${id}"></div></div>`;
+  card.innerHTML = `<div class="sub">t_c 数量分布 Movie（原站 F10：双面板独立日期，左面板 From / To / Delay / Play 播放，右面板固定对照；分布随 as-of 推进而变化，连续稳定才作确认条件）<span class="badge b-dev">开发段</span></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0" class="sub">
       From <select id="mvFrom">${opts}</select> To <select id="mvTo">${opts}</select> Delay(ms) <input id="mvDelay" type="number" value="600" min="100" step="100" style="width:70px">
-      <button id="mvPlay">Play</button> <span id="mvSel"></span></div>
-    <div id="mvFrame"></div>`;
+      <button id="mvPlay">Play</button></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">${panel('A', '面板 A（播放）')}${panel('B', '面板 B（对照）')}</div>`;
   const anchor = $('valid').closest('table'); anchor.parentNode.insertBefore(card, anchor);
   $('mvTo').value = M.length - 1;
   const pct = x => x == null ? '—' : Math.round(x*100) + '%';
-  let cur = M.length - 1, timer = null;
-  const draw = () => { const f = M[cur]; $('mvSel').textContent = `Selected date ${f.asof} · 置信度 ${['1-3m','6-12m','12-24m'].map(k => `${names[k]} ${pct(f.confidence[k])}`).join(' · ')}`;
-    const TD = f.tc_distribution || {};
-    $('mvFrame').innerHTML = ['6-12m','12-24m','1-3m'].map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2]));
+  const frame = f => { const TD = f.tc_distribution || {}; return ['6-12m','12-24m','1-3m'].map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2]));
       return `<div class="sub">${names[k]} · 合格拟合 ${v.n}</div><div style="display:flex;align-items:flex-end;gap:2px;height:60px">${v.bins.map(b => `<div title="${b[0]}–${b[1]}：${b[2]}" style="width:10px;height:${Math.round(b[2]/mx*58)}px;background:var(--red)"></div>`).join('')}</div><div class="sub muted">${v.bins[0][0]} → ${v.bins[v.bins.length-1][1]}</div>`; }).join(''); };
-  const step = () => { const to = +$('mvTo').value; if (cur >= to) { stop(); return; } cur++; draw(); };
+  const cur = {A: M.length - 1, B: 0}; let timer = null;
+  const draw = id => { const f = M[cur[id]]; $('mvSel' + id).value = cur[id]; $('mvInfo' + id).textContent = `置信度 ${['1-3m','6-12m','12-24m'].map(k => `${names[k]} ${pct(f.confidence[k])}`).join(' · ')}`; $('mvFrame' + id).innerHTML = frame(f); };
+  const step = () => { const to = +$('mvTo').value; if (cur.A >= to) { stop(); return; } cur.A++; draw('A'); };
   const stop = () => { if (timer) clearInterval(timer); timer = null; $('mvPlay').textContent = 'Play'; };
-  $('mvPlay').onclick = () => { if (timer) { stop(); return; } cur = Math.max(+$('mvFrom').value, Math.min(cur, +$('mvTo').value)); if (cur >= +$('mvTo').value) cur = +$('mvFrom').value; draw(); timer = setInterval(step, Math.max(100, +$('mvDelay').value)); $('mvPlay').textContent = 'Pause'; };
-  $('mvFrom').onchange = () => { stop(); cur = +$('mvFrom').value; draw(); };
-  $('mvTo').onchange = () => { stop(); cur = Math.min(cur, +$('mvTo').value); draw(); };
-  draw();
+  $('mvPlay').onclick = () => { if (timer) { stop(); return; } cur.A = Math.max(+$('mvFrom').value, Math.min(cur.A, +$('mvTo').value)); if (cur.A >= +$('mvTo').value) cur.A = +$('mvFrom').value; draw('A'); timer = setInterval(step, Math.max(100, +$('mvDelay').value)); $('mvPlay').textContent = 'Pause'; };
+  $('mvFrom').onchange = () => { stop(); cur.A = +$('mvFrom').value; draw('A'); };
+  $('mvTo').onchange = () => { stop(); cur.A = Math.min(cur.A, +$('mvTo').value); draw('A'); };
+  $('mvSelA').onchange = () => { stop(); cur.A = +$('mvSelA').value; draw('A'); };
+  $('mvSelB').onchange = () => { cur.B = +$('mvSelB').value; draw('B'); };
+  draw('A'); draw('B');
 }
 async function load(){
   const f = document.getElementById('sym').value;

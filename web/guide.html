@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>临界点 2.0 · 使用指南（原站 F12 教育页）</title>
+<style>
+  :root{--bg:#0e1116;--panel:#161b22;--line:#2a313b;--fg:#e6edf3;--mute:#8b949e;--red:#f85149;--amb:#d29922;--grn:#3fb950;--blu:#58a6ff;--none:#484f58}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 22px}
+  h1{font-size:18px;margin:0 0 6px}h2{font-size:15px;margin:22px 0 8px;color:var(--fg);border-bottom:1px solid var(--line);padding-bottom:4px}
+  .sub,.muted{color:var(--mute);font-size:12px}a{color:var(--blu);text-decoration:none}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}th,td{border:1px solid var(--line);padding:5px 8px;text-align:left}th{color:var(--mute);font-weight:500}
+  blockquote{margin:8px 0;padding:6px 12px;border-left:3px solid var(--amb);color:var(--mute)}code{background:rgba(110,118,129,.25);padding:1px 5px;border-radius:4px;font-size:12px}
+  ul{padding-left:20px}li{margin:3px 0}nav{display:flex;gap:14px;margin-bottom:12px;font-size:13px}
+</style><script src="theme.js"></script></head>
+<body><div class="wrap">
+<nav><a href="dashboard.html">仪表盘</a><a href="workbench.html">工作台</a><a href="index.html">桌面版</a><b>使用指南</b></nav>
+<div class="card"><div class="sub">原站 F12 "Reports / Education" 的本项目版：下文由 <code>docs/user_guide.md</code> 原样渲染（<code>research/pipeline/report.py</code> 同步到 <code>mock/guide.md</code>），只讲怎么看、怎么用，证据等级以 <code>docs/evidence_table.md</code> 为准。</div>
+<div id="md" style="margin-top:10px">加载中…</div></div>
+</div>
+<script>
+// 极简 Markdown 渲染（标题/段落/列表/表格/引用/粗体/行内代码/链接），够用于 user_guide.md；不引外部库。
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function href(u){u=u.trim();return /^[a-z][a-z0-9+.-]*:/i.test(u)&&!/^(https?:|mailto:)/i.test(u)?'#':u}
+function inl(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>`<a href="${href(u)}">${t}</a>`)}
+function md(src){
+  const L=src.split('\n'),out=[];let i=0;
+  while(i<L.length){const l=L[i];
+    if(/^#{1,3} /.test(l)){const n=l.match(/^#+/)[0].length;out.push(`<h${n}>${inl(l.slice(n+1))}</h${n}>`);i++;continue}
+    if(/^\|/.test(l)){const rows=[];while(i<L.length&&/^\|/.test(L[i]))rows.push(L[i++]);const cells=r=>r.replace(/^\||\|$/g,'').split('|').map(c=>inl(c.trim()));
+      out.push('<table><tr>'+cells(rows[0]).map(c=>`<th>${c}</th>`).join('')+'</tr>'+rows.slice(2).map(r=>'<tr>'+cells(r).map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')+'</table>');continue}
+    if(/^> ?/.test(l)){const q=[];while(i<L.length&&/^> ?/.test(L[i]))q.push(L[i++].replace(/^> ?/,''));out.push(`<blockquote>${q.map(inl).join('<br>')}</blockquote>`);continue}
+    if(/^- /.test(l)){const it=[];while(i<L.length&&/^- /.test(L[i]))it.push(L[i++].slice(2));out.push('<ul>'+it.map(x=>`<li>${inl(x)}</li>`).join('')+'</ul>');continue}
+    if(!l.trim()){i++;continue}
+    const p=[];while(i<L.length&&L[i].trim()&&!/^(#{1,3} |\||> ?|- )/.test(L[i]))p.push(L[i++]);out.push(`<p>${inl(p.join(' '))}</p>`)}
+  return out.join('\n')}
+fetch('mock/guide.md',{cache:'no-store'}).then(r=>r.ok?r.text():Promise.reject(r.status)).then(t=>{document.getElementById('md').innerHTML=md(t)}).catch(e=>{document.getElementById('md').textContent='加载失败：mock/guide.md（'+e+'）'});
+</script></body></html>
