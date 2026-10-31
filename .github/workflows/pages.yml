@@ -24,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true   # 首次运行自动创建 Pages 站点（源=GitHub Actions），无需手动在 Settings 开启
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
