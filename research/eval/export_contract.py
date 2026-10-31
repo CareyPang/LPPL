@@ -206,6 +206,36 @@ def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.Date
             "evidence": "descriptive", "signal_status": "signal" if qualified else "t1_not_qualified"}
 
 
+P1_TABLE = Path("web/mock/data/price_layer/drawdown_table.json")
+
+
+def _price_band(sym: str, bubble: dict) -> dict:
+    """P1 顶后价格带（描述性，战略规划 §4.1）：按当前泡沫（Lagrange 起点）的实际涨幅与持续时长匹配回撤情景表的桶，
+    给顶→谷回撤与时长的 20/50/80 分位及 n（跨市场；A 股单独 n<5 不给），附估值地板带。无预测值（value 恒为 None）。"""
+    base = {"value": None, "evidence": "none", "note": "回撤情景表未生成（python -m research.price_layer.drawdown_table）"}
+    if not P1_TABLE.exists():
+        return base
+    tab = json.loads(P1_TABLE.read_text(encoding="utf-8"))
+    t = tab["table"]
+    ok = bool(bubble.get("t1_qualified_standard"))  # 起点窗口未通过 STANDARD 过滤 → 不按桶匹配，只给全部样本
+    size, dur = (bubble.get("size_realized"), bubble.get("duration_days")) if ok else (None, None)
+    ru = du = None
+    if size is not None:
+        ru = next(n for lo, hi, n in ((-np.inf, 0.5, "<50%"), (0.5, 1.0, "50–100%"), (1.0, 2.0, "100–200%"), (2.0, np.inf, ">200%")) if lo <= size < hi)
+    if dur is not None:
+        du = next(n for lo, hi, n in ((0, 250, "<1 年"), (250, 500, "1–2 年"), (500, np.inf, ">2 年")) if lo <= dur < hi)
+    cands = [(f"{ru} × {du}", t["by_run_up_x_duration"].get(f"{ru}|{du}")) if ru and du else (None, None),
+             (f"涨幅 {ru}", t["by_run_up"].get(ru)) if ru else (None, None), ("全部", t["all"])]
+    name, cell = next((n, c) for n, c in cands if c and c["n"] >= tab["definition"]["min_n_a_share"])
+    return {
+        "value": None, "evidence": "descriptive", "table_version": tab["version"], "bucket": name,
+        "bucket_basis": {"size_realized": bubble.get("size_realized"), "duration_days": bubble.get("duration_days"), "t1_qualified_standard": ok, "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"},
+        "n": cell["n"], "n_a_share": cell["n_a"], "max_dd": cell["max_dd"], "days_to_trough": cell["days_to_trough"],
+        "a_share": cell.get("a_share"), "valuation_floor": tab["valuation_floor"].get(sym),
+        "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期",
+    }
+
+
 def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
                  p20: float | None = None, data_version: str = "frozen_v20261024") -> dict:
     """由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
@@ -262,7 +292,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                 for x in sw.itertuples()
             ],
             "invalidation": {"rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）", "evidence": "rule"},
-            "drawdown_price": {"value": None, "descriptive": [-0.18, -0.35], "evidence": "none"},
+            "drawdown_price": _price_band(sym, bubble),
             "drawdown_time": {"value": None, "evidence": "none"},
             "second_wave": {"value": None, "evidence": "none"},
         },

@@ -18,7 +18,11 @@
     ],
     "scenarios_note": "簇间不平均；簇占比<5% 不列",
     "invalidation": {"rule": "p20 连续 10 日<阈值 或 6–12 月与 12–24 月档置信度均<5%", "evidence": "rule"},
-    "drawdown_price": {"value": null, "descriptive": [-0.18, -0.35], "evidence": "none"},
+    "drawdown_price": {"value": null, "evidence": "descriptive", "table_version": "p1_v20261031", "bucket": "100–200% × 1–2 年",
+      "n": 9, "n_a_share": 8, "max_dd": {"q20": -0.49, "q50": -0.47, "q80": -0.39}, "days_to_trough": {"q20": 155, "q50": 159, "q80": 414},
+      "a_share": {"max_dd": {"q20": -0.48, "q50": -0.46, "q80": -0.37}, "days_to_trough": {"q20": 155, "q50": 159, "q80": 414}},
+      "valuation_floor": {"n": 11, "trough_pe": {"q20": 12.9, "q50": 15.1, "q80": 19.9}, "pe_latest": 16.1, "pe_date": "2026-10-23", "floor_band_points": [2954, 3464], "evidence": "descriptive"},
+      "rule": "P1 顶后价格带：同类泡沫（PS 标签，A 股 6 指数 + 外部 4 指数）历史顶→谷回撤/时长 20/50/80 分位；A 股单独 n<5 不给；估值地板 = 历次 PS 底部 PE 20–50% 分位 × 最新 PE；描述性，不是预测，value 恒为 null"},
     "drawdown_time": {"value": null, "evidence": "none"},
     "second_wave": {"value": null, "evidence": "none"}
   },
