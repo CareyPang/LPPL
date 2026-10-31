@@ -74,7 +74,8 @@
 const SCALES = ['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'], SHORT = {'2-4w':'2–4 周','1-3m':'1–3 月','3-6m':'3–6 月','6-12m':'6–12 月','12-24m':'12–24 月','2-6y':'2–6 年'};
 let SEL = {scale: 'all', dir: 'pos'}, LAST = null;
 { const u = new URLSearchParams(location.search); if (SCALES.includes(u.get('scale'))) SEL.scale = u.get('scale'); if (u.get('dir') === 'neg') SEL.dir = 'neg'; }
-function setSel(k, v){ SEL[k] = v; const u = new URLSearchParams(location.search); if (SEL.scale === 'all') u.delete('scale'); else u.set('scale', SEL.scale); if (SEL.dir === 'pos') u.delete('dir'); else u.set('dir', SEL.dir); history.replaceState(null, '', '?' + u.toString()); if (LAST) render(LAST); }
+function syncUrl(){ const u = new URLSearchParams(location.search); u.set('sym', document.getElementById('sym').value); if (SEL.scale === 'all') u.delete('scale'); else u.set('scale', SEL.scale); if (SEL.dir === 'pos') u.delete('dir'); else u.set('dir', SEL.dir); history.replaceState(null, '', '?' + u.toString()); }
+function setSel(k, v){ SEL[k] = v; syncUrl(); if (LAST) render(LAST); }
 const selBar = () => `<div class="sub" style="margin:6px 0 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="muted">尺度（原站 F06）</span>` +
   ['all', ...SCALES].map(k => `<button class="selbtn ${SEL.scale === k ? 'on' : ''}" onclick="setSel('scale','${k}')">${k === 'all' ? '全部' : SHORT[k]}</button>`).join('') +
   `<span class="muted" style="margin-left:10px">方向</span><button class="selbtn ${SEL.dir === 'pos' ? 'on' : ''}" onclick="setSel('dir','pos')">正泡沫</button><button class="selbtn ${SEL.dir === 'neg' ? 'on' : ''}" onclick="setSel('dir','neg')">负泡沫</button></div>`;
@@ -95,7 +96,7 @@ function render(D){
   const bar = v => `<span style="display:inline-block;width:${Math.round((v||0)*60)}px;height:8px;background:var(--red);vertical-align:middle;margin-right:4px"></span>${pct(v)}`;
   const NB = T.negative_bubble || {}, NBC = NB.confidence_standard || null;
   const negHtml = `<div class="sub">负泡沫置信度（对 −ln P 拟合，STANDARD）${badge('none')} <span class="muted">A 股六指数开发段 0/424 稳健（§17.12），仅描述，不预测底部</span></div>` +
-    (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => NBC[k] != null && (SEL.scale === 'all' || SEL.scale === k)).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
+    (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${NBC[k] == null ? '<span class="muted">未计算</span>' : bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
   $('conf').innerHTML = selBar() + (SEL.dir === 'neg' ? negHtml : `<div class="sub">DS LPPLS 置信度 = 该尺度窗口中通过过滤集的比例 ${badge(L.evidence)}</div>` +
     `<table><tr><th>尺度</th>${SETS.map(k => `<th>${SN[k]}</th>`).join('')}<th>最佳起点 t1（Lagrange）</th><th>状态</th></tr>` +
     SCALES6.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => { const v = I[k] || {}, c = v.confidence || {}; if (v.signal_status === 'not_computed') return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${badge('none')}</td><td colspan="${SETS.length + 2}" class="muted">历史不足或未计算（原站 F06：长尺度数据不足时显示"不足以计算"）</td></tr>`; return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${SE[k] ? badge(SE[k]) : ''}</td>${SETS.map(st => `<td>${c[st] == null ? '—' : bar(c[st])}</td>`).join('')}<td>${v.best_t1 ?? '—'}${v.t1_qualified == null ? '' : v.t1_qualified ? ' ✓' : ' ✗'}</td><td class="muted">${v.signal_status ?? '—'}</td></tr>`; }).join('') + `</table>` +
@@ -208,7 +209,7 @@ async function load(){
   const D = await r.json(); document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
 }
 const q = new URLSearchParams(location.search).get('sym'); if (q && [...document.getElementById('sym').options].some(o => o.value === q)) document.getElementById('sym').value = q;
-document.getElementById('sym').addEventListener('change', load); load();
+document.getElementById('sym').addEventListener('change', () => { syncUrl(); load(); }); load();
 </script>
 </body>
 </html>
