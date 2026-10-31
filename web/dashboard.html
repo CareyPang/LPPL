@@ -76,7 +76,8 @@ const SCALES = ['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'], SHORT = {'2-4w':'
 let SEL = {scale: 'all', dir: 'pos'}, LAST = null, HID = new Set(), RANGE = null;
 function toggleScen(i){ if (HID.has(i)) HID.delete(i); else HID.add(i); if (LAST) { renderChart(LAST, RANGE); renderScen(LAST); } }
 { const u = new URLSearchParams(location.search); if (SCALES.includes(u.get('scale'))) SEL.scale = u.get('scale'); if (u.get('dir') === 'neg') SEL.dir = 'neg'; }
-function setSel(k, v){ SEL[k] = v; const u = new URLSearchParams(location.search); if (SEL.scale === 'all') u.delete('scale'); else u.set('scale', SEL.scale); if (SEL.dir === 'pos') u.delete('dir'); else u.set('dir', SEL.dir); history.replaceState(null, '', '?' + u.toString()); if (LAST) render(LAST); }
+function syncUrl(){ const u = new URLSearchParams(location.search); u.set('sym', document.getElementById('sym').value); if (SEL.scale === 'all') u.delete('scale'); else u.set('scale', SEL.scale); if (SEL.dir === 'pos') u.delete('dir'); else u.set('dir', SEL.dir); history.replaceState(null, '', '?' + u.toString()); }
+function setSel(k, v){ SEL[k] = v; syncUrl(); if (LAST) render(LAST); }
 const selBar = () => `<div class="sub" style="margin:6px 0 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="muted">尺度（原站 F06）</span>` +
   ['all', ...SCALES].map(k => `<button class="selbtn ${SEL.scale === k ? 'on' : ''}" onclick="setSel('scale','${k}')">${k === 'all' ? '全部' : SHORT[k]}</button>`).join('') +
   `<span class="muted" style="margin-left:10px">方向</span><button class="selbtn ${SEL.dir === 'pos' ? 'on' : ''}" onclick="setSel('dir','pos')">正泡沫</button><button class="selbtn ${SEL.dir === 'neg' ? 'on' : ''}" onclick="setSel('dir','neg')">负泡沫</button></div>`;
@@ -97,7 +98,7 @@ function render(D){
   const bar = v => `<span style="display:inline-block;width:${Math.round((v||0)*60)}px;height:8px;background:var(--red);vertical-align:middle;margin-right:4px"></span>${pct(v)}`;
   const NB = T.negative_bubble || {}, NBC = NB.confidence_standard || null;
   const negHtml = `<div class="sub">负泡沫置信度（对 −ln P 拟合，STANDARD）${badge('none')} <span class="muted">A 股六指数开发段 0/424 稳健（§17.12），仅描述，不预测底部</span></div>` +
-    (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => NBC[k] != null && (SEL.scale === 'all' || SEL.scale === k)).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
+    (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${NBC[k] == null ? '<span class="muted">未计算</span>' : bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
   $('conf').innerHTML = selBar() + (SEL.dir === 'neg' ? negHtml : `<div class="sub">DS LPPLS 置信度 = 该尺度窗口中通过过滤集的比例 ${badge(L.evidence)}</div>` +
     `<table><tr><th>尺度</th>${SETS.map(k => `<th>${SN[k]}</th>`).join('')}<th>最佳起点 t1（Lagrange）</th><th>状态</th></tr>` +
     SCALES6.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => { const v = I[k] || {}, c = v.confidence || {}; if (v.signal_status === 'not_computed') return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${badge('none')}</td><td colspan="${SETS.length + 2}" class="muted">历史不足或未计算（原站 F06：长尺度数据不足时显示"不足以计算"）</td></tr>`; return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${SE[k] ? badge(SE[k]) : ''}</td>${SETS.map(st => `<td>${c[st] == null ? '—' : bar(c[st])}</td>`).join('')}<td>${v.best_t1 ?? '—'}${v.t1_qualified == null ? '' : v.t1_qualified ? ' ✓' : ' ✗'}</td><td class="muted">${v.signal_status ?? '—'}</td></tr>`; }).join('') + `</table>` +
@@ -189,7 +190,7 @@ function renderChart(D, range){
   svgEl.addEventListener('mousemove', ev => { const b = svgEl.getBoundingClientRect(); const x = (ev.clientX - b.left) * W / b.width; const i = Math.round((x - ml) / (W - ml - mr) * (xs.length - 1)); if (i < 0 || i >= xs.length) return;
     const d = xs[i], px = X(d); vl.setAttribute('x1', px); vl.setAttribute('x2', px); vl.style.display = '';
     const pi = pIdx.get(d); let txt = `${d}`; if (pi != null) { const v = P.close[pi]; hl.setAttribute('y1', Y(v)); hl.setAttribute('y2', Y(v)); hl.style.display = ''; dot.setAttribute('cx', px); dot.setAttribute('cy', Y(v)); dot.style.display = ''; txt += ` · 收盘 ${v}`; } else { hl.style.display = 'none'; dot.style.display = 'none'; }
-    scen.forEach((s,i2) => { const c = s.representative.curve; const k = c.fit.dates.indexOf(d), k2 = c.extrapolation.dates.indexOf(d); const mv = k >= 0 ? c.fit.price[k] : (k2 >= 0 ? c.extrapolation.price[k2] : null); if (mv != null) txt += ` · 情景${'ABCDEFGHI'[i2]} 模型 ${mv.toFixed(1)}${k2 >= 0 ? '(外推)' : ''}`; });
+    scen.forEach(s => { const i2 = s._i; const c = s.representative.curve; const k = c.fit.dates.indexOf(d), k2 = c.extrapolation.dates.indexOf(d); const mv = k >= 0 ? c.fit.price[k] : (k2 >= 0 ? c.extrapolation.price[k2] : null); if (mv != null) txt += ` · 情景${'ABCDEFGHI'[i2]} 模型 ${mv.toFixed(1)}${k2 >= 0 ? '(外推)' : ''}`; });
     $('xh').textContent = txt; });
   svgEl.addEventListener('mouseleave', () => { vl.style.display = hl.style.display = dot.style.display = 'none'; $('xh').textContent = ''; });
   svgEl.addEventListener('wheel', ev => { ev.preventDefault(); const span = r1 - r0 + 1, k = ev.deltaY > 0 ? 1.25 : 0.8; const ns2 = Math.max(60, Math.min(n0, Math.round(span * k))); const c = Math.round((r0 + r1) / 2); let a = Math.max(0, c - Math.floor(ns2 / 2)), b2 = Math.min(n0 - 1, a + ns2 - 1); a = Math.max(0, b2 - ns2 + 1); renderChart(D, [a, b2]); }, {passive: false});
@@ -225,10 +226,10 @@ async function load(){
   const f = document.getElementById('sym').value;
   const r = await fetch(`mock/data/${f}.json`, {cache:'no-store'});
   if (!r.ok) { document.getElementById('hd').textContent = `加载失败：${f}.json（${r.status}）`; return; }
-  const D = await r.json(); document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
+  const D = await r.json(); if (LAST && LAST._file !== f) { HID.clear(); RANGE = null; } D._file = f; document.getElementById('src').textContent = `mock/data/${f}.json`; render(D);
 }
 const q = new URLSearchParams(location.search).get('sym'); if (q && [...document.getElementById('sym').options].some(o => o.value === q)) document.getElementById('sym').value = q;
-document.getElementById('sym').addEventListener('change', load); load();
+document.getElementById('sym').addEventListener('change', () => { syncUrl(); load(); }); load();
 </script>
 </body>
 </html>
