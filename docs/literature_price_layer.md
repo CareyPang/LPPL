@@ -7,7 +7,7 @@
 3. 二波反弹的收复比例 / 具体价格能否预测
 4. 时间层（t_c、顶 / 底时间区间）能否靠 LPPLS 之外的模型辅助提高精度
 
-检索纪律：限速（每次请求间隔 ≥4 s）、限量（本次新下 16 篇全文 + 复用已有 10 篇；3 篇 SSRN/付费墙只到摘要级）。所有页码指 arXiv/工作论文 PDF 页码。与 `docs/literature_crash_bottom_echo.md`、`docs/literature_top_bottom_models.md` 已覆盖的内容只引用结论、不重复展开。
+检索纪律：限速（每次请求间隔 ≥4 s）、限量（第一轮新下 16 篇全文 + 复用已有 10 篇，第二轮回撤幅度专项再下 13 篇；3 篇 SSRN/付费墙只到摘要级）。所有页码指 arXiv/工作论文 PDF 页码。与 `docs/literature_crash_bottom_echo.md`、`docs/literature_top_bottom_models.md` 已覆盖的内容只引用结论、不重复展开。
 
 证据等级（本文沿用项目口径）：
 `replicated_oos` 独立样本外复验 ｜ `replicated` 多案例但同一作者组/同一样本 ｜ `single_event` 单次事前预测 ｜ `descriptive` 只做了描述统计 ｜ `tested_here_fail` 本项目开发段/校准段已测失败 ｜ `research_candidate` 文献有依据、本项目未测 ｜ `abstract_only` 本次只核到摘要。
@@ -18,7 +18,7 @@
 
 | 问题 | 文献能给什么 | 文献不能给什么 | 对 B/W 卡的含义 |
 |---|---|---|---|
-| 回撤幅度 | **崩盘概率**随泡沫涨幅上升（GSY 2019，样本外复验）；回撤分布是拉伸指数 + 龙王离群（JS） | LPPLS 参数 → 回撤幅度：模型里 κ 根本不可识别；没有任何论文给出稳定的"顶→谷"价格预测 | B 卡"便宜层"只能是**条件经验分位 + n**（P1 已做），不是预测，不给目标价 |
+| 回撤幅度 | **崩盘概率**随泡沫涨幅上升（GSY 2019，样本外复验）；信贷/杠杆 + 涨幅 → 危机概率 45% vs 7%（GHSS 2022）；回撤分布是拉伸指数 + 龙王离群（JS） | LPPLS 参数 → 回撤幅度：κ 不可识别，YWS 2010 的 κ 是事后算的；估值分位对深度无预测力；没有任何论文给出稳定的"顶→谷"价格预测 | B 卡"便宜层"只能是**条件经验分位 + n**（P1 已做）；条件变量优先级 杠杆 > 涨幅 > 估值；是否优于无条件分位需 Q-DD2 检验（未登记） |
 | 止跌确认 | 停时规则（LT 15%）是正式确认层；熊市 hazard 随持续期上升（LT 2004）；负泡沫 LPPLS 在美股有样本外反弹时点技能（Yan 2010） | 底部**价格**；负泡沫在 A 股本项目 0/424；Omori 余震只描述衰减 | B 卡"确认层"只展示 LT 规则是否触发 + 滞后天数，不评价 |
 | 二波 | MMS 2012：熊市反弹平均 ~半年、+7.1%，0.93 的牛市由熊市反弹过渡而来；二波顶可被 LPPLS 当短泡沫捕获（Jiang 2010） | 二波"收复比例"的预测；二波目标价 | W 卡 = 历史收复比例分位 + n（descriptive），状态概率为 Round 2 候选 |
 | 时间层 | 分位回归 / 轮廓似然 t_c 区间（Zhang 2016、Filimonov 2017）；t_1 比 t_c 好定（Demos 2017） | 更精确的 t_c：LPPL sloppy（Brée 2013），波动率、Hawkes 都不给日频顶/底时间 | 不承诺精确日期；区间规则本项目已测弱于朴素窗，维持 `dev_only` |
@@ -53,6 +53,29 @@
 - 可做：P1 回撤情景表（按泡沫涨幅/时长分桶的 20/50/80 分位 + n）、估值分位带。两者都是 `descriptive`，必须写"历史分位，不是预测"。
 - GSY 的"涨幅 → 崩盘概率"可作为 Round 2 候选（`research_candidate`），预登记后在 A 股 + 外部市场上检验；它输出概率，不输出价格。
 - 不做：任何从 LPPLS 参数（B、C、m、ω、t_c）回归回撤幅度的"预测器"。
+
+### 1.5 专项追查（2026-11-01 第二轮）：有没有"哪怕不准、但比没有参照更好"的回撤幅度模型
+
+用户追问后，专门检索"崩盘/熊市深度的条件变量"文献（新下 13 篇全文：NBER w27396/w8992/w14760/w21486/w25040/w7687/w25775、QJE Baron–Xiong、arXiv 1011.5343/cond-mat 0010050/0106520、JAE Kole–van Dijk、Weigand–Irons 2012）。结论分四层：
+
+**(a) 唯一声称"LPPLS 扩展能给崩盘幅度"的论文，不是预测。** Yan–Woodard–Sornette 2010 *Inferring fundamental value and crash nonlinearity*（arXiv:1011.5343 p6–7、p11、p16–17）把崩盘幅度写成 κ(p−p1)^γ，p1 为拟合约束（p1>0.2·p_min）得到的"基本面价"。但文中 RC（崩盘幅度 / 高估部分）是用**事后实际回撤 DD** 算出来的，κ=RC 只对 γ=1 的模型按定义成立；三案例 RC：S&P 1987 0.34–0.40，SSEC 2009 0.23–0.45（不同模型相差 2 倍），HSI 1997 见其表 I。无样本外、无误差统计。→ `single_event / in_sample`，不能作为幅度预测器。
+
+**(b) 有独立样本外证据的条件变量，对象都是"概率"而不是"幅度"：**
+- 涨幅（GSY 2019，§1.2）；
+- 信贷 + 涨幅：Greenwood–Hanson–Shleifer–Sørensen 2022（NBER w27396 p2、p4、p12、p17–18）42 国 1950–2016，3 年企业信贷增速前 1/5 且股价涨幅前 1/3 → 3 年内金融危机概率 45.3%（常态 7%），1 年 13%（常态 4%），有 1973 起滚动的真实时间样本外 R²；
+- 银行信贷扩张：Baron–Xiong 2017 QJE（p1、p4、p30）20 国 1920–2012，信贷扩张超 95 分位 → 银行股指后 3 年超额收益 −37.3%（t=−2.5），probit 与分位回归一致。这是文献里**唯一给出条件均值回撤数字**的结果，但对象是银行股指、条件是宏观信贷，不是指数顶后回撤；
+- 杠杆与衰退深度：Jordà–Schularick–Taylor 2015（NBER w21486 p5、p23–24、p29）1870–2013 17 国：股市泡沫若无信贷扩张对衰退深度"几乎没有影响"，伴随高信贷时衰退多 1 年、5 年累计 GDP −3.6%。对象是 GDP，但支持"杠杆是深度的条件变量、涨幅本身不是"；
+- A 股杠杆：Bian–He–Shue–Zhou 2018（NBER w25040 p2、p4、p6–7）2015 账户级数据，接近平仓线的账户抛售 → 价格异常下跌**随后反转**，影子配资贡献更大；市值 7 月底前蒸发约 30%。单事件，但是 A 股"杠杆 → 跌幅 + 反弹"的直接证据；国内《统计研究》2016 用 VECM 发现融资余额与股指短期双向正反馈。
+
+**(c) 估值作为深度条件变量：证据弱。** 从业者统计（S&P 1950–2020 按 CAPE 三分位分年）：次年回撤中位数与估值无关（都约 −10%），只有"便宜"组回撤范围更窄；CAPE 高于均值只预警 21 次 ≥10% 回撤中的 10 次。Weigand–Irons 2012（22 次美股熊市底 1881–2011）：底部 E10/P 显著扩张、1950 后估值底越来越高，且盈利收益率"不再可靠均值回归"。→ 估值分位只能做地板带参照，不能做深度预测变量。
+
+**(d) 无条件参照已经很强。** Johansen–Sornette 2001（cond-mat/0010050 p2；cond-mat/0106520 p19）：约 98% 的回撤服从（拉伸）指数分布，Nasdaq >10%、DJIA >3–5% 的回撤属于另一分布（离群）；Barro–Ursúa 2009（NBER w14760 p6、p9）30 国 232 次 ≤−25% 多年累计崩盘，平均持续 3.2 年，每年进入概率 0.101，美国最深 1929–31 −55%。从业者两份牛→熊统计相互矛盾（BCA 2014：涨幅与随后跌幅无关甚至负相关；Ned Davis 类：弱牛后熊市均 <27%、强牛 10 次有 9 次 >27%），样本都只有 ~14 个。
+
+**对"比没有参照更好"的回答：**
+1. 最诚实的"更好"是**条件经验分位**（P1 已做），但它是否真的比无条件分位窄、覆盖率是否仍对，文献没有替我们回答——从业者证据相互矛盾，学术证据只到概率。
+2. 文献支持的条件变量优先级：**杠杆/信贷（两融余额占流通市值、场外配资代理）> 涨幅与加速度 > 估值分位**。LPPLS 参数、波动率不在列。
+3. 如果要测，正确的形式是 Q-DD2：对象为 PS 顶后顶→谷回撤（6–24 月），条件变量为对数涨幅、持续月数、两融余额/市值分位、估值分位；基线为无条件分位；指标为 pinball loss 与 80% 区间覆盖；A 股 + 外部四市场留一市场。n≈58 事件、尾部离群，预期只能在中位数附近有增量，80% 分位大概率无增量（JS 2001 的离群结论）。**按用户指示：先不登记，待进一步核实后再定。**
+4. 即便通过，输出形式仍是"区间 + n + 条件说明"，不是目标价。
 
 ---
 
@@ -125,6 +148,11 @@
 | 估值分位 / 地板带 | 价格带 | descriptive | 已做（上证/沪深300/中证500/上证50） | B 卡便宜层 |
 | GSY 涨幅→崩盘概率 | 崩盘概率 | replicated_oos（美/国际行业） | 未测 | Round 2 预登记候选 |
 | LPPLS 参数→回撤幅度 | 幅度 | 无理论基础（κ 不可识别） | Q-DD tested_here_fail | 不做 |
+| YWS 2010 广义 JLS（p1 基本面 + κ） | 幅度 | single_event / in_sample（RC 事后算） | — | 不做 |
+| 信贷/杠杆 + 涨幅 → 危机/崩盘概率（GHSS 2022、Baron–Xiong 2017） | 概率、银行股条件均值 | replicated_oos（宏观面板） | 未测 | Round 2 候选：两融余额/市值作 Q-DD2 条件变量 |
+| 2015 杠杆平仓 → 跌幅与反转（Bian 等 2018） | A 股单事件机制 | single_event | — | 条件变量来源，不单独建模 |
+| 估值分位 → 回撤深度 | 幅度 | 从业者统计否定；Weigand 2012 底部估值漂移 | 地板带已做 | 仅作地板带参照 |
+| 无条件回撤分布（JS 2001、Barro–Ursúa 2009） | 分布 | descriptive | — | Q-DD2 的基线 |
 | 波动率→回撤/崩盘 | 幅度/时间 | 40 泡沫否定 | — | 不做 |
 | LT 15% 停时 | 止跌确认（事后） | descriptive（滞后） | 已在设计 | B 卡确认层（只展示） |
 | LT 熊市 hazard 随持续期上升 | 止跌时间先验 | descriptive（美股） | 未测 | 注脚，标美股来源 |
@@ -174,6 +202,20 @@
 - Brée, Challet, Peirano (2013) Prediction accuracy and sloppiness of log-periodic functions. Quant. Fin. arXiv:1006.2010
 - Sornette, Cauwels (2014) Financial bubbles: mechanisms and diagnostics. arXiv:1404.2140
 - Shu, Zhu (2019) Real-time prediction of bitcoin bubble crashes / CSI 300 LPPLS. arXiv:1905.09640
+
+- Yan, Woodard, Sornette (2010) Inferring fundamental value and crash nonlinearity from bubble calibration. arXiv:1011.5343
+- Greenwood, Hanson, Shleifer, Sørensen (2022) Predictable financial crises. J. Finance. NBER w27396
+- Baron, Xiong (2017) Credit expansion and neglected crash risk. QJE 132(2)
+- Jordà, Schularick, Taylor (2015) Leveraged bubbles. J. Monetary Econ. NBER w21486
+- Bian, He, Shue, Zhou (2018) Leverage-induced fire sales and stock market crashes. NBER w25040
+- Mishkin, White (2002) U.S. stock market crashes and their aftermath. NBER w8992
+- Barro, Ursúa (2009) Stock-market crashes and depressions. NBER w14760
+- Chen, Hong, Stein (2001) Forecasting crashes: trading volume, past returns, and conditional skewness. JFE. NBER w7687
+- Brunnermeier, Rother, Schnabel (2019) Asset price bubbles and systemic risk. NBER w25775
+- Johansen, Sornette (2001) Large stock market price drawdowns are outliers. J. Risk. arXiv:cond-mat/0010050
+- Johansen, Sornette (2001) Significance of log-periodic precursors to financial crashes. Quant. Fin. arXiv:cond-mat/0106520
+- Kole, van Dijk (2017) How to identify and forecast bull and bear markets? JAE 32(1)
+- Weigand, Irons (2012) The relative valuation of US equities at bear market bottoms. IMFI 9(2)
 
 摘要级（未取到全文）：
 - Forró, Woodard, Sornette (2015) Using trading strategies to detect phase transitions in financial markets. PRE 91, 042803
