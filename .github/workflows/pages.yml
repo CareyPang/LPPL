@@ -3,7 +3,11 @@ name: pages
 on:
   push:
     branches: [main]
-    paths: ["web/**", ".github/workflows/pages.yml"]
+    paths:
+      - "web/**"
+      - "frontend/**"
+      - "scripts/build_site.sh"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -26,8 +30,10 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true   # 首次运行自动创建 Pages 站点（源=GitHub Actions），无需手动在 Settings 开启
+      - name: Build public and lab sites
+        run: bash scripts/build_site.sh
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
