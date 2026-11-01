@@ -103,4 +103,4 @@ pytest -m "not network"          # 离线自检
 python -m research.pipeline.universe --help
 bash scripts/build_site.sh && python -m http.server 8000 -d _site
 ```
-数据冻结文件在仓库；未冻结的缓存（`data/cache` 等）不入库，需要时由日更脚本重新拉取。Open Design 规则见 `frontend/AGENTS.md`。进度以本文件 §7 表格与 PR 列表为准。
+入库的只有 `data/frozen/`（PIT 冻结价格）和 `data/universe/`。`data/features/`（LPPLS 扫描，研究脚本如 `tc_stability_eval`/`tc_cluster_dev` 依赖它）、`data/labels/`、`data/cache/` 不入库：新电脑上需先用 `python -m research.features.lppls_scan` 与标签脚本重跑（耗时数小时），或从旧机器拷贝这三个目录。日更、个股预测与前端不依赖它们。Open Design 规则见 `frontend/AGENTS.md`。进度以本文件 §7 表格与 PR 列表为准。
