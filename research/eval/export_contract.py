@@ -22,6 +22,7 @@ from ..features.lppls_rules import (
 )
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
+from ..price_layer import bottom_cards
 from ..price_layer.drawdown_table import DUR_BINS, LOOK, RUNUP_BINS, qualified_turns
 from ..price_layer.drawdown_table import build as build_drawdown_table
 from ..price_layer.drawdown_table import load_logp as load_drawdown_logp
@@ -294,6 +295,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     nmax = max(hi for _, hi in SCALES_FCO.values())
     m_eval = dd.n <= nmax  # 泡沫状态与总信号只用评价过的三档（≤504 日）；六档补充窗口仅作显示
     bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc)
+    bottom_objects = bottom_cards.build(sym, asof)
     w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
     window = ({"start": _to_cal(cal, date, float(w612.q20.iloc[0])), "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
                "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}
@@ -343,7 +345,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
         "bottom": {"state_p": {"value": None, "evidence": "fail_i",
                                "note": "底部概率链 B1/B2/B3：校准段 ΔBrier +0.0012～+0.0014、测试段 +0.0035～+0.0047，区间含/高于 0，判据(i)三段未通过；不显示概率"},
                    "thrust_p": {"value": None, "evidence": "fail_i", "note": "同上；负泡沫/反泡沫 LPPLS 在开发段亦无预测信息"},
-                   "entry_rule": {"value": None, "evidence": "none", "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"}},
+                   "entry_rule": {"value": None, "evidence": "none", "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"},
+                   **bottom_objects},
         "validation": [
             {"split": "开发段 2000–2018（6 指数）", "events": 74, "hit": 0.50, "false_alarm": 0.70, "brier": "ΔBrier −0.0053 [−0.0116, 0.0000]", "status": "dev",
              "note": "长尺度 box 置信度≥5%：顶被提前报警比例 0.50；报警日 120 日内未见顶比例 0.70（精度 0.30，集中于 2007/2015）"},

@@ -60,7 +60,7 @@
     }
     const J = await getJSON(file);
     const B = bars(J.price_history);
-    return { raw: J, top: J.top || {}, sym: S, name: J.name || S.name, asof: J.asof, latest, bars: B, T: B.length - 1 };
+    return { raw: J, top: J.top || {}, bottom: J.bottom || {}, sym: S, name: J.name || S.name, asof: J.asof, latest, bars: B, T: B.length - 1 };
   }
 
   /** 证据等级 → {label, show}；show=false 时不得显示数值 */
