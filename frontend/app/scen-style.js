@@ -4,10 +4,11 @@
   'use strict';
   const WARN = '#FFB800', REAL = '#4DA3FF';
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; };
-  const SCN = {
+  const CPSCN = {
     WARN, REAL, rgba,
     /* 同屏截止日多于该数量时进入"密集模式"：不画连接线，区间线更细，重叠处自然叠亮 */
-    DENSE: 60,
+    DENSE_PER_PX: 0.5,
+    isDense(n, w) { return w > 0 && n / w > CPSCN.DENSE_PER_PX; },
     /* 一条历史情景区间：截止日收盘价 y 处，从 x0 向右连到区间 [xa, xb]。
        o = { x0, xa, xb, y, hot, dense } */
     drawRange(ctx, o) {
@@ -29,5 +30,5 @@
       ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 8); ctx.lineTo(x + 5, y - 8); ctx.closePath(); ctx.fill();
     },
   };
-  G.SCN = SCN;
+  G.CPSCN = CPSCN;
 })(window);

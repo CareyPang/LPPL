@@ -194,7 +194,7 @@ a { color: var(--ink-2); text-decoration: none; }
   const css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
   const col = { bg: C('--bg'), line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real') };
   const FM = C('--f-m'), FU = C('--f-u');
-  const rgba = SCN.rgba;
+  const rgba = CPSCN.rgba;
   const T = (d) => Date.parse(d + 'T00:00:00Z');
   const ymd = (t) => new Date(t).toISOString().slice(0, 10);
   const pct = (x) => (x * 100).toFixed(0) + '%';
@@ -281,7 +281,7 @@ a { color: var(--ink-2); text-decoration: none; }
     const llo = Math.log(lo) - 0.05, lhi = Math.log(hi) + 0.12;
     const X = (t) => pl + (t - ta) / (tb - ta) * (W - pl - pr), Y = (v) => pt + (lhi - Math.log(v)) / (lhi - llo) * (Hh - pt - pb);
     st.G = { X, Y, ta, tb, vis, pt, pb, W, Hh, pl, pr };
-    const dense = vis.length > SCN.DENSE;
+    const dense = CPSCN.isDense(vis.length, W - pl - pr);
 
     // 分段底色
     ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
@@ -320,9 +320,9 @@ a { color: var(--ink-2); text-decoration: none; }
     for (const f of all) {
       if (f.w0 == null || f.w1 < ta || f.t > tb) continue;
       if (f === hot) continue;
-      SCN.drawRange(ctx, { x0: X(f.t), xa: X(f.w0), xb: X(f.w1), y: Y(f.close), dense });
+      CPSCN.drawRange(ctx, { x0: X(f.t), xa: X(f.w0), xb: X(f.w1), y: Y(f.close), dense });
     }
-    if (hot && hot.w0 != null) SCN.drawRange(ctx, { x0: X(hot.t), xa: X(hot.w0), xb: X(hot.w1), y: Y(hot.close), hot: true, dense });
+    if (hot && hot.w0 != null) CPSCN.drawRange(ctx, { x0: X(hot.t), xa: X(hot.w0), xb: X(hot.w1), y: Y(hot.close), hot: true, dense });
     // 收盘价线
     ctx.strokeStyle = col.ink2; ctx.lineWidth = 1.2; ctx.beginPath();
     let started = false;
@@ -335,7 +335,7 @@ a { color: var(--ink-2); text-decoration: none; }
       let px = -Infinity; for (const f of all) { if (Math.abs(f.t - t.t) < 21 * DAY && f.close > px) px = f.close; }
       if (px === -Infinity) continue;
       const x = X(t.t), y = Y(px) - 6;
-      SCN.drawTop(ctx, x, y);
+      CPSCN.drawTop(ctx, x, y);
       if (labelOk) { ctx.fillStyle = col.real; ctx.font = '11px ' + FM; ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
     }
     if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba('#FFFFFF', 0.3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }

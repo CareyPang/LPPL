@@ -607,14 +607,14 @@ window.CP = { dateAt(bars, idx) {
       // ---- 主图叠加层 ----
       ctx.save(); ctx.beginPath(); ctx.rect(0, pt, g.W, pb - pt); ctx.clip();
       if (st.show.hist && R.hist) {
-        const hv = R.hist.frames.filter((f) => vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))), dense = hv.length > SCN.DENSE;
+        const hv = R.hist.frames.filter((f) => vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))), dense = CPSCN.isDense(hv.length, g.W);
         for (const f of hv) {
-          SCN.drawRange(ctx, { x0: X(f.i), xa: X(f.lo), xb: X(f.hi + 1), y: Y(R.bars[Math.min(f.i, R.bars.length - 1)].close), dense });
+          CPSCN.drawRange(ctx, { x0: X(f.i), xa: X(f.lo), xb: X(f.hi + 1), y: Y(R.bars[Math.min(f.i, R.bars.length - 1)].close), dense });
         }        ctx.lineWidth = 1;
         for (const t of R.hist.tops) {
           if (!vis(t.i, t.i)) continue;
           const x = X(t.i) + 0.5, y = Y(R.bars[t.i].high) - 6;
-          SCN.drawTop(ctx, x, y);
+          CPSCN.drawTop(ctx, x, y);
           tag('事后确认顶 ' + U.pct(t.dd, 0), x, Math.max(pt + 10, y - 18), '#0D0D0D', col.real, 'center');
         }
       }
