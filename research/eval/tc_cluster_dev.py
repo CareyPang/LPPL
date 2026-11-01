@@ -28,7 +28,7 @@ OUT = Path("reports/tc_cluster_dev_rows.csv")
 
 def zones(sym: str, cal: pd.DatetimeIndex) -> list[tuple[int, int, int]]:
     close = np.exp(price_series(sym).to_numpy())
-    tp = np.sort(cal.get_indexer(top_dates(sym))) - 1
+    tp = np.sort(cal.get_indexer(top_dates(sym)))
     tp = tp[(tp >= 0) & (cal[np.clip(tp, 0, None)] <= DEV_END + pd.Timedelta(days=365))]
     out = []
     for t in tp:
@@ -53,9 +53,9 @@ def rows() -> pd.DataFrame:
             cand = [z for z in zs if 0 <= z[0] - pos <= HMAX or z[1] <= pos <= z[2]]
             z = min(cand, key=lambda z: abs(tc - z[0])) if cand else (np.nan,) * 3
             out.append(dict(sym=sym, date=d, conf=r.conf, n_fit=r.n_fit, width=r.q80 - r.q20,
-                            pos=pos, tc=tc, top=z[0], za=z[1], zb=z[2]))
+                            pos=pos, tc=tc, top=z[0], za=z[1], zb=z[2],
+                            has_top=any(0 < z[0] - pos <= HMAX for z in zs)))
     df = pd.DataFrame(out)
-    df["has_top"] = df.top.notna()
     df["err"] = df.tc - df.top
     df["hit_top"] = df.err.abs() <= TOL
     df["hit_zone"] = (df.tc >= df.za - TOL) & (df.tc <= df.zb + TOL)

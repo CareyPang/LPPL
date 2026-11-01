@@ -33,12 +33,17 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default=TAG)
     ap.add_argument("--dir", default="data/_download")
+    ap.add_argument("--overwrite", action="store_true", help="目标目录非空时仍解压（旧文件不会被删除）")
     ap.add_argument("--keep", action="store_true", help="保留下载的分卷")
     a = ap.parse_args()
     import zstandard
 
     root = f"https://github.com/{REPO}/releases/download/{a.tag}/"
-    d = Path(a.dir)
+    d = Path(a.dir) / a.tag
+    targets = [Path("data") / x for x in ("features", "labels", "cache", "oof")]
+    busy = [str(t) for t in targets if t.is_symlink() or (t.exists() and any(t.iterdir()))]
+    if busy and not a.overwrite:
+        raise SystemExit(f"{busy} 已存在（或是符号链接）；确认要覆盖请先删除，或加 --overwrite")
     d.mkdir(parents=True, exist_ok=True)
     _get(root + "SHA256SUMS", d / "SHA256SUMS")
     sums = [ln.split() for ln in (d / "SHA256SUMS").read_text().splitlines() if ln.strip()]
@@ -72,11 +77,16 @@ def main() -> None:
                 self.f.close()
                 self.f = None
 
+    root_dir = Path.cwd().resolve()
     with zstandard.ZstdDecompressor().stream_reader(_Cat(parts)) as zr, tarfile.open(fileobj=zr, mode="r|") as tf:
         for m in tf:
             if not m.name.startswith("data/") or ".." in Path(m.name).parts or not (m.isfile() or m.isdir()):
                 raise SystemExit(f"非法路径 {m.name}")
-            tf.extract(m, ".")
+            dest = (root_dir / m.name).resolve()
+            if not dest.is_relative_to(root_dir) or any(
+                    p.is_symlink() for p in [root_dir / m.name, *(root_dir / m.name).parents] if p != root_dir and root_dir in p.parents):
+                raise SystemExit(f"拒绝解压到符号链接或仓库外：{m.name}")
+            tf.extract(m, root_dir)
     if not a.keep:
         for p in parts:
             p.unlink()
