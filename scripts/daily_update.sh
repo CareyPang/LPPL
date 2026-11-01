@@ -6,6 +6,7 @@ cd "$(dirname "$0")/.."
 export LPPLS_BOX=v2
 for s in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
   python -m research.pipeline.daily "$s" "$@"
+  python -m research.eval.export_contract history "$s"
 done
 cp docs/user_guide.md web/mock/guide.md   # 教育页 web/guide.html 读取的副本，随日更同步
 python -m research.pipeline.forward_log seal

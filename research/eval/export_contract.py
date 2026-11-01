@@ -24,6 +24,8 @@ from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
 from ..price_layer.drawdown_table import DUR_BINS, RUNUP_BINS
 from ..price_layer.drawdown_table import build as build_drawdown_table
+from ..price_layer.drawdown_table import load_logp as load_drawdown_logp
+from ..price_layer.drawdown_table import top_events as drawdown_top_events
 from .dataset import price_series
 from .original_standard import SCAN, load
 
@@ -62,6 +64,12 @@ def record(sym: str, asof: str) -> dict:
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
+HISTORY_SCANS = {
+    "dev": Path("data/features/lppls_v2"),
+    "cal": Path("data/features/lppls_v2_cal"),
+    "test": Path("data/features/lppls_v2_test"),
+}
+HISTORY_SCALES = ("6-12m", "12-24m")
 
 
 def _close(ohlc: pd.DataFrame, cal: pd.DatetimeIndex) -> pd.Series:
@@ -372,7 +380,94 @@ def movie(sym: str, a: str, b: str) -> list[dict]:
     return frames
 
 
-if __name__ == "__main__":
+def history(sym: str) -> dict:
+    """Split-tagged, point-in-time scenario windows from the three frozen scan sources."""
+    logp = price_series(sym)
+    pos = pd.Series(np.arange(len(logp)), index=logp.index)
+    lp = logp.to_numpy()
+    scans = []
+    seen_dates: set[pd.Timestamp] = set()
+    for split, folder in HISTORY_SCANS.items():
+        path = folder / f"{sym}.parquet"
+        if not path.exists():
+            continue
+        scan = pd.read_parquet(path)
+        scan["date"] = pd.to_datetime(scan["date"])
+        end = pos.reindex(scan.date).to_numpy()
+        if not np.isfinite(end).all():
+            raise ValueError(f"{sym} {split} scan contains dates absent from the price calendar")
+        scan["y_std"] = [
+            lp[int(i) + 1 - int(n) : int(i) + 1].std()
+            for i, n in zip(end, scan.n, strict=True)
+        ]
+        dates = set(scan["date"].unique())
+        overlap = seen_dates & dates
+        if overlap:
+            raise ValueError(f"{sym} has overlapping {split} as-of dates: {sorted(overlap)[:3]}")
+        seen_dates.update(dates)
+        scan["split"] = split
+        scans.append(scan)
+    if not scans:
+        raise FileNotFoundError(f"no LPPLS history scans found for {sym}")
+
+    d = _derived(pd.concat(scans, ignore_index=True))
+    r = rules(d)
+    cal = logp.index
+    frames = []
+    for date, dd in d.groupby("date", sort=True):
+        rr = r.loc[dd.index]
+        q = dd.loc[rr.box, ["n", "ahead"]]
+        sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
+        split_values = dd["split"].unique()
+        if len(split_values) != 1:
+            raise ValueError(f"{sym} has multiple source splits on {date.date()}")
+        windows = {scale: None for scale in HISTORY_SCALES}
+        for row in sw.itertuples():
+            if row.scale in windows:
+                windows[row.scale] = [
+                    _to_cal(cal, date, float(row.q20)),
+                    _to_cal(cal, date, float(row.q80)),
+                ]
+        conf = _conf(dd, rr, date)
+        frames.append({
+            "asof": str(date.date()),
+            "split": str(split_values[0]),
+            "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
+            "w": windows,
+        })
+
+    tops = [
+        {"date": event["top"], "max_dd": event["max_dd"]}
+        for event in drawdown_top_events(sym, load_drawdown_logp(sym))
+    ]
+    return {
+        "symbol": sym,
+        "model_version": "prereg_v1.7_v2",
+        "evidence": "dev_only",
+        "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
+        "frames": frames,
+        "tops": tops,
+    }
+
+
+def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "history":
+        if len(sys.argv) != 3:
+            raise SystemExit("usage: python -m research.eval.export_contract history <sym>")
+        sym = sys.argv[2]
+        rec = history(sym)
+        out = Path("web/mock/data")
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"{sym}_history.json"
+        path.write_text(json.dumps(rec, ensure_ascii=False, indent=1), encoding="utf-8")
+        missing = [split for split, folder in HISTORY_SCANS.items() if not (folder / f"{sym}.parquet").exists()]
+        if missing:
+            print(f"skipped missing splits for {sym}: {', '.join(missing)}", file=sys.stderr)
+        print(path, "frames", len(rec["frames"]), "tops", len(rec["tops"]))
+        return
+
+    if len(sys.argv) < 3:
+        raise SystemExit("usage: python -m research.eval.export_contract <sym> <asof> [movie_from movie_to]")
     sym, asof = sys.argv[1], sys.argv[2]
     out = Path("web/mock/data")
     out.mkdir(parents=True, exist_ok=True)
@@ -382,3 +477,7 @@ if __name__ == "__main__":
     (out / f"{sym}_{asof}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str))
     print(json.dumps({k: v for k, v in rec.items() if k != "movie"}, ensure_ascii=False, default=str)[:1500])
     print("movie frames", len(rec.get("movie", [])), "scan", SCAN)
+
+
+if __name__ == "__main__":
+    main()
