@@ -103,4 +103,9 @@ pytest -m "not network"          # 离线自检
 python -m research.pipeline.universe --help
 bash scripts/build_site.sh && python -m http.server 8000 -d _site
 ```
-入库的只有 `data/frozen/`（PIT 冻结价格）和 `data/universe/`。`data/features/`（LPPLS 扫描，研究脚本如 `tc_stability_eval`/`tc_cluster_dev` 依赖它）、`data/labels/`、`data/cache/` 不入库：新电脑上需先用 `python -m research.features.lppls_scan` 与标签脚本重跑（耗时数小时），或从旧机器拷贝这三个目录。日更、个股预测与前端不依赖它们。Open Design 规则见 `frontend/AGENTS.md`。进度以本文件 §7 表格与 PR 列表为准。
+入库的只有 `data/frozen/`（PIT 冻结价格）和 `data/universe/`。`data/features/`（LPPLS 扫描，研究脚本如 `tc_stability_eval`/`tc_cluster_dev` 依赖它）、`data/labels/`、`data/cache/`、`data/oof/` 体积约 3.8 GB，作为 GitHub Release [`research-data-v20261101`](https://github.com/CareyPang/LPPL/releases/tag/research-data-v20261101) 附件发布（zstd 分 2 卷，2.9 GB，带 SHA256）。新电脑在仓库根目录执行：
+```
+pip install zstandard
+python scripts/fetch_research_data.py
+```
+日更、个股预测与前端不依赖它们。Open Design 规则见 `frontend/AGENTS.md`。进度以本文件 §7 表格与 PR 列表为准。
