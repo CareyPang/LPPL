@@ -404,6 +404,7 @@ window.CP = { dateAt(bars, idx) {
 </script>
 <script src="app/ui.js"></script>
 <script src="app/lppl-data.js"></script>
+<script src="app/scen-style.js"></script>
 <script>
 (function () {
   'use strict';
@@ -607,17 +608,14 @@ window.CP = { dateAt(bars, idx) {
       // ---- 主图叠加层 ----
       ctx.save(); ctx.beginPath(); ctx.rect(0, pt, g.W, pb - pt); ctx.clip();
       if (st.show.hist && R.hist) {
-        for (const f of R.hist.frames) {
-          if (!vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))) continue;
-          const y = Math.round(Y(R.bars[Math.min(f.i, R.bars.length - 1)].close)) + 0.5, xa = X(f.lo), xb = X(f.hi + 1);
-          ctx.strokeStyle = rgba(col.warn, 0.18); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(f.i), y); ctx.lineTo(xa, y); ctx.stroke();
-          ctx.strokeStyle = rgba(col.warn, 0.55); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(Math.max(xa + 2, xb), y); ctx.stroke();
-        }
-        ctx.lineWidth = 1;
+        const hv = R.hist.frames.filter((f) => vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))), dense = CPSCN.isDense(hv.length, g.W);
+        for (const f of hv) {
+          CPSCN.drawRange(ctx, { x0: X(f.i), xa: X(f.lo), xb: X(f.hi + 1), y: Y(R.bars[Math.min(f.i, R.bars.length - 1)].close), dense });
+        }        ctx.lineWidth = 1;
         for (const t of R.hist.tops) {
           if (!vis(t.i, t.i)) continue;
           const x = X(t.i) + 0.5, y = Y(R.bars[t.i].high) - 6;
-          ctx.fillStyle = col.real; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 8); ctx.lineTo(x + 5, y - 8); ctx.closePath(); ctx.fill();
+          CPSCN.drawTop(ctx, x, y);
           tag('事后确认顶 ' + U.pct(t.dd, 0), x, Math.max(pt + 10, y - 18), '#0D0D0D', col.real, 'center');
         }
       }

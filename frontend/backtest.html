@@ -6,208 +6,463 @@
 <title>临界点 · 回测：历史情景区间</title>
 <link rel="icon" href="data:,">
 <style>
+/* OD-LAYOUT-PRIMITIVES v1 — structure only */
+@layer od-layout {
+  [hidden]:not([hidden="until-found" i]) { display: none !important; }
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid) > :where(*) { min-width: 0; }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-nowrap  { white-space: nowrap; }
+}
+/* OD-LAYOUT-PRIMITIVES v1 end */
+
+/* 与终端（index.html）同一套 Trading Terminal 设计变量：近黑底、细边线、直角、等宽数字。红涨绿跌；琥珀 = 情景区间，蓝 = 事后确认。 */
 :root {
-  --bg: #0D0D0D; --surface: #141414; --line: #2A2A2A; --grid: #1E1E1E;
+  --bg: #0D0D0D; --surface: #141414; --surface-2: #1A1A1A; --line: #2A2A2A; --grid: #1E1E1E;
   --ink: #FFFFFF; --ink-2: #AAAAAA; --ink-3: #828282;
   --warn: #FFB800; --real: #4DA3FF;
   --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
   --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
+  --t-fast: 150ms; --side-w: 344px;
 }
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-u); display: flex; flex-direction: column; }
-a { color: inherit; }
-header { display: flex; align-items: center; gap: 24px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
-.brand b { font-size: 16px; } .brand small { display: block; color: var(--ink-3); font: 11px var(--f-m); letter-spacing: .1em; }
-nav { margin-left: auto; display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); }
-nav a { text-decoration: none; } nav a:hover, nav a[aria-current] { color: var(--ink); }
-.bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--line); align-items: center; }
-.bar .lb { color: var(--ink-3); font-size: 12px; margin-right: 4px; }
-.bar .sp { width: 16px; }
-button.b { background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); padding: 4px 10px; cursor: pointer; font: 12px var(--f-u); }
-button.b:hover { color: var(--ink); } button.b[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
-main { flex: 1; display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
-.chart { position: relative; min-height: 420px; }
-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.tip { position: absolute; pointer-events: none; background: rgba(20,20,20,.95); border: 1px solid var(--line); padding: 8px 10px; font: 12px/1.6 var(--f-m); color: var(--ink-2); display: none; max-width: 300px; }
+* { box-sizing: border-box; border-radius: 0; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-u); min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+a { color: var(--ink-2); text-decoration: none; }
+.m { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--real); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* 顶部栏 */
+.bar { border-bottom: 1px solid var(--line); background: var(--surface); }
+.bar-in { padding: var(--s2) var(--s4); --od-gap: var(--s4); }
+.brand { font: 600 15px/1 var(--f-m); letter-spacing: .04em; }
+.brand small { display: block; font: 500 10px/1 var(--f-u); color: var(--ink-3); letter-spacing: .12em; margin-top: var(--s1); }
+.nav { margin-left: auto; --od-gap: var(--s4); font-size: 13px; flex-wrap: wrap; }
+.nav a { padding: var(--s2) 0; border-bottom: 1px solid transparent; }
+.nav a:hover { color: var(--ink); border-bottom-color: var(--ink-3); }
+.nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--warn); }
+
+/* 指数带 + 区间预设 */
+.strip { border-bottom: 1px solid var(--line); --od-gap: 0; overflow-x: auto; scrollbar-width: thin; }
+.tk { display: flex; align-items: center; padding: var(--s2) var(--s4); min-height: 44px; border: 0; border-right: 1px solid var(--line); background: transparent; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; transition: background var(--t-fast) ease-out; }
+.tk:hover { background: var(--surface-2); color: var(--ink); }
+.tk[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: inset 0 -2px 0 var(--warn); }
+.strip-k { padding: 0 var(--s3) 0 var(--s4); font-size: 11px; color: var(--ink-3); letter-spacing: .08em; white-space: nowrap; }
+.chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 32px; font-size: 12px; color: var(--ink-2); cursor: pointer; white-space: nowrap; margin-right: var(--s1); transition: border-color var(--t-fast) ease-out; }
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+.chip:disabled { opacity: .35; cursor: not-allowed; border-color: var(--line); color: var(--ink-3); }
+.chip:disabled:hover { border-color: var(--line); color: var(--ink-3); }
+.chips { padding-right: var(--s4); --od-gap: 0; }
+
+/* 主体 */
+.app { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) var(--side-w); min-height: 0; }
+.left { display: flex; flex-direction: column; min-width: 0; }
+.chead { border-bottom: 1px solid var(--line); padding: var(--s2) var(--s3); --od-gap: var(--s3); min-height: 48px; flex-wrap: wrap; }
+.sym-n { font: 600 16px/1.2 var(--f-u); white-space: nowrap; }
+.sym-c { font: 400 12px/1.2 var(--f-m); color: var(--ink-3); white-space: nowrap; }
+.lgd { --od-gap: var(--s3); font-size: 12px; color: var(--ink-2); margin-left: auto; }
+.lgd span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sw { display: inline-block; width: 18px; height: 3px; background: var(--warn); }
+.sw.t { width: 0; height: 0; background: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--real); }
+.sw.s { width: 14px; height: 10px; background: rgba(77,163,255,.14); border: 1px solid rgba(77,163,255,.35); }
+.chart { position: relative; flex: 1; min-height: 380px; height: clamp(380px, 56vh, 720px); background: var(--bg); }
+.chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+.chart canvas.grab { cursor: grabbing; }
+.tip { position: absolute; pointer-events: none; background: rgba(20,20,20,.96); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.6 var(--f-m); color: var(--ink-2); max-width: 320px; z-index: 2; }
 .tip b { color: var(--ink); font-weight: 500; }
-aside { border-left: 1px solid var(--line); padding: 16px 18px; overflow: auto; font-size: 13px; color: var(--ink-2); }
-aside h2 { font-size: 13px; color: var(--ink); margin: 0 0 8px; font-weight: 600; }
-aside section { margin-bottom: 20px; }
-.lg { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-.sw { display: inline-block; width: 22px; height: 3px; background: var(--warn); }
-.sw.t { width: 0; height: 0; background: none; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--real); }
-.sw.s { height: 10px; background: rgba(77,163,255,.10); border: 1px solid rgba(77,163,255,.3); }
-.err { color: var(--warn); padding: 40px; }
-table { width: 100%; border-collapse: collapse; font: 12px var(--f-m); }
-td { padding: 4px 0; border-bottom: 1px solid var(--grid); } td:last-child { text-align: right; color: var(--ink); }
-@media (max-width: 860px) { main { grid-template-columns: 1fr; } aside { border-left: 0; border-top: 1px solid var(--line); } }
+.tip .re { color: var(--real); }
+.ld { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(13,13,13,.7); color: var(--ink-3); font-size: 13px; z-index: 3; }
+.ld.err { color: #FF8A94; padding: var(--s6); text-align: center; }
+
+/* 时间轴刷选 */
+.brush { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s2) var(--s3) var(--s3); }
+.brush-h { --od-gap: var(--s2); margin-bottom: var(--s1); font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+.brush-h output { font: 500 12px/1 var(--f-m); color: var(--ink-2); margin-left: auto; white-space: nowrap; }
+.bt { border: 1px solid var(--line); background: transparent; color: var(--ink-2); min-height: 28px; min-width: 44px; padding: 0 var(--s2); font-size: 12px; cursor: pointer; }
+.bt:hover { color: var(--ink); border-color: var(--ink-3); }
+.ov { position: relative; height: 64px; }
+.ov canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: ew-resize; }
+
+/* 右栏 */
+.side { border-left: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.blk { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+.blk-k { margin: 0 0 var(--s2); font: 500 11px/1 var(--f-u); letter-spacing: .1em; color: var(--ink-3); }
+.blk p { margin: 0 0 var(--s2); font-size: 13px; color: var(--ink-2); }
+.blk p:last-child { margin-bottom: 0; }
+.kv { width: 100%; border-collapse: collapse; font: 12px var(--f-m); }
+.kv td { padding: var(--s1) 0; border-bottom: 1px solid var(--grid); color: var(--ink-3); }
+.kv td:last-child { text-align: right; color: var(--ink); }
+.evb { display: inline-block; font: 600 11px/1 var(--f-u); padding: var(--s1) var(--s2); border: 1px solid var(--warn); color: var(--warn); margin-bottom: var(--s2); letter-spacing: .06em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+@media (max-width: 1024px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+  .lgd { margin-left: 0; }
+}
+@media (max-width: 480px) { .chart { min-height: 320px; } .nav { --od-gap: var(--s3); } }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand"><b>临界点</b><small>LPPLS · 回测</small></div>
-  <nav>
-    <a href="home.html">首页</a>
-    <a href="index.html">终端</a>
-    <a href="backtest.html" aria-current="page">回测</a>
-    <a href="lab/dashboard.html">研究仪表盘</a>
-    <a href="lab/guide.html">用户指南</a>
-  </nav>
+
+<header class="bar">
+  <div class="bar-in od-row">
+    <div class="brand od-fixed">临界点回测<small>LPPLS · 历史情景区间</small></div>
+    <nav class="nav od-row" aria-label="页面导航">
+      <a href="home.html">首页</a>
+      <a href="index.html">终端</a>
+      <a href="backtest.html" aria-current="page">回测</a>
+      <a href="lab/dashboard.html">研究仪表盘</a>
+      <a href="lab/guide.html">用户指南</a>
+    </nav>
+  </div>
 </header>
-<div class="bar">
-  <span class="lb">指数</span><span id="syms"></span>
-  <span class="sp"></span>
-  <span class="lb">区间</span><span id="ranges"></span>
+
+<div class="strip od-row" aria-label="指数与区间">
+  <div class="od-row od-fixed" id="syms" role="group" aria-label="指数" style="--od-gap:0"></div>
+  <span class="strip-k">区间</span>
+  <div class="chips od-row od-fixed" id="ranges" role="group" aria-label="时间区间预设"></div>
 </div>
-<main>
-  <div class="chart" id="chart"><canvas id="cv"></canvas><div class="tip" id="tip"></div></div>
-  <aside>
-    <section>
-      <h2>怎么看</h2>
-      <div class="lg"><i class="sw"></i>模型当时给出的 6–12 月档情景区间</div>
-      <p style="margin:2px 0 8px">每条横线从一个周度截止日的收盘价出发，向右延伸到模型那天算出的区间（合格拟合 t_c 的 20–80% 分位）。只用截止日当天及以前的数据。</p>
-      <div class="lg"><i class="sw t"></i>事后确认的顶</div>
-      <p style="margin:2px 0 8px">PS 标签：顶后 126 个交易日内回撤 ≥15%。回撤幅度是事后实测值。</p>
-      <div class="lg"><i class="sw s"></i>校准段 / 测试段</div>
-      <p style="margin:2px 0 8px">未着色为开发段。</p>
+
+<main class="app">
+  <div class="left">
+    <div class="chead od-row">
+      <div class="od-fixed">
+        <div class="sym-n" id="sym-n">—</div>
+        <div class="sym-c" id="sym-c">周度截止日 · 6–12 月档</div>
+      </div>
+      <div class="lgd od-cluster" aria-label="图例">
+        <span><i class="sw"></i>模型当时给出的区间</span>
+        <span><i class="sw t"></i>事后确认的顶</span>
+        <span><i class="sw s"></i>校准段 / 测试段</span>
+      </div>
+    </div>
+
+    <div class="chart" id="chart">
+      <canvas id="cv" tabindex="0" role="img" aria-label="历史情景区间图。滚轮缩放，拖动平移，方向键移动，加减号缩放，双击回到全部。"></canvas>
+      <div class="tip" id="tip" hidden></div>
+      <div class="ld" id="ld">数据加载中…</div>
+    </div>
+
+    <div class="brush">
+      <div class="brush-h od-row">
+        <span>时间轴：拖动窗口平移，拖动两端缩放，点击空白处跳转</span>
+        <button class="bt" type="button" id="b-in" aria-label="放大">放大</button>
+        <button class="bt" type="button" id="b-out" aria-label="缩小">缩小</button>
+        <button class="bt" type="button" id="b-all" aria-label="显示全部历史">全部</button>
+        <output id="vr" for="ov" aria-live="polite">—</output>
+      </div>
+      <div class="ov"><canvas id="ov" tabindex="0" role="slider" aria-label="可见时间窗口" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></canvas></div>
+    </div>
+    <p class="sr" id="sr" aria-live="polite"></p>
+  </div>
+
+  <aside class="side" aria-label="说明">
+    <section class="blk">
+      <p class="blk-k">怎么看</p>
+      <p>每条横线从一个周度截止日的收盘价出发，向右延伸到模型那天算出的区间（合格拟合 t_c 的 20–80% 分位）。只用截止日当天及以前的数据。</p>
+      <p>蓝色三角是事后确认的顶：顶后 126 个交易日内回撤 ≥15%，回撤幅度是事后实测值。</p>
+      <p>线太密时，把时间窗口缩小到几年再看；窗口较大时区间线自动变细、不画连接线。</p>
     </section>
-    <section>
-      <h2>证据等级</h2>
-      <p id="ev"></p>
+    <section class="blk">
+      <p class="blk-k">证据等级</p>
+      <div id="ev"><p>—</p></div>
     </section>
-    <section>
-      <h2>本区间</h2>
-      <table id="sum"></table>
+    <section class="blk">
+      <p class="blk-k">当前窗口</p>
+      <table class="kv" id="sum"></table>
     </section>
-    <section>
-      <p>正式成绩（三段验证、覆盖率）以 <a href="index.html">终端</a> 与 <a href="lab/dashboard.html">研究仪表盘</a> 为准；本页只展示历史区间，不计算命中率。</p>
+    <section class="blk">
+      <p>正式成绩（三段验证、覆盖率）以 <a href="index.html" style="color:var(--real)">终端</a> 与 <a href="lab/dashboard.html" style="color:var(--real)">研究仪表盘</a> 为准；本页只展示历史区间，不计算命中率。</p>
     </section>
   </aside>
 </main>
+
 <script src="app/lppl-data.js"></script>
+<script src="app/scen-style.js"></script>
 <script>
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const E = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const DAY = 864e5;
   const RANGES = [['全部', null, null], ['2005–2009', '2005-01-01', '2009-12-31'], ['2014–2016', '2014-01-01', '2016-12-31'], ['2019–2021', '2019-01-01', '2021-12-31'], ['2024–2025', '2024-01-01', '2025-12-31']];
   const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段' };
   const css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
-  const col = { line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real') };
-  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+  const col = { bg: C('--bg'), line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real') };
+  const FM = C('--f-m'), FU = C('--f-u');
+  const rgba = CPSCN.rgba;
   const T = (d) => Date.parse(d + 'T00:00:00Z');
+  const ymd = (t) => new Date(t).toISOString().slice(0, 10);
   const pct = (x) => (x * 100).toFixed(0) + '%';
-  const st = { sym: 'sh000001', range: 0, H: null, hover: null };
+  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null };
   const q = new URLSearchParams(location.search);
   if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
 
-  $('syms').innerHTML = LPPL.SYMS.map((s) => `<button class="b" type="button" data-s="${s.sym}">${E(s.name)}</button> `).join('');
-  $('ranges').innerHTML = RANGES.map((r, i) => `<button class="b" type="button" data-r="${i}">${r[0]}</button> `).join('');
+  $('syms').innerHTML = LPPL.SYMS.map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
+  $('ranges').innerHTML = RANGES.map((r, i) => `<button class="chip" type="button" data-r="${i}" aria-pressed="false">${E(r[0])}</button>`).join('');
   $('syms').onclick = (e) => { const b = e.target.closest('[data-s]'); if (b) { st.sym = b.dataset.s; load(); } };
-  $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { st.range = +b.dataset.r; mark(); draw(); } };
+  $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { setPreset(+b.dataset.r); } };
+
+  /* 预设与当前指数数据范围的重叠不足 90 天时视为不可用 */
+  function overlaps(i) {
+    const R = RANGES[i]; if (!R[1] || !st.H) return true;
+    return Math.min(st.tmax, T(R[2]) + DAY) - Math.max(st.tmin, T(R[1])) >= MIN_SPAN;
+  }
   function mark() {
     document.querySelectorAll('[data-s]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.s === st.sym));
-    document.querySelectorAll('[data-r]').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.r === st.range));
+    document.querySelectorAll('[data-r]').forEach((b) => {
+      const ok = overlaps(+b.dataset.r); b.disabled = !ok;
+      b.title = ok ? '' : '该指数数据不覆盖这个时间段';
+      b.setAttribute('aria-pressed', ok && st.preset >= 0 && +b.dataset.r === st.preset);
+    });
   }
 
-  async function load() {
+  /* ---------- 视图窗口 ---------- */
+  const MIN_SPAN = 90 * DAY;
+  function setView(a, b, fromPreset) {
+    let span = Math.max(MIN_SPAN, b - a); const full = st.tmax - st.tmin;
+    span = Math.min(span, full);
+    if (a < st.tmin) { a = st.tmin; } if (a + span > st.tmax) { a = st.tmax - span; }
+    st.va = a; st.vb = a + span;
+    if (!fromPreset) st.preset = -1;
+    mark(); draw(); drawOv();
+  }
+  function setPreset(i) {
+    if (!overlaps(i)) i = 0;
+    st.preset = i;
+    const R = RANGES[i];
+    if (!R[1]) setView(st.tmin, st.tmax, true);
+    else setView(Math.max(st.tmin, T(R[1])), Math.min(st.tmax, T(R[2]) + DAY), true);
     mark();
-    const tip = $('tip'); tip.style.display = 'none';
+  }
+  const zoomAt = (f, k) => { const c = st.va + (st.vb - st.va) * f, span = (st.vb - st.va) * k; setView(c - span * f, c + span * (1 - f)); };
+
+  /* ---------- 加载 ---------- */
+  async function load() {
+    mark(); $('tip').hidden = true; st.hover = null;
+    const ld = $('ld'); ld.hidden = false; ld.className = 'ld'; ld.textContent = '数据加载中…';
+    const S = LPPL.resolve(st.sym);
+    $('sym-n').textContent = S ? S.name : st.sym;
     try {
       const H = await LPPL.history(st.sym);
-      const fr = H.frames.filter((f) => f.close != null).map((f) => ({ ...f, t: T(f.asof), w0: f.w['6-12m'] ? T(f.w['6-12m'][0]) : null, w1: f.w['6-12m'] ? T(f.w['6-12m'][1]) : null }));
+      const fr = H.frames.filter((f) => f.close != null).map((f) => {
+        const w = f.w && f.w['6-12m'];
+        return { ...f, t: T(f.asof), w0: w ? T(w[0]) : null, w1: w ? T(w[1]) : null };
+      });
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
-      st.H = { ...H, fr, tops: H.tops.map((t) => ({ ...t, t: T(t.date) })).filter((t) => t.t >= fr[0].t && t.t <= fr[fr.length - 1].t) };
-      $('ev').innerHTML = `证据等级 ${E(H.evidence)}：这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。${E(H.rule)}。数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)}，模型 ${E(H.model_version)}。`;
-      draw();
+      const last = fr[fr.length - 1].t; let mx = last;
+      fr.forEach((f) => { if (f.w1 != null && f.w1 > mx) mx = f.w1; });
+      st.H = { ...H, fr, tops: H.tops.map((t) => ({ ...t, t: T(t.date) })).filter((t) => t.t >= fr[0].t && t.t <= last) };
+      st.tmin = fr[0].t; st.tmax = Math.max(mx, last) + 30 * DAY;
+      const e = H.evidence;
+      $('ev').innerHTML = `<span class="evb">${E(e)}</span><p>${e === 'dev_only' ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。' : '证据等级以研究仪表盘为准。'}</p><p>${E(H.rule || '')}</p><p class="m" style="font-size:12px;color:var(--ink-3)">数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)} · 模型 ${E(H.model_version || '')}</p>`;
+      ld.hidden = true;
+      setPreset(st.preset >= 0 ? st.preset : 0);
     } catch (e) {
-      st.H = null;
+      st.H = null; st.G = null;
       const c = $('cv'); c.getContext('2d').clearRect(0, 0, c.width, c.height);
-      $('sum').innerHTML = ''; $('ev').innerHTML = '<span class="err" style="padding:0">' + E(e.message || e) + '</span>';
+      $('sum').innerHTML = ''; $('vr').textContent = '—';
+      ld.hidden = false; ld.className = 'ld err'; ld.textContent = '数据未加载：' + String(e.message || e).replace(/^数据未加载：/, '');
+      $('ev').innerHTML = '<p>数据未加载</p>';
+      drawOv();
     }
   }
 
-  let G = null;
+  function setup(cv) {
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+    return { ctx, W: r.width, H: r.height };
+  }
+
+  /* ---------- 主图 ---------- */
   function draw() {
     const H = st.H; if (!H) return;
-    const cv = $('cv'), box = $('chart').getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-    cv.width = Math.round(box.width * dpr); cv.height = Math.round(box.height * dpr);
-    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const W = box.width, Hh = box.height, pl = 12, pr = 64, pt = 24, pb = 28;
-    ctx.clearRect(0, 0, W, Hh);
-    const R = RANGES[st.range], all = H.fr;
-    const ta = R[1] ? T(R[1]) : all[0].t, tb = R[2] ? Math.min(T(R[2]), all[all.length - 1].t + 400 * 864e5) : all[all.length - 1].t + 200 * 864e5;
+    const { ctx, W, H: Hh } = setup($('cv'));
+    const pl = 12, pr = 64, pt = 24, pb = 28, ta = st.va, tb = st.vb, all = H.fr;
     const vis = all.filter((f) => f.t >= ta && f.t <= tb);
-    if (!vis.length) { G = null; return; }
-    let lo = Infinity, hi = -Infinity; vis.forEach((f) => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    // 价格范围：可见截止日的收盘价
+    let lo = Infinity, hi = -Infinity;
+    (vis.length ? vis : all).forEach((f) => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
     const llo = Math.log(lo) - 0.05, lhi = Math.log(hi) + 0.12;
     const X = (t) => pl + (t - ta) / (tb - ta) * (W - pl - pr), Y = (v) => pt + (lhi - Math.log(v)) / (lhi - llo) * (Hh - pt - pb);
-    G = { X, Y, ta, tb, vis, pt, pb, W, Hh, pr };
-    ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
+    st.G = { X, Y, ta, tb, vis, pt, pb, W, Hh, pl, pr };
+    const dense = CPSCN.isDense(vis.length, W - pl - pr);
+
     // 分段底色
+    ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
     for (const sp of ['cal', 'test']) {
       const s = all.filter((f) => f.split === sp); if (!s.length) continue;
-      const x0 = X(s[0].t), x1 = X(s[s.length - 1].t);
-      ctx.fillStyle = rgba(col.real, sp === 'cal' ? 0.05 : 0.09); ctx.fillRect(x0, pt, x1 - x0, Hh - pt - pb);
-      ctx.fillStyle = col.ink3; ctx.font = '11px ' + C('--f-u'); ctx.textAlign = 'left'; ctx.fillText(SPLIT[sp], Math.max(pl + 4, x0 + 4), pt + 12);
+      const x0 = X(s[0].t), x1 = X(s[s.length - 1].t + 7 * DAY);
+      if (x1 < pl || x0 > W - pr) continue;
+      ctx.fillStyle = rgba(col.real, sp === 'cal' ? 0.06 : 0.11); ctx.fillRect(x0, pt, x1 - x0, Hh - pt - pb);
+      ctx.fillStyle = col.ink3; ctx.font = '11px ' + FU; ctx.textAlign = 'left'; ctx.fillText(SPLIT[sp], Math.max(pl + 4, x0 + 4), pt + 12);
     }
-    // 网格与价格轴
-    ctx.strokeStyle = col.grid; ctx.lineWidth = 1; ctx.fillStyle = col.ink3; ctx.font = '11px ' + C('--f-m'); ctx.textAlign = 'left';
-    const step = Math.pow(10, Math.floor(Math.log10(hi - lo || hi))) / 2 || 100;
     ctx.restore();
-    const ticks = []; for (let v = Math.ceil(Math.exp(llo) / step) * step; v < Math.exp(lhi); v += step) ticks.push(v);
+
+    // 价格网格与轴
+    ctx.font = '11px ' + FM; ctx.textAlign = 'left';
+    const step = Math.pow(10, Math.floor(Math.log10(hi - lo || hi))) / 2 || 100, ticks = [];
+    for (let v = Math.ceil(Math.exp(llo) / step) * step; v < Math.exp(lhi); v += step) ticks.push(v);
     const ts = ticks.length > 8 ? ticks.filter((_, i) => i % Math.ceil(ticks.length / 8) === 0) : ticks;
-    ts.forEach((v) => { const y = Math.round(Y(v)) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(W - pr, y); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(Math.round(v), W - pr + 6, y + 4); });
-    const y0 = new Date(ta).getUTCFullYear(), y1 = new Date(tb).getUTCFullYear(), ys = Math.max(1, Math.ceil((y1 - y0) / 12));
-    ctx.textAlign = 'center';
-    for (let y = y0 + 1; y <= y1; y += ys) { const x = Math.round(X(Date.UTC(y, 0, 1))) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(y, x, Hh - 10); }
-    ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
-    // 情景区间
-    for (const f of vis) {
-      if (f.w0 == null) continue;
-      const y = Math.round(Y(f.close)) + 0.5, on = st.hover && st.hover.f === f;
-      ctx.strokeStyle = rgba(col.warn, on ? 0.7 : 0.16); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(f.t), y); ctx.lineTo(X(f.w0), y); ctx.stroke();
-      ctx.strokeStyle = rgba(col.warn, on ? 1 : 0.55); ctx.lineWidth = on ? 4 : 2.5; ctx.beginPath(); ctx.moveTo(X(f.w0), y); ctx.lineTo(Math.max(X(f.w0) + 2, X(f.w1)), y); ctx.stroke();
+    ts.forEach((v) => { const y = Math.round(Y(v)) + 0.5; ctx.strokeStyle = col.grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(W - pr, y); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(Math.round(v), W - pr + 6, y + 4); });
+    // 时间轴刻度：跨度大按年，跨度小按月
+    const spanY = (tb - ta) / DAY / 365; ctx.textAlign = 'center';
+    if (spanY > 3) {
+      const y0 = new Date(ta).getUTCFullYear(), y1 = new Date(tb).getUTCFullYear(), ys = Math.max(1, Math.ceil(spanY / 10));
+      for (let y = Math.ceil((y0 + 1) / ys) * ys; y <= y1; y += ys) { const x = Math.round(X(Date.UTC(y, 0, 1))) + 0.5; if (x < pl || x > W - pr) continue; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(y, x, Hh - 10); }
+    } else {
+      const ms = spanY > 1.2 ? 6 : spanY > 0.5 ? 3 : 1; const d0 = new Date(ta);
+      for (let y = d0.getUTCFullYear(), m = Math.floor(d0.getUTCMonth() / ms) * ms; ; m += ms) {
+        if (m >= 12) { y += Math.floor(m / 12); m = m % 12; }
+        const t = Date.UTC(y, m, 1); if (t > tb) break; const x = Math.round(X(t)) + 0.5; if (x < pl || x > W - pr) continue;
+        ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(m === 0 ? y : y + '-' + String(m + 1).padStart(2, '0'), x, Hh - 10);
+      }
     }
-    // 收盘价
+
+    ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
+    // 情景区间（含区间完全在窗口内/部分在窗口内的帧）
+    const hot = st.hover && st.hover.f;
+    for (const f of all) {
+      if (f.w0 == null || f.w1 < ta || f.t > tb) continue;
+      if (f === hot) continue;
+      CPSCN.drawRange(ctx, { x0: X(f.t), xa: X(f.w0), xb: X(f.w1), y: Y(f.close), dense });
+    }
+    if (hot && hot.w0 != null) CPSCN.drawRange(ctx, { x0: X(hot.t), xa: X(hot.w0), xb: X(hot.w1), y: Y(hot.close), hot: true, dense });
+    // 收盘价线
     ctx.strokeStyle = col.ink2; ctx.lineWidth = 1.2; ctx.beginPath();
-    vis.forEach((f, i) => { const x = X(f.t), y = Y(f.close); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    let started = false;
+    for (const f of all) { if (f.t < ta - 30 * DAY) continue; if (f.t > tb + 30 * DAY) break; const x = X(f.t), y = Y(f.close); started ? ctx.lineTo(x, y) : ctx.moveTo(x, y); started = true; }
+    ctx.stroke();
     // 事后确认顶
-    const span = (tb - ta) / 864e5 / 365;
+    const labelOk = spanY <= 8;
     for (const t of H.tops) {
       if (t.t < ta || t.t > tb) continue;
-      const near = all.filter((f) => Math.abs(f.t - t.t) < 21 * 864e5), px = near.length ? Math.max(...near.map((f) => f.close)) : null;
-      if (px == null) continue;
+      let px = -Infinity; for (const f of all) { if (Math.abs(f.t - t.t) < 21 * DAY && f.close > px) px = f.close; }
+      if (px === -Infinity) continue;
       const x = X(t.t), y = Y(px) - 6;
-      ctx.fillStyle = col.real; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 8); ctx.lineTo(x + 5, y - 8); ctx.closePath(); ctx.fill();
-      if (span <= 8) { ctx.font = '11px ' + C('--f-m'); ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
+      CPSCN.drawTop(ctx, x, y);
+      if (labelOk) { ctx.fillStyle = col.real; ctx.font = '11px ' + FM; ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
     }
-    if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba(col.ink, 0.3); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
+    if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba('#FFFFFF', 0.3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
     ctx.restore();
-    // 摘要
-    const vf = vis.filter((f) => f.t <= tb), withW = vf.filter((f) => f.w0 != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
-    $('sum').innerHTML = `<tr><td>周度截止日</td><td>${vf.length}</td></tr><tr><td>有 6–12 月档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr>`;
+
+    const withW = vis.filter((f) => f.w0 != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
+    $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>周度截止日</td><td>${vis.length}</td></tr><tr><td>有 6–12 月档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr><tr><td>显示方式</td><td>${dense ? '密集（细线）' : '标准'}</td></tr>`;
+    $('vr').textContent = ymd(ta) + ' – ' + ymd(Math.min(tb, st.tmax));
+    $('sr').textContent = `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，${vis.length} 个周度截止日，${nt} 个事后确认顶。`;
   }
 
-  $('cv').addEventListener('mousemove', (e) => {
-    if (!G) return;
-    const r = $('cv').getBoundingClientRect(), mx = e.clientX - r.left;
-    let best = null, bd = Infinity; for (const f of G.vis) { const d = Math.abs(G.X(f.t) - mx); if (d < bd) { bd = d; best = f; } }
-    if (!best) return;
-    st.hover = { f: best }; draw();
-    const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * 864e5);
-    const tip = $('tip');
-    tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${SPLIT[best.split] || E(best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
-      (best.w0 != null ? `6–12 月档情景区间 <b>${E(best.w['6-12m'][0])} – ${E(best.w['6-12m'][1])}</b>` : '6–12 月档无合格拟合') +
-      (best.w['12-24m'] ? `<br>12–24 月档 ${E(best.w['12-24m'][0])} – ${E(best.w['12-24m'][1])}` : '') +
-      (top ? `<br><span style="color:${col.real}">附近有事后确认顶 ${E(top.date)}，回撤 ${pct(top.max_dd)}</span>` : '');
-    tip.style.display = 'block';
-    const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);
-    tip.style.left = tx + 'px'; tip.style.top = Math.max(8, e.clientY - r.top - tip.offsetHeight - 12) + 'px';
-  });
-  $('cv').addEventListener('mouseleave', () => { st.hover = null; $('tip').style.display = 'none'; draw(); });
-  window.addEventListener('resize', draw);
+  /* ---------- 刷选时间轴 ---------- */
+  let ovG = null;
+  function drawOv() {
+    const H = st.H, { ctx, W, H: Hh } = setup($('ov'));
+    if (!H) { ovG = null; return; }
+    const px = (t) => (t - st.tmin) / (st.tmax - st.tmin) * W, all = H.fr;
+    let lo = Infinity, hi = -Infinity; all.forEach((f) => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    const llo = Math.log(lo), lhi = Math.log(hi), Y = (v) => 6 + (lhi - Math.log(v)) / (lhi - llo) * (Hh - 12);
+    for (const sp of ['cal', 'test']) {
+      const s = all.filter((f) => f.split === sp); if (!s.length) continue;
+      ctx.fillStyle = rgba(col.real, sp === 'cal' ? 0.1 : 0.18); ctx.fillRect(px(s[0].t), 0, px(s[s.length - 1].t + 7 * DAY) - px(s[0].t), Hh);
+    }
+    ctx.strokeStyle = col.ink3; ctx.lineWidth = 1; ctx.beginPath(); all.forEach((f, i) => { const x = px(f.t), y = Y(f.close); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    ctx.fillStyle = col.real; for (const t of H.tops) { const x = px(t.t); ctx.fillRect(Math.round(x) - 1, Hh - 6, 2, 6); }
+    // 年份刻度
+    ctx.fillStyle = col.ink3; ctx.font = '10px ' + FM; ctx.textAlign = 'left';
+    const y0 = new Date(st.tmin).getUTCFullYear(), y1 = new Date(st.tmax).getUTCFullYear(), ys = W < 520 ? 10 : 5;
+    for (let y = Math.ceil((y0 + 1) / ys) * ys; y <= y1; y += ys) { const x = Math.round(px(Date.UTC(y, 0, 1))) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, Hh); ctx.stroke(); ctx.fillText(y, x + 3, 11); }
+    // 暗化窗口之外
+    const xa = px(st.va), xb = px(st.vb);
+    ctx.fillStyle = 'rgba(13,13,13,.72)'; ctx.fillRect(0, 0, xa, Hh); ctx.fillRect(xb, 0, W - xb, Hh);
+    ctx.strokeStyle = col.warn; ctx.lineWidth = 1.5; ctx.strokeRect(Math.round(xa) + 0.5, 0.5, Math.max(2, xb - xa), Hh - 1);
+    ctx.fillStyle = col.warn; ctx.fillRect(Math.round(xa) - 2, Hh / 2 - 10, 4, 20); ctx.fillRect(Math.round(xb) - 2, Hh / 2 - 10, 4, 20);
+    ovG = { px, W, xa, xb };
+    const o = $('ov'); o.setAttribute('aria-valuenow', Math.round((st.va - st.tmin) / (st.tmax - st.tmin) * 100)); o.setAttribute('aria-valuetext', ymd(st.va) + ' 至 ' + ymd(Math.min(st.vb, st.tmax)));
+  }
+  (function brush() {
+    const o = $('ov'); let drag = null;
+    const inv = (x) => st.tmin + x / ovG.W * (st.tmax - st.tmin);
+    o.addEventListener('pointerdown', (e) => {
+      if (!ovG) return; const x = e.clientX - o.getBoundingClientRect().left, g = 8;
+      if (Math.abs(x - ovG.xa) <= g) drag = { m: 'l' };
+      else if (Math.abs(x - ovG.xb) <= g) drag = { m: 'r' };
+      else if (x > ovG.xa && x < ovG.xb) drag = { m: 'p', off: inv(x) - st.va };
+      else { const c = inv(x), s = st.vb - st.va; setView(c - s / 2, c + s / 2); drag = { m: 'p', off: s / 2 }; }
+      o.setPointerCapture(e.pointerId);
+    });
+    o.addEventListener('pointermove', (e) => {
+      if (!ovG) return; const x = e.clientX - o.getBoundingClientRect().left;
+      if (!drag) { o.style.cursor = (Math.abs(x - ovG.xa) <= 8 || Math.abs(x - ovG.xb) <= 8) ? 'col-resize' : (x > ovG.xa && x < ovG.xb ? 'grab' : 'pointer'); return; }
+      const t = inv(Math.max(0, Math.min(ovG.W, x)));
+      if (drag.m === 'l') setView(Math.min(t, st.vb - MIN_SPAN), st.vb);
+      else if (drag.m === 'r') setView(st.va, Math.max(t, st.va + MIN_SPAN));
+      else setView(t - drag.off, t - drag.off + (st.vb - st.va));
+    });
+    const end = () => { drag = null; };
+    o.addEventListener('pointerup', end); o.addEventListener('pointercancel', end);
+    o.addEventListener('keydown', (e) => keyNav(e));
+  })();
+
+  function keyNav(e) {
+    if (!st.H) return; const s = st.vb - st.va; let h = true;
+    if (e.key === 'ArrowLeft') setView(st.va - s * (e.shiftKey ? .5 : .1), st.vb - s * (e.shiftKey ? .5 : .1));
+    else if (e.key === 'ArrowRight') setView(st.va + s * (e.shiftKey ? .5 : .1), st.vb + s * (e.shiftKey ? .5 : .1));
+    else if (e.key === '+' || e.key === '=') zoomAt(.5, .7);
+    else if (e.key === '-' || e.key === '_') zoomAt(.5, 1.4);
+    else if (e.key === '0') setPreset(0);
+    else h = false;
+    if (h) e.preventDefault();
+  }
+  $('b-in').onclick = () => zoomAt(.5, .6);
+  $('b-out').onclick = () => zoomAt(.5, 1.6);
+  $('b-all').onclick = () => setPreset(0);
+
+  /* ---------- 主图交互：悬停、滚轮缩放、拖动平移 ---------- */
+  (function interact() {
+    const cv = $('cv'), tip = $('tip'); let drag = null;
+    const hideTip = () => { tip.hidden = true; if (st.hover) { st.hover = null; draw(); } };
+    function hover(e) {
+      const G = st.G; if (!G) return; const r = cv.getBoundingClientRect(), mx = e.clientX - r.left;
+      if (mx < G.pl || mx > G.W - G.pr) return hideTip();
+      let best = null, bd = Infinity; for (const f of G.vis) { const d = Math.abs(G.X(f.t) - mx); if (d < bd) { bd = d; best = f; } }
+      if (!best || bd > 24) return hideTip();
+      if (!st.hover || st.hover.f !== best) { st.hover = { f: best }; draw(); }
+      const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * DAY), w = best.w || {};
+      tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${E(SPLIT[best.split] || best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
+        (best.w0 != null ? `6–12 月档情景区间<br><b>${E(w['6-12m'][0])} – ${E(w['6-12m'][1])}</b>` : '6–12 月档无合格拟合') +
+        (w['12-24m'] ? `<br>12–24 月档 ${E(w['12-24m'][0])} – ${E(w['12-24m'][1])}` : '') +
+        (top ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(top.max_dd)}（事后实测）</span>` : '');
+      tip.hidden = false;
+      const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);
+      tip.style.left = Math.max(8, tx) + 'px'; tip.style.top = Math.max(8, e.clientY - r.top - tip.offsetHeight - 12) + 'px';
+    }
+    cv.addEventListener('pointerdown', (e) => { if (!st.H) return; drag = { x: e.clientX, va: st.va, vb: st.vb, moved: false }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', (e) => {
+      if (drag) {
+        const G = st.G, dx = e.clientX - drag.x; if (Math.abs(dx) > 3) { drag.moved = true; cv.classList.add('grab'); tip.hidden = true; }
+        if (drag.moved && G) { const dt = -dx / (G.W - G.pl - G.pr) * (drag.vb - drag.va); setView(drag.va + dt, drag.vb + dt); }
+      } else hover(e);
+    });
+    const end = () => { drag = null; cv.classList.remove('grab'); };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    cv.addEventListener('mouseleave', () => { if (!drag) hideTip(); });
+    cv.addEventListener('wheel', (e) => {
+      if (!st.H || !st.G) return; e.preventDefault();
+      const r = cv.getBoundingClientRect(), G = st.G, f = Math.max(0, Math.min(1, (e.clientX - r.left - G.pl) / (G.W - G.pl - G.pr)));
+      zoomAt(f, e.deltaY < 0 ? 0.82 : 1.22);
+    }, { passive: false });
+    cv.addEventListener('dblclick', () => setPreset(0));
+    cv.addEventListener('keydown', keyNav);
+  })();
+
+  let rz = 0; window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { draw(); drawOv(); }); });
   load();
 })();
 </script>
