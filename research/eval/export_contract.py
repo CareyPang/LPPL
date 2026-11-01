@@ -88,6 +88,50 @@ def _fit_params(row: pd.Series, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: p
             "curve": _curve(row, cal, date)}
 
 
+def _scenario_records(q: pd.DataFrame, scen: pd.DataFrame, gg: pd.DataFrame,
+                      cal: pd.DatetimeIndex, date: pd.Timestamp) -> list[dict]:
+    return [
+        {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
+         "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
+         "q20": round(float(x.q20), 1), "q80": round(float(x.q80), 1),
+         "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
+         "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975),
+         "tc_mode_date": _to_cal(cal, date, x.tc_mode),
+         "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
+        for x in scen.itertuples()
+    ]
+
+
+def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
+                   cal: pd.DatetimeIndex, close: float, split: str,
+                   include_scenarios: bool = False) -> dict:
+    dd = d[d.date == date]
+    rr = r.loc[dd.index]
+    fit_rows = dd.loc[rr.box]
+    q = fit_rows[["n", "ahead"]]
+    sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
+    windows = {scale: None for scale in HISTORY_SCALES}
+    for row in sw.itertuples():
+        if row.scale in windows:
+            windows[row.scale] = [
+                _to_cal(cal, date, float(row.q20)),
+                _to_cal(cal, date, float(row.q80)),
+            ]
+    conf = _conf(dd, rr, date)
+    frame = {
+        "asof": str(date.date()),
+        "split": split,
+        "close": round(float(close), 2),
+        "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
+        "w": windows,
+    }
+    if include_scenarios:
+        gg = grid_rules(dd)
+        scen = scenarios(q) if len(q) else pd.DataFrame()
+        frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date)
+    return frame
+
+
 def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: int = 120) -> dict:
     """F11：代表拟合的模型价格曲线。fit = [t1, t2] 拟合段；extrapolation = (t2, t_c) 外推段（虚线，t_c 处奇点不画）。
     ln P(t) = A + B·(t_c−t)^m + C1·(t_c−t)^m cos(ω ln(t_c−t)) + C2·(t_c−t)^m sin(ω ln(t_c−t))，t 以窗口首日为 0。"""
@@ -332,15 +376,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
                                  "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
-            "scenarios": [
-                {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
-                 "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
-                 "q20": round(float(x.q20), 1), "q80": round(float(x.q80), 1),
-                 "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
-                 "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975), "tc_mode_date": _to_cal(cal, date, x.tc_mode),
-                 "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
-                for x in scen.itertuples()
-            ],
+            "scenarios": _scenario_records(q, scen, gg, cal, date),
             "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
                               "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
             "scale_windows": [
@@ -432,27 +468,10 @@ def history(sym: str) -> dict:
     cal = logp.index
     frames = []
     for date, dd in d.groupby("date", sort=True):
-        rr = r.loc[dd.index]
-        q = dd.loc[rr.box, ["n", "ahead"]]
-        sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
         split_values = dd["split"].unique()
         if len(split_values) != 1:
             raise ValueError(f"{sym} has multiple source splits on {date.date()}")
-        windows = {scale: None for scale in HISTORY_SCALES}
-        for row in sw.itertuples():
-            if row.scale in windows:
-                windows[row.scale] = [
-                    _to_cal(cal, date, float(row.q20)),
-                    _to_cal(cal, date, float(row.q80)),
-                ]
-        conf = _conf(dd, rr, date)
-        frames.append({
-            "asof": str(date.date()),
-            "split": str(split_values[0]),
-            "close": round(float(close.loc[date]), 2),
-            "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
-            "w": windows,
-        })
+        frames.append(_history_frame(d, r, date, cal, close.loc[date], str(split_values[0])))
 
     top_logp = load_drawdown_logp(sym)
     top_values = top_logp.to_numpy()
