@@ -142,7 +142,7 @@ def valuation_floor(sym: str, logp: pd.Series, asof: pd.Timestamp | None = None)
         if len(m) and np.isfinite(m.iloc[-1]):
             rows.append({"trough": str(t.date()), "pe": round(float(m.iloc[-1]), 2)})
     if len(rows) < 3:
-        return {"n": len(rows), "troughs": rows, "evidence": "descriptive", "note": "PS 底部样本不足 3 个，不给地板带"}
+        return {"n": len(rows), "troughs": rows, "evidence": "none", "note": "PS 底部样本不足 3 个，不给地板带"}
     pes = [r["pe"] for r in rows]
     q = _q(pes)
     pe_latest, pe_date = float(pe.iloc[-1]), str(pe.index[-1].date())
@@ -175,7 +175,7 @@ def build(asof: str | None = None) -> dict:
     if len(ev):
         ev = ev.sort_values(["market", "sym", "top"]).reset_index(drop=True)
     else:
-        ev = pd.DataFrame(columns=["market", "sym", "top"])
+        ev = pd.DataFrame(columns=["market", "sym", "top", "start", "trough", "run_up", "dur_days", "max_dd", "days_to_trough"] + [f"dd{h}" for h in HORIZONS])
     return {
         "version": "p1_v20261031", "evidence": "descriptive",
         "sources": {"a_share": "data/frozen/v20261024", "external": "data/frozen/ext_v20261029", "pe": "research.data.valuation（乐咕月频缓存）"},

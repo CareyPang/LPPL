@@ -128,3 +128,21 @@ def test_price_band_contract_field(monkeypatch):
     assert pb["bucket"] != "全部"
     source["n_events"] = 0
     assert export_contract._price_band("sh000001", {}, "2015-06-12")["evidence"] == "none"
+
+
+@pytest.mark.skipif(not _PE_CACHES_READY, reason="需要已有估值 PE 缓存")
+def test_asof_before_any_event_gives_empty_table_and_no_floor():
+    from research.eval.export_contract import _price_band
+
+    rec = dt.build("1981-01-02")
+    assert rec["n_events"] == 0 and rec["table"]["all"]["n"] == 0
+    pb = _price_band("sh000001", {}, "1981-01-02", 300.0)
+    assert pb["value"] is None and pb["evidence"] == "none" and pb["bucket"] == "全部"
+    floor = pb["valuation_floor"]
+    assert floor is None or (floor["evidence"] == "none" and "floor_band_points" not in floor)
+
+
+def test_floor_with_fewer_than_three_troughs_is_no_evidence(monkeypatch):
+    monkeypatch.setattr(dt, "load_pe", lambda sym: pd.Series([10.0], index=pd.DatetimeIndex(["2000-01-31"])))
+    floor = dt.valuation_floor("sh000001", _synthetic())
+    assert floor["evidence"] == "none" and floor["n"] < 3 and "floor_band_points" not in floor
