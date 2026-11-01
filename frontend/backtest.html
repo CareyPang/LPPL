@@ -55,6 +55,8 @@ a { color: var(--ink-2); text-decoration: none; }
 .chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 32px; font-size: 12px; color: var(--ink-2); cursor: pointer; white-space: nowrap; margin-right: var(--s1); transition: border-color var(--t-fast) ease-out; }
 .chip:hover { border-color: var(--ink-3); color: var(--ink); }
 .chip[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+.chip:disabled { opacity: .35; cursor: not-allowed; border-color: var(--line); color: var(--ink-3); }
+.chip:disabled:hover { border-color: var(--line); color: var(--ink-3); }
 .chips { padding-right: var(--s4); --od-gap: 0; }
 
 /* 主体 */
@@ -207,9 +209,18 @@ a { color: var(--ink-2); text-decoration: none; }
   $('syms').onclick = (e) => { const b = e.target.closest('[data-s]'); if (b) { st.sym = b.dataset.s; load(); } };
   $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { setPreset(+b.dataset.r); } };
 
+  /* 预设与当前指数数据范围的重叠不足 90 天时视为不可用 */
+  function overlaps(i) {
+    const R = RANGES[i]; if (!R[1] || !st.H) return true;
+    return Math.min(st.tmax, T(R[2]) + DAY) - Math.max(st.tmin, T(R[1])) >= MIN_SPAN;
+  }
   function mark() {
     document.querySelectorAll('[data-s]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.s === st.sym));
-    document.querySelectorAll('[data-r]').forEach((b) => b.setAttribute('aria-pressed', st.preset >= 0 && +b.dataset.r === st.preset));
+    document.querySelectorAll('[data-r]').forEach((b) => {
+      const ok = overlaps(+b.dataset.r); b.disabled = !ok;
+      b.title = ok ? '' : '该指数数据不覆盖这个时间段';
+      b.setAttribute('aria-pressed', ok && st.preset >= 0 && +b.dataset.r === st.preset);
+    });
   }
 
   /* ---------- 视图窗口 ---------- */
@@ -223,6 +234,7 @@ a { color: var(--ink-2); text-decoration: none; }
     mark(); draw(); drawOv();
   }
   function setPreset(i) {
+    if (!overlaps(i)) i = 0;
     st.preset = i;
     const R = RANGES[i];
     if (!R[1]) setView(st.tmin, st.tmax, true);
