@@ -212,6 +212,8 @@ def _rebound_event(sym: str, logp: pd.Series, peak_i: int, trough_i: int) -> dic
     high_i = trough_i + 1 + int(np.argmax(window))
     peak_close, trough_close = float(closes[peak_i]), float(closes[trough_i])
     high_close = float(closes[high_i])
+    peak_crossings = np.flatnonzero(window >= peak_close)
+    days_to_peak = int(peak_crossings[0] + 1) if len(peak_crossings) else None
     return {
         "symbol": sym,
         "market": "A" if sym in dt.A_SHARE else "external",
@@ -220,6 +222,10 @@ def _rebound_event(sym: str, logp: pd.Series, peak_i: int, trough_i: int) -> dic
         "dd": trough_close / peak_close - 1,
         "high_date": _date_at(logp.index, high_i),
         "recovery": (high_close - trough_close) / (peak_close - trough_close),
+        "recovery_log": np.log(high_close / trough_close) / np.log(peak_close / trough_close),
+        "rebound_ret": high_close / trough_close - 1,
+        "back_to_peak": bool(high_close >= peak_close),
+        "days_to_peak": days_to_peak,
         "days_to_high": high_i - trough_i,
     }
 
@@ -242,6 +248,11 @@ def _rebound_history(asof: str) -> tuple[list[dict], dict, dict]:
         return {
             "n": len(rows),
             "recovery": _quantiles([row["recovery"] for row in rows]),
+            "recovery_log": _quantiles([row["recovery_log"] for row in rows]),
+            "rebound_ret": _quantiles([row["rebound_ret"] for row in rows]),
+            "back_to_peak_share": (
+                round(sum(row["back_to_peak"] for row in rows) / len(rows), 3) if rows else None
+            ),
             "days_to_high": _quantiles([row["days_to_high"] for row in rows]),
         }
 
@@ -265,6 +276,10 @@ def _current_rebound(sym: str, logp: pd.Series, state: dict, history: list[dict]
     peak_i = int(prior_peaks[-1])
     closes = _close(logp)
     recovery_now = (float(closes[-1]) - float(closes[trough_i])) / (float(closes[peak_i]) - float(closes[trough_i]))
+    recovery_log_now = np.log(float(closes[-1]) / float(closes[trough_i])) / np.log(
+        float(closes[peak_i]) / float(closes[trough_i])
+    )
+    rebound_ret_now = float(closes[-1]) / float(closes[trough_i]) - 1
     if not history:
         rank_pct = None
     else:
@@ -273,6 +288,8 @@ def _current_rebound(sym: str, logp: pd.Series, state: dict, history: list[dict]
         "trough_date": _date_at(logp.index, trough_i),
         "peak_date": _date_at(logp.index, peak_i),
         "recovery_now": round(float(recovery_now), 3),
+        "recovery_log_now": round(float(recovery_log_now), 3),
+        "rebound_ret_now": round(float(rebound_ret_now), 3),
         "days_since_trough": days_since,
         "rank_pct": rank_pct,
     }
@@ -319,6 +336,8 @@ def _export_events(events: list[dict]) -> list[dict]:
             **row,
             "dd": round(float(row["dd"]), 3),
             "recovery": round(float(row["recovery"]), 3),
+            "recovery_log": round(float(row["recovery_log"]), 3),
+            "rebound_ret": round(float(row["rebound_ret"]), 3),
             "days_to_high": int(row["days_to_high"]),
         }
         for row in events
@@ -333,6 +352,9 @@ def write_rebound_table(asof: str | None = None) -> dict:
         "evidence": "descriptive" if all_dist["n"] else "none",
         "n": all_dist["n"],
         "recovery": all_dist["recovery"],
+        "recovery_log": all_dist["recovery_log"],
+        "rebound_ret": all_dist["rebound_ret"],
+        "back_to_peak_share": all_dist["back_to_peak_share"],
         "days_to_high": all_dist["days_to_high"],
         "a_share": a_dist,
         "events": _export_events(events),
@@ -344,15 +366,19 @@ def write_rebound_table(asof: str | None = None) -> dict:
     rows = [
         "# 历史反弹分位",
         "",
-        f"as-of {asof}；n={all_dist['n']}；恢复比例分位 {all_dist['recovery']}；顶至高点交易日分位 {all_dist['days_to_high']}；历史分位，不是预测。",
+        f"as-of {asof}；n={all_dist['n']}；价格恢复比例分位 {all_dist['recovery']}；对数恢复比例分位 {all_dist['recovery_log']}；"
+        f"反弹收益分位 {all_dist['rebound_ret']}；回前高比例 {all_dist['back_to_peak_share']}；"
+        f"顶至高点交易日分位 {all_dist['days_to_high']}；历史分位，不是预测。",
         "",
-        "| 指数 | 市场 | 顶日期 | 谷日期 | 回撤 | 250 日内高点日期 | 恢复比例 | 谷至高点交易日 |",
-        "|---|---|---|---|---:|---|---:|---:|",
+        "| 指数 | 市场 | 顶日期 | 谷日期 | 回撤 | 250 日内高点日期 | 价格恢复比例 | 对数恢复比例 | 反弹收益 | 回前高 | 回前高交易日 | 谷至高点交易日 |",
+        "|---|---|---|---|---:|---|---:|---:|---:|---|---:|---:|",
     ]
     for row in table["events"]:
         rows.append(
             f"| {SYMBOL_NAMES[row['symbol']]} | {row['market']} | {row['peak_date']} | {row['trough_date']} "
-            f"| {row['dd']:.3f} | {row['high_date']} | {row['recovery']:.3f} | {row['days_to_high']} |"
+            f"| {row['dd']:.3f} | {row['high_date']} | {row['recovery']:.3f} | {row['recovery_log']:.3f} "
+            f"| {row['rebound_ret']:.3f} | {'是' if row['back_to_peak'] else '否'} "
+            f"| {row['days_to_peak'] if row['days_to_peak'] is not None else '—'} | {row['days_to_high']} |"
         )
     rows.extend(["", "历史分位，不是预测。"])
     OUT_MD.write_text("\n".join(rows) + "\n", encoding="utf-8")

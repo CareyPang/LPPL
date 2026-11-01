@@ -47,8 +47,15 @@
     },
     "rebound": {
       "evidence": "descriptive", "n": 150, "recovery": {"q20": 0.483, "q50": 0.82, "q80": 1.628},
-      "days_to_high": {"q20": 33.0, "q50": 110.5, "q80": 235.8},
-      "a_share": {"n": 86, "recovery": {"q20": 0.47, "q50": 0.879, "q80": 1.892}, "days_to_high": {"q20": 31.0, "q50": 83.0, "q80": 216.0}},
+      "recovery_log": {"q20": 0.525, "q50": 0.85, "q80": 1.482},
+      "rebound_ret": {"q20": 0.229, "q50": 0.351, "q80": 0.742},
+      "back_to_peak_share": 0.42, "days_to_high": {"q20": 33.0, "q50": 110.5, "q80": 235.8},
+      "a_share": {
+        "n": 86, "recovery": {"q20": 0.47, "q50": 0.879, "q80": 1.892},
+        "recovery_log": {"q20": 0.511, "q50": 0.901, "q80": 1.669},
+        "rebound_ret": {"q20": 0.241, "q50": 0.382, "q80": 0.913},
+        "back_to_peak_share": 0.442, "days_to_high": {"q20": 31.0, "q50": 83.0, "q80": 216.0}
+      },
       "current": null, "note": "历史分位，不是预测"
     }
   },
@@ -58,7 +65,7 @@
 
 `price_history` 是截至 `asof` 的 OHLCV 序列：`dates`、`open`、`high`、`low`、`close`、`volume` 为等长数组；OHLC 保留 3 位小数，`volume` 为整数或源数据缺失时为 `null`。所有日期均不晚于记录的 `asof`。
 
-`bottom.cheap`、`bottom.confirm`、`bottom.rebound` 是价格层描述量，均按记录自己的 `asof` 截断；它们不调用模型、不作预测，也不提供目标价。`cheap.dd_rank` 只比较当时已确认的 P1 顶→谷事件；PE 分位取满足 1 个月发布滞后的最近 120 个月，至少需要 36 个月。`confirm` 是 LT 规则状态，显示时标注“规则状态，滞后确认，不是预测”。`rebound` 使用 LT 顶→谷对和谷后完整 250 个交易日窗口；所有描述性数字必须同时显示样本数 `n` 与“历史分位，不是预测”。估值地板只通过 `floor_ref` 指向 `top.drawdown_price.valuation_floor`，不得复制或重算。
+`bottom.cheap`、`bottom.confirm`、`bottom.rebound` 是价格层描述量，均按记录自己的 `asof` 截断；它们不调用模型、不作预测，也不提供目标价。`cheap.dd_rank` 只比较当时已确认的 P1 顶→谷事件；PE 分位取满足 1 个月发布滞后的最近 120 个月，至少需要 36 个月。`confirm` 是 LT 规则状态，显示时标注“规则状态，滞后确认，不是预测”。`rebound` 使用 LT 顶→谷对和谷后完整 250 个交易日窗口，价格恢复比例是主指标；`recovery_log` 和 `rebound_ret` 是辅助描述量，`back_to_peak_share` 是样本比例。当前事件的排名始终基于价格恢复比例。所有描述性数字必须同时显示样本数 `n` 与“历史分位，不是预测”。估值地板只通过 `floor_ref` 指向 `top.drawdown_price.valuation_floor`，不得复制或重算。
 
 约束：
 1. `asof` 之后的数据不得参与任何字段；前端显示 as-of 与数据冻结版本。

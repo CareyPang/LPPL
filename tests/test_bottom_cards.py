@@ -15,16 +15,34 @@ def test_lt_state_turns_match_lt_turns_on_real_index():
 
 
 def test_rebound_formula_on_synthetic_prices():
-    prices = np.full(252, 60.0)
+    prices = np.full(252, 40.0)
     prices[0] = 100.0
-    prices[2] = 80.0
+    prices[2] = 70.0
     logp = pd.Series(np.log(prices), index=pd.bdate_range("2020-01-01", periods=len(prices)))
 
     event = bc._rebound_event("sh000001", logp, 0, 1)
 
-    assert np.isclose(event["dd"], -0.4)
+    assert np.isclose(event["dd"], -0.6)
     assert np.isclose(event["recovery"], 0.5)
+    assert np.isclose(event["recovery_log"], 0.6107, atol=1e-4)
+    assert np.isclose(event["rebound_ret"], 0.75)
+    assert event["back_to_peak"] is False
+    assert event["days_to_peak"] is None
     assert event["days_to_high"] == 1
+
+
+def test_current_rebound_exposes_new_metrics_without_changing_price_rank():
+    prices = np.array([100.0, 40.0, 40.0, 70.0, 80.0])
+    logp = pd.Series(np.log(prices), index=pd.bdate_range("2020-01-01", periods=len(prices)))
+    state = bc.lt_state(logp.to_numpy(), logp.index)
+    history = [{"recovery": 0.4}, {"recovery": 0.8}]
+
+    current = bc._current_rebound("sh000001", logp, state, history)
+
+    assert current["recovery_now"] == round((80 - 40) / (100 - 40), 3)
+    assert current["recovery_log_now"] == round(np.log(80 / 40) / np.log(100 / 40), 3)
+    assert current["rebound_ret_now"] == 1.0
+    assert current["rank_pct"] == 0.5
 
 
 def test_rebound_events_and_dd_rank_are_point_in_time():

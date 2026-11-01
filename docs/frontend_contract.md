@@ -71,7 +71,9 @@
 |---|---|
 | `bottom.cheap` | `evidence=descriptive`。`dd_now` 为当前收盘相对近 500 个交易日最高收盘的回撤，`peak_date`/`peak_close` 标记该高点；`dd_rank.all{pct,n}` 为截至 as-of 的 P1 已确认顶→谷事件中，回撤比当前更浅的比例与样本数；`a_share{pct,n}` 在 A 股样本 `n<5` 时为 null。`pe_pct{value,n_months,pe_date}` 为最近 120 个月中、按 1 个月发布滞后可用 PE 的经验分位（至少 36 个月）；口径不一致的指数给 null 和说明。`floor_ref` 指向 `top.drawdown_price.valuation_floor`，不复制地板带。数字旁必须显示对应 `n` 和“历史分位，不是预测”。 |
 | `bottom.confirm` | `evidence=rule`。LT 状态机：`state`、参考日/收盘；熊市附 `peak_date`、`peak_close`、`rebound_from_low`、`threshold`、`confirmed=false`；已有确认熊市低点的牛市附 `last_trough_date`、`last_trough_close`、`confirmed_date`、`confirmed=true`。状态与反弹/阈值只能作为事实，标注“规则状态，滞后确认，不是预测”。 |
-| `bottom.rebound` | `evidence=descriptive`（`n=0` 时为 `none`）。`recovery{q20,q50,q80}` 是 LT 顶→谷事件在谷后 250 个交易日内的最高收盘恢复比例，可超过 1；`days_to_high{q20,q50,q80}` 为谷至该高点的交易日数；`a_share` 为 A 股分布，样本 `n<5` 时为 null。符合条件时有 `current{trough_date,peak_date,recovery_now,days_since_trough,rank_pct}`。所有数字旁必须显示 `n` 和“历史分位，不是预测”。 |
+| `bottom.rebound` | `evidence=descriptive`（`n=0` 时为 `none`）。每个 LT 顶→谷事件按谷后完整 250 个交易日窗口计算：`recovery=(close_H-close_T)/(close_P-close_T)` 为主指标，可超过 1；另有 `recovery_log=ln(close_H/close_T)/ln(close_P/close_T)`、`rebound_ret=close_H/close_T-1`、`back_to_peak`（窗口最高收盘是否达到顶价）和 `days_to_peak`（首次达到顶价的交易日数，未达到为 null）。分布含 `recovery{q20,q50,q80}`、`recovery_log{q20,q50,q80}`、`rebound_ret{q20,q50,q80}`、`back_to_peak_share`（比例）及 `days_to_high{q20,q50,q80}`；`a_share` 同结构，样本 `n<5` 时为 null。符合条件时 `current` 含 `recovery_now`、`recovery_log_now`、`rebound_ret_now` 等值，`rank_pct` 始终按价格恢复比例计算。所有描述性数字旁必须显示对应 `n` 和“历史分位，不是预测”。 |
+
+口径：主指标为价格回撤比例（技术分析 retracement 约定，ESWA 2021 / Shanaev–Gibson 2022；无预测力证据，ESWA 2021 三市场 Fibonacci 位与随机位无差异）；对数比例与反弹涨幅对应学术常用对数收益口径（MMS 2012、Goetzmann–Kim 2018、Bec et al. 2015 反弹与深度成正比）；回前高比例对应 Patel–Sarkar 1998 恢复定义。
 
 ## 3. 证据等级与显示规则
 
