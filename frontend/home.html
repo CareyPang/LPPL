@@ -274,6 +274,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   .sndp{animation:none}
 }
 </style>
+<script src="app/lppl-data.js"></script>
 </head>
 <body>
 <div class="stage" id="stage" aria-hidden="true">
@@ -300,7 +301,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
       <p class="nt" id="sndstatus" role="status">默认静音，点击声音开关启用。环境声为程序合成，并非海洋实录。</p>
     </div>
   </div>
-  <a class="pill" href="tv.html">进入工作站</a>
+  <a class="pill" href="index.html">进入工作站</a>
 </header>
 
 <div class="hero" id="hero">
@@ -309,7 +310,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   <p class="ln poem" style="--d:.46s"><span><b>启</b>于青萍之末，</span><span><b>满</b>于狂澜之巅。</span></p>
   <blockquote class="quote" id="quote"><div class="en" lang="en">“Does the flap of a butterfly’s wings in Brazil set off a tornado in Texas?”</div></blockquote>
   <div class="cta ln" style="--d:.7s">
-    <a class="btn pri" href="tv.html">进入工作站 <span class="ar">→</span></a>
+    <a class="btn pri" href="index.html">进入工作站 <span class="ar">→</span></a>
     <a class="btn ghost" href="#s1" id="dive"><i>↓</i>开始下潜</a>
   </div>
 </div>
@@ -363,11 +364,11 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
     <h2 class="reveal">选一盏灯，继续往下看</h2>
     <p class="lead reveal">各页面共用同一套计算引擎和数据快照，所有计算都在本机完成。</p>
     <div class="tools">
-      <a class="tc wide glass reveal" href="tv.html"><div class="tag"><span>WORKSTATION</span><span style="color:var(--cyan)">推荐</span></div><h3>分析工作站</h3><p>TradingView 式主界面：K 线叠加见顶窗口、回落区与二波参考，回放截止日，查看准确率与专家参数。</p><span class="go">tv.html →</span></a>
+      <a class="tc wide glass reveal" href="index.html"><div class="tag"><span>WORKSTATION</span><span style="color:var(--cyan)">推荐</span></div><h3>分析工作站</h3><p>TradingView 式主界面：K 线叠加见顶窗口、回落区与二波参考，回放截止日，查看准确率与专家参数。</p><span class="go">tv.html →</span></a>
       <a class="tc wide glass reveal" href="index.html"><div class="tag"><span>TERMINAL</span><span>DESKTOP</span></div><h3>交易终端</h3><p>高密度桌面终端：时间层、价格层、统计物理指标、滚动回放和 A 股规则交易模拟。</p><span class="go">index.html →</span></a>
-      <a class="tc glass reveal" href="mobile.html"><div class="tag"><span>MOBILE</span><span>APK</span></div><h3>移动版</h3><p>黑金配色的手机版，以结论卡和交易计划为主。</p><span class="go">mobile.html →</span></a>
+      <a class="tc glass reveal" href="lab/dashboard.html"><div class="tag"><span>MOBILE</span><span>APK</span></div><h3>移动版</h3><p>黑金配色的手机版，以结论卡和交易计划为主。</p><span class="go">mobile.html →</span></a>
       <div class="tc glass soon reveal"><div class="tag"><span>CONFIDENCE</span><span style="color:var(--amber)">建设中</span></div><h3>多尺度置信度</h3><p>短 / 中 / 长期泡沫置信度历史、t<sub>c</sub> 分布与泡沫看板。</p><span class="go">即将上线</span></div>
-      <a class="tc glass reveal" href="review.html"><div class="tag"><span>REVIEW</span><span>DOC</span></div><h3>方法评审</h3><p>V2588 框架与 Sornette 学派方法的逐项对照、升级路线和参考文献。</p><span class="go">review.html →</span></a>
+      <a class="tc glass reveal" href="lab/guide.html"><div class="tag"><span>REVIEW</span><span>DOC</span></div><h3>方法评审</h3><p>V2588 框架与 Sornette 学派方法的逐项对照、升级路线和参考文献。</p><span class="go">review.html →</span></a>
     </div>
   </section>
 
@@ -386,10 +387,6 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   </section>
 </main>
 
-<script src="app/data-snapshot.js"></script>
-<script src="app/fco-snapshot.js"></script>
-<script src="app/engine.js"></script>
-<script src="app/fco-core.js"></script>
 <script>
 (function(){
 'use strict';
@@ -484,33 +481,8 @@ function loopImage(L,now){
 }
 function pauseLoops(except){ for(const L of LOOPS) if(L!==except && L.vidOk && !L.vid.paused) L.vid.pause(); }
 
-/* ================= 数据 ================= */
+/* ================= 数据（后端静态 JSON，经 app/lppl-data.js；前端不计算模型） ================= */
 const KEYS=['sh000001','sh000300','sz399006'];
-const NAMES={sh000001:'上证指数',sh000300:'沪深300',sz399006:'创业板指'};
-function series(key){
-  const S = window.OD_SNAP && OD_SNAP[key]; if(!S) return null;
-  const rows = typeof S.rows === 'string' ? S.rows.split(';') : S.rows;
-  const d=[], c=[];
-  for(const r of rows){ const a = typeof r==='string'? r.split(',') : r; if(a.length<3) continue; d.push(String(a[0])); c.push(+a[2]); }
-  return {d,c};
-}
-function conf(key){
-  const F = window.FCO_SNAP && FCO_SNAP[key]; if(!F || !window.FC) return {t:0,b:0};
-  let t=0,b=0; for(let i=Math.max(0,F.s.length-4);i<F.s.length;i++){ const c=FC.conf(F.s[i]); t=Math.max(t,c.comboTop); b=Math.max(b,c.comboBot); }
-  return {t,b};
-}
-function vol20(c){ if(!c||c.length<22) return NaN; let s=0,s2=0; for(let i=c.length-20;i<c.length;i++){ const r=Math.log(c[i]/c[i-1]); s+=r; s2+=r*r; } const m=s/20; return Math.sqrt(Math.max(0,s2/20-m*m)); }
-function state(c){
-  const t=c.t,b=c.b;
-  if(t>=.15&&t>=b) return ['▲ 顶部泡沫信号偏强','var(--upT)'];
-  if(b>=.15) return ['▼ 底部（负泡沫）信号偏强','var(--downT)'];
-  if(t>=.05||b>=.05) return [t>=b?'△ 顶部信号较弱':'▽ 底部信号较弱','var(--amber)'];
-  return ['— 没有明显的临界结构','var(--dim)'];
-}
-const DATA={}; for(const k of KEYS){ let s=null,c={t:0,b:0}; try{ s=series(k); c=conf(k); }catch(e){} DATA[k]={s,c,vol:vol20(s&&s.c)}; }
-const S0=DATA.sh000001.s, end=S0&&S0.d.length?S0.d[S0.d.length-1]:'';
-if(end) $('#foot').textContent='数据：东方财富公开日线快照，截至 '+end.slice(0,4)+'-'+end.slice(4,6)+'-'+end.slice(6)+'；置信度未经校准';
-
 function spark(c, up){
   if(!c || c.length<10) return '';
   const a=c.slice(-250), lo=Math.min(...a), hi=Math.max(...a), n=a.length;
@@ -518,23 +490,37 @@ function spark(c, up){
   const col= up ? 'var(--upT)' : 'var(--downT)';
   return `<svg class="sp" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,48 ${pts} 200,48" fill="${col}"/><polyline points="${pts}" stroke="${col}"/></svg>`;
 }
-const idx=$('#idx');
-for(const k of KEYS){
-  const D=DATA[k], c=D.c, [txt,col]=state(c);
-  const px=D.s?D.s.c[D.s.c.length-1]:NaN, pv=D.s?D.s.c[D.s.c.length-2]:NaN, ch=(px/pv-1)*100;
-  const yr = D.s && D.s.c.length>250 ? px/D.s.c[D.s.c.length-250]-1 : 0;
-  const el=document.createElement('div'); el.className='ic glass reveal'; el.dataset.t=c.t; el.dataset.b=c.b;
-  el.innerHTML=`<div class="h"><span class="n">${NAMES[k]}</span><span class="px">${isFinite(px)?px.toFixed(2):'—'}<span style="color:${ch>=0?'var(--upT)':'var(--downT)'}">${isFinite(ch)?(ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'%':''}</span></span></div>
-    ${spark(D.s&&D.s.c, yr>=0)}
-    <div class="row"><span>顶</span><span class="bar"><i style="--w:${Math.min(1,c.t*2).toFixed(3)};background:var(--up)"></i></span><span class="v">${(c.t*100).toFixed(0)}%</span></div>
-    <div class="row"><span>底</span><span class="bar"><i style="--w:${Math.min(1,c.b*2).toFixed(3)};background:var(--down)"></i></span><span class="v">${(c.b*100).toFixed(0)}%</span></div>
-    <div class="st"><b style="color:${col}">${txt}</b>近一年走势（A 股习惯：红涨绿跌）· 近 20 日波动 ${isFinite(D.vol)?(D.vol*100).toFixed(2)+'%':'—'}</div>`;
-  idx.appendChild(el);
+const SIG={signal:['▲ 有合格 LPPLS 拟合（顶部结构）','var(--upT)'],no_qualified_fit:['— 主尺度无合格拟合','var(--dim)'],t1_not_qualified:['— 泡沫起点未达标准','var(--dim)']};
+const REG={HIGH_RISK:'体制带：高风险',LOW_RISK:'体制带：低风险',NEUTRAL:'体制带：中性'};
+function card(D){
+  const J=D.raw, T=D.top, c=J.price_history.close, n=c.length, px=c[n-1], pv=c[n-2], ch=(px/pv-1)*100;
+  const yr = n>250 ? px/c[n-250]-1 : 0;
+  const cb=T.combo||{}, e=LPPL.ev(cb.evidence, J.evidence_levels), v=cb['p0.1'];
+  const top = e.show && v!=null ? `<span class="bar"><i style="--w:${Math.min(1,v).toFixed(3)};background:var(--up)"></i></span><span class="v">${(v*100).toFixed(0)}%</span>` : `<span class="v">${e.label}</span>`;
+  const [txt,col]=SIG[T.signal_status]||['— '+(T.signal_status||'无状态'),'var(--dim)'];
+  const rb=J.regime_band||{};
+  const el=document.createElement('div'); el.className='ic glass reveal';
+  el.innerHTML=`<div class="h"><span class="n">${D.name}</span><span class="px">${isFinite(px)?px.toFixed(2):'—'}<span style="color:${ch>=0?'var(--upT)':'var(--downT)'}">${isFinite(ch)?(ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'%':''}</span></span></div>
+    ${spark(c, yr>=0)}
+    <div class="row"><span>顶</span>${top}</div>
+    <div class="row"><span>底</span><span class="v">${(T.negative_bubble&&T.negative_bubble.signal_status)==='signal'?'负泡沫有合格拟合':'无负泡沫信号'}（不预测底部）</span></div>
+    <div class="st"><b style="color:${col}">${txt}</b>${REG[rb.state]||''}${rb.month?'（'+rb.month+'，描述性）':''} · Combo p=0.1，${e.label}，不是概率 · <a href="index.html?code=${D.sym.sym}">进入终端</a></div>`;
+  return el;
 }
-// 上证信号 → 调色强度与水下颗粒
-const c0=DATA.sh000001.c, dir0 = (c0.b>c0.t && c0.b>=.05) ? -1 : 1, s0=Math.min(1,Math.max(c0.t,c0.b)/.3);
-const TINT = dir0>0 ? [1.0,.55,.27, .05+.26*s0] : [.16,.86,.75, .05+.22*s0];
-$('#fbtint').style.background=`rgba(${TINT[0]*255|0},${TINT[1]*255|0},${TINT[2]*255|0},${TINT[3].toFixed(3)})`;
+const idx=$('#idx');
+let TINT=[1.0,.55,.27,.05], s0=0;
+Promise.all(KEYS.map(k=>LPPL.load(k).catch(e=>({err:e.message,k})))).then(list=>{
+  for(const D of list){
+    if(D.err){ const el=document.createElement('div'); el.className='ic glass reveal'; el.innerHTML=`<div class="h"><span class="n">${D.k}</span></div><div class="st"><b>数据未加载</b>${D.err}</div>`; idx.appendChild(el); continue; }
+    idx.appendChild(card(D));
+  }
+  const ok=list.find(D=>!D.err);
+  if(ok) $('#foot').textContent='数据：'+ok.raw.data_version+' · 截至 '+ok.asof+' · 模型 '+ok.raw.model_version+'；置信度是合格拟合占比，不是概率，未经样本外校准';
+  const D0=list[0];
+  if(!D0.err){ const v=(D0.top.combo||{})['p0.1']||0; s0=Math.min(1,v/.3); TINT=[1.0,.55,.27,.05+.26*s0]; }
+  $('#fbtint').style.background=`rgba(${TINT[0]*255|0},${TINT[1]*255|0},${TINT[2]*255|0},${TINT[3].toFixed(3)})`;
+  idx.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+});
 
 /* ================= 从微澜到浪：示意曲线 ================= */
 (function buildWave(){
