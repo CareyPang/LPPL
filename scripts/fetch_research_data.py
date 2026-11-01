@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import tarfile
 import urllib.request
 from pathlib import Path
@@ -36,6 +37,8 @@ def main() -> None:
     ap.add_argument("--overwrite", action="store_true", help="目标目录非空时仍解压（旧文件不会被删除）")
     ap.add_argument("--keep", action="store_true", help="保留下载的分卷")
     a = ap.parse_args()
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", a.tag) or a.tag in (".", ".."):
+        raise SystemExit(f"非法 tag：{a.tag}")
     import zstandard
 
     root = f"https://github.com/{REPO}/releases/download/{a.tag}/"
