@@ -280,11 +280,10 @@ footer p { margin: 0; max-width: 110ch; }
   <div class="od-row od-fixed" id="ticker" style="--od-gap:0"></div>
   <span class="strip-k">快捷回放</span>
   <div class="chips od-row od-fixed">
-    <button class="chip" type="button" data-c="上证指数" data-d="2026-02-27">上证 · 2026-02-27</button>
-    <button class="chip" type="button" data-c="上证指数" data-d="2026-04-30">上证 · 2026-04-30</button>
+    <button class="chip" type="button" data-c="上证指数" data-d="2007-10-12">上证 · 2007-10-12 回放</button>
+    <button class="chip" type="button" data-c="上证指数" data-d="2015-06-12">上证 · 2015-06-12 回放</button>
     <button class="chip" type="button" data-c="沪深300" data-d="">沪深300 · 最新</button>
     <button class="chip" type="button" data-c="创业板指" data-d="">创业板 · 最新</button>
-    <button class="chip" type="button" data-c="600519" data-d="">600519 · 最新</button>
   </div>
 </div>
 
@@ -305,13 +304,8 @@ footer p { margin: 0; max-width: 110ch; }
     </div>
     <span class="mode od-fixed" id="mode" hidden></span>
     <div class="tg od-cluster od-fill" id="toggles" role="group" aria-label="图层开关">
-      <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>见顶窗口</button>
-      <button class="tgb" type="button" data-k="bot" aria-pressed="true"><i class="sw-bot"></i>回落区</button>
-      <button class="tgb" type="button" data-k="wave" aria-pressed="true"><i class="sw-wave"></i>二波参考</button>
-      <button class="tgb" type="button" data-k="real" aria-pressed="true"><i class="sw-real"></i>真实走势</button>
-      <button class="tgb" type="button" data-k="acts" aria-pressed="true"><i class="sw-act"></i>买卖点</button>
+      <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>情景区间</button>
       <button class="tgb" type="button" data-k="vol" aria-pressed="true"><i class="sw-vol"></i>成交量</button>
-      <button class="tgb" type="button" data-k="conf" aria-pressed="true"><i class="sw-conf"></i>顶部一致度</button>
     </div>
   </div>
 
@@ -352,8 +346,8 @@ footer p { margin: 0; max-width: 110ch; }
       <p class="vs" id="vs"></p>
     </section>
     <section class="blk">
-      <p class="blk-k">泡沫周期阶段</p>
-      <ol class="phs" id="phs" aria-label="六阶段"></ol>
+      <p class="blk-k">六尺度置信度</p>
+      <ol class="phs" id="phs" aria-label="六尺度置信度"></ol>
       <p class="ph-tip" id="ph-tip"></p>
     </section>
     <section class="blk">
@@ -361,7 +355,7 @@ footer p { margin: 0; max-width: 110ch; }
       <ul class="kv" id="kv"></ul>
     </section>
     <section class="blk">
-      <p class="blk-k">操作计划</p>
+      <p class="blk-k">规则与证据</p>
       <div class="seg" role="tablist" aria-label="操作计划" id="seg">
         <button type="button" role="tab" id="sg-0" data-i="0" aria-selected="true" aria-controls="plan" class="s-top">逃顶</button>
         <button type="button" role="tab" id="sg-1" data-i="1" aria-selected="false" aria-controls="plan" class="s-bot" tabindex="-1">抄底</button>
@@ -382,9 +376,9 @@ footer p { margin: 0; max-width: 110ch; }
 
   <section class="bottom" aria-label="验证与参数">
     <div class="tabs" role="tablist" aria-label="底部面板" id="btabs">
-      <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="true" aria-controls="p-replay">回放对照</button>
-      <button type="button" role="tab" id="bt-1" data-p="p-bench" aria-selected="false" aria-controls="p-bench" tabindex="-1">准确率</button>
-      <button type="button" role="tab" id="bt-2" data-p="p-expert" aria-selected="false" aria-controls="p-expert" tabindex="-1">专家参数</button>
+      <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="true" aria-controls="p-replay">回放</button>
+      <button type="button" role="tab" id="bt-1" data-p="p-bench" aria-selected="false" aria-controls="p-bench" tabindex="-1">三段验证</button>
+      <button type="button" role="tab" id="bt-2" data-p="p-expert" aria-selected="false" aria-controls="p-expert" tabindex="-1">六尺度参数</button>
     </div>
     <div class="tp" id="p-replay" role="tabpanel" aria-labelledby="bt-0"></div>
     <div class="tp" id="p-bench" role="tabpanel" aria-labelledby="bt-1" hidden></div>
@@ -393,15 +387,20 @@ footer p { margin: 0; max-width: 110ch; }
 </main>
 
 <footer>
-  <p>研究原型，不构成投资建议。见顶窗口是对临界时间的统计估计，真实顶部可能提前、延后或不出现；回落区和二波参考来自该标的历史同类回撤的分布，不是目标价。数据来自东方财富公开接口；浏览器无法直连时，三个指数使用内置快照（截至 2026-10-23）。</p>
+  <p>研究原型，不构成投资建议。情景区间是合格拟合 t_c 的分位区间，不是峰值日预测；回撤和估值地板是历史分位，不是目标价。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
 </footer>
 
-<script src="app/engine.js"></script>
-<script src="app/data-snapshot.js"></script>
-<script src="app/tape-snapshot.js"></script>
-<script src="app/critical.js"></script>
+<script>
+/* ui.js 只用到 CP.dateAt；前端不含模型引擎 */
+window.CP = { dateAt(bars, idx) {
+  if (idx < bars.length) return bars[Math.max(0, idx)].date;
+  let d = new Date(bars[bars.length - 1].date + 'T00:00:00Z'), k = idx - (bars.length - 1);
+  while (k > 0) { d = new Date(d.getTime() + 86400000); const w = d.getUTCDay(); if (w !== 0 && w !== 6) k--; }
+  return d.toISOString().slice(0, 10);
+}, PHASES: [], RULES: {} };
+</script>
 <script src="app/ui.js"></script>
-<script src="app/api.js"></script>
+<script src="app/lppl-data.js"></script>
 <script>
 (function () {
   'use strict';
@@ -427,32 +426,40 @@ footer p { margin: 0; max-width: 110ch; }
   /* ================= 数据接口层 =================
      后端完成后，只需把 getAnalysis 改成请求后端（返回同样结构的对象）。
      当前实现：浏览器内计算，日线与信号带按标的缓存，拖动回放时不重复拉取。 */
-  const _load = CP.load, dataCache = new Map();
-  CP.load = async function (sym, opt) {
-    if (dataCache.has(sym.key)) return dataCache.get(sym.key);
-    const d = await _load.call(CP, sym, opt);
-    dataCache.set(sym.key, d);
-    return d;
-  };
-  const _bt = CP.buildTape, tapeCache = new Map();
-  CP.buildTape = async function (logp, from, to, step, cb) {
-    const k = logp.length + '|' + logp[logp.length - 1].toFixed(6) + '|' + to;
-    const c = tapeCache.get(k);
-    if (c && c.from <= from) return c.tape.slice();
-    const tape = await _bt.call(CP, logp, from, to, step, cb);
-    tapeCache.set(k, { from, tape });
-    return tape.slice();
-  };
-  async function getAnalysis(code, asof, onProg) { return OD_API.getAnalysis(code, asof, onProg); }
-
-  let benchCache = null;
-  const bench = () => benchCache || (benchCache = CP.indexBench());
+  /* 后端静态 JSON → 图表视图（只做日期↔下标换算，不算任何模型值） */
+  function idxOf(bars, d) {
+    if (!d) return -1;
+    const N = bars.length, last = bars[N - 1].date;
+    if (d <= last) { const i = bars.findIndex((b) => b.date >= d); return i < 0 ? N - 1 : i; }
+    let k = N - 1, t = new Date(last + 'T00:00:00Z'); const e = new Date(d + 'T00:00:00Z');
+    while (t < e) { t = new Date(t.getTime() + 86400000); const w = t.getUTCDay(); if (w !== 0 && w !== 6) k++; }
+    return k;
+  }
+  function toView(D) {
+    const t = D.top, b = D.bars, w = t.window || {}, sc = t.scenarios || [];
+    const win = (lo, hi) => (lo && hi ? { lo: idxOf(b, lo), hi: idxOf(b, hi), loDate: lo, hiDate: hi } : null);
+    let s1 = 0, s2 = 0, n = 0;
+    for (let i = Math.max(1, b.length - 60); i < b.length; i++) { const r = Math.log(b[i].close / b[i - 1].close); s1 += r; s2 += r * r; n++; }
+    return { J: D.raw, top: t, bars: b, T: D.T, asof: D.asof, latest: D.latest,
+      sym: { label: D.name, code: D.sym.sym, isIndex: true }, data: { source: D.raw.data_version, name: D.name },
+      rm: { topW: win(w.start, w.end), altW: sc[1] ? win(sc[1].q20_date, sc[1].q80_date) : null, topPx: null, crash: null,
+        sigma: n ? Math.sqrt(Math.max(0, s2 / n - (s1 / n) ** 2)) : NaN },
+      replay: null, tape: [], phase: { k: '' } };
+  }
+  async function getAnalysis(code, asof, onProg) { onProg && onProg('读取后端数据', 0.5); return toView(await LPPL.load(code, asof)); }
+  const EV = (c) => LPPL.ev(c, cur && cur.J.evidence_levels);
+  const evb = (c) => '<small class="evb" style="color:var(--ink-3)">［' + E(EV(c).label) + '］</small>';
+  const SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
+  const SCN = { '2-4w': '2–4 周', '1-3m': '1–3 月', '3-6m': '3–6 月', '6-12m': '6–12 月', '12-24m': '12–24 月', '2-6y': '2–6 年' };
+  const SIG = { signal: '有合格 LPPLS 拟合：顶部结构', no_qualified_fit: '主尺度没有合格拟合', t1_not_qualified: '泡沫起点未达标准', not_computed: '未计算' };
+  const REG = { HIGH_RISK: '高风险', LOW_RISK: '低风险', NEUTRAL: '中性', BULLISH: '上行', BEARISH: '下行' };
+  const shown = (scale) => { const se = (cur.top.lppls_confidence || {}).scale_evidence || {}; return se[scale] === 'dev'; };
 
   /* ================= 图表（Canvas：主图 + 成交量 + 顶部一致度，共用时间轴与光标） ================= */
   const CH = (function () {
     const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('chartwrap');
     const st = { R: null, a: 0, b: 100, maxI: 100, hover: -1, my: -1, ghost: -1, cross: true, W: 0, H: 0, dpr: 1, drag: null,
-      show: { top: true, bot: true, wave: true, real: true, acts: true, vol: true, conf: true } };
+      show: { top: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
     let col = {}, fm = 'monospace', fu = 'sans-serif', onHover = () => {};
     function readCol() {
       const s = getComputedStyle(document.documentElement), g = (n) => s.getPropertyValue(n).trim();
@@ -583,7 +590,7 @@ footer p { margin: 0; max-width: 110ch; }
         ctx.fillStyle = rgba(col.warn, 0.10); ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
         vline(x0, pt, pb, rgba(col.warn, 0.6)); vline(x1, pt, pb, rgba(col.warn, 0.6));
         if (rm.topPx) { ctx.fillStyle = rgba(col.warn, 0.22); ctx.fillRect(x0, Y(rm.topPx[1]), Math.max(2, x1 - x0), Y(rm.topPx[0]) - Y(rm.topPx[1])); }
-        tag('见顶窗口 ' + U.md(rm.topW.loDate).replace('月', '/').replace('日', '') + '–' + U.md(rm.topW.hiDate).replace('月', '/').replace('日', ''), (x0 + x1) / 2, pt + 30, '#0D0D0D', col.warn, 'center');
+        tag('情景区间 ' + U.md(rm.topW.loDate).replace('月', '/').replace('日', '') + '–' + U.md(rm.topW.hiDate).replace('月', '/').replace('日', ''), (x0 + x1) / 2, pt + 30, '#0D0D0D', col.warn, 'center');
       }
       if (rm.crash && st.show.bot && vis(rm.crash.botLo, rm.crash.botHi)) {
         const c = rm.crash, x0 = X(c.botLo), x1 = X(c.botHi + 1), y0 = Y(c.pxHi), y1 = Y(c.pxLo);
@@ -798,7 +805,7 @@ footer p { margin: 0; max-width: 110ch; }
       $('ld').hidden = false;
       try {
         const R = await getAnalysis(job.code, job.asof, prog);
-        if (!want) { curCode = job.code; cur = R; err(''); render(R); }
+        if (!want) { curCode = R.sym.label; cur = R; err(''); render(R); }
       } catch (e) {
         err(e.message || String(e)); stopPlay();
       }
@@ -816,7 +823,7 @@ footer p { margin: 0; max-width: 110ch; }
   function render(R) {
     const bars = R.bars, T = R.T, rm = R.rm, N = bars.length, last = bars[N - 1].date;
     const name = R.sym.isIndex ? R.sym.label : (R.data.name || R.sym.label);
-    const V = U.verdict(R);
+
 
     $('sym-n').textContent = name;
     $('sym-c').textContent = R.sym.code + ' · 日线 · 对数坐标';
@@ -835,31 +842,37 @@ footer p { margin: 0; max-width: 110ch; }
     $('pxc').textContent = (ch >= 0 ? '▲ ' : '▼ ') + U.px(Math.abs(c0 - c1)) + '  ' + U.sp(ch, 2);
     $('pxs').textContent = (R.latest ? '最新交易日 ' : '截止日 ') + R.asof + ' · 日波动 ' + U.pct(rm.sigma, 2);
 
-    // 结论与阶段
-    $('vh').textContent = V.head;
-    $('vh').className = 'vh ' + (PH_CLASS[R.phase.k] || '');
-    $('vs').textContent = V.sub;
-    const pi = CP.PHASES.findIndex((p) => p.k === R.phase.k);
-    $('phs').innerHTML = CP.PHASES.map((p, j) => `<li class="ph-${p.k}${j === pi ? ' on' : j < pi ? ' past' : ''}"${j === pi ? ' aria-current="step"' : ''}><span class="n">${j + 1}</span>${E(p.name)}</li>`).join('');
-    $('ph-tip').textContent = '当前：' + V.phase.name + ' — ' + V.phase.tip;
+    // 结论
+    const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, LC = t.lppls_confidence || {};
+    $('vh').textContent = SIG[t.signal_status] || ('状态：' + (t.signal_status || '—'));
+    $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
+    $('vs').textContent = (w.start ? '6–12 月档情景区间 ' + U.range(w.start, w.end, R.asof, last) + '（开发段证据，不是峰值日预测）。' : (w.rule || '') + '。') +
+      (rb.state ? ' 体制带 ' + rb.month + '：' + (REG[rb.state] || rb.state) + '（描述性）。' : '');
+    $('phs').innerHTML = SCALES.map((k) => { const v = LC[k], on = shown(k) && v > 0;
+      return `<li class="${on ? 'on' : ''}"><span class="n">${E(SCN[k])}</span>${v == null ? '未计算' : shown(k) ? U.pct(v, 0) : '无证据'}</li>`; }).join('');
+    $('ph-tip').textContent = '置信度 = 合格拟合占比，不是概率；只有 6–12 月、12–24 月档有开发段证据，其余档显示“无证据”。';
 
     // 关键位置
-    const kv = [];
-    kv.push(['见顶窗口', rm.topW ? U.range(rm.topW.loDate, rm.topW.hiDate, R.asof, last) : '暂无', rm.topW ? 'wn' : '']);
-    kv.push(['窗口一致度', rm.topW ? U.pct(rm.conf, 0) + ' · 可信度' + U.LEVEL[rm.level] : '合格尺度 ' + R.scan.nq + '/' + R.scan.total, '']);
-    if (rm.topPx) kv.push(['窗口内参考价', U.px(rm.topPx[0]) + ' – ' + U.px(rm.topPx[1]), '']);
-    kv.push(['预计回落区', rm.crash ? U.px(rm.crash.pxLo) + ' – ' + U.px(rm.crash.pxHi) : '—', rm.crash ? 'dn' : '']);
-    kv.push(['回落时间', rm.crash ? U.range(rm.crash.botLoDate, rm.crash.botHiDate, R.asof, last) : '需先出现见顶窗口', '']);
-    kv.push(['二波参考', rm.crash ? U.px(rm.crash.wave2) : '—', '']);
-    $('kv').innerHTML = kv.map((r) => `<li><span class="k">${E(r[0])}</span><span class="v ${r[2]}">${E(r[1])}</span></li>`).join('');
+    const dp = t.drawdown_price || {}, vf = dp.valuation_floor, kv = [];
+    const sc = t.scenarios || [];
+    kv.push(['情景区间', w.start ? U.range(w.start, w.end, R.asof, last) + ' · 开发段' : '无（' + (w.rule || '无合格拟合') + '）', w.start ? 'wn' : '']);
+    kv.push(['情景占比', sc.length ? sc.map((x) => U.pct(x.share, 0) + ' ' + U.md(x.q20_date) + '–' + U.md(x.q80_date)).join('；') : '无合格情景', '']);
+    if (dp.evidence === 'descriptive' && dp.max_dd) {
+      kv.push(['顶后回撤（历史分位）', U.pct(dp.max_dd.q80, 0) + ' ～ ' + U.pct(dp.max_dd.q20, 0) + '，中位 ' + U.pct(dp.max_dd.q50, 0) + ' · n=' + dp.n, 'dn']);
+      if (dp.days_to_trough) kv.push(['顶→谷时间（历史分位）', dp.days_to_trough.q20 + '–' + dp.days_to_trough.q80 + ' 个交易日 · n=' + dp.n, '']);
+    } else kv.push(['顶后回撤', dp.table ? '无证据' : '回撤情景表未加载', '']);
+    kv.push(['估值地板带', vf && vf.floor_band_points ? vf.floor_band_points[0] + '–' + vf.floor_band_points[1] + ' 点 · PE ' + vf.pe_latest + '（' + vf.pe_date + '）· n=' + vf.n : (vf && vf.note) || '不提供', '']);
+    kv.push(['二波', '无有效预测', '']);
+    $('kv').innerHTML = kv.map((r) => `<li><span class="k">${E(r[0])}</span><span class="v ${r[2]}">${E(r[1])}</span></li>`).join('') +
+      (dp.evidence === 'descriptive' ? '<li><span class="k"></span><span class="v">' + E((dp.bucket ? '桶：' + dp.bucket + '；' : '') + '历史分位，不是预测') + '</span></li>' : '');
 
     renderPlan();
     CH.set(R);
     setupTimeline(R);
     cursor(-1);
 
-    $('note').innerHTML = (R.latest ? '' : '<b>回放模式</b>：预测只用了 ' + E(R.asof) + ' 及之前的数据；蓝色虚线是之后的真实走势，模型没有看到。<br>') +
-      '数据：' + E(R.data.source) + (R.data.fetchError ? '（实时接口不可达，已用内置快照）' : '') + '。所有概率与区间均未经样本外校准。';
+    $('note').innerHTML = (R.latest ? '' : '<b>回放模式</b>：只用了 ' + E(R.asof) + ' 及之前的数据和当时已公布的 PE。<br>') +
+      '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
 
     renderReplay(R);
     renderBench(R);
@@ -877,22 +890,20 @@ footer p { margin: 0; max-width: 110ch; }
 
   function renderPlan() {
     if (!cur) return;
-    const R = cur, P = U.plans(R)[planTab];
-    document.querySelectorAll('#seg [role=tab]').forEach((b, i) => { b.setAttribute('aria-selected', String(i === planTab)); b.tabIndex = i === planTab ? 0 : -1; });
+    const R = cur, t = R.top, b = R.J.bottom || {}, dp = t.drawdown_price || {}, vf = dp.valuation_floor;
+    document.querySelectorAll('#seg [role=tab]').forEach((x, i) => { x.setAttribute('aria-selected', String(i === planTab)); x.tabIndex = i === planTab ? 0 : -1; });
     $('plan').setAttribute('aria-labelledby', 'sg-' + planTab);
-    let h = `<p class="pl-lead">${E(P.lead)}</p><p class="pl-meta">${E(P.meta || '')}</p>`;
-    h += '<ol class="pl-rows">' + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') + '</ol>';
-    if (planTab === 1) {
-      const ck = R.chk;
-      if (ck) {
-        h += '<ul class="cks" aria-label="底部共振检查">' + ck.items.map((it) => `<li><span class="ck-s${it.ok ? ' ok' : ''}">${it.ok ? '✓ 通过' : '– 未过'}</span><div><div class="ck-n">${E(it.name)}${it.need ? '<small>必要</small>' : ''}</div><div class="ck-d">${E(it.detail)}</div></div></li>`).join('') + '</ul>';
-        h += `<p class="ck-sum">通过 <b class="m">${ck.score}/${ck.max}</b> · ${ck.pass ? '<span class="dn">满足进场条件，可以买第一批 1/3</span>' : '不满足进场条件，继续等待'}</p>`;
-      } else h += '<p class="pl-meta" style="margin-top:12px">截止日就是近 60 日最高点，还没有开始调整，底部检查暂不适用。</p>';
-    }
-    $('plan').innerHTML = h;
+    const P = [
+      { lead: '减仓执行规则只有开发段探索（dev_only），没有样本外证据，不给操作计划。', rows: [['失效条件', (t.invalidation || {}).rule || '—'], ['顶后回撤', dp.evidence === 'descriptive' && dp.max_dd ? '中位 ' + U.pct(dp.max_dd.q50, 0) + '（n=' + dp.n + '，历史分位，不是预测）' : '无证据']] },
+      { lead: '底部概率模型三段验证未通过，不显示概率，不预测起涨时间。', rows: [['底部状态', (b.state_p || {}).note || '—'], ['入场规则', (b.entry_rule || {}).note || '—'], ['估值地板带', vf && vf.floor_band_points ? vf.floor_band_points.join('–') + ' 点（n=' + vf.n + '，描述性）' : (vf && vf.note) || '不提供']] },
+      { lead: '二波收复比例统计尚未完成，当前无有效预测。', rows: [['二波', ((t.second_wave || {}).evidence || 'none') === 'none' ? '无证据' : '—']] },
+    ][planTab];
+    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
+      '</ol><p class="pl-meta"><a href="lab/guide.html">怎么读这些指标 →</a></p>';
   }
 
-  function simAt(R, i) {
+  function simAt() { return null; }
+  function simAt_unused(R, i) {
     const s = R.replay && R.replay.sim;
     if (!s || i < s.from || i > s.to) return null;
     let pos = 1;
@@ -920,19 +931,12 @@ footer p { margin: 0; max-width: 110ch; }
     $('cur-d').textContent = d + (i < 0 ? '（截止日）' : '');
     const lines = [];
     if (idx <= N - 1) {
-      const tp = CP.scanAt(R.tape, Math.min(idx, N - 1));
-      if (tp && tp[3]) {
-        const c = tp[3], v = c[3] / tp[1];
-        lines.push('最近一次扫描 ' + bars[tp[0]].date + '：顶部一致度 ' + U.pct(v, 0) + '，指向 ' + U.md(CP.dateAt(bars, tp[0] + c[0])) + '–' + U.md(CP.dateAt(bars, tp[0] + c[1])) + (v >= CP.RULES.alertConf && c[0] <= CP.RULES.alertLead ? '（达到预警条件）' : ''));
-      } else if (tp) lines.push('最近一次扫描 ' + bars[tp[0]].date + '：没有一致的见顶窗口');
-      const s = simAt(R, idx);
-      if (s) lines.push('按计划：' + s.st + '，仓位 ' + Math.round(s.pos * 100) + '%，累计 ' + U.sp(s.eq) + '（持有 ' + U.sp(s.bh) + '）');
       if (idx > T) lines.push('这一天在截止日之后，模型没有看到。');
     } else lines.push('截止日之后的推算区域，只有预测叠加层。');
     $('cur-l').textContent = lines.join('\n');
     $('cur-l').style.whiteSpace = 'pre-line';
     const btn = $('cur-set');
-    if (i >= 0 && idx >= 300 && idx <= N - 1 && idx !== T) {
+    if (false) {
       btn.hidden = false;
       btn.innerHTML = icon('target') + '<span>把 ' + E(bars[idx].date) + ' 设为截止日</span>';
       btn.dataset.i = idx;
@@ -940,75 +944,49 @@ footer p { margin: 0; max-width: 110ch; }
   }
 
   function setupTimeline(R) {
-    const tl = $('tl'), N = R.bars.length;
-    tl.disabled = false; tl.min = 300; tl.max = N - 1; tl.value = R.T;
-    tl.setAttribute('aria-valuetext', R.asof);
-    $('tl-v').textContent = R.asof;
+    $('tl').disabled = true; $('tl-v').textContent = R.asof;
+    ['tl-prev', 'tl-next', 'tl-play'].forEach((k) => { $(k).disabled = true; });
     $('tl-last').disabled = R.latest;
   }
 
   function renderReplay(R) {
-    const el = $('p-replay'), rp = R.replay;
-    if (!rp) {
-      el.innerHTML = '<p class="tp-d">当前是最新交易日，没有之后的走势可以对照。拖动图表下方的“回放截止日”，或在上方选一个历史场景（例如上证 2026-02-27），即可回放。</p>';
-      return;
-    }
-    const sc = U.score(R), s = rp.sim;
-    const idxOf = { '见顶时间': rp.peak.i, '底部时间': rp.bottom.i, '底部价格': rp.bottom.i, '二波高点': rp.wave2.i };
-    const left = `<div class="pn"><h3 class="pn-h">预测 vs 真实 · 点击一行在图上定位</h3><div class="scroll-x"><table><thead><tr><th>项目</th><th>当时的预测</th><th>真实结果</th><th>判定</th></tr></thead><tbody>` +
-      sc.map((r) => `<tr class="jump" tabindex="0" data-i="${idxOf[r.k]}"><td>${E(r.k)}</td><td>${E(r.pred)}</td><td>${E(r.real)}</td><td class="${r.ok ? 'ok' : 'no'}">${r.ok ? '✓ ' : '✕ '}${E(r.note)}</td></tr>`).join('') +
-      '</tbody></table></div>' +
-      (rp.firstSig && !rp.topHit ? `<p class="honest">截止日之后，模型在 ${E(rp.firstSig.date)} 首次指向这个真实顶部（提前 ${rp.firstSig.lead} 个交易日，一致度 ${U.pct(rp.firstSig.conf, 0)}）。</p>` : '') + '</div>';
-    const right = `<div class="pn"><h3 class="pn-h">按计划操作 · ${E(R.asof)} 至 ${E(s.dates[s.dates.length - 1])}（次日开盘成交，含费用）</h3>` +
-      `<div class="kpis od-grid">` +
-      `<div class="kpi"><div class="kpi-k">计划收益</div><div class="kpi-v ${s.ret >= 0 ? 'up' : 'dn'}">${U.sp(s.ret)}</div></div>` +
-      `<div class="kpi"><div class="kpi-k">一直持有</div><div class="kpi-v ${s.bhRet >= 0 ? 'up' : 'dn'}">${U.sp(s.bhRet)}</div></div>` +
-      `<div class="kpi"><div class="kpi-k">计划最大回撤</div><div class="kpi-v">${U.pct(s.mdd)}</div></div>` +
-      `<div class="kpi"><div class="kpi-k">持有最大回撤</div><div class="kpi-v">${U.pct(s.bhMdd)}</div></div></div>` +
-      '<ul class="acts">' + (s.acts.length ? s.acts.map((a) => { const b = a.to > a.from; return `<li><button type="button" data-i="${a.i}"><span class="ad">${E(a.date)}</span><span class="tag ${b ? 'tag-b' : 'tag-s'}">${b ? '买' : '卖'}</span><span class="ap">${U.px(a.px)}</span><span class="aw">${E(a.why)} · 仓位 ${Math.round(a.from * 100)}% → ${Math.round(a.to * 100)}%</span></button></li>`; }).join('') : '<li class="empty">期间没有触发任何操作</li>') + '</ul></div>';
-    el.innerHTML = `<p class="tp-d">把 ${E(R.asof)} 当成“今天”：左边逐项对照预测与真实走势，右边是按操作计划执行的结果（从满仓开始）。</p><div class="cols">${left}${right}</div>`;
+    const reps = LPPL.REPLAYS[R.sym.code] || [];
+    const chips = (R.latest ? '' : `<button class="chip" type="button" data-c="${E(R.sym.label)}" data-d="">回到最新</button>`) +
+      reps.map((d) => `<button class="chip" type="button" data-c="${E(R.sym.label)}" data-d="${d}">${E(R.sym.label)} ${d}</button>`).join('');
+    $('p-replay').innerHTML = `<p class="tp-d">${R.latest ? '当前是最新交易日。' : '回放截止 ' + E(R.asof) + '：只用当时已确认的事件和已公布的 PE。'}后端只开放下列回放日期${reps.length ? '' : '（本标的暂无）'}；逐日动画见 <a href="lab/dashboard.html">研究仪表盘</a>。</p><div>${chips}</div>`;
   }
 
   function renderBench(R) {
-    const ev = R.evalr, B = bench();
-    $('p-bench').innerHTML =
-      `<div class="pn" style="margin-bottom:16px"><h3 class="pn-h">本标的顶部信号带</h3>` +
-      `<div class="tape-lg od-cluster"><span><i style="background:var(--warn)"></i>达到预警条件的扫描</span><span><i style="background:#3A3A3A"></i>未达条件</span><span><i style="background:var(--dn);border-radius:50%"></i>真实顶 · 被提前抓到</span><span><i style="border:1.5px solid var(--up);border-radius:50%"></i>真实顶 · 漏报</span></div>` +
-      `<div class="tape">${U.tapeSVG(R, { span: R.sym.isIndex ? 700 : 500 })}</div>` +
-      `<div class="kpis od-grid" style="border-top:1px solid var(--line);border-bottom:0">` +
-      `<div class="kpi"><div class="kpi-k">预警段数</div><div class="kpi-v">${ev.nEp}</div></div>` +
-      `<div class="kpi"><div class="kpi-k">预警后确实见顶</div><div class="kpi-v">${U.pct(ev.precision, 0)}</div></div>` +
-      `<div class="kpi"><div class="kpi-k">随机预警的命中率</div><div class="kpi-v">${U.pct(ev.randPrecision, 0)}</div></div>` +
-      `<div class="kpi"><div class="kpi-k">真实顶被提前抓到</div><div class="kpi-v">${U.pct(ev.recall, 0)} <small>/ ${ev.nEv} 个</small></div></div></div></div>` +
-      `<div class="pn"><h3 class="pn-h">三大指数全样本（2015 年起，每 5 个交易日一个截止日）</h3><div class="scroll-x"><table><thead><tr><th>指数</th><th>预警后确实见顶</th><th>随机基线</th><th>真实顶被提前抓到</th><th>2016 年起 计划 / 持有</th><th>最大回撤 计划 / 持有</th><th>2024 年起 计划 / 持有</th></tr></thead><tbody>` +
-      B.map((b) => `<tr><td>${E(b.label)}</td><td>${U.pct(b.ev.precision, 0)}（${b.ev.nEp} 段）</td><td>${U.pct(b.ev.randPrecision, 0)}</td><td>${U.pct(b.ev.recall, 0)}（${b.ev.nEv} 个顶）</td><td>${U.sp(b.s16.ret, 0)} / ${U.sp(b.s16.bh, 0)}</td><td>${U.pct(b.s16.mdd, 0)} / ${U.pct(b.s16.bhMdd, 0)}</td><td>${U.sp(b.s24.ret, 0)} / ${U.sp(b.s24.bh, 0)}</td></tr>`).join('') +
-      '</tbody></table></div><p class="honest">结论：预警一旦出现，事后大多确实见顶，明显高于随机放置窗口；但它只能提前抓到约 15–20% 的真实顶部——多数顶部不是加速泡沫形成的。它适合作为“出现就要重视”的逃顶警报，不能作为唯一的卖出依据。每个指数只有 7–8 段预警，样本量小。</p></div>';
+    const V = R.J.validation || [];
+    $('p-bench').innerHTML = '<div class="pn"><div class="scroll-x"><table><thead><tr><th>阶段</th><th>事件数</th><th>提前报警比例</th><th>报警后未见顶比例</th><th>ΔBrier</th><th>证据</th><th>说明</th></tr></thead><tbody>' +
+      V.map((v) => `<tr><td>${E(v.split)}</td><td>${E(v.events)}</td><td>${U.pct(v.hit, 0)}</td><td>${U.pct(v.false_alarm, 0)}</td><td>${E(v.brier || '—')}</td><td>${E(EV(v.status).label)}</td><td>${E(v.note || '')}</td></tr>`).join('') +
+      '</tbody></table></div><p class="honest">开发段有信号，校准段与测试段未通过；所以本站只描述，不给概率。</p></div>';
   }
 
   function renderExpert(R) {
-    const fits = R.scan.fits;
-    $('p-expert').innerHTML = `<p class="tp-d">合格条件：${E(CP.TOP_RULE)}。“距今”是临界时间 t_c 距截止日的交易日数。这些参数只用于诊断，不直接用于决策。</p>` +
-      `<div class="pn"><div class="scroll-x" style="max-height:420px;overflow-y:auto"><table><thead><tr><th>窗口</th><th>起点</th><th>距今</th><th>指向日期</th><th>m 幂指数</th><th>ω 频率</th><th>振荡数</th><th>阻尼</th><th>R²</th><th>合格</th></tr></thead><tbody>` +
-      fits.map((f) => `<tr><td>${f.n}</td><td>${R.bars[R.T + 1 - f.n].date}</td><td>${f.ahead.toFixed(1)}</td><td>${CP.dateAt(R.bars, R.T + Math.round(f.ahead))}</td><td>${f.m.toFixed(2)}</td><td>${f.w.toFixed(2)}</td><td>${f.O.toFixed(2)}</td><td>${f.D.toFixed(2)}</td><td>${f.R2.toFixed(3)}</td><td class="${f.q ? 'q' : ''}">${f.q ? '✓ 是' : '—'}</td></tr>`).join('') +
+    const t = R.top, I = t.indicators || {}, cb = t.combo || {};
+    const cbTxt = EV(cb.evidence).show ? ['p0.1', 'p1', 'p10'].map((k) => k + ' ' + U.pct(cb[k], 1)).join(' · ') : '无证据';
+    $('p-expert').innerHTML = `<p class="tp-d">六尺度为 FCO 公开口径（标准过滤集）。Combo（幂平均）：${E(cbTxt)} ${evb(cb.evidence)}。${E(cb.note || '')}</p>` +
+      '<div class="pn"><div class="scroll-x"><table><thead><tr><th>尺度</th><th>窗口数</th><th>合格拟合数</th><th>最佳起点 t1</th><th>t1 合格</th><th>状态</th><th>证据</th></tr></thead><tbody>' +
+      SCALES.map((k) => { const x = I[k] || {}; return `<tr><td>${E(SCN[k])}</td><td>${x.n_windows ?? '—'}</td><td>${x.n_qualified_standard ?? '—'}</td><td>${E(x.best_t1 || '—')}</td><td>${x.t1_qualified ? '是' : '否'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(((t.lppls_confidence || {}).scale_evidence || {})[k]).label)}</td></tr>`; }).join('') +
       '</tbody></table></div></div>';
   }
 
   /* ================= 行情带（内置快照最后两日） ================= */
   (function ticker() {
-    const S = window.OD_SNAP || {}, out = [];
-    Object.keys(CP.INDEX).forEach((k) => {
-      const s = S[k]; if (!s) return;
-      const rows = s.rows.split(';'), a = rows[rows.length - 1].split(','), b = rows[rows.length - 2].split(',');
-      const c = +a[2], p = +b[2], ch = c / p - 1, cls = ch >= 0 ? 'up' : 'dn';
-      out.push(`<button class="tk" type="button" data-c="${E(CP.INDEX[k].label)}" aria-current="false"><span class="tk-n">${E(CP.INDEX[k].label)} · ${a[0].slice(4, 6)}/${a[0].slice(6, 8)}</span><span class="tk-v">${U.px(c)}<span class="${cls}">${ch >= 0 ? '▲' : '▼'} ${U.sp(ch, 2)}</span></span></button>`);
+    Promise.all(LPPL.SYMS.map((x) => LPPL.load(x.sym).catch(() => null))).then((L) => {
+      $('ticker').innerHTML = L.filter(Boolean).map((D) => {
+        const b = D.bars, q = b[b.length - 1], p = b[b.length - 2], ch = q.close / p.close - 1, cls = ch >= 0 ? 'up' : 'dn';
+        return `<button class="tk" type="button" data-c="${E(D.name)}" aria-current="false"><span class="tk-n">${E(D.name)} · ${q.date.slice(5, 7)}/${q.date.slice(8, 10)}</span><span class="tk-v ${cls}">${U.px(q.close)} ${U.sp(ch, 2)}</span></button>`;
+      }).join('');
+      if (cur) document.querySelectorAll('.tk').forEach((x) => x.setAttribute('aria-current', String(x.dataset.c === cur.sym.label)));
     });
-    $('ticker').innerHTML = out.join('');
   })();
 
   /* ================= 交互绑定 ================= */
   function submit() {
     const code = $('code').value.trim();
-    if (!CP.resolve(code)) { err('无法识别“' + code + '”：请输入 6 位 A 股代码（如 600519），或“上证指数 / 沪深300 / 创业板指”。'); $('code').focus(); return; }
+    if (!LPPL.resolve(code)) { err('无法识别“' + code + '”：目前支持 ' + LPPL.SYMS.map((x) => x.name).join(' / ') + '。'); $('code').focus(); return; }
     stopPlay(); err('');
     request(code, $('asof').value);
   }
@@ -1106,7 +1084,7 @@ footer p { margin: 0; max-width: 110ch; }
 
   /* ================= 启动 ================= */
   const qs = new URLSearchParams(location.search);
-  const c0 = qs.get('code') || '上证指数', d0 = qs.get('code') ? (qs.get('asof') || '') : '2026-02-27';
+  const c0 = qs.get('code') || '上证指数', d0 = qs.get('asof') || '';
   $('code').value = c0; $('asof').value = d0;
   request(c0, d0);
 })();
