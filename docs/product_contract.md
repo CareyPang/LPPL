@@ -39,6 +39,8 @@
 }
 ```
 
+`price_history` 是截至 `asof` 的 OHLCV 序列：`dates`、`open`、`high`、`low`、`close`、`volume` 为等长数组；OHLC 保留 3 位小数，`volume` 为整数或源数据缺失时为 `null`。所有日期均不晚于记录的 `asof`。
+
 约束：
 1. `asof` 之后的数据不得参与任何字段；前端显示 as-of 与数据冻结版本。
 2. 校准段/最终测试段字段在授权运行前一律为 `null` + `evidence: "pending"`。

@@ -16,7 +16,19 @@
 
 ## 2. 记录结构 `<sym>_latest.json`
 
-顶层：`symbol`、`name`、`asof`、`data_version`、`model_version`、`price_history{dates[],close[],note}`、`top{…}`、`regime_band`、`bottom`、`validation[]`、`evidence_levels{}`（证据等级代码 → 中文说明）。
+顶层：`symbol`、`name`、`asof`、`data_version`、`model_version`、`price_history{dates[],open[],high[],low[],close[],volume[],note}`、`top{…}`、`regime_band`、`bottom`、`validation[]`、`evidence_levels{}`（证据等级代码 → 中文说明）。
+
+`price_history` 各数组与日期按索引严格对齐，且只包含不晚于记录 `asof` 的 bar。
+
+| 路径 | 类型 | 可空 | 含义 | 显示规则 |
+|---|---|---|---|---|
+| `price_history.dates[]` | string (`YYYY-MM-DD`) | 否 | 交易日期 | 与所有 OHLCV 数组逐项对齐 |
+| `price_history.open[]` | number \| null | 是 | 开盘价，保留 3 位小数 | 不晚于 `asof`；缺失时留空 |
+| `price_history.high[]` | number \| null | 是 | 最高价，保留 3 位小数 | 不晚于 `asof`；缺失时留空 |
+| `price_history.low[]` | number \| null | 是 | 最低价，保留 3 位小数 | 不晚于 `asof`；缺失时留空 |
+| `price_history.close[]` | number | 否 | 收盘价，保留 3 位小数 | 不晚于 `asof` |
+| `price_history.volume[]` | integer \| null | 是 | 成交量 | 有源数据时整数；缺失时留空 |
+| `price_history.note` | string | 否 | 价格历史的说明文字 | 保留原说明 |
 
 `top` 子树（每个对象都带 `evidence`，页面必须据它决定显示方式，见 §3）：
 

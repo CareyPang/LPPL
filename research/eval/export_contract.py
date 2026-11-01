@@ -178,10 +178,39 @@ def _negative(sym: str, date: pd.Timestamp, cal: pd.DatetimeIndex, logp: pd.Seri
 
 
 def _price_history(ohlc: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp, n: int = 756) -> dict:
-    """F05：as-of 日前 n 个交易日收盘（PIT：不含 as-of 之后），供价格叠加置信度/情景曲线图。"""
+    """F05：as-of 日前 n 个交易日 OHLCV（PIT：不含 as-of 之后）。"""
     c = _close(ohlc, cal)
     c = c[c.index <= date].dropna().tail(n)
-    return {"dates": [str(x.date()) for x in c.index], "close": [round(float(v), 3) for v in c.to_numpy()], "note": "对数轴显示；仅到 as-of 日"}
+    bars = ohlc if isinstance(ohlc.index, pd.DatetimeIndex) else ohlc.set_index("date")
+    bars = bars.reindex(c.index)
+
+    def prices(name: str) -> list[float | None]:
+        if name not in bars:
+            return [None] * len(c)
+        values = pd.to_numeric(bars[name], errors="coerce").to_numpy(dtype=float)
+        return [
+            round(float(value), 3) if pd.notna(value) and np.isfinite(value) else None
+            for value in values
+        ]
+
+    volume_values = (
+        pd.to_numeric(bars["volume"], errors="coerce").to_numpy(dtype=float)
+        if "volume" in bars
+        else np.full(len(c), np.nan)
+    )
+    volume = [
+        int(round(float(value))) if pd.notna(value) and np.isfinite(value) else None
+        for value in volume_values
+    ]
+    return {
+        "dates": [str(x.date()) for x in c.index],
+        "open": prices("open"),
+        "high": prices("high"),
+        "low": prices("low"),
+        "close": [round(float(v), 3) for v in c.to_numpy()],
+        "volume": volume,
+        "note": "对数轴显示；仅到 as-of 日",
+    }
 
 
 def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
