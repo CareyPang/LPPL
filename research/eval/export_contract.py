@@ -22,10 +22,9 @@ from ..features.lppls_rules import (
 )
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
-from ..price_layer.drawdown_table import DUR_BINS, RUNUP_BINS
+from ..price_layer.drawdown_table import DUR_BINS, LOOK, RUNUP_BINS, qualified_turns
 from ..price_layer.drawdown_table import build as build_drawdown_table
 from ..price_layer.drawdown_table import load_logp as load_drawdown_logp
-from ..price_layer.drawdown_table import top_events as drawdown_top_events
 from .dataset import price_series
 from .original_standard import SCAN, load
 
@@ -438,9 +437,16 @@ def history(sym: str) -> dict:
             "w": windows,
         })
 
+    top_logp = load_drawdown_logp(sym)
+    top_values = top_logp.to_numpy()
+    peaks, _ = qualified_turns(top_values)
+    peaks = peaks[peaks + LOOK <= len(top_values) - 1]
     tops = [
-        {"date": event["top"], "max_dd": event["max_dd"]}
-        for event in drawdown_top_events(sym, load_drawdown_logp(sym))
+        {
+            "date": str(top_logp.index[i].date()),
+            "max_dd": round(float(np.exp(top_values[i + 1 : i + LOOK + 1].min() - top_values[i]) - 1), 3),
+        }
+        for i in peaks
     ]
     return {
         "symbol": sym,

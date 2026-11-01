@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>临界点终端 · 见顶窗口 / 回落区 / 二波</title>
+<link rel="icon" href="data:,">
 <style>
 /* OD-LAYOUT-PRIMITIVES v1 — structure only */
 @layer od-layout {
@@ -812,6 +813,7 @@ window.CP = { dateAt(bars, idx) {
         st.maxI = Math.max(R.bars.length - 1, v[1]);
         clampView(); draw();
       },
+      clear() { st.R = null; st.ghost = -1; st.hover = -1; $('legend').innerHTML = ''; draw(); },
       reset() { if (!st.R) return; const v = defView(st.R); st.a = v[0]; st.b = v[1]; clampView(); draw(); },
       all() { if (!st.R) return; st.a = 0; st.b = st.maxI; clampView(); draw(); },
       zoom(f) { if (st.R) zoom(f); },
@@ -827,6 +829,21 @@ window.CP = { dateAt(bars, idx) {
 
   /* ================= 状态与调度 ================= */
   let cur = null, curCode = '', busy = false, want = null, playing = false, tlTimer = 0, playTimer = 0, planTab = 0;
+
+  function clearView() {
+    cur = null; curCode = '';
+    CH.clear();
+    $('sym-n').textContent = '—'; $('sym-c').textContent = '—';
+    $('mode').hidden = true; $('mode').className = 'mode od-fixed';
+    $('px').textContent = '—'; $('pxc').textContent = ''; $('pxs').textContent = '';
+    $('vh').textContent = '—'; $('vh').className = 'vh'; $('vs').textContent = '';
+    $('phs').innerHTML = ''; $('ph-tip').textContent = ''; $('kv').innerHTML = '';
+    $('plan').innerHTML = ''; $('note').innerHTML = '';
+    $('cur-d').textContent = '—'; $('cur-l').textContent = ''; $('cur-set').hidden = true;
+    $('p-replay').innerHTML = ''; $('p-bench').innerHTML = ''; $('p-expert').innerHTML = '';
+    $('tl').value = $('tl').min; $('tl').max = $('tl').min; $('tl').disabled = true; $('tl-v').textContent = '—'; $('tl-last').disabled = true;
+    document.querySelectorAll('.tk').forEach((b) => b.setAttribute('aria-current', 'false'));
+  }
 
   function err(m) { $('err').textContent = m || ''; $('err').hidden = !m; }
   function prog(s, p) { $('ld-fill').style.transform = 'scaleX(' + p + ')'; $('ld-s').textContent = s + ' · ' + Math.round(p * 100) + '%'; }
@@ -845,12 +862,14 @@ window.CP = { dateAt(bars, idx) {
         const R = await getAnalysis(job.code, job.asof, prog);
         if (!want) { curCode = R.sym.label; cur = R; err(''); render(R); }
       } catch (e) {
-        err(e.message || String(e)); stopPlay();
+        stopPlay(); clearView();
+        const detail = String((e && e.message) || e);
+        err(detail.startsWith('数据未加载') ? detail : '数据未加载：' + detail);
       }
     }
     busy = false; $('go').disabled = false;
     if (cur) $('ld').hidden = true;
-    else { $('ld-t').textContent = '没有可显示的结果'; $('ld-s').textContent = '请检查代码后重新分析'; }
+    else { $('ld-t').textContent = '数据未加载'; $('ld-s').textContent = '请检查代码和回放日期后重试'; }
     if (playing) schedulePlay();
   }
 

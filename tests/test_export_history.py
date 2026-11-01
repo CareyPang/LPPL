@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from research.eval import export_contract
+from research.price_layer.drawdown_table import LOOK, load_logp
 
 _HISTORY_INPUTS_READY = all(
     (folder / "sh000001.parquet").exists()
@@ -27,6 +29,15 @@ def test_history_contract_and_replay_window_consistency():
 
     tops = [top["date"] for top in rec["tops"]]
     assert tops == sorted(tops)
+    assert "2021-09-13" in tops
+    logp_series = load_logp("sh000001")
+    logp = logp_series.to_numpy()
+    positions = {str(date.date()): i for i, date in enumerate(logp_series.index)}
+    for top in rec["tops"]:
+        i = positions[top["date"]]
+        assert i + LOOK <= len(logp) - 1
+        expected = round(float(np.exp(logp[i + 1 : i + LOOK + 1].min() - logp[i]) - 1), 3)
+        assert top["max_dd"] == expected
 
     frame_2015 = next((frame for frame in frames if frame["asof"] == "2015-06-12"), None)
     assert frame_2015 is not None

@@ -8,8 +8,8 @@
   const U = {};
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   U.esc = esc;
-  const pct = (v, d) => (isFinite(v) ? (v * 100).toFixed(d === undefined ? 1 : d) + '%' : '—');
-  const sp = (v, d) => (isFinite(v) ? (v >= 0 ? '+' : '') + (v * 100).toFixed(d === undefined ? 1 : d) + '%' : '—');
+  const pct = (v, d) => (v == null || !isFinite(v) ? '—' : (v * 100).toFixed(d === undefined ? 1 : d) + '%');
+  const sp = (v, d) => (v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(d === undefined ? 1 : d) + '%');
   U.pct = pct; U.sp = sp;
   const px = (v) => (isFinite(v) ? (v >= 1000 ? v.toFixed(0) : v >= 100 ? v.toFixed(1) : v.toFixed(2)) : '—');
   U.px = px;
