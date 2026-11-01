@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>临界点 · 回测：历史情景区间</title>
+<style>
+:root {
+  --bg: #0D0D0D; --surface: #141414; --line: #2A2A2A; --grid: #1E1E1E;
+  --ink: #FFFFFF; --ink-2: #AAAAAA; --ink-3: #828282;
+  --warn: #FFB800; --real: #4DA3FF;
+  --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
+  --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-u); display: flex; flex-direction: column; }
+a { color: inherit; }
+header { display: flex; align-items: center; gap: 24px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.brand b { font-size: 16px; } .brand small { display: block; color: var(--ink-3); font: 11px var(--f-m); letter-spacing: .1em; }
+nav { margin-left: auto; display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); }
+nav a { text-decoration: none; } nav a:hover, nav a[aria-current] { color: var(--ink); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--line); align-items: center; }
+.bar .lb { color: var(--ink-3); font-size: 12px; margin-right: 4px; }
+.bar .sp { width: 16px; }
+button.b { background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); padding: 4px 10px; cursor: pointer; font: 12px var(--f-u); }
+button.b:hover { color: var(--ink); } button.b[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+main { flex: 1; display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+.chart { position: relative; min-height: 420px; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.tip { position: absolute; pointer-events: none; background: rgba(20,20,20,.95); border: 1px solid var(--line); padding: 8px 10px; font: 12px/1.6 var(--f-m); color: var(--ink-2); display: none; max-width: 300px; }
+.tip b { color: var(--ink); font-weight: 500; }
+aside { border-left: 1px solid var(--line); padding: 16px 18px; overflow: auto; font-size: 13px; color: var(--ink-2); }
+aside h2 { font-size: 13px; color: var(--ink); margin: 0 0 8px; font-weight: 600; }
+aside section { margin-bottom: 20px; }
+.lg { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.sw { display: inline-block; width: 22px; height: 3px; background: var(--warn); }
+.sw.t { width: 0; height: 0; background: none; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--real); }
+.sw.s { height: 10px; background: rgba(77,163,255,.10); border: 1px solid rgba(77,163,255,.3); }
+.err { color: var(--warn); padding: 40px; }
+table { width: 100%; border-collapse: collapse; font: 12px var(--f-m); }
+td { padding: 4px 0; border-bottom: 1px solid var(--grid); } td:last-child { text-align: right; color: var(--ink); }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } aside { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>临界点</b><small>LPPLS · 回测</small></div>
+  <nav>
+    <a href="home.html">首页</a>
+    <a href="index.html">终端</a>
+    <a href="backtest.html" aria-current="page">回测</a>
+    <a href="lab/dashboard.html">研究仪表盘</a>
+    <a href="lab/guide.html">用户指南</a>
+  </nav>
+</header>
+<div class="bar">
+  <span class="lb">指数</span><span id="syms"></span>
+  <span class="sp"></span>
+  <span class="lb">区间</span><span id="ranges"></span>
+</div>
+<main>
+  <div class="chart" id="chart"><canvas id="cv"></canvas><div class="tip" id="tip"></div></div>
+  <aside>
+    <section>
+      <h2>怎么看</h2>
+      <div class="lg"><i class="sw"></i>模型当时给出的 6–12 月档情景区间</div>
+      <p style="margin:2px 0 8px">每条横线从一个周度截止日的收盘价出发，向右延伸到模型那天算出的区间（合格拟合 t_c 的 20–80% 分位）。只用截止日当天及以前的数据。</p>
+      <div class="lg"><i class="sw t"></i>事后确认的顶</div>
+      <p style="margin:2px 0 8px">PS 标签：顶后 126 个交易日内回撤 ≥15%。回撤幅度是事后实测值。</p>
+      <div class="lg"><i class="sw s"></i>校准段 / 测试段</div>
+      <p style="margin:2px 0 8px">未着色为开发段。</p>
+    </section>
+    <section>
+      <h2>证据等级</h2>
+      <p id="ev"></p>
+    </section>
+    <section>
+      <h2>本区间</h2>
+      <table id="sum"></table>
+    </section>
+    <section>
+      <p>正式成绩（三段验证、覆盖率）以 <a href="index.html">终端</a> 与 <a href="lab/dashboard.html">研究仪表盘</a> 为准；本页只展示历史区间，不计算命中率。</p>
+    </section>
+  </aside>
+</main>
+<script src="app/lppl-data.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const E = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const RANGES = [['全部', null, null], ['2005–2009', '2005-01-01', '2009-12-31'], ['2014–2016', '2014-01-01', '2016-12-31'], ['2019–2021', '2019-01-01', '2021-12-31'], ['2024–2025', '2024-01-01', '2025-12-31']];
+  const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段' };
+  const css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
+  const col = { line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real') };
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+  const T = (d) => Date.parse(d + 'T00:00:00Z');
+  const pct = (x) => (x * 100).toFixed(0) + '%';
+  const st = { sym: 'sh000001', range: 0, H: null, hover: null };
+  const q = new URLSearchParams(location.search);
+  if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
+
+  $('syms').innerHTML = LPPL.SYMS.map((s) => `<button class="b" type="button" data-s="${s.sym}">${E(s.name)}</button> `).join('');
+  $('ranges').innerHTML = RANGES.map((r, i) => `<button class="b" type="button" data-r="${i}">${r[0]}</button> `).join('');
+  $('syms').onclick = (e) => { const b = e.target.closest('[data-s]'); if (b) { st.sym = b.dataset.s; load(); } };
+  $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { st.range = +b.dataset.r; mark(); draw(); } };
+  function mark() {
+    document.querySelectorAll('[data-s]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.s === st.sym));
+    document.querySelectorAll('[data-r]').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.r === st.range));
+  }
+
+  async function load() {
+    mark();
+    const tip = $('tip'); tip.style.display = 'none';
+    try {
+      const H = await LPPL.history(st.sym);
+      const fr = H.frames.filter((f) => f.close != null).map((f) => ({ ...f, t: T(f.asof), w0: f.w['6-12m'] ? T(f.w['6-12m'][0]) : null, w1: f.w['6-12m'] ? T(f.w['6-12m'][1]) : null }));
+      if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
+      st.H = { ...H, fr, tops: H.tops.map((t) => ({ ...t, t: T(t.date) })).filter((t) => t.t >= fr[0].t && t.t <= fr[fr.length - 1].t) };
+      $('ev').innerHTML = `证据等级 ${E(H.evidence)}：这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。${E(H.rule)}。数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)}，模型 ${E(H.model_version)}。`;
+      draw();
+    } catch (e) {
+      st.H = null;
+      const c = $('cv'); c.getContext('2d').clearRect(0, 0, c.width, c.height);
+      $('sum').innerHTML = ''; $('ev').innerHTML = '<span class="err" style="padding:0">' + E(e.message || e) + '</span>';
+    }
+  }
+
+  let G = null;
+  function draw() {
+    const H = st.H; if (!H) return;
+    const cv = $('cv'), box = $('chart').getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(box.width * dpr); cv.height = Math.round(box.height * dpr);
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const W = box.width, Hh = box.height, pl = 12, pr = 64, pt = 24, pb = 28;
+    ctx.clearRect(0, 0, W, Hh);
+    const R = RANGES[st.range], all = H.fr;
+    const ta = R[1] ? T(R[1]) : all[0].t, tb = R[2] ? Math.min(T(R[2]), all[all.length - 1].t + 400 * 864e5) : all[all.length - 1].t + 200 * 864e5;
+    const vis = all.filter((f) => f.t >= ta && f.t <= tb);
+    if (!vis.length) { G = null; return; }
+    let lo = Infinity, hi = -Infinity; vis.forEach((f) => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    const llo = Math.log(lo) - 0.05, lhi = Math.log(hi) + 0.12;
+    const X = (t) => pl + (t - ta) / (tb - ta) * (W - pl - pr), Y = (v) => pt + (lhi - Math.log(v)) / (lhi - llo) * (Hh - pt - pb);
+    G = { X, Y, ta, tb, vis, pt, pb, W, Hh, pr };
+    ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
+    // 分段底色
+    for (const sp of ['cal', 'test']) {
+      const s = all.filter((f) => f.split === sp); if (!s.length) continue;
+      const x0 = X(s[0].t), x1 = X(s[s.length - 1].t);
+      ctx.fillStyle = rgba(col.real, sp === 'cal' ? 0.05 : 0.09); ctx.fillRect(x0, pt, x1 - x0, Hh - pt - pb);
+      ctx.fillStyle = col.ink3; ctx.font = '11px ' + C('--f-u'); ctx.textAlign = 'left'; ctx.fillText(SPLIT[sp], Math.max(pl + 4, x0 + 4), pt + 12);
+    }
+    // 网格与价格轴
+    ctx.strokeStyle = col.grid; ctx.lineWidth = 1; ctx.fillStyle = col.ink3; ctx.font = '11px ' + C('--f-m'); ctx.textAlign = 'left';
+    const step = Math.pow(10, Math.floor(Math.log10(hi - lo || hi))) / 2 || 100;
+    ctx.restore();
+    const ticks = []; for (let v = Math.ceil(Math.exp(llo) / step) * step; v < Math.exp(lhi); v += step) ticks.push(v);
+    const ts = ticks.length > 8 ? ticks.filter((_, i) => i % Math.ceil(ticks.length / 8) === 0) : ticks;
+    ts.forEach((v) => { const y = Math.round(Y(v)) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(W - pr, y); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(Math.round(v), W - pr + 6, y + 4); });
+    const y0 = new Date(ta).getUTCFullYear(), y1 = new Date(tb).getUTCFullYear(), ys = Math.max(1, Math.ceil((y1 - y0) / 12));
+    ctx.textAlign = 'center';
+    for (let y = y0 + 1; y <= y1; y += ys) { const x = Math.round(X(Date.UTC(y, 0, 1))) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(y, x, Hh - 10); }
+    ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
+    // 情景区间
+    for (const f of vis) {
+      if (f.w0 == null) continue;
+      const y = Math.round(Y(f.close)) + 0.5, on = st.hover && st.hover.f === f;
+      ctx.strokeStyle = rgba(col.warn, on ? 0.7 : 0.16); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(f.t), y); ctx.lineTo(X(f.w0), y); ctx.stroke();
+      ctx.strokeStyle = rgba(col.warn, on ? 1 : 0.55); ctx.lineWidth = on ? 4 : 2.5; ctx.beginPath(); ctx.moveTo(X(f.w0), y); ctx.lineTo(Math.max(X(f.w0) + 2, X(f.w1)), y); ctx.stroke();
+    }
+    // 收盘价
+    ctx.strokeStyle = col.ink2; ctx.lineWidth = 1.2; ctx.beginPath();
+    vis.forEach((f, i) => { const x = X(f.t), y = Y(f.close); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    // 事后确认顶
+    const span = (tb - ta) / 864e5 / 365;
+    for (const t of H.tops) {
+      if (t.t < ta || t.t > tb) continue;
+      const near = all.filter((f) => Math.abs(f.t - t.t) < 21 * 864e5), px = near.length ? Math.max(...near.map((f) => f.close)) : null;
+      if (px == null) continue;
+      const x = X(t.t), y = Y(px) - 6;
+      ctx.fillStyle = col.real; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 8); ctx.lineTo(x + 5, y - 8); ctx.closePath(); ctx.fill();
+      if (span <= 8) { ctx.font = '11px ' + C('--f-m'); ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
+    }
+    if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba(col.ink, 0.3); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.restore();
+    // 摘要
+    const vf = vis.filter((f) => f.t <= tb), withW = vf.filter((f) => f.w0 != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
+    $('sum').innerHTML = `<tr><td>周度截止日</td><td>${vf.length}</td></tr><tr><td>有 6–12 月档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr>`;
+  }
+
+  $('cv').addEventListener('mousemove', (e) => {
+    if (!G) return;
+    const r = $('cv').getBoundingClientRect(), mx = e.clientX - r.left;
+    let best = null, bd = Infinity; for (const f of G.vis) { const d = Math.abs(G.X(f.t) - mx); if (d < bd) { bd = d; best = f; } }
+    if (!best) return;
+    st.hover = { f: best }; draw();
+    const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * 864e5);
+    const tip = $('tip');
+    tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${SPLIT[best.split] || E(best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
+      (best.w0 != null ? `6–12 月档情景区间 <b>${E(best.w['6-12m'][0])} – ${E(best.w['6-12m'][1])}</b>` : '6–12 月档无合格拟合') +
+      (best.w['12-24m'] ? `<br>12–24 月档 ${E(best.w['12-24m'][0])} – ${E(best.w['12-24m'][1])}` : '') +
+      (top ? `<br><span style="color:${col.real}">附近有事后确认顶 ${E(top.date)}，回撤 ${pct(top.max_dd)}</span>` : '');
+    tip.style.display = 'block';
+    const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);
+    tip.style.left = tx + 'px'; tip.style.top = Math.max(8, e.clientY - r.top - tip.offsetHeight - 12) + 'px';
+  });
+  $('cv').addEventListener('mouseleave', () => { st.hover = null; $('tip').style.display = 'none'; draw(); });
+  window.addEventListener('resize', draw);
+  load();
+})();
+</script>
+</body>
+</html>

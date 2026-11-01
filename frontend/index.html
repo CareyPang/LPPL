@@ -269,6 +269,7 @@ footer p { margin: 0; max-width: 110ch; }
       <button class="go od-fixed" id="go" type="button">分析</button>
     </div>
     <nav class="nav od-row od-fixed" aria-label="其他页面">
+      <a href="backtest.html">回测</a>
       <a href="lab/dashboard.html">研究仪表盘</a>
       <a href="lab/guide.html">用户指南</a>
     </nav>
@@ -305,6 +306,7 @@ footer p { margin: 0; max-width: 110ch; }
     <span class="mode od-fixed" id="mode" hidden></span>
     <div class="tg od-cluster od-fill" id="toggles" role="group" aria-label="图层开关">
       <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>情景区间</button>
+      <button class="tgb" type="button" data-k="hist" aria-pressed="true"><i class="sw-top" style="opacity:.5"></i>历史情景区间</button>
       <button class="tgb" type="button" data-k="vol" aria-pressed="true"><i class="sw-vol"></i>成交量</button>
     </div>
   </div>
@@ -446,7 +448,28 @@ window.CP = { dateAt(bars, idx) {
         sigma: n ? Math.sqrt(Math.max(0, s2 / n - (s1 / n) ** 2)) : NaN },
       replay: null, tape: [], phase: { k: '' } };
   }
-  async function getAnalysis(code, asof, onProg) { onProg && onProg('读取后端数据', 0.5); return toView(await LPPL.load(code, asof)); }
+  async function getAnalysis(code, asof, onProg) {
+    onProg && onProg('读取后端数据', 0.5);
+    const D = await LPPL.load(code, asof), R = toView(D);
+    const H = await LPPL.history(D.sym.sym).catch(() => null);
+    R.hist = H ? histView(H, R) : null;
+    return R;
+  }
+  /* 历史情景区间：只取截止日及之前的帧；事后标签顶只在确认期（126 交易日）结束于截止日之前时显示 */
+  function histView(H, R) {
+    const b = R.bars, first = b[0].date, frames = [], tops = [];
+    for (const f of H.frames) {
+      const w = f.w['6-12m'];
+      if (!w || f.asof < first || f.asof > R.asof) continue;
+      frames.push({ i: idxOf(b, f.asof), lo: idxOf(b, w[0]), hi: idxOf(b, w[1]), asof: f.asof, split: f.split, w });
+    }
+    for (const t of H.tops) {
+      if (t.date < first) continue;
+      const i = idxOf(b, t.date);
+      if (i + 126 <= R.T) tops.push({ i, date: t.date, dd: t.max_dd });
+    }
+    return { frames, tops, rule: H.rule, evidence: H.evidence, last: H.frames.length ? H.frames[H.frames.length - 1].asof : '' };
+  }
   const EV = (c) => LPPL.ev(c, cur && cur.J.evidence_levels);
   const evb = (c) => '<small class="evb" style="color:var(--ink-3)">［' + E(EV(c).label) + '］</small>';
   const SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
@@ -459,7 +482,7 @@ window.CP = { dateAt(bars, idx) {
   const CH = (function () {
     const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('chartwrap');
     const st = { R: null, a: 0, b: 100, maxI: 100, hover: -1, my: -1, ghost: -1, cross: true, W: 0, H: 0, dpr: 1, drag: null,
-      show: { top: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
+      show: { top: true, hist: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
     let col = {}, fm = 'monospace', fu = 'sans-serif', onHover = () => {};
     function readCol() {
       const s = getComputedStyle(document.documentElement), g = (n) => s.getPropertyValue(n).trim();
@@ -582,6 +605,21 @@ window.CP = { dateAt(bars, idx) {
 
       // ---- 主图叠加层 ----
       ctx.save(); ctx.beginPath(); ctx.rect(0, pt, g.W, pb - pt); ctx.clip();
+      if (st.show.hist && R.hist) {
+        for (const f of R.hist.frames) {
+          if (!vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))) continue;
+          const y = Math.round(Y(R.bars[Math.min(f.i, R.bars.length - 1)].close)) + 0.5, xa = X(f.lo), xb = X(f.hi + 1);
+          ctx.strokeStyle = rgba(col.warn, 0.18); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(f.i), y); ctx.lineTo(xa, y); ctx.stroke();
+          ctx.strokeStyle = rgba(col.warn, 0.55); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(Math.max(xa + 2, xb), y); ctx.stroke();
+        }
+        ctx.lineWidth = 1;
+        for (const t of R.hist.tops) {
+          if (!vis(t.i, t.i)) continue;
+          const x = X(t.i) + 0.5, y = Y(R.bars[t.i].high) - 6;
+          ctx.fillStyle = col.real; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 8); ctx.lineTo(x + 5, y - 8); ctx.closePath(); ctx.fill();
+          tag('事后确认顶 ' + U.pct(t.dd, 0), x, Math.max(pt + 10, y - 18), '#0D0D0D', col.real, 'center');
+        }
+      }
       if (st.show.top && rm.altW && vis(rm.altW.lo, rm.altW.hi)) {
         ctx.fillStyle = rgba(col.warn, 0.05); ctx.fillRect(X(rm.altW.lo), pt, Math.max(2, X(rm.altW.hi + 1) - X(rm.altW.lo)), pb - pt);
       }
@@ -872,7 +910,7 @@ window.CP = { dateAt(bars, idx) {
     cursor(-1);
 
     $('note').innerHTML = (R.latest ? '' : '<b>回放模式</b>：只用了 ' + E(R.asof) + ' 及之前的数据和当时已公布的 PE。<br>') +
-      '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
+      (R.hist ? '历史情景区间：本图内 ' + R.hist.frames.length + ' 个周度截止日的 6–12 月档区间（横线从截止日指向区间；证据等级 dev_only，只示区间' + (R.hist.last ? '，数据到 ' + E(R.hist.last) : '') + '）；蓝色三角是事后确认的顶（PS 标签，126 日内回撤 ≥15%）。<br>' : '') + '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
 
     renderReplay(R);
     renderBench(R);

@@ -70,5 +70,6 @@
   }
 
   const catalog = () => getJSON('catalog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog };
+  const history = (sym) => getJSON(sym + '_history.json');
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history };
 })(window);
