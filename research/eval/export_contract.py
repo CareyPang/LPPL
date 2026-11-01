@@ -383,6 +383,7 @@ def movie(sym: str, a: str, b: str) -> list[dict]:
 def history(sym: str) -> dict:
     """Split-tagged, point-in-time scenario windows from the three frozen scan sources."""
     logp = price_series(sym)
+    close = _close(pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"), logp.index)
     pos = pd.Series(np.arange(len(logp)), index=logp.index)
     lp = logp.to_numpy()
     scans = []
@@ -432,6 +433,7 @@ def history(sym: str) -> dict:
         frames.append({
             "asof": str(date.date()),
             "split": str(split_values[0]),
+            "close": round(float(close.loc[date]), 2),
             "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
             "w": windows,
         })

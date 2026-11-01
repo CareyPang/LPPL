@@ -29,7 +29,8 @@ def test_history_contract_and_replay_window_consistency():
     assert tops == sorted(tops)
 
     frame_2015 = next((frame for frame in frames if frame["asof"] == "2015-06-12"), None)
-    if frame_2015 is not None:
-        replay = json.loads(Path("web/mock/data/sh000001_2015-06-12.json").read_text(encoding="utf-8"))
-        scale_window = next(window for window in replay["top"]["scale_windows"] if window["scale"] == "6-12m")
-        assert frame_2015["w"]["6-12m"] == [scale_window["q20_date"], scale_window["q80_date"]]
+    assert frame_2015 is not None
+    replay = json.loads(Path("web/mock/data/sh000001_2015-06-12.json").read_text(encoding="utf-8"))
+    scale_window = next(window for window in replay["top"]["scale_windows"] if window["scale"] == "6-12m")
+    assert frame_2015["w"]["6-12m"] == [scale_window["q20_date"], scale_window["q80_date"]]
+    assert frame_2015["close"] == round(replay["price_history"]["close"][-1], 2)
