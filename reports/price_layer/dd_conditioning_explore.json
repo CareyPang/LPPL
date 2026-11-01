@@ -1,0 +1,660 @@
+{
+ "events": [
+  {
+   "feat": "lrun",
+   "group": "all",
+   "n": 58,
+   "n_top_months": 36,
+   "spearman": -0.492,
+   "p_naive": 0.0
+  },
+  {
+   "feat": "lrun",
+   "group": "A",
+   "n": 28,
+   "n_top_months": 14,
+   "spearman": -0.748,
+   "p_naive": 0.0
+  },
+  {
+   "feat": "ret500",
+   "group": "all",
+   "n": 57,
+   "n_top_months": 36,
+   "spearman": -0.552,
+   "p_naive": 0.0
+  },
+  {
+   "feat": "ret500",
+   "group": "A",
+   "n": 28,
+   "n_top_months": 14,
+   "spearman": -0.655,
+   "p_naive": 0.0
+  },
+  {
+   "feat": "accel",
+   "group": "all",
+   "n": 57,
+   "n_top_months": 36,
+   "spearman": -0.581,
+   "p_naive": 0.0
+  },
+  {
+   "feat": "accel",
+   "group": "A",
+   "n": 28,
+   "n_top_months": 14,
+   "spearman": -0.757,
+   "p_naive": 0.0
+  },
+  {
+   "feat": "dvol",
+   "group": "all",
+   "n": 57,
+   "n_top_months": 36,
+   "spearman": -0.385,
+   "p_naive": 0.003
+  },
+  {
+   "feat": "dvol",
+   "group": "A",
+   "n": 28,
+   "n_top_months": 14,
+   "spearman": -0.316,
+   "p_naive": 0.102
+  },
+  {
+   "feat": "pe_pct",
+   "group": "all",
+   "n": 16,
+   "n_top_months": 9,
+   "spearman": -0.572,
+   "p_naive": 0.02
+  },
+  {
+   "feat": "pe_pct",
+   "group": "A",
+   "n": 16,
+   "n_top_months": 9,
+   "spearman": -0.572,
+   "p_naive": 0.02
+  },
+  {
+   "feat": "margin_yoy",
+   "group": "all",
+   "n": 19,
+   "n_top_months": 11,
+   "spearman": -0.6,
+   "p_naive": 0.007
+  },
+  {
+   "feat": "margin_yoy",
+   "group": "A",
+   "n": 13,
+   "n_top_months": 6,
+   "spearman": -0.61,
+   "p_naive": 0.027
+  }
+ ],
+ "panel": [
+  {
+   "sample": "A股6指数",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 0.979,
+   "n_oos": 6101,
+   "years": "1997–2025",
+   "n_years": 29
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 0.872,
+   "n_oos": 6101,
+   "years": "1997–2025",
+   "n_years": 29
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 0.992,
+   "n_oos": 6101,
+   "years": "1997–2025",
+   "n_years": 29
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 0.915,
+   "n_oos": 6101,
+   "years": "1997–2025",
+   "n_years": 29
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.007,
+   "n_oos": 6253,
+   "years": "1997–2025",
+   "n_years": 29
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.006,
+   "n_oos": 6253,
+   "years": "1997–2025",
+   "n_years": 29
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "pe_pct",
+   "tau": 0.5,
+   "ratio": 1.089,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "pe_pct",
+   "tau": 0.2,
+   "ratio": 1.064,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "margin_yoy",
+   "tau": 0.5,
+   "ratio": 1.044,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股6指数",
+   "feat": "margin_yoy",
+   "tau": 0.2,
+   "ratio": 1.064,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 1.018,
+   "n_oos": 7798,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 1.029,
+   "n_oos": 7798,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 1.009,
+   "n_oos": 7798,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 1.004,
+   "n_oos": 7798,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.004,
+   "n_oos": 7874,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.004,
+   "n_oos": 7874,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "margin_yoy",
+   "tau": 0.5,
+   "ratio": 1.139,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "外部4指数",
+   "feat": "margin_yoy",
+   "tau": 0.2,
+   "ratio": 1.449,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "全部",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 1.013,
+   "n_oos": 14169,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "全部",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 0.992,
+   "n_oos": 14169,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "全部",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 1.009,
+   "n_oos": 14169,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "全部",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 0.991,
+   "n_oos": 14169,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "全部",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.003,
+   "n_oos": 14473,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "全部",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.006,
+   "n_oos": 14473,
+   "years": "1985–2025",
+   "n_years": 41
+  },
+  {
+   "sample": "全部",
+   "feat": "pe_pct",
+   "tau": 0.5,
+   "ratio": 1.089,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "全部",
+   "feat": "pe_pct",
+   "tau": 0.2,
+   "ratio": 1.064,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "全部",
+   "feat": "margin_yoy",
+   "tau": 0.5,
+   "ratio": 1.056,
+   "n_oos": 6614,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "全部",
+   "feat": "margin_yoy",
+   "tau": 0.2,
+   "ratio": 1.251,
+   "n_oos": 6614,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 1.045,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 0.85,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 0.991,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 0.999,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.083,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.124,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "pe_pct",
+   "tau": 0.5,
+   "ratio": 1.089,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(PE可用)",
+   "feat": "pe_pct",
+   "tau": 0.2,
+   "ratio": 1.064,
+   "n_oos": 3382,
+   "years": "2007–2025",
+   "n_years": 19
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 0.965,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 0.904,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 1.137,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 0.944,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.215,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.248,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "margin_yoy",
+   "tau": 0.5,
+   "ratio": 1.061,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(两融可用)",
+   "feat": "margin_yoy",
+   "tau": 0.2,
+   "ratio": 1.06,
+   "n_oos": 3140,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 0.955,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 0.926,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 1.097,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 0.87,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.203,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.238,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "pe_pct",
+   "tau": 0.5,
+   "ratio": 1.022,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "pe_pct",
+   "tau": 0.2,
+   "ratio": 1.11,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "margin_yoy",
+   "tau": 0.5,
+   "ratio": 1.038,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "A股匹配样本(PE+两融可用)",
+   "feat": "margin_yoy",
+   "tau": 0.2,
+   "ratio": 1.039,
+   "n_oos": 2093,
+   "years": "2015–2025",
+   "n_years": 11
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "ret500",
+   "tau": 0.5,
+   "ratio": 1.223,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "ret500",
+   "tau": 0.2,
+   "ratio": 1.478,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "accel",
+   "tau": 0.5,
+   "ratio": 1.056,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "accel",
+   "tau": 0.2,
+   "ratio": 1.014,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "dvol",
+   "tau": 0.5,
+   "ratio": 1.05,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "dvol",
+   "tau": 0.2,
+   "ratio": 1.137,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "margin_yoy",
+   "tau": 0.5,
+   "ratio": 1.139,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  },
+  {
+   "sample": "美股共同样本(FINRA 1998+)",
+   "feat": "margin_yoy",
+   "tau": 0.2,
+   "ratio": 1.449,
+   "n_oos": 2398,
+   "years": "2002–2025",
+   "n_years": 24
+  }
+ ]
+}
