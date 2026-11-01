@@ -1,17 +1,17 @@
 # 前端数据契约（Open Design 交接）
 
-目的：外部前端（Open Design，目录 `frontend/`）只通过本文列出的静态 JSON 与后端对接。后端不提供 API 服务（规划 2027-H2），所有数据是 `web/mock/data/` 下的静态文件，GitHub Pages 同步发布于 `https://careypang.github.io/LPPL/mock/data/…`。字段含义以 `docs/product_contract.md` 和 `research/eval/export_contract.py` 为准，本文只是索引；字段改名放在前端适配层，后端 JSON 不为前端改名。
+目的：外部前端（Open Design，目录 `frontend/`）只通过本文列出的静态 JSON 与后端对接。后端不提供 API 服务（规划 2027-H2），仓库数据源位于 `web/mock/data/`，GitHub Pages 发布路径为 `lab/mock/data/`（例如 `https://careypang.github.io/LPPL/lab/mock/data/…`）。字段含义以 `docs/product_contract.md` 和 `research/eval/export_contract.py` 为准，本文只是索引；字段改名放在前端适配层，后端 JSON 不为前端改名。
 
 ## 1. 文件清单
 
 | 路径（相对站点根） | 内容 | 生成者 | 更新 |
 |---|---|---|---|
-| `mock/data/<sym>_latest.json` | 单指数最新契约（6 个：sh000001 上证、sh000016 上证50、sh000300 沪深300、sh000905 中证500、sz399001 深证成指、sz399006 创业板指） | `research/pipeline/daily.py` → `build_record` | 日更（`scripts/daily_update.sh`） |
-| `mock/data/sh000001_<date>.json` | 开发段回放（2007-10-12、2015-06-12），同结构，多一个 `movie` 帧数组 | `research/eval/export_contract.py` | 不更新 |
-| `mock/data/price_layer/drawdown_table.json` | P1 全样本情景表（报告用；页面**不要**直接读它，读记录内的 `top.drawdown_price`） | `research/price_layer/drawdown_table.py` | 随冻结数据重生成 |
-| `mock/data/catalog.json`、`stock_names.json` | 资产目录（316 标的：代码、名称、交易所、板块、所属指数） | 日更脚本 | 日更 |
-| `mock/data/universe_*.json` | 指数成分（当前 / 历史 PIT） | 日更脚本 | 日更 |
-| `mock/guide.md` | 用户指南副本（教育页渲染） | `docs/user_guide.md` 复制，CI 校验一致 | 随文档 |
+| `lab/mock/data/<sym>_latest.json` | 单指数最新契约（6 个：sh000001 上证、sh000016 上证50、sh000300 沪深300、sh000905 中证500、sz399001 深证成指、sz399006 创业板指） | `research/pipeline/daily.py` → `build_record` | 日更（`scripts/daily_update.sh`） |
+| `lab/mock/data/sh000001_<date>.json` | 开发段回放（2007-10-12、2015-06-12），同结构，多一个 `movie` 帧数组 | `research/eval/export_contract.py` | 不更新 |
+| `lab/mock/data/price_layer/drawdown_table.json` | P1 全样本情景表（报告用；页面**不要**直接读它，读记录内的 `top.drawdown_price`） | `research/price_layer/drawdown_table.py` | 随冻结数据重生成 |
+| `lab/mock/data/catalog.json`、`stock_names.json` | 资产目录（316 标的：代码、名称、交易所、板块、所属指数） | 日更脚本 | 日更 |
+| `lab/mock/data/universe_*.json` | 指数成分（当前 / 历史 PIT） | 日更脚本 | 日更 |
+| `lab/mock/guide.md` | 用户指南副本（教育页渲染） | `docs/user_guide.md` 复制，CI 校验一致 | 随文档 |
 | `forward_log/` | 前瞻日志（append-only，只读） | `research/pipeline/forward_log.py` | 日更 |
 
 ## 2. 记录结构 `<sym>_latest.json`
@@ -80,6 +80,6 @@
 ## 5. 适配层约定
 
 - 外部前端代码放 `frontend/`，只改该目录；后端只改 `research/`、`web/mock/data/`、`docs/`。
-- 前端所有数据访问经一个适配模块（如 `frontend/app/api.js` 的"静态模式"）：`loadSymbol(sym)` → `mock/data/<sym>_latest.json`，`loadReplay(sym, date)`，`loadCatalog()`；页面组件不直接 fetch 路径。
+- 前端所有数据访问经 `frontend/app/lppl-data.js`：`loadSymbol(sym)`、`loadPriceLayer()`、`loadCatalog()` 从 `lab/mock/data/` 的静态 JSON 加载；页面组件不得直接 fetch 路径。
 - 后端字段改动先改 `docs/product_contract.md` 与本文，再改 JSON；前端字段改名在适配层做。
 - 示例：`web/mock/data/sh000001_latest.json`（最新）、`sh000001_2015-06-12.json`（回放，含 movie）。
