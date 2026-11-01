@@ -61,8 +61,12 @@
     <div class="legend">证据等级：开发段 = 2000–2018 CPCV 通过；校准段 = 2019–2021 固定校准后仍成立；最终测试 = 2022–2025 一次性测试通过；无证据 = 预登记检验未通过，只做描述不做预测。</div>
   </div>
 
-  <div class="card" id="bottomcard"><h2>底部（描述性，不预测起涨时间）<span class="badge b-none">无证据</span></h2><table><tbody id="bottom"></tbody></table>
+  <div class="card" id="bottomcard"><h2>B 底部价格层（描述性与规则状态）</h2>
+    <div class="row"><div class="kv" id="bottom-cheap"></div><div class="kv" id="bottom-confirm"></div></div>
+    <table><tbody id="bottom"></tbody></table>
     <div class="legend">LPPLS 负泡沫 / 反泡沫在开发段与校准段均无预测证据；底部概率链（B1/B2/B3）三段均未通过，不显示概率。</div></div>
+  <div class="card" id="reboundcard"><h2>W 历史反弹 <span id="rebound-badge"></span></h2><div id="rebound"></div>
+    <div class="legend">历史分位，不是预测；恢复比例可以超过 100%。</div></div>
   <div class="card">
     <h2>历史验证（样本外汇总，不是单案例）</h2>
     <table>
@@ -133,8 +137,38 @@ function render(D){
     $('valid').closest('table').parentNode.insertBefore(mv, $('valid').closest('table'));
   }
   $('valid').innerHTML = D.validation.map(v => `<tr><td>${v.split}</td><td>${v.events ?? '—'}</td>${v.hit != null ? `<td>${pct(v.hit)}</td><td>${pct(v.false_alarm)}</td><td>${v.brier ?? '—'}</td>` : `<td colspan="3" class="muted">${v.status === 'pending_cal' ? '未运行（等待授权）' : '锁定后只运行一次'}</td>`}<td>${badge(v.status || 'none')}</td></tr>`).join('');
-  const BT = D.bottom || {};
-  $('bottom').innerHTML = Object.entries(BT).map(([k,v]) => `<tr><td style="width:28%">${k}</td><td>${typeof v === 'object' && v !== null ? (v.value ?? v.state ?? v.rule ?? JSON.stringify(v)) : v}${v && v.note ? `<div class="sub muted">${v.note}</div>` : ''}</td><td style="width:22%">${badge(v && v.evidence ? v.evidence : 'none')}</td></tr>`).join('') || '<tr><td class="muted">无字段</td></tr>';
+  const BT = D.bottom || {}, C = BT.cheap || {}, CF = BT.confirm || {}, W = BT.rebound || {};
+  const pct1 = x => x == null ? '—' : `${(x * 100).toFixed(1)}%`;
+  const money = x => x == null ? '—' : Number(x).toFixed(2);
+  const num3 = x => x == null ? '—' : Number(x).toFixed(3);
+  const quant = (q, format) => q ? [q.q20, q.q50, q.q80].map(format).join(' / ') : '—';
+  const rank = C.dd_rank || {}, rankAll = rank.all || {}, pe = C.pe_pct || {};
+  $('bottom-cheap').innerHTML = `<div class="sub">便宜度（价格与估值描述）${badge(C.evidence || 'none')}</div>` +
+    `<div>近 500 日高点回撤 <b>${pct1(C.dd_now)}</b> <span class="sub muted">as-of 事实</span></div>` +
+    `<div class="sub muted">近 500 日高点 ${money(C.peak_close)}（${C.peak_date || '—'}）</div>` +
+    `<div>已确认顶→谷中，比当前回撤浅 <b>${pct1(rankAll.pct)}</b> <span class="sub muted">n=${rankAll.n ?? 0}；历史分位，不是预测</span></div>` +
+    (rank.a_share ? `<div>A 股比当前回撤浅 <b>${pct1(rank.a_share.pct)}</b> <span class="sub muted">n=${rank.a_share.n}；历史分位，不是预测</span></div>` : '<div class="sub muted">A 股历史样本 n&lt;5，不显示分位</div>') +
+    `<div>PE 分位 <b>${pct1(pe.value)}</b> <span class="sub muted">n=${pe.n_months ?? 0}；历史分位，不是预测${pe.pe_date ? `；PE 月份 ${pe.pe_date}` : ''}</span></div>` +
+    (pe.note ? `<div class="sub muted">${pe.note}</div>` : '') +
+    `<div class="sub muted">估值地板带引用：${C.floor_ref || 'top.drawdown_price.valuation_floor'}（不重复计算）</div>` +
+    `<div class="sub muted">${C.note || rank.note || ''}</div>`;
+  const confirmFacts = CF.state === 'bear'
+    ? `熊市状态 · 最近确认高点 ${CF.peak_date || '—'}（${money(CF.peak_close)}）· 当前低点 ${CF.ref_date || '—'}（${money(CF.ref_close)}）<br>从低点反弹 ${pct1(CF.rebound_from_low)} / 规则阈值 ${pct1(CF.threshold)}`
+    : `${CF.state === 'bull' ? '牛市状态' : '状态未计算'} · 当前参考 ${CF.ref_date || '—'}（${money(CF.ref_close)}）` +
+      (CF.last_trough_date ? `<br>最近确认低点 ${CF.last_trough_date}（${money(CF.last_trough_close)}）· 确认日 ${CF.confirmed_date || '—'}` : '<br>尚无已确认熊市低点');
+  $('bottom-confirm').innerHTML = `<div class="sub">LT 规则状态 ${badge(CF.evidence || 'none')}</div><div>${confirmFacts}</div>` +
+    `<div class="sub muted">规则状态，滞后确认，不是预测。${CF.rule || ''}</div>`;
+  $('rebound-badge').innerHTML = badge(W.evidence || 'none');
+  $('rebound').innerHTML = W.evidence === 'none' ? '<div class="sub muted">无完整历史事件</div>' :
+    `<div>恢复比例 20/50/80 分位：<b>${W.recovery ? [pct1(W.recovery.q20), pct1(W.recovery.q50), pct1(W.recovery.q80)].join(' / ') : '—'}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测</span></div>` +
+    `<div>谷至高点交易日 20/50/80 分位：<b>${W.days_to_high ? [W.days_to_high.q20, W.days_to_high.q50, W.days_to_high.q80].join(' / ') : '—'}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测</span></div>` +
+    `<div>对数恢复比例 q20/q50/q80：<b>${quant(W.recovery_log, num3)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测${W.a_share ? `；A 股 ${quant(W.a_share.recovery_log, num3)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
+    `<div>谷后反弹收益 q20/q50/q80：<b>${quant(W.rebound_ret, pct1)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测${W.a_share ? `；A 股 ${quant(W.a_share.rebound_ret, pct1)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
+    `<div>250 日内回前高占比：<b>${pct1(W.back_to_peak_share)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测${W.a_share ? `；A 股 ${pct1(W.a_share.back_to_peak_share)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
+    (W.a_share ? `<div>A 股恢复比例 20/50/80 分位：<b>${[pct1(W.a_share.recovery.q20), pct1(W.a_share.recovery.q50), pct1(W.a_share.recovery.q80)].join(' / ')}</b> <span class="sub muted">n=${W.a_share.n}；历史分位，不是预测</span></div><div>A 股谷至高点交易日 20/50/80 分位：<b>${[W.a_share.days_to_high.q20, W.a_share.days_to_high.q50, W.a_share.days_to_high.q80].join(' / ')}</b> <span class="sub muted">n=${W.a_share.n}；历史分位，不是预测</span></div>` : '<div class="sub muted">A 股历史样本 n&lt;5，不显示分位</div>') +
+    (W.current ? `<div>当前事件：${W.current.peak_date} → ${W.current.trough_date}，价格恢复 <b>${pct1(W.current.recovery_now)}</b>，对数恢复 ${num3(W.current.recovery_log_now)}，反弹收益 ${pct1(W.current.rebound_ret_now)}，已过 ${W.current.days_since_trough} 个交易日；历史价格恢复分位 <b>${pct1(W.current.rank_pct)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测</span></div>` : '');
+  const legacyBottom = Object.entries(BT).filter(([k]) => !['cheap', 'confirm', 'rebound'].includes(k));
+  $('bottom').innerHTML = legacyBottom.map(([k,v]) => `<tr><td style="width:28%">${k}</td><td>${typeof v === 'object' && v !== null ? (v.value ?? '—') : v}${v && v.note ? `<div class="sub muted">${v.note}</div>` : ''}</td><td style="width:22%">${badge(v && v.evidence ? v.evidence : 'none')}</td></tr>`).join('') || '<tr><td class="muted">无字段</td></tr>';
 }
 const COLORS = ['#f85149','#d29922','#3fb950','#58a6ff','#bc8cff','#f778ba','#79c0ff','#ffa657','#7ee787'];
 const COMBO = {p: 0.1, set: 'standard'};

@@ -33,13 +33,39 @@
   "bottom": {
     "state_p": {"value": 0.31, "evidence": "dev", "notes": ["B1 回撤深度在留出年/分层下稳健"]},
     "thrust_p": {"value": 0.12, "evidence": "dev", "notes": ["宽度确认；未做完整留出年"]},
-    "entry_rule": {"value": null, "evidence": "none", "fallback": "波动率目标加仓节奏"}
+    "entry_rule": {"value": null, "evidence": "none", "fallback": "波动率目标加仓节奏"},
+    "cheap": {
+      "evidence": "descriptive", "dd_now": 0.0, "peak_date": "2015-06-12", "peak_close": 5166.35,
+      "dd_rank": {"all": {"pct": 0.0, "n": 30}, "a_share": {"pct": 0.0, "n": 12}, "note": "历史 30 次顶→谷回撤中，0% 比当前回撤浅（历史分位，不是预测）"},
+      "pe_pct": {"value": 0.708, "n_months": 120, "pe_date": "2015-04-30"},
+      "floor_ref": "top.drawdown_price.valuation_floor"
+    },
+    "confirm": {
+      "evidence": "rule", "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认，不是预测）",
+      "state": "bull", "ref_date": "2015-06-12", "ref_close": 5166.35, "threshold": 0.15, "confirmed": true,
+      "last_trough_date": "2012-12-03", "last_trough_close": 1959.77, "confirmed_date": "2012-12-31"
+    },
+    "rebound": {
+      "evidence": "descriptive", "n": 150, "recovery": {"q20": 0.483, "q50": 0.82, "q80": 1.628},
+      "recovery_log": {"q20": 0.525, "q50": 0.85, "q80": 1.482},
+      "rebound_ret": {"q20": 0.229, "q50": 0.351, "q80": 0.742},
+      "back_to_peak_share": 0.42, "days_to_high": {"q20": 33.0, "q50": 110.5, "q80": 235.8},
+      "a_share": {
+        "n": 86, "recovery": {"q20": 0.47, "q50": 0.879, "q80": 1.892},
+        "recovery_log": {"q20": 0.511, "q50": 0.901, "q80": 1.669},
+        "rebound_ret": {"q20": 0.241, "q50": 0.382, "q80": 0.913},
+        "back_to_peak_share": 0.442, "days_to_high": {"q20": 31.0, "q50": 83.0, "q80": 216.0}
+      },
+      "current": null, "note": "历史分位，不是预测"
+    }
   },
   "evidence_levels": {"dev": "开发段 2000–2018 CPCV 通过", "cal": "校准段 2019–2021 固定校准后成立", "test": "最终测试 2022–2025.08 一次性通过", "none": "预登记检验未通过，仅描述", "rule": "执行规则，非预测", "dev_pending": "开发段评估进行中", "descriptive": "描述已完成月份的状态，非预测"}
 }
 ```
 
 `price_history` 是截至 `asof` 的 OHLCV 序列：`dates`、`open`、`high`、`low`、`close`、`volume` 为等长数组；OHLC 保留 3 位小数，`volume` 为整数或源数据缺失时为 `null`。所有日期均不晚于记录的 `asof`。
+
+`bottom.cheap`、`bottom.confirm`、`bottom.rebound` 是价格层描述量，均按记录自己的 `asof` 截断；它们不调用模型、不作预测，也不提供目标价。`cheap.dd_rank` 只比较当时已确认的 P1 顶→谷事件；PE 分位取满足 1 个月发布滞后的最近 120 个月，至少需要 36 个月。`confirm` 是 LT 规则状态，显示时标注“规则状态，滞后确认，不是预测”。`rebound` 使用 LT 顶→谷对和谷后完整 250 个交易日窗口，价格恢复比例是主指标；`recovery_log` 和 `rebound_ret` 是辅助描述量，`back_to_peak_share` 是样本比例。当前事件的排名始终基于价格恢复比例。所有描述性数字必须同时显示样本数 `n` 与“历史分位，不是预测”。估值地板只通过 `floor_ref` 指向 `top.drawdown_price.valuation_floor`，不得复制或重算。
 
 约束：
 1. `asof` 之后的数据不得参与任何字段；前端显示 as-of 与数据冻结版本。

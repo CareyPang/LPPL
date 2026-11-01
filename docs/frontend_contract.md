@@ -9,6 +9,7 @@
 | `lab/mock/data/<sym>_latest.json` | 单指数最新契约（6 个：sh000001 上证、sh000016 上证50、sh000300 沪深300、sh000905 中证500、sz399001 深证成指、sz399006 创业板指） | `research/pipeline/daily.py` → `build_record` | 日更（`scripts/daily_update.sh`） |
 | `lab/mock/data/sh000001_<date>.json` | 开发段回放（2007-10-12、2015-06-12），同结构，多一个 `movie` 帧数组 | `research/eval/export_contract.py` | 不更新 |
 | `lab/mock/data/price_layer/drawdown_table.json` | P1 全样本情景表（报告用；页面**不要**直接读它，读记录内的 `top.drawdown_price`） | `research/price_layer/drawdown_table.py` | 随冻结数据重生成 |
+| `lab/mock/data/price_layer/rebound_table.json` | LT 顶→谷后 250 日恢复事件与分位汇总 | `research/price_layer/bottom_cards.py` | 随冻结价格数据重生成 |
 | `lab/mock/data/catalog.json`、`stock_names.json` | 资产目录（316 标的：代码、名称、交易所、板块、所属指数） | 日更脚本 | 日更 |
 | `lab/mock/data/universe_*.json` | 指数成分（当前 / 历史 PIT） | 日更脚本 | 日更 |
 | `lab/mock/guide.md` | 用户指南副本（教育页渲染） | `docs/user_guide.md` 复制，CI 校验一致 | 随文档 |
@@ -63,6 +64,16 @@
 | `a_share` | A 股单独分位；A 股 n<5 为 null → 显示"n<5 不显示" |
 | `table.all / by_run_up / by_duration / by_run_up_x_duration` | 整张桶表（每格 `n, n_a, max_dd, days_to_trough, a_share`），供画表 |
 | `valuation_floor` | 估值地板：`n`（底部样本）、`trough_pe{q20,q50,q80}`、`pe_latest`、`pe_date`（as-of 可用、1 个月发布滞后）、`close_ref`、`close_date`、`floor_band_points[q20,q50]`、`band_points`、`rule`；`evidence=none` + `note` 表示不给（深证、创业板：PE 口径与价格指数不一致；底部样本 <3） |
+
+`bottom` 价格层对象（均只使用不晚于记录 `asof` 的数据；不含模型、预测或目标价）：
+
+| 路径 | 含义与显示规则 |
+|---|---|
+| `bottom.cheap` | `evidence=descriptive`。`dd_now` 为当前收盘相对近 500 个交易日最高收盘的回撤，`peak_date`/`peak_close` 标记该高点；`dd_rank.all{pct,n}` 为截至 as-of 的 P1 已确认顶→谷事件中，回撤比当前更浅的比例与样本数；`a_share{pct,n}` 在 A 股样本 `n<5` 时为 null。`pe_pct{value,n_months,pe_date}` 为最近 120 个月中、按 1 个月发布滞后可用 PE 的经验分位（至少 36 个月）；口径不一致的指数给 null 和说明。`floor_ref` 指向 `top.drawdown_price.valuation_floor`，不复制地板带。数字旁必须显示对应 `n` 和“历史分位，不是预测”。 |
+| `bottom.confirm` | `evidence=rule`。LT 状态机：`state`、参考日/收盘；熊市附 `peak_date`、`peak_close`、`rebound_from_low`、`threshold`、`confirmed=false`；已有确认熊市低点的牛市附 `last_trough_date`、`last_trough_close`、`confirmed_date`、`confirmed=true`。状态与反弹/阈值只能作为事实，标注“规则状态，滞后确认，不是预测”。 |
+| `bottom.rebound` | `evidence=descriptive`（`n=0` 时为 `none`）。每个 LT 顶→谷事件按谷后完整 250 个交易日窗口计算：`recovery=(close_H-close_T)/(close_P-close_T)` 为主指标，可超过 1；另有 `recovery_log=ln(close_H/close_T)/ln(close_P/close_T)`、`rebound_ret=close_H/close_T-1`、`back_to_peak`（窗口最高收盘是否达到顶价）和 `days_to_peak`（首次达到顶价的交易日数，未达到为 null）。分布含 `recovery{q20,q50,q80}`、`recovery_log{q20,q50,q80}`、`rebound_ret{q20,q50,q80}`、`back_to_peak_share`（比例）及 `days_to_high{q20,q50,q80}`；`a_share` 同结构，样本 `n<5` 时为 null。符合条件时 `current` 含 `recovery_now`、`recovery_log_now`、`rebound_ret_now` 等值，`rank_pct` 始终按价格恢复比例计算。所有描述性数字旁必须显示对应 `n` 和“历史分位，不是预测”。 |
+
+口径：主指标为价格回撤比例（技术分析 retracement 约定，ESWA 2021 / Shanaev–Gibson 2022；无预测力证据，ESWA 2021 三市场 Fibonacci 位与随机位无差异）；对数比例与反弹涨幅对应学术常用对数收益口径（MMS 2012、Goetzmann–Kim 2018、Bec et al. 2015 反弹与深度成正比）；回前高比例对应 Patel–Sarkar 1998 恢复定义。
 
 ## 3. 证据等级与显示规则
 

@@ -5412,6 +5412,93 @@
    "value": null,
    "evidence": "none",
    "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
+  },
+  "cheap": {
+   "evidence": "descriptive",
+   "dd_now": -0.1517,
+   "peak_date": "2026-05-13",
+   "peak_close": 4242.57,
+   "dd_rank": {
+    "all": {
+     "pct": 0.0,
+     "n": 58
+    },
+    "a_share": {
+     "pct": 0.0,
+     "n": 28
+    },
+    "note": "历史 58 次顶→谷回撤中，0% 比当前回撤浅（历史分位，不是预测）"
+   },
+   "pe_pct": {
+    "value": 0.817,
+    "n_months": 120,
+    "pe_date": "2026-09-30"
+   },
+   "floor_ref": "top.drawdown_price.valuation_floor",
+   "note": "价格与估值均为 as-of 描述；历史分位，不是预测"
+  },
+  "confirm": {
+   "evidence": "rule",
+   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认，不是预测）",
+   "state": "bull",
+   "ref_date": "2026-05-13",
+   "ref_close": 4242.57,
+   "threshold": 0.15,
+   "confirmed": true,
+   "last_trough_date": "2024-02-05",
+   "last_trough_close": 2702.19,
+   "confirmed_date": "2024-04-29"
+  },
+  "rebound": {
+   "evidence": "descriptive",
+   "n": 215,
+   "recovery": {
+    "q20": 0.491,
+    "q50": 0.816,
+    "q80": 1.581
+   },
+   "recovery_log": {
+    "q20": 0.534,
+    "q50": 0.849,
+    "q80": 1.474
+   },
+   "rebound_ret": {
+    "q20": 0.229,
+    "q50": 0.342,
+    "q80": 0.665
+   },
+   "back_to_peak_share": 0.391,
+   "days_to_high": {
+    "q20": 43.8,
+    "q50": 131.0,
+    "q80": 235.4
+   },
+   "a_share": {
+    "n": 132,
+    "recovery": {
+     "q20": 0.453,
+     "q50": 0.83,
+     "q80": 1.653
+    },
+    "recovery_log": {
+     "q20": 0.512,
+     "q50": 0.852,
+     "q80": 1.498
+    },
+    "rebound_ret": {
+     "q20": 0.236,
+     "q50": 0.336,
+     "q80": 0.718
+    },
+    "back_to_peak_share": 0.364,
+    "days_to_high": {
+     "q20": 32.2,
+     "q50": 83.0,
+     "q80": 214.4
+    }
+   },
+   "current": null,
+   "note": "历史分位，不是预测"
   }
  },
  "validation": [
