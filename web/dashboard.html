@@ -113,11 +113,13 @@ function render(D){
   const tdHtml = ['6-12m','12-24m','3-6m','1-3m','2-6y','2-4w'].filter(k => TD[k] && (SEL.scale === 'all' || SEL.scale === k)).map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2])); return `<div class="sub">${names[k]} · 合格拟合 ${v.n} 个（STANDARD），5 交易日分箱</div>` + v.bins.map(b => `<div class="sub"><span style="display:inline-block;width:150px">${b[0]} – ${b[1]}</span><span style="display:inline-block;width:${Math.round(b[2]/mx*200)}px;height:8px;background:var(--red);vertical-align:middle"></span> ${b[2]}</div>`).join(''); }).join('');
   const td = document.createElement('div'); td.className = 'card dyn'; td.innerHTML = `<div class="sub">t_c 数量分布（原站 F09 "Distribution of critical time tc"；密度曲线=同一集合的平滑，不另作预测）${badge('dev')}${SEL.scale === 'all' ? '' : ` <span class="muted">· 仅 ${SHORT[SEL.scale]} 档</span>`}</div>` + (tdHtml || '<div class="sub muted">该档无 t_c 分布</div>');
   $('scen').closest('.card').parentNode.insertBefore(td, $('scen').closest('.card').nextSibling);
+  const P1 = p1Match(D);
+  renderP1(D, P1);
   const rows = [
     ['顶部区间（情景）', T.window.start ? `${T.window.start} – ${T.window.end}<div class="sub muted">${T.window.rule}</div>` : `<span class="muted">${T.window.rule}</span>`, badge(T.window.evidence)],
     ['失效条件', T.invalidation.rule, badge(T.invalidation.evidence)],
     ['信号状态', T.signal_status || '—', badge('rule')],
-    ['预计回落区（价格）', T.drawdown_price.value == null ? `<span class="muted">无有效预测；仅供参考的历史无条件分位：${pct(T.drawdown_price.descriptive[0])} ~ ${pct(T.drawdown_price.descriptive[1])}</span>` : T.drawdown_price.value, badge(T.drawdown_price.evidence)],
+    ['顶后价格带 P1（描述性）', P1 && P1.max_dd && P1.days_to_trough ? `同类泡沫（${P1.bucket}，n=${P1.n}${P1.n_a_share != null ? '，A 股 ' + P1.n_a_share : ''}）历史顶→谷回撤 <b>${sp(P1.max_dd.q80)} ～ ${sp(P1.max_dd.q20)}</b>（中位 ${sp(P1.max_dd.q50)}），见谷 ${P1.days_to_trough.q20}–${P1.days_to_trough.q80} 个交易日${P1.valuation_floor && P1.valuation_floor.floor_band_points ? `；估值地板带 <b>${P1.valuation_floor.floor_band_points[0]}–${P1.valuation_floor.floor_band_points[1]}</b> 点（底部 PE 20–50% 分位 × 最新 PE ${P1.valuation_floor.pe_latest}）` : ''}<div class="sub muted">不是预测、不是目标价；详见下方 P1 卡</div>` : P1 ? `<span class="muted">截至 ${P1.table_asof} 可用历史样本不足</span>` : '<span class="muted">回撤情景表未加载</span>', badge(P1 ? P1.evidence || 'descriptive' : 'none')],
     ['回落时间', '<span class="muted">无有效预测</span>', badge(T.drawdown_time.evidence)],
     ['二波参考', '<span class="muted">无有效预测</span>', badge(T.second_wave.evidence)],
     ['上月体制带（描述性）', D.regime_band && D.regime_band.state ? `${D.regime_band.month}：${D.regime_band.state}${D.regime_band.channel ? '（通道 ' + D.regime_band.channel + '）' : ''} <span class="muted">${D.regime_band.rule}</span>` : '<span class="muted">数据不足</span>', badge(D.regime_band ? D.regime_band.evidence : 'none')]];
@@ -136,6 +138,27 @@ function render(D){
 }
 const COLORS = ['#f85149','#d29922','#3fb950','#58a6ff','#bc8cff','#f778ba','#79c0ff','#ffa657','#7ee787'];
 const COMBO = {p: 0.1, set: 'standard'};
+function p1Match(D){
+  const P1 = D.top && D.top.drawdown_price;
+  return P1 && P1.table ? P1 : null;
+}
+function renderP1(D, P1){
+  const sp = x => x == null ? '—' : (x >= 0 ? '+' : '') + Math.round(x * 100) + '%';
+  const card = document.createElement('div'); card.className = 'card dyn';
+  if (!P1) { card.innerHTML = '<h2>顶后价格带 P1<span class="badge b-none">无证据</span></h2><div class="sub muted">回撤情景表未加载</div>'; }
+  else {
+    const t = P1.table, q = c => c && c.n ? `${sp(c.max_dd.q20)} / ${sp(c.max_dd.q50)} / ${sp(c.max_dd.q80)}` : '—', qa = c => c && c.a_share ? `${sp(c.a_share.max_dd.q20)} / ${sp(c.a_share.max_dd.q50)} / ${sp(c.a_share.max_dd.q80)}` : '<span class="muted">n<5 不显示</span>';
+    const row = (name, c, hi) => `<tr${hi ? ' style="background:var(--line)"' : ''}><td>${name}</td><td>${c.n}</td><td>${c.n_a}</td><td>${q(c)}</td><td>${c.n ? `${c.days_to_trough.q20} / ${c.days_to_trough.q50} / ${c.days_to_trough.q80}` : '—'}</td><td>${qa(c)}</td></tr>`;
+    const hdr = '<tr><th>桶</th><th>n</th><th>A 股</th><th>顶→谷回撤 20/50/80%</th><th>顶→谷交易日 20/50/80%</th><th>A 股单独回撤</th></tr>';
+    const V = P1.valuation_floor;
+    card.innerHTML = `<h2>顶后价格带 P1（描述性：同类泡沫历史回撤分位 + 估值地板带）<span class="badge b-none">${P1.evidence === 'none' ? '无证据' : '描述性'}</span></h2>
+      <div class="sub">as-of ${P1.table_asof}：当前泡沫（FCO 起点 t1）实际涨幅 <b>${sp(P1.bucket_basis && P1.bucket_basis.size_realized)}</b>、持续 <b>${P1.bucket_basis && P1.bucket_basis.duration_days != null ? P1.bucket_basis.duration_days : '—'}</b> 个交易日 → 匹配桶 <b>${P1.bucket}</b>（n=${P1.n}）。事件 = Pagan–Sossounov 转折点且顶后 126 日内回撤 ≥15%，A 股 6 指数 + 恒生/标普500/纳指100/日经225，共 ${P1.n_events} 个（A 股 ${P1.n_events_a}）；进行中的泡沫不计入。</div>
+      <table>${hdr}${row('全部', t.all, P1.bucket === '全部')}${Object.entries(t.by_run_up).map(([k,c]) => row('涨幅 ' + k, c, P1.bucket === '涨幅 ' + k)).join('')}${Object.entries(t.by_duration).map(([k,c]) => row('时长 ' + k, c, false)).join('')}${Object.entries(t.by_run_up_x_duration).filter(([k,c]) => c.n).map(([k,c]) => row(k.replace('|',' × '), c, P1.bucket === k.replace('|',' × '))).join('')}</table>
+      <div class="sub" style="margin-top:8px">估值地板带：${V && V.floor_band_points ? `历次 PS 底部（n=${V.n}）所在月 PE 20/50/80% 分位 ${V.trough_pe.q20} / ${V.trough_pe.q50} / ${V.trough_pe.q80}；最新 PE ${V.pe_latest}（${V.pe_date}，月频）→ 地板带 <b>${V.floor_band_points[0]}–${V.floor_band_points[1]}</b> 点（q80 参考 ${V.band_points.q80}；收盘 ${V.close_ref} @ ${V.close_date}）` : `<span class="muted">${V && V.note ? V.note : '底部样本不足或无 PE 数据'}</span>`}</div>
+      <div class="legend">所有数字是历史分位，不是预测、不是目标价；"便宜"不等于"要涨"。P1 不参与任何报警。</div>`;
+  }
+  const anchor = document.getElementById('bottomcard'); anchor.parentNode.insertBefore(card, anchor);
+}
 function renderCombo(){
   const el = document.getElementById('comboP'); if (!el || !LAST) return;
   COMBO.p = Math.pow(10, +el.value); COMBO.set = document.getElementById('comboSet').value;

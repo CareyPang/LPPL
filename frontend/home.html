@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3E5560">
+<title>临界点 · 浪成于微澜之间</title>
+<link rel="preload" as="image" href="assets/dive/poster.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#13232A;--ink2:rgba(19,35,42,.76);--inkL:rgba(19,35,42,.26);
+  --bp:#13232A;--bpt:#F4F1EA;
+  --plate:rgba(250,244,232,.58);--plateL:rgba(19,35,42,.12);--halo:rgba(252,246,236,.55);
+  --text:#EEF6F5;--dim:rgba(222,238,238,.76);--mute:rgba(222,238,238,.52);
+  --amber:#F5B700;--up:#F23645;--down:#22AB94;--upT:#FF8A8F;--downT:#7FF0D2;--warn:#FFB259;--cyan:#9FE3E0;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --sans:Inter,'PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+  --serif:'Noto Serif SC','Songti SC','SimSun',serif;
+  --latin:'Cormorant Garamond','Noto Serif SC',Georgia,serif;
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:72px;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --pad:clamp(20px,5vw,72px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:#04141B}
+body{color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;background:#04141B}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+
+/* ---------- 背景舞台 ---------- */
+.stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#3E5560 url(assets/dive/poster.jpg) center/cover no-repeat}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#film{display:none}
+.stage.fb #film{display:block}
+.stage.fb #gl{display:none}
+#motes{pointer-events:none;opacity:0}
+.fbfx{position:absolute;inset:0;pointer-events:none;display:none}
+.stage.fb .fbfx{display:block}
+.fbfx.tint{mix-blend-mode:soft-light}
+.fbfx.vig{background:radial-gradient(120% 90% at 35% 35%,transparent 55%,rgba(4,20,27,.38) 100%)}
+.shade{position:absolute;inset:0;pointer-events:none;background:#04141B;opacity:0}
+
+/* ---------- 顶栏 ---------- */
+.top{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:var(--s4);
+  padding:calc(env(safe-area-inset-top) + 20px) var(--pad) var(--s3);color:var(--ink);transition:background .4s}
+.top.solid{background:linear-gradient(180deg,rgba(4,20,27,.66),transparent)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:.14em}
+.mark{width:22px;height:22px;border:1.5px solid currentColor;border-radius:50%;position:relative}
+.mark::before{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:currentColor}
+.mark::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid currentColor;opacity:0;animation:ring 4s var(--ease) infinite}
+@keyframes ring{0%{transform:scale(.6);opacity:.5}100%{transform:scale(1.4);opacity:0}}
+.top nav{margin-left:auto;display:flex;gap:28px;font-size:13px;color:var(--ink2)}
+.top nav a{padding:8px 0;position:relative}
+.top nav a::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .25s var(--ease)}
+@media (hover:hover){.top nav a:hover{color:var(--ink)}.top nav a:hover::after{transform:scaleX(1)}}
+.pill{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--inkL);font-size:13px;font-weight:500;color:var(--ink);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(255,255,255,.08);transition:transform .2s,background .2s;cursor:pointer;font-family:var(--sans)}
+@media (hover:hover){.pill:hover{transform:translateY(-1px);background:rgba(255,255,255,.16)}}
+.snd{min-width:96px;justify-content:center}
+.snd .eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px}
+.snd .eq i{width:2px;height:3px;background:currentColor;border-radius:1px;transition:height .2s}
+.snd[aria-pressed="true"]{background:rgba(255,255,255,.22)}
+.snd[aria-pressed="true"] .eq i{animation:eq 1.1s ease-in-out infinite}
+.snd[aria-pressed="true"] .eq i:nth-child(2){animation-delay:.2s}
+.snd[aria-pressed="true"] .eq i:nth-child(3){animation-delay:.4s}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
+.snd:disabled{opacity:.5;cursor:default}
+/* 声音设置面板：始终是深色底，不随入水变色，保证对比度 */
+.od-icon{width:var(--od-icon-size,1em);height:var(--od-icon-size,1em);flex:none;display:block}
+.sndw{position:relative;display:flex;align-items:center;gap:var(--s2)}
+.sndk{width:40px;padding:0;justify-content:center;--od-icon-size:16px}
+.sndk[aria-expanded="true"]{background:rgba(255,255,255,.22)}
+.sndp{position:absolute;top:calc(100% + 8px);right:0;width:min(264px,calc(100vw - 32px));display:grid;gap:var(--s3);padding:var(--s4);
+  border-radius:16px;background:rgba(6,24,30,.9);border:1px solid rgba(255,255,255,.14);color:#EAF4F3;font-size:14px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 40px rgba(0,0,0,.28);transform-origin:top right;animation:pIn .2s var(--ease)}
+.sndp[hidden]{display:none}
+@keyframes pIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+.sndp .t{font:500 11px var(--mono);letter-spacing:.2em;color:rgba(234,244,243,.66)}
+.sndp .vr{display:grid;grid-template-columns:1fr auto;align-items:center;gap:var(--s2) var(--s3)}
+.sndp .vr input{grid-column:1 / -1;width:100%;accent-color:#7FE0D6;height:24px;cursor:pointer}
+.sndp output{font:400 12px var(--mono);color:rgba(234,244,243,.8)}
+.sndp .sw{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:32px;cursor:pointer}
+.sndp .sw input{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:12px;background:rgba(255,255,255,.2);position:relative;cursor:pointer;transition:background .2s;flex:none;margin:0}
+.sndp .sw input::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#EAF4F3;transition:transform .2s var(--ease)}
+.sndp .sw input:checked{background:#2E9D93}
+.sndp .sw input:checked::after{transform:translateX(16px)}
+.sndp input:focus-visible{outline:2px solid #7FE0D6;outline-offset:3px}
+.sndp .nt{font-size:12px;line-height:1.5;color:rgba(234,244,243,.62)}
+
+/* ---------- 点击反馈：按下压扁 → 松手回弹（挤压与拉伸 + 跟随动作） ---------- */
+.tc,.ic{--pz:.985}
+.is-press{transform:translateY(1px) scale(var(--pz,.96))!important;transition:transform .09s cubic-bezier(.5,0,.75,0)!important}
+.is-pop{animation:pop .24s cubic-bezier(.2,.8,.3,1)}
+@keyframes pop{0%{transform:scale(var(--pz,.96))}45%{transform:scale(calc(2 - var(--pz,.96)))}75%{transform:scale(.995)}100%{transform:scale(1)}}
+/* 水波环：点击处荡开，水上暖白、水下青色 */
+.fx{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+.rp{position:absolute;left:0;top:0;width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:50%;border:1.5px solid var(--rp,rgba(255,240,214,.9));
+  box-shadow:inset 0 0 0 1px var(--rpS,rgba(19,35,42,.16)),0 0 0 1px var(--rpS,rgba(19,35,42,.16));opacity:0;
+   transform:translate(var(--x),var(--y)) scale(.06);animation:rp .3s cubic-bezier(.2,.7,.3,1) forwards}
+.rp.b{animation-delay:.04s;animation-duration:.3s;border-width:1px}
+.rp.s{width:72px;height:72px;margin:-36px 0 0 -36px}
+@keyframes rp{0%{transform:translate(var(--x),var(--y)) scale(.06);opacity:.9}100%{transform:translate(var(--x),var(--y)) scale(1);opacity:0}}
+
+/* ---------- 首屏文字（固定） ---------- */
+.hero{position:fixed;z-index:10;left:var(--pad);top:clamp(100px,16vh,168px);max-width:760px;color:var(--ink);will-change:opacity,transform}
+.hero .eb{font:500 11px var(--mono);letter-spacing:.26em;color:var(--ink2);display:flex;align-items:center;gap:10px}
+.hero .eb::before{content:"";width:28px;height:1px;background:currentColor}
+.hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(46px,7.2vw,112px);line-height:1.04;letter-spacing:.05em;margin:var(--s5) 0 var(--s6)}
+.hero h1 .ln{display:block}
+.hero h1 .ln:nth-child(2){padding-left:.5em}
+.hero p{font-size:clamp(16px,1.3vw,18px);line-height:1.7;color:var(--ink2);max-width:460px}
+/* 引语：恢复无底板的原版样式；只靠贴字的柔光描边保证可读，不遮挡背后的天空 */
+/* 藏头两句：首字略加重，两句各占一行 */
+.hero p.poem{max-width:none;font-family:var(--serif);font-weight:500;font-size:clamp(24px,2.5vw,40px);line-height:1.5;letter-spacing:.14em;
+  position:relative;padding-top:var(--s5)}
+.hero p.poem::before{content:"";position:absolute;left:0;top:0;width:44px;height:1px;background:currentColor;opacity:.55}
+.hero p.poem span{display:block}
+.hero p.poem span+span{padding-left:1.6em}
+/* 启、满：与后文同色同字号，随水上/水下一起变色 */
+.hero p.poem b{font:inherit;color:inherit}
+/* 引语单行：宽屏上可以超出标题宽度；屏幕不够宽时才换行 */
+.quote{position:relative;margin-top:var(--s6);padding:0 0 0 var(--s4);border-left:2px solid var(--inkL);width:max-content;max-width:calc(100vw - var(--pad) * 2 - 64px)}
+.quote .en{font:italic 600 clamp(20px,1.75vw,30px)/1.4 var(--latin);color:var(--ink);letter-spacing:.005em;white-space:nowrap;
+  text-shadow:0 0 2px var(--halo),0 0 8px var(--halo),0 0 22px var(--halo)}
+/* 引语逐词从左到右浮现 */
+.quote{border-left-color:transparent;transition:border-color 1s var(--ease) .6s}
+.quote.on{border-left-color:var(--inkL)}
+.quote .w{display:inline-block;opacity:0;transform:translate(-8px,14px);filter:blur(6px);
+  animation:qw .9s var(--ease) forwards;animation-delay:calc(.66s + var(--i) * 55ms)}
+@keyframes qw{to{opacity:1;transform:none;filter:none}}
+.hero h1,.hero p,.hero .eb{text-shadow:0 0 24px var(--halo)}
+.cta{display:flex;gap:var(--s3);margin-top:var(--s6);flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:999px;font-weight:600;font-size:14px;transition:transform .2s,background .2s}
+@media (hover:hover){.btn:hover{transform:translateY(-2px)}.btn:hover .ar{transform:translateX(3px)}}
+.btn .ar{transition:transform .2s}
+.btn.pri{background:var(--bp);color:var(--bpt)}
+.btn.ghost{border:1px solid var(--inkL);color:var(--ink);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(255,255,255,.1)}
+.btn.ghost i{width:20px;height:20px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-style:normal;font-size:10px}
+.ln{opacity:0;transform:translateY(20px);filter:blur(10px);animation:inl 1s var(--ease) forwards;animation-delay:var(--d,0s)}
+@keyframes inl{to{opacity:1;transform:none;filter:none}}
+
+.hint{position:fixed;z-index:10;left:var(--pad);bottom:calc(env(safe-area-inset-bottom) + 28px);display:flex;align-items:center;gap:12px;
+  font:500 11px var(--mono);letter-spacing:.22em;color:var(--ink2)}
+.hint i{width:22px;height:34px;border:1px solid currentColor;border-radius:12px;position:relative}
+.hint i::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:currentColor;animation:wh 1.8s infinite}
+@keyframes wh{0%{transform:translateY(0);opacity:1}70%{transform:translateY(10px);opacity:0}100%{opacity:0}}
+.load{position:fixed;z-index:10;right:var(--pad);bottom:calc(env(safe-area-inset-bottom) + 30px);font:400 10px var(--mono);letter-spacing:.16em;color:var(--ink2);display:flex;align-items:center;gap:10px;transition:opacity .6s}
+.load b{display:block;width:80px;height:1px;background:var(--inkL);position:relative;overflow:hidden}
+.load b i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
+
+/* ---------- 深度计 ---------- */
+.gauge{position:fixed;z-index:15;right:clamp(14px,2.6vw,34px);top:50%;transform:translateY(-50%);height:min(48vh,400px);width:70px;font:400 10px var(--mono);color:var(--ink2);pointer-events:none}
+.gauge .rail{position:absolute;right:8px;top:0;bottom:0;width:1px;background:currentColor;opacity:.35}
+.gauge .tk{position:absolute;right:8px;display:flex;align-items:center;gap:6px;transform:translateY(-50%);white-space:nowrap}
+.gauge .tk::after{content:"";width:8px;height:1px;background:currentColor;opacity:.6}
+.gauge .mk{position:absolute;right:2px;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--ink);transform:translateY(-50%)}
+.gauge .mk::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--ink)}
+.gauge .rd{position:absolute;right:26px;transform:translateY(-50%);text-align:right;color:var(--ink);font-size:12px;white-space:nowrap}
+.gauge .rd small{display:block;font-size:10px;color:var(--ink2)}
+
+/* ---------- 滚动内容 ---------- */
+#intro{height:420vh;height:420svh}
+main{position:relative;z-index:5}
+.sec{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:112px clamp(20px,6vw,96px) 96px;max-width:1240px;margin:0 auto}
+.zone{font:500 11px var(--mono);letter-spacing:.22em;color:var(--cyan);display:flex;align-items:center;gap:10px;margin-bottom:var(--s4)}
+.zone::before{content:"";width:28px;height:1px;background:currentColor}
+.zone span{color:var(--mute)}
+h2{font-family:var(--serif);font-weight:500;font-size:clamp(32px,4.6vw,60px);line-height:1.18;letter-spacing:.03em;color:#F4FAF9}
+.lead{margin-top:var(--s4);max-width:620px;color:var(--dim);font-size:16px;line-height:1.75}
+.glass{background:rgba(6,34,42,.44);border:1px solid rgba(180,232,228,.18);border-radius:16px;backdrop-filter:blur(18px) saturate(1.15);-webkit-backdrop-filter:blur(18px) saturate(1.15)}
+
+/* 从微澜到浪 */
+.wave{margin-top:var(--s7);padding:var(--s5) var(--s5) var(--s4)}
+.wave svg{display:block;width:100%;height:auto}
+.wave .lp{fill:none;stroke:var(--cyan);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.wave .pw{fill:none;stroke:rgba(222,238,238,.42);stroke-width:1.6;stroke-dasharray:6 8}
+.wave .gd{stroke:rgba(222,238,238,.09);stroke-width:1}
+.wave .tcl{stroke:var(--amber);stroke-width:1.4;stroke-dasharray:4 6}
+.wave text{font-family:var(--mono);fill:var(--mute);font-size:18px}
+.wave text.tcx{fill:var(--amber);font-size:20px}
+.wave .head{fill:#F4FAF9}
+.wave .halo{fill:none;stroke:var(--cyan);stroke-width:1.5;opacity:.6}
+.wave figcaption{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);margin-top:var(--s3);font:400 12px var(--mono);color:var(--mute)}
+.wave figcaption span{display:inline-flex;align-items:center;gap:8px}
+.lg{display:inline-block;width:22px;height:0;border-top:2px solid var(--cyan)}
+.lg.b{border-top:2px dashed rgba(222,238,238,.5)}
+.steps{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4);margin-top:var(--s5)}
+.steps li{padding:var(--s4) 0 0;border-top:1px solid rgba(222,238,238,.18);color:var(--mute);font-size:14px;line-height:1.65;transition:color .4s,border-color .4s}
+.steps li b{display:block;font:500 12px var(--mono);letter-spacing:.14em;margin-bottom:6px;color:var(--mute);transition:color .4s}
+.steps li.on{color:var(--dim);border-color:var(--cyan)}
+.steps li.on b{color:var(--cyan)}
+
+/* 指数 */
+.idx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4);margin-top:40px;max-width:1000px}
+.ic{padding:20px}
+.ic .h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ic .n{font-weight:600;font-size:16px}
+.ic .px{font:400 13px var(--mono);color:var(--dim);white-space:nowrap;text-align:right}
+.ic .px span{display:block;font-size:12px}
+.ic .sp{display:block;width:100%;height:48px;margin-top:var(--s3)}
+.ic .sp polyline{fill:none;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.ic .sp polygon{opacity:.14}
+.ic .row{display:flex;align-items:center;gap:10px;margin-top:10px;font:400 11px var(--mono);color:var(--dim)}
+.ic .row span:first-child{width:22px}
+.bar{flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:2px;transform-origin:left;transform:scaleX(0);transition:transform 1.2s var(--ease) .2s}
+.ic.in .bar i{transform:scaleX(var(--w))}
+.ic .v{width:36px;text-align:right;color:var(--text)}
+.ic .st{margin-top:14px;font-size:13px;color:var(--dim);line-height:1.5}
+.ic .st b{display:block;font-weight:600}
+
+/* 工具 */
+.tools{display:grid;grid-template-columns:repeat(6,1fr);gap:var(--s4);margin-top:40px}
+.tc{grid-column:span 2;padding:var(--s5);min-height:192px;display:flex;flex-direction:column;transition:border-color .25s,transform .25s}
+.tc.wide{grid-column:span 3;min-height:208px}
+@media (hover:hover){a.tc:hover{border-color:rgba(180,232,228,.5);transform:translateY(-4px)}a.tc:hover .go{transform:translateX(4px)}}
+.tc .tag{font:500 10px var(--mono);letter-spacing:.14em;color:var(--mute);display:flex;justify-content:space-between}
+.tc h3{font-size:19px;font-weight:600;margin-top:var(--s3);color:#F4FAF9}
+.tc p{color:var(--dim);font-size:14px;line-height:1.65;margin-top:var(--s2)}
+.tc .go{margin-top:auto;padding-top:var(--s4);font:500 12px var(--mono);color:var(--cyan);transition:transform .25s}
+.tc.soon{opacity:.72}
+.tc.soon .go{color:var(--amber)}
+
+/* 方法 */
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4);margin-top:40px}
+.col{padding:var(--s5)}
+.col .k{font:500 32px var(--mono);color:#F4FAF9;white-space:nowrap}
+.col .k small{font-size:13px;color:var(--dim);margin-left:4px}
+.col h4{font-size:15px;margin-top:10px;font-weight:600}
+.col p{font-size:14px;color:var(--dim);line-height:1.65;margin-top:6px}
+.warn{margin-top:var(--s5);padding:18px 20px;border-radius:16px;border:1px solid rgba(255,178,89,.32);background:rgba(40,24,6,.32);font-size:14px;line-height:1.75;color:#EADFCB;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.warn b{color:var(--warn)}
+.creed{margin-top:var(--s8);text-align:center;font-family:var(--serif);font-size:clamp(26px,3.6vw,44px);color:rgba(244,250,249,.94);letter-spacing:.08em;line-height:1.45}
+.creed small{display:block;margin-top:var(--s3);font:italic 400 18px var(--latin);letter-spacing:.02em;color:var(--mute)}
+footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24px);border-top:1px solid rgba(255,255,255,.12);font:400 11px var(--mono);color:var(--mute);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .9s,transform .9s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+
+@media (max-width:900px){
+  .top nav{display:none}
+  .sndw{margin-left:auto}
+  .idx,.tools,.cols,.steps{grid-template-columns:1fr}
+  .tc,.tc.wide{grid-column:auto;min-height:152px}
+  .gauge{width:52px;height:40vh}
+  .sec{padding-right:76px}
+  .wave{padding:var(--s4) var(--s3) var(--s3)}
+}
+@media (max-width:560px){
+  .top{gap:var(--s2)}
+  .top .pill{height:40px;padding:0 12px}
+  .snd{min-width:0}
+  .snd .lbl{display:none}
+  .gauge .rd small{display:none}
+  .hero{right:20px;top:clamp(92px,14vh,140px)}
+  .hero h1 .ln:nth-child(2){padding-left:.3em}
+  .hero p{max-width:320px}
+  .quote .en{font-size:15px;white-space:normal}
+  .hero p.poem{font-size:21px;letter-spacing:.1em}
+  .hero p.poem span+span{padding-left:1.2em}
+  .load{display:none}
+}
+@media (max-width:1180px){ .quote{width:auto} .quote .en{white-space:normal} }
+@media (max-height:700px) and (max-width:560px){ .hero p{display:none} .quote{margin-top:var(--s4)} }
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .hint i::after,.mark::after,.snd .eq i{animation:none!important}
+  .ln,.quote .w{animation:none;opacity:1;transform:none;filter:none}
+  .bar i{transition:none}
+  .fx{display:none}
+  .is-press,.is-pop{animation:none!important;transform:none!important}
+  .sndp{animation:none}
+}
+</style>
+<script src="app/lppl-data.js"></script>
+</head>
+<body>
+<div class="stage" id="stage" aria-hidden="true">
+  <canvas id="gl"></canvas>
+  <canvas id="film"></canvas>
+  <div class="fbfx tint" id="fbtint"></div>
+  <div class="fbfx vig"></div>
+  <canvas id="motes"></canvas>
+  <div class="shade" id="shade"></div>
+</div>
+
+<header class="top" id="top">
+  <div class="brand"><span class="mark"></span><span>临界点</span></div>
+  <nav aria-label="页内导航"><a href="#s1">微澜</a><a href="#s2">指数</a><a href="#s3">工具</a><a href="#s4">方法</a></nav>
+  <div class="sndw">
+    <button class="pill snd" id="snd" type="button" aria-pressed="false" aria-label="声音开关，当前关闭"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl" id="sndl">声音 · 关</span></button>
+    <button class="pill sndk" id="sndk" type="button" aria-expanded="false" aria-controls="sndp" aria-label="声音设置"><svg class="od-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4.5h7M13 4.5h1M2 11.5h2M8 11.5h6"/><circle cx="11" cy="4.5" r="1.75"/><circle cx="6" cy="11.5" r="1.75"/></svg></button>
+    <div class="sndp" id="sndp" role="group" aria-label="声音设置" hidden>
+      <div class="t">SOUND</div>
+      <label class="vr" for="sv"><span>总音量</span><output id="svo" for="sv">55</output><input type="range" id="sv" min="0" max="100" step="1" value="55"></label>
+      <label class="sw"><span>海洋环境声</span><input type="checkbox" id="sa" role="switch" checked></label>
+      <label class="sw"><span>氛围音乐（可选）</span><input type="checkbox" id="sm" role="switch"></label>
+      <label class="sw"><span>界面音效</span><input type="checkbox" id="su" role="switch" checked></label>
+      <p class="nt" id="sndstatus" role="status">默认静音，点击声音开关启用。环境声为程序合成，并非海洋实录。</p>
+    </div>
+  </div>
+  <a class="pill" href="index.html">进入工作站</a>
+</header>
+
+<div class="hero" id="hero">
+  <div class="eb ln" style="--d:.1s">FROM RIPPLE TO WAVE</div>
+  <h1><span class="ln" style="--d:.22s">浪成于</span><span class="ln" style="--d:.34s">微澜之间</span></h1>
+  <p class="ln poem" style="--d:.46s"><span><b>启</b>于青萍之末，</span><span><b>满</b>于狂澜之巅。</span></p>
+  <blockquote class="quote" id="quote"><div class="en" lang="en">“Does the flap of a butterfly’s wings in Brazil set off a tornado in Texas?”</div></blockquote>
+  <div class="cta ln" style="--d:.7s">
+    <a class="btn pri" href="index.html">进入工作站 <span class="ar">→</span></a>
+    <a class="btn ghost" href="#s1" id="dive"><i>↓</i>开始下潜</a>
+  </div>
+</div>
+<div class="hint" id="hint"><i></i>向下滚动 · 入水</div>
+<div class="load" id="load" aria-hidden="true"><span id="lt">载入 0%</span><b><i id="lb"></i></b></div>
+
+<div class="gauge" id="gauge" aria-hidden="true">
+  <div class="rail"></div>
+  <div id="ticks"></div>
+  <div class="mk" id="mk"></div>
+  <div class="rd" id="rd">0 m<small>海面</small></div>
+</div>
+
+<div id="intro" aria-hidden="true"></div>
+<div class="fx" id="fx" aria-hidden="true"></div>
+
+<main>
+  <section class="sec" id="s1">
+    <div class="zone reveal">水线以下 <span>15 m</span></div>
+    <h2 class="reveal">从微澜到浪</h2>
+    <p class="lead reveal">泡沫末期，价格的振荡不是越来越乱，而是越来越密：每一轮的周期按对数缩短，一路收向临界时刻 t<sub>c</sub>。LPPLS 要找的，就是这种微澜。</p>
+    <figure class="wave glass reveal" id="wave">
+      <svg viewBox="0 0 1000 380" role="img" aria-label="示意曲线：对数周期振荡越来越密，收向临界时刻 tc">
+        <g id="grid"></g>
+        <path class="pw" id="pw"/>
+        <path class="lp" id="lp" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/>
+        <line class="tcl" x1="940" y1="24" x2="940" y2="336"/>
+        <text class="tcx" x="948" y="44">t</text><text class="tcx" x="960" y="52" style="font-size:14px">c</text>
+        <circle class="halo" id="halo" r="12" cx="40" cy="300"/>
+        <circle class="head" id="head" r="5" cx="40" cy="300"/>
+        <text x="40" y="368">过去</text><text x="820" y="368">临界时刻 →</text>
+      </svg>
+      <figcaption><span>示意曲线，非真实行情</span><span><i class="lg"></i>LPPLS：幂律 + 对数周期振荡</span><span><i class="lg b"></i>纯幂律（无振荡）</span></figcaption>
+    </figure>
+    <ol class="steps" id="steps">
+      <li class="reveal"><b>01 · 微澜</b>振荡稀疏、幅度小，看起来只是噪声。</li>
+      <li class="reveal"><b>02 · 加速</b>振荡变密，周期按对数缩短，正反馈在累积。</li>
+      <li class="reveal"><b>03 · 临界</b>t<sub>c</sub> 附近结构最脆弱：可能破裂，也可能平稳着陆。</li>
+    </ol>
+  </section>
+
+  <section class="sec" id="s2">
+    <div class="zone reveal">透光层 <span>30 m</span></div>
+    <h2 class="reveal">三大指数，此刻的光</h2>
+    <p class="lead reveal">综合置信度取近 20 个交易日的最高值：三个尺度里通过筛选的窗口越多，数值越高。它不是事件概率，也没有经过校准。</p>
+    <div class="idx" id="idx"></div>
+  </section>
+
+  <section class="sec" id="s3">
+    <div class="zone reveal">弱光层 <span>200 m</span></div>
+    <h2 class="reveal">选一盏灯，继续往下看</h2>
+    <p class="lead reveal">所有页面读取同一份后端数据；前端不计算任何模型值。</p>
+    <div class="tools">
+      <a class="tc wide glass reveal" href="index.html"><div class="tag"><span>WORKSTATION</span><span style="color:var(--cyan)">推荐</span></div><h3>分析工作站</h3><p>K 线叠加六尺度置信度、情景区间、顶后回撤历史分位与估值地板带，可看 2007 / 2015 回放。</p><span class="go">index.html →</span></a>
+      <a class="tc glass reveal" href="backtest.html"><div class="tag"><span>BACKTEST</span><span>回测</span></div><h3>历史情景区间</h3><p>2000–2025 每个周度截止日模型给出的 6–12 月档区间，与事后确认的顶放在同一张图上。</p></a>
+      <a class="tc glass reveal" href="lab/dashboard.html"><div class="tag"><span>LAB</span><span>研究</span></div><h3>研究仪表盘</h3><p>旧版研究页：Combo 滑块、Movie 双面板、六尺度切换和资产目录。</p><span class="go">lab/dashboard.html →</span></a>
+      <div class="tc glass soon reveal"><div class="tag"><span>CONFIDENCE</span><span style="color:var(--amber)">建设中</span></div><h3>多尺度置信度</h3><p>短 / 中 / 长期泡沫置信度历史、t<sub>c</sub> 分布与泡沫看板。</p><span class="go">即将上线</span></div>
+      <a class="tc glass reveal" href="lab/guide.html"><div class="tag"><span>GUIDE</span><span>DOC</span></div><h3>用户指南</h3><p>每个指标怎么读、证据等级是什么意思、哪些数字不显示。</p><span class="go">lab/guide.html →</span></a>
+    </div>
+  </section>
+
+  <section class="sec" id="s4">
+    <div class="zone reveal">深水层 <span>1000 m</span></div>
+    <h2 class="reveal">t<sub>c</sub> 是临界时刻，不是崩盘日</h2>
+    <p class="lead reveal">按 JLS 理论，泡沫可以在 t<sub>c</sub> 之前破裂，也可以平稳着陆。模型只说明价格结构是否进入临界状态；真实的顶底事件要用另一套模型预测，并单独校准概率。</p>
+    <div class="cols">
+      <div class="col glass reveal"><div class="k">21<small>个窗口</small></div><h4>三个尺度</h4><p>短期 30–105 日、中期 120–250 日、长期 300–700 日，每个尺度 7 个回看窗口，顶部和底部各拟合一次。</p></div>
+      <div class="col glass reveal"><div class="k">3<small>个参数</small></div><h4>稳定标定</h4><p>按 Filimonov–Sornette 方法消去线性参数，只对 t<sub>c</sub>、m、ω 做非线性搜索。</p></div>
+      <div class="col glass reveal"><div class="k">0<small>次校准</small></div><h4>研究输出</h4><p>置信度是“通过筛选的窗口占比”，不是事件发生概率，尚未做样本外校准。</p></div>
+    </div>
+    <div class="warn reveal"><b>风险提示：</b>本工具只用于研究和学习，不构成投资建议。A 股有涨跌停、T+1 和停牌等限制，模型里的“价格触及”不等于实际能成交。</div>
+    <div class="creed reveal">浪成于微澜之间，<br>也终归于平静。<small lang="en">Small causes, large waves — and no wave is fate.</small></div>
+    <footer><span id="foot">数据：东方财富公开日线快照</span><span>临界点 · 背景影像由即梦 AI 生成</span></footer>
+  </section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MOB = Math.min(window.innerWidth, window.innerHeight) < 600 || !!(navigator.connection && navigator.connection.saveData);
+const $ = (s)=>document.querySelector(s);
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+const clk=(now)=>(now/1000)%3600;
+
+// 英文引语：拆成单词，逐词从左到右浮现（读屏仍读整句）
+(function splitQuote(){
+  const q=$('#quote'), en=q&&q.querySelector('.en'); if(!en) return;
+  const txt=en.textContent.trim(); en.setAttribute('aria-label',txt);
+  en.innerHTML=txt.split(/\s+/).map((w,i)=>`<span class="w" aria-hidden="true" style="--i:${i}">${w}</span>`).join(' ');
+  requestAnimationFrame(()=>q.classList.add('on'));
+})();
+
+/* ================= 帧序列 ================= */
+// 清晰度：桌面用 1920 原始分辨率帧，手机用 1280 帧（旧的 1600/960 帧会被放大而发糊）
+const SRC = MOB ? {dir:'assets/dive/m2/',n:121,w:1280,h:720,L:3} : {dir:'assets/dive/h/',n:241,w:1920,h:1080,L:5};
+// 时间轴：0–0.30 海面，0.30–0.42 贴水与入水，0.42 之后水下
+const WATERLINE = 0.30, SUBMERGED = 0.42;
+// 静止时的真实海浪循环，只向前播放
+// sea：即梦固定机位视频（30fps 补帧版），已去重复帧、重做首尾接缝（约 6.3 秒，30fps）
+// under / deep：暂用原下潜视频中镜头最稳的片段（24fps），去抖对齐后交叉淡化
+// 若放入同名视频（assets/dive/loop/sea.mp4 / under.mp4 / deep.mp4），会自动优先使用视频
+const LOOP_DIR = 'assets/dive/loop/', LOOP_SUB = MOB ? 'm' : 'd';
+const LOOPS = [
+  {name:'sea',   n:188, fps:30, lo:-1,           hi:WATERLINE-.03},
+  {name:'under', n:23, fps:24, lo:SUBMERGED+.03, hi:.78},
+  {name:'deep',  n:23, fps:24, lo:.78,           hi:2}
+].map(o=>Object.assign(o,{frames:new Array(o.n),ok:0,vid:null,vidOk:false}));
+const frames = new Array(SRC.n);
+let loaded = 0;
+function nearestLoaded(i){
+  if(frames[i] && frames[i].ok) return i;
+  for(let d=1; d<SRC.n; d++){
+    const a=i-d, b=i+d;
+    if(a>=0 && frames[a] && frames[a].ok) return a;
+    if(b<SRC.n && frames[b] && frames[b].ok) return b;
+  }
+  return -1;
+}
+function loadFrame(i){
+  return new Promise((res)=>{
+    const img = new Image(); img.decoding='async';
+    const rec = {img, ok:false}; frames[i]=rec;
+    img.onload = ()=>{ rec.ok=true; loaded++; progress(); res(); if(RM) kick(); };
+    img.onerror = ()=>{ loaded++; progress(); res(); };
+    img.src = SRC.dir + String(i+1).padStart(3,'0') + '.webp';
+  });
+}
+function progress(){
+  const p = loaded/SRC.n;
+  $('#lt').textContent = '载入 '+Math.round(p*100)+'%'; $('#lb').style.width=(p*100)+'%';
+  if(p>=1) $('#load').style.opacity='0';
+}
+async function loadAll(){
+  const order=[], seen=new Set();
+  for(const step of [16,8,4,2,1]) for(let i=0;i<SRC.n;i+=step) if(!seen.has(i)){ seen.add(i); order.push(i); }
+  let k=0; const W = MOB?4:6;
+  async function worker(){ while(k<order.length){ const i=order[k++]; await loadFrame(i); } }
+  await Promise.all(Array.from({length:W},worker));
+  if(!RM) loadLoops();
+}
+function loadLoops(){
+  for(const L of LOOPS){
+    // 优先尝试固定机位视频；不存在时静默失败，继续使用帧循环
+    const v=document.createElement('video');
+    v.muted=true; v.loop=true; v.playsInline=true; v.preload='auto'; v.setAttribute('playsinline','');
+    v.addEventListener('loadeddata',()=>{ L.vid=v; L.vidOk=true; },{once:true});
+    v.addEventListener('error',()=>{},{once:true});
+    v.src=LOOP_DIR+L.name+'.mp4';
+  }
+  let q=[]; for(const L of LOOPS) for(let k=0;k<L.n;k++) q.push([L,k]);
+  let p=0;
+  const next=()=>{ if(p>=q.length) return; const [L,k]=q[p++]; const img=new Image(); img.decoding='async';
+    const rec={img,ok:false}; L.frames[k]=rec;
+    img.onload=()=>{ rec.ok=true; L.ok++; next(); }; img.onerror=()=>next();
+    img.src=LOOP_DIR+L.name+'/'+LOOP_SUB+'/'+String(k+1).padStart(3,'0')+'.webp'; };
+  for(let i=0;i<3;i++) next();
+}
+function loopFor(c){ for(const L of LOOPS) if(c>=L.lo && c<L.hi) return L; return null; }
+// 当前应显示的循环画面：{key, src, w, h, live}
+function loopImage(L,now){
+  if(!L) return null;
+  if(L.vidOk){ const v=L.vid; if(v.paused){ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); } return {key:'V'+L.name,src:v,w:v.videoWidth,h:v.videoHeight,live:true}; }
+  if(L.ok<L.n) return null;
+  const k=Math.floor(now/1000*L.fps)%L.n, f=L.frames[k];
+  return f&&f.ok ? {key:L.name+k,src:f.img,w:f.img.naturalWidth,h:f.img.naturalHeight,live:false} : null;
+}
+function pauseLoops(except){ for(const L of LOOPS) if(L!==except && L.vidOk && !L.vid.paused) L.vid.pause(); }
+
+/* ================= 数据（后端静态 JSON，经 app/lppl-data.js；前端不计算模型） ================= */
+const KEYS=['sh000001','sh000300','sz399006'];
+function spark(c, up){
+  if(!c || c.length<10) return '';
+  const a=c.slice(-250), lo=Math.min(...a), hi=Math.max(...a), n=a.length;
+  const pts=a.map((v,i)=>((i/(n-1))*200).toFixed(1)+','+(44-(v-lo)/Math.max(1e-9,hi-lo)*40).toFixed(1)).join(' ');
+  const col= up ? 'var(--upT)' : 'var(--downT)';
+  return `<svg class="sp" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,48 ${pts} 200,48" fill="${col}"/><polyline points="${pts}" stroke="${col}"/></svg>`;
+}
+const SIG={signal:['▲ 有合格 LPPLS 拟合（顶部结构）','var(--upT)'],no_qualified_fit:['— 主尺度无合格拟合','var(--dim)'],t1_not_qualified:['— 泡沫起点未达标准','var(--dim)']};
+const REG={HIGH_RISK:'体制带：高风险',LOW_RISK:'体制带：低风险',NEUTRAL:'体制带：中性'};
+function card(D){
+  const J=D.raw, T=D.top, c=J.price_history.close, n=c.length, px=c[n-1], pv=c[n-2], ch=(px/pv-1)*100;
+  const yr = n>250 ? px/c[n-250]-1 : 0;
+  const cb=T.combo||{}, e=LPPL.ev(cb.evidence, J.evidence_levels), v=cb['p0.1'];
+  const top = e.show && v!=null ? `<span class="bar"><i style="--w:${Math.min(1,v).toFixed(3)};background:var(--up)"></i></span><span class="v">${(v*100).toFixed(0)}%</span>` : `<span class="v">${e.label}</span>`;
+  const [txt,col]=SIG[T.signal_status]||['— '+(T.signal_status||'无状态'),'var(--dim)'];
+  const rb=J.regime_band||{};
+  const el=document.createElement('div'); el.className='ic glass reveal';
+  el.innerHTML=`<div class="h"><span class="n">${D.name}</span><span class="px">${isFinite(px)?px.toFixed(2):'—'}<span style="color:${ch>=0?'var(--upT)':'var(--downT)'}">${isFinite(ch)?(ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'%':''}</span></span></div>
+    ${spark(c, yr>=0)}
+    <div class="row"><span>顶</span>${top}</div>
+    <div class="row"><span>底</span><span class="v">${(T.negative_bubble&&T.negative_bubble.signal_status)==='signal'?'负泡沫有合格拟合':'无负泡沫信号'}（不预测底部）</span></div>
+    <div class="st"><b style="color:${col}">${txt}</b>${REG[rb.state]||''}${rb.month?'（'+rb.month+'，描述性）':''} · Combo p=0.1，${e.label}，不是概率 · <a href="index.html?code=${D.sym.sym}">进入终端</a></div>`;
+  return el;
+}
+const idx=$('#idx');
+let TINT=[1.0,.55,.27,.05], s0=0;
+Promise.all(KEYS.map(k=>LPPL.load(k).catch(e=>({err:e.message,k})))).then(list=>{
+  for(const D of list){
+    if(D.err){ const el=document.createElement('div'); el.className='ic glass reveal'; el.innerHTML=`<div class="h"><span class="n">${D.k}</span></div><div class="st"><b>数据未加载</b>${D.err}</div>`; idx.appendChild(el); continue; }
+    idx.appendChild(card(D));
+  }
+  const ok=list.find(D=>!D.err);
+  if(ok) $('#foot').textContent='数据：'+ok.raw.data_version+' · 截至 '+ok.asof+' · 模型 '+ok.raw.model_version+'；置信度是合格拟合占比，不是概率，未经样本外校准';
+  const D0=list[0];
+  if(!D0.err){ const v=(D0.top.combo||{})['p0.1']||0; s0=Math.min(1,v/.3); TINT=[1.0,.55,.27,.05+.26*s0]; }
+  $('#fbtint').style.background=`rgba(${TINT[0]*255|0},${TINT[1]*255|0},${TINT[2]*255|0},${TINT[3].toFixed(3)})`;
+  idx.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+});
+
+/* ================= 从微澜到浪：示意曲线 ================= */
+(function buildWave(){
+  const X0=40,X1=940,Y0=330,Y1=40, m=.48, om=8.6, C=.11, ph=1.2;
+  const P=[],Q=[];
+  const N=520, lnA=0, lnB=Math.log(.0035);
+  let lo=1e9,hi=-1e9; const raw=[];
+  for(let i=0;i<N;i++){
+    const dt=Math.exp(lnA+(lnB-lnA)*i/(N-1)), t=1-dt;
+    const pw=-Math.pow(dt,m), lp=pw - C*Math.pow(dt,m)*Math.cos(om*Math.log(dt)+ph);
+    raw.push([t,lp,pw]); lo=Math.min(lo,lp,pw); hi=Math.max(hi,lp,pw);
+  }
+  const mx=(t)=>X0+(X1-X0)*t, my=(v)=>Y0-(v-lo)/(hi-lo)*(Y0-Y1);
+  for(const [t,lp,pw] of raw){ P.push(mx(t).toFixed(1)+' '+my(lp).toFixed(1)); Q.push(mx(t).toFixed(1)+' '+my(pw).toFixed(1)); }
+  $('#lp').setAttribute('d','M'+P.join(' L'));
+  $('#pw').setAttribute('d','M'+Q.join(' L'));
+  const g=$('#grid'), NS='http://www.w3.org/2000/svg';
+  for(let i=0;i<=4;i++){ const l=document.createElementNS(NS,'line'); const y=Y1+(Y0-Y1)*i/4; l.setAttribute('x1',X0); l.setAttribute('x2',X1); l.setAttribute('y1',y); l.setAttribute('y2',y); l.setAttribute('class','gd'); g.appendChild(l); }
+})();
+const lpPath=$('#lp'), head=$('#head'), halo=$('#halo'), stepEls=[...document.querySelectorAll('#steps li')];
+const lpLen = lpPath.getTotalLength ? lpPath.getTotalLength() : 0;
+let waveP=-1;
+function setWave(p){
+  p=Math.round(p*500)/500; if(p===waveP) return; waveP=p;
+  lpPath.setAttribute('stroke-dashoffset',(1-p).toFixed(4));
+  if(lpLen){ const pt=lpPath.getPointAtLength(lpLen*Math.max(.001,p)); head.setAttribute('cx',pt.x.toFixed(1)); head.setAttribute('cy',pt.y.toFixed(1)); halo.setAttribute('cx',pt.x.toFixed(1)); halo.setAttribute('cy',pt.y.toFixed(1)); }
+  stepEls[0].classList.toggle('on',p>.04 && p<.5);
+  stepEls[1].classList.toggle('on',p>=.5 && p<.9);
+  stepEls[2].classList.toggle('on',p>=.9);
+}
+
+/* ================= 渲染：WebGL（水波折射 / 涟漪 / 焦散 / 光束 / 调色 / 颗粒） ================= */
+const stage=$('#stage'), glc=$('#gl'), film=$('#film');
+let gl=null, U={}, useGL=false, texCache=new Map(), W=1, H=1, dprScale=1;
+const VS='attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
+const FS=`#define OCT ${MOB?3:5}
+precision highp float;
+varying vec2 v;
+uniform sampler2D uA,uB;
+uniform float uMix,uT,uSub,uDeep,uStr;
+uniform vec2 uRes,uCov,uK;
+uniform vec4 uTint;
+uniform float uHz,uSkyW,uSunX;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+/* ---------- 代码渲染的天空：透视云层 + 夕阳 + 海平线薄雾 ---------- */
+float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+// k：可用的细节层数；靠近海平线时云被透视压缩，减少细节层，避免远处闪烁
+float fbmK(vec2 p,float k){float s=0.,a=.5;mat2 R=mat2(1.6,1.2,-1.2,1.6);
+  for(int i=0;i<OCT;i++){s+=a*mix(.5,n2(p),clamp(k-float(i),0.,1.));p=R*p+vec2(1.7,9.2);a*=.5;}return s;}
+float LODK=9.;
+float fbm(vec2 p){return fbmK(p,LODK);}
+// im：画面坐标（x 0–1，y 自上而下 0–1）；以视频的海平线 uHz 为基准
+vec3 skyCol(vec2 im,float asp,float t){
+  float hI=uHz, e=max(hI-im.y,0.), r=clamp(im.y/max(hI,.01),0.,1.);
+  // 底色：取自原视频天空 —— 顶部蓝灰，向海平线过渡到暖橙，贴海平线一层薄雾
+  vec3 c=mix(vec3(.58,.67,.75),vec3(.78,.78,.74),smoothstep(0.,.55,r));
+  c=mix(c,vec3(.88,.78,.62),smoothstep(.45,.86,r));
+  c=mix(c,vec3(.88,.71,.52),smoothstep(.8,.97,r));
+  c=mix(c,vec3(.82,.70,.60),smoothstep(.955,1.,r));
+  // 太阳：位置对准海面上的金色反光列；随下潜逐渐贴近海平线
+  float sy=hI-max(.006,.075-(.431-hI)*.62);
+  vec2 d=vec2((im.x-uSunX)*asp,im.y-sy); float dist=length(d);
+  vec3 sunC=vec3(1.,.79,.50);
+  float fl=1.+.035*sin(t*1.7)+.02*sin(t*3.1+1.);
+  c+=sunC*(exp(-dist*6.)*.42+exp(-dist*24.)*.45)*fl;                       // 大气散射的光晕
+  c+=sunC*exp(-abs(im.y-hI)*22.)*exp(-abs(d.x)*1.4)*.30;                    // 沿海平线铺开的暖光
+  c=mix(c,vec3(1.,.97,.87),smoothstep(.0165,.0115,dist));                 // 日轮
+  // 云：投影到远处的云平面，越靠近海平线越扁、越小（透视）；风持续把云向右吹，并缓慢变形
+  float z=1./(e*2.6+.03);
+  LODK=1.5+float(OCT)*smoothstep(.01,.22,e);
+  vec2 cp=vec2((im.x-.5)*asp*z*.5,z*.85);
+  vec2 wind=vec2(t*.055,t*.010);
+  vec2 q=cp*1.7+wind;
+  vec2 w=vec2(fbm(q*.45+vec2(3.1,1.7)+t*.006),fbm(q*.45+vec2(8.3,2.8)-t*.005));
+  float dn=fbm(q+w*1.1);
+  // 云量：大块积云加上稀疏处的缝隙，天空不再是一整片
+  float cover=fbm(cp*.35+vec2(t*.012,5.))*.35;
+  float a=smoothstep(.40-cover*.25,.66-cover*.25,dn);
+  float thick=smoothstep(.45,.85,dn);
+  vec2 toSun=normalize(vec2(uSunX-im.x,im.y-sy)*vec2(asp,1.)+1e-4);
+  float dn2=fbm(q+w*1.1+toSun*.28);
+  float lit=clamp((dn-dn2)*4.5+.5,0.,1.);                                // 朝阳一侧亮、背阳一侧暗
+  float rim=exp(-dist*2.2);
+  vec3 shade=mix(vec3(.50,.50,.60),vec3(.66,.56,.58),r);                  // 背光：灰紫
+  vec3 litC=mix(vec3(1.,.96,.90),vec3(1.,.83,.58),r*.8+rim*.5);           // 受光：奶白到金
+  vec3 cc=mix(shade,litC,lit);
+  cc*=1.-.22*thick*(1.-lit);                                              // 厚云核心更暗，立体感
+  cc+=sunC*rim*(.55*(1.-a)+.25*lit)*(.4+.6*(1.-thick));                  // 云边银亮的金边
+  // 高空卷云：被拉长的细丝，移动更快
+  float ci=fbm(vec2(cp.x*.3,cp.y*2.4)+vec2(t*.09,t*.01)+w*.3);
+  float a2=smoothstep(.52,.80,ci)*.5*smoothstep(.02,.16,e);
+  c=mix(c,mix(vec3(.95,.90,.84),vec3(1.,.86,.66),r)+sunC*rim*.25,a2);
+  // 近海平线处云渐隐入薄雾
+  a*=smoothstep(.0,.03,e)*(1.-.35*smoothstep(.07,.0,e));
+  cc=mix(cc,c,smoothstep(.08,.0,e)*.45);
+  c=mix(c,cc,a);
+  c+=sunC*exp(-dist*20.)*.18*fl;                                         // 透过云层的余晖
+  return c;
+}
+float caus(vec2 uv,float t){
+  vec2 p=mod(uv*6.28318,6.28318)-250.;vec2 i=p;float c=1.;float inten=.005;
+  for(int n=0;n<4;n++){float tt=t*(1.-(3.5/float(n+1)));i=p+vec2(cos(tt-i.x)+sin(tt+i.y),sin(tt-i.y)+cos(tt+i.x));
+    c+=1./length(vec2(p.x/(sin(i.x+tt)/inten),p.y/(cos(i.y+tt)/inten)));}
+  c/=4.;c=1.17-pow(c,1.4);return clamp(pow(abs(c),8.),0.,1.);
+}
+vec3 soft(vec3 a,vec3 b){return mix(2.*a*b+a*a*(1.-2.*b),2.*a*(1.-b)+sqrt(a)*(2.*b-1.),step(.5,b));}
+void main(){
+  vec2 s=v;float asp=uRes.x/uRes.y;vec2 q=vec2(s.x*asp,s.y);
+  // 不再叠加人工折射和涟漪：水面的动态全部来自真实画面
+  vec2 uv=clamp(s*uCov+uK*(1.-uCov),.001,.999);
+  vec2 px=uCov/uRes*1.2;
+  vec2 ox=vec2(px.x,0.), oy=vec2(0.,px.y);
+  vec3 ca=texture2D(uA,uv).rgb, cb=texture2D(uB,uv).rgb;
+  vec3 col=mix(ca,cb,uMix);
+  // 轻度锐化（反锐化掩模），对混合后的画面计算，避免交叉淡化时出现边缘错位
+  vec3 bl=mix((texture2D(uA,uv+ox).rgb+texture2D(uA,uv-ox).rgb+texture2D(uA,uv+oy).rgb+texture2D(uA,uv-oy).rgb),
+              (texture2D(uB,uv+ox).rgb+texture2D(uB,uv-ox).rgb+texture2D(uB,uv+oy).rgb+texture2D(uB,uv-oy).rgb),uMix)*.25;
+  col=clamp(col+(col-bl)*.5,0.,1.);
+  // 海平线以上换成代码天空；海面、浪尖仍用真实视频（按亮度区分，浪冲过海平线时不会被盖住）
+  if(uSkyW>.001){
+    vec2 im=vec2(uv.x,1.-uv.y);
+    float above=smoothstep(uHz+.004,uHz-.003,im.y);
+    if(above>0.){
+      float lum=dot(col,vec3(.299,.587,.114));
+      float m=above*smoothstep(.40,.54,lum)*uSkyW;
+      if(m>0.) col=mix(col,skyCol(im,1.7778,uT),m);
+    }
+  }
+  if(uSub>.001){
+    // 水下只留很淡的焦散与光束作点缀
+    float topM=smoothstep(.25,1.,s.y);
+    float c=caus(q*1.5+vec2(uT*.01,uT*.02),uT*.22);
+    col+=vec3(.78,1.,.95)*c*.08*uSub*topM*(1.-uDeep*.8);
+    vec2 sun=vec2(.62*asp,1.3);vec2 dv=q-sun;float ang=atan(dv.x,-dv.y);
+    float rays=clamp(.5+.25*sin(ang*23.+uT*.21)+.25*sin(ang*41.-uT*.3+1.7),0.,1.);
+    rays=pow(rays,4.)*smoothstep(1.7,.25,length(dv));
+    col+=vec3(.82,1.,.96)*rays*.06*uSub*(1.-uDeep*.7)*(.65+.55*uStr);
+  }
+  col=clamp(col,0.,1.);
+  col=mix(col,soft(col,uTint.rgb),uTint.a);
+  float vg=smoothstep(1.3,.35,length((s-vec2(.4,.6))*vec2(1.,1.2)));col*=mix(.72,1.,vg);
+  col+=(hash(s*uRes+fract(uT*7.)*91.)-.5)*.022;
+  gl_FragColor=vec4(col,1.);
+}`;
+function initGL(){
+  try{ gl=glc.getContext('webgl',{alpha:false,antialias:false,depth:false,stencil:false,preserveDrawingBuffer:false,powerPreference:'high-performance'}); }catch(e){ gl=null; }
+  if(!gl) return false;
+  const sh=(t,src)=>{ const s=gl.createShader(t); gl.shaderSource(s,src); gl.compileShader(s); if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ console.warn(gl.getShaderInfoLog(s)); return null; } return s; };
+  const vs=sh(gl.VERTEX_SHADER,VS), fs=sh(gl.FRAGMENT_SHADER,FS); if(!vs||!fs) return false;
+  const pr=gl.createProgram(); gl.attachShader(pr,vs); gl.attachShader(pr,fs); gl.linkProgram(pr);
+  if(!gl.getProgramParameter(pr,gl.LINK_STATUS)) return false;
+  gl.useProgram(pr);
+  const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uHz','uSkyW','uSunX']) U[n]=gl.getUniformLocation(pr,n);
+  gl.uniform1i(U.uA,0); gl.uniform1i(U.uB,1);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+  glc.addEventListener('webglcontextlost',(e)=>{ e.preventDefault(); toFallback(); });
+  return true;
+}
+function toFallback(){ useGL=false; texCache.clear(); stage.classList.add('fb'); sizeCanvases(); }
+// 统一的画面源：滚动帧 {key:i, src:img} 或循环帧 / 视频 {key:'sea3', src, live}
+function frameItem(i){ const f=frames[i]; return f&&f.ok ? {key:i,src:f.img,live:false} : null; }
+function tex(it){
+  if(!it) return null;
+  let t=texCache.get(it.key);
+  if(t){ texCache.delete(it.key); texCache.set(it.key,t);
+    if(it.live){ gl.bindTexture(gl.TEXTURE_2D,t); try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,it.src); }catch(e){} }
+    return t; }
+  if(texCache.size>=10){ const first=texCache.keys().next().value; gl.deleteTexture(texCache.get(first)); texCache.delete(first); }
+  t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,it.src); }catch(e){ gl.deleteTexture(t); toFallback(); return null; } // 本地文件被浏览器视为跨域时退回 Canvas
+  texCache.set(it.key,t); return t;
+}
+const fx = film.getContext('2d',{alpha:false});
+function sizeCanvases(){
+  const base=Math.min(window.devicePixelRatio||1, MOB?2:2) * dprScale;
+  const cw=window.innerWidth, ch=window.innerHeight;
+  W=Math.max(1,Math.round(cw*base)); H=Math.max(1,Math.round(ch*base));
+  if(useGL){ glc.width=W; glc.height=H; gl.viewport(0,0,W,H); }
+  else { film.width=W; film.height=H; fx.imageSmoothingEnabled=true; fx.imageSmoothingQuality='high'; }
+}
+// 代码天空：每一帧视频里的海平线高度（自上而下，‰），由原视频逐帧测得；下潜时用它让天空始终贴住海平线
+// 地址加 ?sky=video 可切回视频原本的天空
+const SKY_ON = !/[?&]sky=video\b/.test(location.search);
+const HZ_TAB=[431,431,431,431,431,431,430,430,430,429,429,429,428,428,427,427,427,427,426,426,426,425,425,425,425,425,424,424,424,423,423,423,423,422,422,422,422,421,421,421,421,421,421,421,419,418,417,415,412,409,406,402,399,396,394,390,388,385,382,381,379,378,376,373,371,369,367,365,363,361,359,357,356,353,351,351,350,347,345,345,342,341,331,329,323,316,308,301,292,284,276,268,259,250,243,234,225,217,209,200,191,181,171,163,153,143,132,121,100,89,77,65,53,40,27,15,9,9];
+const HZ_LOOP=.4296, SUN_X=.771;
+function hzAt(fi){ // fi：当前帧序列中的位置 → 换算到 241 帧的原始时间轴
+  const p=fi/(SRC.n-1)*240, i=Math.floor(p), t=p-i;
+  if(i>=HZ_TAB.length-1) return 0;
+  return (HZ_TAB[i]+(HZ_TAB[i+1]-HZ_TAB[i])*t)/1000;
+}
+// fi：滚动位置对应的帧；loop / loopW：静止时的真实海浪循环及其权重
+function render(now, fi, sub, deep, loop, loopW){
+  const i0=Math.floor(fi); let a=nearestLoaded(i0); if(a<0 && !loop) return;
+  let A=null, B=null, mix=0;
+  if(loop && loopW>=.999){ A=B=loop; }
+  else if(loop && loopW>.001){
+    // 停下 / 起步时：当前滚动帧与循环画面交叉淡化
+    A=frameItem(a<0?0:a) || loop; B=loop; mix=loopW;
+  } else {
+    if(a<0) return;
+    A=B=frameItem(a);
+    if(a===i0){ const i1=Math.min(SRC.n-1,i0+1); const it=frameItem(i1); if(it){ B=it;
+      // 只在帧切换附近的窄区间混合，其余时间显示单帧原图，避免两帧叠加的重影
+      mix=sstep(.3,.7,fi-i0); } }
+  }
+  const s=Math.max(W/SRC.w,H/SRC.h), covx=W/(SRC.w*s), covy=H/(SRC.h*s), kx = W<H ? .62 : .5;
+  if(useGL){
+    const ta=tex(A), tb=(B===A)?ta:tex(B); if(!ta) return;
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,ta);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,tb||ta);
+    gl.uniform1f(U.uMix,tb?mix:0); gl.uniform1f(U.uT,clk(now)); gl.uniform1f(U.uSub,sub); gl.uniform1f(U.uDeep,deep); gl.uniform1f(U.uStr,s0);
+    gl.uniform2f(U.uRes,W,H); gl.uniform2f(U.uCov,covx,covy); gl.uniform2f(U.uK,kx,.5);
+    gl.uniform4f(U.uTint,TINT[0],TINT[1],TINT[2],TINT[3]);
+    // 海平线：滚动帧查表，循环画面固定；两者交叉淡化时按权重插值
+    const lw = loop ? loopW : 0, hz = hzAt(fi)*(1-lw) + HZ_LOOP*lw;
+    const skyW = SKY_ON ? sstep(.03,.12,hz) : 0;   // 镜头沉到海平线以下后天空自然退出
+    gl.uniform1f(U.uHz,hz); gl.uniform1f(U.uSkyW,skyW); gl.uniform1f(U.uSunX,.762*(1-lw)+SUN_X*lw);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+  } else {
+    const dw=SRC.w*s, dh=SRC.h*s, ox=(W-dw)*kx, oy=(H-dh)/2;
+    fx.globalAlpha=1; fx.drawImage(A.src,ox,oy,dw,dh);
+    if(B!==A && mix>0.02){ fx.globalAlpha=mix; fx.drawImage(B.src,ox,oy,dw,dh); fx.globalAlpha=1; }
+  }
+}
+
+/* ================= 水下漂浮颗粒（分远近三层） ================= */
+const mc=$('#motes'), mx=mc.getContext('2d');
+let motes=[], mw=1, mh=1, sprite=null;
+function makeSprite(){
+  const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(232,248,244,1)'); g.addColorStop(.35,'rgba(232,248,244,.55)'); g.addColorStop(1,'rgba(232,248,244,0)');
+  x.fillStyle=g; x.fillRect(0,0,64,64); return c;
+}
+function sizeMotes(){
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
+  mw=mc.width=Math.round(window.innerWidth*dpr); mh=mc.height=Math.round(window.innerHeight*dpr);
+  const n=Math.round((MOB?46:96)*(.6+.8*s0));
+  motes=Array.from({length:n},()=>{ const z=Math.random(); return {x:Math.random()*mw,y:Math.random()*mh,z,
+    r:(z<.7? 1.2+z*3 : 8+(z-.7)*40)*dpr, v:(.06+z*.5)*dpr, ph:Math.random()*6.28, a:z<.7? .35+.4*(1-z) : .12+.1*Math.random()}; });
+  motes.sort((p,q)=>p.z-q.z);
+}
+let lastY=0, scrollVel=0;
+function drawMotes(t,vis){
+  mc.style.opacity = vis.toFixed(3);
+  if(vis<=0.01) return;
+  mx.clearRect(0,0,mw,mh);
+  const sp=.6+.9*s0;
+  for(const m of motes){
+    m.y -= m.v*sp + scrollVel*m.z*.25; m.x += Math.sin(t*.0005+m.ph)*(.12+m.z*.3);
+    if(m.y<-m.r*2){ m.y=mh+m.r*2; m.x=Math.random()*mw; }
+    if(m.y>mh+m.r*2){ m.y=-m.r*2; m.x=Math.random()*mw; }
+    mx.globalAlpha=m.a*(.75+.25*Math.sin(t*.002+m.ph));
+    mx.drawImage(sprite,m.x-m.r,m.y-m.r,m.r*2,m.r*2);
+  }
+  mx.globalAlpha=1;
+}
+
+/* ================= 滚动 → 深度 ================= */
+const MAXM=1400, LG=(m)=>Math.log(1+m)/Math.log(1+MAXM);
+let A=[], vh=1, introEnd=1;
+function anchors(){
+  vh=window.innerHeight; const sy=window.scrollY;
+  const mid=(id)=>{ const r=$(id).getBoundingClientRect(); return r.top+sy+r.height/2-vh/2; };
+  introEnd = $('#intro').offsetHeight - vh*.15;
+  const endY = document.documentElement.scrollHeight - vh;
+  A=[[introEnd,8],[mid('#s1'),15],[mid('#s2'),30],[mid('#s3'),200],[mid('#s4'),1000],[Math.max(endY,mid('#s4')+1),1400]];
+}
+function depthAt(y,p){
+  if(y<=A[0][0]) return p<SUBMERGED ? 0 : 8*clamp((p-SUBMERGED)/(1-SUBMERGED),0,1);
+  for(let i=1;i<A.length;i++){ if(y<=A[i][0]){ const [y0,m0]=A[i-1],[y1,m1]=A[i]; return m0+(m1-m0)*(y-y0)/Math.max(1,y1-y0); } }
+  return MAXM;
+}
+const ticks=$('#ticks');
+[[0,'0 m'],[30,'30'],[200,'200'],[1000,'1000']].forEach(([m,l])=>{ const d=document.createElement('div'); d.className='tk'; d.style.top=(LG(m)*100)+'%'; d.textContent=l; ticks.appendChild(d); });
+
+/* ================= 文字颜色：水上深色 → 水下浅色 ================= */
+const root=document.documentElement.style;
+const mixC=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const rgba=(c,a)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+const INK0=[19,35,42], INK1=[240,248,247], BT0=[244,241,234], BT1=[6,34,42];
+const themeMeta=document.querySelector('meta[name=theme-color]');
+let lastInk=-1;
+function setInk(t){
+  t=Math.round(t*40)/40; if(t===lastInk) return; lastInk=t;
+  const ink=mixC(INK0,INK1,t);
+  root.setProperty('--ink',rgba(ink,1)); root.setProperty('--ink2',rgba(ink,.78)); root.setProperty('--inkL',rgba(ink,.28));
+  root.setProperty('--bp',rgba(ink,.95)); root.setProperty('--bpt',rgba(mixC(BT0,BT1,t),1));
+  const pl=mixC([250,244,232],[6,30,38],t);
+  root.setProperty('--plate',rgba(pl,(.58-.14*t).toFixed(3))); root.setProperty('--plateL',rgba(ink,.14));
+  root.setProperty('--halo',rgba(pl,(.55-.1*t).toFixed(3)));
+  root.setProperty('--rp',rgba(mixC([255,240,214],[127,224,214],t),.9)); root.setProperty('--rpS',rgba(mixC([19,35,42],[0,0,0],t),.18));
+  themeMeta.setAttribute('content', t>.5?'#0B2A33':'#3E5560');
+}
+
+/* ================= 声音：默认静音；浪涌起落 → 入水闷响 + 气泡（程序合成） ================= */
+/* 声音设计总则：全部声音落在同一调性（D 小调五声音阶 D F G A C），
+   三条总线：界面音 ui / 环境声 amb / 音乐 mus → 压缩器 → 总音量。 */
+const SND={ctx:null,on:false,u:0,prevU:0,waveT:0,bubT:0,padT:0,whaleT:0,windT:0,zone:-1,hov:new WeakMap(),voices:new Map(),hoverT:0,splashT:-10,busy:false};
+const PREF=(()=>{
+  const defaults={vol:55,music:false,amb:true,ui:true,on:false};
+  try{
+    const p=JSON.parse(localStorage.getItem('cp_snd')||'{}')||{};
+    return {vol:Number.isFinite(p.vol)?clamp(p.vol,0,100):55,
+      music:p.version===2&&p.music===true,amb:p.amb!==false,ui:p.ui!==false,on:false};
+  }catch(e){return defaults;}
+})();
+function savePref(){ try{ localStorage.setItem('cp_snd',JSON.stringify({...PREF,version:2,on:false})); }catch(e){} }
+function trackVoice(source,...nodes){
+  SND.voices.set(source,nodes);
+  source.onended=()=>{source.disconnect(); nodes.forEach(n=>n.disconnect()); SND.voices.delete(source);};
+}
+function stopEvents(){
+  ['waveT','bubT','padT','whaleT'].forEach(k=>clearTimeout(SND[k]));
+  for(const source of SND.voices.keys()){try{source.stop();}catch(e){}}
+}
+function startEvents(){
+  stopEvents();
+  SND.zone=-1; SND.prevU=sstep(WATERLINE-.02,SUBMERGED+.06,cur); sndSet(cur);
+  if(PREF.amb){scheduleWave(); bubbles();}
+  if(PREF.music) padChord();
+}
+const N_={D3:146.83,F3:174.61,G3:196,A3:220,C4:261.63,D4:293.66,F4:349.23,G4:392,A4:440,C5:523.25,D5:587.33,F5:698.46,G5:783.99,A5:880,C6:1046.5,D6:1174.66};
+const PENTA=[N_.D5,N_.F5,N_.G5,N_.A5,N_.C6,N_.D6];
+function brownBuf(ctx,sec){
+  const n=Math.floor(ctx.sampleRate*sec), b=ctx.createBuffer(1,n,ctx.sampleRate), d=b.getChannelData(0);
+  let last=0; for(let i=0;i<n;i++){ last=(last+.02*(Math.random()*2-1))/1.02; d[i]=last*3.5; }
+  return b;
+}
+function whiteBuf(ctx,sec){
+  const n=Math.floor(ctx.sampleRate*sec), b=ctx.createBuffer(1,n,ctx.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1; return b;
+}
+function sndBuild(){
+  const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+  const ctx=new AC();
+  const brown=brownBuf(ctx,8), white=whiteBuf(ctx,4);
+  // 总线：压缩器防止叠加破音 → 总音量（开关淡入淡出）→ 用户音量
+  const out=ctx.createGain(); out.gain.value=PREF.vol/100; out.connect(ctx.destination);
+  const master=ctx.createGain(); master.gain.value=0;
+  const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-16; comp.knee.value=12; comp.ratio.value=4; comp.attack.value=.004; comp.release.value=.25;
+  master.connect(comp); comp.connect(out);
+   const amb=ctx.createGain(); amb.gain.value=PREF.amb?1:0; amb.connect(master);
+  const ui=ctx.createGain(); ui.gain.value=PREF.ui?(RM?.6:1):0; ui.connect(master);
+  const mus=ctx.createGain(); mus.gain.value=PREF.music?1:0;
+  const musF=ctx.createBiquadFilter(); musF.type='lowpass'; musF.frequency.value=5200; musF.Q.value=.3;
+  mus.connect(musF); musF.connect(master);
+  // 短混响：用衰减噪声做脉冲响应，界面音和音乐共用，统一空间感
+   const irN=Math.floor(ctx.sampleRate*.65), ir=ctx.createBuffer(2,irN,ctx.sampleRate);
+  for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch); for(let i=0;i<irN;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/irN,3.2); }
+   // Wet returns pass through their own bus so mute controls silence the tails too.
+   for(const [name,bus] of [['ui',ui],['amb',amb],['mus',mus]]){
+     const verb=ctx.createConvolver(), gain=ctx.createGain(); verb.buffer=ir;
+     gain.gain.value=name==='ui'?.12:.22; verb.connect(gain); gain.connect(bus); SND[name+'Verb']=verb;
+   }
+  const body=ctx.createBiquadFilter(); body.type='lowpass'; body.frequency.value=8000; body.Q.value=.4; body.connect(amb);
+  const surf=ctx.createGain(); surf.gain.value=1; surf.connect(body);
+  // 风：高通噪声，缓慢阵风起伏，只在水面
+  const wind=ctx.createBufferSource(); wind.buffer=white; wind.loop=true;
+  const wF=ctx.createBiquadFilter(); wF.type='bandpass'; wF.frequency.value=900; wF.Q.value=.35;
+   const wG=ctx.createGain(); wG.gain.value=.012;
+   const wL=ctx.createOscillator(); wL.frequency.value=.073; const wLA=ctx.createGain(); wLA.gain.value=.006; wL.connect(wLA); wLA.connect(wG.gain); wL.start();
+  const wL2=ctx.createOscillator(); wL2.frequency.value=.05; const wL2A=ctx.createGain(); wL2A.gain.value=380; wL2.connect(wL2A); wL2A.connect(wF.frequency); wL2.start();
+  wind.connect(wF); wF.connect(wG); wG.connect(surf); wind.start(0,1.1);
+   Object.assign(SND,{out,amb,ui,mus,musF});
+  // 远处持续的海潮底噪
+  const bed=ctx.createBufferSource(); bed.buffer=brown; bed.loop=true;
+  const bedF=ctx.createBiquadFilter(); bedF.type='lowpass'; bedF.frequency.value=420;
+   const bedG=ctx.createGain(); bedG.gain.value=.18;
+  bed.connect(bedF); bedF.connect(bedG); bedG.connect(surf); bed.start();
+  // 水下：低频压力感，缓慢起伏
+  const deep=ctx.createBufferSource(); deep.buffer=brown; deep.loop=true;
+  const dF=ctx.createBiquadFilter(); dF.type='lowpass'; dF.frequency.value=140;
+  const swell=ctx.createGain(); swell.gain.value=1;
+  const lfo=ctx.createOscillator(); lfo.frequency.value=.06; const lA=ctx.createGain(); lA.gain.value=.3; lfo.connect(lA); lA.connect(swell.gain); lfo.start();
+  const gDeep=ctx.createGain(); gDeep.gain.value=0;
+  deep.connect(dF); dF.connect(swell); swell.connect(gDeep); gDeep.connect(amb); deep.start(0,2.3);
+   Object.assign(SND,{ctx,master,body,surf,gDeep,white,brown});
+  return true;
+}
+function scheduleWave(){
+   if(!SND.on||!SND.ctx||document.hidden||!PREF.amb) return;
+  const c=SND.ctx, t=c.currentTime+.05;
+   const rise=2.2+Math.random()*1.4, wash=4+Math.random()*2, peak=.16+Math.random()*.08;
+   const src=c.createBufferSource(); src.buffer=SND.brown; src.loop=true;
+   const foam=c.createBufferSource(); foam.buffer=SND.white; foam.loop=true;
+  const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=.55;
+   bp.frequency.setValueAtTime(180,t); bp.frequency.exponentialRampToValueAtTime(700+Math.random()*400,t+rise); bp.frequency.exponentialRampToValueAtTime(240,t+rise+wash);
+  const g=c.createGain(); g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+rise); g.gain.exponentialRampToValueAtTime(.0001,t+rise+wash);
+   const hp=c.createBiquadFilter(); hp.type='bandpass'; hp.frequency.value=1800; hp.Q.value=.45;
+  const g2=c.createGain(); g2.gain.setValueAtTime(.0001,t); g2.gain.setValueAtTime(.0001,t+rise*.8); g2.gain.exponentialRampToValueAtTime(peak*.32,t+rise+.18); g2.gain.exponentialRampToValueAtTime(.0001,t+rise+wash*.7);
+  const out = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+  if(out.pan) out.pan.value=(Math.random()*2-1)*.55;
+  src.connect(bp); bp.connect(g); g.connect(out);
+   foam.connect(hp); hp.connect(g2); g2.connect(out);
+  out.connect(SND.surf);
+   trackVoice(src,bp,g); trackVoice(foam,hp,g2,out);
+   src.start(t,Math.random()*3); src.stop(t+rise+wash+.2);
+   foam.start(t,Math.random()*2); foam.stop(t+rise+wash+.2);
+  SND.waveT=setTimeout(scheduleWave,(rise+wash)*1000*(.5+Math.random()*.35));
+}
+function sndSet(cur){
+  const u=sstep(WATERLINE-.02,SUBMERGED+.06,cur);
+  const t=SND.ctx.currentTime;
+  SND.body.frequency.setTargetAtTime(8000*Math.pow(380/8000,u),t,.25);
+   SND.surf.gain.setTargetAtTime(Math.cos(u*Math.PI/2),t,.3);
+   SND.gDeep.gain.setTargetAtTime(.28*Math.sin(u*Math.PI/2),t,.3);
+  // 音乐随深度变暗：越深，低通越低
+  const dk=clamp((LG(depth)-LG(30))/(LG(1000)-LG(30)),0,1);
+  SND.musF.frequency.setTargetAtTime(5200*Math.pow(.16,Math.max(u*.55,dk)),t,.6);
+  // 穿过水线：一声入水（向下）或出水（向上）
+   if(t-SND.splashT>2 && ((SND.prevU<.55&&u>=.55)||(SND.prevU>.25&&u<=.25))){
+     splash(u>SND.prevU); SND.splashT=t;
+   }
+  SND.prevU=u; SND.u=u;
+  // 跨越深度层：越深音越低越闷
+  const z = depth<1?0:depth<200?1:depth<1000?2:3;
+   // Depth is communicated by the soundscape, not repeated notification chimes.
+  SND.zone=z;
+}
+
+/* ---------- 合成工具 ---------- */
+function env(g,t,a,peak,dec){ g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(.0001,t+a+dec); }
+function panNode(c,x){ const p=c.createStereoPanner?c.createStereoPanner():c.createGain(); if(p.pan) p.pan.value=clamp(x,-1,1); return p; }
+// 水滴/玻璃般的音：正弦 + 轻微向上滑音，可带一个五度泛音
+function tone(f,{t=0,a=.004,dec=.18,peak=.12,glide=1,type='sine',pan=0,bus='ui',wet=.4,partial=0}={}){
+  const c=SND.ctx; if(!c) return; const t0=c.currentTime+t;
+  const o=c.createOscillator(), g=c.createGain(), p=panNode(c,pan);
+  o.type=type; o.frequency.setValueAtTime(f,t0); if(glide!==1) o.frequency.exponentialRampToValueAtTime(f*glide,t0+a+dec*.6);
+  env(g,t0,a,peak,dec); o.connect(g);
+   if(partial){ const o2=c.createOscillator(), g2=c.createGain(); o2.type='sine'; o2.frequency.setValueAtTime(f*partial,t0); env(g2,t0,a,peak*.22,dec*.55); o2.connect(g2); g2.connect(p); trackVoice(o2,g2); o2.start(t0); o2.stop(t0+a+dec+.04); }
+  g.connect(p); p.connect(SND[bus]);
+   const send=c.createGain(); send.gain.value=wet; g.connect(send); send.connect(SND[bus+'Verb']);
+   trackVoice(o,g,p,send);
+  o.start(t0); o.stop(t0+a+dec+.05);
+}
+// 滤波噪声一阵（入水、低音“咚”的触感）
+function noiseHit({t=0,f0=1800,f1=300,q=.8,a=.005,dec=.35,peak=.2,bus='ui',type='lowpass',pan=0}={}){
+  const c=SND.ctx; if(!c) return; const t0=c.currentTime+t;
+  const s=c.createBufferSource(); s.buffer=SND.white; const fl=c.createBiquadFilter(); fl.type=type; fl.Q.value=q;
+  fl.frequency.setValueAtTime(f0,t0); fl.frequency.exponentialRampToValueAtTime(f1,t0+a+dec);
+  const g=c.createGain(); env(g,t0,a,peak,dec); const p=panNode(c,pan);
+   s.connect(fl); fl.connect(g); g.connect(p); p.connect(SND[bus]); trackVoice(s,fl,g,p); s.start(t0,Math.random()*2); s.stop(t0+a+dec+.05);
+}
+const xPan=(x)=>((x/Math.max(1,window.innerWidth))*2-1)*.7;
+
+/* ---------- 界面音效 ---------- */
+const UI={
+  hover(el,x){
+     if(!canUI()) return; const now=performance.now(), last=SND.hov.get(el)||0;
+     if(now-last<900 || now-SND.hoverT<160) return; SND.hov.set(el,now); SND.hoverT=now;
+     tone(N_.A5,{dec:.045,peak:.012,glide:.98,pan:xPan(x),wet:.08});
+  },
+   tap(x){ if(!canUI()) return; tone(N_.D5,{dec:.09,peak:.055,glide:.92,pan:xPan(x),wet:.12}); },
+  confirm(x){ // 主按钮：低沉“咚” + 上扬泛音
+    if(!canUI()) return; const p=xPan(x);
+     tone(N_.D4,{dec:.09,peak:.075,glide:.92,pan:p,wet:.08});
+     noiseHit({f0:1100,f1:420,dec:.035,peak:.018,pan:p});
+     tone(N_.A4,{t:.035,dec:.12,peak:.035,pan:p,wet:.12});
+  },
+  dive(x){ // 开始下潜：一段向下的滑音 + 气泡
+    if(!canUI()) return; const p=xPan(x);
+     tone(N_.A4,{dec:.28,peak:.045,glide:.5,pan:p,wet:.18});
+     noiseHit({f0:1500,f1:340,a:.04,dec:.24,peak:.035,pan:p});
+  },
+  on(){ tone(N_.D5,{dec:.16,peak:.08,partial:1.5}); tone(N_.A5,{t:.09,dec:.3,peak:.08,partial:1.5}); },
+  off(){ tone(N_.A5,{dec:.14,peak:.07}); tone(N_.D5,{t:.08,dec:.26,peak:.07}); },
+  open(){ if(!canUI()) return; tone(N_.G5,{dec:.08,peak:.04,glide:1.06,wet:.2}); },
+  close(){ if(!canUI()) return; tone(N_.G5,{dec:.08,peak:.035,glide:.94,wet:.2}); },
+  tick(v){ if(!canUI()) return; tone(PENTA[Math.min(5,Math.floor(v/100*6))],{dec:.05,peak:.03,wet:.1}); },
+  gauge(top,bot){ // 指数卡置信度展开：一串升调粒子，信号越强音越高
+    if(!canUI()) return; const s=Math.max(top,bot), n=3+Math.round(Math.min(1,s*2)*3), base=bot>top?0:1;
+    for(let j=0;j<n;j++) tone(PENTA[Math.min(5,base+j)]*(j>=5?1:1),{t:j*.045,dec:.12,peak:.028,glide:1.02,pan:(j/n-.5)*.6,wet:.5});
+  }
+};
+ function canUI(){ return SND.on && SND.ctx && SND.ctx.state==='running' && !document.hidden && PREF.ui; }
+function zoneTone(z,down){
+  const f=[N_.A5,N_.D5,N_.A4,N_.D4][z];
+  tone(f,{dec:1.4,peak:.05,glide:down?.98:1.02,type:'sine',wet:.8,partial:1.5,bus:'ui'});
+  tone(f/2,{t:.03,dec:1.8,peak:.04,wet:.6,bus:'ui'});
+}
+function splash(down){
+   if(!SND.on||!PREF.amb||document.hidden) return;
+  if(down){ noiseHit({f0:4200,f1:260,q:.6,a:.01,dec:.7,peak:.16,bus:'amb'}); tone(N_.D3,{t:.02,dec:.9,peak:.1,glide:.7,bus:'amb',wet:.4});
+    for(let j=0;j<6;j++) tone(420+Math.random()*650,{t:.18+j*.07,dec:.1,peak:.03,glide:1.9,bus:'amb',pan:(Math.random()-.5)*.8,wet:.25}); }
+  else { noiseHit({f0:300,f1:3600,q:.7,a:.06,dec:.45,peak:.09,bus:'amb',type:'bandpass'}); }
+}
+
+/* ---------- 背景音乐：慢速氛围长音，无旋律无节奏；海面明亮，越深越暗越稀疏 ---------- */
+const CHORDS=[[N_.D3,N_.A3,N_.F4,N_.C5],[N_.F3,N_.C4,N_.A4,N_.G5],[N_.G3,N_.D4,N_.A4,N_.F5],[N_.A3,N_.C4,N_.G4,N_.D5]];
+let chordI=0;
+function padChord(){
+   if(!SND.on||!SND.ctx||document.hidden||!PREF.music) return;
+  const c=SND.ctx, t=c.currentTime+.05, dur=9.5, u=SND.u;
+  const ch=CHORDS[chordI++%CHORDS.length];
+  const voices = u>.7 ? ch.slice(0,2) : u>.3 ? ch.slice(0,3) : ch; // 越深越稀疏
+  voices.forEach((f,i)=>{
+    [-6,6].forEach((det,k)=>{
+      const o=c.createOscillator(), g=c.createGain(); o.type=i===0?'sine':'triangle'; o.frequency.value=f*(u>.7?.5:1); o.detune.value=det+(Math.random()-.5)*4;
+      const pk=(i===0?.05:.028)*(k?1:.9);
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(pk,t+3.2); g.gain.setValueAtTime(pk,t+dur-3.6); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+      const p=panNode(c,(i/voices.length-.5)*.8*(k?1:-1));
+       o.connect(g); g.connect(p); p.connect(SND.mus); const s=c.createGain(); s.gain.value=.5; g.connect(s); s.connect(SND.musVerb); trackVoice(o,g,p,s);
+      o.start(t); o.stop(t+dur+.1);
+    });
+  });
+  // 顶部信号强时，和声里加一点不协和（小二度），幅度很小
+   // Do not sonify uncalibrated market signals as urgency or danger.
+  // 水面偶尔一颗高处的“光点”音
+  if(u<.4 && Math.random()<.6) tone(PENTA[2+Math.floor(Math.random()*4)],{t:2+Math.random()*4,dec:1.6,peak:.018,bus:'mus',wet:.9});
+  SND.padT=setTimeout(padChord,(dur-3.4)*1000);
+}
+// 深处偶尔一声远处的鲸鸣
+function whale(){
+  if(!SND.on||!SND.ctx) return;
+  if(SND.u>.8 && Math.random()<.55){
+    const c=SND.ctx, t=c.currentTime+.1, f=N_.D3*(.9+Math.random()*.25), d=3+Math.random()*2;
+    const o=c.createOscillator(), g=c.createGain(), lp=c.createBiquadFilter(); o.type='sawtooth'; lp.type='lowpass'; lp.frequency.value=520; lp.Q.value=4;
+    o.frequency.setValueAtTime(f,t); o.frequency.linearRampToValueAtTime(f*1.5,t+d*.45); o.frequency.linearRampToValueAtTime(f*1.12,t+d);
+    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.022,t+d*.35); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    const p=panNode(c,(Math.random()-.5)*1.4); o.connect(lp); lp.connect(g); g.connect(p); p.connect(SND.amb);
+     const s=c.createGain(); s.gain.value=1.2; g.connect(s); s.connect(SND.ambVerb); trackVoice(o,lp,g,p,s); o.start(t); o.stop(t+d+.1);
+  }
+  SND.whaleT=setTimeout(whale,9000+Math.random()*12000);
+}
+function bubbles(){
+   if(!SND.on||!SND.ctx||document.hidden||!PREF.amb) return;
+  if(SND.u>.7 && Math.random()<.5){
+     const c=SND.ctx, k=1+Math.floor(Math.random()*2);
+    for(let j=0;j<k;j++){
+      const t=c.currentTime+j*(.05+Math.random()*.09), o=c.createOscillator(), g=c.createGain(), f=c.createBiquadFilter();
+      const f0=380+Math.random()*700;
+      o.type='sine'; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f0*1.9,t+.1);
+       g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.015,t+.012); g.gain.exponentialRampToValueAtTime(.0008,t+.16);
+      f.type='lowpass'; f.frequency.value=1100;
+       o.connect(g); g.connect(f); f.connect(SND.amb); trackVoice(o,g,f); o.start(t); o.stop(t+.2);
+    }
+  }
+   SND.bubT=setTimeout(bubbles,2200+Math.random()*3500);
+}
+
+/* ================= 主循环 ================= */
+const hero=$('#hero'), hint=$('#hint'), top=$('#top'), shade=$('#shade'), mk=$('#mk'), rd=$('#rd'), s1=$('#s1');
+let target=0, cur=0, raf=0, depth=0, lastFrame=0, slowCount=0, prevNow=0, lastScrollT=-1e9, loopW=0, curLoop=null;
+const IDLE_MS=300; // 停止滚动多久后切到真实海浪循环
+const FPS_CAP = MOB ? 30 : 60;
+function zoneOf(m){ return m<1?'海面':m<200?'透光层':m<1000?'弱光层':'深水层'; }
+function onScroll(){
+  const y=window.scrollY;
+  if(Math.abs(y-lastY)>.5) lastScrollT=performance.now();
+  scrollVel = clamp(y-lastY,-60,60)*(window.devicePixelRatio||1); lastY=y;
+  target = clamp(y/Math.max(1,introEnd),0,1);
+  depth = depthAt(y,target);
+  const p=(LG(depth)*100)+'%'; mk.style.top=p; rd.style.top=p;
+  rd.innerHTML=(depth<1?'0':'−'+Math.round(depth))+' m<small>'+zoneOf(depth)+'</small>';
+  const below = clamp((y-introEnd)/Math.max(1,vh),0,1);
+  shade.style.opacity = (below*.35 + clamp(LG(depth)-LG(30),0,1)*.35).toFixed(3);
+  top.classList.toggle('solid', y>introEnd);
+  hint.style.opacity = (1-clamp(y/(vh*.5),0,1)).toFixed(3);
+  const r=s1.getBoundingClientRect();
+  setWave(RM ? (r.top<vh ? 1 : 0) : clamp((vh*.8-r.top)/(r.height*.62),0,1));
+  kick();
+}
+function tick(now){
+  raf=0;
+  if(!RM) kick();
+  if(!RM && now-lastFrame < 1000/FPS_CAP-2) return;
+  const dtF = now-(prevNow||now); prevNow=now; lastFrame=now;
+  // 低性能自动降一档清晰度
+  if(useGL && !MOB && dprScale>.6){ slowCount = dtF>40 ? slowCount+1 : Math.max(0,slowCount-1); if(slowCount>45){ dprScale=.8; slowCount=0; sizeCanvases(); } }
+  const k = RM ? 1 : .12;
+  cur += (target-cur)*k; if(Math.abs(target-cur)<.0004) cur=target;
+  scrollVel*=.9;
+  // 滚动时严格按滚动位置取帧（不再来回往返播放，避免镜头上下晃）
+  const fi=clamp(cur*(SRC.n-1),0,SRC.n-1.001);
+  const sub = sstep(WATERLINE, SUBMERGED+.04, cur);
+  const deep = clamp((LG(depth)-LG(30))/(LG(1000)-LG(30)),0,1);
+  // 停下后：淡入该深度对应的真实海浪循环；再次滚动时快速淡回
+  let loopIt=null;
+  if(!RM){
+    const want=loopFor(cur), idle = now-lastScrollT>IDLE_MS && Math.abs(target-cur)<.002;
+    if(want!==curLoop){ if(loopW<.02 || !idle){ curLoop=want; loopW=0; } }
+    loopIt=loopImage(curLoop,now);
+    const goal = (idle && loopIt && want===curLoop) ? 1 : 0;
+    const dt=Math.min(.1,dtF/1000||0);
+    loopW += (goal-loopW)*(1-Math.exp(-dt*(goal>loopW?3.2:9)));
+    if(loopW<.003) loopW=0; if(loopW>.997) loopW=1;
+    pauseLoops(loopW>0?curLoop:null);
+    if(loopW>0) kick();
+  }
+  render(now, fi, sub, deep, loopW>0?loopIt:null, loopW);
+  const fo = sstep(.50,.74,cur);
+  hero.style.opacity=(1-fo).toFixed(3);
+  hero.style.transform=`translateY(${(-fo*40).toFixed(1)}px)`;
+  hero.style.visibility = fo>=1?'hidden':'visible';
+  setInk(sstep(WATERLINE-.04, SUBMERGED, cur));
+  if(SND.on && SND.ctx) sndSet(cur);
+  drawMotes(now, RM ? 0 : sstep(SUBMERGED, SUBMERGED+.1, cur));
+}
+function kick(){ if(!raf && !document.hidden) raf=requestAnimationFrame(tick); }
+
+function resize(){ sizeCanvases(); sizeMotes(); anchors(); onScroll(); }
+window.addEventListener('resize',()=>{ clearTimeout(window._rz); window._rz=setTimeout(resize,120); });
+window.addEventListener('scroll',onScroll,{passive:true});
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) kick(); });
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ anchors(); onScroll(); });
+$('#dive').addEventListener('click',(e)=>{ e.preventDefault(); UI.dive(e.clientX||window.innerWidth*.3); const tgt=s1.getBoundingClientRect().top+window.scrollY; window.scrollTo({top:tgt,behavior:RM?'auto':'smooth'}); });
+
+// 声音开关
+const sndBtn=$('#snd'), sndL=$('#sndl');
+function soundLabel(){
+  sndBtn.setAttribute('aria-pressed',String(SND.on));
+  sndBtn.setAttribute('aria-label',SND.on?'声音开关，当前开启':'声音开关，当前关闭');
+  sndL.textContent=SND.on?'声音 · 开':'声音 · 关';
+}
+async function sndToggle(){
+  if(SND.busy) return;
+  SND.busy=true; sndBtn.disabled=true;
+  try{
+    if(!SND.ctx && !sndBuild()) throw new Error('Audio unavailable');
+    if(SND.on){
+      stopEvents();
+      if(PREF.ui) UI.off();
+      SND.on=false;
+      SND.master.gain.setTargetAtTime(0,SND.ctx.currentTime,.07);
+      await new Promise(resolve=>setTimeout(resolve,240));
+      await SND.ctx.suspend();
+    }else{
+      await SND.ctx.resume();
+      if(SND.ctx.state!=='running') throw new Error('Audio blocked');
+      SND.on=true; startEvents();
+      SND.master.gain.setTargetAtTime(.65,SND.ctx.currentTime,.35);
+      if(PREF.ui) UI.on();
+      if(document.hidden){stopEvents(); await SND.ctx.suspend();}
+    }
+    $('#sndstatus').textContent='环境声与界面音效可独立关闭。离开标签页时自动暂停。';
+  }catch(e){
+    SND.on=false; stopEvents();
+    if(SND.master) SND.master.gain.value=0;
+    $('#sndstatus').textContent='声音暂未启用，请再点一次声音开关，或检查浏览器声音权限。';
+  }finally{
+    SND.busy=false; sndBtn.disabled=false; soundLabel();
+  }
+}
+sndBtn.addEventListener('click',sndToggle);
+
+// 声音设置面板
+const sndK=$('#sndk'), sndP=$('#sndp'), sv=$('#sv'), svo=$('#svo'), sm=$('#sm'), su=$('#su'), sa=$('#sa');
+sv.value=PREF.vol; svo.textContent=PREF.vol; sm.checked=PREF.music; su.checked=PREF.ui; sa.checked=PREF.amb;
+function panel(open){
+  if(open===!sndP.hidden) return;
+  sndP.hidden=!open; sndK.setAttribute('aria-expanded',String(open));
+  if(open){ UI.open(); sv.focus(); } else UI.close();
+}
+sndK.addEventListener('click',(e)=>{ e.stopPropagation(); panel(sndP.hidden); });
+document.addEventListener('click',(e)=>{ if(!sndP.hidden && !e.target.closest('.sndw')) panel(false); });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && !sndP.hidden){ panel(false); sndK.focus(); } });
+let tickV=-1;
+sv.addEventListener('input',()=>{
+  PREF.vol=+sv.value; svo.textContent=PREF.vol; savePref();
+  if(SND.ctx) SND.out.gain.setTargetAtTime(PREF.vol/100,SND.ctx.currentTime,.05);
+  const step=Math.floor(PREF.vol/10); if(step!==tickV){ tickV=step; UI.tick(PREF.vol); }
+});
+sm.addEventListener('change',()=>{ PREF.music=sm.checked; savePref(); if(SND.ctx) SND.mus.gain.setTargetAtTime(PREF.music?1:0,SND.ctx.currentTime,.3); if(SND.on&&!document.hidden) startEvents(); UI.tap(window.innerWidth*.9); });
+sa.addEventListener('change',()=>{ PREF.amb=sa.checked; savePref(); if(SND.ctx) SND.amb.gain.setTargetAtTime(PREF.amb?1:0,SND.ctx.currentTime,.25); if(SND.on&&!document.hidden) startEvents(); UI.tap(window.innerWidth*.9); });
+su.addEventListener('change',()=>{ PREF.ui=su.checked; savePref(); if(SND.ctx) SND.ui.gain.setTargetAtTime(PREF.ui?(RM?.6:1):0,SND.ctx.currentTime,.05); UI.tap(window.innerWidth*.9); });
+if(PREF.on) sndL.textContent='声音 · 关（点击恢复）';
+
+/* ---------- 点击特效：按下压扁、松手回弹 + 水波环 + 对应音效 ---------- */
+const rippleLayer=$('#fx');
+const PRESS='a.btn,button.pill,a.pill,a.tc,.top nav a';
+function ripple(x,y,small){
+  if(RM) return;
+  const r=document.createElement('i'); r.className='rp'+(small?' s':''); r.style.setProperty('--x',x+'px'); r.style.setProperty('--y',y+'px'); rippleLayer.appendChild(r); r.addEventListener('animationend',()=>r.remove(),{once:true});
+  while(rippleLayer.childElementCount>6) rippleLayer.firstElementChild.remove();
+}
+let pressed=null;
+document.addEventListener('pointerdown',(e)=>{
+  if(e.button>0) return;
+  const el=e.target.closest(PRESS);
+  if(el && !el.disabled){ pressed=el; el.classList.remove('is-pop'); if(!RM) el.classList.add('is-press'); }
+},{passive:true});
+function release(){
+  if(!pressed) return; const el=pressed; pressed=null;
+  el.classList.remove('is-press');
+  if(!RM){ void el.offsetWidth; el.classList.add('is-pop'); el.addEventListener('animationend',()=>el.classList.remove('is-pop'),{once:true}); }
+}
+document.addEventListener('pointerup',release,{passive:true});
+function cancelPress(){if(pressed){pressed.classList.remove('is-press'); pressed=null;}}
+document.addEventListener('pointercancel',cancelPress,{passive:true});
+window.addEventListener('blur',cancelPress);
+document.addEventListener('keydown',e=>{
+  if(e.repeat || !['Enter',' '].includes(e.key)) return;
+  const el=e.target.closest(PRESS);
+  if(el&&!el.disabled&&(e.key==='Enter'||el.tagName==='BUTTON')){pressed=el; if(!RM) el.classList.add('is-press');}
+});
+document.addEventListener('keyup',e=>{if(['Enter',' '].includes(e.key)) release();});
+document.addEventListener('click',(e)=>{
+  if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button>0) return;
+  const el=e.target.closest(PRESS);
+  if(!el||el.disabled||el.getAttribute('aria-disabled')==='true') return;
+  const rect=el.getBoundingClientRect(), x=e.detail?e.clientX:rect.left+rect.width/2, y=e.detail?e.clientY:rect.top+rect.height/2;
+  ripple(x,y,true);
+  if(el===sndBtn||el===sndK||el.closest('.sndp')) return;
+  if(el.matches('.btn.pri,.top>.pill,.tc')) UI.confirm(x||window.innerWidth/2);
+  else if(el.id==='dive') return;
+  else UI.tap(x||window.innerWidth/2);
+});
+// 悬停：轻轻一下水滴声（同一元素 380ms 内不重复）
+document.addEventListener('pointerover',(e)=>{
+  if(e.pointerType!=='mouse') return;
+  const el=e.target.closest(PRESS); if(!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
+  UI.hover(el,e.clientX);
+});
+// Keep native link behavior; never delay navigation for a decorative sound.
+async function pauseSound(){
+  if(!SND.ctx) return;
+  stopEvents();
+  SND.master.gain.cancelScheduledValues(SND.ctx.currentTime);
+  SND.master.gain.value=0;
+  try{await SND.ctx.suspend();}catch(e){}
+}
+document.addEventListener('visibilitychange',async()=>{
+  if(!SND.ctx||SND.busy) return;
+  if(document.hidden){await pauseSound(); return;}
+  if(SND.on){
+    try{
+      await SND.ctx.resume();
+      if(document.hidden||!SND.on||SND.ctx.state!=='running') return;
+      startEvents(); SND.master.gain.setTargetAtTime(.65,SND.ctx.currentTime,.35);
+    }catch(e){SND.on=false; soundLabel(); $('#sndstatus').textContent='点击声音开关恢复声音。';}
+  }
+});
+window.addEventListener('pagehide',()=>{SND.on=false; pauseSound(); soundLabel();});
+
+// 启动
+sprite=makeSprite();
+useGL = initGL();
+if(!useGL) stage.classList.add('fb');
+sizeCanvases(); sizeMotes(); anchors();
+cur = target = clamp(window.scrollY/Math.max(1,introEnd),0,1);
+lastY=window.scrollY;
+onScroll();
+loadAll();
+
+const rv=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); rv.unobserve(e.target);} }),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>rv.observe(el));
+})();
+</script>
+</body>
+</html>

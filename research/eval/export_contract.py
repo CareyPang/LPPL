@@ -22,6 +22,10 @@ from ..features.lppls_rules import (
 )
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
+from ..price_layer.drawdown_table import DUR_BINS, RUNUP_BINS
+from ..price_layer.drawdown_table import build as build_drawdown_table
+from ..price_layer.drawdown_table import load_logp as load_drawdown_logp
+from ..price_layer.drawdown_table import top_events as drawdown_top_events
 from .dataset import price_series
 from .original_standard import SCAN, load
 
@@ -60,6 +64,12 @@ def record(sym: str, asof: str) -> dict:
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
+HISTORY_SCANS = {
+    "dev": Path("data/features/lppls_v2"),
+    "cal": Path("data/features/lppls_v2_cal"),
+    "test": Path("data/features/lppls_v2_test"),
+}
+HISTORY_SCALES = ("6-12m", "12-24m")
 
 
 def _close(ohlc: pd.DataFrame, cal: pd.DatetimeIndex) -> pd.Series:
@@ -176,10 +186,39 @@ def _negative(sym: str, date: pd.Timestamp, cal: pd.DatetimeIndex, logp: pd.Seri
 
 
 def _price_history(ohlc: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp, n: int = 756) -> dict:
-    """F05：as-of 日前 n 个交易日收盘（PIT：不含 as-of 之后），供价格叠加置信度/情景曲线图。"""
+    """F05：as-of 日前 n 个交易日 OHLCV（PIT：不含 as-of 之后）。"""
     c = _close(ohlc, cal)
     c = c[c.index <= date].dropna().tail(n)
-    return {"dates": [str(x.date()) for x in c.index], "close": [round(float(v), 3) for v in c.to_numpy()], "note": "对数轴显示；仅到 as-of 日"}
+    bars = ohlc if isinstance(ohlc.index, pd.DatetimeIndex) else ohlc.set_index("date")
+    bars = bars.reindex(c.index)
+
+    def prices(name: str) -> list[float | None]:
+        if name not in bars:
+            return [None] * len(c)
+        values = pd.to_numeric(bars[name], errors="coerce").to_numpy(dtype=float)
+        return [
+            round(float(value), 3) if pd.notna(value) and np.isfinite(value) else None
+            for value in values
+        ]
+
+    volume_values = (
+        pd.to_numeric(bars["volume"], errors="coerce").to_numpy(dtype=float)
+        if "volume" in bars
+        else np.full(len(c), np.nan)
+    )
+    volume = [
+        int(round(float(value))) if pd.notna(value) and np.isfinite(value) else None
+        for value in volume_values
+    ]
+    return {
+        "dates": [str(x.date()) for x in c.index],
+        "open": prices("open"),
+        "high": prices("high"),
+        "low": prices("low"),
+        "close": [round(float(v), 3) for v in c.to_numpy()],
+        "volume": volume,
+        "note": "对数轴显示；仅到 as-of 日",
+    }
 
 
 def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
@@ -204,6 +243,38 @@ def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.Date
             "tc": _to_cal(cal, date, float(row.ahead)), "progress": None, "longest_qualified_scale": longest[-1] if longest else None,
             "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
             "evidence": "descriptive", "signal_status": "signal" if qualified else "t1_not_qualified"}
+
+
+def _price_band(sym: str, bubble: dict, asof: str, close: float | None = None) -> dict:
+    """P1 顶后价格带（描述性，战略规划 §4.1）：按当前泡沫（Lagrange 起点）的实际涨幅与持续时长匹配回撤情景表的桶，
+    给顶→谷回撤与时长的 20/50/80 分位及 n（跨市场；A 股单独 n<5 不给），附估值地板带。无预测值（value 恒为 None）。"""
+    tab = build_drawdown_table(asof)
+    t = tab["table"]
+    ok = bool(bubble.get("t1_qualified_standard"))  # 起点窗口未通过 STANDARD 过滤 → 不按桶匹配，只给全部样本
+    size, dur = (bubble.get("size_realized"), bubble.get("duration_days")) if ok else (None, None)
+    ru = du = None
+    if size is not None:
+        ru = next(n for lo, hi, n in RUNUP_BINS if lo <= size < hi)
+    if dur is not None:
+        du = next(n for lo, hi, n in DUR_BINS if lo <= dur < hi)
+    cands = [(f"{ru} × {du}", t["by_run_up_x_duration"].get(f"{ru}|{du}")) if ru and du else (None, None),
+             (f"涨幅 {ru}", t["by_run_up"].get(ru)) if ru else (None, None), ("全部", t["all"])]
+    name, cell = next(((n, c) for n, c in cands if c and c["n"] >= tab["definition"]["min_n_a_share"]), ("全部", t["all"]))
+    evidence = "descriptive" if tab["n_events"] else "none"
+    floor = tab["valuation_floor"].get(sym)
+    if floor and floor.get("floor_band_points") and close is not None:  # 地板点位按记录自身 as-of 收盘折算（情景表用冻结价，可能滞后）
+        q, pe = floor["trough_pe"], floor["pe_latest"]
+        floor = {**floor, "close_ref": round(float(close), 2), "close_date": asof,
+                 "band_points": {k: round(close * v / pe, 0) for k, v in q.items()},
+                 "floor_band_points": [round(close * q["q20"] / pe, 0), round(close * q["q50"] / pe, 0)]}
+    return {
+        "value": None, "evidence": evidence, "table_version": tab["version"], "table_asof": asof,
+        "n_events": tab["n_events"], "n_events_a": tab["n_events_a"], "table": t, "bucket": name,
+        "bucket_basis": {"size_realized": bubble.get("size_realized"), "duration_days": bubble.get("duration_days"), "t1_qualified_standard": ok, "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"},
+        "n": cell["n"], "n_a_share": cell["n_a"], "max_dd": cell.get("max_dd"), "days_to_trough": cell.get("days_to_trough"),
+        "a_share": cell.get("a_share"), "valuation_floor": floor,
+        "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期",
+    }
 
 
 def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
@@ -262,7 +333,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                 for x in sw.itertuples()
             ],
             "invalidation": {"rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）", "evidence": "rule"},
-            "drawdown_price": {"value": None, "descriptive": [-0.18, -0.35], "evidence": "none"},
+            "drawdown_price": _price_band(sym, bubble, asof, float(ohlc[ohlc.date <= pd.Timestamp(asof)].close.iloc[-1])),
             "drawdown_time": {"value": None, "evidence": "none"},
             "second_wave": {"value": None, "evidence": "none"},
         },
@@ -309,7 +380,96 @@ def movie(sym: str, a: str, b: str) -> list[dict]:
     return frames
 
 
-if __name__ == "__main__":
+def history(sym: str) -> dict:
+    """Split-tagged, point-in-time scenario windows from the three frozen scan sources."""
+    logp = price_series(sym)
+    close = _close(pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"), logp.index)
+    pos = pd.Series(np.arange(len(logp)), index=logp.index)
+    lp = logp.to_numpy()
+    scans = []
+    seen_dates: set[pd.Timestamp] = set()
+    for split, folder in HISTORY_SCANS.items():
+        path = folder / f"{sym}.parquet"
+        if not path.exists():
+            continue
+        scan = pd.read_parquet(path)
+        scan["date"] = pd.to_datetime(scan["date"])
+        end = pos.reindex(scan.date).to_numpy()
+        if not np.isfinite(end).all():
+            raise ValueError(f"{sym} {split} scan contains dates absent from the price calendar")
+        scan["y_std"] = [
+            lp[int(i) + 1 - int(n) : int(i) + 1].std()
+            for i, n in zip(end, scan.n, strict=True)
+        ]
+        dates = set(scan["date"].unique())
+        overlap = seen_dates & dates
+        if overlap:
+            raise ValueError(f"{sym} has overlapping {split} as-of dates: {sorted(overlap)[:3]}")
+        seen_dates.update(dates)
+        scan["split"] = split
+        scans.append(scan)
+    if not scans:
+        raise FileNotFoundError(f"no LPPLS history scans found for {sym}")
+
+    d = _derived(pd.concat(scans, ignore_index=True))
+    r = rules(d)
+    cal = logp.index
+    frames = []
+    for date, dd in d.groupby("date", sort=True):
+        rr = r.loc[dd.index]
+        q = dd.loc[rr.box, ["n", "ahead"]]
+        sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
+        split_values = dd["split"].unique()
+        if len(split_values) != 1:
+            raise ValueError(f"{sym} has multiple source splits on {date.date()}")
+        windows = {scale: None for scale in HISTORY_SCALES}
+        for row in sw.itertuples():
+            if row.scale in windows:
+                windows[row.scale] = [
+                    _to_cal(cal, date, float(row.q20)),
+                    _to_cal(cal, date, float(row.q80)),
+                ]
+        conf = _conf(dd, rr, date)
+        frames.append({
+            "asof": str(date.date()),
+            "split": str(split_values[0]),
+            "close": round(float(close.loc[date]), 2),
+            "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
+            "w": windows,
+        })
+
+    tops = [
+        {"date": event["top"], "max_dd": event["max_dd"]}
+        for event in drawdown_top_events(sym, load_drawdown_logp(sym))
+    ]
+    return {
+        "symbol": sym,
+        "model_version": "prereg_v1.7_v2",
+        "evidence": "dev_only",
+        "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
+        "frames": frames,
+        "tops": tops,
+    }
+
+
+def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "history":
+        if len(sys.argv) != 3:
+            raise SystemExit("usage: python -m research.eval.export_contract history <sym>")
+        sym = sys.argv[2]
+        rec = history(sym)
+        out = Path("web/mock/data")
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"{sym}_history.json"
+        path.write_text(json.dumps(rec, ensure_ascii=False, indent=1), encoding="utf-8")
+        missing = [split for split, folder in HISTORY_SCANS.items() if not (folder / f"{sym}.parquet").exists()]
+        if missing:
+            print(f"skipped missing splits for {sym}: {', '.join(missing)}", file=sys.stderr)
+        print(path, "frames", len(rec["frames"]), "tops", len(rec["tops"]))
+        return
+
+    if len(sys.argv) < 3:
+        raise SystemExit("usage: python -m research.eval.export_contract <sym> <asof> [movie_from movie_to]")
     sym, asof = sys.argv[1], sys.argv[2]
     out = Path("web/mock/data")
     out.mkdir(parents=True, exist_ok=True)
@@ -319,3 +479,7 @@ if __name__ == "__main__":
     (out / f"{sym}_{asof}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str))
     print(json.dumps({k: v for k, v in rec.items() if k != "movie"}, ensure_ascii=False, default=str)[:1500])
     print("movie frames", len(rec.get("movie", [])), "scan", SCAN)
+
+
+if __name__ == "__main__":
+    main()
