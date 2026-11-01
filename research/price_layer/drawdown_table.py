@@ -15,12 +15,13 @@ days_to_trough = 顶 → 后一谷 交易日；dd60/120/250 = 顶后固定窗内
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from ..data.valuation import INDEX_MAP
+from ..data.valuation import INDEX_MAP, LAG_MONTHS
 from ..data.valuation import load as load_pe
 from ..eval.alt_labels import ps_turns
 from ..eval.dataset import price_series
@@ -33,11 +34,13 @@ OUT_JSON = ROOT / "web/mock/data/price_layer/drawdown_table.json"
 OUT_DIR = ROOT / "reports/price_layer"
 
 MIN_DD, LOOK = 0.15, 126
+TURN_WINDOW = 168
 HORIZONS = (60, 120, 250)
 RUNUP_BINS = [(-np.inf, 0.5, "<50%"), (0.5, 1.0, "50–100%"), (1.0, 2.0, "100–200%"), (2.0, np.inf, ">200%")]
 DUR_BINS = [(0, 250, "<1 年"), (250, 500, "1–2 年"), (500, np.inf, ">2 年")]
 QS = (0.2, 0.5, 0.8)
 MIN_N_A = 5  # 契约显示规则：A 股单独 n<5 不显示
+FLOOR_MISMATCH = {"sz399006", "sz399001"}
 
 
 def load_logp(sym: str) -> pd.Series:
@@ -48,7 +51,7 @@ def load_logp(sym: str) -> pd.Series:
 
 
 def qualified_turns(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    pk, tr = ps_turns(x)
+    pk, tr = ps_turns(x, win=TURN_WINDOW)
     pk = np.array([i for i in pk if i + 1 < len(x) and np.exp(x[i + 1 : i + LOOK + 1].min() - x[i]) - 1 <= -MIN_DD], int)
     tr = np.array([i for i in tr if i + 1 < len(x) and np.exp(x[i + 1 : i + LOOK + 1].max() - x[i]) - 1 >= MIN_DD], int)
     return pk, tr
@@ -59,6 +62,8 @@ def top_events(sym: str, logp: pd.Series) -> list[dict]:
     最后一个顶没有后续合格顶（下跌可能仍在进行）不计。"""
     x = logp.to_numpy()
     pk, _ = qualified_turns(x)
+    last = len(x) - 1
+    pk = pk[pk + TURN_WINDOW <= last]
     out = []
     for k, i in enumerate(pk[:-1]):
         lo = int(pk[k - 1]) if k else 0
@@ -67,6 +72,8 @@ def top_events(sym: str, logp: pd.Series) -> list[dict]:
             continue  # 起点落在数据首日，涨幅不可知
         nxt = int(pk[k + 1])
         b = i + 1 + int(np.argmin(x[i + 1 : nxt + 1]))
+        if b + TURN_WINDOW > last:
+            continue
         row = {
             "sym": sym, "market": "A" if sym in A_SHARE else "ext",
             "top": str(logp.index[i].date()), "start": str(logp.index[a].date()), "trough": str(logp.index[b].date()),
@@ -111,14 +118,23 @@ def summarize(ev: pd.DataFrame) -> dict:
     }
 
 
-def valuation_floor(sym: str, logp: pd.Series) -> dict | None:
+def valuation_floor(sym: str, logp: pd.Series, asof: pd.Timestamp | None = None) -> dict | None:
     """A 股指数：PS 底所在月的 PE 分位 → 用最新 PE 折算点位带。"""
+    if sym in FLOOR_MISMATCH:
+        labels = {"sz399006": "创业板指价格与创业板50 PE 不一致", "sz399001": "深证成指价格与深市全市场 PE 不一致"}
+        return {"n": 0, "evidence": "none", "note": f"PE 序列与价格指数口径不一致（{labels[sym]}），不给地板带"}
     try:
         pe = load_pe(sym)
     except Exception:  # noqa: BLE001 缓存缺失且无网
         return None
+    if asof is not None:
+        asof = pd.Timestamp(asof)
+        pe = pe.loc[pe.index + pd.DateOffset(months=LAG_MONTHS) <= asof]  # 与 valuation.value_score 同一发布滞后约定
+        if pe.empty:
+            return {"n": 0, "evidence": "none", "note": "截至该 as-of 尚无满足 1 个月发布滞后的 PE 观察"}
     x = logp.to_numpy()
     _, tr = qualified_turns(x)
+    tr = tr[tr + TURN_WINDOW <= len(x) - 1]
     rows = []
     for i in tr:
         t = logp.index[i]
@@ -131,24 +147,35 @@ def valuation_floor(sym: str, logp: pd.Series) -> dict | None:
     q = _q(pes)
     pe_latest, pe_date = float(pe.iloc[-1]), str(pe.index[-1].date())
     close = float(np.exp(x[-1]))
+    rule = "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理"
+    if sym == "sh000001":
+        rule += "；上证 PE 为上交所全市场序列，近似上证综指口径"
     return {
         "n": len(rows), "troughs": rows, "trough_pe": q, "pe_latest": round(pe_latest, 2), "pe_date": pe_date,
         "close_ref": round(close, 2), "close_date": str(logp.index[-1].date()),
         "band_points": {k: round(close * v / pe_latest, 0) for k, v in q.items()},
         "floor_band_points": [round(close * q["q20"] / pe_latest, 0), round(close * q["q50"] / pe_latest, 0)],
-        "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × 最新收盘 / 最新 PE（q80 仅作上参考）；PE 月频、事后整理、非严格 PIT",
+        "rule": rule,
         "evidence": "descriptive",
     }
 
 
-def build() -> dict:
+@lru_cache(maxsize=16)
+def build(asof: str | None = None) -> dict:
     events, floors = [], {}
+    cutoff = pd.Timestamp(asof) if asof is not None else None
     for sym in A_SHARE + list(EXT):
         lp = load_logp(sym)
+        if cutoff is not None:
+            lp = lp.loc[lp.index <= cutoff]
         events += top_events(sym, lp)
         if sym in A_SHARE:
-            floors[sym] = valuation_floor(sym, lp)
-    ev = pd.DataFrame(events).sort_values(["market", "sym", "top"]).reset_index(drop=True)
+            floors[sym] = valuation_floor(sym, lp, cutoff)
+    ev = pd.DataFrame(events)
+    if len(ev):
+        ev = ev.sort_values(["market", "sym", "top"]).reset_index(drop=True)
+    else:
+        ev = pd.DataFrame(columns=["market", "sym", "top"])
     return {
         "version": "p1_v20261031", "evidence": "descriptive",
         "sources": {"a_share": "data/frozen/v20261024", "external": "data/frozen/ext_v20261029", "pe": "research.data.valuation（乐咕月频缓存）"},

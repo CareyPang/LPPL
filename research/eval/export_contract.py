@@ -22,6 +22,8 @@ from ..features.lppls_rules import (
 )
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
+from ..price_layer.drawdown_table import DUR_BINS, RUNUP_BINS
+from ..price_layer.drawdown_table import build as build_drawdown_table
 from .dataset import price_series
 from .original_standard import SCAN, load
 
@@ -206,32 +208,34 @@ def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.Date
             "evidence": "descriptive", "signal_status": "signal" if qualified else "t1_not_qualified"}
 
 
-P1_TABLE = Path("web/mock/data/price_layer/drawdown_table.json")
-
-
-def _price_band(sym: str, bubble: dict) -> dict:
+def _price_band(sym: str, bubble: dict, asof: str, close: float | None = None) -> dict:
     """P1 顶后价格带（描述性，战略规划 §4.1）：按当前泡沫（Lagrange 起点）的实际涨幅与持续时长匹配回撤情景表的桶，
     给顶→谷回撤与时长的 20/50/80 分位及 n（跨市场；A 股单独 n<5 不给），附估值地板带。无预测值（value 恒为 None）。"""
-    base = {"value": None, "evidence": "none", "note": "回撤情景表未生成（python -m research.price_layer.drawdown_table）"}
-    if not P1_TABLE.exists():
-        return base
-    tab = json.loads(P1_TABLE.read_text(encoding="utf-8"))
+    tab = build_drawdown_table(asof)
     t = tab["table"]
     ok = bool(bubble.get("t1_qualified_standard"))  # 起点窗口未通过 STANDARD 过滤 → 不按桶匹配，只给全部样本
     size, dur = (bubble.get("size_realized"), bubble.get("duration_days")) if ok else (None, None)
     ru = du = None
     if size is not None:
-        ru = next(n for lo, hi, n in ((-np.inf, 0.5, "<50%"), (0.5, 1.0, "50–100%"), (1.0, 2.0, "100–200%"), (2.0, np.inf, ">200%")) if lo <= size < hi)
+        ru = next(n for lo, hi, n in RUNUP_BINS if lo <= size < hi)
     if dur is not None:
-        du = next(n for lo, hi, n in ((0, 250, "<1 年"), (250, 500, "1–2 年"), (500, np.inf, ">2 年")) if lo <= dur < hi)
+        du = next(n for lo, hi, n in DUR_BINS if lo <= dur < hi)
     cands = [(f"{ru} × {du}", t["by_run_up_x_duration"].get(f"{ru}|{du}")) if ru and du else (None, None),
              (f"涨幅 {ru}", t["by_run_up"].get(ru)) if ru else (None, None), ("全部", t["all"])]
-    name, cell = next((n, c) for n, c in cands if c and c["n"] >= tab["definition"]["min_n_a_share"])
+    name, cell = next(((n, c) for n, c in cands if c and c["n"] >= tab["definition"]["min_n_a_share"]), ("全部", t["all"]))
+    evidence = "descriptive" if tab["n_events"] else "none"
+    floor = tab["valuation_floor"].get(sym)
+    if floor and floor.get("floor_band_points") and close is not None:  # 地板点位按记录自身 as-of 收盘折算（情景表用冻结价，可能滞后）
+        q, pe = floor["trough_pe"], floor["pe_latest"]
+        floor = {**floor, "close_ref": round(float(close), 2), "close_date": asof,
+                 "band_points": {k: round(close * v / pe, 0) for k, v in q.items()},
+                 "floor_band_points": [round(close * q["q20"] / pe, 0), round(close * q["q50"] / pe, 0)]}
     return {
-        "value": None, "evidence": "descriptive", "table_version": tab["version"], "bucket": name,
+        "value": None, "evidence": evidence, "table_version": tab["version"], "table_asof": asof,
+        "n_events": tab["n_events"], "n_events_a": tab["n_events_a"], "table": t, "bucket": name,
         "bucket_basis": {"size_realized": bubble.get("size_realized"), "duration_days": bubble.get("duration_days"), "t1_qualified_standard": ok, "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"},
-        "n": cell["n"], "n_a_share": cell["n_a"], "max_dd": cell["max_dd"], "days_to_trough": cell["days_to_trough"],
-        "a_share": cell.get("a_share"), "valuation_floor": tab["valuation_floor"].get(sym),
+        "n": cell["n"], "n_a_share": cell["n_a"], "max_dd": cell.get("max_dd"), "days_to_trough": cell.get("days_to_trough"),
+        "a_share": cell.get("a_share"), "valuation_floor": floor,
         "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期",
     }
 
@@ -292,7 +296,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                 for x in sw.itertuples()
             ],
             "invalidation": {"rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）", "evidence": "rule"},
-            "drawdown_price": _price_band(sym, bubble),
+            "drawdown_price": _price_band(sym, bubble, asof, float(ohlc[ohlc.date <= pd.Timestamp(asof)].close.iloc[-1])),
             "drawdown_time": {"value": None, "evidence": "none"},
             "second_wave": {"value": None, "evidence": "none"},
         },
