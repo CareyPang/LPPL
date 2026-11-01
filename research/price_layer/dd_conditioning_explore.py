@@ -77,9 +77,12 @@ def features(sym: str, lp: pd.Series) -> pd.DataFrame:
         f["margin_yoy"] = np.nan
     x = lp.to_numpy()
     fut = np.full(len(x), np.nan)
+    yend = pd.Series(pd.NaT, index=lp.index)
     for i in range(len(x) - H):
-        fut[i] = x[i + 1: i + H + 1].min() - x[i]
+        fut[i] = min(0.0, x[i + 1: i + H + 1].min() - x[i])
+    yend.iloc[: len(x) - H] = lp.index[H:]
     f["y"] = fut
+    f["yend"] = yend
     f["sym"] = sym
     return f
 
@@ -90,11 +93,12 @@ def pinball(y, q, tau):
 
 
 def oos(panel: pd.DataFrame, feat: str, tau: float) -> dict | None:
-    d = panel[[feat, "y", "sym"]].dropna()
+    d = panel[[feat, "y", "yend", "sym"]].dropna()
     d = d.assign(yr=d.index.year)
     pm, pu, n, yrs = [], [], 0, []
     for Y in sorted(d.yr.unique()):
-        tr, te = d[d.yr <= Y - 2], d[d.yr == Y]
+        te = d[d.yr == Y]
+        tr = d[(d.yr <= Y - 2) & (d.yend < te.index.min())] if len(te) else d.iloc[:0]
         if len(tr) < 150 or tr.yr.nunique() < 3 or not len(te):
             continue
         X = np.column_stack([np.ones(len(tr)), tr[feat].to_numpy()])
@@ -146,13 +150,18 @@ def main() -> None:
                 if r:
                     res.append({"sample": name, "feat": k, "tau": tau, **r})
         # 共同样本：A 股 2011+（两融可用）上所有特征同场比较
-    common = pd.concat([fr[s].iloc[::STEP] for s in A_SHARE]).dropna(subset=["margin_yoy", "ret500", "accel", "dvol", "y"])
-    for k in ["ret500", "accel", "dvol", "margin_yoy", "pe_pct"]:
-        for tau in QS:
-            r = oos(common, k, tau)
-            if r:
-                res.append({"sample": "A股共同样本(两融可用)", "feat": k, "tau": tau, **r})
-    us = pd.concat([fr[s].iloc[::STEP] for s in ("SPX", "NDX")]).dropna(subset=["margin_yoy", "y"])
+    a_panel = pd.concat([fr[s].iloc[::STEP] for s in A_SHARE])
+    cohorts = [("A股匹配样本(PE可用)", ["ret500", "accel", "dvol", "pe_pct"]),
+               ("A股匹配样本(两融可用)", ["ret500", "accel", "dvol", "margin_yoy"]),
+               ("A股匹配样本(PE+两融可用)", ["ret500", "accel", "dvol", "pe_pct", "margin_yoy"])]
+    for name, ks in cohorts:
+        common = a_panel.dropna(subset=ks + ["y", "yend"])
+        for k in ks:
+            for tau in QS:
+                r = oos(common, k, tau)
+                if r:
+                    res.append({"sample": name, "feat": k, "tau": tau, **r})
+    us = pd.concat([fr[s].iloc[::STEP] for s in ("SPX", "NDX")]).dropna(subset=["ret500", "accel", "dvol", "margin_yoy", "y", "yend"])
     for k in ["ret500", "accel", "dvol", "margin_yoy"]:
         for tau in QS:
             r = oos(us, k, tau)
