@@ -413,7 +413,7 @@ const WATERLINE = 0.30, SUBMERGED = 0.42;
 // 静止时的真实海浪循环，只向前播放
 // sea：即梦固定机位视频（30fps 补帧版），已去重复帧、重做首尾接缝（约 6.3 秒，30fps）
 // under / deep：暂用原下潜视频中镜头最稳的片段（24fps），去抖对齐后交叉淡化
-// 若放入同名视频（assets/dive/loop/sea.mp4 / under.mp4 / deep.mp4），会自动优先使用视频
+// 只使用图片帧，不加载 mp4
 const LOOP_DIR = 'assets/dive/loop/', LOOP_SUB = MOB ? 'm' : 'd';
 const LOOPS = [
   {name:'sea',   n:188, fps:30, lo:-1,           hi:WATERLINE-.03},
@@ -454,14 +454,6 @@ async function loadAll(){
   if(!RM) loadLoops();
 }
 function loadLoops(){
-  for(const L of LOOPS){
-    // 优先尝试固定机位视频；不存在时静默失败，继续使用帧循环
-    const v=document.createElement('video');
-    v.muted=true; v.loop=true; v.playsInline=true; v.preload='auto'; v.setAttribute('playsinline','');
-    v.addEventListener('loadeddata',()=>{ L.vid=v; L.vidOk=true; },{once:true});
-    v.addEventListener('error',()=>{},{once:true});
-    v.src=LOOP_DIR+L.name+'.mp4';
-  }
   let q=[]; for(const L of LOOPS) for(let k=0;k<L.n;k++) q.push([L,k]);
   let p=0;
   const next=()=>{ if(p>=q.length) return; const [L,k]=q[p++]; const img=new Image(); img.decoding='async';
