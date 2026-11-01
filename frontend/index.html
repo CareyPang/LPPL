@@ -841,7 +841,7 @@ window.CP = { dateAt(bars, idx) {
     $('plan').innerHTML = ''; $('note').innerHTML = '';
     $('cur-d').textContent = '—'; $('cur-l').textContent = ''; $('cur-set').hidden = true;
     $('p-replay').innerHTML = ''; $('p-bench').innerHTML = ''; $('p-expert').innerHTML = '';
-    $('tl').value = $('tl').min; $('tl').max = $('tl').min; $('tl').disabled = true; $('tl-v').textContent = '—';
+    $('tl').value = $('tl').min; $('tl').max = $('tl').min; $('tl').disabled = true; $('tl-v').textContent = '—'; $('tl-last').disabled = true;
     document.querySelectorAll('.tk').forEach((b) => b.setAttribute('aria-current', 'false'));
   }
 
