@@ -277,6 +277,20 @@ def _price_band(sym: str, bubble: dict, asof: str, close: float | None = None) -
     }
 
 
+def _bottom_objects(sym: str, asof: str, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
+    if sym not in bottom_cards.SUPPORTED:
+        return {}
+    closes = _close(ohlc, cal)
+    if not isinstance(closes, pd.Series) or not isinstance(closes.index, pd.DatetimeIndex):
+        closes = pd.Series(
+            ohlc["close"].to_numpy(dtype=float),
+            index=pd.DatetimeIndex(pd.to_datetime(ohlc["date"])),
+        )
+    logp = np.log(closes.astype(float))
+    logp = logp.loc[logp.index <= pd.Timestamp(asof)]
+    return bottom_cards.build(sym, asof, logp=logp)
+
+
 def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
                  p20: float | None = None, data_version: str = "frozen_v20261024") -> dict:
     """由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
@@ -295,7 +309,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     nmax = max(hi for _, hi in SCALES_FCO.values())
     m_eval = dd.n <= nmax  # 泡沫状态与总信号只用评价过的三档（≤504 日）；六档补充窗口仅作显示
     bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc)
-    bottom_objects = bottom_cards.build(sym, asof)
+    bottom_objects = _bottom_objects(sym, asof, cal, ohlc)
     w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
     window = ({"start": _to_cal(cal, date, float(w612.q20.iloc[0])), "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
                "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}

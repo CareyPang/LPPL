@@ -22,6 +22,7 @@ LT_L1, LT_L2 = 0.20, 0.15
 REBOUND_DAYS = 250
 PE_MONTHS, MIN_PE_MONTHS = 120, 36
 QS = (0.2, 0.5, 0.8)
+SUPPORTED = frozenset(dt.A_SHARE)
 SYMBOL_NAMES = {
     "sh000001": "上证指数",
     "sh000016": "上证50",
@@ -299,13 +300,13 @@ def _latest_common_asof() -> str:
     return str(min(dt.load_logp(sym).index[-1] for sym in dt.A_SHARE + list(dt.EXT)).date())
 
 
-def build(sym: str, asof: str) -> dict:
+def build(sym: str, asof: str, logp: pd.Series | None = None) -> dict:
     """Build the three descriptive bottom-card objects using only observations through asof."""
-    if sym not in dt.A_SHARE:
+    if sym not in SUPPORTED:
         raise ValueError(f"bottom card records are only defined for A-share indices: {sym}")
     asof_ts = pd.Timestamp(asof)
     asof_key = str(asof_ts.date())
-    logp = dt.load_logp(sym)
+    logp = dt.load_logp(sym) if logp is None else logp
     logp = logp.loc[logp.index <= asof_ts]
     p1 = dt.build(asof_key)
     state = lt_state(logp.to_numpy(dtype=float), logp.index)

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from research.eval import export_contract
 from research.eval.alt_labels import lt_turns
 from research.price_layer import bottom_cards as bc
 from research.price_layer import drawdown_table as dt
@@ -43,6 +44,36 @@ def test_current_rebound_exposes_new_metrics_without_changing_price_rank():
     assert current["recovery_log_now"] == round(np.log(80 / 40) / np.log(100 / 40), 3)
     assert current["rebound_ret_now"] == 1.0
     assert current["rank_pct"] == 0.5
+
+
+def test_build_uses_supplied_asof_prices_for_cheap_and_confirm(monkeypatch):
+    dates = pd.bdate_range("2024-01-02", periods=6)
+    frozen = pd.Series(np.log([100.0, 70.0, 90.0, 105.0]), index=dates[:4])
+    supplied = pd.Series(np.log([100.0, 70.0, 90.0, 105.0, 60.0, 1000.0]), index=dates)
+    monkeypatch.setattr(dt, "load_logp", lambda sym: frozen)
+    monkeypatch.setattr(dt, "build", lambda asof: {"events": []})
+    monkeypatch.setattr(bc, "_rebound_history", lambda asof: ([], {"n": 0}, None))
+    monkeypatch.setattr(
+        bc, "_pe_percentile", lambda sym, asof: {"value": None, "n_months": 0, "pe_date": None}
+    )
+
+    cards = bc.build("sh000001", str(dates[4].date()), logp=supplied)
+
+    assert np.isclose(cards["cheap"]["dd_now"], round(60 / 105 - 1, 4))
+    assert cards["confirm"]["state"] == "bear"
+    assert cards["confirm"]["ref_date"] == str(dates[4].date())
+    assert cards["confirm"]["ref_close"] == 60.0
+
+
+def test_unsupported_symbols_skip_bottom_cards(monkeypatch):
+    def unexpected_build(*args, **kwargs):
+        raise AssertionError("unsupported symbols must not build bottom cards")
+
+    monkeypatch.setattr(bc, "build", unexpected_build)
+
+    assert export_contract._bottom_objects(
+        "sh000928", "2024-01-02", pd.DatetimeIndex([]), pd.DataFrame()
+    ) == {}
 
 
 def test_rebound_events_and_dd_rank_are_point_in_time():
