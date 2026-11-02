@@ -107,3 +107,48 @@
 - 本次新增全文（此前仓库只有书目或没有）：JLS 2000、Kaizoji 2000、Bornholdt 2001、Kaizoji–Bornholdt–Fujiwara 2002、Zhou–Sornette 2005/2007、Sornette–Zhou 2006、Harras–Sornette 2011、Cont–Bouchaud 2000、Kaizoji–Leiss–Saichev–Sornette 2015、Yan–Woodard–Sornette 2012（负泡沫）、Troude 等 2024、Guttal 等 2016、Filimonov–Sornette 2015（Hawkes）、Bacry 等 2015、Grech–Mazur 2004、Kantelhardt 等 2002、Jiang 等 2019（多重分形综述）、Laloux 等 1999、Plerou 等 1999、Mantegna 1999、Onnela 等 2003、Zheng 等 2012、Engle–Manganelli 1999、Adrian–Brunnermeier 2008、Kou 2002、Aït-Sahalia 等 2010、Kelly 1956、Martins-Filho–Yao–Torero 2016（arXiv 1612.08099，非参数 GARCH 型位置-尺度 + GPD 的条件 VaR/ES，含一致性与渐近正态，§2–4；IS/TH）、Martín 等 2023（arXiv 2306.12202，GPD 贝叶斯先验 VaR/CVaR；TH）、Yashaswi 2021（arXiv 2112.04576，Heston 状态空间自适应校准；TH——Heston 1993 原文无公开 PDF，未下载）。
 - 获取失败/有误：MacLean–Thorp–Ziemba 2010（404）；Rocco 2014 EVT 综述（Bank of Italy 链接返回按揭证券化论文，内容无效，已在 W6 标注）；Onnela 2003 文本抽取字体损坏（仅摘要）。
 - 总计有效 PDF 41 篇（arXiv 31、PLoS 3、NBER 2、FRBNY 1、哥大/普林斯顿等 4），均在会话机 `~/lit/pdf/`，**未入库**。
+
+## 7. 第二批补查（2026-11-02；为 `docs/research_plan_stock_math.md` 服务；限速 3 s/次，22 篇全文，PDF 在会话机 `~/lit/pdf2/`，未入库）
+
+证据等级同上：**OOS** = 样本外/前瞻实证；**IS** = 样本内实证；**TH** = 理论/方法。"可做/不可做"均指**建议或草案**，不改产品模型与预登记判据。
+
+### 7.1 LPPLS 方法与识别性
+| # | 文献（文件） | 关键结论（页/节） | 等级 | 对个股引擎 |
+|---|---|---|---|---|
+| N1 | Sornette & Johansen (2001) *Significance of log-periodic precursors to financial crashes*, QF 1；cond-mat/0106520（`sornette_johansen2001_…`，38 p） | 回应 Feigenbaum：去掉最靠近 t_c 的 15% 数据再检验幂律发散是"naive"（摘要）；§9 给出港股指数 20 年系统性样本外检验与"crash roulette"显著性公式；§12 列 20 个主要案例的对数周期谱 | IS + 部分 OOS（港股） | 可做：任何个股信号评价都要配 N1 式"预测轨迹显著性"（按事件计）；不可做：用"去尾再拟合"来否定或肯定单只个股的拟合 |
+| N2 | Sornette, Woodard, Yan & Zhou (2013) *Clarifications to questions and criticisms on the JLS model*, Physica A 392；arXiv 1107.3171（27 p） | 逐条澄清 JLS 的理论地位与标定问题（含 B<0、m∈(0,1)、ω 范围的物理含义，§3–§5）；结论承认"领域仍在成熟中"（Conclusion p.18） | TH | 可做：过滤条件的物理解释写进产品文案的"方法说明"；不可做：引用本文把 Confidence 说成"崩盘概率" |
+| N3 | Lin, Ren & Sornette (2009/2014) *A consistent model of 'explosive' financial bubbles with mean-reversing residuals*（volatility-confined LPPL）；arXiv 0905.0128（32 p） | 残差 O-U 均值回复是模型的一部分；残差单位根检验对 GARCH 基准的误报率 0.2%（摘要）；S&P500 1950–2008 识别 1987/1997/1998/2000 四个泡沫；§6 结论 | IS（含 GARCH 零假设） | 可做：把"残差 ADF/PP 平稳性"作为**描述性**附加字段并与本仓库零假设误报率（GBM 6.6%、幂律 34%）并列；不可做：以此替换预登记的 box/FCO 判据 |
+| N4 | Lin & Sornette (2009/2013) *Diagnostics of rational expectation financial bubbles with stochastic mean-reverting termination times*；arXiv 0911.1921（25 p） | 两个 RE 模型：价格或动量的幂律正反馈 + **随机均值回复的终止时间**（§5 结论）；t_c 本身是随机变量 | TH | 支持硬规则"t_c 不是日期"；可做：产品文案引用"t_c 为随机临界时间"；不可做：给 t_c 点估计 |
+| N5 | Nielsen, Sornette & Raissi (2024) *Deep LPPLS*；arXiv 2405.12803（16 p） | M-LNN 对 (t_c, m, ω) 的绝对误差分布对 LM 一阶随机占优（§4 Fig.3 p.6）；P-LNN 可对固定长度序列秒级给参数；训练噪声多样性决定稳健性（§5） | TH + 合成 IS | 可做：作为**标定对比实验**（与 `tcgrid_lm` 在合成序列上比误差分布，WP2）；不可做：进产品链路（无实盘/样本外证据，且改变已登记的标定方法） |
+| N6 | Petrillo (2021) *Verification and validation of LPPL models*；arXiv 2106.05116（4 p） | 子样本重估 + 取中位数的"subordinated algorithm"；t_c 平均绝对误差随窗口逼近临界点仅有不显著下降（Conclusion） | 合成 IS | 可做：跨窗口中位数（本仓库已是多窗口口径）；提醒：逼近 t_c 不保证精度提升，支持只给区间 |
+| N7 | Geraskin & Fantazzini (2013) *Everything you always wanted to know about LPPL…*，MPRA 47869（36 p；**替换上一批错配文件**） | §4 三种估计法（JLS 两步非线性、遗传算法、2/3 步 ML）；§5 残差诊断 + 随机终止时间诊断 + 图形工具；§6 黄金 2009-12 案例 | TH + IS | 可做：残差诊断清单作为审计用例；不可做：把黄金单案例外推到 A 股个股 |
+| N8 | Wheatley, Sornette, Huber, Reppen & Gantner (2018/2019) *Are Bitcoin bubbles predictable?*，R. Soc. Open Sci.；arXiv 1803.05663（20 p） | 基本面（广义 Metcalfe）× LPPLS 技术面交叉诊断，至少 4 次泡沫；附录给出 **GLS + AR(1) 误差 + 剖面似然 t_c 95% 区间** 的算法步骤（p.18–19） | IS（事后）+ 少量前瞻 | 可做：WP2 的 t_c 区间按 AR(1) 误差而非 iid 残差 bootstrap（与 `trust.py` iid 假设对照）；不可做：个股无"基本面网络价值"可比，不能照搬交叉诊断 |
+| N9 | Akingbade, Gidea & Manzi (2023) *Why TDA detects financial bubbles?*；arXiv 2304.06877（29 p） | 拓扑数据分析的早期预警信号在 LPPLS 成立时由对数周期振荡产生（§7）；合成 + 比特币 | TH + IS | 不可做：引入 TDA 为新模型；可做：文献层记录"TDA 信号 = LPPLS 振荡的另一种读数"，无独立信息 |
+
+### 7.2 微观基础与行为证据
+| # | 文献 | 关键结论 | 等级 | 对个股引擎 |
+|---|---|---|---|---|
+| N10 | Sornette (2014) *Physics and financial economics (1776–2014): puzzles, Ising and agent-based models*，Rep. Prog. Phys. 77；arXiv 1404.0243（76 p） | Ising/随机效用/logit 作为社会模仿的统一框架；泡沫 = 正反馈导致的有限时间奇异性；§8 结论强调物理只是"概念与工具框架"而非预测器 | TH（综述） | 定位文献：Ising 只支持"形态诊断"的解释层，不提供可估计的临界距离（与 §1 结论一致） |
+| N11 | Hüsler, Sornette & Hommes (2013) *Super-exponential bubbles in lab experiments*，JEBO；arXiv 1205.0635（24 p） | 实验室价格形成中超指数增长显著，来源是交易者基于**过去价格**而非已实现收益上调乐观预期（摘要、§6） | 实验 IS | 支持 LPPLS 的"超指数"前提；不可做：实验室参数外推到 A 股 |
+| N12 | Zhou & Sornette (2005) *Fundamental factors versus herding in the 2000–2005 US stock market and prediction*；physics/0505079（29 p；替换上一批错下的文件） | 用 AIC/Wilks 比较加入利率、利差、波动率、汇率因子的模型，**最佳模型仍是不含任何因子的二阶 LPPL**（摘要、§5–§6） | IS | 可做：WP3 中"控制动量/波动率后 LPPLS 是否仍有增量"的设计正是本文方法的预登记化；不可做：把结论当作个股层面成立 |
+
+### 7.3 A 股 / 个股 / 危机类型
+| # | 文献 | 关键结论 | 等级 | 对个股引擎 |
+|---|---|---|---|---|
+| N13 | Shu & Zhu (2019) *Diagnosis and prediction of the 2015 Chinese stock market bubble*；arXiv 1905.09633（20 p） | SSEC/SZSC 2014–2015-06：CMA-ES 搜非线性参数、Lomb 谱检出对数周期、残差 PP/ADF 平稳（§4 结论）；回测属事后 | IS（事后） | 可做：Lomb 谱与残差平稳性作描述性诊断；不可做：引用为个股预测证据 |
+| N14 | Song, Shu & Zhu (2021) *The 2020 global stock market crash: endogenous or exogenous?*；arXiv 2101.00327（25 p） | 用 Confidence 作"内生/外生崩盘"分类代理：10 指数中 CSI300 2020-03 回撤 16.1% 判为内生，HSI/NIKKEI/FTSE 外生（Table 1） | IS（事后分类） | 可做：描述性"内生性标签"草案（WP4）；不可做：用于预警或等级 |
+| N15 | Shu, Song & Zhu (2021) *The 'COVID' crash of the 2020 U.S. stock market*；arXiv 2101.03625（19 p） | W5000/SP500/SP400/R2000 崩盘前均处正泡沫，中小盘跌幅更大（§4） | IS（事后） | 提醒：市值分层下泡沫形态与回撤深度不同，WP3 需按市值分层报告 |
+| N16 | Takagi (2021) *Exploring the endogenous nature of meme stocks using the LPPL model and confidence indicator*；arXiv 2110.06190（9 p） | 四只个股（TSLA/GME/KOSS/AMC）：CI 能检出先前的负泡沫（GME 2019-08 CI≈0.8），但**无法预测**由逼空等外生因素引发的大涨（§5） | IS（个股，事后） | 目前唯一直接的"个股 LPPLS"全文证据，结论与本仓库横截面"无预测信息"一致；强化 `research_candidate` |
+
+### 7.4 市场微结构 / 系统性 / 尾部风险 / 仓位
+| # | 文献 | 关键结论 | 等级 | 对个股引擎 |
+|---|---|---|---|---|
+| N17 | Hardiman, Bercot & Bouchaud (2013) *Critical reflexivity in financial markets: a Hawkes process analysis*，EPJ B；arXiv 1302.1405（9 p） | E-mini 1998–2011 Hawkes 核积分恒≈1（幂律核），与 Filimonov–Sornette "反身性上升"结论相反（摘要、Conclusion） | IS | 与 O3 合读：分支比对核形式极敏感 → **不可做** Hawkes 临界作个股信号（维持 §3 结论） |
+| N18 | Billio, Getmansky, Lo & Pelizzon (2010/2012) *Econometric measures of connectedness and systemic risk*，NBER w16223 / JFE（58 p） | PCA 吸收 + Granger 因果网络衡量金融机构关联度，可识别并部分预示危机期（§7） | IS + 部分 OOS | 可做：市场层"关联度/吸收比"描述性背景草案（WP6）；不可做：个股预警 |
+| N19 | Kelly & Jiang (2013/2014) *Tail risk and asset returns*，NBER w19375 / RFS（51 p） | 用个股横截面日收益的 Hill 估计得到月度尾指数 λ_t（AR(1)=0.927，p.3）；对市场 1 月–5 年收益有预测力；高尾风险股 vs 对冲股三因子 α 差 5.4%/年（§5） | OOS（预测回归） | 可做：WP3 把 λ_t 作为**协变量/对照基线**（与动量并列），检验 LPPLS 置信度是否有增量；不可做：直接作为个股顶部信号 |
+| N20 | Bollerslev & Todorov (2011) *Tails, fears, and risk premia*，JF 66（47 p） | 稀有事件补偿占股权/方差风险溢价很大部分；用 EVT 近似 + 高频估计统计跳跃尾、期权估计风险中性尾，构造"投资者恐惧指数" | IS/OOS 混合 | A 股个股无足够期权数据 → 不可做；文献层记录 |
+| N21 | Patton, Ziegel & Chen (2017/2019) *Dynamic semiparametric models for ES and VaR*，JoE；arXiv 1707.05108（71 p） | 利用 Fissler–Ziegel 联合可引出性建模 ES-VaR；4 国际指数 1990–2016 样本外优于 GARCH/滚动窗（§6） | OOS | 可做：WP5 尾部层草案的候选模型与**评分函数**（FZ 损失）；需新预登记 |
+| N22 | Maillard, Roncalli & Teiletche (2010) *The properties of equally weighted risk contribution portfolios*，JPM（23 p） | ERC 波动率介于最小方差与 1/n 之间；全球分散组合 Table 6：1/n 最大回撤 −45.3%、MV −19.7%、ERC −22.7%（p.16） | IS | 可做：文献层"风险预算"记录；不可做：任何仓位规则进产品（需预登记且与泡沫信号无关） |
+
+### 7.5 本批获取失败 / 未引用数值
+Diks–Hommes–Wang 2019（Springer/Tinbergen 均返回 HTML 或超时）、Gençay–Gradojevic 2017（MDPI 403）、Pincus–Kalman 2004（PNAS/EuropePMC 403）、Thorp 2006 Kelly（404）、Phillips–Shi–Yu 2015 GSADF（Cowles/SMU 返回 HTML；仓库 R2 已实现 PSY 口径，题录见 `literature_review.md` P1）、Demos–Sornette 2017 *Birth or burst*、Forró–Woodard–Sornette 2015、Ardila–Forró–Sornette 2021、Sornette 等 2015 上海泡沫（arXiv 无）。以上**只作题录**，正文不引用其具体数值。上一批中 `zhou_sornette2005_fundamental…` 原为错误文件（自动交易系统论文），已替换为 physics/0505079；`geraskin_fantazzini2011_lppl_faq.pdf` 实为 Yan–Woodard–Sornette 2011，本批用 MPRA 47869 补齐。

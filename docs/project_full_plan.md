@@ -140,7 +140,9 @@
 
 ---
 
-## 5. 个股引擎（PR #23）
+## 5. 个股引擎（PR #23；数学审计与研究方案见 PR #28）
+- 数学/数值审计：`reports/stock_math_audit.md`（F1 `grid_profile` 窗内 t_c、F2 `_to_cal` 已修，§20 偏离登记，`MODEL_VERSION=prereg_v1.7_v2.1`）。文献：`docs/literature_stock_math.md`（两批共 63 篇全文）。
+- **研究方案**：`docs/research_plan_stock_math.md`（WP0 基线收尾 → WP1 零假设误报率标定 → WP2 t_c 区间/Trust → WP3 = Q-STK1 执行计划 → WP4 广度 → WP5 尾部层草案 → WP6 背景层；个股维持 `research_candidate`，任何 WP 运行前不改判据）。
 - 接口：`predict(code6, variant, asof)` 当前预测（秒级）；`history(code6, weeks)` 近 2 年周度回放（首次 3–4.5 分钟，缓存后 5–10 秒）。
 - 规则：上市满 500 交易日；剔除上市首 60 日；停牌不插值；一字板比例 >20% 标 degenerate；退市/长期停牌 `in_stats=false`。
 - 缓存键 `(code, asof, variant, data_version, code_version)` → `data/stock/<code>/<variant>/fits.parquet`，已有键永不重算。
@@ -196,6 +198,7 @@
 | 1 | 现在 | 合并 #22–#25、#27；手动跑一次 stock_query（600519） | 线上 `/lab/stock.html?code=600519` 出结果 | 说"合并" |
 | 2 | 合并后当天 | 手动跑一次 stock_nightly | `breadth_sh000300.json` 的 `asof_consistent=true`、`n_missing=0` | — |
 | 3 | 本周 | 冻结 1990s A 股（只冻结+核验） | `data/frozen/*_1990s.parquet` + sha256 | — |
+| 3b | 2026-11/12 | 个股研究方案 WP0–WP2（`docs/research_plan_stock_math.md`）：零假设误报率表、t_c 区间校准 | `reports/null_calibration_stock.md`、`reports/tc_interval_calibration.md` | 批准 Q-STK1 登记文本修订（λ_t、市值分层、Holm） |
 | 4 | 本周 | 写 Q-DD2 / Q-W1 预登记（变量、目标、基线、指标、切分写死） | `docs/preregistration_price_layer.md` | **批准登记后一次性运行** |
 | 5 | 11 月 | 中证500 成分加入夜间预算；个股页迁到 Open Design 终端；市场信息页 | Pages 上可查 800 只 | Open Design 出视觉 |
 | 6 | 11–12 月 | 市场基础信息每日落盘，积累板块资金流历史 | 热力图可回看 | — |
@@ -209,7 +212,8 @@
 1. 合并 #22–#25、#27（说"合并"）。
 2. #26 主页：是否转正式 PR；16 MB mp4 是否改走 Release/LFS；手机 390px 引言换行请真机确认。
 3. 批准 Q-DD2 / Q-W1 登记（步 4）。
-4. 腾讯云 worker 是否要做（不做也能用，只是要点一次 Run workflow、等 1–3 分钟）。
+4. 个股研究方案 `docs/research_plan_stock_math.md` §7 三项：零对照字段进 JSON、Q-STK1 登记文本加 λ_t/市值分层、尾部层是否立项。
+5. 腾讯云 worker 是否要做（不做也能用，只是要点一次 Run workflow、等 1–3 分钟）。
 
 ## 12. 主要风险
 | 风险 | 应对 |
