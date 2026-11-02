@@ -455,3 +455,12 @@ Harding–Pagan 2002（JME）、Pagan–Sossounov 2003、Lunde–Timmermann 2004
 - 三段合并裁决（不改规则）：LPPLS 置信度 = 开发段有信号、校准段脆弱（box 4/7 名义过、LOCO 不满足）、测试段未通过 → 证据等级 `dev_only`，只作泡沫状态描述性分级，不作预测证据；p20 与底部概率链不显示。任何模块不因测试段结果升级；本轮历史段评价到此关闭，后续证据只来自前瞻日志。
 - 扫描/评价 commit：以本条登记所在 commit 为准；特征 `data/features/lppls_v2_test/`（7 指数）。
 
+
+## 20. 实现偏离记录：v2 网格阶段未覆盖窗内 t_c（2026-11-02，用户裁定“全局修复”；PR #28）
+- **偏离内容**：§17.5 登记的 v2 搜索域为 t_c∈[t₂−0.2dt, t₂+0.2dt]、设计矩阵 |t_c−t|^m；§13 第 4 条登记网格阶段（`grid_profile`）与逐点 lstsq“逐项相同”。实际代码中 `research/optim/optimizers.py::grid_profile` 对 t_c≤t₂ 的网格点直接跳过（置 inf），窗内 t_c 只能靠 LM 漂移或 10 个随机起点到达。这是实现与登记规格不一致，不是方法改动。审计证据见 `reports/stock_math_audit.md` F1（600519 stk_full 181 窗中 44 窗 SSE 下降，最大 −52%；合成窗内 t_c 的 MAE 降 4–20×；窗外 t_c 结果逐位不变）。
+- **修复**：`grid_profile` 在 `core.ALLOW_INSIDE=True`（v2）时按 `max(|t_c−t|, MIN_DT)` 计算，与 `design()` 同式；v1/proto 行为不变。产品模型版本 `prereg_v1.7_v2` → `prereg_v1.7_v2.1`。
+- **已登记结果的处置（不改任何判据、不改任何已登记裁决）**：
+  1. §17.9–§19.1 的开发段、校准段、最终测试段结果全部按原代码保留为登记记录，`data/features/lppls_v2*`（Release research-data-v20261101）不覆盖。
+  2. §19.1 已宣布历史段评价关闭。本次只在**开发段**用修复后的代码重扫一次（输出 `data/features/lppls_v2_g2/`，`LPPLS_OUT_TAG=_g2`），并用同一评价脚本（`research.eval.original_standard`，输出 `reports/original_standard_dev_v2_g2/`）出一份**敏感性对照**，与原开发段结果并列报告。校准段、测试段不重扫、不重评；对照结果不用于升级任何模块的证据等级，LPPLS 置信度仍为 `dev_only`。
+  3. 前瞻日志：已封存条目保留原 `model_version`；修复合并后的新条目记 `prereg_v1.7_v2.1`，前瞻评价按 model_version 分段统计，不混算。
+- **产品影响**：合并后日更与个股按需计算立即使用 v2.1；`_to_cal`（F2）同时修复，未来 t_c 不再被截到 as-of 日（只影响展示，个股页仍按规则隐藏 t_c）。

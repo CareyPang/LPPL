@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from scipy.optimize import differential_evolution, least_squares, minimize
 
+from ..lppls import core
 from ..lppls.core import K_LPPLS, K_POWER, design, lin_fit
 
 
@@ -100,7 +101,9 @@ def grid_profile(t, y, tcs, ms, ws, k=K_LPPLS):
     ones = np.ones_like(t)
     for i, tc in enumerate(tcs):
         dt = tc - t
-        if np.any(dt <= 0):
+        if core.ALLOW_INSIDE:
+            dt = np.maximum(np.abs(dt), core.MIN_DT)
+        elif np.any(dt <= 0):
             continue
         L = np.log(dt)
         f = np.exp(np.outer(ms, L))  # (n_m, n)

@@ -41,3 +41,30 @@ def test_each_optimizer_recovers_tc_low_noise(name):
     r = METHODS[name](t, y, lo, hi, seed=0)
     assert r.sse <= 1.05 * sse(tr.theta(), t, y)
     assert abs(r.theta[0] - tr.tc) < 5
+
+
+def test_grid_profile_covers_inside_tc_when_allow_inside(monkeypatch):
+    """v2（ALLOW_INSIDE=True）下 t_c 网格必须覆盖 t2 之前的半域，并与 lin_fit 同解；v1 下仍为 inf。"""
+    from research.lppls import core
+    from research.optim.optimizers import grid_profile
+
+    rng = np.random.default_rng(3)
+    t = np.arange(120.0)
+    tc_true = 110.0
+    X = core.design(t, tc_true, 0.5, 8.0, allow_inside=True)
+    y = X @ np.array([5.0, -0.3, 0.02, 0.01]) + 0.002 * rng.standard_normal(len(t))
+    tcs = np.array([100.0, 110.0, 119.0, 130.0])
+    ms, ws = np.array([0.5]), np.array([8.0])
+
+    monkeypatch.setattr(core, "ALLOW_INSIDE", False)
+    g1 = grid_profile(t, y, tcs, ms, ws)
+    assert np.all(np.isinf(g1[:3, 0, 0])) and np.isfinite(g1[3, 0, 0])
+
+    monkeypatch.setattr(core, "ALLOW_INSIDE", True)
+    g2 = grid_profile(t, y, tcs, ms, ws)
+    assert np.all(np.isfinite(g2[:, 0, 0]))
+    assert int(np.argmin(g2[:, 0, 0])) == 1
+    for i, tc in enumerate(tcs):
+        assert g2[i, 0, 0] == pytest.approx(core.lin_fit(t, y, tc, 0.5, 8.0)[0], rel=1e-6, abs=1e-12)
+    g_pow = grid_profile(t, y, tcs, ms, ws, k=core.K_POWER)
+    assert np.all(np.isfinite(g_pow[:, 0, 0]))

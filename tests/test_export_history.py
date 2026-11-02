@@ -45,3 +45,18 @@ def test_history_contract_and_replay_window_consistency():
     scale_window = next(window for window in replay["top"]["scale_windows"] if window["scale"] == "6-12m")
     assert frame_2015["w"]["6-12m"] == [scale_window["q20_date"], scale_window["q80_date"]]
     assert frame_2015["close"] == round(replay["price_history"]["close"][-1], 2)
+
+
+def test_to_cal_extrapolates_beyond_calendar_end():
+    """as-of 为最后一个交易日时，未来 t_c 不能被截到 as-of 当天，而要按工作日外推。"""
+    import pandas as pd
+
+    from research.eval.export_contract import _to_cal
+
+    cal = pd.bdate_range("2024-01-01", periods=300)
+    assert _to_cal(cal, cal[200], 30.0) == str(cal[230].date())
+    assert _to_cal(cal, cal[-1], 0.0) == str(cal[-1].date())
+    assert _to_cal(cal, cal[-1], 1.0) == str(pd.bdate_range(cal[-1], periods=2)[-1].date())
+    assert _to_cal(cal, cal[-1], 30.0) == str(pd.bdate_range(cal[-1], periods=31)[-1].date())
+    assert _to_cal(cal, cal[-1], 29.6) == _to_cal(cal, cal[-1], 30.0)
+    assert _to_cal(cal, cal[5], -10.0) == str(cal[0].date())
