@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#3E5560">
 <title>临界点 · 浪成于微澜之间</title>
-<link rel="preload" as="image" href="assets/dive/poster.jpg">
+<link rel="preload" as="image" href="assets/ocean/poster-desktop.webp" media="(min-width:600px) and (min-height:600px)">
+<link rel="preload" as="image" href="assets/ocean/poster-mobile.webp" media="(max-width:599px), (max-height:599px)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{
   --ink:#13232A;--ink2:rgba(19,35,42,.76);--inkL:rgba(19,35,42,.26);
@@ -30,7 +31,8 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
 
 /* ---------- 背景舞台 ---------- */
-.stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#3E5560 url(assets/dive/poster.jpg) center/cover no-repeat}
+.stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#3E5560 url(assets/ocean/poster-desktop.webp) center/cover no-repeat}
+@media (max-width:599px), (max-height:599px){.stage{background-image:url(assets/ocean/poster-mobile.webp);background-position:74% center}}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #film{display:none}
 .stage.fb #film{display:block}
@@ -277,6 +279,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 <link rel="stylesheet" href="app/home-readability.css">
 <script src="app/lppl-data.js"></script>
 <script src="app/home-quality.js"></script>
+<script src="app/home-media.js"></script>
 </head>
 <body>
 <div class="stage" id="stage" aria-hidden="true">
@@ -305,6 +308,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   </div>
   <a class="pill" href="index.html">进入工作站</a>
 </header>
+<button id="motion-resume" class="motion-resume" type="button" hidden>播放海浪动画</button>
 
 <div class="hero" id="hero">
   <div class="eb ln" style="--d:.1s">FROM RIPPLE TO WAVE</div>
@@ -412,10 +416,7 @@ const clk=(now)=>(now/1000)%3600;
 const SRC = MOB ? {dir:'assets/dive/m2/',n:121,w:1280,h:720,L:3} : {dir:'assets/dive/h/',n:241,w:1920,h:1080,L:5};
 // 时间轴：0–0.30 海面，0.30–0.42 贴水与入水，0.42 之后水下
 const WATERLINE = 0.30, SUBMERGED = 0.42;
-// 静止时的真实海浪循环，只向前播放
-// sea：即梦固定机位视频（30fps 补帧版），已去重复帧、重做首尾接缝（约 6.3 秒，30fps）
-// under / deep：暂用原下潜视频中镜头最稳的片段（24fps），去抖对齐后交叉淡化
-// 只使用图片帧，不加载 mp4
+// Original 24fps video is the primary path; this bounded image queue is a fallback.
 const LOOP_DIR = 'assets/dive/loop/', LOOP_SUB = MOB ? 'm' : 'd';
 const LOOPS = [
   {name:'sea',   n:188, fps:30, lo:-1,           hi:WATERLINE-.03},
@@ -427,6 +428,7 @@ const START_BUFFER = MOB ? 12 : 18, LOOK_AHEAD = MOB ? 24 : 36;
 const STAGE_FRAMES = [...new Set([0,.27,.36,.45,.65,.8,1].map(p=>Math.round(p*(SRC.n-1))))];
 const mediaQueue=[];
 let loaded=0, mediaActive=0, mediaStarted=false, wantedProgress=0, activeLoop=null;
+let videoMedia=null, heldDive=null, diveSnapshot=null;
 
 // A shared, bounded queue prevents offscreen media from competing with the first sea frames.
 function queueImage(rec,url,priority,done){
@@ -449,7 +451,9 @@ function pumpMedia(){
         if(settled) return; settled=true; clearTimeout(timer); img.onload=img.onerror=null;
         if(!ok && ++attempts<2){ attempt(); return; }
         rec.img=ok?img:null; rec.ok=ok; rec.done=true; rec.loading=false;
-        mediaActive--; job.done(ok); rec.resolve(ok); progress(); kick(); pumpMedia();
+        mediaActive--; job.done(ok); rec.resolve(ok);
+        if(rec.kind==='dive') trimDiveFrames(Math.round(wantedProgress*(SRC.n-1)));
+        progress(); kick(); pumpMedia();
       };
       img.onload=()=>{ if(img.decode) img.decode().then(()=>finish(true),()=>finish(false)); else finish(true); };
       img.onerror=()=>finish(false); img.src=job.url;
@@ -466,6 +470,18 @@ function nearestLoaded(i){
   }
   return -1;
 }
+function trimDiveFrames(center){
+  const radius=MOB?10:14;
+  for(let i=0;i<frames.length;i++){
+    const rec=frames[i];
+    if(!rec || rec.loading || STAGE_FRAMES.includes(i) || Math.abs(i-center)<=radius) continue;
+    if(rec.job){
+      const j=mediaQueue.indexOf(rec.job); if(j>=0) mediaQueue.splice(j,1);
+      rec.job=null;rec.resolve(false);
+    }
+    frames[i]=undefined;
+  }
+}
 function loadFrame(i,priority=2){
   const rec=frames[i] || (frames[i]={ok:false,kind:'dive',index:i});
   return queueImage(rec,SRC.dir+String(i+1).padStart(3,'0')+'.webp',priority,()=>{ loaded++; });
@@ -474,6 +490,9 @@ function contiguousReady(L){
   let n=0; while(n<L.n && L.frames[n] && L.frames[n].done) n++; return n;
 }
 function progress(){
+  if(videoMedia && !RM && (videoMedia.getLoop('sea') || videoMedia.getDive())){
+    $('#load').style.opacity='0'; return;
+  }
   const p=activeLoop ? Math.min(1,contiguousReady(activeLoop)/Math.min(START_BUFFER,activeLoop.n)) : (nearestLoaded(Math.round(wantedProgress*(SRC.n-1)))>=0?1:0);
   $('#lt').textContent='准备画面 '+Math.round(p*100)+'%'; $('#lb').style.width=(p*100)+'%';
   if(p>=1) $('#load').style.opacity='0';
@@ -482,6 +501,8 @@ function prioritizeFrames(p){
   wantedProgress=clamp(p,0,1);
   if(!mediaStarted) return;
   const center=Math.round(wantedProgress*(SRC.n-1));
+  if(videoMedia && !RM && videoMedia.status('dive')!=='failed') return;
+  trimDiveFrames(center);
   for(const job of mediaQueue) if(job.rec.kind==='dive') job.priority=4;
   if(RM){
     const nearest=STAGE_FRAMES.reduce((a,b)=>Math.abs(b-center)<Math.abs(a-center)?b:a);
@@ -496,6 +517,11 @@ function prioritizeFrames(p){
 function loadAll(){
   if(mediaStarted) return; mediaStarted=true;
   const center=Math.round(wantedProgress*(SRC.n-1));
+  if(videoMedia && !RM){
+    const rec=frames[0]={ok:false,kind:'dive',index:0};
+    queueImage(rec,'assets/ocean/poster-'+(MOB?'mobile':'desktop')+'.webp',0,()=>{loaded++;});
+    videoMedia.start(); pumpMedia(); return;
+  }
   loadFrame(RM?STAGE_FRAMES.reduce((a,b)=>Math.abs(b-center)<Math.abs(a-center)?b:a):center,0);
   if(!RM) loopFor(wantedProgress);
   for(const i of STAGE_FRAMES) loadFrame(i,4);
@@ -507,6 +533,11 @@ function loadAll(){
 }
 function loadLoops(L=LOOPS[0]){
   if(RM || !mediaStarted) return;
+  if(videoMedia) return;
+  for(let i=0;i<L.frames.length;i++){
+    const rec=L.frames[i], ahead=(i-L.cursor+L.n)%L.n;
+    if(rec && rec.done && ahead>=LOOK_AHEAD && ahead<L.n-2) L.frames[i]=undefined;
+  }
   if(activeLoop!==L){
     activeLoop=L;
     for(const job of mediaQueue) if(job.rec.kind==='loop') job.priority=4;
@@ -521,6 +552,7 @@ function loopFor(c){ for(const L of LOOPS) if(c>=L.lo && c<L.hi){ loadLoops(L); 
 // 当前应显示的循环画面：{key, src, w, h, live, scene}
 function loopImage(L,now){
   if(!L) return null;
+  if(videoMedia && !RM) return videoMedia.getLoop(L.name);
   if(L.vidOk){ const v=L.vid; if(v.paused){ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); } return {key:'V'+L.name,src:v,w:v.videoWidth,h:v.videoHeight,live:true,scene:L.name}; }
   loadLoops(L);
   if(!L.last){
@@ -543,7 +575,28 @@ function loopImage(L,now){
   }
   return L.last;
 }
-function pauseLoops(except){ for(const L of LOOPS) if(L!==except){ L.clock=null; if(L.vidOk && !L.vid.paused) L.vid.pause(); } }
+function pauseLoops(except){
+  if(videoMedia){videoMedia.setLoop(except?except.name:null);return;}
+  for(const L of LOOPS) if(L!==except){ L.clock=null; if(L.vidOk && !L.vid.paused) L.vid.pause(); }
+}
+if(typeof HomeMedia!=='undefined') videoMedia=HomeMedia.create({
+  mobile:MOB,reducedMotion:RM,
+  onReady(){progress();kick();},
+  onFrame(kind,item){
+    if(kind!=='dive' || !item) return;
+    // Freeze each completed seek before the video starts decoding the next target.
+    if(useGL && tex(item)){ heldDive=item; }
+    else {
+      if(!diveSnapshot) diveSnapshot=document.createElement('canvas');
+      if(diveSnapshot.width!==item.w || diveSnapshot.height!==item.h){diveSnapshot.width=item.w;diveSnapshot.height=item.h;}
+      diveSnapshot.getContext('2d').drawImage(item.src,0,0);
+      heldDive={...item,src:diveSnapshot};
+    }
+    kick();
+  },
+  onError(){prioritizeFrames(wantedProgress);kick();},
+  onBlocked(){ $('#motion-resume').hidden=false; }
+});
 
 /* ================= 数据（后端静态 JSON，经 app/lppl-data.js；前端不计算模型） ================= */
 const KEYS=['sh000001','sh000300','sz399006'];
@@ -618,7 +671,7 @@ function setWave(p){
 
 /* ================= 渲染：WebGL（水波折射 / 涟漪 / 焦散 / 光束 / 调色 / 颗粒） ================= */
 const stage=$('#stage'), glc=$('#gl'), film=$('#film');
-let gl=null, U={}, useGL=false, texCache=new Map(), W=1, H=1, dprScale=1;
+let gl=null, U={}, useGL=false, texCache=new Map(), texRevisions=new Map(), W=1, H=1, dprScale=1;
 const quality = HomeQuality.create({mobile:MOB});
 const VS='attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
 const FS=`#define OCT ${MOB?3:5}
@@ -628,7 +681,7 @@ uniform sampler2D uA,uB;
 uniform float uMix,uT,uSub,uDeep,uStr;
 uniform vec2 uRes,uCov,uK;
 uniform vec4 uTint;
-uniform float uHz,uSkyW,uSunX,uQuality;
+uniform float uHz,uSkyW,uSunX,uQuality,uIdleWater,uProgress;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 /* ---------- 代码渲染的天空：透视云层 + 夕阳 + 海平线薄雾 ---------- */
 float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -641,49 +694,35 @@ float fbm(vec2 p){return fbmK(p,LODK);}
 // im：画面坐标（x 0–1，y 自上而下 0–1）；以视频的海平线 uHz 为基准
 vec3 skyCol(vec2 im,float asp,float t){
   float hI=uHz, e=max(hI-im.y,0.), r=clamp(im.y/max(hI,.01),0.,1.);
-  // 底色：取自原视频天空 —— 顶部蓝灰，向海平线过渡到暖橙，贴海平线一层薄雾
-  vec3 c=mix(vec3(.58,.67,.75),vec3(.78,.78,.74),smoothstep(0.,.55,r));
-  c=mix(c,vec3(.88,.78,.62),smoothstep(.45,.86,r));
-  c=mix(c,vec3(.88,.71,.52),smoothstep(.8,.97,r));
-  c=mix(c,vec3(.82,.70,.60),smoothstep(.955,1.,r));
-  // 太阳：位置对准海面上的金色反光列；随下潜逐渐贴近海平线
-  float sy=hI-max(.006,.075-(.431-hI)*.62);
+  // A restrained, stable exposure: keep a visible sun instead of a white bloom patch.
+  vec3 c=mix(vec3(.45,.61,.69),vec3(.80,.82,.77),smoothstep(0.,.72,r));
+  c=mix(c,vec3(.94,.76,.56),smoothstep(.62,1.,r));
+  float sy=hI-max(.014,.056-(.431-hI)*.32);
   vec2 d=vec2((im.x-uSunX)*asp,im.y-sy); float dist=length(d);
-  vec3 sunC=vec3(1.,.79,.50);
-  float fl=1.+.035*sin(t*1.7)+.02*sin(t*3.1+1.);
-  c+=sunC*(exp(-dist*6.)*.42+exp(-dist*24.)*.45)*fl;                       // 大气散射的光晕
-  c+=sunC*exp(-abs(im.y-hI)*22.)*exp(-abs(d.x)*1.4)*.30;                    // 沿海平线铺开的暖光
-  c=mix(c,vec3(1.,.97,.87),1.-smoothstep(.0115,.0165,dist));             // 日轮
-  // 云：投影到远处的云平面，越靠近海平线越扁、越小（透视）；风持续把云向右吹，并缓慢变形
-  float z=1./(e*2.6+.03);
-  LODK=1.5+float(OCT)*uQuality*smoothstep(.01,.22,e);
-  vec2 cp=vec2((im.x-.5)*asp*z*.5,z*.85);
-  vec2 wind=vec2(t*.055,t*.010);
-  vec2 q=cp*1.7+wind;
-  vec2 w=vec2(fbm(q*.45+vec2(3.1,1.7)+t*.006),fbm(q*.45+vec2(8.3,2.8)-t*.005));
-  float dn=fbm(q+w*1.1);
-  // 云量：大块积云加上稀疏处的缝隙，天空不再是一整片
-  float cover=fbm(cp*.35+vec2(t*.012,5.))*.35;
-  float a=smoothstep(.40-cover*.25,.66-cover*.25,dn);
-  float thick=smoothstep(.45,.85,dn);
-  vec2 toSun=normalize(vec2(uSunX-im.x,im.y-sy)*vec2(asp,1.)+1e-4);
-  float dn2=fbm(q+w*1.1+toSun*.28);
-  float lit=clamp((dn-dn2)*4.5+.5,0.,1.);                                // 朝阳一侧亮、背阳一侧暗
-  float rim=exp(-dist*2.2);
-  vec3 shade=mix(vec3(.50,.50,.60),vec3(.66,.56,.58),r);                  // 背光：灰紫
-  vec3 litC=mix(vec3(1.,.96,.90),vec3(1.,.83,.58),r*.8+rim*.5);           // 受光：奶白到金
-  vec3 cc=mix(shade,litC,lit);
-  cc*=1.-.22*thick*(1.-lit);                                              // 厚云核心更暗，立体感
-  cc+=sunC*rim*(.55*(1.-a)+.25*lit)*(.4+.6*(1.-thick));                  // 云边银亮的金边
-  // 高空卷云：被拉长的细丝，移动更快
-  float ci=fbm(vec2(cp.x*.3,cp.y*2.4)+vec2(t*.09,t*.01)+w*.3);
-  float a2=smoothstep(.52,.80,ci)*.5*smoothstep(.02,.16,e);
-  c=mix(c,mix(vec3(.95,.90,.84),vec3(1.,.86,.66),r)+sunC*rim*.25,a2);
-  // 近海平线处云渐隐入薄雾
-  a*=smoothstep(.0,.03,e)*(1.-.35*(1.-smoothstep(.0,.07,e)));
-  cc=mix(cc,c,(1.-smoothstep(.0,.08,e))*.45);
-  c=mix(c,cc,a);
-  c+=sunC*exp(-dist*20.)*.18*fl;                                         // 透过云层的余晖
+  vec3 sunC=vec3(1.,.77,.45);
+  float warmth=exp(-dot(d,d)*10.);
+  c=mix(c,vec3(.98,.85,.66),warmth*.17);
+  c+=sunC*(exp(-dist*17.)*.08+exp(-dist*75.)*.13);
+  float disc=1.-smoothstep(.012,.014,dist);
+  c=mix(c,vec3(1.,.96,.80),disc);
+  // Bounded sky coordinates avoid the old 1/e horizon singularity and parallel stripes.
+  LODK=1.5+float(OCT-1)*uQuality;
+  vec2 cp=vec2(im.x*4.8,(im.y-hI+.431)*14.);
+  cp+=vec2(t*.004,0.);
+  vec2 warp=vec2(fbm(cp*.65+vec2(2.4,7.1)),fbm(cp*.55+vec2(8.7,2.8)))-.35;
+  vec2 cq=cp+warp*.85;
+  float mass=fbm(cq+vec2(1.8,4.2));
+  float feather=fbm(cq*vec2(1.2,2.3)+vec2(6.3,1.1));
+  float cloud=smoothstep(.36,.56,mass*.75+feather*.25);
+  // Sparse broken wisps, clear title area and a clean band near the horizon.
+  cloud*=smoothstep(.025,.095,e)*(.35+.65*smoothstep(.15,.58,im.x));
+  float rim=clamp((mass-fbm(cq+vec2(.10,-.08)))*5.+.55,0.,1.);
+  vec3 cc=mix(vec3(.56,.61,.67),vec3(.98,.92,.82),rim);
+  cc=mix(cc,vec3(1.,.84,.61),warmth*.24);
+  c=mix(c,cc,cloud*.68);
+  // Thin fibres remain translucent rather than becoming a second painted cloud layer.
+  float veil=smoothstep(.49,.68,feather)*.13*smoothstep(.06,.18,e);
+  c=mix(c,vec3(.94,.89,.81),veil);
   return c;
 }
 float caus(vec2 uv,float t){
@@ -704,31 +743,41 @@ void main(){
   // 轻度锐化（反锐化掩模），对混合后的画面计算，避免交叉淡化时出现边缘错位
   vec3 bl=mix((texture2D(uA,uv+ox).rgb+texture2D(uA,uv-ox).rgb+texture2D(uA,uv+oy).rgb+texture2D(uA,uv-oy).rgb),
               (texture2D(uB,uv+ox).rgb+texture2D(uB,uv-ox).rgb+texture2D(uB,uv+oy).rgb+texture2D(uB,uv-oy).rgb),uMix)*.25;
-  col=clamp(col+(col-bl)*.5,0.,1.);
+  col=clamp(col+clamp((col-bl)*.30,vec3(-.035),vec3(.035)),0.,1.);
   // 海平线以上换成代码天空；海面、浪尖仍用真实视频（按亮度区分，浪冲过海平线时不会被盖住）
   if(uSkyW>.001){
     vec2 im=vec2(uv.x,1.-uv.y);
     float above=1.-smoothstep(uHz-.003,uHz+.004,im.y);
     if(above>0.){
       float lum=dot(col,vec3(.299,.587,.114));
-      float m=above*smoothstep(.40,.54,lum)*uSkyW;
+      float edgeGuard=mix(smoothstep(.32,.53,lum),1.,smoothstep(.006,.035,uHz-im.y));
+      float m=above*edgeGuard*uSkyW;
       if(m>0.) col=mix(col,skyCol(im,1.7778,uT),m);
     }
   }
   if(uSub>.001){
-    // 水下只留很淡的焦散与光束作点缀
-    float topM=smoothstep(.25,1.,s.y);
-    float c=caus(q*1.5+vec2(uT*.01,uT*.02),uT*.22);
-    col+=vec3(.78,1.,.95)*c*.08*uSub*topM*(1.-uDeep*.8);
-    vec2 sun=vec2(.62*asp,1.3);vec2 dv=q-sun;float ang=atan(dv.x,-dv.y);
-    float rays=clamp(.5+.25*sin(ang*23.+uT*.21)+.25*sin(ang*41.-uT*.3+1.7),0.,1.);
-    rays=pow(rays,4.)*(1.-smoothstep(.25,1.7,length(dv)));
-    col+=vec3(.82,1.,.96)*rays*.06*uSub*(1.-uDeep*.7)*(.65+.55*uStr);
+    // Light stays in source-image coordinates, so portrait cropping cannot move the sun.
+    vec2 im=vec2(uv.x,1.-uv.y);
+    float wetY=mix(.57,.13,smoothstep(.30,.52,uProgress));
+    wetY=mix(wetY,.22,uIdleWater);
+    float wet=smoothstep(wetY,wetY+.13,im.y);
+    float attenuation=exp(-max(0.,im.y-.20)*1.25)*(1.-uDeep*.82);
+    vec2 light=vec2(mix(.62,.26,uIdleWater),-.12);
+    float slope=(im.x-light.x)/max(.12,im.y-light.y);
+    float drift=sin(uT*.17+slope*3.)*.012;
+    float bands=.5+.25*sin((slope+drift)*37.+.7*sin(slope*11.))+.25*sin(slope*71.-uT*.12);
+    float rays=pow(max(0.,bands),4.5);
+    float fan=exp(-pow((slope-.07)*1.5,2.));
+    float shafts=rays*fan*wet*attenuation*uSub;
+    // Directional shafts add light locally; open water keeps its depth and contrast.
+    col+=vec3(.39,.68,.65)*shafts*.18*(.85+.15*uQuality);
+    float c=caus(im*vec2(2.8,1.6)+vec2(uT*.006,uT*.009),uT*.12);
+    col+=vec3(.55,.82,.76)*c*.025*uSub*wet*attenuation;
   }
   col=clamp(col,0.,1.);
   col=mix(col,soft(col,uTint.rgb),uTint.a);
   float vg=1.-smoothstep(.35,1.3,length((s-vec2(.4,.6))*vec2(1.,1.2)));col*=mix(.72,1.,vg);
-  col+=(hash(s*uRes+fract(uT*7.)*91.)-.5)*.008;
+  col+=(hash(s*uRes)-.5)*.002;
   gl_FragColor=vec4(col,1.);
 }`;
 function initGL(){
@@ -741,32 +790,43 @@ function initGL(){
   gl.useProgram(pr);
   const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
   const loc=gl.getAttribLocation(pr,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uHz','uSkyW','uSunX','uQuality']) U[n]=gl.getUniformLocation(pr,n);
+  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uHz','uSkyW','uSunX','uQuality','uIdleWater','uProgress']) U[n]=gl.getUniformLocation(pr,n);
   gl.uniform1i(U.uA,0); gl.uniform1i(U.uB,1);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
   glc.addEventListener('webglcontextlost',(e)=>{ e.preventDefault(); toFallback(); });
   return true;
 }
-function toFallback(){ useGL=false; texCache.clear(); stage.classList.add('fb'); sizeCanvases(); }
+function toFallback(){
+  useGL=false; texCache.clear(); texRevisions.clear();
+  // A GPU-held video frame cannot be read safely while its element seeks.
+  if(heldDive && heldDive.src!==diveSnapshot) heldDive=null;
+  stage.classList.add('fb'); sizeCanvases();
+}
 // 统一的画面源：滚动帧 {key:i, src:img} 或循环帧 / 视频 {key:'sea3', src, live}
 function frameItem(i){ const f=frames[i]; return f&&f.ok ? {key:i,src:f.img,live:false} : null; }
 function tex(it){
   if(!it) return null;
   let t=texCache.get(it.key);
   if(t){ texCache.delete(it.key); texCache.set(it.key,t);
-    if(it.live){ gl.bindTexture(gl.TEXTURE_2D,t); try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,it.src); }catch(e){} }
+    if(it.live && texRevisions.get(it.key)!==it.revision){
+      gl.bindTexture(gl.TEXTURE_2D,t);
+      try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,it.src); texRevisions.set(it.key,it.revision); }
+      catch(e){ toFallback(); return null; }
+    }
     return t; }
-  if(texCache.size>=10){ const first=texCache.keys().next().value; gl.deleteTexture(texCache.get(first)); texCache.delete(first); }
+  if(texCache.size>=6){ const first=texCache.keys().next().value; gl.deleteTexture(texCache.get(first)); texCache.delete(first); texRevisions.delete(first); }
   t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,it.src); }catch(e){ gl.deleteTexture(t); toFallback(); return null; } // 本地文件被浏览器视为跨域时退回 Canvas
-  texCache.set(it.key,t); return t;
+  texCache.set(it.key,t); texRevisions.set(it.key,it.revision); return t;
 }
 const fx = film.getContext('2d',{alpha:false});
 function sizeCanvases(){
-  const base=Math.min(window.devicePixelRatio||1, MOB?2:2) * dprScale;
   const cw=window.innerWidth, ch=window.innerHeight;
+  // Cap GPU pixel work, not the DOM text resolution. Portrait 2x remains sharp on phones.
+  const pixelBudget=MOB?1400000:2600000;
+  const base=Math.min(window.devicePixelRatio||1,2,Math.sqrt(pixelBudget/(cw*ch))) * dprScale;
   W=Math.max(1,Math.round(cw*base)); H=Math.max(1,Math.round(ch*base));
   if(useGL){ if(glc.width!==W || glc.height!==H){glc.width=W; glc.height=H;} gl.viewport(0,0,W,H); }
   else { if(film.width!==W || film.height!==H){film.width=W; film.height=H;} fx.imageSmoothingEnabled=true; fx.imageSmoothingQuality='high'; }
@@ -790,26 +850,32 @@ function sceneSky(fi,loop,loopW){
 }
 // fi：滚动位置对应的帧；loop / loopW：静止时的真实海浪循环及其权重
 function render(now, fi, sub, deep, loop, loopW){
-  const i0=Math.floor(fi); let a=nearestLoaded(i0); if(a<0 && !loop) return;
+  const dive=videoMedia&&!RM&&videoMedia.status('dive')!=='failed'?(videoMedia.getDive()||heldDive):null;
+  if(dive){ fi=dive.progress*(SRC.n-1); sub=sstep(WATERLINE,SUBMERGED+.04,dive.progress); }
+  if(loop&&loop.scene!=='sea') sub=sub*(1-loopW)+loopW;
+  const i0=Math.floor(fi); let a=nearestLoaded(i0); if(a<0 && !loop && !dive) return;
   let A=null, B=null, mix=0;
   if(loop && loopW>=.999){ A=B=loop; }
   else if(loop && loopW>.001){
     // 停下 / 起步时：当前滚动帧与循环画面交叉淡化
-    A=frameItem(a<0?0:a) || loop; B=loop; mix=loopW;
+    A=dive || frameItem(a<0?0:a) || loop; B=loop; mix=loopW;
   } else {
-    if(a<0) return;
-    A=B=frameItem(a);
-    if(a===i0){ const i1=Math.min(SRC.n-1,i0+1); const it=frameItem(i1); if(it){ B=it;
+    if(a<0 && !dive) return;
+    A=B=dive || frameItem(a);
+    if(!dive && a===i0){ const i1=Math.min(SRC.n-1,i0+1); const it=frameItem(i1); if(it){ B=it;
       // 只在帧切换附近的窄区间混合，其余时间显示单帧原图，避免两帧叠加的重影
       mix=sstep(.3,.7,fi-i0); } }
   }
-  const s=Math.max(W/SRC.w,H/SRC.h), covx=W/(SRC.w*s), covy=H/(SRC.h*s), kx = W<H ? .62 : .5;
+  // Keep the sun in portrait framing, then gently reveal the underwater light fan.
+  const s=Math.max(W/SRC.w,H/SRC.h), covx=W/(SRC.w*s), covy=H/(SRC.h*s), kx = W<H ? .74-.26*sub : .5;
   if(useGL){
     const ta=tex(A), tb=(B===A)?ta:tex(B); if(!ta) return;
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,ta);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,tb||ta);
-    gl.uniform1f(U.uMix,tb?mix:0); gl.uniform1f(U.uT,clk(now)); gl.uniform1f(U.uSub,sub); gl.uniform1f(U.uDeep,deep); gl.uniform1f(U.uStr,s0);
+    gl.uniform1f(U.uMix,tb?mix:0); gl.uniform1f(U.uT,RM?0:clk(now)); gl.uniform1f(U.uSub,sub); gl.uniform1f(U.uDeep,deep); gl.uniform1f(U.uStr,s0);
     gl.uniform1f(U.uQuality,quality.settings.cloud);
+    gl.uniform1f(U.uIdleWater,loop&&loop.scene!=='sea'?loopW:0);
+    gl.uniform1f(U.uProgress,fi/(SRC.n-1));
     gl.uniform2f(U.uRes,W,H); gl.uniform2f(U.uCov,covx,covy); gl.uniform2f(U.uK,kx,.5);
     gl.uniform4f(U.uTint,TINT[0],TINT[1],TINT[2],TINT[3]);
     // Surface horizon follows its own loop; any residual dive sky fades out with underwater media.
@@ -818,9 +884,12 @@ function render(now, fi, sub, deep, loop, loopW){
     gl.drawArrays(gl.TRIANGLES,0,3);
   } else {
     const dw=SRC.w*s, dh=SRC.h*s, ox=(W-dw)*kx, oy=(H-dh)/2;
-    fx.globalAlpha=1; fx.drawImage(A.src,ox,oy,dw,dh);
-    if(B!==A && mix>0.02){ fx.globalAlpha=mix; fx.drawImage(B.src,ox,oy,dw,dh); fx.globalAlpha=1; }
+    try{
+      fx.globalAlpha=1; fx.drawImage(A.src,ox,oy,dw,dh);
+      if(B!==A && mix>0.02){ fx.globalAlpha=mix; fx.drawImage(B.src,ox,oy,dw,dh); fx.globalAlpha=1; }
+    }catch(e){fx.globalAlpha=1;return;}
   }
+  stage.classList.add('painted');
 }
 
 /* ================= 水下漂浮颗粒（分远近三层） ================= */
@@ -834,9 +903,9 @@ function makeSprite(){
 function sizeMotes(){
   const dpr=Math.min(window.devicePixelRatio||1,1.5);
   mw=mc.width=Math.round(window.innerWidth*dpr); mh=mc.height=Math.round(window.innerHeight*dpr);
-  const n=Math.round((MOB?46:96)*(.6+.8*s0));
+  const n=MOB?24:48;
   motes=Array.from({length:n},()=>{ const z=Math.random(); return {x:Math.random()*mw,y:Math.random()*mh,z,
-    r:(z<.7? 1.2+z*3 : 8+(z-.7)*40)*dpr, v:(.06+z*.5)*dpr, ph:Math.random()*6.28, a:z<.7? .35+.4*(1-z) : .12+.1*Math.random()}; });
+    r:(z<.85? .7+z*1.5 : 3+(z-.85)*15)*dpr, v:(.04+z*.22)*dpr, ph:Math.random()*6.28, a:z<.85? .15+.20*(1-z) : .07}; });
   motes.sort((p,q)=>p.z-q.z);
 }
 let lastY=0, scrollVel=0;
@@ -1154,7 +1223,7 @@ function onScroll(){
   const p=(LG(depth)*100)+'%'; mk.style.top=p; rd.style.top=p;
   rd.innerHTML=(depth<1?'0':'−'+Math.round(depth))+' m<small>'+zoneOf(depth)+'</small>';
   const below = clamp((y-introEnd)/Math.max(1,vh),0,1);
-  shade.style.opacity = (below*.35 + clamp(LG(depth)-LG(30),0,1)*.35).toFixed(3);
+  shade.style.opacity = (below*.12 + clamp(LG(depth)-LG(30),0,1)*.42).toFixed(3);
   top.classList.toggle('solid', y>introEnd);
   hint.style.opacity = (1-clamp(y/(vh*.5),0,1)).toFixed(3);
   const r=s1.getBoundingClientRect();
@@ -1173,6 +1242,7 @@ function tick(now){
   }
   const k = RM ? 1 : 1-Math.exp(-Math.min(dtF||16.67,100)/130);
   cur += (target-cur)*k; if(Math.abs(target-cur)<.0004) cur=target;
+  if(videoMedia && !RM) videoMedia.setProgress(cur);
   scrollVel*=.9;
   // 滚动时严格按滚动位置取帧（不再来回往返播放，避免镜头上下晃）
   const fi=clamp(cur*(SRC.n-1),0,SRC.n-1.001);
@@ -1183,12 +1253,13 @@ function tick(now){
   if(!RM){
     const want=loopFor(cur), idle = now-lastScrollT>IDLE_MS && Math.abs(target-cur)<.002;
     if(want!==curLoop){ if(loopW<.02 || !idle){ curLoop=want; loopW=0; } }
+    if(videoMedia) videoMedia.setLoop((idle||loopW>.01)&&curLoop?curLoop.name:null);
     loopIt=loopImage(curLoop,now);
     const goal = (idle && loopIt && want===curLoop) ? 1 : 0;
     const dt=Math.min(.1,dtF/1000||0);
     loopW += (goal-loopW)*(1-Math.exp(-dt*(goal>loopW?3.2:9)));
     if(loopW<.003) loopW=0; if(loopW>.997) loopW=1;
-    pauseLoops(loopW>0?curLoop:null);
+    if(!videoMedia) pauseLoops(loopW>0?curLoop:null);
     if(loopW>0) kick();
   }
   render(now, fi, sub, deep, loopW>0?loopIt:null, loopW);
@@ -1207,9 +1278,16 @@ window.addEventListener('resize',()=>{ clearTimeout(window._rz); window._rz=setT
 window.addEventListener('scroll',onScroll,{passive:true});
 document.addEventListener('visibilitychange',()=>{
   quality.reset();prevNow=0;lastFrame=0;
+  if(videoMedia) videoMedia.setHidden(document.hidden);
   if(document.hidden) pauseLoops(null); else kick();
 });
+window.addEventListener('pagehide',()=>{ if(videoMedia) videoMedia.setHidden(true); });
+window.addEventListener('pageshow',()=>{ if(videoMedia) videoMedia.setHidden(document.hidden);kick(); });
+$('#motion-resume').addEventListener('click',()=>{
+  if(videoMedia && videoMedia.resume()) $('#motion-resume').hidden=true;
+});
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ anchors(); onScroll(); });
+if(document.fonts&&document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',()=>{anchors();onScroll();});
 $('#dive').addEventListener('click',(e)=>{ e.preventDefault(); UI.dive(e.clientX||window.innerWidth*.3); const tgt=s1.getBoundingClientRect().top+window.scrollY; window.scrollTo({top:tgt,behavior:RM?'auto':'smooth'}); });
 
 // 声音开关
