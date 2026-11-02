@@ -112,12 +112,17 @@ SZSE_RENAME = {"融资余额": "fin_balance", "融资买入额": "fin_buy", "融
 
 
 def load_margin(cache: Path = CACHE) -> pd.DataFrame:
-    """沪深融资日报合并（宽表，列后缀 _sse/_szse/_all），`avail_date` = 数据日的下一行日期（PIT 滞后 1 个交易日）。
+    """沪深融资日报合并，金额列统一为元、数量列统一为股（宽表后缀 _sse/_szse/_all）。
 
+    SZSE parquet 保留接口原始亿元/亿股单位；载入时换算为元/股。`avail_date` 为数据日的下一交易日（PIT 滞后 1 个交易日）。
     深交所缺失日按 NaN 保留；_all 列在任一所缺失时为 NaN，调用方自行决定回退到上交所。
     """
     sse = pd.read_parquet(cache / "sse_margin.parquet").set_index("date").add_suffix("_sse")
-    szse = pd.read_parquet(cache / "szse_margin.parquet").rename(columns=SZSE_RENAME).set_index("date").add_suffix("_szse")
+    szse = pd.read_parquet(cache / "szse_margin.parquet").rename(columns=SZSE_RENAME)
+    for column in ("fin_balance", "fin_buy", "sec_balance", "total_balance", "sec_qty", "sec_sell_qty"):
+        if column in szse:
+            szse[column] = pd.to_numeric(szse[column], errors="coerce") * 1e8
+    szse = szse.set_index("date").add_suffix("_szse")
     df = sse.join(szse, how="outer").sort_index()
     for c in ("fin_balance", "fin_buy", "total_balance"):
         df[f"{c}_all"] = df[f"{c}_sse"] + df[f"{c}_szse"]
