@@ -148,10 +148,12 @@ def load_stock(
         raise RuntimeError(f"cannot load Sina HFQ factors for {sym}: {exc}") from exc
     factors_csv = factors.to_csv(index=False).encode("utf-8")
     factor_hash = hashlib.sha1(factors_csv).hexdigest()[:8]
-    source = "tencent_sina_hfq"
+    source = "tencent_fqkline"
     try:
         raw = tencent_raw(sym, start=requested_start)
+        source = raw.attrs.get("source", source)
         adjusted = apply_factors(raw, factors, "hfq")
+        adjusted.attrs["source"] = source
     except Exception as primary_error:
         try:
             adjusted, fallback_source = cache.download(
@@ -162,7 +164,7 @@ def load_stock(
             adjusted = adjusted.loc[
                 pd.to_datetime(adjusted.date) >= pd.Timestamp(requested_start)
             ]
-            source = "cache_tencent_sina_hfq"
+            source = adjusted.attrs.get("source", "cache_tencent_sina_hfq")
         except Exception as fallback_error:
             raise RuntimeError(
                 f"HFQ stock data unavailable for {sym}; primary Tencent raw × Sina HFQ "
@@ -394,6 +396,7 @@ def _record(
         "trading_days_stale": eligibility["trading_days_stale"],
         "dropped_unclosed_bar": eligibility["dropped_unclosed_bar"],
         "eligibility_note": eligibility["eligibility_note"],
+        "source": meta.get("source", "tencent_fqkline"),
         "evidence": STOCK_EVIDENCE,
         "note": STOCK_NOTE,
     }
