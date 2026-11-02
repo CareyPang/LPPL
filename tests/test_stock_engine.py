@@ -580,3 +580,20 @@ def test_hfq_apply_factors_remains_explicit():
     factors = pd.DataFrame({"date": ["2020-01-01"], "factor": [2.0]})
     assert tencent_sina.apply_factors(raw, factors, "hfq").close.tolist() == [20.0, 20.0]
     assert tencent_sina.apply_factors(raw, factors, "qfq").close.tolist() == [5.0, 5.0]
+
+
+def test_display_calendar_appends_known_future_trading_days(monkeypatch):
+    bars = pd.DatetimeIndex(["2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01"])
+    asof = pd.Timestamp("2025-06-30")
+    ref = pd.DatetimeIndex(["2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04"])
+    monkeypatch.setattr(stock, "_reference_calendar", lambda cutoff: ref)
+    cal = stock._display_calendar(bars, asof)
+    assert list(cal) == list(bars[bars <= asof]) + list(pd.to_datetime(["2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04"]))
+    assert cal.is_monotonic_increasing and cal.is_unique
+    assert export_contract._to_cal(cal, asof, 2.0) == "2025-07-02"
+
+    def boom(cutoff):
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(stock, "_reference_calendar", boom)
+    assert list(stock._display_calendar(bars, asof)) == list(bars[bars <= asof])

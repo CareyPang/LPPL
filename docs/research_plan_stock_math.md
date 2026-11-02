@@ -23,7 +23,7 @@
 
 ## 2. 工作包
 
-### WP0 数学/数值基线固化（本 PR 已完成的部分 + 收尾）
+### WP0 数学/数值基线固化（本 PR 已完成的部分 + 收尾）——收尾 1–3 已完成（`boundary_share`、2–4w `display_only`、`_display_calendar`）；4（`_g2` 对照）待跑
 - 已完成：F1（`grid_profile` 窗内 t_c）、F2（`_to_cal` 外推）、测试、§20 偏离登记、`MODEL_VERSION=prereg_v1.7_v2.1`。
 - 收尾（代码小改，均不改判据）：
   1. 输出"撞边界标记"：m/ω/t_c 距离 v2 搜索域边界 <1% 的窗口数与比例（F10：600519 stk_full 181 窗 t_c 撞 ±0.2dt 搜索边界 30.9%，F1 修复后 38.1%；m 撞下界 14.4%、上界 12.7%），进入 `_indicators()` 的描述性字段。
@@ -32,7 +32,7 @@
   4. 开发段 `_g2` 敏感性对照（§20 第 2 条）跑完并写 `reports/original_standard_dev_v2_g2/`。
 - 验收：`ruff` + `pytest -m "not network"` 通过；审计报告 §7 建议逐条关闭或登记。
 
-### WP1 零假设与误报率标定（RQ1）
+### WP1 零假设与误报率标定（RQ1）——**已完成第一轮**：`reports/null_calibration_stock.md`（六类零假设 × 六档 × 六过滤集，43,800 次拟合；`null_fpr` 描述性字段已接入个股 JSON）
 - 假设：H0 = 各过滤集在无泡沫生成过程下的合格率与真实个股一致，即信号无区分度。
 - 生成过程（每类 ≥200 条、长度 = 各档窗口；参数从真实个股后复权收益 PIT 估计）：GBM（μ=0 与 μ=样本 90 分位）、GARCH(1,1)-t、纯幂律 `A+B(tc−t)^m`、O-U 围绕指数趋势（N3）、块 bootstrap 重排的真实收益（破坏时间结构、保留分布）。
 - 输出：按尺度 × 过滤集的误报率表（含 95% Clopper–Pearson 区间）；写入 `reports/null_calibration_stock.md`；在个股 JSON 增加描述性字段 `null_fpr{scale, set}`（文案："在无泡沫的随机序列中，该过滤集也有 x% 的窗口合格"）。

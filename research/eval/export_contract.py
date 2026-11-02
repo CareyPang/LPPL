@@ -20,6 +20,7 @@ from ..features.lppls_rules import (
     lagrange_pick,
     rules,
 )
+from ..features.lppls_scan import BOX, BOXES
 from ..features.regime_bands import regime_bands
 from ..lppls.scenarios import scale_windows, scenarios
 from ..price_layer import bottom_cards
@@ -164,23 +165,77 @@ def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: i
     return {"fit": fit, "extrapolation": ext, "note": "外推段为模型曲线延伸至 t_c 前，不是价格目标"}
 
 
+DISPLAY_ONLY_SCALES = ("2-4w",)  # 10–20 点拟合 7 参数（审计 F7）：只展示窗口数与比例，不计入任何合格统计
+BOUNDARY_TOL = 0.01  # 距搜索域边界 < 1% 量程即记"撞边界"（审计 F10：个股 t_c 撞 ±0.2dt 边界 30%+）
+
+
+def _boundary(dd: pd.DataFrame) -> dict:
+    """描述性：m/ω/t_c 落在登记搜索域（`lppls_scan.BOXES[BOX]`）边界 1% 量程内的窗口比例。撞边界的解不是形态证据，
+    其 t_c 不应再被解读为情景分位；只报告比例，不改任何过滤判据。"""
+    bx = BOXES[BOX]
+    (m_lo, m_hi), (w_lo, w_hi) = bx["m"], bx["w"]
+    tc_lo, tc_hi = bx["tc"]
+    dt = dd.dt.to_numpy(float)
+    lo = np.where(tc_lo >= 0.5, tc_lo, tc_lo * dt)
+    hi = np.minimum(0.2 * dt, bx["tc_cap"]) if bx.get("tc_cap") is not None else 0.2 * dt
+    m_tol, w_tol, tc_tol = BOUNDARY_TOL * (m_hi - m_lo), BOUNDARY_TOL * (w_hi - w_lo), BOUNDARY_TOL * (hi - lo)
+    flags = {
+        "m_lo": dd.m.to_numpy(float) - m_lo <= m_tol, "m_hi": m_hi - dd.m.to_numpy(float) <= m_tol,
+        "w_lo": dd.w.to_numpy(float) - w_lo <= w_tol, "w_hi": w_hi - dd.w.to_numpy(float) <= w_tol,
+        "tc_lo": dd.ahead.to_numpy(float) - lo <= tc_tol, "tc_hi": hi - dd.ahead.to_numpy(float) <= tc_tol,
+    }
+    out = {k: round(float(np.mean(v)), 3) for k, v in flags.items()}
+    out["any"] = round(float(np.mean(np.any(np.column_stack(list(flags.values())), axis=1))), 3)
+    out["tol"] = BOUNDARY_TOL
+    return out
+
+
+NULL_FPR_PATH = Path("reports/null_calibration_stock.csv")  # WP1 零假设误报率表（描述性）
+NULL_FPR_KINDS = ("gbm0", "block_boot", "gbm_drift")
+_NULL_FPR_CACHE: dict = {}
+
+
+def _null_fpr(scale: str) -> dict | None:
+    """描述性零对照：该尺度在无泡沫生成过程下 standard/box 的窗口级合格率（`reports/null_calibration_stock.md`）。
+    gbm0=无漂移随机游走、block_boot=真实个股收益块重排、gbm_drift=强漂移；缺文件时返回 None。"""
+    if "table" not in _NULL_FPR_CACHE:
+        _NULL_FPR_CACHE["table"] = pd.read_csv(NULL_FPR_PATH) if NULL_FPR_PATH.exists() else None
+    t = _NULL_FPR_CACHE["table"]
+    if t is None:
+        return None
+    sub = t[t.scale == scale]
+    if sub.empty:
+        return None
+    out = {}
+    for col in ("standard", "box"):
+        out[col] = {k: float(sub.loc[sub.kind == k, col].iloc[0]) for k in NULL_FPR_KINDS if (sub.kind == k).any()}
+    out["asof_standard_gt0"] = {k: float(sub.loc[sub.kind == k, "asof_standard_gt0"].iloc[0]) for k in NULL_FPR_KINDS if (sub.kind == k).any()}
+    out["note"] = "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
+    return out
+
+
 def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
-    """每尺度：各过滤集置信度（合格窗口比例，E1/E4 定义）、最佳起点 t1（Lagrange 正则选窗）及其是否合格、signal_status。"""
+    """每尺度：各过滤集置信度（合格窗口比例，E1/E4 定义）、最佳起点 t1（Lagrange 正则选窗）及其是否合格、signal_status、
+    撞边界比例（描述性）；2–4 周档 `display_only=True`（只展示，不进入合格统计）。"""
     out = {}
     for sc, (lo, hi) in SCALES_FCO6.items():
         m = dd.n.between(lo, hi)
         if not m.any():
-            out[sc] = {"signal_status": "not_computed", "direction": "positive"}
+            out[sc] = {"signal_status": "not_computed", "direction": "positive", "display_only": sc in DISPLAY_ONLY_SCALES}
             continue
         sub = dd[m]
         pick = lagrange_pick(sub)
         i = pick.iloc[0] if len(pick) else None
         conf = {"box": round(float(rr.box[m].mean()), 3), **{k: round(float(gg[c][m].mean()), 3) for k, c in FCO_SETS.items()}}
         nq = int(gg["g_fco_standard"][m].sum())
+        display_only = sc in DISPLAY_ONLY_SCALES
         out[sc] = {"direction": "positive", "n_windows": int(m.sum()), "confidence": conf, "n_qualified_standard": nq,
                    "best_t1": str(cal[max(cal.get_indexer([date])[0] - int(sub.loc[i].n) + 1, 0)].date()) if i is not None else None,
                    "t1_qualified": bool(gg.loc[i, "g_fco_standard"]) if i is not None else None,
-                   "signal_status": "signal" if nq > 0 else "no_qualified_fit"}
+                   "boundary_share": _boundary(sub),
+                   "null_fpr": _null_fpr(sc),
+                   "display_only": display_only,
+                   "signal_status": "display_only" if display_only else ("signal" if nq > 0 else "no_qualified_fit")}
     return out
 
 
