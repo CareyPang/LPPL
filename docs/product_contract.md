@@ -73,3 +73,13 @@
 3. 历史验证面板只展示按样本段汇总的命中率/误报率/Brier；单案例"预测 vs 真实"只能作为图表回放。
 
 4. `regime_band` 只描述上一个已完成月，前端必须标注“描述性、非预测”，不得与顶部/底部概率合并成一个分数（研究层 `research/features/regime_bands.py`）。
+
+## 市场背景 `market_latest.json`
+
+`web/mock/data/market/market_latest.json` 提供市场基准信息，不参与 LPPLS 拟合、报警或模型输入。顶层包含 `asof`、`generated_at`、逐来源状态 `sources`、`board_flow`、`limit_pools`、`northbound`、`valuation`、`margin` 和 `notes`。每个市场数据节标记 `evidence: "descriptive"`，且说明“只作市场背景，不进入 LPPLS 报警或任何模型”。
+
+- `board_flow.industry/concept/region` 每行严格包含 `code,name,pct_chg,main_net,main_pct,super_net,large_net,medium_net,small_net,pct_5d,main_net_5d,main_pct_5d,pct_10d,main_net_10d,main_pct_10d`。净额单位为人民币元，涨跌幅与占比为百分数。东方财富资金流按订单规模分类估算，不是交易所官方数据；日快照写入 `data/market/board_flow/<date>.csv.gz`。
+- `limit_pools` 包含涨停、炸板、跌停数，`break_rate` 是 `zb/(zt+zb)` 的比例，另有连板梯度和各池前 20 名。
+- `northbound` 只保存 HKEX 北向成交额、交易笔数与 ETF 成交额，成交额保留 HKEX 原值、不缩放。2024-08 后官方文件不提供买卖额或净额；字段名只能使用 turnover/trades，不得出现“净流入”。文件缺失返回 null。
+- `valuation.indices` 包含四个指定中证指数的日期、PE1/PE2、DY1/DY2 和可用时的滚动十年 PE1 分位；PE 为倍数，股息率为百分数。
+- `margin.data` 复用 `research/data/margin.py`，余额与变化的单位均为人民币元，并遵循 T+1 可用日期。

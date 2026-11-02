@@ -18,3 +18,4 @@ for s in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
 done
 cp docs/user_guide.md web/mock/guide.md   # 教育页 web/guide.html 读取的副本，随日更同步
 python -m research.pipeline.forward_log seal
+python -m research.data.market_base || echo "market_base failed (non-fatal)"

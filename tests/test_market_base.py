@@ -1,0 +1,264 @@
+import json
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from research.data import market_base as market
+
+FIXTURES = Path(__file__).parent / "fixtures" / "market"
+
+
+def fixture(name):
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+
+
+def test_board_parser_uses_documented_fields():
+    payload = fixture("board_snapshot.json")
+    raw = payload["data"]["diff"][0]
+    rows, total = market._parse_board_page(payload, "today")
+
+    assert total == payload["data"]["total"]
+    assert len(rows) == len(payload["data"]["diff"])
+    assert rows[0] == {
+        "code": str(raw["f12"]),
+        "name": str(raw["f14"]),
+        "pct_chg": market._number(raw["f3"]),
+        "main_net": market._number(raw["f62"]),
+        "main_pct": market._number(raw["f184"]),
+        "super_net": market._number(raw["f66"]),
+        "large_net": market._number(raw["f72"]),
+        "medium_net": market._number(raw["f78"]),
+        "small_net": market._number(raw["f84"]),
+    }
+
+
+def test_board_pagination_stops_at_reported_total():
+    base = fixture("board_snapshot.json")["data"]["diff"][0]
+    rows = [base, {**base, "f12": "BK0476", "f14": "公用事业"}, {**base, "f12": "BK0477"}]
+
+    class Client:
+        calls = []
+
+        def get_json(self, url, params, fallback_url=None):
+            self.calls.append(params["pn"])
+            start = (int(params["pn"]) - 1) * 2
+            page_rows = rows[start : start + 2]
+            return {"data": {"total": 3, "diff": page_rows}}
+
+    client = Client()
+    result = market._fetch_board_period("industry", "today", client)
+
+    assert len(result) == 3
+    assert client.calls == ["1", "2"]
+
+
+def test_board_history_parser_uses_field_order():
+    payload = fixture("board_history.json")
+    result = market._parse_board_history(payload)
+    values = payload["data"]["klines"][-1].split(",")
+
+    assert result.iloc[-1].to_dict() == {
+        "date": values[0],
+        "main_net": float(values[1]),
+        "small_net": float(values[2]),
+        "medium_net": float(values[3]),
+        "large_net": float(values[4]),
+        "super_net": float(values[5]),
+    }
+
+
+def test_board_history_order_matches_board_snapshot():
+    snapshot = market._parse_board_page(fixture("board_snapshot.json"), "today")[0][0]
+    history = market._parse_board_history(fixture("board_history.json"))
+
+    assert market._verify_history_order(snapshot, history, "2026-10-30") == [
+        "main_net",
+        "small_net",
+        "medium_net",
+        "large_net",
+        "super_net",
+    ]
+
+
+def test_board_snapshot_has_exact_contract_columns():
+    snapshot = fixture("board_snapshot.json")["data"]["diff"][0]
+    period_rows = {
+        "f62": snapshot,
+        "f164": {
+            **snapshot,
+            "f109": "2.5",
+            "f164": "500",
+            "f165": "0.3",
+            "f257": "华电国际",
+        },
+        "f174": {
+            **snapshot,
+            "f160": "4.5",
+            "f174": "800",
+            "f175": "0.4",
+        },
+    }
+
+    class Client:
+        url_host = "push2delay.eastmoney.com"
+
+        def get_json(self, _url, params, fallback_url=None):
+            return {"data": {"total": 1, "diff": [period_rows[params["fid"]]]}}
+
+    result = market.board_flow_snapshot("industry", Client())
+
+    assert result.columns.tolist() == list(market.BOARD_COLUMNS)
+    assert result.iloc[0]["main_net_10d"] == 800
+
+
+def test_limit_pool_parser_and_top_row():
+    payload = fixture("limit_pool.json")
+    raw = payload["data"]["pool"][0]
+    pool = market._parse_pool(payload, "20261030")
+    row = market._limit_display_row(pool[0], "zt")
+
+    assert row == {
+        "code": str(raw["c"]),
+        "name": str(raw["n"]),
+        "streak": int(raw["lbc"]),
+        "limit_time": market._fmt_limit_time(raw["fbt"]),
+    }
+
+
+def test_limit_pool_summary_uses_fraction_and_all_three_pools():
+    payloads = {
+        "getTopicZTPool": fixture("limit_pool.json"),
+        "getTopicZBPool": fixture("limit_pool_zb.json"),
+        "getTopicDTPool": fixture("limit_pool_dt.json"),
+    }
+
+    class Client:
+        def get_json(self, url, *_args, **_kwargs):
+            return payloads[url.rsplit("/", 1)[-1]]
+
+    result = market.limit_pools("2026-10-30", Client())
+    zt, zb, dt = (payloads[f"getTopic{name}Pool"]["data"]["pool"] for name in ("ZT", "ZB", "DT"))
+    zt_n, zb_n = len(zt), len(zb)
+
+    assert result["zt"] == zt_n
+    assert result["zb"] == zb_n
+    assert result["dt"] == len(dt)
+    assert result["break_rate"] == pytest.approx(zb_n / (zt_n + zb_n))
+    assert result["max_streak"] == max(int(row["lbc"]) for row in zt)
+    assert len(result["top20"]["zt"]) == zt_n
+
+
+def test_northbound_fields_are_turnover_only():
+    value = market._parse_northbound((FIXTURES / "northbound.js").read_text(encoding="utf-8"))
+
+    assert value["sse_nb_turnover"] == 131148.57
+    assert value["szse_nb_turnover"] == 142937.46
+    assert value["sse_nb_trades"] == 7655464
+    assert value["szse_nb_trades"] == 8491537
+    assert not any("net" in key.lower() or "inflow" in key.lower() for key in value)
+
+
+def test_csindex_response_field_contradiction_is_rejected():
+    frame = pd.DataFrame(fixture("valuation_rows.json"))
+
+    with pytest.raises(RuntimeError, match="expected .指数代码IndexCode."):
+        market._parse_index_valuation(frame, "000300")
+
+
+def test_csindex_valuation_parser_uses_only_ten_year_history():
+    frame = pd.DataFrame(
+        [
+            {
+                "日期Date": "2016-10-30",
+                "指数代码IndexCode": "000300",
+                "市盈率1（总股本）P/E1": "10",
+                "市盈率2（计算用股本）P/E2": "11",
+                "股息率1（总股本）D/P1": "3",
+                "股息率2（计算用股本）D/P2": "2.8",
+            },
+            {
+                "日期Date": "2021-10-30",
+                "指数代码IndexCode": "000300",
+                "市盈率1（总股本）P/E1": "15",
+                "市盈率2（计算用股本）P/E2": "16",
+                "股息率1（总股本）D/P1": "2",
+                "股息率2（计算用股本）D/P2": "1.8",
+            },
+            {
+                "日期Date": "2026-10-30",
+                "指数代码IndexCode": "000300",
+                "市盈率1（总股本）P/E1": "13.2",
+                "市盈率2（计算用股本）P/E2": "14",
+                "股息率1（总股本）D/P1": "2.5",
+                "股息率2（计算用股本）D/P2": "2.3",
+            },
+        ]
+    )
+    value = market._parse_index_valuation(frame, "000300")
+
+    assert value["date"] == "2026-10-30"
+    assert value["pe1"] == 13.2
+    assert value["pe1_pct_10y"] == pytest.approx(2 / 3)
+
+
+def test_eastmoney_403_is_not_retried():
+    class Response:
+        status_code = 403
+        url = market.EM_BOARD_URL
+
+        def raise_for_status(self):
+            raise AssertionError("403 is handled before raise_for_status")
+
+    class Session:
+        headers = {}
+        calls = 0
+
+        def get(self, *args, **kwargs):
+            self.calls += 1
+            return Response()
+
+    session = Session()
+    client = market.EMClient(session=session, sleep=lambda _: None, jitter=lambda *_: 0)
+
+    with pytest.raises(market.EMBlocked):
+        client.get(market.EM_BOARD_URL)
+
+    assert session.calls == 1
+
+
+def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
+    def board(kind, _client):
+        if kind == "industry":
+            raise RuntimeError("industry unavailable")
+        return pd.DataFrame(columns=market.BOARD_COLUMNS)
+
+    monkeypatch.setattr(market, "board_flow_snapshot", board)
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("pool unavailable")),
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        market,
+        "csindex_valuation",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("valuation unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
+        "_margin_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError("cache missing")),
+    )
+    payload = market.fetch_market("2026-11-02", em_client=market.EMClient())
+
+    latest, dated, board_csv = market.write_snapshot(
+        payload, tmp_path / "out", board_dir=tmp_path / "board"
+    )
+
+    assert latest.exists() and dated.exists() and board_csv.exists()
+    saved = json.loads(latest.read_text(encoding="utf-8"))
+    assert saved["sources"]["board_flow_industry"]["ok"] is False
+    assert saved["sources"]["limit_pools"]["ok"] is False
+    assert saved["board_flow"]["concept"] == []
+    assert pd.read_csv(board_csv).columns.tolist() == list(market.BOARD_COLUMNS)

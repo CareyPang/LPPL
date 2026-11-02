@@ -1,0 +1,501 @@
+{
+  "asof": "2026-10-30",
+  "generated_at": "2026-11-02T00:49:55.620675+00:00",
+  "sources": {
+    "board_flow_industry": {
+      "url_host": "push2delay.eastmoney.com",
+      "fetched_at": "2026-11-02T00:49:38.787902+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f164&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf109%2Cf164%2Cf165%2Cf257&pn=2"
+    },
+    "board_flow_concept": {
+      "url_host": "push2delay.eastmoney.com",
+      "fetched_at": "2026-11-02T00:49:45.519978+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=3"
+    },
+    "board_flow_region": {
+      "url_host": "push2delay.eastmoney.com",
+      "fetched_at": "2026-11-02T00:49:49.988198+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
+    },
+    "board_flow_history": {
+      "url_host": "push2his.eastmoney.com",
+      "fetched_at": "2026-11-02T00:49:49.988247+00:00",
+      "ok": false,
+      "error": "RuntimeError: industry board snapshot unavailable; cannot verify history fields"
+    },
+    "limit_pools": {
+      "url_host": "push2ex.eastmoney.com",
+      "fetched_at": "2026-11-02T00:49:53.937319+00:00",
+      "ok": true
+    },
+    "northbound": {
+      "url_host": "www.hkex.com.hk",
+      "fetched_at": "2026-11-02T00:49:54.042198+00:00",
+      "ok": true
+    },
+    "index_valuation_000300": {
+      "url_host": "oss-ch.csindex.com.cn",
+      "fetched_at": "2026-11-02T00:49:54.987731+00:00",
+      "ok": false,
+      "error": "RuntimeError: CSIndex field contradiction: expected \"指数代码IndexCode\"; response has \"指数代码Index Code\""
+    },
+    "index_valuation_000905": {
+      "url_host": "oss-ch.csindex.com.cn",
+      "fetched_at": "2026-11-02T00:49:55.186588+00:00",
+      "ok": false,
+      "error": "RuntimeError: CSIndex field contradiction: expected \"指数代码IndexCode\"; response has \"指数代码Index Code\""
+    },
+    "index_valuation_000016": {
+      "url_host": "oss-ch.csindex.com.cn",
+      "fetched_at": "2026-11-02T00:49:55.385535+00:00",
+      "ok": false,
+      "error": "RuntimeError: CSIndex field contradiction: expected \"指数代码IndexCode\"; response has \"指数代码Index Code\""
+    },
+    "index_valuation_000852": {
+      "url_host": "oss-ch.csindex.com.cn",
+      "fetched_at": "2026-11-02T00:49:55.584678+00:00",
+      "ok": false,
+      "error": "RuntimeError: CSIndex field contradiction: expected \"指数代码IndexCode\"; response has \"指数代码Index Code\""
+    },
+    "margin": {
+      "url_host": "local-cache",
+      "fetched_at": "2026-11-02T00:49:55.620660+00:00",
+      "ok": true
+    }
+  },
+  "board_flow": {
+    "evidence": "descriptive",
+    "note": "东财板块资金流为订单规模分类估算，非交易所官方数据；只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "industry": [],
+    "concept": [],
+    "region": [],
+    "history_sample": null
+  },
+  "limit_pools": {
+    "evidence": "descriptive",
+    "note": "只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "date": "20261030",
+    "zt": 47,
+    "zb": 31,
+    "dt": 82,
+    "break_rate": 0.3974358974358974,
+    "max_streak": 5,
+    "streak_dist": {
+      "1": 38,
+      "2": 6,
+      "3": 2,
+      "5": 1
+    },
+    "top20": {
+      "zt": [
+        {
+          "code": "603703",
+          "name": "盛洋科技",
+          "streak": 2,
+          "limit_time": "09:25:00"
+        },
+        {
+          "code": "600261",
+          "name": "阳光照明",
+          "streak": 2,
+          "limit_time": "09:25:02"
+        },
+        {
+          "code": "603131",
+          "name": "上海沪工",
+          "streak": 3,
+          "limit_time": "09:25:02"
+        },
+        {
+          "code": "000897",
+          "name": "津滨发展",
+          "streak": 1,
+          "limit_time": "09:30:00"
+        },
+        {
+          "code": "001219",
+          "name": "青岛食品",
+          "streak": 5,
+          "limit_time": "09:30:00"
+        },
+        {
+          "code": "002365",
+          "name": "永安药业",
+          "streak": 1,
+          "limit_time": "09:30:00"
+        },
+        {
+          "code": "605169",
+          "name": "洪通燃气",
+          "streak": 1,
+          "limit_time": "09:30:01"
+        },
+        {
+          "code": "603029",
+          "name": "天鹅股份",
+          "streak": 1,
+          "limit_time": "09:30:02"
+        },
+        {
+          "code": "000716",
+          "name": "黑芝麻",
+          "streak": 1,
+          "limit_time": "09:30:06"
+        },
+        {
+          "code": "002275",
+          "name": "桂林三金",
+          "streak": 2,
+          "limit_time": "09:30:06"
+        },
+        {
+          "code": "001287",
+          "name": "中电港",
+          "streak": 1,
+          "limit_time": "09:30:12"
+        },
+        {
+          "code": "003032",
+          "name": "传智教育",
+          "streak": 2,
+          "limit_time": "09:31:12"
+        },
+        {
+          "code": "600285",
+          "name": "羚锐制药",
+          "streak": 1,
+          "limit_time": "09:32:07"
+        },
+        {
+          "code": "603587",
+          "name": "地素时尚",
+          "streak": 1,
+          "limit_time": "09:32:13"
+        },
+        {
+          "code": "688045",
+          "name": "必易微",
+          "streak": 1,
+          "limit_time": "09:32:24"
+        },
+        {
+          "code": "000525",
+          "name": "红太阳",
+          "streak": 1,
+          "limit_time": "09:32:27"
+        },
+        {
+          "code": "000410",
+          "name": "沈阳机床",
+          "streak": 1,
+          "limit_time": "09:33:18"
+        },
+        {
+          "code": "600215",
+          "name": "派斯林",
+          "streak": 1,
+          "limit_time": "09:33:28"
+        },
+        {
+          "code": "002432",
+          "name": "九安医疗",
+          "streak": 1,
+          "limit_time": "09:33:42"
+        },
+        {
+          "code": "301187",
+          "name": "欧圣电气",
+          "streak": 1,
+          "limit_time": "09:35:18"
+        }
+      ],
+      "zb": [
+        {
+          "code": "605598",
+          "name": "上海港湾",
+          "streak": 1,
+          "limit_time": "09:30:16"
+        },
+        {
+          "code": "600202",
+          "name": "哈空调",
+          "streak": 0,
+          "limit_time": "09:31:19"
+        },
+        {
+          "code": "002031",
+          "name": "巨轮智能",
+          "streak": 0,
+          "limit_time": "09:35:39"
+        },
+        {
+          "code": "002009",
+          "name": "天奇股份",
+          "streak": 0,
+          "limit_time": "09:37:18"
+        },
+        {
+          "code": "300695",
+          "name": "兆丰股份",
+          "streak": 0,
+          "limit_time": "09:39:39"
+        },
+        {
+          "code": "603039",
+          "name": "泛微网络",
+          "streak": 0,
+          "limit_time": "09:40:04"
+        },
+        {
+          "code": "300980",
+          "name": "祥源新材",
+          "streak": 0,
+          "limit_time": "09:41:30"
+        },
+        {
+          "code": "002747",
+          "name": "埃斯顿",
+          "streak": 0,
+          "limit_time": "09:42:57"
+        },
+        {
+          "code": "603089",
+          "name": "正裕工业",
+          "streak": 0,
+          "limit_time": "09:43:51"
+        },
+        {
+          "code": "002949",
+          "name": "华阳国际",
+          "streak": 0,
+          "limit_time": "09:52:21"
+        },
+        {
+          "code": "002149",
+          "name": "西部材料",
+          "streak": 1,
+          "limit_time": "09:59:18"
+        },
+        {
+          "code": "603330",
+          "name": "天洋新材",
+          "streak": 0,
+          "limit_time": "09:59:37"
+        },
+        {
+          "code": "001318",
+          "name": "阳光乳业",
+          "streak": 0,
+          "limit_time": "10:00:42"
+        },
+        {
+          "code": "603002",
+          "name": "宏昌电子",
+          "streak": 0,
+          "limit_time": "10:11:29"
+        },
+        {
+          "code": "300739",
+          "name": "明阳电路",
+          "streak": 0,
+          "limit_time": "10:12:30"
+        },
+        {
+          "code": "688073",
+          "name": "毕得医药",
+          "streak": 0,
+          "limit_time": "10:50:28"
+        },
+        {
+          "code": "605118",
+          "name": "力鼎光电",
+          "streak": 0,
+          "limit_time": "10:50:30"
+        },
+        {
+          "code": "002164",
+          "name": "宁波东力",
+          "streak": 0,
+          "limit_time": "11:00:33"
+        },
+        {
+          "code": "300829",
+          "name": "金丹科技",
+          "streak": 0,
+          "limit_time": "11:28:12"
+        },
+        {
+          "code": "000823",
+          "name": "超声电子",
+          "streak": 0,
+          "limit_time": "13:00:03"
+        }
+      ],
+      "dt": [
+        {
+          "code": "600556",
+          "name": "天下秀",
+          "streak": 1,
+          "limit_time": "15:00:00"
+        },
+        {
+          "code": "002425",
+          "name": "凯撒文化",
+          "streak": 1,
+          "limit_time": "14:56:18"
+        },
+        {
+          "code": "001238",
+          "name": "浙江正特",
+          "streak": 1,
+          "limit_time": "14:40:21"
+        },
+        {
+          "code": "002674",
+          "name": "兴业科技",
+          "streak": 1,
+          "limit_time": "14:52:15"
+        },
+        {
+          "code": "002292",
+          "name": "奥飞娱乐",
+          "streak": 1,
+          "limit_time": "14:55:33"
+        },
+        {
+          "code": "601199",
+          "name": "江南水务",
+          "streak": 1,
+          "limit_time": "15:00:00"
+        },
+        {
+          "code": "601231",
+          "name": "环旭电子",
+          "streak": 2,
+          "limit_time": "14:51:31"
+        },
+        {
+          "code": "603150",
+          "name": "万朗磁塑",
+          "streak": 1,
+          "limit_time": "14:55:16"
+        },
+        {
+          "code": "603699",
+          "name": "纽威股份",
+          "streak": 1,
+          "limit_time": "13:39:30"
+        },
+        {
+          "code": "000599",
+          "name": "青岛双星",
+          "streak": 1,
+          "limit_time": "14:21:57"
+        },
+        {
+          "code": "600611",
+          "name": "大众交通",
+          "streak": 1,
+          "limit_time": "15:00:00"
+        },
+        {
+          "code": "600668",
+          "name": "尖峰集团",
+          "streak": 1,
+          "limit_time": "15:00:00"
+        },
+        {
+          "code": "002712",
+          "name": "思美传媒",
+          "streak": 1,
+          "limit_time": "14:02:57"
+        },
+        {
+          "code": "002212",
+          "name": "天融信",
+          "streak": 2,
+          "limit_time": "14:33:33"
+        },
+        {
+          "code": "002169",
+          "name": "智光电气",
+          "streak": 1,
+          "limit_time": "14:45:39"
+        },
+        {
+          "code": "002290",
+          "name": "禾盛新材",
+          "streak": 1,
+          "limit_time": "14:50:48"
+        },
+        {
+          "code": "600810",
+          "name": "神马股份",
+          "streak": 1,
+          "limit_time": "15:00:00"
+        },
+        {
+          "code": "603109",
+          "name": "神驰机电",
+          "streak": 1,
+          "limit_time": "14:24:30"
+        },
+        {
+          "code": "603579",
+          "name": "荣泰健康",
+          "streak": 1,
+          "limit_time": "14:05:13"
+        },
+        {
+          "code": "600676",
+          "name": "久事动娱",
+          "streak": 1,
+          "limit_time": "15:00:00"
+        }
+      ]
+    }
+  },
+  "northbound": {
+    "evidence": "descriptive",
+    "note": "HKEX 仅列成交额、交易笔数与 ETF 成交额；2024-08 后不提供买卖额或净流入。只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "data": {
+      "sse_nb_turnover": 131148.57,
+      "szse_nb_turnover": 142937.46,
+      "sse_nb_trades": 7655464,
+      "szse_nb_trades": 8491537,
+      "sse_nb_etf_turnover": 2363.18,
+      "szse_nb_etf_turnover": 2177.88
+    }
+  },
+  "valuation": {
+    "evidence": "descriptive",
+    "note": "中证官方文件中的 PE1/PE2 与股息率；PE1 分位只用文件自带历史计算。只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "indices": {
+      "000300": null,
+      "000905": null,
+      "000016": null,
+      "000852": null
+    }
+  },
+  "margin": {
+    "evidence": "descriptive",
+    "note": "复用交易所两融日报缓存；T+1 可用日期口径。只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "data": {
+      "date": "2025-08-28",
+      "available_date": "2025-08-29",
+      "rows_available": 3746,
+      "fin_balance_all": 1132570883022.86,
+      "fin_balance_all_change_20d": 131608362775.51013,
+      "fin_balance_all_change_20d_pct": 0.13148180887231242,
+      "total_balance_all": 1143263349516.79,
+      "total_balance_all_change_20d": 132621611994.23999,
+      "total_balance_all_change_20d_pct": 0.13122514840851895
+    }
+  },
+  "notes": [
+    "只作市场背景，不进入 LPPLS 报警或任何模型。"
+  ]
+}
