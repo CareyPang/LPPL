@@ -98,9 +98,10 @@
         body: JSON.stringify({ code }),
       });
     },
-    status: (c) => {
+    status: (c, since) => {
       const code = okCode(c);
-      return queryJSON('/status?code=' + encodeURIComponent(code));
+      const sinceParam = since == null ? '' : '&since=' + encodeURIComponent(since);
+      return queryJSON('/status?code=' + encodeURIComponent(code) + sinceParam);
     },
     remote: async (c, kind = 'latest') => {
       const code = okCode(c);

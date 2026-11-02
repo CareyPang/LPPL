@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -18,8 +19,18 @@ ROOT = Path(__file__).resolve().parents[3]
 STOCK_DIR = ROOT / "web" / "mock" / "data" / "stock"
 CODE_PATTERN = re.compile(r"^(?:60|68|00|30|43|83|87|92)\d{4}$")
 STATUS_CALLS: dict[str, int] = {}
+QUERY_SINCE: dict[str, str] = {}
 PORT = int(os.environ.get("PORT", "8765"))
-RUN_URL = f"http://127.0.0.1:{PORT}/runs/600519"
+
+
+def current_since() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace(
+        "+00:00", "Z"
+    )
+
+
+def run_url(code: str) -> str:
+    return f"http://127.0.0.1:{PORT}/runs/{code}"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -53,27 +64,41 @@ class Handler(BaseHTTPRequestHandler):
             self._json(400, {"error": "Invalid A-share code"})
             return
         STATUS_CALLS[code] = 0
-        self._json(202, {"queued": True})
+        since = current_since()
+        QUERY_SINCE[code] = since
+        self._json(202, {"queued": True, "since": since})
 
     def do_GET(self) -> None:
         parsed = urlsplit(self.path)
-        params = parse_qs(parsed.query)
+        params = parse_qs(parsed.query, keep_blank_values=True)
         code = params.get("code", [""])[0]
         if parsed.path == "/status":
             if not CODE_PATTERN.fullmatch(code):
                 self._json(400, {"error": "Invalid A-share code"})
                 return
+            since = params.get("since", [None])[0]
+            if since is not None:
+                try:
+                    parsed_since = datetime.fromisoformat(since.replace("Z", "+00:00"))
+                    if parsed_since.tzinfo is None:
+                        raise ValueError("since must include a timezone")
+                except ValueError:
+                    self._json(400, {"error": "Invalid since timestamp"})
+                    return
+                if since != QUERY_SINCE.get(code):
+                    self._json(200, {"status": "pending"})
+                    return
             calls = STATUS_CALLS.get(code, 0) + 1
             STATUS_CALLS[code] = calls
             if calls == 1:
-                payload = {"status": "queued", "conclusion": None, "run_url": RUN_URL}
+                payload = {"status": "queued", "conclusion": None, "run_url": run_url(code)}
             elif calls == 2:
-                payload = {"status": "in_progress", "conclusion": None, "run_url": RUN_URL}
+                payload = {"status": "in_progress", "conclusion": None, "run_url": run_url(code)}
             else:
                 payload = {
                     "status": "completed",
                     "conclusion": "success",
-                    "run_url": RUN_URL,
+                    "run_url": run_url(code),
                 }
             self._json(200, payload)
             return

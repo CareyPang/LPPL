@@ -1,6 +1,13 @@
 const DEFAULT_ORIGIN = 'https://careypang.github.io';
 const DEFAULT_REPO = 'CareyPang/LPPL';
 const CODE_PATTERN = /^(?:60|68|00|30|43|83|87|92)\d{4}$/;
+const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+function parseIsoTimestamp(value) {
+  if (typeof value !== 'string' || !ISO_TIMESTAMP_PATTERN.test(value)) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
 
 function corsHeaders(request, env) {
   const headers = new Headers({
@@ -51,6 +58,7 @@ async function dispatch(request, env, code) {
   const ratelimit = kv ? 'enabled' : 'disabled';
   const codeKey = `code:${code}`;
   let dedupeReserved = false;
+  let since;
 
   if (kv) {
     if (typeof kv.get !== 'function' || typeof kv.put !== 'function' || typeof kv.delete !== 'function') {
@@ -62,8 +70,18 @@ async function dispatch(request, env, code) {
       );
     }
     try {
-      if (await kv.get(codeKey)) {
-        return jsonResponse(request, env, { queued: true, deduped: true, ratelimit }, 202);
+      let storedSince = await kv.get(codeKey);
+      if (storedSince) {
+        if (parseIsoTimestamp(storedSince) === null) {
+          storedSince = new Date().toISOString();
+          await kv.put(codeKey, storedSince, { expirationTtl: 900 });
+        }
+        return jsonResponse(
+          request,
+          env,
+          { queued: true, deduped: true, since: storedSince, ratelimit },
+          202,
+        );
       }
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const ipKey = `ip:${encodeURIComponent(ip)}`;
@@ -79,12 +97,14 @@ async function dispatch(request, env, code) {
         );
       }
       await kv.put(ipKey, String(currentCount + 1), { expirationTtl: 600 });
-      await kv.put(codeKey, '1', { expirationTtl: 900 });
+      since = new Date().toISOString();
+      await kv.put(codeKey, since, { expirationTtl: 900 });
       dedupeReserved = true;
     } catch {
       return jsonResponse(request, env, { error: 'Rate limiting is unavailable', ratelimit }, 503);
     }
   }
+  if (!since) since = new Date().toISOString();
 
   try {
     const response = await fetch(
@@ -102,26 +122,32 @@ async function dispatch(request, env, code) {
       if (dedupeReserved) await kv.delete(codeKey).catch(() => {});
       return jsonResponse(request, env, { error: 'GitHub dispatch failed', ratelimit }, 502);
     }
-    return jsonResponse(request, env, { queued: true, ratelimit }, 202);
+    return jsonResponse(request, env, { queued: true, since, ratelimit }, 202);
   } catch {
     if (dedupeReserved) await kv.delete(codeKey).catch(() => {});
     return jsonResponse(request, env, { error: 'GitHub dispatch failed', ratelimit }, 502);
   }
 }
 
-async function status(request, env, code) {
+async function status(request, env, code, since) {
   try {
     const response = await fetch(
-      `https://api.github.com/repos/${githubRepo(env)}/actions/workflows/stock_query.yml/runs?per_page=30`,
+      `https://api.github.com/repos/${githubRepo(env)}/actions/workflows/stock_query.yml/runs?per_page=100`,
       { headers: githubHeaders(env) },
     );
     if (!response.ok) return jsonResponse(request, env, { error: 'GitHub status lookup failed' }, 502);
     const data = await response.json();
     const runs = Array.isArray(data.workflow_runs) ? data.workflow_runs : [];
-    const run = runs
+    const matchingRuns = runs
       .filter((item) => item.display_title === `stock_query ${code}`)
+      .filter((item) => {
+        if (since === null) return true;
+        const createdAt = Date.parse(item.created_at);
+        return Number.isFinite(createdAt) && createdAt >= since - 60_000;
+      });
+    const run = matchingRuns
       .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))[0];
-    if (!run) return jsonResponse(request, env, { status: 'none' });
+    if (!run) return jsonResponse(request, env, { status: since === null ? 'none' : 'pending' });
     return jsonResponse(request, env, {
       status: run.status || null,
       conclusion: run.conclusion || null,
@@ -182,7 +208,11 @@ export default {
     if (url.pathname === '/status' && request.method === 'GET') {
       const code = url.searchParams.get('code');
       if (!isValidCode(code)) return jsonResponse(request, env, { error: 'Invalid A-share code' }, 400);
-      return status(request, env, code);
+      const since = url.searchParams.has('since') ? url.searchParams.get('since') : null;
+      if (since !== null && parseIsoTimestamp(since) === null) {
+        return jsonResponse(request, env, { error: 'Invalid since timestamp' }, 400);
+      }
+      return status(request, env, code, since === null ? null : parseIsoTimestamp(since));
     }
 
     if (url.pathname === '/result' && request.method === 'GET') {

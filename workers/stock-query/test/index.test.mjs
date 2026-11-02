@@ -90,7 +90,9 @@ test('dispatches with the fixed query parameters and reports disabled rate limit
       makeEnv(),
     );
     assert.equal(response.status, 202);
-    assert.deepEqual(await response.json(), { queued: true, ratelimit: 'disabled' });
+    const body = await response.json();
+    assert.deepEqual(body, { queued: true, since: body.since, ratelimit: 'disabled' });
+    assert.ok(Number.isFinite(Date.parse(body.since)));
   });
 });
 
@@ -112,9 +114,21 @@ test('a repeated code is deduplicated for 15 minutes', async () => {
     const first = await makeQuery();
     const second = await makeQuery();
     assert.equal(first.status, 202);
-    assert.deepEqual(await first.json(), { queued: true, ratelimit: 'enabled' });
+    const firstBody = await first.json();
+    assert.deepEqual(firstBody, {
+      queued: true,
+      since: firstBody.since,
+      ratelimit: 'enabled',
+    });
     assert.equal(second.status, 202);
-    assert.deepEqual(await second.json(), { queued: true, deduped: true, ratelimit: 'enabled' });
+    const secondBody = await second.json();
+    assert.deepEqual(secondBody, {
+      queued: true,
+      deduped: true,
+      since: firstBody.since,
+      ratelimit: 'enabled',
+    });
+    assert.equal(kv.values.get('code:600519'), firstBody.since);
     assert.equal(dispatches, 1);
     assert.ok(kv.puts.some(({ key, options }) => key === 'code:600519' && options.expirationTtl === 900));
   });
@@ -167,7 +181,7 @@ test('status returns the latest run with an exact display-title match', async ()
   await withFetchMock(async (url, init) => {
     assert.equal(
       url,
-      'https://api.github.com/repos/CareyPang/LPPL/actions/workflows/stock_query.yml/runs?per_page=30',
+      'https://api.github.com/repos/CareyPang/LPPL/actions/workflows/stock_query.yml/runs?per_page=100',
     );
     assert.equal(init.headers.Authorization, `Bearer ${TOKEN}`);
     return Response.json({
@@ -194,6 +208,47 @@ test('status returns none when no matching run exists', async () => {
   await withFetchMock(async () => Response.json({ workflow_runs: [] }), async () => {
     const response = await worker.fetch(makeRequest('/status?code=600519'), makeEnv());
     assert.deepEqual(await response.json(), { status: 'none' });
+  });
+});
+
+test('status filters old runs with since and reports pending when none remain', async () => {
+  const since = '2026-11-02T12:00:00.000Z';
+  await withFetchMock(async (url) => {
+    assert.equal(
+      url,
+      'https://api.github.com/repos/CareyPang/LPPL/actions/workflows/stock_query.yml/runs?per_page=100',
+    );
+    return Response.json({
+      workflow_runs: [
+        {
+          display_title: 'stock_query 600519',
+          status: 'completed',
+          conclusion: 'success',
+          created_at: '2026-11-02T11:58:59.000Z',
+          html_url: 'old-run',
+        },
+      ],
+    });
+  }, async () => {
+    const response = await worker.fetch(
+      makeRequest(`/status?code=600519&since=${encodeURIComponent(since)}`),
+      makeEnv(),
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: 'pending' });
+  });
+});
+
+test('status rejects a non-ISO since value before making a GitHub request', async () => {
+  await withFetchMock(async () => {
+    assert.fail('fetch must not be called');
+  }, async () => {
+    const response = await worker.fetch(
+      makeRequest('/status?code=600519&since=not-a-date'),
+      makeEnv(),
+    );
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'Invalid since timestamp' });
   });
 });
 

@@ -87,12 +87,14 @@ async function runQuery(c,idx,br){
     });
     const queuedBody=await queued.json().catch(()=>null);
     if(!queued.ok) throw new Error(queuedBody?.error||'提交查询失败（HTTP '+queued.status+'）');
+    const since=queuedBody?.since;
+    if(typeof since!=='string'||!Number.isFinite(Date.parse(since))) throw new Error('查询服务未返回有效的任务时间。');
     while(Date.now()-started<900000){
       await new Promise(resolve=>setTimeout(resolve,Math.min(10000,Math.max(0,900000-(Date.now()-started)))));
       if(Date.now()-started>=900000) break;
       let state;
       try{
-        state=await workerJSON('/status?code='+encodeURIComponent(c));
+        state=await workerJSON('/status?code='+encodeURIComponent(c)+'&since='+encodeURIComponent(since));
       }catch(e){
         showQueryProgress(c,'状态暂不可用，继续查询',started);
         continue;

@@ -26,8 +26,18 @@ Worker 为 GitHub Pages 个股页提供公开排队入口、运行状态和已�
 
 默认允许的浏览器来源是 `https://careypang.github.io`，默认仓库是 `CareyPang/LPPL`。可在 `wrangler.toml` 的 `[vars]` 中调整 `ALLOWED_ORIGIN` 和 `REPO`。
 
+## 部署后
+
+从 `npx wrangler deploy` 的输出复制 Worker URL，在 `web/stock.html` 顶部将 `window.LPPL_QUERY_API` 配置为该 URL：
+
+```html
+<script>window.LPPL_QUERY_API = 'https://lppl-stock-query.<your-subdomain>.workers.dev';</script>
+```
+
+Worker 接受 `43`、`83`、`87`、`92` 开头的北交所代码，但实际能否取数取决于 `research/pipeline/stock.py` 的数据路径。检查发现 `stock.py` 没有 `bj` 前缀分支，并通过 `universe._sym` 将非 `6` 开头代码映射为 `sz`；因此当前代码没有显式的北交所路由。不能取数的查询会由工作流写出 error JSON。
+
 ## API
 
 - `POST /query`，JSON `{"code":"600519"}`：成功排队返回 HTTP 202。绑定 KV 时，每 IP 10 分钟最多 5 次，同一代码 15 分钟内只派发一次。
-- `GET /status?code=600519`：返回匹配的最新工作流状态。
+- `GET /status?code=600519`：返回匹配的最新工作流状态；也可带 `since=<ISO timestamp>`，只匹配创建时间不早于 `since` 前 60 秒的运行，无匹配时返回 `pending`。
 - `GET /result?code=600519&kind=latest|history|error`：读取 `stock-results` 分支中的对应 JSON；缺失时保留 HTTP 404。
