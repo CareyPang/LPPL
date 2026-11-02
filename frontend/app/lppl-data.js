@@ -71,5 +71,16 @@
 
   const catalog = () => getJSON('catalog.json');
   const history = (sym) => getJSON(sym + '_history.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history };
+  const opt = (p) => getJSON(p).catch(() => null);
+  const okCode = (c) => { if (!/^\d{6}$/.test(String(c))) throw new Error('股票代码须为 6 位数字'); return String(c); };
+  /** 按需个股结果（stock-results 分支经 Pages 叠加）；缺文件返回 null。证据恒为 research_candidate，置信度按 dev_only 不显示数值 */
+  const stock = {
+    index: () => opt('stock/index.json'),
+    latest: (c) => opt('stock/' + okCode(c) + '.json'),
+    history: (c) => opt('stock/' + okCode(c) + '_history.json'),
+    error: (c) => opt('stock/' + okCode(c) + '_error.json'),
+  };
+  /** 市场背景（descriptive）；缺文件返回 null */
+  const market = () => opt('market/market_latest.json');
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market };
 })(window);

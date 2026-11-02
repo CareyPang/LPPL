@@ -58,16 +58,17 @@ async function own(c){
     return;
   }
   const m=d.stock_meta||{}, t=d.top||{}, ind=t.indicators||{}, b=t.bubble||{};
-  const rows=SC.map(k=>{const x=ind[k]||{}, cf=x.confidence||{}, ev=(t.lppls_confidence?.scale_evidence||{})[k];
-    return `<tr><td>${SCL[k]}</td><td>${x.n_windows??'—'}</td><td>${pct(cf.standard)}</td><td>${pct(cf.early)}</td><td>${pct(cf.box)}</td><td class="sub">${esc(x.signal_status)}</td><td class="sub">${esc(ev)}</td></tr>`}).join('');
+  const fitTxt=x=>{const cf=x.confidence||{}; if(x.n_windows==null) return '未计算'; return (cf.standard||0)>0?'有合格拟合':'无合格拟合';};
+  const rows=SC.map(k=>{const x=ind[k]||{}, ev=(t.lppls_confidence?.scale_evidence||{})[k];
+    return `<tr><td>${SCL[k]}</td><td>${x.n_windows??'—'}</td><td>${fitTxt(x)}</td><td class="sub">${esc(x.signal_status)}</td><td class="sub">${esc(ev)}</td></tr>`}).join('');
   const st=m.status==='eligible'?'':`<span class="badge" style="border-color:var(--red);color:var(--red)">${esc(m.status)}</span>`;
   el.innerHTML=head+
     `<div class="sub">${esc(d.name)} ${esc(d.symbol)} · 截止 ${esc(d.asof)} · ${esc(m.variant)} · ${esc(d.data_version)}${ent?` · 计算于 ${esc(ent.generated_at?.slice(0,16).replace('T',' '))} UTC <a href="${esc(ent.run_url)}" style="color:#58a6ff">日志</a>`:''} ${st}</div>
-    <p class="warn">${esc(m.note)}。${esc(m.eligibility_note)}${m.st?'；ST':''}${m.degenerate?'；截止日为一字板/停牌':''}。开发段横截面里个股置信度没有预测信息，以下只作描述。</p>
-    <div style="overflow-x:auto"><table><thead><tr><th>尺度</th><th>窗口数</th><th>standard</th><th>early</th><th>box</th><th>状态</th><th>尺度证据</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="sub" style="margin-top:8px">当前泡沫段：起点 ${esc(b.start)} · 持续 ${esc(b.duration_days)} 天 · 最长尺度 ${esc(SCL[b.scale]||b.scale)} · 模型 t<sub>c</sub> ${esc(b.tc)}（理论临界时间，不是顶部日期）· 风险窗口 ${t.window?.start?esc(t.window.start)+' → '+esc(t.window.end):'无（'+esc(t.window?.rule)+'）'}</div>
+    <p class="warn">${esc(m.note)}。${esc(m.eligibility_note)}${m.st?'；ST':''}${m.degenerate?'；截止日为一字板/停牌':''}。开发段横截面里个股置信度没有预测信息，按 dev_only 规则不显示置信度数值，只显示有无合格拟合。</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>尺度</th><th>窗口数</th><th>standard 集</th><th>状态</th><th>尺度证据</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="sub" style="margin-top:8px">当前泡沫段：起点 ${esc(b.start)} · 持续 ${esc(b.duration_days)} 天 · 最长尺度 ${esc(SCL[b.scale]||b.scale)}· 风险窗口 ${t.window?.start?esc(t.window.start)+' → '+esc(t.window.end):'无（'+esc(t.window?.rule)+'）'}</div>
     <canvas id="oc"></canvas>
-    <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>历史截止日 6–12月/12–24月 置信度（右轴）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80<i style="background:#58a6ff"></i>事后确认顶</div>`;
+    <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>该截止日 6–12月/12–24月 有合格拟合（任一集合）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80<i style="background:#58a6ff"></i>事后确认顶</div>`;
   draw(d,h);
 }
 function draw(d,h){
@@ -78,13 +79,13 @@ function draw(d,h){
   const x=s=>L+(Date.parse(s)-t0)/(t1-t0||1)*(W-L-R);
   const lo=Math.min(...cl), hi=Math.max(...cl), y=v=>T+(1-(v-lo)/(hi-lo||1))*(H-T-B), yc=v=>T+(1-v)*(H-T-B);
   g.font='11px sans-serif'; g.fillStyle='#8b949e'; g.strokeStyle='#2a313b';
-  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4, yy=y(v); g.beginPath(); g.moveTo(L,yy); g.lineTo(W-R,yy); g.stroke(); g.fillText(v.toFixed(0),2,yy+4); g.fillText((i*25)+'%',W-R+4,yc(i/4)+4);}
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4, yy=y(v); g.beginPath(); g.moveTo(L,yy); g.lineTo(W-R,yy); g.stroke(); g.fillText(v.toFixed(0),2,yy+4);}
   (W<600?[0,.5,1]:[0,.25,.5,.75,1]).forEach(f=>{const s=ds[Math.min(ds.length-1,Math.round(f*(ds.length-1)))]; g.fillText(s.slice(0,7),Math.min(W-R-40,x(s)-18),H-6);});
   const fr=(h&&h.frames)||[];
   fr.forEach(f=>(f.scenarios||[]).forEach(sc=>{ if(!sc.q20_date||Date.parse(f.asof)<t0) return; const a=x(f.asof<sc.q20_date?sc.q20_date:f.asof), e=Math.min(W-R,x(sc.q80_date)); if(e<=a) return;
     g.fillStyle=`rgba(248,81,73,${.15+.35*(sc.share||0)})`; g.fillRect(a,T,e-a,6+(H-T-B)*0); }));
   g.strokeStyle='#8b949e'; g.lineWidth=1.2; g.beginPath(); ds.forEach((s,i)=>i?g.lineTo(x(s),y(cl[i])):g.moveTo(x(s),y(cl[i]))); g.stroke();
-  fr.forEach(f=>{ if(Date.parse(f.asof)<t0) return; const v=Math.max(f.conf?.['6-12m']||0,f.conf?.['12-24m']||0); if(v<=0) return; g.fillStyle='#d29922'; g.fillRect(x(f.asof)-1.5,yc(v),3,yc(0)-yc(v)); });
+  fr.forEach(f=>{ if(Date.parse(f.asof)<t0) return; const v=Math.max(f.conf?.['6-12m']||0,f.conf?.['12-24m']||0); if(v<=0) return; g.fillStyle='#d29922'; g.fillRect(x(f.asof)-1.5,H-B-8,3,8); });
   ((h&&h.confirmed_tops)||[]).forEach(tp=>{ if(Date.parse(tp.date)<t0) return; const i=ds.indexOf(tp.date); const yy=i>=0?y(cl[i]):T+10; g.fillStyle='#58a6ff'; g.beginPath(); g.moveTo(x(tp.date),yy-4); g.lineTo(x(tp.date)-5,yy-12); g.lineTo(x(tp.date)+5,yy-12); g.fill(); });
 }
 document.getElementById('go').onclick=go; document.getElementById('code').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
