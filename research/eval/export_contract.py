@@ -42,9 +42,14 @@ def _conf(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp) -> dict:
 
 
 def _to_cal(cal: pd.DatetimeIndex, date: pd.Timestamp, ahead: float) -> str:
+    """把 as-of 后 `ahead` 个交易日折算成日历日期；超出已知交易日历的部分按工作日外推（情景展示，非顶部日期）。"""
     i = cal.get_indexer([date])[0]
-    j = int(np.clip(round(i + ahead), 0, len(cal) - 1))
-    return str(cal[j].date())
+    j = int(round(i + ahead))
+    if j < 0:
+        return str(cal[0].date())
+    if j < len(cal):
+        return str(cal[j].date())
+    return str(pd.bdate_range(cal[-1], periods=j - len(cal) + 2)[-1].date())
 
 
 def record(sym: str, asof: str) -> dict:
