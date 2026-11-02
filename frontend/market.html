@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>临界点 · 市场背景</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --bg: #0D0D0D; --surface: #141414; --surface-2: #1A1A1A; --line: #2A2A2A; --grid: #1E1E1E;
+  --ink: #FFFFFF; --ink-2: #AAAAAA; --ink-3: #828282;
+  --up: #FF4757; --dn: #00D4AA; --warn: #FFB800; --real: #4DA3FF;
+  --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
+  --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
+}
+* { box-sizing: border-box; border-radius: 0; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-u); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+a { color: var(--ink-2); text-decoration: none; }
+.m { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+.up { color: var(--up); } .dn { color: var(--dn); } .wn { color: var(--warn); }
+:focus-visible { outline: 2px solid var(--real); outline-offset: 1px; }
+.bar { border-bottom: 1px solid var(--line); background: var(--surface); }
+.bar-in { display: flex; align-items: center; gap: var(--s4); padding: var(--s2) var(--s4); flex-wrap: wrap; }
+.brand { font: 600 15px/1 var(--f-m); letter-spacing: .04em; }
+.brand small { display: block; font: 500 10px/1 var(--f-u); color: var(--ink-3); letter-spacing: .12em; margin-top: var(--s1); }
+.nav { display: flex; gap: var(--s4); font-size: 13px; flex-wrap: wrap; }
+.nav a { padding: var(--s2) 0; border-bottom: 1px solid transparent; }
+.nav a:hover, .nav a[aria-current] { color: var(--ink); border-bottom-color: var(--ink-3); }
+.asof { margin-left: auto; font-size: 12px; color: var(--ink-3); }
+main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap: var(--s4); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sec { background: var(--surface); border: 1px solid var(--line); padding: var(--s4); min-width: 0; }
+.sec.wide { grid-column: 1 / -1; }
+.sec-h { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s3); }
+.sec-h h2 { margin: 0; font: 600 14px/1.3 var(--f-u); letter-spacing: .04em; }
+.src { margin-left: auto; font: 11px var(--f-m); color: var(--ink-3); }
+.ev { font: 600 10px/1 var(--f-u); padding: 3px 6px; border: 1px solid var(--ink-3); color: var(--ink-2); letter-spacing: .06em; }
+.fail { border: 1px solid var(--up); color: var(--up); padding: var(--s2) var(--s3); font-size: 12px; margin: var(--s2) 0; word-break: break-all; }
+.warnl { border-left: 2px solid var(--warn); color: var(--ink-2); padding: var(--s1) var(--s3); font-size: 12px; margin: var(--s2) 0; word-break: break-all; }
+.note { font-size: 12px; color: var(--ink-3); margin: var(--s2) 0 0; }
+.chips { display: flex; gap: var(--s1); flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 30px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+.chip:disabled { opacity: .35; cursor: not-allowed; }
+.tm { position: relative; width: 100%; height: 460px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.tile { position: absolute; border: 1px solid var(--bg); overflow: hidden; padding: 3px 5px; font-size: 11px; line-height: 1.25; color: #fff; cursor: default; }
+.tile b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile span { font-family: var(--f-m); opacity: .9; }
+.tip { position: fixed; z-index: 9; pointer-events: none; background: var(--surface-2); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.5 var(--f-m); white-space: nowrap; }
+.legend { display: flex; align-items: center; gap: var(--s2); font-size: 11px; color: var(--ink-3); margin-top: var(--s2); flex-wrap: wrap; }
+.legend i { display: inline-block; width: 18px; height: 10px; }
+.big { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--s2); }
+.big div { border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
+.big small { display: block; font-size: 11px; color: var(--ink-3); }
+.big strong { font: 600 20px/1.3 var(--f-m); font-variant-numeric: tabular-nums; }
+table { width: 100%; border-collapse: collapse; font: 12px var(--f-m); }
+th { text-align: left; font: 500 11px var(--f-u); color: var(--ink-3); padding: var(--s1) var(--s2) var(--s1) 0; border-bottom: 1px solid var(--line); }
+td { padding: var(--s1) var(--s2) var(--s1) 0; border-bottom: 1px solid var(--grid); }
+td.r, th.r { text-align: right; }
+.bars { display: flex; align-items: flex-end; gap: var(--s2); height: 90px; margin: var(--s3) 0 var(--s1); }
+.bars div { flex: 1; background: var(--up); min-height: 1px; position: relative; }
+.bars div em { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font: 10px var(--f-m); color: var(--ink-2); font-style: normal; }
+.bars-x { display: flex; gap: var(--s2); font: 10px var(--f-m); color: var(--ink-3); }
+.bars-x span { flex: 1; text-align: center; }
+.scroll { max-height: 300px; overflow: auto; }
+footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand">临界点市场<small>市场背景 · 只作描述</small></div>
+    <nav class="nav" aria-label="页面导航">
+      <a href="home.html">首页</a>
+      <a href="index.html">终端</a>
+      <a href="backtest.html">回测</a>
+      <a href="market.html" aria-current="page">市场</a>
+      <a href="lab/stock.html">个股</a>
+      <a href="lab/guide.html">用户指南</a>
+    </nav>
+    <span class="asof m" id="asof">加载中…</span>
+  </div>
+</header>
+
+<main>
+  <section class="sec wide" id="s-board" aria-labelledby="h-board">
+    <div class="sec-h">
+      <h2 id="h-board">板块资金流热力图</h2><span class="ev">descriptive</span>
+      <div class="chips" id="kinds" role="group" aria-label="板块类型"></div>
+      <div class="chips" id="periods" role="group" aria-label="统计周期"></div>
+      <span class="src" id="src-board"></span>
+    </div>
+    <div id="board-body"></div>
+  </section>
+
+  <section class="sec" id="s-limit" aria-labelledby="h-limit">
+    <div class="sec-h"><h2 id="h-limit">涨停情绪</h2><span class="ev">descriptive</span><span class="src" id="src-limit"></span></div>
+    <div id="limit-body"></div>
+  </section>
+
+  <section class="sec" id="s-nb" aria-labelledby="h-nb">
+    <div class="sec-h"><h2 id="h-nb">北向成交</h2><span class="ev">descriptive</span><span class="src" id="src-nb"></span></div>
+    <div id="nb-body"></div>
+  </section>
+
+  <section class="sec" id="s-mg" aria-labelledby="h-mg">
+    <div class="sec-h"><h2 id="h-mg">两融余额</h2><span class="ev">descriptive</span><span class="src" id="src-mg"></span></div>
+    <div id="mg-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-val" aria-labelledby="h-val">
+    <div class="sec-h"><h2 id="h-val">指数估值（中证官方）</h2><span class="ev">descriptive</span><span class="src" id="src-val"></span></div>
+    <div id="val-body"></div>
+  </section>
+</main>
+<div class="tip" id="tip" hidden></div>
+<footer>市场背景只作描述，不进入 LPPLS 报警或任何模型。</footer>
+
+<script src="app/lppl-data.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const num = (v) => typeof v === 'number' && Number.isFinite(v);
+  const yi = (v, d = 1) => num(v) ? (v / 1e8).toFixed(d) : '—';
+  const pct = (v, d = 2) => num(v) ? (v > 0 ? '+' : '') + v.toFixed(d) + '%' : '—';
+  const cls = (v) => num(v) ? (v > 0 ? 'up' : v < 0 ? 'dn' : '') : '';
+  const KINDS = { industry: '行业', concept: '概念', region: '地域' };
+  const PERIODS = {
+    today: { label: '今日', net: 'main_net', pct: 'pct_chg', share: 'main_pct' },
+    '5d': { label: '5日', net: 'main_net_5d', pct: 'pct_5d', share: 'main_pct_5d' },
+    '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
+  };
+  let M = null, kind = 'industry', period = 'today';
+
+  function srcLine(names) {
+    const S = (M && M.sources) || {};
+    const metas = names.map((n) => S[n]).filter(Boolean);
+    if (!metas.length) return '';
+    const m = metas[0];
+    return E((m.url_host || '') + ' · ' + String(m.fetched_at || '').replace('T', ' ').slice(0, 16) + ' UTC');
+  }
+  function failMsg(names) {
+    const S = (M && M.sources) || {};
+    return names.map((n) => S[n]).filter((m) => m && m.ok === false)
+      .map((m) => '该源本次未取到：' + E(m.error || '未知错误')).join('<br>');
+  }
+
+  // squarified treemap
+  function squarify(items, x, y, w, h) {
+    const out = [];
+    const total = items.reduce((s, it) => s + it.v, 0);
+    if (!total) return out;
+    const scale = (w * h) / total;
+    let rest = items.map((it) => ({ ...it, a: it.v * scale }));
+    while (rest.length) {
+      const short = Math.min(w, h);
+      let row = [rest[0]], best = worst(row, short), i = 1;
+      while (i < rest.length) {
+        const cand = row.concat(rest[i]), wv = worst(cand, short);
+        if (wv > best) break;
+        row = cand; best = wv; i++;
+      }
+      const sum = row.reduce((s, r) => s + r.a, 0), thick = sum / short;
+      let off = 0;
+      for (const r of row) {
+        const len = r.a / thick;
+        if (w >= h) out.push({ ...r, x, y: y + off, w: thick, h: len });
+        else out.push({ ...r, x: x + off, y, w: len, h: thick });
+        off += len;
+      }
+      if (w >= h) { x += thick; w -= thick; } else { y += thick; h -= thick; }
+      rest = rest.slice(i);
+    }
+    return out;
+  }
+  function worst(row, short) {
+    const s = row.reduce((a, r) => a + r.a, 0), mx = Math.max(...row.map((r) => r.a)), mn = Math.min(...row.map((r) => r.a));
+    return Math.max((short * short * mx) / (s * s), (s * s) / (short * short * mn));
+  }
+  function tileColor(p) {
+    if (!num(p)) return '#333';
+    const t = Math.min(1, Math.abs(p) / 4), a = 0.25 + 0.75 * t;
+    return p >= 0 ? `rgba(255,71,87,${a})` : `rgba(0,212,170,${a})`;
+  }
+
+  function renderBoard() {
+    const bf = M.board_flow || {};
+    const prov = (bf.provider || {})[kind] || (bf[kind] && bf[kind].length ? 'eastmoney' : null);
+    $('kinds').innerHTML = Object.entries(KINDS).map(([k, l]) =>
+      `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === kind}">${l}</button>`).join('');
+    $('periods').innerHTML = Object.entries(PERIODS).map(([k, p]) =>
+      `<button class="chip" type="button" data-p="${k}" aria-pressed="${k === period}" ${prov === 'sina' && k !== 'today' ? 'disabled title="新浪口径只有当日"' : ''}>${p.label}</button>`).join('');
+    $('src-board').innerHTML = srcLine(['board_flow_' + kind]);
+    const P = PERIODS[period], rows = (bf[kind] || []).filter((r) => num(r[P.net]));
+    const fails = failMsg(['board_flow_' + kind]);
+    const S = (M.sources || {})['board_flow_' + kind] || {};
+    let html = '';
+    if (S.fallback_from) html += `<p class="warnl">东财本次未取到，已改用新浪口径（${E(S.fallback_from).slice(0, 160)}）。</p>`;
+    if (!rows.length) {
+      $('board-body').innerHTML = html + `<p class="fail">${fails || '该源本次未取到：无数据'}</p><p class="note">${E(bf.note || '')}</p>`;
+      return;
+    }
+    const lead = prov === 'sina' ? '净额（流入−流出）' : '主力净额';
+    html += `<div class="tm" id="tm" role="img" aria-label="${KINDS[kind]}板块${P.label}${lead}热力图，共 ${rows.length} 个板块"></div>
+      <div class="legend"><span>面积 = |${lead}|</span><span>颜色 = ${P.label}涨跌幅</span>
+      <i style="background:rgba(0,212,170,1)"></i>−4%<i style="background:rgba(0,212,170,.3)"></i><i style="background:rgba(255,71,87,.3)"></i><i style="background:rgba(255,71,87,1)"></i>+4%
+      <span>边框实线 = 净流入，虚线 = 净流出</span><span>n = ${rows.length}</span></div>
+      <p class="note">${E(bf.note || '')}</p>`;
+    $('board-body').innerHTML = html;
+    const box = $('tm'), W = box.clientWidth, H = box.clientHeight;
+    const items = rows.map((r) => ({ r, v: Math.abs(r[P.net]) })).filter((it) => it.v > 0).sort((a, b) => b.v - a.v);
+    const tiles = squarify(items, 0, 0, W, H);
+    box.innerHTML = tiles.map((t, i) => {
+      const r = t.r, show = t.w > 46 && t.h > 30;
+      const st = `left:${t.x.toFixed(1)}px;top:${t.y.toFixed(1)}px;width:${t.w.toFixed(1)}px;height:${t.h.toFixed(1)}px;background:${tileColor(r[P.pct])};${r[P.net] < 0 ? 'outline:1px dashed rgba(255,255,255,.35);outline-offset:-3px;' : ''}`;
+      return `<div class="tile" data-i="${i}" style="${st}">${show ? `<b>${E(r.name)}</b><span>${yi(r[P.net])}亿 ${pct(r[P.pct], 1)}</span>` : ''}</div>`;
+    }).join('');
+    const tip = $('tip');
+    box.onmousemove = (e) => {
+      const el = e.target.closest('.tile'); if (!el) { tip.hidden = true; return; }
+      const r = tiles[+el.dataset.i].r;
+      const lines = [`<b>${E(r.name)}</b>`, `${P.label}涨跌 ${pct(r[P.pct])}`, `${lead} ${yi(r[P.net], 2)} 亿`, `净占比 ${pct(r[P.share])}`];
+      if (period === 'today' && prov !== 'sina') lines.push(`超大 ${yi(r.super_net, 2)} · 大 ${yi(r.large_net, 2)} · 中 ${yi(r.medium_net, 2)} · 小 ${yi(r.small_net, 2)} 亿`);
+      tip.innerHTML = lines.join('<br>'); tip.hidden = false;
+      tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px';
+      tip.style.top = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8) + 'px';
+    };
+    box.onmouseleave = () => { tip.hidden = true; };
+  }
+
+  function renderLimit() {
+    const L = M.limit_pools || {};
+    $('src-limit').innerHTML = srcLine(['limit_pools']);
+    const f = failMsg(['limit_pools']);
+    if (!num(L.zt)) { $('limit-body').innerHTML = `<p class="fail">${f || '该源本次未取到：无数据'}</p>`; return; }
+    const dist = Object.entries(L.streak_dist || {}).map(([k, v]) => [+k, v]).sort((a, b) => a[0] - b[0]);
+    const mx = Math.max(1, ...dist.map((d) => d[1]));
+    const top = ((L.top20 || {}).zt || []);
+    $('limit-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
+      `<div class="big"><div><small>涨停</small><strong class="up">${L.zt}</strong></div><div><small>炸板</small><strong class="wn">${L.zb ?? '—'}</strong></div>
+       <div><small>跌停</small><strong class="dn">${L.dt ?? '—'}</strong></div><div><small>炸板率</small><strong>${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+       <div><small>最高连板</small><strong>${L.max_streak ?? '—'}</strong></div></div>
+       <div class="bars" aria-label="连板分布">${dist.map((d) => `<div style="height:${(d[1] / mx * 100).toFixed(0)}%"><em>${d[1]}</em></div>`).join('')}</div>
+       <div class="bars-x">${dist.map((d) => `<span>${d[0]}板</span>`).join('')}</div>
+       <p class="note">交易日 ${E(L.date || '—')} · 涨停前 ${top.length} 只（按封板时间）</p>
+       <div class="scroll"><table><thead><tr><th>代码</th><th>名称</th><th class="r">连板</th><th class="r">首封</th></tr></thead><tbody>
+       ${top.map((r) => `<tr><td>${E(r.code)}</td><td>${E(r.name)}</td><td class="r">${E(r.streak ?? '—')}</td><td class="r">${E(r.limit_time || '—')}</td></tr>`).join('')}
+       </tbody></table></div><p class="note">${E(L.note || '')}</p>`;
+  }
+
+  function renderNB() {
+    const N = M.northbound || {}, d = N.data || {};
+    $('src-nb').innerHTML = srcLine(['northbound']);
+    const f = failMsg(['northbound']);
+    if (!num(d.sse_nb_turnover) && !num(d.szse_nb_turnover)) { $('nb-body').innerHTML = `<p class="fail">${f || '该源本次未取到：无数据'}</p>`; return; }
+    const sum = (a, b) => (num(a) || num(b)) ? (a || 0) + (b || 0) : null;
+    const tot = sum(d.sse_nb_turnover, d.szse_nb_turnover);
+    // HKEX 数值单位：百万元人民币
+    const bn = (v) => num(v) ? (v / 100).toFixed(1) : '—';
+    $('nb-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
+      `<div class="big"><div><small>北向成交额合计（亿元）</small><strong>${bn(tot)}</strong></div></div>
+       <table style="margin-top:12px"><thead><tr><th></th><th class="r">沪股通</th><th class="r">深股通</th></tr></thead><tbody>
+       <tr><td>成交额（亿元）</td><td class="r">${bn(d.sse_nb_turnover)}</td><td class="r">${bn(d.szse_nb_turnover)}</td></tr>
+       <tr><td>成交笔数（万笔）</td><td class="r">${num(d.sse_nb_trades) ? (d.sse_nb_trades / 1e4).toFixed(1) : '—'}</td><td class="r">${num(d.szse_nb_trades) ? (d.szse_nb_trades / 1e4).toFixed(1) : '—'}</td></tr>
+       <tr><td>ETF 成交额（亿元）</td><td class="r">${bn(d.sse_nb_etf_turnover)}</td><td class="r">${bn(d.szse_nb_etf_turnover)}</td></tr>
+       </tbody></table><p class="note">港交所 2024-08 起不再公布北向买卖额。${E(N.note || '')}</p>`;
+  }
+
+  function renderMargin() {
+    const G = M.margin || {}, d = G.data || {};
+    $('src-mg').innerHTML = srcLine(['margin']);
+    const S = (M.sources || {}).margin || {};
+    if (!num(d.fin_balance_all)) { $('mg-body').innerHTML = `<p class="fail">${failMsg(['margin']) || '该源本次未取到：无数据'}</p>`; return; }
+    $('mg-body').innerHTML = (S.ok === false ? `<p class="warnl">本次刷新失败：${E(S.error || '')}<br>下面显示的是已入库的 ${E(d.date)} 数据。</p>` : '') +
+      `<div class="big"><div><small>融资余额合计（亿元）</small><strong>${yi(d.fin_balance_all, 0)}</strong></div>
+       <div><small>20 日变化</small><strong class="${cls(d.fin_balance_all_change_20d)}">${num(d.fin_balance_all_change_20d_pct) ? pct(d.fin_balance_all_change_20d_pct * 100, 1) : '—'}</strong></div></div>
+       <table style="margin-top:12px"><tbody>
+       <tr><td>沪市融资余额（亿元）</td><td class="r">${yi(d.fin_balance_sse, 0)}</td></tr>
+       <tr><td>深市融资余额（亿元）</td><td class="r">${yi(d.fin_balance_szse, 0)}</td></tr>
+       <tr><td>两融余额合计（亿元）</td><td class="r">${yi(d.total_balance_all, 0)}</td></tr>
+       <tr><td>20 日变化（亿元）</td><td class="r ${cls(d.fin_balance_all_change_20d)}">${yi(d.fin_balance_all_change_20d, 0)}</td></tr>
+       <tr><td>数据日 / 可用日（T+1）</td><td class="r">${E(d.date || '—')} / ${E(d.available_date || '—')}</td></tr>
+       <tr><td>状态</td><td class="r">${d.stale ? '<span class="wn">stale · 滞后 ' + E(d.trading_days_stale) + ' 个交易日</span>' : '最新'}</td></tr>
+       </tbody></table><p class="note">${E(G.note || '')}</p>`;
+  }
+
+  function renderVal() {
+    const V = M.valuation || {}, I = V.indices || {};
+    const names = { '000300': '沪深300', '000905': '中证500', '000016': '上证50', '000852': '中证1000' };
+    const keys = Object.keys(names).filter((k) => I[k]);
+    $('src-val').innerHTML = srcLine(keys.map((k) => 'index_valuation_' + k));
+    const f = failMsg(Object.keys(names).map((k) => 'index_valuation_' + k));
+    if (!keys.length) { $('val-body').innerHTML = `<p class="fail">${f || '该源本次未取到：无数据'}</p>`; return; }
+    $('val-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
+      `<div style="overflow-x:auto"><table style="min-width:640px"><thead><tr><th>指数</th><th>数据日</th><th class="r">PE（静态）</th><th class="r">PE（滚动）</th><th class="r">股息率（静态）</th><th class="r">股息率（滚动）</th><th class="r">PE 10 年分位</th></tr></thead><tbody>
+       ${keys.map((k) => { const r = I[k]; return `<tr><td>${names[k]} ${k}</td><td>${E(r.date || '—')}</td><td class="r">${num(r.pe1) ? r.pe1.toFixed(2) : '—'}</td><td class="r">${num(r.pe2) ? r.pe2.toFixed(2) : '—'}</td>
+         <td class="r">${num(r.dy1) ? r.dy1.toFixed(2) + '%' : '—'}</td><td class="r">${num(r.dy2) ? r.dy2.toFixed(2) + '%' : '—'}</td>
+         <td class="r">${num(r.pe1_pct_10y) ? (r.pe1_pct_10y * 100).toFixed(0) + '%（n=' + E(r.history_rows) + '，历史分位，不是预测）' : '—（源文件只有近 ' + E(r.history_rows ?? 0) + ' 行）'}</td></tr>`; }).join('')}
+       </tbody></table></div><p class="note">${E(V.note || '')}</p>`;
+  }
+
+  function renderAll() {
+    $('asof').textContent = '截止 ' + (M.asof || '—') + ' · 生成 ' + String(M.generated_at || '').replace('T', ' ').slice(0, 16) + ' UTC';
+    for (const fn of [renderBoard, renderLimit, renderNB, renderMargin, renderVal]) {
+      try { fn(); } catch (e) { console.error(e); }
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
+    if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
+    if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
+  });
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
+
+  LPPL.market().then((d) => {
+    if (!d) { $('asof').textContent = '市场数据未加载'; document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>'; return; }
+    M = d; renderAll();
+  }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
+})();
+</script>
+</body>
+</html>
