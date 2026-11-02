@@ -69,7 +69,7 @@ test('the existing video-sky switch disables all procedural sky states', () => {
 test('loop image and video paths attach the explicit scene used by the renderer', () => {
   const mediaStart = html.indexOf('function loopImage(L,now)');
   const mediaEnd = html.indexOf('function pauseLoops', mediaStart);
-  const context = vm.createContext({ loadLoops() {}, contiguousReady: L => L.frames.length, START_BUFFER: 2 });
+  const context = vm.createContext({ videoMedia: null, RM: false, loadLoops() {}, contiguousReady: L => L.frames.length, START_BUFFER: 2 });
   vm.runInContext(html.slice(mediaStart, mediaEnd) + '\nglobalThis.getLoop = loopImage;', context);
   for (const name of ['sea', 'under', 'deep']) {
     const img = { naturalWidth: 1920, naturalHeight: 1080 };
