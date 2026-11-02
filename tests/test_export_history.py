@@ -102,3 +102,26 @@ def test_indicators_boundary_share_and_display_only():
     assert ind["2-4w"]["signal_status"] == "display_only"
     assert ind["2-4w"]["n_windows"] == 2 and "confidence" in ind["2-4w"]
     assert ind["2-6y"] == {"signal_status": "not_computed", "direction": "positive", "display_only": False}
+
+
+def test_null_fpr_reads_calibration_table(tmp_path, monkeypatch):
+    import pandas as pd
+
+    tbl = pd.DataFrame([
+        {"scale": "6-12m", "kind": "gbm0", "standard": 0.053, "box": 0.03, "asof_standard_gt0": 0.14},
+        {"scale": "6-12m", "kind": "block_boot", "standard": 0.09, "box": 0.026, "asof_standard_gt0": 0.26},
+        {"scale": "6-12m", "kind": "gbm_drift", "standard": 0.31, "box": 0.082, "asof_standard_gt0": 0.53},
+        {"scale": "6-12m", "kind": "powerlaw", "standard": 0.384, "box": 0.114, "asof_standard_gt0": 0.72},
+    ])
+    p = tmp_path / "null.csv"
+    tbl.to_csv(p, index=False)
+    monkeypatch.setattr(export_contract, "NULL_FPR_PATH", p)
+    monkeypatch.setattr(export_contract, "_NULL_FPR_CACHE", {})
+    out = export_contract._null_fpr("6-12m")
+    assert out["standard"] == {"gbm0": 0.053, "block_boot": 0.09, "gbm_drift": 0.31}
+    assert out["box"]["gbm_drift"] == 0.082 and out["asof_standard_gt0"]["block_boot"] == 0.26
+    assert export_contract._null_fpr("2-6y") is None
+
+    monkeypatch.setattr(export_contract, "NULL_FPR_PATH", tmp_path / "missing.csv")
+    monkeypatch.setattr(export_contract, "_NULL_FPR_CACHE", {})
+    assert export_contract._null_fpr("6-12m") is None

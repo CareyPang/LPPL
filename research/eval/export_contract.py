@@ -190,6 +190,30 @@ def _boundary(dd: pd.DataFrame) -> dict:
     return out
 
 
+NULL_FPR_PATH = Path("reports/null_calibration_stock.csv")  # WP1 零假设误报率表（描述性）
+NULL_FPR_KINDS = ("gbm0", "block_boot", "gbm_drift")
+_NULL_FPR_CACHE: dict = {}
+
+
+def _null_fpr(scale: str) -> dict | None:
+    """描述性零对照：该尺度在无泡沫生成过程下 standard/box 的窗口级合格率（`reports/null_calibration_stock.md`）。
+    gbm0=无漂移随机游走、block_boot=真实个股收益块重排、gbm_drift=强漂移；缺文件时返回 None。"""
+    if "table" not in _NULL_FPR_CACHE:
+        _NULL_FPR_CACHE["table"] = pd.read_csv(NULL_FPR_PATH) if NULL_FPR_PATH.exists() else None
+    t = _NULL_FPR_CACHE["table"]
+    if t is None:
+        return None
+    sub = t[t.scale == scale]
+    if sub.empty:
+        return None
+    out = {}
+    for col in ("standard", "box"):
+        out[col] = {k: float(sub.loc[sub.kind == k, col].iloc[0]) for k in NULL_FPR_KINDS if (sub.kind == k).any()}
+    out["asof_standard_gt0"] = {k: float(sub.loc[sub.kind == k, "asof_standard_gt0"].iloc[0]) for k in NULL_FPR_KINDS if (sub.kind == k).any()}
+    out["note"] = "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
+    return out
+
+
 def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
     """每尺度：各过滤集置信度（合格窗口比例，E1/E4 定义）、最佳起点 t1（Lagrange 正则选窗）及其是否合格、signal_status、
     撞边界比例（描述性）；2–4 周档 `display_only=True`（只展示，不进入合格统计）。"""
@@ -209,6 +233,7 @@ def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.Da
                    "best_t1": str(cal[max(cal.get_indexer([date])[0] - int(sub.loc[i].n) + 1, 0)].date()) if i is not None else None,
                    "t1_qualified": bool(gg.loc[i, "g_fco_standard"]) if i is not None else None,
                    "boundary_share": _boundary(sub),
+                   "null_fpr": _null_fpr(sc),
                    "display_only": display_only,
                    "signal_status": "display_only" if display_only else ("signal" if nq > 0 else "no_qualified_fit")}
     return out

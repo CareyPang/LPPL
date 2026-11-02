@@ -188,6 +188,8 @@
 | E 夜间预算库 | 固定截止日、分片、成分股广度 | 待合并，CI 绿 | #27，`research/pipeline/stock_batch.py`、`.github/workflows/stock_nightly.yml` |
 | 你的主页改动 | 海洋视频、首屏、可读性 | 草稿，待你决定 | #26，`frontend/home.html`、`frontend/assets/ocean/` |
 | 沪深300 预算 | 300/300，298 可统计；截止日不一致 | 待 #27 合并后重跑 | 未发布 |
+| F 个股数学审计 + 文献 + 研究方案 | F1/F2 修复、§20 偏离登记、63 篇文献、WP0–WP6 方案 | 已合并 | #28，`reports/stock_math_audit.md`、`docs/research_plan_stock_math.md` |
+| G WP0 收尾 + WP1 零假设标定 | 撞边界比例字段、2–4 周档 display_only、展示日历交易日外推；六类零假设 × 六档 × 过滤集误报率表 | 待合并 | `reports/null_calibration_stock.md`、`scripts/audit_stock_math/exp7_null_calibration.py` |
 
 合并顺序：#22 → #23 → #24 → #25 → #27（每合一个，把下一个的 base 改回 main）。
 
