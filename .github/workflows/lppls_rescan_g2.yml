@@ -1,0 +1,113 @@
+name: lppls_rescan_g2
+
+# 预登记 §20 第 2 条：用修复后代码（grid_profile 覆盖窗内 t_c）只在开发段重扫 6 指数，输出 data/features/lppls_v2_g2/。
+# 手动触发；每个 job = 1 个指数 × 1 个日期分片（交错切分），产物由 merge job 合并成 <sym>.parquet 的 artifact（不入库）。
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: Comma-separated index symbols (dev segment only)
+        type: string
+        default: "sh000001,sh000016,sh000300,sh000905,sz399001,sz399006"
+      shards:
+        description: Date shards per symbol (1–20)
+        type: string
+        default: "12"
+      out_tag:
+        description: LPPLS_OUT_TAG (output dir suffix)
+        type: string
+        default: "_g2"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lppls-rescan-${{ inputs.out_tag }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      shards: ${{ steps.plan.outputs.shards }}
+    env:
+      INPUT_SYMBOLS: ${{ inputs.symbols }}
+      INPUT_SHARDS: ${{ inputs.shards }}
+    steps:
+      - id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$INPUT_SHARDS" =~ ^[0-9]{1,2}$ ]] || (( 10#$INPUT_SHARDS < 1 || 10#$INPUT_SHARDS > 20 )); then
+            echo "shards must be 1–20" >&2; exit 1
+          fi
+          if [[ ! "$INPUT_SYMBOLS" =~ ^[a-z]{2}[0-9]{6}(,[a-z]{2}[0-9]{6})*$ ]]; then
+            echo "symbols must look like sh000001,sz399001" >&2; exit 1
+          fi
+          shards=$((10#$INPUT_SHARDS))
+          matrix=$(SYMS="$INPUT_SYMBOLS" N="$shards" python3 -c 'import json,os; syms=os.environ["SYMS"].split(","); n=int(os.environ["N"]); print(json.dumps({"include": [{"symbol": s, "shard": i} for s in syms for i in range(n)]}))')
+          printf 'shards=%s\nmatrix=%s\n' "$shards" "$matrix" >> "$GITHUB_OUTPUT"
+
+  scan:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Scan shard (dev segment, v2 box, fixed grid)
+        shell: bash
+        env:
+          LPPLS_BOX: v2
+          LPPLS_OUT_TAG: ${{ inputs.out_tag }}
+          LPPLS_SYMBOLS: ${{ matrix.symbol }}
+          LPPLS_SHARD: ${{ matrix.shard }}/${{ needs.plan.outputs.shards }}
+          LPPLS_PROCS: "4"
+        run: |
+          set -euo pipefail
+          python -c "from research.optim import optimizers; import inspect; assert 'core.ALLOW_INSIDE' in inspect.getsource(optimizers.grid_profile), 'grid_profile 未含窗内 t_c 修复'"
+          python -m research.features.lppls_scan index dev
+          ls -la "data/features/lppls_v2${LPPLS_OUT_TAG}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lppls-rescan-${{ matrix.symbol }}-${{ matrix.shard }}
+          path: data/features/lppls_v2${{ inputs.out_tag }}/
+          if-no-files-found: error
+
+  merge:
+    needs: [plan, scan]
+    if: needs.scan.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: lppls-rescan-*
+          merge-multiple: true
+          path: data/features/lppls_v2${{ inputs.out_tag }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - run: python scripts/merge_scan_parts.py "data/features/lppls_v2${{ inputs.out_tag }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lppls_v2${{ inputs.out_tag }}-merged
+          path: |
+            data/features/lppls_v2${{ inputs.out_tag }}/*.parquet
+            !data/features/lppls_v2${{ inputs.out_tag }}/*__part*.parquet
+          if-no-files-found: error
+          retention-days: 90

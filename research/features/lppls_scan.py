@@ -165,12 +165,28 @@ def asof_dates(sym: str, group: str, cal: pd.DatetimeIndex, splits: tuple[str, .
     return [d for d in logp.index if d in grid and ok(d)]
 
 
+SHARD = os.environ.get("LPPLS_SHARD", "")  # "i/N"：只扫该标的 as-of 日期的第 i::N 子集，输出 <sym>__part{i}of{N}.parquet（§20 _g2 重扫走 Actions 矩阵）
+SYMBOLS = tuple(x for x in os.environ.get("LPPLS_SYMBOLS", "").split(",") if x)  # 只扫这些标的（空=全部）
+
+
+def _shard_dates(ds: list[pd.Timestamp], shard: str = SHARD) -> tuple[list[pd.Timestamp], str]:
+    """按 "i/N" 取日期子集（交错切分，使每片覆盖整个样本段）；返回 (日期, 文件名后缀)。"""
+    if not shard:
+        return ds, ""
+    i, n = (int(x) for x in shard.split("/"))
+    if not 0 <= i < n:
+        raise ValueError(f"bad LPPLS_SHARD {shard!r}")
+    return ds[i::n], f"__part{i}of{n}"
+
+
 def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = ("dev", "cal", "test")):
     """splits：个股只扫这些样本段（§12.2 算力门触发后只扫 dev）。"""
     OUT.mkdir(parents=True, exist_ok=True)
     _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])
     cal = calendar()
     syms = list(INDEXES) if group == "index" else sorted({s for n, (*_, csv, _) in SPLITS.items() if n in splits for s in _snapshot(csv)})
+    if SYMBOLS:
+        syms = [s for s in syms if s in SYMBOLS]
     if group != "index" and STOCK_SAMPLE:
         # §17.11 个股样本：按市场（sh/sz）分层、固定种子抽 STOCK_SAMPLE 只，先判断横截面排名值不值得全跑
         rng = np.random.default_rng(20261025)
@@ -189,9 +205,9 @@ def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = (
         windows = tuple(w for w in windows if w % 10 == 0)
     tasks, parts = [], {}
     for sym in syms:
-        if (OUT / f"{sym}.parquet").exists():
+        ds, suffix = _shard_dates(asof_dates(sym, group, cal, splits))
+        if (OUT / f"{sym}{suffix}.parquet").exists() or not ds:
             continue
-        ds = asof_dates(sym, group, cal, splits)
         parts[sym] = [None] * ((len(ds) + chunk - 1) // chunk)
         for j in range(0, len(ds), chunk):
             tasks.append((sym, ds[j : j + chunk], windows, cal))
@@ -203,11 +219,12 @@ def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = (
             pieces[sym].append(df)
             done_tasks[sym] += 1
             if done_tasks[sym] == len(parts[sym]):
-                pd.concat(pieces[sym]).sort_values(["date", "n"]).to_parquet(OUT / f"{sym}.parquet")
+                pd.concat(pieces[sym]).sort_values(["date", "n"]).to_parquet(OUT / f"{sym}{_shard_dates([])[1]}.parquet")
                 print(f"done {sym}", flush=True)
             if (k + 1) % 100 == 0:
                 print(f"tasks {k + 1}/{len(tasks)}", flush=True)
 
 
 if __name__ == "__main__":
-    run(sys.argv[1] if len(sys.argv) > 1 else "index", splits=tuple(sys.argv[2].split(",")) if len(sys.argv) > 2 else ("dev", "cal", "test"))
+    run(sys.argv[1] if len(sys.argv) > 1 else "index", procs=int(os.environ.get("LPPLS_PROCS", "8")),
+        splits=tuple(sys.argv[2].split(",")) if len(sys.argv) > 2 else ("dev", "cal", "test"))
