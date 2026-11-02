@@ -287,6 +287,7 @@ def test_load_stock_hfq_factor_direction_and_date_boundary(monkeypatch):
     factors = pd.DataFrame(
         {"date": ["2020-01-01", "2020-01-02"], "factor": [1.0, 2.0]}
     )
+    raw.attrs["source"] = "tencent_kline"
     monkeypatch.setattr(stock, "tencent_raw", lambda sym, start: raw)
     monkeypatch.setattr(stock, "sina_factors", lambda sym, kind: factors)
 
@@ -298,6 +299,7 @@ def test_load_stock_hfq_factor_direction_and_date_boundary(monkeypatch):
         + hashlib.sha1(factors.to_csv(index=False).encode("utf-8")).hexdigest()[:8]
     )
     assert meta["ipo_in_range"] is False
+    assert meta["source"] == "tencent_kline"
 
 
 def test_history_is_point_in_time_and_matches_predict(monkeypatch, tmp_path):
@@ -307,7 +309,11 @@ def test_history_is_point_in_time_and_matches_predict(monkeypatch, tmp_path):
     monkeypatch.setattr(
         stock,
         "load_stock",
-        lambda code, start=None: (prices.copy(), version[0], {"ipo_in_range": False}),
+        lambda code, start=None: (
+            prices.copy(),
+            version[0],
+            {"ipo_in_range": False, "source": "tencent_kline"},
+        ),
     )
     monkeypatch.setattr(stock, "_name_and_st", lambda code: ("sample", False))
     asof = stock._weekly_asofs(stock._fit_logp(prices), 10)[-3]
@@ -318,6 +324,7 @@ def test_history_is_point_in_time_and_matches_predict(monkeypatch, tmp_path):
     )
     assert record["stock_meta"]["trading_days_stale"] == 0
     assert record["stock_meta"]["dropped_unclosed_bar"] is False
+    assert record["stock_meta"]["source"] == "tencent_kline"
     assert historical["stock_meta"]["trading_days_stale"] == 0
     frame = next(item for item in historical["frames"] if item["asof"] == str(asof.date()))
     assert frame["scenarios"] == record["top"]["scenarios"]

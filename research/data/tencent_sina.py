@@ -1,4 +1,4 @@
-"""第二来源：腾讯 fqkline 不复权日线（三入口轮换、640 根分段翻页）+ 新浪比例复权因子。
+"""第二来源：腾讯不复权日线（fqkline/kline 三入口轮换、640 根分段翻页）+ 新浪比例复权因子。
 
 做法来自 simonlin1212/a-stock-data SKILL.md V3.10（§1.2 腾讯 K 线、§1.6 新浪复权因子，MIT）；本文件为独立精简实现。
 腾讯自带 qfq 是等差口径（逐次减分红，高分红老股早年会为负），不可用；指数无复权直接取 day。
@@ -21,33 +21,70 @@ _cooldown: dict[str, float] = {}
 SEG = 640
 
 
-def _tencent_segment(symbol: str, start: str, end: str, timeout: float) -> list[list]:
-    last = None
+def _tencent_segment(
+    symbol: str,
+    start: str,
+    end: str,
+    timeout: float,
+    endpoint: str | None = None,
+) -> tuple[list[list], str]:
+    if endpoint not in (None, "fqkline", "kline"):
+        raise ValueError(f"unsupported Tencent endpoint: {endpoint}")
+    endpoints = (endpoint,) if endpoint else ("fqkline", "kline")
+    errors = []
     for host in HOSTS:
         if _cooldown.get(host, 0) > time.monotonic():
             continue
-        rate_limit()
-        try:
-            r = requests.get(f"{host}/appstock/app/fqkline/get", params={"param": f"{symbol},day,{start},{end},{SEG},"},
-                             headers=UA, timeout=timeout)
-            r.raise_for_status()
-            data = (r.json().get("data") or {}).get(symbol) or {}
-            rows = data.get("day")
-            if rows is None:
-                raise SourceError("empty json")
-            return rows
-        except Exception as e:  # noqa: BLE001 — 换入口
-            last = e
+        host_errors = []
+        for name in endpoints:
+            path = (
+                "/appstock/app/fqkline/get"
+                if name == "fqkline"
+                else "/appstock/app/kline/kline"
+            )
+            param = f"{symbol},day,{start},{end},{SEG}"
+            if name == "fqkline":
+                param += ","
+            rate_limit()
+            try:
+                response = requests.get(
+                    f"{host}{path}",
+                    params={"param": param},
+                    headers=UA,
+                    timeout=timeout,
+                )
+                response.raise_for_status()
+                data = (response.json().get("data") or {}).get(symbol) or {}
+                rows = data.get("day")
+                if rows is None:
+                    raise SourceError("empty json")
+                return rows, f"tencent_{name}"
+            except Exception as exc:  # noqa: BLE001 — 换入口
+                host_errors.append(f"{name}: {type(exc).__name__}: {exc}")
+        if host_errors:
+            errors.append(f"{host}: {'; '.join(host_errors)}")
             _cooldown[host] = time.monotonic() + 120
-    raise SourceError(f"tencent 三入口均失败: {symbol}: {last}")
+    detail = "; ".join(errors) if errors else "all hosts cooling down"
+    raise SourceError(f"tencent 三入口均失败: {symbol}: {detail}")
 
 
-def tencent_raw(symbol: str, start: str = "1990-01-01", end: str | None = None, timeout: float = 15) -> pd.DataFrame:
+def tencent_raw(
+    symbol: str,
+    start: str = "1990-01-01",
+    end: str | None = None,
+    timeout: float = 15,
+    endpoint: str | None = None,
+) -> pd.DataFrame:
     """不复权日线，按 ≤640 根分段向前翻页直到起点之前无数据。"""
     end = end or str(pd.Timestamp.today().date())
     frames, cur_end = [], end
+    source = "tencent_fqkline"
     while True:
-        rows = _tencent_segment(symbol, start, cur_end, timeout)
+        rows, segment_source = _tencent_segment(
+            symbol, start, cur_end, timeout, endpoint
+        )
+        if segment_source == "tencent_kline":
+            source = segment_source
         if not rows:
             break
         df = pd.DataFrame([[r[0], r[1], r[3], r[4], r[2], r[5], None] for r in rows], columns=COLS)
@@ -62,7 +99,9 @@ def tencent_raw(symbol: str, start: str = "1990-01-01", end: str | None = None, 
     out = out[out.date >= start]
     for c in ("open", "high", "low", "close", "volume"):
         out[c] = pd.to_numeric(out[c], errors="coerce")
-    return out.reset_index(drop=True)
+    out = out.reset_index(drop=True)
+    out.attrs["source"] = source
+    return out
 
 
 def sina_factors(symbol: str, kind: str = "qfq", timeout: float = 10) -> pd.DataFrame:
@@ -97,5 +136,8 @@ def fetch_tencent_sina(market: str, six: str, is_index: bool, adjust: str = "qfq
     symbol = f"{market}{six}"
     raw = tencent_raw(symbol, timeout=timeout)
     if is_index or adjust == "":
-        return _norm(raw)
-    return _norm(apply_factors(raw, sina_factors(symbol, adjust, timeout), adjust))
+        out = _norm(raw)
+    else:
+        out = _norm(apply_factors(raw, sina_factors(symbol, adjust, timeout), adjust))
+    out.attrs["source"] = raw.attrs.get("source", "tencent_fqkline")
+    return out
