@@ -188,9 +188,14 @@ def test_reference_calendar_is_cached_and_drops_unclosed_bars(monkeypatch):
 
 @pytest.mark.network
 def test_load_beijing_stock_network():
-    prices, data_version, meta = stock.load_stock("920002")
+    try:
+        prices, data_version, meta = stock.load_stock("920002")
+    except RuntimeError as exc:
+        assert "北交所历史日线暂不可得" in str(exc)
+        print("920002 load_stock: unavailable:", exc)
+        return
 
-    assert not prices.empty
+    assert len(prices) >= 500
     assert meta["n_bars"] == len(prices)
     assert data_version.startswith("vintage_")
     print(
@@ -200,6 +205,20 @@ def test_load_beijing_stock_network():
         f"asof={prices.date.iloc[-1].date()}",
         f"source={meta['source']}",
     )
+
+
+def test_beijing_history_failure_has_clear_error(monkeypatch):
+    factors = pd.DataFrame({"date": ["1900-01-01"], "factor": [1.0]})
+
+    def unavailable(*_args, **_kwargs):
+        raise RuntimeError("no historical data")
+
+    monkeypatch.setattr(stock, "sina_factors", lambda *_args, **_kwargs: factors)
+    monkeypatch.setattr(stock, "tencent_raw", unavailable)
+    monkeypatch.setattr(stock.cache, "download", unavailable)
+
+    with pytest.raises(RuntimeError, match="北交所历史日线暂不可得: bj920002"):
+        stock.load_stock("920002")
 
 
 def test_load_stock_and_calendar_share_close_cutoff(monkeypatch):

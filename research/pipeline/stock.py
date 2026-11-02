@@ -173,6 +173,13 @@ def load_stock(
             ]
             source = adjusted.attrs.get("source", "cache_tencent_sina_hfq")
         except Exception as fallback_error:
+            if sym.startswith("bj"):
+                raise RuntimeError(
+                    f"北交所历史日线暂不可得: {sym}; primary Tencent raw × Sina HFQ failed "
+                    f"({type(primary_error).__name__}: {primary_error}); "
+                    f"HFQ-only cache fallback failed ({type(fallback_error).__name__}: "
+                    f"{fallback_error})"
+                ) from fallback_error
             raise RuntimeError(
                 f"HFQ stock data unavailable for {sym}; primary Tencent raw × Sina HFQ "
                 f"failed ({type(primary_error).__name__}: {primary_error}); "
