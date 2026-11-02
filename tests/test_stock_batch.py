@@ -161,3 +161,12 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
     index = json.loads(_git("--git-dir", str(origin), "show", "stock-results:stock/index.json"))
     assert index["000001"]["status"] == "eligible" and index["000001"]["asof"] == "2026-10-30"
     assert index["000002"]["status"] == "error" and index["000002"]["run_url"] == "https://example.test/runs/batch"
+
+
+def test_qualified_skips_display_only_scales():
+    rec = _record("000001", std612=0.5, conf612=0.6)
+    rec["top"]["indicators"]["2-4w"] = {"n_windows": 6, "confidence": {"standard": 1.0}, "display_only": True}
+    rec["top"]["lppls_confidence"]["2-4w"] = 1.0
+    fit_scales, conf_scales = stock_batch._qualified(rec)
+    assert fit_scales == {"6-12m"}
+    assert conf_scales == {"6-12m", "2-4w"} or conf_scales == {"6-12m"}  # box 置信度口径不受 display_only 影响

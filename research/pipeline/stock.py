@@ -372,6 +372,19 @@ def _fit_logp(ohlc: pd.DataFrame) -> pd.Series:
     )
 
 
+def _display_calendar(index: pd.DatetimeIndex, asof: pd.Timestamp) -> pd.DatetimeIndex:
+    """t_c/情景分位折算日期用的日历：个股自身 bar 日期（≤ as-of）∪ 参考指数（sh000001）在 as-of 之后、
+    今日收盘截止前已知的交易日。只影响展示日期（不含价格，无数学泄漏）；参考日历不可得时退回 bar 日期，
+    `_to_cal` 对超出部分按工作日外推。"""
+    base = pd.DatetimeIndex(index[index <= asof])
+    try:
+        ref = _reference_calendar(_close_cutoff(_now()))
+    except Exception:
+        return base
+    future = ref[ref > pd.Timestamp(asof).normalize()]
+    return base.append(future) if len(future) else base
+
+
 def _record(
     code6: str,
     variant: str,
@@ -393,7 +406,7 @@ def _record(
         str(asof.date()),
         derived,
         rule_frame,
-        logp.index,
+        _display_calendar(logp.index, asof),
         ohlc,
         data_version=data_version,
     )

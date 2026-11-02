@@ -60,3 +60,45 @@ def test_to_cal_extrapolates_beyond_calendar_end():
     assert _to_cal(cal, cal[-1], 30.0) == str(pd.bdate_range(cal[-1], periods=31)[-1].date())
     assert _to_cal(cal, cal[-1], 29.6) == _to_cal(cal, cal[-1], 30.0)
     assert _to_cal(cal, cal[5], -10.0) == str(cal[0].date())
+
+
+def _fits_frame(rows):
+    """rows: (n, m, w, ahead)；其余列取能通过/不通过规则无关的固定值。"""
+    import pandas as pd
+
+    recs = []
+    for n, m, w, ahead in rows:
+        recs.append({"date": pd.Timestamp("2024-06-28"), "n": n, "tc": n - 1 + ahead, "m": m, "w": w, "A": 5.0, "B": -0.3,
+                     "C1": 0.02, "C2": 0.01, "sse": 0.01 * n, "r2": 0.8, "pow_tc": n - 1 + ahead, "pow_m": m, "pow_B": -0.3,
+                     "pow_sse": 0.02 * n, "lomb_w": w, "lomb_pn": 10.0, "df_t": -3.0, "y_std": 0.1})
+    return pd.DataFrame(recs)
+
+
+def test_indicators_boundary_share_and_display_only():
+    import pandas as pd
+
+    from research.features.lppls_rules import _derived, grid_rules, rules
+    from research.features.lppls_scan import BOX, BOXES
+
+    bx = BOXES[BOX]
+    assert BOX == "v2" and bx["tc"] == (-0.2, 0.2)
+    cal = pd.bdate_range("2022-01-03", periods=700)
+    date = pd.Timestamp("2024-06-28")
+    assert date in cal
+    # 6–12m 档 4 窗：一窗 m 撞上界 2.0、一窗 t_c 撞 +0.2dt、一窗 ω 撞下界 1.0、一窗在域内；2–4w 档 2 窗
+    rows = [(127, 2.0, 8.0, 10.0), (152, 0.5, 8.0, 0.2 * 151), (177, 0.5, 1.0, 5.0), (202, 0.5, 8.0, 5.0),
+            (10, 0.5, 8.0, 1.0), (20, 0.5, 8.0, 1.0)]
+    dd = _derived(_fits_frame(rows))
+    rr, gg = rules(dd), grid_rules(dd)
+    ind = export_contract._indicators(dd, rr, gg, cal, date)
+
+    b = ind["6-12m"]["boundary_share"]
+    assert b["m_hi"] == 0.25 and b["tc_hi"] == 0.25 and b["w_lo"] == 0.25 and b["any"] == 0.75
+    assert b["m_lo"] == 0.0 and b["tc_lo"] == 0.0 and b["w_hi"] == 0.0 and b["tol"] == export_contract.BOUNDARY_TOL
+    assert ind["6-12m"]["display_only"] is False
+    assert ind["6-12m"]["signal_status"] in ("signal", "no_qualified_fit")
+
+    assert ind["2-4w"]["display_only"] is True
+    assert ind["2-4w"]["signal_status"] == "display_only"
+    assert ind["2-4w"]["n_windows"] == 2 and "confidence" in ind["2-4w"]
+    assert ind["2-6y"] == {"signal_status": "not_computed", "direction": "positive", "display_only": False}
