@@ -27,6 +27,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch on-demand stock results
+        run: git fetch --depth=1 origin stock-results:stock-results || true
       - uses: actions/configure-pages@v5
         with:
           enablement: true   # 首次运行自动创建 Pages 站点（源=GitHub Actions），无需手动在 Settings 开启

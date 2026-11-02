@@ -1,0 +1,238 @@
+name: stock_query
+
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: Six-digit A-share code
+        type: string
+        required: true
+      variant:
+        description: Stock fitting variant
+        type: choice
+        options:
+          - stk_lite
+          - stk_full
+        default: stk_lite
+      history_weeks:
+        description: Number of weekly history frames (0–156)
+        type: string
+        default: "104"
+  repository_dispatch:
+    types: [stock_query]
+  pull_request:
+    paths:
+      - .github/workflows/stock_query.yml
+      - research/pipeline/stock.py
+      - scripts/publish_stock_result.sh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stock-results
+  cancel-in-progress: false
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.validate.outputs.code }}
+      variant: ${{ steps.validate.outputs.variant }}
+      weeks: ${{ steps.validate.outputs.weeks }}
+      query_failed: ${{ steps.run_query.outputs.failed }}
+    env:
+      INPUT_CODE: ${{ inputs.code }}
+      INPUT_VARIANT: ${{ inputs.variant }}
+      INPUT_HISTORY_WEEKS: ${{ inputs.history_weeks }}
+      DISPATCH_CODE: ${{ github.event.client_payload.code }}
+      DISPATCH_VARIANT: ${{ github.event.client_payload.variant }}
+      DISPATCH_HISTORY_WEEKS: ${{ github.event.client_payload.history_weeks }}
+    steps:
+      - name: Checkout PR merge commit for smoke runs
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout main for dispatched runs
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Validate query inputs
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              code=600519
+              variant=stk_lite
+              weeks=0
+              ;;
+            repository_dispatch)
+              code="${DISPATCH_CODE:-}"
+              variant="${DISPATCH_VARIANT:-stk_lite}"
+              weeks="${DISPATCH_HISTORY_WEEKS:-104}"
+              ;;
+            workflow_dispatch)
+              code="${INPUT_CODE:-}"
+              variant="${INPUT_VARIANT:-stk_lite}"
+              weeks="${INPUT_HISTORY_WEEKS:-104}"
+              ;;
+            *)
+              printf 'Unsupported event: %s\n' "$GITHUB_EVENT_NAME" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "$code" =~ ^[0-9]{6}$ ]]; then
+            echo "code must be exactly six digits" >&2
+            exit 1
+          fi
+          if [[ ! "$variant" =~ ^(stk_lite|stk_full)$ ]]; then
+            echo "variant must be stk_lite or stk_full" >&2
+            exit 1
+          fi
+          if [[ ! "$weeks" =~ ^[0-9]{1,3}$ ]] || (( 10#$weeks > 156 )); then
+            echo "history_weeks must be an integer from 0 through 156" >&2
+            exit 1
+          fi
+          weeks=$((10#$weeks))
+
+          {
+            printf 'CODE=%s\n' "$code"
+            printf 'VARIANT=%s\n' "$variant"
+            printf 'WEEKS=%s\n' "$weeks"
+          } >> "$GITHUB_ENV"
+          {
+            printf 'code=%s\n' "$code"
+            printf 'variant=%s\n' "$variant"
+            printf 'weeks=%s\n' "$weeks"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Restore stock fit cache
+        uses: actions/cache@v4
+        with:
+          path: data/stock/${{ steps.validate.outputs.code }}
+          key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-${{ github.run_id }}
+          restore-keys: |
+            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-
+            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-
+
+      - name: Probe market-data endpoint reachability
+        shell: bash
+        run: |
+          set -u
+          for host in web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --connect-timeout 10 --max-time 20 "https://$host" || true)
+            printf '%s: %s\n' "$host" "${code:-000}"
+          done
+
+      - name: Run stock query
+        id: run_query
+        shell: bash
+        env:
+          STOCK_STDERR: ${{ runner.temp }}/stock-query.stderr
+        run: |
+          set +e
+          mkdir -p out/stock
+          python -m research.pipeline.stock "$CODE" \
+            --variant "$VARIANT" \
+            --history-weeks "$WEEKS" \
+            --procs 4 \
+            --out out/stock 2>"$STOCK_STDERR"
+          result=$?
+          set -e
+          if (( result == 0 )); then
+            echo "failed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          stderr = Path(os.environ["STOCK_STDERR"]).read_text(
+              encoding="utf-8", errors="replace"
+          ).splitlines()
+          run_url = (
+              f'{os.environ["GITHUB_SERVER_URL"]}/{os.environ["GITHUB_REPOSITORY"]}'
+              f'/actions/runs/{os.environ["GITHUB_RUN_ID"]}'
+          )
+          error = {
+              "code": os.environ["CODE"],
+              "error": "\n".join(stderr[-20:]),
+              "run_url": run_url,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+          }
+          path = Path("out/stock") / f'{os.environ["CODE"]}_error.json'
+          path.write_text(json.dumps(error, ensure_ascii=False, indent=2), encoding="utf-8")
+          PY
+          echo "failed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload result for publishing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-result
+          path: out/stock/
+          if-no-files-found: error
+
+      - name: Fail query job after preserving its error result
+        if: steps.run_query.outputs.failed == 'true'
+        run: exit 1
+
+  publish:
+    needs: query
+    if: >-
+      always() &&
+      github.event_name != 'pull_request' &&
+      (needs.query.result == 'success' || needs.query.outputs.query_failed == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      CODE: ${{ needs.query.outputs.code }}
+      VARIANT: ${{ needs.query.outputs.variant }}
+      HISTORY_WEEKS: ${{ needs.query.outputs.weeks }}
+      STOCK_RESULT_DIR: out/stock
+      STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Download stock result
+        uses: actions/download-artifact@v4
+        with:
+          name: stock-result
+          path: out/stock
+
+      - name: Publish to stock-results branch
+        run: bash scripts/publish_stock_result.sh
+
+      - name: Dispatch Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
+
+      - name: Fail after publishing a failed query
+        if: needs.query.outputs.query_failed == 'true'
+        run: exit 1

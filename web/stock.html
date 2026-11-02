@@ -4,12 +4,14 @@ body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px}.sub{color:var(--mute);font-size:12px}.muted{color:var(--mute)}
 input{background:#0e1116;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:15px;width:140px}button{background:#21262d;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 12px}
 .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--none);color:var(--none);margin-left:6px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mute);font-weight:500}
-.warn{border-left:3px solid var(--amb);padding-left:10px;color:var(--mute);font-size:12px}iframe{width:100%;height:1600px;border:0;border-radius:10px}</style>
+.warn{border-left:3px solid var(--amb);padding-left:10px;color:var(--mute);font-size:12px}iframe{width:100%;height:1600px;border:0;border-radius:10px}
+canvas{width:100%;height:300px;display:block;margin-top:10px}.rc{border-color:var(--amb);color:var(--amb)}.leg{font-size:12px;color:var(--mute);margin-top:4px}.leg i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;vertical-align:-1px}</style>
 <script src="theme.js"></script></head><body><div class="wrap">
 <div class="card"><h2 style="margin:0 0 8px">个股输入 → 所属指数的顶部风险</h2>
 <input id="code" placeholder="6 位代码，如 600519" maxlength="6"> <button id="go">查看</button>
 <div class="sub" style="margin-top:8px">个股层面的 LPPLS 置信度/排名在开发段横截面（100 只 PIT 成分股）中<b>无预测信息</b>，产品不对个股本身给泡沫结论；这里只显示它所属指数的风险状态，个股自身的描述性曲线留在图表工作台并标"无证据"。</div></div>
 <div class="card" id="map" style="display:none"><table><tbody id="rows"></tbody></table><p class="warn" style="margin:10px 0 0" id="note"></p></div>
+<div class="card" id="own" style="display:none"></div>
 <iframe id="frame" style="display:none"></iframe>
 </div><script>
 const NAMES={sh000001:'上证指数',sh000016:'上证50',sh000300:'沪深300',sh000905:'中证500',sz399001:'深证成指',sz399006:'创业板指'};
@@ -34,9 +36,57 @@ async function go(){
   if(!/^\d{6}$/.test(c)){ alert('请输入 6 位代码'); return; }
   const {rows,primary}=await resolve(c);
   document.getElementById('map').style.display='';
-  document.getElementById('rows').innerHTML=`<tr><th style="width:28%">个股</th><td>${c}</td></tr>`+rows.map(x=>`<tr><th>${x[0]}</th><td>${NAMES[x[1]]} ${x[1]} <a class="sub" href="dashboard.html?sym=${x[1]}_latest" style="color:#58a6ff">在仪表盘中打开</a></td></tr>`).join('')+`<tr><th>个股自身 LPPLS</th><td class="muted">不给结论 <span class="badge">无证据</span></td></tr>`;
+  document.getElementById('rows').innerHTML=`<tr><th style="width:28%">个股</th><td>${c}</td></tr>`+rows.map(x=>`<tr><th>${x[0]}</th><td>${NAMES[x[1]]} ${x[1]} <a class="sub" href="dashboard.html?sym=${x[1]}_latest" style="color:#58a6ff">在仪表盘中打开</a></td></tr>`).join('')+`<tr><th>个股自身 LPPLS</th><td class="muted">见下方按需计算结果 <span class="badge rc">research_candidate</span></td></tr>`;
   document.getElementById('note').textContent='上证50/沪深300/中证500 成分来自中证指数公司最近公布名单（非 PIT，调样后以官网为准）；其余按代码段推断。指数风险状态的证据等级以仪表盘各 badge 为准。';
   const f=document.getElementById('frame'); f.style.display=''; f.src=`dashboard.html?sym=${primary}_latest`;
+  own(c);
+}
+
+const SC=['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'], SCL={'2-4w':'2–4周','1-3m':'1–3月','3-6m':'3–6月','6-12m':'6–12月','12-24m':'12–24月','2-6y':'2–6年'};
+const ACT='https://github.com/CareyPang/LPPL/actions/workflows/stock_query.yml';
+const esc=x=>String(x??'—').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const pct=v=>v==null?'—':(v*100).toFixed(1)+'%';
+async function own(c){
+  const el=document.getElementById('own'); el.style.display='';
+  el.innerHTML='<div class="sub">读取按需计算结果…</div>';
+  const [d,h,idx,err]=await Promise.all([loadJ(`mock/data/stock/${c}.json`),loadJ(`mock/data/stock/${c}_history.json`),loadJ('mock/data/stock/index.json'),loadJ(`mock/data/stock/${c}_error.json`)]);
+  const ent=idx&&idx[c];
+  const head=`<h3 style="margin:0 0 6px">个股自身 LPPLS（按需计算）<span class="badge rc">research_candidate</span></h3>`;
+  if(!d){
+    el.innerHTML=head+(err?`<p class="warn">最近一次计算失败（${esc(err.generated_at)}）：<br><code>${esc(err.error).replace(/\n/g,'<br>')}</code><br><a href="${esc(err.run_url)}" style="color:#58a6ff">查看运行日志</a></p>`:'')+
+      `<p class="muted">该代码还没有计算结果。到 <a href="${ACT}" style="color:#58a6ff">GitHub Actions · stock_query</a> 点 “Run workflow”，填代码 ${c}，约 1–5 分钟后刷新本页。</p>`;
+    return;
+  }
+  const m=d.stock_meta||{}, t=d.top||{}, ind=t.indicators||{}, b=t.bubble||{};
+  const fitTxt=x=>{const cf=x.confidence||{}; if(x.n_windows==null) return '未计算'; return (cf.standard||0)>0?'有合格拟合':'无合格拟合';};
+  const rows=SC.map(k=>{const x=ind[k]||{}, ev=(t.lppls_confidence?.scale_evidence||{})[k];
+    return `<tr><td>${SCL[k]}</td><td>${x.n_windows??'—'}</td><td>${fitTxt(x)}</td><td class="sub">${esc(x.signal_status)}</td><td class="sub">${esc(ev)}</td></tr>`}).join('');
+  const st=m.status==='eligible'?'':`<span class="badge" style="border-color:var(--red);color:var(--red)">${esc(m.status)}</span>`;
+  el.innerHTML=head+
+    `<div class="sub">${esc(d.name)} ${esc(d.symbol)} · 截止 ${esc(d.asof)} · ${esc(m.variant)} · ${esc(d.data_version)}${ent?` · 计算于 ${esc(ent.generated_at?.slice(0,16).replace('T',' '))} UTC <a href="${esc(ent.run_url)}" style="color:#58a6ff">日志</a>`:''} ${st}</div>
+    <p class="warn">${esc(m.note)}。${esc(m.eligibility_note)}${m.st?'；ST':''}${m.degenerate?'；截止日为一字板/停牌':''}。开发段横截面里个股置信度没有预测信息，按 dev_only 规则不显示置信度数值，只显示有无合格拟合。</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>尺度</th><th>窗口数</th><th>standard 集</th><th>状态</th><th>尺度证据</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="sub" style="margin-top:8px">当前泡沫段：起点 ${esc(b.start)} · 持续 ${esc(b.duration_days)} 天 · 最长尺度 ${esc(SCL[b.scale]||b.scale)}· 风险窗口 ${t.window?.start?esc(t.window.start)+' → '+esc(t.window.end):'无（'+esc(t.window?.rule)+'）'}</div>
+    <canvas id="oc"></canvas>
+    <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>该截止日 6–12月/12–24月 有合格拟合（任一集合）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80<i style="background:#58a6ff"></i>事后确认顶</div>`;
+  draw(d,h);
+}
+function draw(d,h){
+  const cv=document.getElementById('oc'), dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext('2d'); g.scale(dpr,dpr);
+  const ph=d.price_history||{}, ds=ph.dates||[], cl=ph.close||[]; if(!ds.length) return;
+  const L=50,R=40,T=10,B=22, t0=Date.parse(ds[0]), t1=Date.parse(ds[ds.length-1]);
+  const x=s=>L+(Date.parse(s)-t0)/(t1-t0||1)*(W-L-R);
+  const lo=Math.min(...cl), hi=Math.max(...cl), y=v=>T+(1-(v-lo)/(hi-lo||1))*(H-T-B), yc=v=>T+(1-v)*(H-T-B);
+  g.font='11px sans-serif'; g.fillStyle='#8b949e'; g.strokeStyle='#2a313b';
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4, yy=y(v); g.beginPath(); g.moveTo(L,yy); g.lineTo(W-R,yy); g.stroke(); g.fillText(v.toFixed(0),2,yy+4);}
+  (W<600?[0,.5,1]:[0,.25,.5,.75,1]).forEach(f=>{const s=ds[Math.min(ds.length-1,Math.round(f*(ds.length-1)))]; g.fillText(s.slice(0,7),Math.min(W-R-40,x(s)-18),H-6);});
+  const fr=(h&&h.frames)||[];
+  fr.forEach(f=>(f.scenarios||[]).forEach(sc=>{ if(!sc.q20_date||Date.parse(f.asof)<t0) return; const a=x(f.asof<sc.q20_date?sc.q20_date:f.asof), e=Math.min(W-R,x(sc.q80_date)); if(e<=a) return;
+    g.fillStyle=`rgba(248,81,73,${.15+.35*(sc.share||0)})`; g.fillRect(a,T,e-a,6+(H-T-B)*0); }));
+  g.strokeStyle='#8b949e'; g.lineWidth=1.2; g.beginPath(); ds.forEach((s,i)=>i?g.lineTo(x(s),y(cl[i])):g.moveTo(x(s),y(cl[i]))); g.stroke();
+  fr.forEach(f=>{ if(Date.parse(f.asof)<t0) return; const v=Math.max(f.conf?.['6-12m']||0,f.conf?.['12-24m']||0); if(v<=0) return; g.fillStyle='#d29922'; g.fillRect(x(f.asof)-1.5,H-B-8,3,8); });
+  ((h&&h.confirmed_tops)||[]).forEach(tp=>{ if(Date.parse(tp.date)<t0) return; const i=ds.indexOf(tp.date); const yy=i>=0?y(cl[i]):T+10; g.fillStyle='#58a6ff'; g.beginPath(); g.moveTo(x(tp.date),yy-4); g.lineTo(x(tp.date)-5,yy-12); g.lineTo(x(tp.date)+5,yy-12); g.fill(); });
 }
 document.getElementById('go').onclick=go; document.getElementById('code').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
 { const qc=new URLSearchParams(location.search).get('code'); if(qc&&/^\d{6}$/.test(qc)){ document.getElementById('code').value=qc; go(); } }
