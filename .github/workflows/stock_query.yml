@@ -126,8 +126,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/stock/${{ steps.validate.outputs.code }}
-          key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}
+          key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-${{ github.run_id }}
           restore-keys: |
+            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-
             stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-
 
       - name: Probe market-data endpoint reachability
