@@ -40,7 +40,7 @@ def _publish(repo, result_dir, code, *, variant="stk_lite", weeks="104"):
         "STOCK_RESULT_DIR": str(result_dir),
         "STOCK_RUN_URL": f"https://example.test/runs/{code}",
     }
-    subprocess.run(
+    return subprocess.run(
         ["bash", str(SCRIPT)],
         cwd=repo,
         env=env,
@@ -110,3 +110,169 @@ def test_publisher_creates_orphan_updates_index_and_publishes_error(tmp_path):
     assert index["000002"]["history_weeks"] == 0
     assert _git("--git-dir", str(origin), "show", "stock-results:stock/000002.json")
     assert _remote_json(origin, "stock/000002_error.json") == error
+
+
+def test_batch_publisher_keeps_only_variant_and_asof_compatible_histories(tmp_path):
+    origin, repo = _repositories(tmp_path)
+    stock_dir = repo / "stock"
+    stock_dir.mkdir()
+    histories = {
+        "000001": {
+            "variant": "stk_lite",
+            "frames": [{"asof": "2026-10-29"}, {"asof": "2026-10-30"}],
+        },
+        "000002": {
+            "variant": "stk_full",
+            "frames": [{"asof": "2026-10-30"}],
+        },
+        "000003": {
+            "variant": "stk_lite",
+            "frames": [{"asof": "2026-10-31"}],
+        },
+    }
+    for code, history in histories.items():
+        (stock_dir / f"{code}_history.json").write_text(
+            json.dumps(history), encoding="utf-8"
+        )
+    _git("checkout", "-b", "stock-results", cwd=repo)
+    _git("add", "stock", cwd=repo)
+    _git("commit", "-m", "initial stock histories", cwd=repo)
+    _git("push", "-u", "origin", "stock-results", cwd=repo)
+    _git("checkout", "main", cwd=repo)
+
+    result_dir = repo / "out" / "stock"
+    result_dir.mkdir(parents=True)
+    for code in histories:
+        (result_dir / f"{code}.json").write_text(
+            json.dumps(
+                {
+                    "asof": "2026-10-30",
+                    "stock_meta": {"status": "eligible", "variant": "stk_lite"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    _publish(repo, result_dir, "", variant="stk_lite", weeks="0")
+
+    published_files = set(
+        _git(
+            "--git-dir",
+            str(origin),
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "stock-results",
+            "stock/",
+        ).splitlines()
+    )
+    assert "stock/000001_history.json" in published_files
+    assert "stock/000002_history.json" not in published_files
+    assert "stock/000003_history.json" not in published_files
+    index = _remote_json(origin, "stock/index.json")
+    assert index["000001"]["history_weeks"] == 2
+    assert index["000002"]["history_weeks"] == 0
+    assert index["000003"]["history_weeks"] == 0
+
+
+def test_batch_publisher_skips_older_records_and_replaces_with_newer(tmp_path):
+    origin, repo = _repositories(tmp_path)
+    stock_dir = repo / "stock"
+    stock_dir.mkdir()
+    published_record = {
+        "asof": "2026-11-02",
+        "name": "published",
+        "stock_meta": {"status": "eligible", "variant": "stk_lite"},
+    }
+    published_history = {
+        "variant": "stk_lite",
+        "frames": [{"asof": "2026-11-01"}, {"asof": "2026-11-02"}],
+    }
+    published_index = {
+        "000001": {
+            "name": "published",
+            "asof": "2026-11-02",
+            "variant": "stk_lite",
+            "history_weeks": 2,
+            "generated_at": "2026-11-02T10:00:00+00:00",
+            "run_url": "https://example.test/old",
+            "status": "eligible",
+        }
+    }
+    (stock_dir / "000001.json").write_text(
+        json.dumps(published_record), encoding="utf-8"
+    )
+    (stock_dir / "000001_history.json").write_text(
+        json.dumps(published_history), encoding="utf-8"
+    )
+    (stock_dir / "index.json").write_text(
+        json.dumps(published_index), encoding="utf-8"
+    )
+    _git("checkout", "-b", "stock-results", cwd=repo)
+    _git("add", "stock", cwd=repo)
+    _git("commit", "-m", "initial published stock result", cwd=repo)
+    _git("push", "-u", "origin", "stock-results", cwd=repo)
+    _git("checkout", "main", cwd=repo)
+
+    result_dir = repo / "out" / "stock"
+    result_dir.mkdir(parents=True)
+    backfill_record = {
+        "asof": "2026-10-30",
+        "name": "backfill",
+        "stock_meta": {"status": "eligible", "variant": "stk_lite"},
+    }
+    (result_dir / "000001.json").write_text(
+        json.dumps(backfill_record), encoding="utf-8"
+    )
+    (result_dir / "000001_error.json").write_text(
+        json.dumps({"code": "000001", "asof": "2026-10-30", "error": "old failure"}),
+        encoding="utf-8",
+    )
+    (result_dir / "000001_history.json").write_text(
+        json.dumps({"variant": "stk_full", "frames": [{"asof": "2026-10-30"}]}),
+        encoding="utf-8",
+    )
+
+    backfill_run = _publish(repo, result_dir, "", weeks="0")
+    assert (
+        "skip 000001: published asof 2026-11-02 newer than batch 2026-10-30"
+        in backfill_run.stdout
+    )
+    assert _remote_json(origin, "stock/000001.json") == published_record
+    assert _remote_json(origin, "stock/index.json") == published_index
+    assert _remote_json(origin, "stock/000001_history.json") == published_history
+    published_files = set(
+        _git(
+            "--git-dir", str(origin), "ls-tree", "-r", "--name-only", "stock-results", "stock/"
+        ).splitlines()
+    )
+    assert "stock/000001_error.json" not in published_files
+
+    latest_record = {
+        "asof": "2026-11-03",
+        "name": "new latest",
+        "stock_meta": {"status": "eligible", "variant": "stk_lite"},
+    }
+    latest_history = {
+        "variant": "stk_lite",
+        "frames": [
+            {"asof": "2026-11-01"},
+            {"asof": "2026-11-02"},
+            {"asof": "2026-11-03"},
+        ],
+    }
+    (result_dir / "000001.json").write_text(
+        json.dumps(latest_record), encoding="utf-8"
+    )
+    (result_dir / "000001_error.json").unlink()
+    (result_dir / "000001_history.json").write_text(
+        json.dumps(latest_history), encoding="utf-8"
+    )
+
+    _publish(repo, result_dir, "", weeks="0")
+
+    assert _remote_json(origin, "stock/000001.json") == latest_record
+    assert _remote_json(origin, "stock/000001_history.json") == latest_history
+    latest_index = _remote_json(origin, "stock/index.json")
+    assert latest_index["000001"]["asof"] == "2026-11-03"
+    assert latest_index["000001"]["history_weeks"] == 3
