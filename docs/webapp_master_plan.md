@@ -12,11 +12,13 @@
 | B 个股引擎（HFQ、PIT、LPPLS v2、104 周历史、缓存） | 完成，CI 绿 | #23 |
 | C 市场背景数据层（板块资金流/涨停池/北向成交额/中证估值/两融）+ 修复深交所两融单位 | 完成，CI 绿；东财板块 clist 本机 502，待复测 | #24 |
 | D GitHub Actions 按需计算 → `stock-results` 分支 → Pages；`/lab/stock.html` 个股结果卡 | 完成，CI 绿；GitHub 托管机连得上腾讯/新浪，茅台 34 秒 | #25（叠在 #23 上） |
-| E 沪深300 成分预算库 | 盘中首次运行作废；修复后重跑完成：300/300、0 失败，297 eligible，600837/601989 为 delisted_or_long_suspended（in_stats=false）；600570 的停牌误判已修复并重跑为 eligible | #23 |
+| E 沪深300 成分预算库 | 盘中首次运行作废；修复后重跑完成：300/300、0 失败，298 eligible，600837/601989 为 delisted_or_long_suspended（in_stats=false）；600570 的停牌误判已修复并重跑为 eligible | #23 |
 | F 个股/行业预登记草案 + OD prompt | 草案完成：`docs/preregistration_stock_draft.md`、`docs/od_prompt_stock_market.md` | #22 |
 | G 本表 + 交接 | 完成 | #22 |
+| H 夜间预算库（固定截止日、分片并行、成分股广度 descriptive、批量发布） | 完成，待 CI | #27（叠在 #25 上） |
+| I 时间层/价格层深化方案（拟合与回测口径、回撤/反弹幅度方法、执行顺序） | 文档完成：`docs/time_price_layer_plan.md` | #22 |
 
-合并顺序待用户决定：#22 → #23 → #24 → #25（#23 合并后把 #25 的 base 改回 main）。
+合并顺序待用户决定：#22 → #23 → #24 → #25 → #27（#23 合并后把 #25 的 base 改回 main，#25 合并后把 #27 的 base 改回 main）。用户分支 PR #26（`od/home-first-paint`，Open Design 主页海洋视频，草稿）只改 `frontend/`，本地构建桌面/手机均可渲染、无 JS 报错；待真机复核手机宽度引言换行，新增约 16 MB mp4 建议日后改走 Release/LFS。
 **已知问题**：`reports/ladder_bottom_margin_dev.*`（dev_only B5）是在深交所两融单位 bug 修复前生成的，已过期，待重算。
 
 ## 0.2 当前交接（2026-11-02）
@@ -24,6 +26,8 @@
 - 开发 VM 上 Tencent `fqkline` 返回 HTTP 501 反爬 JS 页面。PR #23 `dcfbabe` 增加 `kline/kline` 原始日线回退；在 683 日数据上比较 `kline` 原始数据 × Sina HFQ 与 `fqkline` 原始数据 × Sina HFQ，最大相对差异 ≤5e-6。endpoint 不改变 `data_version`，`stock_meta.source` 记录实际来源。
 - 后续预计算批次应在北京时间 15:30 后运行，并传入固定 `--asof`，确保横截面共用同一截止日。
 - 合并完成后，手动运行一次 `stock_query`（600519）以创建 `stock-results`，再在 Pages 上验证 `/lab/stock.html?code=600519`。
+- #27 合并后，手动触发一次 `stock_nightly`（universe_csi300，asof 留空 = 最后已收盘交易日，6 shards），确认 `stock-results` 出现 `breadth_sh000300.json` 且 `asof_consistent=true`；之后由定时任务（工作日 17:40 北京时间）维护。
+- 下一步研究顺序见 `docs/time_price_layer_plan.md` §3：1990 年代 A 股数据冻结 → 登记 Q-DD2 / Q-W1（需用户批准）→ 外部市场 Round 2。
 
 ## 1. 已完成（按层）
 | 层 | 状态 | 关键文件 |
