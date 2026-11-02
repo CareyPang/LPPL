@@ -15,7 +15,7 @@
 | E 沪深300 成分预算库 | 盘中首次运行作废；修复后重跑完成：300/300、0 失败，298 eligible，600837/601989 为 delisted_or_long_suspended（in_stats=false）；600570 的停牌误判已修复并重跑为 eligible | #23 |
 | F 个股/行业预登记草案 + OD prompt | 草案完成：`docs/preregistration_stock_draft.md`、`docs/od_prompt_stock_market.md` | #22 |
 | G 本表 + 交接 | 完成 | #22 |
-| H 夜间预算库（固定截止日、分片并行、成分股广度 descriptive、批量发布） | 完成，待 CI | #27（叠在 #25 上） |
+| H 夜间预算库（固定截止日、分片并行、成分股广度 descriptive、批量发布） | 完成，CI 绿 | #27（叠在 #25 上） |
 | I 时间层/价格层深化方案（拟合与回测口径、回撤/反弹幅度方法、执行顺序） | 文档完成：`docs/time_price_layer_plan.md` | #22 |
 
 合并顺序待用户决定：#22 → #23 → #24 → #25 → #27（#23 合并后把 #25 的 base 改回 main，#25 合并后把 #27 的 base 改回 main）。用户分支 PR #26（`od/home-first-paint`，Open Design 主页海洋视频，草稿）只改 `frontend/`，本地构建桌面/手机均可渲染、无 JS 报错；待真机复核手机宽度引言换行，新增约 16 MB mp4 建议日后改走 Release/LFS。
