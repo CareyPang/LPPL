@@ -94,3 +94,18 @@
 - 前端所有数据访问经 `frontend/app/lppl-data.js`：`loadSymbol(sym)`、`loadPriceLayer()`、`loadCatalog()` 从 `lab/mock/data/` 的静态 JSON 加载；页面组件不得直接 fetch 路径。
 - 后端字段改动先改 `docs/product_contract.md` 与本文，再改 JSON；前端字段改名在适配层做。
 - 示例：`web/mock/data/sh000001_latest.json`（最新）、`sh000001_2015-06-12.json`（回放，含 movie）。
+
+## 6. 市场背景 market_latest.json
+
+`web/mock/data/market/market_latest.json` 与 `market_<date>.json` 是描述性市场背景，不参与 LPPLS 拟合、报警或任何模型。每个来源独立记录 `url_host`、`fetched_at`、`ok` 和可选 `error`；单源失败时该节数据为空或为 null，其他来源仍写入。
+
+| 路径 | 内容与单位 |
+|---|---|
+| `board_flow.industry / concept / region[]` | 东财行业、概念、地域板块；资金流列为人民币元，涨跌幅和资金流占比为百分数。包含当日、5 日、10 日口径；东财订单规模分类资金流是估算值，不是交易所官方数据。每日原始快照另存 `data/market/board_flow/<date>.csv.gz`，固定 15 列。 |
+| `board_flow.history_sample` | 一个行业板块的日度历史样本；`date`、主力及超大/大/中/小单净额，单位人民币元。字段顺序以 `f51` 日期、`f52` 主力、`f53` 小单、`f54` 中单、`f55` 大单、`f56` 超大单解析；仅用于描述。 |
+| `limit_pools` | 涨停 (`zt`)、炸板 (`zb`)、跌停 (`dt`) 数量；`break_rate=zb/(zt+zb)` 为比例；连板梯度与前 20 项包含代码、名称、连板数/时间。 |
+| `northbound.data` | `sse_nb_turnover`、`szse_nb_turnover`、`sse_nb_trades`、`szse_nb_trades` 及 ETF 成交额；成交额保留 HKEX 原值、不缩放。2024-08 起北向数据不含买入、卖出或净额，不得称为“净流入”。缺少当日 HKEX 文件时为 null。 |
+| `valuation.indices.<code>` | 中证指数 `000300`、`000905`、`000016`、`000852` 最新日期、PE1、PE2、股息率 DY1/DY2，以及文件历史可用时的滚动 10 年 PE1 分位。PE 倍数为倍，股息率为百分数。 |
+| `margin.data` | 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据；`fin_balance_sse`、`fin_balance_szse`、`fin_balance_all` 和变化值统一为人民币元。包含 `latest_date`、T+1 `available_date`、`stale`（距 asof 超过 5 个交易日为 true）。刷新失败、stale 或 SZSE/SSE 融资余额比率超出 `[0.3, 3]` 时 `sources.margin.ok=false`，仍展示可用数据。 |
+
+所有市场背景数值均带 `evidence: "descriptive"`；只能作为事实展示，不得转成预测、目标价或报警信号。
