@@ -181,7 +181,7 @@
 | 前端 | Open Design 主页/终端/回测页、FCO 补全 | 已合并 | #11 #14 #15 #17 #19 #20 |
 | A 规划 | 总规划、交接、t_c 聚类探索、时间/价格层方案、**本文件** | 待合并 | #22，`docs/` |
 | B 个股引擎 | 后复权、PIT、未收盘剔除、停牌/退市、备用接口 | 待合并，CI 绿 | #23，`research/pipeline/stock.py` |
-| C 市场背景数据 | 两融/北向/估值/涨停池/板块资金流 | 待合并，CI 绿 | #24，`research/data/market*.py` |
+| C 市场背景数据 | 两融/北向/估值/涨停池/板块资金流 | 待合并，CI 绿 | #24，`research/data/market_base.py`、`research/data/margin.py` |
 | D 按需计算 | Actions → stock-results → Pages；/lab/ 个股页 | 待合并，CI 绿 | #25，`.github/workflows/stock_query.yml` |
 | E 夜间预算库 | 固定截止日、分片、成分股广度 | 修复审查意见中 | #27，`research/pipeline/stock_batch.py`、`.github/workflows/stock_nightly.yml` |
 | 你的主页改动 | 海洋视频、首屏、可读性 | 草稿，待你决定 | #26，`frontend/home.html`、`frontend/assets/ocean/` |
