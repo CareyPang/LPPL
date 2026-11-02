@@ -113,7 +113,9 @@ def _install_fake_model(monkeypatch):
     monkeypatch.setattr(stock, "build_record", _fake_record)
     monkeypatch.setattr(stock, "_variant_windows", lambda variant, n: (127, 152))
     monkeypatch.setattr(
-        stock, "_trading_days_stale", lambda last_bar, asof=None: (0, None)
+        stock,
+        "_trading_days_stale",
+        lambda last_bar, asof=None, cutoff=None: (0, None),
     )
 
 
@@ -171,19 +173,57 @@ def test_reference_calendar_is_cached_and_drops_unclosed_bars(monkeypatch):
         calls.append((sym, start))
         return raw.copy()
 
-    monkeypatch.setattr(
-        stock,
-        "_now",
-        lambda: pd.Timestamp("2026-11-02 10:00", tz="Asia/Shanghai"),
-    )
     monkeypatch.setattr(stock, "tencent_raw", fake_tencent)
     stock._reference_calendar.cache_clear()
     try:
-        first = stock._reference_calendar()
-        second = stock._reference_calendar()
+        cutoff = today - pd.Timedelta(days=1)
+        first = stock._reference_calendar(cutoff)
+        second = stock._reference_calendar(cutoff)
         assert first.equals(second)
         assert first.tolist() == [today - pd.Timedelta(days=1)]
         assert calls == [("sh000001", stock.DEFAULT_START)]
+    finally:
+        stock._reference_calendar.cache_clear()
+
+
+def test_load_stock_and_calendar_share_close_cutoff(monkeypatch):
+    today = pd.Timestamp("2026-11-02")
+    raw = _ohlc(600)
+    raw["date"] = pd.bdate_range(end=today + pd.Timedelta(days=1), periods=len(raw))
+    factors = pd.DataFrame({"date": ["1900-01-01"], "factor": [1.0]})
+    now_values = iter(
+        (
+            pd.Timestamp("2026-11-02 15:29", tz="Asia/Shanghai"),
+            pd.Timestamp("2026-11-02 15:31", tz="Asia/Shanghai"),
+        )
+    )
+    now_calls = []
+    fetches = []
+
+    def fake_now():
+        now_calls.append(True)
+        return next(now_values)
+
+    def fake_tencent(sym, start):
+        fetches.append(sym)
+        return raw.copy()
+
+    monkeypatch.setattr(stock, "_now", fake_now)
+    monkeypatch.setattr(stock, "tencent_raw", fake_tencent)
+    monkeypatch.setattr(stock, "sina_factors", lambda sym, kind: factors)
+    stock._reference_calendar.cache_clear()
+    try:
+        prices, _, meta = stock.load_stock("600570", start="2020-01-01")
+        status = stock._stock_status_meta(prices, False, meta)
+
+        assert prices.date.iloc[-1] == today - pd.Timedelta(days=3)
+        assert meta["dropped_unclosed_bar"] is True
+        assert meta["reference_cutoff"] == today - pd.Timedelta(days=1)
+        assert status["trading_days_stale"] == 0
+        assert status["status"] == "eligible"
+        assert status["in_stats"] is True
+        assert now_calls == [True]
+        assert fetches == ["sh600570", "sh000001"]
     finally:
         stock._reference_calendar.cache_clear()
 
@@ -202,7 +242,7 @@ def test_reference_calendar_gap_controls_stock_status(
     prices = _ohlc(600)
     last_bar = pd.Timestamp(prices.date.iloc[-1])
     calendar = pd.DatetimeIndex(pd.bdate_range(last_bar, periods=gap + 1))
-    monkeypatch.setattr(stock, "_reference_calendar", lambda: calendar)
+    monkeypatch.setattr(stock, "_reference_calendar", lambda cutoff: calendar)
 
     meta = stock._stock_status_meta(prices, False, {"dropped_unclosed_bar": False})
     assert meta["trading_days_stale"] == gap
@@ -215,7 +255,7 @@ def test_reference_calendar_gap_is_clipped_at_asof(monkeypatch):
     last_bar = pd.Timestamp(prices.date.iloc[-1])
     calendar = pd.DatetimeIndex(pd.bdate_range(last_bar, periods=10))
     asof = calendar[5]
-    monkeypatch.setattr(stock, "_reference_calendar", lambda: calendar)
+    monkeypatch.setattr(stock, "_reference_calendar", lambda cutoff: calendar)
 
     meta = stock._stock_status_meta(
         prices, False, {"dropped_unclosed_bar": False}, asof
@@ -229,7 +269,7 @@ def test_stale_calendar_does_not_override_ineligible_status(monkeypatch):
     prices = _ohlc(600)
     last_bar = pd.Timestamp(prices.date.iloc[-1])
     calendar = pd.DatetimeIndex(pd.bdate_range(last_bar, periods=61))
-    monkeypatch.setattr(stock, "_reference_calendar", lambda: calendar)
+    monkeypatch.setattr(stock, "_reference_calendar", lambda cutoff: calendar)
 
     insufficient = stock._stock_status_meta(
         _ohlc(499), False, {"dropped_unclosed_bar": False}
