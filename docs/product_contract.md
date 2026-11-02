@@ -82,4 +82,4 @@
 - `limit_pools` 包含涨停、炸板、跌停数，`break_rate` 是 `zb/(zt+zb)` 的比例，另有连板梯度和各池前 20 名。
 - `northbound` 只保存 HKEX 北向成交额、交易笔数与 ETF 成交额，成交额保留 HKEX 原值、不缩放。2024-08 后官方文件不提供买卖额或净额；字段名只能使用 turnover/trades，不得出现“净流入”。文件缺失返回 null。
 - `valuation.indices` 包含四个指定中证指数的日期、PE1/PE2、DY1/DY2 和可用时的滚动十年 PE1 分位；PE 为倍数，股息率为百分数。
-- `margin.data` 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据，余额与变化的单位均为人民币元，并遵循 T+1 可用日期；提供 `latest_date`、`stale` 和 `trading_days_stale`。距 asof 超过 5 个交易日或刷新失败时，`sources.margin.ok=false`，但仍展示已有数据。
+- `margin.data` 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据，`fin_balance_sse`、`fin_balance_szse`、`fin_balance_all` 与变化值均为人民币元，并遵循 T+1 可用日期；提供 `latest_date`、`stale` 和 `trading_days_stale`。距 asof 超过 5 个交易日、刷新失败或 SZSE/SSE 融资余额比率超出 `[0.3, 3]` 时，`sources.margin.ok=false`，但仍展示已有数据。

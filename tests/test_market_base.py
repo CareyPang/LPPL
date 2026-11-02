@@ -280,6 +280,8 @@ def _synthetic_margin_frame(dates, calendar):
             {
                 "date": value_date,
                 "avail_date": available_date,
+                "fin_balance_sse": float((i + 100) * 1e8),
+                "fin_balance_szse": float((i + 100) * 1e8),
                 "fin_balance_all": float(i + 100),
                 "total_balance_all": float((i + 100) * 2),
             }
@@ -355,8 +357,8 @@ def test_margin_refresh_uses_existing_exchange_fetchers(tmp_path, monkeypatch):
     assert calls["szse"][1] == 0.8
     assert error is None
     assert trading_dates.equals(pd.DatetimeIndex(dates))
-    assert frame.iloc[-1]["fin_balance_all"] == 304.0
-    assert frame.iloc[-1]["total_balance_all"] == 704.0
+    assert frame.iloc[-1]["fin_balance_all"] == 20_200_000_102.0
+    assert frame.iloc[-1]["total_balance_all"] == 40_200_000_302.0
 
 
 def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
@@ -380,6 +382,8 @@ def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
         "latest_date": "2026-10-20",
         "stale": True,
         "trading_days_stale": 6,
+        "fin_balance_sse": 100.0,
+        "fin_balance_szse": 20.0,
         "fin_balance_all": 100.0,
         "_refresh_error": "fetch failed",
     }
@@ -390,6 +394,7 @@ def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
     assert payload["sources"]["margin"]["ok"] is False
     assert "fetch failed" in payload["sources"]["margin"]["error"]
     assert "stale" in payload["sources"]["margin"]["error"]
+    assert "SZSE/SSE ratio out of range" in payload["sources"]["margin"]["error"]
     assert payload["margin"]["data"]["latest_date"] == "2026-10-20"
 
 

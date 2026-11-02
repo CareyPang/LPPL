@@ -809,6 +809,8 @@ def _margin_snapshot(asof: str, cache: Path = MARGIN_CACHE) -> dict:
         "available_date": latest["avail_date"].date().isoformat(),
         "rows_available": len(eligible),
     }
+    for field in ("fin_balance_sse", "fin_balance_szse"):
+        result[field] = _number(latest[field])
     calendar = trading_dates
     if len(calendar) == 0:
         calendar = pd.DatetimeIndex(frame["date"].dropna().unique())
@@ -953,6 +955,12 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
                 f"{margin_data['latest_date']}, "
                 f"{margin_data['trading_days_stale']} trading days since availability"
             )
+        balance_sse = margin_data.get("fin_balance_sse")
+        balance_szse = margin_data.get("fin_balance_szse")
+        if balance_sse is not None and balance_szse is not None:
+            ratio = balance_szse / balance_sse if balance_sse > 0 else float("inf")
+            if not 0.3 <= ratio <= 3:
+                errors.append(f"SZSE/SSE ratio out of range: {ratio:.4f}")
         sources["margin"] = _source_meta("sse.szse.official", not errors, "; ".join(errors) or None)
     except Exception as exc:
         margin_section["data"] = None
