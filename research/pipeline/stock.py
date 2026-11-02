@@ -5,26 +5,28 @@ import argparse
 import hashlib
 import json
 import os
-import subprocess
 from multiprocessing import Pool
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
+os.environ.setdefault("LPPLS_BOX", "v2")
 
-from ..data import cache
-from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from ..data import cache  # noqa: E402
+from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
 from ..eval.export_contract import (
+    MODEL_VERSION,
     _derived,
     _history_frame,
     build_record,
-)
-from ..eval.label_diag import ps_tops
-from ..features import lppls_scan
-from ..features.lppls_rules import rules
-from ..lppls import core as _core
-from ..pipeline import universe
-from ..pipeline.daily import fit_asof
+)  # noqa: E402
+from ..eval.label_diag import ps_tops  # noqa: E402
+from ..features import lppls_scan  # noqa: E402
+from ..features.lppls_rules import rules  # noqa: E402
+from ..lppls import core as _core  # noqa: E402
+from ..pipeline import universe  # noqa: E402
+from ..pipeline.daily import fit_asof  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 NAMES_PATH = ROOT / "web/mock/data/stock_names.json"
@@ -53,9 +55,17 @@ def _fit_worker(task: tuple[pd.Timestamp, int]) -> pd.DataFrame:
 
 
 def _set_allow_inside() -> bool:
+    _ensure_v2_box()
     inside = bool(lppls_scan.BOXES[lppls_scan.BOX]["inside"])
     _core.ALLOW_INSIDE = inside
     return inside
+
+
+def _ensure_v2_box() -> None:
+    if lppls_scan.BOX != "v2":
+        raise RuntimeError(
+            f"stock engine requires LPPLS_BOX=v2, got {lppls_scan.BOX!r}"
+        )
 
 
 def _fit_pairs(
@@ -193,9 +203,10 @@ def _eligibility(ohlc: pd.DataFrame, st: bool | None) -> dict:
     close = ohlc["close"].astype(float)
     sample = ohlc.tail(505)
     returns = close.pct_change().reindex(sample.index)
+    return_threshold = 0.045 if st is True else 0.095
     if len(sample):
         share = float(
-            ((sample.high == sample.low) & (returns.abs() >= 0.095)).sum()
+            ((sample.high == sample.low) & (returns.abs() >= return_threshold)).sum()
             / len(sample)
         )
     else:
@@ -230,16 +241,24 @@ def _eligibility(ohlc: pd.DataFrame, st: bool | None) -> dict:
 
 
 def _version() -> str:
-    try:
-        return subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
+    digest = hashlib.sha1()
+    for path in (
+        ROOT / "research/lppls/core.py",
+        ROOT / "research/features/lppls_scan.py",
+        ROOT / "research/pipeline/daily.py",
+    ):
+        digest.update(path.read_bytes())
+    digest.update(lppls_scan.BOX.encode("utf-8"))
+    return digest.hexdigest()[:12]
+
+
+def _fit_input_version(
+    logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]
+) -> str:
+    available = logp.loc[logp.index <= asof].to_numpy(dtype=float)
+    n = max(windows, default=len(available))
+    payload = np.round(available[-n:], 10).tobytes()
+    return hashlib.sha1(payload).hexdigest()[:12]
 
 
 def _fit_logp(ohlc: pd.DataFrame) -> pd.Series:
@@ -276,7 +295,7 @@ def _record(
     )
     name, st = _name_and_st(code6)
     eligibility = _eligibility(ohlc, st)
-    record["model_version"] = f"{record['model_version']}+{variant}"
+    record["model_version"] = f"{MODEL_VERSION}+{variant}"
     if name:
         record["name"] = name
     record["top"]["evidence_override"] = STOCK_EVIDENCE
@@ -310,6 +329,7 @@ def predict(
     procs: int | None = None,
     trust_boot: int = 0,
 ) -> dict:
+    _ensure_v2_box()
     code = _validate_code(code6)
     if variant not in ("stk_lite", "stk_full"):
         raise ValueError(f"unknown stock variant: {variant}")
@@ -402,6 +422,7 @@ def history(
     procs: int | None = None,
     cache_dir: Path = Path("data/stock"),
 ) -> dict:
+    _ensure_v2_box()
     code = _validate_code(code6)
     if variant not in ("stk_lite", "stk_full"):
         raise ValueError(f"unknown stock variant: {variant}")
@@ -413,6 +434,10 @@ def history(
     cache_path = Path(cache_dir) / code / variant / "fits.parquet"
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cached = _cache_frame(cache_path)
+    input_versions = {
+        date: _fit_input_version(logp, date, windows)
+        for date in asofs
+    }
     existing_keys = {
         (
             str(pd.Timestamp(row.asof).date()),
@@ -431,13 +456,21 @@ def history(
             (date, n)
             for n in windows
             if n <= len(available)
-            and (str(date.date()), int(n), data_version, code_version) not in existing_keys
+            and (
+                str(date.date()),
+                int(n),
+                input_versions[date],
+                code_version,
+            )
+            not in existing_keys
         )
     new_fits = _fit_pairs(logp, missing_pairs, procs)
     if len(new_fits):
         append = new_fits[lppls_scan.COLS].copy()
         append["asof"] = pd.to_datetime(append.date).dt.normalize()
-        append["data_version"] = data_version
+        append["data_version"] = [
+            input_versions[pd.Timestamp(date)] for date in append.date
+        ]
         append["code_version"] = code_version
         if cached.empty:
             cached = append[FIT_CACHE_COLUMNS].copy()
@@ -453,7 +486,7 @@ def history(
         available = logp.loc[logp.index <= date]
         key_rows = cached[
             (pd.to_datetime(cached["asof"]) == date)
-            & (cached.data_version == data_version)
+            & (cached.data_version == input_versions[date])
             & (cached.code_version == code_version)
             & (cached.n <= len(available))
         ]
@@ -476,7 +509,7 @@ def history(
     tops = [{k: v for k, v in event.items() if k != "evidence"} for event in confirmed_tops]
     return {
         "symbol": sym,
-        "model_version": f"prereg_v1.7_v2+{variant}",
+        "model_version": f"{MODEL_VERSION}+{variant}",
         "evidence": STOCK_EVIDENCE,
         "rule": "每个截止日仅用此前个股拟合生成的情景区间；个股未经过样本外检验",
         "variant": variant,

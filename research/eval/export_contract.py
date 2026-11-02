@@ -64,6 +64,7 @@ def record(sym: str, asof: str) -> dict:
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
+MODEL_VERSION = "prereg_v1.7_v2"
 HISTORY_SCANS = {
     "dev": Path("data/features/lppls_v2"),
     "cal": Path("data/features/lppls_v2_cal"),
@@ -359,7 +360,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}
               if len(w612) else {"start": None, "end": None, "rule": "6–12 月档无合格拟合", "evidence": "dev"})
     rec = {
-        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": "prereg_v1.7_v2",
+        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
         "top": {
             "p20": {"value": None, "evidence": "fail_i_iii",
                     "notes": ["冻结 p20=R2（GSADF）；校准段 ΔBrier +0.00077 [−0.0013, +0.0030] 未通过；测试段 −0.00158 [−0.00231, −0.00003] 点过线但留出 4/7 翻转（判据 iii 不满足），不显示概率",
@@ -486,7 +487,7 @@ def history(sym: str) -> dict:
     ]
     return {
         "symbol": sym,
-        "model_version": "prereg_v1.7_v2",
+        "model_version": MODEL_VERSION,
         "evidence": "dev_only",
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "frames": frames,

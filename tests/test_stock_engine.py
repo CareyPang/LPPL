@@ -1,7 +1,9 @@
 import hashlib
+import subprocess
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from research.data import tencent_sina
 from research.eval import export_contract
@@ -178,16 +180,13 @@ def test_history_is_point_in_time_and_matches_predict(monkeypatch, tmp_path):
     assert extended_frame["conf"] == frame["conf"]
 
 
-def test_history_cache_reuses_existing_keys_and_refits_new_data_version(
-    monkeypatch, tmp_path
-):
+def test_history_cache_reuses_asofs_after_appending_one_bar(monkeypatch, tmp_path):
     _install_fake_model(monkeypatch)
-    prices = _ohlc(600)
-    version = ["v1"]
+    prices = [_ohlc(600)]
     monkeypatch.setattr(
         stock,
         "load_stock",
-        lambda code, start=None: (prices.copy(), version[0], {"ipo_in_range": False}),
+        lambda code, start=None: (prices[0].copy(), "v1", {"ipo_in_range": False}),
     )
     monkeypatch.setattr(stock, "_name_and_st", lambda code: ("sample", False))
     calls = []
@@ -198,13 +197,54 @@ def test_history_cache_reuses_existing_keys_and_refits_new_data_version(
 
     monkeypatch.setattr(stock, "fit_asof", counted_fit)
     stock.history("600519", weeks=3, procs=1, cache_dir=tmp_path)
-    cold_calls = len(calls)
-    stock.history("600519", weeks=3, procs=1, cache_dir=tmp_path)
-    assert len(calls) == cold_calls
+    cached_asofs = {asof for asof, _ in calls}
 
-    version[0] = "v2"
+    prices[0] = _ohlc(601)
+    calls.clear()
     stock.history("600519", weeks=3, procs=1, cache_dir=tmp_path)
-    assert len(calls) == cold_calls * 2
+    assert calls
+    assert cached_asofs.isdisjoint(asof for asof, _ in calls)
+
+
+def test_history_cache_invalidates_restatement(monkeypatch, tmp_path):
+    _install_fake_model(monkeypatch)
+    prices = [_ohlc(600)]
+    monkeypatch.setattr(
+        stock,
+        "load_stock",
+        lambda code, start=None: (prices[0].copy(), "same-vintage", {"ipo_in_range": False}),
+    )
+    monkeypatch.setattr(stock, "_name_and_st", lambda code: ("sample", False))
+    calls = []
+
+    def counted_fit(logp, asof, windows):
+        calls.append((pd.Timestamp(asof), tuple(windows)))
+        return _fake_fit_asof(logp, asof, windows)
+
+    monkeypatch.setattr(stock, "fit_asof", counted_fit)
+    stock.history("600519", weeks=3, procs=1, cache_dir=tmp_path)
+    calls.clear()
+
+    prices[0].loc[prices[0].index[-1], "close"] *= 1.01
+    stock.history("600519", weeks=3, procs=1, cache_dir=tmp_path)
+    assert calls
+    assert {asof for asof, _ in calls} == {pd.Timestamp(prices[0].date.iloc[-1])}
+
+
+def test_model_code_version_does_not_call_git(monkeypatch):
+    expected = stock._version()
+
+    def unexpected_git_call(*args, **kwargs):
+        raise AssertionError("model code version must not invoke git")
+
+    monkeypatch.setattr(subprocess, "run", unexpected_git_call)
+    assert stock._version() == expected
+
+
+def test_predict_rejects_non_v2_box(monkeypatch):
+    monkeypatch.setattr(stock.lppls_scan, "BOX", "v1")
+    with pytest.raises(RuntimeError, match="requires LPPLS_BOX=v2"):
+        stock.predict("600519")
 
 
 def test_history_scenarios_use_full_fit_rows(monkeypatch):
@@ -304,6 +344,18 @@ def test_eligibility_history_boundary_ipo_drop_and_degenerate_flag(monkeypatch):
     result = stock._eligibility(one_price, False)
     assert result["degenerate"] is True
     assert result["in_stats"] is False
+
+    st_prices = _ohlc(505)
+    st_close = st_prices.close.to_numpy(copy=True)
+    for i in jumps:
+        st_close[i] = st_close[i - 1] * 1.06
+    st_prices["close"] = st_close
+    st_prices["high"] = st_close * 1.01
+    st_prices["low"] = st_close * 0.99
+    st_prices.loc[jumps, "high"] = st_close[jumps]
+    st_prices.loc[jumps, "low"] = st_close[jumps]
+    assert stock._eligibility(st_prices, True)["degenerate"] is True
+    assert stock._eligibility(st_prices, False)["degenerate"] is False
 
 
 def test_hfq_apply_factors_remains_explicit():
