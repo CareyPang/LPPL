@@ -5,6 +5,20 @@
 ## 0. 一句话现状
 6 个 A 股指数的完整产品已上线（[主页](https://careypang.github.io/LPPL/) / [终端](https://careypang.github.io/LPPL/index.html) / [回测](https://careypang.github.io/LPPL/backtest.html) / 旧研究站 `/lab/`）。"输入任意 A 股代码 → 取数 → 当前预测 + 历史参考"尚未产品化：`frontend/stock.html` 只把个股映射到所属指数；`research/pipeline/universe.py` 能对单只个股算当前信号，但结果只进工作台排行。
 
+## 0.1 进度更新（2026-11-02）
+| 阶段 | 状态 | PR |
+|---|---|---|
+| A 总规划 + t_c 聚类探索 | 完成 | #22 |
+| B 个股引擎（HFQ、PIT、LPPLS v2、104 周历史、缓存） | 完成，CI 绿 | #23 |
+| C 市场背景数据层（板块资金流/涨停池/北向成交额/中证估值/两融）+ 修复深交所两融单位 | 完成，CI 绿；东财板块 clist 本机 502，待复测 | #24 |
+| D GitHub Actions 按需计算 → `stock-results` 分支 → Pages；`/lab/stock.html` 个股结果卡 | 完成，CI 绿；GitHub 托管机连得上腾讯/新浪，茅台 34 秒 | #25（叠在 #23 上） |
+| E 沪深300 成分预算库 | 进行中（本机批量 stk_lite，约 30 秒/只） | — |
+| F 个股/行业预登记草案 + OD prompt | 草案完成：`docs/preregistration_stock_draft.md`、`docs/od_prompt_stock_market.md` | #22 |
+| G 本表 + 交接 | 完成 | #22 |
+
+合并顺序：#22（文档）、#23 → #24 → #25（#23 合并后把 #25 的 base 改回 main）。
+**已知问题**：`reports/ladder_bottom_margin_dev.*`（dev_only B5）是在深交所两融单位 bug 修复前生成的，已过期，待重算。
+
 ## 1. 已完成（按层）
 | 层 | 状态 | 关键文件 |
 |---|---|---|
