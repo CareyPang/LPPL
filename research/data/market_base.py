@@ -5,6 +5,7 @@ import json
 import math
 import random
 import re
+import tempfile
 import time
 from datetime import date, datetime, timezone
 from io import BytesIO
@@ -15,7 +16,7 @@ import pandas as pd
 import requests
 
 from .margin import CACHE as MARGIN_CACHE
-from .margin import load_margin
+from .margin import SZSE_RENAME, fetch_sse, fetch_szse, load_margin
 
 EM_BOARD_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
@@ -599,15 +600,10 @@ def hkex_northbound(date_value: str, session=None) -> dict | None:
 
 def _parse_index_valuation(frame: pd.DataFrame, code: str) -> dict:
     frame = frame.copy()
-    frame.columns = [str(col) for col in frame.columns]
+    frame.columns = [re.sub(r"\s+", "", str(col)) for col in frame.columns]
     required = {"日期Date", "指数代码IndexCode", *INDEX_FIELDS}
     missing = required - set(frame.columns)
     if missing:
-        if "指数代码IndexCode" in missing and "指数代码Index Code" in frame.columns:
-            raise RuntimeError(
-                'CSIndex field contradiction: expected "指数代码IndexCode"; '
-                'response has "指数代码Index Code"'
-            )
         raise RuntimeError("CSIndex valuation columns missing: " + ", ".join(sorted(missing)))
     rows = []
     for row in frame.to_dict("records"):
@@ -671,23 +667,161 @@ def csindex_valuation(code: str, session=None) -> dict:
     return _parse_index_valuation(frame, code)
 
 
+def _cached_margin_frame(cache: Path) -> pd.DataFrame:
+    required = (cache / "sse_margin.parquet", cache / "szse_margin.parquet")
+    if not all(path.exists() for path in required):
+        return pd.DataFrame()
+    return load_margin(cache)
+
+
+def _merge_margin_frames(base: pd.DataFrame, fresh: pd.DataFrame) -> pd.DataFrame:
+    if base.empty:
+        merged = fresh.copy()
+    elif fresh.empty:
+        merged = base.copy()
+    else:
+        base = base.copy()
+        fresh = fresh.copy()
+        base["date"] = pd.to_datetime(base["date"]).dt.normalize()
+        fresh["date"] = pd.to_datetime(fresh["date"]).dt.normalize()
+        dates = pd.DatetimeIndex(sorted(set(base["date"]) | set(fresh["date"])))
+        merged = base.set_index("date").reindex(dates)
+        merged.update(fresh.set_index("date").reindex(dates))
+        merged.index.name = "date"
+        merged = merged.reset_index()
+    if not merged.empty:
+        merged["date"] = pd.to_datetime(merged["date"]).dt.normalize()
+        merged = merged.sort_values("date").drop_duplicates("date", keep="last")
+        merged["avail_date"] = merged["date"].shift(-1)
+        merged = merged.reset_index(drop=True)
+    return merged
+
+
+def _refresh_margin_frame(asof: str, cache: Path) -> tuple[pd.DataFrame, str | None, pd.DatetimeIndex]:
+    cache = Path(cache)
+    try:
+        base = _cached_margin_frame(cache)
+    except Exception as exc:
+        base = pd.DataFrame()
+        cache_error = _error(exc)
+    else:
+        cache_error = None
+
+    asof_date = pd.Timestamp(asof).normalize()
+    available = 0
+    if not base.empty:
+        base["avail_date"] = pd.to_datetime(base["avail_date"], errors="coerce")
+        available = int((base["avail_date"].notna() & (base["avail_date"] <= asof_date)).sum())
+    lookback_days = 60 if base.empty or available < 21 else 30
+    start_date = asof_date - pd.Timedelta(days=lookback_days)
+    calendar = pd.DatetimeIndex([])
+    try:
+        recent_sse = fetch_sse(start_date.strftime("%Y%m%d"), asof_date.strftime("%Y%m%d"))
+        if recent_sse.empty or "date" not in recent_sse:
+            raise RuntimeError(
+                f"SSE margin fetcher returned no rows from {start_date.date()} to {asof_date.date()}"
+            )
+        recent_sse["date"] = pd.to_datetime(recent_sse["date"]).dt.normalize()
+        recent_sse = recent_sse.loc[
+            (recent_sse["date"] >= start_date) & (recent_sse["date"] <= asof_date)
+        ].sort_values("date").drop_duplicates("date", keep="last")
+        if recent_sse.empty:
+            raise RuntimeError(
+                f"SSE margin fetcher returned no rows from {start_date.date()} to {asof_date.date()}"
+            )
+        calendar = pd.DatetimeIndex(recent_sse["date"])
+        errors = []
+        if cache_error:
+            errors.append(f"cached margin read failed: {cache_error}")
+
+        with tempfile.TemporaryDirectory(prefix="market-margin-") as directory:
+            temp_cache = Path(directory)
+            recent_sse.to_parquet(temp_cache / "sse_margin.parquet", index=False)
+            szse_path = temp_cache / "szse_margin.parquet"
+            try:
+                fetch_szse(calendar, szse_path, pause=0.8)
+            except Exception as exc:
+                errors.append(f"SZSE margin fetcher failed: {_error(exc)}")
+
+            if not szse_path.exists():
+                pd.DataFrame(columns=["date", *SZSE_RENAME]).to_parquet(szse_path, index=False)
+                errors.append("SZSE margin fetcher returned no rows")
+            szse = pd.read_parquet(szse_path)
+            latest_sse_date = calendar.max()
+            if "date" not in szse or latest_sse_date not in set(
+                pd.to_datetime(szse.get("date", pd.Series(dtype="datetime64[ns]")), errors="coerce")
+                .dt.normalize()
+                .dropna()
+            ):
+                errors.append(
+                    f"SZSE margin fetcher returned no row for latest SSE date {latest_sse_date.date()}"
+                )
+            failed_path = szse_path.with_suffix(".failed.json")
+            if failed_path.exists():
+                failed = json.loads(failed_path.read_text(encoding="utf-8"))
+                if failed:
+                    details = ", ".join(f"{row[0]}:{row[1]}" for row in failed)
+                    errors.append(f"SZSE margin fetcher failed dates: {details}")
+            fresh = load_margin(temp_cache)
+            latest = fresh.loc[pd.to_datetime(fresh["date"]).dt.normalize() == latest_sse_date]
+            required_balances = ("fin_balance_all", "total_balance_all")
+            if latest.empty or any(
+                _number(latest.iloc[-1][field]) is None for field in required_balances
+            ):
+                errors.append(
+                    f"margin refresh lacks required SSE/SZSE balances for {latest_sse_date.date()}"
+                )
+
+        merged = _merge_margin_frames(base, fresh)
+        return merged, "; ".join(errors) or None, calendar
+    except Exception as exc:
+        return base, "; ".join(part for part in (cache_error, _error(exc)) if part), calendar
+
+
 def _margin_snapshot(asof: str, cache: Path = MARGIN_CACHE) -> dict:
-    frame = load_margin(cache).sort_values("date").reset_index(drop=True)
+    frame, refresh_error, trading_dates = _refresh_margin_frame(asof, cache)
     if frame.empty:
-        raise RuntimeError("margin cache contains no rows")
+        reason = f"margin data unavailable after refresh: {refresh_error}" if refresh_error else "margin cache contains no rows"
+        raise RuntimeError(reason)
+    frame = frame.sort_values("date").reset_index(drop=True)
     frame["date"] = pd.to_datetime(frame["date"])
     frame["avail_date"] = pd.to_datetime(frame["avail_date"])
-    eligible = frame.loc[frame["avail_date"].notna() & (frame["avail_date"] <= pd.Timestamp(asof))]
+    asof_date = pd.Timestamp(asof).normalize()
+    eligible = frame.loc[
+        frame["avail_date"].notna()
+        & (frame["avail_date"] <= asof_date)
+        & (frame["date"] <= asof_date)
+    ]
     if eligible.empty:
         raise RuntimeError(f"margin cache has no T+1-available rows as of {asof}")
+    if len(eligible) < 21:
+        coverage_error = (
+            f"margin has {len(eligible)} T+1-available rows; "
+            "at least 21 are required for a 20-trading-day change"
+        )
+        refresh_error = "; ".join(part for part in (refresh_error, coverage_error) if part)
     latest = eligible.iloc[-1]
     prior = eligible.iloc[-21] if len(eligible) >= 21 else None
     fields = ("fin_balance_all", "total_balance_all")
     result = {
         "date": latest["date"].date().isoformat(),
+        "latest_date": latest["date"].date().isoformat(),
         "available_date": latest["avail_date"].date().isoformat(),
         "rows_available": len(eligible),
     }
+    calendar = trading_dates
+    if len(calendar) == 0:
+        calendar = pd.DatetimeIndex(frame["date"].dropna().unique())
+    if len(calendar) == 0 or (
+        latest["avail_date"] < asof_date
+        and not ((calendar > latest["avail_date"]) & (calendar <= asof_date)).any()
+    ):
+        calendar = pd.bdate_range(latest["avail_date"] + pd.Timedelta(days=1), asof_date)
+    trading_days_stale = int(((calendar > latest["avail_date"]) & (calendar <= asof_date)).sum())
+    result["stale"] = trading_days_stale > 5
+    result["trading_days_stale"] = trading_days_stale
+    if refresh_error:
+        result["_refresh_error"] = refresh_error
     for field in fields:
         value = _number(latest[field])
         result[field] = value
@@ -801,13 +935,28 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
                 "oss-ch.csindex.com.cn", False, _error(exc)
             )
 
-    margin_section = {"evidence": "descriptive", "note": "复用交易所两融日报缓存；T+1 可用日期口径。" + DESCRIPTIVE_NOTE}
+    margin_section = {
+        "evidence": "descriptive",
+        "note": "使用上交所与深交所官方两融日报刷新，余额按 T+1 可用日期展示；超过 5 个交易日标记 stale。"
+        + DESCRIPTIVE_NOTE,
+    }
     try:
-        margin_section["data"] = _margin_snapshot(asof)
-        sources["margin"] = _source_meta("local-cache", True)
+        margin_data = _margin_snapshot(asof)
+        refresh_error = margin_data.pop("_refresh_error", None)
+        margin_section["data"] = margin_data
+        errors = []
+        if refresh_error:
+            errors.append(f"margin refresh failed: {refresh_error}")
+        if margin_data["stale"]:
+            errors.append(
+                "margin stale: latest_date="
+                f"{margin_data['latest_date']}, "
+                f"{margin_data['trading_days_stale']} trading days since availability"
+            )
+        sources["margin"] = _source_meta("sse.szse.official", not errors, "; ".join(errors) or None)
     except Exception as exc:
         margin_section["data"] = None
-        sources["margin"] = _source_meta("local-cache", False, _error(exc))
+        sources["margin"] = _source_meta("sse.szse.official", False, _error(exc))
 
     return {
         "asof": asof,
@@ -827,7 +976,7 @@ def write_snapshot(
     payload: dict,
     out: Path,
     board_dir: Path = Path("data/market/board_flow"),
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path | None]:
     out.mkdir(parents=True, exist_ok=True)
     asof = payload["asof"]
     latest_path = out / "market_latest.json"
@@ -837,19 +986,22 @@ def write_snapshot(
     latest_path.write_text(text, encoding="utf-8")
     dated_path.write_text(text, encoding="utf-8")
 
-    board_dir.mkdir(parents=True, exist_ok=True)
     frames = payload.get("_board_frames", [])
     if frames:
         board_frame = pd.concat(frames, ignore_index=True)
     else:
         board_frame = pd.DataFrame(columns=BOARD_COLUMNS)
-    board_frame.to_csv(
-        board_dir / f"{asof}.csv.gz",
-        index=False,
-        columns=BOARD_COLUMNS,
-        compression="gzip",
-    )
-    return latest_path, dated_path, board_dir / f"{asof}.csv.gz"
+    board_path = None
+    if len(board_frame) > 0:
+        board_dir.mkdir(parents=True, exist_ok=True)
+        board_path = board_dir / f"{asof}.csv.gz"
+        board_frame.to_csv(
+            board_path,
+            index=False,
+            columns=BOARD_COLUMNS,
+            compression="gzip",
+        )
+    return latest_path, dated_path, board_path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -869,7 +1021,7 @@ def main(argv: list[str] | None = None) -> int:
             {
                 "latest": str(latest),
                 "dated": str(dated),
-                "board_csv": str(board),
+                "board_csv": str(board) if board is not None else None,
                 "board_rows": row_counts,
                 "limit_pool_counts": {
                     key: public["limit_pools"].get(key)

@@ -106,6 +106,6 @@
 | `limit_pools` | 涨停 (`zt`)、炸板 (`zb`)、跌停 (`dt`) 数量；`break_rate=zb/(zt+zb)` 为比例；连板梯度与前 20 项包含代码、名称、连板数/时间。 |
 | `northbound.data` | `sse_nb_turnover`、`szse_nb_turnover`、`sse_nb_trades`、`szse_nb_trades` 及 ETF 成交额；成交额保留 HKEX 原值、不缩放。2024-08 起北向数据不含买入、卖出或净额，不得称为“净流入”。缺少当日 HKEX 文件时为 null。 |
 | `valuation.indices.<code>` | 中证指数 `000300`、`000905`、`000016`、`000852` 最新日期、PE1、PE2、股息率 DY1/DY2，以及文件历史可用时的滚动 10 年 PE1 分位。PE 倍数为倍，股息率为百分数。 |
-| `margin.data` | 复用 `research/data/margin.py` 的两融缓存，余额为人民币元；包含 T+1 可用日期及相对 20 个交易日前变化。 |
+| `margin.data` | 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据，余额为人民币元；包含 `latest_date`、T+1 `available_date`、`stale`（距 asof 超过 5 个交易日为 true）及相对 20 个交易日前变化。刷新失败或 stale 时 `sources.margin.ok=false`，仍展示可用数据。 |
 
 所有市场背景数值均带 `evidence: "descriptive"`；只能作为事实展示，不得转成预测、目标价或报警信号。

@@ -159,11 +159,15 @@ def test_northbound_fields_are_turnover_only():
     assert not any("net" in key.lower() or "inflow" in key.lower() for key in value)
 
 
-def test_csindex_response_field_contradiction_is_rejected():
+def test_csindex_parser_normalizes_spaced_headers():
     frame = pd.DataFrame(fixture("valuation_rows.json"))
 
-    with pytest.raises(RuntimeError, match="expected .指数代码IndexCode."):
-        market._parse_index_valuation(frame, "000300")
+    assert "指数代码Index Code" in frame.columns
+    value = market._parse_index_valuation(frame, "000300")
+
+    assert value["date"] == "2026-10-30"
+    assert value["pe1"] == 13.76
+    assert value["pe1_pct_10y"] is None
 
 
 def test_csindex_valuation_parser_uses_only_ten_year_history():
@@ -256,9 +260,147 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
         payload, tmp_path / "out", board_dir=tmp_path / "board"
     )
 
-    assert latest.exists() and dated.exists() and board_csv.exists()
+    assert latest.exists() and dated.exists()
+    assert board_csv is None
+    assert not (tmp_path / "board" / "2026-11-02.csv.gz").exists()
     saved = json.loads(latest.read_text(encoding="utf-8"))
     assert saved["sources"]["board_flow_industry"]["ok"] is False
     assert saved["sources"]["limit_pools"]["ok"] is False
     assert saved["board_flow"]["concept"] == []
+
+
+def _synthetic_margin_frame(dates, calendar):
+    calendar = pd.DatetimeIndex(calendar)
+    indices = {date: i for i, date in enumerate(calendar)}
+    rows = []
+    for i, value_date in enumerate(dates):
+        next_index = indices[value_date] + 1
+        available_date = calendar[next_index] if next_index < len(calendar) else pd.NaT
+        rows.append(
+            {
+                "date": value_date,
+                "avail_date": available_date,
+                "fin_balance_all": float(i + 100),
+                "total_balance_all": float((i + 100) * 2),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def test_margin_snapshot_reports_latest_date_and_trading_day_staleness(monkeypatch):
+    calendar = pd.date_range("2026-10-01", periods=30, freq="D")
+    fresh_frame = _synthetic_margin_frame(calendar[:-1], calendar)
+    stale_frame = _synthetic_margin_frame(calendar[:20], calendar)
+
+    monkeypatch.setattr(
+        market,
+        "_refresh_margin_frame",
+        lambda *_args, **_kwargs: (fresh_frame.copy(), None, pd.DatetimeIndex(calendar)),
+    )
+    fresh = market._margin_snapshot(calendar[-1].date().isoformat())
+    assert fresh["latest_date"] == calendar[-2].date().isoformat()
+    assert fresh["stale"] is False
+
+    monkeypatch.setattr(
+        market,
+        "_refresh_margin_frame",
+        lambda *_args, **_kwargs: (stale_frame.copy(), "refresh failed", pd.DatetimeIndex(calendar)),
+    )
+    stale = market._margin_snapshot(calendar[-1].date().isoformat())
+    assert stale["latest_date"] == calendar[19].date().isoformat()
+    assert stale["stale"] is True
+    assert "refresh failed" in stale["_refresh_error"]
+
+
+def test_margin_refresh_uses_existing_exchange_fetchers(tmp_path, monkeypatch):
+    dates = pd.date_range("2026-10-28", periods=3, freq="D")
+    sse = pd.DataFrame(
+        {
+            "date": dates,
+            "fin_balance": [100.0, 101.0, 102.0],
+            "fin_buy": [10.0, 11.0, 12.0],
+            "sec_qty": [1.0, 1.0, 1.0],
+            "sec_balance": [20.0, 20.0, 20.0],
+            "sec_sell_qty": [1.0, 1.0, 1.0],
+            "total_balance": [300.0, 301.0, 302.0],
+        }
+    )
+    szse_values = {
+        "date": dates,
+        "融资余额": [200.0, 201.0, 202.0],
+        "融资买入额": [20.0, 21.0, 22.0],
+        "融券余量": [2.0, 2.0, 2.0],
+        "融券余额": [30.0, 30.0, 30.0],
+        "融券卖出量": [2.0, 2.0, 2.0],
+        "融资融券余额": [400.0, 401.0, 402.0],
+    }
+    calls = {}
+
+    def fake_sse(start, end):
+        calls["sse"] = (start, end)
+        return sse.copy()
+
+    def fake_szse(fetch_dates, out, pause):
+        calls["szse"] = (pd.DatetimeIndex(fetch_dates), pause)
+        pd.DataFrame(szse_values).to_parquet(out, index=False)
+        out.with_suffix(".failed.json").write_text("[]", encoding="utf-8")
+
+    monkeypatch.setattr(market, "fetch_sse", fake_sse)
+    monkeypatch.setattr(market, "fetch_szse", fake_szse)
+
+    frame, error, trading_dates = market._refresh_margin_frame("2026-10-30", tmp_path)
+
+    assert calls["sse"] == ("20260831", "20261030")
+    assert calls["szse"][0].equals(pd.DatetimeIndex(dates))
+    assert calls["szse"][1] == 0.8
+    assert error is None
+    assert trading_dates.equals(pd.DatetimeIndex(dates))
+    assert frame.iloc[-1]["fin_balance_all"] == 304.0
+    assert frame.iloc[-1]["total_balance_all"] == 704.0
+
+
+def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
+    monkeypatch.setattr(
+        market,
+        "board_flow_snapshot",
+        lambda *_args, **_kwargs: pd.DataFrame(columns=market.BOARD_COLUMNS),
+    )
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("unavailable")),
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        market,
+        "csindex_valuation",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("unavailable")),
+    )
+    margin_data = {
+        "latest_date": "2026-10-20",
+        "stale": True,
+        "trading_days_stale": 6,
+        "fin_balance_all": 100.0,
+        "_refresh_error": "fetch failed",
+    }
+    monkeypatch.setattr(market, "_margin_snapshot", lambda *_args, **_kwargs: margin_data.copy())
+
+    payload = market.fetch_market("2026-10-30", em_client=market.EMClient())
+
+    assert payload["sources"]["margin"]["ok"] is False
+    assert "fetch failed" in payload["sources"]["margin"]["error"]
+    assert "stale" in payload["sources"]["margin"]["error"]
+    assert payload["margin"]["data"]["latest_date"] == "2026-10-20"
+
+
+def test_board_csv_is_written_only_with_rows(tmp_path):
+    frame = pd.DataFrame([{column: None for column in market.BOARD_COLUMNS}], columns=market.BOARD_COLUMNS)
+    frame.loc[0, ["code", "name"]] = ["BK0438", "食品饮料"]
+    payload = {"asof": "2026-10-30", "_board_frames": [frame]}
+
+    _, _, board_csv = market.write_snapshot(
+        payload, tmp_path / "out", board_dir=tmp_path / "board"
+    )
+
+    assert board_csv is not None and board_csv.exists()
     assert pd.read_csv(board_csv).columns.tolist() == list(market.BOARD_COLUMNS)
