@@ -155,7 +155,14 @@ jobs:
       STOCK_RESULT_DIR: out/stock
       STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - name: Checkout main
+      - name: Checkout PR merge commit for smoke runs
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout main for scheduled and dispatched runs
+        if: github.event_name != 'pull_request'
         uses: actions/checkout@v4
         with:
           ref: main
