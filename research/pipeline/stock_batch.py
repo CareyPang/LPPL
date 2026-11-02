@@ -119,9 +119,15 @@ def _qualified(record: dict) -> tuple[set[str], set[str]]:
     return fit_scales, conf_scales
 
 
-def breadth(result_dir: Path, universe: dict, variant: str = "stk_lite") -> dict:
+def breadth(
+    result_dir: Path,
+    universe: dict,
+    variant: str = "stk_lite",
+    planned_asof: str | None = None,
+) -> dict:
     codes = universe["codes"]
     asofs: dict[str, int] = {}
+    excluded_asofs: dict[str, int] = {}
     per_scale_fit = {s: 0 for s in ALL_SCALES}
     per_scale_conf = {s: 0 for s in ALL_SCALES}
     n_result = n_in_stats = n_fit_dev = n_conf_dev = n_error = n_missing = 0
@@ -139,9 +145,10 @@ def breadth(result_dir: Path, universe: dict, variant: str = "stk_lite") -> dict
         meta = record.get("stock_meta") or {}
         statuses[str(meta.get("status"))] = statuses.get(str(meta.get("status")), 0) + 1
         asof = str(record.get("asof"))
-        asofs[asof] = asofs.get(asof, 0) + 1
         if not meta.get("in_stats"):
+            excluded_asofs[asof] = excluded_asofs.get(asof, 0) + 1
             continue
+        asofs[asof] = asofs.get(asof, 0) + 1
         n_in_stats += 1
         fit_scales, conf_scales = _qualified(record)
         for scale in fit_scales:
@@ -153,14 +160,21 @@ def breadth(result_dir: Path, universe: dict, variant: str = "stk_lite") -> dict
         if conf_scales & set(DEV_SCALES):
             n_conf_dev += 1
     share = lambda k: round(k / n_in_stats, 4) if n_in_stats else None  # noqa: E731
+    asof_consistent = (
+        all(asof == planned_asof for asof in asofs)
+        if planned_asof is not None
+        else len(asofs) <= 1
+    )
     return {
         "index": universe.get("index"),
         "universe_snapshot": universe.get("snapshot"),
         "universe_note": universe.get("note"),
         "variant": variant,
+        "planned_asof": planned_asof,
         "asof": max(asofs, key=asofs.get) if asofs else None,
         "asof_counts": dict(sorted(asofs.items())),
-        "asof_consistent": len(asofs) <= 1,
+        "asof_consistent": asof_consistent,
+        "excluded_asof_counts": dict(sorted(excluded_asofs.items())),
         "n": n_in_stats,
         "n_members": len(codes),
         "n_results": n_result,
@@ -198,6 +212,7 @@ def main() -> None:
     br.add_argument("--universe", type=Path, required=True)
     br.add_argument("--results", type=Path, default=Path("out/stock"))
     br.add_argument("--variant", choices=("stk_lite", "stk_full"), default="stk_lite")
+    br.add_argument("--asof", help="planned YYYY-MM-DD date for this batch")
     br.add_argument("--out", type=Path)
 
     args = parser.parse_args()
@@ -215,7 +230,7 @@ def main() -> None:
         )
         print(f"ok={len(summary['ok'])} failed={len(summary['failed'])}")
         return
-    result = breadth(args.results, universe, args.variant)
+    result = breadth(args.results, universe, args.variant, args.asof)
     out = args.out or args.results / f"breadth_{universe['index']}.json"
     out.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     print(out)

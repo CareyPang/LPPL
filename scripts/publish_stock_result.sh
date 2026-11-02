@@ -80,10 +80,55 @@ for attempt in 1 2 3; do
   fi
   mkdir -p "$build_dir/stock"
 
+  SKIPPED_CODES=()
   for c in "${CODES[@]}"; do
     latest="$RESULT_DIR/$c.json"
     hist="$RESULT_DIR/${c}_history.json"
     errf="$RESULT_DIR/${c}_error.json"
+    if [[ -z "$CODE" && -f "$build_dir/stock/$c.json" ]]; then
+      incoming="$latest"
+      if [[ ! -f "$incoming" ]]; then
+        incoming="$errf"
+      fi
+      comparison="$(
+        python - "$build_dir/stock/$c.json" "$incoming" <<'PY'
+import json
+import sys
+from datetime import date
+from pathlib import Path
+
+
+def _asof(path):
+    try:
+        record = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    value = record.get("asof")
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.isoformat() == value else None
+
+
+published_asof = _asof(sys.argv[1])
+batch_asof = _asof(sys.argv[2])
+if published_asof is not None and batch_asof is not None and published_asof > batch_asof:
+    print(f"{published_asof.isoformat()}\t{batch_asof.isoformat()}")
+PY
+      )"
+      if [[ -n "$comparison" ]]; then
+        published_asof="${comparison%%$'\t'*}"
+        batch_asof="${comparison#*$'\t'}"
+        echo "skip $c: published asof $published_asof newer than batch $batch_asof"
+        SKIPPED_CODES+=("$c")
+        continue
+      fi
+    fi
     if [[ -f "$latest" ]]; then
       cp "$latest" "$build_dir/stock/$c.json"
       if [[ -f "$hist" ]]; then
@@ -110,6 +155,7 @@ for attempt in 1 2 3; do
   STOCK_VARIANT="$VARIANT" \
   STOCK_HISTORY_WEEKS="$HISTORY_WEEKS" \
   STOCK_SINGLE_CODE="$CODE" \
+  STOCK_SKIPPED_CODES="${SKIPPED_CODES[*]}" \
   STOCK_RUN_URL="$RUN_URL" \
   python - <<'PY'
 import json
@@ -131,6 +177,7 @@ names = names if isinstance(names, dict) else {}
 result_dir = Path(os.environ["STOCK_RESULT_DIR"])
 now = datetime.now(timezone.utc).isoformat()
 single_code_mode = bool(os.environ["STOCK_SINGLE_CODE"])
+skipped_codes = set(os.environ["STOCK_SKIPPED_CODES"].split())
 
 
 def _iso_date(value):
@@ -170,7 +217,21 @@ def _history_matches_latest(history_path, latest_record):
             return False
     return True
 
+
+def _history_frame_count(history_path):
+    try:
+        history_record = json.loads(history_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return 0
+    if not isinstance(history_record, dict):
+        return 0
+    frames = history_record.get("frames")
+    return len(frames) if isinstance(frames, list) else 0
+
+
 for code in os.environ["STOCK_CODES"].split():
+    if code in skipped_codes:
+        continue
     latest_path = result_dir / f"{code}.json"
     error_path = result_dir / f"{code}_error.json"
     has_error = error_path.exists()
@@ -195,11 +256,16 @@ for code in os.environ["STOCK_CODES"].split():
         or names.get(code)
         or None
     )
+    history_weeks = int(os.environ["STOCK_HISTORY_WEEKS"])
+    if not single_code_mode:
+        history_weeks = _history_frame_count(
+            index_path.parent / f"{code}_history.json"
+        )
     index[code] = {
         "name": name,
         "asof": latest_record.get("asof") or error_record.get("asof"),
         "variant": os.environ["STOCK_VARIANT"],
-        "history_weeks": int(os.environ["STOCK_HISTORY_WEEKS"]),
+        "history_weeks": history_weeks,
         "generated_at": now,
         "run_url": os.environ["STOCK_RUN_URL"],
         "status": status,

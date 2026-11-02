@@ -49,19 +49,40 @@ def test_breadth_counts_only_in_stats_members_and_flags_mixed_asof(tmp_path):
     (out / "000001.json").write_text(json.dumps(_record("000001", std612=3, conf612=0.667)), encoding="utf-8")
     (out / "000002.json").write_text(json.dumps(_record("000002", std612=1, conf612=0.1)), encoding="utf-8")
     (out / "000003.json").write_text(
-        json.dumps(_record("000003", asof="2026-11-02", status="delisted_or_long_suspended", in_stats=False, std612=5, conf612=0.9)),
+        json.dumps(_record("000003", asof="2025-02-05", status="delisted_or_long_suspended", in_stats=False, std612=5, conf612=0.9)),
         encoding="utf-8",
     )
     (out / "000004_error.json").write_text(json.dumps({"code": "000004", "error": "boom"}), encoding="utf-8")
     universe = {"index": "sh000300", "snapshot": "2021-12-31", "codes": ["000001", "000002", "000003", "000004", "000005"]}
-    b = stock_batch.breadth(out, universe)
+    b = stock_batch.breadth(out, universe, planned_asof="2026-10-30")
     assert b["n_members"] == 5 and b["n_results"] == 3 and b["n_error"] == 1 and b["n_missing"] == 1
     assert b["n"] == 2
     assert b["n_qualified_fit_dev"] == 2 and b["share_qualified_fit_dev"] == 1.0
     assert b["n_confidence_ge_0_5_dev"] == 1 and b["share_confidence_ge_0_5_dev"] == 0.5
     assert b["per_scale_qualified_fit"]["6-12m"] == 2 and b["per_scale_qualified_fit"]["12-24m"] == 0
-    assert b["asof"] == "2026-10-30" and b["asof_consistent"] is False
+    assert b["asof"] == "2026-10-30" and b["asof_consistent"] is True
+    assert b["planned_asof"] == "2026-10-30"
+    assert b["asof_counts"] == {"2026-10-30": 2}
+    assert b["excluded_asof_counts"] == {"2025-02-05": 1}
     assert b["evidence"] == "descriptive" and "不是预测" in b["note"]
+
+
+def test_breadth_flags_in_stats_asof_that_differs_from_planned(tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "000001.json").write_text(
+        json.dumps(_record("000001", asof="2026-11-02")),
+        encoding="utf-8",
+    )
+
+    b = stock_batch.breadth(
+        out,
+        {"codes": ["000001"]},
+        planned_asof="2026-10-30",
+    )
+
+    assert b["asof"] == "2026-11-02"
+    assert b["asof_consistent"] is False
 
 
 def test_run_batch_writes_error_file_and_continues(tmp_path, monkeypatch):

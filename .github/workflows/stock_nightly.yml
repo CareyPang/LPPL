@@ -212,7 +212,8 @@ jobs:
       - name: Build breadth summary
         run: |
           python -m research.pipeline.stock_batch breadth \
-            --universe "web/mock/data/$UNIVERSE" --results out/stock --variant "$VARIANT"
+            --universe "web/mock/data/$UNIVERSE" --results out/stock \
+            --variant "$VARIANT" --asof "$ASOF"
           ls out/stock | wc -l
 
       - name: Validate breadth before publishing
@@ -230,6 +231,11 @@ jobs:
           summary = json.loads(breadth_path.read_text(encoding="utf-8"))
           if summary.get("asof_consistent") is not True:
               raise SystemExit(f"{breadth_path}: asof_consistent is not true")
+          if summary.get("planned_asof") != os.environ["ASOF"]:
+              raise SystemExit(
+                  f"{breadth_path}: planned_asof {summary.get('planned_asof')!r} "
+                  f"does not match planned {os.environ['ASOF']!r}"
+              )
           if summary.get("asof") != os.environ["ASOF"]:
               raise SystemExit(
                   f"{breadth_path}: asof {summary.get('asof')!r} "
