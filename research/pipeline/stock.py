@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -38,6 +39,10 @@ FIT_CACHE_KEY = ["asof", "n", "data_version", "code_version"]
 
 _FIT_LOGP: pd.Series | None = None
 _FIT_INSIDE = False
+
+
+def _now() -> pd.Timestamp:
+    return pd.Timestamp.now(tz="Asia/Shanghai")
 
 
 def _fit_worker_init(logp: pd.Series, inside: bool) -> None:
@@ -115,6 +120,22 @@ def _normalise_prices(frame: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _drop_unclosed_bars(
+    frame: pd.DataFrame, now: pd.Timestamp | None = None
+) -> tuple[pd.DataFrame, bool]:
+    current = pd.Timestamp(now if now is not None else _now())
+    if current.tzinfo is None:
+        current = current.tz_localize("Asia/Shanghai")
+    else:
+        current = current.tz_convert("Asia/Shanghai")
+    today = current.tz_localize(None).normalize()
+    dates = pd.to_datetime(frame["date"]).dt.normalize()
+    dropped = dates > today
+    if current.hour * 60 + current.minute < 15 * 60 + 30:
+        dropped |= dates == today
+    return frame.loc[~dropped].reset_index(drop=True), bool(dropped.any())
+
+
 def load_stock(
     code6: str, start: str | None = None
 ) -> tuple[pd.DataFrame, str, dict]:
@@ -151,8 +172,12 @@ def load_stock(
             ) from fallback_error
 
     ohlc = _normalise_prices(adjusted)
+    ohlc, dropped_unclosed_bar = _drop_unclosed_bars(ohlc)
     if ohlc.empty:
-        raise RuntimeError(f"no positive HFQ closes available for {sym}")
+        raise RuntimeError(
+            f"no positive closed HFQ closes available for {sym} after excluding "
+            "future and unclosed same-day bars"
+        )
     source_first = pd.Timestamp(ohlc.date.iloc[0])
     ipo_in_range = source_first > pd.Timestamp(requested_start)
     if ipo_in_range:
@@ -167,9 +192,38 @@ def load_stock(
         "ipo_in_range": bool(ipo_in_range),
         "fit_first_date": str(pd.Timestamp(ohlc.date.iloc[0]).date()),
         "dropped_ipo_bars": 60 if ipo_in_range else 0,
+        "dropped_unclosed_bar": dropped_unclosed_bar,
         "source": source,
     }
     return ohlc, data_version, meta
+
+
+@lru_cache(maxsize=1)
+def _reference_calendar() -> pd.DatetimeIndex:
+    raw = tencent_raw("sh000001", start=DEFAULT_START)
+    prices = _normalise_prices(raw)
+    prices, _ = _drop_unclosed_bars(prices)
+    if prices.empty:
+        raise RuntimeError("Tencent sh000001 reference calendar has no closed bars")
+    return pd.DatetimeIndex(prices["date"]).normalize()
+
+
+def _trading_days_stale(
+    last_bar: pd.Timestamp, asof: pd.Timestamp | None = None
+) -> tuple[int | None, str | None]:
+    try:
+        calendar = _reference_calendar()
+        if calendar.empty:
+            raise RuntimeError("Tencent sh000001 reference calendar is empty")
+    except Exception as exc:
+        return None, (
+            "参考指数交易日历获取失败，未能判断停牌或退市状态 "
+            f"({type(exc).__name__}: {exc})"
+        )
+    upper = pd.Timestamp(asof).normalize() if asof is not None else calendar[-1]
+    last = pd.Timestamp(last_bar).normalize()
+    gap = int(((calendar > last) & (calendar <= upper)).sum())
+    return gap, None
 
 
 def _variant_windows(variant: str, n_bars: int) -> tuple[int, ...]:
@@ -240,6 +294,33 @@ def _eligibility(ohlc: pd.DataFrame, st: bool | None) -> dict:
     }
 
 
+def _stock_status_meta(
+    ohlc: pd.DataFrame,
+    st: bool | None,
+    meta: dict,
+    reference_asof: pd.Timestamp | None = None,
+) -> dict:
+    result = _eligibility(ohlc, st)
+    last_bar = pd.Timestamp(ohlc.date.iloc[-1])
+    trading_days_stale, reference_error = _trading_days_stale(
+        last_bar, reference_asof
+    )
+    result["trading_days_stale"] = trading_days_stale
+    result["dropped_unclosed_bar"] = bool(meta.get("dropped_unclosed_bar", False))
+    if reference_error is not None:
+        result["eligibility_note"] += f"；{reference_error}"
+    elif result["status"] == "eligible" and trading_days_stale:
+        last_date = str(last_bar.date())
+        result["in_stats"] = False
+        if trading_days_stale >= 60:
+            result["status"] = "delisted_or_long_suspended"
+            result["eligibility_note"] = f"已退市或长期停牌，结果截至 {last_date}"
+        else:
+            result["status"] = "suspended"
+            result["eligibility_note"] = f"停牌中，结果截至 {last_date}"
+    return result
+
+
 def _version() -> str:
     digest = hashlib.sha1()
     for path in (
@@ -280,6 +361,7 @@ def _record(
     fits: pd.DataFrame,
     trust_boot: int = 0,
     procs: int | None = None,
+    reference_asof: pd.Timestamp | None = None,
 ) -> dict:
     sym = universe._sym(code6)
     derived = _derived(fits)
@@ -294,7 +376,7 @@ def _record(
         data_version=data_version,
     )
     name, st = _name_and_st(code6)
-    eligibility = _eligibility(ohlc, st)
+    eligibility = _stock_status_meta(ohlc, st, meta, reference_asof)
     record["model_version"] = f"{MODEL_VERSION}+{variant}"
     if name:
         record["name"] = name
@@ -309,6 +391,8 @@ def _record(
         "ipo_in_range": bool(meta["ipo_in_range"]),
         "n_bars": eligibility["n_bars"],
         "degenerate_share": eligibility["degenerate_share"],
+        "trading_days_stale": eligibility["trading_days_stale"],
+        "dropped_unclosed_bar": eligibility["dropped_unclosed_bar"],
         "eligibility_note": eligibility["eligibility_note"],
         "evidence": STOCK_EVIDENCE,
         "note": STOCK_NOTE,
@@ -357,6 +441,7 @@ def predict(
         fits,
         trust_boot=trust_boot,
         procs=procs,
+        reference_asof=cutoff if asof is not None else None,
     )
 
 
@@ -519,7 +604,7 @@ def history(
         "confirmed_tops": confirmed_tops,
         "confirmed_tops_note": "PS-15% 标签顶，需观察未来 126 个交易日后确认；事后标签，不是预测",
         "stock_meta": {
-            **_eligibility(ohlc, _name_and_st(code)[1]),
+            **_stock_status_meta(ohlc, _name_and_st(code)[1], meta),
             "ipo_in_range": bool(meta["ipo_in_range"]),
         },
     }
