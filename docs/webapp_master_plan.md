@@ -12,12 +12,18 @@
 | B 个股引擎（HFQ、PIT、LPPLS v2、104 周历史、缓存） | 完成，CI 绿 | #23 |
 | C 市场背景数据层（板块资金流/涨停池/北向成交额/中证估值/两融）+ 修复深交所两融单位 | 完成，CI 绿；东财板块 clist 本机 502，待复测 | #24 |
 | D GitHub Actions 按需计算 → `stock-results` 分支 → Pages；`/lab/stock.html` 个股结果卡 | 完成，CI 绿；GitHub 托管机连得上腾讯/新浪，茅台 34 秒 | #25（叠在 #23 上） |
-| E 沪深300 成分预算库 | 第 1 次（2026-11-02 盘中跑）作废：266 只用了未收盘当日 K 线，2 只退市股被标为可统计；引擎已修（剔除 15:30 前当日 bar、按参考日历标 suspended / delisted_or_long_suspended），重跑中。上一次 300 只全程约 98 分钟，0 失败 | #23 |
+| E 沪深300 成分预算库 | 盘中首次运行作废；修复后重跑完成：300/300、0 失败，297 eligible，600837/601989 为 delisted_or_long_suspended（in_stats=false）；600570 的停牌误判已修复并重跑为 eligible | #23 |
 | F 个股/行业预登记草案 + OD prompt | 草案完成：`docs/preregistration_stock_draft.md`、`docs/od_prompt_stock_market.md` | #22 |
 | G 本表 + 交接 | 完成 | #22 |
 
-合并顺序：#22（文档）、#23 → #24 → #25（#23 合并后把 #25 的 base 改回 main）。
+合并顺序待用户决定：#22 → #23 → #24 → #25（#23 合并后把 #25 的 base 改回 main）。
 **已知问题**：`reports/ladder_bottom_margin_dev.*`（dev_only B5）是在深交所两融单位 bug 修复前生成的，已过期，待重算。
+
+## 0.2 当前交接（2026-11-02）
+- CSI300 重跑的 `asof` 分布：`2026-10-30` ×187、`2026-11-02` ×111、`2025-02-05` ×1、`2025-08-12` ×1；后两个日期对应退市股 600837 海通证券、601989 中国重工。600570 曾因 15:30 截止时间竞争被误标为 `suspended`；PR #23 `6ba33ed` 修复后重跑为 `eligible`。结果共 300/300，0 失败；297 只 `eligible`，上述 2 只 `delisted_or_long_suspended` 且 `in_stats=false`。输出留在 `/home/ubuntu/scratch/csi300_out`，未发布、未提交。
+- 开发 VM 上 Tencent `fqkline` 返回 HTTP 501 反爬 JS 页面。PR #23 `dcfbabe` 增加 `kline/kline` 原始日线回退；在 683 日数据上比较 `kline` 原始数据 × Sina HFQ 与 `fqkline` 原始数据 × Sina HFQ，最大相对差异 ≤5e-6。endpoint 不改变 `data_version`，`stock_meta.source` 记录实际来源。
+- 后续预计算批次应在北京时间 15:30 后运行，并传入固定 `--asof`，确保横截面共用同一截止日。
+- 合并完成后，手动运行一次 `stock_query`（600519）以创建 `stock-results`，再在 Pages 上验证 `/lab/stock.html?code=600519`。
 
 ## 1. 已完成（按层）
 | 层 | 状态 | 关键文件 |
