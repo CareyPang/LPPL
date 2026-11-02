@@ -186,6 +186,22 @@ def test_reference_calendar_is_cached_and_drops_unclosed_bars(monkeypatch):
         stock._reference_calendar.cache_clear()
 
 
+@pytest.mark.network
+def test_load_beijing_stock_network():
+    prices, data_version, meta = stock.load_stock("920002")
+
+    assert not prices.empty
+    assert meta["n_bars"] == len(prices)
+    assert data_version.startswith("vintage_")
+    print(
+        "920002 load_stock:",
+        f"symbol={stock.universe._sym('920002')}",
+        f"rows={len(prices)}",
+        f"asof={prices.date.iloc[-1].date()}",
+        f"source={meta['source']}",
+    )
+
+
 def test_load_stock_and_calendar_share_close_cutoff(monkeypatch):
     today = pd.Timestamp("2026-11-02")
     raw = _ohlc(600)

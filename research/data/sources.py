@@ -45,9 +45,9 @@ def rate_limit() -> None:
 
 
 def parse_code(code: str) -> tuple[str, str, bool]:
-    """'600519' / 'sh600519' / '000300' / 'sh000001' -> (market, code6, is_index)."""
+    """Parse stock/index symbols into (market, code6, is_index)."""
     c = code.strip().lower()
-    m = re.fullmatch(r"(sh|sz)?(\d{6})", c)
+    m = re.fullmatch(r"(sh|sz|bj)?(\d{6})", c)
     if not m:
         raise ValueError(f"无法识别代码: {code}")
     pre, six = m.group(1), m.group(2)
@@ -60,10 +60,12 @@ def parse_code(code: str) -> tuple[str, str, bool]:
         return "sz", six, True
     if six in INDEX_HINT:
         return "sh", six, True
-    if six[0] in "69":
+    if six[0] == "6":
         return "sh", six, False
     if six[0] in "03":
         return "sz", six, False
+    if six[0] in "489":
+        return "bj", six, False
     raise ValueError(f"不支持的市场/代码: {code}")
 
 

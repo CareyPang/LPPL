@@ -33,7 +33,13 @@ BROAD = {"sh000001": "上证指数", "sh000016": "上证50", "sh000300": "沪深
 
 
 def _sym(code6: str) -> str:
-    return ("sh" if code6.startswith("6") else "sz") + code6
+    if code6.startswith("6"):
+        market = "sh"
+    elif code6.startswith(("4", "8", "9")):
+        market = "bj"
+    else:
+        market = "sz"
+    return market + code6
 
 
 def _ret(c: pd.Series, k: int) -> float | None:
