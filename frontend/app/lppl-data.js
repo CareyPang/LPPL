@@ -79,6 +79,8 @@
     latest: (c) => opt('stock/' + okCode(c) + '.json'),
     history: (c) => opt('stock/' + okCode(c) + '_history.json'),
     error: (c) => opt('stock/' + okCode(c) + '_error.json'),
+    /** 成分股广度（夜间预算库，descriptive）：有合格拟合的成分股比例与 n；不是预测、不进模型 */
+    breadth: (idx) => { if (!/^(sh|sz)\d{6}$/.test(String(idx))) throw new Error('指数代码须为 sh/sz + 6 位数字'); return opt('stock/breadth_' + idx + '.json'); },
   };
   /** 市场背景（descriptive）；缺文件返回 null */
   const market = () => opt('market/market_latest.json');

@@ -1,0 +1,199 @@
+name: stock_nightly
+
+on:
+  schedule:
+    # 09:40 UTC = 17:40 Beijing, Mon–Fri: after the 15:30 close cutoff used by the stock engine
+    - cron: "40 9 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: Universe file under web/mock/data
+        type: choice
+        options:
+          - universe_csi300.json
+        default: universe_csi300.json
+      asof:
+        description: Fixed as-of date YYYY-MM-DD (blank = last closed sh000001 trading day)
+        type: string
+        default: ""
+      variant:
+        description: Stock fitting variant
+        type: choice
+        options:
+          - stk_lite
+          - stk_full
+        default: stk_lite
+      shards:
+        description: Number of parallel shards (1–10)
+        type: string
+        default: "6"
+  pull_request:
+    paths:
+      - .github/workflows/stock_nightly.yml
+      - research/pipeline/stock_batch.py
+      - scripts/publish_stock_result.sh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stock-nightly
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      universe: ${{ steps.plan.outputs.universe }}
+      asof: ${{ steps.plan.outputs.asof }}
+      variant: ${{ steps.plan.outputs.variant }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      shards: ${{ steps.plan.outputs.shards }}
+    env:
+      INPUT_UNIVERSE: ${{ inputs.universe }}
+      INPUT_ASOF: ${{ inputs.asof }}
+      INPUT_VARIANT: ${{ inputs.variant }}
+      INPUT_SHARDS: ${{ inputs.shards }}
+    steps:
+      - id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          universe="${INPUT_UNIVERSE:-universe_csi300.json}"
+          asof="${INPUT_ASOF:-}"
+          variant="${INPUT_VARIANT:-stk_lite}"
+          shards="${INPUT_SHARDS:-6}"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            shards=1
+          fi
+          if [[ ! "$universe" =~ ^universe_[a-z0-9_]+\.json$ ]]; then
+            echo "universe must look like universe_<name>.json" >&2; exit 1
+          fi
+          if [[ -n "$asof" && ! "$asof" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "asof must be YYYY-MM-DD or blank" >&2; exit 1
+          fi
+          if [[ ! "$variant" =~ ^(stk_lite|stk_full)$ ]]; then
+            echo "variant must be stk_lite or stk_full" >&2; exit 1
+          fi
+          if [[ ! "$shards" =~ ^[0-9]{1,2}$ ]] || (( 10#$shards < 1 || 10#$shards > 10 )); then
+            echo "shards must be 1–10" >&2; exit 1
+          fi
+          shards=$((10#$shards))
+          matrix=$(python3 -c "import json,sys;print(json.dumps(list(range(int(sys.argv[1])))))" "$shards")
+          {
+            printf 'universe=%s\n' "$universe"
+            printf 'asof=%s\n' "$asof"
+            printf 'variant=%s\n' "$variant"
+            printf 'shards=%s\n' "$shards"
+            printf 'matrix=%s\n' "$matrix"
+          } >> "$GITHUB_OUTPUT"
+
+  fit:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout PR merge commit for smoke runs
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout main for scheduled and dispatched runs
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Run shard
+        shell: bash
+        env:
+          UNIVERSE: ${{ needs.plan.outputs.universe }}
+          ASOF: ${{ needs.plan.outputs.asof }}
+          VARIANT: ${{ needs.plan.outputs.variant }}
+          SHARD: ${{ matrix.shard }}
+          SHARDS: ${{ needs.plan.outputs.shards }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          args=(run --universe "web/mock/data/$UNIVERSE" --shard "$SHARD/$SHARDS" \
+                --variant "$VARIANT" --procs 4 --out out/stock --run-url "$RUN_URL")
+          if [[ -n "$ASOF" ]]; then args+=(--asof "$ASOF"); fi
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then args+=(--limit 2); fi
+          python -m research.pipeline.stock_batch "${args[@]}"
+
+      - name: Upload shard results
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-nightly-${{ matrix.shard }}
+          path: out/stock/
+          if-no-files-found: error
+
+  publish:
+    needs: [plan, fit]
+    if: always() && needs.fit.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      UNIVERSE: ${{ needs.plan.outputs.universe }}
+      VARIANT: ${{ needs.plan.outputs.variant }}
+      STOCK_RESULT_DIR: out/stock
+      STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Download shard results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: stock-nightly-*
+          merge-multiple: true
+          path: out/stock
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Build breadth summary
+        run: |
+          python -m research.pipeline.stock_batch breadth \
+            --universe "web/mock/data/$UNIVERSE" --results out/stock --variant "$VARIANT"
+          ls out/stock | wc -l
+
+      - name: Publish batch to stock-results branch
+        if: github.event_name != 'pull_request'
+        env:
+          HISTORY_WEEKS: "0"
+        run: bash scripts/publish_stock_result.sh
+
+      - name: Dispatch Pages build
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
+
+      - name: Fail if any shard failed
+        if: needs.fit.result != 'success'
+        run: exit 1

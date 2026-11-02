@@ -12,6 +12,7 @@
 | `lab/mock/data/price_layer/rebound_table.json` | LT 顶→谷后 250 日恢复事件与分位汇总 | `research/price_layer/bottom_cards.py` | 随冻结价格数据重生成 |
 | `lab/mock/data/catalog.json`、`stock_names.json` | 资产目录（316 标的：代码、名称、交易所、板块、所属指数） | 日更脚本 | 日更 |
 | `lab/mock/data/universe_*.json` | 指数成分（当前 / 历史 PIT） | 日更脚本 | 日更 |
+| `lab/mock/data/stock/breadth_<idx>.json` | 成分股广度（夜间预算库，`stock_nightly` 同一截止日）：`n`（可统计成分股数）、`n_qualified_fit_dev` / `share_qualified_fit_dev`（6–12 月 / 12–24 月任一尺度有合格拟合）、`n_confidence_ge_0_5_dev`、`per_scale_*`、`asof_consistent`。`evidence=descriptive`：只显示比例与 n，文案“描述性统计，不是预测，不进模型”；不得进入报警、置信度或任何模型特征（R8 横截面广度为 Round 2 候选，未登记） | `research/pipeline/stock_batch.py breadth` → `stock-results` 分支 | 工作日 17:40 北京时间 |
 | `lab/mock/guide.md` | 用户指南副本（教育页渲染） | `docs/user_guide.md` 复制，CI 校验一致 | 随文档 |
 | `forward_log/` | 前瞻日志（append-only，只读） | `research/pipeline/forward_log.py` | 日更 |
 
