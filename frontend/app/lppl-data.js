@@ -4,6 +4,7 @@
 (function (G) {
   'use strict';
   const BASE = (G.LPPL_DATA_BASE || 'lab/mock/data/');
+  const QUERY_API = (G.LPPL_QUERY_API || '').replace(/\/$/, '');
   const SYMS = [
     { sym: 'sh000001', name: '上证指数', code: '000001', alias: ['上证', '上证综指', '上证指数'] },
     { sym: 'sh000016', name: '上证50', code: '000016', alias: ['上证50'] },
@@ -73,12 +74,44 @@
   const history = (sym) => getJSON(sym + '_history.json');
   const opt = (p) => getJSON(p).catch(() => null);
   const okCode = (c) => { if (!/^\d{6}$/.test(String(c))) throw new Error('股票代码须为 6 位数字'); return String(c); };
+  const queryApi = () => {
+    if (!QUERY_API) throw new Error('个股公开查询 API 尚未配置');
+    return QUERY_API;
+  };
+  const queryJSON = async (path, options) => {
+    const response = await fetch(queryApi() + path, options);
+    if (!response.ok) throw new Error('个股查询失败（HTTP ' + response.status + '）');
+    return response.json();
+  };
   /** 按需个股结果（stock-results 分支经 Pages 叠加）；缺文件返回 null。证据恒为 research_candidate，置信度按 dev_only 不显示数值 */
   const stock = {
     index: () => opt('stock/index.json'),
     latest: (c) => opt('stock/' + okCode(c) + '.json'),
     history: (c) => opt('stock/' + okCode(c) + '_history.json'),
     error: (c) => opt('stock/' + okCode(c) + '_error.json'),
+    api: () => queryApi(),
+    request: (c) => {
+      const code = okCode(c);
+      return queryJSON('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+    },
+    status: (c) => {
+      const code = okCode(c);
+      return queryJSON('/status?code=' + encodeURIComponent(code));
+    },
+    remote: async (c, kind = 'latest') => {
+      const code = okCode(c);
+      if (!['latest', 'history', 'error'].includes(kind)) throw new Error('个股结果类型无效');
+      const response = await fetch(
+        queryApi() + '/result?code=' + encodeURIComponent(code) + '&kind=' + encodeURIComponent(kind),
+      );
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error('个股结果读取失败（HTTP ' + response.status + '）');
+      return response.json();
+    },
     /** 成分股广度（夜间预算库，descriptive）：有合格拟合的成分股比例与 n；不是预测、不进模型 */
     breadth: (idx) => { if (!/^(sh|sz)\d{6}$/.test(String(idx))) throw new Error('指数代码须为 sh/sz + 6 位数字'); return opt('stock/breadth_' + idx + '.json'); },
   };
