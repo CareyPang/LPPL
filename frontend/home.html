@@ -518,10 +518,10 @@ function loadLoops(L=LOOPS[0]){
   pumpMedia();
 }
 function loopFor(c){ for(const L of LOOPS) if(c>=L.lo && c<L.hi){ loadLoops(L); return L; } return null; }
-// 当前应显示的循环画面：{key, src, w, h, live}
+// 当前应显示的循环画面：{key, src, w, h, live, scene}
 function loopImage(L,now){
   if(!L) return null;
-  if(L.vidOk){ const v=L.vid; if(v.paused){ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); } return {key:'V'+L.name,src:v,w:v.videoWidth,h:v.videoHeight,live:true}; }
+  if(L.vidOk){ const v=L.vid; if(v.paused){ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); } return {key:'V'+L.name,src:v,w:v.videoWidth,h:v.videoHeight,live:true,scene:L.name}; }
   loadLoops(L);
   if(!L.last){
     const ready=contiguousReady(L);
@@ -529,7 +529,7 @@ function loopImage(L,now){
     const first=L.frames.slice(0,ready).findIndex(f=>f.ok);
     if(first<0) return null;
     L.cursor=first; L.clock=now;
-    const f=L.frames[first]; L.last={key:L.name+first,src:f.img,w:f.img.naturalWidth,h:f.img.naturalHeight,live:false};
+    const f=L.frames[first]; L.last={key:L.name+first,src:f.img,w:f.img.naturalWidth,h:f.img.naturalHeight,live:false,scene:L.name};
   }
   if(L.clock===null) L.clock=now;
   else L.clock=Math.max(L.clock,now-250); // Slow rendering still advances, with bounded catch-up work.
@@ -539,7 +539,7 @@ function loopImage(L,now){
     // A missing frame holds the last decoded image; elapsed buffer time is not accumulated.
     if(!f || !f.done){ L.clock=now; break; }
     L.cursor=i; L.clock+=step;
-    if(f.ok) L.last={key:L.name+i,src:f.img,w:f.img.naturalWidth,h:f.img.naturalHeight,live:false};
+    if(f.ok) L.last={key:L.name+i,src:f.img,w:f.img.naturalWidth,h:f.img.naturalHeight,live:false,scene:L.name};
   }
   return L.last;
 }
@@ -653,7 +653,7 @@ vec3 skyCol(vec2 im,float asp,float t){
   float fl=1.+.035*sin(t*1.7)+.02*sin(t*3.1+1.);
   c+=sunC*(exp(-dist*6.)*.42+exp(-dist*24.)*.45)*fl;                       // 大气散射的光晕
   c+=sunC*exp(-abs(im.y-hI)*22.)*exp(-abs(d.x)*1.4)*.30;                    // 沿海平线铺开的暖光
-  c=mix(c,vec3(1.,.97,.87),smoothstep(.0165,.0115,dist));                 // 日轮
+  c=mix(c,vec3(1.,.97,.87),1.-smoothstep(.0115,.0165,dist));             // 日轮
   // 云：投影到远处的云平面，越靠近海平线越扁、越小（透视）；风持续把云向右吹，并缓慢变形
   float z=1./(e*2.6+.03);
   LODK=1.5+float(OCT)*uQuality*smoothstep(.01,.22,e);
@@ -680,8 +680,8 @@ vec3 skyCol(vec2 im,float asp,float t){
   float a2=smoothstep(.52,.80,ci)*.5*smoothstep(.02,.16,e);
   c=mix(c,mix(vec3(.95,.90,.84),vec3(1.,.86,.66),r)+sunC*rim*.25,a2);
   // 近海平线处云渐隐入薄雾
-  a*=smoothstep(.0,.03,e)*(1.-.35*smoothstep(.07,.0,e));
-  cc=mix(cc,c,smoothstep(.08,.0,e)*.45);
+  a*=smoothstep(.0,.03,e)*(1.-.35*(1.-smoothstep(.0,.07,e)));
+  cc=mix(cc,c,(1.-smoothstep(.0,.08,e))*.45);
   c=mix(c,cc,a);
   c+=sunC*exp(-dist*20.)*.18*fl;                                         // 透过云层的余晖
   return c;
@@ -708,7 +708,7 @@ void main(){
   // 海平线以上换成代码天空；海面、浪尖仍用真实视频（按亮度区分，浪冲过海平线时不会被盖住）
   if(uSkyW>.001){
     vec2 im=vec2(uv.x,1.-uv.y);
-    float above=smoothstep(uHz+.004,uHz-.003,im.y);
+    float above=1.-smoothstep(uHz-.003,uHz+.004,im.y);
     if(above>0.){
       float lum=dot(col,vec3(.299,.587,.114));
       float m=above*smoothstep(.40,.54,lum)*uSkyW;
@@ -722,12 +722,12 @@ void main(){
     col+=vec3(.78,1.,.95)*c*.08*uSub*topM*(1.-uDeep*.8);
     vec2 sun=vec2(.62*asp,1.3);vec2 dv=q-sun;float ang=atan(dv.x,-dv.y);
     float rays=clamp(.5+.25*sin(ang*23.+uT*.21)+.25*sin(ang*41.-uT*.3+1.7),0.,1.);
-    rays=pow(rays,4.)*smoothstep(1.7,.25,length(dv));
+    rays=pow(rays,4.)*(1.-smoothstep(.25,1.7,length(dv)));
     col+=vec3(.82,1.,.96)*rays*.06*uSub*(1.-uDeep*.7)*(.65+.55*uStr);
   }
   col=clamp(col,0.,1.);
   col=mix(col,soft(col,uTint.rgb),uTint.a);
-  float vg=smoothstep(1.3,.35,length((s-vec2(.4,.6))*vec2(1.,1.2)));col*=mix(.72,1.,vg);
+  float vg=1.-smoothstep(.35,1.3,length((s-vec2(.4,.6))*vec2(1.,1.2)));col*=mix(.72,1.,vg);
   col+=(hash(s*uRes+fract(uT*7.)*91.)-.5)*.008;
   gl_FragColor=vec4(col,1.);
 }`;
@@ -781,6 +781,13 @@ function hzAt(fi){ // fi：当前帧序列中的位置 → 换算到 241 帧的�
   if(i>=HZ_TAB.length-1) return 0;
   return (HZ_TAB[i]+(HZ_TAB[i+1]-HZ_TAB[i])*t)/1000;
 }
+function sceneSky(fi,loop,loopW){
+  const lw=loop?clamp(loopW,0,1):0, seaMix=loop&&loop.scene==='sea'?lw:0;
+  // Only the surface loop owns HZ_LOOP. Underwater media must never acquire a sky.
+  const hz=hzAt(fi)*(1-seaMix)+HZ_LOOP*seaMix;
+  const remainingSky=loop&&loop.scene!=='sea'?1-lw:1;
+  return {hz,weight:SKY_ON?sstep(.03,.12,hz)*remainingSky:0,sunX:.762*(1-seaMix)+SUN_X*seaMix};
+}
 // fi：滚动位置对应的帧；loop / loopW：静止时的真实海浪循环及其权重
 function render(now, fi, sub, deep, loop, loopW){
   const i0=Math.floor(fi); let a=nearestLoaded(i0); if(a<0 && !loop) return;
@@ -805,10 +812,9 @@ function render(now, fi, sub, deep, loop, loopW){
     gl.uniform1f(U.uQuality,quality.settings.cloud);
     gl.uniform2f(U.uRes,W,H); gl.uniform2f(U.uCov,covx,covy); gl.uniform2f(U.uK,kx,.5);
     gl.uniform4f(U.uTint,TINT[0],TINT[1],TINT[2],TINT[3]);
-    // 海平线：滚动帧查表，循环画面固定；两者交叉淡化时按权重插值
-    const lw = loop ? loopW : 0, hz = hzAt(fi)*(1-lw) + HZ_LOOP*lw;
-    const skyW = SKY_ON ? sstep(.03,.12,hz) : 0;   // 镜头沉到海平线以下后天空自然退出
-    gl.uniform1f(U.uHz,hz); gl.uniform1f(U.uSkyW,skyW); gl.uniform1f(U.uSunX,.762*(1-lw)+SUN_X*lw);
+    // Surface horizon follows its own loop; any residual dive sky fades out with underwater media.
+    const sky=sceneSky(fi,loop,loopW);
+    gl.uniform1f(U.uHz,sky.hz); gl.uniform1f(U.uSkyW,sky.weight); gl.uniform1f(U.uSunX,sky.sunX);
     gl.drawArrays(gl.TRIANGLES,0,3);
   } else {
     const dw=SRC.w*s, dh=SRC.h*s, ox=(W-dw)*kx, oy=(H-dh)/2;
