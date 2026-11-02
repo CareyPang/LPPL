@@ -64,6 +64,7 @@ def record(sym: str, asof: str) -> dict:
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
+MODEL_VERSION = "prereg_v1.7_v2"
 HISTORY_SCANS = {
     "dev": Path("data/features/lppls_v2"),
     "cal": Path("data/features/lppls_v2_cal"),
@@ -86,6 +87,50 @@ def _fit_params(row: pd.Series, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: p
             "loss": round(float(row.sse / max(int(row.n) - 7, 1)), 6),
             "sets": [k for k, c in FCO_SETS.items() if bool(gg.loc[row.name, c])],
             "curve": _curve(row, cal, date)}
+
+
+def _scenario_records(q: pd.DataFrame, scen: pd.DataFrame, gg: pd.DataFrame,
+                      cal: pd.DatetimeIndex, date: pd.Timestamp) -> list[dict]:
+    return [
+        {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
+         "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
+         "q20": round(float(x.q20), 1), "q80": round(float(x.q80), 1),
+         "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
+         "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975),
+         "tc_mode_date": _to_cal(cal, date, x.tc_mode),
+         "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
+        for x in scen.itertuples()
+    ]
+
+
+def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
+                   cal: pd.DatetimeIndex, close: float, split: str,
+                   include_scenarios: bool = False) -> dict:
+    dd = d[d.date == date]
+    rr = r.loc[dd.index]
+    fit_rows = dd.loc[rr.box]
+    q = fit_rows[["n", "ahead"]]
+    sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
+    windows = {scale: None for scale in HISTORY_SCALES}
+    for row in sw.itertuples():
+        if row.scale in windows:
+            windows[row.scale] = [
+                _to_cal(cal, date, float(row.q20)),
+                _to_cal(cal, date, float(row.q80)),
+            ]
+    conf = _conf(dd, rr, date)
+    frame = {
+        "asof": str(date.date()),
+        "split": split,
+        "close": round(float(close), 2),
+        "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
+        "w": windows,
+    }
+    if include_scenarios:
+        gg = grid_rules(dd)
+        scen = scenarios(q) if len(q) else pd.DataFrame()
+        frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date)
+    return frame
 
 
 def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: int = 120) -> dict:
@@ -315,7 +360,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}
               if len(w612) else {"start": None, "end": None, "rule": "6–12 月档无合格拟合", "evidence": "dev"})
     rec = {
-        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": "prereg_v1.7_v2",
+        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
         "top": {
             "p20": {"value": None, "evidence": "fail_i_iii",
                     "notes": ["冻结 p20=R2（GSADF）；校准段 ΔBrier +0.00077 [−0.0013, +0.0030] 未通过；测试段 −0.00158 [−0.00231, −0.00003] 点过线但留出 4/7 翻转（判据 iii 不满足），不显示概率",
@@ -332,15 +377,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
                                  "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
-            "scenarios": [
-                {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
-                 "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
-                 "q20": round(float(x.q20), 1), "q80": round(float(x.q80), 1),
-                 "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
-                 "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975), "tc_mode_date": _to_cal(cal, date, x.tc_mode),
-                 "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
-                for x in scen.itertuples()
-            ],
+            "scenarios": _scenario_records(q, scen, gg, cal, date),
             "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
                               "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
             "scale_windows": [
@@ -432,27 +469,10 @@ def history(sym: str) -> dict:
     cal = logp.index
     frames = []
     for date, dd in d.groupby("date", sort=True):
-        rr = r.loc[dd.index]
-        q = dd.loc[rr.box, ["n", "ahead"]]
-        sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
         split_values = dd["split"].unique()
         if len(split_values) != 1:
             raise ValueError(f"{sym} has multiple source splits on {date.date()}")
-        windows = {scale: None for scale in HISTORY_SCALES}
-        for row in sw.itertuples():
-            if row.scale in windows:
-                windows[row.scale] = [
-                    _to_cal(cal, date, float(row.q20)),
-                    _to_cal(cal, date, float(row.q80)),
-                ]
-        conf = _conf(dd, rr, date)
-        frames.append({
-            "asof": str(date.date()),
-            "split": str(split_values[0]),
-            "close": round(float(close.loc[date]), 2),
-            "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
-            "w": windows,
-        })
+        frames.append(_history_frame(d, r, date, cal, close.loc[date], str(split_values[0])))
 
     top_logp = load_drawdown_logp(sym)
     top_values = top_logp.to_numpy()
@@ -467,7 +487,7 @@ def history(sym: str) -> dict:
     ]
     return {
         "symbol": sym,
-        "model_version": "prereg_v1.7_v2",
+        "model_version": MODEL_VERSION,
         "evidence": "dev_only",
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "frames": frames,
