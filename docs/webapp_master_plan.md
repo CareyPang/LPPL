@@ -17,6 +17,7 @@
 | G 本表 + 交接 | 完成 | #22 |
 | H 夜间预算库（固定截止日、分片并行、成分股广度 descriptive、批量发布） | 完成，CI 绿 | #27（叠在 #25 上） |
 | I 时间层/价格层深化方案（拟合与回测口径、回撤/反弹幅度方法、执行顺序） | 文档完成：`docs/time_price_layer_plan.md` | #22 |
+| J 中证500 夜间预算库（当前非 PIT 500 只、10 分片） | 实现并推送，待检查与合并 | `devin/1793662429-csi500-nightly`（无 PR） |
 
 合并顺序待用户决定：#22 → #23 → #24 → #25 → #27（#23 合并后把 #25 的 base 改回 main，#25 合并后把 #27 的 base 改回 main）。用户分支 PR #26（`od/home-first-paint`，Open Design 主页海洋视频，草稿）只改 `frontend/`，本地构建桌面/手机均可渲染、无 JS 报错；待真机复核手机宽度引言换行，新增约 16 MB mp4 建议日后改走 Release/LFS。
 **已知问题**：`reports/ladder_bottom_margin_dev.*`（dev_only B5）是在深交所两融单位 bug 修复前生成的，已过期，待重算。
