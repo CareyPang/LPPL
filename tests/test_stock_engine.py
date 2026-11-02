@@ -112,6 +112,165 @@ def _install_fake_model(monkeypatch):
     monkeypatch.setattr(stock, "_history_frame", _fake_history_frame)
     monkeypatch.setattr(stock, "build_record", _fake_record)
     monkeypatch.setattr(stock, "_variant_windows", lambda variant, n: (127, 152))
+    monkeypatch.setattr(
+        stock, "_trading_days_stale", lambda last_bar, asof=None: (0, None)
+    )
+
+
+def test_load_stock_drops_unclosed_same_day_and_future_bars(monkeypatch):
+    today = pd.Timestamp("2026-11-02")
+    raw = _ohlc(3)
+    raw["date"] = [
+        today - pd.Timedelta(days=1),
+        today,
+        today + pd.Timedelta(days=1),
+    ]
+    factors = pd.DataFrame({"date": ["1900-01-01"], "factor": [1.0]})
+    monkeypatch.setattr(stock, "tencent_raw", lambda sym, start: raw.copy())
+    monkeypatch.setattr(stock, "sina_factors", lambda sym, kind: factors)
+
+    monkeypatch.setattr(
+        stock, "_now", lambda: pd.Timestamp("2026-11-02 10:00", tz="Asia/Shanghai")
+    )
+    before_close, _, before_meta = stock.load_stock("600519", start="2026-11-01")
+    assert before_close.date.tolist() == [today - pd.Timedelta(days=1)]
+    assert before_meta["dropped_unclosed_bar"] is True
+
+    monkeypatch.setattr(
+        stock, "_now", lambda: pd.Timestamp("2026-11-02 15:31", tz="Asia/Shanghai")
+    )
+    after_close, _, after_meta = stock.load_stock("600519", start="2026-11-01")
+    assert after_close.date.tolist() == [
+        today - pd.Timedelta(days=1),
+        today,
+    ]
+    assert after_meta["dropped_unclosed_bar"] is True
+
+    raw = raw.iloc[:2].copy()
+    after_close_without_future, _, final_meta = stock.load_stock(
+        "600519", start="2026-11-01"
+    )
+    assert after_close_without_future.date.tolist() == [
+        today - pd.Timedelta(days=1),
+        today,
+    ]
+    assert final_meta["dropped_unclosed_bar"] is False
+
+
+def test_reference_calendar_is_cached_and_drops_unclosed_bars(monkeypatch):
+    today = pd.Timestamp("2026-11-02")
+    raw = _ohlc(3)
+    raw["date"] = [
+        today - pd.Timedelta(days=1),
+        today,
+        today + pd.Timedelta(days=1),
+    ]
+    calls = []
+
+    def fake_tencent(sym, start):
+        calls.append((sym, start))
+        return raw.copy()
+
+    monkeypatch.setattr(
+        stock,
+        "_now",
+        lambda: pd.Timestamp("2026-11-02 10:00", tz="Asia/Shanghai"),
+    )
+    monkeypatch.setattr(stock, "tencent_raw", fake_tencent)
+    stock._reference_calendar.cache_clear()
+    try:
+        first = stock._reference_calendar()
+        second = stock._reference_calendar()
+        assert first.equals(second)
+        assert first.tolist() == [today - pd.Timedelta(days=1)]
+        assert calls == [("sh000001", stock.DEFAULT_START)]
+    finally:
+        stock._reference_calendar.cache_clear()
+
+
+@pytest.mark.parametrize(
+    ("gap", "expected_status", "expected_in_stats"),
+    (
+        (0, "eligible", True),
+        (5, "suspended", False),
+        (60, "delisted_or_long_suspended", False),
+    ),
+)
+def test_reference_calendar_gap_controls_stock_status(
+    monkeypatch, gap, expected_status, expected_in_stats
+):
+    prices = _ohlc(600)
+    last_bar = pd.Timestamp(prices.date.iloc[-1])
+    calendar = pd.DatetimeIndex(pd.bdate_range(last_bar, periods=gap + 1))
+    monkeypatch.setattr(stock, "_reference_calendar", lambda: calendar)
+
+    meta = stock._stock_status_meta(prices, False, {"dropped_unclosed_bar": False})
+    assert meta["trading_days_stale"] == gap
+    assert meta["status"] == expected_status
+    assert meta["in_stats"] is expected_in_stats
+
+
+def test_reference_calendar_gap_is_clipped_at_asof(monkeypatch):
+    prices = _ohlc(600)
+    last_bar = pd.Timestamp(prices.date.iloc[-1])
+    calendar = pd.DatetimeIndex(pd.bdate_range(last_bar, periods=10))
+    asof = calendar[5]
+    monkeypatch.setattr(stock, "_reference_calendar", lambda: calendar)
+
+    meta = stock._stock_status_meta(
+        prices, False, {"dropped_unclosed_bar": False}, asof
+    )
+    assert meta["trading_days_stale"] == 5
+    assert meta["status"] == "suspended"
+    assert meta["in_stats"] is False
+
+
+def test_stale_calendar_does_not_override_ineligible_status(monkeypatch):
+    prices = _ohlc(600)
+    last_bar = pd.Timestamp(prices.date.iloc[-1])
+    calendar = pd.DatetimeIndex(pd.bdate_range(last_bar, periods=61))
+    monkeypatch.setattr(stock, "_reference_calendar", lambda: calendar)
+
+    insufficient = stock._stock_status_meta(
+        _ohlc(499), False, {"dropped_unclosed_bar": False}
+    )
+    assert insufficient["status"] == "insufficient_history"
+    assert insufficient["in_stats"] is False
+
+    degenerate = _ohlc(505)
+    close = degenerate.close.to_numpy(copy=True)
+    jump_indices = np.arange(2, 112)
+    for index in jump_indices:
+        close[index] = close[index - 1] * 1.10
+    degenerate["close"] = close
+    degenerate["high"] = close
+    degenerate["low"] = close
+    flagged = stock._stock_status_meta(
+        degenerate, False, {"dropped_unclosed_bar": False}
+    )
+    assert flagged["status"] == "degenerate"
+    assert flagged["in_stats"] is False
+
+
+def test_reference_calendar_failure_keeps_eligibility_and_records_null(monkeypatch):
+    prices = _ohlc(600)
+
+    def unavailable(sym, start):
+        raise ConnectionError("reference endpoint unavailable")
+
+    stock._reference_calendar.cache_clear()
+    monkeypatch.setattr(stock, "tencent_raw", unavailable)
+    try:
+        meta = stock._stock_status_meta(
+            prices, False, {"dropped_unclosed_bar": False}
+        )
+    finally:
+        stock._reference_calendar.cache_clear()
+
+    assert meta["trading_days_stale"] is None
+    assert meta["status"] == "eligible"
+    assert meta["in_stats"] is True
+    assert "参考指数交易日历获取失败" in meta["eligibility_note"]
 
 
 def test_load_stock_hfq_factor_direction_and_date_boundary(monkeypatch):
@@ -157,6 +316,9 @@ def test_history_is_point_in_time_and_matches_predict(monkeypatch, tmp_path):
     historical = stock.history(
         "600519", weeks=10, procs=1, cache_dir=tmp_path / "cache"
     )
+    assert record["stock_meta"]["trading_days_stale"] == 0
+    assert record["stock_meta"]["dropped_unclosed_bar"] is False
+    assert historical["stock_meta"]["trading_days_stale"] == 0
     frame = next(item for item in historical["frames"] if item["asof"] == str(asof.date()))
     assert frame["scenarios"] == record["top"]["scenarios"]
     assert frame["conf"] == {
