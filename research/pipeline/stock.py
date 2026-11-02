@@ -120,25 +120,32 @@ def _normalise_prices(frame: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _drop_unclosed_bars(
-    frame: pd.DataFrame, now: pd.Timestamp | None = None
-) -> tuple[pd.DataFrame, bool]:
-    current = pd.Timestamp(now if now is not None else _now())
+def _close_cutoff(now: pd.Timestamp) -> pd.Timestamp:
+    current = pd.Timestamp(now)
     if current.tzinfo is None:
         current = current.tz_localize("Asia/Shanghai")
     else:
         current = current.tz_convert("Asia/Shanghai")
-    today = current.tz_localize(None).normalize()
-    dates = pd.to_datetime(frame["date"]).dt.normalize()
-    dropped = dates > today
+    cutoff = current.tz_localize(None).normalize()
     if current.hour * 60 + current.minute < 15 * 60 + 30:
-        dropped |= dates == today
+        cutoff -= pd.Timedelta(days=1)
+    return cutoff
+
+
+def _drop_unclosed_bars(
+    frame: pd.DataFrame, now: pd.Timestamp
+) -> tuple[pd.DataFrame, bool]:
+    cutoff = _close_cutoff(now)
+    dates = pd.to_datetime(frame["date"]).dt.normalize()
+    dropped = dates > cutoff
     return frame.loc[~dropped].reset_index(drop=True), bool(dropped.any())
 
 
 def load_stock(
     code6: str, start: str | None = None
 ) -> tuple[pd.DataFrame, str, dict]:
+    now = _now()
+    cutoff = _close_cutoff(now)
     code = _validate_code(code6)
     sym = universe._sym(code)
     requested_start = str(pd.Timestamp(start or DEFAULT_START).date())
@@ -174,7 +181,7 @@ def load_stock(
             ) from fallback_error
 
     ohlc = _normalise_prices(adjusted)
-    ohlc, dropped_unclosed_bar = _drop_unclosed_bars(ohlc)
+    ohlc, dropped_unclosed_bar = _drop_unclosed_bars(ohlc, now)
     if ohlc.empty:
         raise RuntimeError(
             f"no positive closed HFQ closes available for {sym} after excluding "
@@ -195,26 +202,35 @@ def load_stock(
         "fit_first_date": str(pd.Timestamp(ohlc.date.iloc[0]).date()),
         "dropped_ipo_bars": 60 if ipo_in_range else 0,
         "dropped_unclosed_bar": dropped_unclosed_bar,
+        "reference_cutoff": cutoff,
         "source": source,
     }
     return ohlc, data_version, meta
 
 
-@lru_cache(maxsize=1)
-def _reference_calendar() -> pd.DatetimeIndex:
+@lru_cache(maxsize=4)
+def _reference_calendar(cutoff: pd.Timestamp) -> pd.DatetimeIndex:
     raw = tencent_raw("sh000001", start=DEFAULT_START)
     prices = _normalise_prices(raw)
-    prices, _ = _drop_unclosed_bars(prices)
+    cutoff = pd.Timestamp(cutoff).normalize()
+    prices = prices.loc[prices["date"] <= cutoff].reset_index(drop=True)
     if prices.empty:
         raise RuntimeError("Tencent sh000001 reference calendar has no closed bars")
     return pd.DatetimeIndex(prices["date"]).normalize()
 
 
 def _trading_days_stale(
-    last_bar: pd.Timestamp, asof: pd.Timestamp | None = None
+    last_bar: pd.Timestamp,
+    asof: pd.Timestamp | None = None,
+    cutoff: pd.Timestamp | None = None,
 ) -> tuple[int | None, str | None]:
     try:
-        calendar = _reference_calendar()
+        cutoff = (
+            _close_cutoff(_now())
+            if cutoff is None
+            else pd.Timestamp(cutoff).normalize()
+        )
+        calendar = _reference_calendar(cutoff)
         if calendar.empty:
             raise RuntimeError("Tencent sh000001 reference calendar is empty")
     except Exception as exc:
@@ -222,7 +238,11 @@ def _trading_days_stale(
             "参考指数交易日历获取失败，未能判断停牌或退市状态 "
             f"({type(exc).__name__}: {exc})"
         )
-    upper = pd.Timestamp(asof).normalize() if asof is not None else calendar[-1]
+    upper = (
+        min(pd.Timestamp(asof).normalize(), cutoff)
+        if asof is not None
+        else cutoff
+    )
     last = pd.Timestamp(last_bar).normalize()
     gap = int(((calendar > last) & (calendar <= upper)).sum())
     return gap, None
@@ -305,7 +325,7 @@ def _stock_status_meta(
     result = _eligibility(ohlc, st)
     last_bar = pd.Timestamp(ohlc.date.iloc[-1])
     trading_days_stale, reference_error = _trading_days_stale(
-        last_bar, reference_asof
+        last_bar, reference_asof, meta.get("reference_cutoff")
     )
     result["trading_days_stale"] = trading_days_stale
     result["dropped_unclosed_bar"] = bool(meta.get("dropped_unclosed_bar", False))
