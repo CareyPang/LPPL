@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,6 +57,15 @@ def default_asof() -> str:
     return str(pd.Timestamp(calendar[-1]).date())
 
 
+def _write_json_atomic(path: Path, record: dict, indent: int) -> None:
+    temporary_path = path.with_name(f"{path.name}.tmp")
+    temporary_path.write_text(
+        json.dumps(record, ensure_ascii=False, indent=indent, default=str),
+        encoding="utf-8",
+    )
+    os.replace(temporary_path, path)
+
+
 def run_batch(
     codes: list[str],
     asof: str,
@@ -68,16 +78,16 @@ def run_batch(
     summary = {"asof": asof, "variant": variant, "ok": [], "failed": []}
     for code in codes:
         t0 = time.time()
+        result_path = out / f"{code}.json"
+        error_path = out / f"{code}_error.json"
         try:
             record = stock_pipeline.predict(code, variant=variant, asof=asof, procs=procs)
-            (out / f"{code}_error.json").unlink(missing_ok=True)
-            (out / f"{code}.json").write_text(
-                json.dumps(record, ensure_ascii=False, indent=1, default=str),
-                encoding="utf-8",
-            )
+            _write_json_atomic(result_path, record, indent=1)
+            error_path.unlink(missing_ok=True)
             summary["ok"].append(code)
             status = record.get("stock_meta", {}).get("status")
         except Exception as exc:  # noqa: BLE001 —— 单只失败不拖垮整批，显式写入 error 文件
+            result_path.unlink(missing_ok=True)
             error = {
                 "code": code,
                 "asof": asof,
@@ -85,9 +95,7 @@ def run_batch(
                 "run_url": run_url,
                 "generated_at": datetime.now(UTC).isoformat(),
             }
-            (out / f"{code}_error.json").write_text(
-                json.dumps(error, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
+            _write_json_atomic(error_path, error, indent=2)
             summary["failed"].append(code)
             status = "error"
         print(f"{code} {status} {time.time() - t0:.1f}s", flush=True)

@@ -110,3 +110,62 @@ def test_publisher_creates_orphan_updates_index_and_publishes_error(tmp_path):
     assert index["000002"]["history_weeks"] == 0
     assert _git("--git-dir", str(origin), "show", "stock-results:stock/000002.json")
     assert _remote_json(origin, "stock/000002_error.json") == error
+
+
+def test_batch_publisher_keeps_only_variant_and_asof_compatible_histories(tmp_path):
+    origin, repo = _repositories(tmp_path)
+    stock_dir = repo / "stock"
+    stock_dir.mkdir()
+    histories = {
+        "000001": {
+            "variant": "stk_lite",
+            "frames": [{"asof": "2026-10-29"}, {"asof": "2026-10-30"}],
+        },
+        "000002": {
+            "variant": "stk_full",
+            "frames": [{"asof": "2026-10-30"}],
+        },
+        "000003": {
+            "variant": "stk_lite",
+            "frames": [{"asof": "2026-10-31"}],
+        },
+    }
+    for code, history in histories.items():
+        (stock_dir / f"{code}_history.json").write_text(
+            json.dumps(history), encoding="utf-8"
+        )
+    _git("checkout", "-b", "stock-results", cwd=repo)
+    _git("add", "stock", cwd=repo)
+    _git("commit", "-m", "initial stock histories", cwd=repo)
+    _git("push", "-u", "origin", "stock-results", cwd=repo)
+    _git("checkout", "main", cwd=repo)
+
+    result_dir = repo / "out" / "stock"
+    result_dir.mkdir(parents=True)
+    for code in histories:
+        (result_dir / f"{code}.json").write_text(
+            json.dumps(
+                {
+                    "asof": "2026-10-30",
+                    "stock_meta": {"status": "eligible", "variant": "stk_lite"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    _publish(repo, result_dir, "", variant="stk_lite", weeks="0")
+
+    published_files = set(
+        _git(
+            "--git-dir",
+            str(origin),
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "stock-results",
+            "stock/",
+        ).splitlines()
+    )
+    assert "stock/000001_history.json" in published_files
+    assert "stock/000002_history.json" not in published_files
+    assert "stock/000003_history.json" not in published_files

@@ -72,11 +72,33 @@ def test_run_batch_writes_error_file_and_continues(tmp_path, monkeypatch):
 
     monkeypatch.setattr(stock_batch.stock_pipeline, "predict", fake_predict)
     out = tmp_path / "out"
+    out.mkdir()
+    (out / "000001_error.json").write_text("{}", encoding="utf-8")
     summary = stock_batch.run_batch(["000001", "000002"], "2026-10-30", out, run_url="https://x/1")
     assert summary["ok"] == ["000001"] and summary["failed"] == ["000002"]
     assert json.loads((out / "000001.json").read_text(encoding="utf-8"))["asof"] == "2026-10-30"
+    assert not (out / "000001_error.json").exists()
     err = json.loads((out / "000002_error.json").read_text(encoding="utf-8"))
     assert err["error"].startswith("RuntimeError") and err["run_url"] == "https://x/1"
+
+
+def test_run_batch_failure_removes_stale_result_and_breadth_counts_error(tmp_path, monkeypatch):
+    def fail_predict(*args, **kwargs):
+        raise RuntimeError("fetch failed")
+
+    monkeypatch.setattr(stock_batch.stock_pipeline, "predict", fail_predict)
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "000001.json").write_text(
+        json.dumps(_record("000001")), encoding="utf-8"
+    )
+
+    summary = stock_batch.run_batch(["000001"], "2026-10-30", out)
+    breadth = stock_batch.breadth(out, {"codes": ["000001"]})
+
+    assert summary["failed"] == ["000001"] and summary["ok"] == []
+    assert [path.name for path in out.iterdir()] == ["000001_error.json"]
+    assert breadth["n_results"] == 0 and breadth["n_error"] == 1 and breadth["n_missing"] == 0
 
 
 def _git(*args, cwd=None):

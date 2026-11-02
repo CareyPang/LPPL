@@ -55,6 +55,27 @@ jobs:
       INPUT_VARIANT: ${{ inputs.variant }}
       INPUT_SHARDS: ${{ inputs.shards }}
     steps:
+      - name: Checkout PR merge commit for smoke runs
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout main for scheduled and dispatched runs
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project
+        run: python -m pip install -e .
+
       - id: plan
         shell: bash
         run: |
@@ -69,8 +90,12 @@ jobs:
           if [[ ! "$universe" =~ ^universe_[a-z0-9_]+\.json$ ]]; then
             echo "universe must look like universe_<name>.json" >&2; exit 1
           fi
-          if [[ -n "$asof" && ! "$asof" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            echo "asof must be YYYY-MM-DD or blank" >&2; exit 1
+          if [[ -z "$asof" ]]; then
+            asof="$(python -c "from research.pipeline.stock_batch import default_asof; print(default_asof())")"
+          fi
+          if [[ -z "$asof" || ! "$asof" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] \
+            || ! python -c "from datetime import date; import sys; date.fromisoformat(sys.argv[1])" "$asof" >/dev/null 2>&1; then
+            echo "asof must resolve to a valid YYYY-MM-DD date" >&2; exit 1
           fi
           if [[ ! "$variant" =~ ^(stk_lite|stk_full)$ ]]; then
             echo "variant must be stk_lite or stk_full" >&2; exit 1
@@ -129,9 +154,9 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          args=(run --universe "web/mock/data/$UNIVERSE" --shard "$SHARD/$SHARDS" \
-                --variant "$VARIANT" --procs 4 --out out/stock --run-url "$RUN_URL")
-          if [[ -n "$ASOF" ]]; then args+=(--asof "$ASOF"); fi
+          args=(run --universe "web/mock/data/$UNIVERSE" --asof "$ASOF" \
+                --shard "$SHARD/$SHARDS" --variant "$VARIANT" \
+                --procs 4 --out out/stock --run-url "$RUN_URL")
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then args+=(--limit 2); fi
           python -m research.pipeline.stock_batch "${args[@]}"
 
@@ -144,13 +169,14 @@ jobs:
 
   publish:
     needs: [plan, fit]
-    if: always() && needs.fit.result != 'cancelled'
+    if: needs.fit.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: write
     env:
       UNIVERSE: ${{ needs.plan.outputs.universe }}
+      ASOF: ${{ needs.plan.outputs.asof }}
       VARIANT: ${{ needs.plan.outputs.variant }}
       STOCK_RESULT_DIR: out/stock
       STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -189,6 +215,32 @@ jobs:
             --universe "web/mock/data/$UNIVERSE" --results out/stock --variant "$VARIANT"
           ls out/stock | wc -l
 
+      - name: Validate breadth before publishing
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          universe = json.loads(
+              (Path("web/mock/data") / os.environ["UNIVERSE"]).read_text(encoding="utf-8")
+          )
+          breadth_path = Path("out/stock") / f"breadth_{universe['index']}.json"
+          summary = json.loads(breadth_path.read_text(encoding="utf-8"))
+          if summary.get("asof_consistent") is not True:
+              raise SystemExit(f"{breadth_path}: asof_consistent is not true")
+          if summary.get("asof") != os.environ["ASOF"]:
+              raise SystemExit(
+                  f"{breadth_path}: asof {summary.get('asof')!r} "
+                  f"does not match planned {os.environ['ASOF']!r}"
+              )
+          if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
+              n_missing = summary.get("n_missing")
+              if type(n_missing) is not int or n_missing > 0:
+                  raise SystemExit(f"{breadth_path}: n_missing must be zero, got {n_missing!r}")
+          PY
+
       - name: Publish batch to stock-results branch
         if: github.event_name != 'pull_request'
         env:
@@ -200,7 +252,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run pages.yml --ref main
-
-      - name: Fail if any shard failed
-        if: needs.fit.result != 'success'
-        run: exit 1

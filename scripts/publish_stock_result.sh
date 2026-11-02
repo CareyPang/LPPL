@@ -109,11 +109,12 @@ for attempt in 1 2 3; do
   STOCK_NAMES_FILE="$ROOT/web/mock/data/stock_names.json" \
   STOCK_VARIANT="$VARIANT" \
   STOCK_HISTORY_WEEKS="$HISTORY_WEEKS" \
+  STOCK_SINGLE_CODE="$CODE" \
   STOCK_RUN_URL="$RUN_URL" \
   python - <<'PY'
 import json
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 index_path = Path(os.environ["STOCK_INDEX_FILE"])
@@ -129,6 +130,45 @@ names = json.loads(names_path.read_text(encoding="utf-8")) if names_path.exists(
 names = names if isinstance(names, dict) else {}
 result_dir = Path(os.environ["STOCK_RESULT_DIR"])
 now = datetime.now(timezone.utc).isoformat()
+single_code_mode = bool(os.environ["STOCK_SINGLE_CODE"])
+
+
+def _iso_date(value):
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.isoformat() == value else None
+
+
+def _history_matches_latest(history_path, latest_record):
+    try:
+        history_record = json.loads(history_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(history_record, dict):
+        return False
+    latest_meta = latest_record.get("stock_meta")
+    latest_meta = latest_meta if isinstance(latest_meta, dict) else {}
+    latest_variant = latest_record.get("variant") or latest_meta.get("variant")
+    latest_asof = _iso_date(latest_record.get("asof"))
+    frames = history_record.get("frames")
+    if (
+        latest_variant is None
+        or history_record.get("variant") != latest_variant
+        or latest_asof is None
+        or not isinstance(frames, list)
+    ):
+        return False
+    for frame in frames:
+        if not isinstance(frame, dict):
+            return False
+        frame_asof = _iso_date(frame.get("asof"))
+        if frame_asof is None or frame_asof > latest_asof:
+            return False
+    return True
 
 for code in os.environ["STOCK_CODES"].split():
     latest_path = result_dir / f"{code}.json"
@@ -138,6 +178,10 @@ for code in os.environ["STOCK_CODES"].split():
         json.loads(latest_path.read_text(encoding="utf-8")) if latest_path.exists() else {}
     )
     error_record = json.loads(error_path.read_text(encoding="utf-8")) if has_error else {}
+    if not single_code_mode and latest_path.exists():
+        history_path = index_path.parent / f"{code}_history.json"
+        if history_path.exists() and not _history_matches_latest(history_path, latest_record):
+            history_path.unlink()
     record = latest_record or error_record
     previous = index.get(code, {})
     previous = previous if isinstance(previous, dict) else {}
