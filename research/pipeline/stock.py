@@ -158,6 +158,14 @@ def _validate_source_history(
         )
 
 
+def _apply_stock_hfq(
+    raw: pd.DataFrame, factors: pd.DataFrame, source: str
+) -> pd.DataFrame:
+    adjusted = apply_factors(raw, factors, "hfq")
+    adjusted.attrs["source"] = source
+    return adjusted
+
+
 def load_stock(
     code6: str, start: str | None = None
 ) -> tuple[pd.DataFrame, str, dict]:
@@ -177,8 +185,7 @@ def load_stock(
     try:
         raw = tencent_raw(sym, start=requested_start)
         source = raw.attrs.get("source", source)
-        adjusted = apply_factors(raw, factors, "hfq")
-        adjusted.attrs["source"] = source
+        adjusted = _apply_stock_hfq(raw, factors, source)
         _validate_source_history(adjusted, sym, requested_start, now)
     except Exception as primary_error:
         try:
@@ -200,8 +207,7 @@ def load_stock(
                     "history_truncated": bool(raw.attrs.get("history_truncated", False)),
                     "history_earliest_date": raw.attrs.get("history_earliest_date"),
                 }
-                adjusted = apply_factors(raw, factors, "hfq")
-                adjusted.attrs["source"] = source
+                adjusted = _apply_stock_hfq(raw, factors, source)
                 _validate_source_history(adjusted, sym, requested_start, now)
             except Exception as sina_error:
                 if sym.startswith("bj"):

@@ -205,57 +205,55 @@ def test_load_beijing_stock_network():
 
 
 @pytest.mark.network
-def test_sina_hfq_matches_tencent_fqkline_network():
+def test_sina_hfq_matches_tencent_raw_factors_network():
     symbol = "sh600519"
     sina_raw = sources.sina_raw_daily(symbol)
     factors = tencent_sina.sina_factors(symbol, "hfq")
     sina_hfq = tencent_sina.apply_factors(sina_raw, factors, "hfq")
     start = pd.Timestamp(sina_hfq["date"].iloc[max(0, len(sina_hfq) - 640)]).date()
     end = pd.Timestamp(sina_hfq["date"].iloc[-1]).date()
-    param = f"{symbol},day,{start},{end},640,hfq"
-    sources.rate_limit()
-    response = sources.requests.get(
-        "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get",
-        params={"param": param},
-        headers=sources.UA,
-        timeout=15,
+    tencent_raw = tencent_sina.tencent_raw(
+        symbol, start=str(start), end=str(end)
     )
-    response.raise_for_status()
-    data = (response.json().get("data") or {}).get(symbol) or {}
-    rows = data.get("hfqday") or []
-    assert rows, "Tencent fqkline hfq returned no overlapping rows"
-    tencent_hfq = pd.DataFrame(
-        [
-            {
-                "date": row[0],
-                "open": row[1],
-                "close": row[2],
-                "high": row[3],
-                "low": row[4],
-            }
-            for row in rows
-        ]
-    )
+    tencent_hfq = tencent_sina.apply_factors(tencent_raw, factors, "hfq")
+    sina_raw["date"] = pd.to_datetime(sina_raw["date"])
+    tencent_raw["date"] = pd.to_datetime(tencent_raw["date"])
+    sina_hfq["date"] = pd.to_datetime(sina_hfq["date"])
     tencent_hfq["date"] = pd.to_datetime(tencent_hfq["date"])
-    for column in ("open", "high", "low", "close"):
-        tencent_hfq[column] = pd.to_numeric(tencent_hfq[column])
     overlap = sina_hfq.merge(
         tencent_hfq, on="date", suffixes=("_sina", "_tencent")
     )
     assert not overlap.empty
+    raw_overlap = sina_raw.merge(
+        tencent_raw, on="date", suffixes=("_sina", "_tencent")
+    )
+    assert not raw_overlap.empty
+    raw_relative_errors = []
     relative_errors = []
     for column in ("open", "high", "low", "close"):
+        raw_relative_errors.append(
+            (
+                raw_overlap[f"{column}_sina"] - raw_overlap[f"{column}_tencent"]
+            ).abs()
+            / raw_overlap[f"{column}_tencent"].abs()
+        )
         relative_errors.append(
             (
                 overlap[f"{column}_sina"] - overlap[f"{column}_tencent"]
             ).abs()
             / overlap[f"{column}_tencent"].abs()
         )
+    max_raw_relative_error = float(
+        pd.concat(raw_relative_errors, axis=1).max().max()
+    )
     max_relative_error = float(pd.concat(relative_errors, axis=1).max().max())
+    assert max_raw_relative_error <= 1e-4
+    assert max_relative_error <= 1e-4
     assert np.isfinite(max_relative_error)
     print(
-        "sh600519 Sina HFQ vs Tencent fqkline HFQ:",
+        "sh600519 Sina raw × HFQ vs Tencent raw × HFQ:",
         f"overlap={len(overlap)}",
+        f"max_raw_relative_error={max_raw_relative_error:.12g}",
         f"max_relative_error={max_relative_error:.12g}",
     )
 
@@ -790,8 +788,14 @@ def test_hfq_apply_factors_remains_explicit():
         }
     )
     factors = pd.DataFrame({"date": ["2020-01-01"], "factor": [2.0]})
-    assert tencent_sina.apply_factors(raw, factors, "hfq").close.tolist() == [20.0, 20.0]
+    raw_hfq = tencent_sina.apply_factors(raw, factors, "hfq")
+    assert raw_hfq.close.tolist() == [20.0, 20.0]
     assert tencent_sina.apply_factors(raw, factors, "qfq").close.tolist() == [5.0, 5.0]
+    datetime_raw = raw.assign(date=pd.to_datetime(raw.date))
+    datetime_factors = factors.assign(date=pd.to_datetime(factors.date))
+    assert tencent_sina.apply_factors(
+        datetime_raw, datetime_factors, "hfq"
+    ).close.tolist() == raw_hfq.close.tolist()
 
 
 def test_display_calendar_appends_known_future_trading_days(monkeypatch):
