@@ -35,7 +35,7 @@ def one(args):
         for which in ("lm", "lp"):
             a, b = mpl.interval(pr, lvl, which)
             row[f"{which}_{lvl}_lo"], row[f"{which}_{lvl}_hi"] = a, b
-            row[f"{which}_{lvl}_cover"] = bool(a - 0.5 <= tc0 <= b + 0.5); row[f"{which}_{lvl}_width"] = b - a
+            row[f"{which}_{lvl}_cover"] = bool(a <= tc0 <= b); row[f"{which}_{lvl}_width"] = b - a
         a, b, _ = bootstrap_interval(t, y, lo, hi, level=lvl, B=50, block=10, seed=seed)
         row[f"boot_{lvl}_lo"], row[f"boot_{lvl}_hi"] = a, b
         row[f"boot_{lvl}_cover"] = bool(a <= tc0 <= b); row[f"boot_{lvl}_width"] = b - a
