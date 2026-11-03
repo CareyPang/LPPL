@@ -74,10 +74,19 @@ function showQueryFailure(c,message,runUrl){
   const link=runUrl?`<br><a href="${esc(runUrl)}" target="_blank" rel="noopener" style="color:#58a6ff">查看运行日志</a>`:'';
   el.innerHTML=ownHead+`<p class="warn">${esc(c)}：${esc(message)}${link}</p>`;
 }
+function showHistoryNotice(message,runUrl){
+  const el=document.getElementById('history-status');
+  if(!el) return;
+  const link=runUrl?`<br><a href="${esc(runUrl)}" target="_blank" rel="noopener" style="color:#58a6ff">查看运行日志</a>`:'';
+  el.innerHTML=esc(message)+link;
+  el.style.display='';
+}
 async function runQuery(c,idx,br){
   if(activeQueries.has(c)) return;
   activeQueries.add(c);
   const started=Date.now();
+  const currentDeadline=started+10*60*1000;
+  const totalDeadline=started+40*60*1000;
   try{
     showQueryProgress(c,'排队中',started);
     const queued=await fetch(QUERY_API+'/query',{
@@ -88,35 +97,65 @@ async function runQuery(c,idx,br){
     const queuedBody=await queued.json().catch(()=>null);
     if(!queued.ok) throw new Error(queuedBody?.error||'提交查询失败（HTTP '+queued.status+'）');
     const since=queuedBody?.since;
-    if(typeof since!=='string'||!Number.isFinite(Date.parse(since))) throw new Error('查询服务未返回有效的任务时间。');
-    while(Date.now()-started<900000){
-      await new Promise(resolve=>setTimeout(resolve,Math.min(10000,Math.max(0,900000-(Date.now()-started)))));
-      if(Date.now()-started>=900000) break;
+    const sinceTime=Date.parse(since);
+    if(typeof since!=='string'||!Number.isFinite(sinceTime)) throw new Error('查询服务未返回有效的任务时间。');
+    let currentResult=null;
+    while(Date.now()<currentDeadline){
+      try{
+        const result=await remoteStock(c,'latest');
+        if(result&&Number.isFinite(Date.parse(result.generated_at))&&Date.parse(result.generated_at)>=sinceTime-60000){
+          currentResult=result;
+          break;
+        }
+      }catch{}
       let state;
       try{
         state=await workerJSON('/status?code='+encodeURIComponent(c)+'&since='+encodeURIComponent(since));
       }catch(e){
         showQueryProgress(c,'状态暂不可用，继续查询',started);
-        continue;
+        state=null;
       }
-      if(state?.status==='completed'){
-        if(state.conclusion==='success'){
-          const result=await remoteStock(c,'latest');
-          if(!result){
-            showQueryFailure(c,'任务已完成，但结果暂不可读取。',state.run_url);
-            return;
-          }
-          const history=await remoteStock(c,'history').catch(()=>null);
-          renderStock(c,result,history,idx,null,br);
-          return;
-        }
+      if(state?.status==='completed'&&state.conclusion!=='success'){
         const error=await remoteStock(c,'error').catch(()=>null);
         showQueryFailure(c,error?.error||'计算失败。',error?.run_url||state.run_url);
         return;
       }
-      showQueryProgress(c,state?.status==='in_progress'?'计算中':'排队中',started);
+      if(state) showQueryProgress(c,state.status==='in_progress'?'计算中':'排队中',started);
+      const remaining=currentDeadline-Date.now();
+      if(remaining>0) await new Promise(resolve=>setTimeout(resolve,Math.min(10000,remaining)));
     }
-    showQueryFailure(c,'已等待超过 15 分钟，已停止轮询；请稍后刷新页面。');
+    if(!currentResult){
+      showQueryFailure(c,'当前结果超过 10 分钟未返回，请稍后刷新。');
+      return;
+    }
+    renderStock(c,currentResult,null,idx,null,br);
+    showHistoryNotice('历史回测（104 周）后台计算中，约 15 分钟，完成后自动补上；可以先看当前结果。');
+    while(Date.now()<totalDeadline){
+      const remaining=totalDeadline-Date.now();
+      if(remaining<=0) break;
+      await new Promise(resolve=>setTimeout(resolve,Math.min(10000,remaining)));
+      let state;
+      try{
+        state=await workerJSON('/status?code='+encodeURIComponent(c)+'&since='+encodeURIComponent(since));
+      }catch{
+        continue;
+      }
+      if(state?.status!=='completed') continue;
+      if(state.conclusion==='success'){
+        let latest=null, history=null;
+        try{
+          [latest,history]=await Promise.all([remoteStock(c,'latest'),remoteStock(c,'history')]);
+        }catch{}
+        if(latest&&history){
+          renderStock(c,latest,history,idx,null,br);
+          return;
+        }
+        continue;
+      }
+      showHistoryNotice('历史回测失败，当前结果不受影响',state.run_url);
+      return;
+    }
+    showHistoryNotice('历史回测仍在计算，请稍后刷新页面');
   }catch(e){
     showQueryFailure(c,e.message||'公开查询失败。');
   }finally{
@@ -164,6 +203,7 @@ function renderStock(c,d,h,idx,err,br){
     <div style="overflow-x:auto"><table><thead><tr><th>尺度</th><th>窗口数</th><th>standard 集</th><th>状态</th><th>尺度证据</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="sub" style="margin-top:8px">当前泡沫段：起点 ${esc(b.start)} · 持续 ${esc(b.duration_days)} 天 · 最长尺度 ${esc(SCL[b.scale]||b.scale)}· 风险窗口 ${t.window?.start?esc(t.window.start)+' → '+esc(t.window.end):'无（'+esc(t.window?.rule)+'）'}</div>
     ${brTxt}
+    <p class="warn" id="history-status" style="display:none"></p>
     <canvas id="oc"></canvas>
     <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>该截止日 6–12月/12–24月 有合格拟合（任一集合）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80<i style="background:#58a6ff"></i>事后确认顶</div>`;
   const requery=document.getElementById('requery');

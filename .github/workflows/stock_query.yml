@@ -143,7 +143,7 @@ jobs:
             printf '%s: %s\n' "$host" "${code:-000}"
           done
 
-      - name: Run stock query
+      - name: Run current stock query
         id: run_query
         shell: bash
         env:
@@ -153,7 +153,7 @@ jobs:
           mkdir -p out/stock
           python -m research.pipeline.stock "$CODE" \
             --variant "$VARIANT" \
-            --history-weeks "$WEEKS" \
+            --history-weeks 0 \
             --procs 4 \
             --out out/stock 2>"$STOCK_STDERR"
           result=$?
@@ -186,24 +186,125 @@ jobs:
           PY
           echo "failed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Upload result for publishing
+      - name: Upload current result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stock-result
+          name: stock-current
           path: out/stock/
           if-no-files-found: error
 
-      - name: Fail query job after preserving its error result
+      - name: Fail current query after preserving its error result
         if: steps.run_query.outputs.failed == 'true'
         run: exit 1
 
-  publish:
+  publish_current:
     needs: query
     if: >-
       always() &&
       github.event_name != 'pull_request' &&
       (needs.query.result == 'success' || needs.query.outputs.query_failed == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      CODE: ${{ needs.query.outputs.code }}
+      VARIANT: ${{ needs.query.outputs.variant }}
+      HISTORY_WEEKS: "0"
+      STOCK_RESULT_DIR: out/stock
+      STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Download current result
+        uses: actions/download-artifact@v4
+        with:
+          name: stock-current
+          path: out/stock
+
+      - name: Publish current result to stock-results
+        run: bash scripts/publish_stock_result.sh
+
+      - name: Dispatch Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
+
+      - name: Fail after publishing a failed query
+        if: needs.query.outputs.query_failed == 'true'
+        run: exit 1
+
+  history:
+    needs: [query, publish_current]
+    if: >-
+      always() &&
+      !cancelled() &&
+      needs.query.result == 'success' &&
+      github.event_name != 'pull_request' &&
+      needs.query.outputs.weeks != '0'
+    runs-on: ubuntu-latest
+    env:
+      CODE: ${{ needs.query.outputs.code }}
+      VARIANT: ${{ needs.query.outputs.variant }}
+      WEEKS: ${{ needs.query.outputs.weeks }}
+    steps:
+      - name: Checkout main for dispatched runs
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Restore stock fit cache
+        uses: actions/cache@v4
+        with:
+          path: data/stock/${{ needs.query.outputs.code }}
+          key: stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-${{ github.run_id }}
+          restore-keys: |
+            stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-
+            stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-
+
+      - name: Probe market-data endpoint reachability
+        shell: bash
+        run: |
+          set -u
+          for host in web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --connect-timeout 10 --max-time 20 "https://$host" || true)
+            printf '%s: %s\n' "$host" "${code:-000}"
+          done
+
+      - name: Run stock history
+        run: |
+          mkdir -p out/stock
+          python -m research.pipeline.stock "$CODE" \
+            --variant "$VARIANT" \
+            --history-weeks "$WEEKS" \
+            --procs 4 \
+            --out out/stock
+
+      - name: Upload history result
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-history
+          path: out/stock/
+          if-no-files-found: error
+
+  publish_history:
+    needs: [query, history]
+    if: needs.history.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -221,20 +322,16 @@ jobs:
           ref: main
           fetch-depth: 1
 
-      - name: Download stock result
+      - name: Download history result
         uses: actions/download-artifact@v4
         with:
-          name: stock-result
+          name: stock-history
           path: out/stock
 
-      - name: Publish to stock-results branch
+      - name: Publish history to stock-results
         run: bash scripts/publish_stock_result.sh
 
       - name: Dispatch Pages build
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run pages.yml --ref main
-
-      - name: Fail after publishing a failed query
-        if: needs.query.outputs.query_failed == 'true'
-        run: exit 1
