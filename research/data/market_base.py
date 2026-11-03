@@ -22,6 +22,11 @@ EM_BOARD_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 EM_HISTORY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
 EM_POOL_URL = "https://push2ex.eastmoney.com"
+SINA_BOARD_URL = (
+    "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+    "MoneyFlow.ssl_bkzj_bk"
+)
+SINA_BOARD_HOST = "vip.stock.finance.sina.com.cn"
 HKEX_URL = "https://www.hkex.com.hk/chi/csm/DailyStat/data_tab_daily_{date}c.js"
 CSINDEX_URL = (
     "https://oss-ch.csindex.com.cn/static/html/csindex/public/uploads/file/"
@@ -272,6 +277,80 @@ def board_flow_snapshot(kind: str, client: EMClient | None = None) -> pd.DataFra
     frame = frame.astype(object).where(pd.notna(frame), None)
     frame.attrs["url_host"] = client.url_host
     return frame
+
+
+def _parse_sina_board_flow(payload: object) -> pd.DataFrame:
+    if not isinstance(payload, list) or not payload:
+        raise RuntimeError("Sina board-flow response must be a non-empty array")
+    rows = []
+    required = {"category", "name", "avg_changeratio", "netamount", "ratioamount"}
+    for item in payload:
+        if not isinstance(item, dict):
+            raise RuntimeError("Sina board-flow row is not an object")
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("Sina board-flow fields missing: " + ", ".join(sorted(missing)))
+        pct_chg = _number(item["avg_changeratio"])
+        main_pct = _number(item["ratioamount"])
+        rows.append(
+            {
+                "code": str(item["category"]),
+                "name": str(item["name"]),
+                "pct_chg": pct_chg * 100 if pct_chg is not None else None,
+                "main_net": _number(item["netamount"]),
+                "main_pct": main_pct * 100 if main_pct is not None else None,
+                "super_net": None,
+                "large_net": None,
+                "medium_net": None,
+                "small_net": None,
+                "pct_5d": None,
+                "main_net_5d": None,
+                "main_pct_5d": None,
+                "pct_10d": None,
+                "main_net_10d": None,
+                "main_pct_10d": None,
+            }
+        )
+    frame = pd.DataFrame(rows, columns=BOARD_COLUMNS)
+    frame = frame.astype(object).where(pd.notna(frame), None)
+    frame.attrs["url_host"] = SINA_BOARD_HOST
+    return frame
+
+
+def sina_board_flow_snapshot(kind: str, session=None) -> pd.DataFrame:
+    if kind not in ("industry", "concept"):
+        raise ValueError("Sina board flow is available for industry and concept only")
+    session = session or requests.Session()
+    params = {
+        "page": 1,
+        "num": 200,
+        "sort": "netamount",
+        "asc": 0,
+        "fenlei": 0 if kind == "industry" else 1,
+    }
+    errors = []
+    for attempt in range(2):
+        try:
+            response = session.get(
+                SINA_BOARD_URL,
+                params=params,
+                headers={
+                    "User-Agent": UA,
+                    "Referer": "https://finance.sina.com.cn/",
+                },
+                timeout=15,
+                allow_redirects=True,
+            )
+            response.raise_for_status()
+            return _parse_sina_board_flow(response.json())
+        except Exception as exc:  # noqa: BLE001 — retry once on Sina failures
+            errors.append(exc)
+            if attempt == 0:
+                time.sleep(3.0)
+    raise RuntimeError(
+        f"Sina {kind} board-flow request failed after one retry: "
+        + "; ".join(f"{type(error).__name__}: {error}" for error in errors)
+    ) from errors[-1]
 
 
 def _parse_board_history(payload: dict) -> pd.DataFrame:
@@ -852,7 +931,10 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
     sources = {}
     board_flow = {
         "evidence": "descriptive",
-        "note": "东财板块资金流为订单规模分类估算，非交易所官方数据；" + DESCRIPTIVE_NOTE,
+        "note": "东财板块资金流为订单规模分类估算，非交易所官方数据；"
+        + DESCRIPTIVE_NOTE
+        + "新浪口径为板块内个股流入−流出净额（按成交方向估算），不是东财按单笔金额划分的主力口径；只有当日，没有 5/10 日。",
+        "provider": {kind: None for kind in BOARD_FS},
         **{kind: [] for kind in BOARD_FS},
     }
     board_frames = []
@@ -861,15 +943,37 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
         try:
             frame = board_flow_snapshot(kind, em)
             board_flow[kind] = frame.to_dict("records")
+            board_flow["provider"][kind] = "eastmoney"
             board_frames.append(frame)
             sources[f"board_flow_{kind}"] = _source_meta(
                 frame.attrs.get("url_host", host), True
             )
         except Exception as exc:
-            sources[f"board_flow_{kind}"] = _source_meta(host, False, _error(exc))
+            eastmoney_error = _error(exc)
+            if kind not in ("industry", "concept"):
+                sources[f"board_flow_{kind}"] = _source_meta(
+                    host, False, eastmoney_error
+                )
+                continue
+            try:
+                frame = sina_board_flow_snapshot(kind, session)
+                board_flow[kind] = frame.to_dict("records")
+                board_flow["provider"][kind] = "sina"
+                board_frames.append(frame)
+                source = _source_meta(SINA_BOARD_HOST, True)
+                source["fallback_from"] = eastmoney_error
+                sources[f"board_flow_{kind}"] = source
+            except Exception as sina_exc:
+                source = _source_meta(SINA_BOARD_HOST, False, _error(sina_exc))
+                source["fallback_from"] = eastmoney_error
+                sources[f"board_flow_{kind}"] = source
 
     history_sample = None
     try:
+        if board_flow["provider"]["industry"] != "eastmoney":
+            raise RuntimeError(
+                "industry board snapshot is not from Eastmoney; cannot verify history fields"
+            )
         industry = board_flow["industry"]
         if not industry:
             raise RuntimeError("industry board snapshot unavailable; cannot verify history fields")
