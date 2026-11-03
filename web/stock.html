@@ -49,7 +49,12 @@ const pct=v=>v==null?'—':(v*100).toFixed(1)+'%';
 async function own(c){
   const el=document.getElementById('own'); el.style.display='';
   el.innerHTML='<div class="sub">读取按需计算结果…</div>';
-  const [d,h,idx,err,br]=await Promise.all([loadJ(`mock/data/stock/${c}.json`),loadJ(`mock/data/stock/${c}_history.json`),loadJ('mock/data/stock/index.json'),loadJ(`mock/data/stock/${c}_error.json`),loadJ('mock/data/stock/breadth_sh000300.json')]);
+  let breadthIndex=null;
+  if((C.indices.sh000300||[]).includes(c)) breadthIndex='sh000300';
+  else if((C.indices.sh000905||[]).includes(c)) breadthIndex='sh000905';
+  else if(U.codes.includes(c)) breadthIndex='sh000300';
+  const breadthFile=breadthIndex?`mock/data/stock/breadth_${breadthIndex}.json`:null;
+  const [d,h,idx,err,br]=await Promise.all([loadJ(`mock/data/stock/${c}.json`),loadJ(`mock/data/stock/${c}_history.json`),loadJ('mock/data/stock/index.json'),loadJ(`mock/data/stock/${c}_error.json`),breadthFile?loadJ(breadthFile):Promise.resolve(null)]);
   const brTxt=br&&br.n?`<p class="sub">成分股广度（${esc(br.universe_note||br.index)}，截止 ${esc(br.asof)}${br.asof_consistent===false?'，截止日不一致':''}）：6–12月/12–24月有合格拟合 ${br.n_qualified_fit_dev}/${br.n}（${pct(br.share_qualified_fit_dev)}）；置信度≥0.5 ${br.n_confidence_ge_0_5_dev}/${br.n}。n=${br.n}，描述性统计，不是预测，不进模型。</p>`:'';
   const ent=idx&&idx[c];
   const head=`<h3 style="margin:0 0 6px">个股自身 LPPLS（按需计算）<span class="badge rc">research_candidate</span></h3>`;

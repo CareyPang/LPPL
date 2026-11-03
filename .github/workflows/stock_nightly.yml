@@ -4,6 +4,8 @@ on:
   schedule:
     # 09:40 UTC = 17:40 Beijing, Mon–Fri: after the 15:30 close cutoff used by the stock engine
     - cron: "40 9 * * 1-5"
+    # 10:40 UTC = 18:40 Beijing: CSI500, split into ten shards
+    - cron: "40 10 * * 1-5"
   workflow_dispatch:
     inputs:
       universe:
@@ -11,6 +13,7 @@ on:
         type: choice
         options:
           - universe_csi300.json
+          - universe_csi500.json
         default: universe_csi300.json
       asof:
         description: Fixed as-of date YYYY-MM-DD (blank = last closed sh000001 trading day)
@@ -54,6 +57,7 @@ jobs:
       INPUT_ASOF: ${{ inputs.asof }}
       INPUT_VARIANT: ${{ inputs.variant }}
       INPUT_SHARDS: ${{ inputs.shards }}
+      EVENT_SCHEDULE: ${{ github.event.schedule }}
     steps:
       - name: Checkout PR merge commit for smoke runs
         if: github.event_name == 'pull_request'
@@ -84,6 +88,14 @@ jobs:
           asof="${INPUT_ASOF:-}"
           variant="${INPUT_VARIANT:-stk_lite}"
           shards="${INPUT_SHARDS:-6}"
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            universe=universe_csi300.json
+            shards=6
+            if [[ "$EVENT_SCHEDULE" == "40 10 * * 1-5" ]]; then
+              universe=universe_csi500.json
+              shards=10
+            fi
+          fi
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             shards=1
           fi
