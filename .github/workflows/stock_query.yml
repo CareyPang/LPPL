@@ -124,8 +124,8 @@ jobs:
       - name: Install project
         run: python -m pip install -e .
 
-      - name: Restore stock fit cache
-        uses: actions/cache@v4
+      - name: Restore stock fit cache (current phase saves nothing; history job saves)
+        uses: actions/cache/restore@v4
         with:
           path: data/stock/${{ steps.validate.outputs.code }}
           key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-${{ github.run_id }}
