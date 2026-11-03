@@ -66,7 +66,7 @@ function elapsed(start){
 function showQueryProgress(c,label,start){
   const el=document.getElementById('own');
   el.style.display='';
-  el.innerHTML=ownHead+`<p class="muted">${esc(c)}：${esc(label)}（已等待 ${elapsed(start)}）</p>`;
+  el.innerHTML=ownHead+`<p class="muted">${esc(c)}：${esc(label)}（首次计算约 15–20 分钟，已等待 ${elapsed(start)}）</p>`;
 }
 function showQueryFailure(c,message,runUrl){
   const el=document.getElementById('own');
@@ -89,9 +89,9 @@ async function runQuery(c,idx,br){
     if(!queued.ok) throw new Error(queuedBody?.error||'提交查询失败（HTTP '+queued.status+'）');
     const since=queuedBody?.since;
     if(typeof since!=='string'||!Number.isFinite(Date.parse(since))) throw new Error('查询服务未返回有效的任务时间。');
-    while(Date.now()-started<900000){
-      await new Promise(resolve=>setTimeout(resolve,Math.min(10000,Math.max(0,900000-(Date.now()-started)))));
-      if(Date.now()-started>=900000) break;
+    while(Date.now()-started<2400000){
+      await new Promise(resolve=>setTimeout(resolve,Math.min(10000,Math.max(0,2400000-(Date.now()-started)))));
+      if(Date.now()-started>=2400000) break;
       let state;
       try{
         state=await workerJSON('/status?code='+encodeURIComponent(c)+'&since='+encodeURIComponent(since));
@@ -116,7 +116,7 @@ async function runQuery(c,idx,br){
       }
       showQueryProgress(c,state?.status==='in_progress'?'计算中':'排队中',started);
     }
-    showQueryFailure(c,'已等待超过 15 分钟，已停止轮询；请稍后刷新页面。');
+    showQueryFailure(c,'已等待超过 40 分钟，已停止轮询；请稍后刷新页面。');
   }catch(e){
     showQueryFailure(c,e.message||'公开查询失败。');
   }finally{
