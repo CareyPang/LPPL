@@ -3,7 +3,7 @@
  "name": "sz002129",
  "asof": "2026-10-30",
  "data_version": "vintage_20261030_tencent_sina_hfq_6de9bd7c",
- "model_version": "prereg_v1.7_v2+stk_lite",
+ "model_version": "prereg_v1.7_v2.1+stk_lite",
  "top": {
   "p20": {
    "value": null,
@@ -18,9 +18,9 @@
    "duration_days": 452,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 0.079,
+   "size_model": 0.076,
    "size_realized": -0.002,
-   "tc": "2026-06-29",
+   "tc": "2026-06-30",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -30,15 +30,18 @@
   "indicators": {
    "2-4w": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": true
    },
    "1-3m": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": false
    },
    "3-6m": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": false
    },
    "6-12m": {
     "direction": "positive",
@@ -53,6 +56,35 @@
     "n_qualified_standard": 0,
     "best_t1": "2026-02-03",
     "t1_qualified": false,
+    "boundary_share": {
+     "m_lo": 0.0,
+     "m_hi": 0.0,
+     "w_lo": 0.0,
+     "w_hi": 0.0,
+     "tc_lo": 0.0,
+     "tc_hi": 0.0,
+     "any": 0.0,
+     "tol": 0.01
+    },
+    "null_fpr": {
+     "standard": {
+      "gbm0": 0.0533,
+      "block_boot": 0.09,
+      "gbm_drift": 0.31
+     },
+     "box": {
+      "gbm0": 0.03,
+      "block_boot": 0.0258,
+      "gbm_drift": 0.0817
+     },
+     "asof_standard_gt0": {
+      "gbm0": 0.14,
+      "block_boot": 0.26,
+      "gbm_drift": 0.525
+     },
+     "note": "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
+    },
+    "display_only": false,
     "signal_status": "no_qualified_fit"
    },
    "12-24m": {
@@ -61,18 +93,48 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.7,
+     "early": 0.8,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
     "best_t1": "2024-12-17",
     "t1_qualified": false,
+    "boundary_share": {
+     "m_lo": 0.0,
+     "m_hi": 0.2,
+     "w_lo": 0.0,
+     "w_hi": 0.0,
+     "tc_lo": 0.4,
+     "tc_hi": 0.0,
+     "any": 0.6,
+     "tol": 0.01
+    },
+    "null_fpr": {
+     "standard": {
+      "gbm0": 0.043,
+      "block_boot": 0.117,
+      "gbm_drift": 0.4255
+     },
+     "box": {
+      "gbm0": 0.024,
+      "block_boot": 0.0265,
+      "gbm_drift": 0.0695
+     },
+     "asof_standard_gt0": {
+      "gbm0": 0.12,
+      "block_boot": 0.27,
+      "gbm_drift": 0.73
+     },
+     "note": "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
+    },
+    "display_only": false,
     "signal_status": "no_qualified_fit"
    },
    "2-6y": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": false
    },
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
@@ -5281,7 +5343,7 @@
   "ipo_in_range": true,
   "n_bars": 4137,
   "degenerate_share": 0.0,
-  "trading_days_stale": 1,
+  "trading_days_stale": 2,
   "dropped_unclosed_bar": false,
   "eligibility_note": "停牌中，结果截至 2026-10-30",
   "source": "tencent_fqkline",

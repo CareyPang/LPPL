@@ -1,9 +1,9 @@
 {
  "symbol": "sz000338",
  "name": "潍柴动力",
- "asof": "2026-11-02",
- "data_version": "vintage_20261102_tencent_sina_hfq_814213c7",
- "model_version": "prereg_v1.7_v2+stk_lite",
+ "asof": "2026-11-03",
+ "data_version": "vintage_20261103_tencent_sina_hfq_814213c7",
+ "model_version": "prereg_v1.7_v2.1+stk_lite",
  "top": {
   "p20": {
    "value": null,
@@ -14,13 +14,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-04-24",
+   "start": "2026-04-27",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": -0.529,
-   "size_realized": -0.295,
-   "tc": "2026-11-02",
+   "size_model": -0.514,
+   "size_realized": -0.323,
+   "tc": "2026-11-04",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -30,15 +30,18 @@
   "indicators": {
    "2-4w": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": true
    },
    "1-3m": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": false
    },
    "3-6m": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": false
    },
    "6-12m": {
     "direction": "positive",
@@ -51,8 +54,37 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-04-24",
+    "best_t1": "2025-10-21",
     "t1_qualified": false,
+    "boundary_share": {
+     "m_lo": 0.0,
+     "m_hi": 0.167,
+     "w_lo": 0.333,
+     "w_hi": 0.0,
+     "tc_lo": 0.0,
+     "tc_hi": 0.5,
+     "any": 0.5,
+     "tol": 0.01
+    },
+    "null_fpr": {
+     "standard": {
+      "gbm0": 0.0533,
+      "block_boot": 0.09,
+      "gbm_drift": 0.31
+     },
+     "box": {
+      "gbm0": 0.03,
+      "block_boot": 0.0258,
+      "gbm_drift": 0.0817
+     },
+     "asof_standard_gt0": {
+      "gbm0": 0.14,
+      "block_boot": 0.26,
+      "gbm_drift": 0.525
+     },
+     "note": "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
+    },
+    "display_only": false,
     "signal_status": "no_qualified_fit"
    },
    "12-24m": {
@@ -61,18 +93,48 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.5,
+     "early": 0.1,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-10-09",
+    "best_t1": "2024-12-19",
     "t1_qualified": false,
+    "boundary_share": {
+     "m_lo": 0.0,
+     "m_hi": 0.4,
+     "w_lo": 0.0,
+     "w_hi": 0.0,
+     "tc_lo": 0.5,
+     "tc_hi": 0.5,
+     "any": 1.0,
+     "tol": 0.01
+    },
+    "null_fpr": {
+     "standard": {
+      "gbm0": 0.043,
+      "block_boot": 0.117,
+      "gbm_drift": 0.4255
+     },
+     "box": {
+      "gbm0": 0.024,
+      "block_boot": 0.0265,
+      "gbm_drift": 0.0695
+     },
+     "asof_standard_gt0": {
+      "gbm0": 0.12,
+      "block_boot": 0.27,
+      "gbm_drift": 0.73
+     },
+     "note": "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
+    },
+    "display_only": false,
     "signal_status": "no_qualified_fit"
    },
    "2-6y": {
     "signal_status": "not_computed",
-    "direction": "positive"
+    "direction": "positive",
+    "display_only": false
    },
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
@@ -157,7 +219,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-02",
+   "table_asof": "2026-11-03",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -639,7 +701,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.295,
+    "size_realized": -0.323,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -683,7 +745,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-13",
    "2023-09-14",
    "2023-09-15",
    "2023-09-18",
@@ -1438,10 +1499,10 @@
    "2026-10-28",
    "2026-10-29",
    "2026-10-30",
-   "2026-11-02"
+   "2026-11-02",
+   "2026-11-03"
   ],
   "open": [
-   258.981,
    256.034,
    256.455,
    254.77,
@@ -2196,10 +2257,10 @@
    518.078,
    517.347,
    488.863,
-   501.036
+   501.036,
+   487.889
   ],
   "high": [
-   259.824,
    256.876,
    258.139,
    257.508,
@@ -2954,10 +3015,10 @@
    523.434,
    517.834,
    502.983,
-   505.661
+   505.661,
+   497.384
   ],
   "low": [
-   254.77,
    253.507,
    253.928,
    253.296,
@@ -3712,10 +3773,10 @@
    513.695,
    497.871,
    482.289,
-   489.35
+   489.35,
+   465.491
   ],
   "close": [
-   256.034,
    255.191,
    254.981,
    256.876,
@@ -4470,10 +4531,10 @@
    519.782,
    499.088,
    491.541,
-   489.837
+   489.837,
+   471.334
   ],
   "volume": [
-   196720,
    192679,
    256792,
    194620,
@@ -5228,7 +5289,8 @@
    884920,
    794881,
    893169,
-   1071700
+   1071700,
+   1209958
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5279,7 +5341,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": true,
-  "n_bars": 4617,
+  "n_bars": 4618,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
