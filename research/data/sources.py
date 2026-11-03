@@ -1,6 +1,7 @@
 """A 股日线数据源与统一请求限速。"""
 from __future__ import annotations
 
+import json
 import os
 import random
 import re
@@ -13,6 +14,10 @@ import pandas as pd
 import requests
 
 COLS = ["date", "open", "high", "low", "close", "volume", "amount"]
+SINA_DAILY_URL = (
+    "https://quotes.sina.cn/cn/api/jsonp_v2.php/var=/"
+    "CN_MarketDataService.getKLineData"
+)
 UA = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -218,6 +223,69 @@ def fetch_tencent(
     if not frames:
         raise SourceError(f"tencent 无数据: {symbol}")
     return _norm(pd.concat(frames))
+
+
+def sina_raw_daily(
+    sym: str, datalen: int = 1023, timeout: float = 15
+) -> pd.DataFrame:
+    """新浪原始日线；到达 datalen 上限时标记可能被截断的历史。"""
+    if (
+        not isinstance(datalen, int)
+        or isinstance(datalen, bool)
+        or not 1 <= datalen <= 1023
+    ):
+        raise ValueError("datalen must be an integer between 1 and 1023")
+    market, six, _ = parse_code(sym)
+    symbol = f"{market}{six}"
+    rate_limit()
+    response = requests.get(
+        SINA_DAILY_URL,
+        params={"symbol": symbol, "scale": 240, "ma": "no", "datalen": datalen},
+        headers={**UA, "Referer": "https://finance.sina.com.cn/"},
+        timeout=min(timeout, 15),
+    )
+    response.raise_for_status()
+    text = response.text.lstrip("\ufeff").strip()
+    if text.startswith("/*"):
+        comment_end = text.find("*/")
+        if comment_end < 0:
+            raise SourceError(f"sina 日线响应缺少注释结束符: {symbol}")
+        text = text[comment_end + 2 :].strip()
+    match = re.fullmatch(r"var\s*=\s*(\(.*\))\s*;?", text, flags=re.DOTALL)
+    if match is None:
+        raise SourceError(f"sina 日线响应格式无法解析: {symbol}")
+    try:
+        rows = json.loads(match.group(1)[1:-1])
+    except json.JSONDecodeError as exc:
+        raise SourceError(f"sina 日线 JSON 无法解析: {symbol}") from exc
+    required = {"day", "open", "high", "low", "close", "volume"}
+    if not isinstance(rows, list) or not rows:
+        raise SourceError(f"sina 无日线数据: {symbol}")
+    if any(not isinstance(row, dict) or not required.issubset(row) for row in rows):
+        raise SourceError(f"sina 日线字段不完整: {symbol}")
+    frame = _norm(
+        pd.DataFrame(
+            [
+                {
+                    "date": row["day"],
+                    "open": row["open"],
+                    "high": row["high"],
+                    "low": row["low"],
+                    "close": row["close"],
+                    "volume": row["volume"],
+                    "amount": None,
+                }
+                for row in rows
+            ],
+            columns=COLS,
+        )
+    )
+    if frame.empty:
+        raise SourceError(f"sina 无有效日线数据: {symbol}")
+    frame.attrs["source"] = "sina"
+    frame.attrs["history_truncated"] = len(rows) >= datalen
+    frame.attrs["history_earliest_date"] = frame["date"].iloc[0].date().isoformat()
+    return frame
 
 
 def fetch_ak_em_index(

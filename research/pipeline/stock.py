@@ -15,6 +15,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from ..data import cache  # noqa: E402
+from ..data.sources import sina_raw_daily  # noqa: E402
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
 from ..eval.export_contract import (
     MODEL_VERSION,
@@ -141,6 +142,22 @@ def _drop_unclosed_bars(
     return frame.loc[~dropped].reset_index(drop=True), bool(dropped.any())
 
 
+def _validate_source_history(
+    frame: pd.DataFrame, sym: str, requested_start: str, now: pd.Timestamp
+) -> None:
+    prices = _normalise_prices(frame)
+    prices, _ = _drop_unclosed_bars(prices, now)
+    if prices.empty:
+        raise RuntimeError(f"no positive closed HFQ closes available for {sym}")
+    if (
+        pd.Timestamp(prices.date.iloc[0]) > pd.Timestamp(requested_start)
+        and len(prices) <= 60
+    ):
+        raise RuntimeError(
+            f"{sym} has fewer than 61 bars after its in-range listing date"
+        )
+
+
 def load_stock(
     code6: str, start: str | None = None
 ) -> tuple[pd.DataFrame, str, dict]:
@@ -156,11 +173,13 @@ def load_stock(
     factors_csv = factors.to_csv(index=False).encode("utf-8")
     factor_hash = hashlib.sha1(factors_csv).hexdigest()[:8]
     source = "tencent_fqkline"
+    sina_history = None
     try:
         raw = tencent_raw(sym, start=requested_start)
         source = raw.attrs.get("source", source)
         adjusted = apply_factors(raw, factors, "hfq")
         adjusted.attrs["source"] = source
+        _validate_source_history(adjusted, sym, requested_start, now)
     except Exception as primary_error:
         try:
             adjusted, fallback_source = cache.download(
@@ -172,20 +191,34 @@ def load_stock(
                 pd.to_datetime(adjusted.date) >= pd.Timestamp(requested_start)
             ]
             source = adjusted.attrs.get("source", "cache_tencent_sina_hfq")
+            _validate_source_history(adjusted, sym, requested_start, now)
         except Exception as fallback_error:
-            if sym.startswith("bj"):
+            try:
+                raw = sina_raw_daily(sym)
+                source = raw.attrs.get("source", "sina")
+                sina_history = {
+                    "history_truncated": bool(raw.attrs.get("history_truncated", False)),
+                    "history_earliest_date": raw.attrs.get("history_earliest_date"),
+                }
+                adjusted = apply_factors(raw, factors, "hfq")
+                adjusted.attrs["source"] = source
+                _validate_source_history(adjusted, sym, requested_start, now)
+            except Exception as sina_error:
+                if sym.startswith("bj"):
+                    raise RuntimeError(
+                        f"北交所历史日线暂不可得: {sym}; primary Tencent raw × Sina HFQ failed "
+                        f"({type(primary_error).__name__}: {primary_error}); "
+                        f"HFQ-only cache fallback failed ({type(fallback_error).__name__}: "
+                        f"{fallback_error}); Sina raw × HFQ fallback failed "
+                        f"({type(sina_error).__name__}: {sina_error})"
+                    ) from sina_error
                 raise RuntimeError(
-                    f"北交所历史日线暂不可得: {sym}; primary Tencent raw × Sina HFQ failed "
-                    f"({type(primary_error).__name__}: {primary_error}); "
+                    f"HFQ stock data unavailable for {sym}; primary Tencent raw × Sina HFQ "
+                    f"failed ({type(primary_error).__name__}: {primary_error}); "
                     f"HFQ-only cache fallback failed ({type(fallback_error).__name__}: "
-                    f"{fallback_error})"
-                ) from fallback_error
-            raise RuntimeError(
-                f"HFQ stock data unavailable for {sym}; primary Tencent raw × Sina HFQ "
-                f"failed ({type(primary_error).__name__}: {primary_error}); "
-                f"HFQ-only cache fallback failed ({type(fallback_error).__name__}: "
-                f"{fallback_error}); QFQ/raw fallback was not used"
-            ) from fallback_error
+                    f"{fallback_error}); Sina raw × HFQ fallback failed "
+                    f"({type(sina_error).__name__}: {sina_error}); QFQ/raw fallback was not used"
+                ) from sina_error
 
     ohlc = _normalise_prices(adjusted)
     ohlc, dropped_unclosed_bar = _drop_unclosed_bars(ohlc, now)
@@ -201,7 +234,8 @@ def load_stock(
     if ohlc.empty:
         raise RuntimeError(f"{sym} has fewer than 60 bars after its in-range listing date")
     last = pd.Timestamp(ohlc.date.iloc[-1])
-    data_version = f"vintage_{last:%Y%m%d}_tencent_sina_hfq_{factor_hash}"
+    version_source = "sina" if source == "sina" else "tencent_sina"
+    data_version = f"vintage_{last:%Y%m%d}_{version_source}_hfq_{factor_hash}"
     meta = {
         "first_date": str(source_first.date()),
         "n_bars": int(len(ohlc)),
@@ -212,6 +246,8 @@ def load_stock(
         "reference_cutoff": cutoff,
         "source": source,
     }
+    if sina_history is not None:
+        meta.update(sina_history)
     return ohlc, data_version, meta
 
 
