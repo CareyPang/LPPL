@@ -4,7 +4,7 @@
 (function (G) {
   'use strict';
   const BASE = (G.LPPL_DATA_BASE || 'lab/mock/data/');
-  const QUERY_API = (G.LPPL_QUERY_API || '').replace(/\/$/, '');
+  const QUERY_API = (G.LPPL_QUERY_API || 'https://lppl-stock-query.careypang.workers.dev').replace(/\/$/, '');
   const SYMS = [
     { sym: 'sh000001', name: '上证指数', code: '000001', alias: ['上证', '上证综指', '上证指数'] },
     { sym: 'sh000016', name: '上证50', code: '000016', alias: ['上证50'] },

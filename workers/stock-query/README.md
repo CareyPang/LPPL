@@ -31,7 +31,7 @@ Worker 为 GitHub Pages 个股页提供公开排队入口、运行状态和已�
 从 `npx wrangler deploy` 的输出复制 Worker URL，在 `web/stock.html` 顶部将 `window.LPPL_QUERY_API` 配置为该 URL：
 
 ```html
-<script>window.LPPL_QUERY_API = 'https://lppl-stock-query.<your-subdomain>.workers.dev';</script>
+<script>window.LPPL_QUERY_API = 'https://lppl-stock-query.careypang.workers.dev';</script>
 ```
 
 Worker 接受 `43`、`83`、`87`、`92` 开头的北交所代码，但实际能否取数取决于 `research/pipeline/stock.py` 的数据路径。检查发现 `stock.py` 没有 `bj` 前缀分支，并通过 `universe._sym` 将非 `6` 开头代码映射为 `sz`；因此当前代码没有显式的北交所路由。不能取数的查询会由工作流写出 error JSON。
