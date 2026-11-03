@@ -126,7 +126,12 @@ async function runQuery(c,idx,br){
 async function own(c,force=false){
   const el=document.getElementById('own'); el.style.display='';
   el.innerHTML='<div class="sub">读取按需计算结果…</div>';
-  const [localD,localH,idx,err,br]=await Promise.all([loadJ(`mock/data/stock/${c}.json`),loadJ(`mock/data/stock/${c}_history.json`),loadJ('mock/data/stock/index.json'),loadJ(`mock/data/stock/${c}_error.json`),loadJ('mock/data/stock/breadth_sh000300.json')]);
+  let breadthIndex=null;
+  if((C.indices.sh000300||[]).includes(c)) breadthIndex='sh000300';
+  else if((C.indices.sh000905||[]).includes(c)) breadthIndex='sh000905';
+  else if(U.codes.includes(c)) breadthIndex='sh000300';
+  const breadthFile=breadthIndex?`mock/data/stock/breadth_${breadthIndex}.json`:null;
+  const [localD,localH,idx,err,br]=await Promise.all([loadJ(`mock/data/stock/${c}.json`),loadJ(`mock/data/stock/${c}_history.json`),loadJ('mock/data/stock/index.json'),loadJ(`mock/data/stock/${c}_error.json`),breadthFile?loadJ(breadthFile):Promise.resolve(null)]);
   let d=localD, h=localH;
   if(QUERY_API&&force){ await runQuery(c,idx,br); return; }
   if(QUERY_API&&!d){

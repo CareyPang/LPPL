@@ -112,6 +112,71 @@ def test_board_snapshot_has_exact_contract_columns():
     assert result.iloc[0]["main_net_10d"] == 800
 
 
+@pytest.mark.parametrize(
+    ("kind", "fenlei"),
+    (("industry", 0), ("concept", 1)),
+)
+def test_sina_board_flow_retries_and_maps_only_available_fields(monkeypatch, kind, fenlei):
+    payload = fixture("sina_board_flow.json")
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return payload
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, params, headers, timeout, allow_redirects):
+            self.calls.append((url, params, headers, timeout, allow_redirects))
+            if len(self.calls) == 1:
+                raise RuntimeError("temporary failure")
+            return Response()
+
+    session = Session()
+    monkeypatch.setattr(market.time, "sleep", lambda _: None)
+
+    frame = market.sina_board_flow_snapshot(kind, session)
+
+    assert len(session.calls) == 2
+    url, params, headers, timeout, allow_redirects = session.calls[-1]
+    assert url == market.SINA_BOARD_URL
+    assert params == {
+        "page": 1,
+        "num": 200,
+        "sort": "netamount",
+        "asc": 0,
+        "fenlei": fenlei,
+    }
+    assert headers["Referer"] == "https://finance.sina.com.cn/"
+    assert timeout == 15 and allow_redirects is True
+    assert frame.columns.tolist() == list(market.BOARD_COLUMNS)
+    assert frame.attrs["url_host"] == market.SINA_BOARD_HOST
+    first = frame.iloc[0]
+    assert first["code"] == "new_dzxx" and first["name"] == "电子信息"
+    assert first["pct_chg"] == pytest.approx(3.84174)
+    assert first["main_net"] == pytest.approx(17329587436.99)
+    assert first["main_pct"] == pytest.approx(13.009)
+    assert all(
+        first[field] is None
+        for field in (
+            "super_net",
+            "large_net",
+            "medium_net",
+            "small_net",
+            "pct_5d",
+            "main_net_5d",
+            "main_pct_5d",
+            "pct_10d",
+            "main_net_10d",
+            "main_pct_10d",
+        )
+    )
+
+
 def test_limit_pool_parser_and_top_row():
     payload = fixture("limit_pool.json")
     raw = payload["data"]["pool"][0]
@@ -240,6 +305,11 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
     monkeypatch.setattr(market, "board_flow_snapshot", board)
     monkeypatch.setattr(
         market,
+        "sina_board_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
         "limit_pools",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("pool unavailable")),
     )
@@ -267,6 +337,112 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
     assert saved["sources"]["board_flow_industry"]["ok"] is False
     assert saved["sources"]["limit_pools"]["ok"] is False
     assert saved["board_flow"]["concept"] == []
+
+
+def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkeypatch):
+    fixture_payload = fixture("sina_board_flow.json")
+    fallback_calls = []
+    history_calls = []
+
+    def eastmoney(kind, _client):
+        raise RuntimeError(f"Eastmoney {kind} unavailable")
+
+    def sina(kind, session):
+        fallback_calls.append((kind, session))
+        return market._parse_sina_board_flow(fixture_payload)
+
+    def history(*_args, **_kwargs):
+        history_calls.append(True)
+        raise AssertionError("Sina fallback must not be used for history")
+
+    monkeypatch.setattr(market, "board_flow_snapshot", eastmoney)
+    monkeypatch.setattr(market, "sina_board_flow_snapshot", sina)
+    monkeypatch.setattr(market, "board_flow_history", history)
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("pool unavailable")),
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        market,
+        "csindex_valuation",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("valuation unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
+        "_margin_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("margin unavailable")),
+    )
+
+    session = object()
+    payload = market.fetch_market(
+        "2026-11-02",
+        em_client=market.EMClient(),
+        http_session=session,
+    )
+
+    assert [kind for kind, _ in fallback_calls] == ["industry", "concept"]
+    assert all(request_session is session for _, request_session in fallback_calls)
+    assert history_calls == []
+    assert payload["board_flow"]["provider"] == {
+        "industry": "sina",
+        "concept": "sina",
+        "region": None,
+    }
+    assert payload["board_flow"]["industry"][0]["code"] == "new_dzxx"
+    assert "新浪口径为板块内个股流入−流出净额" in payload["board_flow"]["note"]
+    for kind in ("industry", "concept"):
+        source = payload["sources"][f"board_flow_{kind}"]
+        assert source["ok"] is True
+        assert source["url_host"] == market.SINA_BOARD_HOST
+        assert source["fallback_from"] == f"RuntimeError: Eastmoney {kind} unavailable"
+    assert payload["sources"]["board_flow_region"]["ok"] is False
+    assert "fallback_from" not in payload["sources"]["board_flow_region"]
+    assert payload["board_flow"]["history_sample"] is None
+    assert payload["sources"]["board_flow_history"]["ok"] is False
+
+
+def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
+    fallback_calls = []
+
+    def eastmoney(kind, _client):
+        raise RuntimeError(f"Eastmoney {kind} unavailable")
+
+    def sina(kind, _session):
+        fallback_calls.append(kind)
+        raise RuntimeError(f"Sina {kind} unavailable")
+
+    monkeypatch.setattr(market, "board_flow_snapshot", eastmoney)
+    monkeypatch.setattr(market, "sina_board_flow_snapshot", sina)
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("pool unavailable")),
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        market,
+        "csindex_valuation",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("valuation unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
+        "_margin_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("margin unavailable")),
+    )
+
+    payload = market.fetch_market("2026-11-02", em_client=market.EMClient())
+
+    assert fallback_calls == ["industry", "concept"]
+    for kind in ("industry", "concept"):
+        source = payload["sources"][f"board_flow_{kind}"]
+        assert source["ok"] is False
+        assert source["url_host"] == market.SINA_BOARD_HOST
+        assert source["fallback_from"] == f"RuntimeError: Eastmoney {kind} unavailable"
+        assert f"RuntimeError: Sina {kind} unavailable" in source["error"]
+    assert payload["sources"]["board_flow_region"]["ok"] is False
+    assert payload["board_flow"]["industry"] == []
 
 
 def _synthetic_margin_frame(dates, calendar):

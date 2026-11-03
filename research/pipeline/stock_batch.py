@@ -110,6 +110,8 @@ def _qualified(record: dict) -> tuple[set[str], set[str]]:
     conf_scales: set[str] = set()
     for scale in ALL_SCALES:
         ind = indicators.get(scale) or {}
+        if ind.get("display_only"):
+            continue
         standard = (ind.get("confidence") or {}).get("standard")
         if standard is not None and standard > 0:
             fit_scales.add(scale)

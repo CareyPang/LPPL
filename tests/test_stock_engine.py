@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from research.data import tencent_sina
+from research.data import sources, tencent_sina
 from research.eval import export_contract
 from research.features import lppls_scan
 from research.pipeline import stock
@@ -184,6 +184,216 @@ def test_reference_calendar_is_cached_and_drops_unclosed_bars(monkeypatch):
         assert calls == [("sh000001", stock.DEFAULT_START)]
     finally:
         stock._reference_calendar.cache_clear()
+
+
+@pytest.mark.network
+def test_load_beijing_stock_network():
+    prices, data_version, meta = stock.load_stock("920002")
+    assert len(prices) >= 500
+    assert meta["n_bars"] == len(prices)
+    assert meta["source"] == "sina"
+    assert meta["history_truncated"] is False
+    assert meta["history_earliest_date"] == "2024-05-30"
+    assert data_version.startswith("vintage_")
+    print(
+        "920002 load_stock:",
+        f"symbol={stock.universe._sym('920002')}",
+        f"rows={len(prices)}",
+        f"asof={prices.date.iloc[-1].date()}",
+        f"source={meta['source']}",
+    )
+
+
+@pytest.mark.network
+def test_sina_hfq_matches_tencent_raw_factors_network():
+    symbol = "sh600519"
+    sina_raw = sources.sina_raw_daily(symbol)
+    factors = tencent_sina.sina_factors(symbol, "hfq")
+    sina_hfq = tencent_sina.apply_factors(sina_raw, factors, "hfq")
+    start = pd.Timestamp(sina_hfq["date"].iloc[max(0, len(sina_hfq) - 640)]).date()
+    end = pd.Timestamp(sina_hfq["date"].iloc[-1]).date()
+    tencent_raw = tencent_sina.tencent_raw(
+        symbol, start=str(start), end=str(end)
+    )
+    tencent_hfq = tencent_sina.apply_factors(tencent_raw, factors, "hfq")
+    sina_raw["date"] = pd.to_datetime(sina_raw["date"])
+    tencent_raw["date"] = pd.to_datetime(tencent_raw["date"])
+    sina_hfq["date"] = pd.to_datetime(sina_hfq["date"])
+    tencent_hfq["date"] = pd.to_datetime(tencent_hfq["date"])
+    overlap = sina_hfq.merge(
+        tencent_hfq, on="date", suffixes=("_sina", "_tencent")
+    )
+    assert not overlap.empty
+    raw_overlap = sina_raw.merge(
+        tencent_raw, on="date", suffixes=("_sina", "_tencent")
+    )
+    assert not raw_overlap.empty
+    raw_relative_errors = []
+    relative_errors = []
+    for column in ("open", "high", "low", "close"):
+        raw_relative_errors.append(
+            (
+                raw_overlap[f"{column}_sina"] - raw_overlap[f"{column}_tencent"]
+            ).abs()
+            / raw_overlap[f"{column}_tencent"].abs()
+        )
+        relative_errors.append(
+            (
+                overlap[f"{column}_sina"] - overlap[f"{column}_tencent"]
+            ).abs()
+            / overlap[f"{column}_tencent"].abs()
+        )
+    max_raw_relative_error = float(
+        pd.concat(raw_relative_errors, axis=1).max().max()
+    )
+    max_relative_error = float(pd.concat(relative_errors, axis=1).max().max())
+    assert max_raw_relative_error <= 1e-4
+    assert max_relative_error <= 1e-4
+    assert np.isfinite(max_relative_error)
+    print(
+        "sh600519 Sina raw × HFQ vs Tencent raw × HFQ:",
+        f"overlap={len(overlap)}",
+        f"max_raw_relative_error={max_raw_relative_error:.12g}",
+        f"max_relative_error={max_relative_error:.12g}",
+    )
+
+
+def test_sina_raw_daily_parses_wrapped_json_and_marks_limit(monkeypatch):
+    class Response:
+        text = (
+            "/*<script>blocked</script>*/\n"
+            'var=([{"day":"2024-05-30","open":"57.000","high":"75.000",'
+            '"low":"56.660","close":"67.980","volume":"4621401"},'
+            '{"day":"2024-05-31","open":"68.000","high":"72.000",'
+            '"low":"60.000","close":"65.000","volume":"3000000"}]);'
+        )
+
+        def raise_for_status(self):
+            return None
+
+    request = {}
+
+    def fake_get(url, params, headers, timeout):
+        request.update(url=url, params=params, headers=headers, timeout=timeout)
+        return Response()
+
+    monkeypatch.setattr(sources, "rate_limit", lambda: None)
+    monkeypatch.setattr(sources.requests, "get", fake_get)
+
+    frame = sources.sina_raw_daily("bj920002", datalen=2)
+
+    assert request["url"] == sources.SINA_DAILY_URL
+    assert request["params"] == {
+        "symbol": "bj920002",
+        "scale": 240,
+        "ma": "no",
+        "datalen": 2,
+    }
+    assert request["headers"]["Referer"] == "https://finance.sina.com.cn/"
+    assert request["timeout"] == 15
+    assert frame.date.iloc[0] == pd.Timestamp("2024-05-30")
+    assert frame.close.tolist() == [67.98, 65.0]
+    assert frame.volume.tolist() == [4621401, 3000000]
+    assert frame.amount.isna().all()
+    assert frame.attrs["source"] == "sina"
+    assert frame.attrs["history_truncated"] is True
+    assert frame.attrs["history_earliest_date"] == "2024-05-30"
+
+
+@pytest.mark.parametrize(
+    ("code", "symbol"),
+    (("920002", "bj920002"), ("600519", "sh600519")),
+)
+def test_load_stock_uses_sina_raw_after_tencent_failures(monkeypatch, code, symbol):
+    raw = _ohlc(600, start="2024-05-30")
+    raw.attrs.update(
+        source="sina",
+        history_truncated=True,
+        history_earliest_date="2024-05-30",
+    )
+    factors = pd.DataFrame({"date": ["1900-01-01"], "factor": [1.0]})
+    calls = []
+
+    def fail_tencent(sym, start):
+        calls.append(("tencent", sym, start))
+        raise RuntimeError("Tencent history unavailable")
+
+    def fail_cache(sym, **kwargs):
+        calls.append(("cache", sym, kwargs))
+        raise RuntimeError("Tencent cache history unavailable")
+
+    def fake_sina(sym):
+        calls.append(("sina", sym))
+        return raw.copy()
+
+    monkeypatch.setattr(stock, "sina_factors", lambda *_args, **_kwargs: factors)
+    monkeypatch.setattr(stock, "tencent_raw", fail_tencent)
+    monkeypatch.setattr(stock.cache, "download", fail_cache)
+    monkeypatch.setattr(stock, "sina_raw_daily", fake_sina)
+
+    prices, data_version, meta = stock.load_stock(code)
+
+    assert calls[0][0] == "tencent" and calls[0][1] == symbol
+    assert calls[1][0] == "cache" and calls[1][1] == symbol
+    assert calls[2] == ("sina", symbol)
+    assert len(prices) >= 500
+    assert meta["source"] == "sina"
+    assert meta["history_truncated"] is True
+    assert meta["history_earliest_date"] == "2024-05-30"
+    assert data_version.startswith("vintage_") and "_sina_hfq_" in data_version
+
+
+def test_load_stock_uses_sina_when_tencent_returns_only_latest_bar(monkeypatch):
+    latest_bar = _ohlc(1, start="2026-11-02")
+    sina_history = _ohlc(600, start="2024-05-30")
+    sina_history.attrs.update(
+        source="sina",
+        history_truncated=False,
+        history_earliest_date="2024-05-30",
+    )
+    factors = pd.DataFrame({"date": ["1900-01-01"], "factor": [1.0]})
+    calls = []
+
+    def fake_tencent(sym, start):
+        calls.append(("tencent", sym, start))
+        return latest_bar.copy()
+
+    def fail_cache(sym, **kwargs):
+        calls.append(("cache", sym, kwargs))
+        raise RuntimeError("Tencent history unavailable")
+
+    def fake_sina(sym):
+        calls.append(("sina", sym))
+        return sina_history.copy()
+
+    monkeypatch.setattr(
+        stock, "_now", lambda: pd.Timestamp("2026-11-03 16:00", tz="Asia/Shanghai")
+    )
+    monkeypatch.setattr(stock, "sina_factors", lambda *_args, **_kwargs: factors)
+    monkeypatch.setattr(stock, "tencent_raw", fake_tencent)
+    monkeypatch.setattr(stock.cache, "download", fail_cache)
+    monkeypatch.setattr(stock, "sina_raw_daily", fake_sina)
+
+    prices, _, meta = stock.load_stock("920002")
+
+    assert [call[0] for call in calls] == ["tencent", "cache", "sina"]
+    assert len(prices) >= 500
+    assert meta["source"] == "sina"
+
+
+def test_beijing_history_failure_has_clear_error(monkeypatch):
+    factors = pd.DataFrame({"date": ["1900-01-01"], "factor": [1.0]})
+
+    def unavailable(*_args, **_kwargs):
+        raise RuntimeError("no historical data")
+
+    monkeypatch.setattr(stock, "sina_factors", lambda *_args, **_kwargs: factors)
+    monkeypatch.setattr(stock, "tencent_raw", unavailable)
+    monkeypatch.setattr(stock.cache, "download", unavailable)
+    monkeypatch.setattr(stock, "sina_raw_daily", unavailable)
+
+    with pytest.raises(RuntimeError, match="北交所历史日线暂不可得: bj920002"):
+        stock.load_stock("920002")
 
 
 def test_load_stock_and_calendar_share_close_cutoff(monkeypatch):
@@ -578,5 +788,28 @@ def test_hfq_apply_factors_remains_explicit():
         }
     )
     factors = pd.DataFrame({"date": ["2020-01-01"], "factor": [2.0]})
-    assert tencent_sina.apply_factors(raw, factors, "hfq").close.tolist() == [20.0, 20.0]
+    raw_hfq = tencent_sina.apply_factors(raw, factors, "hfq")
+    assert raw_hfq.close.tolist() == [20.0, 20.0]
     assert tencent_sina.apply_factors(raw, factors, "qfq").close.tolist() == [5.0, 5.0]
+    datetime_raw = raw.assign(date=pd.to_datetime(raw.date))
+    datetime_factors = factors.assign(date=pd.to_datetime(factors.date))
+    assert tencent_sina.apply_factors(
+        datetime_raw, datetime_factors, "hfq"
+    ).close.tolist() == raw_hfq.close.tolist()
+
+
+def test_display_calendar_appends_known_future_trading_days(monkeypatch):
+    bars = pd.DatetimeIndex(["2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-01"])
+    asof = pd.Timestamp("2025-06-30")
+    ref = pd.DatetimeIndex(["2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04"])
+    monkeypatch.setattr(stock, "_reference_calendar", lambda cutoff: ref)
+    cal = stock._display_calendar(bars, asof)
+    assert list(cal) == list(bars[bars <= asof]) + list(pd.to_datetime(["2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04"]))
+    assert cal.is_monotonic_increasing and cal.is_unique
+    assert export_contract._to_cal(cal, asof, 2.0) == "2025-07-02"
+
+    def boom(cutoff):
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(stock, "_reference_calendar", boom)
+    assert list(stock._display_calendar(bars, asof)) == list(bars[bars <= asof])

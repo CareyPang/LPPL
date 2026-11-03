@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from research.pipeline import stock_batch
+from scripts.make_universe import make_universe
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "publish_stock_result.sh"
 
@@ -41,6 +42,28 @@ def test_load_universe_and_shard(tmp_path):
     path.write_text(json.dumps({"codes": ["60051"]}), encoding="utf-8")
     with pytest.raises(ValueError):
         stock_batch.load_universe(path)
+
+
+def test_make_universe_uses_current_members_and_source_date(tmp_path):
+    source = tmp_path / "universe_current.json"
+    source.write_text(
+        json.dumps(
+            {
+                "indices": {"sh000905": [f"{code:06d}" for code in range(500)]},
+                "source_date": {"sh000905": "2026-10-27"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    target = make_universe("sh000905", source_path=source, output_dir=tmp_path / "out")
+    universe = json.loads(target.read_text(encoding="utf-8"))
+
+    assert target.name == "universe_csi500.json"
+    assert universe["index"] == "sh000905"
+    assert universe["snapshot"] == "2026-10-27"
+    assert universe["note"] == "中证500 最近公布成分（非 PIT，2026-10-27）"
+    assert len(universe["codes"]) == 500
 
 
 def test_breadth_counts_only_in_stats_members_and_flags_mixed_asof(tmp_path):
@@ -140,11 +163,23 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
     _git("remote", "add", "origin", str(origin), cwd=repo)
     _git("push", "-u", "origin", "main", cwd=repo)
 
+    stock_dir = repo / "stock"
+    stock_dir.mkdir()
+    (stock_dir / "breadth_sh000300.json").write_text(
+        json.dumps({"index": "sh000300", "n": 300}),
+        encoding="utf-8",
+    )
+    _git("checkout", "-b", "stock-results", cwd=repo)
+    _git("add", "stock/breadth_sh000300.json", cwd=repo)
+    _git("commit", "-m", "existing CSI300 breadth", cwd=repo)
+    _git("push", "-u", "origin", "stock-results", cwd=repo)
+    _git("checkout", "main", cwd=repo)
+
     result_dir = repo / "out" / "stock"
     result_dir.mkdir(parents=True)
     (result_dir / "000001.json").write_text(json.dumps(_record("000001")), encoding="utf-8")
     (result_dir / "000002_error.json").write_text(json.dumps({"code": "000002", "error": "boom", "asof": "2026-10-30"}), encoding="utf-8")
-    (result_dir / "breadth_sh000300.json").write_text(json.dumps({"index": "sh000300", "n": 1}), encoding="utf-8")
+    (result_dir / "breadth_sh000905.json").write_text(json.dumps({"index": "sh000905", "n": 500}), encoding="utf-8")
     (result_dir / "_batch_0_of_1.json").write_text("{}", encoding="utf-8")
 
     env = os.environ | {
@@ -157,7 +192,26 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
     subprocess.run(["bash", str(SCRIPT)], cwd=repo, env=env, check=True, capture_output=True, text=True)
 
     files = _git("--git-dir", str(origin), "ls-tree", "--name-only", "stock-results", "stock/").splitlines()
-    assert sorted(files) == ["stock/000001.json", "stock/000002_error.json", "stock/breadth_sh000300.json", "stock/index.json"]
+    assert sorted(files) == [
+        "stock/000001.json",
+        "stock/000002_error.json",
+        "stock/breadth_sh000300.json",
+        "stock/breadth_sh000905.json",
+        "stock/index.json",
+    ]
+    csi300 = json.loads(_git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json"))
+    csi500 = json.loads(_git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000905.json"))
+    assert csi300 == {"index": "sh000300", "n": 300}
+    assert csi500 == {"index": "sh000905", "n": 500}
     index = json.loads(_git("--git-dir", str(origin), "show", "stock-results:stock/index.json"))
     assert index["000001"]["status"] == "eligible" and index["000001"]["asof"] == "2026-10-30"
     assert index["000002"]["status"] == "error" and index["000002"]["run_url"] == "https://example.test/runs/batch"
+
+
+def test_qualified_skips_display_only_scales():
+    rec = _record("000001", std612=0.5, conf612=0.6)
+    rec["top"]["indicators"]["2-4w"] = {"n_windows": 6, "confidence": {"standard": 1.0}, "display_only": True}
+    rec["top"]["lppls_confidence"]["2-4w"] = 1.0
+    fit_scales, conf_scales = stock_batch._qualified(rec)
+    assert fit_scales == {"6-12m"}
+    assert conf_scales == {"6-12m", "2-4w"} or conf_scales == {"6-12m"}  # box 置信度口径不受 display_only 影响

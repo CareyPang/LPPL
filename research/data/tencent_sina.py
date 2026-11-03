@@ -119,8 +119,9 @@ def sina_factors(symbol: str, kind: str = "qfq", timeout: float = 10) -> pd.Data
 
 
 def apply_factors(raw: pd.DataFrame, factors: pd.DataFrame, kind: str = "qfq") -> pd.DataFrame:
-    fd = factors.date.to_numpy().astype(str)
-    idx = np.searchsorted(fd, raw.date.to_numpy().astype(str), side="right") - 1
+    fd = pd.to_datetime(factors.date).dt.strftime("%Y-%m-%d").to_numpy()
+    raw_dates = pd.to_datetime(raw.date).dt.strftime("%Y-%m-%d").to_numpy()
+    idx = np.searchsorted(fd, raw_dates, side="right") - 1
     fac = np.where(idx >= 0, factors.factor.to_numpy()[np.maximum(idx, 0)], np.nan)
     if np.isnan(fac).any():
         fac = pd.Series(fac).bfill().to_numpy()
