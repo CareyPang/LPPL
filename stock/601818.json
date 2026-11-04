@@ -1,8 +1,8 @@
 {
  "symbol": "sh601818",
  "name": "光大银行",
- "asof": "2026-11-03",
- "data_version": "vintage_20261103_tencent_sina_hfq_4a754b6a",
+ "asof": "2026-11-04",
+ "data_version": "vintage_20261104_tencent_sina_hfq_4a754b6a",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
  "top": {
   "p20": {
@@ -14,13 +14,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-03-10",
+   "start": "2025-03-11",
    "duration_days": 402,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.128,
-   "size_realized": -0.081,
-   "tc": "2026-07-28",
+   "size_model": -0.13,
+   "size_realized": -0.087,
+   "tc": "2026-07-17",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -54,14 +54,14 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-02-05",
+    "best_t1": "2026-04-28",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.0,
+     "m_lo": 0.167,
      "m_hi": 0.167,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.333,
+     "tc_lo": 0.167,
      "tc_hi": 0.0,
      "any": 0.333,
      "tol": 0.01
@@ -98,7 +98,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-03-10",
+    "best_t1": "2025-03-11",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -219,7 +219,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-03",
+   "table_asof": "2026-11-04",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -701,7 +701,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.081,
+    "size_realized": -0.087,
     "duration_days": 402,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -745,7 +745,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-14",
    "2023-09-15",
    "2023-09-18",
    "2023-09-19",
@@ -1500,10 +1499,10 @@
    "2026-10-29",
    "2026-10-30",
    "2026-11-02",
-   "2026-11-03"
+   "2026-11-03",
+   "2026-11-04"
   ],
   "open": [
-   5.598,
    5.653,
    5.616,
    5.598,
@@ -2258,10 +2257,10 @@
    6.582,
    6.582,
    6.582,
-   6.71
+   6.71,
+   6.774
   ],
   "high": [
-   5.671,
    5.707,
    5.616,
    5.653,
@@ -3016,10 +3015,10 @@
    6.624,
    6.624,
    6.731,
-   6.838
+   6.838,
+   6.859
   ],
   "low": [
-   5.579,
    5.598,
    5.543,
    5.579,
@@ -3774,10 +3773,10 @@
    6.56,
    6.56,
    6.582,
-   6.624
+   6.624,
+   6.753
   ],
   "close": [
-   5.653,
    5.616,
    5.616,
    5.653,
@@ -4532,10 +4531,10 @@
    6.603,
    6.624,
    6.71,
-   6.817
+   6.817,
+   6.795
   ],
   "volume": [
-   1976644,
    1307523,
    1108152,
    926475,
@@ -5290,7 +5289,8 @@
    1813768,
    1979689,
    3908923,
-   3860001
+   3860001,
+   3145244
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5341,13 +5341,70 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": true,
-  "n_bars": 3855,
+  "n_bars": 3856,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
   "eligibility_note": "符合统计纳入条件",
-  "source": "tencent_kline",
+  "source": "tencent_fqkline",
   "evidence": "research_candidate",
   "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
+ },
+ "dip": {
+  "evidence": "descriptive",
+  "oos": "pending",
+  "note": "历史分位，不是预测；样本外检验进行中",
+  "lib": {
+   "version": "20261103-smoke-v1",
+   "cutoff": "2026-11-03",
+   "smoke": true,
+   "n_events": 701
+  },
+  "state": {
+   "asof": "2026-11-04",
+   "close": 6.79535,
+   "peak_date": "2025-07-07",
+   "runup": 0.704041,
+   "dd": -0.228648,
+   "td_since_peak": 322,
+   "low_date": "2026-06-30",
+   "bounce_from_low": 0.125113,
+   "ret20": 0.046053,
+   "ret60": 0.015974,
+   "rv20": 0.176873,
+   "rv20_pct5y": 0.654762,
+   "vol_d": 0.009995,
+   "well_dist_below": 0.038592
+  },
+  "in_structure": false,
+  "depth_bucket": null,
+  "similar": null,
+  "first_hit": {
+   "fh60": {
+    "hist": null,
+    "rw": {
+     "U": 0.05655,
+     "L": 0.0317,
+     "none": 0.91175
+    }
+   },
+   "fh120": {
+    "hist": null,
+    "rw": {
+     "U": 0.012,
+     "L": 0.04185,
+     "none": 0.94615
+    }
+   }
+  },
+  "regime": {
+   "p_hi_filtered": 1.0,
+   "hi_vol_ann": 0.157232,
+   "lo_vol_ann": 0.0,
+   "hi_mean_wk": -0.000205,
+   "lo_mean_wk": 0.119741,
+   "weeks": 260,
+   "note": "波动体制，不是涨跌信号"
+  }
  }
 }
