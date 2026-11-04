@@ -50,12 +50,19 @@ GIT_DIR="$(git rev-parse --absolute-git-dir)"
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/stock-result-publish.XXXXXX")"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
-for attempt in 1 2 3; do
+retry_delay() {
+  local delay=$((RANDOM % 9 + 2))
+  echo "Retrying publish after ${delay}s" >&2
+  sleep "$delay"
+}
+
+for attempt in {1..8}; do
   base_commit=""
   if remote_ref="$(git ls-remote --exit-code origin refs/heads/stock-results 2>/dev/null)"; then
     if ! git fetch --no-tags origin \
       +refs/heads/stock-results:refs/remotes/origin/stock-results >/dev/null; then
       echo "Could not fetch stock-results on publish attempt $attempt" >&2
+      retry_delay
       continue
     fi
     base_commit="$(git rev-parse refs/remotes/origin/stock-results)"
@@ -63,6 +70,7 @@ for attempt in 1 2 3; do
     remote_status=$?
     if (( remote_status != 2 )); then
       echo "Could not inspect stock-results on publish attempt $attempt" >&2
+      retry_delay
       continue
     fi
   fi
@@ -309,7 +317,8 @@ PY
     exit 0
   fi
   echo "Push failed on attempt $attempt; rebuilding atop latest stock-results" >&2
+  retry_delay
 done
 
-echo "Failed to publish ${#CODES[@]} result(s) after three attempts" >&2
+echo "Failed to publish ${#CODES[@]} result(s) after eight attempts" >&2
 exit 1
