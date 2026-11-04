@@ -4,11 +4,13 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from ..features.wells import well_features_at
 from . import events
 
 LOGGER = logging.getLogger(__name__)
@@ -101,6 +103,15 @@ def _summary(frame: pd.DataFrame) -> dict:
             label: _first_touch(frame["fh120"])[label] if "fh120" in frame else None
             for label in ("U", "L", "none")
         },
+    }
+
+
+def _sample_counts(frame: pd.DataFrame) -> dict[str, int]:
+    return {
+        "n": int(len(frame)),
+        "n_delisted": int(frame["delisted"].fillna(False).astype(bool).sum())
+        if "delisted" in frame
+        else 0,
     }
 
 
@@ -249,7 +260,27 @@ def _state(prices: pd.DataFrame) -> tuple[dict, float | None, float | None]:
     )
     ewma = events.ewma_vol(closes)
     vol_d = _number(ewma[-1]) if len(ewma) else None
-    sma200 = float(np.mean(closes[-200:])) if n >= 200 else None
+    well_dist_below = None
+    if {"high", "low", "volume"}.issubset(frame.columns):
+        high = pd.to_numeric(frame["high"], errors="coerce").to_numpy(dtype=float)
+        low = pd.to_numeric(frame["low"], errors="coerce").to_numpy(dtype=float)
+        volume = pd.to_numeric(frame["volume"], errors="coerce").to_numpy(dtype=float)
+        typical = (high + low + closes) / 3
+        if (
+            np.isfinite(typical).all()
+            and np.isfinite(high).all()
+            and np.isfinite(low).all()
+            and np.isfinite(volume).all()
+            and (typical > 0).all()
+            and (high > 0).all()
+            and (low > 0).all()
+        ):
+            x = np.log(typical)[-events.W :]
+            r2 = ((np.log(high) - np.log(low)) ** 2 / 12)[-events.W :]
+            well = well_features_at(
+                x, r2, volume[-events.W :], math.log(current)
+            )
+            well_dist_below = _number(well[2])
     state = {
         "asof": str(pd.Timestamp(dates[-1]).date()),
         "close": _number(current),
@@ -264,7 +295,7 @@ def _state(prices: pd.DataFrame) -> tuple[dict, float | None, float | None]:
         "rv20": rv20,
         "rv20_pct5y": rv20_pct,
         "vol_d": vol_d,
-        "well_dist_below": _number(current / sma200 - 1) if sma200 else None,
+        "well_dist_below": well_dist_below,
     }
     return state, vol_d, rv20
 
@@ -315,6 +346,7 @@ def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dic
             "full": _summary(full),
             "industry": _summary(industry) if len(industry) >= 30 else None,
             "excl1516": _summary(no_1516),
+            "industry_counts": _sample_counts(industry),
         }
         first_hit = {
             key: {

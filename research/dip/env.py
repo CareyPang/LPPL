@@ -101,15 +101,24 @@ def _share_history(days: int = 130) -> pd.DataFrame:
 
 
 def _share_summary(frame: pd.DataFrame, code: str) -> dict:
-    data = frame.loc[frame.code == code].sort_values("date")
+    data = (
+        frame.loc[frame.code == code]
+        .sort_values("date")
+        .drop_duplicates("date", keep="last")
+    )
     if data.empty:
         return {
             "evidence": "descriptive",
             "note": ENV_NOTE,
             "n_days": 0,
+            "latest_date": None,
+            "latest_shares_yi": None,
             "change_5d": None,
             "change_20d": None,
             "change_60d": None,
+            "change_5d_shares_yi": None,
+            "change_20d_shares_yi": None,
+            "change_60d_shares_yi": None,
             "mad_subscription_dates": [],
         }
     values = data.shares.to_numpy(dtype=float)
@@ -132,12 +141,19 @@ def _share_summary(frame: pd.DataFrame, code: str) -> dict:
         "evidence": "descriptive",
         "note": ENV_NOTE,
         "n_days": int(len(data)),
+        "latest_date": str(data.date.iloc[-1].date()),
+        "latest_shares_yi": float(values[-1] / 1e4),
     }
     for days in (5, 20, 60):
+        available = len(values) > days and values[-days - 1] != 0
         summary[f"change_{days}d"] = (
-            float(values[-1] / values[-days - 1] - 1)
-            if len(values) > days and values[-days - 1] != 0
-            else None
+            float(values[-1] / values[-days - 1] - 1) if available else None
+        )
+        summary[f"change_{days}d_shares_yi"] = (
+            float((values[-1] - values[-days - 1]) / 1e4) if available else None
+        )
+        summary[f"change_{days}d_from"] = (
+            str(data.date.iloc[-days - 1].date()) if available else None
         )
     summary["mad_subscription_dates"] = anomalies[-12:]
     return summary

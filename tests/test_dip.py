@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from research.dip import events, panel
+from research.dip.env import _share_summary
 from research.pipeline import stock
 
 
@@ -140,9 +141,10 @@ def test_panel_structure_and_outside_structure_keep_expected_shape(tmp_path, mon
     assert result["depth_bucket"] == -0.5
     assert result["similar"]["full"]["n"] == 0
     assert result["similar"]["industry"] is None
+    assert result["similar"]["industry_counts"] == {"n": 0, "n_delisted": 0}
     assert result["first_hit"]["fh60"]["hist"]["n"] == 0
     assert result["first_hit"]["fh60"]["rw"].keys() == {"U", "L", "none"}
-    assert result["state"]["well_dist_below"] is not None
+    assert "well_dist_below" in result["state"]
     assert result["state"]["close"] is not None
     assert all(
         value is None
@@ -160,6 +162,66 @@ def test_panel_structure_and_outside_structure_keep_expected_shape(tmp_path, mon
     assert other["similar"] is None
     assert other["first_hit"]["fh60"]["hist"] is None
     assert other["first_hit"]["fh60"]["rw"] is not None
+
+
+def test_state_uses_recent_well_features_and_returns_lower_distance(monkeypatch):
+    prices = _prices(np.linspace(80.0, 160.0, 600))
+    captured = {}
+
+    def fake_well_features_at(x, r2, volume, x_now):
+        captured["x"] = x.copy()
+        captured["r2"] = r2.copy()
+        captured["volume"] = volume.copy()
+        captured["x_now"] = x_now
+        return (0.0, 0.0, 0.125)
+
+    monkeypatch.setattr(panel, "well_features_at", fake_well_features_at)
+
+    state, _, _ = panel._state(prices)
+
+    expected = prices.iloc[-500:]
+    np.testing.assert_allclose(
+        captured["x"],
+        np.log((expected.high + expected.low + expected.close).to_numpy() / 3),
+    )
+    np.testing.assert_allclose(
+        captured["r2"],
+        (np.log(expected.high) - np.log(expected.low)).to_numpy() ** 2 / 12,
+    )
+    np.testing.assert_allclose(captured["volume"], expected.volume.to_numpy())
+    assert captured["x_now"] == pytest.approx(np.log(prices.close.iloc[-1]))
+    assert state["well_dist_below"] == pytest.approx(0.125)
+
+
+def test_state_returns_null_when_there_is_no_lower_price_well(monkeypatch):
+    prices = _prices(np.linspace(80.0, 160.0, 600))
+    monkeypatch.setattr(
+        panel, "well_features_at", lambda *args: (0.0, 0.0, np.nan)
+    )
+
+    state, _, _ = panel._state(prices)
+
+    assert state["well_dist_below"] is None
+
+
+def test_share_summary_uses_sse_10k_units_and_deduplicates_dates():
+    dates = pd.date_range("2026-01-01", periods=22)
+    rows = []
+    for index, date in enumerate(dates):
+        rows.append(
+            {"date": date, "code": "510300", "shares": 1_000_000 + index * 1_000}
+        )
+        rows.append({"date": date, "code": "588000", "shares": 5_000_000})
+    rows.append({"date": dates[1], "code": "510300", "shares": 1_001_000})
+
+    summary = _share_summary(pd.DataFrame(rows), "510300")
+
+    assert summary["n_days"] == 22
+    assert summary["latest_date"] == "2026-01-22"
+    assert summary["latest_shares_yi"] == pytest.approx(102.1)
+    assert summary["change_20d_from"] == "2026-01-02"
+    assert summary["change_20d_shares_yi"] == pytest.approx(2.0)
+    assert summary["change_20d"] == pytest.approx(1_021_000 / 1_001_000 - 1)
 
 
 def test_predict_adds_dip_without_changing_existing_record_fields(monkeypatch):
