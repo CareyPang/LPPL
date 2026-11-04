@@ -1,5 +1,8 @@
 import hashlib
+import json
 import subprocess
+import sys
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -813,3 +816,23 @@ def test_display_calendar_appends_known_future_trading_days(monkeypatch):
 
     monkeypatch.setattr(stock, "_reference_calendar", boom)
     assert list(stock._display_calendar(bars, asof)) == list(bars[bars <= asof])
+
+
+def test_main_adds_generated_at_to_current_and_history_records(tmp_path, monkeypatch):
+    monkeypatch.setattr(stock, "predict", lambda *_args, **_kwargs: {"symbol": "sh600519"})
+    monkeypatch.setattr(
+        stock,
+        "history",
+        lambda *_args, **_kwargs: {"symbol": "sh600519", "frames": []},
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["stock", "600519", "--history-weeks", "1", "--out", str(tmp_path)],
+    )
+
+    stock.main()
+
+    for name in ("600519.json", "600519_history.json"):
+        record = json.loads((tmp_path / name).read_text(encoding="utf-8"))
+        assert datetime.fromisoformat(record["generated_at"]).utcoffset().total_seconds() == 0

@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+from datetime import datetime, timezone
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
@@ -713,6 +714,7 @@ def main() -> None:
         procs=args.procs,
         trust_boot=args.trust_boot,
     )
+    record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
     path = args.out / f"{args.code6}.json"
     path.write_text(json.dumps(record, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     print(path)
@@ -723,6 +725,7 @@ def main() -> None:
             variant=args.variant,
             procs=args.procs,
         )
+        history_record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
         history_path = args.out / f"{args.code6}_history.json"
         history_path.write_text(
             json.dumps(history_record, ensure_ascii=False, indent=1, default=str),
