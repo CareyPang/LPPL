@@ -112,7 +112,7 @@ def _share_summary(frame: pd.DataFrame, code: str, previous=None) -> dict:
     if frame.empty or "code" not in frame:
         old = (previous or {}).get("shares", {}).get(code, {})
         if old.get("latest_shares_yi") is not None:
-            return {**old, "stale": True, "as_of": previous.get("asof")}
+            return {**old, "stale": True, "as_of": old.get("as_of") or previous.get("asof")}
         return {
             "available": False,
             "reason": SHARE_ERROR or "上交所份额接口拒绝访问（HTTP 403）或无数据",
