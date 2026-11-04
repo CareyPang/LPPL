@@ -32,6 +32,7 @@ SINA_HEADERS = {
     "User-Agent": "Mozilla/5.0",
 }
 ENV_NOTE = "指数/ETF 环境，不是个股信号"
+SHARE_ERROR = None
 
 
 def _sina_list(param: str) -> list[str]:
@@ -57,7 +58,13 @@ def _json_safe(value):
 
 
 def _share_history(days: int = 130) -> pd.DataFrame:
-    prices = fetch_tencent_sina("sh", "510300", True, "")
+    global SHARE_ERROR
+    SHARE_ERROR = None
+    try:
+        prices = fetch_tencent_sina("sh", "510300", True, "")
+    except Exception as exc:
+        SHARE_ERROR = f"{type(exc).__name__}: {exc}"
+        return pd.DataFrame()
     dates = prices.date.astype(str).drop_duplicates().tail(days).tolist()
     rows = []
     for day in dates:
@@ -91,6 +98,7 @@ def _share_history(days: int = 130) -> pd.DataFrame:
                         }
                     )
         except Exception as exc:
+            SHARE_ERROR = f"{type(exc).__name__}: {exc}"
             print(f"ETF share snapshot {day} failed: {type(exc).__name__}: {exc}")
         time.sleep(1.2)
     frame = pd.DataFrame(rows)
@@ -100,7 +108,15 @@ def _share_history(days: int = 130) -> pd.DataFrame:
     return frame
 
 
-def _share_summary(frame: pd.DataFrame, code: str) -> dict:
+def _share_summary(frame: pd.DataFrame, code: str, previous=None) -> dict:
+    if frame.empty or "code" not in frame:
+        old = (previous or {}).get("shares", {}).get(code, {})
+        if old.get("latest_shares_yi") is not None:
+            return {**old, "stale": True, "as_of": old.get("as_of") or previous.get("asof")}
+        return {
+            "available": False,
+            "reason": SHARE_ERROR or "上交所份额接口拒绝访问（HTTP 403）或无数据",
+        }
     data = (
         frame.loc[frame.code == code]
         .sort_values("date")
@@ -255,10 +271,13 @@ def _option_summary(underlying: str) -> dict:
         }
 
 
-def collect() -> tuple[dict, dict]:
+def collect(previous=None) -> tuple[dict, dict]:
     today = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
     shares = _share_history()
-    share_data = {code: _share_summary(shares, code) for code in ETF_CODES}
+    share_data = {
+        code: _share_summary(shares, code, previous)
+        for code in ETF_CODES
+    }
     options = {code: _option_summary(code) for code in ETF_CODES}
     snapshot = {
         "asof": today,
@@ -274,7 +293,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Collect descriptive ETF/index environment")
     parser.add_argument("--out", type=Path, default=Path("out/stock"))
     args = parser.parse_args()
-    snapshot, options = collect()
+    previous_path = args.out / "_dip_env.previous.json"
+    previous = (
+        json.loads(previous_path.read_text(encoding="utf-8"))
+        if previous_path.exists() and previous_path.stat().st_size
+        else None
+    )
+    snapshot, options = collect(previous)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "_dip_env.json").write_text(
         json.dumps(snapshot, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
