@@ -86,8 +86,9 @@ def keep_rule(rule: str, d: float, hi: float) -> bool:
     return hi < 0 if rule == "ci" else d < -0.001
 
 def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev", rule: str = "ci", df: pd.DataFrame | None = None,
-               title: str = "开发段模型阶梯"):
-    """rule="ci"：主链（§6，90% 区间不含 0）；rule="point"：次要链（§13.2，点估计 < −0.001）。df 可由调用方提供（如底部阶梯）。"""
+               title: str = "开发段模型阶梯", force_keep: frozenset[str] = frozenset()):
+    """rule="ci"：主链（§6，90% 区间不含 0）；rule="point"：次要链（§13.2，点估计 < −0.001）。df 可由调用方提供（如底部阶梯）。
+    force_keep：无论判定如何都保留的层（用于在子样本上固定已登记的保留链，再检验新层；§21.4）。"""
     levels = with_z_variants(LEVELS) if levels is None else levels
     OOF_DIR.mkdir(parents=True, exist_ok=True)
     df = assemble(split) if df is None else df
@@ -117,7 +118,7 @@ def run_ladder(levels=None, split: str = "dev", tag: str = "ladder_dev", rule: s
                     best = (sc["brier"], cfg, C, feats, oof)
         _, cfg, C, feats, oof = best
         d, lo, hi = paired_delta_brier(oof, prev_oof)
-        keep = keep_rule(rule, d, hi)
+        keep = keep_rule(rule, d, hi) or name in force_keep
         oof.to_parquet(OOF_DIR / f"{tag}_{name}_{cfg}_C{C}.parquet")
         rows.append(dict(level=name, config=f"{cfg} (chosen)", C=C, kept=keep, vs=prev_name,
                          dbrier=d, ci_lo=lo, ci_hi=hi, **score_table(oof.y, oof.p, p_ref), **event_metrics(oof)))

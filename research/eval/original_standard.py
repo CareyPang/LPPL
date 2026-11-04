@@ -253,8 +253,7 @@ def evaluate_symbol(sym: str, seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame
     return tab, pd.DataFrame(win_rows)
 
 
-def main(symbols: list[str]) -> None:
-    REPORT.mkdir(parents=True, exist_ok=True)
+def evaluate_all(symbols: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
     tabs, wins = [], []
     for sym in symbols:
         if not (SCAN / f"{sym}.parquet").exists():
@@ -264,8 +263,17 @@ def main(symbols: list[str]) -> None:
         tabs.append(t)
         wins.append(w)
         print("done", sym, len(t), len(w), flush=True)
-    tab = pd.concat(tabs, ignore_index=True)
-    win = pd.concat(wins, ignore_index=True)
+    return pd.concat(tabs, ignore_index=True), pd.concat(wins, ignore_index=True)
+
+
+def main(symbols: list[str]) -> None:
+    tab, win = evaluate_all(symbols)
+    write_report(tab, win, symbols)
+
+
+def write_report(tab: pd.DataFrame, win: pd.DataFrame, symbols: list[str]) -> None:
+    """聚合与写报告（与评价分离，便于按标的并行后复用同一聚合代码）。"""
+    REPORT.mkdir(parents=True, exist_ok=True)
     tab.to_csv(REPORT / "alarm_grid.csv", index=False)
     win.to_csv(REPORT / "quantile_windows.csv", index=False)
     agg = (tab.groupby(["indicator", "q", "H"])
