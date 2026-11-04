@@ -5,7 +5,10 @@ body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"
 input{background:#0e1116;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:15px;width:140px}button{background:#21262d;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 12px}
 .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--none);color:var(--none);margin-left:6px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mute);font-weight:500}
 .warn{border-left:3px solid var(--amb);padding-left:10px;color:var(--mute);font-size:12px}iframe{width:100%;height:1600px;border:0;border-radius:10px}
-canvas{width:100%;height:300px;display:block;margin-top:10px}.rc{border-color:var(--amb);color:var(--amb)}.leg{font-size:12px;color:var(--mute);margin-top:4px}.leg i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;vertical-align:-1px}</style>
+canvas{width:100%;height:300px;display:block;margin-top:10px}.rc{border-color:var(--amb);color:var(--amb)}.leg{font-size:12px;color:var(--mute);margin-top:4px}.leg i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;vertical-align:-1px}
+.dip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}.dip-card{min-width:0;background:#11161d;border:1px solid var(--line);border-radius:8px;padding:12px}.dip-card h4{margin:0 0 8px}.dip-wide{grid-column:1/-1}.dip-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dip-values div{border-bottom:1px solid var(--line);padding:4px 0}.dip-label{display:block;color:var(--mute);font-size:11px}.dip-value{font-variant-numeric:tabular-nums}.dip-scroll{overflow-x:auto}.dip-table{min-width:700px;font-size:11px}.dip-table td,.dip-table th{padding:5px}.dip-quantile{width:100%;min-width:0;table-layout:fixed;font-size:10px}.dip-quantile td,.dip-quantile th{padding:4px 3px;overflow-wrap:anywhere}.dip-quantile th:first-child{width:34%}.dip-pool{min-width:0;margin:10px 0 14px}.dip-pool-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}.dip-prob-row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--mute);font-size:11px;margin-top:3px}.dip-disclaimer{color:var(--mute);font-size:11px;margin:8px 0 0}.dip-env-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dip-env-item{border:1px solid var(--line);border-radius:6px;padding:8px}.dip-badge{color:var(--amb);font-size:12px;margin:3px 0}
+@media(max-width:600px){.dip-grid,.dip-env-grid{grid-template-columns:1fr}.dip-wide{grid-column:auto}.dip-values{grid-template-columns:repeat(2,minmax(0,1fr))}.dip-card{padding:10px}.dip-table{min-width:640px}}
+</style><style>.dip-anomalies{margin:2px 0 0;padding-left:18px;font-size:11px}.dip-anomalies li{margin:2px 0}.dip-hit-table{min-width:0;width:100%;table-layout:fixed;font-size:10px}.dip-hit-table td,.dip-hit-table th{padding:4px 2px;overflow-wrap:anywhere}.dip-hit-table th:nth-child(1){width:12%}.dip-hit-table th:nth-child(2){width:24%}.dip-hit-table th:nth-child(6){width:20%}</style>
 <script>window.LPPL_QUERY_API = 'https://lppl-stock-query.careypang.workers.dev';</script><script src="theme.js"></script></head><body><div class="wrap">
 <div class="card"><h2 style="margin:0 0 8px">个股输入 → 所属指数的顶部风险</h2>
 <input id="code" placeholder="6 位代码，如 600519" maxlength="6"> <button id="go">查看</button>
@@ -80,6 +83,87 @@ function showHistoryNotice(message,runUrl){
   const link=runUrl?`<br><a href="${esc(runUrl)}" target="_blank" rel="noopener" style="color:#58a6ff">查看运行日志</a>`:'';
   el.innerHTML=esc(message)+link;
   el.style.display='';
+}
+const dipNum=v=>v==null||!Number.isFinite(Number(v))?'—':String(Number(v));
+const dipPct=v=>v==null||!Number.isFinite(Number(v))?'—':(Number(v)*100).toFixed(1)+'%';
+const dipFixed=(v,digits=2)=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toFixed(digits);
+const dipSigned=(v,digits=2)=>v==null||!Number.isFinite(Number(v))?'—':(Number(v)>0?'+':'')+Number(v).toFixed(digits);
+const dipPctChange=v=>v==null||!Number.isFinite(Number(v))?null:Number(v)*100;
+const dipShareChange=(x,days)=>`${dipSigned(x[`change_${days}d_shares_yi`])} 亿份（${dipSigned(dipPctChange(x[`change_${days}d`]),1)}%）`;
+function dipStatBlock(items){
+  return `<div class="dip-values">${items.map(([label,value])=>`<div><span class="dip-label">${esc(label)}</span><span class="dip-value">${esc(value)}</span></div>`).join('')}</div>`;
+}
+function dipSimilarPools(similar){
+  const metrics=[['r60','60日后收益'],['r120','120日后收益'],['r250','250日后收益'],['mdd120','120日内最深再跌'],['up120','120日内最高反弹']];
+  return [['full','全市场'],['industry','同行业'],['excl1516','剔除 2015–16 年（牛熊极端年）']].map(([key,label])=>{
+    const s=similar?.[key]||null;
+    const counts=s||(key==='industry'?(similar?.industry_counts||{}):{});
+    const n=counts?.n, delisted=counts?.n_delisted;
+    const quantiles=s?.q;
+    const rows=metrics.map(([metric,title])=>`<tr><th>${title}</th>${[0,1,2,3,4].map(i=>`<td>${dipPct(quantiles?.[metric]?.[i])}</td>`).join('')}<td>${dipNum(s?.n_outcome?.[metric])}</td></tr>`).join('');
+    const p30=dipPct(s?.p_up120_ge30),p50=dipPct(s?.p_up120_ge50);
+    const unavailable=key==='industry'&&!s?'同行业样本 <30，不单独统计':'';
+    return `<section class="dip-pool"><div class="dip-pool-head"><b>${label}</b><span>${dipNum(n)} 个事件，其中退市股 ${dipNum(delisted)} 个</span></div>${s?`<div class="muted">较差 10%：只有 10% 的事件比这更差；较好 10%：只有 10% 的事件比这更好。</div><table class="dip-quantile"><thead><tr><th>指标</th><th>较差 10%</th><th>25%</th><th>中位数</th><th>75%</th><th>较好 10%</th><th>样本数</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="muted">${unavailable||'—'}</div>`}<div class="dip-prob-row"><span>120 日内最高反弹 ≥30%：${p30}</span><span>≥50%：${p50}</span></div></section>`;
+  }).join('');
+}
+function dipHitRows(dip){
+  return ['fh60','fh120'].map(key=>{
+    const item=dip.first_hit?.[key]||{};
+    const [term,bounds]=key==='fh60'?['60 日','+15% / −15%']:['120 日','+30% / −20%'];
+    return ['hist','rw'].map(kind=>{
+      const value=item[kind];
+      return `<tr><td>${term}</td><td>${bounds}</td><td>${kind==='hist'?'历史类似事件':'随机波动对照'}</td><td>${dipPct(value?.U)}</td><td>${dipPct(value?.L)}</td><td>${dipPct(value?.none)}</td><td>${kind==='hist'?dipNum(value?.n):'模拟 20000 条'}</td></tr>`;
+    }).join('');
+  }).join('');
+}
+function dipEnvironmentHtml(env){
+  if(!env) return '<p class="muted">暂无</p><p class="dip-disclaimer">ETF 份额增加只说明有资金申购，不能确定是谁买的。期权数据反映的是指数情绪，不是这只股票。历史分位，不是预测。</p>';
+  const names={510300:'沪深300 ETF',588000:'科创50 ETF',510050:'上证50 ETF',510500:'中证500 ETF'};
+  const shares=env.shares||{}, options=env.options||{};
+  const shareItems=Object.keys(names).map(code=>{
+    const x=shares[code]||{};
+    const dates=(x.mad_subscription_dates||[]).slice(-3).map(v=>`<li>${esc(v.date)}：${dipSigned(v.change==null?null:Number(v.change)/1e4)} 亿份，偏离常态 ${dipFixed(v.robust_z,1)} 倍</li>`).join('')||'<li>—</li>';
+    const twentyDay=`${dipSigned(x.change_20d_shares_yi)} 亿份（${dipSigned(dipPctChange(x.change_20d),1)}%）`;
+    return `<div class="dip-env-item"><b>${names[code]}</b><p>近 20 个交易日份额 ${twentyDay}。</p>${dipStatBlock([['最新总份额',`${dipFixed(x.latest_shares_yi)} 亿份`],['5日份额变化',dipShareChange(x,5)],['20日份额变化',dipShareChange(x,20)],['60日份额变化',dipShareChange(x,60)]])}<div class="dip-label">样本：${dipNum(x.n_days)} 日；最新日 ${esc(x.latest_date||'—')}；20日分母日 ${esc(x.change_20d_from||'—')}</div><div class="dip-label">单日申购明显偏大的日子（最近 3 次）</div><ul class="dip-anomalies">${dates}</ul></div>`;
+  }).join('');
+  const optionItems=Object.keys(names).map(code=>{
+    const x=options[code]||{};
+    return `<div class="dip-env-item"><b>${names[code]}</b>${dipStatBlock([['隐含波动率（平值）',dipPct(x.iv_atm)],['隐含波动 − 近 20 日实际波动',dipPct(x.iv_minus_rv20)],['认沽比认购贵（偏度）',dipPct(x.put_call_skew)],['认沽/认购成交量比',dipFixed(x.put_call_volume,2)],['隐含波动在历史中的位置',`${dipPct(x.iv_pct_rv_history)} 分位`]])}<div class="dip-label">样本：${dipNum(x.n)} 个期权合约；${esc(x.error||'指数/ETF 环境，非个股期权')}</div></div>`;
+  }).join('');
+  return `<div class="sub">截止 ${esc(env.asof||'—')}</div><h5>宽基 ETF 份额变化（资金申购/赎回代理）</h5><div class="dip-env-grid">${shareItems}</div><p class="dip-disclaimer">ETF 份额增加只说明有资金申购，不能确定是谁买的。历史分位，不是预测。</p><h5>ETF 期权：市场情绪（指数/ETF 环境，非个股期权）</h5><div class="dip-env-grid">${optionItems}</div><p class="dip-disclaimer">期权数据反映的是指数情绪，不是这只股票。历史分位，不是预测。</p>`;
+}
+async function loadDipEnvironment(){
+  const el=document.getElementById('dip-env-data');
+  if(!el) return;
+  const env=await loadJ('mock/data/stock/_dip_env.json');
+  el.innerHTML=dipEnvironmentHtml(env);
+}
+function renderDipPanel(dip){
+  const host=document.getElementById('dip-panel');
+  if(!host) return;
+  if(!dip){host.innerHTML='<h3>抄底面板</h3><p class="muted">—</p><p class="dip-disclaimer">历史分位，不是预测。</p>';return;}
+  const s=dip.state||{}, lib=dip.lib||{}, badge=lib.smoke?'<div class="dip-badge">临时事件库（223 只）</div>':'';
+  const pending=dip.oos==='pending'?'<div class="dip-badge">样本外检验进行中</div>':'';
+  const similar=dip.similar||{};
+  const reading=similar.full||{};
+  const fullQuantiles=reading.q||{};
+  const structureReading=`从 ${s.peak_date||'—'} 的高点（此前上涨 ${dipPct(s.runup)}）已下跌 ${dipPct(s.dd)}，历时 ${dipNum(s.td_since_peak)} 个交易日；最近低点在 ${s.low_date||'—'}，之后反弹 ${dipPct(s.bounce_from_low)}。`;
+  const depthText=dip.depth_bucket==null?'—':dipPct(Math.abs(Number(dip.depth_bucket)));
+  const structureRule=dip.in_structure===true?`符合‘大涨后深跌’条件，下面按跌幅 ≥${depthText} 的历史事件对照。`:'不符合‘大涨后深跌’条件（要求此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日），下面不做相似事件对照。';
+  const similarReading=`全市场 ${dipNum(reading.n)} 个类似事件中，120 个交易日后收益中位数 ${dipPct(fullQuantiles.r120?.[2])}，一半落在 ${dipPct(fullQuantiles.r120?.[1])} 到 ${dipPct(fullQuantiles.r120?.[3])} 之间；期间最深再跌中位数 ${dipPct(fullQuantiles.mdd120?.[2])}；120 日内最高反弹达到 30% 的占 ${dipPct(reading.p_up120_ge30)}。`;
+  const hit=dip.first_hit||{}, hist60=hit.fh60?.hist||{}, rw60=hit.fh60?.rw||{};
+  const hitReading=`历史上类似情况，60 个交易日内先涨 15% 的占 ${dipPct(hist60.U)}，先跌 15% 的占 ${dipPct(hist60.L)}；如果股价只是随机波动（波动率按当前水平），这两个数是 ${dipPct(rw60.U)} 和 ${dipPct(rw60.L)}。`;
+  const regime=dip.regime||{};
+  const regimeReading=`按周收益估计，现在处于高波动阶段的概率是 ${dipPct(regime.p_hi_filtered)}（高波动阶段年化波动 ${dipPct(regime.hi_vol_ann)}，低波动阶段 ${dipPct(regime.lo_vol_ann)}）。`;
+  host.innerHTML=`<h3 style="margin:16px 0 6px">抄底面板</h3><p>只描述历史上类似情况后来怎样，不是预测，也不构成投资建议。</p>${badge}${pending}<div class="sub">事件库 ${esc(lib.version||'—')} · 数据截至 ${esc(lib.cutoff||'—')} · 共 ${dipNum(lib.n_events)} 个事件</div>
+  <div class="dip-grid">
+  <section class="dip-card"><h4>现在跌到哪了？</h4><p>${structureReading}<br>${structureRule}</p>${dipStatBlock([['截止日期',s.asof||'—'],['收盘价（后复权）',s.close==null?'—':`${dipFixed(s.close)}（后复权）`],['是否符合条件',dip.in_structure===true?'是':dip.in_structure===false?'否':'—'],['对照档',dip.depth_bucket==null?'—':`跌幅 ≥${depthText}`],['前高日期',s.peak_date||'—'],['高点前涨幅',dipPct(s.runup)],['距高点跌幅',dipPct(s.dd)],['距高点交易日',dipNum(s.td_since_peak)],['低点日期',s.low_date||'—'],['距最近低点反弹',dipPct(s.bounce_from_low)],['20日收益',dipPct(s.ret20)],['60日收益',dipPct(s.ret60)],['近 20 日波动（年化）',dipPct(s.rv20)],['波动在近 5 年中的位置',`${dipPct(s.rv20_pct5y)} 分位`],['日波动估计',dipPct(s.vol_d)],['距下方成交密集区',s.well_dist_below==null?'下方没有成交密集区':dipPct(s.well_dist_below)]])}<div class="dip-disclaimer">基于最近 500 个交易日。历史分位，不是预测。</div></section>
+    <section class="dip-card"><h4>历史上类似的股票，后来怎样？</h4><p>${similarReading}</p>${dipSimilarPools(similar)}<p class="dip-disclaimer">‘最高反弹’按事后最高点计算，实际很难恰好卖在最高点，所以要和‘120日后收益’一起看。历史分位，不是预测。</p></section>
+    <section class="dip-card"><h4>先涨还是先跌？</h4><p>${hitReading}</p><div class="dip-scroll"><table class="dip-hit-table"><thead><tr><th>期限</th><th>上沿/下沿</th><th>来源</th><th>先碰上沿</th><th>先碰下沿</th><th>都没碰到</th><th>样本数</th></tr></thead><tbody>${dipHitRows(dip)}</tbody></table></div><div class="dip-disclaimer">历史比例高于随机对照，只说明过去类似事件略偏向先反弹；样本外检验完成前，不能当作预测。历史分位，不是预测。</div></section>
+    <section class="dip-card"><h4>现在是高波动阶段吗？</h4><p>${regimeReading}</p>${dipStatBlock([['处于高波动阶段的概率',dipPct(regime.p_hi_filtered)],['高波动阶段的年化波动',dipPct(regime.hi_vol_ann)],['低波动阶段的年化波动',dipPct(regime.lo_vol_ann)],['高波动阶段的平均周收益',dipPct(regime.hi_mean_wk)],['低波动阶段的平均周收益',dipPct(regime.lo_mean_wk)],['使用周数',dipNum(regime.weeks)]])}<div class="dip-disclaimer">高波动不等于下跌：它只说明价格摆动大。概率只用截至当周的数据计算，不用未来数据。历史分位，不是预测。</div></section>
+    <section class="dip-card dip-wide"><h4>大盘资金和情绪怎样？</h4><div id="dip-env-data" class="muted">加载中…</div></section>
+  </div>`;
+  loadDipEnvironment();
 }
 async function runQuery(c,idx,br){
   if(activeQueries.has(c)) return;
@@ -204,11 +288,13 @@ function renderStock(c,d,h,idx,err,br){
     <div class="sub" style="margin-top:8px">当前泡沫段：起点 ${esc(b.start)} · 持续 ${esc(b.duration_days)} 天 · 最长尺度 ${esc(SCL[b.scale]||b.scale)}· 风险窗口 ${t.window?.start?esc(t.window.start)+' → '+esc(t.window.end):'无（'+esc(t.window?.rule)+'）'}</div>
     ${brTxt}
     <p class="warn" id="history-status" style="display:none"></p>
+    <div id="dip-panel"></div>
     <canvas id="oc"></canvas>
     <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>该截止日 6–12月/12–24月 有合格拟合（任一集合）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80<i style="background:#58a6ff"></i>事后确认顶</div>`;
   const requery=document.getElementById('requery');
   if(requery) requery.onclick=()=>own(c,true);
   draw(d,h);
+  renderDipPanel(d.dip);
 }
 function draw(d,h){
   const cv=document.getElementById('oc'), dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;

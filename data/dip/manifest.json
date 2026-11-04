@@ -1,0 +1,40 @@
+{
+  "version": "20261103-smoke-v1",
+  "cutoff": "2026-11-03",
+  "n_stocks": 223,
+  "n_events": 701,
+  "n_unconditional": 22171,
+  "definition": {
+    "W": 500,
+    "MIN_RUNUP": 2.0,
+    "MAXAGE": 250,
+    "DEPTHS": [
+      -0.4,
+      -0.5,
+      -0.6
+    ],
+    "HS": [
+      60,
+      120,
+      250
+    ],
+    "FH": {
+      "fh60": [
+        0.85,
+        1.15,
+        60
+      ],
+      "fh120": [
+        0.8,
+        1.3,
+        120
+      ]
+    },
+    "UNC_STEP": 20
+  },
+  "sha256": "8c4985ab06b24d43d947932ea425f5dfcded85d7bbf38d54747c6459c64c00a2",
+  "events_file": "events_smoke.parquet",
+  "unconditional_file": "uncond_smoke.parquet",
+  "smoke": true,
+  "sw1_pit": false
+}

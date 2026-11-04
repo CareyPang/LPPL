@@ -18,6 +18,7 @@ import pandas as pd  # noqa: E402
 from ..data import cache  # noqa: E402
 from ..data.sources import sina_raw_daily  # noqa: E402
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
+from ..dip.panel import build_panel  # noqa: E402
 from ..eval.export_contract import (
     MODEL_VERSION,
     _derived,
@@ -516,7 +517,7 @@ def predict(
     if eligibility["n_bars"] < 500:
         windows = ()
     fits = _fit_pairs(available, [(date, n) for n in windows if n <= len(available)], procs)
-    return _record(
+    record = _record(
         code,
         variant,
         date,
@@ -529,6 +530,9 @@ def predict(
         procs=procs,
         reference_asof=cutoff if asof is not None else None,
     )
+    ohlc_pit.attrs["sym"] = universe._sym(code)
+    record["dip"] = build_panel(ohlc_pit)
+    return record
 
 
 def _weekly_asofs(logp: pd.Series, weeks: int) -> list[pd.Timestamp]:

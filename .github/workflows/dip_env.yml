@@ -1,0 +1,54 @@
+name: dip_env
+
+on:
+  schedule:
+    - cron: "30 10 * * 1-5" # 18:30 Asia/Shanghai, weekdays
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: dip-env
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Collect index and ETF environment
+        run: python -m research.dip.env --out out/stock
+      - name: Publish to stock-results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot_date="$(python -c 'import json; print(json.load(open("out/stock/_dip_env.json"))["asof"])')"
+          git fetch --no-tags origin stock-results
+          git switch -c dip-env-publish origin/stock-results
+          mkdir -p stock/dip_env/options
+          cp out/stock/_dip_env.json stock/_dip_env.json
+          cp "out/stock/dip_env/options/${snapshot_date}.json" \
+            "stock/dip_env/options/${snapshot_date}.json"
+          git add stock/_dip_env.json "stock/dip_env/options/${snapshot_date}.json"
+          if git diff --cached --quiet; then
+            echo "No environment snapshot changes to publish"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "dip: 发布指数与 ETF 环境 ${snapshot_date}"
+          git push origin HEAD:stock-results
+          gh workflow run pages.yml --ref main
