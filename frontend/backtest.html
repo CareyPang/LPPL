@@ -119,6 +119,7 @@ a { color: var(--ink-2); text-decoration: none; }
       <a href="index.html">终端</a>
       <a href="backtest.html" aria-current="page">回测</a>
       <a href="market.html">市场</a>
+      <a href="stock.html">个股</a>
       <a href="lab/dashboard.html">研究仪表盘</a>
       <a href="lab/guide.html">用户指南</a>
     </nav>
@@ -167,7 +168,7 @@ a { color: var(--ink-2); text-decoration: none; }
   <aside class="side" aria-label="说明">
     <section class="blk">
       <p class="blk-k">怎么看</p>
-      <p>每条横线从一个周度截止日的收盘价出发，向右延伸到模型那天算出的区间（合格拟合 t_c 的 20–80% 分位）。只用截止日当天及以前的数据。</p>
+      <p>每条横线从一个周度截止日的收盘价出发，向右延伸到模型那天算出的区间（合格拟合 t_c 的 20–80% 分位；未校准，仅供参考）。只用截止日当天及以前的数据。</p>
       <p>蓝色三角是事后确认的顶：顶后 126 个交易日内回撤 ≥15%，回撤幅度是事后实测值。</p>
       <p>线太密时，把时间窗口缩小到几年再看；窗口较大时区间线自动变细、不画连接线。</p>
     </section>
@@ -437,8 +438,8 @@ a { color: var(--ink-2); text-decoration: none; }
       if (!st.hover || st.hover.f !== best) { st.hover = { f: best }; draw(); }
       const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * DAY), w = best.w || {};
       tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${E(SPLIT[best.split] || best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
-        (best.w0 != null ? `6–12 月档情景区间<br><b>${E(w['6-12m'][0])} – ${E(w['6-12m'][1])}</b>` : '6–12 月档无合格拟合') +
-        (w['12-24m'] ? `<br>12–24 月档 ${E(w['12-24m'][0])} – ${E(w['12-24m'][1])}` : '') +
+        (best.w0 != null ? `6–12 月档情景区间<br><b>${E(w['6-12m'][0])} – ${E(w['6-12m'][1])}</b>（未校准，仅供参考）` : '6–12 月档无合格拟合') +
+        (w['12-24m'] ? `<br>12–24 月档 ${E(w['12-24m'][0])} – ${E(w['12-24m'][1])}（未校准，仅供参考）` : '') +
         (top ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(top.max_dd)}（事后实测）</span>` : '');
       tip.hidden = false;
       const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);

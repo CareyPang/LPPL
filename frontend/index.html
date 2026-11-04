@@ -272,6 +272,7 @@ footer p { margin: 0; max-width: 110ch; }
     <nav class="nav od-row od-fixed" aria-label="其他页面">
       <a href="backtest.html">回测</a>
       <a href="market.html">市场</a>
+      <a href="stock.html">个股</a>
       <a href="lab/dashboard.html">研究仪表盘</a>
       <a href="lab/guide.html">用户指南</a>
     </nav>
@@ -391,7 +392,7 @@ footer p { margin: 0; max-width: 110ch; }
 </main>
 
 <footer>
-  <p>研究原型，不构成投资建议。情景区间是合格拟合 t_c 的分位区间，不是峰值日预测；回撤和估值地板是历史分位，不是目标价。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
+  <p>研究原型，不构成投资建议。情景区间是合格拟合 t_c 的分位区间（未校准，仅供参考），不是峰值日预测；回撤和估值地板是历史分位，不是目标价。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
 </footer>
 
 <script>
@@ -628,7 +629,7 @@ window.CP = { dateAt(bars, idx) {
         ctx.fillStyle = rgba(col.warn, 0.10); ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
         vline(x0, pt, pb, rgba(col.warn, 0.6)); vline(x1, pt, pb, rgba(col.warn, 0.6));
         if (rm.topPx) { ctx.fillStyle = rgba(col.warn, 0.22); ctx.fillRect(x0, Y(rm.topPx[1]), Math.max(2, x1 - x0), Y(rm.topPx[0]) - Y(rm.topPx[1])); }
-        tag('情景区间 ' + U.md(rm.topW.loDate).replace('月', '/').replace('日', '') + '–' + U.md(rm.topW.hiDate).replace('月', '/').replace('日', ''), (x0 + x1) / 2, pt + 30, '#0D0D0D', col.warn, 'center');
+        tag('情景区间 ' + U.md(rm.topW.loDate).replace('月', '/').replace('日', '') + '–' + U.md(rm.topW.hiDate).replace('月', '/').replace('日', '') + '（未校准，仅供参考）', (x0 + x1) / 2, pt + 30, '#0D0D0D', col.warn, 'center');
       }
       if (rm.crash && st.show.bot && vis(rm.crash.botLo, rm.crash.botHi)) {
         const c = rm.crash, x0 = X(c.botLo), x1 = X(c.botHi + 1), y0 = Y(c.pxHi), y1 = Y(c.pxLo);
@@ -902,7 +903,7 @@ window.CP = { dateAt(bars, idx) {
     const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, LC = t.lppls_confidence || {};
     $('vh').textContent = SIG[t.signal_status] || ('状态：' + (t.signal_status || '—'));
     $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
-    $('vs').textContent = (w.start ? '6–12 月档情景区间 ' + U.range(w.start, w.end, R.asof, last) + '（开发段证据，不是峰值日预测）。' : (w.rule || '') + '。') +
+    $('vs').textContent = (w.start ? '6–12 月档情景区间 ' + U.range(w.start, w.end, R.asof, last) + '（未校准，仅供参考；开发段证据，不是峰值日预测）。' : (w.rule || '') + '。') +
       (rb.state ? ' 体制带 ' + rb.month + '：' + (REG[rb.state] || rb.state) + '（描述性）。' : '');
     $('phs').innerHTML = SCALES.map((k) => { const v = LC[k], on = shown(k) && v > 0;
       return `<li class="${on ? 'on' : ''}"><span class="n">${E(SCN[k])}</span>${v == null ? '未计算' : shown(k) ? U.pct(v, 0) : '无证据'}</li>`; }).join('');
@@ -911,8 +912,8 @@ window.CP = { dateAt(bars, idx) {
     // 关键位置
     const dp = t.drawdown_price || {}, vf = dp.valuation_floor, kv = [];
     const sc = t.scenarios || [];
-    kv.push(['情景区间', w.start ? U.range(w.start, w.end, R.asof, last) + ' · 开发段' : '无（' + (w.rule || '无合格拟合') + '）', w.start ? 'wn' : '']);
-    kv.push(['情景占比', sc.length ? sc.map((x) => U.pct(x.share, 0) + ' ' + U.md(x.q20_date) + '–' + U.md(x.q80_date)).join('；') : '无合格情景', '']);
+    kv.push(['情景区间', w.start ? U.range(w.start, w.end, R.asof, last) + ' · 开发段（未校准，仅供参考）' : '无（' + (w.rule || '无合格拟合') + '）', w.start ? 'wn' : '']);
+    kv.push(['情景占比', sc.length ? sc.map((x) => U.pct(x.share, 0) + ' ' + U.md(x.q20_date) + '–' + U.md(x.q80_date) + '（未校准，仅供参考）').join('；') : '无合格情景', '']);
     if (dp.evidence === 'descriptive' && dp.max_dd) {
       kv.push(['顶后回撤（历史分位）', U.pct(dp.max_dd.q80, 0) + ' ～ ' + U.pct(dp.max_dd.q20, 0) + '，中位 ' + U.pct(dp.max_dd.q50, 0) + ' · n=' + dp.n, 'dn']);
       if (dp.days_to_trough) kv.push(['顶→谷时间（历史分位）', dp.days_to_trough.q20 + '–' + dp.days_to_trough.q80 + ' 个交易日 · n=' + dp.n, '']);
@@ -928,7 +929,7 @@ window.CP = { dateAt(bars, idx) {
     cursor(-1);
 
     $('note').innerHTML = (R.latest ? '' : '<b>回放模式</b>：只用了 ' + E(R.asof) + ' 及之前的数据和当时已公布的 PE。<br>') +
-      (R.hist ? '历史情景区间：本图内 ' + R.hist.frames.length + ' 个周度截止日的 6–12 月档区间（横线从截止日指向区间；证据等级 dev_only，只示区间' + (R.hist.last ? '，数据到 ' + E(R.hist.last) : '') + '）；蓝色三角是事后确认的顶（PS 标签，126 日内回撤 ≥15%）。<br>' : '') + '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
+      (R.hist ? '历史情景区间：本图内 ' + R.hist.frames.length + ' 个周度截止日的 6–12 月档区间（横线从截止日指向区间；未校准，仅供参考；证据等级 dev_only，只示区间' + (R.hist.last ? '，数据到 ' + E(R.hist.last) : '') + '）；蓝色三角是事后确认的顶（PS 标签，126 日内回撤 ≥15%）。<br>' : '') + '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
 
     renderReplay(R);
     renderBench(R);
