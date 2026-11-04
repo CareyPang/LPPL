@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>临界点 · 个股</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #0D0D0D;
+      --surface: #141414;
+      --surface-2: #1A1A1A;
+      --line: #2A2A2A;
+      --grid: #1E1E1E;
+      --ink: #FFF;
+      --ink-2: #AAA;
+      --ink-3: #828282;
+      --warn: #FFB800;
+      --real: #4DA3FF;
+      --f-m: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+      --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+      --s1: 4px;
+      --s2: 8px;
+      --s3: 12px;
+      --s4: 16px;
+      --s6: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+      border-radius: 0;
+    }
+
+    html,
+    body {
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.5 var(--f-u);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input {
+      font: inherit;
+      color: inherit;
+    }
+
+    a {
+      color: var(--ink-2);
+      text-decoration: none;
+    }
+
+    .m {
+      font-family: var(--f-m);
+      font-variant-numeric: tabular-nums;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--real);
+      outline-offset: 1px;
+    }
+
+    .bar {
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .bar-in {
+      display: flex;
+      align-items: center;
+      gap: var(--s4);
+      padding: var(--s2) var(--s4);
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font: 600 15px/1 var(--f-m);
+      letter-spacing: .04em;
+    }
+
+    .brand small {
+      display: block;
+      font: 500 10px/1 var(--f-u);
+      color: var(--ink-3);
+      letter-spacing: .12em;
+      margin-top: var(--s1);
+    }
+
+    .nav {
+      display: flex;
+      gap: var(--s4);
+      font-size: 13px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+
+    .nav a {
+      padding: var(--s2) 0;
+      border-bottom: 1px solid transparent;
+    }
+
+    .nav a:hover,
+    .nav a[aria-current=page] {
+      color: var(--ink);
+      border-bottom-color: var(--warn);
+    }
+
+    .asof {
+      font-size: 12px;
+      color: var(--ink-3);
+    }
+
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--s4);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--s4);
+    }
+
+    .sec {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: var(--s4);
+      min-width: 0;
+    }
+
+    .sec h1 {
+      font-size: 19px;
+      margin: 0 0 var(--s3);
+    }
+
+    .sec h2 {
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .sec-h {
+      display: flex;
+      align-items: baseline;
+      gap: var(--s3);
+      flex-wrap: wrap;
+      margin-bottom: var(--s3);
+    }
+
+    .note,
+    .muted {
+      color: var(--ink-3);
+    }
+
+    .note {
+      font-size: 12px;
+      margin: var(--s2) 0 0;
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      gap: var(--s2);
+      flex-wrap: wrap;
+    }
+
+    .search input {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: var(--s2) var(--s3);
+      width: 170px;
+    }
+
+    .search button {
+      background: transparent;
+      border: 1px solid var(--line);
+      padding: var(--s2) var(--s3);
+      cursor: pointer;
+    }
+
+    .search button:hover {
+      border-color: var(--warn);
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .badge {
+      display: inline-block;
+      border: 1px solid var(--warn);
+      color: var(--warn);
+      padding: 2px 6px;
+      margin-right: var(--s2);
+      font-size: 11px;
+    }
+
+    .status {
+      color: var(--ink-2);
+      font-size: 12px;
+      margin: var(--s2) 0;
+    }
+
+    .error {
+      color: #FF8A94;
+    }
+
+    .stock-meta {
+      color: var(--ink-3);
+      font-size: 12px;
+      margin-bottom: var(--s3);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--s4);
+    }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      padding: var(--s3);
+    }
+
+    .card h3 {
+      font-size: 14px;
+      margin: 0 0 var(--s2);
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .scroll {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 12px var(--f-m);
+    }
+
+    .table th,
+    .table td {
+      padding: var(--s2);
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th {
+      font: 500 11px var(--f-u);
+      color: var(--ink-3);
+    }
+
+    .table td {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .range {
+      color: var(--warn);
+    }
+
+    .disclaimer {
+      font-size: 11px;
+      color: var(--ink-3);
+      margin: var(--s2) 0 0;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--s2);
+    }
+
+    .kv div {
+      border-bottom: 1px solid var(--line);
+      padding: var(--s2) 0;
+      min-width: 0;
+    }
+
+    .kv small {
+      display: block;
+      color: var(--ink-3);
+      font-size: 11px;
+    }
+
+    .plot {
+      height: 260px;
+      width: 100%;
+      display: block;
+      background: var(--bg);
+      margin-top: var(--s2);
+    }
+
+    .dip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--s3);
+    }
+
+    .dip-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      padding: var(--s3);
+    }
+
+    .dip-card h3 {
+      margin: 0 0 var(--s2);
+    }
+
+    .dip-card p {
+      margin: var(--s2) 0;
+    }
+
+    .dip-values {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--s2);
+    }
+
+    .dip-values > div {
+      min-width: 0;
+      border-bottom: 1px solid var(--line);
+      padding: var(--s2) 0;
+      overflow-wrap: anywhere;
+    }
+
+    .dip-label {
+      display: block;
+      color: var(--ink-3);
+      font-size: 11px;
+    }
+
+    .dip-value {
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .dip-pool {
+      margin: var(--s3) 0;
+    }
+
+    .dip-pool-head,
+    .dip-prob-row {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--s2);
+      flex-wrap: wrap;
+    }
+
+    .dip-prob-row {
+      font-size: 11px;
+      color: var(--ink-2);
+    }
+
+    .dip-quantile {
+      table-layout: fixed;
+      min-width: 620px;
+    }
+
+    .dip-quantile td,
+    .dip-quantile th {
+      padding: var(--s1);
+      overflow-wrap: anywhere;
+    }
+
+    .env-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--s2);
+    }
+
+    .env-item {
+      border: 1px solid var(--line);
+      padding: var(--s2);
+      min-width: 0;
+    }
+
+    .anomalies {
+      padding-left: 20px;
+      font-size: 11px;
+    }
+
+    .dip-disclaimer {
+      font-size: 11px;
+      color: var(--ink-3);
+    }
+
+    footer {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--s3) var(--s4) var(--s6);
+      font-size: 12px;
+      color: var(--ink-3);
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: var(--s2);
+      }
+
+      .grid,
+      .dip-grid,
+      .env-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .wide {
+        grid-column: auto;
+      }
+
+      .kv,
+      .dip-values {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-in {
+        gap: var(--s2);
+      }
+
+      .nav {
+        gap: var(--s3);
+      }
+
+      .asof {
+        margin-left: auto;
+      }
+    }
+  </style>
+  <script src="app/lppl-data.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-in">
+      <div class="brand">临界点个股<small>LPPLS 风险窗口 · 描述性结果</small></div>
+      <nav class="nav" aria-label="页面导航">
+        <a href="home.html">首页</a>
+        <a href="index.html">终端</a>
+        <a href="backtest.html">回测</a>
+        <a href="market.html">市场</a>
+        <a href="stock.html" aria-current="page">个股</a>
+        <a href="lab/guide.html">用户指南</a>
+      </nav>
+      <span class="asof m" id="asof">—</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="sec">
+      <h1>个股风险窗口</h1>
+      <form class="search" id="search">
+        <label for="code">六位股票代码</label>
+        <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="例如 301196" required>
+        <button type="submit">查看</button>
+      </form>
+      <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
+      <p id="query-status" class="status" role="status"></p>
+    </section>
+
+    <section class="sec" id="results" hidden>
+      <div class="stock-meta" id="stock-meta"></div>
+      <div class="grid">
+        <section class="card wide">
+          <div class="sec-h">
+            <h2>逃顶（LPPLS 风险窗口）</h2>
+            <span class="muted">时间窗只显示区间，不显示精确顶部日期</span>
+          </div>
+          <div id="risk"></div>
+        </section>
+        <section class="card wide">
+          <h2>104 周历史情景区间</h2>
+          <div id="history-note" class="note"></div>
+          <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
+          <p class="note">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
+        </section>
+        <section class="card wide">
+          <h2>抄底面板</h2>
+          <div id="dip-panel"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer>数据仅通过 Open Design 个股数据适配层读取。</footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) =>
+      String(value ?? '—').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[char]);
+
+    const hiddenEv = (evidence) =>
+      !evidence
+      || evidence === 'none'
+      || evidence.startsWith('fail')
+      || evidence === 'dev_only'
+      || evidence === 'dev_failed';
+    const evLabel = (evidence) =>
+      ({
+        descriptive: '描述性',
+        dev: '开发段',
+        cal: '校准段',
+        test: '测试段',
+        dev_only: '仅开发段',
+        dev_failed: '开发段未通过',
+        none: '无证据',
+      })[evidence] || evidence || '无证据';
+    const pct = (value) =>
+      value == null || !Number.isFinite(Number(value))
+        ? '—'
+        : `${(Number(value) * 100).toFixed(1)}%`;
+    const nfmt = (value) =>
+      value == null || !Number.isFinite(Number(value))
+        ? '—'
+        : String(Number(value));
+    const signalStatus = {
+      signal: '有合格拟合',
+      no_qualified_fit: '没有合格拟合',
+      t1_not_qualified: '起点未达条件',
+      not_computed: '未计算',
+    };
+    const scales = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
+    const scaleName = {
+      '2-4w': '2–4 周',
+      '1-3m': '1–3 月',
+      '3-6m': '3–6 月',
+      '6-12m': '6–12 月',
+      '12-24m': '12–24 月',
+      '2-6y': '2–6 年',
+    };
+
+    function drawdownHtml(dp) {
+      if (dp?.evidence !== 'descriptive') {
+        return `<p>${esc(evLabel(dp?.evidence))}：不显示数值。</p>`;
+      }
+      const all = dp.table?.all || {};
+      const n = dp.n ?? all.n;
+      if (n == null) {
+        return '<p>描述性结果缺少样本数，暂不显示数值。</p>';
+      }
+      const rows = [
+        ['顶后最大回撤', all.max_dd],
+        ['顶后回撤时间（交易日）', all.days_to_trough],
+        ['120 日内回撤', all.dd120],
+      ].filter((row) => row[1]);
+      return `
+        <div class="scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>描述性指标（n=${n}）</th>
+                <th>20 分位</th>
+                <th>中位数</th>
+                <th>80 分位</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(([key, value]) => `
+                <tr>
+                  <td>${key}</td>
+                  <td>${key.includes('时间') ? nfmt(value.q20) : pct(value.q20)}</td>
+                  <td>${key.includes('时间') ? nfmt(value.q50) : pct(value.q50)}</td>
+                  <td>${key.includes('时间') ? nfmt(value.q80) : pct(value.q80)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <p class="disclaimer">n=${n}；历史分位，不是预测。此处不提供目标价。</p>
+      `;
+    }
+
+    function riskHtml(d) {
+      const top = d.top || {};
+      const window = top.window || {};
+      const confidence = top.lppls_confidence || {};
+      const indicators = top.indicators || {};
+      const drawdown = top.drawdown_price || {};
+      const status = signalStatus[top.signal_status] || '—';
+      const rows = scales.map((scale) => {
+        const indicator = indicators[scale] || {};
+        const evidence =
+          confidence.scale_evidence?.[scale]
+          || indicator.evidence
+          || confidence.evidence;
+        const show = !hiddenEv(evidence);
+        const rowStatus = signalStatus[indicator.signal_status] || '—';
+        return `
+          <tr>
+            <td>${scaleName[scale]}</td>
+            <td>${show ? nfmt(indicator.n_windows) : '—'}</td>
+            <td>${show ? nfmt(indicator.n_qualified_standard) : '—'}</td>
+            <td>${esc(rowStatus)}</td>
+            <td>${esc(evLabel(evidence))}</td>
+          </tr>
+        `;
+      }).join('');
+      let range = '当前没有可显示的风险窗口。';
+      if (window.start && window.end && !hiddenEv(window.evidence || confidence.evidence)) {
+        range = `<p class="range">风险窗口：${esc(window.start)} – ${esc(window.end)}（未校准，仅供参考）</p>`;
+      }
+      const scenarios = (top.scenarios || []).filter((scenario) =>
+        scenario.q20_date
+        && scenario.q80_date
+        && !hiddenEv(
+          scenario.evidence
+          || confidence.scale_evidence?.[scenario.scale]
+          || confidence.evidence,
+        ));
+      const scenarioText = scenarios.map((scenario) => `
+        <p class="range">
+          ${esc(scaleName[scenario.scale] || scenario.scale || '情景')}：
+          ${esc(scenario.q20_date)} – ${esc(scenario.q80_date)}（未校准，仅供参考）
+        </p>
+      `).join('');
+      return `
+        <p>状态：${esc(status)}。个股开发段结果不代表预测。</p>
+        ${range}
+        ${scenarioText}
+        <div class="scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>尺度</th>
+                <th>窗口数</th>
+                <th>合格拟合数</th>
+                <th>状态</th>
+                <th>证据</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <p class="disclaimer">无证据、失败或仅开发段结果不显示数值；风险时间只按区间展示。</p>
+        <h3>历史回撤分布</h3>
+        ${drawdownHtml(drawdown)}
+      `;
+    }
+
+    function drawHistory(d, history) {
+      const canvas = $('plot');
+      const context = canvas.getContext('2d');
+      const priceHistory = d.price_history || {};
+      const dates = priceHistory.dates || [];
+      const closes = priceHistory.close || [];
+      const frames = history?.frames || [];
+      const hidden = hiddenEv(
+        history?.evidence || history?.evidence_levels?.scenarios || 'dev_only',
+      );
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const dpr = devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      context.scale(dpr, dpr);
+      context.clearRect(0, 0, width, height);
+      if (dates.length < 2) {
+        $('history-note').textContent = '暂无可绘制的后复权历史数据。';
+        return;
+      }
+      const x = (date) =>
+        (Date.parse(date) - Date.parse(dates[0]))
+          / (Date.parse(dates.at(-1)) - Date.parse(dates[0]) || 1)
+          * (width - 12)
+        + 6;
+      const low = Math.min(...closes);
+      const high = Math.max(...closes);
+      const y = (value) => height - 8 - (value - low) / (high - low || 1) * (height - 16);
+      context.strokeStyle = '#2A2A2A';
+      for (let index = 1; index < 4; index += 1) {
+        context.beginPath();
+        context.moveTo(0, height * index / 4);
+        context.lineTo(width, height * index / 4);
+        context.stroke();
+      }
+      if (!hidden) {
+        for (const frame of frames) {
+          for (const scenario of frame.scenarios || []) {
+            if (!scenario.q20_date || !scenario.q80_date) {
+              continue;
+            }
+            const left = frame.asof < scenario.q20_date ? scenario.q20_date : frame.asof;
+            context.fillStyle = 'rgba(255,184,0,.12)';
+            context.fillRect(x(left), 4, Math.max(1, x(scenario.q80_date) - x(left)), 8);
+          }
+        }
+      }
+      context.strokeStyle = '#AAAAAA';
+      context.beginPath();
+      closes.forEach((close, index) => {
+        if (index) {
+          context.lineTo(x(dates[index]), y(close));
+        } else {
+          context.moveTo(x(dates[index]), y(close));
+        }
+      });
+      context.stroke();
+      $('history-note').textContent = history
+        ? `${history.evidence === 'descriptive'
+          ? `n=${frames.length}；历史分位，不是预测。`
+          : '历史回测结果已加载。'}${hidden ? ' 情景数值按证据规则隐藏。' : ' 情景带仅作未校准参考。'}`
+        : '本次数据未附历史回测文件；当前结果中的后复权收盘序列仍供回看。';
+    }
+
+    const dnum = (value) =>
+      value == null || !Number.isFinite(Number(value)) ? '—' : String(Number(value));
+    const dipPct = (value) =>
+      value == null || !Number.isFinite(Number(value))
+        ? '—'
+        : `${(Number(value) * 100).toFixed(1)}%`;
+    const dipFix = (value, digits = 2) =>
+      value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toFixed(digits);
+    const dipSigned = (value, digits = 2) =>
+      value == null || !Number.isFinite(Number(value))
+        ? '—'
+        : `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(digits)}`;
+    const dipPctChange = (value) =>
+      value == null || !Number.isFinite(Number(value)) ? null : Number(value) * 100;
+    const dipShareChange = (share, days) =>
+      `${dipSigned(share[`change_${days}d_shares_yi`])} 亿份（${dipSigned(dipPctChange(share[`change_${days}d`]), 1)}%）`;
+
+    function values(items) {
+      return `
+        <div class="dip-values">
+          ${items.map(([label, value]) => `
+            <div>
+              <span class="dip-label">${esc(label)}</span>
+              <span class="dip-value">${esc(value)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function similarPools(similar) {
+      const metrics = [
+        ['r60', '60日后收益'],
+        ['r120', '120日后收益'],
+        ['r250', '250日后收益'],
+        ['mdd120', '120日内最深再跌'],
+        ['up120', '120日内最高反弹'],
+      ];
+      const pools = [
+        ['full', '全市场'],
+        ['industry', '同行业'],
+        ['excl1516', '剔除 2015–16 年（牛熊极端年）'],
+      ];
+      return pools.map(([key, label]) => {
+        const summary = similar?.[key];
+        const counts = summary || (key === 'industry' ? similar?.industry_counts : null);
+        const quantiles = summary?.q || {};
+        return `
+          <section class="dip-pool">
+            <div class="dip-pool-head">
+              <b>${label}</b>
+              <span>${dnum(counts?.n)} 个事件，其中退市股 ${dnum(counts?.n_delisted)} 个</span>
+            </div>
+            ${summary ? `
+              <p class="disclaimer">较差 10%：只有 10% 的事件比这更差；较好 10%：只有 10% 的事件比这更好。</p>
+              <div class="scroll">
+                <table class="table dip-quantile">
+                  <thead>
+                    <tr>
+                      <th>指标</th>
+                      <th>较差 10%</th>
+                      <th>25%</th>
+                      <th>中位数</th>
+                      <th>75%</th>
+                      <th>较好 10%</th>
+                      <th>样本数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${metrics.map(([metric, name]) => `
+                      <tr>
+                        <td>${name}</td>
+                        ${[0, 1, 2, 3, 4].map((index) => `<td>${dipPct(quantiles[metric]?.[index])}</td>`).join('')}
+                        <td>${dnum(summary.n_outcome?.[metric])}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <p class="muted">${key === 'industry' ? '同行业样本 <30，不单独统计' : '暂无'}</p>
+            `}
+            <div class="dip-prob-row">
+              <span>120 日内最高反弹 ≥30%：${dipPct(summary?.p_up120_ge30)}</span>
+              <span>≥50%：${dipPct(summary?.p_up120_ge50)}</span>
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    function hitRows(d) {
+      return ['fh60', 'fh120'].map((key) => {
+        const result = d.first_hit?.[key] || {};
+        const [term, bounds] = key === 'fh60'
+          ? ['60 日', '+15% / −15%']
+          : ['120 日', '+30% / −20%'];
+        return ['hist', 'rw'].map((type) => {
+          const values = result[type];
+          return `
+            <tr>
+              <td>${term}</td>
+              <td>${bounds}</td>
+              <td>${type === 'hist' ? '历史类似事件' : '随机波动对照'}</td>
+              <td>${dipPct(values?.U)}</td>
+              <td>${dipPct(values?.L)}</td>
+              <td>${dipPct(values?.none)}</td>
+              <td>${type === 'hist' ? dnum(values?.n) : '模拟 20000 条'}</td>
+            </tr>
+          `;
+        }).join('');
+      }).join('');
+    }
+
+    async function renderDip(d) {
+      const host = $('dip-panel');
+      if (!d) {
+        host.innerHTML = '<p class="muted">暂无抄底面板结果。</p><p class="dip-disclaimer">历史分位，不是预测。</p>';
+        return;
+      }
+      const state = d.state || {};
+      const lib = d.lib || {};
+      const full = d.similar?.full || {};
+      const quantiles = full.q || {};
+      const badge = lib.smoke ? '<span class="badge">临时事件库（223 只）</span>' : '';
+      const pending = d.oos === 'pending' ? '<span class="badge">样本外检验进行中</span>' : '';
+      const structure = `从 ${state.peak_date || '—'} 的高点（此前上涨 ${dipPct(state.runup)}）已下跌 ${dipPct(state.dd)}，历时 ${dnum(state.td_since_peak)} 个交易日；最近低点在 ${state.low_date || '—'}，之后反弹 ${dipPct(state.bounce_from_low)}。`;
+      const depth = d.depth_bucket == null ? '—' : dipPct(Math.abs(Number(d.depth_bucket)));
+      const rule = d.in_structure === true
+        ? `符合‘大涨后深跌’条件，下面按跌幅 ≥${depth} 的历史事件对照。`
+        : '不符合‘大涨后深跌’条件（要求此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日），下面不做相似事件对照。';
+      const similarReading = `全市场 ${dnum(full.n)} 个类似事件中，120 个交易日后收益中位数 ${dipPct(quantiles.r120?.[2])}，一半落在 ${dipPct(quantiles.r120?.[1])} 到 ${dipPct(quantiles.r120?.[3])} 之间；期间最深再跌中位数 ${dipPct(quantiles.mdd120?.[2])}；120 日内最高反弹达到 30% 的占 ${dipPct(full.p_up120_ge30)}。`;
+      const firstHit = d.first_hit || {};
+      const firstHitReading = `历史上类似情况，60 个交易日内先涨 15% 的占 ${dipPct(firstHit.fh60?.hist?.U)}，先跌 15% 的占 ${dipPct(firstHit.fh60?.hist?.L)}；如果股价只是随机波动（波动率按当前水平），这两个数是 ${dipPct(firstHit.fh60?.rw?.U)} 和 ${dipPct(firstHit.fh60?.rw?.L)}。`;
+      const regime = d.regime || {};
+      const regimeReading = `按周收益估计，现在处于高波动阶段的概率是 ${dipPct(regime.p_hi_filtered)}（高波动阶段年化波动 ${dipPct(regime.hi_vol_ann)}，低波动阶段 ${dipPct(regime.lo_vol_ann)}）。`;
+      const env = await LPPL.stock.dipEnv();
+      const names = {
+        510300: '沪深300 ETF',
+        588000: '科创50 ETF',
+        510050: '上证50 ETF',
+        510500: '中证500 ETF',
+      };
+      const shares = env?.shares || {};
+      const options = env?.options || {};
+      const shareHtml = env
+        ? Object.keys(names).map((code) => {
+          const share = shares[code] || {};
+          const stale = share.stale
+            ? `<p class="dip-stale">沿用 ${esc(share.as_of || '—')} 的数据</p>`
+            : '';
+          if (share.available === false) {
+            return `
+              <div class="env-item">
+                <b>${names[code]}</b>
+                ${stale}
+                <p class="muted">${esc(share.reason || '暂无')}</p>
+              </div>
+            `;
+          }
+          const days = (share.mad_subscription_dates || []).slice(-3).map((item) => `
+            <li>
+              ${esc(item.date)}：${dipSigned(item.change == null ? null : Number(item.change) / 1e4)}
+              亿份，偏离常态 ${dipFix(item.robust_z, 1)} 倍
+            </li>
+          `).join('') || '<li>—</li>';
+          return `
+            <div class="env-item">
+              <b>${names[code]}</b>
+              ${stale}
+              <p>近 20 个交易日份额 ${dipSigned(share.change_20d_shares_yi)} 亿份（${dipSigned(dipPctChange(share.change_20d), 1)}%）。</p>
+              ${values([
+                ['最新总份额', `${dipFix(share.latest_shares_yi)} 亿份`],
+                ['5日份额变化', dipShareChange(share, 5)],
+                ['20日份额变化', dipShareChange(share, 20)],
+                ['60日份额变化', dipShareChange(share, 60)],
+              ])}
+              <small>
+                样本 ${dnum(share.n_days)} 日；最新日 ${esc(share.latest_date || '—')}；
+                20日分母日 ${esc(share.change_20d_from || '—')}
+              </small>
+              <p class="dip-label">单日申购明显偏大的日子（最近 3 次）</p>
+              <ul class="anomalies">${days}</ul>
+            </div>
+          `;
+        }).join('')
+        : '<p class="muted">暂无</p>';
+      const optionHtml = env
+        ? Object.keys(names).map((code) => {
+          const option = options[code] || {};
+          return `
+            <div class="env-item">
+              <b>${names[code]}</b>
+              ${values([
+                ['隐含波动率（平值）', dipPct(option.iv_atm)],
+                ['隐含波动 − 近 20 日实际波动', dipPct(option.iv_minus_rv20)],
+                ['认沽比认购贵（偏度）', dipPct(option.put_call_skew)],
+                ['认沽/认购成交量比', dipFix(option.put_call_volume, 2)],
+                ['隐含波动在历史中的位置', `${dipPct(option.iv_pct_rv_history)} 分位`],
+              ])}
+              <small>
+                样本 ${dnum(option.n)} 个期权合约；
+                ${esc(option.error || '指数/ETF 环境，非个股期权')}
+              </small>
+            </div>
+          `;
+        }).join('')
+        : '<p class="muted">暂无</p>';
+
+      host.innerHTML = `
+        <p>只描述历史上类似情况后来怎样，不是预测，也不构成投资建议。</p>
+        ${badge}
+        ${pending}
+        <p class="disclaimer">
+          事件库 ${esc(lib.version || '—')} · 数据截至 ${esc(lib.cutoff || '—')} · 共 ${dnum(lib.n_events)} 个事件
+        </p>
+        <div class="dip-grid">
+          <section class="dip-card">
+            <h3>现在跌到哪了？</h3>
+            <p>${structure}<br>${rule}</p>
+            ${values([
+              ['截止日期', state.asof || '—'],
+              ['收盘价（后复权）', state.close == null ? '—' : `${dipFix(state.close)}（后复权）`],
+              ['是否符合条件', d.in_structure === true ? '是' : d.in_structure === false ? '否' : '—'],
+              ['对照档', d.depth_bucket == null ? '—' : `跌幅 ≥${depth}`],
+              ['前高日期', state.peak_date || '—'],
+              ['高点前涨幅', dipPct(state.runup)],
+              ['距高点跌幅', dipPct(state.dd)],
+              ['距高点交易日', dnum(state.td_since_peak)],
+              ['低点日期', state.low_date || '—'],
+              ['距最近低点反弹', dipPct(state.bounce_from_low)],
+              ['20日收益', dipPct(state.ret20)],
+              ['60日收益', dipPct(state.ret60)],
+              ['近 20 日波动（年化）', dipPct(state.rv20)],
+              ['波动在近 5 年中的位置', `${dipPct(state.rv20_pct5y)} 分位`],
+              ['日波动估计', dipPct(state.vol_d)],
+              ['距下方成交密集区', state.well_dist_below == null ? '下方没有成交密集区' : dipPct(state.well_dist_below)],
+            ])}
+            <p class="dip-disclaimer">基于最近 500 个交易日。历史分位，不是预测。</p>
+          </section>
+          <section class="dip-card">
+            <h3>历史上类似的股票，后来怎样？</h3>
+            <p>${similarReading}</p>
+            ${similarPools(d.similar || {})}
+            <p class="dip-disclaimer">
+              ‘最高反弹’按事后最高点计算，实际很难恰好卖在最高点，所以要和‘120日后收益’一起看。
+              历史分位，不是预测。
+            </p>
+          </section>
+          <section class="dip-card">
+            <h3>先涨还是先跌？</h3>
+            <p>${firstHitReading}</p>
+            <div class="scroll">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>期限</th>
+                    <th>上沿/下沿</th>
+                    <th>来源</th>
+                    <th>先碰上沿</th>
+                    <th>先碰下沿</th>
+                    <th>都没碰到</th>
+                    <th>样本数</th>
+                  </tr>
+                </thead>
+                <tbody>${hitRows(d)}</tbody>
+              </table>
+            </div>
+            <p class="dip-disclaimer">
+              历史比例高于随机对照，只说明过去类似事件略偏向先反弹；样本外检验完成前，不能当作预测。
+              历史分位，不是预测。
+            </p>
+          </section>
+          <section class="dip-card">
+            <h3>现在是高波动阶段吗？</h3>
+            <p>${regimeReading}</p>
+            ${values([
+              ['处于高波动阶段的概率', dipPct(regime.p_hi_filtered)],
+              ['高波动阶段的年化波动', dipPct(regime.hi_vol_ann)],
+              ['低波动阶段的年化波动', dipPct(regime.lo_vol_ann)],
+              ['高波动阶段的平均周收益', dipPct(regime.hi_mean_wk)],
+              ['低波动阶段的平均周收益', dipPct(regime.lo_mean_wk)],
+              ['使用周数', dnum(regime.weeks)],
+            ])}
+            <p class="dip-disclaimer">
+              高波动不等于下跌：它只说明价格摆动大。概率只用截至当周的数据计算，不用未来数据。
+              历史分位，不是预测。
+            </p>
+          </section>
+          <section class="dip-card wide">
+            <h3>大盘资金和情绪怎样？</h3>
+            <p class="dip-disclaimer">截至 ${esc(env?.asof || '—')}。</p>
+            <h4>宽基 ETF 份额变化（资金申购/赎回代理）</h4>
+            <div class="env-grid">${shareHtml}</div>
+            <p class="dip-disclaimer">
+              ETF 份额增加只说明有资金申购，不能确定是谁买的。历史分位，不是预测。
+            </p>
+            <h4>ETF 期权：市场情绪（指数/ETF 环境，非个股期权）</h4>
+            <div class="env-grid">${optionHtml}</div>
+            <p class="dip-disclaimer">
+              期权数据反映的是指数情绪，不是这只股票。历史分位，不是预测。
+            </p>
+          </section>
+        </div>
+      `;
+    }
+
+    function render(d, history) {
+      $('results').hidden = false;
+      $('asof').textContent = d.asof || '—';
+      $('stock-meta').textContent =
+        `${d.name || ''} ${d.symbol || ''} · 截止 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
+      $('risk').innerHTML = riskHtml(d);
+      drawHistory(d, history);
+      renderDip(d.dip);
+    }
+
+    let serial = 0;
+
+    async function query(code, id) {
+      const api = LPPL.stock;
+      const queued = await api.request(code);
+      const since = queued?.since;
+      const timestamp = Date.parse(since);
+      if (!Number.isFinite(timestamp)) {
+        throw Error('查询服务未返回有效任务时间');
+      }
+      const start = Date.now();
+      const currentDeadline = start + 600000;
+      const totalDeadline = start + 2400000;
+      let latest = null;
+      while (Date.now() < currentDeadline) {
+        latest = await api.remote(code, 'latest').catch(() => null);
+        if (latest && Date.parse(latest.generated_at) >= timestamp - 60000) {
+          break;
+        }
+        const status = await api.status(code, since).catch(() => null);
+        if (status?.status === 'completed' && status.conclusion !== 'success') {
+          throw Error('当前结果计算失败');
+        }
+        $('query-status').textContent = '当前结果计算中…';
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        if (id !== serial) {
+          return;
+        }
+      }
+      if (!latest || Date.parse(latest.generated_at) < timestamp - 60000) {
+        throw Error('当前结果暂未返回，请稍后刷新');
+      }
+      render(latest, null);
+      $('query-status').textContent = '当前结果已就绪；历史回测后台计算中。';
+      while (Date.now() < totalDeadline && id === serial) {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        const status = await api.status(code, since).catch(() => null);
+        if (status?.status !== 'completed') {
+          continue;
+        }
+        if (status.conclusion === 'success') {
+          const [current, history] = await Promise.all([
+            api.remote(code, 'latest'),
+            api.remote(code, 'history'),
+          ]);
+          if (current) {
+            render(current, history);
+            $('query-status').textContent = '历史回测已更新。';
+            return;
+          }
+        } else {
+          $('query-status').textContent = '历史回测未能完成；当前结果仍可查看。';
+          return;
+        }
+      }
+      $('query-status').textContent = '历史回测后台仍在计算；当前结果可先查看。';
+    }
+
+    async function loadCode(code) {
+      const id = ++serial;
+      $('query-status').textContent = '读取缓存结果…';
+      try {
+        const [current, history] = await Promise.all([
+          LPPL.stock.latest(code),
+          LPPL.stock.history(code),
+        ]);
+        if (id !== serial) {
+          return;
+        }
+        if (current) {
+          render(current, history);
+          $('query-status').textContent = history
+            ? '缓存的当前结果和历史回测已加载。'
+            : '历史回测文件暂不可用';
+          return;
+        }
+        await query(code, id);
+      } catch (error) {
+        if (id === serial) {
+          $('query-status').textContent = error.message || '数据未加载。';
+        }
+      }
+    }
+
+    $('search').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const code = $('code').value.trim();
+      if (!/^\d{6}$/.test(code)) {
+        $('query-status').textContent = '请输入六位数字代码。';
+        return;
+      }
+      const url = new URL(location.href);
+      url.searchParams.set('code', code);
+      history.replaceState(null, '', url);
+      loadCode(code);
+    });
+
+    const initial = new URLSearchParams(location.search).get('code');
+    if (initial && /^\d{6}$/.test(initial)) {
+      $('code').value = initial;
+      loadCode(initial);
+    }
+  </script>
+</body>
+</html>

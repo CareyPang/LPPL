@@ -88,6 +88,7 @@
     index: () => opt('stock/index.json'),
     latest: (c) => opt('stock/' + okCode(c) + '.json'),
     history: (c) => opt('stock/' + okCode(c) + '_history.json'),
+    dipEnv: () => opt('stock/_dip_env.json'),
     error: (c) => opt('stock/' + okCode(c) + '_error.json'),
     api: () => queryApi(),
     request: (c) => {

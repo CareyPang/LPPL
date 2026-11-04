@@ -290,7 +290,7 @@ function renderStock(c,d,h,idx,err,br){
     <p class="warn" id="history-status" style="display:none"></p>
     <div id="dip-panel"></div>
     <canvas id="oc"></canvas>
-    <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>该截止日 6–12月/12–24月 有合格拟合（任一集合）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80<i style="background:#58a6ff"></i>事后确认顶</div>`;
+    <div class="leg"><i style="background:#8b949e"></i>后复权收盘<i style="background:#d29922"></i>该截止日 6–12月/12–24月 有合格拟合（任一集合）<i style="background:rgba(248,81,73,.5)"></i>当时情景区间 q20–q80（未校准，仅供参考）<i style="background:#58a6ff"></i>事后确认顶</div>`;
   const requery=document.getElementById('requery');
   if(requery) requery.onclick=()=>own(c,true);
   draw(d,h);
