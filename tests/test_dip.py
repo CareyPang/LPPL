@@ -81,16 +81,16 @@ def test_outcomes_use_entry_close_and_future_extrema():
 
 
 def _write_library(tmp_path, rows):
-    event_path = tmp_path / "events_smoke.parquet"
+    event_path = tmp_path / "events.parquet"
     pd.DataFrame(rows).to_parquet(event_path, index=False)
     payload = {
         "version": "test",
         "cutoff": "2026-11-03",
-        "n_stocks": 223,
+        "n_stocks": len({row["sym"] for row in rows}),
         "n_events": len(rows),
         "events_file": event_path.name,
         "sha256": hashlib.sha256(event_path.read_bytes()).hexdigest(),
-        "smoke": True,
+        "smoke": False,
     }
     (tmp_path / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
     pd.DataFrame({"sym": ["sh600519"], "sw1_name": ["测试行业"]}).to_csv(
@@ -139,6 +139,12 @@ def test_panel_structure_and_outside_structure_keep_expected_shape(tmp_path, mon
     result = panel.build_panel(prices, tmp_path)
 
     assert result["in_structure"] is True
+    assert result["oos"] == {"items": {}, "label": "样本外检验未完成"}
+    verdict = {"items": {"H1": "failed"}, "label": "样本外未通过，仅描述"}
+    (tmp_path / "oos_verdict.json").write_text(
+        json.dumps(verdict, ensure_ascii=False), encoding="utf-8"
+    )
+    assert panel.build_panel(prices, tmp_path)["oos"] == verdict
     assert result["depth_bucket"] == -0.5
     assert result["similar"]["full"]["n"] == 0
     assert result["similar"]["industry"] is None
@@ -170,6 +176,19 @@ def test_panel_structure_and_outside_structure_keep_expected_shape(tmp_path, mon
     assert other["similar"] is None
     assert other["first_hit"]["fh60"]["hist"] is None
     assert other["first_hit"]["fh60"]["rw"] is not None
+
+
+def test_oos_verdict_loads_contents_and_missing_file_falls_back(tmp_path):
+    path = tmp_path / "oos_verdict.json"
+
+    assert panel._load_oos_verdict(path) == {
+        "items": {},
+        "label": "样本外检验未完成",
+    }
+
+    verdict = {"items": {"H1": "failed"}, "label": "样本外未通过，仅描述"}
+    path.write_text(json.dumps(verdict, ensure_ascii=False), encoding="utf-8")
+    assert panel._load_oos_verdict(path) == verdict
 
 
 def test_state_uses_recent_well_features_and_returns_lower_distance(monkeypatch):
