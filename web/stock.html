@@ -8,7 +8,7 @@ input{background:#0e1116;color:var(--fg);border:1px solid var(--line);border-rad
 canvas{width:100%;height:300px;display:block;margin-top:10px}.rc{border-color:var(--amb);color:var(--amb)}.leg{font-size:12px;color:var(--mute);margin-top:4px}.leg i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;vertical-align:-1px}
 .dip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}.dip-card{min-width:0;background:#11161d;border:1px solid var(--line);border-radius:8px;padding:12px}.dip-card h4{margin:0 0 8px}.dip-wide{grid-column:1/-1}.dip-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dip-values div{border-bottom:1px solid var(--line);padding:4px 0}.dip-label{display:block;color:var(--mute);font-size:11px}.dip-value{font-variant-numeric:tabular-nums}.dip-scroll{overflow-x:auto}.dip-table{min-width:700px;font-size:11px}.dip-table td,.dip-table th{padding:5px}.dip-quantile{width:100%;min-width:0;table-layout:fixed;font-size:10px}.dip-quantile td,.dip-quantile th{padding:4px 3px;overflow-wrap:anywhere}.dip-quantile th:first-child{width:34%}.dip-pool{min-width:0;margin:10px 0 14px}.dip-pool-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}.dip-prob-row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--mute);font-size:11px;margin-top:3px}.dip-disclaimer{color:var(--mute);font-size:11px;margin:8px 0 0}.dip-env-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dip-env-item{border:1px solid var(--line);border-radius:6px;padding:8px}.dip-badge{color:var(--amb);font-size:12px;margin:3px 0}
 @media(max-width:600px){.dip-grid,.dip-env-grid{grid-template-columns:1fr}.dip-wide{grid-column:auto}.dip-values{grid-template-columns:repeat(2,minmax(0,1fr))}.dip-card{padding:10px}.dip-table{min-width:640px}}
-</style><style>.dip-anomalies{margin:2px 0 0;padding-left:18px;font-size:11px}.dip-anomalies li{margin:2px 0}</style>
+</style><style>.dip-anomalies{margin:2px 0 0;padding-left:18px;font-size:11px}.dip-anomalies li{margin:2px 0}.dip-hit-table{min-width:0;width:100%;table-layout:fixed;font-size:10px}.dip-hit-table td,.dip-hit-table th{padding:4px 2px;overflow-wrap:anywhere}.dip-hit-table th:nth-child(1){width:12%}.dip-hit-table th:nth-child(2){width:24%}.dip-hit-table th:nth-child(6){width:20%}</style>
 <script>window.LPPL_QUERY_API = 'https://lppl-stock-query.careypang.workers.dev';</script><script src="theme.js"></script></head><body><div class="wrap">
 <div class="card"><h2 style="margin:0 0 8px">个股输入 → 所属指数的顶部风险</h2>
 <input id="code" placeholder="6 位代码，如 600519" maxlength="6"> <button id="go">查看</button>
@@ -96,13 +96,13 @@ function dipSimilarPools(similar){
   const metrics=[['r60','60日收益'],['r120','120日收益'],['r250','250日收益'],['mdd120','120日内最大再跌'],['up120','120日内最大反弹']];
   return [['full','全市场'],['industry','同行业'],['excl1516','剔除 2015–16']].map(([key,label])=>{
     const s=similar?.[key]||null;
-    const counts=key==='industry'?(similar?.industry_counts||{}):s;
+    const counts=s||(key==='industry'?(similar?.industry_counts||{}):{});
     const n=counts?.n, delisted=counts?.n_delisted;
     const quantiles=s?.q;
-    const rows=metrics.map(([metric,title])=>`<tr><th>${title}</th>${[0,1,2,3,4].map(i=>`<td>${dipPct(quantiles?.[metric]?.[i])}</td>`).join('')}</tr>`).join('');
+    const rows=metrics.map(([metric,title])=>`<tr><th>${title}</th>${[0,1,2,3,4].map(i=>`<td>${dipPct(quantiles?.[metric]?.[i])}</td>`).join('')}<td>${dipNum(s?.n_outcome?.[metric])}</td></tr>`).join('');
     const p30=dipPct(s?.p_up120_ge30),p50=dipPct(s?.p_up120_ge50);
-    const unavailable=key==='industry'&&n!=null&&n<30?'样本不足 30，分布不展示':'';
-    return `<section class="dip-pool"><div class="dip-pool-head"><b>${label}</b><span>n=${dipNum(n)}；退市股=${dipNum(delisted)}</span></div>${s?`<table class="dip-quantile"><thead><tr><th>指标</th>${[10,25,50,75,90].map(q=>`<th>q${q}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`:`<div class="muted">${unavailable||'—'}</div>`}<div class="dip-prob-row"><span>P(反弹≥30%) ${p30}</span><span>P(反弹≥50%) ${p50}</span></div></section>`;
+    const unavailable=key==='industry'&&!s?'同行业样本 <30，不单独统计':'';
+    return `<section class="dip-pool"><div class="dip-pool-head"><b>${label}</b><span>n=${dipNum(n)}；退市股=${dipNum(delisted)}</span></div>${s?`<table class="dip-quantile"><thead><tr><th>指标</th>${[10,25,50,75,90].map(q=>`<th>q${q}</th>`).join('')}<th>n</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="muted">${unavailable||'—'}</div>`}<div class="dip-prob-row"><span>P(反弹≥30%) ${p30}</span><span>P(反弹≥50%) ${p50}</span></div></section>`;
   }).join('');
 }
 function dipHitRows(dip){
@@ -110,7 +110,7 @@ function dipHitRows(dip){
     const item=dip.first_hit?.[key]||{};
     return ['hist','rw'].map(kind=>{
       const value=item[kind];
-      return `<tr><th>${key}</th><td>${kind==='hist'?'历史':'零漂移随机游走'}</td><td>${dipPct(value?.U)}</td><td>${dipPct(value?.L)}</td><td>${dipPct(value?.none)}</td><td>${kind==='hist'?dipNum(value?.n):'20,000'}</td></tr>`;
+      return `<tr><th>${key}</th><td>${kind==='hist'?'历史':'零漂移随机游走'}</td><td>${dipPct(value?.U)}</td><td>${dipPct(value?.L)}</td><td>${dipPct(value?.none)}</td><td>${kind==='hist'?dipNum(value?.n):'模拟 20000 条'}</td></tr>`;
     }).join('');
   }).join('');
 }
@@ -146,7 +146,7 @@ function renderDipPanel(dip){
   <div class="dip-grid">
   <section class="dip-card"><h4>跌幅结构</h4>${dipStatBlock([['截止日期',s.asof||'—'],['收盘价（后复权）',s.close==null?'—':`${dipFixed(s.close)}（后复权）`],['结构',dip.in_structure===true?'结构内':dip.in_structure===false?'结构外':'—'],['深度档',dip.depth_bucket==null?'—':dipPct(dip.depth_bucket)],['前高日期',s.peak_date||'—'],['前高涨幅',dipPct(s.runup)],['距前高跌幅',dipPct(s.dd)],['距前高交易日',dipNum(s.td_since_peak)],['低点日期',s.low_date||'—'],['低点反弹',dipPct(s.bounce_from_low)],['20日收益',dipPct(s.ret20)],['60日收益',dipPct(s.ret60)],['RV20 年化',dipPct(s.rv20)],['RV20 五年分位',dipPct(s.rv20_pct5y)],['日 EWMA 波动',dipPct(s.vol_d)],['下方价格密集区距离',s.well_dist_below==null?'下方无价格密集区':dipPct(s.well_dist_below)]])}<div class="dip-disclaimer">样本：最近 500 个交易日；历史分位，不是预测。</div></section>
     <section class="dip-card"><h4>相似事件分布</h4>${dipSimilarPools(similar)}<p class="dip-disclaimer">样本数见各池；历史分位，不是预测。</p></section>
-    <section class="dip-card"><h4>首次触及</h4><div class="dip-scroll"><table class="dip-table"><thead><tr><th>阈值</th><th>样本</th><th>上触及 U</th><th>下触及 L</th><th>未触及</th><th>n</th></tr></thead><tbody>${dipHitRows(dip)}</tbody></table></div><div class="dip-disclaimer">样本数见表；历史分位，不是预测。</div></section>
+    <section class="dip-card"><h4>首次触及</h4><div class="dip-scroll"><table class="dip-hit-table"><thead><tr><th>阈值</th><th>样本</th><th>上触及 U</th><th>下触及 L</th><th>均未触及</th><th>样本数</th></tr></thead><tbody>${dipHitRows(dip)}</tbody></table></div><div class="dip-disclaimer">样本数见表；历史分位，不是预测。</div></section>
     <section class="dip-card"><h4>波动体制</h4>${dipStatBlock([['高波动状态 filtered 概率',dipPct(dip.regime?.p_hi_filtered)],['高波动年化',dipPct(dip.regime?.hi_vol_ann)],['低波动年化',dipPct(dip.regime?.lo_vol_ann)],['高波动周均收益',dipPct(dip.regime?.hi_mean_wk)],['低波动周均收益',dipPct(dip.regime?.lo_mean_wk)],['周样本数',dipNum(dip.regime?.weeks)]])}<div class="dip-disclaimer">${esc(dip.regime?.note||'波动体制，不是涨跌信号')}；历史分位，不是预测。</div></section>
     <section class="dip-card dip-wide"><h4>指数环境</h4><div id="dip-env-data" class="muted">加载中…</div><div class="dip-disclaimer">样本数见各项；历史分位，不是预测。</div></section>
   </div>`;

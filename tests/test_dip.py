@@ -150,6 +150,13 @@ def test_panel_structure_and_outside_structure_keep_expected_shape(tmp_path, mon
         value is None
         for value in result["similar"]["full"]["q"]["r60"]
     )
+    assert result["similar"]["full"]["n_outcome"] == {
+        "r60": 0,
+        "r120": 0,
+        "r250": 0,
+        "mdd120": 0,
+        "up120": 0,
+    }
     assert not any(
         isinstance(value, float) and np.isnan(value)
         for value in result["similar"]["full"]["q"]["r60"]
@@ -222,6 +229,35 @@ def test_share_summary_uses_sse_10k_units_and_deduplicates_dates():
     assert summary["change_20d_from"] == "2026-01-02"
     assert summary["change_20d_shares_yi"] == pytest.approx(2.0)
     assert summary["change_20d"] == pytest.approx(1_021_000 / 1_001_000 - 1)
+
+
+def test_summary_reports_valid_sample_count_for_each_outcome():
+    frame = pd.DataFrame(
+        {
+            "r60": [0.1, np.nan],
+            "r120": [0.2, np.nan],
+            "r250": [0.3, 0.4],
+            "mdd120": [-0.2, np.nan],
+            "up120": [0.4, 0.5],
+            "delisted": [False, True],
+            "fh60": ["U", "none"],
+            "fh120": ["L", "none"],
+        }
+    )
+
+    summary = panel._summary(frame)
+
+    assert summary["n"] == 2
+    assert summary["n_delisted"] == 1
+    assert summary["n_outcome"] == {
+        "r60": 1,
+        "r120": 1,
+        "r250": 2,
+        "mdd120": 1,
+        "up120": 2,
+    }
+    assert summary["p_up120_ge30"] == pytest.approx(1.0)
+    assert summary["p_up120_ge50"] == pytest.approx(0.5)
 
 
 def test_predict_adds_dip_without_changing_existing_record_fields(monkeypatch):

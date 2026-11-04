@@ -79,8 +79,10 @@ def _first_touch(values: pd.Series) -> dict:
 def _summary(frame: pd.DataFrame) -> dict:
     outcomes = ("r60", "r120", "r250", "mdd120", "up120")
     quantile_rows = {}
+    outcome_counts = {}
     for column in outcomes:
         values = pd.to_numeric(frame[column], errors="coerce").dropna() if column in frame else pd.Series(dtype=float)
+        outcome_counts[column] = int(len(values))
         quantile_rows[column] = (
             [_number(value) for value in values.quantile(QUANTILES).to_numpy()]
             if len(values)
@@ -92,6 +94,7 @@ def _summary(frame: pd.DataFrame) -> dict:
         "n_delisted": int(frame["delisted"].fillna(False).astype(bool).sum())
         if "delisted" in frame
         else 0,
+        "n_outcome": outcome_counts,
         "q": quantile_rows,
         "p_up120_ge30": _number(float((up120 >= 0.30).mean())) if len(up120) else None,
         "p_up120_ge50": _number(float((up120 >= 0.50).mean())) if len(up120) else None,
