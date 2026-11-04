@@ -146,7 +146,7 @@ function renderDipPanel(dip){
   const verdictLabel=verdict.label||'样本外未通过，仅描述';
   const h1Badge=verdict.items?.H1==='failed'?`<div class="dip-badge">${esc(verdictLabel)}</div>`:'';
   const h2Badge=verdict.items?.H2==='failed'?`<div class="dip-badge">${esc(verdictLabel)}</div>`:'';
-  const h3Badge=verdict.items?.H3==='pending'?'<div class="dip-badge">样本外检验未做</div>':'';
+  const h3Badge=verdict.items?.H3==='failed'?`<div class="dip-badge">${esc(verdictLabel)}</div>`:verdict.items?.H3==='pending'?'<div class="dip-badge">样本外检验未做</div>':'';
   const similar=dip.similar||{};
   const reading=similar.full||{};
   const fullQuantiles=reading.q||{};

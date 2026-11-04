@@ -847,9 +847,11 @@
       const h2Badge = verdict.items?.H2 === 'failed'
         ? `<span class="badge">${esc(verdictLabel)}</span>`
         : '';
-      const h3Badge = verdict.items?.H3 === 'pending'
-        ? '<span class="badge">样本外检验未做</span>'
-        : '';
+      const h3Badge = verdict.items?.H3 === 'failed'
+        ? `<span class="badge">${esc(verdictLabel)}</span>`
+        : verdict.items?.H3 === 'pending'
+          ? '<span class="badge">样本外检验未做</span>'
+          : '';
       const structure = `从 ${state.peak_date || '—'} 的高点（此前上涨 ${dipPct(state.runup)}）已下跌 ${dipPct(state.dd)}，历时 ${dnum(state.td_since_peak)} 个交易日；最近低点在 ${state.low_date || '—'}，之后反弹 ${dipPct(state.bounce_from_low)}。`;
       const depth = d.depth_bucket == null ? '—' : dipPct(Math.abs(Number(d.depth_bucket)));
       const rule = d.in_structure === true
