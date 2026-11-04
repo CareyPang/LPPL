@@ -137,7 +137,7 @@ jobs:
         shell: bash
         run: |
           set -u
-          for host in web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
+          for host in qt.gtimg.cn web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
             code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
               --connect-timeout 10 --max-time 20 "https://$host" || true)
             printf '%s: %s\n' "$host" "${code:-000}"
@@ -280,7 +280,7 @@ jobs:
         shell: bash
         run: |
           set -u
-          for host in web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
+          for host in qt.gtimg.cn web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
             code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
               --connect-timeout 10 --max-time 20 "https://$host" || true)
             printf '%s: %s\n' "$host" "${code:-000}"
