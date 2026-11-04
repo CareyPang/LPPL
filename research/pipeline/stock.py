@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -14,9 +15,10 @@ os.environ.setdefault("LPPLS_BOX", "v2")
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+import requests  # noqa: E402
 
 from ..data import cache  # noqa: E402
-from ..data.sources import sina_raw_daily  # noqa: E402
+from ..data.sources import UA, sina_raw_daily  # noqa: E402
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
 from ..dip.panel import build_panel  # noqa: E402
 from ..eval.export_contract import (
@@ -39,6 +41,7 @@ STOCK_EVIDENCE = "research_candidate"
 STOCK_NOTE = "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
 FIT_CACHE_COLUMNS = [*lppls_scan.COLS, "asof", "data_version", "code_version"]
 FIT_CACHE_KEY = ["asof", "n", "data_version", "code_version"]
+LOGGER = logging.getLogger(__name__)
 
 _FIT_LOGP: pd.Series | None = None
 _FIT_INSIDE = False
@@ -313,17 +316,45 @@ def _variant_windows(variant: str, n_bars: int) -> tuple[int, ...]:
     raise ValueError(f"unknown stock variant: {variant}")
 
 
-def _name_and_st(code6: str) -> tuple[str | None, bool | None]:
-    if not NAMES_PATH.exists():
-        return None, None
+@lru_cache(maxsize=512)
+def _tencent_stock_name(code6: str) -> str | None:
+    symbol = universe._sym(code6)
     try:
-        names = json.loads(NAMES_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None, None
+        response = requests.get(
+            f"https://qt.gtimg.cn/q={symbol}",
+            headers=UA,
+            timeout=5,
+        )
+        response.raise_for_status()
+        text = response.content.decode("gbk")
+        _, opening_quote, quoted_body = text.partition('"')
+        body, closing_quote, _ = quoted_body.partition('"')
+        if not opening_quote or not closing_quote:
+            raise ValueError("malformed Tencent quote response")
+        fields = body.split("~")
+        if len(fields) < 2 or not fields[1].strip():
+            raise ValueError("Tencent quote response has no stock name")
+        return fields[1].strip()
+    except Exception as exc:  # noqa: BLE001 — name lookup must not fail a stock query
+        LOGGER.warning("Tencent name lookup failed for %s: %s", code6, exc)
+        return None
+
+
+def _name_and_st(code6: str) -> tuple[str | None, bool | None]:
+    names = {}
+    if NAMES_PATH.exists():
+        try:
+            loaded = json.loads(NAMES_PATH.read_text(encoding="utf-8"))
+            names = loaded if isinstance(loaded, dict) else {}
+        except (OSError, json.JSONDecodeError) as exc:
+            LOGGER.warning("Could not read stock names: %s", exc)
     name = names.get(code6) if isinstance(names, dict) else None
     if name is None:
+        name = _tencent_stock_name(code6)
+    if name is None:
         return None, None
-    return str(name), "ST" in str(name).upper()
+    name = str(name)
+    return name, "ST" in name.upper()
 
 
 def _eligibility(ohlc: pd.DataFrame, st: bool | None) -> dict:
