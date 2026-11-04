@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>临界点 · 历史情景研究 · 独立预览</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:,">
+<style>
+/* OD-LAYOUT-PRIMITIVES v1 — structure only */
+@layer od-layout {
+  [hidden]:not([hidden="until-found" i]) { display: none !important; }
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid) > :where(*) { min-width: 0; }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-nowrap  { white-space: nowrap; }
+}
+/* OD-LAYOUT-PRIMITIVES v1 end */
+
+/* 与终端（index.html）同一套 Trading Terminal 设计变量：近黑底、细边线、直角、等宽数字。红涨绿跌；琥珀 = 情景区间，蓝 = 事后确认。 */
+:root {
+  --bg: #0D0D0D; --surface: #141414; --surface-2: #1A1A1A; --line: #2A2A2A; --grid: #1E1E1E;
+  --ink: #FFFFFF; --ink-2: #AAAAAA; --ink-3: #828282;
+  --warn: #FFB800; --real: #4DA3FF;
+  --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
+  --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
+  --t-fast: 150ms; --side-w: 344px;
+}
+* { box-sizing: border-box; border-radius: 0; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-u); min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+a { color: var(--ink-2); text-decoration: none; }
+.m { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--real); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* 顶部栏 */
+.bar { border-bottom: 1px solid var(--line); background: var(--surface); }
+.bar-in { padding: var(--s2) var(--s4); --od-gap: var(--s4); }
+.brand { font: 600 15px/1 var(--f-m); letter-spacing: .04em; }
+.brand small { display: block; font: 500 10px/1 var(--f-u); color: var(--ink-3); letter-spacing: .12em; margin-top: var(--s1); }
+.nav { margin-left: auto; --od-gap: var(--s4); font-size: 13px; flex-wrap: wrap; }
+.nav a { padding: var(--s2) 0; border-bottom: 1px solid transparent; }
+.nav a:hover { color: var(--ink); border-bottom-color: var(--ink-3); }
+.nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--warn); }
+
+/* 指数带 + 区间预设 */
+.strip { border-bottom: 1px solid var(--line); --od-gap: 0; overflow-x: auto; scrollbar-width: thin; }
+.tk { display: flex; align-items: center; padding: var(--s2) var(--s4); min-height: 44px; border: 0; border-right: 1px solid var(--line); background: transparent; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; transition: background var(--t-fast) ease-out; }
+.tk:hover { background: var(--surface-2); color: var(--ink); }
+.tk[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: inset 0 -2px 0 var(--warn); }
+.strip-k { padding: 0 var(--s3) 0 var(--s4); font-size: 11px; color: var(--ink-3); letter-spacing: .08em; white-space: nowrap; }
+.chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 32px; font-size: 12px; color: var(--ink-2); cursor: pointer; white-space: nowrap; margin-right: var(--s1); transition: border-color var(--t-fast) ease-out; }
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
+.chip:disabled { opacity: .35; cursor: not-allowed; border-color: var(--line); color: var(--ink-3); }
+.chip:disabled:hover { border-color: var(--line); color: var(--ink-3); }
+.chips { padding-right: var(--s4); --od-gap: 0; }
+
+/* 主体 */
+.app { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) var(--side-w); min-height: 0; }
+.left { display: flex; flex-direction: column; min-width: 0; }
+.chead { border-bottom: 1px solid var(--line); padding: var(--s2) var(--s3); --od-gap: var(--s3); min-height: 48px; flex-wrap: wrap; }
+.sym-n { font: 600 16px/1.2 var(--f-u); white-space: nowrap; }
+.sym-c { font: 400 12px/1.2 var(--f-m); color: var(--ink-3); white-space: nowrap; }
+.lgd { --od-gap: var(--s3); font-size: 12px; color: var(--ink-2); margin-left: auto; }
+.lgd span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sw { display: inline-block; width: 18px; height: 3px; background: var(--warn); }
+.sw.t { width: 0; height: 0; background: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--real); }
+.sw.s { width: 14px; height: 10px; background: rgba(77,163,255,.14); border: 1px solid rgba(77,163,255,.35); }
+.chart { position: relative; flex: 1; min-height: 380px; height: clamp(380px, 56vh, 720px); background: var(--bg); }
+.chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: pan-y; }
+.chart canvas.grab { cursor: grabbing; }
+.tip { position: absolute; pointer-events: none; background: rgba(20,20,20,.96); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.6 var(--f-m); color: var(--ink-2); max-width: 320px; z-index: 2; }
+.tip b { color: var(--ink); font-weight: 500; }
+.tip .re { color: var(--real); }
+.ld { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(13,13,13,.7); color: var(--ink-3); font-size: 13px; z-index: 3; }
+.ld.err { color: #FF8A94; padding: var(--s6); text-align: center; }
+
+/* 时间轴刷选 */
+.brush { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s2) var(--s3) var(--s3); }
+.brush-h { --od-gap: var(--s2); margin-bottom: var(--s1); font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+.brush-h output { font: 500 12px/1 var(--f-m); color: var(--ink-2); margin-left: auto; white-space: nowrap; }
+.bt { border: 1px solid var(--line); background: transparent; color: var(--ink-2); min-height: 28px; min-width: 44px; padding: 0 var(--s2); font-size: 12px; cursor: pointer; }
+.bt:hover { color: var(--ink); border-color: var(--ink-3); }
+.ov { position: relative; height: 64px; }
+.ov canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: ew-resize; }
+
+/* 右栏 */
+.side { border-left: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.blk { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+.blk-k { margin: 0 0 var(--s2); font: 500 11px/1 var(--f-u); letter-spacing: .1em; color: var(--ink-3); }
+.blk p { margin: 0 0 var(--s2); font-size: 13px; color: var(--ink-2); }
+.blk p:last-child { margin-bottom: 0; }
+.kv { width: 100%; border-collapse: collapse; font: 12px var(--f-m); }
+.kv td { padding: var(--s1) 0; border-bottom: 1px solid var(--grid); color: var(--ink-3); }
+.kv td:last-child { text-align: right; color: var(--ink); }
+.evb { display: inline-block; font: 600 11px/1 var(--f-u); padding: var(--s1) var(--s2); border: 1px solid var(--warn); color: var(--warn); margin-bottom: var(--s2); letter-spacing: .06em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+@media (max-width: 1024px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+  .lgd { margin-left: 0; }
+}
+@media (max-width: 480px) { .chart { min-height: 320px; } .nav { --od-gap: var(--s3); } }
+</style>
+<link rel="stylesheet" href="app/research-editorial.css">
+<link rel="stylesheet" href="app/backtest-market-editorial.css">
+<link rel="stylesheet" href="app/history-comparison-editorial.css">
+</head>
+<body data-page="backtest">
+
+<header class="bar">
+  <div class="bar-in od-row">
+    <div class="brand od-fixed">临界点<small>LPPLS · 历史情景研究</small></div>
+    <nav class="nav od-row" aria-label="页面导航">
+      <a href="home-editorial.html">首页</a>
+      <a href="workstation-editorial.html" id="workstation-link">研究工作站</a>
+      <a href="backtest-editorial.html" aria-current="page">历史回测</a>
+    </nav>
+  </div>
+</header>
+
+<div class="strip od-row" aria-label="指数与区间">
+  <div class="od-row od-fixed" id="syms" role="group" aria-label="指数" style="--od-gap:0"></div>
+  <span class="strip-k">区间</span>
+  <div class="chips od-row od-fixed" id="ranges" role="group" aria-label="时间区间预设"></div>
+</div>
+
+<main class="app">
+  <div class="left">
+    <div class="chead od-row">
+      <div class="od-fixed">
+        <div class="sym-n" id="sym-n">—</div>
+        <div class="sym-c" id="sym-c">日 K · 成交量 · 对数坐标</div>
+      </div>
+      <div class="lgd od-cluster" aria-label="图例">
+        <span><i class="sw"></i>模型当时给出的区间</span>
+        <span><i class="sw t"></i>事后确认的顶</span>
+        <span><i class="sw s"></i>校准段 / 测试段</span>
+      </div>
+    </div>
+
+    <div class="market-toolbar" aria-label="行情与图层">
+      <span class="market-label">已发布日 K</span>
+      <div id="market-views" role="group" aria-label="真实日线覆盖区间"></div>
+      <a class="bt comparison-jump" href="#history-comparison">双日期对照 ↓</a>
+      <button class="bt" id="volume-toggle" type="button" aria-pressed="true">成交量</button>
+    </div>
+    <div class="chart" id="chart">
+      <canvas id="cv" tabindex="0" role="img" aria-label="历史日 K、成交量与顶部情景区间。缺少日线的区段仅展示周度收盘。点按区间查看详情；方向键平移，加减号缩放，Enter 查看当前记录。也可使用图下的截止日选择器。" aria-describedby="history-help market-coverage"></canvas>
+      <div class="tip" id="tip" hidden></div>
+      <div class="market-readout" id="market-readout" aria-live="off"></div>
+      <div class="ld load-status" id="ld"><div><p id="load-message" role="status" aria-live="polite">数据加载中…</p><button class="bt retry-button" type="button" id="retry" hidden>重试当前指数</button></div></div>
+    </div>
+    <p class="market-coverage" id="market-coverage" role="status">正在核对已发布日线与历史记录…</p>
+
+    <div class="history-inspector">
+      <label for="frame-select">历史截止日</label>
+      <select id="frame-select" disabled aria-describedby="history-help"><option value="">等待历史记录</option></select>
+      <button class="bt" type="button" id="frame-prev" disabled aria-label="上一个历史截止日">上一期</button>
+      <button class="bt" type="button" id="frame-next" disabled aria-label="下一个历史截止日">下一期</button>
+      <button class="bt" type="button" id="frame-open" disabled aria-controls="frame-detail" aria-expanded="false">查看详情</button>
+      <p id="history-help">点按图中区间，或选择已有截止日。手机可纵向滚页、横向拖图；本页只展示历史情景，不计算命中率。</p>
+    </div>
+
+    <div class="brush">
+      <div class="brush-h od-row">
+        <span>时间轴：拖动窗口平移，拖动两端缩放，点击空白处跳转</span>
+        <button class="bt" type="button" id="b-in" aria-label="放大">放大</button>
+        <button class="bt" type="button" id="b-out" aria-label="缩小">缩小</button>
+        <button class="bt" type="button" id="b-all" aria-label="显示全部历史">全部</button>
+        <output id="vr" for="ov" aria-live="polite">—</output>
+      </div>
+      <div class="ov"><canvas id="ov" tabindex="0" role="slider" aria-label="可见时间窗口" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></canvas></div>
+    </div>
+    <p class="sr" id="sr" aria-live="polite"></p>
+  </div>
+
+  <aside class="side" aria-label="说明">
+    <section class="blk detail-panel" id="frame-detail" role="region" aria-labelledby="detail-heading" hidden>
+      <div class="detail-heading"><h2 id="detail-heading" tabindex="-1">历史区间详情</h2><button class="bt detail-close" id="detail-close" type="button" aria-label="关闭历史区间详情">关闭</button></div>
+      <p id="detail-context"></p>
+      <dl class="detail-fields" id="detail-fields"></dl>
+      <p class="detail-boundary">区间来自当时的拟合记录：情景，非时点；不是峰值日预测或事件概率。</p>
+    </section>
+    <section class="blk">
+      <p class="blk-k">怎么看</p>
+      <p>红涨绿跌的日 K 与成交量来自已发布行情。浅色细线仅表示缺少日线区段的周度收盘；不同数据段之间不补造 K 线。</p>
+      <p>金色横线是各截止日给出的顶部情景区间（合格拟合 t_c 的 20–80% 分位）。点击后显示顶部区间带；模型区间仅使用当时数据，背景行情属于事后回看。</p>
+      <p>蓝色三角是事后确认的顶：顶后 126 个交易日内回撤 ≥15%，回撤幅度是事后实测值。</p>
+      <p>线太密时，把时间窗口缩小到几年再看；窗口较大时区间线自动变细、不画连接线。</p>
+    </section>
+    <section class="blk">
+      <p class="blk-k">证据等级</p>
+      <div id="ev"><p>—</p></div>
+    </section>
+    <section class="blk">
+      <p class="blk-k">当前窗口</p>
+      <table class="kv" id="sum"></table>
+    </section>
+    <section class="blk">
+      <p>验证结果以 <a href="workstation-editorial.html" style="color:var(--real)">研究工作站</a> 与 <a href="lab/dashboard.html" style="color:var(--real)">研究仪表盘</a> 为准；本页只展示历史区间，不计算命中率。</p>
+      <p><a href="lab/guide.html">阅读用户指南 ↗</a></p>
+    </section>
+  </aside>
+</main>
+<section id="history-comparison" aria-label="两个历史截止日对照"></section>
+<footer class="preview-footer">独立预览 · <a href="backtest.html">对比原版历史页</a> · <a href="home-editorial.html">返回新首页</a></footer>
+
+<script src="app/lppl-data.js"></script>
+<script src="app/scen-style-editorial.js"></script>
+<script src="app/backtest-market-editorial.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const E = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const DAY = 864e5;
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const RANGES = [['全部', null, null], ['2005–2009', '2005-01-01', '2009-12-31'], ['2014–2016', '2014-01-01', '2016-12-31'], ['2019–2021', '2019-01-01', '2021-12-31'], ['2024–2025', '2024-01-01', '2025-12-31']];
+  const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段' };
+  const css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
+  const col = { bg: C('--bg'), line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real'), up: C('--up'), dn: C('--dn') };
+  const FM = C('--f-m'), FU = C('--f-u');
+  const rgba = CPSCN.rgba;
+  const T = (d) => Date.parse(d + 'T00:00:00Z');
+  const ymd = (t) => new Date(t).toISOString().slice(0, 10);
+  const pct = (x) => (x * 100).toFixed(0) + '%';
+  const st = { sym: 'sh000001', preset: 0, H: null, market: null, marketHover: null, volume: true, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, selected: null, G: null };
+  let requestId = 0, detailReturnFocus = null;
+  const q = new URLSearchParams(location.search);
+  const emitHistory = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
+  if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
+  let returnAsOf = q.get('asof') || '';
+
+  $('syms').innerHTML = LPPL.SYMS.map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
+  $('ranges').innerHTML = RANGES.map((r, i) => `<button class="chip" type="button" data-r="${i}" aria-pressed="false">${E(r[0])}</button>`).join('');
+  $('syms').onclick = (e) => { const b = e.target.closest('[data-s]'); if (b) { st.sym = b.dataset.s; load(); } };
+  $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { setPreset(+b.dataset.r); } };
+
+  /* 预设与当前指数数据范围的重叠不足 90 天时视为不可用 */
+  function overlaps(i) {
+    const R = RANGES[i]; if (!R[1] || !st.H) return true;
+    return Math.min(st.tmax, T(R[2]) + DAY) - Math.max(st.tmin, T(R[1])) >= MIN_SPAN;
+  }
+  function mark() {
+    document.querySelectorAll('[data-s]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.s === st.sym));
+    document.querySelectorAll('[data-r]').forEach((b) => {
+      const ok = !!st.H && overlaps(+b.dataset.r); b.disabled = !ok;
+      b.title = ok ? '' : st.H ? '该指数数据不覆盖这个时间段' : '先加载历史记录';
+      b.setAttribute('aria-pressed', ok && st.preset >= 0 && +b.dataset.r === st.preset);
+    });
+  }
+
+  /* ---------- 视图窗口 ---------- */
+  const MIN_SPAN = 90 * DAY;
+  function setView(a, b, fromPreset) {
+    if (!st.H) return;
+    let span = Math.max(MIN_SPAN, b - a); const full = st.tmax - st.tmin;
+    span = Math.min(span, full);
+    if (a < st.tmin) { a = st.tmin; } if (a + span > st.tmax) { a = st.tmax - span; }
+    st.va = a; st.vb = a + span;
+    if (!fromPreset) st.preset = -1;
+    st.marketHover = null;
+    document.querySelectorAll('[data-market-asof]').forEach(button => button.setAttribute('aria-pressed', 'false'));
+    mark(); draw(); drawOv();
+  }
+  function setPreset(i) {
+    if (!overlaps(i)) i = 0;
+    st.preset = i;
+    const R = RANGES[i];
+    if (!R[1]) setView(st.tmin, st.tmax, true);
+    else setView(Math.max(st.tmin, T(R[1])), Math.min(st.tmax, T(R[2]) + DAY), true);
+    mark();
+  }
+  const zoomAt = (f, k) => { const c = st.va + (st.vb - st.va) * f, span = (st.vb - st.va) * k; setView(c - span * f, c + span * (1 - f)); };
+  function showMarketSnapshot(asof) {
+    const s = st.market && st.market.snapshots.find(row => row.asof === asof);
+    if (!s) return;
+    const historyEnd = st.H.fr[st.H.fr.length - 1].t;
+    const overlap = s.latest ? s.bars.filter(b => b.t <= historyEnd) : s.bars;
+    const shown = overlap.length ? overlap : s.bars;
+    const first = shown[Math.max(0, shown.length - 160)], last = shown[shown.length - 1];
+    st.marketHover = null;
+    setView(first.t - 3 * DAY, last.t + 24 * DAY);
+    document.querySelectorAll('[data-market-asof]').forEach(b => b.setAttribute('aria-pressed', b.dataset.marketAsof === asof));
+  }
+  $('market-views').addEventListener('click', e => { const b = e.target.closest('[data-market-asof]'); if (b) showMarketSnapshot(b.dataset.marketAsof); });
+  $('volume-toggle').addEventListener('click', () => { st.volume = !st.volume; $('volume-toggle').setAttribute('aria-pressed', String(st.volume)); draw(); });
+
+  /* ---------- 已发布历史记录的选择与详情，不推算新截止日 ---------- */
+  function frameWindow(f, scale) {
+    const w = f.w && f.w[scale];
+    return Array.isArray(w) && w.length === 2 && w.every(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(T(d))) && w[0] <= w[1] ? w : null;
+  }
+  function detailRows(f, H) {
+    const evidence = typeof f.evidence === 'string' ? f.evidence : H.evidence || 'none';
+    const ev = LPPL.ev(evidence, H.evidence_levels);
+    // The existing historical dev_only layer permits scenario intervals, never confidence numbers.
+    const showInterval = historyIntervalAllowed(f, H);
+    const n = Number.isInteger(f.n) && f.n >= 0 ? f.n : null;
+    const showNumbers = ['dev', 'cal', 'test', 'cal_fragile'].includes(evidence) || evidence === 'descriptive' && n > 0;
+    const labels = { dev: '开发段证据', dev_only: '仅开发段证据，校准/测试未通过', dev_failed: '开发段未通过', none: '无证据', descriptive: '描述性', cal: '校准段', test: '测试段' };
+    const rows = [['截止日', f.asof], ['数据阶段', SPLIT[f.split] || f.split || '未提供'], ['证据等级', labels[evidence] || ev.label]];
+    for (const scale of ['6-12m', '12-24m']) {
+      const w = frameWindow(f, scale);
+      rows.push([scale === '6-12m' ? '6–12 月档情景区间' : '12–24 月档情景区间', !showInterval ? '当前证据等级不展示区间' : w ? w.join(' 至 ') : '该日未提供区间']);
+    }
+    rows.push(['样本数', n == null ? '记录未提供' : showNumbers ? 'n=' + n : '当前证据等级不展示数字']);
+    if (evidence === 'descriptive') rows.push(['解释', '历史分位，不是预测']);
+    rows.push(['模型版本', H.model_version || '记录未提供'], ['数据版本', H.data_version || '记录未提供']);
+    return rows;
+  }
+  function updateFrameControls() {
+    const i = st.H ? st.H.fr.findIndex(f => f.asof === $('frame-select').value) : -1;
+    $('frame-open').disabled = i < 0;
+    $('frame-prev').disabled = i <= 0;
+    $('frame-next').disabled = i < 0 || i >= st.H.fr.length - 1;
+  }
+  function closeDetails(restoreFocus = true) {
+    const wasOpen = !$('frame-detail').hidden;
+    $('frame-detail').hidden = true;
+    $('frame-open').setAttribute('aria-expanded', 'false');
+    st.selected = null;
+    if (st.H) draw();
+    if (wasOpen && restoreFocus) {
+      const target = detailReturnFocus && detailReturnFocus.isConnected && !detailReturnFocus.disabled ? detailReturnFocus : $('frame-select');
+      if (!target.disabled) {
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({ block: 'nearest', behavior: RM ? 'auto' : 'smooth' });
+      }
+    }
+    detailReturnFocus = null;
+  }
+  function selectFrame(asof, trigger, focus = true) {
+    const f = st.H && st.H.fr.find(row => row.asof === asof);
+    if (!f) return false;
+    detailReturnFocus = trigger || document.activeElement;
+    st.selected = f; st.hover = null; st.marketHover = null; $('tip').hidden = true;
+    $('frame-select').value = f.asof;
+    updateFrameControls();
+    $('detail-heading').textContent = '截止 ' + f.asof;
+    const S = LPPL.resolve(st.sym);
+    $('detail-context').textContent = (S ? S.name : st.sym) + ' · 当时可用的历史记录';
+    $('detail-fields').innerHTML = detailRows(f, st.H).map(([label, value]) => `<div><dt>${E(label)}</dt><dd>${E(value)}</dd></div>`).join('');
+    $('frame-detail').hidden = false;
+    $('frame-open').setAttribute('aria-expanded', 'true');
+    emitHistory('lppl-history-select', { symbol: st.sym, H: st.H, frame: f });
+    const allowed = historyIntervalAllowed(f, st.H), left = Math.min(f.t, allowed && f.w0 != null ? f.w0 : f.t), right = Math.max(f.t, allowed && f.w1 != null ? f.w1 : f.t);
+    if (left < st.va || right > st.vb) {
+      const span = Math.max(st.vb - st.va, right - left + 28 * DAY), end = right + 14 * DAY;
+      // Keep the lead-in price structure visible; avoid centering mostly on later close-only data.
+      setView(end - span, end);
+    } else draw();
+    if (focus) {
+      $('detail-heading').focus({ preventScroll: true });
+      $('detail-heading').scrollIntoView({ block: matchMedia('(max-width: 1024px)').matches ? 'start' : 'nearest', behavior: RM ? 'auto' : 'smooth' });
+    }
+    return true;
+  }
+  function moveFrame(delta, trigger) {
+    if (!st.H) return;
+    const i = st.H.fr.findIndex(f => f.asof === $('frame-select').value);
+    const next = st.H.fr[i + delta];
+    if (next) selectFrame(next.asof, trigger, false);
+  }
+  $('frame-select').addEventListener('change', e => selectFrame(e.target.value, e.target, false));
+  $('frame-open').addEventListener('click', e => selectFrame($('frame-select').value, e.currentTarget));
+  $('frame-prev').addEventListener('click', e => moveFrame(-1, e.currentTarget));
+  $('frame-next').addEventListener('click', e => moveFrame(1, e.currentTarget));
+  $('detail-close').addEventListener('click', () => closeDetails());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('frame-detail').hidden) { e.preventDefault(); closeDetails(); }
+  });
+
+  /* ---------- 加载：旧请求不能改变新指数的任何显示状态 ---------- */
+  function clearHistoryView() {
+    st.H = null; st.market = null; st.G = null; st.hover = null; st.marketHover = null; st.selected = null;
+    $('market-readout').textContent = ''; $('market-views').innerHTML = '';
+    $('market-coverage').textContent = '正在核对已发布日线与历史记录…';
+    emitHistory('lppl-history-reset', { symbol: st.sym });
+    closeDetails(false);
+    $('tip').hidden = true;
+    $('frame-select').innerHTML = '<option value="">等待历史记录</option>';
+    $('frame-select').value = ''; $('frame-select').disabled = true;
+    updateFrameControls();
+    $('sum').innerHTML = ''; $('vr').textContent = '—';
+    const c = $('cv'); c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    drawOv();
+  }
+  async function load() {
+    const id = ++requestId, symbol = st.sym, S = LPPL.resolve(symbol), name = S ? S.name : symbol;
+    clearHistoryView(); mark();
+    const ld = $('ld'); ld.hidden = false; ld.className = 'ld load-status';
+    $('load-message').textContent = '正在读取 ' + name + ' 的历史记录…';
+    $('retry').hidden = true;
+    $('chart').setAttribute('aria-busy', 'true');
+    $('sym-n').textContent = name;
+    $('ev').textContent = '正在读取本指数的证据说明…';
+    if (!(LPPL.REPLAYS[symbol] || []).includes(returnAsOf)) returnAsOf = '';
+    const returnQuery = new URLSearchParams({ code: symbol });
+    if (returnAsOf) returnQuery.set('asof', returnAsOf);
+    $('workstation-link').href = 'workstation-editorial.html?' + returnQuery;
+    try {
+      const url = new URL(location.href); url.searchParams.set('code', symbol);
+      if (returnAsOf) url.searchParams.set('asof', returnAsOf); else url.searchParams.delete('asof');
+      history.replaceState(null, '', url);
+    } catch (_) { /* Local previews may not allow history writes. */ }
+    const marketRequest = LPPLMarket.load(LPPL, symbol).catch(() => ({ symbol, bars: [], ranges: [], snapshots: [], failures: ['unavailable'] }));
+    try {
+      const H = await LPPL.history(symbol);
+      if (id !== requestId || symbol !== st.sym) return;
+      if (!H || !Array.isArray(H.frames)) throw new Error('历史记录格式不完整');
+      const fr = H.frames.filter(f => Number.isFinite(f.close) && f.close > 0 && typeof f.asof === 'string' && Number.isFinite(T(f.asof))).map((f) => {
+        const w = frameWindow(f, '6-12m');
+        return { ...f, t: T(f.asof), w0: w ? T(w[0]) : null, w1: w ? T(w[1]) : null };
+      }).sort((a, b) => a.t - b.t);
+      if (!fr.length) { const error = new Error('这份历史记录没有可展示的截止日'); error.empty = true; throw error; }
+      const last = fr[fr.length - 1].t; let mx = last;
+      fr.forEach((f) => { if (f.w1 != null && f.w1 > mx) mx = f.w1; });
+      const market = await marketRequest;
+      if (id !== requestId || symbol !== st.sym) return;
+      st.market = market;
+      st.H = { ...H, fr, tops: (Array.isArray(H.tops) ? H.tops : []).map((t) => ({ ...t, t: T(t.date) })).filter((t) => t.t >= fr[0].t && t.t <= last) };
+      st.tmin = Math.min(fr[0].t, market.bars.length ? market.bars[0].t : fr[0].t);
+      st.tmax = Math.max(mx, last, market.bars.length ? market.bars[market.bars.length - 1].t : last) + 30 * DAY;
+      $('market-views').innerHTML = market.snapshots.map(s => `<button class="chip" type="button" data-market-asof="${E(s.asof)}" aria-pressed="false">${s.latest ? '最近回测日 K' : E(s.asof.slice(0, 4)) + ' 回放日 K'}</button>`).join('');
+      $('sym-c').textContent = market.bars.length ? '日 K · 成交量 · 对数坐标' : '周度收盘 · 当前无可用日 K';
+      const e = H.evidence;
+      $('ev').innerHTML = `<span class="evb">${E(e)}</span><p>${e === 'dev_only' ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。' : '证据等级以研究仪表盘为准。'}</p><p>${E(H.rule || '')}</p><p class="m" style="font-size:12px;color:var(--ink-3)">数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)} · 模型 ${E(H.model_version || '')}</p>`;
+      $('frame-select').innerHTML = fr.map(f => `<option value="${E(f.asof)}">${E(f.asof)}${!historyIntervalAllowed(f, H) ? ' · 区间不展示' : f.w0 == null ? ' · 无 6–12 月档区间' : ' · 有 6–12 月档区间'}</option>`).join('');
+      $('frame-select').value = fr[fr.length - 1].asof; $('frame-select').disabled = false;
+      updateFrameControls();
+      ld.hidden = true;
+      const initial = market.snapshots.find(s => s.asof === returnAsOf) || market.snapshots.find(s => s.latest) || market.snapshots[0];
+      if (initial) showMarketSnapshot(initial.asof); else setPreset(st.preset >= 0 ? st.preset : 0);
+      emitHistory('lppl-history-ready', { symbol, H: st.H });
+    } catch (e) {
+      if (id !== requestId || symbol !== st.sym) return;
+      clearHistoryView(); mark();
+      ld.hidden = false; ld.className = 'ld load-status ' + (e.empty ? 'empty' : 'err');
+      $('load-message').textContent = name + '：' + (e.empty ? e.message : '数据未加载。' + String(e.message || e).replace(/^数据未加载：/, ''));
+      $('retry').textContent = '重新读取 ' + name; $('retry').hidden = false;
+      $('ev').textContent = e.empty ? '没有可展示的历史记录；不据此判断有无市场信号。' : '本指数证据说明暂未加载。';
+      $('market-coverage').textContent = '历史记录未载入，行情与区间暂不展示。';
+    } finally {
+      if (id === requestId && symbol === st.sym) $('chart').setAttribute('aria-busy', 'false');
+    }
+  }
+  $('retry').addEventListener('click', () => load());
+
+  function setup(cv) {
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+    return { ctx, W: r.width, H: r.height };
+  }
+
+  /* ---------- 主图 ---------- */
+  function draw() {
+    const H = st.H; if (!H) return;
+    const { ctx, W, H: Hh } = setup($('cv'));
+    const pl = 12, pr = W < 480 ? 52 : 64, pt = W < 480 ? 70 : 45, pb = 28, ta = st.va, tb = st.vb, all = H.fr;
+    const market = st.market || { bars: [], ranges: [], failures: [] };
+    const vis = all.filter(f => f.t >= ta && f.t <= tb), visibleBars = market.bars.filter(b => b.t >= ta && b.t <= tb);
+    const priceBottom = st.volume ? Hh - pb - 90 : Hh - pb, volumeTop = priceBottom + 18, volumeBottom = Hh - pb;
+    const hot = (st.hover && st.hover.f) || st.selected;
+    let lo = Infinity, hi = -Infinity;
+    visibleBars.forEach(b => { lo = Math.min(lo, b.low); hi = Math.max(hi, b.high); });
+    vis.forEach(f => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    // Off-origin scenario marks can still be visible inside the selected time span.
+    const intervals = all.filter(f => f.w0 != null && f.w1 >= ta && f.t <= tb && historyIntervalAllowed(f, H));
+    intervals.forEach(f => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) all.forEach(f => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    const llo = Math.log(lo) - .05, lhi = Math.log(hi) + .12;
+    const X = t => pl + (t - ta) / (tb - ta) * (W - pl - pr), Y = v => pt + (lhi - Math.log(v)) / (lhi - llo) * (priceBottom - pt);
+    st.G = { X, Y, ta, tb, vis, visibleBars, pt, pb, W, Hh, pl, pr, priceBottom };
+    const dense = CPSCN.isDense(vis.length, W - pl - pr);
+    ctx.save(); ctx.beginPath(); ctx.rect(pl, pt, W - pl - pr, Hh - pt - pb); ctx.clip();
+    for (const sp of ['cal', 'test']) {
+      const rows = all.filter(f => f.split === sp); if (!rows.length) continue;
+      const x0 = X(rows[0].t), x1 = X(rows[rows.length - 1].t + 7 * DAY);
+      if (x1 < pl || x0 > W - pr) continue;
+      ctx.fillStyle = rgba(col.real, sp === 'cal' ? .045 : .075); ctx.fillRect(x0, pt, x1 - x0, priceBottom - pt);
+      ctx.fillStyle = col.ink3; ctx.font = '10px ' + FU; ctx.textAlign = 'left'; ctx.fillText(SPLIT[sp], Math.max(pl + 4, x0 + 4), priceBottom - 6);
+    }
+    if (hot && hot.w0 != null && historyIntervalAllowed(hot, H)) {
+      const a = X(hot.w0), b = X(hot.w1);
+      ctx.fillStyle = rgba(col.warn, .09); ctx.fillRect(a, pt, Math.max(2, b - a), priceBottom - pt);
+      ctx.strokeStyle = rgba(col.warn, .65); ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      for (const x of [a, b]) { ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, priceBottom); ctx.stroke(); }
+      ctx.setLineDash([]);
+      if (b >= pl && a <= W - pr) { ctx.fillStyle = col.warn; ctx.font = '11px ' + FM; ctx.textAlign = 'left'; ctx.fillText('顶部情景区间', Math.max(pl + 4, Math.min(a + 4, W - pr - 100)), pt + 13); }
+    }
+    ctx.restore();
+    ctx.font = '11px ' + FM; ctx.textAlign = 'left';
+    const step = Math.pow(10, Math.floor(Math.log10(hi - lo || hi))) / 2 || 100, ticks = [];
+    for (let v = Math.ceil(Math.exp(llo) / step) * step; v < Math.exp(lhi); v += step) ticks.push(v);
+    const ts = ticks.length > 6 ? ticks.filter((_, i) => i % Math.ceil(ticks.length / 6) === 0) : ticks;
+    ts.forEach(v => { const y = Math.round(Y(v)) + .5; ctx.strokeStyle = col.grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(W - pr, y); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(Math.round(v), W - pr + 6, y + 4); });
+    const spanY = (tb - ta) / DAY / 365, tickSlots = Math.max(2, Math.min(10, Math.floor((W - pl - pr) / 75))); ctx.textAlign = 'center';
+    function timeTick(t, label) { const x = Math.round(X(t)) + .5; if (x < pl || x > W - pr) return; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.fillStyle = col.ink3; ctx.fillText(label, x, Hh - 10); }
+    if (spanY > 3) {
+      const y0 = new Date(ta).getUTCFullYear(), y1 = new Date(tb).getUTCFullYear(), ys = [1, 2, 3, 5, 10, 20, 50].find(step => step >= spanY / tickSlots) || 50;
+      for (let y = Math.ceil((y0 + 1) / ys) * ys; y <= y1; y += ys) timeTick(Date.UTC(y, 0, 1), y);
+    } else {
+      const ms = [1, 2, 3, 6, 12, 24].find(step => step >= spanY * 12 / tickSlots) || 24, d0 = new Date(ta);
+      for (let y = d0.getUTCFullYear(), m = Math.floor(d0.getUTCMonth() / ms) * ms; ; m += ms) {
+        if (m >= 12) { y += Math.floor(m / 12); m %= 12; }
+        const t = Date.UTC(y, m, 1); if (t > tb) break;
+        timeTick(t, m === 0 ? y : y + '-' + String(m + 1).padStart(2, '0'));
+      }
+    }
+    ctx.save(); ctx.beginPath(); ctx.rect(pl, pt, W - pl - pr, priceBottom - pt); ctx.clip();
+    // Close-only historical segments never cross a genuine OHLC coverage range.
+    ctx.strokeStyle = col.ink2; ctx.lineWidth = 1.2;
+    for (const segment of LPPLMarket.weeklySegments(all, market.ranges)) {
+      ctx.beginPath(); let started = false;
+      for (const f of segment) {
+        if (f.t < ta - 30 * DAY) continue; if (f.t > tb + 30 * DAY) break;
+        started ? ctx.lineTo(X(f.t), Y(f.close)) : ctx.moveTo(X(f.t), Y(f.close)); started = true;
+      }
+      ctx.stroke();
+    }
+    const bw = Math.max(1, Math.min(9, (W - pl - pr) / ((tb - ta) / DAY) * .76));
+    for (const b of visibleBars) {
+      const x = Math.round(X(b.t)) + .5, rising = b.close >= b.open;
+      ctx.strokeStyle = ctx.fillStyle = rising ? col.up : col.dn; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, Y(b.high)); ctx.lineTo(x, Y(b.low)); ctx.stroke();
+      const y = Math.min(Y(b.open), Y(b.close)), h = Math.max(1, Math.abs(Y(b.open) - Y(b.close)));
+      ctx.fillRect(Math.round(x - bw / 2), y, Math.max(1, Math.round(bw)), h);
+    }
+    for (const f of intervals) {
+      if (f === hot) continue;
+      CPSCN.drawRange(ctx, { x0: X(f.t), xa: X(f.w0), xb: X(f.w1), y: Y(f.close), dense });
+    }
+    if (hot && hot.w0 != null && historyIntervalAllowed(hot, H)) CPSCN.drawRange(ctx, { x0: X(hot.t), xa: X(hot.w0), xb: X(hot.w1), y: Y(hot.close), hot: true, dense });
+    for (const top of H.tops) {
+      if (top.t < ta || top.t > tb) continue;
+      let px = -Infinity;
+      for (const b of market.bars) if (Math.abs(b.t - top.t) < 4 * DAY) px = Math.max(px, b.high);
+      if (!Number.isFinite(px)) for (const f of all) if (Math.abs(f.t - top.t) < 21 * DAY) px = Math.max(px, f.close);
+      if (!Number.isFinite(px)) continue;
+      const x = X(top.t), y = Y(px) - 6; CPSCN.drawTop(ctx, x, y);
+      if (spanY <= 8) { ctx.fillStyle = col.real; ctx.font = '10px ' + FM; ctx.textAlign = 'center'; ctx.fillText('事后顶 ' + top.date.slice(0, 7), x, y - 12); }
+    }
+    if (hot || st.marketHover) {
+      const x = Math.round(X(st.marketHover ? st.marketHover.t : hot.t)) + .5;
+      ctx.strokeStyle = rgba('#FFFFFF', .3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, priceBottom); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.restore();
+    if (st.volume) {
+      ctx.strokeStyle = col.line; ctx.beginPath(); ctx.moveTo(pl, volumeTop - 8); ctx.lineTo(W - pr, volumeTop - 8); ctx.stroke();
+      let maxVolume = 0; visibleBars.forEach(b => { if (b.volume != null) maxVolume = Math.max(maxVolume, b.volume); });
+      ctx.save(); ctx.beginPath(); ctx.rect(pl, volumeTop, W - pl - pr, volumeBottom - volumeTop); ctx.clip();
+      for (const b of visibleBars) {
+        if (b.volume == null || !maxVolume) continue;
+        const h = b.volume / maxVolume * (volumeBottom - volumeTop - 4);
+        ctx.fillStyle = rgba(b.close >= b.open ? col.up : col.dn, .55);
+        ctx.fillRect(Math.round(X(b.t) - bw / 2), volumeBottom - h, Math.max(1, Math.round(bw)), h);
+      }
+      ctx.restore(); ctx.fillStyle = col.ink3; ctx.font = '10px ' + FU; ctx.textAlign = 'left';
+      ctx.fillText(visibleBars.some(b => b.volume != null) ? '成交量' : '本区段未提供成交量', pl + 2, volumeTop + 7);
+    }
+    const daily = st.marketHover || visibleBars[visibleBars.length - 1];
+    const weekly = !daily && vis[vis.length - 1];
+    $('market-readout').innerHTML = daily ? `<b>${E(daily.date)}</b><span class="${daily.close >= daily.open ? 'rise' : 'fall'}">开 ${daily.open.toFixed(2)}　高 ${daily.high.toFixed(2)}　低 ${daily.low.toFixed(2)}　收 ${daily.close.toFixed(2)}</span><span>量 ${daily.volume == null ? '未提供' : formatVolume(daily.volume)}</span>` : weekly ? `<b>${E(weekly.asof)}</b><span>周度收盘 ${weekly.close.toFixed(2)} · 未提供开高低与成交量</span>` : '';
+    const missing = vis.filter(f => !LPPLMarket.covered(f.t, market.ranges)).length;
+    $('market-coverage').textContent = (visibleBars.length ? `当前窗口显示 ${visibleBars.length} 根真实日 K；成交量按已有记录显示。` : '当前窗口没有已发布日线，仅显示周度收盘。') + (missing ? '浅色线为缺少 OHLCV 的周度记录，不代表 K 线。' : '') + (market.failures.length ? ' 部分日线快照未载入，可重新读取本指数。' : '') + ` 情景记录截至 ${H.fr[H.fr.length - 1].asof}；此后行情不代表新增模型记录。`;
+    const withW = vis.filter(f => f.w0 != null && historyIntervalAllowed(f, H)).length, nt = H.tops.filter(t => t.t >= ta && t.t <= tb).length;
+    $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>真实日 K</td><td>${visibleBars.length}</td></tr><tr><td>周度截止日</td><td>${vis.length}</td></tr><tr><td>有 6–12 月档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr>`;
+    $('vr').textContent = ymd(ta) + ' – ' + ymd(Math.min(tb, st.tmax));
+    $('sr').textContent = `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，${visibleBars.length} 根真实日 K，${vis.length} 个周度截止日。`;
+  }
+  function formatVolume(value) {
+    return value >= 1e8 ? (value / 1e8).toFixed(2) + ' 亿' : value >= 1e4 ? (value / 1e4).toFixed(2) + ' 万' : String(value);
+  }
+  function historyIntervalAllowed(f, H) {
+    const evidence = (typeof f.evidence === 'string' ? f.evidence : H.evidence) || 'none';
+    return ['dev_only', 'dev', 'cal', 'test', 'cal_fragile'].includes(evidence) || evidence === 'descriptive' && Number.isInteger(f.n) && f.n > 0;
+  }
+
+  /* ---------- 刷选时间轴 ---------- */
+  let ovG = null;
+  function drawOv() {
+    const H = st.H, { ctx, W, H: Hh } = setup($('ov'));
+    if (!H) { ovG = null; return; }
+    const px = (t) => (t - st.tmin) / (st.tmax - st.tmin) * W;
+    const market = st.market || { bars: [], ranges: [] };
+    const all = [...H.fr.filter(f => !LPPLMarket.covered(f.t, market.ranges)), ...market.bars].sort((a, b) => a.t - b.t);
+    let lo = Infinity, hi = -Infinity; all.forEach((f) => { lo = Math.min(lo, f.close); hi = Math.max(hi, f.close); });
+    const llo = Math.log(lo), lhi = Math.log(hi), Y = (v) => 6 + (lhi - Math.log(v)) / Math.max(1e-9, lhi - llo) * (Hh - 12);
+    for (const sp of ['cal', 'test']) {
+      const s = H.fr.filter((f) => f.split === sp); if (!s.length) continue;
+      ctx.fillStyle = rgba(col.real, sp === 'cal' ? 0.1 : 0.18); ctx.fillRect(px(s[0].t), 0, px(s[s.length - 1].t + 7 * DAY) - px(s[0].t), Hh);
+    }
+    ctx.strokeStyle = col.ink3; ctx.lineWidth = 1; ctx.beginPath(); all.forEach((f, i) => { const x = px(f.t), y = Y(f.close); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    ctx.fillStyle = col.real; for (const t of H.tops) { const x = px(t.t); ctx.fillRect(Math.round(x) - 1, Hh - 6, 2, 6); }
+    // 年份刻度
+    ctx.fillStyle = col.ink3; ctx.font = '10px ' + FM; ctx.textAlign = 'left';
+    const y0 = new Date(st.tmin).getUTCFullYear(), y1 = new Date(st.tmax).getUTCFullYear(), ys = W < 520 ? 10 : 5;
+    for (let y = Math.ceil((y0 + 1) / ys) * ys; y <= y1; y += ys) { const x = Math.round(px(Date.UTC(y, 0, 1))) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, Hh); ctx.stroke(); ctx.fillText(y, x + 3, 11); }
+    // 暗化窗口之外
+    const xa = px(st.va), xb = px(st.vb);
+    ctx.fillStyle = 'rgba(13,13,13,.72)'; ctx.fillRect(0, 0, xa, Hh); ctx.fillRect(xb, 0, W - xb, Hh);
+    ctx.strokeStyle = col.warn; ctx.lineWidth = 1.5; ctx.strokeRect(Math.round(xa) + 0.5, 0.5, Math.max(2, xb - xa), Hh - 1);
+    ctx.fillStyle = col.warn; ctx.fillRect(Math.round(xa) - 2, Hh / 2 - 10, 4, 20); ctx.fillRect(Math.round(xb) - 2, Hh / 2 - 10, 4, 20);
+    ovG = { px, W, xa, xb };
+    const o = $('ov'); o.setAttribute('aria-valuenow', Math.round((st.va - st.tmin) / (st.tmax - st.tmin) * 100)); o.setAttribute('aria-valuetext', ymd(st.va) + ' 至 ' + ymd(Math.min(st.vb, st.tmax)));
+  }
+  (function brush() {
+    const o = $('ov'); let drag = null;
+    const inv = (x) => st.tmin + x / ovG.W * (st.tmax - st.tmin);
+    function begin() {
+      if (drag.m === 'j') {
+        const c = inv(drag.x), span = st.vb - st.va;
+        setView(c - span / 2, c + span / 2);
+        drag.m = 'p'; drag.off = span / 2;
+      }
+      drag.active = true;
+    }
+    o.addEventListener('pointerdown', (e) => {
+      if (!ovG || e.button > 0 || e.isPrimary === false) return;
+      const x = e.clientX - o.getBoundingClientRect().left, g = e.pointerType === 'touch' ? 16 : 8;
+      const m = Math.abs(x - ovG.xa) <= g ? 'l' : Math.abs(x - ovG.xb) <= g ? 'r' : x > ovG.xa && x < ovG.xb ? 'p' : 'j';
+      drag = { m, x, startX: e.clientX, startY: e.clientY, off: inv(x) - st.va, id: requestId, active: false, vertical: false };
+      o.setPointerCapture(e.pointerId);
+    });
+    o.addEventListener('pointermove', (e) => {
+      if (!ovG) return; const x = e.clientX - o.getBoundingClientRect().left;
+      if (!drag) { o.style.cursor = (Math.abs(x - ovG.xa) <= 8 || Math.abs(x - ovG.xb) <= 8) ? 'col-resize' : (x > ovG.xa && x < ovG.xb ? 'grab' : 'pointer'); return; }
+      if (drag.id !== requestId || drag.vertical) return;
+      if (!drag.active) {
+        const dx = Math.abs(e.clientX - drag.startX), dy = Math.abs(e.clientY - drag.startY);
+        if (e.pointerType === 'touch' && dy > 6 && dy > dx) { drag.vertical = true; return; }
+        if (dx <= 6) return;
+        begin();
+      }
+      const t = inv(Math.max(0, Math.min(ovG.W, x)));
+      if (drag.m === 'l') setView(Math.min(t, st.vb - MIN_SPAN), st.vb);
+      else if (drag.m === 'r') setView(st.va, Math.max(t, st.va + MIN_SPAN));
+      else setView(t - drag.off, t - drag.off + (st.vb - st.va));
+    });
+    o.addEventListener('pointerup', () => { if (drag && ovG && drag.id === requestId && !drag.active && !drag.vertical) begin(); drag = null; });
+    o.addEventListener('pointercancel', () => { drag = null; });
+    o.addEventListener('keydown', (e) => keyNav(e));
+  })();
+
+  function keyNav(e) {
+    if (!st.H) return; const s = st.vb - st.va; let h = true;
+    if (e.key === 'Enter' && e.currentTarget === $('cv')) {
+      const visible = st.G && st.G.vis;
+      const f = (st.hover && st.hover.f) || st.selected || (visible && visible[visible.length - 1]);
+      if (f) selectFrame(f.asof, $('cv'));
+    }
+    else if (e.key === 'ArrowLeft') setView(st.va - s * (e.shiftKey ? .5 : .1), st.vb - s * (e.shiftKey ? .5 : .1));
+    else if (e.key === 'ArrowRight') setView(st.va + s * (e.shiftKey ? .5 : .1), st.vb + s * (e.shiftKey ? .5 : .1));
+    else if (e.key === '+' || e.key === '=') zoomAt(.5, .7);
+    else if (e.key === '-' || e.key === '_') zoomAt(.5, 1.4);
+    else if (e.key === '0') setPreset(0);
+    else h = false;
+    if (h) e.preventDefault();
+  }
+  $('b-in').onclick = () => zoomAt(.5, .6);
+  $('b-out').onclick = () => zoomAt(.5, 1.6);
+  $('b-all').onclick = () => setPreset(0);
+
+  /* Point-to-segment hit testing selects the interval actually touched, not a nearby date. */
+  function hitFrame(mx, my, tolerance = 14) {
+    const G = st.G;
+    if (!G || !st.H || mx < G.pl || mx > G.W - G.pr || my < G.pt || my > G.priceBottom) return null;
+    let best = null, distance = tolerance * tolerance;
+    for (const f of st.H.fr) {
+      const y = G.Y(f.close), x = G.X(f.t);
+      let d = (mx - x) ** 2 + (my - y) ** 2;
+      if (f.w0 != null && historyIntervalAllowed(f, st.H)) {
+        const a = Math.max(G.pl, G.X(f.w0)), b = Math.min(G.W - G.pr, G.X(f.w1));
+        if (a <= b) d = Math.min(d, Math.max(a - mx, 0, mx - b) ** 2 + (my - y) ** 2);
+      }
+      if (d <= distance) { best = f; distance = d; }
+    }
+    return best;
+  }
+
+  /* ---------- 主图交互：点按详情、滚轮缩放、横向平移；纵向手势留给页面 ---------- */
+  (function interact() {
+    const cv = $('cv'), tip = $('tip'); let drag = null;
+    const hideTip = () => { tip.hidden = true; if (st.hover || st.marketHover) { st.hover = null; st.marketHover = null; draw(); } };
+    function hover(e) {
+      const G = st.G; if (!G) return; const r = cv.getBoundingClientRect(), mx = e.clientX - r.left;
+      if (mx < G.pl || mx > G.W - G.pr) return hideTip();
+      let bar = null, barDistance = Infinity;
+      for (const b of G.visibleBars) { const distance = Math.abs(G.X(b.t) - mx); if (distance < barDistance) { bar = b; barDistance = distance; } }
+      st.marketHover = barDistance <= 16 ? bar : null;
+      let best = null, bd = Infinity; for (const f of G.vis) { const d = Math.abs(G.X(f.t) - mx); if (d < bd) { bd = d; best = f; } }
+      if (!best || bd > 24) { st.hover = null; tip.hidden = true; draw(); return; }
+      st.hover = { f: best }; draw();
+      const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * DAY), w = best.w || {};
+      tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${E(SPLIT[best.split] || best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
+        (best.w0 != null && historyIntervalAllowed(best, st.H) ? `6–12 月档情景区间<br><b>${E(w['6-12m'][0])} – ${E(w['6-12m'][1])}</b>` : '6–12 月档无可展示区间') +
+        (w['12-24m'] && historyIntervalAllowed(best, st.H) ? `<br>12–24 月档 ${E(w['12-24m'][0])} – ${E(w['12-24m'][1])}` : '') +
+        (top ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(top.max_dd)}（事后实测）</span>` : '');
+      tip.hidden = false;
+      const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);
+      tip.style.left = Math.max(8, tx) + 'px'; tip.style.top = Math.max(8, e.clientY - r.top - tip.offsetHeight - 12) + 'px';
+    }
+    cv.addEventListener('pointerdown', (e) => {
+      if (!st.H || e.button > 0 || e.isPrimary === false) return;
+      drag = { x: e.clientX, y: e.clientY, va: st.va, vb: st.vb, id: requestId, moved: false, vertical: false };
+      cv.setPointerCapture(e.pointerId);
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (drag) {
+        if (drag.id !== requestId || drag.vertical) return;
+        const G = st.G, dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if (!drag.moved && e.pointerType === 'touch' && Math.abs(dy) > 6 && Math.abs(dy) > Math.abs(dx)) { drag.vertical = true; return; }
+        if (Math.abs(dx) > 6) { drag.moved = true; cv.classList.add('grab'); tip.hidden = true; }
+        if (drag.moved && G) { const dt = -dx / (G.W - G.pl - G.pr) * (drag.vb - drag.va); setView(drag.va + dt, drag.vb + dt); }
+      } else hover(e);
+    });
+    cv.addEventListener('pointerup', e => {
+      const click = drag && drag.id === requestId && !drag.moved && !drag.vertical;
+      drag = null; cv.classList.remove('grab');
+      if (!click) return;
+      const r = cv.getBoundingClientRect(), f = hitFrame(e.clientX - r.left, e.clientY - r.top, e.pointerType === 'touch' ? 22 : 14);
+      if (f) { hideTip(); selectFrame(f.asof, cv); }
+    });
+    cv.addEventListener('pointercancel', () => { drag = null; cv.classList.remove('grab'); });
+    cv.addEventListener('mouseleave', () => { if (!drag) hideTip(); });
+    cv.addEventListener('wheel', (e) => {
+      if (!st.H || !st.G) return; e.preventDefault();
+      const r = cv.getBoundingClientRect(), G = st.G, f = Math.max(0, Math.min(1, (e.clientX - r.left - G.pl) / (G.W - G.pl - G.pr)));
+      zoomAt(f, e.deltaY < 0 ? 0.82 : 1.22);
+    }, { passive: false });
+    cv.addEventListener('dblclick', () => setPreset(0));
+    cv.addEventListener('keydown', keyNav);
+  })();
+
+  let rz = 0; window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { draw(); drawOv(); }); });
+  window.LPPLHistoryPreview = {
+    getContext: () => ({ symbol: st.sym, H: st.H }),
+    selectFrame,
+    showDates(a, b) {
+      if (!st.H) return false;
+      const fa = st.H.fr.find(f => f.asof === a), fb = st.H.fr.find(f => f.asof === b);
+      if (!fa || !fb) return false;
+      const start = Math.min(fa.t, fb.t), end = Math.max(fa.t, fb.t, fa.w1 || fa.t, fb.w1 || fb.t), margin = Math.max(21 * DAY, (end - start) * .08);
+      setView(start - margin, end + margin); return true;
+    }
+  };
+  load();
+})();
+</script>
+<script src="app/history-comparison-editorial.js"></script>
+</body>
+</html>
