@@ -67,6 +67,13 @@ def _load_library(data_dir: Path) -> tuple[dict, pd.DataFrame, dict[str, str]]:
     return manifest, event_frame, industries
 
 
+def _load_oos_verdict(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {"items": {}, "label": "样本外检验未完成"}
+
+
 def _first_touch(values: pd.Series) -> dict:
     valid = values.dropna()
     total = len(valid)
@@ -305,6 +312,7 @@ def _state(prices: pd.DataFrame) -> tuple[dict, float | None, float | None]:
 
 def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dict:
     data_path = Path(data_dir) if data_dir is not None else DIP_DATA
+    oos_verdict = _load_oos_verdict(data_path / "oos_verdict.json")
     state, vol_d, _ = _state(prices)
     regime = _regime(prices)
     try:
@@ -361,8 +369,8 @@ def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dic
     return _json_safe(
         {
             "evidence": "descriptive",
-            "oos": "pending",
-            "note": "历史分位，不是预测；样本外检验进行中",
+            "oos": oos_verdict,
+            "note": "历史分位，不是预测；样本外检验结果见各卡片标识",
             "lib": {
                 "version": manifest.get("version"),
                 "cutoff": manifest.get("cutoff"),
