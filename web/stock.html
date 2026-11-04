@@ -122,9 +122,11 @@ function dipEnvironmentHtml(env){
   const shares=env.shares||{}, options=env.options||{};
   const shareItems=Object.keys(names).map(code=>{
     const x=shares[code]||{};
+    const stale=x.stale?`<div class="dip-label">沿用 ${esc(x.as_of||'—')} 的数据</div>`:'';
+    if(x.available===false) return `<div class="dip-env-item"><b>${names[code]}</b>${stale}<p>${esc(x.reason||'暂无')}</p></div>`;
     const dates=(x.mad_subscription_dates||[]).slice(-3).map(v=>`<li>${esc(v.date)}：${dipSigned(v.change==null?null:Number(v.change)/1e4)} 亿份，偏离常态 ${dipFixed(v.robust_z,1)} 倍</li>`).join('')||'<li>—</li>';
     const twentyDay=`${dipSigned(x.change_20d_shares_yi)} 亿份（${dipSigned(dipPctChange(x.change_20d),1)}%）`;
-    return `<div class="dip-env-item"><b>${names[code]}</b><p>近 20 个交易日份额 ${twentyDay}。</p>${dipStatBlock([['最新总份额',`${dipFixed(x.latest_shares_yi)} 亿份`],['5日份额变化',dipShareChange(x,5)],['20日份额变化',dipShareChange(x,20)],['60日份额变化',dipShareChange(x,60)]])}<div class="dip-label">样本：${dipNum(x.n_days)} 日；最新日 ${esc(x.latest_date||'—')}；20日分母日 ${esc(x.change_20d_from||'—')}</div><div class="dip-label">单日申购明显偏大的日子（最近 3 次）</div><ul class="dip-anomalies">${dates}</ul></div>`;
+    return `<div class="dip-env-item"><b>${names[code]}</b>${stale}<p>近 20 个交易日份额 ${twentyDay}。</p>${dipStatBlock([['最新总份额',`${dipFixed(x.latest_shares_yi)} 亿份`],['5日份额变化',dipShareChange(x,5)],['20日份额变化',dipShareChange(x,20)],['60日份额变化',dipShareChange(x,60)]])}<div class="dip-label">样本：${dipNum(x.n_days)} 日；最新日 ${esc(x.latest_date||'—')}；20日分母日 ${esc(x.change_20d_from||'—')}</div><div class="dip-label">单日申购明显偏大的日子（最近 3 次）</div><ul class="dip-anomalies">${dates}</ul></div>`;
   }).join('');
   const optionItems=Object.keys(names).map(code=>{
     const x=options[code]||{};

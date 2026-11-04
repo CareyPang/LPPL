@@ -4,8 +4,9 @@ import json
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 
-from research.dip import events, panel
+from research.dip import env, events, panel
 from research.dip.env import _share_summary
 from research.pipeline import stock
 
@@ -229,6 +230,47 @@ def test_share_summary_uses_sse_10k_units_and_deduplicates_dates():
     assert summary["change_20d_from"] == "2026-01-02"
     assert summary["change_20d_shares_yi"] == pytest.approx(2.0)
     assert summary["change_20d"] == pytest.approx(1_021_000 / 1_001_000 - 1)
+
+
+def test_share_http_403_degrades_without_crashing(monkeypatch):
+    monkeypatch.setattr(
+        env, "fetch_tencent_sina",
+        lambda *args: pd.DataFrame({"date": ["2026-01-01"]}),
+    )
+    monkeypatch.setattr(env.time, "sleep", lambda *_: None)
+    def forbidden(*args, **kwargs):
+        raise requests.HTTPError("403 Client Error")
+    monkeypatch.setattr(env.requests, "get", forbidden)
+
+    frame = env._share_history()
+    summary = _share_summary(frame, "510300")
+
+    assert summary == {
+        "available": False,
+        "reason": "HTTPError: 403 Client Error",
+    }
+
+
+def test_share_http_403_carries_forward_previous_data(monkeypatch):
+    monkeypatch.setattr(
+        env, "fetch_tencent_sina",
+        lambda *args: pd.DataFrame({"date": ["2026-01-01"]}),
+    )
+    monkeypatch.setattr(env.time, "sleep", lambda *_: None)
+    monkeypatch.setattr(
+        env.requests, "get",
+        lambda *args, **kwargs: (_ for _ in ()).throw(requests.HTTPError("403")),
+    )
+    previous = {
+        "asof": "2025-12-31",
+        "shares": {"510300": {"latest_shares_yi": 10.0}},
+    }
+
+    summary = _share_summary(env._share_history(), "510300", previous)
+
+    assert summary["latest_shares_yi"] == 10.0
+    assert summary["stale"] is True
+    assert summary["as_of"] == "2025-12-31"
 
 
 def test_summary_reports_valid_sample_count_for_each_outcome():
