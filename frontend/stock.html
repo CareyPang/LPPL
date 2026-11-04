@@ -5,434 +5,166 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>临界点 · 个股</title>
   <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0D0D0D;
-      --surface: #141414;
-      --surface-2: #1A1A1A;
-      --line: #2A2A2A;
-      --grid: #1E1E1E;
-      --ink: #FFF;
-      --ink-2: #AAA;
-      --ink-3: #828282;
-      --warn: #FFB800;
-      --real: #4DA3FF;
-      --f-m: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-      --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
-      --s1: 4px;
-      --s2: 8px;
-      --s3: 12px;
-      --s4: 16px;
-      --s6: 24px;
+      --bg: #05131A;
+      --bg-2: #0A1E27;
+      --glass: rgba(255, 255, 255, .035);
+      --glass-2: rgba(255, 255, 255, .06);
+      --line: rgba(159, 227, 224, .14);
+      --line-2: rgba(159, 227, 224, .26);
+      --ink: #EAF3F4;
+      --ink-2: rgba(234, 243, 244, .74);
+      --ink-3: rgba(234, 243, 244, .52);
+      --cyan: #9FE3E0;
+      --amber: #F5B700;
+      --warn: #FFB259;
+      --up: #FF6B73;
+      --down: #3DD6B5;
+      --real: #9FE3E0;
+      --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+      --f-u: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", "Noto Sans CJK SC", system-ui, sans-serif;
+      --f-m: "JetBrains Mono", "Cascadia Mono", Consolas, "Noto Sans SC", "Microsoft YaHei UI", monospace;
+      --r: 16px;
+      --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
     }
-
-    * {
-      box-sizing: border-box;
-      border-radius: 0;
-    }
-
-    html,
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
     body {
-      margin: 0;
-    }
-
-    body {
-      background: var(--bg);
+      background:
+        radial-gradient(1200px 520px at 78% -10%, rgba(159, 227, 224, .12), transparent 60%),
+        radial-gradient(900px 600px at -10% 10%, rgba(245, 183, 0, .05), transparent 60%),
+        linear-gradient(180deg, var(--bg-2), var(--bg) 640px);
+      background-color: var(--bg);
       color: var(--ink);
-      font: 14px/1.5 var(--f-u);
+      font: 400 15px/1.7 var(--f-u);
       -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
+    button, input { font: inherit; color: inherit; }
+    a { color: var(--ink-2); text-decoration: none; }
+    h1, h2, h3, h4 { font-weight: 600; letter-spacing: .02em; }
+    .m, .dip-value, .table td, .tile b { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 6px; }
+    [hidden] { display: none !important; }
 
-    button,
-    input {
-      font: inherit;
-      color: inherit;
+    .bar { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      background: rgba(5, 19, 26, .72); border-bottom: 1px solid var(--line); }
+    .bar-in { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: var(--s5); padding: 14px var(--s5); flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 600 17px/1 var(--serif); letter-spacing: .12em; color: var(--ink); }
+    .brand .mark { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--cyan); position: relative; }
+    .brand .mark::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--cyan); }
+    .nav { display: flex; gap: 22px; font-size: 14px; flex-wrap: wrap; margin-left: auto; }
+    .nav a { padding: 4px 0; border-bottom: 1.5px solid transparent; transition: color .2s, border-color .2s; }
+    .nav a:hover, .nav a[aria-current=page] { color: var(--ink); border-bottom-color: var(--cyan); }
+    .asof { font: 500 12px var(--f-m); color: var(--ink-3); }
+
+    main { max-width: 1200px; margin: 0 auto; padding: var(--s6) var(--s5) var(--s7); display: grid; gap: var(--s6); }
+    .hero { padding: var(--s5) 0 0; }
+    .eyebrow { font: 500 12px var(--f-m); letter-spacing: .24em; color: var(--cyan); text-transform: uppercase; }
+    .hero h1 { font: 600 clamp(32px, 4.4vw, 52px)/1.2 var(--serif); letter-spacing: .06em; margin: var(--s3) 0 var(--s3); }
+    .hero .lead { color: var(--ink-2); font-size: 16px; max-width: 640px; margin: 0 0 var(--s5); }
+    .search { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--glass-2); border: 1px solid var(--line-2);
+      border-radius: 999px; padding: 6px 6px 6px 22px; max-width: 560px; }
+    .search label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font: 500 20px var(--f-m); letter-spacing: .18em; padding: 8px 0; }
+    .search input::placeholder { color: var(--ink-3); letter-spacing: .06em; font: 400 15px var(--f-u); }
+    .search button { border: 0; border-radius: 999px; background: var(--cyan); color: #05222A; font-weight: 600; padding: 12px 28px; cursor: pointer; transition: transform .15s, background .2s; }
+    .search button:hover { background: #C3F1EF; transform: translateY(-1px); }
+    .name-hint { min-height: 26px; margin: var(--s3) 0 0 22px; font-size: 14px; color: var(--ink-2); }
+    .name-hint b { color: var(--ink); font-family: var(--serif); font-size: 16px; margin-right: 8px; }
+    .chips { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s3); }
+    .chip { border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
+    .chip:hover { border-color: var(--cyan); color: var(--ink); }
+    .chip .m { color: var(--ink-3); margin-left: 6px; font-size: 12px; }
+    .note { font-size: 13px; color: var(--ink-3); margin: var(--s4) 0 0; }
+    .status { color: var(--cyan); font-size: 14px; margin: var(--s3) 0 0; min-height: 1.7em; }
+    .status:empty { display: none; }
+    .muted { color: var(--ink-3); }
+    .error { color: var(--up); }
+
+    .stock-head { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; padding-bottom: var(--s4); border-bottom: 1px solid var(--line); }
+    .stock-head h2 { font: 600 clamp(28px, 3.4vw, 40px)/1.15 var(--serif); letter-spacing: .06em; margin: 0; }
+    .stock-head .code { font: 500 18px var(--f-m); color: var(--ink-2); letter-spacing: .08em; }
+    .stock-meta { width: 100%; font-size: 13px; color: var(--ink-3); }
+    .ev-pill { margin-left: auto; font-size: 12px; color: var(--warn); border: 1px solid rgba(255, 178, 89, .5); border-radius: 999px; padding: 3px 12px; }
+
+    .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); margin-top: var(--s5); }
+    .sum-card { border: 1px solid var(--line); border-radius: var(--r); background: var(--glass); padding: var(--s5); min-width: 0; position: relative; overflow: hidden; }
+    .sum-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent, var(--cyan)); }
+    .sum-card.top { --accent: var(--amber); }
+    .sum-card.dip { --accent: var(--cyan); }
+    .sum-card h3 { font: 600 20px var(--serif); margin: 0 0 var(--s2); display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+    .state-pill { font: 500 12px var(--f-u); border-radius: 999px; padding: 2px 10px; background: rgba(255, 255, 255, .08); color: var(--ink-2); letter-spacing: 0; }
+    .state-pill.hot { background: rgba(245, 183, 0, .16); color: var(--amber); }
+    .state-pill.on { background: rgba(159, 227, 224, .14); color: var(--cyan); }
+    .sum-card p { margin: 0 0 var(--s4); color: var(--ink-2); font-size: 15px; }
+    .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+    .tile { background: rgba(0, 0, 0, .18); border-radius: 12px; padding: var(--s3); min-width: 0; }
+    .tile small { display: block; font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+    .tile b { display: block; font-size: 22px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
+    .tile .sub { font-size: 12px; color: var(--ink-3); }
+    .pos { color: var(--up); }
+    .neg { color: var(--down); }
+    .sum-foot { margin-top: var(--s4); font-size: 13px; color: var(--ink-3); }
+
+    .section { margin-top: var(--s7); }
+    .sec-h { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
+    .sec-h h2 { font: 600 26px var(--serif); margin: 0; letter-spacing: .06em; }
+    .sec-h .muted { font-size: 13px; }
+    .grid, .dip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+    .card, .dip-card { min-width: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--glass); padding: var(--s5); }
+    .card h3, .dip-card h3 { font: 600 18px var(--serif); margin: 0 0 var(--s3); letter-spacing: .04em; }
+    .dip-card h4 { font-size: 15px; margin: var(--s5) 0 var(--s3); color: var(--ink); }
+    .dip-card p { margin: var(--s2) 0 var(--s3); color: var(--ink-2); }
+    .wide { grid-column: 1 / -1; }
+    .scroll { max-width: 100%; overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; white-space: nowrap; }
+    .table th { font: 500 12px var(--f-u); color: var(--ink-3); background: rgba(255, 255, 255, .02); }
+    .table tbody tr:hover { background: rgba(159, 227, 224, .04); }
+    .range { color: var(--amber); }
+    .disclaimer, .dip-disclaimer { font-size: 12.5px; color: var(--ink-3); margin: var(--s3) 0 0; }
+    .badge { display: inline-block; border: 1px solid rgba(255, 178, 89, .55); color: var(--warn); border-radius: 999px; padding: 2px 10px; margin: 0 var(--s2) var(--s2) 0; font-size: 12px; }
+    .plot { height: 300px; width: 100%; display: block; background: rgba(0, 0, 0, .18); border-radius: 12px; margin-top: var(--s3); }
+    .dip-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--s4); }
+    .dip-values > div { min-width: 0; border-bottom: 1px solid var(--line); padding: 10px 0; overflow-wrap: anywhere; }
+    .dip-label { display: block; color: var(--ink-3); font-size: 12.5px; }
+    .dip-value { font-size: 15px; overflow-wrap: anywhere; }
+    .dip-pool { margin: var(--s4) 0; }
+    .dip-pool-head, .dip-prob-row { display: flex; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
+    .dip-pool-head b { font-size: 15px; }
+    .dip-pool-head span { font-size: 13px; color: var(--ink-3); }
+    .dip-prob-row { font-size: 13px; color: var(--ink-2); margin-top: var(--s2); }
+    .dip-quantile { table-layout: fixed; min-width: 640px; }
+    .dip-quantile th, .dip-quantile td { white-space: normal; padding: 10px 8px; }
+    .dip-quantile th:first-child, .dip-quantile td:first-child { width: 132px; font-family: var(--f-u); }
+    .scroll { scrollbar-color: rgba(159, 227, 224, .3) transparent; scrollbar-width: thin; }
+    .dip-stale { color: var(--warn); font-size: 12.5px; }
+    .env-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+    .env-item { border: 1px solid var(--line); border-radius: 12px; background: rgba(0, 0, 0, .14); padding: var(--s4); min-width: 0; }
+    .env-item b { font-size: 15px; }
+    .env-item small { display: block; color: var(--ink-3); font-size: 12px; margin-top: var(--s2); }
+    .anomalies { padding-left: 20px; font-size: 13px; color: var(--ink-2); margin: var(--s1) 0 0; }
+    .lib-line { font-size: 13px; color: var(--ink-3); margin: 0 0 var(--s4); }
+    footer { max-width: 1200px; margin: 0 auto; padding: var(--s5); font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--line); }
+
+    @media (max-width: 860px) {
+      .summary, .grid, .dip-grid, .env-grid { grid-template-columns: minmax(0, 1fr); }
+      .wide { grid-column: auto; }
     }
-
-    a {
-      color: var(--ink-2);
-      text-decoration: none;
-    }
-
-    .m {
-      font-family: var(--f-m);
-      font-variant-numeric: tabular-nums;
-    }
-
-    :focus-visible {
-      outline: 2px solid var(--real);
-      outline-offset: 1px;
-    }
-
-    .bar {
-      border-bottom: 1px solid var(--line);
-      background: var(--surface);
-    }
-
-    .bar-in {
-      display: flex;
-      align-items: center;
-      gap: var(--s4);
-      padding: var(--s2) var(--s4);
-      flex-wrap: wrap;
-    }
-
-    .brand {
-      font: 600 15px/1 var(--f-m);
-      letter-spacing: .04em;
-    }
-
-    .brand small {
-      display: block;
-      font: 500 10px/1 var(--f-u);
-      color: var(--ink-3);
-      letter-spacing: .12em;
-      margin-top: var(--s1);
-    }
-
-    .nav {
-      display: flex;
-      gap: var(--s4);
-      font-size: 13px;
-      flex-wrap: wrap;
-      margin-left: auto;
-    }
-
-    .nav a {
-      padding: var(--s2) 0;
-      border-bottom: 1px solid transparent;
-    }
-
-    .nav a:hover,
-    .nav a[aria-current=page] {
-      color: var(--ink);
-      border-bottom-color: var(--warn);
-    }
-
-    .asof {
-      font-size: 12px;
-      color: var(--ink-3);
-    }
-
-    main {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: var(--s4);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--s4);
-    }
-
-    .sec {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      padding: var(--s4);
-      min-width: 0;
-    }
-
-    .sec h1 {
-      font-size: 19px;
-      margin: 0 0 var(--s3);
-    }
-
-    .sec h2 {
-      font-size: 15px;
-      margin: 0;
-    }
-
-    .sec-h {
-      display: flex;
-      align-items: baseline;
-      gap: var(--s3);
-      flex-wrap: wrap;
-      margin-bottom: var(--s3);
-    }
-
-    .note,
-    .muted {
-      color: var(--ink-3);
-    }
-
-    .note {
-      font-size: 12px;
-      margin: var(--s2) 0 0;
-    }
-
-    .search {
-      display: flex;
-      align-items: center;
-      gap: var(--s2);
-      flex-wrap: wrap;
-    }
-
-    .search input {
-      background: var(--bg);
-      border: 1px solid var(--line);
-      padding: var(--s2) var(--s3);
-      width: 170px;
-    }
-
-    .search button {
-      background: transparent;
-      border: 1px solid var(--line);
-      padding: var(--s2) var(--s3);
-      cursor: pointer;
-    }
-
-    .search button:hover {
-      border-color: var(--warn);
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    .badge {
-      display: inline-block;
-      border: 1px solid var(--warn);
-      color: var(--warn);
-      padding: 2px 6px;
-      margin-right: var(--s2);
-      font-size: 11px;
-    }
-
-    .status {
-      color: var(--ink-2);
-      font-size: 12px;
-      margin: var(--s2) 0;
-    }
-
-    .error {
-      color: #FF8A94;
-    }
-
-    .stock-meta {
-      color: var(--ink-3);
-      font-size: 12px;
-      margin-bottom: var(--s3);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--s4);
-    }
-
-    .card {
-      min-width: 0;
-      border: 1px solid var(--line);
-      background: var(--surface-2);
-      padding: var(--s3);
-    }
-
-    .card h3 {
-      font-size: 14px;
-      margin: 0 0 var(--s2);
-    }
-
-    .wide {
-      grid-column: 1 / -1;
-    }
-
-    .scroll {
-      max-width: 100%;
-      overflow-x: auto;
-    }
-
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      font: 12px var(--f-m);
-    }
-
-    .table th,
-    .table td {
-      padding: var(--s2);
-      border-bottom: 1px solid var(--line);
-      text-align: left;
-      vertical-align: top;
-    }
-
-    .table th {
-      font: 500 11px var(--f-u);
-      color: var(--ink-3);
-    }
-
-    .table td {
-      font-variant-numeric: tabular-nums;
-    }
-
-    .range {
-      color: var(--warn);
-    }
-
-    .disclaimer {
-      font-size: 11px;
-      color: var(--ink-3);
-      margin: var(--s2) 0 0;
-    }
-
-    .kv {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--s2);
-    }
-
-    .kv div {
-      border-bottom: 1px solid var(--line);
-      padding: var(--s2) 0;
-      min-width: 0;
-    }
-
-    .kv small {
-      display: block;
-      color: var(--ink-3);
-      font-size: 11px;
-    }
-
-    .plot {
-      height: 260px;
-      width: 100%;
-      display: block;
-      background: var(--bg);
-      margin-top: var(--s2);
-    }
-
-    .dip-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--s3);
-    }
-
-    .dip-card {
-      min-width: 0;
-      border: 1px solid var(--line);
-      background: var(--surface-2);
-      padding: var(--s3);
-    }
-
-    .dip-card h3 {
-      margin: 0 0 var(--s2);
-    }
-
-    .dip-card p {
-      margin: var(--s2) 0;
-    }
-
-    .dip-values {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--s2);
-    }
-
-    .dip-values > div {
-      min-width: 0;
-      border-bottom: 1px solid var(--line);
-      padding: var(--s2) 0;
-      overflow-wrap: anywhere;
-    }
-
-    .dip-label {
-      display: block;
-      color: var(--ink-3);
-      font-size: 11px;
-    }
-
-    .dip-value {
-      font-variant-numeric: tabular-nums;
-      overflow-wrap: anywhere;
-    }
-
-    .dip-pool {
-      margin: var(--s3) 0;
-    }
-
-    .dip-pool-head,
-    .dip-prob-row {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--s2);
-      flex-wrap: wrap;
-    }
-
-    .dip-prob-row {
-      font-size: 11px;
-      color: var(--ink-2);
-    }
-
-    .dip-quantile {
-      table-layout: fixed;
-      min-width: 620px;
-    }
-
-    .dip-quantile td,
-    .dip-quantile th {
-      padding: var(--s1);
-      overflow-wrap: anywhere;
-    }
-
-    .env-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--s2);
-    }
-
-    .env-item {
-      border: 1px solid var(--line);
-      padding: var(--s2);
-      min-width: 0;
-    }
-
-    .anomalies {
-      padding-left: 20px;
-      font-size: 11px;
-    }
-
-    .dip-disclaimer {
-      font-size: 11px;
-      color: var(--ink-3);
-    }
-
-    footer {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: var(--s3) var(--s4) var(--s6);
-      font-size: 12px;
-      color: var(--ink-3);
-      border-top: 1px solid var(--line);
-    }
-
-    @media (max-width: 760px) {
-      main {
-        padding: var(--s2);
-      }
-
-      .grid,
-      .dip-grid,
-      .env-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .wide {
-        grid-column: auto;
-      }
-
-      .kv,
-      .dip-values {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .bar-in {
-        gap: var(--s2);
-      }
-
-      .nav {
-        gap: var(--s3);
-      }
-
-      .asof {
-        margin-left: auto;
-      }
+    @media (max-width: 560px) {
+      main { padding: var(--s5) var(--s4) var(--s6); gap: var(--s5); }
+      .bar-in { padding: 10px var(--s4); gap: var(--s3); }
+      .nav { gap: 14px; font-size: 13px; margin-left: 0; width: 100%; order: 3; }
+      .asof { margin-left: auto; }
+      .tiles, .dip-values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .search { padding-left: 16px; }
+      .search button { padding: 10px 18px; }
+      .card, .dip-card, .sum-card { padding: var(--s4); }
+      .ev-pill { margin-left: 0; }
     }
   </style>
   <script src="app/lppl-data.js"></script>
@@ -440,7 +172,7 @@
 <body>
   <header class="bar">
     <div class="bar-in">
-      <div class="brand">临界点个股<small>LPPLS 风险窗口 · 描述性结果</small></div>
+      <a class="brand" href="home.html"><span class="mark" aria-hidden="true"></span>临界点</a>
       <nav class="nav" aria-label="页面导航">
         <a href="home.html">首页</a>
         <a href="index.html">终端</a>
@@ -449,47 +181,64 @@
         <a href="stock.html" aria-current="page">个股</a>
         <a href="lab/guide.html">用户指南</a>
       </nav>
-      <span class="asof m" id="asof">—</span>
+      <span class="asof" id="asof">—</span>
     </div>
   </header>
 
   <main>
-    <section class="sec">
-      <h1>个股风险窗口</h1>
+    <section class="hero">
+      <div class="eyebrow">Stock · 逃顶 / 抄底</div>
+      <h1>个股风险与深跌结构</h1>
+      <p class="lead">输入 A 股六位代码，同时看两件事：现在有没有泡沫风险窗口；如果已经大跌，历史上类似的股票后来怎样。</p>
       <form class="search" id="search">
         <label for="code">六位股票代码</label>
-        <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="例如 301196" required>
-        <button type="submit">查看</button>
+        <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入六位代码，例如 301196" required>
+        <button type="submit">分析</button>
       </form>
-      <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
+      <div class="name-hint" id="name-hint" aria-live="polite"></div>
+      <div class="chips" id="chips"></div>
       <p id="query-status" class="status" role="status"></p>
+      <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
     </section>
 
-    <section class="sec" id="results" hidden>
-      <div class="stock-meta" id="stock-meta"></div>
-      <div class="grid">
-        <section class="card wide">
-          <div class="sec-h">
-            <h2>逃顶（LPPLS 风险窗口）</h2>
-            <span class="muted">时间窗只显示区间，不显示精确顶部日期</span>
-          </div>
-          <div id="risk"></div>
-        </section>
-        <section class="card wide">
-          <h2>104 周历史情景区间</h2>
-          <div id="history-note" class="note"></div>
-          <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
-          <p class="note">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
-        </section>
-        <section class="card wide">
-          <h2>抄底面板</h2>
-          <div id="dip-panel"></div>
-        </section>
+    <section id="results" hidden>
+      <div class="stock-head">
+        <h2 id="stock-name">—</h2>
+        <span class="code" id="stock-code"></span>
+        <span class="ev-pill">研究候选 · 未经样本外检验</span>
+        <div class="stock-meta" id="stock-meta"></div>
       </div>
+      <div class="summary" id="summary"></div>
+
+      <section class="section" id="sec-top">
+        <div class="sec-h">
+          <h2>逃顶</h2>
+          <span class="muted">LPPLS 风险窗口 · 时间窗只显示区间，不显示精确顶部日期</span>
+        </div>
+        <div class="grid">
+          <section class="card wide">
+            <div id="risk"></div>
+          </section>
+          <section class="card wide">
+            <h3>104 周历史情景区间</h3>
+            <div id="history-note" class="disclaimer"></div>
+            <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
+            <p class="disclaimer">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
+          </section>
+        </div>
+      </section>
+
+      <section class="section" id="sec-dip">
+        <div class="sec-h">
+          <h2>抄底</h2>
+          <span class="muted">描述性统计 · 历史分位，不是预测</span>
+        </div>
+        <div id="dip-panel"></div>
+      </section>
     </section>
   </main>
 
-  <footer>数据仅通过 Open Design 个股数据适配层读取。</footer>
+  <footer>数据仅通过 Open Design 个股数据适配层读取；页面不计算任何模型值。</footer>
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -627,9 +376,11 @@
         </p>
       `).join('');
       return `
+        <h3>现在在风险窗口里吗？</h3>
         <p>状态：${esc(status)}。个股开发段结果不代表预测。</p>
         ${range}
         ${scenarioText}
+        <h3 style="margin-top:24px">各尺度拟合</h3>
         <div class="scroll">
           <table class="table">
             <thead>
@@ -679,7 +430,7 @@
       const low = Math.min(...closes);
       const high = Math.max(...closes);
       const y = (value) => height - 8 - (value - low) / (high - low || 1) * (height - 16);
-      context.strokeStyle = '#2A2A2A';
+      context.strokeStyle = 'rgba(159,227,224,.08)';
       for (let index = 1; index < 4; index += 1) {
         context.beginPath();
         context.moveTo(0, height * index / 4);
@@ -693,12 +444,13 @@
               continue;
             }
             const left = frame.asof < scenario.q20_date ? scenario.q20_date : frame.asof;
-            context.fillStyle = 'rgba(255,184,0,.12)';
+            context.fillStyle = 'rgba(245,183,0,.16)';
             context.fillRect(x(left), 4, Math.max(1, x(scenario.q80_date) - x(left)), 8);
           }
         }
       }
-      context.strokeStyle = '#AAAAAA';
+      context.strokeStyle = '#9FE3E0';
+      context.lineWidth = 1.5;
       context.beginPath();
       closes.forEach((close, index) => {
         if (index) {
@@ -937,7 +689,7 @@
 
       host.innerHTML = `
         <p>只描述历史上类似情况后来怎样，不是预测，也不构成投资建议。</p>
-        <p class="disclaimer">
+        <p class="lib-line">
           事件库 ${esc(lib.version || '—')} · 数据截至 ${esc(lib.cutoff || '—')} · 共 ${dnum(lib.n_events)} 个事件
         </p>
         <div class="dip-grid">
@@ -1034,11 +786,83 @@
       `;
     }
 
+    let nameIndex = {};
+    const code6 = (symbol) => String(symbol || '').replace(/^[a-z]{2}/i, '');
+    const realName = (name, symbol) =>
+      name && !/^(sh|sz|bj)?\d{6}$/i.test(String(name)) ? String(name) : '';
+    const stockName = (d) =>
+      realName(d.name, d.symbol) || realName(nameIndex[code6(d.symbol)]?.name) || '';
+    const signCls = (value) =>
+      value == null || !Number.isFinite(Number(value)) || Number(value) === 0 ? '' : Number(value) > 0 ? 'pos' : 'neg';
+    const tile = (label, value, cls = '', sub = '') =>
+      `<div class="tile"><small>${esc(label)}</small><b class="${cls}">${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`;
+
+    function summaryHtml(d, name) {
+      const top = d.top || {};
+      const confidence = top.lppls_confidence || {};
+      const window = top.window || {};
+      const indicators = top.indicators || {};
+      const shownScales = scales.filter((scale) => !hiddenEv(
+        confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
+      ));
+      const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
+      const hasWindow = window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
+      const topState = hasWindow ? ['hot', '有风险窗口'] : top.signal_status === 'signal' ? ['hot', '有合格拟合'] : ['', '不在风险窗口'];
+      const topText = hasWindow
+        ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
+        : `${signalStatus[top.signal_status] || '暂无结果'}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '说明价格走势不符合 LPPLS 泡沫形态，不代表不会下跌。' : ''}`;
+      const dip = d.dip || {};
+      const state = dip.state || {};
+      const full = dip.similar?.full || {};
+      const q = full.q || {};
+      const fh = dip.first_hit?.fh60 || {};
+      const verdict = dip.oos || {};
+      const inStructure = dip.in_structure === true;
+      const dipState = !d.dip ? ['', '暂无结果'] : inStructure ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
+      let dipText = '暂无抄底面板结果。';
+      if (d.dip) {
+        dipText = inStructure
+          ? `距 ${state.peak_date || '—'} 高点已跌 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}，波动处于近 5 年 ${dipPct(state.rv20_pct5y)} 分位。历史上 ${dnum(full.n)} 个类似事件，120 个交易日后收益中位数 ${dipPct(q.r120?.[2])}，一半落在 ${dipPct(q.r120?.[1])} 至 ${dipPct(q.r120?.[3])} 之间。`
+          : `不满足“此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日”，不做相似事件对照。距 ${state.peak_date || '—'} 高点 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}。`;
+      }
+      const topTiles = [
+        tile('合格拟合的尺度', `${qualified.length} / ${shownScales.length || 6}`),
+        tile('风险窗口', hasWindow ? `${window.start} – ${window.end}` : '无'),
+        tile('证据等级', '研究候选'),
+      ].join('');
+      const dipTiles = d.dip ? [
+        tile('距高点跌幅', dipPct(state.dd), signCls(state.dd)),
+        tile('近 20 日收益', dipPct(state.ret20), signCls(state.ret20)),
+        inStructure
+          ? tile('120 日收益中位数', dipPct(q.r120?.[2]), signCls(q.r120?.[2]), `n=${dnum(full.n_outcome?.r120)}`)
+          : tile('距最近低点反弹', dipPct(state.bounce_from_low), signCls(state.bounce_from_low)),
+      ].join('') : '';
+      const oos = verdict.label ? `抄底各项：${verdict.label}。` : '';
+      return `
+        <section class="sum-card top">
+          <h3>逃顶 <span class="state-pill ${topState[0]}">${esc(topState[1])}</span></h3>
+          <p>${esc(topText)}</p>
+          <div class="tiles">${topTiles}</div>
+        </section>
+        <section class="sum-card dip">
+          <h3>抄底 <span class="state-pill ${dipState[0]}">${esc(dipState[1])}</span></h3>
+          <p>${esc(dipText)}</p>
+          <div class="tiles">${dipTiles}</div>
+          ${inStructure ? `<p class="sum-foot">60 日内先涨 15% 的历史比例 ${dipPct(fh.hist?.U)}，随机波动对照 ${dipPct(fh.rw?.U)}。${esc(oos)}历史分位，不是预测。</p>` : `<p class="sum-foot">${esc(oos)}历史分位，不是预测。</p>`}
+        </section>
+      `;
+    }
+
     function render(d, history) {
       $('results').hidden = false;
-      $('asof').textContent = d.asof || '—';
+      $('asof').textContent = d.asof ? `截至 ${d.asof}` : '—';
+      const name = stockName(d);
+      $('stock-name').textContent = name || code6(d.symbol) || '—';
+      $('stock-code').textContent = name ? code6(d.symbol) : '';
+      document.title = `${name || code6(d.symbol)} · 临界点个股`;
+      $('summary').innerHTML = summaryHtml(d, name);
       $('stock-meta').textContent =
-        `${d.name || ''} ${d.symbol || ''} · 截止 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
+        `${d.symbol || ''} · 数据截至 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
       $('risk').innerHTML = riskHtml(d);
       drawHistory(d, history);
       renderDip(d.dip);
@@ -1140,6 +964,40 @@
       history.replaceState(null, '', url);
       loadCode(code);
     });
+
+    const showHint = () => {
+      const code = $('code').value.trim();
+      const hit = /^\d{6}$/.test(code) ? nameIndex[code] : null;
+      const name = realName(hit?.name);
+      $('name-hint').innerHTML = !/^\d{6}$/.test(code)
+        ? ''
+        : hit
+          ? `<b>${esc(name || code)}</b>已有 ${esc(hit.asof || '')} 的结果，打开即可查看`
+          : '<span class="muted">这只股票还没算过，首次查询约 1–2 分钟出当前结果</span>';
+    };
+    $('code').addEventListener('input', () => {
+      $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
+      showHint();
+    });
+    const go = (code) => {
+      $('code').value = code;
+      showHint();
+      $('search').requestSubmit();
+    };
+    LPPL.stock.index().then((index) => {
+      nameIndex = index || {};
+      $('chips').innerHTML = ['301196', '002490', '600519', '300750']
+        .filter((code) => nameIndex[code])
+        .map((code) => `<button class="chip" type="button" data-code="${code}">${esc(realName(nameIndex[code].name) || code)}<span class="m">${code}</span></button>`)
+        .join('');
+      $('chips').querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => go(chip.dataset.code)));
+      showHint();
+      const name = $('stock-name').textContent;
+      if (/^\d{6}$/.test(name) && realName(nameIndex[name]?.name)) {
+        $('stock-code').textContent = name;
+        $('stock-name').textContent = realName(nameIndex[name].name);
+      }
+    }).catch(() => {});
 
     const initial = new URLSearchParams(location.search).get('code');
     if (initial && /^\d{6}$/.test(initial)) {
