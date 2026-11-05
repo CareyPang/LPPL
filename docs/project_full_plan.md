@@ -171,7 +171,7 @@
 
 ---
 
-## 9. 当前进度（2026-11-02）
+## 9. 当前进度（2026-11-04）
 
 | 阶段 | 内容 | 状态 | PR / 路径 |
 |---|---|---|---|
@@ -190,6 +190,9 @@
 | 沪深300 预算 | 300/300，298 可统计；截止日不一致 | 待 #27 合并后重跑 | 未发布 |
 | F 个股数学审计 + 文献 + 研究方案 | F1/F2 修复、§20 偏离登记、63 篇文献、WP0–WP6 方案 | 已合并 | #28，`reports/stock_math_audit.md`、`docs/research_plan_stock_math.md` |
 | G WP0 收尾 + WP1 零假设标定 | 撞边界比例字段、2–4 周档 display_only、展示日历交易日外推；六类零假设 × 六档 × 过滤集误报率表 | 待合并 | `reports/null_calibration_stock.md`、`scripts/audit_stock_math/exp7_null_calibration.py` |
+| H 开发段 `_g2` 对照 + §21 (a)(b) 合成标定 + (c)(d)(e) 开发段 | `_g2` 重扫 6 指数（§19.1 结论不变）；Q2 0/24 可容许、MPL 覆盖 0.70/0.60、Ising 主链上界 +0.0097、价格层三项区间含 0 → **a/b/d/e 全部未通过**；1990s 冻结 `a90s_v20261104` | 已合并 | #38，`reports/sensitivity_dev_v2_g2.md`、`reports/q2_calibration.md`、`reports/mpl_calibration.md`、`reports/ising_dev_2010_2018.md`、`reports/price_layer_e_dev.md` |
+| I §21.7/§21.8 登记 + 冻结修正版 | a–e 负面结果登记（不改判据）；`v20261104` 只替换 ≤2000 段、默认仍 `v20261024` | 已合并 | `44f0140`，`docs/preregistration.md` §21.7–21.8、`data/frozen/v20261104/` |
+| J `v20261024` 缺陷标注 | sh000001 1990–92 段/sz399001 1995 错位写进 README，指向 a90s/v20261104 | 待合并 | 本 PR，`data/frozen/v20261024/README.md` |
 
 合并顺序：#22 → #23 → #24 → #25 → #27（每合一个，把下一个的 base 改回 main）。
 
@@ -199,8 +202,8 @@
 |---|---|---|---|---|
 | 1 | 现在 | 合并 #22–#25、#27；手动跑一次 stock_query（600519） | 线上 `/lab/stock.html?code=600519` 出结果 | 说"合并" |
 | 2 | 合并后当天 | 手动跑一次 stock_nightly | `breadth_sh000300.json` 的 `asof_consistent=true`、`n_missing=0` | — |
-| 3 | 本周 | 冻结 1990s A 股（只冻结+核验） | `data/frozen/*_1990s.parquet` + sha256 | — |
-| 3b | 2026-11/12 | 个股研究方案 WP0–WP2（`docs/research_plan_stock_math.md`）：零假设误报率表、t_c 区间校准 | `reports/null_calibration_stock.md`、`reports/tc_interval_calibration.md` | 批准 Q-STK1 登记文本修订（λ_t、市值分层、Holm） |
+| 3 | ~~本周~~ 已完成（#38） | 冻结 1990s A 股（只冻结+核验） | `data/frozen/a90s_v20261104/` + sha256；§21.0 下只在确认阶段读取，本轮无模块进入确认，仍未评价 | — |
+| 3b | 2026-11/12（WP0/WP1 已合并 #30；WP2 的 MPL 区间与 §21 a/b/d/e 已在 #38 得出负面结论，再试须新登记） | 个股研究方案 WP0–WP2（`docs/research_plan_stock_math.md`）：零假设误报率表、t_c 区间校准 | `reports/null_calibration_stock.md`、`reports/tc_interval_calibration.md` | 批准 Q-STK1 登记文本修订（λ_t、市值分层、Holm） |
 | 4 | 本周 | 写 Q-DD2 / Q-W1 预登记（变量、目标、基线、指标、切分写死） | `docs/preregistration_price_layer.md` | **批准登记后一次性运行** |
 | 5 | 11 月 | 中证500 成分加入夜间预算；个股页迁到 Open Design 终端；市场信息页 | Pages 上可查 800 只 | Open Design 出视觉 |
 | 6 | 11–12 月 | 市场基础信息每日落盘，积累板块资金流历史 | 热力图可回看 | — |
