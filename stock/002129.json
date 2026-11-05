@@ -5343,7 +5343,7 @@
   "ipo_in_range": true,
   "n_bars": 4137,
   "degenerate_share": 0.0,
-  "trading_days_stale": 3,
+  "trading_days_stale": 4,
   "dropped_unclosed_bar": false,
   "eligibility_note": "停牌中，结果截至 2026-10-30",
   "source": "tencent_fqkline",
@@ -5352,13 +5352,25 @@
  },
  "dip": {
   "evidence": "descriptive",
-  "oos": "pending",
-  "note": "历史分位，不是预测；样本外检验进行中",
+  "oos": {
+   "test": "2019-01-01 起入场",
+   "library": "20261104-full-v1",
+   "report": "reports/dip_oos_2019.md",
+   "items": {
+    "H1": "failed",
+    "H2": "failed",
+    "H3": "failed",
+    "H4": "descriptive",
+    "H5": "descriptive"
+   },
+   "label": "样本外未通过，仅描述"
+  },
+  "note": "历史分位，不是预测；样本外检验结果见各卡片标识",
   "lib": {
-   "version": "20261103-smoke-v1",
+   "version": "20261104-full-v1",
    "cutoff": "2026-11-03",
-   "smoke": true,
-   "n_events": 701
+   "smoke": false,
+   "n_events": 21122
   },
   "state": {
    "asof": "2026-10-30",
