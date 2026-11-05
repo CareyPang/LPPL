@@ -1,8 +1,8 @@
 {
  "symbol": "sz000987",
  "name": "sz000987",
- "asof": "2026-11-04",
- "data_version": "vintage_20261104_tencent_sina_hfq_c1c3884f",
+ "asof": "2026-11-05",
+ "data_version": "vintage_20261105_tencent_sina_hfq_c1c3884f",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
  "top": {
   "p20": {
@@ -14,13 +14,13 @@
    ]
   },
   "bubble": {
-   "start": "2024-11-15",
+   "start": "2024-11-18",
    "duration_days": 477,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.02,
-   "size_realized": -0.05,
-   "tc": "2026-09-30",
+   "size_model": 0.002,
+   "size_realized": -0.025,
+   "tc": "2026-10-08",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -54,7 +54,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-12-31",
+    "best_t1": "2026-01-05",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -98,7 +98,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-11-15",
+    "best_t1": "2024-11-18",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -219,7 +219,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-04",
+   "table_asof": "2026-11-05",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -701,7 +701,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.05,
+    "size_realized": -0.025,
     "duration_days": 477,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -745,7 +745,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-15",
    "2023-09-18",
    "2023-09-19",
    "2023-09-20",
@@ -1500,10 +1499,10 @@
    "2026-10-30",
    "2026-11-02",
    "2026-11-03",
-   "2026-11-04"
+   "2026-11-04",
+   "2026-11-05"
   ],
   "open": [
-   55.212,
    54.806,
    55.374,
    54.887,
@@ -2258,10 +2257,10 @@
    58.707,
    60.065,
    61.606,
-   62.149
+   62.149,
+   62.24
   ],
   "high": [
-   55.779,
    55.536,
    55.617,
    55.779,
@@ -3016,10 +3015,10 @@
    60.428,
    61.606,
    62.421,
-   62.874
+   62.874,
+   63.146
   ],
   "low": [
-   54.806,
    54.401,
    54.968,
    54.887,
@@ -3774,10 +3773,10 @@
    58.435,
    59.703,
    61.153,
-   61.424
+   61.424,
+   62.24
   ],
   "close": [
-   54.806,
    55.374,
    55.13,
    55.455,
@@ -4532,10 +4531,10 @@
    59.16,
    61.334,
    62.059,
-   62.693
+   62.693,
+   62.874
   ],
   "volume": [
-   149053,
    164911,
    110196,
    157833,
@@ -5290,7 +5289,8 @@
    202358,
    297123,
    232282,
-   242955
+   242955,
+   202923
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5341,7 +5341,7 @@
   "st": null,
   "in_stats": true,
   "ipo_in_range": true,
-  "n_bars": 6098,
+  "n_bars": 6099,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5352,29 +5352,41 @@
  },
  "dip": {
   "evidence": "descriptive",
-  "oos": "pending",
-  "note": "历史分位，不是预测；样本外检验进行中",
+  "oos": {
+   "test": "2019-01-01 起入场",
+   "library": "20261104-full-v1",
+   "report": "reports/dip_oos_2019.md",
+   "items": {
+    "H1": "failed",
+    "H2": "failed",
+    "H3": "failed",
+    "H4": "descriptive",
+    "H5": "descriptive"
+   },
+   "label": "样本外未通过，仅描述"
+  },
+  "note": "历史分位，不是预测；样本外检验结果见各卡片标识",
   "lib": {
-   "version": "20261103-smoke-v1",
+   "version": "20261104-full-v1",
    "cutoff": "2026-11-03",
-   "smoke": true,
-   "n_events": 701
+   "smoke": false,
+   "n_events": 21122
   },
   "state": {
-   "asof": "2026-11-04",
-   "close": 62.692783,
+   "asof": "2026-11-05",
+   "close": 62.873977,
    "peak_date": "2026-01-26",
    "runup": 1.537253,
-   "dd": -0.38208,
-   "td_since_peak": 185,
+   "dd": -0.380294,
+   "td_since_peak": 186,
    "low_date": "2026-10-30",
-   "bounce_from_low": 0.059724,
-   "ret20": -0.013355,
-   "ret60": -0.095052,
-   "rv20": 0.239705,
-   "rv20_pct5y": 0.350794,
-   "vol_d": 0.016054,
-   "well_dist_below": 0.139599
+   "bounce_from_low": 0.062787,
+   "ret20": -0.003584,
+   "ret60": -0.097037,
+   "rv20": 0.238823,
+   "rv20_pct5y": 0.347619,
+   "vol_d": 0.015584,
+   "well_dist_below": 0.142428
   },
   "in_structure": false,
   "depth_bucket": null,
@@ -5383,26 +5395,26 @@
    "fh60": {
     "hist": null,
     "rw": {
-     "U": 0.2136,
-     "L": 0.18435,
-     "none": 0.60205
+     "U": 0.20235,
+     "L": 0.1714,
+     "none": 0.62625
     }
    },
    "fh120": {
     "hist": null,
     "rw": {
-     "U": 0.1075,
-     "L": 0.20725,
-     "none": 0.68525
+     "U": 0.09775,
+     "L": 0.1933,
+     "none": 0.70895
     }
    }
   },
   "regime": {
-   "p_hi_filtered": 0.169235,
-   "hi_vol_ann": 0.672569,
-   "lo_vol_ann": 0.239837,
-   "hi_mean_wk": 0.047302,
-   "lo_mean_wk": -0.004604,
+   "p_hi_filtered": 0.195985,
+   "hi_vol_ann": 0.672203,
+   "lo_vol_ann": 0.239965,
+   "hi_mean_wk": 0.047294,
+   "lo_mean_wk": -0.0046,
    "weeks": 260,
    "note": "波动体制，不是涨跌信号"
   }
