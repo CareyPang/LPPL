@@ -202,6 +202,48 @@
       margin: var(--s2) 0;
     }
 
+    .search button:disabled { opacity: .5; cursor: default; }
+    .search button.primary { border-color: #83B4AC; background: #19322E; }
+    .intro { max-width: 66ch; margin: 0 0 20px; color: var(--ink-2); }
+    .eyebrow { color: #A2C4BE; font-size: 11px; letter-spacing: .12em; margin-bottom: 8px; }
+    .task-tools, .periods, .recent { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .task-tools { margin-top: 16px; }
+    .task-tools button, .periods button, .recent button {
+      background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2);
+      padding: 9px 12px; cursor: pointer; min-height: 40px;
+    }
+    .task-tools button:disabled { opacity: .45; cursor: default; }
+    .periods button[aria-pressed=true], .recent button[aria-current=true] {
+      border-color: #83B4AC; color: var(--ink); background: #19322E;
+    }
+    .recent { margin-top: 12px; }
+    .recent:empty { display: none; }
+    .stages { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 12px 0 0; }
+    .stages span { color: var(--ink-2); font-size: 12px; }
+    .market-header { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 16px; }
+    .market-header h2 { font-size: 22px; letter-spacing: -.02em; }
+    .market-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 20px 0 12px; }
+    .market-stats small { display: block; color: var(--ink-3); font-size: 11px; }
+    .market-stats strong { display: block; font: 500 22px var(--f-m); margin-top: 6px; }
+    .market-canvas { width: 100%; height: 270px; display: block; background: #101615; }
+    .market-empty { padding: 44px 12px; text-align: center; color: var(--ink-2); border: 1px dashed var(--line); }
+    .date-control { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 12px; align-items: center; margin-top: 12px; }
+    .date-control input { width: 100%; accent-color: #91C7BC; min-height: 32px; }
+    .quote-readout { min-height: 22px; color: var(--ink-2); font: 12px/1.7 var(--f-m); overflow-wrap: anywhere; }
+    .pending-result { border-left: 2px solid #83B4AC; padding: 12px 16px; color: var(--ink-2); }
+    #refresh-current, #compute-history, #resume-jobs { min-height: 44px; }
+    @media (max-width: 480px) {
+      .market-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .market-canvas { height: 230px; }
+      .market-header h2 { font-size: 19px; }
+      .search input { flex: 1; min-width: 120px; width: 140px; }
+      .search label { flex-basis: 100%; }
+      .task-tools button { flex: 1; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .market-stats, .stages { transition: opacity .18s ease; }
+    }
+
     .error {
       color: #FF8A94;
     }
@@ -436,6 +478,8 @@
     }
   </style>
   <script src="app/lppl-data.js"></script>
+  <script src="app/stock-session.js"></script>
+  <script src="app/stock-view.js"></script>
 </head>
 <body>
   <header class="bar">
@@ -455,15 +499,53 @@
 
   <main>
     <section class="sec">
-      <h1>个股风险窗口</h1>
+      <div class="eyebrow">个股研究 · 日线</div>
+      <h1>先看行情，再看风险</h1>
+      <p class="intro">输入股票代码，先读取日线和已有分析。更新在后台进行，你可以继续查看图表或切换股票。</p>
       <form class="search" id="search">
         <label for="code">六位股票代码</label>
         <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="例如 301196" required>
-        <button type="submit">查看</button>
+        <button type="submit" class="primary">查看股票</button>
       </form>
       <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
       <p id="query-status" class="status" role="status"></p>
+      <div id="recent-stocks" class="recent" aria-label="最近查看和进行中的任务"></div>
+      <div id="task-stages" class="stages" hidden>
+        <span id="market-stage"></span><span id="current-stage"></span><span id="history-stage"></span>
+      </div>
+      <div class="task-tools">
+        <button id="refresh-current" type="button" disabled>更新当前分析</button>
+        <button id="compute-history" type="button" disabled>生成历史回放</button>
+        <button id="resume-jobs" type="button" hidden>继续查看任务</button>
+      </div>
     </section>
+
+    <section class="sec" id="market-panel" hidden aria-label="独立日线行情">
+      <div class="market-header">
+        <div><h2 id="market-name">正在读取行情</h2><p class="note" id="market-date"></p></div>
+        <div class="periods" aria-label="图表显示范围">
+          <button type="button" data-days="20" aria-pressed="false">1个月</button>
+          <button type="button" data-days="60" aria-pressed="false">3个月</button>
+          <button type="button" data-days="120" aria-pressed="true">6个月</button>
+          <button type="button" data-days="250" aria-pressed="false">1年</button>
+        </div>
+      </div>
+      <div class="market-stats" id="market-stats" hidden>
+        <div><small>最近收盘</small><strong id="quote-close">—</strong></div>
+        <div><small>当日开盘</small><strong id="quote-open">—</strong></div>
+        <div><small>当日最高</small><strong id="quote-high">—</strong></div>
+        <div><small>当日最低</small><strong id="quote-low">—</strong></div>
+      </div>
+      <p class="market-empty" id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
+      <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日线收盘价，可用下方日期滑块逐日查看" hidden></canvas>
+      <div class="date-control" id="date-control" hidden>
+        <label for="quote-date">查看日期</label>
+        <input type="range" id="quote-date" min="0" max="0" value="0" step="1">
+      </div>
+      <p id="quote-readout" class="quote-readout" aria-live="polite"></p>
+      <p class="note">行情为已收盘日线、未复权报价；下方模型历史使用后复权数据，两者价格刻度分别显示。</p>
+    </section>
+    <div id="analysis-pending" class="pending-result" hidden>当前分析在后台更新。你可以先看行情、切换股票，或稍后回来查看。</div>
 
     <section class="sec" id="results" hidden>
       <div class="stock-meta" id="stock-meta"></div>
@@ -476,7 +558,7 @@
           <div id="risk"></div>
         </section>
         <section class="card wide">
-          <h2>104 周历史情景区间</h2>
+          <h2>历史情景回放 · 按需生成</h2>
           <div id="history-note" class="note"></div>
           <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
           <p class="note">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
@@ -711,7 +793,7 @@
       $('history-note').textContent = history
         ? `${history.evidence === 'descriptive'
           ? `n=${frames.length}；历史分位，不是预测。`
-          : '历史回测结果已加载。'}${hidden ? ' 情景数值按证据规则隐藏。' : ' 情景带仅作未校准参考。'}`
+          : '历史情景回放已加载。'}${hidden ? ' 情景数值按证据规则隐藏。' : ' 情景带仅作未校准参考。'}`
         : '本次数据未附历史回测文件；当前结果中的后复权收盘序列仍供回看。';
     }
 
@@ -1044,108 +1126,7 @@
       renderDip(d.dip);
     }
 
-    let serial = 0;
-
-    async function query(code, id) {
-      const api = LPPL.stock;
-      const queued = await api.request(code);
-      const since = queued?.since;
-      const timestamp = Date.parse(since);
-      if (!Number.isFinite(timestamp)) {
-        throw Error('查询服务未返回有效任务时间');
-      }
-      const start = Date.now();
-      const currentDeadline = start + 600000;
-      const totalDeadline = start + 2400000;
-      let latest = null;
-      while (Date.now() < currentDeadline) {
-        latest = await api.remote(code, 'latest').catch(() => null);
-        if (latest && Date.parse(latest.generated_at) >= timestamp - 60000) {
-          break;
-        }
-        const status = await api.status(code, since).catch(() => null);
-        if (status?.status === 'completed' && status.conclusion !== 'success') {
-          throw Error('当前结果计算失败');
-        }
-        $('query-status').textContent = '当前结果计算中…';
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        if (id !== serial) {
-          return;
-        }
-      }
-      if (!latest || Date.parse(latest.generated_at) < timestamp - 60000) {
-        throw Error('当前结果暂未返回，请稍后刷新');
-      }
-      render(latest, null);
-      $('query-status').textContent = '当前结果已就绪；历史回测后台计算中。';
-      while (Date.now() < totalDeadline && id === serial) {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        const status = await api.status(code, since).catch(() => null);
-        if (status?.status !== 'completed') {
-          continue;
-        }
-        if (status.conclusion === 'success') {
-          const [current, history] = await Promise.all([
-            api.remote(code, 'latest'),
-            api.remote(code, 'history'),
-          ]);
-          if (current) {
-            render(current, history);
-            $('query-status').textContent = '历史回测已更新。';
-            return;
-          }
-        } else {
-          $('query-status').textContent = '历史回测未能完成；当前结果仍可查看。';
-          return;
-        }
-      }
-      $('query-status').textContent = '历史回测后台仍在计算；当前结果可先查看。';
-    }
-
-    async function loadCode(code) {
-      const id = ++serial;
-      $('query-status').textContent = '读取缓存结果…';
-      try {
-        const [current, history] = await Promise.all([
-          LPPL.stock.latest(code),
-          LPPL.stock.history(code),
-        ]);
-        if (id !== serial) {
-          return;
-        }
-        if (current) {
-          render(current, history);
-          $('query-status').textContent = history
-            ? '缓存的当前结果和历史回测已加载。'
-            : '历史回测文件暂不可用';
-          return;
-        }
-        await query(code, id);
-      } catch (error) {
-        if (id === serial) {
-          $('query-status').textContent = error.message || '数据未加载。';
-        }
-      }
-    }
-
-    $('search').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const code = $('code').value.trim();
-      if (!/^\d{6}$/.test(code)) {
-        $('query-status').textContent = '请输入六位数字代码。';
-        return;
-      }
-      const url = new URL(location.href);
-      url.searchParams.set('code', code);
-      history.replaceState(null, '', url);
-      loadCode(code);
-    });
-
-    const initial = new URLSearchParams(location.search).get('code');
-    if (initial && /^\d{6}$/.test(initial)) {
-      $('code').value = initial;
-      loadCode(initial);
-    }
+    StockView.mount({ api: LPPL.stock, renderResult: render });
   </script>
 </body>
 </html>
