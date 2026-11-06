@@ -151,12 +151,10 @@ test('scrolling promotes its target frame ahead of queued offscreen images', asy
   assert.ok(m.requests.some(r => r.url.includes('/deep/')), 'The deep loop is loaded only after activation');
 });
 
-test('reduced motion requests only sparse stage stills, including after scrolling', async () => {
+test('static mode uses the CSS poster and requests no frame sequence while scrolling', async () => {
   const m = setup({ reduced: true, mobile: true });
   m.prioritizeFrames(.5); m.loadAll(); await m.drain();
   m.prioritizeFrames(.923); await m.drain();
-  assert.equal(m.requests.length, m.STAGE_FRAMES.length);
-  assert.ok(m.requests.every(r => !r.url.includes('/loop/')));
-  const allowed = m.STAGE_FRAMES.map(i => `assets/dive/m2/${String(i + 1).padStart(3, '0')}.webp`);
-  assert.ok(m.requests.every(r => allowed.includes(r.url)));
+  assert.equal(m.requests.length, 0);
+  assert.equal(m.nodes.get('#load').hidden, true);
 });

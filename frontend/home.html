@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="home-static">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#3E5560">
+<meta name="theme-color" content="#0B283B">
 <title>临界点 · 浪成于微澜之间</title>
 <link rel="preload" as="image" href="assets/ocean/poster-desktop.webp" media="(min-width:600px) and (min-height:600px)">
 <link rel="preload" as="image" href="assets/ocean/poster-mobile.webp" media="(max-width:599px), (max-height:599px)">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{
   --ink:#13232A;--ink2:rgba(19,35,42,.76);--inkL:rgba(19,35,42,.26);
@@ -277,11 +275,12 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 }
 </style>
 <link rel="stylesheet" href="app/home-readability.css">
-<script src="app/lppl-data.js"></script>
 <script src="app/home-quality.js"></script>
 <script src="app/home-media.js"></script>
+<script src="app/home-journey.js"></script>
 </head>
-<body>
+<body id="page-top">
+<a class="skip-link" href="#s1">跳过影像，阅读研究说明</a>
 <div class="stage" id="stage" aria-hidden="true">
   <canvas id="gl"></canvas>
   <canvas id="film"></canvas>
@@ -292,8 +291,9 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 </div>
 
 <header class="top" id="top">
-  <div class="brand"><span class="mark"></span><span>临界点</span></div>
-  <nav aria-label="页内导航"><a href="#s1">微澜</a><a href="#s2">指数</a><a href="#s3">工具</a><a href="stock.html">个股</a><a href="#s4">方法</a></nav>
+  <a class="brand" href="#page-top" aria-label="临界点，返回海面"><span class="mark" aria-hidden="true"></span><span>临界点<small>MARKET OBSERVATORY</small></span></a>
+  <nav aria-label="页内导航"><a href="#s1">两种尺度</a><a href="#s3">研究方法</a></nav>
+  <button class="pill motion-toggle" id="motion-toggle" type="button" aria-pressed="false"><span aria-hidden="true" class="motion-symbol">Ⅱ</span><span id="motion-label">静态画面</span></button>
   <div class="sndw">
     <button class="pill snd" id="snd" type="button" aria-pressed="false" aria-label="声音开关，当前关闭"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl" id="sndl">声音 · 关</span></button>
     <button class="pill sndk" id="sndk" type="button" aria-expanded="false" aria-controls="sndp" aria-label="声音设置"><svg class="od-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2 4.5h7M13 4.5h1M2 11.5h2M8 11.5h6"/><circle cx="11" cy="4.5" r="1.75"/><circle cx="6" cy="11.5" r="1.75"/></svg></button>
@@ -306,20 +306,26 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
       <p class="nt" id="sndstatus" role="status">默认静音，点击声音开关启用。环境声为程序合成，并非海洋实录。</p>
     </div>
   </div>
-  <a class="pill" href="index.html">进入工作站</a>
+  <a class="pill workstation-nav" href="stock.html" data-workstation>进入工作站 <span aria-hidden="true">↗</span></a>
 </header>
 <button id="motion-resume" class="motion-resume" type="button" hidden>播放海浪动画</button>
 
 <div class="hero" id="hero">
-  <div class="eb ln" style="--d:.1s">FROM RIPPLE TO WAVE</div>
-  <h1><span class="ln" style="--d:.22s">浪成于</span><span class="ln" style="--d:.34s">微澜之间</span></h1>
-  <p class="ln poem" style="--d:.46s"><span><b>启</b>于青萍之末，</span><span><b>满</b>于狂澜之巅。</span></p>
-  <div class="cta ln" style="--d:.7s">
-    <a class="btn pri" href="index.html">进入工作站 <span class="ar">→</span></a>
-    <a class="btn ghost" href="#s1" id="dive"><i>↓</i>开始下潜</a>
+  <div class="eb ln">FROM RIPPLE TO WAVE <span class="hero-edition">研究版</span></div>
+  <h1><span class="ln">浪成于</span><span class="ln">微澜之间<span class="title-period">。</span></span></h1>
+  <p class="hero-purpose">从价格的起伏，<br>研究高点可能出现的时间窗口。</p>
+  <div class="cta ln">
+    <a class="btn pri" href="stock.html" data-workstation>进入工作站 <span class="ar" aria-hidden="true">↗</span></a>
+    <a class="btn ghost" href="#s1" id="dive"><i aria-hidden="true">↓</i>下潜了解</a>
   </div>
+  <p class="hero-boundary">短期与阶段分开观察 · 识别能力仍在验证</p>
 </div>
-<div class="hint" id="hint"><i></i>向下滚动 · 入水</div>
+<div class="scene-copy" id="scene-copy" aria-hidden="true">
+  <div class="scene-chapter" id="waterline-copy"><span class="scene-eyebrow">01 / THE WATERLINE</span><p>局部起伏，<br>还是阶段转折？</p><span class="scene-caption">向水线以下，看见另一种尺度。</span></div>
+  <div class="scene-chapter" id="underwater-copy"><span class="scene-eyebrow">02 / ANOTHER SCALE</span><p>同一段上涨，<br>不止一种高点。</p><span class="scene-caption">先分清观察对象，再讨论判断。</span></div>
+</div>
+<div class="hint" id="hint"><i aria-hidden="true"></i><span>向下探索 <b>↓</b></span></div>
+<div class="chapter-marker" id="chapter-marker" aria-hidden="true"><span>海面</span><i></i>水线以下</div>
 <div class="load" id="load" aria-hidden="true"><span id="lt">载入 0%</span><b><i id="lb"></i></b></div>
 
 <div class="gauge" id="gauge" aria-hidden="true">
@@ -334,11 +340,34 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 
 <main>
   <section class="sec" id="s1">
-    <div class="zone reveal">水线以下 <span>15 m</span></div>
-    <blockquote class="quote reveal" id="quote"><div class="en" lang="en">“Does the flap of a butterfly’s wings in Brazil set off a tornado in Texas?”</div></blockquote>
-    <h2 class="reveal">从微澜到浪</h2>
-    <p class="lead reveal">泡沫末期，价格的振荡不是越来越乱，而是越来越密：每一轮的周期按对数缩短，一路收向临界时刻 t<sub>c</sub>。LPPLS 要找的，就是这种微澜。</p>
-    <figure class="wave glass reveal" id="wave">
+    <div class="zone reveal">01 / 两种尺度 <span>水线以下</span></div>
+    <div class="section-heading"><h2 class="reveal">波纹与潮汐，<br>各有自己的时间。</h2><p class="lead reveal">局部高点值得留意。<br>一段上涨的阶段高点，更需要单独判断。</p></div>
+    <div class="scale-study reveal" id="scale-study" data-selected="stage">
+      <div class="scale-choices" role="group" aria-label="选择尺度讲解"><button type="button" data-scale="stage" aria-pressed="true">阶段性高点<span>重点观察</span></button><button type="button" data-scale="local" aria-pressed="false">短期局部高点</button><button type="button" data-scale="pending" aria-pressed="false">尺度待判</button></div>
+      <div class="scale-layout">
+        <div class="scale-lines" role="img" aria-label="非行情尺度示意：局部起伏与一段较长的上涨结构可以同时存在">
+          <div class="scale-lane stage-lane"><span>阶段结构 <small>约 1–6 个月上涨</small></span><svg viewBox="0 0 600 130" preserveAspectRatio="none" aria-hidden="true"><path d="M0 112 C45 108 56 85 90 95 S142 54 177 66 S226 35 255 45 S304 19 337 26 S380 5 410 22 S461 36 488 28 S548 52 600 43"/><line x1="0" y1="126" x2="600" y2="126"/></svg></div>
+          <div class="scale-lane local-lane"><span>局部起伏 <small>数周行情</small></span><svg viewBox="0 0 600 95" preserveAspectRatio="none" aria-hidden="true"><path d="M0 63 C18 63 24 24 47 42 S77 75 98 49 S127 16 150 39 S180 69 200 43 S230 12 250 35 S279 64 303 39 S334 13 355 35 S384 69 408 48 S440 26 461 49 S490 71 512 50 S543 28 566 52 S587 59 600 50"/><line x1="0" y1="91" x2="600" y2="91"/></svg></div>
+          <p class="scale-caption">尺度示意 · 非真实行情，不标示预测日期</p>
+        </div>
+        <div class="scale-explanation" aria-live="polite"><span class="small-label">观察说明</span><h3 id="scale-title">阶段性高点</h3><p id="scale-description">关注约 1–6 个月上涨阶段的高点。它可能同时也是局部高点；更长的观察尺度，并不代表更远的预测日期。</p><p id="scale-note" class="scale-note">阶段提示优先呈现，局部提示独立保留。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec research-entry" id="s2">
+    <div class="zone reveal">02 / 从观察开始 <span>工作站</span></div>
+    <h2 class="reveal">海面给你空间，<br>研究需要证据。</h2>
+    <div class="entry-layout"><p class="lead reveal">进入工作站后，输入资产代码。<br>先看行情与日期，再查看已有研究和历史核对。</p><a class="entry-link reveal" href="stock.html" data-workstation><span>进入工作站</span><span aria-hidden="true">↗</span></a></div>
+    <ol class="research-steps"><li class="reveal"><span>01</span><h3>选择资产</h3><p>在工作站输入六位 A 股代码。</p></li><li class="reveal"><span>02</span><h3>看清时间</h3><p>价格日期、研究日期与未来区间分开阅读。</p></li><li class="reveal"><span>03</span><h3>检查依据</h3><p>有结果就读证据；尚无结果，就保留空白。</p></li></ol>
+  </section>
+
+  <section class="sec method-section" id="s3">
+    <div class="zone reveal">03 / 方法与边界 <span>研究中</span></div>
+    <h2 class="reveal">看见一种形态，<br>不等于知道结局。</h2>
+    <p class="lead reveal">LPPLS 研究价格中的加速与振荡结构。合格拟合与可靠的顶部预测是两件事，时间区间的识别能力需要独立验证。</p>
+    <details class="method-detail reveal"><summary>展开：从微澜到浪的结构示意<span aria-hidden="true">＋</span></summary>
+    <figure class="wave reveal" id="wave">
       <svg viewBox="0 0 1000 380" role="img" aria-label="示意曲线：对数周期振荡越来越密，收向临界时刻 tc">
         <g id="grid"></g>
         <path class="pw" id="pw"/>
@@ -355,61 +384,38 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
       <li class="reveal"><b>01 · 微澜</b>振荡稀疏、幅度小，看起来只是噪声。</li>
       <li class="reveal"><b>02 · 加速</b>振荡变密，周期按对数缩短，正反馈在累积。</li>
       <li class="reveal"><b>03 · 临界</b>t<sub>c</sub> 附近结构最脆弱：可能破裂，也可能平稳着陆。</li>
-    </ol>
-  </section>
-
-  <section class="sec" id="s2">
-    <div class="zone reveal">透光层 <span>30 m</span></div>
-    <h2 class="reveal">三大指数，此刻的光</h2>
-    <p class="lead reveal">综合置信度取近 20 个交易日的最高值：三个尺度里通过筛选的窗口越多，数值越高。它不是事件概率，也没有经过校准。</p>
-    <div class="idx" id="idx"></div>
-  </section>
-
-  <section class="sec" id="s3">
-    <div class="zone reveal">弱光层 <span>200 m</span></div>
-    <h2 class="reveal">选一盏灯，继续往下看</h2>
-    <p class="lead reveal">所有页面读取同一份后端数据；前端不计算任何模型值。</p>
-    <div class="tools">
-      <a class="tc wide glass reveal" href="index.html"><div class="tag"><span>WORKSTATION</span><span style="color:var(--cyan)">推荐</span></div><h3>分析工作站</h3><p>K 线叠加六尺度置信度、情景区间（未校准，仅供参考）、顶后回撤历史分位与估值地板带，可看 2007 / 2015 回放。</p><span class="go">index.html →</span></a>
-      <a class="tc glass reveal" href="backtest.html"><div class="tag"><span>BACKTEST</span><span>回测</span></div><h3>历史情景区间</h3><p>2000–2025 每个周度截止日模型给出的 6–12 月档区间（未校准，仅供参考），与事后确认的顶放在同一张图上。</p></a>
-      <a class="tc glass reveal" href="lab/dashboard.html"><div class="tag"><span>LAB</span><span>研究</span></div><h3>研究仪表盘</h3><p>旧版研究页：Combo 滑块、Movie 双面板、六尺度切换和资产目录。</p><span class="go">lab/dashboard.html →</span></a>
-      <div class="tc glass soon reveal"><div class="tag"><span>CONFIDENCE</span><span style="color:var(--amber)">建设中</span></div><h3>多尺度置信度</h3><p>短 / 中 / 长期泡沫置信度历史、t<sub>c</sub> 分布与泡沫看板。</p><span class="go">即将上线</span></div>
-      <a class="tc glass reveal" href="lab/guide.html"><div class="tag"><span>GUIDE</span><span>DOC</span></div><h3>用户指南</h3><p>每个指标怎么读、证据等级是什么意思、哪些数字不显示。</p><span class="go">lab/guide.html →</span></a>
-    </div>
+    </ol></details>
+    <div class="evidence-lines reveal"><p><span>关于区间</span>只讨论可能的时间范围，不许诺精确顶部日。</p><p><span>关于层级</span>局部与阶段分开记录，证据不足时不强行分类。</p><p><span>关于价格</span>时间窗口不附带跌幅、目标价或交易收益承诺。</p></div>
   </section>
 
   <section class="sec" id="s4">
-    <div class="zone reveal">深水层 <span>1000 m</span></div>
-    <h2 class="reveal">t<sub>c</sub> 是临界时刻，不是崩盘日</h2>
-    <p class="lead reveal">按 JLS 理论，泡沫可以在 t<sub>c</sub> 之前破裂，也可以平稳着陆。模型只说明价格结构是否进入临界状态；真实的顶底事件要用另一套模型预测，并单独校准概率。</p>
-    <div class="cols">
-      <div class="col glass reveal"><div class="k">21<small>个窗口</small></div><h4>三个尺度</h4><p>短期 30–105 日、中期 120–250 日、长期 300–700 日，每个尺度 7 个回看窗口，顶部和底部各拟合一次。</p></div>
-      <div class="col glass reveal"><div class="k">3<small>个参数</small></div><h4>稳定标定</h4><p>按 Filimonov–Sornette 方法消去线性参数，只对 t<sub>c</sub>、m、ω 做非线性搜索。</p></div>
-      <div class="col glass reveal"><div class="k">0<small>次校准</small></div><h4>研究输出</h4><p>置信度是“通过筛选的窗口占比”，不是事件发生概率，尚未做样本外校准。</p></div>
-    </div>
-    <div class="warn reveal"><b>风险提示：</b>本工具只用于研究和学习，不构成投资建议。A 股有涨跌停、T+1 和停牌等限制，模型里的“价格触及”不等于实际能成交。</div>
-    <div class="creed reveal">浪成于微澜之间，<br>也终归于平静。<small lang="en">Small causes, large waves — and no wave is fate.</small></div>
-    <footer><span id="foot">数据：东方财富公开日线快照</span><span>临界点 · 背景影像由即梦 AI 生成</span></footer>
+    <div class="zone reveal">04 / 回到研究 <span>临界点</span></div>
+    <h2 class="reveal">先记录判断，<br>再让时间回答。</h2>
+    <p class="lead reveal">从你关注的一只股票开始。<br>进入工作站，查看价格、研究状态与历史核对。</p>
+    <div class="closing-actions reveal"><a class="btn pri" href="stock.html" data-workstation>进入工作站 <span aria-hidden="true">↗</span></a><a class="back-to-surface" href="#page-top" id="resurface">回到海面 <span aria-hidden="true">↑</span></a></div>
+    <p class="closing-boundary reveal">研究与学习用途 · 顶部时间区间能力尚未完成验证</p>
+    <footer><span id="foot">海洋叙事独立于市场与模型分数</span><span>临界点 · 背景影像由即梦 AI 生成</span></footer>
   </section>
 </main>
 
 <script>
 (function(){
 'use strict';
-const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const MOB = Math.min(window.innerWidth, window.innerHeight) < 600 || !!(navigator.connection && navigator.connection.saveData);
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+const saveData = !!(navigator.connection && navigator.connection.saveData);
+let storedMotion = null;
+try{storedMotion=localStorage.getItem('cp_home_motion');}catch(e){}
+const motionPolicy=()=>HomeJourney.motionPolicy({reducedMotion:motionQuery.matches,saveData,stored:storedMotion,protocol:location.protocol});
+let RM = !motionPolicy().enabled;
+document.documentElement.classList.toggle('home-static',RM);
+document.documentElement.classList.toggle('home-animated',!RM);
+HomeJourney.prepareLinks(document,location.search);
+HomeJourney.bindScales(document);
+const MOB = Math.min(window.innerWidth, window.innerHeight) < 600 || saveData;
 const $ = (s)=>document.querySelector(s);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const clk=(now)=>(now/1000)%3600;
-
-// 英文引语：拆成单词，逐词从左到右浮现（读屏仍读整句）
-(function splitQuote(){
-  const q=$('#quote'), en=q&&q.querySelector('.en'); if(!en) return;
-  const txt=en.textContent.trim(); en.setAttribute('aria-label',txt);
-  en.innerHTML=txt.split(/\s+/).map((w,i)=>`<span class="w" aria-hidden="true" style="--i:${i}">${w}</span>`).join(' ');
-  requestAnimationFrame(()=>q.classList.add('on'));
-})();
 
 /* ================= 帧序列 ================= */
 // 清晰度：桌面用 1920 原始分辨率帧，手机用 1280 帧（旧的 1600/960 帧会被放大而发糊）
@@ -439,6 +445,7 @@ function queueImage(rec,url,priority,done){
   return rec.promise;
 }
 function pumpMedia(){
+  if(RM) return;
   while(mediaActive<(MOB?3:4) && mediaQueue.length){
     mediaQueue.sort((a,b)=>a.priority-b.priority);
     const job=mediaQueue.shift(), rec=job.rec;
@@ -499,7 +506,7 @@ function progress(){
 }
 function prioritizeFrames(p){
   wantedProgress=clamp(p,0,1);
-  if(!mediaStarted) return;
+  if(RM || !mediaStarted) return;
   const center=Math.round(wantedProgress*(SRC.n-1));
   if(videoMedia && !RM && videoMedia.status('dive')!=='failed') return;
   trimDiveFrames(center);
@@ -515,6 +522,7 @@ function prioritizeFrames(p){
   pumpMedia();
 }
 function loadAll(){
+  if(RM){$('#load').hidden=true;return;}
   if(mediaStarted) return; mediaStarted=true;
   const center=Math.round(wantedProgress*(SRC.n-1));
   if(videoMedia && !RM){
@@ -579,11 +587,13 @@ function pauseLoops(except){
   if(videoMedia){videoMedia.setLoop(except?except.name:null);return;}
   for(const L of LOOPS) if(L!==except){ L.clock=null; if(L.vidOk && !L.vid.paused) L.vid.pause(); }
 }
-if(typeof HomeMedia!=='undefined') videoMedia=HomeMedia.create({
-  mobile:MOB,reducedMotion:RM,
+function ensureVideoMedia(){
+if(videoMedia || RM || typeof HomeMedia==='undefined') return;
+videoMedia=HomeMedia.create({
+  mobile:MOB,reducedMotion:false,
   onReady(){progress();kick();},
   onFrame(kind,item){
-    if(kind!=='dive' || !item) return;
+    if(RM || kind!=='dive' || !item) return;
     // Freeze each completed seek before the video starts decoding the next target.
     if(useGL && tex(item)){ heldDive=item; }
     else {
@@ -595,49 +605,14 @@ if(typeof HomeMedia!=='undefined') videoMedia=HomeMedia.create({
     kick();
   },
   onError(){prioritizeFrames(wantedProgress);kick();},
-  onBlocked(){ $('#motion-resume').hidden=false; }
+  onBlocked(){ if(!RM) $('#motion-resume').hidden=false; }
 });
+}
+ensureVideoMedia();
 
-/* ================= 数据（后端静态 JSON，经 app/lppl-data.js；前端不计算模型） ================= */
-const KEYS=['sh000001','sh000300','sz399006'];
-function spark(c, up){
-  if(!c || c.length<10) return '';
-  const a=c.slice(-250), lo=Math.min(...a), hi=Math.max(...a), n=a.length;
-  const pts=a.map((v,i)=>((i/(n-1))*200).toFixed(1)+','+(44-(v-lo)/Math.max(1e-9,hi-lo)*40).toFixed(1)).join(' ');
-  const col= up ? 'var(--upT)' : 'var(--downT)';
-  return `<svg class="sp" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,48 ${pts} 200,48" fill="${col}"/><polyline points="${pts}" stroke="${col}"/></svg>`;
-}
-const SIG={signal:['▲ 有合格 LPPLS 拟合（顶部结构）','var(--upT)'],no_qualified_fit:['— 主尺度无合格拟合','var(--dim)'],t1_not_qualified:['— 泡沫起点未达标准','var(--dim)']};
-const REG={HIGH_RISK:'体制带：高风险',LOW_RISK:'体制带：低风险',NEUTRAL:'体制带：中性'};
-function card(D){
-  const J=D.raw, T=D.top, c=J.price_history.close, n=c.length, px=c[n-1], pv=c[n-2], ch=(px/pv-1)*100;
-  const yr = n>250 ? px/c[n-250]-1 : 0;
-  const cb=T.combo||{}, e=LPPL.ev(cb.evidence, J.evidence_levels), v=cb['p0.1'];
-  const top = e.show && v!=null ? `<span class="bar"><i style="--w:${Math.min(1,v).toFixed(3)};background:var(--up)"></i></span><span class="v">${(v*100).toFixed(0)}%</span>` : `<span class="v">${e.label}</span>`;
-  const [txt,col]=SIG[T.signal_status]||['— '+(T.signal_status||'无状态'),'var(--dim)'];
-  const rb=J.regime_band||{};
-  const el=document.createElement('div'); el.className='ic glass reveal';
-  el.innerHTML=`<div class="h"><span class="n">${D.name}</span><span class="px">${isFinite(px)?px.toFixed(2):'—'}<span style="color:${ch>=0?'var(--upT)':'var(--downT)'}">${isFinite(ch)?(ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'%':''}</span></span></div>
-    ${spark(c, yr>=0)}
-    <div class="row"><span>顶</span>${top}</div>
-    <div class="row"><span>底</span><span class="v">${(T.negative_bubble&&T.negative_bubble.signal_status)==='signal'?'负泡沫有合格拟合':'无负泡沫信号'}（不预测底部）</span></div>
-    <div class="st"><b style="color:${col}">${txt}</b>${REG[rb.state]||''}${rb.month?'（'+rb.month+'，描述性）':''} · Combo p=0.1，${e.label}，不是概率 · <a href="index.html?code=${D.sym.sym}">进入终端</a></div>`;
-  return el;
-}
-const idx=$('#idx');
-let TINT=[1.0,.55,.27,.05], s0=0;
-Promise.all(KEYS.map(k=>LPPL.load(k).catch(e=>({err:e.message,k})))).then(list=>{
-  for(const D of list){
-    if(D.err){ const el=document.createElement('div'); el.className='ic glass reveal'; el.innerHTML=`<div class="h"><span class="n">${D.k}</span></div><div class="st"><b>数据未加载</b>${D.err}</div>`; idx.appendChild(el); continue; }
-    idx.appendChild(card(D));
-  }
-  const ok=list.find(D=>!D.err);
-  if(ok) $('#foot').textContent='数据：'+ok.raw.data_version+' · 截至 '+ok.asof+' · 模型 '+ok.raw.model_version+'；置信度是合格拟合占比，不是概率，未经样本外校准';
-  const D0=list[0];
-  if(!D0.err){ const v=(D0.top.combo||{})['p0.1']||0; s0=Math.min(1,v/.3); TINT=[1.0,.55,.27,.05+.26*s0]; }
-  $('#fbtint').style.background=`rgba(${TINT[0]*255|0},${TINT[1]*255|0},${TINT[2]*255|0},${TINT[3].toFixed(3)})`;
-  idx.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
-});
+/* ================= 数据（首页不读取市场或模型数据；品牌影像独立） ================= */
+const TINT=[1.0,.69,.43,.035], BRAND_DRIFT=.6;
+$('#fbtint').style.background='rgba(255,176,110,.035)';
 
 /* ================= 从微澜到浪：示意曲线 ================= */
 (function buildWave(){
@@ -848,7 +823,7 @@ function render(now, fi, sub, deep, loop, loopW){
     const ta=tex(A), tb=(B===A)?ta:tex(B); if(!ta) return;
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,ta);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,tb||ta);
-    gl.uniform1f(U.uMix,tb?mix:0); gl.uniform1f(U.uT,RM?0:clk(now)); gl.uniform1f(U.uSub,sub); gl.uniform1f(U.uDeep,deep); gl.uniform1f(U.uStr,s0);
+    gl.uniform1f(U.uMix,tb?mix:0); gl.uniform1f(U.uT,RM?0:clk(now)); gl.uniform1f(U.uSub,sub); gl.uniform1f(U.uDeep,deep); gl.uniform1f(U.uStr,0);
     gl.uniform1f(U.uQuality,quality.settings.cloud);
     gl.uniform1f(U.uIdleWater,loop&&loop.scene!=='sea'?loopW:0);
     gl.uniform1f(U.uProgress,fi/(SRC.n-1));
@@ -889,7 +864,7 @@ function drawMotes(t,vis){
   mc.style.opacity = vis.toFixed(3);
   if(vis<=0.01) return;
   mx.clearRect(0,0,mw,mh);
-  const sp=.6+.9*s0;
+  const sp=BRAND_DRIFT;
   for(let i=0;i<motes.length;i++){const m=motes[i];
     m.y -= m.v*sp + scrollVel*m.z*.25; m.x += Math.sin(t*.0005+m.ph)*(.12+m.z*.3);
     if(m.y<-m.r*2){ m.y=mh+m.r*2; m.x=Math.random()*mw; }
@@ -906,8 +881,9 @@ const MAXM=1400, LG=(m)=>Math.log(1+m)/Math.log(1+MAXM);
 let A=[], vh=1, introEnd=1;
 function anchors(){
   vh=window.innerHeight; const sy=window.scrollY;
+  document.documentElement.style.setProperty('--home-header-clearance',($('#top').getBoundingClientRect().height+24)+'px');
   const mid=(id)=>{ const r=$(id).getBoundingClientRect(); return r.top+sy+r.height/2-vh/2; };
-  introEnd = $('#intro').offsetHeight - vh*.15;
+  introEnd = Math.max(1,$('#intro').offsetHeight - vh*.15);
   const endY = document.documentElement.scrollHeight - vh;
   A=[[introEnd,8],[mid('#s1'),15],[mid('#s2'),30],[mid('#s3'),200],[mid('#s4'),1000],[Math.max(endY,mid('#s4')+1),1400]];
 }
@@ -1186,6 +1162,7 @@ function bubbles(){
 
 /* ================= 主循环 ================= */
 const hero=$('#hero'), hint=$('#hint'), top=$('#top'), shade=$('#shade'), mk=$('#mk'), rd=$('#rd'), s1=$('#s1');
+const waterlineCopy=$('#waterline-copy'), underwaterCopy=$('#underwater-copy'), chapterMarker=$('#chapter-marker');
 let target=0, cur=0, raf=0, depth=0, lastFrame=0, prevNow=0, lastScrollT=-1e9, loopW=0, curLoop=null;
 const IDLE_MS=300; // 停止滚动多久后切到真实海浪循环
 function zoneOf(m){ return m<1?'海面':m<200?'透光层':m<1000?'弱光层':'深水层'; }
@@ -1208,6 +1185,11 @@ function onScroll(){
 }
 function tick(now){
   raf=0;
+  if(RM){
+    hero.style.opacity='1';hero.style.transform='none';hero.style.visibility='visible';
+    waterlineCopy.style.opacity=underwaterCopy.style.opacity='0';
+    mc.style.opacity='0';setWave(1);return;
+  }
   if(!RM) kick();
   if(!RM && now-lastFrame < 1000/quality.settings.fps-2) return;
   const dtF = now-(prevNow||now); prevNow=now; lastFrame=now;
@@ -1239,10 +1221,16 @@ function tick(now){
     if(loopW>0) kick();
   }
   render(now, fi, sub, deep, loopW>0?loopIt:null, loopW);
-  const fo = sstep(.50,.74,cur);
-  hero.style.opacity=(1-fo).toFixed(3);
-  hero.style.transform=`translateY(${(-fo*40).toFixed(1)}px)`;
-  hero.style.visibility = fo>=1?'hidden':'visible';
+  const story=HomeJourney.scene(cur);
+  hero.style.opacity=story.hero.toFixed(3);
+  hero.style.transform=`translateY(${((1-story.hero)*-24).toFixed(1)}px)`;
+  hero.style.visibility=story.hero<.005?'hidden':'visible';
+  waterlineCopy.style.opacity=story.waterline.toFixed(3);
+  waterlineCopy.style.transform=`translateY(${((1-story.waterline)*18).toFixed(1)}px)`;
+  underwaterCopy.style.opacity=story.underwater.toFixed(3);
+  underwaterCopy.style.transform=`translateY(${((1-story.underwater)*18).toFixed(1)}px)`;
+  chapterMarker.querySelector('span').textContent=story.chapter;
+  chapterMarker.style.opacity=window.scrollY>introEnd?'0':'1';
   setInk(sstep(WATERLINE-.04, SUBMERGED, cur));
   if(SND.on && SND.ctx) sndSet(cur);
   drawMotes(now, RM ? 0 : sstep(SUBMERGED, SUBMERGED+.1, cur));
@@ -1254,17 +1242,58 @@ window.addEventListener('resize',()=>{ clearTimeout(window._rz); window._rz=setT
 window.addEventListener('scroll',onScroll,{passive:true});
 document.addEventListener('visibilitychange',()=>{
   quality.reset();prevNow=0;lastFrame=0;
-  if(videoMedia) videoMedia.setHidden(document.hidden);
+  if(videoMedia) videoMedia.setHidden(document.hidden||RM);
   if(document.hidden) pauseLoops(null); else kick();
 });
 window.addEventListener('pagehide',()=>{ if(videoMedia) videoMedia.setHidden(true); });
-window.addEventListener('pageshow',()=>{ if(videoMedia) videoMedia.setHidden(document.hidden);kick(); });
+window.addEventListener('pageshow',()=>{ if(videoMedia) videoMedia.setHidden(document.hidden||RM);kick(); });
 $('#motion-resume').addEventListener('click',()=>{
   if(videoMedia && videoMedia.resume()) $('#motion-resume').hidden=true;
 });
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ anchors(); onScroll(); });
 if(document.fonts&&document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',()=>{anchors();onScroll();});
-$('#dive').addEventListener('click',(e)=>{ e.preventDefault(); UI.dive(e.clientX||window.innerWidth*.3); const tgt=s1.getBoundingClientRect().top+window.scrollY; window.scrollTo({top:tgt,behavior:RM?'auto':'smooth'}); });
+$('#dive').addEventListener('click',(e)=>{ e.preventDefault(); UI.dive(e.clientX||window.innerWidth*.3); const tgt=Math.max(0,s1.getBoundingClientRect().top+window.scrollY-top.getBoundingClientRect().height-24); window.scrollTo({top:tgt,behavior:RM?'auto':'smooth'}); });
+$('#resurface').addEventListener('click',e=>{e.preventDefault();window.scrollTo({top:0,behavior:RM?'auto':'smooth'});});
+document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();window.scrollTo({top:0,behavior:RM?'auto':'smooth'});});
+document.querySelector('.method-detail').addEventListener('toggle',()=>{anchors();setWave(1);});
+
+const motionButton=$('#motion-toggle'),motionLabel=$('#motion-label');
+function syncMotionLabel(){
+  const policy=motionPolicy();
+  motionButton.disabled=policy.locked;
+  motionButton.setAttribute('aria-pressed',String(!RM));
+  motionButton.setAttribute('aria-label',policy.locked?'静态画面，遵循本地预览或系统减少动效设置':RM?'动画已关闭，开启海洋动画':'动画已开启，切换为静态画面');
+  motionLabel.textContent=policy.locked?'静态画面':RM?'动画 · 关':'动画 · 开';
+}
+function applyMotionChoice(choice){
+  const reading=[...document.querySelectorAll('main .sec')].find(section=>{
+    const rect=section.getBoundingClientRect();return rect.top<window.innerHeight*.6&&rect.bottom>120;
+  });
+  const readingTop=reading?reading.getBoundingClientRect().top:0;
+  if(choice!==null){storedMotion=choice;try{localStorage.setItem('cp_home_motion',choice);}catch(e){}}
+  RM=!motionPolicy().enabled;
+  document.documentElement.classList.toggle('home-static',RM);
+  document.documentElement.classList.toggle('home-animated',!RM);
+  $('#motion-resume').hidden=true;
+  if(RM){
+    if(raf){cancelAnimationFrame(raf);raf=0;}
+    pauseLoops(null);if(videoMedia)videoMedia.setHidden(true);
+    for(const job of mediaQueue.splice(0)){job.rec.job=null;job.rec.resolve(false);}
+    hero.style.opacity='1';hero.style.transform='none';hero.style.visibility='visible';
+  }else{
+    ensureVideoMedia();if(videoMedia)videoMedia.setHidden(document.hidden);
+    if(!gl){useGL=initGL();stage.classList.toggle('fb',!useGL);}
+    quality.reset();prevNow=lastFrame=0;loadAll();
+    if(videoMedia){videoMedia.start();videoMedia.resume();}
+  }
+  anchors();sizeCanvases();sizeMotes();
+  window.scrollTo({top:reading?reading.getBoundingClientRect().top+window.scrollY-readingTop:0,behavior:'auto'});
+  cur=target=clamp(window.scrollY/Math.max(1,introEnd),0,1);
+  syncMotionLabel();onScroll();kick();
+}
+motionButton.addEventListener('click',()=>applyMotionChoice(RM?'on':'off'));
+if(motionQuery.addEventListener)motionQuery.addEventListener('change',()=>applyMotionChoice(null));
+syncMotionLabel();
 
 // 声音开关
 const sndBtn=$('#snd'), sndL=$('#sndl');
@@ -1395,7 +1424,7 @@ window.addEventListener('pagehide',()=>{SND.on=false; pauseSound(); soundLabel()
 
 // 启动
 sprite=makeSprite();
-useGL = initGL();
+useGL = !RM && initGL();
 if(!useGL) stage.classList.add('fb');
 sizeCanvases(); sizeMotes(); anchors();
 cur = target = clamp(window.scrollY/Math.max(1,introEnd),0,1);
@@ -1403,8 +1432,10 @@ lastY=window.scrollY;
 onScroll();
 loadAll();
 
-const rv=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); rv.unobserve(e.target);} }),{threshold:.12});
-document.querySelectorAll('.reveal').forEach(el=>rv.observe(el));
+if(typeof IntersectionObserver==='function'){
+  const rv=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); rv.unobserve(e.target);} }),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>rv.observe(el));
+}else document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
 })();
 </script>
 </body>
