@@ -15,23 +15,36 @@ import numpy as np
 import pandas as pd
 
 from ..lppls.core import TOP_RULE
+from ..lppls.oscillations import LEGACY_OSC_VERSION, OSC_UNITS_VERSION, future_oscillations
 
 
 def _derived(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep all historical fields/gates unchanged; add explicit unit diagnostics.
+
+    ``osc``/``n_osc`` remain the old abs/clipped half-phase and its division
+    by pi. Only ``osc_cycles`` is a future-domain complete-cycle count.
+    The new metadata is diagnostic and does not select a production policy.
+    """
     d = df.reset_index(drop=True)
     t2 = d.n - 1
     d["ahead"] = d.tc - t2
     d["dt"] = t2
     C = np.hypot(d.C1, d.C2)
     d["D"] = np.where(C > 0, d.m * d.B.abs() / (d.w * C), np.inf)
-    # (ω/2)·ln|(t_c−t₁)/(t_c−t₂)|，E7 的写法；取绝对值以支持 t_c 落在 t₂ 之前（§17.4）
+    # LEGACY: half-phase, not complete cycles; preserve abs/clipping for old results.
     d["osc"] = d.w / 2 * np.log(np.abs(d.tc) / np.maximum(np.abs(d.tc - t2), 1e-3))
     d["n_osc"] = d.osc / np.pi
+    d["osc_legacy_half_phase"] = d.osc
+    d["osc_legacy_cycles"] = d.n_osc
+    d["osc_legacy_version"] = LEGACY_OSC_VERSION
+    d["osc_cycles"], d["osc_cycles_status"] = future_oscillations(d.tc, d.w, t2=t2)
+    d["osc_units_version"] = OSC_UNITS_VERSION
     d["rel_err"] = np.sqrt(d.sse / d.n) / d.y_std
     return d
 
 
 def rules(d: pd.DataFrame) -> pd.DataFrame:
+    """Historical mixed-unit rules, frozen for compatibility; no policy migration."""
     r = pd.DataFrame(index=d.index)
     r["power"] = (d.pow_B < 0) & (d.pow_m > 0) & (d.pow_m < 1)
     r["p_ds"] = ((d.B < 0) & d.m.between(0.01, 0.99) & d.w.between(2, 15)
@@ -73,7 +86,11 @@ JIANG_TOL, JIANG_DF = 0.10, -2.86
 
 
 def grid_rules(d: pd.DataFrame) -> pd.DataFrame:
-    """E7 条件 1 的框架（B<0、t_c∈[t₂−0.15dt, t₂+0.13dt]、(ω/2)ln≥2.5）× 网格阈值；另加 Jiang 变体。"""
+    """Historical half-phase gates, including legacy FCO-named variants.
+
+    Names do not establish equivalence to the protected FCO implementation.
+    (ω/2)ln >= 2.5 is NOT a threshold of 2.5 complete cycles.
+    """
     base = (d.B < 0) & d.ahead.between(-0.15 * d.dt, 0.13 * d.dt) & (d.osc >= 2.5)
     r = {}
     for dk in GRID_D:
@@ -87,7 +104,7 @@ def grid_rules(d: pd.DataFrame) -> pd.DataFrame:
                  & ((d.lomb_w - d.w).abs() / d.w <= JIANG_TOL) & (d.df_t <= JIANG_DF))
         r["g_jiang"] = jiang
         r["g_jiang_strict"] = jiang & d.m.between(0.1, 0.9) & d.w.between(6, 13)
-    # FCO 平台公开的四套合格过滤集（文献 §16.16，前端原文数值）；公开文字未给 t_c 范围，故只用 B<0 与 m∈(0,1]
+    # Legacy FCO-named local variants; keep old numeric units, not verified platform parity.
     fco = (d.B < 0) & (d.m > 0)
     r["g_fco_standard"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)
     r["g_fco_early"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.0) & (d.osc >= 1.5)
@@ -173,7 +190,9 @@ def scores(scan: pd.DataFrame) -> pd.DataFrame:
 
 
 def rules_ab(d: pd.DataFrame) -> pd.DataFrame:
-    """§17.4-7 Johansen–Sornette 1999 反泡沫合格条件（LPPLS_ANCHOR=start 扫描；t_c 在窗口起点之前，t₁=0）：
+    """Legacy half-phase antibubble rules, preserved; not future top forecasts.
+
+    §17.4-7 Johansen–Sornette 1999 反泡沫合格条件（LPPLS_ANCHOR=start 扫描；t_c 在窗口起点之前，t₁=0）：
     t_c<0、B<0（峰后衰减）、m∈(0,1)、ω∈[2,25]、D≥0.5、振荡数 (ω/2)·ln((t₂−t_c)/(t₁−t_c))≥2.5；
     ab_strict 另加 m∈[0.1,0.9]、ω∈[5,13]（对应 FCO PURE 的窄域）。"""
     t2 = d.n - 1
