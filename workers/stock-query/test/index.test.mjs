@@ -97,6 +97,39 @@ function resultFor(job, extra = {}) {
     requested_at: job.requested_at, ...extra };
 }
 
+test('server first-observed receipt persists across status, result reads and object eviction without becoming publication time', async () => {
+  await withUpstream(upstream(), async server => {
+    const env = environment(), job = await (await query(env)).json();
+    const value = resultFor(job, { asof: '2026-11-05', generated_at: '2026-11-05T09:00:00Z' });
+    server.outputs.set(`stock/jobs/${job.job_id}/600519.json`, value);
+    const status = await (await worker.fetch(request(`/status?code=600519&job_id=${job.job_id}`), env)).json();
+    const receipt = status.delivery_observation;
+    assert.equal(receipt.meaning, 'FIRST_WORKER_READ_NOT_PUBLICATION_OR_USER_VISIBILITY');
+    assert.match(receipt.result_sha256, /^[a-f\d]{64}$/);
+    assert.equal(receipt.published_at, undefined);
+    assert.notEqual(receipt.first_observed_at, value.generated_at);
+    env.STOCK_JOBS.evict('600519');
+    const fetched = await (await worker.fetch(request(`/result?code=600519&job_id=${job.job_id}`), env)).json();
+    assert.deepEqual(fetched.delivery_observation, receipt);
+    assert.deepEqual(server.outputs.get(`stock/jobs/${job.job_id}/600519.json`), value, 'upstream immutable artifact is untouched');
+    server.outputs.set(`stock/jobs/${job.job_id}/600519.json`, { ...value, changed: true });
+    const changed = await worker.fetch(request(`/result?code=600519&job_id=${job.job_id}`), env);
+    assert.equal(changed.status, 502, 'an immutable result mutation cannot inherit its old observation');
+  });
+});
+
+test('legacy or unregistered results remain readable without manufactured server observation receipts', async () => {
+  await withUpstream(upstream(), async server => {
+    const env = environment();
+    server.outputs.set('stock/600519.json', { code: '600519', mode: 'current',
+      job_id: '11111111-1111-4111-8111-111111111111', source_sha: SHA });
+    const response = await worker.fetch(request('/result?code=600519'), env);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).delivery_observation, null);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
 test('CORS, methods and invalid inputs fail before upstream requests', async () => {
   await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
     const env = environment();

@@ -5,14 +5,14 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const chart = require('../app/candle-chart.js');
 
-function harness(demo = true, search = '?demo=1') {
+function harness(demo = true, search = '?demo=1', track = false) {
   const nodes = new Map(), values = new Map(), calls = [], renders = [];
   const element = () => ({ hidden: false, textContent: '', value: '',
     events: {}, attrs: {}, classList: { add() {} },
     addEventListener(name, fn) { this.events[name] = fn; },
     setAttribute(name, value) { this.attrs[name] = value; }, replaceChildren() {} });
   const node = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id); };
-  let config, currentUrl;
+  let config, currentUrl, visibilityConfig;
   const api = { isDemo: demo, codes: ['600519'] };
   const root = { document: { getElementById: node, querySelectorAll: () => [],
     createElement: element, body: element() }, CandleChart: chart,
@@ -23,14 +23,33 @@ function harness(demo = true, search = '?demo=1') {
       config = options;
       return { select: code => calls.push(code), request() {}, resume() {}, destroy() {} };
     } } };
+  if (track) root.StockVisibility = { mount(options) {
+    visibilityConfig = options;
+    return { set() {}, records: () => [], destroy() {} };
+  } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../app/stock-view.js'), 'utf8'),
     { window: root, URL, URLSearchParams });
   root.StockView.mount({ api, renderResult: value => renders.push(value) });
   const current = { code: '600519', asof: '2026-10-23', demo };
   const update = changes => config.onChange({ code: '600519', market: null, marketStatus: 'loading',
     current, currentStatus: 'ready', history: null, historyStatus: 'idle', issues: {}, tasks: [], recent: [], ...changes });
-  return { node, values, calls, renders, update, current, config, url: () => currentUrl };
+  return { node, values, calls, renders, update, current, config, visibilityConfig, url: () => currentUrl };
 }
+
+test('first-visible note belongs to the displayed stock and resets on a different result or stock', () => {
+  const h = harness(false, '', true);
+  h.update({});
+  h.visibilityConfig.onVisible({ identity: { symbol: 'sh600519', window: { start: '2026-11-16', end: '2026-11-20' } },
+    first_visible_at_client: '2026-11-06T08:00:00Z', is_cached: true, storage_status: 'BROWSER_LOCAL' });
+  assert.match(h.node('visibility-note').textContent, /sh600519.*2026-11-16/);
+  h.update({ code: '000001', current: null });
+  assert.doesNotMatch(h.node('visibility-note').textContent, /sh600519/);
+  assert.match(h.node('visibility-note').textContent, /尚无/);
+  h.update({ code: '000001', current: { symbol: 'sz000001', asof: '2026-11-06' } });
+  h.visibilityConfig.onVisible({ identity: { symbol: 'sz000001', window: { start: '2026-10-01', end: '2026-10-05' } },
+    first_visible_at_client: '2026-11-06T08:00:00Z', is_cached: true, date_relation_at_client_observation: 'PAST_WINDOW', storage_status: 'BROWSER_LOCAL' });
+  assert.match(h.node('visibility-note').textContent, /sz000001.*已过期/);
+});
 
 test('an active demo task takes precedence over a retained completed result in the overall status', () => {
   const h = harness();

@@ -198,6 +198,8 @@ test('fresh cached analysis does not dispatch a new calculation', async t => {
   t.after(() => h.session.destroy());
   await h.session.select('000001');
   assert.equal(h.requests.length, 0);
+  assert.equal(h.session.snapshot().currentDelivery.source, 'static_cache');
+  assert.equal(h.session.snapshot().currentDelivery.received_at_client, '2026-11-06T08:00:00.000Z');
   assert.equal(h.session.snapshot().stale, false);
 });
 
@@ -334,6 +336,7 @@ test('a completed matching job updates data, clears staleness and persisted task
   assert.equal(h.session.snapshot().current.asof, '2026-11-06');
   assert.equal(h.session.snapshot().currentStatus, 'ready');
   assert.equal(h.session.snapshot().stale, false);
+  assert.equal(h.session.snapshot().currentDelivery.source, 'job_result');
   assert.equal(h.session.snapshot().tasks.length, 0);
   assert.deepEqual(JSON.parse(h.store.get(STORE)), []);
 });
@@ -385,6 +388,7 @@ test('explicit history generation is separate and its failure retains current an
   assert.equal(h.session.snapshot().currentStatus, 'ready');
   assert.equal(h.session.snapshot().historyStatus, 'failed');
   assert.equal(h.session.snapshot().current.symbol, 'sz000001');
+  assert.equal(h.session.snapshot().currentDelivery.source, 'static_cache', 'history completion cannot manufacture a fresh current prediction');
 });
 
 test('history compatibility rejects mixed symbols, model versions, variants and future frames', () => {

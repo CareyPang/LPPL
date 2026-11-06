@@ -25,6 +25,25 @@
         setItem: (key, value) => native.setItem('presentation.' + key, value),
       } : native;
     } catch { /* Storage is optional. */ }
+    const visibilityEmpty = '仅记录区间实际进入当前可见页面后的本机时间；不是预测发布时间。当前尚无可见区间记录。';
+    const visibility = !demo && root.StockVisibility ? root.StockVisibility.mount({
+      document: doc, container: $('risk'), storage,
+      onVisible: record => { if ($('visibility-note')) $('visibility-note').textContent =
+        `${record.identity.symbol} 区间 ${record.identity.window.start}—${record.identity.window.end}，本机首次看到：${record.first_visible_at_client}。` +
+        (record.is_cached ? '读取的是已有结果，未产生新预测。' : '') +
+        (record.date_relation_at_client_observation === 'PAST_WINDOW' ? '首次查看时区间已过期，不能作为提前提醒。' : '') +
+        '本机时钟未经校验；这不是首次公开发布时间。' +
+        (record.storage_status === 'MEMORY_ONLY' ? '浏览器存储不可用，仅保留在当前页面。' : '记录仅保存在此浏览器。'); },
+    }) : null;
+    $('export-visibility')?.addEventListener('click', () => {
+      if (!visibility) return;
+      const blob = new Blob([JSON.stringify({ schema: 'browser_visibility_export_v1',
+        warning: 'CLIENT_CLOCK_NOT_ADVANCE_PUBLICATION_PROOF', records: visibility.records() }, null, 2)],
+      { type: 'application/json' });
+      const url = URL.createObjectURL(blob), link = doc.createElement('a');
+      link.href = url; link.download = 'lppl-local-visibility.json'; link.click();
+      root.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
     function readout(announce = false) {
       const bar = prices[selected];
       const text = chart.describe(bar, state?.market?.volume_unit);
@@ -81,6 +100,8 @@
       if (lastCode !== next.code) {
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
         $('results').hidden = true; $('demo-result').hidden = true; $('asof').textContent = '—'; showMarket(null);
+        visibility?.set(null, null);
+        if ($('visibility-note')) $('visibility-note').textContent = visibilityEmpty;
       }
       $('welcome').hidden = true; doc.body.classList.add('has-stock');
       $('task-tools').hidden = false; $('market-panel').hidden = false; $('task-stages').hidden = false;
@@ -92,6 +113,8 @@
       if (next.current && (lastCurrent !== next.current || lastHistory !== history)) {
         lastCurrent = next.current; lastHistory = history;
         options.renderResult(next.current, history);
+        if ($('visibility-note')) $('visibility-note').textContent = visibilityEmpty;
+        visibility?.set(next.current, next.currentDelivery);
         if (!demo && next.history && !history) $('history-note').textContent =
           '已有历史回放与当前模型版本尚未匹配，可重新生成；当前分析仍可查看。';
       }
@@ -178,7 +201,7 @@
     const observer = root.ResizeObserver ? new root.ResizeObserver(scheduleDraw) : null;
     observer?.observe($('market-panel'));
     root.addEventListener('pagehide', event => {
-      if (!event.persisted) { session.destroy(); observer?.disconnect(); if (drawFrame !== null) root.cancelAnimationFrame?.(drawFrame); }
+      if (!event.persisted) { session.destroy(); visibility?.destroy(); observer?.disconnect(); if (drawFrame !== null) root.cancelAnimationFrame?.(drawFrame); }
     });
     root.addEventListener('pageshow', event => { if (event.persisted && state) void session.select(state.code); });
     const initial = new URLSearchParams(root.location.search).get('code');

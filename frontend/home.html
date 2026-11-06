@@ -315,7 +315,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   <h1><span class="ln">浪成于</span><span class="ln">微澜之间<span class="title-period">。</span></span></h1>
   <p class="poem"><span><b>启</b>于青萍之末，</span><span><b>满</b>于狂澜之巅。</span></p>
   <div class="cta ln">
-    <a class="btn pri" href="stock.html" data-workstation>进入工作站 <span class="ar" aria-hidden="true">↗</span></a>
+    <a class="btn pri sun-badge" href="stock.html" data-workstation><span class="badge-seal" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="3.5"/><path d="M16 4v2M8.5 6.5l1.5 1.5M23.5 6.5 22 8M5.5 12h2M24.5 12h2M8 19c5-3 11-3 16 0M10 23c4-2 8-2 12 0"/></svg></span><span class="badge-label">进入工作站</span><span class="ar" aria-hidden="true">↗</span></a>
     <a class="btn ghost" href="#s1" id="dive"><i aria-hidden="true">↓</i>下潜了解</a>
   </div>
   <p class="hero-boundary">短期与阶段分开观察 · 识别能力仍在验证</p>
@@ -656,7 +656,8 @@ uniform sampler2D uA,uB;
 uniform float uMix,uT,uSub,uDeep,uStr;
 uniform vec2 uRes,uCov,uK;
 uniform vec4 uTint;
-uniform float uHz,uSkyW,uSunX,uQuality,uIdleWater,uProgress;
+uniform vec3 uSkyA,uSkyB;
+uniform float uQuality,uIdleWater,uProgress;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 /* ---------- 代码渲染的天空：透视云层 + 夕阳 + 海平线薄雾 ---------- */
 float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -667,13 +668,13 @@ float fbmK(vec2 p,float k){float s=0.,a=.5;mat2 R=mat2(1.6,1.2,-1.2,1.6);
 float LODK=9.;
 float fbm(vec2 p){return fbmK(p,LODK);}
 // im：画面坐标（x 0–1，y 自上而下 0–1）；以视频的海平线 uHz 为基准
-vec3 skyCol(vec2 im,float asp,float t){
-  float hI=uHz, e=max(hI-im.y,0.), r=clamp(im.y/max(hI,.01),0.,1.);
+vec3 skyCol(vec2 im,float asp,float t,float hI,float sunX){
+  float e=max(hI-im.y,0.), r=clamp(im.y/max(hI,.01),0.,1.);
   // A restrained, stable exposure: keep a visible sun instead of a white bloom patch.
   vec3 c=mix(vec3(.45,.61,.69),vec3(.80,.82,.77),smoothstep(0.,.72,r));
   c=mix(c,vec3(.94,.76,.56),smoothstep(.62,1.,r));
   float sy=hI-max(.014,.056-(.431-hI)*.32);
-  vec2 d=vec2((im.x-uSunX)*asp,im.y-sy); float dist=length(d);
+  vec2 d=vec2((im.x-sunX)*asp,im.y-sy); float dist=length(d);
   vec3 sunC=vec3(1.,.77,.45);
   float warmth=exp(-dot(d,d)*10.);
   c=mix(c,vec3(.98,.85,.66),warmth*.17);
@@ -700,6 +701,13 @@ vec3 skyCol(vec2 im,float asp,float t){
   c=mix(c,vec3(.94,.89,.81),veil);
   return c;
 }
+// Replace each decoded source before crossfading: two sources may have different horizons.
+vec3 replaceSky(vec3 source,vec2 im,vec3 sky){
+  if(sky.y<.5) return source;
+  float mask=1.-smoothstep(sky.x,sky.x+.004,im.y);
+  if(mask<=0.) return source;
+  return mix(source,skyCol(im,1.7778,uT,sky.x,sky.z),mask);
+}
 vec3 soft(vec3 a,vec3 b){return mix(2.*a*b+a*a*(1.-2.*b),2.*a*(1.-b)+sqrt(a)*(2.*b-1.),step(.5,b));}
 void main(){
   vec2 s=v;float asp=uRes.x/uRes.y;vec2 q=vec2(s.x*asp,s.y);
@@ -708,22 +716,16 @@ void main(){
   vec2 px=uCov/uRes*1.2;
   vec2 ox=vec2(px.x,0.), oy=vec2(0.,px.y);
   vec3 ca=texture2D(uA,uv).rgb, cb=texture2D(uB,uv).rgb;
-  vec3 col=mix(ca,cb,uMix);
-  // 轻度锐化（反锐化掩模），对混合后的画面计算，避免交叉淡化时出现边缘错位
-  vec3 bl=mix((texture2D(uA,uv+ox).rgb+texture2D(uA,uv-ox).rgb+texture2D(uA,uv+oy).rgb+texture2D(uA,uv-oy).rgb),
-              (texture2D(uB,uv+ox).rgb+texture2D(uB,uv-ox).rgb+texture2D(uB,uv+oy).rgb+texture2D(uB,uv-oy).rgb),uMix)*.25;
-  col=clamp(col+clamp((col-bl)*.30,vec3(-.035),vec3(.035)),0.,1.);
-  // 海平线以上换成代码天空；海面、浪尖仍用真实视频（按亮度区分，浪冲过海平线时不会被盖住）
-  if(uSkyW>.001){
-    vec2 im=vec2(uv.x,1.-uv.y);
-    float above=1.-smoothstep(uHz-.003,uHz+.004,im.y);
-    if(above>0.){
-      float lum=dot(col,vec3(.299,.587,.114));
-      float edgeGuard=mix(smoothstep(.32,.53,lum),1.,smoothstep(.006,.035,uHz-im.y));
-      float m=above*edgeGuard*uSkyW;
-      if(m>0.) col=mix(col,skyCol(im,1.7778,uT),m);
-    }
-  }
+  vec3 ba=(texture2D(uA,uv+ox).rgb+texture2D(uA,uv-ox).rgb+texture2D(uA,uv+oy).rgb+texture2D(uA,uv-oy).rgb)*.25;
+  vec3 bb=(texture2D(uB,uv+ox).rgb+texture2D(uB,uv-ox).rgb+texture2D(uB,uv+oy).rgb+texture2D(uB,uv-oy).rgb)*.25;
+  ca=clamp(ca+clamp((ca-ba)*.30,vec3(-.035),vec3(.035)),0.,1.);
+  cb=clamp(cb+clamp((cb-bb)*.30,vec3(-.035),vec3(.035)),0.,1.);
+  vec2 im=vec2(uv.x,1.-uv.y);
+  // Full coverage above each measured horizon; source brightness never opens holes.
+  vec3 col;
+  if(uMix<=.001) col=replaceSky(ca,im,uSkyA);
+  else if(uMix>=.999) col=replaceSky(cb,im,uSkyB);
+  else col=mix(replaceSky(ca,im,uSkyA),replaceSky(cb,im,uSkyB),uMix);
   // Underwater illumination stays source-aligned and comes from the decoded footage.
   col=clamp(col,0.,1.);
   col=mix(col,soft(col,uTint.rgb),uTint.a);
@@ -741,7 +743,7 @@ function initGL(){
   gl.useProgram(pr);
   const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
   const loc=gl.getAttribLocation(pr,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uHz','uSkyW','uSunX','uQuality','uIdleWater','uProgress']) U[n]=gl.getUniformLocation(pr,n);
+  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uSkyA','uSkyB','uQuality','uIdleWater','uProgress']) U[n]=gl.getUniformLocation(pr,n);
   gl.uniform1i(U.uA,0); gl.uniform1i(U.uB,1);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
   glc.addEventListener('webglcontextlost',(e)=>{ e.preventDefault(); toFallback(); });
@@ -754,7 +756,7 @@ function toFallback(){
   stage.classList.add('fb'); sizeCanvases();
 }
 // 统一的画面源：滚动帧 {key:i, src:img} 或循环帧 / 视频 {key:'sea3', src, live}
-function frameItem(i){ const f=frames[i]; return f&&f.ok ? {key:i,src:f.img,live:false} : null; }
+function frameItem(i){ const f=frames[i]; return f&&f.ok ? {key:i,src:f.img,live:false,scene:'dive',progress:i/(SRC.n-1)} : null; }
 function tex(it){
   if(!it) return null;
   let t=texCache.get(it.key);
@@ -797,7 +799,43 @@ function sceneSky(fi,loop,loopW){
   // Only the surface loop owns HZ_LOOP. Underwater media must never acquire a sky.
   const hz=hzAt(fi)*(1-seaMix)+HZ_LOOP*seaMix;
   const remainingSky=loop&&loop.scene!=='sea'?1-lw:1;
-  return {hz,weight:SKY_ON?sstep(.03,.12,hz)*remainingSky:0,sunX:.762*(1-seaMix)+SUN_X*seaMix};
+  return {hz,weight:SKY_ON && hz>0?remainingSky:0,sunX:.762*(1-seaMix)+SUN_X*seaMix};
+}
+function sourceSky(item){
+  if(item.scene==='sea') return sceneSky(0,item,1);
+  if(item.scene==='under'||item.scene==='deep') return {hz:0,weight:0,sunX:SUN_X};
+  // The actual held/decoded frame owns the mask, never the pending scroll target.
+  return sceneSky(clamp(item.progress||0,0,1)*(SRC.n-1),null,0);
+}
+let fallbackLayer=null, fallbackContext=null;
+function paintFallbackSource(item,sky,now,ox,oy,dw,dh){
+  if(!fallbackLayer){fallbackLayer=document.createElement('canvas');fallbackContext=fallbackLayer.getContext('2d',{alpha:false});}
+  if(fallbackLayer.width!==W||fallbackLayer.height!==H){fallbackLayer.width=W;fallbackLayer.height=H;}
+  const ctx=fallbackContext;
+  ctx.drawImage(item.src,ox,oy,dw,dh);
+  if(sky.weight>0){
+    const horizon=oy+dh*sky.hz, edge=Math.min(H,Math.max(0,horizon+dh*.004));
+    if(edge>0){
+      ctx.save();ctx.beginPath();ctx.rect(0,0,W,edge);ctx.clip();
+      const gradient=ctx.createLinearGradient(0,oy,0,Math.max(oy+1,horizon));
+      gradient.addColorStop(0,'#739cad');gradient.addColorStop(.72,'#ccd1c4');gradient.addColorStop(1,'#efc28f');
+      ctx.fillStyle=gradient;ctx.fillRect(0,0,W,edge);
+      const sunY=oy+dh*(sky.hz-Math.max(.014,.056-(.431-sky.hz)*.32)),sunX=ox+dw*sky.sunX;
+      const glow=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,dh*.18);
+      glow.addColorStop(0,'rgba(255,215,156,.43)');glow.addColorStop(1,'rgba(255,215,156,0)');
+      ctx.fillStyle=glow;ctx.fillRect(0,0,W,edge);
+      // A bounded Canvas sky keeps clouds moving when WebGL is unavailable.
+      const t=RM?0:clk(now);
+      for(let i=0;i<16;i++){
+        const phase=(i*.173+t*.004)%1.5-.25,x=ox+dw*phase,y=oy+dh*(sky.hz-.10-(i%4)*.075);
+        const cloud=ctx.createRadialGradient(x,y,0,x,y,dw*.14);
+        cloud.addColorStop(0,'rgba(226,224,218,.24)');cloud.addColorStop(1,'rgba(226,224,218,0)');
+        ctx.save();ctx.translate(x,y);ctx.scale(1,.22);ctx.translate(-x,-y);ctx.fillStyle=cloud;ctx.fillRect(x-dw*.14,y-dw*.14,dw*.28,dw*.28);ctx.restore();
+      }
+      ctx.fillStyle='#fff5ce';ctx.beginPath();ctx.arc(sunX,sunY,dh*.012,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+  }
+  return fallbackLayer;
 }
 // fi：滚动位置对应的帧；loop / loopW：静止时的真实海浪循环及其权重
 function render(now, fi, sub, deep, loop, loopW){
@@ -819,6 +857,7 @@ function render(now, fi, sub, deep, loop, loopW){
   }
   // Keep the sun in portrait framing, then gently reveal the underwater footage.
   const s=Math.max(W/SRC.w,H/SRC.h), covx=W/(SRC.w*s), covy=H/(SRC.h*s), kx = W<H ? .74-.26*sub : .5;
+  const skyA=sourceSky(A), skyB=sourceSky(B);
   if(useGL){
     const ta=tex(A), tb=(B===A)?ta:tex(B); if(!ta) return;
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,ta);
@@ -829,15 +868,14 @@ function render(now, fi, sub, deep, loop, loopW){
     gl.uniform1f(U.uProgress,fi/(SRC.n-1));
     gl.uniform2f(U.uRes,W,H); gl.uniform2f(U.uCov,covx,covy); gl.uniform2f(U.uK,kx,.5);
     gl.uniform4f(U.uTint,TINT[0],TINT[1],TINT[2],TINT[3]);
-    // Surface horizon follows its own loop; any residual dive sky fades out with underwater media.
-    const sky=sceneSky(fi,loop,loopW);
-    gl.uniform1f(U.uHz,sky.hz); gl.uniform1f(U.uSkyW,sky.weight); gl.uniform1f(U.uSunX,sky.sunX);
+    gl.uniform3f(U.uSkyA,skyA.hz,skyA.weight,skyA.sunX);
+    gl.uniform3f(U.uSkyB,skyB.hz,skyB.weight,skyB.sunX);
     gl.drawArrays(gl.TRIANGLES,0,3);
   } else {
     const dw=SRC.w*s, dh=SRC.h*s, ox=(W-dw)*kx, oy=(H-dh)/2;
     try{
-      fx.globalAlpha=1; fx.drawImage(A.src,ox,oy,dw,dh);
-      if(B!==A && mix>0.02){ fx.globalAlpha=mix; fx.drawImage(B.src,ox,oy,dw,dh); fx.globalAlpha=1; }
+      fx.globalAlpha=1; fx.drawImage(paintFallbackSource(A,skyA,now,ox,oy,dw,dh),0,0);
+      if(B!==A && mix>0.02){ fx.globalAlpha=mix; fx.drawImage(paintFallbackSource(B,skyB,now,ox,oy,dw,dh),0,0); fx.globalAlpha=1; }
     }catch(e){fx.globalAlpha=1;return;}
   }
   stage.classList.add('painted');

@@ -482,6 +482,7 @@
   <script src="app/stock-emblem.js" defer></script>
   <script src="app/lppl-data.js"></script>
   <script src="app/stock-session.js"></script>
+  <script src="app/stock-visibility.js"></script>
   <script src="app/candle-chart.js"></script>
   <script src="app/stock-demo-data.js"></script>
   <script src="app/stock-demo.js"></script>
@@ -595,6 +596,10 @@
             <span class="muted">时间窗只显示区间，不显示精确顶部日期</span>
           </div>
           <div id="risk"></div>
+          <details class="note"><summary>本机查看记录</summary>
+            <p id="visibility-note">仅记录时间区间实际进入当前可见页面后的本机时间；不是预测发布时间。演示、无区间及被证据规则隐藏的结果不记入。</p>
+            <button id="export-visibility" type="button">导出本机查看记录</button>
+          </details>
         </section>
         <section class="card wide">
           <h2>历史情景回放 · 按需生成</h2>
@@ -731,9 +736,9 @@
       }).join('');
       let range = '当前没有可显示的风险窗口。';
       if (window.start && window.end && !hiddenEv(window.evidence || confidence.evidence)) {
-        range = `<p class="range">风险窗口：${esc(window.start)} – ${esc(window.end)}（未校准，仅供参考）</p>`;
+        range = `<p class="range" data-forecast-window="window">风险窗口：${esc(window.start)} – ${esc(window.end)}（未校准，仅供参考）</p>`;
       }
-      const scenarios = (top.scenarios || []).filter((scenario) =>
+      const scenarios = (top.scenarios || []).map((scenario, index) => ({ ...scenario, visibilityIndex: index })).filter((scenario) =>
         scenario.q20_date
         && scenario.q80_date
         && !hiddenEv(
@@ -742,7 +747,7 @@
           || confidence.evidence,
         ));
       const scenarioText = scenarios.map((scenario) => `
-        <p class="range">
+        <p class="range" data-forecast-window="scenario-${scenario.visibilityIndex}">
           ${esc(scaleName[scenario.scale] || scenario.scale || '情景')}：
           ${esc(scenario.q20_date)} – ${esc(scenario.q80_date)}（未校准，仅供参考）
         </p>

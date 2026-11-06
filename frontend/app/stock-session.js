@@ -85,10 +85,11 @@
       }
     } catch { /* Corrupt browser state must not block the page. */ }
 
-    function applyCurrent(e, value) {
+    function applyCurrent(e, value, source) {
       if (!value || value.symbol !== symbol(e.code)) return;
       if (newer(value, e.current)) {
         e.current = value;
+        e.currentDelivery = { source, received_at_client: new Date(clock()).toISOString() };
         e.stale = stale(value, e.market);
         if (!jobs.has(e.code + ':current') && ['idle', 'ready'].includes(e.currentStatus)) e.currentStatus = 'ready';
         emit();
@@ -134,7 +135,7 @@
                 (job.source_sha && result.source_sha !== job.source_sha)) {
               throw Error('结果身份或版本尚未核对完成，稍后自动重试。');
             }
-            if (job.mode === 'history') applyHistory(e, result); else applyCurrent(e, result);
+            if (job.mode === 'history') applyHistory(e, result); else applyCurrent(e, result, 'job_result');
             finish(key, e, job.mode, 'ready');
             return;
           }
@@ -211,9 +212,9 @@
         }
       }
       const latest = Promise.resolve().then(() => api.latest(code))
-        .then(value => applyCurrent(e, value)).catch(() => {});
+        .then(value => applyCurrent(e, value, 'static_cache')).catch(() => {});
       const remote = Promise.resolve().then(() => api.remote(code, 'latest'))
-        .then(value => applyCurrent(e, value)).catch(error => { e.issues.cached = error.message; emit(); });
+        .then(value => applyCurrent(e, value, 'remote_cache')).catch(error => { e.issues.cached = error.message; emit(); });
       const market = Promise.resolve().then(() => api.market(code)).then(value => {
         if (generation !== e.generation) return;
         if (!value || value.code !== code || !Array.isArray(value.price)) throw Error('行情返回格式不正确。');

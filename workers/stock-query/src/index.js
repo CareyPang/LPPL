@@ -221,7 +221,37 @@ export class StockQueryState extends SerializedObject {
     if (path === '/market') return this.market(input);
     if (path === '/query') return this.query(input);
     if (path === '/status') return this.status(input);
+    if (path === '/observed') return this.observed(input);
     return failure('NOT_FOUND', '接口不存在', 404);
+  }
+
+  async observed({ code, job_id, kind, data }) {
+    const job = await this.ctx.storage.get(`job:${job_id}`);
+    if (!job || job.code !== code) return Response.json({ observation: null, reason: 'UNREGISTERED_JOB' });
+    if (!['latest', 'history'].includes(kind) || !sameResult(data, job) ||
+        (kind === 'latest' ? 'current' : 'history') !== job.mode) {
+      return failure('RESULT_MISMATCH', '结果身份不匹配', 502);
+    }
+    const observation = await this.observeResult(job, kind, data);
+    return Response.json({ observation });
+  }
+
+  async observeResult(job, kind, data) {
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(data)));
+    const sha256 = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
+    const key = `observed:${job.job_id}:${kind}`;
+    const existing = await this.ctx.storage.get(key);
+    if (existing) {
+      if (existing.result_sha256 !== sha256) throw new Error('immutable_result_changed');
+      return existing;
+    }
+    const receipt = { schema: 'result_observation_v1', code: job.code, job_id: job.job_id,
+      mode: job.mode, source_sha: job.source_sha, result_sha256: sha256,
+      hash_encoding: 'UTF8_JSON_STRINGIFY_PARSED_RESULT',
+      first_observed_at: new Date().toISOString(), clock: 'WORKER_SERVER',
+      meaning: 'FIRST_WORKER_READ_NOT_PUBLICATION_OR_USER_VISIBILITY' };
+    await this.ctx.storage.put(key, receipt);
+    return receipt;
   }
 
   async market({ code, ip }) {
@@ -324,11 +354,14 @@ export class StockQueryState extends SerializedObject {
         status = 'completed'; conclusion = 'failure'; phase = run.conclusion === 'success' ? 'publish_failed' : 'failed';
       }
     }
+    const observation = targetReady ? await this.observeResult(job,
+      job.mode === 'current' ? 'latest' : 'history', outputs[job.mode === 'current' ? 0 : 1].data) : null;
     const snapshot = { code: job.code, job_id: job.job_id, mode: job.mode, requested_at: job.requested_at,
       source_sha: job.source_sha, status, conclusion, phase, current_ready, history_ready, error_ready,
       created_at: run?.created_at || job.requested_at, updated_at: run?.updated_at || null,
       workflow_status: run?.status || null, workflow_conclusion: run?.conclusion || null,
       run_url: run?.html_url || null,
+      delivery_observation: observation,
       ...(phase === 'publish_failed' ? { error_code: 'RESULT_NOT_PUBLISHED', error: '计算结束，但本任务结果尚未发布' } : {}) };
     job.status = status;
     job.snapshot = snapshot;
@@ -399,7 +432,16 @@ export default {
         if (job_id && (result.data?.job_id !== job_id || result.data?.code !== code)) {
           return jsonResponse(request, env, { error_code: 'RESULT_MISMATCH', error: '结果身份不匹配' }, 502);
         }
-        return jsonResponse(request, env, result.data, 200, { 'Cache-Control': job_id ? 'public, max-age=300' : 'max-age=30' });
+        let observation = null;
+        const resultJob = job_id || result.data?.job_id;
+        if (bindingsReady(env) && JOB_PATTERN.test(resultJob || '') && ['latest', 'history'].includes(kind)) {
+          const receipt = await internal(env.STOCK_JOBS, code, '/observed',
+            { code, job_id: resultJob, kind, data: result.data });
+          if (!receipt.ok) throw new Error('observation_identity_failed');
+          observation = (await receipt.json()).observation;
+        }
+        return jsonResponse(request, env, { ...result.data, delivery_observation: observation },
+          200, { 'Cache-Control': job_id ? 'public, max-age=300' : 'max-age=30' });
       }
       if (url.pathname === '/status' && !job_id) {
         const since = url.searchParams.get('since');
