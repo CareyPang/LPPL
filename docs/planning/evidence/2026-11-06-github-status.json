@@ -1,0 +1,797 @@
+{
+  "checked_on": "2026-11-06",
+  "baseline_main": {
+    "sha": "12292944289343f6dbda65db1cf160f3736052cd",
+    "protected": false
+  },
+  "pull_request_count": 49,
+  "pull_requests": [
+    {
+      "number": 50,
+      "title": "feat: 个股异步查询、持久任务与可复现模型研究",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "339ebb170db5dd7d078bbeff9877843ba24e515f",
+      "base": "main"
+    },
+    {
+      "number": 49,
+      "title": "docs: 网站完整设计、交互原型与时间/价格模型研究",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "383f4c2ea3d3693799c21354d00b39b5798cce6a",
+      "base": "main"
+    },
+    {
+      "number": 47,
+      "title": "Add editorial stock observation entry",
+      "state": "open",
+      "draft": false,
+      "merged_at": null,
+      "head": "425b343e96d2513f1cb0525077553067d105331e",
+      "base": "main"
+    },
+    {
+      "number": 46,
+      "title": "Use native ocean video on home page",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-05T10:09:14Z",
+      "head": "50534c4c3a64d9c285565ccd43aa232793003124",
+      "base": "main"
+    },
+    {
+      "number": 45,
+      "title": "个股名称：名称表缺失时从腾讯行情取名称",
+      "state": "open",
+      "draft": false,
+      "merged_at": null,
+      "head": "e821c7cbd8e2e98b9e7e685e46a2e422c5b77181",
+      "base": "main"
+    },
+    {
+      "number": 44,
+      "title": "个股页重做：主站风格与字体、股票名称提示、逃顶/抄底分析摘要",
+      "state": "open",
+      "draft": false,
+      "merged_at": null,
+      "head": "e862e5b78c360a992055ee9b38fa62d814da4ba0",
+      "base": "main"
+    },
+    {
+      "number": 43,
+      "title": "抄底面板：换成全量事件库（含退市股）+ 2019 年以后样本外检验结果（H1/H2/H3 未通过）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T22:46:18Z",
+      "head": "a5b458999234699386fe2f574bf6c953e9c59a31",
+      "base": "main"
+    },
+    {
+      "number": 42,
+      "title": "dip_env：上交所份额接口 403 时降级并沿用上次快照，不再整任务失败",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T22:46:10Z",
+      "head": "2d0a01a38ea367791acd3079d92a0bde4338b605",
+      "base": "main"
+    },
+    {
+      "number": 41,
+      "title": "主站个股页：逃顶（LPPLS 风险窗口 + 104 周回测）+ 抄底面板；t_c 情景区间标“未校准，仅供参考”",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T22:46:04Z",
+      "head": "9269e1b7b465151f24481f3cd76cbdbbd44e3957",
+      "base": "main"
+    },
+    {
+      "number": 40,
+      "title": "抄底面板（描述性）：个股页新增 dip 块 + 相似事件库 + 指数/ETF 环境日更",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T16:27:07Z",
+      "head": "637f50a68ab2fef1e376716b97480e0e729e784f",
+      "base": "main"
+    },
+    {
+      "number": 39,
+      "title": "v20261024 冻结版 README 标注 1990–92/1995 段已知缺陷；project_full_plan 补 §21 a–e 结果进度（只改文档，不合并待审）",
+      "state": "open",
+      "draft": false,
+      "merged_at": null,
+      "head": "94e7b5f231fc673e8fce87fc60e01dcd28fd9ba0",
+      "base": "main"
+    },
+    {
+      "number": 38,
+      "title": "§21 v1.8 框架升级 a–e：研究实现 + 合成/开发段结果登记（均未通过，线上不变）+ 冻结修正版 v20261104",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T10:16:22Z",
+      "head": "44f01402f2ec99fc821b305d7ff56bdf2fb26e37",
+      "base": "main"
+    },
+    {
+      "number": 37,
+      "title": "公开查询两阶段：当前结果约 1–2 分钟先发布，104 周历史回测后台补上",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T13:42:11Z",
+      "head": "8e9472fc3ce2f332d4ee679c283a0fdd17facc6f",
+      "base": "main"
+    },
+    {
+      "number": 36,
+      "title": "预登记 §21 v1.8 框架升级草案：Q2 泡沫/强趋势判据、MPL t_c 区间、扩样本、Ising 序参量、价格层条件分位与首次触及（待确认）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-04T10:16:25Z",
+      "head": "8de27157b9a4abc936919b088a0e099c842cbb34",
+      "base": "main"
+    },
+    {
+      "number": 35,
+      "title": "公开查询：轮询上限 15→40 分钟 + 首次计算耗时提示",
+      "state": "closed",
+      "draft": false,
+      "merged_at": null,
+      "head": "b7795e825110b0498fbc1ee740da126c7962e808",
+      "base": "main"
+    },
+    {
+      "number": 34,
+      "title": "个股：支持北交所（bj 路由 + 新浪原始日线回退 × 比例复权因子）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-03T10:52:53Z",
+      "head": "123454605e8821e0f06b07b3ef971021feed5850",
+      "base": "main"
+    },
+    {
+      "number": 33,
+      "title": "市场背景：板块资金流新浪回退（东财 502 时）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-03T10:52:13Z",
+      "head": "88614a54c7d9a8edaf3b0d252b2490d1bd4a5739",
+      "base": "main"
+    },
+    {
+      "number": 32,
+      "title": "stock_nightly：加中证500 成分股夜间预算（18:40，10 片）+ 广度按所属指数",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-03T10:52:40Z",
+      "head": "2a23fcdd876d67cb58495464a871dc518d2407e7",
+      "base": "main"
+    },
+    {
+      "number": 31,
+      "title": "市场背景页 market.html：板块资金流热力图 / 涨停情绪 / 北向 / 两融 / 估值（descriptive）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-03T10:52:26Z",
+      "head": "836dcc08eb5f8d8a709dc13bce1dffdb369cd271",
+      "base": "main"
+    },
+    {
+      "number": 30,
+      "title": "个股引擎 WP0 收尾 + WP1 零假设误报率标定 + §20 开发段 _g2 重扫工作流（待审）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T23:31:00Z",
+      "head": "4f07d8953e738077c98ec0bdfca6889d75373332",
+      "base": "main"
+    },
+    {
+      "number": 29,
+      "title": "公开个股查询入口：Cloudflare Worker 队列 + stock.html 自动排队/轮询（Worker 待部署）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-03T12:18:01Z",
+      "head": "ed177c3c9e6c872c17eb9f9458238621bd933adf",
+      "base": "main"
+    },
+    {
+      "number": 28,
+      "title": "个股引擎数学审计：修 grid_profile 窗内 t_c 网格与 _to_cal 日历截断 + 文献综述 + 审计报告（不合并）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T16:59:55Z",
+      "head": "876ca0f5ca4024a6972f5502617ca4fe2522bfda",
+      "base": "main"
+    },
+    {
+      "number": 27,
+      "title": "stock_nightly：固定截止日分片预算沪深300 + 成分股广度（descriptive）+ 批量发布到 stock-results（叠在 #25 上）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T14:13:05Z",
+      "head": "6c36dcded04c60ac476e930a231cb0a01db19ec2",
+      "base": "main"
+    },
+    {
+      "number": 26,
+      "title": "Improve ocean homepage and add Editorial research preview",
+      "state": "open",
+      "draft": true,
+      "merged_at": null,
+      "head": "da669d38d1a775864c82381a7823e655a6717ab1",
+      "base": "main"
+    },
+    {
+      "number": 25,
+      "title": "按需个股计算：GitHub Actions stock_query → stock-results 分支 → Pages（叠在 #23 上）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T14:03:20Z",
+      "head": "0537cf1b8c8c88c408757716cbc604af7da7db75",
+      "base": "main"
+    },
+    {
+      "number": 24,
+      "title": "市场背景数据层：板块资金流 / 涨停池 / 北向成交额 / 中证估值 / 两融（descriptive）+ 修复深交所两融单位",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T14:02:52Z",
+      "head": "78dcd8fcf073bfd73dda87265b27c186058092da",
+      "base": "main"
+    },
+    {
+      "number": 23,
+      "title": "个股引擎：任意 A 股代码 → 后复权取数 → LPPLS v2 当前预测 + 104 周历史参考（research_candidate）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T14:02:45Z",
+      "head": "6ba33ed648642936a9a2af888ff62159b58fe38c",
+      "base": "main"
+    },
+    {
+      "number": 22,
+      "title": "docs: Web 应用总规划 + 当前进度/交接 + t_c 聚类紧密度探索（dev_only，未登记）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-02T14:02:39Z",
+      "head": "60fe320c3f29b8a25e2dbc1689841254167455fb",
+      "base": "main"
+    },
+    {
+      "number": 21,
+      "title": "Price layer B/W cards: cheap layer + LT confirmation state + historical rebound recovery percentiles (descriptive, no model)",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-01T15:30:36Z",
+      "head": "a397e9b5bbed810117ff96762c86ec006a246bf4",
+      "base": "main"
+    },
+    {
+      "number": 20,
+      "title": "Open Design: unify backtest page visuals + shared scenario-range drawing + remove home mp4 probe",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-01T15:30:39Z",
+      "head": "9562ad96126de44bc01b9a0d4bdb2905326367da",
+      "base": "main"
+    },
+    {
+      "number": 19,
+      "title": "修复 PR #17 审查的 3 个问题：空值显示 0%、回测漏标最后确认顶、加载失败残留旧图",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-01T14:22:31Z",
+      "head": "43f75f527333e42f5b0903ba3dfd4f0e0918f53f",
+      "base": "main"
+    },
+    {
+      "number": 18,
+      "title": "文献综述：价格层四问（回撤幅度 / 止跌确认 / 二波 / 时间层）证据矩阵——只综述，不实现 B/W 卡",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-01T14:22:34Z",
+      "head": "cc50455279c9d7bedbfb5f694a5a891bfaf59cb4",
+      "base": "main"
+    },
+    {
+      "number": 17,
+      "title": "前端整合：Open Design 主页 + 终端接入后端静态 JSON + 回测页（旧站移至 /lab/）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-01T10:48:22Z",
+      "head": "ef546bf346a0b23258bb64775c4e0a24afcd20f0",
+      "base": "main"
+    },
+    {
+      "number": 16,
+      "title": "价格层 P1：回撤情景表 + 估值地板带（描述性，A 股 6 指数 + 外部 4 指数，PS 标签顶）——契约 drawdown_price 改为 P1 字段",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-11-01T10:48:24Z",
+      "head": "e403869cb9576eb7967b404aae8e2497d87f1cb1",
+      "base": "main"
+    },
+    {
+      "number": 15,
+      "title": "教育页数据源同步：daily_update.sh 复制 user_guide.md → web/mock/guide.md + CI 一致性校验（#14 Review 跟进）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-31T10:02:57Z",
+      "head": "9814d6ed727f4d5d497bdc1e3182c404d7178260",
+      "base": "main"
+    },
+    {
+      "number": 14,
+      "title": "FCO 补齐 B+C：F11 情景多选 + F07 Combo 滑块 + F12 教育页 + F10 Movie 双面板 + F13 主题（重开 #12/#13）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-31T02:30:47Z",
+      "head": "25edb51455237df4c3963b35f6a66f0d247ed43b",
+      "base": "main"
+    },
+    {
+      "number": 13,
+      "title": "FCO 补齐 C：F12 教育页 + F10 Movie 双面板独立日期 + F13 深/浅色主题",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-31T02:28:30Z",
+      "head": "dc47fed9cc08a547ebca84e4f1890956c951a3ce",
+      "base": "devin/1793368925-fco-scen-combo"
+    },
+    {
+      "number": 12,
+      "title": "FCO 补齐 B：F11 情景多选 + F07 Combo 权重滑块",
+      "state": "closed",
+      "draft": false,
+      "merged_at": null,
+      "head": "262ac328a2f93a54e2e2a4be5d97163b5b58c1ca",
+      "base": "devin/1793368446-fco-catalog-scales"
+    },
+    {
+      "number": 11,
+      "title": "FCO 补齐 A：F03 资产目录/搜索 + F06 六尺度选择器与正/负方向切换",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-31T02:27:21Z",
+      "head": "545359b78a7d5ed213d46c1e2c21d11c91491cc5",
+      "base": "main"
+    },
+    {
+      "number": 10,
+      "title": "Round 2 §2.0：外部市场数据冻结（恒生/标普500/纳指100/日经225，Yahoo 日线）——只冻结不评价",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-31T02:28:34Z",
+      "head": "3281b498535fa90b9878895fe5e3fb603fe3306f",
+      "base": "main"
+    },
+    {
+      "number": 9,
+      "title": "docs: 临界点 2.0 战略规划 v1（产品终态契约 → 模型层 Round 2/3 → 价格层 → 工程/治理/时间表）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-29T16:56:42Z",
+      "head": "add6b82aa3c3a4e66fac27b15073854862d4ff16",
+      "base": "main"
+    },
+    {
+      "number": 8,
+      "title": "文献综述三份 + Round 1 顶部标签漏顶诊断；下一轮预登记：标签改 PS/LT/FBE 事件级，加 M1、年级面板、R8、二波、回撤表、底部两层",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-29T16:59:14Z",
+      "head": "fd0d3a5bd76dc8ca6dfacad19a6ab28461864ea1",
+      "base": "main"
+    },
+    {
+      "number": 7,
+      "title": "用户指南：报警确认结束前不建议重新加仓（dev_only 探索结论）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-29T16:55:42Z",
+      "head": "f4ae31d34d6cd276094a9713b1ffeee60e291635",
+      "base": "main"
+    },
+    {
+      "number": 6,
+      "title": "开发段探索：报警后执行规则（止损/均线 vs 直接减仓；再入场）dev_only + 下一轮预登记草案（外部市场、负泡沫底部）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-29T16:55:38Z",
+      "head": "34fb26bf174ac21080d6b104ca5db36a2203fd3c",
+      "base": "main"
+    },
+    {
+      "number": 5,
+      "title": "GitHub Pages：main 的 web/ 自动发布",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-31T02:45:08Z",
+      "head": "2d3ab9745c9d3e672a1efd8f26cdd24a7d75d527",
+      "base": "main"
+    },
+    {
+      "number": 4,
+      "title": "开发段探索：t_c 分布稳定性在置信度分级之上无增量（dev_only，不加顶部卡）",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-29T11:11:10Z",
+      "head": "f4dcf6dd17c52b4091f460cf1f83f2b259b0b0b0",
+      "base": "main"
+    },
+    {
+      "number": 3,
+      "title": "工作台：多资产扫描备用数据链（腾讯限流）+ 2026-10-28 契约/报告重导",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-29T11:42:57Z",
+      "head": "1c3377e87b207b7cf5d97c3fe91622ce432756aa",
+      "base": "main"
+    },
+    {
+      "number": 2,
+      "title": "reports: 对 LPPLS 文献综述的独立对抗性审稿",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-24T06:28:55Z",
+      "head": "215ed89a538a4e62d69b489bcc09c0e44471e1d1",
+      "base": "devin/1792818155-research-phase0-3"
+    },
+    {
+      "number": 1,
+      "title": "研究层：数据/标签/阶梯 + LPPLS v2 原版复现（多尺度置信度、情景聚类、FBE 评价）与开发段结果",
+      "state": "closed",
+      "draft": false,
+      "merged_at": "2026-10-28T14:01:01Z",
+      "head": "8acddb92b93f30beb29c39daaace68315fc0b0ad",
+      "base": "main"
+    }
+  ],
+  "open": [
+    {
+      "number": 50,
+      "head": "339ebb170db5dd7d078bbeff9877843ba24e515f",
+      "draft": true,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "files": [
+        ".gitattributes",
+        ".github/workflows/ci.yml",
+        ".github/workflows/stock_nightly.yml",
+        ".github/workflows/stock_query.yml",
+        "docs/research/2026-11-06-optimizer-and-clustering-followup.md",
+        "docs/research/2026-11-06-oscillation-units-and-refilter.md",
+        "docs/research/2026-11-06-target-definition-review.md",
+        "docs/research/evidence/optimizer-probe-20261106/executed_probe.py",
+        "docs/research/evidence/optimizer-probe-20261106/filter_diagnostics.json",
+        "docs/research/evidence/optimizer-probe-20261106/inputs.json",
+        "docs/research/evidence/optimizer-probe-20261106/results.json",
+        "docs/research/evidence/oscillation-refilter-20261106/README.md",
+        "docs/research/evidence/oscillation-refilter-20261106/github-artifact-inputs.json",
+        "docs/research/evidence/oscillation-refilter-20261106/repo-dev/alarms.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/repo-dev/asofs.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/repo-dev/events.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/repo-dev/manifest.json",
+        "docs/research/evidence/oscillation-refilter-20261106/repo-dev/paired_events.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/repo-dev/summary.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix-v2/input_manifest.json",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix-v2/per_asof.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix-v2/per_fit.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix-v2/summary.json",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix/input_manifest.json",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix/per_asof.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix/per_fit.csv",
+        "docs/research/evidence/oscillation-refilter-20261106/skhynix/summary.json",
+        "docs/research/evidence/oscillation-refilter-20261106/verification.json",
+        "docs/validation/2026-11-06-stock-async-implementation.md",
+        "docs/validation/2026-11-06-tencent-purchase-note.md",
+        "docs/validation/stock-desktop.jpg",
+        "docs/validation/stock-mobile-390.jpg",
+        "frontend/app/lppl-data.js",
+        "frontend/app/stock-session.js",
+        "frontend/app/stock-view.js",
+        "frontend/stock.html",
+        "frontend/tests/stock-data.test.cjs",
+        "frontend/tests/stock-session.test.cjs",
+        "research/features/lppls_rules.py",
+        "research/lppls/core.py",
+        "research/lppls/oscillations.py",
+        "research/pipeline/daily.py",
+        "research/pipeline/stock.py",
+        "research/pipeline/stock_batch.py",
+        "research/pipeline/stock_jobs.py",
+        "research/pipeline/stock_publish.py",
+        "scripts/publish_stock_result.sh",
+        "tests/test_oscillation_refilter.py",
+        "tests/test_oscillations.py",
+        "tests/test_pipeline_daily.py",
+        "tests/test_publish_stock_result.py",
+        "tests/test_repo_oscillation_refilter.py",
+        "tests/test_stock_batch.py",
+        "tests/test_stock_engine.py",
+        "tests/test_stock_jobs.py",
+        "tools/lppl_oscillation_refilter.py",
+        "tools/lppl_repo_oscillation_refilter.py",
+        "tools/lppl_synthetic_filter_diagnostics.py",
+        "tools/lppl_synthetic_optimizer_probe.py",
+        "tools/stock_async_preview.py",
+        "workers/stock-query/README.md",
+        "workers/stock-query/src/index.js",
+        "workers/stock-query/test/index.test.mjs",
+        "workers/stock-query/wrangler.toml"
+      ],
+      "checks": [
+        {
+          "name": "publish",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760574/job/127692902436"
+        },
+        {
+          "name": "query",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760574/job/127692699331"
+        },
+        {
+          "name": "publish",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760515/job/127692649495"
+        },
+        {
+          "name": "fit",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760515/job/127692648364"
+        },
+        {
+          "name": "plan",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760515/job/127692648102"
+        },
+        {
+          "name": "prepare",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760574/job/127692647094"
+        },
+        {
+          "name": "smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760515/job/127692646563"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156760627/job/127692646425"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42156754355/job/127692624187"
+        }
+      ]
+    },
+    {
+      "number": 49,
+      "head": "383f4c2ea3d3693799c21354d00b39b5798cce6a",
+      "draft": true,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "files": [
+        "docs/design-research/2026-11-05/EXECUTION_PROMPT.md",
+        "docs/design-research/2026-11-05/MANIFEST.json",
+        "docs/design-research/2026-11-05/README.md",
+        "docs/design-research/2026-11-05/VALIDATION.md",
+        "docs/design-research/2026-11-05/backend-design.md",
+        "docs/design-research/2026-11-05/joint-protocol.md",
+        "docs/design-research/2026-11-05/price-layer-research.md",
+        "docs/design-research/2026-11-05/prototype.html",
+        "docs/design-research/2026-11-05/time-layer-research.md",
+        "docs/design-research/2026-11-05/website-design-spec.md"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42004981299/job/127169338724"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/42004875418/job/127168989729"
+        }
+      ]
+    },
+    {
+      "number": 47,
+      "head": "425b343e96d2513f1cb0525077553067d105331e",
+      "draft": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "files": [
+        "frontend/stock-editorial.html"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41945658411/job/126977083116"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41945411617/job/126976288906"
+        }
+      ]
+    },
+    {
+      "number": 45,
+      "head": "e821c7cbd8e2e98b9e7e685e46a2e422c5b77181",
+      "draft": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "files": [
+        ".github/workflows/stock_query.yml",
+        "research/pipeline/stock.py",
+        "tests/test_stock_engine.py"
+      ],
+      "checks": [
+        {
+          "name": "history",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934833670/job/126941423968"
+        },
+        {
+          "name": "publish_history",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934833670/job/126941423849"
+        },
+        {
+          "name": "publish_current",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934833670/job/126941422283"
+        },
+        {
+          "name": "query",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934833670/job/126940563321"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934833698/job/126940561979"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934661822/job/126939991639"
+        }
+      ]
+    },
+    {
+      "number": 44,
+      "head": "e862e5b78c360a992055ee9b38fa62d814da4ba0",
+      "draft": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "files": [
+        "frontend/stock.html"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934829281/job/126940546731"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41934779882/job/126940381806"
+        }
+      ]
+    },
+    {
+      "number": 39,
+      "head": "94e7b5f231fc673e8fce87fc60e01dcd28fd9ba0",
+      "draft": false,
+      "mergeable": true,
+      "mergeable_state": "clean",
+      "files": [
+        "data/frozen/v20261024/README.md",
+        "docs/project_full_plan.md"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41821383212/job/126545116315"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41821322862/job/126544911317"
+        }
+      ]
+    },
+    {
+      "number": 26,
+      "head": "da669d38d1a775864c82381a7823e655a6717ab1",
+      "draft": true,
+      "mergeable": false,
+      "mergeable_state": "dirty",
+      "files": [
+        "frontend/app/backtest-market-editorial.css",
+        "frontend/app/backtest-market-editorial.js",
+        "frontend/app/history-comparison-editorial.css",
+        "frontend/app/history-comparison-editorial.js",
+        "frontend/app/home-editorial.css",
+        "frontend/app/home-media.js",
+        "frontend/app/home-quality.js",
+        "frontend/app/home-readability.css",
+        "frontend/app/research-editorial.css",
+        "frontend/app/scen-style-editorial.js",
+        "frontend/app/validation-evidence-editorial.css",
+        "frontend/app/validation-evidence-editorial.js",
+        "frontend/app/workstation-editorial.css",
+        "frontend/assets/ocean/dive-desktop.mp4",
+        "frontend/assets/ocean/dive-mobile.mp4",
+        "frontend/assets/ocean/manifest.json",
+        "frontend/assets/ocean/poster-desktop.webp",
+        "frontend/assets/ocean/poster-mobile.webp",
+        "frontend/assets/ocean/sea-desktop.mp4",
+        "frontend/assets/ocean/sea-mobile.mp4",
+        "frontend/assets/ocean/under-desktop.mp4",
+        "frontend/assets/ocean/under-mobile.mp4",
+        "frontend/backtest-editorial.html",
+        "frontend/home-editorial.html",
+        "frontend/home.html",
+        "frontend/tests/backtest-editorial.test.cjs",
+        "frontend/tests/backtest-market-editorial.test.cjs",
+        "frontend/tests/history-comparison-editorial.test.cjs",
+        "frontend/tests/home-media.test.cjs",
+        "frontend/tests/home-native-media.test.cjs",
+        "frontend/tests/home-quality.test.cjs",
+        "frontend/tests/home-scene.test.cjs",
+        "frontend/tests/validation-evidence-editorial.test.cjs",
+        "frontend/tests/workstation-editorial.test.cjs",
+        "frontend/workstation-editorial.html"
+      ],
+      "checks": [
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41775798047/job/126395729336"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "html_url": "https://github.com/CareyPang/LPPL/actions/runs/41775792602/job/126395712074"
+        }
+      ]
+    }
+  ],
+  "scope": "PR index and open PR metadata/file overlaps; not a new full semantic re-audit of every historical diff"
+}
