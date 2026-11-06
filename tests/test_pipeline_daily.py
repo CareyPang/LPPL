@@ -39,7 +39,8 @@ def test_price_history_contains_aligned_point_in_time_ohlcv():
 def test_daily_frozen_smoke(tmp_path, monkeypatch):
     monkeypatch.setenv("LPPLS_BOX", "v2")
     p = daily.run("sh000001", frozen=True, asof="2015-06-12", windows=(130, 200, 300), out=tmp_path, trust_boot=2)
-    rec = json.loads(p.read_text())
+    rec = json.loads(p.read_text(encoding="utf-8"))
+    assert rec["name"] == "上证指数"
     conf = rec["top"]["lppls_confidence"]
     assert set(["1-3m", "6-12m", "12-24m"]) <= set(conf)
     assert rec["top"]["p20"]["evidence"] == "fail_i_iii"

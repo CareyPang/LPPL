@@ -91,7 +91,15 @@ Windows 分析命令先加载 `D:\CodexData\config\analysis-env.ps1`；环境和
 2. **Worker**：部署预览并验收持久任务、额度、行情及新协议，再切换正式服务。
 3. **前端及 CI**：确认服务端已支持后启用异步界面。`pages.yml` 监听 main 的前端变化，不能忽视合并前端可能自动触发发布。
 
-本轮没有推送、创建新的代码 PR、合并、触发 Actions、部署 Worker 或发布 Pages。不要直接把全部文件合并到 main 后才配置新 Worker。
+上述本地实现阶段没有推送、创建新的代码 PR、合并、触发 Actions、部署 Worker 或发布 Pages。随后用户明确授权推送并以 PR 提交；现已创建草稿 [PR #50](https://github.com/CareyPang/LPPL/pull/50)，仍未合并或生产发布。不要直接把全部文件合并到 main 后才配置新 Worker。
+
+## 后续 PR 与研究验证（2026-11-06）
+
+- 第一份提交 `1baf381` 的 GitHub `ci`、`stock_query` PR smoke、`stock_nightly` PR smoke 均通过。这里是自动检查，不是实际夜间批量计算、Worker部署或Pages发布。
+- 为准备PR，本机另执行完整 `pytest -m 'not network'`：234 passed、4 skipped、3 deselected、1 failed。唯一失败是原有 `daily.py` 在Windows默认cp1252环境写中文JSON未指定UTF-8。补上明确UTF-8并验证中文名称后，仅重跑失败项，1 passed；不能把这两次记录写成一次全量通过。
+- 完整测试包含既有冻结上证2015样本的3窗口拟合和少量bootstrap，在D盘临时测试目录生成Parquet/JSON。这是工程smoke，不是全合成测试，也不是新市场回测或新的预测成功证据；没有新行情下载。
+- 按用户后续授权继续研究，新增24次纯合成优化器拟合及原始证据，见 [第二轮研究](../research/2026-11-06-optimizer-and-clustering-followup.md)。它不改变生产优化器或旧失败结论。
+- [腾讯云采购说明](2026-11-06-tencent-purchase-note.md) 记录官方刊例与活动报价边界；没有购买或部署云资源。
 
 ## 尚需处理的运营限制
 
