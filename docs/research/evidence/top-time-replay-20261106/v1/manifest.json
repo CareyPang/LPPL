@@ -1,0 +1,190 @@
+{
+  "version": "top_time_saved_interval_replay_v1",
+  "protocol_commit": "e06aceb3e3cd685d665878c933d2277577aa5e44",
+  "protocol_sha256": "8c7d5e4c4f3289dad18d8840fce66cc919c99466c8aa9b73568b8d46d51a6014",
+  "replay_generated_at": "2026-11-06T08:07:42.568145+00:00",
+  "finished_at": "2026-11-06T08:08:01.368473+00:00",
+  "evidence_status": "HYPOTHETICAL_REPLAY_CLAIM_NOT_ORIGINAL",
+  "model_fit_calls": 0,
+  "network_fetches": 0,
+  "actual_published_forecast_rows": 0,
+  "daily_rows": 423360,
+  "hypothetical_forecast_rows": 18292,
+  "source_parameters": {
+    "evaluator_version": "top_time_evaluator_v1_dev",
+    "short_left": 10,
+    "short_right": 10,
+    "stage_left": 63,
+    "stage_right": 42,
+    "merge_gap": 5,
+    "trough_left": 21,
+    "trough_right": 21,
+    "rise_min": 21,
+    "rise_max": 126,
+    "require_stage_rise": true,
+    "horizon": 63,
+    "minimum_lead": 5,
+    "maximum_width": 10,
+    "require_entire_window_lead": true,
+    "price_field": "close",
+    "parameter_status": "RESEARCH_DEFAULT_NOT_FROZEN"
+  },
+  "arms": [
+    "ref_6_12m",
+    "ref_12_24m",
+    "or2_full",
+    "or4_full",
+    "or4_thin",
+    "cluster_any_full",
+    "cluster_cross_full",
+    "cluster_cross_thin",
+    "cluster_cross_stable2",
+    "calendar_fixed_10"
+  ],
+  "scope_probes": [
+    "stage",
+    "short"
+  ],
+  "pair_references": {
+    "ref_12_24m": "ref_6_12m",
+    "or2_full": "ref_6_12m",
+    "or4_full": "or2_full",
+    "or4_thin": "or4_full",
+    "cluster_any_full": "or4_full",
+    "cluster_cross_full": "cluster_any_full",
+    "cluster_cross_thin": "cluster_cross_full",
+    "cluster_cross_stable2": "cluster_cross_full"
+  },
+  "comparison": "development replay; interval-localization probes, not scale-classification performance",
+  "calendar": "observed-index only; exchange completeness and actual actionability NOT_ESTABLISHED",
+  "timing": "five-observation saved scan grid, no new fits on other daily ledger rows",
+  "common_subset": "fixed [peak-H,peak) saved-scan availability diagnostic; not the exact action-adjusted opportunity range [peak-H-1,peak-2] and not exhaustive coverage",
+  "before_sha256": {
+    "D:\\LPPL-development\\async-stock-20261106\\docs\\research\\evidence\\window-cluster-20261106\\v1\\asofs.csv.gz": "1bb3061c378644938c293fcf5fb4914b3f5bb200c0e0b3272cdd75f5538b3bbe",
+    "D:\\LPPL-development\\async-stock-20261106\\docs\\research\\evidence\\window-cluster-20261106\\v1\\manifest.json": "19e96d9bb4f4308766d94748251244f30addd0bc6e25d2562cb6cd648c95083f",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000001.parquet": "c8f78eb2a781dfa01f0423d48d93395e1e3a062b9b48fbc18c9ec9b647bf31a1",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000016.parquet": "0b6a126d11bd61f060920db5bd9ac2c7d4b024e0389d1f12acab4d79b2f91fd3",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000300.parquet": "aea740b9477d200b20bbb9735380b30153fb24860549c9c9cffad9ebe9dcd525",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000905.parquet": "0aeec2c688e3230eeb8541a71b2c6a68bf6d3849a4c8e50220a6616ef317c53d",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sz399001.parquet": "f12ab7107741bf889acafe7f90a14a2163e7e97525d9c9c111304772afef4366",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sz399006.parquet": "38f8340e7a4bb7bc871dae1b62a48b110557ac8e74d834f592361ff52fe1a858",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000001_qfq.parquet": "82bc8177ab3b5fb13dace1dbd54c200d477a7c473fdebd457ad0d483b19d5784",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000016_qfq.parquet": "ef4bfceccc041d3efc1930f2b464718ec8fa732cdacf6f81b1e4676f7ac0707a",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000300_qfq.parquet": "beb9413e5357d3bcd8fd9004314e8151e3a65ca366ca3510ce7ad7f9e9bd97e9",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000905_qfq.parquet": "593c1b029011cbbf2a82adfe5ecca520cd583346605cf51a5333bc523c907890",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sz399001_qfq.parquet": "10bb04c7fb796a342659926d471b59ef8a818dc9409a8412283d83d3c459f1b3",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sz399006_qfq.parquet": "60b9ac7e3a9546d884b95ec574f8393acc769e1d5b1ce73e8558d2967ad0d36b",
+    "D:\\LPPL-development\\async-stock-20261106\\tools\\lppl_top_time_replay.py": "282f65ccaece82afd180f09a7d32346222c5db21b6d6e9a2c992ba636cf28aeb",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\replay.py": "d4fa78946841f738f50c1062e068f9811ede9c4f8950c3da7f61921622efd073",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\contracts.py": "7ec1522c8a34433c6c66c87fad392168fddb1d141e660900a07c8baf8821688b",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\labels.py": "a57b69709a18376a7b4bb5a9afba83f9601f878a3987b941b70d79432d64480f",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\scoring.py": "ab4cff21eee0230ce3a8762dd030b9150a12936ab402d1e8379e6c200d1ae0bb",
+    "D:\\LPPL-development\\async-stock-20261106\\docs\\research\\2026-11-06-top-time-replay-protocol.md": "8c7d5e4c4f3289dad18d8840fce66cc919c99466c8aa9b73568b8d46d51a6014"
+  },
+  "after_sha256": {
+    "D:\\LPPL-development\\async-stock-20261106\\docs\\research\\evidence\\window-cluster-20261106\\v1\\asofs.csv.gz": "1bb3061c378644938c293fcf5fb4914b3f5bb200c0e0b3272cdd75f5538b3bbe",
+    "D:\\LPPL-development\\async-stock-20261106\\docs\\research\\evidence\\window-cluster-20261106\\v1\\manifest.json": "19e96d9bb4f4308766d94748251244f30addd0bc6e25d2562cb6cd648c95083f",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000001.parquet": "c8f78eb2a781dfa01f0423d48d93395e1e3a062b9b48fbc18c9ec9b647bf31a1",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000016.parquet": "0b6a126d11bd61f060920db5bd9ac2c7d4b024e0389d1f12acab4d79b2f91fd3",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000300.parquet": "aea740b9477d200b20bbb9735380b30153fb24860549c9c9cffad9ebe9dcd525",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sh000905.parquet": "0aeec2c688e3230eeb8541a71b2c6a68bf6d3849a4c8e50220a6616ef317c53d",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sz399001.parquet": "f12ab7107741bf889acafe7f90a14a2163e7e97525d9c9c111304772afef4366",
+    "D:\\CodexData\\temp\\lppl-oscillation-artifacts-20261106\\sz399006.parquet": "38f8340e7a4bb7bc871dae1b62a48b110557ac8e74d834f592361ff52fe1a858",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000001_qfq.parquet": "82bc8177ab3b5fb13dace1dbd54c200d477a7c473fdebd457ad0d483b19d5784",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000016_qfq.parquet": "ef4bfceccc041d3efc1930f2b464718ec8fa732cdacf6f81b1e4676f7ac0707a",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000300_qfq.parquet": "beb9413e5357d3bcd8fd9004314e8151e3a65ca366ca3510ce7ad7f9e9bd97e9",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sh000905_qfq.parquet": "593c1b029011cbbf2a82adfe5ecca520cd583346605cf51a5333bc523c907890",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sz399001_qfq.parquet": "10bb04c7fb796a342659926d471b59ef8a818dc9409a8412283d83d3c459f1b3",
+    "D:\\LPPL-development\\async-stock-20261106\\data\\frozen\\v20261024\\sz399006_qfq.parquet": "60b9ac7e3a9546d884b95ec574f8393acc769e1d5b1ce73e8558d2967ad0d36b",
+    "D:\\LPPL-development\\async-stock-20261106\\tools\\lppl_top_time_replay.py": "282f65ccaece82afd180f09a7d32346222c5db21b6d6e9a2c992ba636cf28aeb",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\replay.py": "d4fa78946841f738f50c1062e068f9811ede9c4f8950c3da7f61921622efd073",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\contracts.py": "7ec1522c8a34433c6c66c87fad392168fddb1d141e660900a07c8baf8821688b",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\labels.py": "a57b69709a18376a7b4bb5a9afba83f9601f878a3987b941b70d79432d64480f",
+    "D:\\LPPL-development\\async-stock-20261106\\research\\eval\\top_time\\scoring.py": "ab4cff21eee0230ce3a8762dd030b9150a12936ab402d1e8379e6c200d1ae0bb",
+    "D:\\LPPL-development\\async-stock-20261106\\docs\\research\\2026-11-06-top-time-replay-protocol.md": "8c7d5e4c4f3289dad18d8840fce66cc919c99466c8aa9b73568b8d46d51a6014"
+  },
+  "input_and_source_unchanged": true,
+  "elapsed_seconds": 18.80073459999403,
+  "outputs": {
+    "actual_published_forecasts.csv": {
+      "sha256": "7cd6d0642b3926e4185963aada68527ae67fef49af670180cadd7ca68a650196",
+      "bytes": 169
+    },
+    "daily_ledger_preview.csv": {
+      "sha256": "5ccf3ea218f2b61da9f2753c5768503632126192586b7220ecbadb2290271277",
+      "bytes": 600655
+    },
+    "daily_replay_ledger.csv.gz": {
+      "sha256": "a6df55f1be2333dbfb1680a6573d9f3af6403cb309b0e0a3b3144f71a22c5a71",
+      "bytes": 6052029
+    },
+    "denominator_checks.csv": {
+      "sha256": "3c9d41453d30af290194cf68baf9d60e5a2ec62b3ea85f6a6886736bbabc4ab7",
+      "bytes": 314
+    },
+    "evaluations.jsonl.gz": {
+      "sha256": "e5c72ea3371649f96b67ed52e4ef9a8ef4d2a19234e64a64f7367e2588766606",
+      "bytes": 1067182
+    },
+    "event_scores.csv": {
+      "sha256": "192be7c6d9f2572ae99056ede31b1e5b2c8d98eea3a23c49fb22a2700dea5db2",
+      "bytes": 1287384
+    },
+    "executed_sources/2026-11-06-top-time-replay-protocol.md": {
+      "sha256": "8c7d5e4c4f3289dad18d8840fce66cc919c99466c8aa9b73568b8d46d51a6014",
+      "bytes": 6705
+    },
+    "executed_sources/contracts.py": {
+      "sha256": "7ec1522c8a34433c6c66c87fad392168fddb1d141e660900a07c8baf8821688b",
+      "bytes": 4021
+    },
+    "executed_sources/labels.py": {
+      "sha256": "a57b69709a18376a7b4bb5a9afba83f9601f878a3987b941b70d79432d64480f",
+      "bytes": 18691
+    },
+    "executed_sources/lppl_top_time_replay.py": {
+      "sha256": "282f65ccaece82afd180f09a7d32346222c5db21b6d6e9a2c992ba636cf28aeb",
+      "bytes": 19001
+    },
+    "executed_sources/replay.py": {
+      "sha256": "d4fa78946841f738f50c1062e068f9811ede9c4f8950c3da7f61921622efd073",
+      "bytes": 8737
+    },
+    "executed_sources/scoring.py": {
+      "sha256": "ab4cff21eee0230ce3a8762dd030b9150a12936ab402d1e8379e6c200d1ae0bb",
+      "bytes": 29248
+    },
+    "forecast_preview.csv": {
+      "sha256": "fe980b91566a312576d90c06cbf8e88f83f21253ebf79f401f6ed886f8a6b517",
+      "bytes": 276316
+    },
+    "hypothetical_forecasts.csv.gz": {
+      "sha256": "f0dbd3769363b32333777d61183e97fd2971adff039a219b55f6874e32f17cb2",
+      "bytes": 939148
+    },
+    "input_map.json": {
+      "sha256": "f87ec2341044d5ab1b17b9f69859d8e045578a6d980201eb08564828bff15d53",
+      "bytes": 7129
+    },
+    "label_books.jsonl.gz": {
+      "sha256": "2d844d272bd5cb66fd13fda65a6fd4e30077d59c994fdd32972146de8609aa10",
+      "bytes": 541305
+    },
+    "paired_common_events.csv": {
+      "sha256": "5f65c07cb727a5cfeda46c3a8ce909cab9b52c89e7bd64ecee01520e95525443",
+      "bytes": 553220
+    },
+    "scan_inventory.csv": {
+      "sha256": "b947edc5ffbb9c069e24f9aa16356e0f4e4fa174aa786302be16561803a29f4b",
+      "bytes": 129998
+    },
+    "summary_by_symbol.csv": {
+      "sha256": "8fd29f7515a6e2edb5505d5c2be2b9539dd200c7176bf39b59e85b513c779f2c",
+      "bytes": 41871
+    },
+    "summary_pooled.csv": {
+      "sha256": "db6537184e4d2d9d67d51d53fa2b9fc7e1be99402e9ea647d474df9afd26f674",
+      "bytes": 8442
+    }
+  }
+}
