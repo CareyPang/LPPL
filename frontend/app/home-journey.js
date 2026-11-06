@@ -13,12 +13,17 @@
     if (saveData && stored !== 'on') return { enabled: false, locked: false, reason: 'save-data' };
     return { enabled: true, locked: false, reason: 'motion' };
   }
-  function scene(progress) {
+  function introRunway(introHeight, viewportHeight) {
+    // Finish the fixed story before the next section enters the viewport.
+    return Math.max(1, introHeight - viewportHeight * 1.1);
+  }
+  function scene(progress, layout = {}) {
     const p = clamp(Number(progress) || 0, 0, 1);
+    const clearance = smooth(.85, 1.05, layout.contentTopRatio ?? 2);
     return {
-      hero: 1 - smooth(.13, .30, p),
-      waterline: smooth(.27, .38, p) * (1 - smooth(.52, .63, p)),
-      underwater: smooth(.59, .71, p) * (1 - smooth(.87, .98, p)),
+      hero: (1 - smooth(.13, .28, p)) * clearance,
+      waterline: smooth(.32, .40, p) * (1 - smooth(.52, .60, p)) * clearance,
+      underwater: smooth(.64, .72, p) * (1 - smooth(.87, .96, p)) * clearance,
       chapter: p < .30 ? '海面' : p < .58 ? '入水' : '水线以下'
     };
   }
@@ -64,7 +69,7 @@
     buttons.forEach(button => button.addEventListener('click', () => choose(button.dataset.scale)));
     choose('stage');
   }
-  const api = { motionPolicy, scene, workstationHref, prepareLinks, scaleCopy, bindScales };
+  const api = { motionPolicy, introRunway, scene, workstationHref, prepareLinks, scaleCopy, bindScales };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.HomeJourney = api;
 })(typeof window === 'object' ? window : globalThis);

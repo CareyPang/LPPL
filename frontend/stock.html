@@ -479,6 +479,7 @@
     }
   </style>
   <link rel="stylesheet" href="app/stock-workstation.css">
+  <script src="app/stock-emblem.js" defer></script>
   <script src="app/lppl-data.js"></script>
   <script src="app/stock-session.js"></script>
   <script src="app/candle-chart.js"></script>
@@ -503,6 +504,20 @@
   <main>
     <aside id="demo-banner" class="demo-banner" hidden><b>离线演示</b><span>实际冻结行情 · 任务流程模拟 · 不运行模型、不提供预测</span></aside>
     <section class="sec query-panel">
+      <div class="observatory-emblem">
+        <div class="emblem-metal" aria-hidden="true">
+          <svg viewBox="0 0 120 120" focusable="false">
+            <circle class="emblem-rim" cx="60" cy="60" r="55"/>
+            <circle class="emblem-dial" cx="60" cy="60" r="48"/>
+            <path class="emblem-ticks" d="M60 8v6m0 92v6M8 60h6m92 0h6M23 23l4 4m66 66 4 4M23 97l4-4m66-66 4-4"/>
+            <path class="emblem-star" d="m60 29 3.2 12.8L76 45l-12.8 3.2L60 61l-3.2-12.8L44 45l12.8-3.2Z"/>
+            <path class="emblem-wave" d="M26 69c10-9 21-9 34 0s24 9 34 0M31 79c10-7 19-7 29 0s19 7 29 0"/>
+            <path class="emblem-horizon" d="M30 61h17m26 0h17"/>
+          </svg>
+          <span class="emblem-wordmark">临界点</span>
+        </div>
+        <button class="emblem-motion" id="workspace-motion" type="button" aria-pressed="true" aria-label="关闭工作站装饰动效">动效 · 开</button>
+      </div>
       <div class="eyebrow">从海面，进入观察</div>
       <h1>看清行情，<em>再研究时间。</em></h1>
       <p class="intro">从一只股票开始。日线、成交量与已有研究结果分别加载，后台更新时仍可继续看图。</p>

@@ -48,6 +48,29 @@ test('workstation links retain demo mode without forwarding unrelated parameters
   assert.equal(Journey.workstationHref(''), 'stock.html');
 });
 
+test('fixed narrative never crossfades two text blocks, in either scroll direction', () => {
+  for (let step = 0; step <= 10000; step++) {
+    for (const p of [step / 10000, 1 - step / 10000]) {
+      const state = Journey.scene(p);
+      assert.ok(['hero', 'waterline', 'underwater'].filter(key => state[key] > 0).length <= 1);
+    }
+  }
+});
+
+test('fixed copy finishes before document content and clears immediately on a fast scroll', () => {
+  for (const height of [667, 844, 900]) {
+    for (const introScale of [2.05, 2.45]) {
+      const introHeight = height * introScale;
+      const end = Journey.introRunway(introHeight, height);
+      assert.ok(introHeight - end >= height * 1.0999);
+    }
+  }
+  for (const progress of [0, .43, .78]) {
+    const state = Journey.scene(progress, { contentTopRatio: .85 });
+    assert.equal(state.hero + state.waterline + state.underwater, 0);
+  }
+});
+
 test('scale controls change explanation and selected state without data access', () => {
   const buttons = ['stage', 'local', 'pending'].map(name => ({
     dataset: { scale: name }, attrs: {}, listeners: {},
