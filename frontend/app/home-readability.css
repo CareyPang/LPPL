@@ -81,107 +81,77 @@ footer{margin-top:70px;color:#9eb2c4;font:400 10px/1.8 var(--sans);border-color:
 
 @media(hover:hover){.top .workstation-nav:hover{background:#244258;border-color:#b7c9df}}
 
-/* Sunlit entry badge. Only the left hero CTA uses this treatment.
-   The soft sweep travels under the label; navigation never waits for animation. */
-.hero .btn.sun-badge {
+/* A diagonal champagne light pass, adapted from the user's video reference.
+   The surface catches the light; the label remains steady and readable. */
+.hero .btn.sun-sweep {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   min-height: 52px;
   height: auto;
-  gap: 12px;
-  padding: 9px 18px 9px 10px;
-  border: 1px solid #e3c795;
-  border-radius: 7px;
-  color: #23383b;
-  background: linear-gradient(116deg, #f5e8d3 0%, #eddbbb 42%, #f7ebd6 72%, #e6cfa9 100%);
-  box-shadow: inset 0 1px 0 #fff8e9, inset 0 -2px 0 #b4956240, 0 3px 8px #00151d38, 0 0 24px #ebc88416;
+  gap: 18px;
+  padding: 13px 24px;
+  border: 1px solid #e7cca1;
+  border-radius: 4px;
+  color: #142c34;
+  background: linear-gradient(112deg, #f3e6d0, #ead4ae 53%, #f1dfbf);
+  box-shadow: inset 0 1px 0 #fff8e9b3, inset 0 -1px 0 #b4956233, 0 3px 10px #00151d33;
   text-shadow: none;
   transition: box-shadow .25s ease, border-color .25s ease, transform .2s ease;
 }
-.hero .sun-badge::before {
+.hero .sun-sweep::before {
   content: "";
   position: absolute;
   z-index: 0;
   inset: 1px;
   pointer-events: none;
-  border: 1px solid #fff9e77a;
-  border-radius: 5px;
-  background: radial-gradient(ellipse at 18% 0%, #fff9eaaa, transparent 63%);
+  border: 1px solid #fff9e74d;
+  border-radius: 2px;
 }
-.hero .sun-badge::after {
+.hero .sun-sweep::after {
   content: "";
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  top: -75%;
-  bottom: -75%;
-  left: -55%;
-  width: 45%;
-  background: linear-gradient(90deg, transparent, #fffdf299 48%, #fff7de33 66%, transparent);
-  transform: translateX(0) skewX(-24deg);
+  top: -100%;
+  height: 300%;
+  left: -210%;
+  width: 180%;
+  background: linear-gradient(166deg,
+    transparent 38%, #d9ac5b18 43%, #ffe0a76b 46%,
+    #fff3cde6 49.4%, #fffef5 50%, #fff5d7e6 50.9%,
+    #ffe0a780 53%, #d9ac5b18 58%, transparent 64%);
+  transform: translateX(0);
   opacity: 0;
-  animation: badge-sun-pass 8s 1.4s ease-in-out infinite;
+  animation: sunlight-pass 4.8s .8s cubic-bezier(.3, 0, .25, 1) infinite;
 }
-.hero .sun-badge > span { position: relative; z-index: 1; }
-.hero .sun-badge .badge-seal {
-  display: grid;
-  place-items: center;
-  flex: 0 0 30px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid #aa875b80;
-  color: #796144;
-  background: radial-gradient(circle at 35% 18%, #fff8e9, #f0dbb5 56%, #ccb083);
-  box-shadow: inset 0 1px 1px #fffaf0, 0 1px 1px #80613d2b;
-}
-.hero .badge-seal svg { width: 26px; height: 26px; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round; }
-.hero .badge-seal::after {
-  content: "";
-  position: absolute;
-  top: -4px;
-  right: 0;
-  width: 13px;
-  height: 13px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent 40%, #fffef0 50%, transparent 60%), linear-gradient(0deg, transparent 40%, #fffef0 50%, transparent 60%);
-  opacity: .24;
-  transform: rotate(12deg) scale(.65);
-  animation: badge-sun-glint 8s 1.4s ease-in-out infinite;
-}
-.hero .sun-badge .ar { margin-left: 2px; font-size: 16px; }
-.hero .sun-badge:focus-visible {
+.hero .sun-sweep > span { position: relative; z-index: 1; }
+.hero .sun-sweep .ar { font-size: 16px; }
+.hero .sun-sweep:focus-visible {
   outline: 2px solid #fff3da;
   outline-offset: 5px;
   box-shadow: inset 0 1px 0 #fffdf5, 0 0 0 1px #b09261, 0 0 28px #efd09840;
 }
 @media (hover: hover) {
-  .hero .btn.sun-badge:hover {
-    background: linear-gradient(116deg, #fbefda, #efdfc0 42%, #fff2da 72%, #edd6af);
+  .hero .btn.sun-sweep:hover {
+    background: linear-gradient(112deg, #f9edd8, #efdcb8 53%, #f7e8cb);
     border-color: #f8e9c6;
     box-shadow: inset 0 1px 0 #fffdf5, inset 0 -2px 0 #b4956230, 0 5px 16px #00151d45, 0 0 30px #efd09836;
     transform: translateY(-1px);
   }
 }
-@keyframes badge-sun-pass {
-  0%, 12% { transform: translateX(0) skewX(-24deg); opacity: 0; }
-  16% { opacity: .7; }
-  33% { transform: translateX(380%) skewX(-24deg); opacity: 0; }
-  100% { transform: translateX(380%) skewX(-24deg); opacity: 0; }
-}
-@keyframes badge-sun-glint {
-  0%, 12%, 34%, 100% { opacity: .24; transform: rotate(12deg) scale(.65); }
-  20% { opacity: .85; transform: rotate(12deg) scale(1); }
+@keyframes sunlight-pass {
+  0%, 5% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  47% { opacity: 1; }
+  58%, 100% { transform: translateX(210%); opacity: 0; }
 }
 @media (max-width: 560px) {
-  .hero .btn.sun-badge { gap: 9px; min-height: 50px; padding: 9px 13px 9px 9px; }
-  .hero .sun-badge .badge-seal { flex-basis: 28px; width: 28px; height: 28px; }
+  .hero .btn.sun-sweep { gap: 18px; min-height: 50px; padding: 12px 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero .sun-badge::after, .hero .badge-seal::after { animation: none; }
-  .hero .sun-badge::after { opacity: 0; }
-  .hero .btn.sun-badge, .hero .sun-badge .ar { transition: none; transform: none; }
+  .hero .sun-sweep::after { animation: none; opacity: 0; }
+  .hero .btn.sun-sweep, .hero .sun-sweep .ar { transition: none; transform: none; }
 }
 
-.home-static .hero .sun-badge::after,.home-static .hero .badge-seal::after{animation:none}.home-static .hero .sun-badge::after{opacity:0}
+.home-static .hero .sun-sweep::after{animation:none;opacity:0}

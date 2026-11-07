@@ -115,7 +115,7 @@ test('decoded dive frames and sea loops retain separate masks during crossfade',
   assert.equal(uniforms.get('B')[1], 1);
 });
 
-test('Canvas fallback paints a moving sky before compositing but leaves underwater footage intact', () => {
+test('Canvas fallback clouds drift visibly while the sun stays anchored, respect motion-off and leave underwater footage intact', () => {
   const calls = [];
   const gradient = { addColorStop() {} };
   const ctx = {
@@ -125,19 +125,65 @@ test('Canvas fallback paints a moving sky before compositing but leaves underwat
     fillRect() {}, translate() {}, scale() {}, arc() {}, fill() {}
   };
   const context = vm.createContext({ location: { search: '' }, SRC: { n: 241 }, clamp,
-    sstep: () => 1, RM: false, clk: value => value / 1000, W: 1280, H: 720,
+    sstep: (a,b,x) => { const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }, RM: false, clk: value => value / 1000, W: 1280, H: 720,
     document: { createElement: () => ({ width:0, height:0, getContext: () => ctx }) }
   });
   vm.runInContext(html.slice(start,end) + '\nglobalThis.paint = paintFallbackSource;', context);
   const original = {};
   context.paint({src:original},{hz:.43,weight:1,sunX:.771},1000,0,0,1280,720);
+  const sun = calls.filter(x=>x[0]==='cloud')[0];
   const firstCloud = calls.filter(x=>x[0]==='cloud')[1];
   assert.equal(calls[0][1], original);
   assert.equal(calls.filter(x=>x[0]==='sky').length,1);
   calls.length=0;
   context.paint({src:original},{hz:.43,weight:1,sunX:.771},6000,0,0,1280,720);
-  assert.notEqual(calls.filter(x=>x[0]==='cloud')[1][1],firstCloud[1]);
+  const secondCloud = calls.filter(x=>x[0]==='cloud')[1];
+  const drift = secondCloud[1]-firstCloud[1];
+  assert.ok(drift>25 && drift<40, 'Five seconds produces visible but restrained drift at a 1280px source width');
+  assert.deepEqual(calls.filter(x=>x[0]==='cloud')[0],sun,'The sun does not travel with the cloud field');
+  context.RM=true;
+  calls.length=0;
+  context.paint({src:original},{hz:.43,weight:1,sunX:.771},1000,0,0,1280,720);
+  const staticClouds = calls.filter(x=>x[0]==='cloud');
+  calls.length=0;
+  context.paint({src:original},{hz:.43,weight:1,sunX:.771},6000,0,0,1280,720);
+  assert.deepEqual(calls.filter(x=>x[0]==='cloud'),staticClouds);
   calls.length=0;
   context.paint({src:original},{hz:0,weight:0,sunX:.771},6000,0,0,1280,720);
   assert.deepEqual(calls,[['image',original]]);
+});
+
+test('the procedural sky clock is continuous across an hour instead of snapping back', () => {
+  const context = vm.createContext({});
+  const clock = html.match(/^const clk=.+$/m);
+  assert.ok(clock, 'Use the homepage clock itself');
+  vm.runInContext(clock[0]+'\nglobalThis.clock=clk;',context);
+  assert.equal(context.clock(3601000)-context.clock(3599000),2);
+});
+
+test('idle surface animation keeps rendering without scroll or new media and stops scheduling when motion is off', () => {
+  const scheduled = [], rendered = [], loop = {name:'sea'}, styles = () => ({style:{}});
+  const context = vm.createContext({
+    RM:false, raf:0, document:{hidden:false}, requestAnimationFrame:fn => {scheduled.push(fn);return scheduled.length;},
+    hero:styles(),waterlineCopy:styles(),underwaterCopy:styles(),mc:styles(),setWave(){},
+    lastFrame:0,prevNow:0,quality:{settings:{fps:60}},useGL:false,
+    target:0,cur:0,scrollVel:0,videoMedia:{setProgress(){},setLoop(){}},SRC:{n:241},
+    clamp,sstep:(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);},
+    WATERLINE:.3,SUBMERGED:.42,depth:1,LG:Math.log10,loopFor:()=>loop,curLoop:loop,
+    lastScrollT:0,IDLE_MS:200,loopW:1,loopImage:()=>({scene:'sea'}),
+    render:now=>rendered.push(now),HomeJourney:{scene:()=>({hero:1,waterline:0,underwater:0,chapter:'海面'})},
+    s1:{getBoundingClientRect:()=>({top:2000})},vh:720,chapterMarker:{style:{},querySelector:()=>({})},
+    window:{scrollY:0},introEnd:1500,setInk(){},SND:{on:false},drawMotes(){}
+  });
+  const tickStart=html.indexOf('function tick(now){'),tickEnd=html.indexOf('function resize()',tickStart);
+  assert.ok(tickStart>=0&&tickEnd>tickStart);
+  vm.runInContext(html.slice(tickStart,tickEnd)+'\nglobalThis.tickFrame=tick;',context);
+  context.tickFrame(1000);
+  context.tickFrame(6000);
+  assert.deepEqual(rendered,[1000,6000]);
+  assert.equal(scheduled.length,2,'Each idle frame schedules the next frame independently of media revision');
+  context.RM=true;
+  context.tickFrame(7000);
+  assert.equal(scheduled.length,2);
+  assert.deepEqual(rendered,[1000,6000]);
 });

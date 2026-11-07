@@ -315,8 +315,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   <h1><span class="ln">浪成于</span><span class="ln">微澜之间<span class="title-period">。</span></span></h1>
   <p class="poem"><span><b>启</b>于青萍之末，</span><span><b>满</b>于狂澜之巅。</span></p>
   <div class="cta ln">
-    <a class="btn pri sun-badge" href="stock.html" data-workstation><span class="badge-seal" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="3.5"/><path d="M16 4v2M8.5 6.5l1.5 1.5M23.5 6.5 22 8M5.5 12h2M24.5 12h2M8 19c5-3 11-3 16 0M10 23c4-2 8-2 12 0"/></svg></span><span class="badge-label">进入工作站</span><span class="ar" aria-hidden="true">↗</span></a>
-    <a class="btn ghost" href="#s1" id="dive"><i aria-hidden="true">↓</i>下潜了解</a>
+    <a class="btn pri sun-sweep" href="stock.html" data-workstation><span>进入工作站</span><span class="ar" aria-hidden="true">↗</span></a>
   </div>
   <p class="hero-boundary">短期与阶段分开观察 · 识别能力仍在验证</p>
 </div>
@@ -415,7 +414,7 @@ const MOB = Math.min(window.innerWidth, window.innerHeight) < 600 || saveData;
 const $ = (s)=>document.querySelector(s);
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
-const clk=(now)=>(now/1000)%3600;
+const clk=(now)=>now/1000; // Continuous elapsed seconds; do not snap the cloud field back every hour.
 
 /* ================= 帧序列 ================= */
 // 清晰度：桌面用 1920 原始分辨率帧，手机用 1280 帧（旧的 1600/960 帧会被放大而发糊）
@@ -684,11 +683,14 @@ vec3 skyCol(vec2 im,float asp,float t,float hI,float sunX){
   // Bounded sky coordinates avoid the old 1/e horizon singularity and parallel stripes.
   LODK=1.5+float(OCT-1)*uQuality;
   vec2 cp=vec2(im.x*4.8,(im.y-hI+.431)*14.);
-  cp+=vec2(t*.004,0.);
-  vec2 warp=vec2(fbm(cp*.65+vec2(2.4,7.1)),fbm(cp*.55+vec2(8.7,2.8)))-.35;
+  // About 0.6% of source width per second aloft, slower towards the horizon.
+  // Advect only cloud noise: the sky gradient, horizon and sun stay anchored.
+  float wind=.0288*(.72+.28*smoothstep(.06,.30,e));
+  cp-=vec2(t*wind,0.);
+  vec2 warp=vec2(fbm(cp*.65+vec2(2.4,7.1+t*.003)),fbm(cp*.55+vec2(8.7,2.8-t*.002)))-.35;
   vec2 cq=cp+warp*.85;
   float mass=fbm(cq+vec2(1.8,4.2));
-  float feather=fbm(cq*vec2(1.2,2.3)+vec2(6.3,1.1));
+  float feather=fbm(cq*vec2(1.2,2.3)+vec2(6.3-t*.006,1.1+t*.0015));
   float cloud=smoothstep(.36,.56,mass*.75+feather*.25);
   // Sparse broken wisps, clear title area and a clean band near the horizon.
   cloud*=smoothstep(.025,.095,e)*(.35+.65*smoothstep(.15,.58,im.x));
@@ -824,10 +826,11 @@ function paintFallbackSource(item,sky,now,ox,oy,dw,dh){
       const glow=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,dh*.18);
       glow.addColorStop(0,'rgba(255,215,156,.43)');glow.addColorStop(1,'rgba(255,215,156,0)');
       ctx.fillStyle=glow;ctx.fillRect(0,0,W,edge);
-      // A bounded Canvas sky keeps clouds moving when WebGL is unavailable.
+      // Match the shader's rightward drift and gentle altitude shear without moving the sun.
       const t=RM?0:clk(now);
       for(let i=0;i<16;i++){
-        const phase=(i*.173+t*.004)%1.5-.25,x=ox+dw*phase,y=oy+dh*(sky.hz-.10-(i%4)*.075);
+        const height=.10+(i%4)*.075,wind=.006*(.72+.28*sstep(.06,.30,height));
+        const phase=(i*.173+t*wind)%1.5-.25,x=ox+dw*phase,y=oy+dh*(sky.hz-height+Math.sin(t*.09+i*1.7)*.003);
         const cloud=ctx.createRadialGradient(x,y,0,x,y,dw*.14);
         cloud.addColorStop(0,'rgba(226,224,218,.24)');cloud.addColorStop(1,'rgba(226,224,218,0)');
         ctx.save();ctx.translate(x,y);ctx.scale(1,.22);ctx.translate(-x,-y);ctx.fillStyle=cloud;ctx.fillRect(x-dw*.14,y-dw*.14,dw*.28,dw*.28);ctx.restore();
@@ -1290,7 +1293,6 @@ $('#motion-resume').addEventListener('click',()=>{
 });
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ anchors(); onScroll(); });
 if(document.fonts&&document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',()=>{anchors();onScroll();});
-$('#dive').addEventListener('click',(e)=>{ e.preventDefault(); UI.dive(e.clientX||window.innerWidth*.3); const tgt=Math.max(0,s1.getBoundingClientRect().top+window.scrollY-top.getBoundingClientRect().height-24); window.scrollTo({top:tgt,behavior:RM?'auto':'smooth'}); });
 $('#resurface').addEventListener('click',e=>{e.preventDefault();window.scrollTo({top:0,behavior:RM?'auto':'smooth'});});
 document.querySelector('.brand').addEventListener('click',e=>{e.preventDefault();window.scrollTo({top:0,behavior:RM?'auto':'smooth'});});
 document.querySelector('.method-detail').addEventListener('toggle',()=>{anchors();setWave(1);});
@@ -1430,7 +1432,6 @@ document.addEventListener('click',(e)=>{
   ripple(x,y,true);
   if(el===sndBtn||el===sndK||el.closest('.sndp')) return;
   if(el.matches('.btn.pri,.top>.pill,.tc')) UI.confirm(x||window.innerWidth/2);
-  else if(el.id==='dive') return;
   else UI.tap(x||window.innerWidth/2);
 });
 // 悬停：轻轻一下水滴声（同一元素 380ms 内不重复）
