@@ -36,6 +36,9 @@ def _json_sha256(value: Any) -> str:
 
 
 def _source_status(meta: dict[str, Any]) -> str:
+    declared = meta.get("status")
+    if declared in {"fresh", "partial", "error", "stale", "not_available", "source_unavailable", "schema_changed"}:
+        return "fresh" if declared == "fresh" else declared
     if meta.get("ok") is True:
         return "fresh"
     if meta.get("ok") is False:
@@ -48,7 +51,7 @@ def _source_meta(source_id: str, meta: Any, *, source_url: str | None = None) ->
     status = _source_status(raw)
     return {
         "source_id": source_id,
-        "source_url": source_url,
+        "source_url": raw.get("source_url") or source_url,
         "url_host": raw.get("url_host"),
         "fetched_at": raw.get("fetched_at"),
         "status": status,

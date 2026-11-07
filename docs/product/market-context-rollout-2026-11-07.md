@@ -13,6 +13,14 @@
 - 增加“功能接入地图”，将题材库、龙虎榜/机构增仓、快讯/直播、商品/ETF、宏观概率分别标出 P1/P2/P3 依赖，避免页面用空数组或截图数字假装已经接通。
 - 新增独立 `workers/market-context` Worker 和 `market-context.v1` 快照契约：读取与个股 `/market` 分离；刷新受保护、异步返回 `job_id`，同日请求去重，历史日期只读对应快照。
 
+## P1 日终适配器（2026-11-08）
+
+- **VERIFIED · 代码契约**：`research/data/market_p1.py` 已增加两个独立上游适配器。东财 `getYesterdayZTPool` 保存前一交易日池在当日的表现；同花顺涨停揭秘端点保存 `reason_type` 和对应题材标签。每条源记录 `source_url`、`fetched_at`、`status`、`ok`、`raw_sha256` 和许可证待核验标记。
+- **VERIFIED · 代码契约**：`market_base.limit_pools()` 仍保留旧的 `zt/zb/dt/top20` 字段，同时封存完整 `pool_rows`。`attach_snapshot_extensions()` 只有在两份不同日期的完整 `pool_rows` 和显式交易日历同时存在时，才计算 `history.progression`；否则保持 `not_available`，不会从当前快照倒推历史晋级率。
+- **VERIFIED · artifact runner**：`scripts/update_market_context.py` 每次只封存一个 `market_context_<asof>.json`，并更新带源哈希的 manifest；`.github/workflows/market_context_nightly.yml` 默认只上传不可变 artifact，不写 `main`、Pages 或生产 Worker。
+- **VERIFIED · gate**：`scripts/market_context_gate.py` 要求两个不同交易日、`run_mode=live`、`fresh/partial` 状态和至少一个原始响应哈希，才返回 `ready_for_frontend_polling=true`。
+- **NOT_ESTABLISHED · 运行证据**：本 PR 尚未完成两组真实日终抓取，故前端仍不轮询 `workers/market-context`；现有页面继续读取已封存的静态市场快照。适配器通过离线 fixture 和契约测试不等于上游当天可达或已取得商业再分发许可。
+
 ## 截图功能核对结果
 
 截图中的产品形态与公开的 `vibe-astock` / `a-stock-data` 功能说明高度对应，但本仓库当前只有日终市场快照。当前可复用和不能直接复用的范围如下：

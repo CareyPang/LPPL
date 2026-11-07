@@ -32,6 +32,20 @@ def test_market_context_preserves_existing_values_and_adds_explicit_missing_stat
     assert len(result["snapshot_sha256"]) == 64
 
 
+def test_market_context_preserves_adapter_source_url_and_status():
+    value = payload()
+    value["sources"]["ths_limit_up_pool"] = {
+        "source_url": "https://data.10jqka.com.cn/dataapi/limit_up/limit_up_pool",
+        "status": "fresh",
+        "raw_sha256": "a" * 64,
+        "fetched_at": "2026-11-02T23:46:52+00:00",
+    }
+    result = build_snapshot(value)
+    source = result["sources"]["ths_limit_up_pool"]
+    assert source["status"] == "fresh"
+    assert source["source_url"].startswith("https://data.10jqka.com.cn/")
+
+
 def test_snapshot_hash_is_stable_for_same_payload():
     left = build_snapshot(payload(), requested_at="2026-11-03T00:00:00+00:00")
     right = build_snapshot(copy.deepcopy(payload()), requested_at="2026-11-03T00:00:00+00:00")
