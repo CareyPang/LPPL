@@ -118,6 +118,27 @@ test('controlled seed rejects a missing or incorrect snapshot hash and keeps lat
   assert.equal((await latest.json()).asof, '2026-11-06');
 });
 
+test('refresh never overwrites an already sealed dated snapshot', async () => {
+  const state = new State();
+  const e = env(state);
+  const sealed = await seedSnapshot('2026-11-05');
+  const seedResponse = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify(sealed),
+  }), e);
+  assert.equal(seedResponse.status, 201);
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ ...snapshot, asof: '2026-11-05', generated_at: '2026-11-05T23:00:00Z' });
+  try {
+    const response = await worker.fetch(new Request('https://worker.test/context/refresh', {
+      method: 'POST', headers: { 'X-Market-Context-Token': 'secret' }, body: JSON.stringify({ date: '2026-11-05' }),
+    }), e);
+    assert.equal(response.status, 202);
+    await Promise.all(state.waits);
+  } finally { globalThis.fetch = original; }
+  const read = await worker.fetch(new Request('https://worker.test/context?date=2026-11-05'), e);
+  assert.equal((await read.json()).snapshot_sha256, sealed.snapshot_sha256);
+});
+
 test('raw seed hashing preserves Python decimal lexical values', async () => {
   assert.equal(await digestRawJson('{"a":1.0,"b":2}'), '3a5fc11441293773f44e7207ddf4783fdcfc50b78e63e3e484cfcbfe61a8508c');
 });
@@ -140,5 +161,7 @@ test('a failed refresh keeps the last snapshot and marks it stale', async () => 
     assert.equal(body.status, 'stale');
     assert.equal(body.last_good_asof, '2026-11-02');
     assert.equal(body.stale_reason, 'CONTEXT_REFRESH_FAILED');
+    const dated = await worker.fetch(new Request('https://worker.test/context?date=2026-11-02'), env(state));
+    assert.equal((await dated.json()).status, 'fresh');
   } finally { globalThis.fetch = original; }
 });

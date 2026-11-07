@@ -284,8 +284,10 @@ export class MarketContextState extends SerializedState {
       const snapshot = await fetchSource(this.env);
       if (job.date !== 'latest' && snapshot.asof !== job.date) throw new Error('DATE_NOT_AVAILABLE');
       const key = `snapshot:${snapshot.asof}`;
-      await this.ctx.storage.put(key, snapshot);
-      await this.ctx.storage.put('latest', snapshot);
+      const sealed = await this.ctx.storage.get(key);
+      if (!sealed) await this.ctx.storage.put(key, snapshot);
+      const latest = await this.ctx.storage.get('latest');
+      if (!latest || String(latest.asof || '') <= snapshot.asof) await this.ctx.storage.put('latest', sealed || snapshot);
       job.status = 'completed'; job.asof = snapshot.asof;
     } catch (error) {
       job.status = 'failed'; job.error_code = String(error?.message || 'CONTEXT_REFRESH_FAILED') === 'DATE_NOT_AVAILABLE' ? 'DATE_NOT_AVAILABLE' : 'CONTEXT_REFRESH_FAILED'; job.error = job.error_code === 'DATE_NOT_AVAILABLE' ? '请求日期没有对应封存快照' : '市场背景刷新失败';
@@ -295,7 +297,6 @@ export class MarketContextState extends SerializedState {
           requested_at: new Date().toISOString(), source: { ...previous.source, status: 'stale', stale_reason: job.error_code } };
         stale.snapshot_sha256 = await digest(stale);
         await this.ctx.storage.put('latest', stale);
-        await this.ctx.storage.put(`snapshot:${previous.asof}`, stale);
       }
     }
     await this.ctx.storage.put(`job:${job.job_id}`, job);
