@@ -52,6 +52,11 @@ main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap
 .legend { display: flex; align-items: center; gap: var(--s2); font-size: 11px; color: var(--ink-3); margin-top: var(--s2); flex-wrap: wrap; }
 .legend i { display: inline-block; width: 18px; height: 10px; }
 .market-tools { display: grid; gap: var(--s3); }
+.context-controls { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: var(--s3); }
+.context-controls label { color: var(--ink-3); font-size: 12px; }
+.context-controls input, .context-controls button { border: 1px solid var(--line); background: transparent; color: var(--ink-2); padding: var(--s2) var(--s3); min-height: 34px; }
+.context-controls button { cursor: pointer; }
+.context-controls button:hover { color: var(--ink); border-color: var(--warn); }
 .tool-nav { display: flex; gap: var(--s2); flex-wrap: wrap; }
 .tool-nav button, .review-tabs button { border: 1px solid var(--line); background: transparent; color: var(--ink-2); padding: var(--s2) var(--s3); cursor: pointer; }
 .tool-nav button:hover, .review-tabs button:hover, .tool-nav button[aria-current="true"], .review-tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--warn); }
@@ -120,6 +125,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <button type="button" data-tool-target="s-capabilities">全球宏观</button>
       </div>
       <p class="tool-status" id="tool-status">已接入真实日终市场快照；盘中实时、历史补录和外部资讯仍按独立数据契约接入。</p>
+      <div class="context-controls" data-market-context-controls hidden>
+        <label for="context-date">封存日期</label>
+        <input id="context-date" type="date" />
+        <button id="context-load" type="button">读取历史复盘</button>
+        <button id="context-latest" type="button">回到最新</button>
+        <span id="context-status" class="tool-status" role="status">Worker 读取未启用</span>
+      </div>
     </div>
   </section>
 
@@ -183,6 +195,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 <div class="tip" id="tip" hidden></div>
 <footer>市场背景只作描述，不进入 LPPLS 报警或任何模型。</footer>
 
+<script src="app/market-context-client.js"></script>
 <script src="app/lppl-data.js"></script>
 <script>
 (function () {
@@ -199,7 +212,58 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     '5d': { label: '5日', net: 'main_net_5d', pct: 'pct_5d', share: 'main_pct_5d' },
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
-  let M = null, kind = 'industry', period = 'today';
+  let M = null, kind = 'industry', period = 'today', contextClient = null;
+
+  function normalizeContext(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return snapshot;
+    const value = { ...snapshot, limit_pools: { ...(snapshot.limit_pools || {}) } };
+    if (!value.limit_pools.date && value.asof) value.limit_pools.date = value.asof;
+    return value;
+  }
+
+  function showContextState(next) {
+    const controls = document.querySelector('[data-market-context-controls]');
+    const status = $('context-status');
+    if (!controls || !status) return;
+    controls.hidden = !(window.LPPL_CONTEXT_ENABLED === true);
+    if (next.status === 'disabled') {
+      status.textContent = 'Worker 读取未启用';
+      return;
+    }
+    if (next.status === 'ready') {
+      const s = next.snapshot || {};
+      const source = s.source || {};
+      const stale = s.status === 'stale' || source.status === 'stale';
+      status.textContent = `${stale ? 'stale · ' : ''}封存 ${s.asof || next.date} · ${source.source_id || 'market-context'}${source.fetched_at ? ' · ' + String(source.fetched_at).replace('T', ' ').slice(0, 16) + ' UTC' : ''}`;
+      status.className = 'tool-status' + (stale ? ' wn' : '');
+      return;
+    }
+    if (next.status === 'error') {
+      status.textContent = `读取失败 · ${next.error?.code || 'CONTEXT_UNAVAILABLE'}；未回退到当前快照`;
+      status.className = 'tool-status wn';
+    }
+  }
+
+  function setupContextClient() {
+    if (window.LPPL_CONTEXT_ENABLED !== true) {
+      showContextState({ status: 'disabled' });
+      return;
+    }
+    try {
+      contextClient = LPPL.marketContext({
+        onState: (next) => {
+          showContextState(next);
+          if (next.status === 'ready' && next.snapshot) {
+            M = normalizeContext(next.snapshot);
+            renderAll();
+          }
+        },
+      });
+      contextClient.start('latest');
+    } catch (error) {
+      showContextState({ status: 'error', error });
+    }
+  }
 
   function srcLine(names) {
     const S = (M && M.sources) || {};
@@ -421,6 +485,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
     const review = e.target.closest('[data-review]');
     const tool = e.target.closest('[data-tool-target]');
+    const contextLoad = e.target.closest('#context-load');
+    const contextLatest = e.target.closest('#context-latest');
     if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
     if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
     if (review) {
@@ -436,13 +502,28 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       }
       document.getElementById(tool.dataset.toolTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    if (contextLoad && contextClient) {
+      const date = $('context-date').value;
+      contextClient.stop();
+      contextClient.get(date || 'latest').catch((error) => showContextState({ status: 'error', date, error }));
+    }
+    if (contextLatest && contextClient) {
+      $('context-date').value = '';
+      contextClient.start('latest');
+    }
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
   LPPL.market().then((d) => {
-    if (!d) { $('asof').textContent = '市场数据未加载'; document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>'; return; }
+    if (!d) {
+      $('asof').textContent = '市场数据未加载';
+      if (window.LPPL_CONTEXT_ENABLED !== true) document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>';
+      setupContextClient();
+      return;
+    }
     M = d; renderAll();
-  }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
+    setupContextClient();
+  }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); setupContextClient(); });
 })();
 </script>
 </body>

@@ -167,5 +167,22 @@
   };
   /** 市场背景（descriptive）；缺文件返回 null */
   const market = () => opt('market/market_latest.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market };
+  /**
+   * Optional dated market-context Worker adapter.  The page must opt in with
+   * LPPL_CONTEXT_ENABLED=true and provide LPPL_CONTEXT_API; otherwise this
+   * returns a disabled client and performs no network request.
+   */
+  const marketContext = (options = {}) => {
+    if (!G.LPPLMarketContext || typeof G.LPPLMarketContext.createMarketContextClient !== 'function') {
+      throw new Error('市场背景 Worker 客户端未加载');
+    }
+    return G.LPPLMarketContext.createMarketContextClient({
+      enabled: options.enabled === true || G.LPPL_CONTEXT_ENABLED === true,
+      baseUrl: options.baseUrl || G.LPPL_CONTEXT_API || '',
+      intervalMs: options.intervalMs,
+      fetchImpl: options.fetchImpl,
+      onState: options.onState,
+    });
+  };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, marketContext };
 })(window);

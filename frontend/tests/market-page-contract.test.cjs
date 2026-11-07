@@ -22,6 +22,11 @@ test('market page renders a descriptive review switch and ladder from the saved 
   assert.match(page, /id="s-ladder"/);
   assert.match(page, /function renderLadder\(\)/);
   assert.match(page, /function renderReview\(\)/);
+  assert.match(page, /app\/market-context-client\.js/);
+  assert.match(page, /data-market-context-controls/);
+  assert.match(page, /id="context-load"/);
+  assert.match(page, /id="context-latest"/);
+  assert.match(page, /LPPL\.marketContext\(/);
   assert.match(page, /LPPL\.market\(\)/);
 });
 
