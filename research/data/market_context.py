@@ -60,11 +60,11 @@ def _source_meta(source_id: str, meta: Any, *, source_url: str | None = None) ->
     }
 
 
-def _missing(asof: str, reason: str) -> dict[str, Any]:
+def _missing(asof: str, reason: str, *, window: str | None = None) -> dict[str, Any]:
     return {
         "status": "not_available",
         "asof": asof,
-        "window": None,
+        "window": window,
         "rows": [],
         "stale_reason": reason,
         "evidence": EVIDENCE,
@@ -95,7 +95,10 @@ def build_snapshot(
     limit = {**raw_limit}
     limit.setdefault("reasons", _missing(asof, "source did not provide limit-up reason rows"))
     limit.setdefault("topics", _missing(asof, "source did not provide topic labels"))
-    progression = _missing(asof, "prior trading-day limit-pool pair is not available")
+    limit.setdefault("prior_day", _missing(asof, "previous trading-day limit-pool snapshot was not supplied", window="t-1"))
+    raw_history = payload.get("history") if isinstance(payload.get("history"), dict) else {}
+    raw_progression = raw_history.get("progression") if isinstance(raw_history.get("progression"), dict) else None
+    progression = raw_progression or _missing(asof, "prior trading-day limit-pool pair is not available", window="t+1")
     history = {"progression": progression}
     context = {
         "schema_version": SCHEMA_VERSION,
