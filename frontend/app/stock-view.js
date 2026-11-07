@@ -145,6 +145,7 @@
       }
       $('welcome').hidden = true; doc.body.classList.add('has-stock');
       $('task-tools').hidden = false; $('market-panel').hidden = false; $('task-stages').hidden = false;
+      $('analysis-position').hidden = false;
       $('market-name').textContent = (next.market?.name || next.current?.name || '股票') + ' · ' + next.code;
       if (root.StockAnalysis) {
         analysis = root.StockAnalysis.normalize(next.current, next.market, next.currentStatus);

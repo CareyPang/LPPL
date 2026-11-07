@@ -497,6 +497,7 @@
       <nav class="nav" aria-label="页面导航">
         <a class="home-link" href="home.html">海面</a>
         <a class="workspace-link" href="stock.html" aria-current="page">工作站</a>
+        <a class="market-link" href="market.html">市场背景</a>
         <a class="research-link" href="index.html">指数研究</a>
         <a class="research-link" href="lab/guide.html">方法与证据</a>
       </nav>
@@ -519,10 +520,9 @@
           </svg>
           <span class="emblem-wordmark">临界点</span>
         </div>
-        <button class="emblem-motion" id="workspace-motion" type="button" aria-pressed="true" aria-label="关闭工作站装饰动画" title="仅控制徽章扫光，不影响行情与分析">装饰动画 · 开</button>
       </div>
       <div class="eyebrow">从海面，进入观察</div>
-      <h1>看清行情，<em>再研究时间。</em></h1>
+      <h1>资产研究工作站</h1>
       <p class="intro">从一只股票开始。日线、成交量与已有研究结果分别加载，后台更新时仍可继续看图。</p>
       <form class="search" id="search">
         <label class="search-label" for="code">资产</label>
@@ -541,6 +541,12 @@
         <button id="refresh-current" type="button" disabled>更新当前分析</button>
         <button id="compute-history" type="button" disabled>生成历史回放</button>
         <button id="resume-jobs" type="button" hidden>继续查看任务</button>
+      </div>
+      <div id="analysis-position" class="analysis-position" hidden role="tablist" aria-label="分析位置">
+        <span class="analysis-position-label">分析视图</span>
+        <button type="button" role="tab" data-analysis-view="top" aria-selected="true">顶部时间</button>
+        <button type="button" role="tab" data-analysis-view="bottom" aria-selected="false">底部结构</button>
+        <button type="button" role="tab" data-analysis-view="market" aria-selected="false">市场背景</button>
       </div>
     </section>
 
@@ -593,7 +599,8 @@
 
     <section class="sec" id="results" hidden>
       <div class="stock-meta" id="stock-meta"></div>
-      <div class="grid">
+      <section id="bottom-dashboard" class="bottom-dashboard" hidden aria-live="polite"></section>
+      <div id="legacy-results" class="grid">
         <section class="card wide">
           <div class="sec-h">
             <h2>顶部时间研究 · 当前状态</h2>
@@ -1167,17 +1174,83 @@
       `;
     }
 
+    function previewBottomHtml(d) {
+      const analysis = d.analysis || {};
+      const windows = Array.isArray(analysis.windows) ? analysis.windows : [];
+      const status = analysis.status === 'no_signal' ? '当前没有合格顶部区间'
+        : windows.length ? `保留 ${windows.length} 个研究候选区间` : '等待当前分析状态';
+      return `
+        <div class="bottom-dashboard-grid">
+          <section class="bottom-card bottom-card-primary">
+            <span class="bottom-card-kicker">价格结构 · LPPLS</span>
+            <h3>${esc(status)}</h3>
+            <p>当前预览只研究未来时间区间。模型完整周期门槛为 ${esc(analysis.minimum_full_cycles ?? '1.5')}；底部价格、目标价和回撤幅度不由本次计算推导。</p>
+            <div class="bottom-metrics">
+              <span><b>${esc(analysis.as_of || d.asof || '—')}</b><small>分析截止</small></span>
+              <span><b>${windows.length}</b><small>候选区间</small></span>
+              <span><b>${esc(analysis.model_version || d.model_version || '—')}</b><small>模型版本</small></span>
+            </div>
+          </section>
+          <section class="bottom-card">
+            <span class="bottom-card-kicker">底部结构 · 研究边界</span>
+            <h3>底部评分尚未接入当前任务</h3>
+            <p>历史回撤分布、波动状态和类似事件只能作为描述性背景；没有经过样本外验证的抄底概率，不显示成买入信号。</p>
+            <span class="evidence-pill">NOT_ESTABLISHED · 不进入 LPPLS</span>
+          </section>
+          <section class="bottom-card bottom-card-market" data-market-context-card>
+            <span class="bottom-card-kicker">市场背景 · 描述性</span>
+            <h3>把个股放回市场环境</h3>
+            <p>板块热力、涨停与连板、两融、估值和北向资金已有独立市场背景页；数据不参与顶部拟合。</p>
+            <a class="bottom-card-link" href="market.html">打开市场背景工作台 <span aria-hidden="true">↗</span></a>
+          </section>
+          <section class="bottom-card">
+            <span class="bottom-card-kicker">全球宏观 · 待接入</span>
+            <h3>利率、消息与市场隐含概率</h3>
+            <p>后续接入官方宏观源和预测市场快照。美联储概率将标为“市场隐含概率”，不称为官方预测，不喂入 LPPLS。</p>
+            <div class="bottom-source-list"><span>美债曲线 · planned</span><span>全球消息 · planned</span><span>Fed 市场隐含概率 · planned</span></div>
+          </section>
+        </div>
+        <p class="bottom-disclaimer">研究区间、市场背景和宏观概率属于不同证据层。来源失败时保留上次快照并标记 stale，不用空数组冒充没有风险。</p>
+      `;
+    }
+
+    let analysisView = 'top';
+    try { analysisView = localStorage.getItem('lppl.analysis.view') || 'top'; } catch { /* Session-only preference. */ }
+    function setAnalysisView(view) {
+      analysisView = ['top', 'bottom', 'market'].includes(view) ? view : 'top';
+      try { localStorage.setItem('lppl.analysis.view', analysisView); } catch { /* Session-only preference. */ }
+      document.querySelectorAll('[data-analysis-view]').forEach((button) => {
+        button.setAttribute('aria-selected', String(button.dataset.analysisView === analysisView));
+      });
+      const summary = $('analysis-summary');
+      const results = $('results');
+      if (summary) summary.hidden = analysisView !== 'top';
+      if (results && results.dataset.empty !== 'true') results.hidden = analysisView === 'top';
+      document.body.dataset.analysisView = analysisView;
+      const marketCard = document.querySelector('[data-market-context-card]');
+      if (marketCard) marketCard.classList.toggle('is-focused', analysisView === 'market');
+    }
+
     function render(d, history) {
       if (d.analysis && d.model_computed === true) {
         ++dipRenderEpoch;
-        $('results').hidden = true;
+        $('results').hidden = false;
+        $('results').dataset.empty = 'false';
+        $('bottom-dashboard').hidden = false;
+        $('bottom-dashboard').innerHTML = previewBottomHtml(d);
+        $('legacy-results').hidden = true;
+        $('stock-meta').textContent = `${d.name || ''} ${d.symbol || ''} · 截止 ${d.asof || '—'} · 当前预览`;
         $('demo-result').hidden = true;
         $('asof').textContent = '研究计算 · ' + d.asof;
+        setAnalysisView(analysisView);
         return;
       }
       if (d.demo === true) {
         ++dipRenderEpoch;
         $('results').hidden = true;
+        $('results').dataset.empty = 'true';
+        $('bottom-dashboard').hidden = true;
+        $('legacy-results').hidden = true;
         $('demo-result').hidden = false;
         $('asof').textContent = '冻结样本 · ' + d.asof;
         $('demo-result-note').textContent = history
@@ -1186,12 +1259,16 @@
         return;
       }
       $('results').hidden = false;
+      $('results').dataset.empty = 'false';
+      $('bottom-dashboard').hidden = true;
+      $('legacy-results').hidden = false;
       $('asof').textContent = d.asof || '—';
       $('stock-meta').textContent =
         `${d.name || ''} ${d.symbol || ''} · 截止 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
       $('risk').innerHTML = riskHtml(d);
       drawHistory(d, history);
       renderDip(d.dip);
+      setAnalysisView(analysisView);
     }
 
     const demoMode = new URLSearchParams(location.search).get('demo') === '1';
@@ -1217,6 +1294,10 @@
       });
       document.querySelectorAll('.research-link').forEach(link => { link.hidden = true; });
     }
+    document.querySelectorAll('[data-analysis-view]').forEach(button => {
+      button.addEventListener('click', () => setAnalysisView(button.dataset.analysisView));
+    });
+    setAnalysisView(analysisView);
     StockView.mount({ api: activeApi, renderResult: render });
   </script>
 </body>
