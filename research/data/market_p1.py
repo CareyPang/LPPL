@@ -576,4 +576,3 @@ def attach_snapshot_extensions(
         limit["prior_day"] = previous
     result["history"] = {"progression": progression}
     return result
-

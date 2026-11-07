@@ -93,4 +93,3 @@
 - 每张数据卡能看到 `asof`、`fetched_at`、来源和 stale 状态。
 - 页面文案明确区分 VERIFIED、descriptive、NOT_ESTABLISHED；不把 H1/H2/H3、Q2、MPL、Ising、Q-DD2、PPE 的失败结果升级为预测能力。
 - 新数据接入前先完成字段、许可、频率、缓存和原始快照审计，再进入独立 PR；不直接改 `frontend/app/lppl-data.js`。
-

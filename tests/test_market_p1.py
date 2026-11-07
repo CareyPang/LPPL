@@ -212,4 +212,3 @@ def test_ths_reason_topic_adapter_does_not_treat_industry_as_reason():
     assert reasons["rows"] == [{"code": "000001", "name": "示例", "reason": "算力", "source_field": "reason_type"}]
     assert topics["rows"][0]["topic_label"] == "算力"
     assert source["raw_sha256"]
-
