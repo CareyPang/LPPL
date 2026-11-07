@@ -14,12 +14,14 @@ class State {
   waitUntil(promise) { this.waits.push(promise); }
 }
 
-function binding(state) {
-  return { idFromName: () => 'global', get: () => ({ fetch: (request) => new MarketContextState(state, { MARKET_CONTEXT_SOURCE_URL: 'https://source.test/market.json', MARKET_CONTEXT_REFRESH_TOKEN: 'secret', MARKET_CONTEXT_SEED_TOKEN: 'seed-secret' }).fetch(request) }) };
+function binding(state, sourceUrl = 'https://source.test/market.json') {
+  const workerEnv = { MARKET_CONTEXT_REFRESH_TOKEN: 'secret', MARKET_CONTEXT_SEED_TOKEN: 'seed-secret' };
+  if (sourceUrl) workerEnv.MARKET_CONTEXT_SOURCE_URL = sourceUrl;
+  return { idFromName: () => 'global', get: () => ({ fetch: (request) => new MarketContextState(state, workerEnv).fetch(request) }) };
 }
 
-function env(state) {
-  return { ALLOWED_ORIGIN: 'https://example.test', MARKET_CONTEXT: binding(state), MARKET_CONTEXT_REFRESH_TOKEN: 'secret', MARKET_CONTEXT_SEED_TOKEN: 'seed-secret' };
+function env(state, sourceUrl = 'https://source.test/market.json') {
+  return { ALLOWED_ORIGIN: 'https://example.test', MARKET_CONTEXT: binding(state, sourceUrl), MARKET_CONTEXT_REFRESH_TOKEN: 'secret', MARKET_CONTEXT_SEED_TOKEN: 'seed-secret' };
 }
 
 async function seedSnapshot(asof) {
@@ -62,6 +64,30 @@ test('refresh is protected, asynchronous and returns a stable snapshot after com
     assert.equal(body.cache, 'hit');
     const status = await worker.fetch(new Request(`https://worker.test/context/status?job_id=${job.job_id}`), env(state));
     assert.equal((await status.json()).status, 'completed');
+  } finally { globalThis.fetch = original; }
+});
+
+test('refresh fails closed when the source URL is not configured', async () => {
+  const state = new State();
+  let networkCalls = 0;
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => { networkCalls += 1; return Response.json(snapshot); };
+  try {
+    const response = await worker.fetch(new Request('https://worker.test/context/refresh', {
+      method: 'POST', headers: { 'X-Market-Context-Token': 'secret' }, body: '{}',
+    }), env(state, null));
+    assert.equal(response.status, 202);
+    const job = await response.json();
+    await Promise.all(state.waits);
+    assert.equal(networkCalls, 0);
+    const latest = await worker.fetch(new Request('https://worker.test/context?date=latest'), env(state, null));
+    assert.equal(latest.status, 404);
+    const dated = await worker.fetch(new Request('https://worker.test/context?date=2026-11-02'), env(state, null));
+    assert.equal(dated.status, 404);
+    const status = await worker.fetch(new Request(`https://worker.test/context/status?job_id=${job.job_id}`), env(state, null));
+    const statusBody = await status.json();
+    assert.equal(statusBody.status, 'failed');
+    assert.equal(statusBody.error_code, 'CONTEXT_REFRESH_FAILED');
   } finally { globalThis.fetch = original; }
 });
 

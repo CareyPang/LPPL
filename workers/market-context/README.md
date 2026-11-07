@@ -13,3 +13,5 @@
 快照使用 `market-context.v1` 契约，保留 `source/asof/fetched_at/status/stale_reason/snapshot_sha256`。来源失败时整体为 `partial`，局部模块保留错误；涨停原因、题材标签和历史晋级率缺失时写 `status=not_available`，不写成 0。
 
 本目录只提供代码和本地 fixture 验证，不代表已部署 Cloudflare Worker。正式部署前仍需配置来源许可、刷新/seed token、定时任务、数据保留期和大陆网络可用性。`/context/seed` 不接受浏览器公开调用，建议由受控 artifact 导入任务调用。
+
+`MARKET_CONTEXT_SOURCE_URL` 必须由部署环境显式配置；未配置时 `/context/refresh` 会失败并保持已有历史快照不变，不会回退到仓库 `main` 的 mock 数据。

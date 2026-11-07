@@ -1,5 +1,4 @@
 const DEFAULT_ORIGIN = 'https://careypang.github.io';
-const DEFAULT_SOURCE = 'https://raw.githubusercontent.com/CareyPang/LPPL/main/web/mock/data/market/market_latest.json';
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const JOB_PATTERN = /^[a-f0-9-]{36}$/;
 const MAX_BODY = 2048;
@@ -166,7 +165,8 @@ export async function validateSeedSnapshot(snapshot, rawText = null) {
 }
 
 async function fetchSource(env) {
-  const source_url = env.MARKET_CONTEXT_SOURCE_URL || DEFAULT_SOURCE;
+  const source_url = env.MARKET_CONTEXT_SOURCE_URL;
+  if (!source_url) throw new Error('SOURCE_NOT_CONFIGURED');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
   try {
