@@ -21,4 +21,8 @@ NOT_INSPECTED：低端真机、所有浏览器及所有素材帧逐帧验收；C
 
 ## 发布记录
 
-独立演示站的版本身份和线上验收待发布完成后追加；此文件此刻不证明线上已更新。
+- VERIFIED：同一[公开演示链接](https://lppl-ocean-observatory-preview.groovy-cabin-8182.chatgpt.site)第 4 版部署成功。项目 `appgprj_6aedbc87f8808191b58788204795e049`，保存版本 `appgprj_6aedbc87f8808191b58788204795e049~appgver_4e951c49e7608191bdcd6540f365af8e`，部署 `appgdep_6aee841f315c8191978774a28fbd5a99` 状态 `succeeded`，时间 `2026-11-07T01:51:33Z`。
+- VERIFIED：Sites 源码 `61bd22926f2354cb5b3d286eb2ef0dcaf38160c4`，LPPL 来源 `2e14b548561b9dd48cff05b102bd7482e94a7550`。保存服务解包后的 tar SHA256 为 `dabc69fcf014b7166bf7f764b01589a51102d17fee0427e0d69b8d2ed1229a19`，53,442,560 字节、862 文件；构建清单的 860 个输出哈希逐一相符，工作站仍强制演示模式。
+- VERIFIED（线上浏览器）：刷新同一公开页面后，hero 只有 1 个入口、0 个 SVG 图标；光带为 `sunlight-pass`、4.8 秒循环；`stage painted`，右上仍为 `rgba(8,31,47,.7)`。线上画面已显示新按钮、海面与代码云。
+
+线上检查使用实际 1215px 桌面视口；390px 为本地同源代码验收，不混称线上移动验收。旧版本、旧记录及原研究结果保留。没有合并 PR 或部署正式 Pages/生产 Worker。
