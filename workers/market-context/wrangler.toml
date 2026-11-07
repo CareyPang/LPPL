@@ -1,0 +1,15 @@
+name = "lppl-market-context"
+main = "src/index.js"
+compatibility_date = "2026-11-07"
+
+[vars]
+ALLOWED_ORIGIN = "https://careypang.github.io"
+MARKET_CONTEXT_SOURCE_URL = "https://raw.githubusercontent.com/CareyPang/LPPL/main/web/mock/data/market/market_latest.json"
+
+[[durable_objects.bindings]]
+name = "MARKET_CONTEXT"
+class_name = "MarketContextState"
+
+[[migrations]]
+tag = "v1-market-context"
+new_sqlite_classes = ["MarketContextState"]

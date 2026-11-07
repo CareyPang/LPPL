@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "purpose": "OFFLINE_PRESENTATION_ONLY_NOT_MODEL_EVIDENCE",
+  "samples": [
+    {
+      "source_file": "data/frozen/v20261104/sh600519_qfq.parquet",
+      "source_sha256": "53f9674375c16b1b898b4a1ccc7d7fdc241a490d34001e4e35ccfa7b22c21c57",
+      "source_provider": "sina",
+      "source_downloaded_at": "2026-10-24T05:26:28.554078+00:00",
+      "source_snapshot": "v20261104",
+      "source_rows": 6027,
+      "sample_rows": 250,
+      "first_date": "2025-10-14",
+      "last_date": "2026-10-23",
+      "adjustment": "qfq",
+      "adjustment_evidence": "Frozen manifest and README both declare qfq; values retained without recalculation.",
+      "volume_unit": "vendor_native",
+      "volume_unit_status": "NOT_VERIFIED",
+      "volume_note": "Raw volume values retained without conversion; units not independently established.",
+      "model_computed": false,
+      "evidence": "OBSERVED_FROZEN_OHLCV_NOT_PREDICTION",
+      "extraction": "Last 250 existing rows, date sorted, OHLCV only; no download, fitting, adjustment or forecast."
+    }
+  ],
+  "artifact": "app/stock-demo-data.js",
+  "artifact_sha256": "296edcaea311114c0dd4979e56b50158b25103419aa253a94450150bc6c30d49"
+}

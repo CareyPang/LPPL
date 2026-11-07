@@ -1,0 +1,843 @@
+{
+  "scope": {
+    "source_files": [
+      "data/frozen/v20261104/sh000001_qfq.parquet",
+      "data/frozen/v20261104/sh600519_qfq.parquet"
+    ],
+    "selected_peak_range": [
+      "2023-01-01",
+      "2024-06-30"
+    ],
+    "price_read_range": [
+      "2022-07-01",
+      "2024-08-31"
+    ],
+    "price_field": "frozen qfq close; index point / stock CNY qfq basis",
+    "protocol_read": "sections 3-4 only; no prediction file read",
+    "execution_boundary": "POLICY_ONLY",
+    "purpose": "limited label semantics examples, no prediction scoring or backtest",
+    "source_report": "Independent bounded review; local paths normalized for repository artifact"
+  },
+  "definitions": {
+    "short_L_R": [
+      10,
+      10
+    ],
+    "stage_L_R": [
+      63,
+      21
+    ],
+    "trough_L_R": [
+      21,
+      21
+    ],
+    "G": 5,
+    "G_role": "merge exact equal-price adjacent candidates only; close group at v+G+R",
+    "calendar_basis": "common observed dates in the two files; independent exchange calendar NOT_VERIFIED",
+    "new_rise": "nearest trough endpoint in fixed [u-126,u-21], retrospectively confirmed, peak above trough and no lower close in (a,u]",
+    "old_rise": "filter trough group by support_end<=peak date before selecting nearest; actual availability time NOT_ESTABLISHED",
+    "price_basis": "PRICE_BASIS_UNRESOLVED; corporate actions not checked"
+  },
+  "data_checks": {
+    "sh000001": {
+      "sha256": "13a808a15198b9b4f3bc606cd881023c6a7c74f3560c2552f3be0a4df7f8ee0a",
+      "rows_in_read_range": 529,
+      "dates_range": [
+        "2022-07-01",
+        "2024-08-30"
+      ],
+      "duplicate_dates": 0,
+      "null_or_nonfinite_close": 0,
+      "nonpositive_or_missing_volume": 0,
+      "source_date_calendar_matches_other": true,
+      "independent_exchange_calendar": "NOT_VERIFIED",
+      "corporate_action_history": "NOT_INSPECTED",
+      "historical_price_availability_timestamps": "NOT_ESTABLISHED"
+    },
+    "sh600519": {
+      "sha256": "53f9674375c16b1b898b4a1ccc7d7fdc241a490d34001e4e35ccfa7b22c21c57",
+      "rows_in_read_range": 529,
+      "dates_range": [
+        "2022-07-01",
+        "2024-08-30"
+      ],
+      "duplicate_dates": 0,
+      "null_or_nonfinite_close": 0,
+      "nonpositive_or_missing_volume": 0,
+      "source_date_calendar_matches_other": true,
+      "independent_exchange_calendar": "NOT_VERIFIED",
+      "corporate_action_history": "NOT_INSPECTED",
+      "historical_price_availability_timestamps": "NOT_ESTABLISHED"
+    }
+  },
+  "cases": [
+    {
+      "symbol": "sh000001",
+      "peak_date": "2023-04-18",
+      "close": "3393.33",
+      "intraday_high_reference_only": "3396.17",
+      "plateau_start": "2023-04-18",
+      "plateau_end": "2023-04-18",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": false,
+        "stage_rise_old_date_proxy": false,
+        "stage_rise_new_retrospective": false
+      },
+      "short_window": {
+        "left": [
+          "2023-04-03",
+          "2023-04-17"
+        ],
+        "right": [
+          "2023-04-19",
+          "2023-05-05"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2023-05-12",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2023-01-11",
+          "2023-04-17"
+        ],
+        "right": [
+          "2023-04-19",
+          "2023-05-22"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2023-05-29",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2022-10-13",
+        "2023-03-17"
+      ],
+      "new_trough": {
+        "date": "2022-12-23",
+        "price": "3045.87",
+        "duration_sessions": 75,
+        "duration_calendar_days": 116,
+        "trough_support": "2023-02-07",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2022-12-23",
+        "plateau_end": "2022-12-23",
+        "left_start": "2022-11-24",
+        "right_end": "2023-01-31",
+        "segment_min_excluding_start": {
+          "date": "2022-12-26",
+          "close": "3065.56"
+        },
+        "combined_stage_label_support_end": null
+      },
+      "old_trough": {
+        "date": "2022-12-23",
+        "price": "3045.87",
+        "duration_sessions": 75,
+        "duration_calendar_days": 116,
+        "trough_support": "2023-02-07",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2022-12-23",
+        "plateau_end": "2022-12-23",
+        "left_start": "2022-11-24",
+        "right_end": "2023-01-31",
+        "segment_min_excluding_start": {
+          "date": "2022-12-26",
+          "close": "3065.56"
+        },
+        "combined_stage_label_support_end": null
+      },
+      "stage_blocker": {
+        "date": "2023-05-08",
+        "close": "3395.0",
+        "offset_sessions": 11,
+        "higher_by": "1.67"
+      }
+    },
+    {
+      "symbol": "sh000001",
+      "peak_date": "2023-05-08",
+      "close": "3395.0",
+      "intraday_high_reference_only": "3400.18",
+      "plateau_start": "2023-05-08",
+      "plateau_end": "2023-05-08",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": true,
+        "stage_rise_old_date_proxy": true,
+        "stage_rise_new_retrospective": true
+      },
+      "short_window": {
+        "left": [
+          "2023-04-19",
+          "2023-05-05"
+        ],
+        "right": [
+          "2023-05-09",
+          "2023-05-22"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2023-05-29",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2023-02-02",
+          "2023-05-05"
+        ],
+        "right": [
+          "2023-05-09",
+          "2023-06-06"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2023-06-13",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2022-10-28",
+        "2023-04-03"
+      ],
+      "new_trough": {
+        "date": "2022-12-23",
+        "price": "3045.87",
+        "duration_sessions": 86,
+        "duration_calendar_days": 136,
+        "trough_support": "2023-02-07",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2022-12-23",
+        "plateau_end": "2022-12-23",
+        "left_start": "2022-11-24",
+        "right_end": "2023-01-31",
+        "segment_min_excluding_start": {
+          "date": "2022-12-26",
+          "close": "3065.56"
+        },
+        "combined_stage_label_support_end": "2023-06-13"
+      },
+      "old_trough": {
+        "date": "2022-12-23",
+        "price": "3045.87",
+        "duration_sessions": 86,
+        "duration_calendar_days": 136,
+        "trough_support": "2023-02-07",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2022-12-23",
+        "plateau_end": "2022-12-23",
+        "left_start": "2022-11-24",
+        "right_end": "2023-01-31",
+        "segment_min_excluding_start": {
+          "date": "2022-12-26",
+          "close": "3065.56"
+        },
+        "combined_stage_label_support_end": "2023-06-13"
+      },
+      "stage_blocker": null
+    },
+    {
+      "symbol": "sh000001",
+      "peak_date": "2024-03-18",
+      "close": "3084.93",
+      "intraday_high_reference_only": "3085.31",
+      "plateau_start": "2024-03-18",
+      "plateau_end": "2024-03-18",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": true,
+        "stage_rise_old_date_proxy": false,
+        "stage_rise_new_retrospective": true
+      },
+      "short_window": {
+        "left": [
+          "2024-03-04",
+          "2024-03-15"
+        ],
+        "right": [
+          "2024-03-19",
+          "2024-04-01"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2024-04-10",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2023-12-11",
+          "2024-03-15"
+        ],
+        "right": [
+          "2024-03-19",
+          "2024-04-18"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2024-04-25",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2023-09-05",
+        "2024-02-08"
+      ],
+      "new_trough": {
+        "date": "2024-02-05",
+        "price": "2702.19",
+        "duration_sessions": 24,
+        "duration_calendar_days": 42,
+        "trough_support": "2024-03-20",
+        "mature_at_peak_by_row_date": false,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-02-05",
+        "plateau_end": "2024-02-05",
+        "left_start": "2024-01-05",
+        "right_end": "2024-03-13",
+        "segment_min_excluding_start": {
+          "date": "2024-02-06",
+          "close": "2789.49"
+        },
+        "combined_stage_label_support_end": "2024-04-25"
+      },
+      "old_trough": {
+        "date": "2023-10-23",
+        "price": "2939.29",
+        "duration_sessions": 98,
+        "duration_calendar_days": 147,
+        "trough_support": "2023-11-28",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": false,
+        "peak_above_trough": true,
+        "rise_pass": false,
+        "plateau_start": "2023-10-23",
+        "plateau_end": "2023-10-23",
+        "left_start": "2023-09-14",
+        "right_end": "2023-11-21",
+        "segment_min_excluding_start": {
+          "date": "2024-02-05",
+          "close": "2702.19"
+        },
+        "combined_stage_label_support_end": "2024-04-25"
+      },
+      "stage_blocker": null
+    },
+    {
+      "symbol": "sh000001",
+      "peak_date": "2024-05-20",
+      "close": "3171.15",
+      "intraday_high_reference_only": "3174.27",
+      "plateau_start": "2024-05-20",
+      "plateau_end": "2024-05-20",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": true,
+        "stage_rise_old_date_proxy": true,
+        "stage_rise_new_retrospective": true
+      },
+      "short_window": {
+        "left": [
+          "2024-05-06",
+          "2024-05-17"
+        ],
+        "right": [
+          "2024-05-21",
+          "2024-06-03"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2024-06-11",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2024-02-06",
+          "2024-05-17"
+        ],
+        "right": [
+          "2024-05-21",
+          "2024-06-19"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2024-06-26",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2023-11-08",
+        "2024-04-16"
+      ],
+      "new_trough": {
+        "date": "2024-02-05",
+        "price": "2702.19",
+        "duration_sessions": 64,
+        "duration_calendar_days": 105,
+        "trough_support": "2024-03-20",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-02-05",
+        "plateau_end": "2024-02-05",
+        "left_start": "2024-01-05",
+        "right_end": "2024-03-13",
+        "segment_min_excluding_start": {
+          "date": "2024-02-06",
+          "close": "2789.49"
+        },
+        "combined_stage_label_support_end": "2024-06-26"
+      },
+      "old_trough": {
+        "date": "2024-02-05",
+        "price": "2702.19",
+        "duration_sessions": 64,
+        "duration_calendar_days": 105,
+        "trough_support": "2024-03-20",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-02-05",
+        "plateau_end": "2024-02-05",
+        "left_start": "2024-01-05",
+        "right_end": "2024-03-13",
+        "segment_min_excluding_start": {
+          "date": "2024-02-06",
+          "close": "2789.49"
+        },
+        "combined_stage_label_support_end": "2024-06-26"
+      },
+      "stage_blocker": null
+    },
+    {
+      "symbol": "sh600519",
+      "peak_date": "2023-07-28",
+      "close": "1704.2",
+      "intraday_high_reference_only": "1706.9",
+      "plateau_start": "2023-07-28",
+      "plateau_end": "2023-07-28",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": true,
+        "stage_rise_old_date_proxy": true,
+        "stage_rise_new_retrospective": true
+      },
+      "short_window": {
+        "left": [
+          "2023-07-14",
+          "2023-07-27"
+        ],
+        "right": [
+          "2023-07-31",
+          "2023-08-11"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2023-08-18",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2023-04-25",
+          "2023-07-27"
+        ],
+        "right": [
+          "2023-07-31",
+          "2023-08-28"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2023-09-04",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2023-01-18",
+        "2023-06-29"
+      ],
+      "new_trough": {
+        "date": "2023-05-31",
+        "price": "1441.23",
+        "duration_sessions": 40,
+        "duration_calendar_days": 58,
+        "trough_support": "2023-07-10",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2023-05-31",
+        "plateau_end": "2023-05-31",
+        "left_start": "2023-04-27",
+        "right_end": "2023-07-03",
+        "segment_min_excluding_start": {
+          "date": "2023-06-01",
+          "close": "1447.44"
+        },
+        "combined_stage_label_support_end": "2023-09-04"
+      },
+      "old_trough": {
+        "date": "2023-05-31",
+        "price": "1441.23",
+        "duration_sessions": 40,
+        "duration_calendar_days": 58,
+        "trough_support": "2023-07-10",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2023-05-31",
+        "plateau_end": "2023-05-31",
+        "left_start": "2023-04-27",
+        "right_end": "2023-07-03",
+        "segment_min_excluding_start": {
+          "date": "2023-06-01",
+          "close": "1447.44"
+        },
+        "combined_stage_label_support_end": "2023-09-04"
+      },
+      "stage_blocker": null
+    },
+    {
+      "symbol": "sh600519",
+      "peak_date": "2024-04-01",
+      "close": "1564.23",
+      "intraday_high_reference_only": "1575.74",
+      "plateau_start": "2024-04-01",
+      "plateau_end": "2024-04-01",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": false,
+        "stage_rise_old_date_proxy": false,
+        "stage_rise_new_retrospective": false
+      },
+      "short_window": {
+        "left": [
+          "2024-03-18",
+          "2024-03-29"
+        ],
+        "right": [
+          "2024-04-02",
+          "2024-04-17"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2024-04-24",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2023-12-25",
+          "2024-03-29"
+        ],
+        "right": [
+          "2024-04-02",
+          "2024-05-07"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2024-05-14",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2023-09-19",
+        "2024-03-01"
+      ],
+      "new_trough": {
+        "date": "2024-01-17",
+        "price": "1433.07",
+        "duration_sessions": 47,
+        "duration_calendar_days": 75,
+        "trough_support": "2024-03-01",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-01-17",
+        "plateau_end": "2024-01-17",
+        "left_start": "2023-12-18",
+        "right_end": "2024-02-23",
+        "segment_min_excluding_start": {
+          "date": "2024-02-02",
+          "close": "1450.34"
+        },
+        "combined_stage_label_support_end": null
+      },
+      "old_trough": {
+        "date": "2024-01-17",
+        "price": "1433.07",
+        "duration_sessions": 47,
+        "duration_calendar_days": 75,
+        "trough_support": "2024-03-01",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-01-17",
+        "plateau_end": "2024-01-17",
+        "left_start": "2023-12-18",
+        "right_end": "2024-02-23",
+        "segment_min_excluding_start": {
+          "date": "2024-02-02",
+          "close": "1450.34"
+        },
+        "combined_stage_label_support_end": null
+      },
+      "stage_blocker": {
+        "date": "2024-05-07",
+        "close": "1608.46",
+        "offset_sessions": 21,
+        "higher_by": "44.23"
+      }
+    },
+    {
+      "symbol": "sh600519",
+      "peak_date": "2024-05-07",
+      "close": "1608.46",
+      "intraday_high_reference_only": "1615.55",
+      "plateau_start": "2024-05-07",
+      "plateau_end": "2024-05-07",
+      "candidate_group_size": 1,
+      "labels_conditional_on_price_calendar": {
+        "short": true,
+        "stage_structure": true,
+        "stage_rise_old_date_proxy": true,
+        "stage_rise_new_retrospective": true
+      },
+      "short_window": {
+        "left": [
+          "2024-04-18",
+          "2024-05-06"
+        ],
+        "right": [
+          "2024-05-08",
+          "2024-05-21"
+        ],
+        "left_count": 10,
+        "right_count": 10,
+        "support_end_including_G5": "2024-05-28",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "stage_test_window": {
+        "left": [
+          "2024-01-24",
+          "2024-05-06"
+        ],
+        "right": [
+          "2024-05-08",
+          "2024-06-05"
+        ],
+        "left_count": 63,
+        "right_count": 21,
+        "support_end_including_G5": "2024-06-13",
+        "observed_rows_complete_against_common_dates": true
+      },
+      "eligible_trough_endpoint_dates": [
+        "2023-10-26",
+        "2024-04-01"
+      ],
+      "new_trough": {
+        "date": "2024-01-17",
+        "price": "1433.07",
+        "duration_sessions": 68,
+        "duration_calendar_days": 111,
+        "trough_support": "2024-03-01",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-01-17",
+        "plateau_end": "2024-01-17",
+        "left_start": "2023-12-18",
+        "right_end": "2024-02-23",
+        "segment_min_excluding_start": {
+          "date": "2024-02-02",
+          "close": "1450.34"
+        },
+        "combined_stage_label_support_end": "2024-06-13"
+      },
+      "old_trough": {
+        "date": "2024-01-17",
+        "price": "1433.07",
+        "duration_sessions": 68,
+        "duration_calendar_days": 111,
+        "trough_support": "2024-03-01",
+        "mature_at_peak_by_row_date": true,
+        "no_lower_between": true,
+        "peak_above_trough": true,
+        "rise_pass": true,
+        "plateau_start": "2024-01-17",
+        "plateau_end": "2024-01-17",
+        "left_start": "2023-12-18",
+        "right_end": "2024-02-23",
+        "segment_min_excluding_start": {
+          "date": "2024-02-02",
+          "close": "1450.34"
+        },
+        "combined_stage_label_support_end": "2024-06-13"
+      },
+      "stage_blocker": null
+    }
+  ],
+  "limited_sample_summary": {
+    "stage_structure_events": 8,
+    "stage_candidate_implies_short_in_both_files": true,
+    "all_selected_cases_singleton_groups": true,
+    "new_rule_stage_structure_without_rise_count": 0,
+    "old_date_proxy_stage_structure_without_rise": [
+      "sh000001 2024-03-18"
+    ],
+    "strict_statement": "stage candidate implies short candidate by nested neighborhoods; separately merged event representative dates need not generally coincide",
+    "not_inferred": "No predictive performance, downside magnitude, official calendar completeness, corporate action correctness, or actual historical publication times established."
+  },
+  "right_context_semantic_comparison": {
+    "status": "DRAFT_LABEL_SEMANTICS_ONLY_NO_MODEL_SCORES",
+    "cases": [
+      {
+        "symbol": "sh000001",
+        "peak_date": "2023-04-18",
+        "stage_L63_R21": false,
+        "right_end_R21": "2023-05-22",
+        "closure_R21_G5": "2023-05-29",
+        "higher_or_peak_R21": {
+          "date": "2023-05-08",
+          "close": 3395.0
+        },
+        "stage_L63_R42": false,
+        "right_end_R42": "2023-06-20",
+        "closure_R42_G5": "2023-06-29",
+        "higher_or_peak_R42": {
+          "date": "2023-05-08",
+          "close": 3395.0
+        }
+      },
+      {
+        "symbol": "sh000001",
+        "peak_date": "2023-05-08",
+        "stage_L63_R21": true,
+        "right_end_R21": "2023-06-06",
+        "closure_R21_G5": "2023-06-13",
+        "higher_or_peak_R21": {
+          "date": "2023-05-08",
+          "close": 3395.0
+        },
+        "stage_L63_R42": true,
+        "right_end_R42": "2023-07-07",
+        "closure_R42_G5": "2023-07-14",
+        "higher_or_peak_R42": {
+          "date": "2023-05-08",
+          "close": 3395.0
+        }
+      },
+      {
+        "symbol": "sh000001",
+        "peak_date": "2024-03-18",
+        "stage_L63_R21": true,
+        "right_end_R21": "2024-04-18",
+        "closure_R21_G5": "2024-04-25",
+        "higher_or_peak_R21": {
+          "date": "2024-03-18",
+          "close": 3084.93
+        },
+        "stage_L63_R42": false,
+        "right_end_R42": "2024-05-22",
+        "closure_R42_G5": "2024-05-29",
+        "higher_or_peak_R42": {
+          "date": "2024-05-20",
+          "close": 3171.15
+        }
+      },
+      {
+        "symbol": "sh000001",
+        "peak_date": "2024-05-20",
+        "stage_L63_R21": true,
+        "right_end_R21": "2024-06-19",
+        "closure_R21_G5": "2024-06-26",
+        "higher_or_peak_R21": {
+          "date": "2024-05-20",
+          "close": 3171.15
+        },
+        "stage_L63_R42": true,
+        "right_end_R42": "2024-07-18",
+        "closure_R42_G5": "2024-07-25",
+        "higher_or_peak_R42": {
+          "date": "2024-05-20",
+          "close": 3171.15
+        }
+      },
+      {
+        "symbol": "sh600519",
+        "peak_date": "2023-07-28",
+        "stage_L63_R21": true,
+        "right_end_R21": "2023-08-28",
+        "closure_R21_G5": "2023-09-04",
+        "higher_or_peak_R21": {
+          "date": "2023-07-28",
+          "close": 1704.2
+        },
+        "stage_L63_R42": true,
+        "right_end_R42": "2023-09-26",
+        "closure_R42_G5": "2023-10-11",
+        "higher_or_peak_R42": {
+          "date": "2023-07-28",
+          "close": 1704.2
+        }
+      },
+      {
+        "symbol": "sh600519",
+        "peak_date": "2024-04-01",
+        "stage_L63_R21": false,
+        "right_end_R21": "2024-05-07",
+        "closure_R21_G5": "2024-05-14",
+        "higher_or_peak_R21": {
+          "date": "2024-05-07",
+          "close": 1608.46
+        },
+        "stage_L63_R42": false,
+        "right_end_R42": "2024-06-05",
+        "closure_R42_G5": "2024-06-13",
+        "higher_or_peak_R42": {
+          "date": "2024-05-07",
+          "close": 1608.46
+        }
+      },
+      {
+        "symbol": "sh600519",
+        "peak_date": "2024-05-07",
+        "stage_L63_R21": true,
+        "right_end_R21": "2024-06-05",
+        "closure_R21_G5": "2024-06-13",
+        "higher_or_peak_R21": {
+          "date": "2024-05-07",
+          "close": 1608.46
+        },
+        "stage_L63_R42": true,
+        "right_end_R42": "2024-07-05",
+        "closure_R42_G5": "2024-07-12",
+        "higher_or_peak_R42": {
+          "date": "2024-05-07",
+          "close": 1608.46
+        }
+      }
+    ]
+  }
+}

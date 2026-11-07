@@ -1,0 +1,60 @@
+name: market-context-nightly
+
+on:
+  schedule:
+    # 10:20 UTC = 18:20 Beijing, after the A-share EOD source window.
+    - cron: "20 10 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      asof:
+        description: "EOD date YYYY-MM-DD (blank = runner date)"
+        type: string
+        default: ""
+      prior_asof:
+        description: "Explicit prior trading date; blank keeps progression unavailable"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-context-nightly
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      INPUT_ASOF: ${{ inputs.asof }}
+      INPUT_PRIOR_ASOF: ${{ inputs.prior_asof }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Fetch and seal descriptive EOD snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--out out/market-context --run-mode live)
+          if [[ -n "${INPUT_ASOF:-}" ]]; then args+=(--asof "$INPUT_ASOF"); fi
+          if [[ -n "${INPUT_PRIOR_ASOF:-}" ]]; then args+=(--prior-asof "$INPUT_PRIOR_ASOF"); fi
+          python scripts/update_market_context.py "${args[@]}"
+      - name: Check two-snapshot UI gate (informational until two real EOD dates exist)
+        shell: bash
+        continue-on-error: true
+        run: python scripts/market_context_gate.py --directory out/market-context
+      - name: Upload immutable research artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-context-${{ github.run_id }}
+          path: out/market-context/
+          if-no-files-found: error

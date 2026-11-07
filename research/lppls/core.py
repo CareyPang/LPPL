@@ -16,6 +16,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .oscillations import future_oscillations
+
 K_LPPLS, K_POWER = 4, 2
 
 
@@ -79,8 +81,16 @@ class Fit:
         return float(self.m * abs(self.B) / (self.w * self.C)) if self.C > 0 else np.inf
 
     def n_osc(self, t0: float = 0.0) -> float:
-        """样本内对数周期振荡个数 (ω/2π) ln((tc-t0)/(tc-t_end))。"""
+        """Legacy complete-cycle calculation; unchanged for existing qualifiers.
+
+        Call ``osc_cycles`` for explicit future-domain/finite validation.
+        """
         return float(self.w / (2 * np.pi) * np.log((self.tc - t0) / (self.tc - (self.n - 1))))
+
+    def osc_cycles(self, t0: float = 0.0) -> float:
+        """Complete cycles for finite t0 < n-1 < tc, w > 0; otherwise NaN."""
+        cycles, _ = future_oscillations(self.tc, self.w, t0, t2=self.n - 1)
+        return float(cycles)
 
     def curve(self, t: np.ndarray) -> np.ndarray:
         X = design(t, self.tc, self.m, self.w)

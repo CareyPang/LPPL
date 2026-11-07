@@ -1,0 +1,310 @@
+{
+  "claims": [
+    {
+      "prediction_id": "p1",
+      "episode_id": "e1",
+      "scope": "stage",
+      "kind": "explicit",
+      "target_event_id": "SYNTHETIC:stage:2020-08-08:2020-08-08",
+      "target_family_id": "family:SYNTHETIC:short:2020-08-08:2020-08-08",
+      "target_session": 220,
+      "status": "event",
+      "pending": false,
+      "unknown_blocker_session": null,
+      "boundary_excluded": false,
+      "failure_reasons": [],
+      "strict_evidence_failures": [],
+      "lead": 19,
+      "width": 10,
+      "width_pass": true,
+      "event_lead_pass": true,
+      "entire_window_lead_pass": true,
+      "strict_hit": true,
+      "event_only_hit": true,
+      "revision_hit": false,
+      "is_first": true,
+      "is_revision": false,
+      "first_prediction_id": "p1",
+      "first_alert_id": "p1",
+      "duplicate_event": false,
+      "overstatement": false,
+      "action_session": 201,
+      "published_session": 200,
+      "original_scope": "stage",
+      "short_affiliate": {
+        "prediction_id": "p1",
+        "episode_id": "e1",
+        "scope": "short",
+        "kind": "stage_affiliate",
+        "target_event_id": "SYNTHETIC:short:2020-08-08:2020-08-08",
+        "target_family_id": "family:SYNTHETIC:short:2020-08-08:2020-08-08",
+        "target_session": 220,
+        "status": "event",
+        "pending": false,
+        "unknown_blocker_session": null,
+        "boundary_excluded": false,
+        "failure_reasons": [],
+        "strict_evidence_failures": [],
+        "lead": 19,
+        "width": 10,
+        "width_pass": true,
+        "event_lead_pass": true,
+        "entire_window_lead_pass": true,
+        "strict_hit": true,
+        "event_only_hit": true,
+        "revision_hit": false,
+        "is_first": false,
+        "is_revision": false,
+        "first_prediction_id": null,
+        "first_alert_id": null,
+        "duplicate_event": false,
+        "overstatement": false,
+        "action_session": 201,
+        "published_session": 200
+      }
+    }
+  ],
+  "events": [
+    {
+      "event_id": "SYNTHETIC:short:2020-08-08:2020-08-08",
+      "scope": "short",
+      "scale": "short",
+      "peak_session": 220,
+      "family_id": "family:SYNTHETIC:short:2020-08-08:2020-08-08",
+      "first_prediction_id": null,
+      "strict_hit": false,
+      "event_only_hit": false,
+      "failure_reasons": [
+        "no_claim"
+      ]
+    },
+    {
+      "event_id": "SYNTHETIC:stage:2020-08-08:2020-08-08",
+      "scope": "stage",
+      "scale": "stage",
+      "peak_session": 220,
+      "family_id": "family:SYNTHETIC:short:2020-08-08:2020-08-08",
+      "first_prediction_id": "p1",
+      "strict_hit": true,
+      "event_only_hit": true,
+      "failure_reasons": []
+    }
+  ],
+  "metrics": {
+    "stage": {
+      "E": 1,
+      "P": 1,
+      "TP": 1,
+      "FP": 0,
+      "FN": 0,
+      "recall": 1.0,
+      "precision": 1.0,
+      "event_only": {
+        "E": 1,
+        "P": 1,
+        "TP": 1,
+        "FP": 0,
+        "FN": 0,
+        "recall": 1.0,
+        "precision": 1.0
+      },
+      "issued_claims": 1,
+      "pending_claims": 0,
+      "pending_events": 0,
+      "pending_label_regions": 2,
+      "known_anchors": 241,
+      "unknown_anchors": 110,
+      "known_anchor_fraction": 0.6866096866096866,
+      "complete_recall_denominator_established": false,
+      "failure_counts": {},
+      "missed_event_reasons": {},
+      "lead_distribution": {
+        "n": 1,
+        "values": [
+          19
+        ],
+        "min": 19,
+        "median": 19,
+        "max": 19
+      },
+      "width_distribution": {
+        "n": 1,
+        "values": [
+          10
+        ],
+        "min": 10,
+        "median": 10,
+        "max": 10
+      },
+      "successful_lead_distribution": {
+        "n": 1,
+        "values": [
+          19
+        ],
+        "min": 19,
+        "median": 19,
+        "max": 19
+      },
+      "successful_width_distribution": {
+        "n": 1,
+        "values": [
+          10
+        ],
+        "min": 10,
+        "median": 10,
+        "max": 10
+      }
+    },
+    "short": {
+      "E": 1,
+      "P": 0,
+      "TP": 0,
+      "FP": 0,
+      "FN": 1,
+      "recall": 0.0,
+      "precision": null,
+      "event_only": {
+        "E": 1,
+        "P": 0,
+        "TP": 0,
+        "FP": 0,
+        "FN": 1,
+        "recall": 0.0,
+        "precision": null
+      },
+      "issued_claims": 0,
+      "pending_claims": 0,
+      "pending_events": 0,
+      "pending_label_regions": 2,
+      "known_anchors": 326,
+      "unknown_anchors": 25,
+      "known_anchor_fraction": 0.9287749287749287,
+      "complete_recall_denominator_established": false,
+      "failure_counts": {},
+      "missed_event_reasons": {
+        "no_claim": 1
+      },
+      "lead_distribution": {
+        "n": 0,
+        "values": [],
+        "min": null,
+        "median": null,
+        "max": null
+      },
+      "width_distribution": {
+        "n": 0,
+        "values": [],
+        "min": null,
+        "median": null,
+        "max": null
+      },
+      "successful_lead_distribution": {
+        "n": 0,
+        "values": [],
+        "min": null,
+        "median": null,
+        "max": null
+      },
+      "successful_width_distribution": {
+        "n": 0,
+        "values": [],
+        "min": null,
+        "median": null,
+        "max": null
+      }
+    },
+    "diagnostics": {
+      "pending_claims": 0,
+      "pending_action": 0,
+      "revision_hit_count": 0,
+      "duplicate_claims": 0,
+      "uncertain_claims": 0,
+      "overstatement_count": 0,
+      "total_notifications": 1,
+      "input_records": 1,
+      "not_yet_published_records": 0,
+      "boundary_excluded_claims": 0,
+      "actionability_not_verified": 0
+    },
+    "operational": {
+      "scheduled_runs": 1,
+      "on_time_runs": 1,
+      "completed_runs": 1,
+      "missing_or_failed_runs": 0,
+      "status_counts": {
+        "ON_TIME_INTERVAL": 1
+      },
+      "on_time_fraction": 1.0,
+      "total_notifications": 1,
+      "notifications_published_in_range": 1,
+      "unrecognized_status_runs": 0
+    },
+    "short_affiliate": {
+      "diagnostic_records": 1,
+      "strict_covered_events": 1,
+      "event_ids": [
+        "SYNTHETIC:short:2020-08-08:2020-08-08"
+      ],
+      "adds_to_short_P": false,
+      "explicit_both_subclaims_are_in_short_metrics": true
+    },
+    "family": {
+      "event_families": 1,
+      "successful_families_strict": 1,
+      "successful_families_event_only": 1,
+      "strict_family_ids": [
+        "family:SYNTHETIC:short:2020-08-08:2020-08-08"
+      ],
+      "ambiguous_events": 0
+    }
+  },
+  "metadata": {
+    "protocol": {
+      "evaluator_version": "top_time_evaluator_v1_dev",
+      "short_left": 10,
+      "short_right": 10,
+      "stage_left": 63,
+      "stage_right": 42,
+      "merge_gap": 5,
+      "trough_left": 21,
+      "trough_right": 21,
+      "rise_min": 21,
+      "rise_max": 126,
+      "require_stage_rise": true,
+      "horizon": 63,
+      "minimum_lead": 5,
+      "maximum_width": 10,
+      "require_entire_window_lead": true,
+      "price_field": "close",
+      "parameter_status": "RESEARCH_DEFAULT_NOT_FROZEN"
+    },
+    "mode": "strict",
+    "symbol": "SYNTHETIC",
+    "start_session": 0,
+    "end_session": 350,
+    "asof_session": 350,
+    "evidence_status": "SYNTHETIC_IMPLEMENTATION_CHECK_NOT_MODEL_SKILL",
+    "scored_claim_ledger_closed": true,
+    "precision_defined_by_scale": {
+      "stage": true,
+      "short": false
+    },
+    "complete_recall_denominator_established": false,
+    "complete_strict_precision_established": true,
+    "incomplete_scoring": true,
+    "boundary_policy": "E: in-range event anchors; P: in-range targets regardless of publication boundary; no-event P: action in range with all H known; unresolved overlapping horizons pending",
+    "short_policy": "explicit short and explicit both same-family subclaims; same episode shares short first claim; stage-only affiliates diagnostic, never added to short P",
+    "first_policy": "UTC published_at then prediction_id; first per symbol/episode/scope; first event alert across episodes cannot be repaired",
+    "publication_calendar_policy": "for ISO-date sessions, published_at's declared local-offset date must equal the calendar date; callers must normalize timestamps to the calendar/venue timezone before evaluation; abstract T labels skip this check",
+    "notification_policy": "each available supplied Forecast is one published notification; revisions count; no inferred hidden deliveries",
+    "unknown_policy": "never scan past an unknown anchor; action=None pending, not a no-event observation",
+    "label_generation_performed": false,
+    "input_mode": "fixture",
+    "price_basis": "synthetic units",
+    "calendar_status": "SYNTHETIC",
+    "price_basis_status": "SYNTHETIC",
+    "publication_status": "SYNTHETIC",
+    "input_sha256": "155ae492ed67140c3e99753691e6ab38503cc39986882a09d5153b11f445f57e",
+    "predictive_skill": "NOT_ESTABLISHED"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "version": "top_time_first_window_attribution_v1",
+  "generated_at": "2026-11-06T11:45:25.449801+00:00",
+  "source_directory": "docs\\research\\evidence\\top-time-replay-20261106\\v1",
+  "source_before_sha256": {
+    "manifest.json": "4dd581cedbf4e3bb595cdfac392d57a49dd99146e1a1e0d80295c7d1135e6a15",
+    "event_scores.csv": "192be7c6d9f2572ae99056ede31b1e5b2c8d98eea3a23c49fb22a2700dea5db2",
+    "hypothetical_forecasts.csv.gz": "f0dbd3769363b32333777d61183e97fd2971adff039a219b55f6874e32f17cb2",
+    "evaluations.jsonl.gz": "e5c72ea3371649f96b67ed52e4ef9a8ef4d2a19234e64a64f7367e2588766606",
+    "daily_replay_ledger.csv.gz": "a6df55f1be2333dbfb1680a6573d9f3af6403cb309b0e0a3b3144f71a22c5a71",
+    "label_books.jsonl.gz": "2d844d272bd5cb66fd13fda65a6fd4e30077d59c994fdd32972146de8609aa10",
+    "input_map.json": "f87ec2341044d5ab1b17b9f69859d8e045578a6d980201eb08564828bff15d53",
+    "actual_published_forecasts.csv": "7cd6d0642b3926e4185963aada68527ae67fef49af670180cadd7ca68a650196",
+    "summary_pooled.csv": "db6537184e4d2d9d67d51d53fa2b9fc7e1be99402e9ea647d474df9afd26f674"
+  },
+  "source_after_sha256": {
+    "manifest.json": "4dd581cedbf4e3bb595cdfac392d57a49dd99146e1a1e0d80295c7d1135e6a15",
+    "event_scores.csv": "192be7c6d9f2572ae99056ede31b1e5b2c8d98eea3a23c49fb22a2700dea5db2",
+    "hypothetical_forecasts.csv.gz": "f0dbd3769363b32333777d61183e97fd2971adff039a219b55f6874e32f17cb2",
+    "evaluations.jsonl.gz": "e5c72ea3371649f96b67ed52e4ef9a8ef4d2a19234e64a64f7367e2588766606",
+    "daily_replay_ledger.csv.gz": "a6df55f1be2333dbfb1680a6573d9f3af6403cb309b0e0a3b3144f71a22c5a71",
+    "label_books.jsonl.gz": "2d844d272bd5cb66fd13fda65a6fd4e30077d59c994fdd32972146de8609aa10",
+    "input_map.json": "f87ec2341044d5ab1b17b9f69859d8e045578a6d980201eb08564828bff15d53",
+    "actual_published_forecasts.csv": "7cd6d0642b3926e4185963aada68527ae67fef49af670180cadd7ca68a650196",
+    "summary_pooled.csv": "db6537184e4d2d9d67d51d53fa2b9fc7e1be99402e9ea647d474df9afd26f674"
+  },
+  "source_unchanged": true,
+  "generator_sha256": "a0102780f37d1c12ad86c1c308fbe23abe5499d55232d56f1bfef07bcdac0312",
+  "evidence_status": "CONDITIONAL_DIAGNOSTIC_NOT_PROSPECTIVE",
+  "first_score_recomputed": false,
+  "model_fit_calls": 0,
+  "network_fetches": 0,
+  "event_rows": 910,
+  "unique_events": 91,
+  "unknown_stage_anchors": 3,
+  "primary_reason_priority": [
+    "NO_FIRST_CLAIM",
+    "INTERVAL_BEFORE_PEAK",
+    "INTERVAL_AFTER_PEAK",
+    "INVALID_OR_NONFUTURE",
+    "BEYOND_HORIZON",
+    "WIDTH_EXCEEDED",
+    "EVENT_LEAD_INSUFFICIENT",
+    "WINDOW_LEAD_INSUFFICIENT",
+    "OTHER_FAILURE"
+  ],
+  "primary_reason_meaning": "DISPLAY_PRIORITY_NOT_CAUSAL_PRIORITY; all independent flags preserved",
+  "later_oracle": "Reconstructed single-claim geometry and saved failures excluding ONLY duplicate_event_claim, SAME original target_event_id/status, late publication excluded; actionability remains theoretical. raw_strict_hit is removed by evaluator and NOT present in sealed outputs; never replace saved score",
+  "opportunity_cutoffs": "[peak-64, peak-2] for next-session action within 1..63; >=5 lead narrows end to peak-6",
+  "input_scope": "saved six-index development replay, observed sessions, current frozen qfq, not PIT or real publication",
+  "elapsed_seconds": 3.110801499991794,
+  "outputs": {
+    "cases.html": {
+      "sha256": "a09d847360903699d84dccd74abad9372a658099ad40c61e75070c91ff4573b3",
+      "bytes": 625788
+    },
+    "event_index.csv": {
+      "sha256": "4310b0a1147753592cee9f94ef9101b01f06e47c5745e421f92e447d5ab674be",
+      "bytes": 21498
+    },
+    "first_window_attribution.csv": {
+      "sha256": "4182f5b65b997c5d9ba6c7a05516f6cb4703193eabe86ab6fabffbf1dbb7dff8",
+      "bytes": 603809
+    },
+    "summary.json": {
+      "sha256": "9a10c4f9167c018447e2fa36260ce32d3b0d4a9bd1528bd622762e1d26181712",
+      "bytes": 9202
+    },
+    "summary_by_arm.csv": {
+      "sha256": "93a9c413b5c537e000562d37f53c4bcc768db71dc9a76b5d8f3862413faa67b5",
+      "bytes": 3893
+    },
+    "unknown_stage_anchors.csv": {
+      "sha256": "d6635b2608e9a4a77e13cb15c8fa11849d0a5974dbf458b70505a32b7b478c9a",
+      "bytes": 191
+    }
+  }
+}

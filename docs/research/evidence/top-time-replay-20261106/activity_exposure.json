@@ -1,0 +1,308 @@
+{
+  "status": "DERIVED_ACTIVITY_CHECK_NO_RESCORE_NO_MODEL",
+  "denominator": "one 252-observed-session equivalent asset-year per 252 actual ledger observations; not calendar years, official exchange completeness, or historical production uptime",
+  "scope": "full replay activity window, including warmup, unavailable and non-scan dates; notification numerator includes all published hypothetical records and revisions in that same window",
+  "pooling": "sum notifications / sum per-asset observed_days/252; never average asset rates",
+  "stage_and_short": "independent probes using identical saved signals; rates per probe, do not add stage and short as actual deliveries",
+  "assets": [
+    {
+      "symbol": "sh000001",
+      "first_observation": "2000-01-10",
+      "last_observation": "2018-12-28",
+      "observed_days": 4598,
+      "equivalent_asset_years_252": 18.246031746031747
+    },
+    {
+      "symbol": "sh000016",
+      "first_observation": "2004-01-06",
+      "last_observation": "2018-12-28",
+      "observed_days": 3643,
+      "equivalent_asset_years_252": 14.456349206349206
+    },
+    {
+      "symbol": "sh000300",
+      "first_observation": "2005-04-13",
+      "last_observation": "2018-12-28",
+      "observed_days": 3338,
+      "equivalent_asset_years_252": 13.246031746031745
+    },
+    {
+      "symbol": "sh000905",
+      "first_observation": "2007-01-19",
+      "last_observation": "2018-12-28",
+      "observed_days": 2908,
+      "equivalent_asset_years_252": 11.53968253968254
+    },
+    {
+      "symbol": "sz399001",
+      "first_observation": "2000-01-10",
+      "last_observation": "2018-12-28",
+      "observed_days": 4598,
+      "equivalent_asset_years_252": 18.246031746031747
+    },
+    {
+      "symbol": "sz399006",
+      "first_observation": "2010-06-08",
+      "last_observation": "2018-12-28",
+      "observed_days": 2083,
+      "equivalent_asset_years_252": 8.265873015873016
+    }
+  ],
+  "pooled_observed_days": 21168,
+  "pooled_equivalent_asset_years_252": 84.0,
+  "ledger_rows_checked": 423360,
+  "output_rows": 140,
+  "pooled": [
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "calendar_fixed_10",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 4236,
+      "revision_notifications": 3175,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 50.42857142857143
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "calendar_fixed_10",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 4236,
+      "revision_notifications": 3175,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 50.42857142857143
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_any_full",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 770,
+      "revision_notifications": 550,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 9.166666666666666
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_any_full",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 770,
+      "revision_notifications": 550,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 9.166666666666666
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_cross_full",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 258,
+      "revision_notifications": 149,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 3.0714285714285716
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_cross_full",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 258,
+      "revision_notifications": 149,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 3.0714285714285716
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_cross_stable2",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 69,
+      "revision_notifications": 28,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 0.8214285714285714
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_cross_stable2",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 69,
+      "revision_notifications": 28,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 0.8214285714285714
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_cross_thin",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 224,
+      "revision_notifications": 125,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 2.6666666666666665
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "cluster_cross_thin",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 224,
+      "revision_notifications": 125,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 2.6666666666666665
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "or2_full",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 656,
+      "revision_notifications": 526,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 7.809523809523809
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "or2_full",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 656,
+      "revision_notifications": 526,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 7.809523809523809
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "or4_full",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 1136,
+      "revision_notifications": 755,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 13.523809523809524
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "or4_full",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 1136,
+      "revision_notifications": 755,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 13.523809523809524
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "or4_thin",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 1051,
+      "revision_notifications": 678,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 12.511904761904763
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "or4_thin",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 1051,
+      "revision_notifications": 678,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 12.511904761904763
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "ref_12_24m",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 304,
+      "revision_notifications": 253,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 3.619047619047619
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "ref_12_24m",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 304,
+      "revision_notifications": 253,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 3.619047619047619
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "ref_6_12m",
+      "scope_probe": "short",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 442,
+      "revision_notifications": 328,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 5.261904761904762
+    },
+    {
+      "level": "pooled",
+      "symbol": "ALL_SIX",
+      "arm": "ref_6_12m",
+      "scope_probe": "stage",
+      "observed_days": 21168,
+      "equivalent_asset_years_252": 84.0,
+      "hypothetical_notifications": 442,
+      "revision_notifications": 328,
+      "scheduled_scans": 4236,
+      "notifications_per_equivalent_asset_year": 5.261904761904762
+    }
+  ],
+  "source_hashes_before": {
+    "v1\\daily_replay_ledger.csv.gz": "a6df55f1be2333dbfb1680a6573d9f3af6403cb309b0e0a3b3144f71a22c5a71",
+    "v1\\manifest.json": "4dd581cedbf4e3bb595cdfac392d57a49dd99146e1a1e0d80295c7d1135e6a15"
+  },
+  "source_hashes_after": {
+    "v1\\daily_replay_ledger.csv.gz": "a6df55f1be2333dbfb1680a6573d9f3af6403cb309b0e0a3b3144f71a22c5a71",
+    "v1\\manifest.json": "4dd581cedbf4e3bb595cdfac392d57a49dd99146e1a1e0d80295c7d1135e6a15"
+  },
+  "sealed_v1_inputs_unchanged": true,
+  "generator_sha256": "badc88a6be8362fcb24ab98e27b2d2d5205931af98cbfa49a57838165c5d629e",
+  "csv_sha256": "01717bfd71b1a01cfa9dc5759eddbe498178a7e66d2c20d4e019901c1ef8fb53"
+}

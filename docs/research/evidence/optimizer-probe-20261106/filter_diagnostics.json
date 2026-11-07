@@ -1,0 +1,304 @@
+{
+  "purpose": "Post-fit deterministic diagnostics; no optimizer rerun; not production box rule",
+  "rule": {
+    "m": [
+      0.1,
+      0.95
+    ],
+    "w": [
+      4.0,
+      15.0
+    ],
+    "horizon": [
+      1,
+      115
+    ],
+    "n_osc": 1.5,
+    "damping": 0.3,
+    "r2": 0.8
+  },
+  "rows": [
+    {
+      "case": "clean_future",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.030000158231843405,
+      "damping": 0.4894409183061531,
+      "n_osc_cycles": 3.284300518878871,
+      "r2": 0.9999999999998385,
+      "tc_absolute_error_if_pass": 1.9557290130478577e-05
+    },
+    {
+      "case": "clean_future",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.029999999999998635,
+      "damping": 0.48944134961050845,
+      "n_osc_cycles": 3.2842991248370152,
+      "r2": 1.0,
+      "tc_absolute_error_if_pass": 8.526512829121202e-13
+    },
+    {
+      "case": "clean_future",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.030000000000001137,
+      "damping": 0.48944134961051156,
+      "n_osc_cycles": 3.2842991248369655,
+      "r2": 1.0,
+      "tc_absolute_error_if_pass": 8.526512829121202e-14
+    },
+    {
+      "case": "clean_future",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.0299999061955716,
+      "damping": 0.4894416239996007,
+      "n_osc_cycles": 3.284297540102369,
+      "r2": 0.9999999999998586,
+      "tc_absolute_error_if_pass": 3.053707786193627e-05
+    },
+    {
+      "case": "clean_future",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.02999999125133356,
+      "damping": 0.48944136027181634,
+      "n_osc_cycles": 3.284298886172708,
+      "r2": 0.9999999999999948,
+      "tc_absolute_error_if_pass": 7.4730426717906084e-06
+    },
+    {
+      "case": "clean_future",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.029999999999999066,
+      "damping": 0.48944134961050806,
+      "n_osc_cycles": 3.2842991248369717,
+      "r2": 1.0,
+      "tc_absolute_error_if_pass": 1.1368683772161603e-13
+    },
+    {
+      "case": "iid_future",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.025935525671652568,
+      "damping": 0.5514917271430332,
+      "n_osc_cycles": 3.908891516274734,
+      "r2": 0.9976467570437426,
+      "tc_absolute_error_if_pass": 0.6656050727148113
+    },
+    {
+      "case": "iid_future",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.02593552759807986,
+      "damping": 0.5514917015317867,
+      "n_osc_cycles": 3.9088920441796757,
+      "r2": 0.9976467570437457,
+      "tc_absolute_error_if_pass": 0.6656192018305092
+    },
+    {
+      "case": "iid_future",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.02593552759807986,
+      "damping": 0.5514917015317867,
+      "n_osc_cycles": 3.9088920441796757,
+      "r2": 0.9976467570437457,
+      "tc_absolute_error_if_pass": 0.6656192018305092
+    },
+    {
+      "case": "iid_future",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.025935491361707225,
+      "damping": 0.5514915864072558,
+      "n_osc_cycles": 3.9088955344750724,
+      "r2": 0.997646757043603,
+      "tc_absolute_error_if_pass": 0.6657195263085214
+    },
+    {
+      "case": "iid_future",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.025935637306959032,
+      "damping": 0.5514913798139396,
+      "n_osc_cycles": 3.9088943484122667,
+      "r2": 0.9976467570434631,
+      "tc_absolute_error_if_pass": 0.6657260139899677
+    },
+    {
+      "case": "iid_future",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "filter": "existing_core_TOP_RULE",
+      "pass": true,
+      "reasons": [],
+      "B": -0.02593552759807986,
+      "damping": 0.5514917015317867,
+      "n_osc_cycles": 3.9088920441796757,
+      "r2": 0.9976467570437457,
+      "tc_absolute_error_if_pass": 0.6656192018305092
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "filter": "existing_core_TOP_RULE",
+      "pass": false,
+      "reasons": [
+        "w"
+      ],
+      "B": -0.08225339629607233,
+      "damping": 0.7994048324224935,
+      "n_osc_cycles": 5.280999953831699,
+      "r2": 0.9428369568331423,
+      "tc_absolute_error_if_pass": null
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "filter": "existing_core_TOP_RULE",
+      "pass": false,
+      "reasons": [
+        "w"
+      ],
+      "B": -0.08225349432560261,
+      "damping": 0.7994048231781782,
+      "n_osc_cycles": 5.281000022160295,
+      "r2": 0.9428369568331363,
+      "tc_absolute_error_if_pass": null
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "filter": "existing_core_TOP_RULE",
+      "pass": false,
+      "reasons": [
+        "w"
+      ],
+      "B": -0.08225349432560261,
+      "damping": 0.7994048231781782,
+      "n_osc_cycles": 5.281000022160295,
+      "r2": 0.9428369568331363,
+      "tc_absolute_error_if_pass": null
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "filter": "existing_core_TOP_RULE",
+      "pass": false,
+      "reasons": [
+        "w"
+      ],
+      "B": -0.08225327200431264,
+      "damping": 0.7994049565476089,
+      "n_osc_cycles": 5.280999059722676,
+      "r2": 0.9428369568331567,
+      "tc_absolute_error_if_pass": null
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "filter": "existing_core_TOP_RULE",
+      "pass": false,
+      "reasons": [
+        "w"
+      ],
+      "B": -0.08225334852472041,
+      "damping": 0.799404881865042,
+      "n_osc_cycles": 5.280999597714499,
+      "r2": 0.9428369568331559,
+      "tc_absolute_error_if_pass": null
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "filter": "existing_core_TOP_RULE",
+      "pass": false,
+      "reasons": [
+        "w"
+      ],
+      "B": -0.08225349432560261,
+      "damping": 0.7994048231781782,
+      "n_osc_cycles": 5.281000022160295,
+      "r2": 0.9428369568331363,
+      "tc_absolute_error_if_pass": null
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "filter_status": "NOT_APPLICABLE_future_only_rule"
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "filter_status": "NOT_APPLICABLE_future_only_rule"
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "filter_status": "NOT_APPLICABLE_future_only_rule"
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "filter_status": "NOT_APPLICABLE_future_only_rule"
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "filter_status": "NOT_APPLICABLE_future_only_rule"
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "filter_status": "NOT_APPLICABLE_future_only_rule"
+    }
+  ]
+}

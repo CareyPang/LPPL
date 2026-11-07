@@ -19,3 +19,10 @@ done
 cp docs/user_guide.md web/mock/guide.md   # 教育页 web/guide.html 读取的副本，随日更同步
 python -m research.pipeline.forward_log seal
 python -m research.data.market_base || echo "market_base failed (non-fatal)"
+if [[ "${LPPLS_MARKET_CONTEXT:-1}" == "1" && -f web/mock/data/market/market_latest.json ]]; then
+  python scripts/update_market_context.py \
+    --base-snapshot web/mock/data/market/market_latest.json \
+    --out web/mock/data/market \
+    --run-mode live \
+    || echo "market-context P1 refresh failed (non-fatal; prior snapshot retained)" >&2
+fi
