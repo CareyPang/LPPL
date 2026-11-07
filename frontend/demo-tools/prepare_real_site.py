@@ -36,7 +36,7 @@ def prepare(site_root: Path) -> dict:
         client.mkdir()
         for directory in ["app", "assets"]:
             shutil.copytree(FRONTEND / directory, client / directory)
-        for name in ["home.html", "stock.html"]:
+        for name in ["home.html", "stock.html", "market.html"]:
             page = (FRONTEND / name).read_text(encoding="utf-8")
             page = page.replace("<head>", '<head>\n<meta name="robots" content="noindex,nofollow">', 1)
             if name == "stock.html":
@@ -44,6 +44,14 @@ def prepare(site_root: Path) -> dict:
                     '<script>window.LPPL_REAL_PREVIEW=true;window.LPPL_QUERY_API="/api/preview";</script>\n'
                     '<script src="app/lppl-data.js"></script>')
             (client / name).write_text(page, encoding="utf-8", newline="\n")
+        # The market background page is descriptive context. Keep its frozen
+        # snapshot in the same lab/mock/data namespace used by lppl-data.js;
+        # it never enters the real preview worker or LPPLS calculation.
+        market_data = ROOT / "web/mock/data/market/market_latest.json"
+        if market_data.exists():
+            target_market = client / "lab/mock/data/market"
+            target_market.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(market_data, target_market / "market_latest.json")
         (client / "index.html").write_text(
             '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">'
             '<meta name="robots" content="noindex,nofollow">'
