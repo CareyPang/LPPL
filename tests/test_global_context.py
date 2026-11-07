@@ -97,7 +97,7 @@ def test_probability_snapshot_is_descriptive_and_preserves_liquidity_and_stale()
         question="Will the target range be lower at the December meeting?",
         outcome="Yes",
         implied_probability=0.62,
-        asof=ASOF,
+        asof="2026-11-06T09:00:00Z",
         fetched_at=FETCHED,
         source_url="https://polymarket.com/event/example",
         liquidity={"volume_24h": 12000, "open_interest": 90000},
@@ -110,6 +110,9 @@ def test_probability_snapshot_is_descriptive_and_preserves_liquidity_and_stale()
     assert item["probability_type"] == "forecast_market_implied_probability"
     assert item["official_fedwatch"] is False
     assert item["liquidity"]["volume_24h"] == 12000
+    assert item["volume_24h"] == 12000
+    assert item["open_interest"] == 90000
+    assert item["asof"] == "2026-11-06T09:00:00Z"
     assert snapshot["status"] == "stale"
     assert snapshot["items"][0]["stale_reason"] == "source_unavailable"
 

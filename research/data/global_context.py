@@ -79,6 +79,22 @@ def _iso_timestamp(value: Any, field: str = "fetched_at") -> str:
     return value
 
 
+def _iso_point(value: Any, field: str = "asof") -> str:
+    """Accept either a daily key or an observation timestamp.
+
+    P2 daily contexts use ``YYYY-MM-DD`` while P3 market observations may be
+    intraday.  Both retain the caller's original spelling for replay.
+    """
+
+    if isinstance(value, str):
+        try:
+            if date.fromisoformat(value).isoformat() == value:
+                return value
+        except ValueError:
+            pass
+    return _iso_timestamp(value, field)
+
+
 def _status(value: Any, *, default: str = "ok") -> str:
     status = str(value or default)
     # ``fresh`` is retained as an input alias for the P1 envelope; P2/P3 emit
@@ -103,7 +119,7 @@ def source_meta(
 ) -> dict[str, Any]:
     """Build the common provenance record used by P2 and P3."""
 
-    asof = _iso_date(asof)
+    asof = _iso_point(asof)
     fetched_at = _iso_timestamp(fetched_at)
     status = _status(status)
     return {
@@ -378,6 +394,7 @@ def source_unavailable_market(
     return {
         "market": market_id,
         "source": meta["source"],
+        "source_id": meta["source_id"],
         "source_url": meta["source_url"],
         "asof": meta["asof"],
         "fetched_at": meta["fetched_at"],
@@ -401,6 +418,8 @@ def build_probability_snapshot(
     fetched_at: str,
     source_url: str | None,
     liquidity: Mapping[str, Any] | None = None,
+    volume_24h: Any = None,
+    open_interest: Any = None,
     end_at: str | None = None,
     status: str = "ok",
     stale_reason: str | None = None,
@@ -434,12 +453,15 @@ def build_probability_snapshot(
         "probability_unit": "decimal_0_1",
         "implied_probability": None if implied_probability is None else float(implied_probability),
         "liquidity": deepcopy(dict(liquidity)) if liquidity is not None else None,
+        "volume_24h": volume_24h if volume_24h is not None else (liquidity or {}).get("volume_24h"),
+        "open_interest": open_interest if open_interest is not None else (liquidity or {}).get("open_interest"),
         "asof": meta["asof"],
         "fetched_at": meta["fetched_at"],
         "end_at": end_at,
         "status": meta["status"],
         "stale_reason": meta["stale_reason"],
         "source": meta["source"],
+        "source_id": meta["source_id"],
         "source_url": meta["source_url"],
         "raw_sha256": meta["raw_sha256"],
         "license_tier": meta["license_tier"],
@@ -457,7 +479,7 @@ def build_probability_context(
 ) -> dict[str, Any]:
     """Wrap Polymarket/Kalshi items as a standalone P3 snapshot."""
 
-    _iso_date(asof)
+    _iso_point(asof)
     _iso_timestamp(generated_at, "generated_at")
     values = [deepcopy(dict(item)) for item in (items or [])]
     statuses = {str(item.get("status") or "ok") for item in values}
