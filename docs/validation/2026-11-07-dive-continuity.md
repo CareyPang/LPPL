@@ -29,4 +29,9 @@ NOT_INSPECTED：低端真机、所有视频帧逐帧人工视觉验收、所有�
 
 ## 独立演示发布
 
-待完成后追加实际版本身份；旧版记录保留，不合并或发布正式站。
+- VERIFIED：同一[公开演示链接](https://lppl-ocean-observatory-preview.groovy-cabin-8182.chatgpt.site)第5版部署成功。项目 `appgprj_6aedbc87f8808191b58788204795e049`；版本 `appgprj_6aedbc87f8808191b58788204795e049~appgver_797f4198a2ac81918a5613828d8f04e7`；部署 `appgdep_6aeeb86cfadc81918151d65a60e386c5`；状态 `succeeded`，时间 `2026-11-07T05:34:42.838709+00:00`。
+- VERIFIED：Sites源码 `3f54f1d800ff1b882d477c129f450779dc6d7d3b`，LPPL来源 `a7efb9f33c9d17f0d6e59dfaf01635df2df02d48`。862项构建输出哈希相符；保存服务解包tar为53,473,280字节、864文件，SHA256 `2266a446994378a61d5a17e97193d15e1aa225297756027dde4c15574a971615`。
+- VERIFIED（线上桌面）：刷新后468px处显示下潜视频4.833秒，停留时没有另一段水下视频启动。原循环中途交接已移除。
+- VERIFIED（本地移动补充）：下潜完成、dive-mobile到10秒时，才开始under-mobile循环；固定叙事文字已退出，未重叠。
+
+旧版记录保留；本次只更新已授权独立演示站，不合并或发布正式Pages/生产Worker。
