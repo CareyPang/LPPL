@@ -1,0 +1,57 @@
+name: global-context-nightly
+
+on:
+  schedule:
+    # Artifact sealing only.  No source is fetched by this workflow.
+    - cron: "40 11 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      asof:
+        description: "Snapshot date YYYY-MM-DD (blank = manifest or runner date)"
+        type: string
+        default: ""
+      generated_at:
+        description: "ISO-8601 generation timestamp (blank = manifest or runner time)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: global-context-nightly
+  cancel-in-progress: false
+
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      INPUT_ASOF: ${{ inputs.asof }}
+      INPUT_GENERATED_AT: ${{ inputs.generated_at }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Seal local P2/P3 artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--input-dir data/global-context/incoming --out out/global-context)
+          if [[ -n "${INPUT_ASOF:-}" ]]; then args+=(--asof "$INPUT_ASOF"); fi
+          if [[ -n "${INPUT_GENERATED_AT:-}" ]]; then args+=(--generated-at "$INPUT_GENERATED_AT"); fi
+          python scripts/update_global_context.py "${args[@]}"
+      - name: Verify provenance and integration boundary
+        shell: bash
+        run: python scripts/update_global_context.py --check out/global-context/global_context_latest.json
+      - name: Upload immutable research artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-context-${{ github.run_id }}
+          path: out/global-context/
+          if-no-files-found: error

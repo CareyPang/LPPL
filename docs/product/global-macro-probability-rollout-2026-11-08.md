@@ -10,6 +10,13 @@
 - **官方页面已核对**：Polymarket 的 [Gamma API 文档](https://gamma-api.polymarket.com/docs) 与 [Data API 文档](https://data-api.polymarket.com/v2/docs) 提供匿名只读市场数据；[Kalshi API 帮助页](https://help.kalshi.com/en/articles/13823854-kalshi-api) 也说明 API 可读公共市场数据，但其 [Developer Agreement](https://kalshi-public-docs.s3.amazonaws.com/Kalshi-Developer-Agreement.pdf) / [Data Terms](https://kalshi-public-docs.s3.amazonaws.com/kalshi-data-terms-of-service.pdf) 对会员、重试和第三方再分发有额外限制。两者均不能仅因“无需 API key”就视为获得本项目公开展示许可。
 - **NOT_ESTABLISHED**：大陆网络下对每个上游端点的可达性、稳定性、速率限制和长期商业许可尚未在本项目运行环境中验证。浏览器端不得直接跨域抓取上游。
 
+## Artifact-only nightly boundary (2026-11-08)
+
+- **VERIFIED · local runner**：`scripts/update_global_context.py` 只读取 `data/global-context/incoming/manifest.json` 及其 JSON payload，计算原始字节 SHA-256，并封存 `global-context.v1`。它没有 HTTP 客户端、浏览器调用、LPPLS import 或 Worker/Pages 写入路径。
+- **VERIFIED · metadata gate**：每条输入源都输出 `source/source_url/asof/fetched_at/status/stale_reason/raw_sha256/license_tier`，并额外保留 `license_status`、`frequency_status` 和 `mainland_network_status`。缺省和当前仓库默认值均为 `NOT_ESTABLISHED`，不代表许可、速率或大陆网络已经核验；快照顶层固定声明 `browser_direct_fetch=forbidden` 与 `lppls_input=forbidden`。
+- **VERIFIED · workflow**：`.github/workflows/global_context_nightly.yml` 只 checkout 当前提交、读取本地 artifact、运行元数据校验并上传不可变 artifact；没有部署、`main`/Pages/KV 写入或浏览器直连步骤。没有 `manifest.json` 时输出 `not_requested`，不会把空输入伪装成实时数据。
+- **NOT_ESTABLISHED**：本仓库尚未取得逐源商用展示许可、频率限制确认或大陆网络可达性证据；P2/P3 仍不能进入 LPPLS、顶部/底部评分或任何回测。
+
 ## 已提交的纯适配器实现
 
 - **VERIFIED · 代码合同**：`research/data/global_context.py` 提供 `global-context.v1` 和 `macro-probability.v1` 的纯解析/封装函数，保留来源、时点、状态、stale 原因、原始哈希和许可证字段；没有网络请求，也不修改 LPPLS 输入。
