@@ -50,6 +50,7 @@ def _source_meta(
         "url_host": host,
         "fetched_at": fetched_at,
         "status": status,
+        "ok": status == "fresh",
         "raw_sha256": raw_sha256,
         "license_tier": None,
         "stale_reason": error,
