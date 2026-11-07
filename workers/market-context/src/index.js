@@ -3,6 +3,8 @@ const DEFAULT_SOURCE = 'https://raw.githubusercontent.com/CareyPang/LPPL/main/we
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const JOB_PATTERN = /^[a-f0-9-]{36}$/;
 const MAX_BODY = 2048;
+const MAX_SEED_BODY = 2_500_000;
+const HASH_PATTERN = /^[a-f0-9]{64}$/i;
 
 function validDate(value) {
   if (!DATE_PATTERN.test(String(value || ''))) return false;
@@ -11,7 +13,7 @@ function validDate(value) {
 }
 
 function corsHeaders(request, env) {
-  const headers = new Headers({ Vary: 'Origin', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-Market-Context-Token', 'Access-Control-Max-Age': '86400' });
+  const headers = new Headers({ Vary: 'Origin', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-Market-Context-Token, X-Market-Context-Seed-Token', 'Access-Control-Max-Age': '86400' });
   const allowed = env.ALLOWED_ORIGIN || DEFAULT_ORIGIN;
   if (request.headers.get('Origin') === allowed) headers.set('Access-Control-Allow-Origin', allowed);
   return headers;
@@ -29,10 +31,34 @@ function errorResponse(request, env, error_code, error, status = 400, extra = {}
   return jsonResponse(request, env, { error_code, error, ...extra }, status);
 }
 
-async function digest(value) {
-  const bytes = new TextEncoder().encode(JSON.stringify(value, Object.keys(value).sort()));
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalize(value[key])]));
+  }
+  return value;
+}
+
+export async function digest(value) {
+  const bytes = new TextEncoder().encode(JSON.stringify(canonicalize(value)));
   const hash = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export async function validateSeedSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return { ok: false, error_code: 'INVALID_SNAPSHOT', error: '快照必须是对象' };
+  if (snapshot.schema_version !== 'market-context.v1') return { ok: false, error_code: 'SCHEMA_MISMATCH', error: '快照版本不受支持' };
+  if (!validDate(snapshot.asof)) return { ok: false, error_code: 'INVALID_DATE', error: '快照 asof 必须是已验证工作日' };
+  if (!HASH_PATTERN.test(String(snapshot.snapshot_sha256 || ''))) return { ok: false, error_code: 'SNAPSHOT_HASH_REQUIRED', error: '快照必须包含 64 位 snapshot_sha256' };
+  if (snapshot.evidence !== 'descriptive') return { ok: false, error_code: 'EVIDENCE_REQUIRED', error: '市场背景快照必须是 descriptive evidence' };
+  const sources = snapshot.sources && typeof snapshot.sources === 'object' ? Object.values(snapshot.sources) : [];
+  const hasRawHash = sources.some((source) => source && HASH_PATTERN.test(String(source.raw_sha256 || '')));
+  if (!hasRawHash) return { ok: false, error_code: 'SOURCE_HASH_REQUIRED', error: '至少一个来源必须包含 raw_sha256' };
+  const unsigned = { ...snapshot };
+  delete unsigned.snapshot_sha256;
+  const expected = await digest(unsigned);
+  if (expected.toLowerCase() !== String(snapshot.snapshot_sha256).toLowerCase()) return { ok: false, error_code: 'SNAPSHOT_HASH_MISMATCH', error: 'snapshot_sha256 与快照内容不一致' };
+  return { ok: true };
 }
 
 async function fetchSource(env) {
@@ -86,6 +112,7 @@ export class MarketContextState extends SerializedState {
     if (url.pathname === '/context/snapshot' || url.pathname === '/context') return this.snapshot(url.searchParams.get('date') || 'latest');
     if (url.pathname === '/context/status') return this.status(url.searchParams.get('job_id'));
     if (url.pathname === '/context/refresh' && request.method === 'POST') return this.refresh(request);
+    if (url.pathname === '/context/seed' && request.method === 'POST') return this.seed(request);
     return Response.json({ error_code: 'NOT_FOUND', error: '接口不存在' }, { status: 404 });
   }
 
@@ -117,6 +144,33 @@ export class MarketContextState extends SerializedState {
     if (typeof this.ctx.waitUntil === 'function') this.ctx.waitUntil(work);
     else work.catch(() => {});
     return Response.json({ queued: true, deduped: false, job_id: job.job_id, date, status: 'queued', requested_at: job.requested_at }, { status: 202 });
+  }
+
+  async seed(request) {
+    const expected = this.env.MARKET_CONTEXT_SEED_TOKEN;
+    if (!expected || request.headers.get('X-Market-Context-Seed-Token') !== expected) return Response.json({ error_code: 'SEED_FORBIDDEN', error: '快照导入接口只允许受控服务端调用' }, { status: 403 });
+    let body;
+    try {
+      const raw = await request.text();
+      if (raw.length > MAX_SEED_BODY) return Response.json({ error_code: 'BODY_TOO_LARGE', error: '快照内容过长' }, { status: 413 });
+      body = raw ? JSON.parse(raw) : null;
+    } catch { return Response.json({ error_code: 'INVALID_JSON', error: '请求内容不是有效JSON' }, { status: 400 }); }
+    const snapshot = body && body.snapshot && typeof body.snapshot === 'object' ? body.snapshot : body;
+    const validation = await validateSeedSnapshot(snapshot);
+    if (!validation.ok) return Response.json({ error_code: validation.error_code, error: validation.error }, { status: 422 });
+    const asof = snapshot.asof;
+    const key = `snapshot:${asof}`;
+    const existing = await this.ctx.storage.get(key);
+    if (existing) return Response.json({ error_code: 'SNAPSHOT_EXISTS', error: '该日期快照已经封存，不允许覆盖', asof }, { status: 409 });
+    await this.ctx.storage.put(key, snapshot);
+    const latest = await this.ctx.storage.get('latest');
+    let latest_updated = false;
+    if (!latest || String(latest.asof || '') <= asof) {
+      await this.ctx.storage.put('latest', snapshot);
+      latest_updated = true;
+    }
+    await this.ctx.storage.put(`seed_meta:${asof}`, { asof, seeded_at: new Date().toISOString(), source: 'controlled_seed', snapshot_sha256: snapshot.snapshot_sha256 });
+    return Response.json({ seeded: true, asof, latest_updated, snapshot_sha256: snapshot.snapshot_sha256 }, { status: 201 });
   }
 
   async run(job) {
@@ -158,12 +212,13 @@ export default {
     if (origin && origin !== (env.ALLOWED_ORIGIN || DEFAULT_ORIGIN)) return jsonResponse(request, env, { error_code: 'ORIGIN_FORBIDDEN', error: '来源未获允许' }, 403);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     const route = url.pathname;
-    const methods = { '/context': 'GET', '/context/snapshot': 'GET', '/context/status': 'GET', '/context/refresh': 'POST' };
+    const methods = { '/context': 'GET', '/context/snapshot': 'GET', '/context/status': 'GET', '/context/refresh': 'POST', '/context/seed': 'POST' };
     if (!methods[route]) return errorResponse(request, env, 'NOT_FOUND', '接口不存在', 404);
     if (methods[route] !== request.method) return errorResponse(request, env, 'METHOD_NOT_ALLOWED', '请求方法不支持', 405);
     if (!env.MARKET_CONTEXT || typeof env.MARKET_CONTEXT.get !== 'function') return errorResponse(request, env, 'SERVICE_UNAVAILABLE', '市场背景服务尚未配置', 503);
     const body = request.method === 'POST' ? await request.clone().text() : '{}';
-    if (body.length > MAX_BODY) return errorResponse(request, env, 'BODY_TOO_LARGE', '请求内容过长', 413);
+    const maxBody = route === '/context/seed' ? MAX_SEED_BODY : MAX_BODY;
+    if (body.length > maxBody) return errorResponse(request, env, 'BODY_TOO_LARGE', '请求内容过长', 413);
     const id = env.MARKET_CONTEXT.idFromName('global');
     const internal = new Request(`https://internal${route}${url.search}`, { method: request.method, headers: request.headers, body: request.method === 'POST' ? body : undefined });
     const response = await env.MARKET_CONTEXT.get(id).fetch(internal);

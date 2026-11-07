@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { MarketContextState } from '../src/index.js';
+import worker, { MarketContextState, digest } from '../src/index.js';
 
 class Storage {
   constructor() { this.map = new Map(); }
@@ -15,11 +15,24 @@ class State {
 }
 
 function binding(state) {
-  return { idFromName: () => 'global', get: () => ({ fetch: (request) => new MarketContextState(state, { MARKET_CONTEXT_SOURCE_URL: 'https://source.test/market.json', MARKET_CONTEXT_REFRESH_TOKEN: 'secret' }).fetch(request) }) };
+  return { idFromName: () => 'global', get: () => ({ fetch: (request) => new MarketContextState(state, { MARKET_CONTEXT_SOURCE_URL: 'https://source.test/market.json', MARKET_CONTEXT_REFRESH_TOKEN: 'secret', MARKET_CONTEXT_SEED_TOKEN: 'seed-secret' }).fetch(request) }) };
 }
 
 function env(state) {
-  return { ALLOWED_ORIGIN: 'https://example.test', MARKET_CONTEXT: binding(state), MARKET_CONTEXT_REFRESH_TOKEN: 'secret' };
+  return { ALLOWED_ORIGIN: 'https://example.test', MARKET_CONTEXT: binding(state), MARKET_CONTEXT_REFRESH_TOKEN: 'secret', MARKET_CONTEXT_SEED_TOKEN: 'seed-secret' };
+}
+
+async function seedSnapshot(asof) {
+  const snapshot = {
+    schema_version: 'market-context.v1', kind: 'market_context', market: 'CN_A_SHARE', snapshot_kind: 'eod',
+    asof, generated_at: `${asof}T15:30:00Z`, requested_at: `${asof}T15:31:00Z`, status: 'partial', stale_reason: null,
+    last_good_asof: asof, evidence: 'descriptive', source: { source_id: 'controlled_fixture', status: 'partial' },
+    sources: { limit_pools: { source_id: 'eastmoney_yesterday_zt_pool', status: 'fresh', raw_sha256: 'a'.repeat(64) } },
+    limit_pools: { zt: 1, top20: { zt: [{ code: '000001', name: '示例', streak: 2 }] }, reasons: { status: 'fresh', rows: [] }, topics: { status: 'fresh', rows: [] } },
+    history: { progression: { status: 'not_available', rows: [] } }, board_flow: {}, northbound: {}, margin: {}, valuation: {},
+  };
+  snapshot.snapshot_sha256 = await digest(snapshot);
+  return snapshot;
 }
 
 const snapshot = {
@@ -59,6 +72,50 @@ test('historical reads never fall back to latest and requested dates are validat
   assert.equal(missing.status, 404);
   const weekend = await worker.fetch(new Request('https://worker.test/context/snapshot?date=2026-11-01'), e);
   assert.equal(weekend.status, 400);
+});
+
+test('controlled seed imports dated snapshots and never overwrites a sealed date', async () => {
+  const state = new State();
+  const e = env(state);
+  const snapshot = await seedSnapshot('2026-11-05');
+  const forbidden = await worker.fetch(new Request('https://worker.test/context/seed', { method: 'POST', body: JSON.stringify(snapshot) }), e);
+  assert.equal(forbidden.status, 403);
+  const seeded = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify({ snapshot }),
+  }), e);
+  assert.equal(seeded.status, 201);
+  assert.equal((await seeded.json()).latest_updated, true);
+  const read = await worker.fetch(new Request('https://worker.test/context?date=2026-11-05'), e);
+  assert.equal((await read.json()).snapshot_sha256, snapshot.snapshot_sha256);
+  const duplicate = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify(snapshot),
+  }), e);
+  assert.equal(duplicate.status, 409);
+  assert.equal((await duplicate.json()).error_code, 'SNAPSHOT_EXISTS');
+});
+
+test('controlled seed rejects a missing or incorrect snapshot hash and keeps latest monotonic', async () => {
+  const state = new State();
+  const e = env(state);
+  const valid = await seedSnapshot('2026-11-06');
+  const bad = { ...valid, snapshot_sha256: 'b'.repeat(64) };
+  const mismatch = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify(bad),
+  }), e);
+  assert.equal(mismatch.status, 422);
+  assert.equal((await mismatch.json()).error_code, 'SNAPSHOT_HASH_MISMATCH');
+  const first = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify(valid),
+  }), e);
+  assert.equal(first.status, 201);
+  const older = await seedSnapshot('2026-11-05');
+  const second = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify(older),
+  }), e);
+  assert.equal(second.status, 201);
+  assert.equal((await second.json()).latest_updated, false);
+  const latest = await worker.fetch(new Request('https://worker.test/context?date=latest'), e);
+  assert.equal((await latest.json()).asof, '2026-11-06');
 });
 
 test('a failed refresh keeps the last snapshot and marks it stale', async () => {
