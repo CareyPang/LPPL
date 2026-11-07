@@ -9,6 +9,11 @@ def _snapshot(asof, *, mode="live", status="partial"):
         "run_mode": mode,
         "status": status,
         "sources": {"limit": {"raw_sha256": "a" * 64}},
+        "limit_pools": {
+            "reasons": {"status": "fresh"},
+            "topics": {"status": "fresh"},
+            "prior_day": {"status": "fresh"},
+        },
     }
 
 

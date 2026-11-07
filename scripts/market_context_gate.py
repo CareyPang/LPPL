@@ -20,10 +20,16 @@ def inspect(directory: Path) -> dict:
             for meta in (value.get("sources") or {}).values()
             if isinstance(meta, dict)
         ]
+        limit = value.get("limit_pools") if isinstance(value.get("limit_pools"), dict) else {}
+        p1_core_ready = all(
+            isinstance(limit.get(key), dict) and limit[key].get("status") == "fresh"
+            for key in ("reasons", "topics", "prior_day")
+        )
         if (
             value.get("run_mode") == "live"
             and value.get("status") in {"fresh", "partial"}
             and isinstance(value.get("asof"), str)
+            and p1_core_ready
             and any(isinstance(item, str) and len(item) == 64 for item in hashes)
         ):
             entries.append({"asof": value["asof"], "status": value["status"], "path": str(path), "source_hash_count": sum(1 for item in hashes if isinstance(item, str))})

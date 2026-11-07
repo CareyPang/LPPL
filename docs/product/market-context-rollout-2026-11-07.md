@@ -19,7 +19,8 @@
 - **VERIFIED · 代码契约**：`market_base.limit_pools()` 仍保留旧的 `zt/zb/dt/top20` 字段，同时封存完整 `pool_rows`。`attach_snapshot_extensions()` 只有在两份不同日期的完整 `pool_rows` 和显式交易日历同时存在时，才计算 `history.progression`；否则保持 `not_available`，不会从当前快照倒推历史晋级率。
 - **VERIFIED · artifact runner**：`scripts/update_market_context.py` 每次只封存一个 `market_context_<asof>.json`，并更新带源哈希的 manifest；`.github/workflows/market_context_nightly.yml` 默认只上传不可变 artifact，不写 `main`、Pages 或生产 Worker。
 - **VERIFIED · gate**：`scripts/market_context_gate.py` 要求两个不同交易日、`run_mode=live`、`fresh/partial` 状态和至少一个原始响应哈希，才返回 `ready_for_frontend_polling=true`。
-- **NOT_ESTABLISHED · 运行证据**：本 PR 尚未完成两组真实日终抓取，故前端仍不轮询 `workers/market-context`；现有页面继续读取已封存的静态市场快照。适配器通过离线 fixture 和契约测试不等于上游当天可达或已取得商业再分发许可。
+- **VERIFIED · 隔离运行证据**：在 `D:\CodexData\analysis\lppl-real-preview-20261108\market-context` 完成两组真实上游日终抓取（2026-11-05、2026-11-06）。两份均为 `run_mode=live`、整体 `partial`，但 P1 核心的原因、题材、前一交易日池均为 `fresh`；第二份使用显式交易日历计算出 4 组次日晋级结果。每份包含东财/同花顺原始响应哈希；gate 返回 `real_snapshot_count=2`、`ready_for_frontend_polling=true`。
+- **NOT_ESTABLISHED · 产品发布证据**：上述快照仍只在 D 盘研究目录，没有写入 Cloudflare Worker KV、Pages 静态包或 `main`。因此当前前端仍不轮询 `workers/market-context`，现有页面继续读取已封存的静态市场快照。适配器通过真实源抓取和离线测试不等于上游长期可达或已取得商业再分发许可。
 
 ## 截图功能核对结果
 
