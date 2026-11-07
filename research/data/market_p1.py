@@ -496,7 +496,7 @@ def progression_from_snapshots(
     previous = {
         "status": "fresh",
         "asof": prior_asof,
-        "window": "t-1",
+        "window": "prior_snapshot",
         "rows": {pool: deepcopy(list(prior_rows[pool])) for pool in POOL_KINDS},
         "stale_reason": None,
         "evidence": EVIDENCE,
@@ -506,6 +506,8 @@ def progression_from_snapshots(
         return previous, unavailable(asof, "explicit trading calendar is required to establish t+1", window="t+1")
     if adjacent is False:
         return previous, unavailable(asof, f"snapshots {prior_asof} and {asof} are not adjacent trading days", window="t+1")
+
+    previous["window"] = "t-1"
 
     current_by_code = {
         row.get("code"): row
@@ -570,7 +572,8 @@ def attach_snapshot_extensions(
         result["limit_pools"] = limit
     limit.setdefault("reasons", unavailable(asof, "source did not provide limit-up reason rows"))
     limit.setdefault("topics", unavailable(asof, "source did not provide topic labels"))
-    limit["prior_day"] = previous
+    if prior_payload is not None or "prior_day" not in limit:
+        limit["prior_day"] = previous
     result["history"] = {"progression": progression}
     return result
 
