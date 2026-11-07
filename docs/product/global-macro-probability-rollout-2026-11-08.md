@@ -7,7 +7,7 @@
 - **VERIFIED**：当前仓库已有独立 `workers/market-context` 快照接口和 `market-context.v1` 的 `source/asof/fetched_at/status/stale_reason/snapshot_sha256` 字段；该 Worker 尚未正式部署。
 - **PR 作者报告**：[`global-stock-data`](https://github.com/simonlin1212/global-stock-data/blob/main/SKILL.md) 列出了 Treasury、BIS、ECB、纽约联储、美联储、EIA、BLS、CBOE 等适配方向，并给出了合规分级。仓库不会把 README 的分级当作本项目的法律意见，接入前仍需逐源复核当前条款、频率限制和商用展示许可。
 - **PR 作者报告**：[`globalpercent`](https://github.com/simonlin1212/globalpercent) 以 Polymarket 和 Kalshi 的公开只读市场数据组成宏观事件隐含概率面板。它是参考实现，不是本项目已经取得的授权，也不是官方 FedWatch 数据源。
-- **官方页面已核对**：Polymarket 的 Gamma/Data 端点提供匿名只读市场数据；Kalshi Help Center 也说明 API 可读公共市场数据，但其 Developer Agreement/Data Terms 对会员、重试和第三方再分发有额外限制。两者均不能仅因“无需 API key”就视为获得本项目公开展示许可。
+- **官方页面已核对**：Polymarket 的 [Gamma API 文档](https://gamma-api.polymarket.com/docs) 与 [Data API 文档](https://data-api.polymarket.com/v2/docs) 提供匿名只读市场数据；[Kalshi API 帮助页](https://help.kalshi.com/en/articles/13823854-kalshi-api) 也说明 API 可读公共市场数据，但其 [Developer Agreement](https://kalshi-public-docs.s3.amazonaws.com/Kalshi-Developer-Agreement.pdf) / [Data Terms](https://kalshi-public-docs.s3.amazonaws.com/kalshi-data-terms-of-service.pdf) 对会员、重试和第三方再分发有额外限制。两者均不能仅因“无需 API key”就视为获得本项目公开展示许可。
 - **NOT_ESTABLISHED**：大陆网络下对每个上游端点的可达性、稳定性、速率限制和长期商业许可尚未在本项目运行环境中验证。浏览器端不得直接跨域抓取上游。
 
 ## P2 来源适配器
