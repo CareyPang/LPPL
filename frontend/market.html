@@ -274,7 +274,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }
   function failMsg(names) {
     const S = (M && M.sources) || {};
-    return names.map((n) => S[n]).filter((m) => m && m.ok === false)
+    return names.map((n) => S[n]).filter((m) => m && (m.ok === false || ['error', 'source_unavailable', 'schema_changed'].includes(m.status)))
       .map((m) => '该源本次未取到：' + E(m.error || '未知错误')).join('<br>');
   }
 
@@ -446,7 +446,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-mg').innerHTML = srcLine(['margin']);
     const S = (M.sources || {}).margin || {};
     if (!num(d.fin_balance_all)) { $('mg-body').innerHTML = `<p class="fail">${failMsg(['margin']) || '该源本次未取到：无数据'}</p>`; return; }
-    $('mg-body').innerHTML = (S.ok === false ? `<p class="warnl">本次刷新失败：${E(S.error || '')}<br>下面显示的是已入库的 ${E(d.date)} 数据。</p>` : '') +
+    $('mg-body').innerHTML = ((S.ok === false || ['error', 'source_unavailable', 'schema_changed'].includes(S.status)) ? `<p class="warnl">本次刷新失败：${E(S.error || S.stale_reason || '')}<br>下面显示的是已入库的 ${E(d.date)} 数据。</p>` : '') +
       `<div class="big"><div><small>融资余额合计（亿元）</small><strong>${yi(d.fin_balance_all, 0)}</strong></div>
        <div><small>20 日变化</small><strong class="${cls(d.fin_balance_all_change_20d)}">${num(d.fin_balance_all_change_20d_pct) ? pct(d.fin_balance_all_change_20d_pct * 100, 1) : '—'}</strong></div></div>
        <table style="margin-top:12px"><tbody>
