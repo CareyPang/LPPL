@@ -60,3 +60,24 @@ test('historical reads never fall back to latest and requested dates are validat
   const weekend = await worker.fetch(new Request('https://worker.test/context/snapshot?date=2026-11-01'), e);
   assert.equal(weekend.status, 400);
 });
+
+test('a failed refresh keeps the last snapshot and marks it stale', async () => {
+  const state = new State();
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    if (calls === 1) return Response.json(snapshot);
+    return new Response('upstream failed', { status: 502 });
+  };
+  try {
+    const start = (headers = {}) => worker.fetch(new Request('https://worker.test/context/refresh', { method: 'POST', headers: { 'X-Market-Context-Token': 'secret', ...headers }, body: '{}' }), env(state));
+    await start(); await Promise.all(state.waits.splice(0));
+    await start(); await Promise.all(state.waits.splice(0));
+    const read = await worker.fetch(new Request('https://worker.test/context?date=latest'), env(state));
+    const body = await read.json();
+    assert.equal(body.status, 'stale');
+    assert.equal(body.last_good_asof, '2026-11-02');
+    assert.equal(body.stale_reason, 'CONTEXT_REFRESH_FAILED');
+  } finally { globalThis.fetch = original; }
+});

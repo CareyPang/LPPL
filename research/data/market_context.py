@@ -107,7 +107,7 @@ def build_snapshot(
         "requested_at": requested_at or _now(),
         "status": status,
         "stale_reason": "one or more sources failed" if source_errors else None,
-        "last_good_asof": asof if not source_errors else None,
+        "last_good_asof": asof,
         "evidence": EVIDENCE,
         "source": {
             "source_id": "market_latest_wrapper",
