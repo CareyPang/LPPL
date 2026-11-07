@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { MarketContextState, digest } from '../src/index.js';
+import worker, { MarketContextState, digest, digestRawJson } from '../src/index.js';
 
 class Storage {
   constructor() { this.map = new Map(); }
@@ -116,6 +116,10 @@ test('controlled seed rejects a missing or incorrect snapshot hash and keeps lat
   assert.equal((await second.json()).latest_updated, false);
   const latest = await worker.fetch(new Request('https://worker.test/context?date=latest'), e);
   assert.equal((await latest.json()).asof, '2026-11-06');
+});
+
+test('raw seed hashing preserves Python decimal lexical values', async () => {
+  assert.equal(await digestRawJson('{"a":1.0,"b":2}'), '3a5fc11441293773f44e7207ddf4783fdcfc50b78e63e3e484cfcbfe61a8508c');
 });
 
 test('a failed refresh keeps the last snapshot and marks it stale', async () => {

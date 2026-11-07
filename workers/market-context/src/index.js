@@ -39,13 +39,112 @@ function canonicalize(value) {
   return value;
 }
 
+class RawNumber {
+  constructor(raw) { this.raw = raw; }
+}
+
+class RawJsonParser {
+  constructor(text) { this.text = text; this.index = 0; }
+  whitespace() { while (/\s/.test(this.text[this.index] || '')) this.index += 1; }
+  value() {
+    this.whitespace();
+    const char = this.text[this.index];
+    if (char === '{') return this.object();
+    if (char === '[') return this.array();
+    if (char === '"') return this.string();
+    if (this.text.startsWith('true', this.index)) { this.index += 4; return true; }
+    if (this.text.startsWith('false', this.index)) { this.index += 5; return false; }
+    if (this.text.startsWith('null', this.index)) { this.index += 4; return null; }
+    const match = this.text.slice(this.index).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+    if (!match) throw new Error('invalid_json_value');
+    this.index += match[0].length;
+    return new RawNumber(match[0]);
+  }
+  string() {
+    const start = this.index;
+    this.index += 1;
+    let escaped = false;
+    for (; this.index < this.text.length; this.index += 1) {
+      const char = this.text[this.index];
+      if (escaped) { escaped = false; continue; }
+      if (char === '\\') { escaped = true; continue; }
+      if (char === '"') { this.index += 1; return JSON.parse(this.text.slice(start, this.index)); }
+    }
+    throw new Error('unterminated_json_string');
+  }
+  object() {
+    this.index += 1;
+    const entries = [];
+    this.whitespace();
+    if (this.text[this.index] === '}') { this.index += 1; return { kind: 'object', entries }; }
+    while (this.index < this.text.length) {
+      this.whitespace();
+      if (this.text[this.index] !== '"') throw new Error('invalid_json_key');
+      const key = this.string();
+      this.whitespace();
+      if (this.text[this.index] !== ':') throw new Error('invalid_json_colon');
+      this.index += 1;
+      entries.push({ key, node: this.value() });
+      this.whitespace();
+      if (this.text[this.index] === '}') { this.index += 1; return { kind: 'object', entries }; }
+      if (this.text[this.index] !== ',') throw new Error('invalid_json_object');
+      this.index += 1;
+    }
+    throw new Error('unterminated_json_object');
+  }
+  array() {
+    this.index += 1;
+    const values = [];
+    this.whitespace();
+    if (this.text[this.index] === ']') { this.index += 1; return { kind: 'array', values }; }
+    while (this.index < this.text.length) {
+      values.push(this.value());
+      this.whitespace();
+      if (this.text[this.index] === ']') { this.index += 1; return { kind: 'array', values }; }
+      if (this.text[this.index] !== ',') throw new Error('invalid_json_array');
+      this.index += 1;
+    }
+    throw new Error('unterminated_json_array');
+  }
+  parse() {
+    const node = this.value();
+    this.whitespace();
+    if (this.index !== this.text.length) throw new Error('trailing_json');
+    return node;
+  }
+}
+
+function rawCanonical(node, omitSnapshotHash = false) {
+  if (node instanceof RawNumber) return node.raw;
+  if (Array.isArray(node)) return `[${node.map((item) => rawCanonical(item)).join(',')}]`;
+  if (node && node.kind === 'array') return `[${node.values.map((item) => rawCanonical(item)).join(',')}]`;
+  if (node && node.kind === 'object') {
+    const entries = node.entries
+      .filter((entry) => !(omitSnapshotHash && entry.key === 'snapshot_sha256'))
+      .sort((left, right) => left.key < right.key ? -1 : left.key > right.key ? 1 : 0);
+    return `{${entries.map((entry) => `${JSON.stringify(entry.key)}:${rawCanonical(entry.node)}`).join(',')}}`;
+  }
+  return JSON.stringify(node);
+}
+
+export async function digestRawJson(text, options = {}) {
+  const parsed = new RawJsonParser(String(text)).parse();
+  const selected = options.selectSnapshot && parsed && parsed.kind === 'object'
+    ? parsed.entries.find((entry) => entry.key === 'snapshot')?.node
+    : parsed;
+  if (!selected) throw new Error('snapshot_missing');
+  const bytes = new TextEncoder().encode(rawCanonical(selected, true));
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 export async function digest(value) {
   const bytes = new TextEncoder().encode(JSON.stringify(canonicalize(value)));
   const hash = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-export async function validateSeedSnapshot(snapshot) {
+export async function validateSeedSnapshot(snapshot, rawText = null) {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return { ok: false, error_code: 'INVALID_SNAPSHOT', error: '快照必须是对象' };
   if (snapshot.schema_version !== 'market-context.v1') return { ok: false, error_code: 'SCHEMA_MISMATCH', error: '快照版本不受支持' };
   if (!validDate(snapshot.asof)) return { ok: false, error_code: 'INVALID_DATE', error: '快照 asof 必须是已验证工作日' };
@@ -56,7 +155,12 @@ export async function validateSeedSnapshot(snapshot) {
   if (!hasRawHash) return { ok: false, error_code: 'SOURCE_HASH_REQUIRED', error: '至少一个来源必须包含 raw_sha256' };
   const unsigned = { ...snapshot };
   delete unsigned.snapshot_sha256;
-  const expected = await digest(unsigned);
+  let expected;
+  try {
+    expected = rawText == null ? await digest(unsigned) : await digestRawJson(rawText, { selectSnapshot: Boolean(JSON.parse(rawText)?.snapshot) });
+  } catch {
+    expected = await digest(unsigned);
+  }
   if (expected.toLowerCase() !== String(snapshot.snapshot_sha256).toLowerCase()) return { ok: false, error_code: 'SNAPSHOT_HASH_MISMATCH', error: 'snapshot_sha256 与快照内容不一致' };
   return { ok: true };
 }
@@ -150,13 +254,14 @@ export class MarketContextState extends SerializedState {
     const expected = this.env.MARKET_CONTEXT_SEED_TOKEN;
     if (!expected || request.headers.get('X-Market-Context-Seed-Token') !== expected) return Response.json({ error_code: 'SEED_FORBIDDEN', error: '快照导入接口只允许受控服务端调用' }, { status: 403 });
     let body;
+    let raw;
     try {
-      const raw = await request.text();
+      raw = await request.text();
       if (raw.length > MAX_SEED_BODY) return Response.json({ error_code: 'BODY_TOO_LARGE', error: '快照内容过长' }, { status: 413 });
       body = raw ? JSON.parse(raw) : null;
     } catch { return Response.json({ error_code: 'INVALID_JSON', error: '请求内容不是有效JSON' }, { status: 400 }); }
     const snapshot = body && body.snapshot && typeof body.snapshot === 'object' ? body.snapshot : body;
-    const validation = await validateSeedSnapshot(snapshot);
+    const validation = await validateSeedSnapshot(snapshot, raw);
     if (!validation.ok) return Response.json({ error_code: validation.error_code, error: validation.error }, { status: 422 });
     const asof = snapshot.asof;
     const key = `snapshot:${asof}`;
