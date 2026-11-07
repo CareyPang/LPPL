@@ -51,6 +51,28 @@ main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap
 .tip { position: fixed; z-index: 9; pointer-events: none; background: var(--surface-2); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.5 var(--f-m); white-space: nowrap; }
 .legend { display: flex; align-items: center; gap: var(--s2); font-size: 11px; color: var(--ink-3); margin-top: var(--s2); flex-wrap: wrap; }
 .legend i { display: inline-block; width: 18px; height: 10px; }
+.market-tools { display: grid; gap: var(--s3); }
+.tool-nav { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.tool-nav button, .review-tabs button { border: 1px solid var(--line); background: transparent; color: var(--ink-2); padding: var(--s2) var(--s3); cursor: pointer; }
+.tool-nav button:hover, .review-tabs button:hover, .tool-nav button[aria-current="true"], .review-tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--warn); }
+.tool-status { color: var(--ink-3); font-size: 12px; margin: 0; }
+.review-tabs { display: flex; gap: var(--s2); border-bottom: 1px solid var(--line); padding-bottom: var(--s3); margin-bottom: var(--s3); flex-wrap: wrap; }
+.review-body { min-height: 120px; }
+.review-grid, .feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+.review-card, .feature-card { border: 1px solid var(--grid); padding: var(--s3); min-width: 0; }
+.review-card h3, .feature-card h3 { margin: 0 0 var(--s2); font-size: 13px; }
+.review-card p, .feature-card p { margin: 0; color: var(--ink-2); font-size: 12px; line-height: 1.7; }
+.status-pill { display: inline-block; margin-bottom: var(--s2); border: 1px solid var(--ink-3); padding: 3px 6px; color: var(--ink-2); font: 600 10px var(--f-m); letter-spacing: .04em; }
+.status-pill.ready { border-color: var(--up); color: var(--up); }
+.status-pill.planned { border-color: var(--warn); color: var(--warn); }
+.ladder { display: grid; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.ladder-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); min-height: 58px; background: var(--surface); }
+.ladder-label { display: grid; place-items: center start; padding: var(--s2) var(--s3); color: var(--ink-2); border-right: 1px solid var(--line); font: 600 12px var(--f-m); }
+.ladder-cells { display: flex; gap: var(--s2); padding: var(--s2); flex-wrap: wrap; align-items: stretch; }
+.ladder-card { min-width: 120px; flex: 1 1 120px; border: 1px solid var(--grid); padding: var(--s2); }
+.ladder-card b { display: block; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ladder-card small { display: block; margin-top: 3px; color: var(--ink-3); font: 10px var(--f-m); }
+.ladder-note { margin-top: var(--s2); color: var(--ink-3); font-size: 11px; }
 .big { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--s2); }
 .big div { border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
 .big small { display: block; font-size: 11px; color: var(--ink-3); }
@@ -66,7 +88,8 @@ td.r, th.r { text-align: right; }
 .bars-x span { flex: 1; text-align: center; }
 .scroll { max-height: 300px; overflow: auto; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
-@media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } .review-grid, .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 540px) { .bar-in { padding: var(--s2) 12px; } .nav { gap: 10px; font-size: 12px; } .asof { width: 100%; margin-left: 0; } main { padding: 12px; } .sec { padding: 12px; } .review-grid, .feature-grid { grid-template-columns: 1fr; } .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .tool-nav button, .review-tabs button { flex: 1 1 auto; min-height: 40px; font-size: 12px; } }
 </style>
 </head>
 <body>
@@ -86,6 +109,30 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 </header>
 
 <main>
+  <section class="sec wide" id="s-toolkit" aria-labelledby="h-toolkit">
+    <div class="sec-h"><h2 id="h-toolkit">盘面工具</h2><span class="ev">功能地图</span><span class="src">日终快照 · 不等同实时行情</span></div>
+    <div class="market-tools">
+      <div class="tool-nav" role="navigation" aria-label="盘面工具入口">
+        <button type="button" data-tool-target="s-review">今日盘面</button>
+        <button type="button" data-tool-target="s-review" data-review-target="replay">历史复盘</button>
+        <button type="button" data-tool-target="s-capabilities">题材库</button>
+        <button type="button" data-tool-target="s-capabilities">资讯雷达</button>
+        <button type="button" data-tool-target="s-capabilities">全球宏观</button>
+      </div>
+      <p class="tool-status" id="tool-status">已接入真实日终市场快照；盘中实时、历史补录和外部资讯仍按独立数据契约接入。</p>
+    </div>
+  </section>
+
+  <section class="sec wide" id="s-review" aria-labelledby="h-review">
+    <div class="sec-h"><h2 id="h-review">复盘啦 · 日终盘面</h2><span class="ev">descriptive</span><span class="src" id="src-review"></span></div>
+    <div class="review-tabs" role="tablist" aria-label="复盘视图">
+      <button type="button" data-review="overview" aria-selected="true">盘面梳理</button>
+      <button type="button" data-review="direction" aria-selected="false">市场动向</button>
+      <button type="button" data-review="reason" aria-selected="false">涨停原因</button>
+    </div>
+    <div class="review-body" id="review-body"></div>
+  </section>
+
   <section class="sec wide" id="s-board" aria-labelledby="h-board">
     <div class="sec-h">
       <h2 id="h-board">板块资金流热力图</h2><span class="ev">descriptive</span>
@@ -101,6 +148,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div id="limit-body"></div>
   </section>
 
+  <section class="sec wide" id="s-ladder" aria-labelledby="h-ladder">
+    <div class="sec-h"><h2 id="h-ladder">连板天梯</h2><span class="ev">descriptive</span><span class="src" id="src-ladder"></span></div>
+    <div id="ladder-body"></div>
+  </section>
+
   <section class="sec" id="s-nb" aria-labelledby="h-nb">
     <div class="sec-h"><h2 id="h-nb">北向成交</h2><span class="ev">descriptive</span><span class="src" id="src-nb"></span></div>
     <div id="nb-body"></div>
@@ -114,6 +166,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <section class="sec wide" id="s-val" aria-labelledby="h-val">
     <div class="sec-h"><h2 id="h-val">指数估值（中证官方）</h2><span class="ev">descriptive</span><span class="src" id="src-val"></span></div>
     <div id="val-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-capabilities" aria-labelledby="h-capabilities">
+    <div class="sec-h"><h2 id="h-capabilities">功能接入地图</h2><span class="ev">证据边界</span></div>
+    <div class="feature-grid">
+      <article class="feature-card"><span class="status-pill ready">VERIFIED · 日终</span><h3>市场情绪与连板</h3><p>涨停、炸板、跌停、最高连板、连板分布和当前快照梯队已接入。数据日和来源显示在卡片内。</p></article>
+      <article class="feature-card"><span class="status-pill planned">PLANNED · P1</span><h3>题材库与涨停原因</h3><p>当前快照没有题材标签和原因字段，不能从名称反推原因。下一步先做带来源、日期和样本数的题材快照。</p></article>
+      <article class="feature-card"><span class="status-pill planned">PLANNED · P1.5</span><h3>龙虎榜与机构增仓</h3><p>需要独立的龙虎榜、席位和股东数据契约，并核对东财/同花顺的使用边界；暂不显示“机构买入”推断。</p></article>
+      <article class="feature-card"><span class="status-pill planned">PLANNED · P2</span><h3>快讯、全球消息与直播</h3><p>先接可追溯标题、来源、发布时间和抓取状态。直播属于盘中数据产品，不能用日终快照冒充实时。</p></article>
+      <article class="feature-card"><span class="status-pill planned">PLANNED · P2</span><h3>商品与 ETF</h3><p>可加入黄金、原油、美元兑人民币和主要 ETF 的行情背景；每个品种单独标注交易所、时点、复权和延迟。</p></article>
+      <article class="feature-card"><span class="status-pill planned">PLANNED · P3</span><h3>美联储概率</h3><p>只显示预测市场隐含概率，注明 Polymarket/Kalshi、流动性、抓取时间和 stale 状态，不称为官方 FedWatch，也不进入 LPPLS。</p></article>
+    </div>
   </section>
 </main>
 <div class="tip" id="tip" hidden></div>
@@ -253,6 +317,48 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        </tbody></table></div><p class="note">${E(L.note || '')}</p>`;
   }
 
+  function renderLadder() {
+    const L = M.limit_pools || {}, top = ((L.top20 || {}).zt || []).filter((r) => r && r.name);
+    $('src-ladder').innerHTML = srcLine(['limit_pools']);
+    if (!top.length) {
+      $('ladder-body').innerHTML = `<p class="fail">${failMsg(['limit_pools']) || '该源本次未取到：没有可复用的连板明细'}</p>`;
+      return;
+    }
+    const groups = new Map();
+    for (const row of top) {
+      const streak = Number(row.streak);
+      if (!Number.isFinite(streak)) continue;
+      if (!groups.has(streak)) groups.set(streak, []);
+      groups.get(streak).push(row);
+    }
+    const max = Math.max(...groups.keys());
+    const rows = [];
+    for (let streak = max; streak >= 1; streak -= 1) {
+      const members = groups.get(streak) || [];
+      rows.push(`<div class="ladder-row"><div class="ladder-label">${streak}板</div><div class="ladder-cells">${members.length ? members.map((r) =>
+        `<div class="ladder-card"><b>${E(r.name)}</b><small>${E(r.code || '—')} · 首封 ${E(r.limit_time || '—')}</small></div>`).join('') : '<span class="ladder-note">当前快照未提供成员</span>'}</div></div>`);
+    }
+    $('ladder-body').innerHTML = `<div class="ladder" role="table" aria-label="${E(L.date || '—')} 连板天梯">${rows.join('')}</div>
+      <p class="ladder-note">交易日 ${E(L.date || '—')} · 仅按当前快照的涨停前 ${top.length} 项整理；缺失成员、题材和历史晋级率不会补造。梯队是描述性统计，不是强弱或收益预测。</p>`;
+  }
+
+  function renderReview() {
+    if (!M) return;
+    const L = M.limit_pools || {}, bf = M.board_flow || {}, tab = window.__reviewTab || 'overview';
+    $('src-review').innerHTML = srcLine(['limit_pools', 'board_flow_industry']);
+    const zt = num(L.zt) ? L.zt : '—', zb = num(L.zb) ? L.zb : '—', dt = num(L.dt) ? L.dt : '—';
+    if (tab === 'direction') {
+      const rows = (bf.industry || []).filter((r) => num(r.main_net)).sort((a, b) => Math.abs(b.main_net) - Math.abs(a.main_net)).slice(0, 8);
+      $('review-body').innerHTML = rows.length ? `<div class="review-grid"><article class="review-card"><span class="status-pill ready">VERIFIED · ${E(M.asof || '—')}</span><h3>板块资金方向</h3><p>按当前快照中的行业净额排序；颜色和面积仍只表达当日描述。</p></article><article class="review-card"><h3>流入前列</h3><p>${rows.filter((r) => r.main_net > 0).slice(0, 4).map((r) => `${E(r.name)} ${yi(r.main_net, 1)}亿`).join(' · ') || '暂无可用值'}</p></article><article class="review-card"><h3>流出前列</h3><p>${rows.filter((r) => r.main_net < 0).slice(0, 4).map((r) => `${E(r.name)} ${yi(r.main_net, 1)}亿`).join(' · ') || '暂无可用值'}</p></article></div><p class="note">资金流口径和来源见下方热力图；“流入/流出”不代表机构真实意图，也不进入 LPPLS。</p>` : '<p class="fail">当前快照没有可核验的板块资金方向数据。</p>';
+      return;
+    }
+    if (tab === 'reason') {
+      $('review-body').innerHTML = `<div class="review-grid"><article class="review-card"><span class="status-pill planned">NOT_ESTABLISHED</span><h3>涨停原因</h3><p>当前 ${E(L.date || '—')} 快照只提供代码、名称、连板数和首封时间，没有原因或题材字段。</p></article><article class="review-card"><span class="status-pill planned">PLANNED · P1.5</span><h3>题材标签</h3><p>需要独立来源和原始快照后才能展示，不能根据股票名称或行业简称推断。</p></article><article class="review-card"><span class="status-pill planned">PLANNED · P2</span><h3>历史原因回看</h3><p>尚未建立按交易日保存的原因记录，未来补做时会拒绝用当前资料回填过去。</p></article></div>`;
+      return;
+    }
+    $('review-body').innerHTML = `<div class="review-grid"><article class="review-card"><span class="status-pill ready">VERIFIED · 日终快照</span><h3>涨停情绪</h3><p>涨停 ${zt} · 炸板 ${zb} · 跌停 ${dt} · 最高连板 ${E(L.max_streak ?? '—')}</p></article><article class="review-card"><span class="status-pill ready">VERIFIED · 描述性</span><h3>封板质量</h3><p>炸板率 ${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}。这是当前样本的统计，不是未来情绪预测。</p></article><article class="review-card"><span class="status-pill planned">NOT_ESTABLISHED</span><h3>历史晋级与赚钱效应</h3><p>当前没有前一交易日涨停池和次日反馈的配对快照，因此不显示晋级率、连板溢价或赚钱效应。</p></article></div><p class="note">复盘日期、数据日、生成时间和来源必须独立保存；当前页面只读取已封存的 ${E(M.asof || '—')} 快照。</p>`;
+  }
+
   function renderNB() {
     const N = M.northbound || {}, d = N.data || {};
     $('src-nb').innerHTML = srcLine(['northbound']);
@@ -306,15 +412,30 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
   function renderAll() {
     $('asof').textContent = '截止 ' + (M.asof || '—') + ' · 生成 ' + String(M.generated_at || '').replace('T', ' ').slice(0, 16) + ' UTC';
-    for (const fn of [renderBoard, renderLimit, renderNB, renderMargin, renderVal]) {
+    for (const fn of [renderReview, renderBoard, renderLimit, renderLadder, renderNB, renderMargin, renderVal]) {
       try { fn(); } catch (e) { console.error(e); }
     }
   }
 
   document.addEventListener('click', (e) => {
     const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
+    const review = e.target.closest('[data-review]');
+    const tool = e.target.closest('[data-tool-target]');
     if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
     if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
+    if (review) {
+      window.__reviewTab = review.dataset.review;
+      document.querySelectorAll('[data-review]').forEach((button) => button.setAttribute('aria-selected', String(button === review)));
+      renderReview();
+    }
+    if (tool) {
+      if (tool.dataset.reviewTarget) {
+        window.__reviewTab = tool.dataset.reviewTarget;
+        document.querySelectorAll('[data-review]').forEach((button) => button.setAttribute('aria-selected', String(button.dataset.review === window.__reviewTab)));
+        renderReview();
+      }
+      document.getElementById(tool.dataset.toolTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
