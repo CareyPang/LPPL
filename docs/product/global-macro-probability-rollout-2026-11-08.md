@@ -15,7 +15,7 @@
 
 | 模块 | 首选来源 | 建议字段 | 许可/网络状态 |
 | --- | --- | --- | --- |
-| 美债收益率曲线 | [U.S. Treasury Daily Treasury Par Yield Curve](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve) 或 FiscalData | `tenor`, `yield_pct`, `quote_type`, `asof` | **PR 作者报告；待复核**。保存发布日期与修订标记，不能用后来的修订值覆盖历史快照。 |
+| 美债收益率曲线 | [U.S. Treasury Daily Treasury Par Yield Curve](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve) 或 FiscalData | `tenor`, `yield_pct`, `quote_type`, `asof` | **官方页面已核对；许可仍待复核**。CMT 是基于纽约联储约 15:30 的 indicative bid quotes 由 Treasury 插值得到，并非成交价；XML 接口按年度或分页读取。保存发布日期与修订标记，不能用后来的修订值覆盖历史快照。 |
 | SOFR/EFFR 等美元参考利率 | [New York Fed Markets API](https://markets.newyorkfed.org/) | `rate`, `volume`, `percentile_rank`, `asof` | **PR 作者报告；待复核**。对外展示附纽约联储免责声明文本。 |
 | 央行政策利率、全球利率 | [BIS Data Portal](https://data.bis.org/)、[ECB Data Portal](https://data-api.ecb.europa.eu/service/data/)、美联储 H.10/H.6 | `institution`, `rate_type`, `currency`, `effective_date`, `published_at` | **PR 作者报告；待复核**。严格分开 `effective_date`、`published_at`，保留修订版本。 |
 | CPI、就业、PPI、JOLTS、初请 | [BLS Public API](https://api.bls.gov/publicAPI/v2/)、[DOL ETA](https://oui.doleta.gov/unemploy/) | `series_id`, `value`, `unit`, `release_date`, `revision` | **PR 作者报告；待复核**。免 key BLS API 有请求与序列限制，适配器要做批量、缓存和退避。 |
