@@ -81,6 +81,10 @@ def _iso_timestamp(value: Any, field: str = "fetched_at") -> str:
 
 def _status(value: Any, *, default: str = "ok") -> str:
     status = str(value or default)
+    # ``fresh`` is retained as an input alias for the P1 envelope; P2/P3 emit
+    # the documented ``ok`` spelling so consumers have one status vocabulary.
+    if status == "fresh":
+        status = "ok"
     if status not in VALID_STATUSES:
         raise ValueError(f"unsupported status: {status}")
     return status
