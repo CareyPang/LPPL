@@ -52,7 +52,7 @@ def prepare(site_root: Path) -> dict:
             '<a href="home.html">进入海洋观测台</a></body></html>', encoding="utf-8")
         (client / "robots.txt").write_text("User-agent: *\nDisallow: /\n", encoding="utf-8")
         config.pop("static", None)
-        config["d1"] = {"binding": "DB"}
+        config["d1"] = "DB"
         config["r2"] = None
         (stage / "server").mkdir()
         shutil.copy2(FRONTEND / "demo-tools/preview-worker.mjs", stage / "server/index.js")
