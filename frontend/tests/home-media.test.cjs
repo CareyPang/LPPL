@@ -141,14 +141,22 @@ test('scrolling promotes its target frame ahead of queued offscreen images', asy
   await m.complete(m.requests[0]);
   assert.equal(m.requests[4].url, 'assets/dive/h/217.webp');
   assert.ok(m.requests.every(r => !/under|deep/.test(r.url)));
-  m.loopFor(.9);
+  assert.equal(m.loopFor(.9), null, 'An unfinished descent cannot switch to a different underwater camera');
+  m.loopFor(1);
   await m.complete(m.requests[1]);
   await m.complete(m.requests[2]);
   await m.complete(m.requests[3]);
-  for (let i = 0; i < 8 && !m.requests.some(r => r.url.includes('/deep/')); i++) {
+  for (let i = 0; i < 8 && !m.requests.some(r => r.url.includes('/under/')); i++) {
     await m.complete(m.requests.find(r => !r.finished));
   }
-  assert.ok(m.requests.some(r => r.url.includes('/deep/')), 'The deep loop is loaded only after activation');
+  assert.ok(m.requests.some(r => r.url.includes('/under/')), 'The underwater loop is loaded only after the descent finishes');
+});
+
+test('idle loops exist only at the surface and completed descent, never inside the waterline passage', () => {
+  const m=setup();
+  assert.equal(m.loopFor(0).name,'sea');
+  for(const p of [.02,.15,.27,.3,.42,.45,.6,.8,.98]) assert.equal(m.loopFor(p),null);
+  assert.equal(m.loopFor(1).name,'under');
 });
 
 test('static mode uses the CSS poster and requests no frame sequence while scrolling', async () => {

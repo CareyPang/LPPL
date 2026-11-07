@@ -278,6 +278,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 <script src="app/home-quality.js"></script>
 <script src="app/home-media.js"></script>
 <script src="app/home-journey.js"></script>
+<script src="app/home-horizon.js"></script>
 </head>
 <body id="page-top">
 <a class="skip-link" href="#s1">跳过影像，阅读研究说明</a>
@@ -424,9 +425,8 @@ const WATERLINE = 0.30, SUBMERGED = 0.42;
 // Original 24fps video is the primary path; this bounded image queue is a fallback.
 const LOOP_DIR = 'assets/dive/loop/', LOOP_SUB = MOB ? 'm' : 'd';
 const LOOPS = [
-  {name:'sea',   n:188, fps:30, lo:-1,           hi:WATERLINE-.03},
-  {name:'under', n:23, fps:24, lo:SUBMERGED+.03, hi:.78},
-  {name:'deep',  n:23, fps:24, lo:.78,           hi:2}
+  {name:'sea',   n:188, fps:30, lo:-1,    hi:.015},
+  {name:'under', n:23, fps:24, lo:.985,  hi:2}
 ].map(o=>Object.assign(o,{frames:new Array(o.n),ok:0,vid:null,vidOk:false,cursor:0,clock:null,last:null}));
 const frames = new Array(SRC.n);
 const START_BUFFER = MOB ? 12 : 18, LOOK_AHEAD = MOB ? 24 : 36;
@@ -652,6 +652,8 @@ const FS=`#define OCT ${MOB?3:5}
 precision highp float;
 varying vec2 v;
 uniform sampler2D uA,uB;
+uniform sampler2D uHorizon;
+uniform vec2 uHorizonRows;
 uniform float uMix,uT,uSub,uDeep,uStr;
 uniform vec2 uRes,uCov,uK;
 uniform vec4 uTint;
@@ -704,9 +706,13 @@ vec3 skyCol(vec2 im,float asp,float t,float hI,float sunX){
   return c;
 }
 // Replace each decoded source before crossfading: two sources may have different horizons.
-vec3 replaceSky(vec3 source,vec2 im,vec3 sky){
+vec3 replaceSky(vec3 source,vec2 im,vec3 sky,float row){
   if(sky.y<.5) return source;
-  float mask=1.-smoothstep(sky.x,sky.x+.004,im.y);
+  vec2 encoded=texture2D(uHorizon,vec2((im.x*31.+.5)/32.,(row+.5)/128.)).rg;
+  float edge=dot(encoded,vec2(65280./65535.,255./65535.));
+  if(edge<.0001) return source;
+  // Follow the connected wave contour, not a horizontal slice through the crest.
+  float mask=1.-smoothstep(edge-.004,edge+.008,im.y);
   if(mask<=0.) return source;
   return mix(source,skyCol(im,1.7778,uT,sky.x,sky.z),mask);
 }
@@ -725,9 +731,9 @@ void main(){
   vec2 im=vec2(uv.x,1.-uv.y);
   // Full coverage above each measured horizon; source brightness never opens holes.
   vec3 col;
-  if(uMix<=.001) col=replaceSky(ca,im,uSkyA);
-  else if(uMix>=.999) col=replaceSky(cb,im,uSkyB);
-  else col=mix(replaceSky(ca,im,uSkyA),replaceSky(cb,im,uSkyB),uMix);
+  if(uMix<=.001) col=replaceSky(ca,im,uSkyA,uHorizonRows.x);
+  else if(uMix>=.999) col=replaceSky(cb,im,uSkyB,uHorizonRows.y);
+  else col=mix(replaceSky(ca,im,uSkyA,uHorizonRows.x),replaceSky(cb,im,uSkyB,uHorizonRows.y),uMix);
   // Underwater illumination stays source-aligned and comes from the decoded footage.
   col=clamp(col,0.,1.);
   col=mix(col,soft(col,uTint.rgb),uTint.a);
@@ -745,8 +751,18 @@ function initGL(){
   gl.useProgram(pr);
   const b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
   const loc=gl.getAttribLocation(pr,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uSkyA','uSkyB','uQuality','uIdleWater','uProgress']) U[n]=gl.getUniformLocation(pr,n);
+  for(const n of ['uA','uB','uMix','uT','uSub','uDeep','uStr','uRes','uCov','uK','uTint','uSkyA','uSkyB','uQuality','uIdleWater','uProgress','uHorizon','uHorizonRows']) U[n]=gl.getUniformLocation(pr,n);
   gl.uniform1i(U.uA,0); gl.uniform1i(U.uB,1);
+  gl.uniform1i(U.uHorizon,2);
+  gl.activeTexture(gl.TEXTURE2);
+  gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,HomeHorizon.width,HomeHorizon.height,0,gl.RGBA,gl.UNSIGNED_BYTE,HomeHorizon.pixels());
+  gl.activeTexture(gl.TEXTURE0);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
   glc.addEventListener('webglcontextlost',(e)=>{ e.preventDefault(); toFallback(); });
   return true;
@@ -807,7 +823,12 @@ function sourceSky(item){
   if(item.scene==='sea') return sceneSky(0,item,1);
   if(item.scene==='under'||item.scene==='deep') return {hz:0,weight:0,sunX:SUN_X};
   // The actual held/decoded frame owns the mask, never the pending scroll target.
-  return sceneSky(clamp(item.progress||0,0,1)*(SRC.n-1),null,0);
+  const sky=sceneSky(clamp(item.progress||0,0,1)*(SRC.n-1),null,0);
+  if(SKY_ON && !sky.weight){
+    sky.hz=Math.max(...Array.from({length:32},(_,i)=>HomeHorizon.at(item,i/31)));
+    sky.weight=sky.hz>0?1:0;
+  }
+  return sky;
 }
 let fallbackLayer=null, fallbackContext=null;
 function paintFallbackSource(item,sky,now,ox,oy,dw,dh){
@@ -818,10 +839,15 @@ function paintFallbackSource(item,sky,now,ox,oy,dw,dh){
   if(sky.weight>0){
     const horizon=oy+dh*sky.hz, edge=Math.min(H,Math.max(0,horizon+dh*.004));
     if(edge>0){
-      ctx.save();ctx.beginPath();ctx.rect(0,0,W,edge);ctx.clip();
+      ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W,0);
+      for(let i=32;i>=0;i--){
+        const x=W*i/32, contour=HomeHorizon.at(item,clamp((x-ox)/dw,0,1));
+        ctx.lineTo(x,contour>0?Math.max(0,oy+dh*(contour+.002)):0);
+      }
+      ctx.closePath();ctx.clip();
       const gradient=ctx.createLinearGradient(0,oy,0,Math.max(oy+1,horizon));
       gradient.addColorStop(0,'#739cad');gradient.addColorStop(.72,'#ccd1c4');gradient.addColorStop(1,'#efc28f');
-      ctx.fillStyle=gradient;ctx.fillRect(0,0,W,edge);
+      ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
       const sunY=oy+dh*(sky.hz-Math.max(.014,.056-(.431-sky.hz)*.32)),sunX=ox+dw*sky.sunX;
       const glow=ctx.createRadialGradient(sunX,sunY,0,sunX,sunY,dh*.18);
       glow.addColorStop(0,'rgba(255,215,156,.43)');glow.addColorStop(1,'rgba(255,215,156,0)');
@@ -873,6 +899,7 @@ function render(now, fi, sub, deep, loop, loopW){
     gl.uniform4f(U.uTint,TINT[0],TINT[1],TINT[2],TINT[3]);
     gl.uniform3f(U.uSkyA,skyA.hz,skyA.weight,skyA.sunX);
     gl.uniform3f(U.uSkyB,skyB.hz,skyB.weight,skyB.sunX);
+    gl.uniform2f(U.uHorizonRows,HomeHorizon.index(A),HomeHorizon.index(B));
     gl.drawArrays(gl.TRIANGLES,0,3);
   } else {
     const dw=SRC.w*s, dh=SRC.h*s, ox=(W-dw)*kx, oy=(H-dh)/2;
@@ -882,6 +909,8 @@ function render(now, fi, sub, deep, loop, loopW){
     }catch(e){fx.globalAlpha=1;return;}
   }
   stage.classList.add('painted');
+  const progressOf=item=>item.scene==='sea'?0:item.scene==='under'||item.scene==='deep'?1:(item.progress??fi/(SRC.n-1));
+  return progressOf(A)*(1-mix)+progressOf(B)*mix;
 }
 
 /* ================= 水下漂浮颗粒（分远近三层） ================= */
@@ -1251,18 +1280,22 @@ function tick(now){
   let loopIt=null;
   if(!RM){
     const want=loopFor(cur), idle = now-lastScrollT>IDLE_MS && Math.abs(target-cur)<.002;
-    if(want!==curLoop){ if(loopW<.02 || !idle){ curLoop=want; loopW=0; } }
+    // Finish fading the current camera out before changing clips. Never cut a live
+    // sea/underwater shot off just because the scroll target crossed a boundary.
+    if(want!==curLoop && loopW===0) curLoop=want;
     if(videoMedia) videoMedia.setLoop((idle||loopW>.01)&&curLoop?curLoop.name:null);
     loopIt=loopImage(curLoop,now);
-    const goal = (idle && loopIt && want===curLoop) ? 1 : 0;
+    const waitingForDive=videoMedia && videoMedia.status('dive')!=='failed' && !videoMedia.getDive() && !heldDive;
+    const goal = loopIt && ((idle && want===curLoop) || (waitingForDive && loopW>0)) ? 1 : 0;
     const dt=Math.min(.1,dtF/1000||0);
     loopW += (goal-loopW)*(1-Math.exp(-dt*(goal>loopW?3.2:9)));
     if(loopW<.003) loopW=0; if(loopW>.997) loopW=1;
     if(!videoMedia) pauseLoops(loopW>0?curLoop:null);
     if(loopW>0) kick();
   }
-  render(now, fi, sub, deep, loopW>0?loopIt:null, loopW);
-  const story=HomeJourney.scene(cur,{contentTopRatio:s1.getBoundingClientRect().top/vh});
+  const paintedProgress=render(now, fi, sub, deep, loopW>0?loopIt:null, loopW);
+  const visibleProgress=Number.isFinite(paintedProgress)?paintedProgress:cur;
+  const story=HomeJourney.scene(visibleProgress,{contentTopRatio:s1.getBoundingClientRect().top/vh});
   hero.style.opacity=story.hero.toFixed(3);
   hero.style.transform=`translateY(${((1-story.hero)*-24).toFixed(1)}px)`;
   hero.style.visibility=story.hero<.005?'hidden':'visible';
@@ -1272,9 +1305,9 @@ function tick(now){
   underwaterCopy.style.transform=`translateY(${((1-story.underwater)*18).toFixed(1)}px)`;
   chapterMarker.querySelector('span').textContent=story.chapter;
   chapterMarker.style.opacity=window.scrollY>introEnd?'0':'1';
-  setInk(sstep(WATERLINE-.04, SUBMERGED, cur));
-  if(SND.on && SND.ctx) sndSet(cur);
-  drawMotes(now, RM ? 0 : sstep(SUBMERGED, SUBMERGED+.1, cur));
+  setInk(sstep(WATERLINE-.04, SUBMERGED, visibleProgress));
+  if(SND.on && SND.ctx) sndSet(visibleProgress);
+  drawMotes(now, RM ? 0 : sstep(SUBMERGED, SUBMERGED+.1, visibleProgress));
 }
 function kick(){ if(!raf && !document.hidden) raf=requestAnimationFrame(tick); }
 

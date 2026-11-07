@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const HomeHorizon = require('../app/home-horizon.js');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'home.html'), 'utf8');
 const start = html.indexOf('const SKY_ON =');
@@ -12,7 +13,7 @@ assert.ok(start >= 0 && end > start, 'Extract the actual horizon and scene mappi
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 function setup({ search = '', n = 241 } = {}) {
   const context = vm.createContext({
-    location: { search }, SRC: { n }, clamp,
+    location: { search }, SRC: { n }, clamp, HomeHorizon,
     sstep: (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
   });
   vm.runInContext(html.slice(start, end) + '\nglobalThis.scene = { sceneSky, sourceSky, hzAt, HZ_LOOP, SUN_X };', context);
@@ -103,7 +104,7 @@ test('decoded dive frames and sea loops retain separate masks during crossfade',
     RM: false, videoMedia: { status: () => 'ready', getDive: () => held }, heldDive: null,
     WATERLINE: .3, SUBMERGED: .42, nearestLoaded: () => -1, frameItem: () => null,
     W: 1280, H: 720, useGL: true, tex: item => item.key, gl, clk: () => 5,
-    U: { uSkyA: 'A', uSkyB: 'B' }, quality: { settings: { cloud: 1 } }, TINT: [1,.69,.43,.035],
+    U: { uSkyA: 'A', uSkyB: 'B' }, HomeHorizon, quality: { settings: { cloud: 1 } }, TINT: [1,.69,.43,.035],
     stage: { classList: { add() {} } }
   });
   const renderEnd = html.indexOf('/* ================= 水下漂浮颗粒', start);
@@ -119,14 +120,14 @@ test('Canvas fallback clouds drift visibly while the sun stays anchored, respect
   const calls = [];
   const gradient = { addColorStop() {} };
   const ctx = {
-    drawImage(source) { calls.push(['image',source]); }, save() {}, restore() {}, beginPath() {}, rect() {}, clip() {},
+    drawImage(source) { calls.push(['image',source]); }, save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, moveTo() {}, lineTo() {}, closePath() {},
     createLinearGradient() { calls.push(['sky']); return gradient; },
     createRadialGradient(x,y) { calls.push(['cloud',x,y]); return gradient; },
     fillRect() {}, translate() {}, scale() {}, arc() {}, fill() {}
   };
   const context = vm.createContext({ location: { search: '' }, SRC: { n: 241 }, clamp,
     sstep: (a,b,x) => { const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }, RM: false, clk: value => value / 1000, W: 1280, H: 720,
-    document: { createElement: () => ({ width:0, height:0, getContext: () => ctx }) }
+    HomeHorizon, document: { createElement: () => ({ width:0, height:0, getContext: () => ctx }) }
   });
   vm.runInContext(html.slice(start,end) + '\nglobalThis.paint = paintFallbackSource;', context);
   const original = {};
@@ -167,7 +168,7 @@ test('idle surface animation keeps rendering without scroll or new media and sto
     RM:false, raf:0, document:{hidden:false}, requestAnimationFrame:fn => {scheduled.push(fn);return scheduled.length;},
     hero:styles(),waterlineCopy:styles(),underwaterCopy:styles(),mc:styles(),setWave(){},
     lastFrame:0,prevNow:0,quality:{settings:{fps:60}},useGL:false,
-    target:0,cur:0,scrollVel:0,videoMedia:{setProgress(){},setLoop(){}},SRC:{n:241},
+    target:0,cur:0,scrollVel:0,videoMedia:{setProgress(){},setLoop(){},getDive:()=>({progress:0}),status:()=> 'ready'},heldDive:null,SRC:{n:241},
     clamp,sstep:(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);},
     WATERLINE:.3,SUBMERGED:.42,depth:1,LG:Math.log10,loopFor:()=>loop,curLoop:loop,
     lastScrollT:0,IDLE_MS:200,loopW:1,loopImage:()=>({scene:'sea'}),
@@ -186,4 +187,32 @@ test('idle surface animation keeps rendering without scroll or new media and sto
   context.tickFrame(7000);
   assert.equal(scheduled.length,2);
   assert.deepEqual(rendered,[1000,6000]);
+});
+
+test('leaving a loop fades the current camera, waits for decoding, and keeps copy on the painted frame',()=>{
+  const styles=()=>({style:{}}),shots=[],copy=[],sea={name:'sea'};
+  let decoded={progress:.2};
+  const context=vm.createContext({
+    RM:false,raf:0,document:{hidden:false},requestAnimationFrame:()=>1,
+    hero:styles(),waterlineCopy:styles(),underwaterCopy:styles(),mc:styles(),setWave(){},
+    lastFrame:900,prevNow:984,quality:{settings:{fps:60}},useGL:false,
+    target:.4,cur:.4,scrollVel:0,videoMedia:{setProgress(){},setLoop(){},getDive:()=>decoded,status:()=>decoded?'ready':'loading'},heldDive:null,SRC:{n:241},
+    clamp,sstep:(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);},
+    WATERLINE:.3,SUBMERGED:.42,depth:1,LG:Math.log10,loopFor:()=>null,curLoop:sea,
+    lastScrollT:999,IDLE_MS:300,loopW:1,loopImage:()=>({scene:'sea'}),
+    render:(...args)=>{shots.push(args);return .2;},
+    HomeJourney:{scene:p=>{copy.push(p);return {hero:0,waterline:1,underwater:0,chapter:'入水'};}},
+    s1:{getBoundingClientRect:()=>({top:2000})},vh:720,chapterMarker:{style:{},querySelector:()=>({})},
+    window:{scrollY:400},introEnd:1500,setInk(){},SND:{on:false},drawMotes(){}
+  });
+  const from=html.indexOf('function tick(now){'),to=html.indexOf('function resize()',from);
+  vm.runInContext(html.slice(from,to)+'\nglobalThis.tickFrame=tick;',context);
+  context.tickFrame(1000);
+  assert.equal(context.curLoop,sea);
+  assert.ok(context.loopW>.8&&context.loopW<1,'Crossing the boundary must not zero the visible loop in one frame');
+  assert.equal(shots[0][4].scene,'sea');
+  assert.equal(copy[0],.2,'Text follows the decoded frame, not the .4 scroll request');
+  context.loopW=1;context.prevNow=1000;context.lastFrame=1000;decoded=null;
+  context.tickFrame(1020);
+  assert.equal(context.loopW,1,'Keep the source camera until the first dive frame is available');
 });
