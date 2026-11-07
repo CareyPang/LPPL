@@ -7,6 +7,7 @@
 - **VERIFIED**：当前仓库已有独立 `workers/market-context` 快照接口和 `market-context.v1` 的 `source/asof/fetched_at/status/stale_reason/snapshot_sha256` 字段；该 Worker 尚未正式部署。
 - **PR 作者报告**：[`global-stock-data`](https://github.com/simonlin1212/global-stock-data/blob/main/SKILL.md) 列出了 Treasury、BIS、ECB、纽约联储、美联储、EIA、BLS、CBOE 等适配方向，并给出了合规分级。仓库不会把 README 的分级当作本项目的法律意见，接入前仍需逐源复核当前条款、频率限制和商用展示许可。
 - **PR 作者报告**：[`globalpercent`](https://github.com/simonlin1212/globalpercent) 以 Polymarket 和 Kalshi 的公开只读市场数据组成宏观事件隐含概率面板。它是参考实现，不是本项目已经取得的授权，也不是官方 FedWatch 数据源。
+- **官方页面已核对**：Polymarket 的 Gamma/Data 端点提供匿名只读市场数据；Kalshi Help Center 也说明 API 可读公共市场数据，但其 Developer Agreement/Data Terms 对会员、重试和第三方再分发有额外限制。两者均不能仅因“无需 API key”就视为获得本项目公开展示许可。
 - **NOT_ESTABLISHED**：大陆网络下对每个上游端点的可达性、稳定性、速率限制和长期商业许可尚未在本项目运行环境中验证。浏览器端不得直接跨域抓取上游。
 
 ## P2 来源适配器
@@ -62,7 +63,7 @@ P2 页面只显示描述性上下文，例如曲线形状、最近变动、事�
 1. Polymarket 与 Kalshi 先并排显示。只有在两个市场的事件语义、结算时间和结果集合完全对齐，并且代码中登记了可复查的映射规则，才允许额外显示“跨平台比较”；默认不计算一个没有定义的“共识概率”。
 2. `liquidity`、`volume_24h`、`open_interest` 取不到时保留 `null`，同时显示“流动性未取到”。不能用概率本身代替流动性。
 3. 页面文案固定为“预测市场隐含概率（Polymarket/Kalshi）”，标注 `asof`、`fetched_at`、市场链接和 stale 状态；不得称为官方 FedWatch、央行概率或 LPPLS 预测。
-4. 预测市场数据至少每 6 小时刷新一次；请求超时或境外端点不可达时保留最后一份快照并写 `stale_reason=source_unavailable`。全量 Kalshi 市场抓取耗时可能达到分钟级，必须异步、分页、限时和可恢复。
+4. 预测市场数据至少每 6 小时刷新一次；请求超时或境外端点不可达时保留最后一份快照并写 `stale_reason=source_unavailable`。全量 Kalshi 市场抓取耗时可能达到分钟级，必须异步、分页、限时和可恢复。Kalshi 的公开站展示仍需先完成其 Developer Agreement/Data Terms 许可核对。
 5. P3 数据永远不进入 LPPLS、顶部评价器、底部价格层或任何回测分数。若未来要研究关联，只能在独立实验分支预注册变量、时间对齐和样本外评估。
 
 ## 统一快照与每日更新
