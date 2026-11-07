@@ -281,7 +281,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 <script src="app/home-horizon.js"></script>
 </head>
 <body id="page-top">
-<a class="skip-link" href="#s1">跳过影像，阅读研究说明</a>
+<a class="skip-link" href="#s1">跳过影像，选择资产</a>
 <div class="stage" id="stage" aria-hidden="true">
   <canvas id="gl"></canvas>
   <canvas id="film"></canvas>
@@ -293,7 +293,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 
 <header class="top" id="top">
   <a class="brand" href="#page-top" aria-label="临界点，返回海面"><span class="mark" aria-hidden="true"></span><span>临界点<small>MARKET OBSERVATORY</small></span></a>
-  <nav aria-label="页内导航"><a href="#s1">两种尺度</a><a href="#s3">研究方法</a></nav>
+  <nav aria-label="页内导航"><a href="#s1">选择资产</a><a href="#s3">研究方法</a></nav>
   <button class="pill motion-toggle" id="motion-toggle" type="button" aria-pressed="false"><span aria-hidden="true" class="motion-symbol">Ⅱ</span><span id="motion-label">静态画面</span></button>
   <div class="sndw">
     <button class="pill snd" id="snd" type="button" aria-pressed="false" aria-label="声音开关，当前关闭"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl" id="sndl">声音 · 关</span></button>
@@ -320,10 +320,6 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
   </div>
   <p class="hero-boundary">短期与阶段分开观察 · 识别能力仍在验证</p>
 </div>
-<div class="scene-copy" id="scene-copy" aria-hidden="true">
-  <div class="scene-chapter" id="waterline-copy"><span class="scene-eyebrow">01 / THE WATERLINE</span><p>局部起伏，<br>还是阶段转折？</p><span class="scene-caption">向水线以下，看见另一种尺度。</span></div>
-  <div class="scene-chapter" id="underwater-copy"><span class="scene-eyebrow">02 / ANOTHER SCALE</span><p>同一段上涨，<br>不止一种高点。</p><span class="scene-caption">先分清观察对象，再讨论判断。</span></div>
-</div>
 <div class="hint" id="hint"><i aria-hidden="true"></i><span>向下探索 <b>↓</b></span></div>
 <div class="chapter-marker" id="chapter-marker" aria-hidden="true"><span>海面</span><i></i>水线以下</div>
 <div class="load" id="load" aria-hidden="true"><span id="lt">载入 0%</span><b><i id="lb"></i></b></div>
@@ -339,9 +335,26 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
 <div class="fx" id="fx" aria-hidden="true"></div>
 
 <main>
-  <section class="sec" id="s1">
-    <div class="zone reveal">01 / 两种尺度 <span>水线以下</span></div>
-    <div class="section-heading"><h2 class="reveal">波纹与潮汐，<br>各有自己的时间。</h2><p class="lead reveal">局部高点值得留意。<br>一段上涨的阶段高点，更需要单独判断。</p></div>
+  <section class="sec asset-entry" id="s1" aria-labelledby="asset-entry-title">
+    <div class="zone reveal">01 / 开始观察 <span>水线以下</span></div>
+    <div class="section-heading"><h2 class="reveal" id="asset-entry-title">从你关注的<br>资产开始。</h2><p class="lead reveal">先看日线与成交量，再查看当前分析。<br>历史回放由你选择何时开始。</p></div>
+    <form class="asset-search reveal" id="home-asset-search" action="stock.html" method="get">
+      <label for="home-asset-code">资产代码或名称</label>
+      <div class="asset-search-row"><input id="home-asset-code" name="code" type="search" autocomplete="off" maxlength="32" placeholder="例如 600519、贵州茅台或上证指数" aria-describedby="asset-search-hint" required><button type="submit">查看资产 <span aria-hidden="true">↗</span></button></div>
+      <p id="asset-search-hint">输入代码可直接进入。指数请带交易所前缀，例如 sh000001。</p>
+    </form>
+    <div class="asset-shortcuts reveal" aria-label="常用资产入口">
+      <a class="asset-shortcut" href="stock.html?code=sh000001" data-workstation data-workstation-code="sh000001"><span class="asset-kind">市场指数</span><span class="asset-name">上证指数 <i aria-hidden="true">↗</i></span><span class="asset-symbol">SH000001</span></a>
+      <a class="asset-shortcut" href="stock.html?code=sh600519" data-workstation data-workstation-code="sh600519"><span class="asset-kind">A 股公司</span><span class="asset-name">贵州茅台 <i aria-hidden="true">↗</i></span><span class="asset-symbol">SH600519</span></a>
+    </div>
+    <p class="asset-entry-note reveal">有合格结果时，在 K 线上查看候选时间区间；没有合格区间时会明确说明，不强行给出顶部日期。</p>
+  </section>
+
+  <section class="sec research-entry" id="s2">
+    <div class="zone reveal">02 / 如何阅读 <span>研究说明</span></div>
+    <h2 class="reveal">先看行情，<br>再看判断的依据。</h2>
+    <ol class="research-steps"><li class="reveal"><span>01</span><h3>行情先显示</h3><p>日线与成交量独立加载，计算期间仍可查看。</p></li><li class="reveal"><span>02</span><h3>当前分析</h3><p>查看数据截至时间、当前状态和已有时间区间。</p></li><li class="reveal"><span>03</span><h3>历史核对</h3><p>按需启动历史回放，历史重放与真实提前记录分开阅读。</p></li></ol>
+    <details class="method-detail scale-detail reveal"><summary>了解：短期高点与阶段性高点<span aria-hidden="true">＋</span></summary>
     <div class="scale-study reveal" id="scale-study" data-selected="stage">
       <div class="scale-choices" role="group" aria-label="选择尺度讲解"><button type="button" data-scale="stage" aria-pressed="true">阶段性高点<span>重点观察</span></button><button type="button" data-scale="local" aria-pressed="false">短期局部高点</button><button type="button" data-scale="pending" aria-pressed="false">尺度待判</button></div>
       <div class="scale-layout">
@@ -352,14 +365,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
         </div>
         <div class="scale-explanation" aria-live="polite"><span class="small-label">观察说明</span><h3 id="scale-title">阶段性高点</h3><p id="scale-description">关注约 1–6 个月上涨阶段的高点。它可能同时也是局部高点；更长的观察尺度，并不代表更远的预测日期。</p><p id="scale-note" class="scale-note">阶段提示优先呈现，局部提示独立保留。</p></div>
       </div>
-    </div>
-  </section>
-
-  <section class="sec research-entry" id="s2">
-    <div class="zone reveal">02 / 从观察开始 <span>工作站</span></div>
-    <h2 class="reveal">海面给你空间，<br>研究需要证据。</h2>
-    <div class="entry-layout"><p class="lead reveal">进入工作站后，输入资产代码。<br>先看行情与日期，再查看已有研究和历史核对。</p><a class="entry-link reveal" href="stock.html" data-workstation><span>进入工作站</span><span aria-hidden="true">↗</span></a></div>
-    <ol class="research-steps"><li class="reveal"><span>01</span><h3>选择资产</h3><p>在工作站输入六位 A 股代码。</p></li><li class="reveal"><span>02</span><h3>看清时间</h3><p>价格日期、研究日期与未来区间分开阅读。</p></li><li class="reveal"><span>03</span><h3>检查依据</h3><p>有结果就读证据；尚无结果，就保留空白。</p></li></ol>
+    </div></details>
   </section>
 
   <section class="sec method-section" id="s3">
@@ -410,6 +416,7 @@ let RM = !motionPolicy().enabled;
 document.documentElement.classList.toggle('home-static',RM);
 document.documentElement.classList.toggle('home-animated',!RM);
 HomeJourney.prepareLinks(document,location.search);
+HomeJourney.bindAssetEntry(document,location.search);
 HomeJourney.bindScales(document);
 const MOB = Math.min(window.innerWidth, window.innerHeight) < 600 || saveData;
 const $ = (s)=>document.querySelector(s);
@@ -965,7 +972,7 @@ function depthAt(y,p){
 const ticks=$('#ticks');
 [[0,'0 m'],[30,'30'],[200,'200'],[1000,'1000']].forEach(([m,l])=>{ const d=document.createElement('div'); d.className='tk'; d.style.top=(LG(m)*100)+'%'; d.textContent=l; ticks.appendChild(d); });
 
-/* ================= 文字颜色：水上深色 → 水下浅色 ================= */
+/* ================= 文字颜色：暖象牙 → 入水冷白 ================= */
 const root=document.documentElement.style;
 const mixC=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
 const rgba=(c,a)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
@@ -973,8 +980,12 @@ const INK0=[19,35,42], INK1=[240,248,247], BT0=[244,241,234], BT1=[6,34,42];
 const themeMeta=document.querySelector('meta[name=theme-color]');
 let lastInk=-1;
 function setInk(t){
-  t=Math.round(t*40)/40; if(t===lastInk) return; lastInk=t;
+  t=Math.round(t*255)/255; if(t===lastInk) return; lastInk=t;
   const ink=mixC(INK0,INK1,t);
+  root.setProperty('--hero-ink',rgba(mixC([243,232,211],[238,245,243],t),1));
+  root.setProperty('--hero-ink-muted',rgba(mixC([217,208,191],[197,216,217],t),1));
+  root.setProperty('--hero-ink-line',rgba(mixC([217,181,122],[128,175,180],t),.6));
+  root.setProperty('--hero-accent',rgba(mixC([217,181,122],[128,175,180],t),1));
   root.setProperty('--ink',rgba(ink,1)); root.setProperty('--ink2',rgba(ink,.78)); root.setProperty('--inkL',rgba(ink,.28));
   root.setProperty('--bp',rgba(ink,.95)); root.setProperty('--bpt',rgba(mixC(BT0,BT1,t),1));
   const pl=mixC([250,244,232],[6,30,38],t);
@@ -1232,7 +1243,7 @@ function bubbles(){
 
 /* ================= 主循环 ================= */
 const hero=$('#hero'), hint=$('#hint'), top=$('#top'), shade=$('#shade'), mk=$('#mk'), rd=$('#rd'), s1=$('#s1');
-const waterlineCopy=$('#waterline-copy'), underwaterCopy=$('#underwater-copy'), chapterMarker=$('#chapter-marker');
+const chapterMarker=$('#chapter-marker');
 let target=0, cur=0, raf=0, depth=0, lastFrame=0, prevNow=0, lastScrollT=-1e9, loopW=0, curLoop=null;
 const IDLE_MS=300; // 停止滚动多久后切到真实海浪循环
 function zoneOf(m){ return m<1?'海面':m<200?'透光层':m<1000?'弱光层':'深水层'; }
@@ -1257,7 +1268,6 @@ function tick(now){
   raf=0;
   if(RM){
     hero.style.opacity='1';hero.style.transform='none';hero.style.visibility='visible';
-    waterlineCopy.style.opacity=underwaterCopy.style.opacity='0';
     mc.style.opacity='0';setWave(1);return;
   }
   if(!RM) kick();
@@ -1299,10 +1309,6 @@ function tick(now){
   hero.style.opacity=story.hero.toFixed(3);
   hero.style.transform=`translateY(${((1-story.hero)*-24).toFixed(1)}px)`;
   hero.style.visibility=story.hero<.005?'hidden':'visible';
-  waterlineCopy.style.opacity=story.waterline.toFixed(3);
-  waterlineCopy.style.transform=`translateY(${((1-story.waterline)*18).toFixed(1)}px)`;
-  underwaterCopy.style.opacity=story.underwater.toFixed(3);
-  underwaterCopy.style.transform=`translateY(${((1-story.underwater)*18).toFixed(1)}px)`;
   chapterMarker.querySelector('span').textContent=story.chapter;
   chapterMarker.style.opacity=window.scrollY>introEnd?'0':'1';
   setInk(sstep(WATERLINE-.04, SUBMERGED, visibleProgress));

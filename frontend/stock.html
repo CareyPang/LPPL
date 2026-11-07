@@ -482,10 +482,12 @@
   <script src="app/stock-emblem.js" defer></script>
   <script src="app/lppl-data.js"></script>
   <script src="app/stock-session.js"></script>
+  <script src="app/stock-analysis.js"></script>
   <script src="app/stock-visibility.js"></script>
   <script src="app/candle-chart.js"></script>
   <script src="app/stock-demo-data.js"></script>
   <script src="app/stock-demo.js"></script>
+  <script src="app/stock-preview-api.js"></script>
   <script src="app/stock-view.js"></script>
 </head>
 <body>
@@ -517,18 +519,18 @@
           </svg>
           <span class="emblem-wordmark">临界点</span>
         </div>
-        <button class="emblem-motion" id="workspace-motion" type="button" aria-pressed="true" aria-label="关闭工作站装饰动效">动效 · 开</button>
+        <button class="emblem-motion" id="workspace-motion" type="button" aria-pressed="true" aria-label="关闭工作站装饰动画" title="仅控制徽章扫光，不影响行情与分析">装饰动画 · 开</button>
       </div>
       <div class="eyebrow">从海面，进入观察</div>
       <h1>看清行情，<em>再研究时间。</em></h1>
       <p class="intro">从一只股票开始。日线、成交量与已有研究结果分别加载，后台更新时仍可继续看图。</p>
       <form class="search" id="search">
-        <label class="search-label" for="code">股票代码</label>
-        <input id="code" name="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入六位A股代码" aria-describedby="search-error query-status" required>
+        <label class="search-label" for="code">资产</label>
+        <input id="code" name="code" autocomplete="off" maxlength="24" placeholder="代码或名称，例如贵州茅台" aria-describedby="search-error query-status" required>
         <button type="submit" class="primary">进入观察 <span aria-hidden="true">↗</span></button>
       </form>
       <p id="search-error" class="search-error" role="alert" aria-atomic="true" hidden></p>
-      <div class="sample-actions"><span>从这个样本开始</span><button type="button" data-stock-code="600519">贵州茅台 <span>600519</span><i aria-hidden="true">→</i></button><a class="workspace-link reset-link" href="stock.html">回到起点</a></div>
+      <div class="sample-actions"><span>选择一个资产</span><button type="button" data-stock-code="sh000001" data-preview-only hidden>上证指数 <span>sh000001</span><i aria-hidden="true">→</i></button><button type="button" data-stock-code="600519">贵州茅台 <span>600519</span><i aria-hidden="true">→</i></button><a class="workspace-link reset-link" href="stock.html">回到起点</a></div>
       <p class="research-disclaimer">研究版 · 个股模型尚未通过样本外检验；没有可发布窗口不代表市场安全。</p>
       <p id="query-status" class="status" role="status"></p>
       <div id="recent-stocks" class="recent" aria-label="最近查看和进行中的任务"></div>
@@ -570,6 +572,7 @@
       </div>
       <p class="market-empty" id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
       <div id="chart-legend" class="chart-legend" hidden><span><i class="legend-up"></i>收盘高于开盘</span><span><i class="legend-down"></i>收盘低于开盘</span><span>K线 + 成交量 · 共用时间轴</span></div>
+      <div id="forecast-legend" class="forecast-legend" hidden aria-label="图中研究观察区间"></div>
       <div id="chart-shell" class="chart-shell" hidden>
         <div id="chart-tooltip" class="chart-tooltip" aria-hidden="true" hidden><b id="tooltip-date"></b><span id="tooltip-ohlc"></span><small id="tooltip-volume"></small></div>
         <canvas id="market-plot" class="market-canvas" role="img" aria-label="日线K线与成交量，可用下方日期滑块逐日查看" hidden></canvas>
@@ -582,6 +585,7 @@
       <p id="quote-announcement" class="sr-only" aria-live="polite"></p>
       <p class="note" id="market-basis"></p>
       <p class="note" id="chart-source-note"></p>
+      <section id="analysis-summary" class="analysis-summary" aria-live="polite" hidden></section>
     </section>
     <div id="analysis-pending" class="pending-result" hidden>当前分析在后台更新。你可以先看行情、切换股票，或稍后回来查看。</div>
 
@@ -1164,6 +1168,13 @@
     }
 
     function render(d, history) {
+      if (d.analysis && d.model_computed === true) {
+        ++dipRenderEpoch;
+        $('results').hidden = true;
+        $('demo-result').hidden = true;
+        $('asof').textContent = '研究计算 · ' + d.asof;
+        return;
+      }
       if (d.demo === true) {
         ++dipRenderEpoch;
         $('results').hidden = true;
@@ -1186,8 +1197,15 @@
     const demoMode = new URLSearchParams(location.search).get('demo') === '1';
     let demoStorage;
     try { demoStorage = localStorage; } catch { /* file:// and private browsing may disable storage. */ }
-    const activeApi = demoMode ? StockDemo.create(StockDemoData, { storage: demoStorage }) : LPPL.stock;
-    if (demoMode) {
+    const previewMode = window.LPPL_REAL_PREVIEW === true;
+    const activeApi = previewMode ? StockPreviewApi.create(LPPL.stock) : demoMode ? StockDemo.create(StockDemoData, { storage: demoStorage }) : LPPL.stock;
+    if (previewMode) {
+      document.querySelectorAll('[data-preview-only]').forEach(node => { node.hidden = false; });
+      document.querySelectorAll('.research-link').forEach(node => { node.hidden = true; });
+      $('demo-banner').hidden = false;
+      $('demo-banner').innerHTML = '<b>真实计算预览</b><span>上证指数 / 贵州茅台 · 最新一期分析 · 研究区间，尚未验证逃顶能力</span>';
+    }
+    if (demoMode && !previewMode) {
       document.body.classList.add('demo-mode');
       $('demo-banner').hidden = false;
       $('demo-provenance').hidden = false;

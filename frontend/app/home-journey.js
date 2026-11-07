@@ -21,20 +21,51 @@
     const p = clamp(Number(progress) || 0, 0, 1);
     const clearance = smooth(.85, 1.05, layout.contentTopRatio ?? 2);
     return {
-      hero: (1 - smooth(.13, .28, p)) * clearance,
-      waterline: smooth(.32, .40, p) * (1 - smooth(.52, .60, p)) * clearance,
-      underwater: smooth(.64, .72, p) * (1 - smooth(.87, .96, p)) * clearance,
+      // Keep the same words visible through the ivory-to-white transition
+      // (.26–.42), then clear them before the functional section arrives.
+      hero: (1 - smooth(.43, .58, p)) * clearance,
+      waterline: 0,
+      underwater: 0,
       chapter: p < .30 ? '海面' : p < .58 ? '入水' : '水线以下'
     };
   }
-  function workstationHref(search = '') {
+  function assetCode(value = '') {
+    const code = String(value).normalize('NFKC').trim();
+    const aliases = { '上证指数': 'sh000001', '上证': 'sh000001', '沪指': 'sh000001', '贵州茅台': 'sh600519', '茅台': 'sh600519' };
+    if (aliases[code]) return aliases[code];
+    if (/^(?:sh|sz|bj)\d{6}$/i.test(code)) return code.toLowerCase();
+    if (/^(?:60|68)\d{4}$/.test(code)) return 'sh' + code;
+    if (/^(?:00|30)\d{4}$/.test(code)) return 'sz' + code;
+    if (/^(?:43|83|87|92)\d{4}$/.test(code)) return 'bj' + code;
+    return code;
+  }
+  function workstationHref(search = '', selectedCode) {
     const params = new URLSearchParams(search);
-    return params.get('demo') === '1' ? 'stock.html?demo=1' : 'stock.html';
+    const next = new URLSearchParams();
+    if (params.get('demo') === '1') next.set('demo', '1');
+    const code = assetCode(selectedCode ?? params.get('code') ?? '');
+    if (code) next.set('code', code);
+    return 'stock.html' + (next.size ? '?' + next.toString() : '');
   }
   function prepareLinks(document, search) {
     const href = workstationHref(search);
-    document.querySelectorAll('[data-workstation]').forEach(link => { link.href = href; });
+    document.querySelectorAll('[data-workstation]').forEach(link => {
+      link.href = workstationHref(search, link.dataset?.workstationCode);
+    });
     return href;
+  }
+  function bindAssetEntry(document, search, navigate = href => root.location.assign(href)) {
+    const form = document.getElementById('home-asset-search');
+    if (!form) return;
+    const input = document.getElementById('home-asset-code');
+    const initial = new URLSearchParams(search).get('code');
+    if (initial) input.value = initial;
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const code = input.value.trim();
+      if (!code) { input.focus(); return; }
+      navigate(workstationHref(search, code));
+    });
   }
   const scales = {
     stage: {
@@ -69,7 +100,7 @@
     buttons.forEach(button => button.addEventListener('click', () => choose(button.dataset.scale)));
     choose('stage');
   }
-  const api = { motionPolicy, introRunway, scene, workstationHref, prepareLinks, scaleCopy, bindScales };
+  const api = { motionPolicy, introRunway, scene, assetCode, workstationHref, prepareLinks, bindAssetEntry, scaleCopy, bindScales };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.HomeJourney = api;
 })(typeof window === 'object' ? window : globalThis);

@@ -47,6 +47,10 @@
   }
   function create(options) {
     const api = options.api;
+    const validCode = value => api.resolveCode ? (() => {
+      try { return api.resolveCode(String(value)) === value; } catch { return false; }
+    })() : CODE.test(String(value));
+    const assetSymbol = value => api.symbolFor ? api.symbolFor(value) : symbol(value);
     const clock = options.now || Date.now;
     const timer = options.setTimeout || setTimeout;
     const untimer = options.clearTimeout || clearTimeout;
@@ -56,7 +60,7 @@
     let selected = null, closed = false;
 
     function entry(code) {
-      if (!CODE.test(String(code))) throw Error('请输入支持的六位 A 股股票代码。');
+      if (!validCode(code)) throw Error('请输入支持的资产代码或名称。');
       if (!entries.has(code)) entries.set(code, {
         code, market: null, current: null, history: null, marketStatus: 'idle',
         currentStatus: 'idle', historyStatus: 'idle', issues: {}, autoAttempted: false,
@@ -77,8 +81,8 @@
       const saved = JSON.parse(storage?.getItem(STORE) || '[]');
       if (Array.isArray(saved)) for (const job of saved.slice(0, 16)) {
         const when = Date.parse(job?.requested_at);
-        if (CODE.test(String(job?.code)) && JOB.test(String(job?.job_id)) &&
-            MODES.includes(job.mode) && Number.isFinite(when) &&
+        if (validCode(job?.code) && JOB.test(String(job?.job_id)) &&
+            MODES.includes(job.mode) && !(api.historySupported === false && job.mode === 'history') && Number.isFinite(when) &&
             when <= clock() + 60000 && when > clock() - 7 * 86400000) {
           jobs.set(job.code + ':' + job.mode, job);
         }
@@ -86,7 +90,7 @@
     } catch { /* Corrupt browser state must not block the page. */ }
 
     function applyCurrent(e, value, source) {
-      if (!value || value.symbol !== symbol(e.code)) return;
+      if (!value || value.symbol !== assetSymbol(e.code)) return;
       if (newer(value, e.current)) {
         e.current = value;
         e.currentDelivery = { source, received_at_client: new Date(clock()).toISOString() };
@@ -96,7 +100,7 @@
       }
     }
     function applyHistory(e, value) {
-      if (!value || value.symbol !== symbol(e.code)) return;
+      if (!value || value.symbol !== assetSymbol(e.code)) return;
       if (newer(value, e.history)) {
         e.history = value;
         if (!jobs.has(e.code + ':history') && ['idle', 'ready'].includes(e.historyStatus)) e.historyStatus = 'ready';
@@ -131,7 +135,7 @@
             const result = await api.remote(job.code, job.mode === 'history' ? 'history' : 'latest', { jobId: job.job_id });
             if (closed || watches.get(key) !== watcher) return;
             if (!result || result.job_id !== job.job_id ||
-                result.symbol !== symbol(job.code) ||
+                result.symbol !== assetSymbol(job.code) ||
                 (job.source_sha && result.source_sha !== job.source_sha)) {
               throw Error('结果身份或版本尚未核对完成，稍后自动重试。');
             }
@@ -173,6 +177,7 @@
     }
     async function request(code, mode = 'current') {
       if (!MODES.includes(mode)) throw Error('未知任务类型。');
+      if (mode === 'history' && api.historySupported === false) throw Error('当前预览仅运行最新一期，历史回放尚未开放。');
       const e = entry(code), key = code + ':' + mode;
       const pending = jobs.get(key);
       if (pending) { watch(pending); return pending; }
@@ -218,7 +223,7 @@
       const market = Promise.resolve().then(() => api.market(code)).then(value => {
         if (generation !== e.generation) return;
         if (!value || value.code !== code || !Array.isArray(value.price)) throw Error('行情返回格式不正确。');
-        if (value.symbol && value.symbol !== symbol(code)) throw Error('行情标的身份不匹配。');
+        if (value.symbol && value.symbol !== assetSymbol(code)) throw Error('行情标的身份不匹配。');
         if (!e.market || newer(value, e.market)) e.market = value;
         if (value.stale === true || value.cache === 'stale') {
           e.marketStatus = 'stale';
@@ -236,8 +241,10 @@
         emit();
       });
       // History is deliberately outside the readiness barrier.
-      void Promise.resolve().then(() => api.history(code)).then(value => applyHistory(e, value)).catch(() => {});
-      void Promise.resolve().then(() => api.remote(code, 'history')).then(value => applyHistory(e, value)).catch(() => {});
+      if (api.historySupported !== false) {
+        void Promise.resolve().then(() => api.history(code)).then(value => applyHistory(e, value)).catch(() => {});
+        void Promise.resolve().then(() => api.remote(code, 'history')).then(value => applyHistory(e, value)).catch(() => {});
+      }
       return Promise.allSettled([latest, remote, market]).then(async () => {
         if (closed || generation !== e.generation) return;
         e.stale = stale(e.current, e.market);

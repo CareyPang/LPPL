@@ -13,6 +13,12 @@
     const top = record.top || {}, confidence = top.lppls_confidence || {}, window = top.window || {};
     if ([record.evidence, top.evidence_override].some(value => value && !allowedEvidence(value)) ||
         String(record.claim_origin || '').startsWith('HYPOTHETICAL')) return [];
+    if (record.analysis) {
+      const policy = root.StockAnalysis || (typeof module === 'object' && module.exports ? require('./stock-analysis.js') : null);
+      if (!policy) return [];
+      return policy.normalize(record).windows.map((row, index) => ({ slot: 'analysis-' + index,
+        start: row.start, end: row.end, evidence: row.evidence, scale: null }));
+    }
     const rows = [{ slot: 'window', start: window.start, end: window.end,
       evidence: window.evidence || confidence.evidence, scale: null }];
     (top.scenarios || []).forEach((scenario, index) => rows.push({ slot: 'scenario-' + index,
@@ -24,8 +30,8 @@
   function identity(record, window) {
     return { symbol: record.symbol, asof: record.asof, job_id: record.job_id || null,
       original_prediction_id: record.prediction_id || null, source_sha: record.source_sha || null,
-      model_version: record.model_version || record.code_version || null,
-      fit_code_version: record.fit_code_version || null, data_version: record.data_version || null,
+      model_version: record.analysis?.model_version || record.model_version || record.code_version || null,
+      fit_code_version: record.analysis?.fit_code_version || record.fit_code_version || null, data_version: record.data_version || null,
       fit_input_hash: record.fit_input_hash || null, generated_at: record.generated_at || null,
       window };
   }
@@ -104,7 +110,7 @@
   function mount(options) {
     const doc = options.document || root.document;
     const ledger = create(options);
-    const container = options.container;
+    const containers = (options.containers || [options.container]).filter(Boolean);
     let current = null, delivery = null, targets = [], epoch = 0, pending = false, destroyed = false;
     const visible = node => {
       if (destroyed || doc.visibilityState !== 'visible' || !node?.isConnected ||
@@ -145,7 +151,7 @@
       set(record, received) {
         epoch++; current = record; delivery = received; observer?.disconnect(); targets = [];
         for (const window of candidates(record)) {
-          const node = container.querySelector('[data-forecast-window="' + window.slot + '"]');
+          const node = containers.map(container => container.querySelector('[data-forecast-window="' + window.slot + '"]')).find(Boolean);
           if (node) { targets.push({ node, window }); observer?.observe(node); }
         }
         schedule();

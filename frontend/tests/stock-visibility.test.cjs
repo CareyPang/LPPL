@@ -85,6 +85,25 @@ test('server first-observed clock remains separate and must match the displayed 
   assert.equal(other.server_first_observed_at, null);
 });
 
+test('analysis candidates share the display gate and retain separate browser/server/publication timestamps', async () => {
+  const record = result({ analysis: { status: 'research_candidate', as_of: '2026-11-05', evidence: 'research_candidate',
+    model_version: 'future-domain-1.5', windows: [{ start: '2026-11-16', end: '2026-11-20', evidence: 'research_candidate' }] } });
+  const rows = candidates(record);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].slot, 'analysis-0');
+  const ledger = create({ now: () => NOW, crypto: webcrypto });
+  const seen = await ledger.recordVisible(record, rows[0], delivery, () => true);
+  assert.equal(seen.identity.model_version, 'future-domain-1.5');
+  assert.equal(seen.public_first_published_at, null);
+  assert.equal(seen.server_first_observed_at, null);
+  assert.equal(seen.first_visible_at_client, '2026-11-06T08:00:00.000Z');
+  record.analysis.windows[0].evidence = 'dev_failed';
+  assert.deepEqual(candidates(record), [], 'a legacy top.window cannot bypass the withheld analysis');
+  record.analysis.windows[0].evidence = 'research_candidate';
+  record.analysis.status = 'no_signal';
+  assert.deepEqual(candidates(record), []);
+});
+
 test('storage failure is memory-only and damaged prior observations are not overwritten', async () => {
   const fail = { getItem: () => null, setItem() { throw Error('quota'); } };
   const ledger = create({ storage: fail, now: () => NOW, crypto: webcrypto });
@@ -106,7 +125,8 @@ test('DOM observer excludes hidden tabs, offscreen windows, opaque overlays and 
     requestAnimationFrame: callback => frames.push(callback), addEventListener(name, fn) { handlers[name] = fn; }, removeEventListener() {} };
   vm.runInNewContext(fs.readFileSync(require.resolve('../app/stock-visibility.js'), 'utf8'),
     { window: root, TextEncoder, Date, Uint8Array });
-  const view = root.StockVisibility.mount({ document: doc, container: { querySelector: () => node },
+  const view = root.StockVisibility.mount({ document: doc,
+    containers: [{ querySelector: () => null }, { querySelector: () => node }],
     storage: store, now: () => NOW, crypto: webcrypto, onRecord: record => events.push(record) });
   const flush = async () => { while (frames.length) frames.shift()(); await new Promise(resolve => setTimeout(resolve, 10)); };
   view.set(result(), delivery); await flush(); assert.equal(events.length, 0);

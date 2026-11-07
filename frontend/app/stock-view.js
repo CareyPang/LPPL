@@ -16,23 +16,32 @@
     const labels = demo ? { ...baseLabels, queued: '演示排队中', running: '流程演示中',
       publishing: '演示整理中', ready: '演示已完成 · 未运行模型' } : baseLabels;
     let days = 120, prices = [], selected = -1, pointerY = null, layout = null;
+    let analysis = null;
+    let legendKey = null;
     let lastCurrent, lastHistory, lastMarket, lastCode, state = null, drawFrame = null;
     let storage = options.storage;
-    if (!storage) try {
-      const native = root.localStorage;
-      storage = demo ? {
-        getItem: key => native.getItem('presentation.' + key),
-        setItem: (key, value) => native.setItem('presentation.' + key, value),
-      } : native;
-    } catch { /* Storage is optional. */ }
+    if (!storage) try { storage = root.localStorage; } catch { /* Storage is optional. */ }
+    const storagePrefix = demo ? 'presentation.' : options.api.isResearchPreview ? 'research-preview.' : '';
+    if (storage && storagePrefix) {
+      const native = storage;
+      const keys = () => Array.from({ length: native.length || 0 }, (_, i) => native.key(i))
+        .filter(key => typeof key === 'string' && key.startsWith(storagePrefix));
+      storage = {
+        getItem: key => native.getItem(storagePrefix + key),
+        setItem: (key, value) => native.setItem(storagePrefix + key, value),
+        get length() { return keys().length; },
+        key: index => keys()[index]?.slice(storagePrefix.length) ?? null,
+      };
+    }
     const visibilityEmpty = '仅记录区间实际进入当前可见页面后的本机时间；不是预测发布时间。当前尚无可见区间记录。';
     const visibility = !demo && root.StockVisibility ? root.StockVisibility.mount({
-      document: doc, container: $('risk'), storage,
+      document: doc, containers: [$('risk'), $('analysis-summary')].filter(Boolean), storage,
       onVisible: record => { if ($('visibility-note')) $('visibility-note').textContent =
         `${record.identity.symbol} 区间 ${record.identity.window.start}—${record.identity.window.end}，本机首次看到：${record.first_visible_at_client}。` +
         (record.is_cached ? '读取的是已有结果，未产生新预测。' : '') +
         (record.date_relation_at_client_observation === 'PAST_WINDOW' ? '首次查看时区间已过期，不能作为提前提醒。' : '') +
         '本机时钟未经校验；这不是首次公开发布时间。' +
+        (record.server_first_observed_at ? `服务首次观测到结果：${record.server_first_observed_at}，也不是公开首发时间。` : '') +
         (record.storage_status === 'MEMORY_ONLY' ? '浏览器存储不可用，仅保留在当前页面。' : '记录仅保存在此浏览器。'); },
     }) : null;
     $('export-visibility')?.addEventListener('click', () => {
@@ -46,7 +55,8 @@
     });
     function readout(announce = false) {
       const bar = prices[selected];
-      const text = chart.describe(bar, state?.market?.volume_unit);
+      const text = bar ? chart.describe(bar, state?.market?.volume_unit) : prices.length
+        ? '未来日期区域 · 仅有研究候选区间，没有未来价格或成交量' : '';
       $('quote-readout').textContent = text;
       if (announce && $('quote-announcement')) $('quote-announcement').textContent = text;
       if (!bar) { $('chart-tooltip').hidden = true; return; }
@@ -60,8 +70,36 @@
       drawFrame = null;
       const canvas = $('market-plot');
       if (canvas.hidden || !prices.length) return;
-      layout = chart.draw(canvas, prices, selected, { pointerY });
+      layout = chart.draw(canvas, prices, selected, { pointerY, analysis });
+      showForecastLegend();
+      if (analysis?.windows.length) canvas.setAttribute('aria-label',
+        `历史日线K线与成交量，分析截止 ${analysis.asOf}；另有 ${analysis.windows.length} 个研究候选区间，未来区域没有价格或成交量`);
       readout();
+    }
+    function showForecastLegend() {
+      const container = $('forecast-legend');
+      if (!container) return;
+      const items = (chart.intervalLabels?.(analysis) || []).filter(item => !layout?.xDate ||
+        (layout.xDate(item.start) !== null && layout.xDate(item.end) !== null));
+      container.hidden = !items.length;
+      const key = JSON.stringify([state?.code, items]);
+      if (key === legendKey) return;
+      legendKey = key;
+      container.replaceChildren(...items.map(item => {
+        const button = doc.createElement('button'); button.type = 'button'; button.className = 'forecast-chip';
+        const badge = doc.createElement('span'); badge.className = 'forecast-badge'; badge.textContent = item.badge;
+        const dates = doc.createElement('span'); dates.className = 'forecast-dates'; dates.textContent = item.dates;
+        button.replaceChildren(badge, dates);
+        button.setAttribute('aria-label', `${item.badge}区间 ${item.dates}，查看研究说明`);
+        button.addEventListener('click', () => {
+          const card = doc.querySelector?.('#analysis-summary [data-forecast-window="analysis-' + item.index + '"]');
+          if (!card) return;
+          card.tabIndex = -1;
+          card.focus({ preventScroll: true });
+          card.scrollIntoView({ behavior: root.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+        });
+        return button;
+      }));
     }
     function scheduleDraw() {
       if (drawFrame !== null) return;
@@ -77,6 +115,7 @@
       prices = chart.normalize(market?.price).slice(-days);
       selected = prices.length - 1; pointerY = null;
       const exists = prices.length > 0;
+      if (!exists && $('forecast-legend')) { $('forecast-legend').hidden = true; legendKey = null; }
       $('market-stats').hidden = !exists; $('chart-shell').hidden = !exists;
       $('market-plot').hidden = !exists; $('date-control').hidden = !exists;
       $('market-empty').hidden = exists; $('chart-legend').hidden = !exists;
@@ -99,6 +138,7 @@
       state = next;
       if (lastCode !== next.code) {
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
+        analysis = null;
         $('results').hidden = true; $('demo-result').hidden = true; $('asof').textContent = '—'; showMarket(null);
         visibility?.set(null, null);
         if ($('visibility-note')) $('visibility-note').textContent = visibilityEmpty;
@@ -106,6 +146,10 @@
       $('welcome').hidden = true; doc.body.classList.add('has-stock');
       $('task-tools').hidden = false; $('market-panel').hidden = false; $('task-stages').hidden = false;
       $('market-name').textContent = (next.market?.name || next.current?.name || '股票') + ' · ' + next.code;
+      if (root.StockAnalysis) {
+        analysis = root.StockAnalysis.normalize(next.current, next.market, next.currentStatus);
+        root.StockAnalysis.render($('analysis-summary'), analysis);
+      }
       if (next.market && next.market !== lastMarket) { lastMarket = next.market; showMarket(next.market); }
       if (next.market) $('market-date').textContent = marketCaption(next.market, next.marketStatus);
       if (!next.market) $('market-empty').textContent = next.issues.market || '正在读取已收盘日线；研究任务不会锁定行情。';
@@ -114,10 +158,12 @@
         lastCurrent = next.current; lastHistory = history;
         options.renderResult(next.current, history);
         if ($('visibility-note')) $('visibility-note').textContent = visibilityEmpty;
-        visibility?.set(next.current, next.currentDelivery);
         if (!demo && next.history && !history) $('history-note').textContent =
           '已有历史回放与当前模型版本尚未匹配，可重新生成；当前分析仍可查看。';
+        scheduleDraw();
       }
+      // Summary DOM is refreshed independently of the legacy result card. Observe the new nodes.
+      visibility?.set(next.current, next.currentDelivery);
       $('analysis-pending').hidden = !!next.current;
       $('analysis-pending').textContent = demo
         ? '任务状态正在本机演示。你可以操作K线；没有请求线上计算，也不会生成预测值。'
@@ -144,6 +190,12 @@
       $('refresh-current').disabled = active(next.currentStatus); $('compute-history').disabled = active(next.historyStatus);
       $('refresh-current').textContent = active(next.currentStatus) ? labels[next.currentStatus] : demo ? '再演示一次后台任务' : '更新当前分析';
       $('compute-history').textContent = active(next.historyStatus) ? labels[next.historyStatus] : demo ? '演示独立回放任务' : next.history ? '更新历史回放' : '生成104周回放';
+      if (options.api.historySupported === false) {
+        $('compute-history').disabled = true;
+        $('compute-history').hidden = true;
+        $('history-stage').textContent = '历史回放 · 尚未接入';
+        $('history-note').textContent = '当前预览提供独立的最新分析。历史回放尚未接入，不会自动启动104周计算。';
+      }
       $('resume-jobs').hidden = !['currentStatus', 'historyStatus'].some(key => next[key] === 'paused');
       const recent = [...new Set([...next.tasks.map(job => job.code), ...(next.recent || [])])].slice(0, 8);
       $('recent-stocks').replaceChildren(...recent.map(code => {
@@ -161,8 +213,13 @@
       $('search-error').hidden = false;
       $('code').setAttribute('aria-invalid', 'true');
     }
-    function select(code) {
-      if (!/^(?:60|68|00|30|43|83|87|92)\d{4}$/.test(code)) {
+    function select(input) {
+      let code = input;
+      if (typeof options.api.resolveCode === 'function') {
+        try { code = options.api.resolveCode(input); }
+        catch (error) { searchError(error.message || '暂不支持该资产，请选择页面中的示例。', input); return; }
+        if (!code) { searchError('暂不支持该资产，请选择页面中的示例。', input); return; }
+      } else if (!/^(?:60|68|00|30|43|83|87|92)\d{4}$/.test(code)) {
         searchError('请输入支持的六位A股股票代码。', code); return;
       }
       if (demo && !options.api.codes.includes(code)) {
@@ -181,7 +238,9 @@
     });
     for (const button of doc.querySelectorAll('[data-stock-code]')) button.addEventListener('click', () => select(button.dataset.stockCode));
     $('refresh-current').addEventListener('click', () => { if (state) void session.request(state.code); });
-    $('compute-history').addEventListener('click', () => { if (state) void session.request(state.code, 'history'); });
+    $('compute-history').addEventListener('click', () => {
+      if (state && options.api.historySupported !== false) void session.request(state.code, 'history');
+    });
     $('resume-jobs').addEventListener('click', () => {
       if (state) for (const mode of ['current', 'history']) session.resume(state.code, mode);
     });
@@ -194,6 +253,9 @@
     $('market-plot').addEventListener('pointermove', event => {
       if (!prices.length || !layout) return;
       const rect = event.currentTarget.getBoundingClientRect();
+      if (layout.isFutureAt?.(event.clientX - rect.left)) {
+        selected = -1; pointerY = null; scheduleDraw(); return;
+      }
       selected = layout.indexAt(event.clientX - rect.left); pointerY = event.clientY - rect.top;
       $('quote-date').value = String(selected); scheduleDraw();
     });

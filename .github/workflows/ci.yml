@@ -1,6 +1,17 @@
 name: ci
 on: [push, pull_request]
 jobs:
+  preview-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Check isolated preview coordinator with real SQLite reservations
+        run: node --test frontend/demo-tools/preview-worker.test.mjs
   test:
     runs-on: ubuntu-latest
     steps:

@@ -14,7 +14,8 @@
     control.disabled = locked;
     control.setAttribute('aria-pressed', String(enabled));
     control.setAttribute('aria-label', locked ? '静态画面，遵循系统减少动效或节省流量设置' : enabled ? '关闭工作站装饰动效' : '开启工作站装饰动效');
-    control.textContent = locked ? '静态画面' : enabled ? '动效 · 开' : '动效 · 关';
+    control.textContent = locked ? '装饰动画 · 系统关闭' : enabled ? '装饰动画 · 开' : '装饰动画 · 关';
+    control.title = locked ? '遵循系统减少动态效果或省流设置；不影响行情与分析' : '仅控制徽章扫光，不影响行情与分析';
   }
   control.addEventListener('click', function () {
     stored = root.classList.contains('workspace-static') ? 'on' : 'off';
