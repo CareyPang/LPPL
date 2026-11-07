@@ -11,6 +11,7 @@
 - 参考“开盘啦”类截图新增了日终“复盘啦”三页入口：盘面梳理、市场动向、涨停原因；只有已有快照能支持的数字会显示，缺失的原因、题材和历史晋级率会明确标记为未接入。
 - 将当前涨停前 20 项按连板数整理成“连板天梯”矩阵。它是已保存快照的可读视图，不是实时龙虎榜，也不把单日梯队解释为持续性或收益预测。
 - 增加“功能接入地图”，将题材库、龙虎榜/机构增仓、快讯/直播、商品/ETF、宏观概率分别标出 P1/P2/P3 依赖，避免页面用空数组或截图数字假装已经接通。
+- 新增独立 `workers/market-context` Worker 和 `market-context.v1` 快照契约：读取与个股 `/market` 分离；刷新受保护、异步返回 `job_id`，同日请求去重，历史日期只读对应快照。
 
 ## 截图功能核对结果
 
@@ -60,6 +61,13 @@
 - 空数组、零值和缺失值分开表示；不可用时显示“未取到”及原因。
 - 中国大陆访问优先采用异步快照和可替换源；不把浏览器直接跨域抓取作为正式架构。
 - 所有市场背景数据默认 `evidence=descriptive`，不进入研究评分。只有经过单独预注册和样本外验证的变量，才能申请进入模型实验分支。
+
+### P1 接口验收
+
+- `GET /context?date=latest` 和 `GET /context/snapshot?date=YYYY-MM-DD` 只读取已封存内容；不存在时返回 `CONTEXT_NOT_READY`，不回退到最新日期。
+- `POST /context/refresh` 需要服务端 token，返回 `202 + job_id`；同一日期的并发刷新去重。
+- `GET /context/status?job_id=...` 返回 `queued/running/completed/failed`，失败保留稳定错误码，不透传上游响应正文。
+- `limit_pools.reasons`、`limit_pools.topics`、`history.progression` 缺失时为 `not_available`，不能把缺失当作零值。
 
 ## 来源边界
 
