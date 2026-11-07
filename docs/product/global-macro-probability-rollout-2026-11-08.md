@@ -10,6 +10,12 @@
 - **官方页面已核对**：Polymarket 的 [Gamma API 文档](https://gamma-api.polymarket.com/docs) 与 [Data API 文档](https://data-api.polymarket.com/v2/docs) 提供匿名只读市场数据；[Kalshi API 帮助页](https://help.kalshi.com/en/articles/13823854-kalshi-api) 也说明 API 可读公共市场数据，但其 [Developer Agreement](https://kalshi-public-docs.s3.amazonaws.com/Kalshi-Developer-Agreement.pdf) / [Data Terms](https://kalshi-public-docs.s3.amazonaws.com/kalshi-data-terms-of-service.pdf) 对会员、重试和第三方再分发有额外限制。两者均不能仅因“无需 API key”就视为获得本项目公开展示许可。
 - **NOT_ESTABLISHED**：大陆网络下对每个上游端点的可达性、稳定性、速率限制和长期商业许可尚未在本项目运行环境中验证。浏览器端不得直接跨域抓取上游。
 
+## 已提交的纯适配器实现
+
+- **VERIFIED · 代码合同**：`research/data/global_context.py` 提供 `global-context.v1` 和 `macro-probability.v1` 的纯解析/封装函数，保留来源、时点、状态、stale 原因、原始哈希和许可证字段；没有网络请求，也不修改 LPPLS 输入。
+- **VERIFIED · 离线形状测试**：Treasury、NY Fed、BLS、EIA 的 fixture 解析，以及 VIX/DXY/黄金的 `source_unavailable`、Polymarket/Kalshi 的隐含概率、流动性和 stale 场景均有离线测试。当前结果是适配器合同通过，不是实时源已经接通。
+- **NOT_ESTABLISHED**：P2/P3 尚未写入 Worker/Pages，未完成逐源商用许可、频率、大陆网络和实时长期可达性核验；P3 数值仍不得进入 LPPLS 或任何评分。
+
 ## P2 来源适配器
 
 每个适配器都输出同一条记录结构，保留原始响应（或压缩归档）和 SHA-256。数值缺失使用 `null`，不把缺失转换成 0。
