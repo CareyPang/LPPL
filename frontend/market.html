@@ -96,8 +96,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } .review-grid, .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 540px) { .bar-in { padding: var(--s2) 12px; } .nav { gap: 10px; font-size: 12px; } .asof { width: 100%; margin-left: 0; } main { padding: 12px; } .sec { padding: 12px; } .review-grid, .feature-grid { grid-template-columns: 1fr; } .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .tool-nav button, .review-tabs button { flex: 1 1 auto; min-height: 40px; font-size: 12px; } }
 </style>
+<link rel="stylesheet" href="app/observatory-phase1.css">
 </head>
-<body>
+<body class="observatory-page" data-page="market">
 <header class="bar">
   <div class="bar-in">
     <div class="brand">临界点市场<small>市场背景 · 只作描述</small></div>
