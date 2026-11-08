@@ -39,6 +39,8 @@ def inspect(directory: Path) -> dict:
         ]
         limit = value.get("limit_pools") if isinstance(value.get("limit_pools"), dict) else {}
         calendar = value.get("calendar")
+        history = value.get("history") if isinstance(value.get("history"), dict) else {}
+        progression = history.get("progression") if isinstance(history.get("progression"), dict) else {}
         p1_core_ready = all(
             isinstance(limit.get(key), dict) and limit[key].get("status") == "fresh"
             for key in ("reasons", "topics", "prior_day")
@@ -48,7 +50,7 @@ def inspect(directory: Path) -> dict:
             and value.get("status") in {"fresh", "partial"}
             and isinstance(value.get("asof"), str)
             and p1_core_ready
-            and _verified_calendar(calendar, require_prior=bool((value.get("history") or {}).get("progression", {}).get("status") == "fresh"))
+            and _verified_calendar(calendar, require_prior=progression.get("status") == "fresh")
             and any(isinstance(item, str) and len(item) == 64 for item in hashes)
         ):
             entries.append({
