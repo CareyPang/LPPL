@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const chart = require('../app/candle-chart.js');
 const analysis = require('../app/stock-analysis.js');
+const workstationLedger = require('../app/workstation-ledger.js');
 
 function harness(demo = true, search = '?demo=1', track = false, apiOverrides = {}) {
   const nodes = new Map(), values = new Map(), calls = [], renders = [], requests = [], chartCalls = [];
@@ -22,6 +23,7 @@ function harness(demo = true, search = '?demo=1', track = false, apiOverrides = 
       chartCalls.push({ bars, selected, options });
       return { indexAt: () => 0, isFutureAt: x => x > 250 };
     } }, StockAnalysis: { normalize: analysis.normalize, render(node, view) { node.analysis = view; } },
+    WorkstationLedger: workstationLedger,
     localStorage: { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value),
       get length() { return values.size; }, key: index => [...values.keys()][index] ?? null },
     location: { href: 'http://localhost/stock.html' + search, search },
@@ -195,4 +197,19 @@ test('a real candidate reaches both the summary and candle options; future hover
   assert.match(h.node('quote-readout').textContent, /没有未来价格或成交量/);
   assert.equal(h.node('chart-tooltip').hidden, true);
   assert.equal(h.chartCalls.at(-1).selected, -1);
+});
+
+test('P0 ledger is connected to the workstation view and exposes watch/revision provenance', () => {
+  const h = harness(false, '');
+  const result = { symbol: 'sh600519', asof: '2026-11-06', source_sha: 'sha-1', evidence: 'research_candidate', analysis: {
+    status: 'research_candidate', evidence: 'research_candidate', as_of: '2026-11-06',
+    windows: [{ start: '2026-11-16', end: '2026-11-20', claim_kind: 'new', evidence: 'research_candidate' }],
+  } };
+  h.update({ current: result, marketStatus: 'ready', market: { symbol: 'sh600519', name: '贵州茅台', asof: '2026-11-06', source: 'fixture', price: [] } });
+  assert.equal(h.node('workstation-ledger').hidden, false);
+  assert.match(h.node('ledger-meta').textContent, /行情截至 2026-11-06.*来源 fixture.*证据 research_candidate/);
+  assert.equal(h.node('revision-ledger').children.length, 1);
+  h.node('watch-toggle').events.click();
+  assert.match(h.node('watch-toggle').textContent, /移出自选/);
+  assert.equal(h.node('watchlist').children.length, 1);
 });
