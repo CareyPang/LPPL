@@ -1,10 +1,14 @@
-/* 临界点 · 数据适配层（Devin 维护，Open Design 不改）
+/* 临界点 · 数据适配层
    只读后端静态 JSON（站点 lab/mock/data/），不做任何模型计算；取数失败直接抛错，页面显示"数据未加载"。
-   字段含义：docs/frontend_contract.md、docs/od_field_mapping.md */
+   字段含义：docs/frontend_contract.md、docs/od_field_mapping.md。
+   API 地址由 LPPL_QUERY_API 或 LPPL_RUNTIME_CONFIG.queryApi 提供；不绑定某一家云厂商。 */
 (function (G) {
   'use strict';
   const BASE = (G.LPPL_DATA_BASE || 'lab/mock/data/');
-  const QUERY_API = (G.LPPL_QUERY_API || 'https://lppl-stock-query.careypang.workers.dev').replace(/\/$/, '');
+  const RUNTIME = (G.LPPL_RUNTIME_CONFIG && typeof G.LPPL_RUNTIME_CONFIG === 'object') ? G.LPPL_RUNTIME_CONFIG : {};
+  const QUERY_API = String(G.LPPL_QUERY_API || RUNTIME.queryApi || '').replace(/\/$/, '');
+  const CONTEXT_API = String(G.LPPL_CONTEXT_API || RUNTIME.contextApi || '').replace(/\/$/, '');
+  const CONTEXT_ENABLED = G.LPPL_CONTEXT_ENABLED === true || RUNTIME.contextEnabled === true;
   const SYMS = [
     { sym: 'sh000001', name: '上证指数', code: '000001', alias: ['上证', '上证综指', '上证指数'] },
     { sym: 'sh000016', name: '上证50', code: '000016', alias: ['上证50'] },
@@ -177,8 +181,8 @@
       throw new Error('市场背景 Worker 客户端未加载');
     }
     return G.LPPLMarketContext.createMarketContextClient({
-      enabled: options.enabled === true || G.LPPL_CONTEXT_ENABLED === true,
-      baseUrl: options.baseUrl || G.LPPL_CONTEXT_API || '',
+      enabled: options.enabled === true || CONTEXT_ENABLED,
+      baseUrl: options.baseUrl || CONTEXT_API,
       intervalMs: options.intervalMs,
       fetchImpl: options.fetchImpl,
       onState: options.onState,

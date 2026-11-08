@@ -201,6 +201,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const RUNTIME = (window.LPPL_RUNTIME_CONFIG && typeof window.LPPL_RUNTIME_CONFIG === 'object') ? window.LPPL_RUNTIME_CONFIG : {};
+  const contextEnabled = window.LPPL_CONTEXT_ENABLED === true || RUNTIME.contextEnabled === true;
   const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
   const yi = (v, d = 1) => num(v) ? (v / 1e8).toFixed(d) : '—';
@@ -225,7 +227,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const controls = document.querySelector('[data-market-context-controls]');
     const status = $('context-status');
     if (!controls || !status) return;
-    controls.hidden = !(window.LPPL_CONTEXT_ENABLED === true);
+    controls.hidden = !contextEnabled;
     if (next.status === 'disabled') {
       status.textContent = 'Worker 读取未启用';
       return;
@@ -245,7 +247,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }
 
   function setupContextClient() {
-    if (window.LPPL_CONTEXT_ENABLED !== true) {
+    if (!contextEnabled) {
       showContextState({ status: 'disabled' });
       return;
     }
@@ -517,7 +519,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   LPPL.market().then((d) => {
     if (!d) {
       $('asof').textContent = '市场数据未加载';
-      if (window.LPPL_CONTEXT_ENABLED !== true) document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>';
+      if (!contextEnabled) document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>';
       setupContextClient();
       return;
     }

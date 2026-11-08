@@ -23,11 +23,13 @@ async function settle() {
   for (let i = 0; i < 15; i++) await Promise.resolve();
 }
 
-function setup(handler = async () => response({ ok: true }), marketContext = null) {
+function setup(handler = async () => response({ ok: true }), marketContext = null, runtimeConfig = null) {
   const requests = [], timers = new Map();
   let now = 0, nextTimer = 0;
   class ClockDate extends Date { static now() { return now; } }
-  const window = { LPPL_DATA_BASE: '/snapshots/', LPPL_QUERY_API: 'https://query.example.test/' };
+  const window = { LPPL_DATA_BASE: '/snapshots/' };
+  if (runtimeConfig) window.LPPL_RUNTIME_CONFIG = runtimeConfig;
+  else window.LPPL_QUERY_API = 'https://query.example.test/';
   if (marketContext) window.LPPLMarketContext = marketContext;
   const context = vm.createContext({
     window, Date: ClockDate, AbortController,
@@ -42,6 +44,18 @@ function setup(handler = async () => response({ ok: true }), marketContext = nul
     expire() { for (const [id, timer] of [...timers]) { timers.delete(id); timer.fn(); } },
   };
 }
+
+test('provider-neutral runtime config supplies query and market-context endpoints', () => {
+  let received = null;
+  const h = setup(undefined, { createMarketContextClient: options => { received = options; return { start() {}, stop() {} }; } }, {
+    queryApi: 'https://tencent.example/api', contextApi: 'https://tencent.example/context', contextEnabled: true,
+  });
+  assert.equal(h.api.stock.api(), 'https://tencent.example/api');
+  const client = h.api.marketContext();
+  assert.equal(received.baseUrl, 'https://tencent.example/context');
+  assert.equal(received.enabled, true);
+  assert.equal(typeof client.start, 'function');
+});
 
 test('market-context wrapper is opt-in and forwards Worker configuration', () => {
   let received = null;
