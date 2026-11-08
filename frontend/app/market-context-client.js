@@ -54,6 +54,7 @@
     const onState = typeof options.onState === 'function' ? options.onState : () => {};
     let timer = null;
     let currentDate = 'latest';
+    const lastByDate = new Map();
 
     function state(next) {
       onState(next);
@@ -74,7 +75,17 @@
       if (!response.ok) {
         throw safeError(body?.error_code || 'CONTEXT_UNAVAILABLE', body?.error || '该日期尚无已封存市场背景快照', response.status, date);
       }
-      return state({ status: 'ready', date, snapshot: validateSnapshot(body, date) });
+      const snapshot = validateSnapshot(body, date);
+      lastByDate.set(date, snapshot);
+      const stale = snapshot.status === 'stale' || snapshot.source?.status === 'stale';
+      return state({
+        status: stale ? 'stale' : 'ready',
+        date,
+        snapshot,
+        lastGoodAsOf: snapshot.last_good_asof || snapshot.asof || null,
+        staleReason: snapshot.stale_reason || snapshot.source?.stale_reason || null,
+        fetchedAt: snapshot.source?.fetched_at || snapshot.fetched_at || null,
+      });
     }
 
     function stop() {
@@ -85,9 +96,15 @@
     function start(date = currentDate) {
       stop();
       currentDate = date;
-      void get(date).catch((error) => state({ status: 'error', date, error }));
+      void get(date).catch((error) => state({
+        status: 'error', date, error, snapshot: lastByDate.get(date) || null,
+        retained: lastByDate.has(date),
+      }));
       if (enabled) timer = setInterval(() => {
-        void get(currentDate).catch((error) => state({ status: 'error', date: currentDate, error }));
+        void get(currentDate).catch((error) => state({
+          status: 'error', date: currentDate, error, snapshot: lastByDate.get(currentDate) || null,
+          retained: lastByDate.has(currentDate),
+        }));
       }, intervalMs);
       return { status: enabled ? 'started' : 'disabled', date };
     }

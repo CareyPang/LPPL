@@ -28,6 +28,9 @@ test('market page renders a descriptive review switch and ladder from the saved 
   assert.match(page, /id="context-latest"/);
   assert.match(page, /LPPL\.marketContext\(/);
   assert.match(page, /LPPL\.market\(\)/);
+  assert.match(page, /last_good_asof/);
+  assert.match(page, /stale_reason/);
+  assert.match(page, /contextTime\(/);
 });
 
 test('unsupported screenshot modules remain explicit evidence boundaries', () => {

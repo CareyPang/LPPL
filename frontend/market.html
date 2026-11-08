@@ -223,6 +223,16 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     return value;
   }
 
+  function contextTime(value) {
+    if (!value) return '';
+    const text = String(value).replace('T', ' ').replace(/\.\d+Z$/, 'Z');
+    return text.endsWith('Z') ? text.slice(0, -1) + ' UTC' : text;
+  }
+
+  function contextReason(snapshot, next) {
+    return snapshot?.stale_reason || snapshot?.source?.stale_reason || next?.staleReason || '';
+  }
+
   function showContextState(next) {
     const controls = document.querySelector('[data-market-context-controls]');
     const status = $('context-status');
@@ -232,16 +242,22 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       status.textContent = 'Worker 读取未启用';
       return;
     }
-    if (next.status === 'ready') {
+    if (next.status === 'ready' || next.status === 'stale') {
       const s = next.snapshot || {};
       const source = s.source || {};
-      const stale = s.status === 'stale' || source.status === 'stale';
-      status.textContent = `${stale ? 'stale · ' : ''}封存 ${s.asof || next.date} · ${source.source_id || 'market-context'}${source.fetched_at ? ' · ' + String(source.fetched_at).replace('T', ' ').slice(0, 16) + ' UTC' : ''}`;
+      const stale = next.status === 'stale' || s.status === 'stale' || source.status === 'stale';
+      const reason = contextReason(s, next);
+      const lastGood = s.last_good_asof || next.lastGoodAsOf || s.asof || next.date;
+      const fetched = source.fetched_at || s.fetched_at || next.fetchedAt;
+      status.textContent = `${stale ? 'stale · ' : ''}封存 ${s.asof || next.date} · ${source.source_id || 'market-context'}${fetched ? ' · ' + contextTime(fetched) : ''}${stale && reason ? ' · 原因：' + reason : ''}${stale && lastGood ? ' · 上次正常：' + lastGood : ''}`;
       status.className = 'tool-status' + (stale ? ' wn' : '');
+      const date = $('context-date');
+      if (date && next.date !== 'latest' && s.asof) date.value = s.asof;
       return;
     }
     if (next.status === 'error') {
-      status.textContent = `读取失败 · ${next.error?.code || 'CONTEXT_UNAVAILABLE'}；未回退到当前快照`;
+      const retained = next.retained && next.snapshot?.asof ? `；保留 ${next.snapshot.asof} 的最后成功快照` : '；未回退到其他日期快照';
+      status.textContent = `读取失败 · ${next.error?.code || 'CONTEXT_UNAVAILABLE'}${retained}`;
       status.className = 'tool-status wn';
     }
   }
@@ -255,7 +271,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       contextClient = LPPL.marketContext({
         onState: (next) => {
           showContextState(next);
-          if (next.status === 'ready' && next.snapshot) {
+          if ((next.status === 'ready' || next.status === 'stale') && next.snapshot) {
             M = normalizeContext(next.snapshot);
             renderAll();
           }
