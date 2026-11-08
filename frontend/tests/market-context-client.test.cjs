@@ -52,3 +52,28 @@ test('stale snapshot preserves last-good date, reason and fetched time', async (
   assert.equal(state.fetchedAt, '2026-11-06T08:00:00Z');
   assert.equal(states.at(-1).snapshot.asof, '2026-11-06');
 });
+
+test('polling retains the requested dated snapshot after a refresh error', async () => {
+  let tick = null;
+  let calls = 0;
+  const states = [];
+  const client = createMarketContextClient({
+    enabled: true, baseUrl: 'https://context.example', intervalMs: 1000, onState: state => states.push(state),
+    setIntervalImpl: callback => { tick = callback; return 1; }, clearIntervalImpl: () => {},
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) return new Response(JSON.stringify({ schema_version: 'market-context.v1', asof: '2026-11-06', status: 'partial', source: { fetched_at: '2026-11-06T08:00:00Z' } }));
+      throw Object.assign(new Error('source unavailable'), { code: 'SOURCE_UNAVAILABLE' });
+    },
+  });
+  client.start('2026-11-06');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(typeof tick, 'function');
+  tick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(states.at(-1).status, 'error');
+  assert.equal(states.at(-1).date, '2026-11-06');
+  assert.equal(states.at(-1).snapshot.asof, '2026-11-06');
+  assert.equal(states.at(-1).retained, true);
+  client.stop();
+});

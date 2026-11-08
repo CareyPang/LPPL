@@ -5,6 +5,13 @@ const MAX_BODY = 2048;
 const MAX_SEED_BODY = 2_500_000;
 const HASH_PATTERN = /^[a-f0-9]{64}$/i;
 
+function verifiedCalendar(calendar, requirePrior = false) {
+  if (!calendar || typeof calendar !== 'object') return false;
+  if (calendar.calendar_status !== 'provided' || calendar.asof_status !== 'exchange_verified') return false;
+  if (!HASH_PATTERN.test(String(calendar.calendar_source_sha256 || ''))) return false;
+  return !requirePrior || calendar.prior_status === 'exchange_verified';
+}
+
 function validDate(value) {
   if (!DATE_PATTERN.test(String(value || ''))) return false;
   const date = new Date(`${value}T00:00:00Z`);
@@ -149,6 +156,10 @@ export async function validateSeedSnapshot(snapshot, rawText = null) {
   if (!validDate(snapshot.asof)) return { ok: false, error_code: 'INVALID_DATE', error: '快照 asof 必须是已验证工作日' };
   if (!HASH_PATTERN.test(String(snapshot.snapshot_sha256 || ''))) return { ok: false, error_code: 'SNAPSHOT_HASH_REQUIRED', error: '快照必须包含 64 位 snapshot_sha256' };
   if (snapshot.evidence !== 'descriptive') return { ok: false, error_code: 'EVIDENCE_REQUIRED', error: '市场背景快照必须是 descriptive evidence' };
+  const progression = snapshot.history && typeof snapshot.history === 'object' ? snapshot.history.progression : null;
+  if (!verifiedCalendar(snapshot.calendar, progression?.status === 'fresh')) {
+    return { ok: false, error_code: 'CALENDAR_UNVERIFIED', error: '快照必须携带带来源哈希的交易所交易日历' };
+  }
   const sources = snapshot.sources && typeof snapshot.sources === 'object' ? Object.values(snapshot.sources) : [];
   const hasRawHash = sources.some((source) => source && HASH_PATTERN.test(String(source.raw_sha256 || '')));
   if (!hasRawHash) return { ok: false, error_code: 'SOURCE_HASH_REQUIRED', error: '至少一个来源必须包含 raw_sha256' };
@@ -197,9 +208,11 @@ async function fetchSource(env) {
       source: { source_id: 'market_latest_wrapper', source_url, fetched_at, status: failed ? 'partial' : 'fresh', stale_reason: failed ? 'one or more sources failed' : null, license_tier: null },
       sources: Object.fromEntries(sourceList.map((entry) => [entry.source_id, entry])),
       board_flow: raw.board_flow || {}, limit_pools: limit,
-      history: { progression: missing('prior trading-day limit-pool pair is not available') },
+      history: { progression: raw.history?.progression || missing('prior trading-day limit-pool pair is not available') },
+      calendar: raw.calendar || null,
       northbound: raw.northbound || {}, margin: raw.margin || {}, valuation: raw.valuation || {},
     };
+    if (!verifiedCalendar(context.calendar, context.history.progression.status === 'fresh')) throw new Error('CALENDAR_NOT_VERIFIED');
     context.snapshot_sha256 = await digest(context);
     return context;
   } finally { clearTimeout(timer); }

@@ -25,10 +25,12 @@ function env(state, sourceUrl = 'https://source.test/market.json') {
 }
 
 async function seedSnapshot(asof) {
+  const prior = asof === '2026-11-06' ? '2026-11-05' : null;
   const snapshot = {
     schema_version: 'market-context.v1', kind: 'market_context', market: 'CN_A_SHARE', snapshot_kind: 'eod',
     asof, generated_at: `${asof}T15:30:00Z`, requested_at: `${asof}T15:31:00Z`, status: 'partial', stale_reason: null,
     last_good_asof: asof, evidence: 'descriptive', source: { source_id: 'controlled_fixture', status: 'partial' },
+    calendar: { calendar_status: 'provided', asof_status: 'exchange_verified', prior_status: prior ? 'exchange_verified' : 'not_available', calendar_source_sha256: 'c'.repeat(64), calendar_version: 'fixture-v1', prior_asof: prior },
     sources: { limit_pools: { source_id: 'eastmoney_yesterday_zt_pool', status: 'fresh', raw_sha256: 'a'.repeat(64) } },
     limit_pools: { zt: 1, top20: { zt: [{ code: '000001', name: '示例', streak: 2 }] }, reasons: { status: 'fresh', rows: [] }, topics: { status: 'fresh', rows: [] } },
     history: { progression: { status: 'not_available', rows: [] } }, board_flow: {}, northbound: {}, margin: {}, valuation: {},
@@ -39,6 +41,7 @@ async function seedSnapshot(asof) {
 
 const snapshot = {
   asof: '2026-11-02', generated_at: '2026-11-02T23:47:50Z',
+  calendar: { calendar_status: 'provided', asof_status: 'exchange_verified', prior_status: 'not_available', calendar_source_sha256: 'c'.repeat(64), calendar_version: 'fixture-v1', prior_asof: null },
   sources: { limit_pools: { url_host: 'push2ex.eastmoney.com', fetched_at: '2026-11-02T23:46:52Z', ok: true } },
   limit_pools: { zt: 125, top20: { zt: [{ code: '000001', name: '示例', streak: 2 }] } },
   board_flow: {}, northbound: {}, margin: {}, valuation: {},
@@ -118,6 +121,19 @@ test('controlled seed imports dated snapshots and never overwrites a sealed date
   }), e);
   assert.equal(duplicate.status, 409);
   assert.equal((await duplicate.json()).error_code, 'SNAPSHOT_EXISTS');
+});
+
+test('controlled seed rejects snapshots without an exchange-verified calendar', async () => {
+  const state = new State();
+  const e = env(state);
+  const snapshot = await seedSnapshot('2026-11-05');
+  delete snapshot.calendar;
+  snapshot.snapshot_sha256 = await digest(snapshot);
+  const response = await worker.fetch(new Request('https://worker.test/context/seed', {
+    method: 'POST', headers: { 'X-Market-Context-Seed-Token': 'seed-secret' }, body: JSON.stringify(snapshot),
+  }), e);
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error_code, 'CALENDAR_UNVERIFIED');
 });
 
 test('controlled seed rejects a missing or incorrect snapshot hash and keeps latest monotonic', async () => {

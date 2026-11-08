@@ -51,6 +51,8 @@
     const fetchImpl = options.fetchImpl || (typeof fetch === 'function' ? fetch : null);
     const enabled = options.enabled === true;
     const intervalMs = Math.max(1000, Number(options.intervalMs || 300000));
+    const setIntervalImpl = options.setIntervalImpl || setInterval;
+    const clearIntervalImpl = options.clearIntervalImpl || clearInterval;
     const onState = typeof options.onState === 'function' ? options.onState : () => {};
     let timer = null;
     let currentDate = 'latest';
@@ -89,7 +91,7 @@
     }
 
     function stop() {
-      if (timer != null) clearInterval(timer);
+      if (timer != null) clearIntervalImpl(timer);
       timer = null;
     }
 
@@ -100,7 +102,7 @@
         status: 'error', date, error, snapshot: lastByDate.get(date) || null,
         retained: lastByDate.has(date),
       }));
-      if (enabled) timer = setInterval(() => {
+      if (enabled) timer = setIntervalImpl(() => {
         void get(currentDate).catch((error) => state({
           status: 'error', date: currentDate, error, snapshot: lastByDate.get(currentDate) || null,
           retained: lastByDate.has(currentDate),
