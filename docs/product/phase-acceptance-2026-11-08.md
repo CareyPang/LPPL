@@ -42,6 +42,7 @@
 - **VERIFIED**：`market_context_persistence.py` 和 `prepare_market_context_seed.py` 只读已有日期文件，重算 `snapshot_sha256`、文件哈希和源哈希，要求 exchange-verified 日历、相邻交易日和第二日 fresh progression。
 - **VERIFIED**：bundle manifest 记录日历源哈希、每个输入文件哈希、快照哈希、asof/prior_asof、状态和不可覆盖标记；同一日期出现不同快照哈希会被拒绝。
 - **VERIFIED**：当前 D 盘两日旧快照没有 calendar 元数据，gate 返回 `real_snapshot_count=0`；seed preparation 也 fail-closed，不会补写或改写原始证据。
+- **VERIFIED**：bundle 追加时检查日历位置连续性；Worker 的单次 `/context/seed` 只证明该日期快照合法，不能单独证明多日连续性，因此连续性必须由 bundle gate 在导入前证明。
 - **PLANNED**：取得可核验交易日历后，重新封存新 bundle，逐日导入 Worker，再单独验收历史复盘与轮询。
 
 ### 每日更新边界
