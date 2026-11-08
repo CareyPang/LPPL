@@ -81,6 +81,17 @@ P2 页面只显示描述性上下文，例如曲线形状、最近变动、事�
 
 ## 统一快照与每日更新
 
+### Provider-neutral refresh contract
+
+`research/data/global_context_schedule.py` now freezes the schedule rules
+without binding them to Cloudflare or Tencent Cloud: P2 daily sources use a
+36-hour TTL, event calendars use 24 hours, and P3 probability snapshots are
+eligible again at the six-hour boundary. A missing successful fetch is due
+immediately; a failed attempt does not advance the success clock. Future
+timestamps are marked `clock_skew`, while expired snapshots are marked
+`ttl_expired`. These are descriptive freshness states only and never become
+LPPLS inputs or forecast scores.
+
 P2/P3 采用与 P1 相同的异步快照思想，建议顶层结构为 `global-context.v1`：
 
 ```json
