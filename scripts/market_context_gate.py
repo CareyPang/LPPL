@@ -59,9 +59,20 @@ def inspect(directory: Path) -> dict:
                 "calendar_status": calendar.get("calendar_status"),
                 "calendar_version": calendar.get("calendar_version"),
                 "prior_asof": calendar.get("prior_asof"),
+                "progression_status": progression.get("status"),
+                "progression_prior_asof": progression.get("prior_asof"),
             })
     distinct = {entry["asof"] for entry in entries}
-    return {"directory": str(directory), "real_snapshot_count": len(distinct), "ready_for_frontend_polling": len(distinct) >= 2, "snapshots": entries}
+    ready_progression = any(
+        entry.get("progression_status") == "fresh"
+        and entry.get("progression_prior_asof") in distinct
+        for entry in entries
+    )
+    return {
+        "directory": str(directory), "real_snapshot_count": len(distinct),
+        "ready_for_frontend_polling": len(distinct) >= 2 and ready_progression,
+        "progression_ready": ready_progression, "snapshots": entries,
+    }
 
 
 def main() -> int:
