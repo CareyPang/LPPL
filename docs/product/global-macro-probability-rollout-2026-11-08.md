@@ -21,6 +21,8 @@
 
 - **VERIFIED · 代码合同**：`research/data/global_context.py` 提供 `global-context.v1` 和 `macro-probability.v1` 的纯解析/封装函数，保留来源、时点、状态、stale 原因、原始哈希和许可证字段；没有网络请求，也不修改 LPPLS 输入。
 - **VERIFIED · 离线形状测试**：Treasury、NY Fed、BLS、EIA 的 fixture 解析，以及 VIX/DXY/黄金的 `source_unavailable`、Polymarket/Kalshi 的隐含概率、流动性和 stale 场景均有离线测试。当前结果是适配器合同通过，不是实时源已经接通。
+- **VERIFIED · P3 manifest 适配**：`scripts/update_global_context.py` 可读取 `probability_sources.polymarket` / `probability_sources.kalshi` 的本地 JSON artifact，保留每个 venue 的原始 SHA-256、来源、抓取时间和三项核验状态，再封存为 `macro-probability.v1`。适配器只接受明确的数值概率字段；`outcomePrices` 字符串不会被猜测或转换，缺失时记录 `partial` 与 stale 原因。
+- **VERIFIED · P2 policy 传递**：Treasury、NY Fed、BLS、EIA 的 canonical section 与 source metadata 均携带 `license_status`、`frequency_status`、`mainland_network_status`。默认 `NOT_ESTABLISHED` 仍表示尚未核验，不能解释为已获授权或大陆网络可用。
 - **NOT_ESTABLISHED**：P2/P3 尚未写入 Worker/Pages，未完成逐源商用许可、频率、大陆网络和实时长期可达性核验；P3 数值仍不得进入 LPPLS 或任何评分。
 
 ## P2 来源适配器
@@ -70,6 +72,35 @@ P2 页面只显示描述性上下文，例如曲线形状、最近变动、事�
   "official_fedwatch": false
 }
 ```
+
+离线 runner 的 manifest 可以声明原始市场响应（runner 不联网）：
+
+```json
+{
+  "probability_sources": {
+    "polymarket": {
+      "file": "polymarket.json",
+      "source_url": "https://gamma-api.polymarket.com/events",
+      "fetched_at": "2026-11-07T00:00:00+00:00",
+      "status": "ok",
+      "license_status": "NOT_ESTABLISHED",
+      "frequency_status": "NOT_ESTABLISHED",
+      "mainland_network_status": "NOT_ESTABLISHED"
+    },
+    "kalshi": {
+      "file": "kalshi.json",
+      "source_url": "https://api.kalshi.com/markets",
+      "fetched_at": "2026-11-07T00:00:00+00:00",
+      "status": "ok",
+      "license_status": "NOT_ESTABLISHED",
+      "frequency_status": "NOT_ESTABLISHED",
+      "mainland_network_status": "NOT_ESTABLISHED"
+    }
+  }
+}
+```
+
+如果响应只有市场元数据而没有明确的 `implied_probability`、`impliedProbability` 或数值 `probability` 字段，适配器仍保存市场 ID、问题、流动性和原始哈希，但将该条记录标成 `partial`；不会把 `outcomePrices`、盘口价格或字符串字段当作已核准概率。
 
 实现规则：
 

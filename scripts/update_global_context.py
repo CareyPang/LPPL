@@ -52,10 +52,12 @@ from research.data.global_context import (
     GLOBAL_SCHEMA_VERSION,
     PROBABILITY_SCHEMA_VERSION,
     build_global_context,
+    build_probability_context,
     json_sha256,
     parse_bls_series,
     parse_eia_series,
     parse_ny_fed_observations,
+    parse_prediction_market_metadata,
     parse_treasury_curve,
 )
 
@@ -163,6 +165,20 @@ def validate_global_context(snapshot: dict[str, Any], *, require_source_hash: bo
         raise ValueError("probability must be a macro-probability.v1 object")
     if probability.get("official_fedwatch") is not False:
         raise ValueError("probability.official_fedwatch must remain false")
+    probability_policy = probability.get("policy")
+    if not isinstance(probability_policy, dict):
+        raise ValueError("probability policy metadata is required")
+    for field in POLICY_FIELDS:
+        value = probability_policy.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"probability policy.{field} must be explicit")
+    for index, item in enumerate(probability.get("items") or []):
+        if not isinstance(item, dict):
+            raise ValueError(f"probability item {index} must be an object")
+        for field in POLICY_FIELDS:
+            value = item.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"probability item {index} is missing {field}")
     expected_hash = json_sha256({key: value for key, value in snapshot.items() if key != "snapshot_sha256"})
     if snapshot.get("snapshot_sha256") != expected_hash:
         raise ValueError("snapshot_sha256 does not match snapshot contents")
@@ -186,7 +202,42 @@ def _load_manifest(input_dir: Path, *, asof: str | None, generated_at: str | Non
     return manifest
 
 
-def _read_probability(input_dir: Path, manifest: dict[str, Any]) -> dict[str, Any] | None:
+def _read_probability(
+    input_dir: Path,
+    manifest: dict[str, Any],
+    *,
+    asof: str,
+    generated_at: str,
+) -> dict[str, Any] | None:
+    source_specs = manifest.get("probability_sources")
+    if source_specs is not None:
+        if not isinstance(source_specs, dict):
+            raise ValueError("probability_sources must be an object")
+        items: list[dict[str, Any]] = []
+        for venue, raw_meta in source_specs.items():
+            if venue not in {"polymarket", "kalshi"}:
+                raise ValueError(f"unsupported probability venue: {venue}")
+            if not isinstance(raw_meta, dict):
+                raise ValueError(f"probability source {venue} must be an object")
+            policy = _policy(raw_meta)
+            path = _resolve_artifact(input_dir, raw_meta.get("file"))
+            items.extend(
+                parse_prediction_market_metadata(
+                    _load_json(path),
+                    venue=venue,
+                    asof=asof,
+                    fetched_at=raw_meta.get("fetched_at") or generated_at,
+                    source_url=raw_meta.get("source_url"),
+                    raw_sha256=_raw_sha256(path),
+                    status=raw_meta.get("status", "ok"),
+                    stale_reason=raw_meta.get("stale_reason"),
+                    license_tier=raw_meta.get("license_tier") or NOT_ESTABLISHED,
+                    license_status=policy["license_status"],
+                    frequency_status=policy["frequency_status"],
+                    mainland_network_status=policy["mainland_network_status"],
+                )
+            )
+        return build_probability_context(items, asof=asof, generated_at=generated_at)
     relative = manifest.get("probability_file")
     if relative is None:
         return None
@@ -228,6 +279,9 @@ def run(*, input_dir: Path, out_dir: Path, asof: str | None = None, generated_at
             source_url=raw_meta.get("source_url"),
             raw_sha256=_raw_sha256(path),
             license_tier=raw_meta.get("license_tier") or NOT_ESTABLISHED,
+            license_status=policy["license_status"],
+            frequency_status=policy["frequency_status"],
+            mainland_network_status=policy["mainland_network_status"],
             status=raw_meta.get("status", "ok"),
             stale_reason=raw_meta.get("stale_reason"),
         )
@@ -240,7 +294,7 @@ def run(*, input_dir: Path, out_dir: Path, asof: str | None = None, generated_at
         else:
             markets[section_name] = source
 
-    probability = _read_probability(input_dir, manifest)
+    probability = _read_probability(input_dir, manifest, asof=asof, generated_at=generated_at)
     snapshot = build_global_context(
         asof=asof,
         generated_at=generated_at,

@@ -96,3 +96,51 @@ def test_validator_rejects_missing_policy_and_hash() -> None:
                 "evidence": "descriptive",
             }
         )
+
+
+def test_runner_seals_polymarket_and_kalshi_metadata_sources(tmp_path: Path) -> None:
+    incoming = tmp_path / "incoming"
+    out = tmp_path / "out"
+    incoming.mkdir()
+    (incoming / "poly.json").write_text(
+        json.dumps({"markets": [{"id": "poly-1", "question": "Example", "outcomePrices": "[0.4,0.6]"}]}),
+        encoding="utf-8",
+    )
+    (incoming / "kalshi.json").write_text(
+        json.dumps({"markets": [{"ticker": "KALSHI-1", "title": "Example", "probability": 0.55}]}),
+        encoding="utf-8",
+    )
+    (incoming / "manifest.json").write_text(
+        json.dumps(
+            {
+                "asof": ASOF,
+                "generated_at": GENERATED,
+                "probability_sources": {
+                    "polymarket": {
+                        "file": "poly.json",
+                        "source_url": "https://gamma-api.polymarket.com/events",
+                        "fetched_at": GENERATED,
+                        "status": "ok",
+                    },
+                    "kalshi": {
+                        "file": "kalshi.json",
+                        "source_url": "https://api.kalshi.com/markets",
+                        "fetched_at": GENERATED,
+                        "status": "ok",
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = runner.run(input_dir=incoming, out_dir=out)
+    # The aggregate top-level status reflects P2 sources; P3 is reported in
+    # its own status field so a probability-only artifact stays explicit.
+    assert result["status"] == "not_requested"
+    snapshot = json.loads((out / "global_context_latest.json").read_text(encoding="utf-8"))
+    assert snapshot["probability"]["status"] == "partial"
+    items = snapshot["probability"]["items"]
+    assert {item["venue"] for item in items} == {"polymarket", "kalshi"}
+    assert all(item["license_status"] == "NOT_ESTABLISHED" for item in items)
+    assert next(item for item in items if item["venue"] == "polymarket")["implied_probability"] is None
+    assert runner.validate_global_context(snapshot)["source_count"] == 0

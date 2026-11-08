@@ -32,6 +32,30 @@ VALID_STATUSES = frozenset(
     }
 )
 
+POLICY_FIELDS: tuple[str, ...] = (
+    "license_status",
+    "frequency_status",
+    "mainland_network_status",
+)
+NOT_ESTABLISHED = "NOT_ESTABLISHED"
+
+
+def _policy_values(
+    *,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
+) -> dict[str, str]:
+    values = {
+        "license_status": license_status,
+        "frequency_status": frequency_status,
+        "mainland_network_status": mainland_network_status,
+    }
+    for field, value in values.items():
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{field} must be a non-empty status string")
+    return values
+
 _TREASURY_TENORS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("1m", ("1 Mo", "1M", "1 month", "1_month")),
     ("2m", ("2 Mo", "2M", "2 month", "2_month")),
@@ -116,12 +140,20 @@ def source_meta(
     stale_reason: str | None = None,
     raw_sha256: str | None = None,
     license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
 ) -> dict[str, Any]:
     """Build the common provenance record used by P2 and P3."""
 
     asof = _iso_point(asof)
     fetched_at = _iso_timestamp(fetched_at)
     status = _status(status)
+    policy = _policy_values(
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
+    )
     return {
         "source": source,
         "source_id": source,
@@ -132,6 +164,7 @@ def source_meta(
         "stale_reason": stale_reason,
         "raw_sha256": raw_sha256,
         "license_tier": license_tier,
+        **policy,
     }
 
 
@@ -180,6 +213,9 @@ def _section(
         "stale_reason": source.get("stale_reason"),
         "raw_sha256": source.get("raw_sha256"),
         "license_tier": source.get("license_tier"),
+        "license_status": source.get("license_status", NOT_ESTABLISHED),
+        "frequency_status": source.get("frequency_status", NOT_ESTABLISHED),
+        "mainland_network_status": source.get("mainland_network_status", NOT_ESTABLISHED),
         "evidence": EVIDENCE,
         "rows": values,
     }
@@ -200,6 +236,9 @@ def parse_treasury_curve(
     source_url: str | None,
     raw_sha256: str | None,
     license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
     status: str = "ok",
     stale_reason: str | None = None,
 ) -> dict[str, Any]:
@@ -220,6 +259,9 @@ def parse_treasury_curve(
         stale_reason=stale_reason,
         raw_sha256=raw_sha256,
         license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
     )
     raw_rows = _rows(payload, "data", "results", "records")
     if raw_rows is None:
@@ -262,6 +304,9 @@ def parse_ny_fed_observations(
     source_url: str | None,
     raw_sha256: str | None,
     license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
     status: str = "ok",
     stale_reason: str | None = None,
 ) -> dict[str, Any]:
@@ -276,6 +321,9 @@ def parse_ny_fed_observations(
         stale_reason=stale_reason,
         raw_sha256=raw_sha256,
         license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
     )
     return _parse_observations(
         payload,
@@ -293,6 +341,9 @@ def parse_bls_series(
     source_url: str | None,
     raw_sha256: str | None,
     license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
     status: str = "ok",
     stale_reason: str | None = None,
 ) -> dict[str, Any]:
@@ -307,6 +358,9 @@ def parse_bls_series(
         stale_reason=stale_reason,
         raw_sha256=raw_sha256,
         license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
     )
     series_rows: list[Mapping[str, Any]] | None = None
     if isinstance(payload, Mapping):
@@ -338,6 +392,9 @@ def parse_eia_series(
     source_url: str | None,
     raw_sha256: str | None,
     license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
     status: str = "ok",
     stale_reason: str | None = None,
 ) -> dict[str, Any]:
@@ -352,6 +409,9 @@ def parse_eia_series(
         stale_reason=stale_reason,
         raw_sha256=raw_sha256,
         license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
     )
     data = payload.get("response") if isinstance(payload, Mapping) else None
     if not isinstance(data, Mapping):
@@ -378,6 +438,9 @@ def source_unavailable_market(
     source_url: str | None = None,
     license_tier: str | None = None,
     raw_sha256: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
 ) -> dict[str, Any]:
     """Represent an unconnected market series such as VIX, DXY or gold."""
 
@@ -390,6 +453,9 @@ def source_unavailable_market(
         stale_reason=reason,
         raw_sha256=raw_sha256,
         license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
     )
     return {
         "market": market_id,
@@ -402,9 +468,124 @@ def source_unavailable_market(
         "stale_reason": meta["stale_reason"],
         "raw_sha256": meta["raw_sha256"],
         "license_tier": meta["license_tier"],
+        "license_status": meta["license_status"],
+        "frequency_status": meta["frequency_status"],
+        "mainland_network_status": meta["mainland_network_status"],
         "evidence": EVIDENCE,
         "value": None,
     }
+
+
+def parse_prediction_market_metadata(
+    payload: Any,
+    *,
+    venue: str,
+    asof: str,
+    fetched_at: str,
+    source_url: str | None,
+    raw_sha256: str | None,
+    status: str = "ok",
+    stale_reason: str | None = None,
+    license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
+) -> list[dict[str, Any]]:
+    """Normalize Polymarket/Kalshi metadata without guessing probabilities.
+
+    The public APIs expose different field names and sometimes encode outcome
+    prices as JSON strings.  This adapter only accepts an explicit numeric
+    probability field; outcome prices are retained as untrusted metadata by
+    callers and are never silently converted into a model input.
+    """
+
+    if venue not in {"polymarket", "kalshi"}:
+        raise ValueError("venue must be polymarket or kalshi")
+    rows = _rows(payload, "markets", "events", "data", "results")
+    if rows is None:
+        return [
+            build_probability_snapshot(
+                venue=venue,
+                market_id="unknown",
+                question="",
+                outcome="",
+                implied_probability=None,
+                asof=asof,
+                fetched_at=fetched_at,
+                source_url=source_url,
+                status="schema_changed",
+                stale_reason=stale_reason or "response shape did not contain markets or events",
+                raw_sha256=raw_sha256,
+                license_tier=license_tier,
+                license_status=license_status,
+                frequency_status=frequency_status,
+                mainland_network_status=mainland_network_status,
+            )
+        ]
+
+    flattened: list[dict[str, Any]] = []
+    for row in rows:
+        nested = _rows(row, "markets")
+        if nested:
+            parent = {key: value for key, value in row.items() if key != "markets"}
+            flattened.extend([{**parent, **child} for child in nested])
+        else:
+            flattened.append(dict(row))
+
+    values: list[dict[str, Any]] = []
+    for row in flattened:
+        market_id = _first(row, ("market_id", "marketId", "id", "ticker", "slug"))
+        question = _first(row, ("question", "title", "name", "subtitle"))
+        outcome = _first(row, ("outcome", "outcome_name", "outcomeName", "yes_sub_title")) or "Yes"
+        explicit = _first(row, ("implied_probability", "impliedProbability", "probability"))
+        probability: float | None = None
+        if isinstance(explicit, (int, float)) and not isinstance(explicit, bool):
+            probability = float(explicit)
+        row_status = status
+        row_stale = stale_reason
+        if probability is not None and not 0 <= probability <= 1:
+            probability = None
+            row_status = "schema_changed"
+            row_stale = row_stale or "explicit probability is outside 0..1"
+        elif probability is None and row_status == "ok":
+            # Metadata is still useful for provenance, but a missing explicit
+            # probability is incomplete and must not look like a fresh signal.
+            row_status = "partial"
+            row_stale = row_stale or "explicit probability field unavailable"
+        if not isinstance(market_id, str) or not market_id.strip() or not isinstance(question, str) or not question.strip():
+            row_status = "schema_changed"
+            row_stale = row_stale or "market id or question is missing"
+            market_id = str(market_id or "unknown")
+            question = str(question or "")
+        row_asof = _first(row, ("asof", "updated_at", "updatedAt", "timestamp"))
+        if not isinstance(row_asof, str):
+            row_asof = asof
+        row_source = _first(row, ("source_url", "url", "market_url")) or source_url
+        liquidity = row.get("liquidity") if isinstance(row.get("liquidity"), Mapping) else None
+        values.append(
+            build_probability_snapshot(
+                venue=venue,
+                market_id=str(market_id),
+                question=str(question),
+                outcome=str(outcome),
+                implied_probability=probability,
+                asof=row_asof,
+                fetched_at=fetched_at,
+                source_url=row_source,
+                liquidity=liquidity,
+                volume_24h=_first(row, ("volume_24h", "volume24h", "volume")),
+                open_interest=_first(row, ("open_interest", "openInterest")),
+                end_at=_first(row, ("end_at", "endAt", "close_time", "closeTime")),
+                status=row_status,
+                stale_reason=row_stale,
+                raw_sha256=row.get("raw_sha256") or raw_sha256,
+                license_tier=license_tier,
+                license_status=license_status,
+                frequency_status=frequency_status,
+                mainland_network_status=mainland_network_status,
+            )
+        )
+    return values
 
 
 def build_probability_snapshot(
@@ -425,6 +606,9 @@ def build_probability_snapshot(
     stale_reason: str | None = None,
     raw_sha256: str | None = None,
     license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
 ) -> dict[str, Any]:
     """Build one explicitly non-official prediction-market observation."""
 
@@ -442,6 +626,9 @@ def build_probability_snapshot(
         stale_reason=stale_reason,
         raw_sha256=raw_sha256,
         license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
     )
     return {
         "schema_version": PROBABILITY_SCHEMA_VERSION,
@@ -465,6 +652,9 @@ def build_probability_snapshot(
         "source_url": meta["source_url"],
         "raw_sha256": meta["raw_sha256"],
         "license_tier": meta["license_tier"],
+        "license_status": meta["license_status"],
+        "frequency_status": meta["frequency_status"],
+        "mainland_network_status": meta["mainland_network_status"],
         "official_fedwatch": False,
         "evidence": EVIDENCE,
     }
@@ -476,11 +666,19 @@ def build_probability_context(
     asof: str,
     generated_at: str,
     stale_reason: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
 ) -> dict[str, Any]:
     """Wrap Polymarket/Kalshi items as a standalone P3 snapshot."""
 
     _iso_point(asof)
     _iso_timestamp(generated_at, "generated_at")
+    policy = _policy_values(
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
+    )
     values = [deepcopy(dict(item)) for item in (items or [])]
     statuses = {str(item.get("status") or "ok") for item in values}
     status = "not_requested" if not values else "ok"
@@ -502,6 +700,7 @@ def build_probability_context(
         "stale_reason": stale_reason,
         "evidence": EVIDENCE,
         "official_fedwatch": False,
+        "policy": policy,
         "items": values,
     }
     snapshot["snapshot_sha256"] = json_sha256(snapshot)
@@ -558,6 +757,9 @@ def build_global_context(
         meta.setdefault("stale_reason", None)
         meta.setdefault("raw_sha256", None)
         meta.setdefault("license_tier", None)
+        for field in POLICY_FIELDS:
+            meta.setdefault(field, NOT_ESTABLISHED)
+        _policy_values(**{field: meta[field] for field in POLICY_FIELDS})
         normalized_sources[str(source_id)] = meta
     context = {
         "schema_version": GLOBAL_SCHEMA_VERSION,
@@ -590,6 +792,7 @@ __all__ = [
     "parse_bls_series",
     "parse_eia_series",
     "parse_ny_fed_observations",
+    "parse_prediction_market_metadata",
     "parse_treasury_curve",
     "source_meta",
     "source_unavailable_market",

@@ -14,6 +14,7 @@ from research.data.global_context import (
     parse_bls_series,
     parse_eia_series,
     parse_ny_fed_observations,
+    parse_prediction_market_metadata,
     parse_treasury_curve,
     source_unavailable_market,
 )
@@ -143,6 +144,60 @@ def test_probability_range_is_validated_and_missing_probability_stays_none() -> 
         stale_reason="network unavailable",
     )
     assert item["implied_probability"] is None
+
+
+def test_prediction_market_adapter_keeps_venue_metadata_and_policy_without_guessing_prices() -> None:
+    items = parse_prediction_market_metadata(
+        {
+            "events": [
+                {
+                    "id": "event-1",
+                    "title": "December target range",
+                    "markets": [
+                        {"id": "poly-1", "question": "Will the range be lower?", "outcomePrices": "[\"0.62\",\"0.38\"]"},
+                    ],
+                }
+            ]
+        },
+        venue="polymarket",
+        asof="2026-11-06T09:00:00Z",
+        fetched_at=FETCHED,
+        source_url="https://gamma-api.polymarket.com/events",
+        raw_sha256="a" * 64,
+        license_status="NOT_ESTABLISHED",
+        frequency_status="NOT_ESTABLISHED",
+        mainland_network_status="NOT_ESTABLISHED",
+    )
+    assert len(items) == 1
+    assert items[0]["market_id"] == "poly-1"
+    assert items[0]["implied_probability"] is None
+    assert items[0]["status"] == "partial"
+    assert items[0]["stale_reason"] == "explicit probability field unavailable"
+    assert items[0]["raw_sha256"] == "a" * 64
+    assert items[0]["license_status"] == "NOT_ESTABLISHED"
+
+
+def test_prediction_market_adapter_marks_invalid_probability_and_missing_schema() -> None:
+    invalid = parse_prediction_market_metadata(
+        {"markets": [{"id": "k-1", "question": "Example", "probability": 2.0}]},
+        venue="kalshi",
+        asof=ASOF,
+        fetched_at=FETCHED,
+        source_url="https://api.kalshi.com/markets",
+        raw_sha256="b" * 64,
+    )[0]
+    assert invalid["status"] == "schema_changed"
+    assert invalid["implied_probability"] is None
+    missing = parse_prediction_market_metadata(
+        {"unexpected": []},
+        venue="kalshi",
+        asof=ASOF,
+        fetched_at=FETCHED,
+        source_url=None,
+        raw_sha256="c" * 64,
+    )[0]
+    assert missing["status"] == "schema_changed"
+    assert missing["stale_reason"]
 
 
 def test_global_context_is_stable_and_keeps_p2_p3_separate() -> None:
