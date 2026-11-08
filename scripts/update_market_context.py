@@ -12,11 +12,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import date
 from pathlib import Path
 from typing import Any
 
 from research.data.market_base import fetch_market, write_snapshot
+from research.data.market_calendar import load_calendar, resolve_sessions
 from research.data.market_context import build_snapshot
 from research.data.market_p1 import (
     EM_YESTERDAY_POOL_URL,
@@ -79,7 +79,14 @@ def _rehash(context: dict[str, Any]) -> None:
 def run(args: argparse.Namespace) -> dict[str, Any]:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    asof = args.asof or date.today().isoformat()
+    calendar = load_calendar(getattr(args, "trading_calendar", None))
+    sessions = resolve_sessions(
+        asof=args.asof,
+        prior_asof=args.prior_asof,
+        calendar=calendar,
+        today=getattr(args, "today", None),
+    )
+    asof = sessions["asof"]
     base_snapshot = getattr(args, "base_snapshot", None)
     payload = _load_json(Path(base_snapshot)) if base_snapshot else fetch_market(asof)
     asof = payload.get("asof", asof)
@@ -115,7 +122,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         }
 
     payload = attach_source_adapters(payload, yesterday_pool=yesterday_pool, ths_pool=ths_pool)
-    prior_asof = args.prior_asof
+    prior_asof = sessions["prior_asof"]
     prior = None
     if prior_asof:
         path = _prior_path(out, prior_asof)
@@ -135,6 +142,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         fetched_at=payload.get("generated_at"),
     )
     context["run_mode"] = args.run_mode
+    context["calendar"] = sessions
     context["history"]["progression"] = payload.get("history", {}).get("progression", context["history"]["progression"])
     _rehash(context)
     text = json.dumps(context, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
@@ -144,11 +152,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     manifest_path = out / "market_context_manifest.json"
     manifest = _load_json(manifest_path) if manifest_path.exists() else {"schema_version": "market-context-manifest.v1", "snapshots": []}
     entries = [entry for entry in manifest.get("snapshots", []) if entry.get("asof") != asof]
-    entries.append(_manifest_entry(context, run_mode=args.run_mode))
+    entry = _manifest_entry(context, run_mode=args.run_mode)
+    entry.update({"prior_asof": sessions["prior_asof"], "calendar_status": sessions["calendar_status"], "calendar_version": sessions["calendar_version"]})
+    entries.append(entry)
     entries.sort(key=lambda entry: str(entry.get("asof")))
     manifest.update({"generated_at": context.get("generated_at"), "snapshots": entries, "real_snapshot_count": sum(1 for entry in entries if entry.get("run_mode") == "live" and entry.get("status") in {"fresh", "partial"} and entry.get("source_hashes"))})
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return {"asof": asof, "status": context.get("status"), "progression": context["history"]["progression"].get("status"), "real_snapshot_count": manifest["real_snapshot_count"], "output": str(out)}
+    return {"asof": asof, "prior_asof": sessions["prior_asof"], "calendar_status": sessions["calendar_status"], "status": context.get("status"), "progression": context["history"]["progression"].get("status"), "real_snapshot_count": manifest["real_snapshot_count"], "output": str(out)}
 
 
 def main() -> int:
@@ -156,6 +166,7 @@ def main() -> int:
     parser.add_argument("--asof", help="EOD date YYYY-MM-DD")
     parser.add_argument("--prior-asof", help="explicit prior trading date; missing file stays unavailable")
     parser.add_argument("--trading-calendar", help="JSON list of verified trading dates")
+    parser.add_argument("--today", help="Override today for deterministic calendar resolution")
     parser.add_argument("--out", default="out/market-context")
     parser.add_argument("--base-snapshot", help="Use an already fetched dated market payload; still refreshes P1 adapters")
     parser.add_argument("--source-url", default=None)

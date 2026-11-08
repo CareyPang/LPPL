@@ -41,3 +41,34 @@ def test_runner_seals_dated_context_and_manifest_without_frontend_write(monkeypa
     assert (tmp_path / "market_2026-11-03.json").exists()
     manifest = json.loads((tmp_path / "market_context_manifest.json").read_text(encoding="utf-8"))
     assert manifest["real_snapshot_count"] == 1
+
+
+def test_runner_resolves_prior_session_and_keeps_append_only_dates(monkeypatch, tmp_path):
+    monkeypatch.setattr(runner, "fetch_market", lambda asof: _payload(asof))
+    monkeypatch.setattr(
+        runner,
+        "fetch_ths_reasons_topics",
+        lambda asof: (
+            {"status": "fresh", "rows": [], "stale_reason": None},
+            {"status": "fresh", "rows": [], "stale_reason": None},
+            {"source_id": "ths", "source_url": "https://example.test/ths", "status": "fresh", "ok": True, "raw_sha256": "c" * 64, "fetched_at": f"{asof}T23:00:00+00:00"},
+        ),
+    )
+    monkeypatch.setattr(
+        runner,
+        "fetch_yesterday_pool",
+        lambda asof: {"status": "fresh", "asof": asof, "rows": [], "source": {"source_id": "eastmoney", "source_url": "https://example.test/em", "status": "fresh", "ok": True, "raw_sha256": "d" * 64}},
+    )
+    calendar = tmp_path / "calendar.json"
+    calendar.write_text(json.dumps({"version": "test-v1", "dates": ["2026-11-05", "2026-11-06"]}), encoding="utf-8")
+    common = dict(prior_asof=None, trading_calendar=str(calendar), today="2026-11-06", out=str(tmp_path), source_url=None, requested_at=None, run_mode="live")
+    first = runner.run(Namespace(asof="2026-11-05", **common))
+    second = runner.run(Namespace(asof=None, **common))
+    assert first["prior_asof"] is None
+    assert second["asof"] == "2026-11-06"
+    assert second["prior_asof"] == "2026-11-05"
+    assert second["calendar_status"] == "provided"
+    manifest = json.loads((tmp_path / "market_context_manifest.json").read_text(encoding="utf-8"))
+    assert [entry["asof"] for entry in manifest["snapshots"]] == ["2026-11-05", "2026-11-06"]
+    assert manifest["snapshots"][1]["prior_asof"] == "2026-11-05"
+    assert json.loads((tmp_path / "market_context_2026-11-05.json").read_text(encoding="utf-8"))["asof"] == "2026-11-05"

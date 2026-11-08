@@ -14,6 +14,10 @@ on:
         description: "Explicit prior trading date; blank keeps progression unavailable"
         type: string
         default: ""
+      trading_calendar:
+        description: "Checked-in JSON trading calendar; blank leaves exchange date unverified"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -29,6 +33,7 @@ jobs:
     env:
       INPUT_ASOF: ${{ inputs.asof }}
       INPUT_PRIOR_ASOF: ${{ inputs.prior_asof }}
+      INPUT_TRADING_CALENDAR: ${{ inputs.trading_calendar }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,6 +52,7 @@ jobs:
           args=(--out out/market-context --run-mode live)
           if [[ -n "${INPUT_ASOF:-}" ]]; then args+=(--asof "$INPUT_ASOF"); fi
           if [[ -n "${INPUT_PRIOR_ASOF:-}" ]]; then args+=(--prior-asof "$INPUT_PRIOR_ASOF"); fi
+          if [[ -n "${INPUT_TRADING_CALENDAR:-}" ]]; then args+=(--trading-calendar "$INPUT_TRADING_CALENDAR"); fi
           python scripts/update_market_context.py "${args[@]}"
       - name: Check two-snapshot UI gate (informational until two real EOD dates exist)
         shell: bash
