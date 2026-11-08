@@ -93,3 +93,11 @@
 - 每张数据卡能看到 `asof`、`fetched_at`、来源和 stale 状态。
 - 页面文案明确区分 VERIFIED、descriptive、NOT_ESTABLISHED；不把 H1/H2/H3、Q2、MPL、Ising、Q-DD2、PPE 的失败结果升级为预测能力。
 - 新数据接入前先完成字段、许可、频率、缓存和原始快照审计，再进入独立 PR；不直接改 `frontend/app/lppl-data.js`。
+
+## P1 真实闭环更正（2026-11-08）
+
+旧段落记录的是未带交易日历元数据的原始两日快照，仍保留作为历史证据。**VERIFIED**：新隔离重封存目录已补齐上交所 2026 官方休市安排、日历来源哈希和快照哈希；`market_context_gate.py` 现返回 `real_snapshot_count=2`、`ready_for_frontend_polling=true`、`progression_ready=true`。
+
+**VERIFIED**：append-only bundle SHA256 为 `227af1d3b69924c68f8dcff998121f55097d3d00e275e10b2e52ec6faad2862a`；Worker 的 `validateSeedSnapshot` 对 2026-11-05 与 2026-11-06 两份原始 JSON 均返回 `ok=true`。
+
+**NOT_ESTABLISHED**：这只是 Worker seed 前验收，尚未执行线上 seed、部署、Pages 配置或真实轮询；需要后续明确授权后再进行受控导入。

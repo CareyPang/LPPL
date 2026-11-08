@@ -102,3 +102,15 @@
 3. 补 P1 行业/概念/地域、资金历史分位和公告/F10 等独立契约。
 4. 完成 P2 官方源的修订与事件日历回放验收。
 5. 取得 P3 书面许可后再启用六小时异步刷新。
+
+## P1 真实闭环复核（2026-11-08）
+
+此前“旧两日快照缺少 calendar、gate=0”仍作为旧证据保留。**VERIFIED**：在新的隔离目录 `D:\CodexData\analysis\lppl-real-preview-20261108-verified-v2` 中，使用已封存的上交所 2026 官方休市安排重新封存 2026-11-05/06 两份快照，未覆盖旧文件。
+
+- 交易日历版本 `sse_2026_20251222_v1`，官方原始响应 SHA256 `ff188c710b8904758c185eb955e9eaa2c9bd7c2061af984d4f1d743f899c12a4`，日历 artifact SHA256 `07061ee00f5e6d025f84dc9f248ed3a660767f36f8a3b6514cbeee7ff1687593`。
+- **VERIFIED**：两日 gate 返回 `real_snapshot_count=2`、`ready_for_frontend_polling=true`、`progression_ready=true`。
+- **VERIFIED**：append-only bundle SHA256 为 `227af1d3b69924c68f8dcff998121f55097d3d00e275e10b2e52ec6faad2862a`，包含两份相邻日期快照。
+- **VERIFIED**：Worker 实际 `validateSeedSnapshot` 对两份原始 JSON 均返回 `ok=true`。
+- **NOT_ESTABLISHED**：尚未调用线上 Worker seed；没有 KV 写入回执、Pages 环境变量或线上轮询结果。
+
+完整来源、文件哈希和验收命令见 [P1 两日真实快照闭环验收](../validation/2026-11-08-p1-real-closure.md)。
