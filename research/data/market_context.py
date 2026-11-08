@@ -12,6 +12,8 @@ import json
 from datetime import UTC, date, datetime
 from typing import Any
 
+from .market_p1_extensions import attach_p1_extensions
+
 SCHEMA_VERSION = "market-context.v1"
 MARKET = "CN_A_SHARE"
 EVIDENCE = "descriptive"
@@ -131,6 +133,7 @@ def build_snapshot(
         "margin": payload.get("margin") or {},
         "valuation": payload.get("valuation") or {},
     }
+    context = attach_p1_extensions(context)
     context["snapshot_sha256"] = _json_sha256(context)
     return context
 

@@ -29,6 +29,8 @@ def test_market_context_preserves_existing_values_and_adds_explicit_missing_stat
     assert result["history"]["progression"]["status"] == "not_available"
     assert result["sources"]["margin"]["status"] == "error"
     assert result["sources"]["margin"]["stale_reason"] == "refresh failed"
+    assert result["p1"]["limit_pool_stats"]["status"] == "not_available"
+    assert result["p1"]["disclosures"]["announcements"]["status"] == "not_available"
     assert len(result["snapshot_sha256"]) == 64
 
 
