@@ -290,10 +290,120 @@ def _parse_observations(
         return _section(meta, None, section=section)
     normalized = []
     for row in raw_rows:
-        period = _first(row, ("date", "asof", "period", "observation_date", "effectiveDate", "year"))
+        period = _first(
+            row,
+            ("date", "asof", "period", "observation_date", "effectiveDate", "year", "TIME_PERIOD", "time_period"),
+        )
         value = _first(row, keys)
         normalized.append({"asof": period, "value": value})
     return _section(meta, normalized, section=section)
+
+
+def _parse_official_series(
+    payload: Any,
+    *,
+    source: str,
+    section: str,
+    value_keys: tuple[str, ...],
+    asof: str,
+    fetched_at: str,
+    source_url: str | None,
+    raw_sha256: str | None,
+    license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
+    status: str = "ok",
+    stale_reason: str | None = None,
+) -> dict[str, Any]:
+    meta = source_meta(
+        source,
+        source_url=source_url,
+        asof=asof,
+        fetched_at=fetched_at,
+        status=status,
+        stale_reason=stale_reason,
+        raw_sha256=raw_sha256,
+        license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
+    )
+    return _parse_observations(payload, meta=meta, section=section, keys=value_keys)
+
+
+def parse_bis_series(
+    payload: Any,
+    *,
+    asof: str,
+    fetched_at: str,
+    source_url: str | None,
+    raw_sha256: str | None,
+    license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
+    status: str = "ok",
+    stale_reason: str | None = None,
+) -> dict[str, Any]:
+    """Normalize a BIS Data Portal observation response.
+
+    BIS exports may use SDMX-style ``TIME_PERIOD``/``OBS_VALUE`` fields or a
+    compact ``date``/``value`` representation.  The parser intentionally
+    keeps one canonical row shape and marks unsupported envelopes as
+    ``schema_changed`` through the shared normalizer.
+    """
+
+    return _parse_official_series(
+        payload,
+        source="bis",
+        section="bis_series",
+        value_keys=("value", "OBS_VALUE", "obs_value", "VALUE"),
+        asof=asof,
+        fetched_at=fetched_at,
+        source_url=source_url,
+        raw_sha256=raw_sha256,
+        license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
+        status=status,
+        stale_reason=stale_reason,
+    )
+
+
+def parse_ecb_series(
+    payload: Any,
+    *,
+    asof: str,
+    fetched_at: str,
+    source_url: str | None,
+    raw_sha256: str | None,
+    license_tier: str | None = None,
+    license_status: str = NOT_ESTABLISHED,
+    frequency_status: str = NOT_ESTABLISHED,
+    mainland_network_status: str = NOT_ESTABLISHED,
+    status: str = "ok",
+    stale_reason: str | None = None,
+) -> dict[str, Any]:
+    """Normalize ECB Data API/SDMX observation rows."""
+
+    return _parse_official_series(
+        payload,
+        source="ecb",
+        section="ecb_series",
+        value_keys=("value", "OBS_VALUE", "obs_value", "VALUE"),
+        asof=asof,
+        fetched_at=fetched_at,
+        source_url=source_url,
+        raw_sha256=raw_sha256,
+        license_tier=license_tier,
+        license_status=license_status,
+        frequency_status=frequency_status,
+        mainland_network_status=mainland_network_status,
+        status=status,
+        stale_reason=stale_reason,
+    )
 
 
 def parse_ny_fed_observations(
@@ -707,6 +817,45 @@ def build_probability_context(
     return snapshot
 
 
+def normalize_news(items: Iterable[Mapping[str, Any]] | None) -> list[dict[str, str]]:
+    """Keep the deliberately small P3 news index contract.
+
+    Only title, source, publication time, URL and a content hash are retained.
+    The hash is accepted from a trusted fetcher when present; otherwise it is
+    derived from those five canonical fields so an item remains replayable
+    without persisting article text or an unreviewed summary.
+    """
+
+    normalized: list[dict[str, str]] = []
+    for raw in items or []:
+        if not isinstance(raw, Mapping):
+            continue
+        title = raw.get("title")
+        source = raw.get("source")
+        published_at = raw.get("published_at", raw.get("publishedAt", raw.get("time")))
+        url = raw.get("url", raw.get("link"))
+        if not all(isinstance(value, str) and value.strip() for value in (title, source, published_at, url)):
+            # Invalid rows are omitted rather than converted into a plausible
+            # headline.  The source metadata still carries freshness/status.
+            continue
+        try:
+            published_at = _iso_timestamp(published_at, "news.published_at")
+        except ValueError:
+            # Some feeds expose a date-only publication key.  Keep it only if
+            # it is a valid ISO date; otherwise it is not replay-safe.
+            published_at = _iso_date(published_at, "news.published_at")
+        canonical = {
+            "title": title.strip(),
+            "source": source.strip(),
+            "published_at": published_at,
+            "url": url.strip(),
+        }
+        supplied_hash = raw.get("content_hash", raw.get("hash"))
+        content_hash = supplied_hash.strip() if isinstance(supplied_hash, str) and supplied_hash.strip() else json_sha256(canonical)
+        normalized.append({**canonical, "content_hash": content_hash})
+    return normalized
+
+
 def _aggregate_status(sources: Mapping[str, Mapping[str, Any]]) -> str:
     if not sources:
         return "not_requested"
@@ -774,7 +923,7 @@ def build_global_context(
         "rates": deepcopy(dict(rates or {})),
         "markets": deepcopy(dict(markets or {})),
         "events": [deepcopy(dict(item)) for item in (events or [])],
-        "news": [deepcopy(dict(item)) for item in (news or [])],
+        "news": normalize_news(news),
         "probability": deepcopy(dict(probability)) if probability is not None else build_probability_context(None, asof=asof, generated_at=generated_at),
     }
     context["snapshot_sha256"] = json_sha256(context)
@@ -790,10 +939,13 @@ __all__ = [
     "build_probability_snapshot",
     "json_sha256",
     "parse_bls_series",
+    "parse_bis_series",
+    "parse_ecb_series",
     "parse_eia_series",
     "parse_ny_fed_observations",
     "parse_prediction_market_metadata",
     "parse_treasury_curve",
     "source_meta",
     "source_unavailable_market",
+    "normalize_news",
 ]

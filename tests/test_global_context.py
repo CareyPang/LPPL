@@ -11,7 +11,10 @@ from research.data.global_context import (
     build_probability_context,
     build_probability_snapshot,
     json_sha256,
+    normalize_news,
+    parse_bis_series,
     parse_bls_series,
+    parse_ecb_series,
     parse_eia_series,
     parse_ny_fed_observations,
     parse_prediction_market_metadata,
@@ -76,6 +79,51 @@ def test_official_response_parsers_are_offline_and_shape_explicit() -> None:
     assert bls["rows"][0]["period"] == "M10"
     assert bls["rows"][0]["value"] == "3.1"
     assert eia["rows"] == [{"period": "2026-11-06", "value": 72.0}]
+
+
+def test_bis_and_ecb_sdmx_parsers_keep_policy_and_canonical_periods() -> None:
+    bis = parse_bis_series(
+        {"data": [{"TIME_PERIOD": ASOF, "OBS_VALUE": "3.2"}]},
+        asof=ASOF,
+        fetched_at=FETCHED,
+        source_url="https://data.bis.org/",
+        raw_sha256="raw-bis",
+    )
+    ecb = parse_ecb_series(
+        {"observations": [{"time_period": ASOF, "OBS_VALUE": "2.1"}]},
+        asof=ASOF,
+        fetched_at=FETCHED,
+        source_url="https://data-api.ecb.europa.eu/service/data/",
+        raw_sha256="raw-ecb",
+    )
+    assert bis["source"] == "bis"
+    assert bis["rows"] == [{"asof": ASOF, "value": "3.2"}]
+    assert ecb["source"] == "ecb"
+    assert ecb["rows"] == [{"asof": ASOF, "value": "2.1"}]
+    assert bis["license_status"] == "NOT_ESTABLISHED"
+
+
+def test_global_news_is_minimal_and_hashable_without_article_body() -> None:
+    news = normalize_news(
+        [
+            {
+                "title": "Policy decision",
+                "source": "Official bulletin",
+                "published_at": FETCHED,
+                "url": "https://example.test/policy",
+                "summary": "must not be stored",
+            },
+            {"title": "invalid", "source": "missing time", "url": "https://example.test/invalid"},
+        ]
+    )
+    assert len(news) == 1
+    assert set(news[0]) == {"title", "source", "published_at", "url", "content_hash"}
+    assert news[0]["content_hash"] == json_sha256(
+        {key: news[0][key] for key in ("title", "source", "published_at", "url")}
+    )
+
+    context = build_global_context(asof=ASOF, generated_at=FETCHED, news=news)
+    assert context["news"] == news
 
 
 def test_source_unavailable_market_does_not_fill_zero() -> None:
