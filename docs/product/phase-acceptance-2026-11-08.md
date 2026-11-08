@@ -37,6 +37,13 @@
 5. **NOT_ESTABLISHED**：定时任务仍从干净 checkout 开始；没有可证明的跨运行累积存储。两日真实快照仍在 D 盘隔离证据目录，未导入 Worker/Pages。
 6. **NOT_ESTABLISHED**：行业/概念/地域历史热力图、资金历史分位、公告/研报/F10/股东/解禁尚未接入可追溯的长期源契约。
 
+### Append-only seed bundle
+
+- **VERIFIED**：`market_context_persistence.py` 和 `prepare_market_context_seed.py` 只读已有日期文件，重算 `snapshot_sha256`、文件哈希和源哈希，要求 exchange-verified 日历、相邻交易日和第二日 fresh progression。
+- **VERIFIED**：bundle manifest 记录日历源哈希、每个输入文件哈希、快照哈希、asof/prior_asof、状态和不可覆盖标记；同一日期出现不同快照哈希会被拒绝。
+- **VERIFIED**：当前 D 盘两日旧快照没有 calendar 元数据，gate 返回 `real_snapshot_count=0`；seed preparation 也 fail-closed，不会补写或改写原始证据。
+- **PLANNED**：取得可核验交易日历后，重新封存新 bundle，逐日导入 Worker，再单独验收历史复盘与轮询。
+
 ### 每日更新边界
 
 “工作日每天尝试生成 artifact”不等于“每天把历史快照写入后端”。在受控存储、源许可、频率和大陆网络核验完成前，不打开前端轮询，也不把当前快照补造成过去的晋级率。
