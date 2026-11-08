@@ -1,6 +1,8 @@
 import json
 from argparse import Namespace
 
+import pytest
+
 from scripts import update_market_context as runner
 
 
@@ -72,3 +74,16 @@ def test_runner_resolves_prior_session_and_keeps_append_only_dates(monkeypatch, 
     assert [entry["asof"] for entry in manifest["snapshots"]] == ["2026-11-05", "2026-11-06"]
     assert manifest["snapshots"][1]["prior_asof"] == "2026-11-05"
     assert json.loads((tmp_path / "market_context_2026-11-05.json").read_text(encoding="utf-8"))["asof"] == "2026-11-05"
+
+
+def test_runner_rejects_conflicting_rewrite_of_dated_snapshot(monkeypatch, tmp_path):
+    monkeypatch.setattr(runner, "fetch_market", lambda asof: _payload(asof))
+    monkeypatch.setattr(runner, "fetch_ths_reasons_topics", lambda asof: ({"status": "fresh", "rows": [], "stale_reason": None}, {"status": "fresh", "rows": [], "stale_reason": None}, {"source_id": "ths", "status": "fresh", "ok": True, "raw_sha256": "c" * 64}))
+    monkeypatch.setattr(runner, "fetch_yesterday_pool", lambda asof: {"status": "fresh", "asof": asof, "rows": [], "source": {"source_id": "em", "status": "fresh", "ok": True, "raw_sha256": "d" * 64}})
+    args = Namespace(asof="2026-11-05", prior_asof=None, trading_calendar=None, today=None, out=str(tmp_path), source_url=None, requested_at=None, run_mode="live")
+    runner.run(args)
+    original = json.loads((tmp_path / "market_2026-11-05.json").read_text(encoding="utf-8"))
+    original["limit_pools"]["zt"] = 999
+    (tmp_path / "market_2026-11-05.json").write_text(json.dumps(original), encoding="utf-8")
+    with pytest.raises(ValueError, match="immutable"):
+        runner.run(args)

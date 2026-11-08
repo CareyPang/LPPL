@@ -76,6 +76,23 @@ def _rehash(context: dict[str, Any]) -> None:
     context["snapshot_sha256"] = hashlib.sha256(raw).hexdigest()
 
 
+def _canonical(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _assert_dated_payload_immutable(path: Path, payload: dict[str, Any]) -> None:
+    if not path.exists():
+        return
+    existing = _load_json(path)
+    if _canonical(existing) != _canonical(payload):
+        raise ValueError(f"dated market payload is immutable: {path.name}")
+
+
+def _assert_dated_context_immutable(path: Path, text: str) -> None:
+    if path.exists() and path.read_text(encoding="utf-8") != text:
+        raise ValueError(f"dated market context is immutable: {path.name}")
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -122,6 +139,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         }
 
     payload = attach_source_adapters(payload, yesterday_pool=yesterday_pool, ths_pool=ths_pool)
+    _assert_dated_payload_immutable(out / f"market_{asof}.json", payload)
     prior_asof = sessions["prior_asof"]
     prior = None
     if prior_asof:
@@ -146,14 +164,31 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     context["history"]["progression"] = payload.get("history", {}).get("progression", context["history"]["progression"])
     _rehash(context)
     text = json.dumps(context, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
-    (out / f"market_context_{asof}.json").write_text(text, encoding="utf-8")
-    (out / "market_context_latest.json").write_text(text, encoding="utf-8")
+    dated_context = out / f"market_context_{asof}.json"
+    _assert_dated_context_immutable(dated_context, text)
+    if not dated_context.exists():
+        dated_context.write_text(text, encoding="utf-8")
+    latest_context = out / "market_context_latest.json"
+    if latest_context.exists():
+        existing_latest = _load_json(latest_context)
+        existing_asof = str(existing_latest.get("asof") or "")
+        if existing_asof > asof:
+            pass
+        elif existing_asof == asof:
+            _assert_dated_context_immutable(latest_context, text)
+        else:
+            latest_context.write_text(text, encoding="utf-8")
+    else:
+        latest_context.write_text(text, encoding="utf-8")
 
     manifest_path = out / "market_context_manifest.json"
     manifest = _load_json(manifest_path) if manifest_path.exists() else {"schema_version": "market-context-manifest.v1", "snapshots": []}
-    entries = [entry for entry in manifest.get("snapshots", []) if entry.get("asof") != asof]
     entry = _manifest_entry(context, run_mode=args.run_mode)
     entry.update({"prior_asof": sessions["prior_asof"], "calendar_status": sessions["calendar_status"], "calendar_version": sessions["calendar_version"]})
+    existing_entry = next((item for item in manifest.get("snapshots", []) if item.get("asof") == asof), None)
+    if existing_entry and existing_entry.get("snapshot_sha256") != entry.get("snapshot_sha256"):
+        raise ValueError(f"dated manifest entry is immutable: {asof}")
+    entries = [item for item in manifest.get("snapshots", []) if item.get("asof") != asof]
     entries.append(entry)
     entries.sort(key=lambda entry: str(entry.get("asof")))
     manifest.update({"generated_at": context.get("generated_at"), "snapshots": entries, "real_snapshot_count": sum(1 for entry in entries if entry.get("run_mode") == "live" and entry.get("status") in {"fresh", "partial"} and entry.get("source_hashes"))})
