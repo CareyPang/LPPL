@@ -11,7 +11,11 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from research.data.market_context_persistence import PersistenceError, append_seed_bundle, build_seed_bundle
+from research.data.market_context_persistence import (
+    PersistenceError,
+    append_seed_bundle,
+    build_seed_bundle,
+)
 
 
 def main() -> int:
