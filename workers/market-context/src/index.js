@@ -150,8 +150,16 @@ export async function digest(value) {
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+function hasUnpublishedEvidence(snapshot) {
+  return Object.hasOwn(snapshot, 'evidence_import')
+    || snapshot.publication_eligible === false
+    || ['research_import', 'fixture'].includes(snapshot.run_mode)
+    || Object.hasOwn(snapshot.p1 || {}, 'supplemental_sources');
+}
+
 export async function validateSeedSnapshot(snapshot, rawText = null) {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return { ok: false, error_code: 'INVALID_SNAPSHOT', error: '快照必须是对象' };
+  if (hasUnpublishedEvidence(snapshot)) return { ok: false, error_code: 'UNPUBLISHED_EVIDENCE', error: '离线研究导入尚未获准公开，不能写入市场快照' };
   if (snapshot.schema_version !== 'market-context.v1') return { ok: false, error_code: 'SCHEMA_MISMATCH', error: '快照版本不受支持' };
   if (!validDate(snapshot.asof)) return { ok: false, error_code: 'INVALID_DATE', error: '快照 asof 必须是已验证工作日' };
   if (!HASH_PATTERN.test(String(snapshot.snapshot_sha256 || ''))) return { ok: false, error_code: 'SNAPSHOT_HASH_REQUIRED', error: '快照必须包含 64 位 snapshot_sha256' };
@@ -187,6 +195,7 @@ async function fetchSource(env) {
     if (text.length > 2_000_000) throw new Error('source_body_too_large');
     const raw = JSON.parse(text);
     if (!raw || typeof raw !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(raw.asof || '')) throw new Error('source_invalid_snapshot');
+    if (hasUnpublishedEvidence(raw)) throw new Error('UNPUBLISHED_EVIDENCE');
     const fetched_at = new Date().toISOString();
     const sources = raw.sources && typeof raw.sources === 'object' ? raw.sources : {};
     const sourceList = Object.entries(sources).map(([source_id, meta]) => ({

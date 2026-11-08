@@ -45,6 +45,20 @@ def test_unverified_calendar_is_rejected(tmp_path):
         build_seed_bundle([first, first], calendar)
 
 
+@pytest.mark.parametrize("marker", [{"evidence_import": {}}, {"publication_eligible": False}, {"p1": {"supplemental_sources": {}}}])
+def test_research_evidence_cannot_enter_live_bundle_even_if_relabelled(tmp_path, marker):
+    calendar = _calendar(tmp_path)
+    first = tmp_path / "market_context_2026-11-05.json"
+    _snapshot(first, "2026-11-05")
+    value = json.loads(first.read_text(encoding="utf-8"))
+    value.update(marker)
+    value.pop("snapshot_sha256")
+    value["snapshot_sha256"] = hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    first.write_text(json.dumps(value), encoding="utf-8")
+    with pytest.raises(PersistenceError, match="not eligible for publication"):
+        build_seed_bundle([first, first], calendar)
+
+
 def test_append_bundle_rejects_changed_sealed_date(tmp_path):
     calendar = _calendar(tmp_path)
     first, second = tmp_path / "market_context_2026-11-05.json", tmp_path / "market_context_2026-11-06.json"

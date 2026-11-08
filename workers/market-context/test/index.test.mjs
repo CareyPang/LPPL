@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { MarketContextState, digest, digestRawJson } from '../src/index.js';
+import worker, { MarketContextState, digest, digestRawJson, validateSeedSnapshot } from '../src/index.js';
 
 class Storage {
   constructor() { this.map = new Map(); }
@@ -46,6 +46,34 @@ const snapshot = {
   limit_pools: { zt: 125, top20: { zt: [{ code: '000001', name: '示例', streak: 2 }] } },
   board_flow: {}, northbound: {}, margin: {}, valuation: {},
 };
+
+test('seed rejects unpublished evidence even when the remaining snapshot and hash are valid', async () => {
+  for (const marker of [{ evidence_import: {} }, { publication_eligible: false }, { run_mode: 'research_import' }, { run_mode: 'fixture' }, { p1: { supplemental_sources: {} } }]) {
+    const value = { ...await seedSnapshot('2026-11-05'), ...marker };
+    delete value.snapshot_sha256;
+    value.snapshot_sha256 = await digest(value);
+    const result = await validateSeedSnapshot(value);
+    assert.equal(result.ok, false);
+    assert.equal(result.error_code, 'UNPUBLISHED_EVIDENCE');
+  }
+});
+
+test('refresh cannot strip unpublished evidence markers and promote imports to live context', async () => {
+  const state = new State();
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ ...snapshot, evidence_import: {}, run_mode: 'research_import' });
+  try {
+    const response = await worker.fetch(new Request('https://worker.test/context/refresh', {
+      method: 'POST', headers: { 'X-Market-Context-Token': 'secret' }, body: '{}',
+    }), env(state));
+    const job = await response.json();
+    await Promise.all(state.waits);
+    const latest = await worker.fetch(new Request('https://worker.test/context?date=latest'), env(state));
+    assert.equal(latest.status, 404);
+    const status = await worker.fetch(new Request(`https://worker.test/context/status?job_id=${job.job_id}`), env(state));
+    assert.equal((await status.json()).status, 'failed');
+  } finally { globalThis.fetch = original; }
+});
 
 test('refresh is protected, asynchronous and returns a stable snapshot after completion', async () => {
   const state = new State();

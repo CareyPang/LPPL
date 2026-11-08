@@ -85,6 +85,14 @@ def validate_snapshot(path: str | Path, calendar: dict[str, Any]) -> dict[str, A
         raise PersistenceError(f"invalid snapshot JSON: {snapshot_path.name}") from exc
     if not isinstance(value, dict) or value.get("schema_version") != SCHEMA_VERSION:
         raise PersistenceError(f"unsupported snapshot schema: {snapshot_path.name}")
+    if value.get("p1") is not None and not isinstance(value["p1"], dict):
+        raise PersistenceError("P1 sections must be an object")
+    if (
+        "evidence_import" in value
+        or value.get("publication_eligible") is False
+        or "supplemental_sources" in (value.get("p1") or {})
+    ):
+        raise PersistenceError("offline supplemental evidence is not eligible for publication")
     asof = _iso(value.get("asof"))
     if value.get("run_mode") != "live" or value.get("status") not in {"fresh", "partial"}:
         raise PersistenceError(f"snapshot is not a live fresh/partial snapshot: {snapshot_path.name}")

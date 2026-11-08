@@ -32,6 +32,8 @@ def inspect(directory: Path) -> dict:
             value = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
+        if not isinstance(value, dict) or not isinstance(value.get("p1") or {}, dict):
+            continue
         hashes = [
             meta.get("raw_sha256")
             for meta in (value.get("sources") or {}).values()
@@ -47,6 +49,9 @@ def inspect(directory: Path) -> dict:
         )
         if (
             value.get("run_mode") == "live"
+            and "evidence_import" not in value
+            and value.get("publication_eligible") is not False
+            and "supplemental_sources" not in (value.get("p1") or {})
             and value.get("status") in {"fresh", "partial"}
             and isinstance(value.get("asof"), str)
             and p1_core_ready

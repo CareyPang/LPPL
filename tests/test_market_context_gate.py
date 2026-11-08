@@ -1,6 +1,15 @@
 import json
 
+import pytest
+
 from scripts.market_context_gate import inspect
+
+
+@pytest.mark.parametrize("marker", [{"evidence_import": {}}, {"publication_eligible": False}, {"p1": {"supplemental_sources": {}}}])
+def test_gate_does_not_count_offline_imports_relabelled_as_live(tmp_path, marker):
+    value = {**_snapshot("2026-11-02"), **marker}
+    (tmp_path / "market_context_2026-11-02.json").write_text(json.dumps(value), encoding="utf-8")
+    assert inspect(tmp_path)["real_snapshot_count"] == 0
 
 
 def _snapshot(asof, *, mode="live", status="partial"):

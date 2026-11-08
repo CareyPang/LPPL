@@ -221,7 +221,7 @@ test('oversized JSON and upstream faults return only bounded sanitized errors', 
 });
 
 test('the preview workflow is pinned, read-only and gated away from both preparation and publication', () => {
-  const workflow = readFileSync(new URL('../../.github/workflows/stock_query.yml', import.meta.url), 'utf8');
+  const workflow = readFileSync(new URL('../../.github/workflows/stock_query.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   const preview = workflow.split('\n  preview:\n')[1].split('\n  prepare:\n')[0];
   const prepare = workflow.split('\n  prepare:\n')[1].split('\n  query:\n')[0];
   const publish = workflow.split('\n  publish:\n')[1];
