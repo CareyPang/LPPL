@@ -33,6 +33,45 @@
         key: index => keys()[index]?.slice(storagePrefix.length) ?? null,
       };
     }
+    // P0 ledger is a browser-local provenance record. It complements the
+    // resumable StockSession job ledger and never changes model output.
+    const workstationLedger = root.WorkstationLedger?.create({ storage });
+    const ledgerAsset = value => {
+      const item = value || {};
+      return { code: item.code || item.symbol, symbol: item.market?.symbol || item.current?.symbol || item.symbol,
+        name: item.market?.name || item.current?.name || item.name };
+    };
+    function renderLedger(next) {
+      const panel = $('workstation-ledger');
+      if (!panel || !workstationLedger) return;
+      const asset = ledgerAsset(next), snapshot = workstationLedger.snapshot();
+      panel.hidden = false;
+      const toggle = $('watch-toggle');
+      if (toggle) {
+        const watched = workstationLedger.isWatched(asset);
+        toggle.textContent = watched ? '移出自选' : '加入自选';
+        toggle.setAttribute('aria-pressed', String(watched));
+      }
+      const source = next.market?.source || next.current?.source_sha || next.current?.source || '待核验';
+      const evidence = next.current?.evidence || next.current?.analysis?.evidence || 'NOT_ESTABLISHED';
+      const stale = next.marketStatus === 'stale' || next.market?.stale === true || root.StockSession.stale(next.current, next.market);
+      if ($('ledger-meta')) $('ledger-meta').textContent =
+        `行情截至 ${next.market?.asof || '—'} · 分析截至 ${next.current?.asof || next.current?.analysis?.as_of || '—'} · 来源 ${source} · 证据 ${evidence}` +
+        (stale ? ' · stale：保留上次可读数据，刷新未完成' : '');
+      const button = (row, label, onClick) => {
+        const node = doc.createElement('button'); node.type = 'button'; node.className = 'ledger-row';
+        node.textContent = label; node.setAttribute('title', row.name ? `${row.name} · ${row.code}` : row.code);
+        node.addEventListener('click', onClick); return node;
+      };
+      const selectCode = row => select(row.code);
+      $('watchlist')?.replaceChildren(...snapshot.watchlist.slice(0, 12).map(row =>
+        button(row, `${row.name || row.code} · ${row.code}`, () => selectCode(row))));
+      $('analysis-ledger')?.replaceChildren(...snapshot.recent.slice(0, 12).map(row =>
+        button(row, `${row.code} · ${row.analysis_asof || row.asof || '待核验'}`, () => selectCode(row))));
+      const revisions = snapshot.revisions.filter(row => !asset.code || row.code === asset.code).slice(0, 12);
+      $('revision-ledger')?.replaceChildren(...revisions.map(row =>
+        button(row, `${row.start}—${row.end} · ${row.kind || '观察'}`, () => selectCode(row))));
+    }
     const visibilityEmpty = '仅记录区间实际进入当前可见页面后的本机时间；不是预测发布时间。当前尚无可见区间记录。';
     const visibility = !demo && root.StockVisibility ? root.StockVisibility.mount({
       document: doc, containers: [$('risk'), $('analysis-summary')].filter(Boolean), storage,
@@ -151,6 +190,19 @@
         analysis = root.StockAnalysis.normalize(next.current, next.market, next.currentStatus);
         root.StockAnalysis.render($('analysis-summary'), analysis);
       }
+      const asset = ledgerAsset(next);
+      workstationLedger?.touchRecent({ ...asset,
+        asof: next.market?.asof || next.current?.asof || next.current?.analysis?.as_of,
+        analysis_asof: next.current?.asof || next.current?.analysis?.as_of,
+        source: next.market?.source || next.current?.source_sha || next.current?.source,
+        evidence_status: next.current?.evidence || next.current?.analysis?.evidence || analysis?.status,
+        status: next.currentStatus || next.marketStatus || 'viewed',
+        stale: next.marketStatus === 'stale' || next.market?.stale === true || root.StockSession.stale(next.current, next.market),
+      });
+      if (next.current && next.current !== lastCurrent) {
+        workstationLedger?.recordAnalysis({ ...next.current, analysis: analysis || next.current.analysis });
+      }
+      renderLedger(next);
       if (next.market && next.market !== lastMarket) { lastMarket = next.market; showMarket(next.market); }
       if (next.market) $('market-date').textContent = marketCaption(next.market, next.marketStatus);
       if (!next.market) $('market-empty').textContent = next.issues.market || '正在读取已收盘日线；研究任务不会锁定行情。';
@@ -208,6 +260,11 @@
     }
     const session = root.StockSession.create({ api: options.api, storage, onChange: update,
       ...(demo ? { pollMs: 700 } : {}) });
+    $('watch-toggle')?.addEventListener('click', () => {
+      if (!state || !workstationLedger) return;
+      workstationLedger.toggleWatch(ledgerAsset(state));
+      renderLedger(state);
+    });
     function searchError(message, code) {
       const retained = state?.code ? ` 当前仍显示 ${state.code}${code ? `，未切换至 ${code}` : ''}。` : '';
       $('search-error').textContent = message + retained;

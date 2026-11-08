@@ -488,6 +488,7 @@
   <script src="app/stock-demo-data.js"></script>
   <script src="app/stock-demo.js"></script>
   <script src="app/stock-preview-api.js"></script>
+  <script src="app/workstation-ledger.js"></script>
   <script src="app/stock-view.js"></script>
 </head>
 <body>
@@ -534,6 +535,15 @@
       <p class="research-disclaimer">研究版 · 个股模型尚未通过样本外检验；没有可发布窗口不代表市场安全。</p>
       <p id="query-status" class="status" role="status"></p>
       <div id="recent-stocks" class="recent" aria-label="最近查看和进行中的任务"></div>
+      <section id="workstation-ledger" class="workstation-ledger" hidden aria-label="工作站研究账本">
+        <div class="ledger-head"><div><span class="eyebrow">TRACEABLE WORKSPACE</span><h2>我的研究账本</h2></div><button id="watch-toggle" type="button" aria-pressed="false">加入自选</button></div>
+        <p id="ledger-meta" class="note"></p>
+        <div class="ledger-columns">
+          <div><h3>自选股</h3><div id="watchlist" class="ledger-list"></div></div>
+          <div><h3>最近分析</h3><div id="analysis-ledger" class="ledger-list"></div></div>
+          <div><h3>顶部区间修订</h3><div id="revision-ledger" class="ledger-list"></div></div>
+        </div>
+      </section>
       <div id="task-stages" class="stages" hidden>
         <span id="market-stage"></span><span id="current-stage"></span><span id="history-stage"></span>
       </div>
