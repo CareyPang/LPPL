@@ -55,3 +55,15 @@ def test_append_bundle_rejects_changed_sealed_date(tmp_path):
     changed["snapshots"][0]["snapshot_sha256"] = "c" * 64
     with pytest.raises(PersistenceError, match="sealed snapshot changed"):
         append_seed_bundle(bundle, changed)
+
+
+def test_append_bundle_rejects_calendar_gap(tmp_path):
+    calendar = tmp_path / "calendar.json"
+    calendar.write_text(json.dumps({"dates": ["2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08"], "version": "exchange-2026-v1", "source_url": "https://calendar.example/v1", "source_sha256": "a" * 64, "verification_status": "exchange_verified"}), encoding="utf-8")
+    first, second = tmp_path / "market_context_2026-11-05.json", tmp_path / "market_context_2026-11-06.json"
+    _snapshot(first, "2026-11-05")
+    _snapshot(second, "2026-11-06", prior="2026-11-05", progression="fresh")
+    bundle = build_seed_bundle([first, second], calendar)
+    incoming = {**bundle, "snapshots": [dict(bundle["snapshots"][-1], asof="2026-11-08")]}
+    with pytest.raises(PersistenceError, match="gap"):
+        append_seed_bundle(bundle, incoming)

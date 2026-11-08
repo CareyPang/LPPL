@@ -164,6 +164,9 @@ def append_seed_bundle(existing: dict[str, Any] | None, incoming: dict[str, Any]
         if previous and previous.get("snapshot_sha256") != item.get("snapshot_sha256"):
             raise PersistenceError(f"sealed snapshot changed: {item['asof']}")
         old[item["asof"]] = item
+    positions = [existing["calendar"]["dates"].index(item["asof"]) for item in old.values()]
+    if any(right != left + 1 for left, right in zip(sorted(positions), sorted(positions)[1:], strict=False)):
+        raise PersistenceError("append would leave a gap in the verified calendar")
     merged = {"schema_version": BUNDLE_SCHEMA_VERSION, "evidence": "descriptive", "append_only": True, "calendar": existing["calendar"], "snapshots": [old[key] for key in sorted(old)]}
     merged["bundle_sha256"] = _sha(_canonical(merged))
     return merged
