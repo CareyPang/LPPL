@@ -78,7 +78,7 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     (out / "fits").mkdir(exist_ok=True)
     d.to_parquet(out / "fits" / f"{sym}_{'latest' if asof is None else asof}.parquet")  # 缓存拟合表，便于只改契约时重导
     path = out / f"{sym}_{'latest' if asof is None else asof}.json"
-    path.write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str))
+    path.write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     return path
 
 

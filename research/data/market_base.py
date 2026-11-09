@@ -509,7 +509,7 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
         key = str(streak)
         streak_dist[key] = streak_dist.get(key, 0) + 1
     total = len(zt) + len(zb)
-    return {
+    summary = {
         "date": compact_date,
         "zt": len(zt),
         "zb": len(zb),
@@ -522,6 +522,12 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
             for kind, pool in pools.items()
         },
     }
+    # Keep the historical summary keys above untouched, then add P1 archival
+    # rows and explicit reason/topic availability.  The adapter has no network
+    # behavior and only accepts fields present in the saved source response.
+    from .market_p1 import enrich_limit_pools
+
+    return enrich_limit_pools(summary, pools, f"{compact_date[:4]}-{compact_date[4:6]}-{compact_date[6:]}")
 
 
 def _json_from_js(text: str) -> dict | list:

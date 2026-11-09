@@ -1,0 +1,195 @@
+{
+  "schema_version": "p1-source-catalog.v1",
+  "recorded_on": "2026-11-09",
+  "scope": "Eight selected existing or candidate P1 adapters; not a complete provider catalog, live-source certification, or data license.",
+  "source_count": 8,
+  "complete_upstream_catalog": false,
+  "pinned_upstreams": {
+    "vibe_research": {
+      "repository": "https://github.com/simonlin1212/Vibe-Research",
+      "commit": "84c141b86b5e7540b29f5f4cd5457dc0ebd6052e",
+      "code_license": "MIT",
+      "license_url": "https://github.com/simonlin1212/Vibe-Research/blob/84c141b86b5e7540b29f5f4cd5457dc0ebd6052e/LICENSE",
+      "reference_path": ".agents/skills/data-access/scripts/sources",
+      "usage": "Read-only reference inspection; no upstream implementation copied. Data rights are reviewed separately."
+    },
+    "tradingagents_astock": {
+      "repository": "https://github.com/simonlin1212/TradingAgents-astock",
+      "commit": "3a9171182304e87042743dde245c64922e04ed96",
+      "code_license": "Apache-2.0",
+      "license_url": "https://github.com/simonlin1212/TradingAgents-astock/blob/3a9171182304e87042743dde245c64922e04ed96/LICENSE",
+      "reference_path": "tradingagents/dataflows/a_stock.py",
+      "usage": "Read-only reference inspection; no LangGraph, Streamlit, trader, LLM dependency, or upstream implementation copied. Data rights are reviewed separately."
+    }
+  },
+  "sources": [
+    {
+      "source_id": "ths_limit_up_pool",
+      "title": "同花顺涨停原因与题材标签",
+      "provider": "tonghuashun",
+      "source_urls": ["https://data.10jqka.com.cn/dataapi/limit_up/limit_up_pool"],
+      "hosts": ["data.10jqka.com.cn"],
+      "parser": "research.data.market_p1:fetch_ths_reasons_topics",
+      "parser_kind": "existing_fetcher",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "existing_local_implementation_reference_audit", "upstream_refs": ["vibe_research"], "reference_functions": ["sources/ths.py:ths_limit_up_pool"], "copied_in_this_change": false},
+      "date_capability": {"mode": "date_parameter", "request_date_supported": true, "pit_verified": false, "note": "Requested date is not proof of historical availability. Preserve the original response, source date and first available time; never backfill old topic labels from today's response."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_yesterday_zt_pool",
+      "title": "东方财富前一日涨停池与当日表现",
+      "provider": "eastmoney",
+      "source_urls": ["https://push2ex.eastmoney.com/getYesterdayZTPool"],
+      "hosts": ["push2ex.eastmoney.com"],
+      "parser": "research.data.market_p1:fetch_yesterday_pool",
+      "parser_kind": "existing_fetcher",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "existing_local_implementation_reference_audit", "upstream_refs": ["vibe_research"], "reference_functions": ["sources/eastmoney.py:em_yzt_pool"], "copied_in_this_change": false},
+      "date_capability": {"mode": "date_parameter_t_minus_1_to_t", "request_date_supported": true, "pit_verified": false, "note": "The T-1 pool returned on T is not a substitute for the archived T-1 snapshot. Progression needs two dated archives and a verified exchange calendar."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_limit_pools",
+      "title": "东方财富涨停、炸板、跌停三池",
+      "provider": "eastmoney",
+      "source_urls": ["https://push2ex.eastmoney.com/getTopicZTPool", "https://push2ex.eastmoney.com/getTopicZBPool", "https://push2ex.eastmoney.com/getTopicDTPool"],
+      "hosts": ["push2ex.eastmoney.com"],
+      "parser": "research.data.market_base:limit_pools",
+      "parser_kind": "existing_fetcher",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "existing_local_implementation_reference_audit", "upstream_refs": ["vibe_research"], "reference_functions": ["sources/eastmoney.py:em_zt_pool", "sources/eastmoney.py:em_zb_pool", "sources/eastmoney.py:em_dt_pool"], "copied_in_this_change": false},
+      "date_capability": {"mode": "date_parameter", "request_date_supported": true, "pit_verified": false, "note": "A current qdate or successful HTTP response does not verify a requested historical session. Empty, missing and failed pools remain distinct; archival completeness must be checked."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_board_flow",
+      "title": "东方财富行业、概念、地域资金快照",
+      "provider": "eastmoney",
+      "source_urls": ["https://push2delay.eastmoney.com/api/qt/clist/get", "https://push2.eastmoney.com/api/qt/clist/get"],
+      "hosts": ["push2delay.eastmoney.com", "push2.eastmoney.com"],
+      "parser": "research.data.market_base:board_flow_snapshot",
+      "parser_kind": "existing_fetcher",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "existing_local_implementation_reference_audit", "upstream_refs": ["vibe_research"], "reference_functions": ["sources/eastmoney.py:board_fund_flow"], "copied_in_this_change": false},
+      "date_capability": {"mode": "current_snapshot_with_rolling_periods", "request_date_supported": false, "pit_verified": false, "note": "Today/5d/10d fields are current rolling snapshots, not historical vintages. Only snapshots captured on each date may enter historical replay. The separate Sina fallback is outside this eight-source catalog."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_fund_flow_history",
+      "title": "东方财富个股日级资金历史",
+      "provider": "eastmoney",
+      "source_urls": ["https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"],
+      "hosts": ["push2his.eastmoney.com"],
+      "parser": "research.data.p1_provider_parsers:parse_provider_payload",
+      "parser_kind": "offline_parser",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "independent_parser_reference_only", "upstream_refs": ["vibe_research", "tradingagents_astock"], "reference_functions": ["sources/eastmoney.py:stock_fund_flow_120d", "tradingagents/dataflows/a_stock.py:get_fund_flow"], "copied_in_this_change": false},
+      "date_capability": {"mode": "dated_rows_current_vintage", "request_date_supported": false, "pit_verified": false, "note": "Rows have trade dates, but a current historical series is not proof of what was available then. Preserve fetch/availability time and archive vintage; reject future rows and do not manufacture past observations."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_dragon_tiger",
+      "title": "东方财富龙虎榜明细",
+      "provider": "eastmoney",
+      "source_urls": ["https://datacenter-web.eastmoney.com/api/data/v1/get"],
+      "hosts": ["datacenter-web.eastmoney.com"],
+      "parser": "research.data.p1_provider_parsers:parse_provider_payload",
+      "parser_kind": "offline_parser",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "independent_parser_reference_only", "upstream_refs": ["vibe_research", "tradingagents_astock"], "reference_functions": ["sources/eastmoney.py:dragon_tiger_board", "tradingagents/dataflows/a_stock.py:get_dragon_tiger_board"], "copied_in_this_change": false},
+      "date_capability": {"mode": "trade_date_filtered_rows", "request_date_supported": true, "pit_verified": false, "note": "RPT_DAILYBILLBOARD_DETAILSNEW trade dates are event dates, not first-publication timestamps. Need archived availability and pagination completeness; data absence is not proof of no listing."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_lockup_expiry",
+      "title": "东方财富限售解禁日程",
+      "provider": "eastmoney",
+      "source_urls": ["https://datacenter-web.eastmoney.com/api/data/v1/get"],
+      "hosts": ["datacenter-web.eastmoney.com"],
+      "parser": "research.data.p1_provider_parsers:parse_provider_payload",
+      "parser_kind": "offline_parser",
+      "implemented": true,
+      "code_provenance": {"reuse_mode": "independent_parser_reference_only", "upstream_refs": ["vibe_research", "tradingagents_astock"], "reference_functions": ["sources/eastmoney.py:lockup_expiry", "tradingagents/dataflows/a_stock.py:get_lockup_expiry"], "copied_in_this_change": false},
+      "date_capability": {"mode": "event_date_schedule", "request_date_supported": true, "pit_verified": false, "note": "RPT_LIFT_STAGE FREE_DATE is a scheduled event date and may be in the future. It is not announcement time. A current schedule cannot stand in for a schedule known at historical asof; missing availability remains unknown."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial display and caching rights are not established."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "eod_only_after_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    },
+    {
+      "source_id": "eastmoney_stock_news",
+      "title": "东方财富个股新闻索引（候选）",
+      "provider": "eastmoney",
+      "source_urls": ["https://search-api-web.eastmoney.com/search/jsonp"],
+      "hosts": ["search-api-web.eastmoney.com"],
+      "parser": null,
+      "parser_kind": "candidate",
+      "implemented": false,
+      "code_provenance": {"reuse_mode": "candidate_reference_only", "upstream_refs": ["vibe_research", "tradingagents_astock"], "reference_functions": ["sources/eastmoney.py:eastmoney_stock_news", "tradingagents/dataflows/a_stock.py:get_news"], "copied_in_this_change": false},
+      "date_capability": {"mode": "current_search_with_publication_dates", "request_date_supported": false, "pit_verified": false, "note": "Current search results are not a complete historical news archive. Candidate storage is restricted to title/source/time/link/hash; no article body or LLM-generated date may fill missing evidence."},
+      "data_policy": {
+        "fetch_enabled": false,
+        "publish_enabled": false,
+        "access": {"status": "pending", "evidence_refs": [], "note": "Public endpoint access is not a reviewed right to automate collection."},
+        "redistribution": {"status": "pending", "evidence_refs": [], "note": "Public/commercial title display, metadata caching and third-party news rights need separate review."},
+        "mainland_network": {"status": "pending", "evidence_refs": [], "note": "No representative mainland network probe or stability review in this change."},
+        "frequency_review": {"status": "pending", "evidence_refs": [], "note": "No verified provider limit; local rate proposal is not provider permission."}
+      },
+      "local_rate_policy": {"owner": "LPPL", "status": "proposal_not_enforced", "scope": "per_provider_host", "max_concurrency": 1, "minimum_interval_seconds": 2, "max_attempts": 2, "refresh": "disabled_pending_news_scope_review", "on_429": "respect_retry_after_then_stop_at_budget", "on_403": "stop_and_review", "provider_guarantee": false}
+    }
+  ]
+}

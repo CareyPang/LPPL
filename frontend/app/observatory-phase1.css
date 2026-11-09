@@ -1,0 +1,281 @@
+/*
+ * Phase 1 visual system
+ *
+ * The ocean landing page and the data pages have different jobs, but they
+ * should read as one product. These tokens are deliberately prefixed so the
+ * legacy page styles and data contracts remain untouched.
+ */
+:root {
+  --obs-ocean-950: #071a2a;
+  --obs-ocean-900: #0b2436;
+  --obs-ocean-800: #12384e;
+  --obs-surface: rgba(16, 43, 61, .84);
+  --obs-surface-quiet: rgba(17, 47, 65, .58);
+  --obs-surface-solid: #102b3d;
+  --obs-line: rgba(181, 211, 224, .22);
+  --obs-line-strong: rgba(217, 193, 159, .54);
+  --obs-ivory: #f1e8d8;
+  --obs-cold: #e6f1f3;
+  --obs-champagne: #d9c19f;
+  --obs-cyan: #8ccfd1;
+  --obs-muted: #b9c9d5;
+  --obs-stale: #e8b365;
+  --obs-not-established: #d9c19f;
+  --obs-error: #ef8b84;
+  --obs-up: #ef8b84;
+  --obs-down: #8ccfbb;
+  --obs-space-1: 4px;
+  --obs-space-2: 8px;
+  --obs-space-3: 12px;
+  --obs-space-4: 16px;
+  --obs-space-5: 24px;
+  --obs-space-6: 32px;
+  --obs-space-7: 48px;
+  --obs-space-8: 72px;
+  --obs-radius-sm: 8px;
+  --obs-radius-md: 12px;
+  --obs-radius-lg: 18px;
+  --obs-motion-control: 160ms;
+  --obs-motion-content: 360ms;
+  --obs-motion-chapter: 900ms;
+  --obs-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* The data pages are still functional in a plain browser with this file
+   missing; the class only scopes the visual bridge between them and home. */
+body.observatory-page {
+  background:
+    radial-gradient(120% 90% at 8% -20%, rgba(46, 103, 124, .28), transparent 55%),
+    var(--obs-ocean-950);
+  color: var(--obs-cold);
+}
+
+body.observatory-page .bar {
+  background: rgba(7, 26, 42, .88);
+  border-bottom-color: var(--obs-line);
+  box-shadow: 0 8px 28px rgba(2, 14, 23, .18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+body.observatory-page .sec,
+body.observatory-page .card,
+body.observatory-page .welcome,
+body.observatory-page .query-panel,
+body.observatory-page .market-panel,
+body.observatory-page .review-card,
+body.observatory-page .feature-card,
+body.observatory-page .ladder-card {
+  background: linear-gradient(145deg, var(--obs-surface), var(--obs-surface-quiet));
+  border-color: var(--obs-line);
+  border-radius: var(--obs-radius-md);
+}
+
+body.observatory-page .sec.wide {
+  border-radius: var(--obs-radius-lg);
+}
+
+body.observatory-page .brand,
+body.observatory-page .sec-h h2,
+body.observatory-page .market-header,
+body.observatory-page .welcome h1 {
+  color: var(--obs-ivory);
+}
+
+body.observatory-page .brand small,
+body.observatory-page .asof,
+body.observatory-page .note,
+body.observatory-page .src,
+body.observatory-page .tool-status,
+body.observatory-page .legend,
+body.observatory-page .ladder-note {
+  color: var(--obs-muted);
+}
+
+body.observatory-page button,
+body.observatory-page input,
+body.observatory-page select {
+  border-radius: var(--obs-radius-sm);
+  transition: border-color var(--obs-motion-control) var(--obs-ease),
+    background-color var(--obs-motion-control) var(--obs-ease),
+    color var(--obs-motion-control) var(--obs-ease),
+    transform var(--obs-motion-control) var(--obs-ease);
+}
+
+body.observatory-page button:not(:disabled):hover,
+body.observatory-page a:hover {
+  color: var(--obs-cold);
+}
+
+body.observatory-page button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+body.observatory-page :focus-visible {
+  outline: 2px solid var(--obs-cyan);
+  outline-offset: 3px;
+}
+
+body.observatory-page .chip,
+body.observatory-page .tool-nav button,
+body.observatory-page .review-tabs button,
+body.observatory-page .context-controls button,
+body.observatory-page .context-controls input {
+  min-height: 44px;
+  border-color: var(--obs-line);
+  background: rgba(7, 26, 42, .38);
+}
+
+body.observatory-page .chip[aria-pressed="true"],
+body.observatory-page .tool-nav button[aria-current="true"],
+body.observatory-page .review-tabs button[aria-selected="true"] {
+  color: var(--obs-ivory);
+  border-color: var(--obs-champagne);
+  background: rgba(217, 193, 159, .12);
+}
+
+body.observatory-page .status-pill.planned,
+body.observatory-page .status-pill.stale {
+  border-color: var(--obs-stale);
+  color: var(--obs-stale);
+}
+
+body.observatory-page .status-pill.ready {
+  border-color: var(--obs-cyan);
+  color: var(--obs-cyan);
+}
+
+body.observatory-page .status-pill.error,
+body.observatory-page .fail {
+  border-color: var(--obs-error);
+  color: var(--obs-error);
+}
+
+body.observatory-page .up { color: var(--obs-up); }
+body.observatory-page .dn { color: var(--obs-down); }
+
+body.observatory-page .tm,
+body.observatory-page .ladder,
+body.observatory-page .chart-wrap,
+body.observatory-page .results {
+  border-color: var(--obs-line);
+  background: rgba(7, 26, 42, .5);
+  border-radius: var(--obs-radius-md);
+}
+
+/* Home: keep the waterline story, but give the first viewport a quieter,
+   editorial reading layer and one clear action. */
+body.observatory-home .hero::before {
+  background: linear-gradient(90deg, rgba(5, 24, 38, .68), rgba(5, 24, 38, .45) 62%, rgba(5, 24, 38, .08) 86%, transparent);
+}
+
+body.observatory-home .hero h1 {
+  text-wrap: balance;
+  max-width: 8.5em;
+}
+
+body.observatory-home .hero p.hero-purpose {
+  max-width: 32em;
+  color: var(--obs-cold);
+}
+
+body.observatory-home .hero p.poem {
+  color: var(--obs-ivory);
+  max-width: 20em;
+}
+
+body.observatory-home .hero .cta {
+  align-items: center;
+}
+
+body.observatory-home .hero .btn.sun-sweep {
+  background: linear-gradient(112deg, var(--obs-ivory), #ead4ae 53%, #f1dfbf);
+  border-color: var(--obs-champagne);
+  box-shadow: inset 0 1px 0 #fff8e9b3, 0 8px 24px rgba(2, 14, 23, .22);
+}
+
+body.observatory-home .hero-boundary {
+  max-width: 34em;
+  color: var(--obs-muted);
+}
+
+body.observatory-home .scene-chapter {
+  transition: opacity var(--obs-motion-chapter) var(--obs-ease), transform var(--obs-motion-chapter) var(--obs-ease);
+}
+
+body.observatory-home .reveal {
+  transition-duration: var(--obs-motion-content);
+  transition-timing-function: var(--obs-ease);
+}
+
+@media (max-width: 600px) {
+  body.observatory-home .hero::before {
+    background: linear-gradient(90deg, rgba(4, 24, 40, .74), rgba(4, 24, 40, .43) 76%, rgba(4, 24, 40, .06));
+  }
+
+  body.observatory-home .hero h1 {
+    max-width: 8em;
+  }
+
+  body.observatory-home .hero .cta {
+    width: 100%;
+  }
+
+  body.observatory-home .hero .btn.sun-sweep {
+    width: min(100%, 22rem);
+    justify-content: space-between;
+  }
+
+  body.observatory-home .hero-boundary {
+    max-width: 28em;
+  }
+
+  body.observatory-page .bar-in {
+    padding: var(--obs-space-2) var(--obs-space-3);
+  }
+
+  body.observatory-page main {
+    padding: var(--obs-space-3);
+  }
+
+  body.observatory-page .sec,
+  body.observatory-page .sec.wide {
+    border-radius: var(--obs-radius-md);
+    padding: var(--obs-space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.observatory-page button,
+  body.observatory-page input,
+  body.observatory-page select,
+  body.observatory-home .scene-chapter,
+  body.observatory-home .reveal {
+    transition: none !important;
+  }
+
+  body.observatory-page button:not(:disabled):active {
+    transform: none;
+  }
+
+  body.observatory-home .hero .sun-sweep::after {
+    animation: none !important;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  body.observatory-home .top .workstation-nav {
+    font-size: 10px;
+    padding-inline: 11px;
+  }
+
+  body.observatory-home .hero p.poem {
+    font-size: 21px;
+    letter-spacing: .045em;
+  }
+
+  body.observatory-home .hero .btn.sun-sweep {
+    width: 100%;
+  }
+}

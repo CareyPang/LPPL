@@ -1,0 +1,177 @@
+{
+  "schema_version": "market-source-validation-report.v1",
+  "allowed": false,
+  "checked_at": "2026-11-09T02:44:10.231710+00:00",
+  "publication_eligible": false,
+  "model_input_eligible": false,
+  "missing": [],
+  "blocked": [],
+  "sources": {
+    "eastmoney_limit_pools": {
+      "allowed": false,
+      "missing": [
+        {
+          "check": "automated_access",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "raw_retention",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "frequency",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "cn_path",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "mainland_network.http_samples",
+          "reason": "ACTUAL_HTTP_SAMPLE_REQUIRED"
+        }
+      ],
+      "blocked": [
+        {
+          "check": "fetch_enabled",
+          "reason": "FETCH_DISABLED"
+        },
+        {
+          "check": "automated_access",
+          "reason": "REVIEW_NOT_VERIFIED"
+        },
+        {
+          "check": "raw_retention",
+          "reason": "REVIEW_NOT_VERIFIED"
+        },
+        {
+          "check": "frequency",
+          "reason": "OFFICIAL_OR_PROVIDER_APPROVAL_REQUIRED"
+        },
+        {
+          "check": "min_interval_seconds",
+          "reason": "LOCAL_INTERVAL_BELOW_REVIEWED_MINIMUM_OR_INVALID"
+        },
+        {
+          "check": "mainland_network",
+          "reason": "MAINLAND_NETWORK_NOT_VERIFIED"
+        },
+        {
+          "check": "mainland_network.cn_path",
+          "reason": "VERIFIED_CN_ROUTE_REQUIRED"
+        }
+      ]
+    },
+    "eastmoney_yesterday_zt_pool": {
+      "allowed": false,
+      "missing": [
+        {
+          "check": "automated_access",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "raw_retention",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "frequency",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "cn_path",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "mainland_network.http_samples",
+          "reason": "ACTUAL_HTTP_SAMPLE_REQUIRED"
+        }
+      ],
+      "blocked": [
+        {
+          "check": "fetch_enabled",
+          "reason": "FETCH_DISABLED"
+        },
+        {
+          "check": "automated_access",
+          "reason": "REVIEW_NOT_VERIFIED"
+        },
+        {
+          "check": "raw_retention",
+          "reason": "REVIEW_NOT_VERIFIED"
+        },
+        {
+          "check": "frequency",
+          "reason": "OFFICIAL_OR_PROVIDER_APPROVAL_REQUIRED"
+        },
+        {
+          "check": "min_interval_seconds",
+          "reason": "LOCAL_INTERVAL_BELOW_REVIEWED_MINIMUM_OR_INVALID"
+        },
+        {
+          "check": "mainland_network",
+          "reason": "MAINLAND_NETWORK_NOT_VERIFIED"
+        },
+        {
+          "check": "mainland_network.cn_path",
+          "reason": "VERIFIED_CN_ROUTE_REQUIRED"
+        }
+      ]
+    },
+    "ths_limit_up_pool": {
+      "allowed": false,
+      "missing": [
+        {
+          "check": "automated_access",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "raw_retention",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "frequency",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "cn_path",
+          "reason": "EVIDENCE_REFS_REQUIRED"
+        },
+        {
+          "check": "mainland_network.http_samples",
+          "reason": "ACTUAL_HTTP_SAMPLE_REQUIRED"
+        }
+      ],
+      "blocked": [
+        {
+          "check": "fetch_enabled",
+          "reason": "FETCH_DISABLED"
+        },
+        {
+          "check": "automated_access",
+          "reason": "REVIEW_NOT_VERIFIED"
+        },
+        {
+          "check": "raw_retention",
+          "reason": "REVIEW_NOT_VERIFIED"
+        },
+        {
+          "check": "frequency",
+          "reason": "OFFICIAL_OR_PROVIDER_APPROVAL_REQUIRED"
+        },
+        {
+          "check": "min_interval_seconds",
+          "reason": "LOCAL_INTERVAL_BELOW_REVIEWED_MINIMUM_OR_INVALID"
+        },
+        {
+          "check": "mainland_network",
+          "reason": "MAINLAND_NETWORK_NOT_VERIFIED"
+        },
+        {
+          "check": "mainland_network.cn_path",
+          "reason": "VERIFIED_CN_ROUTE_REQUIRED"
+        }
+      ]
+    }
+  },
+  "validation_bundle_sha256": "1e0e7c6ed8bab56caa47f6916528800ac42c22702cf42a3b7f0f0a5540282e3d"
+}

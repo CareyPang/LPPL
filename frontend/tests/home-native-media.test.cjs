@@ -66,6 +66,30 @@ test('first paint loads only the chosen sea variant; underwater media remains la
   assert.equal(media.getLoop('sea').scene, 'sea');
 });
 
+test('the dive decoder warms only after the sea is ready, without starting the underwater loop', async () => {
+  const { media, videos, expire } = setup();
+  media.start(); expire(250);
+  assert.equal(videos.length, 1);
+  videos[0].ready(); await flush();
+  expire(250);
+  assert.equal(videos.length, 2);
+  assert.equal(videos[1].src, 'assets/ocean/dive-desktop.mp4');
+  videos[1].ready();
+  assert.equal(media.getDive().progress, 0);
+  assert.equal(videos[1].plays, 0);
+  assert.equal(media.status('under'), 'idle');
+});
+
+test('a hidden or destroyed page cannot start a delayed decoder warmup', async () => {
+  for (const action of ['hide', 'destroy']) {
+    const { media, videos, expire } = setup();
+    media.start(); videos[0].ready(); await flush();
+    if (action === 'hide') media.setHidden(true); else media.destroy();
+    expire(250);
+    assert.equal(videos.length, 1);
+  }
+});
+
 test('scroll seeks serialize work and coalesce all pending requests to the latest decoded target', async () => {
   const { media, videos, decoded } = setup();
   const first = media.seek(.1), video = videos[0];

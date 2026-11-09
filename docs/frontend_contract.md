@@ -110,3 +110,26 @@
 | `margin.data` | 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据；`fin_balance_sse`、`fin_balance_szse`、`fin_balance_all` 和变化值统一为人民币元。包含 `latest_date`、T+1 `available_date`、`stale`（距 asof 超过 5 个交易日为 true）。刷新失败、stale 或 SZSE/SSE 融资余额比率超出 `[0.3, 3]` 时 `sources.margin.ok=false`，仍展示可用数据。 |
 
 所有市场背景数值均带 `evidence: "descriptive"`；只能作为事实展示，不得转成预测、目标价或报警信号。
+
+## 7. 独立 market-context.v1 快照
+
+P1 的全市场背景读取与个股 Worker `/market` 分离。`workers/market-context` 只读取已封存的日终快照，前端不得直接跨域抓取上游源。
+
+顶层必须包含：
+
+| 字段 | 约束 |
+| --- | --- |
+| `schema_version` | 固定为 `market-context.v1` |
+| `kind` / `snapshot_kind` | `market_context` / `eod` |
+| `asof` | 实际封存交易日；不得把抓取日期当数据日 |
+| `requested_at` / `generated_at` | 请求和生成时间分开保存 |
+| `status` | `fresh`、`partial`、`stale`、`failed` 之一 |
+| `stale_reason` / `last_good_asof` | 刷新失败时保留上一份证据并说明原因 |
+| `evidence` | 固定为 `descriptive`，不进入 LPPLS |
+| `snapshot_sha256` | 对快照内容做稳定哈希 |
+
+每个 `sources.<source_id>` 至少包含 `source_id`、`source_url` 或 `url_host`、`fetched_at`、`status`、`stale_reason`、`raw_sha256`、`license_tier` 和 `error`；保留旧的 `ok` 字段以兼容 `market_latest.json`。
+
+`limit_pools.reasons`、`limit_pools.topics` 和 `history.progression` 在来源没有提供时必须是 `status: "not_available"`、`rows: []`，不能使用 0 表示没有原因、题材或晋级。`history.progression` 若可用，行字段必须包含 `from_streak`、`to_streak`、`eligible_count`、`advanced_count`、`rate`、`asof` 和 `window`。
+
+接口只允许读取对应日期的快照：`GET /context?date=latest|YYYY-MM-DD`、`GET /context/snapshot?date=YYYY-MM-DD`；没有该日期时返回 `CONTEXT_NOT_READY`，不能回退到当前数据。刷新由受保护的 `POST /context/refresh` 异步创建任务并返回 `job_id`，状态通过 `GET /context/status?job_id=...` 读取。

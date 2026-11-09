@@ -14,7 +14,7 @@
     const records = new Map();
     const waiters = [];
     let hidden = !!doc.hidden, destroyed = false, started = false, active = null;
-    let requestedProgress = 0, requestedFrame = 0;
+    let requestedProgress = 0, requestedFrame = 0, warmTimer = null;
     const timer = options.setTimeout || root.setTimeout.bind(root);
     const untimer = options.clearTimeout || root.clearTimeout.bind(root);
 
@@ -68,6 +68,13 @@
       if (!record.notified) {
         record.notified = true;
         if (options.onReady) options.onReady(record.kind, item(record));
+        // Let the surface paint first, then prime the scrub decoder before the first scroll.
+        if (record.kind === 'sea' && !records.has('dive')) {
+          warmTimer = timer(() => {
+            warmTimer = null;
+            if (!destroyed && !hidden && !reduced) ensure('dive');
+          }, 250);
+        }
       }
     }
     function watchFrames(record) {
@@ -222,6 +229,7 @@
       },
       destroy() {
         destroyed = true;
+        untimer(warmTimer);
         for (const record of records.values()) {
           untimer(record.loadTimer); untimer(record.seekTimer);
           if (record.callback !== null && record.video.cancelVideoFrameCallback) record.video.cancelVideoFrameCallback(record.callback);

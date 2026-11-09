@@ -1,0 +1,1003 @@
+{
+  "purpose": "synthetic numerical diagnostic; not market forecast validation",
+  "input_sha256": "ba0165bb13490f2d9ef8cfc1b9373838002b226e85aead616523872c348102db",
+  "source_commit": "1baf3816c24090fbfc54274caba5b8d11e6a2a4a",
+  "python": "3.12.10",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "system": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 191 Stepping 2, GenuineIntel",
+  "optimizer_sha256": "b5f35d1ddaa158846b28c22bd5750300208661d3ccc91ad479b45ad1dfccce8e",
+  "core_sha256": "b1962fb4d19aad477c0ae4c542b06a3cb5eb7e1be2351ab7aebc247850a1a231",
+  "probe_sha256": "d1eb9f2c17144a8d9b008d28b9f036e07db3a7105c7d839f07a0062ccd9eccc6",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "rows": [
+    {
+      "case": "clean_future",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "status": "returned",
+      "message": "Maximum number of iterations has been exceeded.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          124.5,
+          0.01,
+          1.0
+        ],
+        [
+          148.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3638,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3638,
+      "reported_nfev": 3638,
+      "seconds": 0.25465689999691676,
+      "cpu_seconds": 0.234375,
+      "theta": [
+        135.99998044270987,
+        0.49999909095740125,
+        8.499998405215552
+      ],
+      "returned_sse": 1.17438032023813e-13,
+      "audited_sse": 1.17438032023813e-13,
+      "tc_absolute_error": 1.9557290130478577e-05,
+      "near_boundary": false
+    },
+    {
+      "case": "clean_future",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          124.5,
+          0.01,
+          1.0
+        ],
+        [
+          148.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 999,
+        "grid_points": 1600
+      },
+      "actual_work": 2599,
+      "reported_nfev": 1855,
+      "seconds": 0.12623059999896213,
+      "cpu_seconds": 0.125,
+      "theta": [
+        135.99999999999915,
+        0.5000000000000091,
+        8.499999999999885
+      ],
+      "returned_sse": 1.111820559818494e-26,
+      "audited_sse": 1.111820559818494e-26,
+      "tc_absolute_error": 8.526512829121202e-13,
+      "near_boundary": false
+    },
+    {
+      "case": "clean_future",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          124.5,
+          0.01,
+          1.0
+        ],
+        [
+          148.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 488,
+        "grid_points": 1600
+      },
+      "actual_work": 2088,
+      "reported_nfev": 1722,
+      "seconds": 0.05998150000232272,
+      "cpu_seconds": 0.046875,
+      "theta": [
+        136.00000000000009,
+        0.49999999999999895,
+        8.500000000000004
+      ],
+      "returned_sse": 1.1807670029348105e-26,
+      "audited_sse": 1.1807670029348105e-26,
+      "tc_absolute_error": 8.526512829121202e-14,
+      "near_boundary": false
+    },
+    {
+      "case": "clean_future",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "status": "returned",
+      "message": "Maximum number of iterations has been exceeded.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          124.5,
+          0.01,
+          1.0
+        ],
+        [
+          148.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3638,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3638,
+      "reported_nfev": 3638,
+      "seconds": 0.21731560000625905,
+      "cpu_seconds": 0.21875,
+      "theta": [
+        136.00003053707786,
+        0.5000005692329366,
+        8.50000402210719
+      ],
+      "returned_sse": 1.0282840411131722e-13,
+      "audited_sse": 1.0282840411131722e-13,
+      "tc_absolute_error": 3.053707786193627e-05,
+      "near_boundary": false
+    },
+    {
+      "case": "clean_future",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "status": "returned",
+      "message": "Maximum number of iterations has been exceeded.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          124.5,
+          0.01,
+          1.0
+        ],
+        [
+          148.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3638,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3638,
+      "reported_nfev": 3638,
+      "seconds": 0.21631309999793302,
+      "cpu_seconds": 0.21875,
+      "theta": [
+        136.00000747304267,
+        0.5000000588972806,
+        8.500001370309883
+      ],
+      "returned_sse": 3.776301819636137e-15,
+      "audited_sse": 3.776301819636137e-15,
+      "tc_absolute_error": 7.4730426717906084e-06,
+      "near_boundary": false
+    },
+    {
+      "case": "clean_future",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          124.5,
+          0.01,
+          1.0
+        ],
+        [
+          148.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 870,
+        "grid_points": 1600
+      },
+      "actual_work": 2470,
+      "reported_nfev": 1828,
+      "seconds": 0.09688290000485722,
+      "cpu_seconds": 0.09375,
+      "theta": [
+        136.0000000000001,
+        0.5000000000000091,
+        8.500000000000028
+      ],
+      "returned_sse": 1.185815712728225e-26,
+      "audited_sse": 1.185815712728225e-26,
+      "tc_absolute_error": 1.1368683772161603e-13,
+      "near_boundary": false
+    },
+    {
+      "case": "iid_future",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 2994,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 2994,
+      "reported_nfev": 2994,
+      "seconds": 0.21466070000315085,
+      "cpu_seconds": 0.203125,
+      "theta": [
+        266.3343949272852,
+        0.6225915473583234,
+        8.9896598241741
+      ],
+      "returned_sse": 0.023490164104620417,
+      "audited_sse": 0.023490164104620417,
+      "tc_absolute_error": 0.6656050727148113,
+      "near_boundary": false
+    },
+    {
+      "case": "iid_future",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 699,
+        "grid_points": 1600
+      },
+      "actual_work": 2299,
+      "reported_nfev": 1777,
+      "seconds": 0.09325439999520313,
+      "cpu_seconds": 0.078125,
+      "theta": [
+        266.3343807981695,
+        0.6225915221662015,
+        8.989658530802956
+      ],
+      "returned_sse": 0.023490164104589515,
+      "audited_sse": 0.023490164104589515,
+      "tc_absolute_error": 0.6656192018305092,
+      "near_boundary": false
+    },
+    {
+      "case": "iid_future",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 598,
+        "grid_points": 1600
+      },
+      "actual_work": 2198,
+      "reported_nfev": 1751,
+      "seconds": 0.07622810000611935,
+      "cpu_seconds": 0.078125,
+      "theta": [
+        266.3343807981695,
+        0.6225915221662015,
+        8.989658530802956
+      ],
+      "returned_sse": 0.023490164104589515,
+      "audited_sse": 0.023490164104589515,
+      "tc_absolute_error": 0.6656192018305092,
+      "near_boundary": false
+    },
+    {
+      "case": "iid_future",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3110,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3110,
+      "reported_nfev": 3110,
+      "seconds": 0.20206700000562705,
+      "cpu_seconds": 0.1875,
+      "theta": [
+        266.3342804736915,
+        0.6225916450524529,
+        8.98964875349465
+      ],
+      "returned_sse": 0.023490164106014153,
+      "audited_sse": 0.023490164106014153,
+      "tc_absolute_error": 0.6657195263085214,
+      "near_boundary": false
+    },
+    {
+      "case": "iid_future",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3102,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3102,
+      "reported_nfev": 3102,
+      "seconds": 0.20555980000062846,
+      "cpu_seconds": 0.203125,
+      "theta": [
+        266.33427398601003,
+        0.6225907233081625,
+        8.989644874446206
+      ],
+      "returned_sse": 0.023490164107410696,
+      "audited_sse": 0.023490164107410696,
+      "tc_absolute_error": 0.6657260139899677,
+      "near_boundary": false
+    },
+    {
+      "case": "iid_future",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 590,
+        "grid_points": 1600
+      },
+      "actual_work": 2190,
+      "reported_nfev": 1749,
+      "seconds": 0.07465209999645595,
+      "cpu_seconds": 0.078125,
+      "theta": [
+        266.3343807981695,
+        0.6225915221662015,
+        8.989658530802956
+      ],
+      "returned_sse": 0.023490164104589515,
+      "audited_sse": 0.023490164104589515,
+      "tc_absolute_error": 0.6656192018305092,
+      "near_boundary": false
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "status": "returned",
+      "message": "Maximum number of iterations has been exceeded.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3662,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3662,
+      "reported_nfev": 3662,
+      "seconds": 0.2552291000029072,
+      "cpu_seconds": 0.25,
+      "theta": [
+        298.8,
+        0.33160313698223987,
+        18.518948490015248
+      ],
+      "returned_sse": 0.06855705868852154,
+      "audited_sse": 0.06855705868852154,
+      "tc_absolute_error": 23.80000000000001,
+      "near_boundary": true
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 1528,
+        "grid_points": 1600
+      },
+      "actual_work": 3128,
+      "reported_nfev": 2012,
+      "seconds": 0.23858730000210926,
+      "cpu_seconds": 0.234375,
+      "theta": [
+        298.79999999999995,
+        0.3316029873731763,
+        18.518948729623975
+      ],
+      "returned_sse": 0.0685570586885287,
+      "audited_sse": 0.0685570586885287,
+      "tc_absolute_error": 23.799999999999955,
+      "near_boundary": true
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 692,
+        "grid_points": 1600
+      },
+      "actual_work": 2292,
+      "reported_nfev": 1776,
+      "seconds": 0.09460199999739416,
+      "cpu_seconds": 0.09375,
+      "theta": [
+        298.79999999999995,
+        0.3316029873731763,
+        18.518948729623975
+      ],
+      "returned_sse": 0.0685570586885287,
+      "audited_sse": 0.0685570586885287,
+      "tc_absolute_error": 23.799999999999955,
+      "near_boundary": true
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3268,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3268,
+      "reported_nfev": 3268,
+      "seconds": 0.2800241999939317,
+      "cpu_seconds": 0.28125,
+      "theta": [
+        298.8,
+        0.3316033302527644,
+        18.518945354631967
+      ],
+      "returned_sse": 0.06855705868850412,
+      "audited_sse": 0.06855705868850412,
+      "tc_absolute_error": 23.80000000000001,
+      "near_boundary": true
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "status": "returned",
+      "message": "Maximum number of iterations has been exceeded.",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3658,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3658,
+      "reported_nfev": 3658,
+      "seconds": 0.3361239999940153,
+      "cpu_seconds": 0.34375,
+      "theta": [
+        298.8,
+        0.3316032113207269,
+        18.51894724121461
+      ],
+      "returned_sse": 0.06855705868850517,
+      "audited_sse": 0.06855705868850517,
+      "tc_absolute_error": 23.80000000000001,
+      "near_boundary": true
+    },
+    {
+      "case": "weak_ar1_future",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "status": "returned",
+      "message": "",
+      "domain": "future_only",
+      "bounds": [
+        [
+          249.5,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 916,
+        "grid_points": 1600
+      },
+      "actual_work": 2516,
+      "reported_nfev": 1829,
+      "seconds": 0.1268421999993734,
+      "cpu_seconds": 0.125,
+      "theta": [
+        298.79999999999995,
+        0.3316029873731763,
+        18.518948729623975
+      ],
+      "returned_sse": 0.0685570586885287,
+      "audited_sse": 0.0685570586885287,
+      "tc_absolute_error": 23.799999999999955,
+      "near_boundary": true
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "de_lbfgsb",
+      "seed": 0,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "inside_descriptive",
+      "bounds": [
+        [
+          199.2,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3272,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3272,
+      "reported_nfev": 3272,
+      "seconds": 0.28053580000414513,
+      "cpu_seconds": 0.28125,
+      "theta": [
+        239.2351762933531,
+        0.5485160692896129,
+        8.492284736683903
+      ],
+      "returned_sse": 0.006133121525123658,
+      "audited_sse": 0.006133121525123658,
+      "tc_absolute_error": 0.014823706646893697,
+      "near_boundary": false
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "tcgrid_lm",
+      "seed": 0,
+      "status": "returned",
+      "message": "",
+      "domain": "inside_descriptive",
+      "bounds": [
+        [
+          199.2,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 1309,
+        "grid_points": 1600
+      },
+      "actual_work": 2909,
+      "reported_nfev": 1940,
+      "seconds": 0.1966203000047244,
+      "cpu_seconds": 0.1875,
+      "theta": [
+        254.27266764551797,
+        0.5401382123706922,
+        9.721723982971218
+      ],
+      "returned_sse": 0.06336848240265162,
+      "audited_sse": 0.06336848240265162,
+      "tc_absolute_error": 15.02266764551797,
+      "near_boundary": false
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "tcgrid_lm",
+      "seed": 1,
+      "status": "returned",
+      "message": "",
+      "domain": "inside_descriptive",
+      "bounds": [
+        [
+          199.2,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 1122,
+        "grid_points": 1600
+      },
+      "actual_work": 2722,
+      "reported_nfev": 1891,
+      "seconds": 0.1581540000042878,
+      "cpu_seconds": 0.140625,
+      "theta": [
+        254.27266764551797,
+        0.5401382123706922,
+        9.721723982971218
+      ],
+      "returned_sse": 0.06336848240265162,
+      "audited_sse": 0.06336848240265162,
+      "tc_absolute_error": 15.02266764551797,
+      "near_boundary": false
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "de_lbfgsb",
+      "seed": 1,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "inside_descriptive",
+      "bounds": [
+        [
+          199.2,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3492,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3492,
+      "reported_nfev": 3492,
+      "seconds": 0.2977509999909671,
+      "cpu_seconds": 0.296875,
+      "theta": [
+        239.23516820473472,
+        0.5485162555049561,
+        8.492280859550482
+      ],
+      "returned_sse": 0.006133121527311766,
+      "audited_sse": 0.006133121527311766,
+      "tc_absolute_error": 0.014831795265280334,
+      "near_boundary": false
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "de_lbfgsb",
+      "seed": 2,
+      "status": "returned",
+      "message": "Optimization terminated successfully.",
+      "domain": "inside_descriptive",
+      "bounds": [
+        [
+          199.2,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 3148,
+        "residual": 0,
+        "grid_points": 0
+      },
+      "actual_work": 3148,
+      "reported_nfev": 3148,
+      "seconds": 0.2667154000082519,
+      "cpu_seconds": 0.265625,
+      "theta": [
+        239.2351770120554,
+        0.5485159904581417,
+        8.492285446902413
+      ],
+      "returned_sse": 0.006133121525141995,
+      "audited_sse": 0.006133121525141995,
+      "tc_absolute_error": 0.014822987944597799,
+      "near_boundary": false
+    },
+    {
+      "case": "inside_descriptive",
+      "method": "tcgrid_lm",
+      "seed": 2,
+      "status": "returned",
+      "message": "",
+      "domain": "inside_descriptive",
+      "bounds": [
+        [
+          199.2,
+          0.01,
+          1.0
+        ],
+        [
+          298.8,
+          2.0,
+          50.0
+        ]
+      ],
+      "work_cap": 6000,
+      "seconds_cap": 3.0,
+      "calls": {
+        "objective": 0,
+        "residual": 2993,
+        "grid_points": 1600
+      },
+      "actual_work": 4593,
+      "reported_nfev": 2406,
+      "seconds": 0.387397599988617,
+      "cpu_seconds": 0.359375,
+      "theta": [
+        239.23517542006797,
+        0.5485161298606605,
+        8.492284681524918
+      ],
+      "returned_sse": 0.00613312152515359,
+      "audited_sse": 0.00613312152515359,
+      "tc_absolute_error": 0.014824579932025017,
+      "near_boundary": false
+    }
+  ],
+  "threadpools": [
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 1,
+      "prefix": "libscipy_openblas",
+      "filepath": "D:\\CodexData\\envs\\lppl-async-20261106\\Lib\\site-packages\\numpy.libs\\libscipy_openblas64_-ed4f167a5330424524f45258e7ca2c8d.dll",
+      "version": "0.3.34.106.0",
+      "threading_layer": "pthreads",
+      "architecture": "Haswell"
+    },
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 1,
+      "prefix": "libscipy_openblas",
+      "filepath": "D:\\CodexData\\envs\\lppl-async-20261106\\Lib\\site-packages\\scipy.libs\\libscipy_openblas-197ee2fc9b4d071f7e048078cac74115.dll",
+      "version": "0.3.31.dev",
+      "threading_layer": "pthreads",
+      "architecture": "Haswell"
+    }
+  ],
+  "total_seconds": 4.759608500011382
+}

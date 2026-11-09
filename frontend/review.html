@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071a2a">
+  <title>复盘与资讯 · 临界点</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="app/observatory-phase1.css">
+  <link rel="stylesheet" href="app/investor-workspace.css">
+</head>
+<body class="investor-page">
+  <a class="skip-link" href="#workspace-content">跳至内容</a>
+  <aside class="side-rail">
+    <a class="wordmark" href="home.html"><span class="mark" aria-hidden="true">∿</span><span>临界点<small>OCEAN OBSERVATORY</small></span></a>
+    <p class="rail-label">信息工作台</p>
+    <nav aria-label="复盘功能" id="workspace-nav">
+      <a href="review.html?view=overview" data-view="overview" aria-current="page"><span>◫</span>盘面总览</a>
+      <a href="review.html?view=themes" data-view="themes"><span>▦</span>题材与连板</a>
+      <a href="review.html?view=news" data-view="news"><span>≋</span>资讯与公告</a>
+      <a href="review.html?view=calendar" data-view="calendar"><span>▤</span>事件日历</a>
+      <a href="review.html?view=stocks" data-view="stocks"><span>☆</span>我的自选</a>
+      <a href="review.html?view=notebook" data-view="notebook"><span>✎</span>复盘笔记</a>
+      <a href="review.html?view=sources" data-view="sources"><span>ⓘ</span>数据与来源</a>
+    </nav>
+    <div class="rail-bottom"><a href="stock.html">进入 LPPL 工作站 <span>↗</span></a><a href="market.html">市场热力图与宏观 <span>↗</span></a><p>信息与模型分开运行<br>查看资料不会启动拟合</p></div>
+  </aside>
+  <div class="workspace-shell">
+    <header class="workspace-header">
+      <div><p class="eyebrow">MARKET JOURNAL <span>日终资料</span></p><h1>复盘与资讯</h1><p class="subtitle">从盘面到公司，把相关信息放在一起。</p></div>
+      <a class="quiet-link" href="home.html">返回海洋首页 ↗</a>
+    </header>
+    <div class="workspace-toolbar">
+      <form id="search-form" role="search"><label for="workspace-search" class="sr-only">搜索股票代码、名称、题材或资讯</label><span aria-hidden="true">⌕</span><input id="workspace-search" type="search" maxlength="80" autocomplete="off" placeholder="搜索股票、题材或资讯"><button type="submit">查找</button></form>
+      <div class="date-tools"><label for="review-date">复盘日期</label><input id="review-date" type="date"><button type="button" id="load-date">查看</button><button type="button" id="load-latest">最新封存</button><button type="button" id="refresh-context" aria-label="重新读取当前快照">↻</button></div>
+    </div>
+    <div class="context-strip" role="status" aria-live="polite"><span class="status-dot" aria-hidden="true"></span><span id="context-message">正在读取已封存的市场资料…</span><span id="snapshot-label"></span></div>
+    <main id="workspace-content" tabindex="-1"><div class="loading-shell"><div></div><div></div><div></div></div></main>
+    <footer>资料用于复盘与信息检索。涨停原因是来源归类，资金流是供应商统计口径；均不进入 LPPL 拟合，也不代表买卖建议。</footer>
+  </div>
+  <dialog id="stock-dossier" aria-labelledby="dossier-title">
+    <div class="dossier-top"><div><p class="eyebrow">STOCK DOSSIER</p><h2 id="dossier-title">个股资料</h2><span id="dossier-symbol"></span></div><button type="button" id="close-dossier" aria-label="关闭个股资料">×</button></div>
+    <div class="dossier-actions"><button type="button" id="dossier-watch">加入自选</button><a id="dossier-workstation" href="stock.html">在工作站查看 LPPL ↗</a></div>
+    <div class="dossier-body" id="dossier-body"></div>
+  </dialog>
+  <script src="app/market-context-client.js"></script>
+  <script src="app/lppl-data.js"></script>
+  <script src="app/workstation-ledger.js"></script>
+  <script src="app/candle-chart.js"></script>
+  <script src="app/investor-info.js"></script>
+  <script src="app/investor-workspace.js"></script>
+</body>
+</html>
