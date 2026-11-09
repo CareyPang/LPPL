@@ -2,6 +2,7 @@
 
 import json
 from copy import deepcopy
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import pytest
@@ -10,6 +11,7 @@ import requests
 from research.data import market_eod_pipeline as pipeline
 from research.data.market_eod_archive import EODArchive, digest
 from research.data.market_p1 import THS_LIMIT_UP_URL
+from tests.test_market_source_validation import rewrite_bundle, write_policy_fixture
 
 DAY = "2026-11-06"
 PRIOR = "2026-11-05"
@@ -40,11 +42,7 @@ def calendar_path(tmp_path):
 
 @pytest.fixture
 def policy_path(tmp_path):
-    path = tmp_path / "policy.json"
-    path.write_text(json.dumps({"schema_version": "market-eod-fetch-policy.v1", "sources": {
-        key: {"fetch_enabled": True, "research_access_review": "verified", "evidence_refs": ["synthetic-test-only"],
-              "min_interval_seconds": 1} for key in pipeline.REQUIRED_FETCH_SOURCES}}), encoding="utf-8")
-    return path
+    return write_policy_fixture(tmp_path / "source-policy")
 
 
 def fake_collector(day, archive, run_id, policy):
@@ -117,12 +115,12 @@ def test_policy_is_required_before_any_capture(archive, calendar_path):
     def forbidden(*args):
         raise AssertionError("collector must not run without policy")
     result = run(archive, calendar_path, collector=forbidden)
-    assert result["status"] == "failed" and result["detail"]["reason"] == "SOURCE_POLICY_REQUIRED"
+    assert result["status"] == "failed" and result["detail"]["reason"] == "SOURCE_VALIDATION_BLOCKED"
+    assert {item["reason"] for item in result["detail"]["source_validation"]["missing"]} >= {"SOURCE_POLICY_REQUIRED"}
     assert archive.report()["raw_response_count"] == 0 and not archive.report()["revisions"]
 
 
-@pytest.mark.parametrize("change", [{"fetch_enabled": False}, {"research_access_review": "pending"},
-                                  {"evidence_refs": []}, {"min_interval_seconds": True}, {"min_interval_seconds": 0}])
+@pytest.mark.parametrize("change", [{"fetch_enabled": False}, {"min_interval_seconds": True}, {"min_interval_seconds": 0}])
 def test_unreviewed_policy_is_a_durable_failure(archive, calendar_path, policy_path, change):
     policy = json.loads(policy_path.read_text(encoding="utf-8"))
     policy["sources"]["eastmoney_limit_pools"].update(change)
@@ -130,6 +128,41 @@ def test_unreviewed_policy_is_a_durable_failure(archive, calendar_path, policy_p
     result = run(archive, calendar_path, policy_path)
     assert result["status"] == "failed"
     assert archive.report()["runs"][0] == result and not archive.report()["revisions"]
+
+
+@pytest.mark.parametrize("claim", ["automated_access", "raw_retention", "frequency", "mainland_network"])
+def test_each_unverified_source_review_prevents_even_a_custom_collector(
+    archive, calendar_path, policy_path, claim,
+):
+    rewrite_bundle(policy_path, lambda bundle: bundle["sources"]["eastmoney_limit_pools"][claim].update({"status": "pending"}))
+    def forbidden(*args):
+        raise AssertionError("collector ran before source review completed")
+    result = run(archive, calendar_path, policy_path, collector=forbidden)
+    assert result["status"] == "failed"
+    report = result["detail"]["source_validation"]
+    assert report["allowed"] is False and report["sources"]["eastmoney_limit_pools"]["blocked"]
+    assert archive.report()["raw_response_count"] == 0 and not archive.report()["revisions"]
+
+
+def test_verified_strings_without_bundle_do_not_reach_capture(archive, calendar_path, tmp_path):
+    policy = tmp_path / "old-policy.json"
+    policy.write_text(json.dumps({"schema_version": "market-eod-fetch-policy.v1", "sources": {
+        key: {"fetch_enabled": True, "research_access_review": "verified", "evidence_refs": ["verified"],
+              "min_interval_seconds": 1} for key in pipeline.REQUIRED_FETCH_SOURCES}}), encoding="utf-8")
+    result = run(archive, calendar_path, policy)
+    assert result["status"] == "failed" and result["detail"]["source_validation"]["allowed"] is False
+    assert archive.report()["raw_response_count"] == 0
+
+
+def test_checked_in_policy_blocks_real_capture_before_any_collector(archive, calendar_path):
+    policy_path = Path(__file__).resolve().parents[1] / "research/data/market_eod_fetch_policy.json"
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    bundle = json.loads((policy_path.parent / policy["validation_bundle"]["path"]).read_text(encoding="utf-8"))
+    def forbidden(*args):
+        raise AssertionError("real checked-in policy permitted a collector")
+    result = run(archive, calendar_path, policy_path, collector=forbidden, now=bundle["reviewed_at"])
+    assert result["status"] == "failed" and result["detail"]["source_validation"]["allowed"] is False
+    assert archive.report()["raw_response_count"] == 0
 
 
 @pytest.mark.parametrize("change,expected", [
@@ -242,7 +275,7 @@ def test_recording_session_archives_actual_http_body_before_parse(archive, polic
         observed.append(kwargs)
         return response
     monkeypatch.setattr(requests.Session, "request", mock_request)
-    with pipeline.RecordingSession(archive, "recording_run_001", pipeline.load_fetch_policy(policy_path)) as session:
+    with pipeline.RecordingSession(archive, "recording_run_001", pipeline.load_fetch_policy(policy_path, now=NOW)) as session:
         returned = session.get(THS_LIMIT_UP_URL, allow_redirects=True)
         assert returned is response
         with pytest.raises(requests.exceptions.JSONDecodeError):
@@ -259,7 +292,7 @@ def test_recording_session_archives_actual_http_body_before_parse(archive, polic
 
 def test_recording_session_rejects_unreviewed_host_without_network(archive, policy_path):
     archive.start("recording_run_001", asof=DAY, mode="fixture", now=NOW)
-    with pipeline.RecordingSession(archive, "recording_run_001", pipeline.load_fetch_policy(policy_path)) as session:
+    with pipeline.RecordingSession(archive, "recording_run_001", pipeline.load_fetch_policy(policy_path, now=NOW)) as session:
         with pytest.raises(ValueError, match="UNREVIEWED_SOURCE_HOST"):
             session.get("https://example.test/anything")
     assert archive.report()["raw_response_count"] == 0

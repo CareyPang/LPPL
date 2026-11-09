@@ -1,0 +1,217 @@
+{
+  "schema_version": "market-source-validation.v1",
+  "reviewed_at": "2026-11-09T02:43:16.494295+00:00",
+  "expires_at": "2026-11-16T02:43:16.494295+00:00",
+  "reviewer": "Codex source audit; documents and transport only; rights not approved",
+  "publication_eligible": false,
+  "model_input_eligible": false,
+  "real_eod_sample_count": 0,
+  "evidence": {
+    "terms_eastmoney": {
+      "kind": "terms_review",
+      "url": "https://about.eastmoney.com/home/legal",
+      "path": "../../2026-11-09-source-terms-audit.md",
+      "sha256": "c4db61afcb09d5ecf1b279f540eb0b7758dc407e3779d42e39f65663565afb3f",
+      "observed_at": "2026-11-09T02:43:16.494295+00:00",
+      "synthetic": false
+    },
+    "terms_ths": {
+      "kind": "terms_review",
+      "url": "https://news.10jqka.com.cn/clientinfo/protocol.html",
+      "path": "../../2026-11-09-source-terms-audit.md",
+      "sha256": "c4db61afcb09d5ecf1b279f540eb0b7758dc407e3779d42e39f65663565afb3f",
+      "observed_at": "2026-11-09T02:43:16.494295+00:00",
+      "synthetic": false
+    },
+    "upstream_skill": {
+      "kind": "code_reference",
+      "url": "https://github.com/simonlin1212/a-stock-data/blob/f21534946c42be3ad048ac938eecb1bad84cb8ab/SKILL.md",
+      "path": "../../2026-11-09-source-skill-audit.md",
+      "sha256": "06e894c2e1368a713537b49149247d45cc4db045c3286f5636c6dbe07a4cca0a",
+      "observed_at": "2026-11-09T02:43:16.494295+00:00",
+      "synthetic": false
+    },
+    "transport": {
+      "kind": "tls_probe",
+      "url": "https://push2ex.eastmoney.com/",
+      "path": "transport.json",
+      "sha256": "5fded9b151c2119953a71a5a2b5127f701863b0f864b848d0492fcc770ebbd02",
+      "observed_at": "2026-11-09T02:43:16.494295+00:00",
+      "synthetic": false
+    }
+  },
+  "sources": {
+    "eastmoney_limit_pools": {
+      "source_id": "eastmoney_limit_pools",
+      "endpoints": [
+        {
+          "host": "push2ex.eastmoney.com",
+          "path": "/getTopicZTPool"
+        },
+        {
+          "host": "push2ex.eastmoney.com",
+          "path": "/getTopicZBPool"
+        },
+        {
+          "host": "push2ex.eastmoney.com",
+          "path": "/getTopicDTPool"
+        }
+      ],
+      "review_notes_refs": [
+        "terms_eastmoney",
+        "upstream_skill",
+        "transport"
+      ],
+      "automated_access": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": [],
+        "note": "No endpoint-specific permission established; operator reports no additional authorization."
+      },
+      "raw_retention": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": [],
+        "note": "Private raw archival scope not established separately from viewing."
+      },
+      "derived_statistics": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": []
+      },
+      "public_display": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": []
+      },
+      "frequency": {
+        "status": "NOT_ESTABLISHED",
+        "authority": null,
+        "min_interval_seconds": null,
+        "evidence_refs": [],
+        "note": "Author throttling and local budget are not an official or provider-approved quota."
+      },
+      "mainland_network": {
+        "status": "NOT_ESTABLISHED",
+        "http_samples": [],
+        "cn_path": {
+          "status": "NOT_ESTABLISHED",
+          "country_code": null,
+          "route": "unknown_tun",
+          "evidence_refs": []
+        },
+        "note": "DNS/TLS only, two of four attempts timed out. Location and endpoint routing unverified."
+      }
+    },
+    "eastmoney_yesterday_zt_pool": {
+      "source_id": "eastmoney_yesterday_zt_pool",
+      "endpoints": [
+        {
+          "host": "push2ex.eastmoney.com",
+          "path": "/getYesterdayZTPool"
+        }
+      ],
+      "review_notes_refs": [
+        "terms_eastmoney",
+        "upstream_skill",
+        "transport"
+      ],
+      "automated_access": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": [],
+        "note": "No endpoint-specific permission established; operator reports no additional authorization."
+      },
+      "raw_retention": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": [],
+        "note": "Private raw archival scope not established separately from viewing."
+      },
+      "derived_statistics": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": []
+      },
+      "public_display": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": []
+      },
+      "frequency": {
+        "status": "NOT_ESTABLISHED",
+        "authority": null,
+        "min_interval_seconds": null,
+        "evidence_refs": [],
+        "note": "Author throttling and local budget are not an official or provider-approved quota."
+      },
+      "mainland_network": {
+        "status": "NOT_ESTABLISHED",
+        "http_samples": [],
+        "cn_path": {
+          "status": "NOT_ESTABLISHED",
+          "country_code": null,
+          "route": "unknown_tun",
+          "evidence_refs": []
+        },
+        "note": "DNS/TLS only, two of four attempts timed out. Location and endpoint routing unverified."
+      }
+    },
+    "ths_limit_up_pool": {
+      "source_id": "ths_limit_up_pool",
+      "endpoints": [
+        {
+          "host": "data.10jqka.com.cn",
+          "path": "/dataapi/limit_up/limit_up_pool"
+        }
+      ],
+      "review_notes_refs": [
+        "terms_ths",
+        "upstream_skill",
+        "transport"
+      ],
+      "automated_access": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": [],
+        "note": "No endpoint-specific permission established; operator reports no additional authorization."
+      },
+      "raw_retention": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": [],
+        "note": "Private raw archival scope not established separately from viewing."
+      },
+      "derived_statistics": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": []
+      },
+      "public_display": {
+        "status": "NOT_ESTABLISHED",
+        "evidence_refs": []
+      },
+      "frequency": {
+        "status": "NOT_ESTABLISHED",
+        "authority": null,
+        "min_interval_seconds": null,
+        "evidence_refs": [],
+        "note": "Author throttling and local budget are not an official or provider-approved quota."
+      },
+      "mainland_network": {
+        "status": "NOT_ESTABLISHED",
+        "http_samples": [],
+        "cn_path": {
+          "status": "NOT_ESTABLISHED",
+          "country_code": null,
+          "route": "unknown_tun",
+          "evidence_refs": []
+        },
+        "note": "DNS/TLS only, two of four attempts timed out. Location and endpoint routing unverified."
+      }
+    }
+  },
+  "local_sample_proposal": {
+    "enabled": false,
+    "max_days": 2,
+    "max_core_requests_per_day": 5,
+    "min_interval_seconds": 5,
+    "concurrency": 1,
+    "retry_403_429": false,
+    "provider_approved": false
+  },
+  "limitations": [
+    "This review expires for rechecking, not as a granted licence.",
+    "Hash verification is not a supplier signature or legal review.",
+    "No HTTP market payload was fetched; old imports are not new live samples."
+  ]
+}

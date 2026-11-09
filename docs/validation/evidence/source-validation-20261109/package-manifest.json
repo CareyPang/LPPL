@@ -1,0 +1,33 @@
+{
+  "schema_version": "source-validation-package.v1",
+  "baseline_commit": "8433523db14e0d66869e0cf2e13a0e7535c4594c",
+  "real_market_payload_count": 0,
+  "online_writes": false,
+  "files": {
+    "source-review.json": {
+      "sha256": "1e0e7c6ed8bab56caa47f6916528800ac42c22702cf42a3b7f0f0a5540282e3d",
+      "bytes": 7343
+    },
+    "transport.json": {
+      "sha256": "5fded9b151c2119953a71a5a2b5127f701863b0f864b848d0492fcc770ebbd02",
+      "bytes": 3935
+    },
+    "manifest.json": {
+      "sha256": "6014b3da304409ec9423b59da48f6351e5a5cebb7b37b7cb3167c516325afd5d",
+      "bytes": 348
+    },
+    "source-gate-report.json": {
+      "sha256": "32d4c452ad24eae2d04a7248cca1de5ab11435dbdfc4f97d6b231a30629e8e8d",
+      "bytes": 4765
+    },
+    "blocked-capture-receipt.json": {
+      "sha256": "b6a8a1a0d6d2714c39404574541f28cc37d2be02a01ecbc316691808f4340423",
+      "bytes": 6884
+    }
+  },
+  "notes": [
+    "Transport diagnostics are real DNS/TLS only, not HTTP or Mainland path verification.",
+    "No provider raw payload or credentials are included.",
+    "Package hashes prove byte consistency, not permission or market-data correctness."
+  ]
+}

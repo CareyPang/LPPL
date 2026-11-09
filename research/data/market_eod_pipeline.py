@@ -20,26 +20,14 @@ from .market_context_persistence import load_calendar_metadata
 from .market_eod_archive import EODArchive, canonical, day, digest, safe_source_url, stamp
 from .market_eod_quality import assess_eod_payload
 from .market_p1 import attach_source_adapters, fetch_ths_reasons_topics, fetch_yesterday_pool
+from .market_source_validation import SOURCE_ENDPOINTS, SourceValidationError, require_fetch_policy
 
 CN = timezone(timedelta(hours=8))
-REQUIRED_FETCH_SOURCES = {"eastmoney_limit_pools", "ths_limit_up_pool", "eastmoney_yesterday_zt_pool"}
+REQUIRED_FETCH_SOURCES = set(SOURCE_ENDPOINTS)
 
 
-def load_fetch_policy(path: str | Path | None) -> dict[str, Any]:
-    if path is None:
-        raise ValueError("SOURCE_POLICY_REQUIRED")
-    value = json.loads(Path(path).read_text(encoding="utf-8"))
-    if value.get("schema_version") != "market-eod-fetch-policy.v1":
-        raise ValueError("SOURCE_POLICY_SCHEMA")
-    sources = value.get("sources", {})
-    for key in REQUIRED_FETCH_SOURCES:
-        item = sources.get(key, {})
-        if item.get("fetch_enabled") is not True or item.get("research_access_review") != "verified" or not item.get("evidence_refs"):
-            raise ValueError(f"SOURCE_ACCESS_NOT_REVIEWED:{key}")
-        interval = item.get("min_interval_seconds")
-        if isinstance(interval, bool) or not isinstance(interval, (int, float)) or not 1 <= interval <= 60:
-            raise ValueError(f"SOURCE_FREQUENCY_NOT_REVIEWED:{key}")
-    return value
+def load_fetch_policy(path: str | Path | None, *, now: str | None = None) -> dict[str, Any]:
+    return require_fetch_policy(path, now=now)
 
 
 class RecordingSession(requests.Session):
@@ -212,7 +200,7 @@ def run_eod(*, archive: EODArchive, calendar_path: str | Path, asof: str | None 
             import_ref = {"input_file_sha256": digest(raw), "input_snapshot_sha256": payload.get("snapshot_sha256"),
                           "original_run_mode": payload.get("run_mode"), "raw_responses_available": False}
         else:
-            policy = load_fetch_policy(policy_path)
+            policy = load_fetch_policy(policy_path, now=started_at)
             payload = collector(requested, archive, run_id, policy)
             import_ref = None
         if not isinstance(payload, dict) or payload.get("asof") != requested:
@@ -256,4 +244,7 @@ def run_eod(*, archive: EODArchive, calendar_path: str | Path, asof: str | None 
         return archive.finish(run_id, status=state, detail={"quality_status": quality["status"], "raw_verification": raw_checks,
                               "progression_status": quality["progression"]["status"], "prior_asof": sessions["prior_asof"]}, snapshot=context, now=now)
     except Exception as exc:  # noqa: BLE001 — failures are durable outcomes, never silent empty success
-        return archive.finish(run_id, status="failed", detail={"error_type": type(exc).__name__, "reason": str(exc)[:300]}, now=now)
+        detail = {"error_type": type(exc).__name__, "reason": str(exc)[:300]}
+        if isinstance(exc, SourceValidationError):
+            detail["source_validation"] = exc.report
+        return archive.finish(run_id, status="failed", detail=detail, now=now)

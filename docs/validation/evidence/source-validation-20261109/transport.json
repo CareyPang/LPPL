@@ -1,0 +1,133 @@
+{
+  "schema_version": "market-source-transport.v1",
+  "started_at": "2026-11-09T02:41:16.233975+00:00",
+  "finished_at": "2026-11-09T02:41:35.645629+00:00",
+  "publication_eligible": false,
+  "provider_payload_fetched": false,
+  "mainland_network": "NOT_ESTABLISHED",
+  "environment": {
+    "user_location": "NOT_ESTABLISHED",
+    "exit_location": "NOT_ESTABLISHED",
+    "tun_detected": true,
+    "tun_evidence": "caller_declaration_only",
+    "proxy_configuration_inspected": false,
+    "proxy_configuration_changed": false
+  },
+  "limits": {
+    "allowlisted_hosts": [
+      "push2ex.eastmoney.com",
+      "data.10jqka.com.cn"
+    ],
+    "rounds": 2,
+    "max_dns_resolver_calls": 4,
+    "max_tls_connection_attempts": 4,
+    "min_interval_seconds": 3,
+    "socket_timeout_seconds": 5,
+    "dns_timeout_enforced": false,
+    "retries": 0,
+    "http_requests": 0
+  },
+  "limitations": [
+    "System DNS resolution may outlast the socket timeout.",
+    "Socket connections may traverse a system TUN; this probe does not detect or alter routing.",
+    "DNS/TLS success does not establish API access, licensing, data completeness, frequency limits, or Mainland direct connectivity."
+  ],
+  "results": [
+    {
+      "round": 1,
+      "host": "push2ex.eastmoney.com",
+      "port": 443,
+      "started_at": "2026-11-09T02:41:16.233975+00:00",
+      "dns_success": true,
+      "resolved_ips": [
+        "198.18.0.46"
+      ],
+      "target_ip": "198.18.0.46",
+      "tcp_success": true,
+      "tls_success": true,
+      "cipher": [
+        "ECDHE-RSA-AES128-GCM-SHA256",
+        "TLSv1.2",
+        128
+      ],
+      "tls_version": "TLSv1.2",
+      "certificate_sha256": "8fba816c6adcf91fad19b2cadb686c476a900638cc2a1beedd8aa4f06351df10",
+      "failure_stage": null,
+      "failure_type": null,
+      "provider_payload_fetched": false,
+      "http_requests": 0,
+      "finished_at": "2026-11-09T02:41:16.493941+00:00",
+      "elapsed_seconds": 0.266
+    },
+    {
+      "round": 1,
+      "host": "data.10jqka.com.cn",
+      "port": 443,
+      "started_at": "2026-11-09T02:41:19.495087+00:00",
+      "dns_success": true,
+      "resolved_ips": [
+        "198.18.0.47"
+      ],
+      "target_ip": "198.18.0.47",
+      "tcp_success": true,
+      "tls_success": true,
+      "cipher": [
+        "TLS_AES_256_GCM_SHA384",
+        "TLSv1.3",
+        256
+      ],
+      "tls_version": "TLSv1.3",
+      "certificate_sha256": "c41717acfd1fb9b190ffa6db08d83ef91f950a77f8077f6cfcb3ac5ec3ddc81a",
+      "failure_stage": null,
+      "failure_type": null,
+      "provider_payload_fetched": false,
+      "http_requests": 0,
+      "finished_at": "2026-11-09T02:41:19.548009+00:00",
+      "elapsed_seconds": 0.047
+    },
+    {
+      "round": 2,
+      "host": "push2ex.eastmoney.com",
+      "port": 443,
+      "started_at": "2026-11-09T02:41:22.549501+00:00",
+      "dns_success": true,
+      "resolved_ips": [
+        "198.18.0.46"
+      ],
+      "target_ip": "198.18.0.46",
+      "tcp_success": false,
+      "tls_success": false,
+      "cipher": null,
+      "tls_version": null,
+      "certificate_sha256": null,
+      "failure_stage": "tcp",
+      "failure_type": "TIMEOUT",
+      "provider_payload_fetched": false,
+      "http_requests": 0,
+      "finished_at": "2026-11-09T02:41:27.585482+00:00",
+      "elapsed_seconds": 5.031
+    },
+    {
+      "round": 2,
+      "host": "data.10jqka.com.cn",
+      "port": 443,
+      "started_at": "2026-11-09T02:41:30.586960+00:00",
+      "dns_success": true,
+      "resolved_ips": [
+        "198.18.0.47"
+      ],
+      "target_ip": "198.18.0.47",
+      "tcp_success": false,
+      "tls_success": false,
+      "cipher": null,
+      "tls_version": null,
+      "certificate_sha256": null,
+      "failure_stage": "tcp",
+      "failure_type": "TIMEOUT",
+      "provider_payload_fetched": false,
+      "http_requests": 0,
+      "finished_at": "2026-11-09T02:41:35.644616+00:00",
+      "elapsed_seconds": 5.047
+    }
+  ]
+}
