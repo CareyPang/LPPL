@@ -11,10 +11,13 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from datetime import date
+from math import isfinite
 from typing import Any
 
 SCHEMA = "market-eod-quality.v1"
 POOLS = ("zt", "zb", "dt")
+YESTERDAY_POOL = "yesterday_performance"
+YESTERDAY_SOURCE = "eastmoney_yesterday_zt_pool"
 _HASH = re.compile(r"[0-9a-fA-F]{64}\Z")
 _CODE = re.compile(r"(?:[03648]\d{5}|92\d{4})\Z")
 
@@ -44,8 +47,19 @@ def _mapping(value: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
+def _quote_available(value: Any) -> bool:
+    try:
+        return type(value) in (int, float) and isfinite(value)
+    except OverflowError:
+        return False
+
+
 def _pool_source(payload: Mapping[str, Any], kind: str) -> Mapping[str, Any]:
     limit = _mapping(payload.get("limit_pools"))
+    if kind == YESTERDAY_POOL:
+        # This T-day view has an independent source. Never fall back to the
+        # current-day three-pool receipt or an archived T-1 snapshot.
+        return _mapping(_mapping(limit.get(kind)).get("source"))
     scoped = _mapping(limit.get("pool_sources"))
     if kind in scoped:
         return _mapping(scoped[kind])
@@ -112,16 +126,21 @@ def _source_checks(source: Mapping[str, Any], *, asof: str, declared: Any) -> di
 
 def _pool(payload: Mapping[str, Any], kind: str, asof: str) -> dict[str, Any]:
     limit = _mapping(payload.get("limit_pools"))
-    declared = limit.get(kind)
-    row_map = _mapping(limit.get("pool_rows"))
-    raw = row_map.get(kind)
+    section = _mapping(limit.get(kind)) if kind == YESTERDAY_POOL else {}
+    declared = section.get("declared_count") if kind == YESTERDAY_POOL else limit.get(kind)
+    raw = section.get("rows") if kind == YESTERDAY_POOL else _mapping(limit.get("pool_rows")).get(kind)
+    present = isinstance(raw, list)
     reasons: list[str] = []
+    if kind == YESTERDAY_POOL:
+        if section.get("asof") != asof:
+            reasons.append("yesterday_performance_asof_missing_or_mismatch")
+        if section.get("window") != "t-1_to_t":
+            reasons.append("yesterday_performance_window_not_t_minus_one_to_t")
     if not _count(declared):
         reasons.append("declared_total_missing_or_invalid")
     if not isinstance(raw, list):
         reasons.append("full_pool_rows_missing_top20_is_not_complete")
         raw = []
-    present = isinstance(row_map.get(kind), list)
     if present and _count(declared) and len(raw) != declared:
         reasons.append("declared_total_row_count_mismatch")
     if payload.get("asof") != asof:
@@ -157,12 +176,19 @@ def _pool(payload: Mapping[str, Any], kind: str, asof: str) -> dict[str, Any]:
     if invalid_rows:
         reasons.append("invalid_pool_rows")
     structurally_complete = not reasons
-    source = _source_checks(_pool_source(payload, kind), asof=asof, declared=declared)
+    source_meta = _pool_source(payload, kind)
+    source = _source_checks(source_meta, asof=asof, declared=declared)
+    independent_source = kind != YESTERDAY_POOL or source_meta.get("source_id") == YESTERDAY_SOURCE
+    envelope_fresh = kind != YESTERDAY_POOL or section.get("status") == "fresh"
+    if not independent_source:
+        source["reasons"].append("yesterday_performance_independent_source_missing_or_wrong")
+    if not envelope_fresh:
+        source["reasons"].append("yesterday_performance_not_fresh")
     verified = (structurally_complete and source["source_status"] == "fresh"
                 and source["raw_source_hash_present"] and source["source_date_status"] == "VERIFIED"
-                and source["coverage_status"] == "VERIFIED")
+                and source["coverage_status"] == "VERIFIED" and independent_source and envelope_fresh)
     source_mismatch = source["source_date_status"] == "MISMATCH" or source["coverage_status"] == "MISMATCH"
-    return {
+    result = {
         "status": "complete" if verified else "invalid" if not structurally_complete or source_mismatch else "partial",
         "evidence": "descriptive", "structurally_complete": structurally_complete,
         "verified_complete": verified, "declared_count": declared if _count(declared) else None,
@@ -171,6 +197,16 @@ def _pool(payload: Mapping[str, Any], kind: str, asof: str) -> dict[str, Any]:
         "codes": sorted(seen), **{key: value for key, value in source.items() if key != "reasons"},
         "reasons": reasons + source["reasons"],
     }
+    if kind == YESTERDAY_POOL:
+        # Missing quotes are observations, not permission to remove members or
+        # silently assume suspension. Keep them in the archived population.
+        unavailable = sorted({row["code"] for row in raw if isinstance(row, Mapping) and _code(row.get("code"))
+                              and not _quote_available(row.get("pct"))})
+        result.update({"source_id": source_meta.get("source_id"), "window": "t-1_to_t",
+                       "population_basis": "provider_t_day_view_not_prior_archive",
+                       "quote_unavailable_codes": unavailable, "quote_unavailable_count": len(unavailable),
+                       "quote_note": "Missing quotes remain members; suspension is not inferred."})
+    return result
 
 
 def _labels(payload: Mapping[str, Any], key: str, asof: str, zt: Mapping[str, Any]) -> dict[str, Any]:
@@ -259,6 +295,49 @@ def _calendar_proof(payload: Mapping[str, Any], prior: Mapping[str, Any], asof: 
     return reasons
 
 
+def _yesterday_membership(payload: Mapping[str, Any], prior: Any, *, asof: str, prior_asof: str | None,
+                          yesterday: dict[str, Any]) -> dict[str, Any]:
+    """Reconcile the T-day view against an independently archived T-1 pool."""
+    result: dict[str, Any] = {"status": "not_available", "asof": asof, "prior_asof": prior_asof,
+                              "basis": "independent_prior_zt_archive", "prior_count": None,
+                              "matched_count": None, "missing_codes": [], "extra_codes": [], "reasons": []}
+    if not isinstance(prior, Mapping):
+        result["reasons"].append("prior_snapshot_missing")
+        return result
+    result["reasons"].extend(_calendar_proof(payload, prior, asof, prior_asof))
+    prior_capture = _mapping(prior.get("daily_capture"))
+    if (_mapping(prior_capture.get("quality")).get("core_complete") is not True
+            or _mapping(prior_capture.get("raw_verification")).get("zt") is not True):
+        result["reasons"].append("prior_zt_archive_raw_verification_not_established")
+    if prior_asof is None:
+        return result
+    prior_zt = _pool(prior, "zt", prior_asof)
+    if not prior_zt["verified_complete"]:
+        result["reasons"].append("prior_zt_pool_not_verified_complete")
+    if result["reasons"]:
+        return result
+    expected, observed = set(prior_zt["codes"]), set(yesterday["codes"])
+    missing, extra = sorted(expected - observed), sorted(observed - expected)
+    result.update({"prior_count": len(expected), "matched_count": len(expected & observed),
+                   "missing_codes": missing, "extra_codes": extra})
+    if missing:
+        result["reasons"].append("prior_zt_members_missing_from_yesterday_performance")
+    if extra:
+        result["reasons"].append("yesterday_performance_members_absent_from_prior_zt")
+    if missing or extra:
+        # A provider may omit suspended securities or change its universe.
+        # Neither explanation is silently inferred; expose the discrepancy.
+        yesterday["verified_complete"] = False
+        yesterday["status"] = "partial" if yesterday["structurally_complete"] else "invalid"
+        yesterday["reasons"].extend(result["reasons"])
+        result["status"] = "mismatch"
+    elif yesterday["verified_complete"]:
+        result["status"] = "matched"
+    else:
+        result["reasons"].append("yesterday_performance_not_verified_complete")
+    return result
+
+
 def _progression(payload: Mapping[str, Any], prior: Any, *, asof: str, prior_asof: str | None,
                  current_zt: Mapping[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {"status": "not_available", "asof": asof, "prior_asof": prior_asof,
@@ -306,7 +385,8 @@ def assess_eod_payload(payload: Any, *, asof: str, prior_payload: Any = None,
                        prior_asof: str | None = None) -> dict[str, Any]:
     """Assess normalized saved payloads without modifying historical results.
 
-    New provider receipts belong in ``limit_pools.pool_sources.<zt|zb|dt>``:
+    New provider receipts belong in ``limit_pools.pool_sources.<zt|zb|dt>``
+    and ``limit_pools.yesterday_performance.source``:
     status=fresh, asof, asof_status=source_verified, raw_sha256, and
     coverage={status:complete,declared_total,pages_expected,pages_received}.
     These are supplied assertions checked for consistency, not a substitute
@@ -318,9 +398,16 @@ def assess_eod_payload(payload: Any, *, asof: str, prior_payload: Any = None,
         raise ValueError("prior_asof must be YYYY-MM-DD")
     value = _mapping(payload)
     pools = {kind: _pool(value, kind, asof) for kind in POOLS}
+    pools[YESTERDAY_POOL] = _pool(value, YESTERDAY_POOL, asof)
+    pools[YESTERDAY_POOL]["prior_membership"] = _yesterday_membership(
+        value, prior_payload, asof=asof, prior_asof=prior_asof, yesterday=pools[YESTERDAY_POOL])
     labels = {key: _labels(value, key, asof, pools["zt"]) for key in ("reasons", "topics")}
     progression = _progression(value, prior_payload, asof=asof, prior_asof=prior_asof, current_zt=pools["zt"])
-    core_complete = all(pool["verified_complete"] for pool in pools.values())
+    # Preserve the v1 three-pool flag and two-ZT progression semantics. A
+    # separate fourth-pool contract strengthens sealing, not old conclusions.
+    core_complete = all(pools[kind]["verified_complete"] for kind in POOLS)
+    membership_matched = pools[YESTERDAY_POOL]["prior_membership"]["status"] == "matched"
+    four_pool_complete = core_complete and pools[YESTERDAY_POOL]["verified_complete"] and membership_matched
     reasons = []
     if not isinstance(payload, Mapping):
         reasons.append("payload_not_object")
@@ -328,6 +415,10 @@ def assess_eod_payload(payload: Any, *, asof: str, prior_payload: Any = None,
         reasons.append("payload_asof_mismatch")
     if not core_complete:
         reasons.append("one_or_more_pools_not_verified_complete")
+    if not pools[YESTERDAY_POOL]["verified_complete"]:
+        reasons.append("yesterday_performance_not_verified_complete")
+    if not membership_matched:
+        reasons.append("yesterday_performance_prior_membership_not_matched")
     if any(label["status"] != "fresh" for label in labels.values()):
         reasons.append("reason_or_topic_coverage_incomplete_or_unverified")
     status = "ready" if not reasons else "partial"
@@ -336,8 +427,10 @@ def assess_eod_payload(payload: Any, *, asof: str, prior_payload: Any = None,
     return {
         "schema_version": SCHEMA, "asof": asof, "status": status,
         "evidence": "descriptive", "pools": pools, "labels": labels, "progression": progression,
-        "core_complete": core_complete,
-        "structurally_complete": all(pool["structurally_complete"] for pool in pools.values()),
+        "core_complete": core_complete, "three_pool_complete": core_complete, "four_pool_complete": four_pool_complete,
+        "core_complete_scope": "zt_zb_dt_legacy_v1",
+        "structurally_complete": all(pools[kind]["structurally_complete"] for kind in POOLS),
+        "four_pool_structurally_complete": all(pool["structurally_complete"] for pool in pools.values()),
         "reasons": reasons, "publication_eligible": False,
         "proof_scope": "metadata_consistency_only_archive_must_verify_raw_bytes_and_calendar",
         "model_input_eligible": False,

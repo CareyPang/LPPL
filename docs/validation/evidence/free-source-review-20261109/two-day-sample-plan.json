@@ -1,0 +1,71 @@
+{
+  "schema_version": "p1-free-source-sample-plan.v1",
+  "created_at": "2026-11-09T06:06:46.097149+00:00",
+  "baseline_commit": "439657749102bdc617282475afe7966c69b34f72",
+  "upstream_commit": "f21534946c42be3ad048ac938eecb1bad84cb8ab",
+  "status": "NOT_FETCHED_CONDITIONS_NOT_ESTABLISHED",
+  "candidate_sessions": [
+    "2026-11-05",
+    "2026-11-06"
+  ],
+  "calendar_reference": "../market-context-p1-20261108/trading_calendar_verified.json",
+  "candidate_sessions_note": "Two adjacent already closed sessions at planning time; re-evaluate source history availability before any authorized collection. Do not overwrite or relabel previous late-acquired records.",
+  "market_data_http_requests": 0,
+  "actual_new_sample_days": 0,
+  "actual_raw_response_count": 0,
+  "actual_new_snapshot_count": 0,
+  "supplier_contacts": 0,
+  "purchase_or_trial_requests": 0,
+  "publication_eligible": false,
+  "model_input_eligible": false,
+  "scope": [
+    "zt",
+    "zb",
+    "dt",
+    "yesterday_performance",
+    "ths_limit_reason_and_source_labels"
+  ],
+  "not_in_initial_sample": [
+    "getharden_event_reason",
+    "current_concept_membership",
+    "industry_effective_history"
+  ],
+  "local_budget_proposal": {
+    "concurrency": 1,
+    "minimum_interval_seconds": 5,
+    "core_requests_per_day": 5,
+    "planned_core_requests_total": 10,
+    "automatic_retry": false,
+    "automatic_budget_expansion": false,
+    "extra_pages": "Require a predetermined reviewed total budget; otherwise report pagination incomplete.",
+    "provider_approved": false,
+    "preflight_budget": "Separate and not yet approved; no preflight executed."
+  },
+  "stop_on": [
+    "403",
+    "429",
+    "captcha",
+    "redirect",
+    "unexpected_host",
+    "budget_exhaustion",
+    "unreviewed_response_shape"
+  ],
+  "pending_conditions": [
+    "applicable_automated_access_basis",
+    "applicable_private_raw_retention_basis",
+    "reviewed_numeric_rate_basis_under_current_policy",
+    "verified_mainland_http_path",
+    "source_history_and_market_scope"
+  ],
+  "rights_evidence_options": [
+    "applicable_public_free_license",
+    "other_verifiable_applicable_authorization"
+  ],
+  "paid_contract_required": false,
+  "public_display_is_separate": true,
+  "notes": [
+    "HTTP success and a code license alone do not grant data-use rights.",
+    "No current data or synthetic fixture may be used to fill historical source gaps.",
+    "first_public_visible_at must remain null for private research; no advance prediction claim."
+  ]
+}

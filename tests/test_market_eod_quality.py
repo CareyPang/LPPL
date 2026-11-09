@@ -18,11 +18,16 @@ def receipt(day, total):
 def payload(day=DAY, *, prior=PRIOR):
     rows = [{"code": "000001", "streak": 2 if day == DAY else 1}, {"code": "600519", "streak": 1}]
     return {"asof": day,
+            "daily_capture": {"quality": {"core_complete": True}, "raw_verification": {"zt": True},
+                              "evidence_note": "Synthetic metadata assertions; pure quality tests do not verify bytes."},
             "calendar": {"calendar_status": "provided", "asof_status": "exchange_verified", "prior_status": "exchange_verified",
                          "prior_asof": prior, "calendar_source_sha256": "b" * 64},
             "limit_pools": {"date": day.replace("-", ""), "zt": 2, "zb": 0, "dt": 0,
                 "pool_rows": {"zt": rows, "zb": [], "dt": []},
                 "pool_sources": {key: receipt(day, 2 if key == "zt" else 0) for key in ("zt", "zb", "dt")},
+                "yesterday_performance": {"status": "fresh", "asof": day, "window": "t-1_to_t", "declared_count": 2,
+                    "source": {**receipt(day, 2), "source_id": "eastmoney_yesterday_zt_pool"},
+                    "rows": [{"code": row["code"], "pct": 0.0} for row in rows]},
                 "reasons": {"status": "fresh", "asof": day, "source": receipt(day, 2),
                             "rows": [{"code": row["code"], "reason": "Synthetic reason"} for row in rows]},
                 "topics": {"status": "fresh", "asof": day, "source": receipt(day, 2),
@@ -36,9 +41,11 @@ def assess(value=None, **kwargs):
 def test_complete_receipts_separate_structure_evidence_and_no_mutation():
     value = payload()
     before = deepcopy(value)
-    result = assess(value)
+    result = assess(value, prior_payload=payload(PRIOR), prior_asof=PRIOR)
     assert value == before
     assert result["status"] == "ready" and result["core_complete"]
+    assert result["three_pool_complete"] and result["four_pool_complete"]
+    assert result["core_complete_scope"] == "zt_zb_dt_legacy_v1"
     assert result["pools"]["zt"]["structurally_complete"] and result["pools"]["zt"]["verified_complete"]
     assert not result["pools"]["zt"]["raw_bytes_verified"]
     assert not result["publication_eligible"] and not result["model_input_eligible"]
@@ -236,3 +243,95 @@ def test_malformed_label_status_is_reported_not_a_type_error():
     result = assess(value)
     assert result["labels"]["topics"]["status"] == "not_available"
     assert result["labels"]["topics"]["matched_count"] == 0
+
+
+def test_fourth_pool_is_required_and_legacy_prior_day_cannot_replace_it():
+    value = payload()
+    value["limit_pools"]["prior_day"] = value["limit_pools"].pop("yesterday_performance")
+    before = deepcopy(value)
+    result = assess(value)
+    assert result["status"] == "partial" and result["core_complete"] and not result["four_pool_complete"]
+    assert not result["pools"]["yesterday_performance"]["verified_complete"]
+    assert value == before
+
+
+@pytest.mark.parametrize("change", [
+    {"source_id": None}, {"source_id": "eastmoney_limit_pools"}, {"status": "error"},
+    {"asof": None}, {"asof": PRIOR}, {"asof_status": "request_date"}, {"raw_sha256": None},
+    {"coverage": {"status": "complete", "declared_total": 3, "pages_expected": 1, "pages_received": 1}},
+])
+def test_yesterday_source_is_independent_dated_complete_and_hashed(change):
+    value = payload()
+    value["limit_pools"]["yesterday_performance"]["source"].update(change)
+    result = assess(value)
+    assert result["status"] == "partial" and result["core_complete"] and not result["four_pool_complete"]
+    assert not result["pools"]["yesterday_performance"]["verified_complete"]
+
+
+@pytest.mark.parametrize("change", [
+    {"status": "error"}, {"status": "stale"}, {"asof": PRIOR}, {"window": "t-1"},
+    {"source": None}, {"declared_count": None}, {"declared_count": True}, {"declared_count": 1},
+    {"rows": None}, {"rows": [{"code": "000001"}, {"code": "000001"}]},
+    {"rows": [{"code": "000001"}, {"code": "sh600519"}]},
+])
+def test_yesterday_envelope_cannot_hide_failure_truncation_or_duplicates(change):
+    value = payload()
+    value["limit_pools"]["yesterday_performance"].update(change)
+    result = assess(value)
+    assert result["status"] == "partial" and result["core_complete"] and not result["four_pool_complete"]
+
+
+def test_yesterday_day_view_never_supplies_a_missing_prior_archive():
+    result = assess(prior_asof=PRIOR)
+    assert result["core_complete"]
+    assert not result["four_pool_complete"] and result["status"] == "partial"
+    assert result["pools"]["yesterday_performance"]["prior_membership"]["status"] == "not_available"
+    assert result["progression"]["status"] == "not_available"
+    assert result["progression"]["reasons"] == ["prior_snapshot_missing"]
+
+
+@pytest.mark.parametrize("codes,missing,extra", [
+    (["000001"], ["600519"], []),
+    (["000001", "600519", "000002"], [], ["000002"]),
+])
+def test_yesterday_membership_discrepancy_is_explicit_and_cannot_be_complete(codes, missing, extra):
+    current = payload()
+    section = current["limit_pools"]["yesterday_performance"]
+    section["rows"] = [{"code": code, "pct": 0.0} for code in codes]
+    section["declared_count"] = len(codes)
+    section["source"]["coverage"]["declared_total"] = len(codes)
+    result = assess(current, prior_payload=payload(PRIOR), prior_asof=PRIOR)
+    fourth = result["pools"]["yesterday_performance"]
+    assert fourth["prior_membership"]["status"] == "mismatch"
+    assert fourth["prior_membership"]["missing_codes"] == missing
+    assert fourth["prior_membership"]["extra_codes"] == extra
+    assert result["core_complete"] and not result["four_pool_complete"]
+    # The fourth view does not rewrite the independent archived-ZT denominator.
+    assert result["progression"]["status"] == "fresh"
+    assert result["progression"]["rows"][0]["eligible_count"] == 2
+    assert result["progression"]["rows"][0]["rate"] == 0.5
+
+
+def test_yesterday_missing_quote_is_retained_and_reported_without_inventing_suspension():
+    current = payload()
+    current["limit_pools"]["yesterday_performance"]["rows"][1]["pct"] = None
+    before = deepcopy(current)
+    result = assess(current, prior_payload=payload(PRIOR), prior_asof=PRIOR)
+    fourth = result["pools"]["yesterday_performance"]
+    assert current == before
+    assert fourth["prior_membership"]["status"] == "matched"
+    assert fourth["quote_unavailable_codes"] == ["600519"]
+    assert fourth["unique_count"] == fourth["prior_membership"]["prior_count"] == 2
+    assert result["progression"]["rows"][0]["eligible_count"] == 2
+    assert result["progression"]["rows"][0]["rate"] == 0.5
+
+
+@pytest.mark.parametrize("capture", [{}, {"quality": {"core_complete": True}, "raw_verification": {"zt": False}},
+    {"quality": {"core_complete": False}, "raw_verification": {"zt": True}}])
+def test_prior_metadata_without_archive_raw_claims_cannot_complete_four_pools(capture):
+    previous = payload(PRIOR)
+    previous["daily_capture"] = capture
+    result = assess(prior_payload=previous, prior_asof=PRIOR)
+    assert result["core_complete"] and not result["four_pool_complete"]
+    assert result["pools"]["yesterday_performance"]["prior_membership"]["status"] == "not_available"
+    assert result["progression"]["rows"][0]["rate"] == 0.5  # Legacy two-ZT metric stays separate.

@@ -46,6 +46,17 @@ def safe_source_url(url: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode([(k, v) for k, v in parse_qsl(parts.query) if k in allowed]), ""))
 
 
+def _quality_rank(snapshot: dict[str, Any], *, final_status: str | None = None) -> int:
+    quality = snapshot.get("daily_capture", {}).get("quality", {})
+    if quality.get("core_complete") is True:
+        if "four_pool_complete" in quality:
+            if quality["four_pool_complete"] is True:
+                return 200 if final_status == "sealed" and quality.get("status") == "ready" else 90
+            return 80
+        return 100  # Preserve the meaning of legacy three-pool revisions.
+    return sum(int(p.get("structurally_complete") is True) for p in quality.get("pools", {}).values())
+
+
 class EODArchive:
     """One SQLite transaction seals a revision and its final receipt.
 
@@ -146,8 +157,7 @@ class EODArchive:
                 if snapshot.get("asof") != start["asof"] or snapshot.get("publication_eligible") is not False:
                     raise ValueError("snapshot date/publication boundary mismatch")
                 text = canonical(snapshot)
-                quality = snapshot.get("daily_capture", {}).get("quality", {})
-                rank = 100 if quality.get("core_complete") is True else sum(int(p.get("structurally_complete") is True) for p in quality.get("pools", {}).values())
+                rank = _quality_rank(snapshot, final_status=status)
                 sha = digest(text.encode())
                 result = db.execute("INSERT INTO revisions(run_id,asof,recorded_at,rank,content_sha256,body) VALUES (?,?,?,?,?,?)", (run_id, start["asof"], recorded, rank, sha, text))
                 receipt.update({"revision": result.lastrowid, "content_sha256": sha})
@@ -157,19 +167,33 @@ class EODArchive:
     def best(self, asof: str | None = None, *, known_by: str | None = None) -> dict[str, Any] | None:
         clauses, values = [], []
         if asof is not None:
-            clauses.append("asof=?")
+            clauses.append("r.asof=?")
             values.append(day(asof))
         if known_by is not None:
-            clauses.append("recorded_at<=?")
+            clauses.append("r.recorded_at<=?")
             values.append(stamp(known_by))
         where = " WHERE " + " AND ".join(clauses) if clauses else ""
         with self.connect() as db:
-            row = db.execute("SELECT * FROM revisions" + where + " ORDER BY asof DESC,rank DESC,seq DESC LIMIT 1", values).fetchone()
-        if row is None:
+            rows = db.execute(
+                "WITH eligible AS (SELECT r.*, e.body AS receipt_body FROM revisions r "
+                "LEFT JOIN events e ON e.run_id=r.run_id AND e.kind='finished'" + where + ") "
+                "SELECT * FROM eligible WHERE asof=(SELECT MAX(asof) FROM eligible)", values,
+            ).fetchall()
+        if not rows:
             return None
-        if digest(row["body"].encode()) != row["content_sha256"]:
-            raise ValueError("stored revision hash mismatch")
-        return {"revision": row["seq"], "recorded_at": row["recorded_at"], "content_sha256": row["content_sha256"], "snapshot": json.loads(row["body"])}
+        candidates = []
+        for row in rows:
+            if digest(row["body"].encode()) != row["content_sha256"]:
+                raise ValueError("stored revision hash mismatch")
+            snapshot = json.loads(row["body"])
+            quality = snapshot.get("daily_capture", {}).get("quality", {})
+            # Re-evaluate explicit four-pool records even in an older archive
+            # with cached rank=100. Never rewrite immutable historical ranks.
+            receipt = json.loads(row["receipt_body"]) if row["receipt_body"] else {}
+            rank = _quality_rank(snapshot, final_status=receipt.get("status")) if "four_pool_complete" in quality else row["rank"]
+            candidates.append((rank, row["seq"], row, snapshot))
+        _, _, row, snapshot = max(candidates, key=lambda item: (item[0], item[1]))
+        return {"revision": row["seq"], "recorded_at": row["recorded_at"], "content_sha256": row["content_sha256"], "snapshot": snapshot}
 
     def report(self) -> dict[str, Any]:
         with self.connect() as db:

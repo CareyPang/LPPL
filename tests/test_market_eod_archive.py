@@ -138,6 +138,79 @@ def test_partial_pool_quality_orders_candidates_without_discarding_them(archive)
     assert len(archive.report()["revisions"]) == 2
 
 
+def four_pool_snapshot(complete, *, version):
+    value = snapshot(complete=True, pools=3, version=version)
+    value["daily_capture"]["quality"]["four_pool_complete"] = complete
+    value["daily_capture"]["quality"]["status"] = "ready" if complete else "partial"
+    return value
+
+
+def test_four_pool_partial_retry_cannot_replace_strict_complete_revision(archive):
+    good = four_pool_snapshot(True, version="four_pool_complete")
+    seal(archive, "strict_four_first", good, status="sealed")
+    seal(archive, "new_partial_four", four_pool_snapshot(False, version="four_pool_failed"), now=LATER)
+    assert archive.best(DAY)["snapshot"] == good
+    assert [r["rank"] for r in archive.report()["revisions"]] == [200, 80]
+
+
+@pytest.mark.parametrize("missing_proof", ["labels", "reason_raw"])
+def test_complete_pools_but_partial_labels_or_raw_do_not_replace_sealed(archive, missing_proof):
+    good = four_pool_snapshot(True, version="fully_sealed")
+    seal(archive, "good_with_labels", good, status="sealed")
+    value = four_pool_snapshot(True, version="four_pools_partial")
+    if missing_proof == "labels":
+        value["daily_capture"]["quality"]["status"] = "partial"
+    else:
+        value["daily_capture"]["raw_verification"] = {"reasons_topics": False}
+    seal(archive, "partial_with_four", value, now=LATER, status="partial")
+    assert archive.best(DAY)["snapshot"] == good
+    assert [r["rank"] for r in archive.report()["revisions"]] == [200, 90]
+
+
+def test_legacy_three_pool_record_keeps_meaning_between_strict_candidates(archive):
+    legacy = snapshot(complete=True, pools=3, version="legacy_three")
+    seal(archive, "old_three_sealed", legacy, status="sealed")
+    seal(archive, "new_four_partial", four_pool_snapshot(False, version="new_partial"), now=LATER)
+    assert archive.best(DAY)["snapshot"] == legacy
+    assert "four_pool_complete" not in archive.best(DAY)["snapshot"]["daily_capture"]["quality"]
+    strict = four_pool_snapshot(True, version="strict_four")
+    seal(archive, "strict_after_old", strict, now="2026-11-09T02:03:00Z", status="sealed")
+    assert archive.best(DAY)["snapshot"] == strict
+    assert archive.best(DAY, known_by=LATER)["snapshot"] == legacy
+
+
+def test_read_ranking_handles_old_cached_rank_without_rewriting_append_only_rows(archive, tmp_path):
+    # Simulate an older writer's stored rank. Synthetic insert only, no UPDATE
+    # of any archive record; all source payloads are still hash-bound.
+    complete = four_pool_snapshot(True, version="complete_cached_100")
+    partial = four_pool_snapshot(False, version="partial_cached_100")
+    with archive.connect() as db:
+        for index, (value, recorded) in enumerate(((complete, SEALED), (partial, LATER))):
+            body = canonical(value)
+            db.execute(
+                "INSERT INTO revisions(run_id,asof,recorded_at,rank,content_sha256,body) VALUES (?,?,?,?,?,?)",
+                (f"old_cached_{index}", DAY, recorded, 100, digest(body.encode()), body),
+            )
+    before = archive.report()
+    assert archive.best(DAY)["snapshot"] == complete
+    assert archive.best(DAY, known_by=SEALED)["snapshot"] == complete
+    assert archive.best(DAY, known_by=START) is None
+    assert archive.report() == before
+    restored_path = tmp_path / "restored.sqlite3"
+    archive.backup(restored_path)
+    restored = EODArchive(restored_path)
+    assert restored.best(DAY)["snapshot"] == complete
+    assert restored.report() == before
+
+
+def test_four_pool_ranking_still_respects_requested_day_before_quality(archive):
+    seal(archive, "prior_strict_day", {**four_pool_snapshot(True, version="prior_strict"), "asof": PRIOR}, asof=PRIOR)
+    current = four_pool_snapshot(False, version="current_partial")
+    seal(archive, "latest_part_day", current, now=LATER)
+    assert archive.best()["snapshot"] == current
+    assert archive.best(PRIOR)["snapshot"]["asof"] == PRIOR
+
+
 def test_newer_failed_day_keeps_previous_usable_latest(archive):
     seal(archive, "previous_good_day", snapshot(PRIOR, complete=True), asof=PRIOR, status="sealed")
     archive.start("new_day_failed", asof=DAY, mode="capture", now=START)
