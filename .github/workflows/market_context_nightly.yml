@@ -11,16 +11,17 @@ on:
         type: string
         default: ""
       prior_asof:
-        description: "Explicit prior trading date; blank keeps progression unavailable"
+        description: "Legacy input retained for compatibility; prior session is now resolved from verified calendar"
         type: string
         default: ""
       trading_calendar:
-        description: "Checked-in JSON trading calendar; blank leaves exchange date unverified"
+        description: "Verified calendar path; blank uses checked-in 2026 exchange calendar"
         type: string
         default: ""
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: market-context-nightly
@@ -28,11 +29,14 @@ concurrency:
 
 jobs:
   refresh:
+    # Raw research responses must never become downloadable public artifacts.
+    # Public repositories use the separately authorized private backend path.
+    # Opt-in and source review remain required even in a private repository.
+    if: github.event.repository.private == true && vars.LPPL_EOD_CAPTURE_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       INPUT_ASOF: ${{ inputs.asof }}
-      INPUT_PRIOR_ASOF: ${{ inputs.prior_asof }}
       INPUT_TRADING_CALENDAR: ${{ inputs.trading_calendar }}
     steps:
       - uses: actions/checkout@v4
@@ -45,22 +49,61 @@ jobs:
           python-version: "3.12"
       - name: Install project
         run: python -m pip install -e .
-      - name: Fetch and seal descriptive EOD snapshot
+      - name: Locate previous journal from this workflow on main
+        id: previous
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {owner,repo}=context.repo;
+            const result=await github.rest.actions.listArtifactsForRepo({owner,repo,name:'market-eod-state',per_page:50});
+            for(const artifact of result.data.artifacts) {
+              if(artifact.expired || artifact.workflow_run?.id===context.runId || artifact.workflow_run?.head_branch!=='main') continue;
+              const {data:run}=await github.rest.actions.getWorkflowRun({owner,repo,run_id:artifact.workflow_run.id});
+              if(run.path!=='.github/workflows/market_context_nightly.yml' || run.status!=='completed') continue;
+              core.setOutput('run_id',String(run.id));
+              core.setOutput('found','true');
+              return;
+            }
+            core.setOutput('found','false');
+            core.notice('No prior journal artifact is available; no prior-day data will be invented.');
+      - name: Download previous immutable artifact
+        if: steps.previous.outputs.found == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: market-eod-state
+          path: out/previous-eod
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.previous.outputs.run_id }}
+      - name: Verify and restore journal
+        if: steps.previous.outputs.found == 'true'
+        run: python scripts/restore_market_eod_archive.py --source out/previous-eod/state.sqlite --destination out/market-eod/journal.sqlite
+      - name: Capture one EOD attempt with raw responses and durable receipts
         shell: bash
         run: |
           set -euo pipefail
-          args=(--out out/market-context --run-mode live)
+          calendar="${INPUT_TRADING_CALENDAR:-docs/validation/evidence/market-context-p1-20261108/trading_calendar_verified.json}"
+          args=(--archive out/market-eod/journal.sqlite --calendar "$calendar" --capture
+            --source-policy research/data/market_eod_fetch_policy.json
+            --report out/market-eod/report.json)
           if [[ -n "${INPUT_ASOF:-}" ]]; then args+=(--asof "$INPUT_ASOF"); fi
-          if [[ -n "${INPUT_PRIOR_ASOF:-}" ]]; then args+=(--prior-asof "$INPUT_PRIOR_ASOF"); fi
-          if [[ -n "${INPUT_TRADING_CALENDAR:-}" ]]; then args+=(--trading-calendar "$INPUT_TRADING_CALENDAR"); fi
-          python scripts/update_market_context.py "${args[@]}"
-      - name: Check two-snapshot UI gate (informational until two real EOD dates exist)
-        shell: bash
-        continue-on-error: true
-        run: python scripts/market_context_gate.py --directory out/market-context
-      - name: Upload immutable research artifact
+          python scripts/capture_market_eod.py "${args[@]}"
+      - name: Finalize and verify transferable state even after interruption
+        id: final_state
+        if: always()
+        run: python -m scripts.finalize_market_eod_archive --source out/market-eod/journal.sqlite --directory out/eod-transfer
+      - name: Upload verified journal and failure receipts
+        if: always() && steps.final_state.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: market-context-${{ github.run_id }}
-          path: out/market-context/
+          name: market-eod-state
+          path: out/eod-transfer/
           if-no-files-found: error
+          retention-days: 90
+      - name: Preserve diagnostics separately from resumable state
+        if: always() && steps.final_state.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-eod-diagnostics-${{ github.run_id }}
+          path: out/market-eod/
+          if-no-files-found: warn
+          retention-days: 30
