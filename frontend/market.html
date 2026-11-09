@@ -58,7 +58,7 @@ main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap
 .context-controls button { cursor: pointer; }
 .context-controls button:hover { color: var(--ink); border-color: var(--warn); }
 .tool-nav { display: flex; gap: var(--s2); flex-wrap: wrap; }
-.tool-nav button, .review-tabs button { border: 1px solid var(--line); background: transparent; color: var(--ink-2); padding: var(--s2) var(--s3); cursor: pointer; }
+.tool-nav button, .tool-nav a, .review-tabs button { border: 1px solid var(--line); background: transparent; color: var(--ink-2); padding: var(--s2) var(--s3); cursor: pointer; }
 .tool-nav button:hover, .review-tabs button:hover, .tool-nav button[aria-current="true"], .review-tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--warn); }
 .tool-status { color: var(--ink-3); font-size: 12px; margin: 0; }
 .review-tabs { display: flex; gap: var(--s2); border-bottom: 1px solid var(--line); padding-bottom: var(--s3); margin-bottom: var(--s3); flex-wrap: wrap; }
@@ -108,6 +108,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <a href="backtest.html">回测</a>
       <a href="market.html" aria-current="page">市场</a>
       <a href="stock.html">个股</a>
+      <a href="review.html">复盘资讯</a>
       <a href="lab/guide.html">用户指南</a>
     </nav>
     <span class="asof m" id="asof">加载中…</span>
@@ -121,8 +122,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <div class="tool-nav" role="navigation" aria-label="盘面工具入口">
         <button type="button" data-tool-target="s-review">今日盘面</button>
         <button type="button" data-tool-target="s-review" data-review-target="replay">历史复盘</button>
-        <button type="button" data-tool-target="s-capabilities">题材库</button>
-        <button type="button" data-tool-target="s-capabilities">资讯雷达</button>
+        <a href="review.html?view=themes">题材库</a>
+        <a href="review.html?view=news">资讯雷达</a>
+        <a href="review.html?view=calendar">事件日历</a>
         <button type="button" data-tool-target="s-capabilities">全球宏观</button>
       </div>
       <p class="tool-status" id="tool-status">已接入真实日终市场快照；盘中实时、历史补录和外部资讯仍按独立数据契约接入。</p>

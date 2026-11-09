@@ -24,6 +24,12 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+from research.data.investor_context import (
+    build_investor_context,
+    valid_symbol,
+    validate_public_context,
+)
+
 API_SCHEMA = "tencent-api.v1"
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CODE_RE = re.compile(r"^(?:60|68|00|30|43|83|87|92)\d{4}$")
@@ -76,6 +82,9 @@ class InMemoryTencentStore:
         self.snapshots: dict[str, dict[str, Any]] = {}
         self.latest: dict[str, Any] | None = None
         self.refresh_jobs: dict[str, dict[str, Any]] = {}
+        # Populated only by an explicit trusted backend workflow/test fixture.
+        # No public seed endpoint or implicit fetch writes this information.
+        self.investor_snapshots: dict[tuple[str, str | None], dict[str, Any]] = {}
 
     def put_result(self, *, code: str, job_id: str, kind: str, value: Mapping[str, Any]) -> None:
         item = copy.deepcopy(dict(value))
@@ -133,6 +142,8 @@ class TencentCompat:
             return self._status(query)
         if path == "/result" and method == "GET":
             return self._result(query)
+        if path == "/investor-context" and method == "GET":
+            return self._investor_context(query)
         if path in {"/context", "/context/snapshot"} and method == "GET":
             return self._context(query)
         if path == "/context/seed" and method == "POST":
@@ -144,8 +155,8 @@ class TencentCompat:
         return self._error("NOT_FOUND", "接口不存在", 404)
 
     @staticmethod
-    def _error(code: str, message: str, status: int, **extra: Any) -> TencentResponse:
-        return TencentResponse(status, {"error_code": code, "error": message, **extra})
+    def _error(code: str, message: str, http_status: int, **extra: Any) -> TencentResponse:
+        return TencentResponse(http_status, {"error_code": code, "error": message, **extra})
 
     def _market(self, query: Mapping[str, Any]) -> TencentResponse:
         code = str(query.get("code", ""))
@@ -154,7 +165,64 @@ class TencentCompat:
         item = self.store.markets.get(code)
         if item is None:
             return self._error("SOURCE_UNAVAILABLE", "行情暂不可用", 503)
-        return TencentResponse(200, copy.deepcopy(item))
+        result = copy.deepcopy(item)
+        asof = result.get("asof")
+        symbol = ("sh" if code.startswith(("60", "68")) else "sz" if code.startswith(("00", "30")) else "bj") + code
+        # Never let a stored, unvalidated embedded object bypass the dedicated
+        # information cache's source-permission and availability checks.
+        result.pop("investor_context", None)
+        if self._information_date(asof):
+            try:
+                result["investor_context"] = self._investor_projection(asof, symbol)
+            except (ValueError, TypeError, KeyError, OverflowError):
+                # Information metadata must never turn a cached quote into a
+                # failed quote request. The UI treats absence as unavailable.
+                result["investor_context"] = None
+        return TencentResponse(200, result)
+
+    @staticmethod
+    def _information_date(value: Any) -> bool:
+        if not isinstance(value, str) or not DATE_RE.fullmatch(value):
+            return False
+        try:
+            return datetime.fromisoformat(value).date().isoformat() == value
+        except ValueError:
+            return False
+
+    def _read_investor(self, asof: str, symbol: str | None) -> dict[str, Any] | None:
+        item = self.store.investor_snapshots.get((asof, symbol))
+        if item is None:
+            return None
+        try:
+            validate_public_context(item, asof=asof, symbol=symbol, available_at_cutoff=_now())
+        except (ValueError, TypeError, KeyError, OverflowError):
+            return None
+        return copy.deepcopy(item)
+
+    def _investor_projection(self, asof: str, symbol: str | None) -> dict[str, Any]:
+        found = self._read_investor(asof, symbol)
+        if found is not None:
+            return found
+        return build_investor_context(asof=asof, symbol=symbol, available_at_cutoff=_now(), purpose="publish")
+
+    def _investor_context(self, query: Mapping[str, Any]) -> TencentResponse:
+        requested = query.get("date", "latest")
+        symbol = query.get("symbol")
+        if symbol is not None and not valid_symbol(symbol):
+            return self._error("INVALID_SYMBOL", "资产须为交易所前缀与六位代码", 400)
+        if requested != "latest" and not self._information_date(requested):
+            return self._error("INVALID_DATE", "日期须为 latest 或有效日期", 400)
+        if requested == "latest":
+            dates = [key[0] for key in self.store.investor_snapshots
+                     if isinstance(key, tuple) and len(key) == 2 and key[1] == symbol and self._information_date(key[0])]
+            asof = max(dates) if dates else None
+        else:
+            asof = requested
+        item = self._read_investor(asof, symbol) if asof else None
+        if item is None:
+            return self._error("INVESTOR_CONTEXT_NOT_READY", "该日期暂无可公开的资讯快照", 404,
+                               date=requested, symbol=symbol, status="not_available")
+        return TencentResponse(200, item)
 
     def _query(self, body: Mapping[str, Any]) -> TencentResponse:
         code = str(body.get("code", ""))
@@ -252,8 +320,15 @@ class TencentCompat:
         item = self.store.latest if date == "latest" else self.store.snapshots.get(date)
         if item is None:
             return TencentResponse(404, {"error_code": "CONTEXT_NOT_READY", "error": "该日期尚无已封存市场背景快照", "date": date, "status": "not_ready"})
+        if date != "latest" and item.get("asof") != date:
+            return self._error("DATE_MISMATCH", "已封存快照日期与请求不一致", 503)
         result = copy.deepcopy(item)
         result["cache"] = "hit"
+        result["investor_context"] = self._investor_projection(result["asof"], None)
+        # Projection changes content. Preserve the sealed base hash separately
+        # and hash the response envelope instead of mislabelling the old hash.
+        result["base_snapshot_sha256"] = result.get("snapshot_sha256")
+        result["snapshot_sha256"] = _json_hash(result)
         return TencentResponse(200, result)
 
     def _seed(self, body: Mapping[str, Any], headers: Mapping[str, str]) -> TencentResponse:
@@ -277,12 +352,28 @@ class TencentCompat:
 
     @staticmethod
     def _validate_snapshot(snapshot: Mapping[str, Any]) -> str | None:
+        p1 = snapshot.get("p1") if isinstance(snapshot.get("p1"), Mapping) else {}
+        if (
+            "evidence_import" in snapshot
+            or snapshot.get("publication_eligible") is False
+            or snapshot.get("run_mode") in {"research_import", "fixture"}
+            or "supplemental_sources" in p1
+            or "investor_context" in snapshot
+        ):
+            return "UNPUBLISHED_EVIDENCE"
         if snapshot.get("schema_version") != "market-context.v1":
             return "SCHEMA_MISMATCH"
         if not _valid_date(snapshot.get("asof")):
             return "INVALID_DATE"
         if snapshot.get("evidence") != "descriptive":
             return "EVIDENCE_REQUIRED"
+        calendar = snapshot.get("calendar")
+        if not isinstance(calendar, Mapping) or calendar.get("calendar_status") != "provided" or calendar.get("asof_status") != "exchange_verified" or not HASH_RE.fullmatch(str(calendar.get("calendar_source_sha256") or "")):
+            return "CALENDAR_UNVERIFIED"
+        history = snapshot.get("history") if isinstance(snapshot.get("history"), Mapping) else {}
+        progression = history.get("progression") if isinstance(history.get("progression"), Mapping) else {}
+        if progression.get("status") == "fresh" and calendar.get("prior_status") != "exchange_verified":
+            return "CALENDAR_UNVERIFIED"
         if not HASH_RE.fullmatch(str(snapshot.get("snapshot_sha256", ""))):
             return "SNAPSHOT_HASH_REQUIRED"
         sources = snapshot.get("sources")
