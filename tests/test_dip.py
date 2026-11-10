@@ -1,12 +1,13 @@
 import hashlib
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
 import pytest
 import requests
 
-from research.dip import env, events, panel
+from research.dip import env, events, oos_h3, panel
 from research.dip.env import _share_summary
 from research.pipeline import stock
 
@@ -146,6 +147,8 @@ def test_panel_structure_and_outside_structure_keep_expected_shape(tmp_path, mon
     )
     assert panel.build_panel(prices, tmp_path)["oos"] == verdict
     assert result["depth_bucket"] == -0.5
+    assert result["lib"]["reference_asof"] == result["state"]["asof"]
+    assert result["lib"]["note"] == "参考库截止晚于行情日期，已按结果成熟日期筛选"
     assert result["similar"]["full"]["n"] == 0
     assert result["similar"]["industry"] is None
     assert result["similar"]["industry_counts"] == {"n": 0, "n_delisted": 0}
@@ -295,18 +298,26 @@ def test_share_http_403_carries_forward_previous_data(monkeypatch):
 def test_summary_reports_valid_sample_count_for_each_outcome():
     frame = pd.DataFrame(
         {
+            "sig_date": ["2020-01-01", "2020-01-01"],
             "r60": [0.1, np.nan],
             "r120": [0.2, np.nan],
             "r250": [0.3, 0.4],
+            "mdd60": [-0.1, -0.2],
+            "up60": [0.2, 0.3],
             "mdd120": [-0.2, np.nan],
             "up120": [0.4, 0.5],
+            "known60": ["2020-03-01", "2020-03-01"],
+            "known120": ["2020-05-01", "2020-05-01"],
+            "known250": ["2020-12-01", "2020-12-01"],
+            "fh60_known": ["2020-03-01", "2020-03-01"],
+            "fh120_known": ["2020-05-01", "2020-05-01"],
             "delisted": [False, True],
             "fh60": ["U", "none"],
             "fh120": ["L", "none"],
         }
     )
 
-    summary = panel._summary(frame)
+    summary = panel._summary(frame, "2026-01-01")
 
     assert summary["n"] == 2
     assert summary["n_delisted"] == 1
@@ -319,6 +330,245 @@ def test_summary_reports_valid_sample_count_for_each_outcome():
     }
     assert summary["p_up120_ge30"] == pytest.approx(1.0)
     assert summary["p_up120_ge50"] == pytest.approx(0.5)
+    assert not any(summary["n_excluded_immature"].values())
+
+
+def test_panel_maturity_gate_and_future_signals(tmp_path, monkeypatch):
+    prices = _rise_and_fall()
+    prices.attrs["sym"] = "sh600519"
+    asof = panel._state(prices)[0]["asof"]
+    rows = [
+        {
+            "sym": "sh600519",
+            "depth": -0.5,
+            "sig_date": "2024-12-01",
+            "entry_date": "2024-12-02",
+            "sw1": "测试行业",
+            "delisted": False,
+            "r60": 0.1,
+            "mdd60": -0.1,
+            "up60": 0.2,
+            "known60": "2025-02-01",
+            "r120": 0.9,
+            "mdd120": -0.3,
+            "up120": 0.9,
+            "known120": "2026-01-01",
+            "r250": 0.9,
+            "known250": "2026-06-01",
+            "fh60": "U",
+            "fh60_known": "2025-02-01",
+            "fh120": "L",
+            "fh120_known": "2026-01-01",
+        },
+        {
+            "sym": "sh600519",
+            "depth": -0.5,
+            "sig_date": "2024-11-01",
+            "entry_date": "2024-11-04",
+            "sw1": "测试行业",
+            "delisted": False,
+            "r60": 0.3,
+            "mdd60": -0.2,
+            "up60": 0.4,
+            "known60": "2025-01-01",
+            "r120": 0.2,
+            "mdd120": -0.1,
+            "up120": 0.3,
+            "known120": "2025-06-01",
+            "r250": 0.5,
+            "known250": "2025-11-01",
+            "fh60": "L",
+            "fh60_known": "2025-01-01",
+            "fh120": "U",
+            "fh120_known": "2025-06-01",
+        },
+    ]
+    monkeypatch.setattr(
+        panel,
+        "_regime",
+        lambda frame: {
+            "p_hi_filtered": None,
+            "hi_vol_ann": None,
+            "lo_vol_ann": None,
+            "hi_mean_wk": None,
+            "lo_mean_wk": None,
+            "weeks": 0,
+            "status": "short_history",
+            "note": "周收益不足 104 周；波动体制，不是涨跌信号",
+        },
+    )
+
+    _write_library(tmp_path, rows)
+    first = panel.build_panel(prices, tmp_path)
+    summary = first["similar"]["full"]
+    assert first["lib"]["reference_asof"] == asof
+    assert summary["n_outcome"]["r60"] == 2
+    assert summary["n_outcome"]["r120"] == 1
+    assert summary["q"]["r120"] == pytest.approx([0.2] * 5)
+    assert summary["n_excluded_immature"]["r60"] == 0
+    assert summary["n_excluded_immature"]["r120"] == 1
+    assert first["first_hit"]["fh60"]["hist"]["n"] == 2
+    assert first["first_hit"]["fh120"]["hist"]["n"] == 1
+
+    future_event = dict(rows[0], sig_date="2026-01-01", entry_date="2026-01-02")
+    _write_library(tmp_path, rows + [future_event])
+    second = panel.build_panel(prices, tmp_path)
+    assert second["similar"] == first["similar"]
+    assert second["first_hit"] == first["first_hit"]
+
+
+def test_h3_uses_only_known_same_regime_refs_and_keeps_h2_baseline():
+    references = pd.DataFrame(
+        {
+            "p_hi": [0.2] * 30 + [0.8] * 30 + [np.nan] * 5,
+            "fh60": [("U", "L", "none")[index % 3] for index in range(65)],
+            "fh60_known": ["2020-01-01"] * 65,
+        }
+    )
+    references["regime"] = references.p_hi.map(oos_h3._regime_label)
+    test_event = {
+        "regime": "low",
+        "fh60": "U",
+        "fh60_known": "2020-02-01",
+        "entry_date": "2020-02-01",
+        "depth": -0.5,
+    }
+
+    result = oos_h3._h3_event(test_event, references, "fh60")
+
+    all_reference = references[references.fh60_known < test_event["entry_date"]]
+    low_reference = all_reference[all_reference.regime == "low"]
+    p2 = np.array(
+        [(all_reference.fh60 == category).mean() for category in ("U", "L", "none")]
+    )
+    p3 = np.array(
+        [(low_reference.fh60 == category).mean() for category in ("U", "L", "none")]
+    )
+    observed = np.array([1.0, 0.0, 0.0])
+    expected_delta = ((p2 - observed) ** 2).sum() - ((p3 - observed) ** 2).sum()
+    assert result["n_ref"] == 65
+    assert result["n_sub"] == 30
+    assert result["n_ref_unknown"] == 5
+    assert result["fallback"] is False
+    assert result["d"] == pytest.approx(expected_delta)
+    assert oos_h3._regime_label(np.nan) == "unknown"
+    assert (
+        oos_h3._h3_event(
+            {**test_event, "regime": "unknown"}, references, "fh60"
+        )
+        is None
+    )
+
+
+def test_h3_fallback_is_counted_when_known_same_regime_refs_are_fewer_than_30():
+    references = pd.DataFrame(
+        [
+            {
+                "regime": "low" if index < 10 else "high" if index < 35 else "unknown",
+                "fh60": ("U", "L", "none")[index % 3],
+                "fh60_known": "2020-01-01",
+            }
+            for index in range(40)
+        ]
+    )
+    test_event = {
+        "regime": "low",
+        "fh60": "L",
+        "entry_date": "2020-02-01",
+        "depth": -0.5,
+    }
+
+    row = oos_h3._h3_event(test_event, references, "fh60")
+    result = oos_h3._aggregate_group(
+        "全市场",
+        pd.DataFrame(
+            [
+                {
+                    **row,
+                    "month": "2020-02",
+                    "year": "2020",
+                }
+            ]
+        ),
+        np.random.default_rng(1),
+    )
+
+    assert row["n_sub"] == 10
+    assert row["n_ref_unknown"] == 5
+    assert row["fallback"] is True
+    assert row["d"] == pytest.approx(0.0)
+    assert result["n_fallback"] == 1
+    assert result["n_ref_unknown"] == 5
+    assert result["n_ref_unknown_share"] == pytest.approx(5 / 40)
+
+
+def test_regime_nonconvergence_has_explicit_status(monkeypatch):
+    class NonconvergedModel:
+        def fit(self, **kwargs):
+            return SimpleNamespace(mle_retvals={"converged": False})
+
+    monkeypatch.setattr(
+        "statsmodels.tsa.regime_switching.markov_regression.MarkovRegression",
+        lambda *args, **kwargs: NonconvergedModel(),
+    )
+    dates = pd.bdate_range("2018-01-01", periods=800)
+    close = 100 * np.exp(np.cumsum(np.sin(np.arange(len(dates)) / 7) * 0.01))
+    result = panel._regime(pd.DataFrame({"date": dates, "close": close}))
+
+    assert result["p_hi_filtered"] is None
+    assert result["status"] == "nonconverged"
+    assert result["note"] == "波动体制估计未收敛，不是涨跌信号"
+
+
+def test_regime_short_history_has_explicit_status():
+    prices = _prices(np.linspace(100.0, 120.0, 300))
+
+    result = panel._regime(prices)
+
+    assert result["status"] == "short_history"
+    assert result["p_hi_filtered"] is None
+
+
+def test_regime_fit_is_reproducible_for_same_series():
+    dates = pd.bdate_range("2018-01-01", periods=1000)
+    rng = np.random.default_rng(19)
+    returns = np.concatenate(
+        [rng.normal(0.0002, 0.008, 500), rng.normal(0.0001, 0.02, 500)]
+    )
+    close = 100 * np.exp(np.cumsum(returns))
+    prices = pd.DataFrame({"date": dates, "close": close})
+
+    first = panel._regime(prices)
+    second = panel._regime(prices)
+
+    assert first["status"] == second["status"] == "ok"
+    assert first["p_hi_filtered"] is not None
+    assert first["p_hi_filtered"] == second["p_hi_filtered"]
+
+
+def test_phi_cache_invalidates_when_events_hash_changes(tmp_path):
+    lib_dir = tmp_path / "lib"
+    cache_dir = tmp_path / "cache"
+    out_dir = tmp_path / "out"
+    lib_dir.mkdir()
+    cache_dir.mkdir()
+    out_dir.mkdir()
+    events_path = lib_dir / "events.parquet"
+    events_path.write_bytes(b"old-events")
+    (lib_dir / "manifest.json").write_text(
+        json.dumps({"events_file": "events.parquet"}), encoding="utf-8"
+    )
+    phi_path = out_dir / "phi.parquet"
+    meta_path = out_dir / "phi.meta.json"
+    phi_path.write_bytes(b"cached-phi")
+    original_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir)
+    meta_path.write_text(json.dumps(original_meta), encoding="utf-8")
+    assert oos_h3._phi_cache_reusable(phi_path, meta_path, original_meta)
+
+    events_path.write_bytes(b"new-events")
+    changed_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir)
+    assert changed_meta["events_sha256"] != original_meta["events_sha256"]
+    assert not oos_h3._phi_cache_reusable(phi_path, meta_path, changed_meta)
 
 
 def test_predict_adds_dip_without_changing_existing_record_fields(monkeypatch):

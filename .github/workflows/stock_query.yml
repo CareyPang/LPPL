@@ -128,9 +128,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/stock/${{ steps.validate.outputs.code }}
-          key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-${{ github.run_id }}
+          key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-${{ github.run_id }}
           restore-keys: |
-            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-
+            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-
             stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-
 
       - name: Probe market-data endpoint reachability
@@ -271,9 +271,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/stock/${{ needs.query.outputs.code }}
-          key: stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-${{ github.run_id }}
+          key: stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-${{ github.run_id }}
           restore-keys: |
-            stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py') }}-
+            stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-
             stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-
 
       - name: Probe market-data endpoint reachability

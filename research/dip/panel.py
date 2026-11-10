@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import math
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -18,8 +19,21 @@ ROOT = Path(__file__).resolve().parents[2]
 DIP_DATA = ROOT / "data" / "dip"
 RANDOM_WALK_N = 20_000
 RANDOM_WALK_SEED = 20261103
+REGIME_SEED = 20261110
+REGIME_MIN_WEEKS = 104
 EXCLUDED_YEARS = ("2015", "2016")
 QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
+MATURITY_COLUMNS = {
+    "r60": "known60",
+    "mdd60": "known60",
+    "up60": "known60",
+    "r120": "known120",
+    "mdd120": "known120",
+    "up120": "known120",
+    "r250": "known250",
+    "fh60": "fh60_known",
+    "fh120": "fh120_known",
+}
 
 
 def _number(value: object, digits: int = 6) -> float | None:
@@ -83,34 +97,70 @@ def _first_touch(values: pd.Series) -> dict:
     } | {"n": int(total)}
 
 
-def _summary(frame: pd.DataFrame) -> dict:
+def _mature(frame: pd.DataFrame, column: str, asof: str | None) -> pd.DataFrame:
+    known_column = MATURITY_COLUMNS[column]
+    if asof is None:
+        return frame.iloc[0:0].copy()
+    cutoff = pd.Timestamp(asof).strftime("%Y-%m-%d")
+    eligible = frame
+    if "sig_date" in eligible:
+        signal_dates = pd.to_datetime(eligible["sig_date"], errors="coerce").dt.strftime(
+            "%Y-%m-%d"
+        )
+        eligible = eligible.loc[signal_dates.notna() & (signal_dates <= cutoff)]
+    if known_column not in eligible:
+        return eligible.iloc[0:0].copy()
+    known_dates = pd.to_datetime(
+        eligible[known_column], errors="coerce"
+    ).dt.strftime("%Y-%m-%d")
+    return eligible.loc[known_dates.notna() & (known_dates <= cutoff)].copy()
+
+
+def _summary(frame: pd.DataFrame, asof: str | None) -> dict:
     outcomes = ("r60", "r120", "r250", "mdd120", "up120")
     quantile_rows = {}
     outcome_counts = {}
     for column in outcomes:
-        values = pd.to_numeric(frame[column], errors="coerce").dropna() if column in frame else pd.Series(dtype=float)
+        mature = _mature(frame, column, asof)
+        values = (
+            pd.to_numeric(mature[column], errors="coerce").dropna()
+            if column in mature
+            else pd.Series(dtype=float)
+        )
         outcome_counts[column] = int(len(values))
         quantile_rows[column] = (
             [_number(value) for value in values.quantile(QUANTILES).to_numpy()]
             if len(values)
             else [None] * len(QUANTILES)
         )
-    up120 = pd.to_numeric(frame["up120"], errors="coerce").dropna() if "up120" in frame else pd.Series(dtype=float)
+    mature_up120 = _mature(frame, "up120", asof)
+    up120 = (
+        pd.to_numeric(mature_up120["up120"], errors="coerce").dropna()
+        if "up120" in mature_up120
+        else pd.Series(dtype=float)
+    )
+    first_hits = {
+        key: _historical_first_hit(frame, key, asof) for key in ("fh60", "fh120")
+    }
     return {
         "n": int(len(frame)),
         "n_delisted": int(frame["delisted"].fillna(False).astype(bool).sum())
         if "delisted" in frame
         else 0,
         "n_outcome": outcome_counts,
+        "n_excluded_immature": {
+            column: int(len(frame) - len(_mature(frame, column, asof)))
+            for column in MATURITY_COLUMNS
+        },
         "q": quantile_rows,
         "p_up120_ge30": _number(float((up120 >= 0.30).mean())) if len(up120) else None,
         "p_up120_ge50": _number(float((up120 >= 0.50).mean())) if len(up120) else None,
         "fh60": {
-            label: _first_touch(frame["fh60"])[label] if "fh60" in frame else None
+            label: first_hits["fh60"][label]
             for label in ("U", "L", "none")
         },
         "fh120": {
-            label: _first_touch(frame["fh120"])[label] if "fh120" in frame else None
+            label: first_hits["fh120"][label]
             for label in ("U", "L", "none")
         },
     }
@@ -125,8 +175,15 @@ def _sample_counts(frame: pd.DataFrame) -> dict[str, int]:
     }
 
 
-def _historical_first_hit(frame: pd.DataFrame, key: str) -> dict:
-    rates = _first_touch(frame[key]) if key in frame else _first_touch(pd.Series(dtype=object))
+def _historical_first_hit(
+    frame: pd.DataFrame, key: str, asof: str | None
+) -> dict:
+    mature = _mature(frame, key, asof)
+    rates = (
+        _first_touch(mature[key])
+        if key in mature
+        else _first_touch(pd.Series(dtype=object))
+    )
     return {label: rates[label] for label in ("U", "L", "none")} | {"n": rates["n"]}
 
 
@@ -173,11 +230,14 @@ def _regime(prices: pd.DataFrame) -> dict:
             "hi_mean_wk": None,
             "lo_mean_wk": None,
             "weeks": weeks,
+            "status": "failed",
             "note": "波动体制，不是涨跌信号",
         }
-        if weeks < 104:
+        if weeks < REGIME_MIN_WEEKS:
+            base["status"] = "short_history"
             base["note"] = "周收益不足 104 周；波动体制，不是涨跌信号"
             return base
+        from statsmodels.tools.sm_exceptions import ConvergenceWarning, ValueWarning
         from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 
         model = MarkovRegression(
@@ -186,7 +246,18 @@ def _regime(prices: pd.DataFrame) -> dict:
             trend="c",
             switching_variance=True,
         )
-        fitted = model.fit(disp=False, search_reps=10)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ConvergenceWarning)
+            warnings.simplefilter("ignore", ValueWarning)
+            fitted = model.fit(
+                disp=False,
+                search_reps=10,
+                rng=np.random.RandomState(REGIME_SEED),
+            )
+        if not fitted.mle_retvals.get("converged"):
+            base["status"] = "nonconverged"
+            base["note"] = "波动体制估计未收敛，不是涨跌信号"
+            return base
         names = list(fitted.model.param_names)
         params = np.asarray(fitted.params, dtype=float)
         variance_indices = [i for i, name in enumerate(names) if name.startswith("sigma2[")]
@@ -204,6 +275,7 @@ def _regime(prices: pd.DataFrame) -> dict:
                 "lo_vol_ann": _number(np.sqrt(variances[int(low_index)] * 52)),
                 "hi_mean_wk": _number(params[mean_indices[int(high_index)]]),
                 "lo_mean_wk": _number(params[mean_indices[int(low_index)]]),
+                "status": "ok",
             }
         )
         return base
@@ -216,6 +288,7 @@ def _regime(prices: pd.DataFrame) -> dict:
             "hi_mean_wk": None,
             "lo_mean_wk": None,
             "weeks": weeks,
+            "status": "failed",
             "note": "波动体制估计失败，不是涨跌信号",
         }
 
@@ -338,11 +411,34 @@ def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dic
     if depth_bucket is not None and not library.empty and "depth" in library:
         depth_values = pd.to_numeric(library["depth"], errors="coerce")
         full = library.loc[np.isclose(depth_values, depth_bucket, equal_nan=False)].copy()
+    if "sig_date" in full:
+        if state["asof"] is None:
+            full = full.iloc[0:0].copy()
+        else:
+            signal_dates = pd.to_datetime(
+                full["sig_date"], errors="coerce"
+            ).dt.strftime("%Y-%m-%d")
+            full = full.loc[
+                signal_dates.notna() & (signal_dates <= state["asof"])
+            ].copy()
     industry = (
         full.loc[full["sw1"].astype(str) == current_sw1]
         if current_sw1 and "sw1" in full
         else pd.DataFrame()
     )
+    lib_info = {
+        "version": manifest.get("version"),
+        "cutoff": manifest.get("cutoff"),
+        "smoke": bool(manifest.get("smoke", False)),
+        "n_events": manifest.get("n_events"),
+        "reference_asof": state["asof"],
+    }
+    if (
+        manifest.get("cutoff") is not None
+        and state["asof"] is not None
+        and str(manifest["cutoff"]) > str(state["asof"])
+    ):
+        lib_info["note"] = "参考库截止晚于行情日期，已按结果成熟日期筛选"
     if not in_structure:
         similar = None
         first_hit = {
@@ -354,14 +450,16 @@ def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dic
             ~full["sig_date"].astype(str).str[:4].isin(EXCLUDED_YEARS)
         ]
         similar = {
-            "full": _summary(full),
-            "industry": _summary(industry) if len(industry) >= 30 else None,
-            "excl1516": _summary(no_1516),
+            "full": _summary(full, state["asof"]),
+            "industry": _summary(industry, state["asof"])
+            if len(industry) >= 30
+            else None,
+            "excl1516": _summary(no_1516, state["asof"]),
             "industry_counts": _sample_counts(industry),
         }
         first_hit = {
             key: {
-                "hist": _historical_first_hit(full, key),
+                "hist": _historical_first_hit(full, key, state["asof"]),
                 "rw": values,
             }
             for key, values in _random_walk(vol_d).items()
@@ -371,12 +469,7 @@ def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dic
             "evidence": "descriptive",
             "oos": oos_verdict,
             "note": "历史分位，不是预测；样本外检验结果见各卡片标识",
-            "lib": {
-                "version": manifest.get("version"),
-                "cutoff": manifest.get("cutoff"),
-                "smoke": bool(manifest.get("smoke", False)),
-                "n_events": manifest.get("n_events"),
-            },
+            "lib": lib_info,
             "state": state,
             "in_structure": in_structure,
             "depth_bucket": depth_bucket,
