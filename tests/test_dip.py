@@ -503,8 +503,11 @@ def test_h3_fallback_is_counted_when_known_same_regime_refs_are_fewer_than_30():
 
 
 def test_regime_nonconvergence_has_explicit_status(monkeypatch):
+    attempted_seeds = []
+
     class NonconvergedModel:
         def fit(self, **kwargs):
+            attempted_seeds.append(int(kwargs["rng"].get_state()[1][0]))
             return SimpleNamespace(mle_retvals={"converged": False})
 
     monkeypatch.setattr(
@@ -518,6 +521,76 @@ def test_regime_nonconvergence_has_explicit_status(monkeypatch):
     assert result["p_hi_filtered"] is None
     assert result["status"] == "nonconverged"
     assert result["note"] == "波动体制估计未收敛，不是涨跌信号"
+    assert result["seed"] is None
+    assert result["attempts"] == len(panel.REGIME_SEEDS)
+    assert result["reason"] == "not converged"
+    assert attempted_seeds == list(panel.REGIME_SEEDS)
+
+
+def test_regime_retries_after_exception_and_records_accepted_seed(monkeypatch):
+    attempted_seeds = []
+
+    class RetryModel:
+        def fit(self, **kwargs):
+            attempted_seeds.append(int(kwargs["rng"].get_state()[1][0]))
+            if len(attempted_seeds) == 1:
+                raise np.linalg.LinAlgError("SVD did not converge")
+            return SimpleNamespace(
+                mle_retvals={"converged": True},
+                model=SimpleNamespace(
+                    param_names=[
+                        "const[0]",
+                        "const[1]",
+                        "sigma2[0]",
+                        "sigma2[1]",
+                    ]
+                ),
+                params=np.array([0.001, 0.002, 0.01, 0.04]),
+                filtered_marginal_probabilities=pd.DataFrame(
+                    [[0.8, 0.2], [0.25, 0.75]]
+                ),
+            )
+
+    monkeypatch.setattr(
+        "statsmodels.tsa.regime_switching.markov_regression.MarkovRegression",
+        lambda *args, **kwargs: RetryModel(),
+    )
+    dates = pd.bdate_range("2018-01-01", periods=800)
+    close = 100 * np.exp(np.cumsum(np.sin(np.arange(len(dates)) / 7) * 0.01))
+    prices = pd.DataFrame({"date": dates, "close": close})
+
+    result = panel._regime(prices)
+
+    assert result["status"] == "ok"
+    assert result["seed"] == panel.REGIME_SEEDS[1]
+    assert result["attempts"] == 2
+    assert result["reason"] is None
+    assert attempted_seeds == list(panel.REGIME_SEEDS[:2])
+
+
+def test_regime_returns_last_exception_when_all_seeds_fail(monkeypatch):
+    attempted_seeds = []
+
+    class FailedModel:
+        def fit(self, **kwargs):
+            attempted_seeds.append(int(kwargs["rng"].get_state()[1][0]))
+            raise np.linalg.LinAlgError("SVD did not converge")
+
+    monkeypatch.setattr(
+        "statsmodels.tsa.regime_switching.markov_regression.MarkovRegression",
+        lambda *args, **kwargs: FailedModel(),
+    )
+    dates = pd.bdate_range("2018-01-01", periods=800)
+    close = 100 * np.exp(np.cumsum(np.sin(np.arange(len(dates)) / 7) * 0.01))
+    prices = pd.DataFrame({"date": dates, "close": close})
+
+    result = panel._regime(prices)
+
+    assert result["status"] == "failed"
+    assert result["seed"] is None
+    assert result["attempts"] == len(panel.REGIME_SEEDS)
+    assert result["reason"] == "LinAlgError: SVD did not converge"
+    assert attempted_seeds == list(panel.REGIME_SEEDS)
 
 
 def test_regime_short_history_has_explicit_status():
@@ -527,6 +600,8 @@ def test_regime_short_history_has_explicit_status():
 
     assert result["status"] == "short_history"
     assert result["p_hi_filtered"] is None
+    assert result["seed"] is None
+    assert result["attempts"] == 0
 
 
 def test_regime_fit_is_reproducible_for_same_series():
@@ -544,6 +619,24 @@ def test_regime_fit_is_reproducible_for_same_series():
     assert first["status"] == second["status"] == "ok"
     assert first["p_hi_filtered"] is not None
     assert first["p_hi_filtered"] == second["p_hi_filtered"]
+    assert first["seed"] == second["seed"]
+    assert first["attempts"] == second["attempts"]
+
+
+def test_h3_reason_breakdown_counts_only_failed_statuses_and_keeps_top_ten():
+    reasons = [f"error-{index:02d}" for index in range(11)]
+    frame = pd.DataFrame(
+        {
+            "status": ["failed"] * 11
+            + ["nonconverged", "nonconverged", "ok"],
+            "reason": reasons + ["not converged", "not converged", "ignore"],
+        }
+    )
+
+    counts = oos_h3._reason_counts(frame)
+
+    assert list(counts) == ["not converged"] + [f"error-{i:02d}" for i in range(9)]
+    assert counts["not converged"] == 2
 
 
 def test_phi_cache_invalidates_when_events_hash_changes(tmp_path):

@@ -102,7 +102,7 @@ def _phi_cache_meta(lib_dir: Path, cache_dir: Path) -> dict:
         "panel_sha1": hashlib.sha1(panel_path.read_bytes()).hexdigest(),
         "oos_h3_sha1": hashlib.sha1(script_path.read_bytes()).hexdigest(),
         "statsmodels_version": statsmodels.__version__,
-        "regime_seed": panel.REGIME_SEED,
+        "regime_seeds": list(panel.REGIME_SEEDS),
         "min_weeks": panel.REGIME_MIN_WEEKS,
     }
 
@@ -123,8 +123,9 @@ def phi(args):
     try:
         data = events.load(cache_dir / f"{sym}.parquet")
         data["date"] = pd.to_datetime(data["date"])
-    except Exception:
-        return [(sym, date, None, "failed") for date in dates]
+    except Exception as exc:
+        reason = f"{type(exc).__name__}: {str(exc)[:120]}"
+        return [(sym, date, None, "failed", None, 0, reason) for date in dates]
 
     out = []
     for date in dates:
@@ -136,6 +137,9 @@ def phi(args):
                 date,
                 regime["p_hi_filtered"],
                 regime["status"],
+                regime["seed"],
+                regime["attempts"],
+                regime["reason"],
             )
         )
     return out
@@ -151,7 +155,15 @@ def _load_or_build_phi(
     if _phi_cache_reusable(phi_path, meta_path, expected_meta):
         try:
             cached = pd.read_parquet(phi_path)
-            if {"sym", "sig_date", "p_hi", "status"}.issubset(cached.columns):
+            if {
+                "sym",
+                "sig_date",
+                "p_hi",
+                "status",
+                "seed",
+                "attempts",
+                "reason",
+            }.issubset(cached.columns):
                 print("Reusing phi cache with matching metadata", flush=True)
                 return cached
         except Exception:
@@ -167,7 +179,10 @@ def _load_or_build_phi(
             rows += result
             if index % 200 == 0:
                 print(index, len(jobs), flush=True)
-    result = pd.DataFrame(rows, columns=["sym", "sig_date", "p_hi", "status"])
+    result = pd.DataFrame(
+        rows,
+        columns=["sym", "sig_date", "p_hi", "status", "seed", "attempts", "reason"],
+    )
     result.to_parquet(phi_path, index=False)
     meta_path.write_text(
         json.dumps(expected_meta, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -185,6 +200,19 @@ def _status_counts(phi_frame: pd.DataFrame) -> dict[str, int]:
         (~phi_frame["status"].isin(REGIME_STATUSES)).sum()
     )
     return counts
+
+
+def _reason_counts(phi_frame: pd.DataFrame) -> dict[str, int]:
+    reasons = phi_frame.loc[
+        phi_frame["status"].isin(("failed", "nonconverged")), "reason"
+    ].dropna()
+    counts = reasons.value_counts()
+    return {
+        str(reason): int(count)
+        for reason, count in sorted(
+            counts.items(), key=lambda item: (-item[1], str(item[0]))
+        )[:10]
+    }
 
 
 def _aggregate_group(label: str, group: pd.DataFrame, rng: np.random.Generator) -> dict:
@@ -245,7 +273,9 @@ def main():
         args.cache_dir,
     )
     status_counts = _status_counts(phi_frame)
+    reason_counts = _reason_counts(phi_frame)
     print("phi status counts", json.dumps(status_counts, ensure_ascii=False), flush=True)
+    print("phi reason counts", json.dumps(reason_counts, ensure_ascii=False), flush=True)
 
     events_frame = events_frame.merge(
         phi_frame, on=["sym", "sig_date"], how="left"
@@ -293,6 +323,7 @@ def main():
                 "B": B,
                 "phi_missing": phi_missing,
                 "phi_status_counts": status_counts,
+                "phi_reason_counts": reason_counts,
                 "phi_meta": cache_meta,
                 "results": results,
             },

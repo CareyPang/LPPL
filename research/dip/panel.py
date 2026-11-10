@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[2]
 DIP_DATA = ROOT / "data" / "dip"
 RANDOM_WALK_N = 20_000
 RANDOM_WALK_SEED = 20261103
-REGIME_SEED = 20261110
+REGIME_SEEDS = (20261110, 20261111, 20261112, 20261113, 20261114)
+REGIME_SEED = REGIME_SEEDS[0]
 REGIME_MIN_WEEKS = 104
 EXCLUDED_YEARS = ("2015", "2016")
 QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
@@ -219,23 +220,30 @@ def _random_walk(vol_d: float | None) -> dict:
 
 def _regime(prices: pd.DataFrame) -> dict:
     weeks = 0
+    base = {
+        "p_hi_filtered": None,
+        "hi_vol_ann": None,
+        "lo_vol_ann": None,
+        "hi_mean_wk": None,
+        "lo_mean_wk": None,
+        "weeks": weeks,
+        "status": "failed",
+        "seed": None,
+        "attempts": 0,
+        "reason": None,
+        "note": "波动体制，不是涨跌信号",
+    }
     try:
         close = prices.set_index(pd.to_datetime(prices["date"]))["close"].astype(float)
         weekly = close.resample("W-FRI").last().dropna().pct_change().dropna().tail(260)
         weeks = int(len(weekly))
-        base = {
-            "p_hi_filtered": None,
-            "hi_vol_ann": None,
-            "lo_vol_ann": None,
-            "hi_mean_wk": None,
-            "lo_mean_wk": None,
-            "weeks": weeks,
-            "status": "failed",
-            "note": "波动体制，不是涨跌信号",
-        }
+        base["weeks"] = weeks
         if weeks < REGIME_MIN_WEEKS:
-            base["status"] = "short_history"
-            base["note"] = "周收益不足 104 周；波动体制，不是涨跌信号"
+            base.update(
+                status="short_history",
+                reason="short history",
+                note="周收益不足 104 周；波动体制，不是涨跌信号",
+            )
             return base
         from statsmodels.tools.sm_exceptions import ConvergenceWarning, ValueWarning
         from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
@@ -246,51 +254,95 @@ def _regime(prices: pd.DataFrame) -> dict:
             trend="c",
             switching_variance=True,
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ConvergenceWarning)
-            warnings.simplefilter("ignore", ValueWarning)
-            fitted = model.fit(
-                disp=False,
-                search_reps=10,
-                rng=np.random.RandomState(REGIME_SEED),
-            )
-        if not fitted.mle_retvals.get("converged"):
-            base["status"] = "nonconverged"
-            base["note"] = "波动体制估计未收敛，不是涨跌信号"
-            return base
-        names = list(fitted.model.param_names)
-        params = np.asarray(fitted.params, dtype=float)
-        variance_indices = [i for i, name in enumerate(names) if name.startswith("sigma2[")]
-        mean_indices = [i for i, name in enumerate(names) if name.startswith("const[")]
-        if len(variance_indices) != 2 or len(mean_indices) != 2:
-            raise ValueError("MarkovRegression returned unexpected parameter names")
-        variances = [float(params[index]) for index in variance_indices]
-        low_index, high_index = np.argsort(variances)
-        filtered = fitted.filtered_marginal_probabilities
-        last = filtered.iloc[-1] if hasattr(filtered, "iloc") else filtered[-1]
+    except Exception as exc:
+        base.update(
+            status="failed",
+            reason=f"{type(exc).__name__}: {str(exc)[:120]}",
+            note="波动体制估计失败，不是涨跌信号",
+        )
+        LOGGER.warning("dip volatility regime fit failed: %s", base["reason"])
+        return base
+
+    saw_nonconverged = False
+    last_exception = None
+    for seed in REGIME_SEEDS:
+        base["attempts"] += 1
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ConvergenceWarning)
+                warnings.simplefilter("ignore", ValueWarning)
+                fitted = model.fit(
+                    disp=False,
+                    search_reps=10,
+                    rng=np.random.RandomState(seed),
+                )
+            if not fitted.mle_retvals.get("converged"):
+                saw_nonconverged = True
+                continue
+            names = list(fitted.model.param_names)
+            params = np.asarray(fitted.params, dtype=float)
+            filtered = fitted.filtered_marginal_probabilities
+            probabilities = np.asarray(filtered, dtype=float)
+            if not np.isfinite(params).all() or not np.isfinite(probabilities).all():
+                raise ValueError("non-finite parameters or probabilities")
+            variance_indices = [
+                i for i, name in enumerate(names) if name.startswith("sigma2[")
+            ]
+            mean_indices = [
+                i for i, name in enumerate(names) if name.startswith("const[")
+            ]
+            if len(variance_indices) != 2 or len(mean_indices) != 2:
+                raise ValueError("MarkovRegression returned unexpected parameter names")
+            variances = [float(params[index]) for index in variance_indices]
+            low_index, high_index = np.argsort(variances)
+            last = filtered.iloc[-1] if hasattr(filtered, "iloc") else filtered[-1]
+            with np.errstate(invalid="ignore"):
+                values = np.asarray(
+                    [
+                        last[int(high_index)],
+                        np.sqrt(variances[int(high_index)] * 52),
+                        np.sqrt(variances[int(low_index)] * 52),
+                        params[mean_indices[int(high_index)]],
+                        params[mean_indices[int(low_index)]],
+                    ],
+                    dtype=float,
+                )
+            if not np.isfinite(values).all():
+                raise ValueError("non-finite parameters or probabilities")
+        except Exception as exc:
+            last_exception = exc
+            continue
+
         base.update(
             {
-                "p_hi_filtered": _number(last[int(high_index)]),
-                "hi_vol_ann": _number(np.sqrt(variances[int(high_index)] * 52)),
-                "lo_vol_ann": _number(np.sqrt(variances[int(low_index)] * 52)),
-                "hi_mean_wk": _number(params[mean_indices[int(high_index)]]),
-                "lo_mean_wk": _number(params[mean_indices[int(low_index)]]),
+                "p_hi_filtered": _number(values[0]),
+                "hi_vol_ann": _number(values[1]),
+                "lo_vol_ann": _number(values[2]),
+                "hi_mean_wk": _number(values[3]),
+                "lo_mean_wk": _number(values[4]),
                 "status": "ok",
+                "seed": seed,
+                "reason": None,
             }
         )
         return base
-    except Exception as exc:
-        LOGGER.warning("dip volatility regime fit failed: %s: %s", type(exc).__name__, exc)
-        return {
-            "p_hi_filtered": None,
-            "hi_vol_ann": None,
-            "lo_vol_ann": None,
-            "hi_mean_wk": None,
-            "lo_mean_wk": None,
-            "weeks": weeks,
-            "status": "failed",
-            "note": "波动体制估计失败，不是涨跌信号",
-        }
+
+    base.update(
+        status="nonconverged" if saw_nonconverged else "failed",
+        reason=(
+            f"{type(last_exception).__name__}: {str(last_exception)[:120]}"
+            if last_exception is not None
+            else "not converged"
+        ),
+        note=(
+            "波动体制估计未收敛，不是涨跌信号"
+            if saw_nonconverged
+            else "波动体制估计失败，不是涨跌信号"
+        ),
+    )
+    if last_exception is not None:
+        LOGGER.warning("dip volatility regime fit failed: %s", base["reason"])
+    return base
 
 
 def _state(prices: pd.DataFrame) -> tuple[dict, float | None, float | None]:
