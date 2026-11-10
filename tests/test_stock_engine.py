@@ -836,3 +836,67 @@ def test_main_adds_generated_at_to_current_and_history_records(tmp_path, monkeyp
     for name in ("600519.json", "600519_history.json"):
         record = json.loads((tmp_path / name).read_text(encoding="utf-8"))
         assert datetime.fromisoformat(record["generated_at"]).utcoffset().total_seconds() == 0
+
+
+def test_name_and_st_uses_stock_names_without_http(monkeypatch, tmp_path):
+    stock._tencent_stock_name.cache_clear()
+    names_path = tmp_path / "stock_names.json"
+    names_path.write_text(json.dumps({"600000": "浦发银行"}), encoding="utf-8")
+    monkeypatch.setattr(stock, "NAMES_PATH", names_path)
+
+    def fail_http(*_args, **_kwargs):
+        raise AssertionError("unexpected HTTP request")
+
+    monkeypatch.setattr(stock.requests, "get", fail_http)
+    assert stock._name_and_st("600000") == ("浦发银行", False)
+
+
+def test_name_and_st_falls_back_to_tencent_gbk_response(monkeypatch, tmp_path):
+    stock._tencent_stock_name.cache_clear()
+    monkeypatch.setattr(stock, "NAMES_PATH", tmp_path / "missing.json")
+    content = 'v_sz301196="51~唯科科技~301196~66.20~..."'.encode("gbk")
+
+    class Response:
+        def __init__(self):
+            self.content = content
+
+        def raise_for_status(self):
+            return None
+
+    calls = []
+
+    def get(url, **kwargs):
+        calls.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setattr(stock.requests, "get", get)
+    assert stock._name_and_st("301196") == ("唯科科技", False)
+    assert calls[0][0] == "https://qt.gtimg.cn/q=sz301196"
+    assert calls[0][1]["timeout"] == 5
+
+
+def test_name_and_st_marks_tencent_st_name(monkeypatch, tmp_path):
+    stock._tencent_stock_name.cache_clear()
+    monkeypatch.setattr(stock, "NAMES_PATH", tmp_path / "missing.json")
+    content = 'v_sh600000="51~*ST测试~600000~66.20~..."'.encode("gbk")
+
+    class Response:
+        def __init__(self):
+            self.content = content
+
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr(stock.requests, "get", lambda *_args, **_kwargs: Response())
+    assert stock._name_and_st("600000") == ("*ST测试", True)
+
+
+def test_name_and_st_returns_none_on_tencent_http_failure(monkeypatch, tmp_path):
+    stock._tencent_stock_name.cache_clear()
+    monkeypatch.setattr(stock, "NAMES_PATH", tmp_path / "missing.json")
+
+    def fail_http(*_args, **_kwargs):
+        raise stock.requests.HTTPError("HTTP 403")
+
+    monkeypatch.setattr(stock.requests, "get", fail_http)
+    assert stock._name_and_st("301196") == (None, None)
