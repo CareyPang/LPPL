@@ -426,14 +426,26 @@ def _stock_status_meta(
 
 
 def _version() -> str:
+    _set_allow_inside()
     digest = hashlib.sha1()
     for path in (
         ROOT / "research/lppls/core.py",
+        ROOT / "research/optim/optimizers.py",
         ROOT / "research/features/lppls_scan.py",
         ROOT / "research/pipeline/daily.py",
+        ROOT / "research/pipeline/universe.py",
     ):
         digest.update(path.read_bytes())
-    digest.update(lppls_scan.BOX.encode("utf-8"))
+    digest.update(
+        json.dumps(
+            {
+                "box": lppls_scan.BOX,
+                "allow_inside": _core.ALLOW_INSIDE,
+                "box_config": lppls_scan.BOXES[lppls_scan.BOX],
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+    )
     return digest.hexdigest()[:12]
 
 

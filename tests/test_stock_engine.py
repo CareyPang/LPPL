@@ -663,6 +663,27 @@ def test_model_code_version_does_not_call_git(monkeypatch):
     assert stock._version() == expected
 
 
+def test_stock_fit_version_changes_with_optimizer_bytes(monkeypatch, tmp_path):
+    dependencies = (
+        "research/lppls/core.py",
+        "research/optim/optimizers.py",
+        "research/features/lppls_scan.py",
+        "research/pipeline/daily.py",
+        "research/pipeline/universe.py",
+    )
+    for relative in dependencies:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((stock.ROOT / relative).read_bytes())
+    monkeypatch.setattr(stock, "ROOT", tmp_path)
+    original = stock._version()
+
+    optimizer = tmp_path / "research/optim/optimizers.py"
+    optimizer.write_bytes(optimizer.read_bytes() + b"\n")
+
+    assert stock._version() != original
+
+
 def test_predict_rejects_non_v2_box(monkeypatch):
     monkeypatch.setattr(stock.lppls_scan, "BOX", "v1")
     with pytest.raises(RuntimeError, match="requires LPPLS_BOX=v2"):
