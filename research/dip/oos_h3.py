@@ -85,20 +85,28 @@ def _h3_event(
     }
 
 
-def _phi_cache_meta(lib_dir: Path, cache_dir: Path) -> dict:
+def _phi_cache_meta(lib_dir: Path, cache_dir: Path, syms: pd.Series) -> dict:
     manifest = json.loads((lib_dir / "manifest.json").read_text(encoding="utf-8"))
     events_path = lib_dir / manifest.get("events_file", "events.parquet")
-    cache_file_count = (
-        sum(path.is_file() for path in cache_dir.rglob("*"))
-        if cache_dir.exists()
-        else 0
-    )
+    cache_input_lines = []
+    for sym in sorted(syms.dropna().astype(str).unique()):
+        name = f"{sym}.parquet"
+        path = cache_dir / name
+        digest = (
+            hashlib.sha256(path.read_bytes()).hexdigest()
+            if path.is_file()
+            else "MISSING"
+        )
+        cache_input_lines.append(f"{name}\t{digest}")
+    cache_inputs_sha256 = hashlib.sha256(
+        "\n".join(cache_input_lines).encode("utf-8")
+    ).hexdigest()
     panel_path = Path(panel.__file__).resolve()
     script_path = Path(__file__).resolve()
     return {
         "events_sha256": hashlib.sha256(events_path.read_bytes()).hexdigest(),
         "cache_dir": str(cache_dir.resolve()),
-        "cache_file_count": int(cache_file_count),
+        "cache_inputs_sha256": cache_inputs_sha256,
         "panel_sha1": hashlib.sha1(panel_path.read_bytes()).hexdigest(),
         "oos_h3_sha1": hashlib.sha1(script_path.read_bytes()).hexdigest(),
         "statsmodels_version": statsmodels.__version__,
@@ -264,7 +272,7 @@ def main():
     events_frame = pd.read_parquet(events_path)
     phi_path = args.out_dir / "phi.parquet"
     meta_path = args.out_dir / "phi.meta.json"
-    cache_meta = _phi_cache_meta(args.lib_dir, args.cache_dir)
+    cache_meta = _phi_cache_meta(args.lib_dir, args.cache_dir, events_frame["sym"])
     phi_frame = _load_or_build_phi(
         events_frame,
         phi_path,

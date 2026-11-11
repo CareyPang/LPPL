@@ -654,14 +654,64 @@ def test_phi_cache_invalidates_when_events_hash_changes(tmp_path):
     phi_path = out_dir / "phi.parquet"
     meta_path = out_dir / "phi.meta.json"
     phi_path.write_bytes(b"cached-phi")
-    original_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir)
+    syms = pd.Series(["sh600001"])
+    original_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir, syms)
     meta_path.write_text(json.dumps(original_meta), encoding="utf-8")
     assert oos_h3._phi_cache_reusable(phi_path, meta_path, original_meta)
 
     events_path.write_bytes(b"new-events")
-    changed_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir)
+    changed_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir, syms)
     assert changed_meta["events_sha256"] != original_meta["events_sha256"]
     assert not oos_h3._phi_cache_reusable(phi_path, meta_path, changed_meta)
+
+
+def test_phi_cache_invalidates_when_symbol_cache_content_changes(tmp_path):
+    lib_dir = tmp_path / "lib"
+    cache_dir = tmp_path / "cache"
+    out_dir = tmp_path / "out"
+    lib_dir.mkdir()
+    cache_dir.mkdir()
+    out_dir.mkdir()
+    (lib_dir / "events.parquet").write_bytes(b"events")
+    (lib_dir / "manifest.json").write_text(
+        json.dumps({"events_file": "events.parquet"}), encoding="utf-8"
+    )
+    cache_file = cache_dir / "sh600001.parquet"
+    cache_file.write_bytes(b"old-prices")
+    phi_path = out_dir / "phi.parquet"
+    meta_path = out_dir / "phi.meta.json"
+    phi_path.write_bytes(b"cached-phi")
+    syms = pd.Series(["sh600001"])
+
+    original_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir, syms)
+    meta_path.write_text(json.dumps(original_meta), encoding="utf-8")
+    original_file_count = len(list(cache_dir.glob("*.parquet")))
+    assert oos_h3._phi_cache_reusable(phi_path, meta_path, original_meta)
+
+    cache_file.write_bytes(b"revised-prices")
+    changed_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir, syms)
+
+    assert len(list(cache_dir.glob("*.parquet"))) == original_file_count
+    assert changed_meta["cache_inputs_sha256"] != original_meta["cache_inputs_sha256"]
+    assert not oos_h3._phi_cache_reusable(phi_path, meta_path, changed_meta)
+
+
+def test_phi_cache_metadata_tracks_missing_symbol_files(tmp_path):
+    lib_dir = tmp_path / "lib"
+    cache_dir = tmp_path / "cache"
+    lib_dir.mkdir()
+    cache_dir.mkdir()
+    (lib_dir / "events.parquet").write_bytes(b"events")
+    (lib_dir / "manifest.json").write_text(
+        json.dumps({"events_file": "events.parquet"}), encoding="utf-8"
+    )
+    syms = pd.Series(["sh600001"])
+
+    missing_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir, syms)
+    (cache_dir / "sh600001.parquet").write_bytes(b"prices")
+    present_meta = oos_h3._phi_cache_meta(lib_dir, cache_dir, syms)
+
+    assert missing_meta["cache_inputs_sha256"] != present_meta["cache_inputs_sha256"]
 
 
 def test_predict_adds_dip_without_changing_existing_record_fields(monkeypatch):

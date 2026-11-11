@@ -22,7 +22,7 @@
 | not converged | 46 |
 | RuntimeError: Steady-state probabilities could not be constructed. | 6 |
 
-sidecar `/home/ubuntu/dd_study/oos/h3_v2/phi.meta.json` 记录事件文件 SHA-256 `3405e609b331f16ffbd28cc5627b6f408536c1211ea56d663b74a1028b16e739`、缓存目录 `/home/ubuntu/dd_study/cache_all`（5,597 个文件）、代码哈希、statsmodels 0.15.0、种子列表及最少 104 周。
+sidecar `/home/ubuntu/dd_study/oos/h3_v2/phi.meta.json` 记录事件文件 SHA-256 `3405e609b331f16ffbd28cc5627b6f408536c1211ea56d663b74a1028b16e739`、缓存目录 `/home/ubuntu/dd_study/cache_all` 及 4,041 个事件股票对应的缓存输入 SHA-256 `181aa2a574555324e305bb9e1e739b2d76c0f0e4972ad8633e18415395532022`、代码哈希、statsmodels 0.15.0、种子列表及最少 104 周。
 
 引用数按逐个测试事件的参考集合累加；`n_ref_unknown / n_ref_total` 同时给出未知引用占比，`n_fallback` 是退回 H2 的测试事件行数。
 
