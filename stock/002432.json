@@ -1,8 +1,8 @@
 {
  "symbol": "sz002432",
  "name": "九安医疗",
- "asof": "2026-11-10",
- "data_version": "vintage_20261110_tencent_sina_hfq_78171aa6",
+ "asof": "2026-11-11",
+ "data_version": "vintage_20261111_tencent_sina_hfq_78171aa6",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
  "top": {
   "p20": {
@@ -14,13 +14,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-05-07",
+   "start": "2026-05-08",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": -0.505,
-   "size_realized": -0.249,
-   "tc": "2026-12-15",
+   "size_model": -0.478,
+   "size_realized": -0.203,
+   "tc": "2026-12-16",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -54,16 +54,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-03-27",
+    "best_t1": "2026-03-30",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.0,
+     "m_lo": 0.167,
      "m_hi": 0.333,
      "w_lo": 0.167,
      "w_hi": 0.0,
-     "tc_lo": 0.167,
-     "tc_hi": 0.333,
-     "any": 0.667,
+     "tc_lo": 0.333,
+     "tc_hi": 0.5,
+     "any": 1.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -93,20 +93,20 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.2,
+     "early": 0.4,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-09-15",
+    "best_t1": "2025-09-16",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.5,
-     "tc_hi": 0.2,
+     "tc_lo": 0.3,
+     "tc_hi": 0.4,
      "any": 0.7,
      "tol": 0.01
     },
@@ -219,7 +219,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-10",
+   "table_asof": "2026-11-11",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -701,7 +701,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.249,
+    "size_realized": -0.203,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -745,7 +745,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-21",
    "2023-09-22",
    "2023-09-25",
    "2023-09-26",
@@ -1500,10 +1499,10 @@
    "2026-11-05",
    "2026-11-06",
    "2026-11-09",
-   "2026-11-10"
+   "2026-11-10",
+   "2026-11-11"
   ],
   "open": [
-   121.891,
    125.408,
    123.351,
    125.11,
@@ -2258,10 +2257,10 @@
    182.016,
    177.877,
    179.656,
-   182.495
+   182.495,
+   198.06
   ],
   "high": [
-   125.74,
    126.404,
    127.333,
    125.508,
@@ -3016,10 +3015,10 @@
    189.85,
    181.298,
    182.94,
-   197.204
+   197.204,
+   206.68
   ],
   "low": [
-   121.293,
    122.488,
    123.318,
    123.052,
@@ -3774,10 +3773,10 @@
    181.401,
    176.27,
    179.143,
-   181.982
+   181.982,
+   193.476
   ],
   "close": [
-   124.081,
    124.512,
    125.574,
    124.181,
@@ -4532,10 +4531,10 @@
    186.874,
    178.561,
    179.28,
-   197.204
+   197.204,
+   203.669
   ],
   "volume": [
-   167768,
    126694,
    133571,
    79130,
@@ -5290,7 +5289,8 @@
    225957,
    180147,
    133055,
-   302930
+   302930,
+   423313
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5341,7 +5341,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": true,
-  "n_bars": 3880,
+  "n_bars": 3881,
   "degenerate_share": 0.002,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5370,23 +5370,24 @@
    "version": "20261104-full-v1",
    "cutoff": "2026-11-03",
    "smoke": false,
-   "n_events": 21122
+   "n_events": 21122,
+   "reference_asof": "2026-11-11"
   },
   "state": {
-   "asof": "2026-11-10",
-   "close": 197.204339,
+   "asof": "2026-11-11",
+   "close": 203.669494,
    "peak_date": "2026-04-10",
    "runup": 1.596585,
-   "dd": -0.366337,
-   "td_since_peak": 142,
+   "dd": -0.345563,
+   "td_since_peak": 143,
    "low_date": "2026-10-29",
-   "bounce_from_low": 0.127518,
-   "ret20": 0.006108,
-   "ret60": -0.202407,
-   "rv20": 0.606523,
-   "rv20_pct5y": 0.766667,
-   "vol_d": 0.039008,
-   "well_dist_below": 0.356798
+   "bounce_from_low": 0.164483,
+   "ret20": 0.066452,
+   "ret60": -0.15904,
+   "rv20": 0.608271,
+   "rv20_pct5y": 0.769048,
+   "vol_d": 0.038537,
+   "well_dist_below": 0.388706
   },
   "in_structure": false,
   "depth_bucket": null,
@@ -5395,27 +5396,31 @@
    "fh60": {
     "hist": null,
     "rw": {
-     "U": 0.4722,
-     "L": 0.4944,
-     "none": 0.0334
+     "U": 0.4713,
+     "L": 0.4933,
+     "none": 0.0354
     }
    },
    "fh120": {
     "hist": null,
     "rw": {
-     "U": 0.37495,
-     "L": 0.5773,
-     "none": 0.04775
+     "U": 0.37315,
+     "L": 0.5753,
+     "none": 0.05155
     }
    }
   },
   "regime": {
-   "p_hi_filtered": 0.991359,
-   "hi_vol_ann": 1.133964,
-   "lo_vol_ann": 0.211273,
-   "hi_mean_wk": 0.045987,
-   "lo_mean_wk": -0.004361,
+   "p_hi_filtered": 0.999954,
+   "hi_vol_ann": 1.135604,
+   "lo_vol_ann": 0.21118,
+   "hi_mean_wk": 0.046434,
+   "lo_mean_wk": -0.004369,
    "weeks": 260,
+   "status": "ok",
+   "seed": 20261110,
+   "attempts": 1,
+   "reason": null,
    "note": "波动体制，不是涨跌信号"
   }
  }
