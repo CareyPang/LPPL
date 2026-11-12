@@ -363,24 +363,95 @@ def test_concept_strength_excludes_yesterday_meta_boards():
     assert all(not row["name"].startswith("昨日") for row in result)
 
 
-def test_board_strength_uses_push2delay_after_push2_failure():
+def test_board_strength_non_json_push2_response_uses_push2delay():
     payload = fixture("market_review_board_strength.json")
 
     class Client:
         calls = []
 
-        def get_json(self, url, params, fallback_url=None):
+        def get_json(self, url, params):
             self.calls.append(url)
-            if url == market.EM_BOARD_FALLBACK_URL:
-                self.calls.append(fallback_url)
+            if url == market.EM_BOARD_STRENGTH_URL:
+                raise json.JSONDecodeError("Expecting value", "<html>", 0)
+            if url == market.EM_BOARD_STRENGTH_FALLBACK_URL:
                 return payload
             raise AssertionError(f"unexpected board host: {url}")
 
     client = Client()
-    rows = market.fetch_board_strength([], None, client)
+    source_info = {}
+    rows = market.fetch_board_strength([], None, client, source_info=source_info)
 
     assert rows
-    assert client.calls == [market.EM_BOARD_FALLBACK_URL, market.EM_BOARD_URL]
+    assert client.calls == [
+        market.EM_BOARD_STRENGTH_URL,
+        market.EM_BOARD_STRENGTH_FALLBACK_URL,
+    ]
+    assert source_info["provider"] == "eastmoney"
+    assert "JSONDecodeError" in source_info["fallback_from"]
+
+
+def test_board_strength_falls_back_to_sina_when_both_eastmoney_hosts_fail():
+    fixture_text = (FIXTURES / "market_review_sina_concept_boards.js").read_text(
+        encoding="utf-8"
+    )
+
+    class Client:
+        calls = []
+
+        def get_json(self, url, params):
+            self.calls.append(url)
+            raise RuntimeError("Eastmoney unavailable")
+
+    class Response:
+        content = fixture_text.encode("gbk")
+
+        def raise_for_status(self):
+            return None
+
+    class Session:
+        calls = []
+
+        def get(self, url, **kwargs):
+            self.calls.append((url, kwargs))
+            return Response()
+
+    client, session, source_info = Client(), Session(), {}
+    rows = market.fetch_board_strength(
+        [{"code": "000001"}],
+        {"harden_rows": [{"code": "000001", "reason": "“华为汽车”"}]},
+        client,
+        session=session,
+        source_info=source_info,
+    )
+
+    assert client.calls == [
+        market.EM_BOARD_STRENGTH_URL,
+        market.EM_BOARD_STRENGTH_FALLBACK_URL,
+    ]
+    assert len(session.calls) == 1
+    url, request = session.calls[0]
+    assert url == market.SINA_CONCEPT_BOARD_URL
+    assert request["params"] == {"param": "class"}
+    assert request["headers"]["Referer"] == "https://finance.sina.com.cn/"
+    assert source_info["provider"] == "sina"
+    assert source_info["url_host"] == market.SINA_BOARD_HOST
+    assert "push2.eastmoney.com" in source_info["fallback_from"]
+    assert "push2delay.eastmoney.com" in source_info["fallback_from"]
+    assert rows == [
+        {
+            "code": "gn_hwqc",
+            "name": "华为汽车",
+            "pct": -2.8870452265041,
+            "amount": 31520738736.0,
+            "up": None,
+            "down": None,
+            "up_share": None,
+            "leader_code": "sh603178",
+            "leader_pct": 0.583,
+            "leader_name": "圣龙股份",
+            "zt_n": 1,
+        }
+    ]
 
 
 def test_lhb_groups_codes_joins_reasons_and_rejects_stale_trade_date():
@@ -636,6 +707,17 @@ def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkey
     )
     stub_market_additions(monkeypatch)
 
+    def board_strength(*_args, source_info=None, **_kwargs):
+        source_info.update(
+            {
+                "provider": "sina",
+                "url_host": market.SINA_BOARD_HOST,
+                "fallback_from": "push2.eastmoney.com: RuntimeError",
+            }
+        )
+        return []
+
+    monkeypatch.setattr(market, "fetch_board_strength", board_strength)
     session = object()
     payload = market.fetch_market(
         "2026-11-02",
@@ -662,6 +744,11 @@ def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkey
     assert "fallback_from" not in payload["sources"]["board_flow_region"]
     assert payload["board_flow"]["history_sample"] is None
     assert payload["sources"]["board_flow_history"]["ok"] is False
+    assert payload["board_strength"]["provider"] == "sina"
+    assert payload["sources"]["board_strength"]["provider"] == "sina"
+    assert payload["sources"]["board_strength"]["fallback_from"] == (
+        "push2.eastmoney.com: RuntimeError"
+    )
 
 
 def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):

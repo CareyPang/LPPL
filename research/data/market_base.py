@@ -24,6 +24,8 @@ from .margin import SZSE_RENAME, fetch_sse, fetch_szse, load_margin
 
 EM_BOARD_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+EM_BOARD_STRENGTH_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+EM_BOARD_STRENGTH_FALLBACK_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_HISTORY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
 EM_POOL_URL = "https://push2ex.eastmoney.com"
 EM_ULIST_URL = "https://push2delay.eastmoney.com/api/qt/ulist.np/get"
@@ -37,6 +39,7 @@ SINA_BOARD_URL = (
     "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
     "MoneyFlow.ssl_bkzj_bk"
 )
+SINA_CONCEPT_BOARD_URL = "https://vip.stock.finance.sina.com.cn/q/view/newFLJK.php"
 SINA_BOARD_HOST = "vip.stock.finance.sina.com.cn"
 HKEX_URL = "https://www.hkex.com.hk/chi/csm/DailyStat/data_tab_daily_{date}c.js"
 CSINDEX_URL = (
@@ -763,11 +766,28 @@ def _parse_themes(payload: dict) -> dict:
     return {"harden_rows": rows, "tags": _theme_tags(payload["data"])}
 
 
-def _parse_board_strength(
-    payload: dict,
+def _rank_board_strength(
+    rows: list[dict],
     zt_codes: set[str] | None,
     tag_codes: dict[str, set[str]] | None,
 ):
+    for row in rows:
+        row["zt_n"] = (
+            len(zt_codes & tag_codes.get(row["name"], set()))
+            if tag_codes is not None and zt_codes is not None
+            else None
+        )
+    rows.sort(
+        key=lambda row: (
+            row["zt_n"] is None,
+            -(row["zt_n"] or 0),
+            -(row["pct"] if row["pct"] is not None else float("-inf")),
+        )
+    )
+    return rows[:30]
+
+
+def _parse_board_strength(payload: dict, zt_codes: set[str] | None, tag_codes: dict[str, set[str]] | None):
     rows = _payload_diff(payload, "Eastmoney concept boards")
     required = {"f12", "f14", "f3", "f6", "f104", "f105", "f128", "f136", "f140"}
     output = []
@@ -792,21 +812,57 @@ def _parse_board_strength(
                 "leader_name": str(item["f128"]) if item["f128"] is not None else None,
                 "leader_code": str(item["f140"]) if item["f140"] is not None else None,
                 "leader_pct": _number(item["f136"]),
-                "zt_n": (
-                    len(zt_codes & tag_codes.get(name, set()))
-                    if tag_codes is not None and zt_codes is not None
-                    else None
-                ),
             }
         )
-    output.sort(
-        key=lambda row: (
-            row["zt_n"] is None,
-            -(row["zt_n"] or 0),
-            -(row["pct"] if row["pct"] is not None else float("-inf")),
-        )
+    return _rank_board_strength(output, zt_codes, tag_codes)
+
+
+def _parse_sina_concept_boards(
+    text: str,
+    zt_codes: set[str] | None,
+    tag_codes: dict[str, set[str]] | None,
+) -> list[dict]:
+    match = re.search(
+        r"^\s*var\s+S_Finance_bankuai_class\s*=\s*(\{.*\})\s*;?\s*$",
+        text.lstrip("\ufeff"),
+        re.DOTALL,
     )
-    return output[:30]
+    if not match:
+        raise RuntimeError("Sina concept-board response lacks S_Finance_bankuai_class")
+    try:
+        payload = json.loads(match.group(1))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("Sina concept-board response is not valid JSON") from exc
+    if not isinstance(payload, dict) or not payload:
+        raise RuntimeError("Sina concept-board response is empty")
+
+    output = []
+    for key, value in payload.items():
+        if not isinstance(value, str):
+            raise RuntimeError("Sina concept-board row is not a string")
+        fields = value.split(",")
+        if len(fields) < 8:
+            raise RuntimeError("Sina concept-board row lacks required fields")
+        code, name = fields[0].strip() or str(key), fields[1].strip()
+        if not code or not name:
+            raise RuntimeError("Sina concept-board row lacks code/name")
+        if name.startswith("昨日"):
+            continue
+        output.append(
+            {
+                "code": code,
+                "name": name,
+                "pct": _number(fields[5]),
+                "amount": _number(fields[7]),
+                "up": None,
+                "down": None,
+                "up_share": None,
+                "leader_code": fields[8].strip() or None if len(fields) > 8 else None,
+                "leader_pct": _number(fields[9]) if len(fields) > 9 else None,
+                "leader_name": fields[12].strip() or None if len(fields) > 12 else None,
+            }
+        )
+    return _rank_board_strength(output, zt_codes, tag_codes)
 
 
 def _parse_ths_hot(payload: dict) -> list[dict]:
@@ -1035,20 +1091,11 @@ def fetch_board_strength(
     zt_rows: list[dict] | None,
     themes: dict | None,
     client=None,
+    session=None,
+    source_info: dict | None = None,
 ) -> list[dict]:
     client = client or EMClient()
-    payload = client.get_json(
-        EM_BOARD_FALLBACK_URL,
-        {
-            "fs": "m:90+t:3",
-            "fid": "f3",
-            "po": "1",
-            "pz": "500",
-            "pn": "1",
-            "fields": "f12,f14,f3,f6,f104,f105,f128,f136,f140",
-        },
-        fallback_url=EM_BOARD_URL,
-    )
+    session = session or requests.Session()
     tag_codes = None
     if themes is not None:
         tag_codes = {}
@@ -1056,7 +1103,59 @@ def fetch_board_strength(
             for tag in _split_theme_reason(row["reason"]):
                 tag_codes.setdefault(tag, set()).add(row["code"])
     zt_codes = {row["code"] for row in zt_rows} if zt_rows is not None else None
-    return _parse_board_strength(payload, zt_codes, tag_codes)
+    params = {
+        "fs": "m:90+t:3",
+        "fid": "f3",
+        "po": "1",
+        "pz": "500",
+        "pn": "1",
+        "fields": "f12,f14,f3,f6,f104,f105,f128,f136,f140",
+    }
+    errors = []
+    for url in (EM_BOARD_STRENGTH_URL, EM_BOARD_STRENGTH_FALLBACK_URL):
+        host = urlparse(url).hostname or "unknown"
+        try:
+            payload = client.get_json(url, params)
+            rows = _parse_board_strength(payload, zt_codes, tag_codes)
+            info = {"provider": "eastmoney", "url_host": host}
+            if errors:
+                info["fallback_from"] = "; ".join(errors)
+            if source_info is not None:
+                source_info.update(info)
+            return rows
+        except Exception as exc:  # noqa: BLE001 — try the next provider on any source failure
+            errors.append(f"{host}: {_error(exc)}")
+
+    try:
+        response = session.get(
+            SINA_CONCEPT_BOARD_URL,
+            params={"param": "class"},
+            headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"},
+            timeout=15,
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+        text = response.content.decode("gbk")
+        rows = _parse_sina_concept_boards(text, zt_codes, tag_codes)
+        info = {
+            "provider": "sina",
+            "url_host": SINA_BOARD_HOST,
+            "fallback_from": "; ".join(errors),
+        }
+        if source_info is not None:
+            source_info.update(info)
+        return rows
+    except Exception as exc:  # noqa: BLE001 — preserve independent source failure
+        if source_info is not None:
+            source_info.update(
+                {
+                    "provider": None,
+                    "url_host": SINA_BOARD_HOST,
+                    "fallback_from": "; ".join(errors),
+                }
+            )
+        errors.append(f"{SINA_BOARD_HOST}: {_error(exc)}")
+        raise RuntimeError("Board-strength providers failed: " + "; ".join(errors)) from exc
 
 
 def fetch_ths_hot(session=None) -> list[dict]:
@@ -1679,16 +1778,39 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
     board_strength_section = {
         "evidence": "descriptive",
         "note": "按涨停家数排序，相同再按涨幅。" + DESCRIPTIVE_NOTE,
+        "provider": None,
     }
+    board_strength_source = {}
     try:
         zt_rows = limit_section.get("zt_rows") if sources["limit_pools"]["ok"] else None
-        board_strength_section["rows"] = fetch_board_strength(zt_rows, themes_data, em)
-        sources["board_strength"] = _source_meta(em.url_host, True)
+        board_strength_section["rows"] = fetch_board_strength(
+            zt_rows,
+            themes_data,
+            em,
+            session=session,
+            source_info=board_strength_source,
+        )
+        provider = board_strength_source.get("provider", "eastmoney")
+        board_strength_section["provider"] = provider
+        source = _source_meta(
+            board_strength_source.get("url_host", em.url_host), True
+        )
+        source["provider"] = provider
+        if board_strength_source.get("fallback_from"):
+            source["fallback_from"] = board_strength_source["fallback_from"]
+        sources["board_strength"] = source
     except Exception as exc:
         board_strength_section["data"] = None
-        sources["board_strength"] = _source_meta(
-            "push2delay.eastmoney.com", False, _error(exc)
+        board_strength_section["provider"] = board_strength_source.get("provider")
+        source = _source_meta(
+            board_strength_source.get("url_host", "push2.eastmoney.com"),
+            False,
+            _error(exc),
         )
+        source["provider"] = board_strength_source.get("provider")
+        if board_strength_source.get("fallback_from"):
+            source["fallback_from"] = board_strength_source["fallback_from"]
+        sources["board_strength"] = source
 
     hot_section = {
         "evidence": "descriptive",
