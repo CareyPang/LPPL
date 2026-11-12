@@ -82,6 +82,10 @@ td.r, th.r { text-align: right; }
 .news-grid > section { min-width: 0; }
 .news-list { display: grid; gap: var(--s2); min-width: 0; }
 .news-item a { display: block; overflow-wrap: anywhere; }
+.range-tabs { margin: var(--s2) 0 var(--s3); }
+.abnormal-table { min-width: 860px; }
+.range-table { min-width: 520px; }
+#s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
@@ -105,6 +109,25 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 </header>
 
 <main>
+  <section class="sec wide" id="s-abnormal" aria-labelledby="h-abnormal">
+    <div class="sec-h">
+      <h2 id="h-abnormal">异动提醒</h2><span class="ev">descriptive</span><span class="src" id="src-abnormal"></span>
+    </div>
+    <div id="abnormal-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-range" aria-labelledby="h-range">
+    <div class="sec-h">
+      <h2 id="h-range">区间统计</h2><span class="ev">descriptive</span><span class="src" id="src-range"></span>
+    </div>
+    <div class="chips range-tabs" role="group" aria-label="区间统计交易日窗口">
+      <button class="chip" type="button" data-range-window="5" aria-pressed="true">5日</button>
+      <button class="chip" type="button" data-range-window="10" aria-pressed="false">10日</button>
+      <button class="chip" type="button" data-range-window="20" aria-pressed="false">20日</button>
+    </div>
+    <div id="range-body"></div>
+  </section>
+
   <section class="sec wide" id="s-board" aria-labelledby="h-board">
     <div class="sec-h">
       <h2 id="h-board">板块资金流热力图</h2><span class="ev">descriptive</span>
@@ -495,6 +518,77 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (!d) { $('asof').textContent = '市场数据未加载'; document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>'; return; }
     M = d; renderAll();
   }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
+})();
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[ch]);
+  const pct = (value) => Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—';
+  const cash = (value) => Number.isFinite(value) ? value.toLocaleString('zh-CN', { maximumFractionDigits: 0 }) : '—';
+  const abnormalBody = $('abnormal-body');
+  let rangeData = null, rangeWindow = '5';
+
+  function renderAbnormal(data) {
+    if (!data) {
+      $('src-abnormal').textContent = '数据未加载';
+      abnormalBody.innerHTML = '<p class="fail">异动提醒数据未加载。</p>';
+      return;
+    }
+    const source = data.source || {};
+    $('src-abnormal').textContent =
+      `${source.provider || '—'} · 截至 ${data.asof || '—'} · 缺失 ${source.missing ?? 0}`;
+    const items = data.items || [];
+    const missing = (source.missing_codes || []).slice(0, 5)
+      .map((item) => `${item.code}: ${item.error}`).join('；');
+    abnormalBody.innerHTML = `<p class="note">${esc(data.note || '')} 候选 ${source.candidate_count ?? 0}，可计算 ${source.available_count ?? 0}，接近阈值 ${data.counts?.near ?? 0}。${missing ? `缺失样例：${esc(missing)}` : ''}</p>
+      ${items.length ? `<div class="table-scroll"><table class="abnormal-table"><thead><tr><th>代码</th><th>名称</th><th>板块</th><th class="r">3日偏离</th><th class="r">10日偏离</th><th class="r">30日偏离</th><th>最近阈值</th><th class="r">剩余</th><th>状态</th></tr></thead><tbody>
+      ${items.map((item) => `<tr><td>${esc(item.code)}</td><td>${esc(item.name || '—')}</td><td>${esc(item.board)}</td>
+        <td class="r">${pct(item.dev_3d)}</td><td class="r">${pct(item.dev_10d)}</td><td class="r">${pct(item.dev_30d)}</td>
+        <td>${item.threshold ? `${esc(item.threshold.window)} ${item.threshold.direction === 'up' ? '↑' : '↓'} ${pct(item.threshold.threshold_pct)}` : '—'}</td>
+        <td class="r">${Number.isFinite(item.remaining_pp) ? `${item.remaining_pp.toFixed(2)}pp` : '—'}</td>
+        <td>${item.triggered ? '<span class="up">已达规则阈值</span>' : item.near ? '<span class="wn">接近</span>' : '观察'}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">当前没有可展示的候选股票。</p>'}`;
+  }
+
+  function renderRange() {
+    if (!rangeData) return;
+    const source = rangeData.source || {};
+    const windowData = rangeData.windows?.[rangeWindow] || {};
+    const skipReasons = {
+      short_history: '历史不足',
+      provider_mismatch: '来源不一致，已跳过',
+      provider_missing: '来源缺失，已跳过',
+      board_missing_from_window: '窗口内未每日出现，已跳过',
+      missing_metric: '指标缺失，已跳过',
+      duplicate_board_name: '板块名称重复，已跳过',
+    };
+    $('src-range').textContent =
+      `${source.provider || '—'} · 截至 ${rangeData.asof || '—'} · 可用 ${rangeData.n_days ?? 0} 日`;
+    const renderTable = (kind, label) => {
+      const rows = windowData[kind] || [];
+      return `<h3>${label}</h3>${rows.length ? `<div class="table-scroll"><table class="range-table"><thead><tr><th>板块</th><th>来源</th><th class="r">${rangeWindow}日复合涨跌</th><th class="r">${rangeWindow}日主力净流入合计（元）</th><th>说明</th></tr></thead><tbody>
+        ${rows.map((row) => `<tr><td>${esc(row.name)}</td><td>${esc(row.provider || '—')}</td><td class="r">${pct(row.return_pct)}</td><td class="r">${cash(row.net_flow)}</td><td>${esc(skipReasons[row.skip_reason] || row.skip_reason || '完整窗口')}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">该窗口暂无可用板块。</p>'}`;
+    };
+    $('range-body').innerHTML = `<p class="note">${esc(rangeData.note || '')}；当前 ${rangeWindow} 个交易日窗口，历史可用 ${rangeData.n_days ?? 0} 日。</p>
+      ${renderTable('industry', '行业板块')}${renderTable('concept', '概念板块')}`;
+  }
+
+  LPPL.abnormal().then(renderAbnormal).catch(() => renderAbnormal(null));
+  LPPL.rangeStats().then((data) => { rangeData = data; renderRange(); }).catch(() => {
+    $('src-range').textContent = '数据未加载';
+    $('range-body').innerHTML = '<p class="fail">区间统计数据未加载。</p>';
+  });
+  document.querySelectorAll('[data-range-window]').forEach((button) => {
+    button.addEventListener('click', () => {
+      rangeWindow = button.dataset.rangeWindow;
+      document.querySelectorAll('[data-range-window]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      renderRange();
+    });
+  });
 })();
 </script>
 </body>

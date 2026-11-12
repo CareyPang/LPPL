@@ -211,6 +211,13 @@
       </div>
       <div class="summary" id="summary"></div>
 
+      <section class="section" id="recent-events" hidden>
+        <div class="sec-h">
+          <h3>近期事件</h3><span class="ev-pill">descriptive</span><span class="muted" id="abnormal-asof"></span>
+        </div>
+        <div id="stock-abnormal-row"></div>
+      </section>
+
       <section class="section" id="sec-top">
         <div class="sec-h">
           <h2>逃顶</h2>
@@ -1005,6 +1012,30 @@
       $('code').value = initial;
       loadCode(initial);
     }
+  </script>
+  <script>
+    (() => {
+      const section = document.getElementById('recent-events');
+      const row = document.getElementById('stock-abnormal-row');
+      const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      })[ch]);
+      const fmt = (value) => Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—';
+      async function renderAbnormalForCode() {
+        const code = document.getElementById('code').value.trim();
+        if (!/^\d{6}$/.test(code)) return;
+        const data = await LPPL.abnormal().catch(() => null);
+        const item = (data?.items || []).find((candidate) => candidate.code === code);
+        if (!item) { section.hidden = true; return; }
+        section.hidden = false;
+        document.getElementById('abnormal-asof').textContent = `截止 ${data.asof || '—'}`;
+        const state = item.triggered ? '已达规则阈值' : item.near ? '接近阈值' : '';
+        row.innerHTML = `<p>${esc(item.board)} 异动规则距离：3日偏离 ${fmt(item.dev_3d)}，10日 ${fmt(item.dev_10d)}，30日 ${fmt(item.dev_30d)}；最近阈值剩余 ${Number.isFinite(item.remaining_pp) ? item.remaining_pp.toFixed(2) + ' 个百分点' : '—'}。${state ? `<b>${state}</b>` : ''}</p>
+          <p class="muted">${esc(data.note || '')} ${esc((data.source || {}).provider || '')}。</p>`;
+      }
+      document.getElementById('search').addEventListener('submit', renderAbnormalForCode);
+      renderAbnormalForCode();
+    })();
   </script>
 </body>
 </html>
