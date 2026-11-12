@@ -197,7 +197,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const metas = names.map((n) => S[n]).filter(Boolean);
     if (!metas.length) return '';
     const m = metas[0];
-    return E((m.url_host || '') + ' · ' + String(m.fetched_at || '').replace('T', ' ').slice(0, 16) + ' UTC');
+    const host = m.url_host || m.provider || '';
+    const fetched = m.fetched_at ? String(m.fetched_at).replace('T', ' ').slice(0, 16) + ' UTC' : '';
+    return E([host, fetched].filter(Boolean).join(' · '));
   }
   function failMsg(names) {
     const S = (M && M.sources) || {};
@@ -254,10 +256,21 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const P = PERIODS[period], rows = (bf[kind] || []).filter((r) => num(r[P.net]));
     const fails = failMsg(['board_flow_' + kind]);
     const S = (M.sources || {})['board_flow_' + kind] || {};
+    const historySource = (M.sources || {}).board_flow_history || {};
+    const historyNote = kind === 'industry'
+      ? (historySource.verify_reason
+        ? `<p class="warnl">板块历史数据：${E(historySource.verify_reason)}</p>`
+        : '') + (historySource.ok === false
+          ? `<p class="fail">板块历史数据不可用：${E(historySource.error || historySource.reason || '该源本次未取到')}</p>`
+          : '')
+      : '';
     let html = '';
     if (S.fallback_from) html += `<p class="warnl">东财本次未取到，已改用新浪口径（${E(S.fallback_from).slice(0, 160)}）。</p>`;
+    if (S.reason) html += `<p class="fail">${E(S.reason)}</p>`;
     if (!rows.length) {
-      $('board-body').innerHTML = html + `<p class="fail">${fails || '该源本次未取到：无数据'}</p><p class="note">${E(bf.note || '')}</p>`;
+      const emptyMessage = S.reason ? '' : (fails || '该源本次未取到：无数据');
+      $('board-body').innerHTML = html + (emptyMessage ? `<p class="fail">${E(emptyMessage)}</p>` : '') +
+        historyNote + `<p class="note">${E(bf.note || '')}</p>`;
       return;
     }
     const lead = prov === 'sina' ? '净额（流入−流出）' : '主力净额';
@@ -265,7 +278,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <div class="legend"><span>面积 = |${lead}|</span><span>颜色 = ${P.label}涨跌幅</span>
       <i style="background:rgba(0,212,170,1)"></i>−4%<i style="background:rgba(0,212,170,.3)"></i><i style="background:rgba(255,71,87,.3)"></i><i style="background:rgba(255,71,87,1)"></i>+4%
       <span>边框实线 = 净流入，虚线 = 净流出</span><span>n = ${rows.length}</span></div>
-      <p class="note">${E(bf.note || '')}</p>`;
+      ${historyNote}<p class="note">${E(bf.note || '')}</p>`;
     $('board-body').innerHTML = html;
     const box = $('tm'), W = box.clientWidth, H = box.clientHeight;
     const items = rows.map((r) => ({ r, v: Math.abs(r[P.net]) })).filter((it) => it.v > 0).sort((a, b) => b.v - a.v);
@@ -449,7 +462,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-mg').innerHTML = srcLine(['margin']);
     const S = (M.sources || {}).margin || {};
     if (!num(d.fin_balance_all)) { $('mg-body').innerHTML = `<p class="fail">${failMsg(['margin']) || '该源本次未取到：无数据'}</p>`; return; }
-    $('mg-body').innerHTML = (S.ok === false ? `<p class="warnl">本次刷新失败：${E(S.error || '')}<br>下面显示的是已入库的 ${E(d.date)} 数据。</p>` : '') +
+    const missingDates = Array.isArray(S.missing_dates) ? S.missing_dates : [];
+    const status = [];
+    if (S.ok === false) status.push(`本次刷新失败：${S.error || '来源不可用'}；下面显示已入库数据`);
+    if (S.asof) status.push(`最后完整数据日：${S.asof}`);
+    if (S.stale) status.push('当前数据不完整或已滞后');
+    if (missingDates.length) status.push(`缺失日期：${missingDates.join('、')}`);
+    $('mg-body').innerHTML = (status.length
+      ? `<p class="${S.stale || S.ok === false ? 'warnl' : 'note'}">${status.map(E).join('<br>')}</p>`
+      : '') +
       `<div class="big"><div><small>融资余额合计（亿元）</small><strong>${yi(d.fin_balance_all, 0)}</strong></div>
        <div><small>20 日变化</small><strong class="${cls(d.fin_balance_all_change_20d)}">${num(d.fin_balance_all_change_20d_pct) ? pct(d.fin_balance_all_change_20d_pct * 100, 1) : '—'}</strong></div></div>
        <table style="margin-top:12px"><tbody>
@@ -458,7 +479,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        <tr><td>两融余额合计（亿元）</td><td class="r">${yi(d.total_balance_all, 0)}</td></tr>
        <tr><td>20 日变化（亿元）</td><td class="r ${cls(d.fin_balance_all_change_20d)}">${yi(d.fin_balance_all_change_20d, 0)}</td></tr>
        <tr><td>数据日 / 可用日（T+1）</td><td class="r">${E(d.date || '—')} / ${E(d.available_date || '—')}</td></tr>
-       <tr><td>状态</td><td class="r">${d.stale ? '<span class="wn">stale · 滞后 ' + E(d.trading_days_stale) + ' 个交易日</span>' : '最新'}</td></tr>
+       <tr><td>状态</td><td class="r">${(S.stale || d.stale) ? '<span class="wn">stale · 完整数据日 ' + E(S.asof || d.latest_date || '—') + '</span>' : '最新'}</td></tr>
        </tbody></table><p class="note">${E(G.note || '')}</p>`;
   }
 

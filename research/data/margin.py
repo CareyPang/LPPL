@@ -68,7 +68,7 @@ def fetch_account_info() -> pd.DataFrame:
 
 
 def fetch_szse(dates: pd.DatetimeIndex, out: Path, pause: float = 0.8) -> None:
-    """深交所按日查询，增量写入 out（parquet）；失败日期跳过并记录。"""
+    """深交所按日查询，失败日期重试一次后跳过并记录。"""
     import akshare as ak
 
     done = pd.read_parquet(out) if out.exists() else pd.DataFrame()
@@ -77,13 +77,20 @@ def fetch_szse(dates: pd.DatetimeIndex, out: Path, pause: float = 0.8) -> None:
     for i, d in enumerate(dates):
         if d in have:
             continue
-        try:
-            x = ak.stock_margin_szse(date=d.strftime("%Y%m%d"))
-            x["date"] = d
-            rows.append(x)
-        except Exception as e:  # noqa: BLE001
-            failed.append((str(d.date()), type(e).__name__))
-            time.sleep(3)
+        last_error = None
+        for attempt in range(2):
+            try:
+                x = ak.stock_margin_szse(date=d.strftime("%Y%m%d"))
+                x["date"] = d
+                rows.append(x)
+                last_error = None
+                break
+            except Exception as e:  # noqa: BLE001
+                last_error = e
+                if attempt == 0:
+                    time.sleep(3)
+        if last_error is not None:
+            failed.append((str(d.date()), type(last_error).__name__))
         time.sleep(pause)
         if rows and (i % 50 == 0):
             pd.concat([done, *rows], ignore_index=True).to_parquet(out)
