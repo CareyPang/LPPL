@@ -187,6 +187,63 @@ def test_us_reference_calendar_uses_spy(monkeypatch):
     stock._us_reference_calendar.cache_clear()
 
 
+def test_us_nightly_shard_assignment_uses_watchlist_index_modulo():
+    tickers = ("NVDA", "AMD", "MRVL", "AVGO", "TSM", "ARM", "MU")
+
+    shards = [
+        us_nightly.shard_tickers(shard, 3, tickers)
+        for shard in range(3)
+    ]
+
+    assert shards == [
+        ("NVDA", "AVGO", "MU"),
+        ("AMD", "TSM"),
+        ("MRVL", "ARM"),
+    ]
+    assert sorted(ticker for shard in shards for ticker in shard) == sorted(tickers)
+    with pytest.raises(ValueError, match="shard must be in range"):
+        us_nightly.shard_tickers(3, 3, tickers)
+
+
+def test_us_nightly_index_builder_uses_current_and_error_files(tmp_path, monkeypatch):
+    monkeypatch.setattr(us_nightly, "US_WATCHLIST", ("NVDA", "AAPL", "AMD"))
+    (tmp_path / "US_NVDA.json").write_text(
+        json.dumps({"asof": "2026-11-11"}), encoding="utf-8"
+    )
+    (tmp_path / "US_AAPL.json").write_text(
+        json.dumps({"asof": "2026-11-10"}), encoding="utf-8"
+    )
+    (tmp_path / "US_AAPL_error.json").write_text(
+        json.dumps({"error": "refresh failed"}), encoding="utf-8"
+    )
+    (tmp_path / "US_AMD_error.json").write_text(
+        json.dumps({"error": "no current record"}), encoding="utf-8"
+    )
+
+    index = us_nightly.build_index(tmp_path)
+
+    assert index == [
+        {
+            "ticker": "NVDA",
+            "name": us_nightly.US_NAMES["NVDA"],
+            "asof": "2026-11-11",
+            "ok": True,
+        },
+        {
+            "ticker": "AAPL",
+            "name": us_nightly.US_NAMES["AAPL"],
+            "asof": "2026-11-10",
+            "ok": False,
+        },
+        {
+            "ticker": "AMD",
+            "name": us_nightly.US_NAMES["AMD"],
+            "asof": None,
+            "ok": False,
+        },
+    ]
+
+
 def test_nightly_continues_after_ticker_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(us_nightly, "US_WATCHLIST", ("NVDA", "AAPL"))
 
