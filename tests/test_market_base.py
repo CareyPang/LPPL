@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -11,6 +12,27 @@ FIXTURES = Path(__file__).parent / "fixtures" / "market"
 
 def fixture(name):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+
+
+def stub_market_additions(monkeypatch):
+    monkeypatch.setattr(market, "fetch_breadth", lambda *_args, **_kwargs: {"up": 1})
+    monkeypatch.setattr(
+        market,
+        "fetch_themes",
+        lambda *_args, **_kwargs: {"harden_rows": [], "tags": []},
+    )
+    monkeypatch.setattr(
+        market, "fetch_board_strength", lambda *_args, **_kwargs: []
+    )
+    monkeypatch.setattr(market, "fetch_ths_hot", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(market, "fetch_em_hot_rank", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(
+        market,
+        "fetch_dragon_tiger",
+        lambda asof, *_args, **_kwargs: {"date": asof, "n_stocks": 0, "top_buy": [], "top_sell": []},
+    )
+    monkeypatch.setattr(market, "fetch_cls_news", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(market, "fetch_em_news", lambda *_args, **_kwargs: [])
 
 
 def test_board_parser_uses_documented_fields():
@@ -31,6 +53,16 @@ def test_board_parser_uses_documented_fields():
         "medium_net": market._number(raw["f78"]),
         "small_net": market._number(raw["f84"]),
     }
+
+
+def test_breadth_snapshot_sums_index_rows_from_real_fixture():
+    result = market._parse_breadth(fixture("market_review_breadth.json"))
+
+    assert result["up"] == sum(row["up"] for row in result["indices"])
+    assert result["down"] == sum(row["down"] for row in result["indices"])
+    assert result["flat"] == sum(row["flat"] for row in result["indices"])
+    assert result["amount_yuan"] == sum(row["amount_yuan"] for row in result["indices"])
+    assert result["snapshot_at"]
 
 
 def test_board_pagination_stops_at_reported_total():
@@ -193,9 +225,10 @@ def test_limit_pool_parser_and_top_row():
 
 def test_limit_pool_summary_uses_fraction_and_all_three_pools():
     payloads = {
-        "getTopicZTPool": fixture("limit_pool.json"),
+        "getTopicZTPool": fixture("market_review_zt_pool.json"),
         "getTopicZBPool": fixture("limit_pool_zb.json"),
         "getTopicDTPool": fixture("limit_pool_dt.json"),
+        "getYesterdayZTPool": fixture("market_review_yesterday_pool.json"),
     }
 
     class Client:
@@ -212,6 +245,188 @@ def test_limit_pool_summary_uses_fraction_and_all_three_pools():
     assert result["break_rate"] == pytest.approx(zb_n / (zt_n + zb_n))
     assert result["max_streak"] == max(int(row["lbc"]) for row in zt)
     assert len(result["top20"]["zt"]) == zt_n
+    assert len(result["zt_rows"]) == zt_n
+    assert result["promotion"]["n_prev_total"] == len(
+        payloads["getYesterdayZTPool"]["data"]["pool"]
+    )
+
+
+def _yesterday_row(code, level, pct):
+    return {
+        "c": code,
+        "n": code,
+        "p": "10",
+        "zdp": str(pct),
+        "hs": "2",
+        "yfbt": "093000",
+        "ylbc": level,
+        "hybk": "电子",
+    }
+
+
+def _today_zt_row(code, level):
+    return {
+        "c": code,
+        "n": code,
+        "lbc": level,
+        "fbt": "093000",
+        "lbt": "145000",
+        "fund": "1000000",
+        "zbc": "0",
+        "hybk": "电子",
+        "zdp": "10",
+        "amount": "10000000",
+        "hs": "2",
+    }
+
+
+def test_promotion_counts_each_previous_level_and_requires_next_streak():
+    yesterday = [
+        _yesterday_row("A", 1, 2),
+        _yesterday_row("B", 1, -1),
+        _yesterday_row("C", 2, 3),
+    ]
+    today = [_today_zt_row("A", 2), _today_zt_row("C", 3)]
+
+    _sentiment, promotion = market._promotion_summary(yesterday, today)
+
+    assert promotion["levels"] == [
+        {"k": "1", "n_prev": 2, "n_up": 1},
+        {"k": "2", "n_prev": 1, "n_up": 1},
+    ]
+    assert promotion["n_prev_total"] == 3
+    assert promotion["n_up_total"] == 2
+    assert promotion["rate"] == pytest.approx(2 / 3)
+
+
+def test_yesterday_limit_profit_effect_mean_median_and_up_share():
+    yesterday = [
+        _yesterday_row("A", 1, 10),
+        _yesterday_row("B", 1, -5),
+        _yesterday_row("C", 1, 0),
+    ]
+
+    sentiment, _promotion = market._promotion_summary(yesterday, [])
+
+    assert sentiment["yzt_n"] == 3
+    assert sentiment["yzt_mean_pct"] == pytest.approx(5 / 3)
+    assert sentiment["yzt_median_pct"] == 0
+    assert sentiment["yzt_up_share"] == pytest.approx(1 / 3)
+
+
+def test_theme_tag_split_strips_quotes_and_counts_real_fixture_tags():
+    raw_rows = fixture("market_review_themes.json")["data"]
+    tags = market._theme_tags(raw_rows)
+    first = raw_rows[0]
+    split = market._split_theme_reason(first["reason"])
+    tag = next(row for row in tags if row["tag"] == "东方系")
+
+    assert "“" not in split[0] and "”" not in split[0]
+    assert tag["n"] == len(tag["codes"])
+    assert first["code"] in tag["codes"]
+
+
+def test_themes_missing_live_metrics_raise_instead_of_zero_filling():
+    with pytest.raises(RuntimeError, match="zhangfu"):
+        market._parse_themes(fixture("market_review_themes.json"))
+
+
+def test_concept_strength_excludes_yesterday_meta_boards():
+    payload = fixture("market_review_board_strength.json")
+    rows = market._payload_diff(payload, "fixture")
+    rows.append(
+        {
+            "f12": "BK_META",
+            "f14": "昨日涨停",
+            "f3": 1,
+            "f6": 1,
+            "f104": 1,
+            "f105": 0,
+            "f128": "样例",
+            "f136": 1,
+            "f140": "000001",
+        }
+    )
+    payload["data"]["diff"] = rows
+
+    result = market._parse_board_strength(payload, set(), {})
+
+    assert all(not row["name"].startswith("昨日") for row in result)
+
+
+def test_lhb_groups_codes_joins_reasons_and_rejects_stale_trade_date():
+    payload = fixture("market_review_lhb.json")
+    original = payload["result"]["data"][0]
+    duplicate = {**original, "EXPLANATION": "第二个上榜原因"}
+    payload["result"]["data"].insert(1, duplicate)
+
+    result = market._parse_dragon_tiger(payload, "2026-11-12")
+    stock = next(row for row in result["top_buy"] if row["code"] == original["SECURITY_CODE"])
+    expected_reasons = list(
+        dict.fromkeys(
+            row["EXPLANATION"]
+            for row in payload["result"]["data"]
+            if row["SECURITY_CODE"] == original["SECURITY_CODE"]
+        )
+    )
+    assert stock["reason"] == "；".join(expected_reasons)
+
+    payload["result"]["data"][0]["TRADE_DATE"] = "2026-11-11 00:00:00"
+    with pytest.raises(RuntimeError, match="TRADE_DATE"):
+        market._parse_dragon_tiger(payload, "2026-11-12")
+
+
+def test_eastmoney_hot_rank_accepts_ulist_diff_as_list_or_dict():
+    ranked = fixture("market_review_em_hot.json")
+    quotes = fixture("market_review_em_hot_quotes.json")
+    raw_rows = market._payload_diff(quotes, "fixture")
+    variants = [
+        raw_rows,
+        {str(index): row for index, row in enumerate(raw_rows)},
+    ]
+
+    results = []
+    for diff in variants:
+        payload = json.loads(json.dumps(quotes))
+        payload["data"]["diff"] = diff
+        results.append(market._parse_em_hot_rank(ranked, payload))
+
+    assert results[0] == results[1]
+    assert len(results[0]) == len(ranked["data"])
+
+
+def test_ths_hot_parser_uses_rank_and_tag_fields_from_real_fixture():
+    rows = market._parse_ths_hot(fixture("market_review_ths_hot.json"))
+
+    assert rows
+    assert rows[0]["rank"] == 1
+    assert rows[0]["name"]
+    assert isinstance(rows[0]["concepts"], list)
+
+
+def test_cls_sign_is_md5_of_sha1_of_sorted_query():
+    params = {
+        "appName": "CailianpressWeb",
+        "os": "web",
+        "sv": "7.7.5",
+        "last_time": "",
+        "refresh_type": "1",
+        "rn": "50",
+    }
+    qs, sign = market._cls_query(params)
+    expected_qs = "&".join(f"{key}={params[key]}" for key in sorted(params))
+    expected = hashlib.md5(hashlib.sha1(expected_qs.encode()).hexdigest().encode()).hexdigest()
+
+    assert qs == expected_qs
+    assert sign == expected
+
+
+def test_news_uses_only_explicit_payload_urls():
+    cls_rows = market._parse_cls_news(fixture("market_review_cls_news.json"))
+    em_rows = market._parse_em_news(fixture("market_review_em_news.json"))
+
+    assert cls_rows and cls_rows[0]["url"].startswith("https://")
+    assert em_rows and all("url" not in row for row in em_rows)
 
 
 def test_northbound_fields_are_turnover_only():
@@ -324,6 +539,7 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
         "_margin_snapshot",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError("cache missing")),
     )
+    stub_market_additions(monkeypatch)
     payload = market.fetch_market("2026-11-02", em_client=market.EMClient())
 
     latest, dated, board_csv = market.write_snapshot(
@@ -374,6 +590,7 @@ def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkey
         "_margin_snapshot",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("margin unavailable")),
     )
+    stub_market_additions(monkeypatch)
 
     session = object()
     payload = market.fetch_market(
@@ -431,6 +648,7 @@ def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
         "_margin_snapshot",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("margin unavailable")),
     )
+    stub_market_additions(monkeypatch)
 
     payload = market.fetch_market("2026-11-02", em_client=market.EMClient())
 
@@ -564,6 +782,7 @@ def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
         "_refresh_error": "fetch failed",
     }
     monkeypatch.setattr(market, "_margin_snapshot", lambda *_args, **_kwargs: margin_data.copy())
+    stub_market_additions(monkeypatch)
 
     payload = market.fetch_market("2026-10-30", em_client=market.EMClient())
 
@@ -572,6 +791,46 @@ def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
     assert "stale" in payload["sources"]["margin"]["error"]
     assert "SZSE/SSE ratio out of range" in payload["sources"]["margin"]["error"]
     assert payload["margin"]["data"]["latest_date"] == "2026-10-20"
+
+
+def test_market_source_failure_is_isolated_from_other_sections(monkeypatch):
+    stub_market_additions(monkeypatch)
+    monkeypatch.setattr(
+        market,
+        "fetch_breadth",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("breadth unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
+        "board_flow_snapshot",
+        lambda *_args, **_kwargs: pd.DataFrame(columns=market.BOARD_COLUMNS),
+    )
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: {"zt": 0, "zt_rows": [], "top20": {"zt": []}},
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(market, "csindex_valuation", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        market,
+        "_margin_snapshot",
+        lambda *_args, **_kwargs: {
+            "latest_date": "2026-11-12",
+            "stale": False,
+            "trading_days_stale": 0,
+            "fin_balance_sse": 1,
+            "fin_balance_szse": 1,
+        },
+    )
+
+    payload = market.fetch_market("2026-11-12", em_client=market.EMClient())
+
+    assert payload["sources"]["breadth"]["ok"] is False
+    assert payload["breadth"]["data"] is None
+    assert payload["sources"]["themes"]["ok"] is True
+    assert payload["sources"]["limit_pools"]["ok"] is True
+    assert payload["limit_pools"]["zt"] == 0
 
 
 def test_board_csv_is_written_only_with_rows(tmp_path):

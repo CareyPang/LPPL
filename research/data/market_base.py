@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import random
 import re
+import statistics
 import tempfile
 import time
+import uuid
 from datetime import date, datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -22,6 +26,13 @@ EM_BOARD_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 EM_HISTORY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
 EM_POOL_URL = "https://push2ex.eastmoney.com"
+EM_ULIST_URL = "https://push2delay.eastmoney.com/api/qt/ulist.np/get"
+EM_HOT_RANK_URL = "https://emappdata.eastmoney.com/stockrank/getAllCurrentList"
+EM_DATACENTER_URL = "https://datacenter-web.eastmoney.com/api/data/v1/get"
+EM_FAST_NEWS_URL = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
+THS_HARDEN_URL = "http://zx.10jqka.com.cn/event/api/getharden"
+THS_HOT_URL = "https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock"
+CLS_ROLL_URL = "https://www.cls.cn/v1/roll/get_roll_list"
 SINA_BOARD_URL = (
     "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
     "MoneyFlow.ssl_bkzj_bk"
@@ -167,6 +178,30 @@ class EMClient:
 
     def get_json(self, url, params=None, headers=None, fallback_url=None):
         response = self.get(url, params, headers, fallback_url)
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("Eastmoney response is not a JSON object")
+        return payload
+
+    def post_json(self, url, body, headers=None):
+        if self.last_call is not None:
+            elapsed = time.monotonic() - self.last_call
+            delay = max(0.0, 0.6 - elapsed) + self.jitter(0.0, 0.4)
+            self.sleep(delay)
+        try:
+            response = self.session.post(
+                url,
+                json=body,
+                headers=headers,
+                timeout=15,
+                allow_redirects=True,
+            )
+        finally:
+            self.last_call = time.monotonic()
+        if response.status_code == 403:
+            raise EMBlocked(f"Eastmoney returned HTTP 403 for {url}")
+        response.raise_for_status()
+        self.last_url = response.url
         payload = response.json()
         if not isinstance(payload, dict):
             raise RuntimeError("Eastmoney response is not a JSON object")
@@ -482,6 +517,87 @@ def _limit_display_row(row: dict, pool: str) -> dict:
     }
 
 
+def _limit_zt_row(row: dict) -> dict:
+    required = {"c", "n", "lbc", "fbt", "lbt", "fund", "zbc", "hybk", "zdp", "amount", "hs"}
+    missing = required - set(row)
+    if missing:
+        raise RuntimeError("Eastmoney ZT fields missing: " + ", ".join(sorted(missing)))
+    return {
+        "code": str(row["c"]),
+        "name": str(row["n"]),
+        "streak": _int(row["lbc"], "lbc"),
+        "first_seal": _fmt_limit_time(row["fbt"]),
+        "last_seal": _fmt_limit_time(row["lbt"]),
+        "seal_fund": _number(row["fund"]),
+        "break_times": _int(row["zbc"], "zbc"),
+        "industry": str(row["hybk"]) if row["hybk"] is not None else None,
+        "pct": _number(row["zdp"]),
+        "amount": _number(row["amount"]),
+        "turnover": _number(row["hs"]),
+        "reason": None,
+    }
+
+
+def _yesterday_pool_row(row: dict) -> dict:
+    required = {"c", "n", "p", "zdp", "hs", "yfbt", "ylbc", "hybk"}
+    missing = required - set(row)
+    if missing:
+        raise RuntimeError("Eastmoney yesterday-ZT fields missing: " + ", ".join(sorted(missing)))
+    return {
+        "code": str(row["c"]),
+        "name": str(row["n"]),
+        "close": _number(row["p"]),
+        "pct": _number(row["zdp"]),
+        "turnover": _number(row["hs"]),
+        "first_seal": _fmt_limit_time(row["yfbt"]),
+        "level": _int(row["ylbc"], "ylbc"),
+        "industry": str(row["hybk"]) if row["hybk"] is not None else None,
+    }
+
+
+def _promotion_summary(yesterday_rows: list[dict], today_rows: list[dict]) -> tuple[dict, dict]:
+    previous = [_yesterday_pool_row(row) for row in yesterday_rows]
+    today = [_limit_zt_row(row) for row in today_rows]
+    today_by_code = {row["code"]: row for row in today}
+    pct_values = [row["pct"] for row in previous if row["pct"] is not None]
+    sentiment = {
+        "yzt_n": len(pct_values),
+        "yzt_mean_pct": statistics.mean(pct_values) if pct_values else None,
+        "yzt_median_pct": statistics.median(pct_values) if pct_values else None,
+        "yzt_up_share": (
+            sum(value > 0 for value in pct_values) / len(pct_values) if pct_values else None
+        ),
+    }
+    levels: dict[int, list[dict]] = {}
+    for row in previous:
+        levels.setdefault(row["level"], []).append(row)
+    promotion_rows = []
+    total_previous = 0
+    total_up = 0
+    grouped: dict[str, dict[str, int]] = {}
+    for level, rows in sorted(levels.items()):
+        key = "5+" if level >= 5 else str(level)
+        counts = grouped.setdefault(key, {"n_prev": 0, "n_up": 0})
+        counts["n_prev"] += len(rows)
+        counts["n_up"] += sum(
+            today_by_code.get(row["code"], {}).get("streak") == row["level"] + 1
+            for row in rows
+        )
+        total_previous += len(rows)
+        total_up += sum(
+            today_by_code.get(row["code"], {}).get("streak") == row["level"] + 1
+            for row in rows
+        )
+    for key, counts in grouped.items():
+        promotion_rows.append({"k": key, **counts})
+    return sentiment, {
+        "levels": promotion_rows,
+        "n_prev_total": total_previous,
+        "n_up_total": total_up,
+        "rate": total_up / total_previous if total_previous else None,
+    }
+
+
 def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
     compact_date = date_value.replace("-", "")
     if not re.fullmatch(r"\d{8}", compact_date):
@@ -502,7 +618,22 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
             url, params, headers={"Referer": "https://quote.eastmoney.com/"}
         )
         pools[kind] = _parse_pool(payload, compact_date)
+    yesterday_payload = client.get_json(
+        f"{EM_POOL_URL}/getYesterdayZTPool",
+        {
+            "ut": LIMIT_UT,
+            "dpt": "wz.ztzt",
+            "Pageindex": 0,
+            "pagesize": 10000,
+            "sort": "zs:desc",
+            "date": compact_date,
+        },
+        headers={"Referer": "https://quote.eastmoney.com/"},
+    )
+    yesterday_rows = _parse_pool(yesterday_payload, compact_date)
     zt, zb, dt = (pools[k] for k in ("zt", "zb", "dt"))
+    zt_rows = [_limit_zt_row(row) for row in zt]
+    sentiment, promotion = _promotion_summary(yesterday_rows, zt)
     streak_dist: dict[str, int] = {}
     for row in zt:
         streak = _int(row["lbc"], "lbc")
@@ -521,7 +652,515 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
             kind: [_limit_display_row(row, kind) for row in pool[:20]]
             for kind, pool in pools.items()
         },
+        "zt_rows": zt_rows,
+        "yesterday_rows": [_yesterday_pool_row(row) for row in yesterday_rows],
+        "sentiment": sentiment,
+        "promotion": promotion,
     }
+
+
+def _row_list(value, field: str) -> list[dict]:
+    if isinstance(value, dict):
+        rows = list(value.values())
+    elif isinstance(value, list):
+        rows = value
+    else:
+        raise RuntimeError(f"{field} must be a list or object")
+    if any(not isinstance(row, dict) for row in rows):
+        raise RuntimeError(f"{field} contains a non-object row")
+    return rows
+
+
+def _payload_diff(payload: dict, source: str) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or "diff" not in data:
+        raise RuntimeError(f"{source} response lacks data.diff")
+    return _row_list(data["diff"], f"{source} data.diff")
+
+
+def _parse_breadth(payload: dict) -> dict:
+    rows = _payload_diff(payload, "Eastmoney breadth")
+    required = {"f12", "f14", "f104", "f105", "f106", "f6"}
+    indices = []
+    for row in rows:
+        missing = required - set(row)
+        if missing:
+            raise RuntimeError("Eastmoney breadth fields missing: " + ", ".join(sorted(missing)))
+        indices.append(
+            {
+                "code": str(row["f12"]),
+                "name": str(row["f14"]),
+                "up": _int(row["f104"], "f104"),
+                "down": _int(row["f105"], "f105"),
+                "flat": _int(row["f106"], "f106"),
+                "amount_yuan": _number(row["f6"]),
+            }
+        )
+        if indices[-1]["amount_yuan"] is None:
+            raise RuntimeError("Eastmoney breadth f6 is not numeric")
+    if len(indices) != 2:
+        raise RuntimeError(f"Eastmoney breadth returned {len(indices)} index rows; expected 2")
+    return {
+        "up": sum(row["up"] for row in indices),
+        "down": sum(row["down"] for row in indices),
+        "flat": sum(row["flat"] for row in indices),
+        "amount_yuan": sum(row["amount_yuan"] or 0 for row in indices),
+        "indices": indices,
+        "snapshot_at": _now(),
+        "note": "这是实时快照，仅在收盘后同日运行时有效。" + DESCRIPTIVE_NOTE,
+    }
+
+
+def _split_theme_reason(reason: str) -> list[str]:
+    if not isinstance(reason, str):
+        raise RuntimeError("THS theme reason is not a string")
+    return [
+        tag
+        for raw in reason.split("+")
+        if (tag := raw.strip().strip(" \t\r\n“”\"'"))
+    ]
+
+
+def _theme_tags(rows: list[dict]) -> list[dict]:
+    tag_codes: dict[str, set[str]] = {}
+    for row in rows:
+        missing = {"code", "reason"} - set(row)
+        if missing:
+            raise RuntimeError("THS theme tag fields missing: " + ", ".join(sorted(missing)))
+        for tag in _split_theme_reason(row["reason"]):
+            tag_codes.setdefault(tag, set()).add(str(row["code"]))
+    tags = [
+        {"tag": tag, "n": len(codes), "codes": sorted(codes)}
+        for tag, codes in tag_codes.items()
+    ]
+    tags.sort(key=lambda row: (-row["n"], row["tag"]))
+    return tags[:30]
+
+
+def _parse_themes(payload: dict) -> dict:
+    if "data" not in payload or not isinstance(payload["data"], list):
+        raise RuntimeError("THS harden response lacks data array")
+    if payload.get("errocode") not in (None, 0, "0"):
+        raise RuntimeError(f"THS harden error: {payload.get('errormsg', '')}")
+    rows = []
+    for item in payload["data"]:
+        if not isinstance(item, dict):
+            raise RuntimeError("THS harden row is not an object")
+        required = {"name", "code", "reason", "zhangfu", "huanshou", "chengjiaoe"}
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("THS harden fields missing: " + ", ".join(sorted(missing)))
+        code = str(item["code"])
+        row = {
+            "code": code,
+            "name": str(item["name"]),
+            "reason": item["reason"],
+            "pct": _number(item["zhangfu"]),
+            "turnover": _number(item["huanshou"]),
+            "amount": _number(item["chengjiaoe"]),
+        }
+        rows.append(row)
+    return {"harden_rows": rows, "tags": _theme_tags(payload["data"])}
+
+
+def _parse_board_strength(
+    payload: dict,
+    zt_codes: set[str] | None,
+    tag_codes: dict[str, set[str]] | None,
+):
+    rows = _payload_diff(payload, "Eastmoney concept boards")
+    required = {"f12", "f14", "f3", "f6", "f104", "f105", "f128", "f136", "f140"}
+    output = []
+    for item in rows:
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("Eastmoney concept fields missing: " + ", ".join(sorted(missing)))
+        name = str(item["f14"])
+        if name.startswith("昨日"):
+            continue
+        up = _int(item["f104"], "f104")
+        down = _int(item["f105"], "f105")
+        output.append(
+            {
+                "code": str(item["f12"]),
+                "name": name,
+                "pct": _number(item["f3"]),
+                "amount": _number(item["f6"]),
+                "up": up,
+                "down": down,
+                "up_share": up / (up + down) if up + down else None,
+                "leader_name": str(item["f128"]) if item["f128"] is not None else None,
+                "leader_code": str(item["f140"]) if item["f140"] is not None else None,
+                "leader_pct": _number(item["f136"]),
+                "zt_n": (
+                    len(zt_codes & tag_codes.get(name, set()))
+                    if tag_codes is not None and zt_codes is not None
+                    else None
+                ),
+            }
+        )
+    output.sort(
+        key=lambda row: (
+            row["zt_n"] is None,
+            -(row["zt_n"] or 0),
+            -(row["pct"] if row["pct"] is not None else float("-inf")),
+        )
+    )
+    return output[:30]
+
+
+def _parse_ths_hot(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or "stock_list" not in data:
+        raise RuntimeError("THS hot response lacks data.stock_list")
+    rows = _row_list(data["stock_list"], "THS hot stock_list")
+    output = []
+    for item in rows[:50]:
+        required = {"order", "code", "name", "rate", "rise_and_fall", "hot_rank_chg", "tag"}
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("THS hot fields missing: " + ", ".join(sorted(missing)))
+        tag = item["tag"]
+        if not isinstance(tag, dict) or not {"concept_tag", "popularity_tag"} <= set(tag):
+            raise RuntimeError("THS hot row lacks tag.concept_tag or tag.popularity_tag")
+        if not isinstance(tag["concept_tag"], list):
+            raise RuntimeError("THS hot tag.concept_tag must be an array")
+        output.append(
+            {
+                "rank": _int(item["order"], "order"),
+                "code": str(item["code"]),
+                "name": str(item["name"]),
+                "heat": _number(item["rate"]),
+                "pct": _number(item["rise_and_fall"]),
+                "rank_chg": _number(item["hot_rank_chg"]),
+                "concepts": [str(value) for value in tag["concept_tag"]],
+                "popularity_tag": str(tag["popularity_tag"] or ""),
+            }
+        )
+    return output
+
+
+def _parse_em_hot_rank(payload: dict, quotes_payload: dict) -> list[dict]:
+    if "data" not in payload:
+        raise RuntimeError("Eastmoney hot-rank response lacks data")
+    ranked = _row_list(payload["data"], "Eastmoney hot-rank data")
+    quotes = _payload_diff(quotes_payload, "Eastmoney hot-rank quote")
+    quote_fields = {"f12", "f14", "f2", "f3"}
+    quote_by_code = {}
+    for row in quotes:
+        missing = quote_fields - set(row)
+        if missing:
+            raise RuntimeError("Eastmoney hot quote fields missing: " + ", ".join(sorted(missing)))
+        quote_by_code[str(row["f12"])] = {
+            "name": str(row["f14"]),
+            "price": _number(row["f2"]),
+            "pct": _number(row["f3"]),
+        }
+    output = []
+    for item in ranked[:50]:
+        required = {"sc", "rk", "hisRc"}
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("Eastmoney hot-rank fields missing: " + ", ".join(sorted(missing)))
+        source_code = str(item["sc"])
+        if len(source_code) < 6:
+            raise RuntimeError(f"invalid Eastmoney hot-rank code: {source_code!r}")
+        code = source_code[-6:]
+        quote = quote_by_code.get(code)
+        if quote is None:
+            raise RuntimeError(f"Eastmoney hot-rank quote missing for {code}")
+        output.append(
+            {
+                "rank": _int(item["rk"], "rk"),
+                "code": code,
+                **quote,
+                "rank_chg": _number(item["hisRc"]),
+            }
+        )
+    return output
+
+
+def _parse_dragon_tiger(payload: dict, asof: str) -> dict:
+    result = payload.get("result")
+    if not isinstance(result, dict) or "data" not in result:
+        raise RuntimeError("Eastmoney LHB response lacks result.data")
+    rows = result["data"]
+    if not isinstance(rows, list):
+        raise RuntimeError("Eastmoney LHB result.data must be an array")
+    required = {
+        "TRADE_DATE",
+        "SECURITY_CODE",
+        "SECURITY_NAME_ABBR",
+        "EXPLANATION",
+        "CLOSE_PRICE",
+        "CHANGE_RATE",
+        "BILLBOARD_NET_AMT",
+        "TURNOVERRATE",
+    }
+    grouped = {}
+    for item in rows:
+        if not isinstance(item, dict):
+            raise RuntimeError("Eastmoney LHB row is not an object")
+        missing = required - set(item)
+        buy_field = "BUY_AMT" if "BUY_AMT" in item else "BILLBOARD_BUY_AMT"
+        sell_field = "SELL_AMT" if "SELL_AMT" in item else "BILLBOARD_SELL_AMT"
+        if buy_field not in item:
+            missing.add("BUY_AMT/BILLBOARD_BUY_AMT")
+        if sell_field not in item:
+            missing.add("SELL_AMT/BILLBOARD_SELL_AMT")
+        if missing:
+            raise RuntimeError("Eastmoney LHB fields missing: " + ", ".join(sorted(missing)))
+        trade_date = str(item["TRADE_DATE"])[:10]
+        if trade_date != asof:
+            raise RuntimeError(f"Eastmoney LHB TRADE_DATE {trade_date} does not match {asof}")
+        code = str(item["SECURITY_CODE"])
+        if code not in grouped:
+            grouped[code] = {
+                "code": code,
+                "name": str(item["SECURITY_NAME_ABBR"]),
+                "reason": [],
+                "close": _number(item["CLOSE_PRICE"]),
+                "pct": _number(item["CHANGE_RATE"]),
+                "net": _number(item["BILLBOARD_NET_AMT"]),
+                "buy": _number(item[buy_field]),
+                "sell": _number(item[sell_field]),
+                "turnover": _number(item["TURNOVERRATE"]),
+            }
+        reason = item["EXPLANATION"]
+        if reason and str(reason) not in grouped[code]["reason"]:
+            grouped[code]["reason"].append(str(reason))
+    stocks = list(grouped.values())
+    for row in stocks:
+        row["reason"] = "；".join(row["reason"])
+    return {
+        "date": str(rows[0]["TRADE_DATE"])[:10] if rows else asof,
+        "n_stocks": len(stocks),
+        "top_buy": sorted(stocks, key=lambda row: row["net"] or 0, reverse=True)[:20],
+        "top_sell": sorted(stocks, key=lambda row: row["net"] or 0)[:10],
+    }
+
+
+def _cls_query(params: dict[str, str]) -> tuple[str, str]:
+    qs = "&".join(f"{key}={params[key]}" for key in sorted(params))
+    sign = hashlib.md5(hashlib.sha1(qs.encode("utf-8")).hexdigest().encode("ascii")).hexdigest()
+    return qs, sign
+
+
+def _parse_cls_news(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("roll_data"), list):
+        raise RuntimeError("CLS response lacks data.roll_data")
+    rows = []
+    for item in data["roll_data"][:30]:
+        if not isinstance(item, dict) or not {"title", "brief", "ctime"} <= set(item):
+            raise RuntimeError("CLS roll item lacks title, brief, or ctime")
+        title = str(item["title"] or str(item["brief"] or "")[:80])
+        stamp = _number(item["ctime"])
+        if stamp is None:
+            raise RuntimeError("CLS ctime is not a timestamp")
+        row = {
+            "source": "财联社",
+            "time": datetime.fromtimestamp(stamp, ZoneInfo("Asia/Shanghai")).strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+            "title": title,
+        }
+        for field in ("shareurl", "share_url", "detail_url", "url"):
+            if item.get(field):
+                row["url"] = str(item[field])
+                break
+        rows.append(row)
+    return rows
+
+
+def _parse_em_news(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("fastNewsList"), list):
+        raise RuntimeError("Eastmoney fast-news response lacks data.fastNewsList")
+    rows = []
+    for item in data["fastNewsList"][:30]:
+        if not isinstance(item, dict) or not {"title", "summary", "showTime"} <= set(item):
+            raise RuntimeError("Eastmoney fast-news item lacks title, summary, or showTime")
+        title = str(item["title"] or str(item["summary"] or "")[:80])
+        try:
+            stamp = pd.Timestamp(str(item["showTime"]))
+            if pd.isna(stamp):
+                raise ValueError("timestamp is not a date")
+            stamp = (
+                stamp.tz_localize("Asia/Shanghai")
+                if stamp.tzinfo is None
+                else stamp.tz_convert("Asia/Shanghai")
+            )
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f"invalid Eastmoney showTime: {item['showTime']!r}") from exc
+        row = {
+            "source": "东方财富",
+            "time": stamp.strftime("%Y-%m-%d %H:%M"),
+            "title": title,
+        }
+        for field in ("shareUrl", "share_url", "detailUrl", "detail_url", "url"):
+            if item.get(field):
+                row["url"] = str(item[field])
+                break
+        rows.append(row)
+    return rows
+
+
+def fetch_breadth(client: EMClient | None = None) -> dict:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_ULIST_URL,
+        {
+            "secids": "1.000001,0.399001",
+            "fields": "f12,f14,f104,f105,f106,f6",
+            "fltt": "2",
+            "invt": "2",
+        },
+    )
+    return _parse_breadth(payload)
+
+
+def fetch_themes(asof: str, session=None) -> dict:
+    session = session or requests.Session()
+    url = f"{THS_HARDEN_URL}/date/{asof}/orderby/date/orderway/desc/charset/GBK/"
+    response = session.get(url, headers={"User-Agent": UA}, timeout=15)
+    response.raise_for_status()
+    return _parse_themes(response.json())
+
+
+def fetch_board_strength(
+    zt_rows: list[dict] | None,
+    themes: dict | None,
+    client=None,
+) -> list[dict]:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_BOARD_URL,
+        {
+            "fs": "m:90+t:3",
+            "fid": "f3",
+            "po": "1",
+            "pz": "500",
+            "pn": "1",
+            "fields": "f12,f14,f3,f6,f104,f105,f128,f136,f140",
+        },
+        fallback_url=EM_BOARD_FALLBACK_URL,
+    )
+    tag_codes = None
+    if themes is not None:
+        tag_codes = {}
+        for row in themes["harden_rows"]:
+            for tag in _split_theme_reason(row["reason"]):
+                tag_codes.setdefault(tag, set()).add(row["code"])
+    zt_codes = {row["code"] for row in zt_rows} if zt_rows is not None else None
+    return _parse_board_strength(payload, zt_codes, tag_codes)
+
+
+def fetch_ths_hot(session=None) -> list[dict]:
+    session = session or requests.Session()
+    response = session.get(
+        THS_HOT_URL,
+        params={"stock_type": "a", "type": "day", "list_type": "normal"},
+        headers={"User-Agent": UA},
+        timeout=15,
+    )
+    response.raise_for_status()
+    return _parse_ths_hot(response.json())
+
+
+def fetch_em_hot_rank(client=None) -> list[dict]:
+    client = client or EMClient()
+    payload = client.post_json(
+        EM_HOT_RANK_URL,
+        {
+            "appId": "appId01",
+            "globalId": "786e4c21-70dc-435a-93bb-38",
+            "marketType": "",
+            "pageNo": 1,
+            "pageSize": 50,
+        },
+        headers={"User-Agent": UA},
+    )
+    ranked = _row_list(payload.get("data"), "Eastmoney hot-rank data")
+    if not ranked:
+        return []
+    secids = []
+    for item in ranked[:50]:
+        if "sc" not in item:
+            raise RuntimeError("Eastmoney hot-rank row lacks sc")
+        code = str(item["sc"])
+        market_code = code[:2].upper()
+        prefix = {"SZ": "0.", "SH": "1.", "BJ": "0."}.get(market_code)
+        if prefix is None:
+            raise RuntimeError(f"unknown Eastmoney hot-rank market: {code!r}")
+        secids.append(prefix + code[2:])
+    quotes_payload = client.get_json(
+        EM_ULIST_URL,
+        {
+            "ut": "f057cbcbce2a86e2866ab8877db1d059",
+            "fltt": "2",
+            "invt": "2",
+            "fields": "f14,f3,f12,f2",
+            "secids": ",".join(secids),
+        },
+        headers={"Referer": "https://quote.eastmoney.com/"},
+    )
+    return _parse_em_hot_rank(payload, quotes_payload)
+
+
+def fetch_dragon_tiger(asof: str, client=None) -> dict:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_DATACENTER_URL,
+        {
+            "reportName": "RPT_DAILYBILLBOARD_DETAILSNEW",
+            "columns": "ALL",
+            "filter": f"(TRADE_DATE>='{asof}')(TRADE_DATE<='{asof}')",
+            "pageSize": "500",
+            "sortColumns": "BILLBOARD_NET_AMT",
+            "sortTypes": "-1",
+            "source": "WEB",
+            "client": "WEB",
+        },
+    )
+    return _parse_dragon_tiger(payload, asof)
+
+
+def fetch_cls_news(session=None) -> list[dict]:
+    session = session or requests.Session()
+    params = {
+        "appName": "CailianpressWeb",
+        "os": "web",
+        "sv": "7.7.5",
+        "last_time": "",
+        "refresh_type": "1",
+        "rn": "50",
+    }
+    qs, sign = _cls_query(params)
+    response = session.get(
+        f"{CLS_ROLL_URL}?{qs}&sign={sign}",
+        headers={"User-Agent": UA, "Referer": "https://www.cls.cn/"},
+        timeout=15,
+    )
+    response.raise_for_status()
+    return _parse_cls_news(response.json())
+
+
+def fetch_em_news(client: EMClient | None = None) -> list[dict]:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_FAST_NEWS_URL,
+        {
+            "client": "web",
+            "biz": "web_724",
+            "fastColumn": 102,
+            "sortEnd": "",
+            "pageSize": 50,
+            "req_trace": str(uuid.uuid4()),
+        },
+        headers={"Referer": "https://kuaixun.eastmoney.com/"},
+    )
+    return _parse_em_news(payload)
 
 
 def _json_from_js(text: str) -> dict | list:
@@ -1007,6 +1646,98 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
             "push2ex.eastmoney.com", False, _error(exc)
         )
 
+    themes_section = {
+        "evidence": "descriptive",
+        "note": "同花顺题材涨停统计，只作标签与当日归类。" + DESCRIPTIVE_NOTE,
+    }
+    themes_data = None
+    try:
+        themes_data = fetch_themes(asof, session)
+        themes_section.update(themes_data)
+        sources["themes"] = _source_meta("zx.10jqka.com.cn", True)
+        reasons = {row["code"]: row["reason"] for row in themes_data["harden_rows"]}
+        for row in limit_section.get("zt_rows", []):
+            row["reason"] = reasons.get(row["code"])
+    except Exception as exc:
+        themes_section["data"] = None
+        sources["themes"] = _source_meta("zx.10jqka.com.cn", False, _error(exc))
+
+    breadth_section = {
+        "evidence": "descriptive",
+        "note": "实时市场宽度快照；仅在收盘后同日运行时有效。" + DESCRIPTIVE_NOTE,
+    }
+    try:
+        breadth_section.update(fetch_breadth(em))
+        sources["breadth"] = _source_meta(em.url_host, True)
+    except Exception as exc:
+        breadth_section["data"] = None
+        sources["breadth"] = _source_meta("push2delay.eastmoney.com", False, _error(exc))
+
+    board_strength_section = {
+        "evidence": "descriptive",
+        "note": "按涨停家数排序，相同再按涨幅。" + DESCRIPTIVE_NOTE,
+    }
+    try:
+        zt_rows = limit_section.get("zt_rows") if sources["limit_pools"]["ok"] else None
+        board_strength_section["rows"] = fetch_board_strength(zt_rows, themes_data, em)
+        sources["board_strength"] = _source_meta(em.url_host, True)
+    except Exception as exc:
+        board_strength_section["data"] = None
+        sources["board_strength"] = _source_meta(
+            "push2delay.eastmoney.com", False, _error(exc)
+        )
+
+    hot_section = {
+        "evidence": "descriptive",
+        "note": "热榜仅反映来源自身排序与标签。" + DESCRIPTIVE_NOTE,
+        "ths": None,
+        "eastmoney": None,
+    }
+    try:
+        hot_section["ths"] = fetch_ths_hot(session)
+        sources["hot_ths"] = _source_meta("dq.10jqka.com.cn", True)
+    except Exception as exc:
+        sources["hot_ths"] = _source_meta("dq.10jqka.com.cn", False, _error(exc))
+    try:
+        hot_section["eastmoney"] = fetch_em_hot_rank(em)
+        sources["hot_eastmoney"] = _source_meta("emappdata.eastmoney.com", True)
+    except Exception as exc:
+        sources["hot_eastmoney"] = _source_meta(
+            "emappdata.eastmoney.com", False, _error(exc)
+        )
+
+    dragon_tiger_section = {
+        "evidence": "descriptive",
+        "note": "盘后龙虎榜按证券代码汇总；不展示营业部或席位。" + DESCRIPTIVE_NOTE,
+    }
+    try:
+        dragon_tiger_section.update(fetch_dragon_tiger(asof, em))
+        sources["dragon_tiger"] = _source_meta("datacenter-web.eastmoney.com", True)
+    except Exception as exc:
+        dragon_tiger_section["data"] = None
+        sources["dragon_tiger"] = _source_meta(
+            "datacenter-web.eastmoney.com", False, _error(exc)
+        )
+
+    news_section = {
+        "evidence": "descriptive",
+        "note": "标题来自第三方，只作资讯索引，不进入模型。" + DESCRIPTIVE_NOTE,
+        "cls": None,
+        "eastmoney": None,
+    }
+    try:
+        news_section["cls"] = fetch_cls_news(session)
+        sources["news_cls"] = _source_meta("www.cls.cn", True)
+    except Exception as exc:
+        sources["news_cls"] = _source_meta("www.cls.cn", False, _error(exc))
+    try:
+        news_section["eastmoney"] = fetch_em_news(em)
+        sources["news_eastmoney"] = _source_meta("np-weblist.eastmoney.com", True)
+    except Exception as exc:
+        sources["news_eastmoney"] = _source_meta(
+            "np-weblist.eastmoney.com", False, _error(exc)
+        )
+
     northbound = {
         "evidence": "descriptive",
         "note": "HKEX 仅列成交额、交易笔数与 ETF 成交额；2024-08 后不提供买卖额或净流入。"
@@ -1076,6 +1807,12 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
         "sources": sources,
         "board_flow": board_flow,
         "limit_pools": limit_section,
+        "breadth": breadth_section,
+        "themes": themes_section,
+        "board_strength": board_strength_section,
+        "hot": hot_section,
+        "dragon_tiger": dragon_tiger_section,
+        "news": news_section,
         "northbound": northbound,
         "valuation": valuation,
         "margin": margin_section,
