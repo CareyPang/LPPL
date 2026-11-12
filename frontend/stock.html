@@ -79,6 +79,20 @@
     .chip { border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
     .chip:hover { border-color: var(--cyan); color: var(--ink); }
     .chip .m { color: var(--ink-3); margin-left: 6px; font-size: 12px; }
+    .watch { margin-top: var(--s4); }
+    .watch-h { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); flex-wrap: wrap; }
+    .watch-h h3 { margin: 0; font-size: 16px; }
+    .watch-h .muted { font-size: 12px; }
+    .watch-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 6px; }
+    .watch-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s2); align-items: center; border: 1px solid var(--line); background: var(--glass); border-radius: 12px; padding: 8px 12px; }
+    .watch-open { all: unset; cursor: pointer; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+    .watch-open:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
+    .watch-open b { font-family: var(--serif); font-size: 15px; color: var(--ink); }
+    .watch-open .m { color: var(--ink-3); font-size: 12px; }
+    .watch-open .st { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .watch-del, .watch-toggle { font: 500 12px var(--f-u); color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+    .watch-del:hover, .watch-toggle:hover { border-color: var(--cyan); color: var(--ink); }
+    .watch-toggle[aria-pressed="true"] { color: var(--cyan); border-color: rgba(159, 227, 224, .6); }
     .note { font-size: 13px; color: var(--ink-3); margin: var(--s4) 0 0; }
     .status { color: var(--cyan); font-size: 14px; margin: var(--s3) 0 0; min-height: 1.7em; }
     .status:empty { display: none; }
@@ -198,6 +212,13 @@
       </form>
       <div class="name-hint" id="name-hint" aria-live="polite"></div>
       <div class="chips" id="chips"></div>
+      <section class="watch" id="watch" hidden>
+        <div class="watch-h">
+          <h3>我的自选</h3>
+          <span class="muted">只保存在本浏览器，不上传；状态读自已缓存的结果，不会发起新计算。</span>
+        </div>
+        <ul class="watch-list" id="watch-list"></ul>
+      </section>
       <p id="query-status" class="status" role="status"></p>
       <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
     </section>
@@ -207,6 +228,7 @@
         <h2 id="stock-name">—</h2>
         <span class="code" id="stock-code"></span>
         <span class="ev-pill">研究候选 · 未经样本外检验</span>
+        <button type="button" class="watch-toggle" id="watch-toggle" aria-pressed="false">加入自选</button>
         <div class="stock-meta" id="stock-meta"></div>
       </div>
       <div class="summary" id="summary"></div>
@@ -798,6 +820,65 @@
     const tile = (label, value, cls = '', sub = '') =>
       `<div class="tile"><small>${esc(label)}</small><b class="${cls}">${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`;
 
+    function states(d) {
+      const top = d.top || {};
+      const confidence = top.lppls_confidence || {};
+      const window = top.window || {};
+      const hasWindow = window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
+      const topState = hasWindow ? ['hot', '有风险窗口'] : top.signal_status === 'signal' ? ['hot', '有合格拟合'] : ['', '不在风险窗口'];
+      const dipState = !d.dip ? ['', '暂无结果'] : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
+      return { topState, dipState };
+    }
+
+    const WATCH_KEY = 'lppl.watchlist.v1';
+    const WATCH_MAX = 50;
+    const okWatch = (code) => /^(\d{6}|US_[A-Z.]{1,6})$/.test(String(code));
+    function watchRead() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(WATCH_KEY) || '[]');
+        return Array.isArray(raw) ? raw.map(String).filter(okWatch).slice(0, WATCH_MAX) : [];
+      } catch {
+        return [];
+      }
+    }
+    function watchWrite(list) {
+      try {
+        localStorage.setItem(WATCH_KEY, JSON.stringify(list.slice(0, WATCH_MAX)));
+      } catch {
+        $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+      }
+    }
+    let watchSerial = 0;
+    async function renderWatch() {
+      const list = watchRead();
+      $('watch').hidden = list.length === 0;
+      const id = ++watchSerial;
+      const rows = await Promise.all(list.map(async (code) => {
+        try {
+          return { code, d: await LPPL.stock.latest(code) };
+        } catch {
+          return { code, d: null };
+        }
+      }));
+      if (id !== watchSerial) return;
+      $('watch-list').innerHTML = rows.map(({ code, d }) => {
+        const name = (d && stockName(d)) || realName(nameIndex[code]?.name) || '';
+        const label = code.startsWith('US_') ? code.slice(3) : code;
+        let body = '<span class="muted">还没有缓存结果，点开查询</span>';
+        if (d) {
+          const { topState, dipState } = states(d);
+          body = `<span class="m">截至 ${esc(d.asof || '—')}</span><span class="st"><span class="state-pill ${topState[0]}">逃顶 · ${esc(topState[1])}</span><span class="state-pill ${dipState[0]}">抄底 · ${esc(dipState[1])}</span></span>`;
+        }
+        return `<li><button type="button" class="watch-open" data-code="${esc(code)}"><b>${esc(name || label)}</b>${name ? `<span class="m">${esc(label)}</span>` : ''}${body}</button><button type="button" class="watch-del" data-code="${esc(code)}" aria-label="从自选移除 ${esc(name || label)}">移除</button></li>`;
+      }).join('');
+    }
+    let currentCode = null;
+    function syncWatchToggle() {
+      const on = currentCode != null && watchRead().includes(currentCode);
+      $('watch-toggle').setAttribute('aria-pressed', String(on));
+      $('watch-toggle').textContent = on ? '已在自选 · 移除' : '加入自选';
+    }
+
     function summaryHtml(d, name) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
@@ -808,7 +889,7 @@
       ));
       const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
       const hasWindow = window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
-      const topState = hasWindow ? ['hot', '有风险窗口'] : top.signal_status === 'signal' ? ['hot', '有合格拟合'] : ['', '不在风险窗口'];
+      const { topState, dipState } = states(d);
       const topText = hasWindow
         ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
         : `${signalStatus[top.signal_status] || '暂无结果'}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '说明价格走势不符合 LPPLS 泡沫形态，不代表不会下跌。' : ''}`;
@@ -819,7 +900,6 @@
       const fh = dip.first_hit?.fh60 || {};
       const verdict = dip.oos || {};
       const inStructure = dip.in_structure === true;
-      const dipState = !d.dip ? ['', '暂无结果'] : inStructure ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
       let dipText = '暂无抄底面板结果。';
       if (d.dip) {
         dipText = inStructure
@@ -862,6 +942,8 @@
       $('stock-code').textContent = name ? code6(d.symbol) : '';
       document.title = `${name || code6(d.symbol)} · 临界点个股`;
       $('summary').innerHTML = summaryHtml(d, name);
+      currentCode = d.symbol?.startsWith('US_') ? d.symbol : code6(d.symbol) || null;
+      syncWatchToggle();
       $('stock-meta').textContent =
         `${d.symbol || ''} · 数据截至 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
       $('risk').innerHTML = riskHtml(d);
@@ -987,6 +1069,7 @@
     };
     LPPL.stock.index().then((index) => {
       nameIndex = index || {};
+      renderWatch();
       $('chips').innerHTML = ['301196', '002490', '600519', '300750']
         .filter((code) => nameIndex[code])
         .map((code) => `<button class="chip" type="button" data-code="${code}">${esc(realName(nameIndex[code].name) || code)}<span class="m">${code}</span></button>`)
@@ -999,6 +1082,37 @@
         $('stock-name').textContent = realName(nameIndex[name].name);
       }
     }).catch(() => {});
+
+    $('watch-toggle').addEventListener('click', () => {
+      if (!currentCode || !okWatch(currentCode)) return;
+      const list = watchRead();
+      const next = list.includes(currentCode) ? list.filter((c) => c !== currentCode) : [currentCode, ...list];
+      if (next.length > WATCH_MAX) {
+        $('query-status').textContent = `自选最多 ${WATCH_MAX} 只。`;
+        return;
+      }
+      watchWrite(next);
+      syncWatchToggle();
+      renderWatch();
+    });
+    $('watch-list').addEventListener('click', (event) => {
+      const del = event.target.closest('.watch-del');
+      if (del) {
+        watchWrite(watchRead().filter((c) => c !== del.dataset.code));
+        syncWatchToggle();
+        renderWatch();
+        return;
+      }
+      const open = event.target.closest('.watch-open');
+      if (open) go(open.dataset.code);
+    });
+    addEventListener('storage', (event) => {
+      if (event.key === WATCH_KEY) {
+        syncWatchToggle();
+        renderWatch();
+      }
+    });
+    renderWatch();
 
     const initial = new URLSearchParams(location.search).get('code');
     if (initial && /^\d{6}$/.test(initial)) {
