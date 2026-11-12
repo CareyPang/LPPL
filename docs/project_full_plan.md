@@ -193,6 +193,8 @@
 | H 开发段 `_g2` 对照 + §21 (a)(b) 合成标定 + (c)(d)(e) 开发段 | `_g2` 重扫 6 指数（§19.1 结论不变）；Q2 0/24 可容许、MPL 覆盖 0.70/0.60、Ising 主链上界 +0.0097、价格层三项区间含 0 → **a/b/d/e 全部未通过**；1990s 冻结 `a90s_v20261104` | 已合并 | #38，`reports/sensitivity_dev_v2_g2.md`、`reports/q2_calibration.md`、`reports/mpl_calibration.md`、`reports/ising_dev_2010_2018.md`、`reports/price_layer_e_dev.md` |
 | I §21.7/§21.8 登记 + 冻结修正版 | a–e 负面结果登记（不改判据）；`v20261104` 只替换 ≤2000 段、默认仍 `v20261024` | 已合并 | `44f0140`，`docs/preregistration.md` §21.7–21.8、`data/frozen/v20261104/` |
 | J `v20261024` 缺陷标注 | sh000001 1990–92 段/sz399001 1995 错位写进 README，指向 a90s/v20261104 | 待合并 | 本 PR，`data/frozen/v20261024/README.md` |
+| K 个股引擎精度计划 Phase 0–4 | 四指标基线、优化器对比、t_c 聚合、逃顶价格、抄底分型/B9、前瞻日志硬化；1b/2/3b 负面，3a 阴跌底有召回，1a 可修漏找；发现前瞻日志 2026-10-30 起停更 | 待合并，CI 绿 | #54，`docs/plan_stock_engine_precision.md`、`reports/precision_program_summary.md` |
+| L §22 Q3 草案 | 窗口级循环平移零对照合格判据（Phase 1c），待逐条确认 | 待确认，不合并 | #55，`docs/preregistration.md` §22 |
 
 合并顺序：#22 → #23 → #24 → #25 → #27（每合一个，把下一个的 base 改回 main）。
 
@@ -219,6 +221,7 @@
 3. 批准 Q-DD2 / Q-W1 登记（步 4）。
 4. 个股研究方案 `docs/research_plan_stock_math.md` §7 三项：零对照字段进 JSON、Q-STK1 登记文本加 λ_t/市值分层、尾部层是否立项。
 5. 腾讯云 worker 是否要做（不做也能用，只是要点一次 Run workflow、等 1–3 分钟）。
+6. §22 Q3（PR #55）的 K、α 网格、f* 变体、开发段门逐条确认；是否登记 `_g3`（`tcgrid_lm` ∧ `de_lbfgsb`）重扫对照；是否新增 `forward_log_seal.yml` 恢复前瞻日志每日封存（2026-10-30 起停更，见 `reports/forward_log_hardening.md`）。
 
 ## 12. 主要风险
 | 风险 | 应对 |
