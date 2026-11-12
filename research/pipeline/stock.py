@@ -306,13 +306,7 @@ def _variant_windows(variant: str, n_bars: int) -> tuple[int, ...]:
     if variant == "stk_lite":
         return tuple(universe.WINDOWS)
     if variant == "stk_full":
-        windows = (
-            lppls_scan.XS_WINDOWS
-            + lppls_scan.SHORT_WINDOWS
-            + lppls_scan.IDX_WINDOWS
-            + lppls_scan.XL_WINDOWS
-        )
-        return tuple(sorted({int(n) for n in windows if n <= n_bars}))
+        return lppls_scan.full_windows(n_bars)
     raise ValueError(f"unknown stock variant: {variant}")
 
 
@@ -466,6 +460,114 @@ def _fit_logp(ohlc: pd.DataFrame) -> pd.Series:
     )
 
 
+def _price_frame_sha256(ohlc: pd.DataFrame) -> str:
+    frame = ohlc.copy()
+    frame["date"] = pd.to_datetime(frame["date"]).dt.strftime("%Y-%m-%d")
+    frame = frame.sort_values("date", kind="stable").reset_index(drop=True)
+    payload = frame.to_csv(index=False, float_format="%.17g").encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _price_snapshot_paths(
+    code: str, data_version: str, snapshot_dir: Path
+) -> tuple[Path, Path]:
+    path = Path(snapshot_dir) / code / "prices" / f"{data_version}.parquet"
+    return path, path.with_suffix(".json")
+
+
+def _seal_price_snapshot(
+    code: str,
+    ohlc: pd.DataFrame,
+    data_version: str,
+    meta: dict,
+    snapshot_dir: Path,
+) -> dict:
+    path, metadata_path = _price_snapshot_paths(code, data_version, snapshot_dir)
+    input_hash = _price_frame_sha256(ohlc)
+    if path.exists() or metadata_path.exists():
+        if not path.exists() or not metadata_path.exists():
+            raise RuntimeError(f"incomplete sealed price snapshot for {code} {data_version}")
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        existing_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        saved = pd.read_parquet(path)
+        if (
+            metadata.get("data_version") != data_version
+            or metadata.get("sha256") != existing_hash
+            or metadata.get("prices_sha256") != _price_frame_sha256(saved)
+            or metadata.get("prices_sha256") != input_hash
+        ):
+            raise RuntimeError(f"sealed price snapshot changed for {code} {data_version}")
+        return {
+            "path": str(path),
+            "sha256": existing_hash,
+            "data_version": data_version,
+        }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ohlc.to_parquet(path, index=False)
+    snapshot_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "data_version": data_version,
+                "sha256": snapshot_hash,
+                "prices_sha256": input_hash,
+                "meta": meta,
+            },
+            ensure_ascii=False,
+            indent=2,
+            default=str,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "path": str(path),
+        "sha256": snapshot_hash,
+        "data_version": data_version,
+    }
+
+
+def _load_price_snapshot(
+    code: str,
+    data_version: str,
+    snapshot_dir: Path,
+    reference: dict | None = None,
+) -> tuple[pd.DataFrame, str, dict]:
+    path, metadata_path = _price_snapshot_paths(code, data_version, snapshot_dir)
+    if not path.exists() or not metadata_path.exists():
+        raise FileNotFoundError(f"sealed price snapshot is missing for {code} {data_version}")
+    if reference is not None:
+        if reference.get("data_version") != data_version:
+            raise ValueError(f"current record snapshot version mismatch for {code}")
+        if Path(reference.get("path", "")).resolve() != path.resolve():
+            raise ValueError(f"current record snapshot path mismatch for {code}")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    snapshot_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    if (
+        metadata.get("data_version") != data_version
+        or metadata.get("sha256") != snapshot_hash
+        or (reference is not None and reference.get("sha256") != snapshot_hash)
+    ):
+        raise ValueError(f"sealed price snapshot checksum mismatch for {code} {data_version}")
+    ohlc = pd.read_parquet(path)
+    if metadata.get("prices_sha256") != _price_frame_sha256(ohlc):
+        raise ValueError(f"sealed price snapshot content mismatch for {code} {data_version}")
+    return ohlc, data_version, metadata.get("meta", {})
+
+
+def _snapshot_through(
+    snapshot: tuple[pd.DataFrame, str, dict], asof: str
+) -> tuple[pd.DataFrame, str, dict]:
+    ohlc, data_version, meta = snapshot
+    cutoff = pd.Timestamp(asof).normalize()
+    dates = pd.to_datetime(ohlc["date"]).dt.normalize()
+    ohlc = ohlc.loc[dates <= cutoff].reset_index(drop=True)
+    if ohlc.empty:
+        raise ValueError(f"sealed price snapshot has no bars through {cutoff.date()}")
+    return ohlc, data_version, meta
+
+
 def _display_calendar(index: pd.DatetimeIndex, asof: pd.Timestamp) -> pd.DatetimeIndex:
     """t_c/情景分位折算日期用的日历：个股自身 bar 日期（≤ as-of）∪ 参考指数（sh000001）在 as-of 之后、
     今日收盘截止前已知的交易日。只影响展示日期（不含价格，无数学泄漏）；参考日历不可得时退回 bar 日期，
@@ -542,6 +644,7 @@ def predict(
     asof: str | None = None,
     procs: int | None = None,
     trust_boot: int = 0,
+    snapshot_dir: Path | None = None,
 ) -> dict:
     _ensure_v2_box()
     code = _validate_code(code6)
@@ -575,6 +678,10 @@ def predict(
     )
     ohlc_pit.attrs["sym"] = universe._sym(code)
     record["dip"] = build_panel(ohlc_pit)
+    if snapshot_dir is not None:
+        record["stock_meta"]["price_snapshot"] = _seal_price_snapshot(
+            code, ohlc, data_version, meta, snapshot_dir
+        )
     return record
 
 
@@ -639,12 +746,16 @@ def history(
     variant: str = "stk_lite",
     procs: int | None = None,
     cache_dir: Path = Path("data/stock"),
+    price_snapshot: tuple[pd.DataFrame, str, dict] | None = None,
 ) -> dict:
     _ensure_v2_box()
     code = _validate_code(code6)
     if variant not in ("stk_lite", "stk_full"):
         raise ValueError(f"unknown stock variant: {variant}")
-    ohlc, data_version, meta = load_stock(code)
+    if price_snapshot is None:
+        ohlc, data_version, meta = load_stock(code)
+    else:
+        ohlc, data_version, meta = price_snapshot
     logp = _fit_logp(ohlc)
     asofs = _weekly_asofs(logp, weeks)
     windows = _variant_windows(variant, len(logp))
@@ -749,17 +860,60 @@ def main() -> None:
     parser.add_argument("--variant", choices=("stk_lite", "stk_full"), default="stk_lite")
     parser.add_argument("--asof")
     parser.add_argument("--history-weeks", type=int, default=0)
+    parser.add_argument("--history-only", action="store_true")
     parser.add_argument("--procs", type=int)
     parser.add_argument("--trust-boot", type=int, default=0)
     parser.add_argument("--out", type=Path, default=Path("web/mock/data/stock"))
+    parser.add_argument("--cache-dir", type=Path, default=Path("data/stock"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    code = _validate_code(args.code6)
+    if args.history_only:
+        current_path = args.out / f"{args.code6}.json"
+        current_text = current_path.read_text(encoding="utf-8")
+        current = json.loads(current_text)
+        expected_symbol = universe._sym(code)
+        expected_model = f"{MODEL_VERSION}+{args.variant}"
+        if (
+            current.get("symbol") != expected_symbol
+            or not current.get("asof")
+            or not current.get("data_version")
+            or current.get("model_version") != expected_model
+        ):
+            raise ValueError(f"no successful current record for {args.code6} {args.variant}")
+        snapshot_ref = current.get("stock_meta", {}).get("price_snapshot")
+        if not snapshot_ref:
+            raise ValueError(f"current record has no sealed price snapshot for {args.code6}")
+        snapshot = _snapshot_through(
+            _load_price_snapshot(
+                code, current["data_version"], args.cache_dir, snapshot_ref
+            ),
+            current["asof"],
+        )
+        history_record = history(
+            args.code6,
+            weeks=args.history_weeks or 104,
+            variant=args.variant,
+            procs=args.procs,
+            cache_dir=args.cache_dir,
+            price_snapshot=snapshot,
+        )
+        history_record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
+        history_path = args.out / f"{args.code6}_history.json"
+        history_path.write_text(
+            json.dumps(history_record, ensure_ascii=False, indent=1, default=str),
+            encoding="utf-8",
+        )
+        print(history_path)
+        return
+
     record = predict(
         args.code6,
         variant=args.variant,
         asof=args.asof,
         procs=args.procs,
         trust_boot=args.trust_boot,
+        snapshot_dir=args.cache_dir,
     )
     record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
     path = args.out / f"{args.code6}.json"
@@ -771,6 +925,18 @@ def main() -> None:
             weeks=args.history_weeks,
             variant=args.variant,
             procs=args.procs,
+            cache_dir=args.cache_dir,
+            price_snapshot=_snapshot_through(
+                _load_price_snapshot(
+                    code,
+                    record["data_version"],
+                    args.cache_dir,
+                    record["stock_meta"]["price_snapshot"],
+                ),
+                record["asof"],
+            )
+            if record.get("stock_meta", {}).get("price_snapshot")
+            else None,
         )
         history_record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
         history_path = args.out / f"{args.code6}_history.json"

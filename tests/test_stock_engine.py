@@ -628,6 +628,144 @@ def test_history_cache_reuses_asofs_after_appending_one_bar(monkeypatch, tmp_pat
     assert cached_asofs.isdisjoint(asof for asof, _ in calls)
 
 
+def test_history_reuses_sealed_price_snapshot_and_fit_cache(monkeypatch, tmp_path):
+    _install_fake_model(monkeypatch)
+    prices = _ohlc(610)
+    monkeypatch.setattr(
+        stock, "load_stock", lambda *_args, **_kwargs: pytest.fail("unexpected reload")
+    )
+    monkeypatch.setattr(stock, "_name_and_st", lambda _code: ("sample", False))
+    calls = []
+
+    def counted_fit(logp, asof, windows):
+        calls.append((pd.Timestamp(asof), tuple(windows)))
+        return _fake_fit_asof(logp, asof, windows)
+
+    monkeypatch.setattr(stock, "fit_asof", counted_fit)
+    snapshot = (
+        prices,
+        "fixture-v1",
+        {"ipo_in_range": False, "source": "sealed_fixture"},
+    )
+    first = stock.history(
+        "600519",
+        weeks=2,
+        procs=1,
+        cache_dir=tmp_path,
+        price_snapshot=snapshot,
+    )
+    assert calls
+    calls.clear()
+    second = stock.history(
+        "600519",
+        weeks=2,
+        procs=1,
+        cache_dir=tmp_path,
+        price_snapshot=snapshot,
+    )
+
+    assert not calls
+    assert first["data_version"] == second["data_version"] == "fixture-v1"
+
+
+def test_history_only_does_not_predict_or_replace_current_on_failure(
+    monkeypatch, tmp_path
+):
+    output = tmp_path / "output"
+    output.mkdir()
+    code = "600519"
+    current_path = output / f"{code}.json"
+    prices = _ohlc(600)
+    asof = str(prices.date.iloc[-2].date())
+    current = {
+        "symbol": "sh600519",
+        "asof": asof,
+        "model_version": f"{stock.MODEL_VERSION}+stk_lite",
+        "data_version": "fixture-v1",
+        "stock_meta": {
+            "price_snapshot": {
+                "path": str(tmp_path / "cache" / code / "prices" / "fixture-v1.parquet"),
+                "sha256": "sealed-hash",
+                "data_version": "fixture-v1",
+            }
+        },
+    }
+    current_path.write_text(json.dumps(current), encoding="utf-8")
+    before = current_path.read_bytes()
+    snapshot = (prices, "fixture-v1", {"ipo_in_range": False})
+    requested = {}
+
+    monkeypatch.setattr(
+        stock,
+        "predict",
+        lambda *_args, **_kwargs: pytest.fail("history-only called predict"),
+    )
+    monkeypatch.setattr(
+        stock,
+        "_load_price_snapshot",
+        lambda *args: requested.update(snapshot_args=args) or snapshot,
+    )
+    monkeypatch.setattr(
+        stock,
+        "load_stock",
+        lambda *_args, **_kwargs: pytest.fail("history-only reloaded prices"),
+    )
+
+    def fail_history(_code, **kwargs):
+        requested["history_kwargs"] = kwargs
+        raise RuntimeError("history fit failed")
+
+    monkeypatch.setattr(stock, "history", fail_history)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "stock",
+            code,
+            "--history-only",
+            "--out",
+            str(output),
+            "--cache-dir",
+            str(tmp_path / "cache"),
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="history fit failed"):
+        stock.main()
+
+    assert requested["snapshot_args"][1:3] == (
+        "fixture-v1",
+        tmp_path / "cache",
+    )
+    assert requested["history_kwargs"]["weeks"] == 104
+    assert requested["history_kwargs"]["price_snapshot"][1] == "fixture-v1"
+    assert str(
+        requested["history_kwargs"]["price_snapshot"][0].date.iloc[-1].date()
+    ) == asof
+    assert current_path.read_bytes() == before
+    assert not (output / f"{code}_history.json").exists()
+
+
+def test_price_snapshot_is_write_once_and_checksum_verified(tmp_path):
+    prices = _ohlc(10)
+    meta = {"source": "fixture"}
+    reference = stock._seal_price_snapshot(
+        "600519", prices, "fixture-v1", meta, tmp_path
+    )
+
+    loaded, version, loaded_meta = stock._load_price_snapshot(
+        "600519", "fixture-v1", tmp_path, reference
+    )
+
+    assert version == "fixture-v1"
+    assert loaded.equals(prices)
+    assert loaded_meta == meta
+    changed = prices.copy()
+    changed.loc[changed.index[-1], "close"] += 1
+    with pytest.raises(RuntimeError, match="sealed price snapshot changed"):
+        stock._seal_price_snapshot("600519", changed, "fixture-v1", meta, tmp_path)
+
+
 def test_history_cache_invalidates_restatement(monkeypatch, tmp_path):
     _install_fake_model(monkeypatch)
     prices = [_ohlc(600)]

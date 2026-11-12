@@ -74,6 +74,71 @@ def _fits_frame(rows):
     return pd.DataFrame(recs)
 
 
+def test_current_and_history_representative_uses_adjusted_sse_and_keeps_index(
+    monkeypatch,
+):
+    import pandas as pd
+
+    from research.eval.export_contract import FCO_SETS, _derived
+
+    date = pd.Timestamp("2024-06-28")
+    fits = _fits_frame(
+        [(30, 0.4, 8.0, 10.0), (40, 0.7, 8.0, 20.0), (50, 1.0, 8.0, 30.0)]
+    )
+    fits["sse"] = [30.0, 6.6, 30.0]
+    d = _derived(fits)
+    d.index = [11, 37, 92]
+    r = pd.DataFrame({"box": [True, True, True]}, index=d.index)
+    cal = pd.bdate_range("2022-01-03", periods=800)
+    ohlc = pd.DataFrame({"date": cal, "close": 100.0})
+    seen = []
+    real_scenarios = export_contract.scenarios
+
+    def tracked_scenarios(q):
+        seen.append((list(q.columns), list(q.index)))
+        return real_scenarios(q)
+
+    monkeypatch.setattr(export_contract, "scenarios", tracked_scenarios)
+    monkeypatch.setattr(
+        export_contract,
+        "grid_rules",
+        lambda rows: pd.DataFrame(
+            {column: False for column in FCO_SETS.values()}, index=rows.index
+        ),
+    )
+    monkeypatch.setattr(
+        export_contract,
+        "_conf",
+        lambda *_args: {scale: None for scale in export_contract.HISTORY_SCALES},
+    )
+    monkeypatch.setattr(export_contract, "scale_windows", lambda *_args: pd.DataFrame())
+    monkeypatch.setattr(export_contract, "regime_bands", lambda *_args: pd.DataFrame())
+    monkeypatch.setattr(export_contract, "_indicators", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_bubble", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_bottom_objects", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_combo", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_tc_distribution", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_negative", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_price_band", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_price_history", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_curve", lambda *_args: {})
+
+    current = export_contract.build_record("sh000001", str(date.date()), d, r, cal, ohlc)
+    historical = export_contract._history_frame(
+        d, r, date, cal, 100.0, "dev", include_scenarios=True
+    )
+
+    assert seen == [
+        (["n", "ahead", "sse"], [11, 37, 92]),
+        (["n", "ahead", "sse"], [11, 37, 92]),
+    ]
+    for scenarios in (current["top"]["scenarios"], historical["scenarios"]):
+        representative = scenarios[0]["representative"]
+        assert scenarios[0]["representative_rule"] == "minimum_sse_over_n_minus_7"
+        assert representative["m"] == 0.7
+        assert representative["loss"] == round(6.6 / (40 - 7), 6)
+
+
 def test_indicators_boundary_share_and_display_only():
     import pandas as pd
 
