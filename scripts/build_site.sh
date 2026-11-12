@@ -15,4 +15,7 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
     mkdir -p "$SITE/lab/mock/data/nt_etf"
     git -C "$ROOT" archive stock-results nt_etf | tar -x -C "$SITE/lab/mock/data/"
   fi
+  if git -C "$ROOT" cat-file -e stock-results:market 2>/dev/null; then
+    git -C "$ROOT" archive stock-results market | tar -x -C "$SITE/lab/mock/data/"
+  fi
 fi

@@ -65,8 +65,26 @@ td.r, th.r { text-align: right; }
 .bars-x { display: flex; gap: var(--s2); font: 10px var(--f-m); color: var(--ink-3); }
 .bars-x span { flex: 1; text-align: center; }
 .scroll { max-height: 300px; overflow: auto; }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.ladder { display: grid; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.ladder-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); min-height: 58px; background: var(--surface); }
+.ladder-label { display: grid; place-items: center start; padding: var(--s2) var(--s3); color: var(--ink-2); border-right: 1px solid var(--line); font: 600 12px var(--f-m); }
+.ladder-cells { display: flex; gap: var(--s2); padding: var(--s2); flex-wrap: wrap; align-items: stretch; }
+.ladder-card { min-width: 120px; flex: 1 1 120px; border: 1px solid var(--grid); padding: var(--s2); }
+.ladder-card b { display: block; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ladder-card small { display: block; margin-top: 3px; color: var(--ink-3); font: 10px var(--f-m); overflow-wrap: anywhere; }
+.ladder-note { margin-top: var(--s2); color: var(--ink-3); font-size: 11px; }
+.tag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s2); }
+.tag-card, .news-item { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
+.tag-card b, .news-item b { display: block; }
+.tag-card small, .news-item small { color: var(--ink-3); }
+.news-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.news-grid > section { min-width: 0; }
+.news-list { display: grid; gap: var(--s2); min-width: 0; }
+.news-item a { display: block; overflow-wrap: anywhere; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
+@media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -102,6 +120,41 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div id="limit-body"></div>
   </section>
 
+  <section class="sec wide" id="s-sentiment" aria-labelledby="h-sentiment">
+    <div class="sec-h"><h2 id="h-sentiment">市场情绪</h2><span class="ev">descriptive</span><span class="src" id="src-sentiment"></span></div>
+    <div id="sentiment-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-ladder" aria-labelledby="h-ladder">
+    <div class="sec-h"><h2 id="h-ladder">连板天梯</h2><span class="ev">descriptive</span><span class="src" id="src-ladder"></span></div>
+    <div id="ladder-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-strength" aria-labelledby="h-strength">
+    <div class="sec-h"><h2 id="h-strength">板块强度</h2><span class="ev">descriptive</span><span class="src" id="src-strength"></span></div>
+    <div id="strength-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-themes" aria-labelledby="h-themes">
+    <div class="sec-h"><h2 id="h-themes">题材涨停</h2><span class="ev">descriptive</span><span class="src" id="src-themes"></span></div>
+    <div id="themes-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-hot" aria-labelledby="h-hot">
+    <div class="sec-h"><h2 id="h-hot">强势股与人气</h2><span class="ev">descriptive</span><span class="src" id="src-hot"></span></div>
+    <div id="hot-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-lhb" aria-labelledby="h-lhb">
+    <div class="sec-h"><h2 id="h-lhb">盘后龙虎榜</h2><span class="ev">descriptive</span><span class="src" id="src-lhb"></span></div>
+    <div id="lhb-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-news" aria-labelledby="h-news">
+    <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
+    <div id="news-body"></div>
+  </section>
+
   <section class="sec" id="s-nb" aria-labelledby="h-nb">
     <div class="sec-h"><h2 id="h-nb">北向成交</h2><span class="ev">descriptive</span><span class="src" id="src-nb"></span></div>
     <div id="nb-body"></div>
@@ -128,6 +181,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
   const yi = (v, d = 1) => num(v) ? (v / 1e8).toFixed(d) : '—';
+  const money = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
   const pct = (v, d = 2) => num(v) ? (v > 0 ? '+' : '') + v.toFixed(d) + '%' : '—';
   const cls = (v) => num(v) ? (v > 0 ? 'up' : v < 0 ? 'dn' : '') : '';
   const KINDS = { industry: '行业', concept: '概念', region: '地域' };
@@ -254,6 +308,123 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        </tbody></table></div><p class="note">${E(L.note || '')}</p>`;
   }
 
+  function renderSentiment() {
+    const B = M.breadth || {}, L = M.limit_pools || {};
+    const S = L.sentiment || {}, P = L.promotion || {};
+    $('src-sentiment').innerHTML = srcLine(['breadth', 'limit_pools']);
+    const errors = failMsg(['breadth', 'limit_pools']);
+    const levels = (P.levels || []).map((r) =>
+      `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r">${E(r.n_up)}</td></tr>`).join('');
+    $('sentiment-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="big">
+        <div><small>上涨家数</small><strong class="up">${E(B.up ?? '—')}</strong></div>
+        <div><small>下跌家数</small><strong class="dn">${E(B.down ?? '—')}</strong></div>
+        <div><small>平盘家数</small><strong>${E(B.flat ?? '—')}</strong></div>
+        <div><small>成交额（亿元）</small><strong>${yi(B.amount_yuan)}</strong></div>
+        <div><small>涨停 / 跌停 / 炸板率</small><strong>${E(L.zt ?? '—')} / ${E(L.dt ?? '—')} / ${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+        <div><small>昨日涨停今日均值</small><strong class="${cls(S.yzt_mean_pct)}">${pct(S.yzt_mean_pct)}</strong></div>
+        <div><small>昨日涨停今日中位数</small><strong class="${cls(S.yzt_median_pct)}">${pct(S.yzt_median_pct)}</strong></div>
+        <div><small>昨日涨停今日上涨比例（n=${E(S.yzt_n ?? '—')}）</small><strong>${num(S.yzt_up_share) ? (S.yzt_up_share * 100).toFixed(1) + '%' : '—'}</strong></div>
+        <div><small>晋级率（n=${E(P.n_prev_total ?? '—')}）</small><strong>${num(P.rate) ? (P.rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+      </div>
+      <div class="table-scroll" style="margin-top:12px"><table style="min-width:360px"><thead><tr><th>昨日连板</th><th class="r">前日涨停数</th><th class="r">晋级数</th></tr></thead><tbody>${levels || '<tr><td colspan="3">暂无晋级分层数据</td></tr>'}</tbody></table></div>
+      <p class="note">${E(B.note || '')} ${E(L.note || '')}</p>`;
+  }
+
+  function renderLadder() {
+    const L = M.limit_pools || {}, items = Array.isArray(L.zt_rows) ? L.zt_rows : [];
+    $('src-ladder').innerHTML = srcLine(['limit_pools']);
+    const errors = failMsg(['limit_pools']);
+    if (!items.length) {
+      $('ladder-body').innerHTML = `<p class="fail">${errors || '该源本次未取到：没有连板明细'}</p>`;
+      return;
+    }
+    const promotions = new Map((L.promotion && L.promotion.levels || []).map((row) => [String(row.k), row]));
+    const grouped = new Map();
+    for (const item of items) {
+      const streak = Number(item.streak);
+      if (!Number.isFinite(streak)) continue;
+      if (!grouped.has(streak)) grouped.set(streak, []);
+      grouped.get(streak).push(item);
+    }
+    const rows = [...grouped.keys()].sort((a, b) => b - a).map((streak) => {
+      const prev = streak - 1, key = prev >= 5 ? '5+' : String(prev);
+      const p = promotions.get(key), members = grouped.get(streak);
+      return `<div class="ladder-row"><div class="ladder-label">${streak}板</div><div class="ladder-cells">${members.map((r) =>
+        `<div class="ladder-card"><b>${E(r.name)}</b>
+          <small>${E(r.code)} · 首封 ${E(r.first_seal || '—')} · 炸板 ${E(r.break_times ?? '—')}</small>
+          <small>昨日${E(prev >= 5 ? '5+' : prev)}板 ${E(p ? p.n_prev : 0)} 只，晋级 ${E(p ? p.n_up : 0)} 只</small>
+          <small>题材 ${E(String(r.reason || '—').slice(0, 64))}</small></div>`).join('')}</div></div>`;
+    });
+    $('ladder-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="ladder" role="table" aria-label="${E(L.date || M.asof || '—')} 连板天梯">${rows.join('')}</div>
+      <p class="ladder-note">交易日 ${E(M.asof || '—')} · 当前全部涨停明细；仅描述当日市场结构，不是强弱或收益预测。</p>`;
+  }
+
+  function renderStrength() {
+    const B = M.board_strength || {}, rows = Array.isArray(B.rows) ? B.rows : [];
+    $('src-strength').innerHTML = srcLine(['board_strength']);
+    const errors = failMsg(['board_strength']);
+    $('strength-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<p class="note">${E(B.note || '按涨停家数排序，相同再按涨幅。')}</p>` +
+      (rows.length ? `<div class="table-scroll"><table style="min-width:760px"><thead><tr><th>板块</th><th class="r">涨停家数</th><th class="r">涨幅</th><th class="r">上涨占比</th><th class="r">成交额（亿）</th><th>领涨股</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="r">${E(r.zt_n ?? '—')}</td><td class="r ${cls(r.pct)}">${pct(r.pct)}</td><td class="r">${num(r.up_share) ? (r.up_share * 100).toFixed(1) + '%' : '—'}</td><td class="r">${yi(r.amount)}</td><td>${E(r.leader_name || '—')} ${E(r.leader_code || '')} <small>${pct(r.leader_pct)}</small></td></tr>`).join('')}
+      </tbody></table></div>` : `<p class="note">${errors ? '' : '当前没有可展示的概念板块。'}</p>`);
+  }
+
+  function renderThemes() {
+    const T = M.themes || {}, tags = Array.isArray(T.tags) ? T.tags : [];
+    $('src-themes').innerHTML = srcLine(['themes']);
+    const errors = failMsg(['themes']);
+    const names = new Map((T.harden_rows || []).map((r) => [String(r.code), r.name]));
+    $('themes-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      (tags.length ? `<div class="tag-grid">${tags.map((r) => {
+        const stocks = (r.codes || []).slice(0, 5).map((code) => names.get(String(code)) || code);
+        return `<article class="tag-card"><b>${E(r.tag)} <small>n=${E(r.n)}</small></b><small>${stocks.map(E).join(' · ')}</small></article>`;
+      }).join('')}</div>` : `<p class="note">${errors ? '' : '当日没有可用题材标签。'}</p>`) +
+      `<p class="note">${E(T.note || '')}</p>`;
+  }
+
+  function renderHot() {
+    const H = M.hot || {}, T = M.themes || {};
+    const themes = Array.isArray(T.harden_rows) ? T.harden_rows.slice(0, 30) : [];
+    const ths = Array.isArray(H.ths) ? H.ths.slice(0, 20) : [];
+    const em = Array.isArray(H.eastmoney) ? H.eastmoney.slice(0, 20) : [];
+    $('src-hot').innerHTML = srcLine(['themes', 'hot_ths', 'hot_eastmoney']);
+    const errors = failMsg(['themes', 'hot_ths', 'hot_eastmoney']);
+    const table = (rows) => `<div class="table-scroll"><table style="min-width:520px"><thead><tr><th>排名</th><th>名称</th><th>涨幅</th><th>标签</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    $('hot-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="news-grid">
+        <section><h3>涨停揭秘</h3>${themes.length ? table(themes.map((r, i) => `<tr><td>${i + 1}</td><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="up">${pct(r.pct)}</td><td>${E(String(r.reason || '').slice(0, 100))}</td></tr>`).join('')) : '<p class="note">暂无可用题材归因。</p>'}</section>
+        <section><h3>同花顺热榜</h3>${ths.length ? table(ths.map((r) => `<tr><td>${E(r.rank)}</td><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="${cls(r.pct)}">${pct(r.pct)}</td><td>${E(r.popularity_tag)} · ${E((r.concepts || []).join('、'))}</td></tr>`).join('')) : '<p class="note">暂无热榜数据。</p>'}</section>
+        <section><h3>东财人气榜</h3>${em.length ? table(em.map((r) => `<tr><td>${E(r.rank)}</td><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="${cls(r.pct)}">${pct(r.pct)}</td><td>排名变化 ${E(r.rank_chg ?? '—')}</td></tr>`).join('')) : '<p class="note">暂无人气榜数据。</p>'}</section>
+      </div><p class="note">${E(H.note || '')}</p>`;
+  }
+
+  function renderLHB() {
+    const D = M.dragon_tiger || {}, data = D.data === null ? null : D;
+    $('src-lhb').innerHTML = srcLine(['dragon_tiger']);
+    const errors = failMsg(['dragon_tiger']);
+    const table = (rows) => rows.length ? `<div class="table-scroll"><table style="min-width:720px"><thead><tr><th>名称</th><th>上榜原因</th><th class="r">涨跌幅</th><th class="r">净买额</th><th class="r">买入</th><th class="r">卖出</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${E(r.name)} <small>${E(r.code)}</small></td><td>${E(r.reason)}</td><td class="r ${cls(r.pct)}">${pct(r.pct)}</td><td class="r">${money(r.net)}</td><td class="r">${money(r.buy)}</td><td class="r">${money(r.sell)}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">当日无龙虎榜记录。</p>';
+    $('lhb-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      (data ? `<p class="note">交易日 ${E(data.date || M.asof || '—')} · ${E(data.n_stocks ?? 0)} 只</p><div class="news-grid"><section><h3>净买入前 20</h3>${table(data.top_buy || [])}</section><section><h3>净卖出前 10</h3>${table(data.top_sell || [])}</section></div>` : '') +
+      `<p class="note">${E(D.note || '')}</p>`;
+  }
+
+  function renderNews() {
+    const N = M.news || {}, clsRows = Array.isArray(N.cls) ? N.cls : [];
+    const emRows = Array.isArray(N.eastmoney) ? N.eastmoney : [];
+    $('src-news').innerHTML = srcLine(['news_cls', 'news_eastmoney']);
+    const errors = failMsg(['news_cls', 'news_eastmoney']);
+    const list = (rows) => rows.length ? `<div class="news-list">${rows.map((r) =>
+      `<article class="news-item"><small>${E(r.time || '—')}</small>${r.url ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`}</article>`).join('')}</div>` : '<p class="note">暂无快讯。</p>';
+    $('news-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="news-grid"><section><h3>财联社电报</h3>${list(clsRows)}</section><section><h3>东方财富</h3>${list(emRows)}</section></div>
+      <p class="note">${E(N.note || '')}</p>`;
+  }
+
   function renderNB() {
     const N = M.northbound || {}, d = N.data || {};
     $('src-nb').innerHTML = srcLine(['northbound']);
@@ -307,7 +478,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
   function renderAll() {
     $('asof').textContent = '截止 ' + (M.asof || '—') + ' · 生成 ' + String(M.generated_at || '').replace('T', ' ').slice(0, 16) + ' UTC';
-    for (const fn of [renderBoard, renderLimit, renderNB, renderMargin, renderVal]) {
+    for (const fn of [renderBoard, renderLimit, renderSentiment, renderLadder, renderStrength, renderThemes, renderHot, renderLHB, renderNews, renderNB, renderMargin, renderVal]) {
       try { fn(); } catch (e) { console.error(e); }
     }
   }
