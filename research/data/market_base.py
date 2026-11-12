@@ -27,6 +27,7 @@ EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 EM_BOARD_STRENGTH_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 EM_BOARD_STRENGTH_FALLBACK_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_HISTORY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+EM_HISTORY_REFERENCE_BK = "BK0475"
 EM_POOL_URL = "https://push2ex.eastmoney.com"
 EM_ULIST_URL = "https://push2delay.eastmoney.com/api/qt/ulist.np/get"
 EM_HOT_RANK_URL = "https://emappdata.eastmoney.com/stockrank/getAllCurrentList"
@@ -484,7 +485,7 @@ def _verify_history_order(snapshot: dict, history: pd.DataFrame, asof: str) -> l
 
 
 def board_flow_history(bk: str, client: EMClient | None = None) -> pd.DataFrame:
-    if not re.fullmatch(r"[A-Za-z0-9_]{1,64}", str(bk)):
+    if not re.fullmatch(r"BK\d{4}", str(bk)):
         raise ValueError(f"invalid Eastmoney board code: {bk!r}")
     client = client or EMClient()
     payload = client.get_json(
@@ -1745,20 +1746,24 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
                 sources[f"board_flow_{kind}"] = source
 
     history_sample = None
+    history_snapshot_provider = board_flow["provider"]["industry"]
     history_verify_reason = (
         "snapshot 来自新浪，无法交叉核对列顺序"
-        if board_flow["provider"]["industry"] == "sina"
+        if history_snapshot_provider != "eastmoney"
         else None
     )
+    history_code = None
+    reference_board = history_snapshot_provider != "eastmoney"
     try:
         industry = board_flow["industry"]
         if not industry:
             raise RuntimeError("industry board snapshot unavailable; cannot query history")
         snapshot = industry[0]
-        bk = snapshot["code"]
-        history = board_flow_history(bk, em)
-        snapshot_provider = board_flow["provider"]["industry"]
-        if snapshot_provider == "eastmoney":
+        history_code = (
+            EM_HISTORY_REFERENCE_BK if reference_board else snapshot["code"]
+        )
+        history = board_flow_history(history_code, em)
+        if not reference_board:
             verified_fields = _verify_history_order(snapshot, history, asof)
             verified = True
             verify_reason = None
@@ -1767,7 +1772,8 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
             verified = False
             verify_reason = history_verify_reason
         history_sample = {
-            "code": bk,
+            "code": history_code,
+            "reference_board": reference_board,
             "rows": history.to_dict("records"),
             "column_order_verified": verified,
             "verified": verified,
@@ -1779,7 +1785,12 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
         source = _source_meta(
             history.attrs.get("url_host", "push2his.eastmoney.com"), True
         )
-        source.update(provider="eastmoney", verified=verified)
+        source.update(
+            provider="eastmoney",
+            code=history_code,
+            reference_board=reference_board,
+            verified=verified,
+        )
         if verify_reason:
             source["verify_reason"] = verify_reason
         sources["board_flow_history"] = source
@@ -1788,6 +1799,8 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
             "push2his.eastmoney.com", False, _error(exc)
         )
         source["provider"] = "eastmoney"
+        if history_code is not None:
+            source.update(code=history_code, reference_board=reference_board)
         if history_verify_reason:
             source.update(verified=False, verify_reason=history_verify_reason)
         sources["board_flow_history"] = source

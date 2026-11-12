@@ -737,7 +737,7 @@ def test_fetch_market_uses_sina_fallback_and_marks_history_unverified(monkeypatc
 
     assert [kind for kind, _ in fallback_calls] == ["industry", "concept"]
     assert all(request_session is session for _, request_session in fallback_calls)
-    assert history_calls == ["new_dzxx"]
+    assert history_calls == [market.EM_HISTORY_REFERENCE_BK]
     assert payload["board_flow"]["provider"] == {
         "industry": "sina",
         "concept": "sina",
@@ -757,11 +757,16 @@ def test_fetch_market_uses_sina_fallback_and_marks_history_unverified(monkeypatc
     )
     assert "fallback_from" not in payload["sources"]["board_flow_region"]
     assert payload["board_flow"]["history_sample"]["verified"] is False
+    assert payload["board_flow"]["history_sample"]["code"] == "BK0475"
+    assert payload["board_flow"]["history_sample"]["reference_board"] is True
     assert payload["board_flow"]["history_sample"]["verify_reason"] == (
         "snapshot 来自新浪，无法交叉核对列顺序"
     )
     assert payload["sources"]["board_flow_history"]["ok"] is True
+    assert payload["sources"]["board_flow_history"]["code"] == "BK0475"
+    assert payload["sources"]["board_flow_history"]["reference_board"] is True
     assert payload["sources"]["board_flow_history"]["verified"] is False
+    assert "new_dzxx" not in history_calls
     assert payload["board_strength"]["provider"] == "sina"
     assert payload["sources"]["board_strength"]["provider"] == "sina"
     assert payload["sources"]["board_strength"]["fallback_from"] == (
@@ -875,8 +880,7 @@ def test_board_region_both_eastmoney_hosts_fail_with_explicit_reason(monkeypatch
     }
 
 
-@pytest.mark.parametrize("code", ("hangye_ZG001", "new_ysbz"))
-def test_board_flow_history_accepts_sina_codes_and_parses_payload(code):
+def test_board_flow_history_accepts_eastmoney_reference_code():
     calls = []
 
     class Client:
@@ -886,10 +890,15 @@ def test_board_flow_history_accepts_sina_codes_and_parses_payload(code):
             calls.append((url, params, fallback_url))
             return fixture("board_history.json")
 
-    history = market.board_flow_history(code, Client())
+    history = market.board_flow_history("BK0475", Client())
 
     assert len(history) > 0
-    assert calls[0][1]["secid"] == f"90.{code}"
+    assert calls[0][1]["secid"] == "90.BK0475"
+
+
+def test_board_flow_history_rejects_sina_category_code():
+    with pytest.raises(ValueError, match="invalid Eastmoney board code"):
+        market.board_flow_history("new_ysbz", object())
 
 
 def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
