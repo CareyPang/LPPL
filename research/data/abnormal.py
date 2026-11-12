@@ -10,7 +10,7 @@ from pathlib import Path
 
 import requests
 
-TENCENT_QFQ_URL = "https://ifzq.gtimg.cn/appstock/app/fqkline/get"
+TENCENT_QFQ_URL = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
 TENCENT_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36"
 MAX_CANDIDATES = 400
 MAX_OUTPUT = 50
