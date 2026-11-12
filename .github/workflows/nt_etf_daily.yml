@@ -1,0 +1,88 @@
+name: nt_etf_daily
+
+on:
+  schedule:
+    - cron: "30 15 * * 1-5"
+    - cron: "30 1 * * 2-6"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "research/data/nt_etf.py"
+      - "data/nt_etf/**"
+      - "frontend/nt.html"
+      - "frontend/app/lppl-data.js"
+      - "scripts/build_site.sh"
+      - "tests/test_nt_etf.py"
+      - ".github/workflows/nt_etf_daily.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || 'main' }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Fetch previous stock-results snapshot
+        run: |
+          mkdir -p out/nt_etf
+          git fetch origin stock-results || true
+          if git show origin/stock-results:nt_etf/nt_etf_latest.json > out/nt_etf/previous.json 2>/dev/null; then
+            :
+          else
+            rm -f out/nt_etf/previous.json
+          fi
+      - name: Collect snapshot (PR smoke does not publish)
+        run: |
+          args=()
+          if [ -f out/nt_etf/previous.json ]; then args+=(--previous out/nt_etf/previous.json); fi
+          python -m research.data.nt_etf --date "$(TZ=Asia/Shanghai date +%F)" --out out/nt_etf "${args[@]}"
+      - name: Print source status and SSE reachability
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p=pathlib.Path("out/nt_etf/nt_etf_latest.json")
+          if p.exists():
+              d=json.loads(p.read_text())
+              for name,s in d.get("sources",{}).items(): print(f"{name}: {'ok' if s.get('ok') else 'err'} {s.get('error') or ''}")
+              print("GitHub Actions SSE reachability:", "ok" if d.get("sources",{}).get("sse_shares",{}).get("ok") else "err")
+          else: print("collector produced no snapshot")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nt-etf-snapshot
+          path: out/nt_etf/nt_etf_*.json
+          if-no-files-found: warn
+      - name: Gate publish on a successful share source
+        id: gate
+        if: github.event_name != 'pull_request'
+        run: |
+          ok="$(python -c 'import json; d=json.load(open("out/nt_etf/nt_etf_latest.json")); print(str(any(d["sources"].get(k,{}).get("ok") for k in ("sse_shares","szse_shares"))).lower())')"
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+      - name: Publish to stock-results
+        if: github.event_name != 'pull_request' && steps.gate.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          day="$(python -c 'import json; print(json.load(open("out/nt_etf/nt_etf_latest.json"))["asof"])')"
+          git fetch --no-tags origin stock-results
+          git switch -c nt-etf-publish origin/stock-results
+          mkdir -p nt_etf
+          cp out/nt_etf/nt_etf_latest.json nt_etf/nt_etf_latest.json
+          cp "out/nt_etf/nt_etf_${day}.json" "nt_etf/nt_etf_${day}.json"
+          git add nt_etf/nt_etf_latest.json "nt_etf/nt_etf_${day}.json"
+          if ! git diff --cached --quiet; then
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "ETF: 发布国家队份额板 ${day}"
+            git push origin HEAD:stock-results
+            gh workflow run pages.yml --ref main
+          fi
