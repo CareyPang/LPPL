@@ -199,6 +199,9 @@
       <div class="name-hint" id="name-hint" aria-live="polite"></div>
       <div class="chips" id="chips"></div>
       <p id="query-status" class="status" role="status"></p>
+      <section id="stock-events" class="card" hidden aria-labelledby="stock-events-title">
+        <h2 id="stock-events-title">近期事件</h2><div id="stock-events-body"></div>
+      </section>
       <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
     </section>
 
@@ -870,6 +873,24 @@
     }
 
     let serial = 0;
+    let eventsSerial = 0;
+    async function renderRecentEvents(code) {
+      const request = ++eventsSerial, panel = $('stock-events');
+      panel.hidden = true;
+      try {
+        const data = await LPPL.events();
+        if (request !== eventsSerial || !data) return;
+        const code6Value = String(code).replace(/^\D+/, '').slice(-6);
+        const rows = [
+          ...(data.lift || []).filter((r) => r.code === code6Value).map((r) => `解禁 ${r.free_date} · ${r.free_shares_10k ?? '—'} 万股`),
+          ...(data.dividend || []).filter((r) => r.code === code6Value).map((r) => `除权除息 ${r.ex_dividend_date} · ${r.pretax_bonus_rmb_10 ?? '—'} 元/10股`),
+          ...(data.forecast || []).filter((r) => r.code === code6Value).map((r) => `业绩预告 ${r.notice_date} · ${r.predict_type || '—'} · 归母净利润 ${r.headline?.amount_lower ?? '—'}～${r.headline?.amount_upper ?? '—'} 元`),
+        ];
+        if (!rows.length) return;
+        $('stock-events-body').innerHTML = `<p>${rows.map(esc).join('<br>')}</p><p class="disclaimer">descriptive · n=${rows.length} · 历史分位，不是预测。</p>`;
+        panel.hidden = false;
+      } catch (_) { panel.hidden = true; }
+    }
 
     async function query(code, id) {
       const api = LPPL.stock;
@@ -963,6 +984,7 @@
       const url = new URL(location.href);
       url.searchParams.set('code', code);
       history.replaceState(null, '', url);
+      renderRecentEvents(code);
       loadCode(code);
     });
 
@@ -1003,6 +1025,7 @@
     const initial = new URLSearchParams(location.search).get('code');
     if (initial && /^\d{6}$/.test(initial)) {
       $('code').value = initial;
+      renderRecentEvents(initial);
       loadCode(initial);
     }
   </script>
