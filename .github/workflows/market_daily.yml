@@ -1,0 +1,112 @@
+name: market_daily
+
+on:
+  schedule:
+    - cron: "0 10 * * 1-5" # 18:00 Asia/Shanghai, weekdays
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research/data/market_base.py
+      - .github/workflows/market_daily.yml
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: market-daily
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Fetch market review
+        id: fetch
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          echo "asof=$snapshot_date" >> "$GITHUB_OUTPUT"
+          python -m research.data.market_base --date "$snapshot_date" --out out/market
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          sources = json.loads(Path("out/market/market_latest.json").read_text(encoding="utf-8"))["sources"]
+          for name, source in sources.items():
+              status = "ok" if source.get("ok") else "failed"
+              print(f"{name}: {status}" + (f" — {source.get('error')}" if source.get("error") else ""))
+          print(f"limit_pools_publishable={sources.get('limit_pools', {}).get('ok', False)}")
+          PY
+          limit_ok="$(python -c 'import json; print(str(json.load(open("out/market/market_latest.json"))["sources"].get("limit_pools", {}).get("ok", False)).lower())')"
+          echo "limit_ok=$limit_ok" >> "$GITHUB_OUTPUT"
+          if [[ "$limit_ok" != "true" ]]; then
+            echo "limit_pools failed; keeping the previous published snapshot"
+          fi
+      - name: Publish to stock-results
+        if: steps.fetch.outputs.limit_ok == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot_date="${{ steps.fetch.outputs.asof }}"
+          git fetch --no-tags origin stock-results
+          git switch -c market-publish origin/stock-results
+          mkdir -p market
+          cp out/market/market_latest.json market/market_latest.json
+          cp "out/market/market_${snapshot_date}.json" "market/${snapshot_date}.json"
+          git add market/market_latest.json "market/${snapshot_date}.json"
+          if git diff --cached --quiet; then
+            echo "No market snapshot changes to publish"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "market: 发布市场复盘 ${snapshot_date}"
+          git push origin HEAD:stock-results
+          gh workflow run pages.yml --ref main
+
+  smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Fetch without publishing and summarize sources
+        shell: bash
+        run: |
+          snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          python -m research.data.market_base --date "$snapshot_date" --out out/market
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          sources = json.loads(Path("out/market/market_latest.json").read_text(encoding="utf-8"))["sources"]
+          for name, source in sources.items():
+              status = "ok" if source.get("ok") else "failed"
+              print(f"{name}: {status}" + (f" — {source.get('error')}" if source.get("error") else ""))
+          PY
+      - name: Upload market smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-smoke-${{ github.run_id }}
+          path: out/market
+          if-no-files-found: warn

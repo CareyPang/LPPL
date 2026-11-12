@@ -11,4 +11,7 @@ cp -a "$ROOT/web/." "$SITE/lab/"
 if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
   mkdir -p "$SITE/lab/mock/data"
   git -C "$ROOT" archive stock-results stock | tar -x -C "$SITE/lab/mock/data/"
+  if git -C "$ROOT" cat-file -e stock-results:market 2>/dev/null; then
+    git -C "$ROOT" archive stock-results market | tar -x -C "$SITE/lab/mock/data/"
+  fi
 fi
