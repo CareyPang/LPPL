@@ -1,17 +1,22 @@
 {
   "asof": "2026-11-12",
-  "generated": "2026-11-12T17:57:24.777800+00:00",
+  "generated": "2026-11-12T18:08:21.563373+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
     "candidate_count": 104,
     "available_count": 102,
-    "missing": 4,
+    "missing": 5,
     "missing_codes": [
+      {
+        "code": "600825",
+        "name": "新华传媒",
+        "error": "部分区间缺少足够个股日线或对应基准日期"
+      },
       {
         "code": "301660",
         "name": "粤芯半导体",
-        "error": "40 根日线不足以计算全部区间"
+        "error": "部分区间缺少足够个股日线或对应基准日期"
       },
       {
         "code": "127119",
@@ -26,7 +31,7 @@
       {
         "code": "001381",
         "name": "皇冠新材",
-        "error": "40 根日线不足以计算全部区间"
+        "error": "部分区间缺少足够个股日线或对应基准日期"
       }
     ],
     "rule_source": "交易所异常波动规则摘要"
@@ -35,7 +40,8 @@
     "candidate_count": 104,
     "available_count": 102,
     "near": 35,
-    "triggered": 17
+    "triggered": 17,
+    "stale_bar": 0
   },
   "rules": {
     "thresholds": {
@@ -92,6 +98,8 @@
       "name": "飞亚达",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb"
       ],
@@ -127,6 +135,8 @@
       "name": "英力特",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "dragon_tiger"
       ],
@@ -162,6 +172,8 @@
       "name": "襄阳轴承",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths",
@@ -200,6 +212,8 @@
       "name": "中捷资源",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "dragon_tiger"
@@ -236,6 +250,8 @@
       "name": "东方海洋",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
@@ -274,6 +290,8 @@
       "name": "北纬科技",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -310,6 +328,8 @@
       "name": "日上集团",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -346,13 +366,15 @@
       "name": "亚玛顿",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
       ],
-      "dev_3d": 32.62033348218935,
-      "dev_10d": 41.860624795638365,
-      "dev_30d": 70.98233697478744,
+      "dev_3d": 31.39021062417151,
+      "dev_10d": 43.800308120868564,
+      "dev_30d": 69.8755989864125,
       "thresholds": {
         "3d": {
           "up": 20.0,
@@ -382,6 +404,8 @@
       "name": "锋龙股份",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths",
@@ -419,6 +443,8 @@
       "name": "大东方",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
@@ -456,6 +482,8 @@
       "name": "中重科技",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney",
@@ -493,6 +521,8 @@
       "name": "赛腾股份",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "dragon_tiger"
       ],
@@ -528,6 +558,8 @@
       "name": "日出东方",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
@@ -565,6 +597,8 @@
       "name": "金辰股份",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney",
@@ -602,6 +636,8 @@
       "name": "惠发食品",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
@@ -640,6 +676,8 @@
       "name": "东方环宇",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -676,6 +714,8 @@
       "name": "天普股份",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -712,6 +752,8 @@
       "name": "阳光照明",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
         "hot_eastmoney"
@@ -748,6 +790,8 @@
       "name": "文投控股",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths",
@@ -786,6 +830,8 @@
       "name": "剑桥科技",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths",
@@ -823,6 +869,8 @@
       "name": "宁波东力",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths"
@@ -859,6 +907,8 @@
       "name": "东方新能",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
         "hot_eastmoney"
@@ -895,6 +945,8 @@
       "name": "哈森股份",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt"
       ],
@@ -930,6 +982,8 @@
       "name": "沪电股份",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths"
       ],
@@ -965,6 +1019,8 @@
       "name": "慈文传媒",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths"
       ],
@@ -1000,6 +1056,8 @@
       "name": "粤宏远Ａ",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt"
       ],
@@ -1035,6 +1093,8 @@
       "name": "道恩股份",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb"
       ],
@@ -1070,6 +1130,8 @@
       "name": "福建水泥",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney",
@@ -1107,6 +1169,8 @@
       "name": "超颖电子",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt"
       ],
@@ -1142,6 +1206,8 @@
       "name": "吉视传媒",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney",
@@ -1179,6 +1245,8 @@
       "name": "天安新材",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney",
@@ -1216,6 +1284,8 @@
       "name": "国统股份",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -1252,6 +1322,8 @@
       "name": "达 意 隆",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb"
       ],
@@ -1287,6 +1359,8 @@
       "name": "起帆电缆",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -1323,6 +1397,8 @@
       "name": "风语筑",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
         "dragon_tiger"
@@ -1359,6 +1435,8 @@
       "name": "宁波中百",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -1395,6 +1473,8 @@
       "name": "东山精密",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
         "hot_eastmoney"
@@ -1431,6 +1511,8 @@
       "name": "洪通燃气",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney"
@@ -1467,6 +1549,8 @@
       "name": "青山纸业",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths",
@@ -1504,6 +1588,8 @@
       "name": "冰山冷热",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
         "hot_eastmoney",
@@ -1541,6 +1627,8 @@
       "name": "日海智能",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb"
       ],
@@ -1576,6 +1664,8 @@
       "name": "光洋股份",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths"
       ],
@@ -1611,6 +1701,8 @@
       "name": "沈鼓集团",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
@@ -1648,6 +1740,8 @@
       "name": "凯撒文化",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "dragon_tiger"
@@ -1684,6 +1778,8 @@
       "name": "兴欣新材",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt"
       ],
@@ -1719,6 +1815,8 @@
       "name": "龙江交通",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
@@ -1756,6 +1854,8 @@
       "name": "天洋新材",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths"
@@ -1792,6 +1892,8 @@
       "name": "好当家",
       "board": "沪主板",
       "benchmark": "sh000001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
         "hot_eastmoney",
@@ -1829,6 +1931,8 @@
       "name": "东易日盛",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb"
       ],
@@ -1864,6 +1968,8 @@
       "name": "通富微电",
       "board": "深主板",
       "benchmark": "sz399001",
+      "last_bar_date": "2026-11-12",
+      "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
         "hot_eastmoney"

@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,76 @@ def test_deviation_math_uses_stock_minus_benchmark_return():
     result = deviation_pct(fixture["stock"], fixture["benchmark"], 3)
 
     assert result == pytest.approx((110 / 100 - 1) * 100 - (105 / 100 - 1) * 100)
+
+
+def test_deviation_aligns_benchmark_to_stock_dates_across_suspended_day():
+    stock = [
+        {"date": "2026-11-02", "close": 100.0},
+        {"date": "2026-11-03", "close": 104.0},
+        {"date": "2026-11-05", "close": 108.0},
+        {"date": "2026-11-06", "close": 110.0},
+    ]
+    benchmark = [
+        {"date": "2026-11-02", "close": 100.0},
+        {"date": "2026-11-03", "close": 101.0},
+        {"date": "2026-11-04", "close": 103.0},
+        {"date": "2026-11-05", "close": 104.0},
+        {"date": "2026-11-06", "close": 105.0},
+    ]
+
+    result = deviation_pct(stock, benchmark, 3)
+
+    assert result == pytest.approx(10.0 - 5.0)
+
+
+def test_deviation_is_unavailable_when_benchmark_lacks_stock_start_date():
+    stock = [
+        {"date": "2026-11-02", "close": 100.0},
+        {"date": "2026-11-03", "close": 104.0},
+        {"date": "2026-11-05", "close": 108.0},
+        {"date": "2026-11-06", "close": 110.0},
+    ]
+    benchmark = [
+        {"date": "2026-11-03", "close": 101.0},
+        {"date": "2026-11-04", "close": 103.0},
+        {"date": "2026-11-05", "close": 104.0},
+        {"date": "2026-11-06", "close": 105.0},
+    ]
+
+    assert deviation_pct(stock, benchmark, 3) is None
+
+
+def test_calculate_marks_stock_older_than_benchmark_as_stale():
+    start = date(2026, 10, 1)
+    stock_rows = [
+        {"date": (start + timedelta(days=index)).isoformat(), "close": 100.0 + index}
+        for index in range(31)
+    ]
+    benchmark_rows = [
+        {"date": (start + timedelta(days=index)).isoformat(), "close": 100.0 + index}
+        for index in range(32)
+    ]
+
+    class Client:
+        def fetch(self, symbol):
+            return benchmark_rows if symbol == "sz399006" else stock_rows
+
+    result = calculate(
+        {
+            "asof": "2026-10-31",
+            "limit_pools": {
+                "zt_rows": [{"code": "300123", "name": "测试股"}],
+                "zb_rows": [],
+                "dt_rows": [],
+            },
+        },
+        client=Client(),
+    )
+
+    item = result["items"][0]
+    assert item["stale_bar"] is True
+    assert item["last_bar_date"] == "2026-10-31"
+    assert result["counts"]["stale_bar"] == 1
 
 
 def test_board_to_benchmark_mapping_and_st_threshold():

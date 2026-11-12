@@ -124,10 +124,20 @@ class TencentQfqClient:
 
 
 def deviation_pct(stock_rows: list[dict], benchmark_rows: list[dict], days: int) -> float | None:
-    if len(stock_rows) < days + 1 or len(benchmark_rows) < days + 1:
+    if len(stock_rows) < days + 1:
         return None
-    stock_start, stock_end = stock_rows[-days - 1]["close"], stock_rows[-1]["close"]
-    bench_start, bench_end = benchmark_rows[-days - 1]["close"], benchmark_rows[-1]["close"]
+    stock_window = stock_rows[-days - 1 :]
+    start_date, end_date = stock_window[0].get("date"), stock_window[-1].get("date")
+    if not start_date or not end_date:
+        return None
+    benchmark_by_date = {
+        row.get("date"): row.get("close") for row in benchmark_rows if row.get("date")
+    }
+    stock_start, stock_end = stock_window[0]["close"], stock_window[-1]["close"]
+    bench_start = benchmark_by_date.get(start_date)
+    bench_end = benchmark_by_date.get(end_date)
+    if bench_start is None or bench_end is None:
+        return None
     if min(stock_start, stock_end, bench_start, bench_end) <= 0:
         return None
     stock_return = (stock_end / stock_start - 1) * 100
@@ -235,6 +245,13 @@ def calculate(market: dict, client=None, max_candidates: int = MAX_CANDIDATES) -
         except Exception as exc:
             missing.append({"code": code, "name": name, "error": f"{type(exc).__name__}: {exc}"})
             continue
+        last_bar_date = stock_rows[-1]["date"] if stock_rows else None
+        benchmark_last_date = (
+            benchmark_rows[benchmark][-1]["date"] if benchmark_rows[benchmark] else None
+        )
+        stale_bar = bool(
+            last_bar_date and benchmark_last_date and last_bar_date < benchmark_last_date
+        )
         devs = {
             f"{days}d": deviation_pct(stock_rows, benchmark_rows[benchmark], days)
             for days in (3, 10, 30)
@@ -242,13 +259,21 @@ def calculate(market: dict, client=None, max_candidates: int = MAX_CANDIDATES) -
         thresholds = _thresholds(board, name)
         distance = remaining_to_trigger(devs, thresholds)
         if any(value is None for value in devs.values()):
-            missing.append({"code": code, "name": name, "error": "40 根日线不足以计算全部区间"})
+            missing.append(
+                {
+                    "code": code,
+                    "name": name,
+                    "error": "部分区间缺少足够个股日线或对应基准日期",
+                }
+            )
         items.append(
             {
                 "code": code,
                 "name": name,
                 "board": board,
                 "benchmark": benchmark,
+                "last_bar_date": last_bar_date,
+                "stale_bar": stale_bar,
                 "candidate_sources": candidate["sources"],
                 "dev_3d": devs["3d"],
                 "dev_10d": devs["10d"],
@@ -266,6 +291,7 @@ def calculate(market: dict, client=None, max_candidates: int = MAX_CANDIDATES) -
     )
     near_n = sum(item["near"] for item in items)
     triggered_n = sum(item["triggered"] for item in items)
+    stale_bar_n = sum(item["stale_bar"] for item in items)
     return {
         "asof": market.get("asof"),
         "generated": datetime.now().astimezone().isoformat(),
@@ -283,6 +309,7 @@ def calculate(market: dict, client=None, max_candidates: int = MAX_CANDIDATES) -
             "available_count": len(items),
             "near": near_n,
             "triggered": triggered_n,
+            "stale_bar": stale_bar_n,
         },
         "rules": {
             "thresholds": RULES,

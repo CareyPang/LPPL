@@ -1029,7 +1029,9 @@
         if (!item) { section.hidden = true; return; }
         section.hidden = false;
         document.getElementById('abnormal-asof').textContent = `截止 ${data.asof || '—'}`;
-        const state = item.triggered ? '已达规则阈值' : item.near ? '接近阈值' : '';
+        const state = item.stale_bar
+          ? `停牌/无当日数据${item.last_bar_date ? `（行情截至 ${esc(item.last_bar_date)}）` : ''}`
+          : item.triggered ? '已达规则阈值' : item.near ? '接近阈值' : '';
         row.innerHTML = `<p>${esc(item.board)} 异动规则距离：3日偏离 ${fmt(item.dev_3d)}，10日 ${fmt(item.dev_10d)}，30日 ${fmt(item.dev_30d)}；最近阈值剩余 ${Number.isFinite(item.remaining_pp) ? item.remaining_pp.toFixed(2) + ' 个百分点' : '—'}。${state ? `<b>${state}</b>` : ''}</p>
           <p class="muted">${esc(data.note || '')} ${esc((data.source || {}).provider || '')}。</p>`;
       }
