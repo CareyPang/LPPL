@@ -363,10 +363,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
   function renderStrength() {
     const B = M.board_strength || {}, rows = Array.isArray(B.rows) ? B.rows : [];
+    const provider = B.provider === 'sina' ? '新浪' : B.provider === 'eastmoney' ? '东方财富' : '—';
     $('src-strength').innerHTML = srcLine(['board_strength']);
     const errors = failMsg(['board_strength']);
     $('strength-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
-      `<p class="note">${E(B.note || '按涨停家数排序，相同再按涨幅。')}</p>` +
+      `<p class="note">数据源：${E(provider)}。${E(B.note || '按涨停家数排序，相同再按涨幅。')}</p>` +
       (rows.length ? `<div class="table-scroll"><table style="min-width:760px"><thead><tr><th>板块</th><th class="r">涨停家数</th><th class="r">涨幅</th><th class="r">上涨占比</th><th class="r">成交额（亿）</th><th>领涨股</th></tr></thead><tbody>
       ${rows.map((r) => `<tr><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="r">${E(r.zt_n ?? '—')}</td><td class="r ${cls(r.pct)}">${pct(r.pct)}</td><td class="r">${num(r.up_share) ? (r.up_share * 100).toFixed(1) + '%' : '—'}</td><td class="r">${yi(r.amount)}</td><td>${E(r.leader_name || '—')} ${E(r.leader_code || '')} <small>${pct(r.leader_pct)}</small></td></tr>`).join('')}
       </tbody></table></div>` : `<p class="note">${errors ? '' : '当前没有可展示的概念板块。'}</p>`);
