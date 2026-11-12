@@ -326,9 +326,18 @@ def test_theme_tag_split_strips_quotes_and_counts_real_fixture_tags():
     assert first["code"] in tag["codes"]
 
 
-def test_themes_missing_live_metrics_raise_instead_of_zero_filling():
-    with pytest.raises(RuntimeError, match="zhangfu"):
-        market._parse_themes(fixture("market_review_themes.json"))
+def test_themes_optional_live_metrics_parse_as_none_but_required_fields_stay_required():
+    payload = fixture("market_review_themes.json")
+    parsed = market._parse_themes(payload)
+
+    assert parsed["harden_rows"]
+    assert parsed["harden_rows"][0]["pct"] is None
+    assert parsed["harden_rows"][0]["turnover"] is None
+    assert parsed["harden_rows"][0]["amount"] is None
+
+    del payload["data"][0]["code"]
+    with pytest.raises(RuntimeError, match="code"):
+        market._parse_themes(payload)
 
 
 def test_concept_strength_excludes_yesterday_meta_boards():
@@ -352,6 +361,26 @@ def test_concept_strength_excludes_yesterday_meta_boards():
     result = market._parse_board_strength(payload, set(), {})
 
     assert all(not row["name"].startswith("昨日") for row in result)
+
+
+def test_board_strength_uses_push2delay_after_push2_failure():
+    payload = fixture("market_review_board_strength.json")
+
+    class Client:
+        calls = []
+
+        def get_json(self, url, params, fallback_url=None):
+            self.calls.append(url)
+            if url == market.EM_BOARD_FALLBACK_URL:
+                self.calls.append(fallback_url)
+                return payload
+            raise AssertionError(f"unexpected board host: {url}")
+
+    client = Client()
+    rows = market.fetch_board_strength([], None, client)
+
+    assert rows
+    assert client.calls == [market.EM_BOARD_FALLBACK_URL, market.EM_BOARD_URL]
 
 
 def test_lhb_groups_codes_joins_reasons_and_rejects_stale_trade_date():
@@ -402,6 +431,21 @@ def test_ths_hot_parser_uses_rank_and_tag_fields_from_real_fixture():
     assert rows[0]["rank"] == 1
     assert rows[0]["name"]
     assert isinstance(rows[0]["concepts"], list)
+
+
+def test_ths_hot_optional_tags_default_to_empty_and_none():
+    payload = fixture("market_review_ths_hot.json")
+    rows = payload["data"]["stock_list"]
+    rows[0].pop("tag")
+    rows[1]["tag"].pop("concept_tag")
+    rows[2]["tag"].pop("popularity_tag")
+
+    parsed = market._parse_ths_hot(payload)
+
+    assert parsed[0]["concepts"] == []
+    assert parsed[0]["popularity_tag"] is None
+    assert parsed[1]["concepts"] == []
+    assert parsed[2]["popularity_tag"] is None
 
 
 def test_cls_sign_is_md5_of_sha1_of_sorted_query():

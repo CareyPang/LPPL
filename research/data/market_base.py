@@ -746,7 +746,7 @@ def _parse_themes(payload: dict) -> dict:
     for item in payload["data"]:
         if not isinstance(item, dict):
             raise RuntimeError("THS harden row is not an object")
-        required = {"name", "code", "reason", "zhangfu", "huanshou", "chengjiaoe"}
+        required = {"name", "code", "reason"}
         missing = required - set(item)
         if missing:
             raise RuntimeError("THS harden fields missing: " + ", ".join(sorted(missing)))
@@ -755,9 +755,9 @@ def _parse_themes(payload: dict) -> dict:
             "code": code,
             "name": str(item["name"]),
             "reason": item["reason"],
-            "pct": _number(item["zhangfu"]),
-            "turnover": _number(item["huanshou"]),
-            "amount": _number(item["chengjiaoe"]),
+            "pct": _number(item.get("zhangfu")),
+            "turnover": _number(item.get("huanshou")),
+            "amount": _number(item.get("chengjiaoe")),
         }
         rows.append(row)
     return {"harden_rows": rows, "tags": _theme_tags(payload["data"])}
@@ -816,14 +816,15 @@ def _parse_ths_hot(payload: dict) -> list[dict]:
     rows = _row_list(data["stock_list"], "THS hot stock_list")
     output = []
     for item in rows[:50]:
-        required = {"order", "code", "name", "rate", "rise_and_fall", "hot_rank_chg", "tag"}
+        required = {"order", "code", "name", "rate", "rise_and_fall", "hot_rank_chg"}
         missing = required - set(item)
         if missing:
             raise RuntimeError("THS hot fields missing: " + ", ".join(sorted(missing)))
-        tag = item["tag"]
-        if not isinstance(tag, dict) or not {"concept_tag", "popularity_tag"} <= set(tag):
-            raise RuntimeError("THS hot row lacks tag.concept_tag or tag.popularity_tag")
-        if not isinstance(tag["concept_tag"], list):
+        tag = item.get("tag")
+        if tag is not None and not isinstance(tag, dict):
+            raise RuntimeError("THS hot tag must be an object when present")
+        concepts = (tag or {}).get("concept_tag", [])
+        if not isinstance(concepts, list):
             raise RuntimeError("THS hot tag.concept_tag must be an array")
         output.append(
             {
@@ -833,8 +834,10 @@ def _parse_ths_hot(payload: dict) -> list[dict]:
                 "heat": _number(item["rate"]),
                 "pct": _number(item["rise_and_fall"]),
                 "rank_chg": _number(item["hot_rank_chg"]),
-                "concepts": [str(value) for value in tag["concept_tag"]],
-                "popularity_tag": str(tag["popularity_tag"] or ""),
+                "concepts": [str(value) for value in concepts],
+                "popularity_tag": (
+                    str(tag["popularity_tag"]) if tag and tag.get("popularity_tag") is not None else None
+                ),
             }
         )
     return output
@@ -1035,7 +1038,7 @@ def fetch_board_strength(
 ) -> list[dict]:
     client = client or EMClient()
     payload = client.get_json(
-        EM_BOARD_URL,
+        EM_BOARD_FALLBACK_URL,
         {
             "fs": "m:90+t:3",
             "fid": "f3",
@@ -1044,7 +1047,7 @@ def fetch_board_strength(
             "pn": "1",
             "fields": "f12,f14,f3,f6,f104,f105,f128,f136,f140",
         },
-        fallback_url=EM_BOARD_FALLBACK_URL,
+        fallback_url=EM_BOARD_URL,
     )
     tag_codes = None
     if themes is not None:
