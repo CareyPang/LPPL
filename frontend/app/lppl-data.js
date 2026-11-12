@@ -73,7 +73,18 @@
   const catalog = () => getJSON('catalog.json');
   const history = (sym) => getJSON(sym + '_history.json');
   const opt = (p) => getJSON(p).catch(() => null);
-  const okCode = (c) => { if (!/^\d{6}$/.test(String(c))) throw new Error('股票代码须为 6 位数字'); return String(c); };
+  const okCode = (c) => {
+    const code = String(c).trim();
+    if (/^\d{6}$/.test(code)) return code;
+    if (/^US_[A-Z.]{1,6}$/i.test(code)) return 'US_' + code.slice(3).toUpperCase();
+    if (/^[A-Z.]{1,6}$/i.test(code)) return 'US_' + code.toUpperCase();
+    throw new Error('股票代码须为 6 位数字或 US_ 美股代码');
+  };
+  const workerCode = (c) => {
+    const code = okCode(c);
+    if (code.startsWith('US_')) throw new Error('美股仅支持观察清单的预计算数据');
+    return code;
+  };
   const queryApi = () => {
     if (!QUERY_API) throw new Error('个股公开查询 API 尚未配置');
     return QUERY_API;
@@ -86,13 +97,14 @@
   /** 按需个股结果（stock-results 分支经 Pages 叠加）；缺文件返回 null。证据恒为 research_candidate，置信度按 dev_only 不显示数值 */
   const stock = {
     index: () => opt('stock/index.json'),
+    usIndex: () => opt('stock/us_index.json'),
     latest: (c) => opt('stock/' + okCode(c) + '.json'),
     history: (c) => opt('stock/' + okCode(c) + '_history.json'),
     dipEnv: () => opt('stock/_dip_env.json'),
     error: (c) => opt('stock/' + okCode(c) + '_error.json'),
     api: () => queryApi(),
     request: (c) => {
-      const code = okCode(c);
+      const code = workerCode(c);
       return queryJSON('/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,12 +112,12 @@
       });
     },
     status: (c, since) => {
-      const code = okCode(c);
+      const code = workerCode(c);
       const sinceParam = since == null ? '' : '&since=' + encodeURIComponent(since);
       return queryJSON('/status?code=' + encodeURIComponent(code) + sinceParam);
     },
     remote: async (c, kind = 'latest') => {
-      const code = okCode(c);
+      const code = workerCode(c);
       if (!['latest', 'history', 'error'].includes(kind)) throw new Error('个股结果类型无效');
       const response = await fetch(
         queryApi() + '/result?code=' + encodeURIComponent(code) + '&kind=' + encodeURIComponent(kind),
