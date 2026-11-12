@@ -881,13 +881,15 @@
         const data = await LPPL.events();
         if (request !== eventsSerial || !data) return;
         const code6Value = String(code).replace(/^\D+/, '').slice(-6);
+        const shareCount = (v) => Number.isFinite(v) ? `${Number(v.toFixed(2))} 万股` : '— 万股';
+        const marketCap = (v) => Number.isFinite(v) ? `${v.toFixed(2)} 万元` : '— 万元';
         const rows = [
-          ...(data.lift || []).filter((r) => r.code === code6Value).map((r) => `解禁 ${r.free_date} · ${r.free_shares_10k ?? '—'} 万股`),
+          ...(data.lift || []).filter((r) => r.code === code6Value).map((r) => `解禁 ${r.free_date} · ${shareCount(r.current_free_shares_10k)} · 解禁市值 ${marketCap(r.lift_market_cap_10k)} · FREE_RATIO ${Number.isFinite(r.free_ratio) ? (r.free_ratio * 100).toFixed(2) + '%' : '—'}`),
           ...(data.dividend || []).filter((r) => r.code === code6Value).map((r) => `除权除息 ${r.ex_dividend_date} · ${r.pretax_bonus_rmb_10 ?? '—'} 元/10股`),
           ...(data.forecast || []).filter((r) => r.code === code6Value).map((r) => `业绩预告 ${r.notice_date} · ${r.predict_type || '—'} · 归母净利润 ${r.headline?.amount_lower ?? '—'}～${r.headline?.amount_upper ?? '—'} 元`),
         ];
         if (!rows.length) return;
-        $('stock-events-body').innerHTML = `<p>${rows.map(esc).join('<br>')}</p><p class="disclaimer">descriptive · n=${rows.length} · 历史分位，不是预测。</p>`;
+        $('stock-events-body').innerHTML = `<p>${rows.map(esc).join('<br>')}</p><p class="disclaimer">公告事件，来源东财数据中心，截至 ${esc(data.asof)}。</p>`;
         panel.hidden = false;
       } catch (_) { panel.hidden = true; }
     }

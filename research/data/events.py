@@ -15,10 +15,10 @@ DATA_DIR = Path("web/mock/data/events")
 PROVIDER = "datacenter-web.eastmoney.com"
 PAGE_SIZE = 500
 DESCRIPTIVE_NOTE = (
-    "公开事件日历只作描述，不进入 LPPLS 报警或任何模型；历史分位，不是预测。"
+    "公告事件是事实记录，仅作描述，不进入 LPPLS 报警或任何模型。"
 )
 UNITS_NOTE = (
-    "单位核对：源字段 FREE_SHARES 的原始值按股处理，输出换算为万股；"
+    "单位核对：CURRENT_FREE_SHARES 按东财原始值直接作为万股；FREE_SHARES 保留原值，口径未核实；"
     "LIFT_MARKET_CAP 为万元，实测 002202、002209 与 CURRENT_FREE_SHARES（万股）乘对应股价吻合，"
     "但不与 FREE_SHARES 乘股价吻合。PRETAX_BONUS_RMB 为元/10股，与 IMPL_PLAN_PROFILE 文本相符。"
 )
@@ -27,7 +27,7 @@ LIFT_SORT_COLUMNS = (
     "FREE_DATE",
     "SECURITY_CODE",
     "FREE_SHARES_TYPE",
-    "FREE_SHARES",
+    "CURRENT_FREE_SHARES",
 )
 DIVIDEND_SORT_COLUMNS = (
     "EX_DIVIDEND_DATE",
@@ -225,15 +225,14 @@ def _validate_window(
 def _normalize_lift(rows: list[dict], start: date, end: date) -> list[dict]:
     normalized = []
     for row, day in _validate_window(rows, "FREE_DATE", start, end):
-        free_shares = _number(row.get("FREE_SHARES"), "FREE_SHARES")
         current_free_shares = _number(row.get("CURRENT_FREE_SHARES"), "CURRENT_FREE_SHARES")
         normalized.append(
             {
                 "code": _code(row),
                 "name": _require_name(row),
                 "free_date": day,
-                "free_shares_shares": free_shares,
-                "free_shares_10k": free_shares / 10000 if free_shares is not None else None,
+                "free_shares_raw": _number(row.get("FREE_SHARES"), "FREE_SHARES"),
+                "free_shares_raw_label": "东财 FREE_SHARES（口径未核实）",
                 "current_free_shares_10k": current_free_shares,
                 "lift_market_cap_10k": _number(row.get("LIFT_MARKET_CAP"), "LIFT_MARKET_CAP"),
                 "free_ratio": _number(row.get("FREE_RATIO"), "FREE_RATIO"),

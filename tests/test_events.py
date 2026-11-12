@@ -71,6 +71,21 @@ def test_event_fetch_rejects_out_of_range_rows():
         )
 
 
+def test_lift_shares_use_current_free_shares_without_rescaling():
+    row = fixture("lift_pages.json")["page1"]["result"]["data"][1]
+
+    normalized = events._normalize_lift(
+        [row],
+        date.fromisoformat("2026-11-13"),
+        date.fromisoformat("2026-12-13"),
+    )[0]
+
+    assert normalized["current_free_shares_10k"] == 11.2
+    assert normalized["free_shares_raw"] == 15782.2788
+    assert normalized["free_shares_raw_label"] == "东财 FREE_SHARES（口径未核实）"
+    assert "free_shares_10k" not in normalized
+
+
 def test_forecast_groups_indicator_rows_with_004_as_headline():
     rows = fixture("forecast_rows.json")["result"]["data"]
     rows[0]["CHANGE_REASON_EXPLAIN"] = "原因" * 120
