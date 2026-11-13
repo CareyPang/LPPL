@@ -1,8 +1,8 @@
 {
  "symbol": "sh601658",
  "name": "邮储银行",
- "asof": "2026-11-12",
- "data_version": "vintage_20261112_tencent_sina_hfq_2510ec98",
+ "asof": "2026-11-13",
+ "data_version": "vintage_20261113_tencent_sina_hfq_2510ec98",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
  "top": {
   "p20": {
@@ -14,15 +14,15 @@
    ]
   },
   "bubble": {
-   "start": "2025-08-13",
+   "start": "2025-08-14",
    "duration_days": 302,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.033,
-   "size_realized": -0.028,
+   "size_model": -0.046,
+   "size_realized": -0.03,
    "tc": "2026-11-06",
    "progress": null,
-   "longest_qualified_scale": null,
+   "longest_qualified_scale": "6-12m",
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
    "evidence": "descriptive",
    "signal_status": "t1_not_qualified"
@@ -48,22 +48,22 @@
     "n_windows": 6,
     "confidence": {
      "box": 0.167,
-     "standard": 0.0,
+     "standard": 0.167,
      "early": 0.5,
      "end": 0.0,
      "pure": 0.0
     },
-    "n_qualified_standard": 0,
-    "best_t1": "2026-05-11",
+    "n_qualified_standard": 1,
+    "best_t1": "2026-05-12",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.167,
+     "m_lo": 0.0,
      "m_hi": 0.167,
      "w_lo": 0.333,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.0,
-     "any": 0.667,
+     "any": 0.5,
      "tol": 0.01
     },
     "null_fpr": {
@@ -85,7 +85,7 @@
      "note": "无泡沫随机序列中该过滤集的窗口级合格率 / as-of 级 standard>0 比例（描述性，不是显著性检验）"
     },
     "display_only": false,
-    "signal_status": "no_qualified_fit"
+    "signal_status": "signal"
    },
    "12-24m": {
     "direction": "positive",
@@ -98,7 +98,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-04-24",
+    "best_t1": "2025-04-25",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -139,9 +139,9 @@
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
   "combo": {
-   "p0.1": 0.0,
-   "p1": 0.0,
-   "p10": 0.0,
+   "p0.1": 0.001,
+   "p1": 0.084,
+   "p10": 0.156,
    "set": "standard",
    "scales": [
     "6-12m",
@@ -164,8 +164,15 @@
     "bins": []
    },
    "6-12m": {
-    "n": 0,
-    "bins": []
+    "n": 1,
+    "bin_days": 5,
+    "bins": [
+     [
+      "2026-11-13",
+      "2026-11-20",
+      1
+     ]
+    ]
    },
    "12-24m": {
     "n": 0,
@@ -180,7 +187,7 @@
    "evidence": "none",
    "signal_status": "not_computed"
   },
-  "signal_status": "no_qualified_fit",
+  "signal_status": "signal",
   "window": {
    "start": null,
    "end": null,
@@ -219,7 +226,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-12",
+   "table_asof": "2026-11-13",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -701,7 +708,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.028,
+    "size_realized": -0.03,
     "duration_days": 302,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -745,7 +752,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-25",
    "2023-09-26",
    "2023-09-27",
    "2023-09-28",
@@ -1500,10 +1506,10 @@
    "2026-11-09",
    "2026-11-10",
    "2026-11-11",
-   "2026-11-12"
+   "2026-11-12",
+   "2026-11-13"
   ],
   "open": [
-   6.102,
    6.09,
    6.066,
    6.006,
@@ -2258,10 +2264,10 @@
    7.62,
    7.759,
    7.814,
-   7.772
+   7.772,
+   7.786
   ],
   "high": [
-   6.15,
    6.162,
    6.078,
    6.042,
@@ -3016,10 +3022,10 @@
    7.814,
    7.842,
    7.897,
-   7.828
+   7.828,
+   7.911
   ],
   "low": [
-   6.042,
    6.03,
    5.969,
    5.969,
@@ -3774,10 +3780,10 @@
    7.578,
    7.703,
    7.786,
-   7.731
+   7.731,
+   7.745
   ],
   "close": [
-   6.09,
    6.042,
    5.981,
    5.981,
@@ -4532,10 +4538,10 @@
    7.8,
    7.814,
    7.814,
-   7.8
+   7.8,
+   7.897
   ],
   "volume": [
-   873774,
    943386,
    849877,
    650542,
@@ -5290,7 +5296,8 @@
    2213596,
    1160032,
    1496568,
-   1309858
+   1309858,
+   1558735
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5341,7 +5348,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": true,
-  "n_bars": 1618,
+  "n_bars": 1619,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5371,23 +5378,23 @@
    "cutoff": "2026-11-03",
    "smoke": false,
    "n_events": 21122,
-   "reference_asof": "2026-11-12"
+   "reference_asof": "2026-11-13"
   },
   "state": {
-   "asof": "2026-11-12",
-   "close": 7.800145,
+   "asof": "2026-11-13",
+   "close": 7.8973,
    "peak_date": "2025-09-04",
    "runup": 0.666433,
-   "dd": -0.082734,
-   "td_since_peak": 285,
+   "dd": -0.071309,
+   "td_since_peak": 286,
    "low_date": "2026-06-18",
-   "bounce_from_low": 0.178666,
-   "ret20": 0.01444,
-   "ret60": 0.139959,
-   "rv20": 0.188087,
-   "rv20_pct5y": 0.388889,
-   "vol_d": 0.011148,
-   "well_dist_below": 0.126484
+   "bounce_from_low": 0.193347,
+   "ret20": 0.032668,
+   "ret60": 0.149495,
+   "rv20": 0.190969,
+   "rv20_pct5y": 0.413492,
+   "vol_d": 0.011157,
+   "well_dist_below": 0.032446
   },
   "in_structure": false,
   "depth_bucket": null,
@@ -5396,26 +5403,26 @@
    "fh60": {
     "hist": null,
     "rw": {
-     "U": 0.08345,
-     "L": 0.0542,
-     "none": 0.86235
+     "U": 0.08375,
+     "L": 0.0544,
+     "none": 0.86185
     }
    },
    "fh120": {
     "hist": null,
     "rw": {
-     "U": 0.0236,
-     "L": 0.0673,
-     "none": 0.9091
+     "U": 0.02365,
+     "L": 0.0677,
+     "none": 0.90865
     }
    }
   },
   "regime": {
-   "p_hi_filtered": 0.983885,
-   "hi_vol_ann": 0.182846,
-   "lo_vol_ann": 0.133141,
-   "hi_mean_wk": -0.004461,
-   "lo_mean_wk": 0.058904,
+   "p_hi_filtered": 0.891777,
+   "hi_vol_ann": 0.18233,
+   "lo_vol_ann": 0.134972,
+   "hi_mean_wk": -0.004589,
+   "lo_mean_wk": 0.058225,
    "weeks": 260,
    "status": "ok",
    "seed": 20261110,
