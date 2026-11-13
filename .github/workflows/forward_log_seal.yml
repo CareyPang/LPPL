@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           today="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
-          new_asofs="$(git diff -U0 -- forward_log/ledger.jsonl | grep '^+{' | python -c 'import sys,json; print(" ".join(sorted({json.loads(l[1:])["asof"] for l in sys.stdin})))')"
+          new_asofs="$(git diff -U0 -- forward_log/ledger.jsonl | { grep '^+{' || true; } | python -c 'import sys,json; print(" ".join(sorted({json.loads(l[1:])["asof"] for l in sys.stdin})))')"
           echo "today=$today new_asofs=[$new_asofs]"
           if [[ -z "$new_asofs" ]]; then
             echo "nothing newly sealed"
