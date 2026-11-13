@@ -12,12 +12,14 @@ import argparse
 import json
 import os
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
 from . import stock as stock_pipeline
+from .stock_jobs import attach_job, cli_job
 
 UTC = timezone.utc  # noqa: UP017 — 运行环境 Python 3.10
 
@@ -73,15 +75,23 @@ def run_batch(
     variant: str = "stk_lite",
     procs: int | None = None,
     run_url: str | None = None,
+    job: dict | None = None,
 ) -> dict:
+    batch = cli_job(**job) if job else {}
     out.mkdir(parents=True, exist_ok=True)
     summary = {"asof": asof, "variant": variant, "ok": [], "failed": []}
+    if batch:
+        summary.update(batch_id=batch["job_id"], requested_at=batch["requested_at"], source_sha=batch["source_sha"])
     for code in codes:
+        stock_job = {**batch, "job_id": str(uuid.uuid4())} if batch else {}
         t0 = time.time()
         result_path = out / f"{code}.json"
         error_path = out / f"{code}_error.json"
         try:
             record = stock_pipeline.predict(code, variant=variant, asof=asof, procs=procs)
+            attach_job(record, stock_job, code, "current")
+            if batch:
+                record["batch_id"] = batch["job_id"]
             _write_json_atomic(result_path, record, indent=1)
             error_path.unlink(missing_ok=True)
             summary["ok"].append(code)
@@ -91,10 +101,16 @@ def run_batch(
             error = {
                 "code": code,
                 "asof": asof,
-                "error": f"{type(exc).__name__}: {exc}",
+                "error": "本次日更未完成，已有结果仍可查看。",
+                "error_code": "COMPUTE_FAILED",
+                "stage": "current",
                 "run_url": run_url,
                 "generated_at": datetime.now(UTC).isoformat(),
             }
+            attach_job(error, stock_job, code, "current")
+            if batch:
+                error["batch_id"] = batch["job_id"]
+            print(f"{code}: {type(exc).__name__}", flush=True)
             _write_json_atomic(error_path, error, indent=2)
             summary["failed"].append(code)
             status = "error"
@@ -209,6 +225,9 @@ def main() -> None:
     run.add_argument("--out", type=Path, default=Path("out/stock"))
     run.add_argument("--run-url")
     run.add_argument("--limit", type=int)
+    run.add_argument("--batch-id")
+    run.add_argument("--requested-at")
+    run.add_argument("--source-sha")
 
     br = sub.add_parser("breadth", help="summarise a result directory into breadth JSON")
     br.add_argument("--universe", type=Path, required=True)
@@ -226,7 +245,8 @@ def main() -> None:
             codes = codes[: args.limit]
         asof = args.asof or default_asof()
         print(f"asof={asof} shard={k}/{n} codes={len(codes)}", flush=True)
-        summary = run_batch(codes, asof, args.out, args.variant, args.procs, args.run_url)
+        job = cli_job(args.batch_id, args.requested_at, args.source_sha)
+        summary = run_batch(codes, asof, args.out, args.variant, args.procs, args.run_url, job=job)
         (args.out / f"_batch_{k}_of_{n}.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8"
         )
