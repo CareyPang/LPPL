@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from functools import lru_cache
 from multiprocessing import Pool
@@ -17,9 +18,10 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import requests  # noqa: E402
 
-from ..data import cache  # noqa: E402
+from ..data import cache, us_stock  # noqa: E402
 from ..data.sources import UA, sina_raw_daily  # noqa: E402
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
+from ..data.us_watchlist import US_NAMES  # noqa: E402
 from ..dip.panel import build_panel  # noqa: E402
 from ..eval.export_contract import (
     MODEL_VERSION,
@@ -105,9 +107,20 @@ def _fit_pairs(
 
 def _validate_code(code6: str) -> str:
     code = str(code6).strip()
+    upper = code.upper()
+    if upper.startswith("US_"):
+        ticker = upper[3:]
+        if re.fullmatch(r"[A-Z.]{1,6}", ticker):
+            return f"US_{ticker}"
+    elif re.fullmatch(r"[A-Z.]{1,6}", upper):
+        return f"US_{upper}"
     if len(code) != 6 or not code.isdigit():
-        raise ValueError(f"stock code must be six digits: {code6!r}")
+        raise ValueError(f"stock code must be six digits or a supported US ticker: {code6!r}")
     return code
+
+
+def _symbol(code: str) -> str:
+    return code if code.startswith("US_") else universe._sym(code)
 
 
 def _normalise_prices(frame: pd.DataFrame) -> pd.DataFrame:
@@ -177,6 +190,8 @@ def load_stock(
     now = _now()
     cutoff = _close_cutoff(now)
     code = _validate_code(code6)
+    if code.startswith("US_"):
+        return load_us_stock(code, start)
     sym = universe._sym(code)
     requested_start = str(pd.Timestamp(start or DEFAULT_START).date())
     try:
@@ -262,6 +277,39 @@ def load_stock(
     return ohlc, data_version, meta
 
 
+def load_us_stock(
+    ticker: str, start: str | None = None
+) -> tuple[pd.DataFrame, str, dict]:
+    code = _validate_code(ticker)
+    if not code.startswith("US_"):
+        raise ValueError(f"not a US ticker: {ticker!r}")
+    now = _now()
+    cutoff = _close_cutoff(now)
+    requested_start = str(pd.Timestamp(start or DEFAULT_START).date())
+    ohlc, _, history_meta = us_stock.load_us_prices(code[3:], start=requested_start)
+    ohlc = _normalise_prices(ohlc)
+    ohlc = ohlc.loc[ohlc.date <= cutoff].reset_index(drop=True)
+    if ohlc.empty:
+        raise RuntimeError(f"no positive closed US bars available for {code}")
+    version = hashlib.sha1(
+        ohlc.to_csv(index=False, float_format="%.12g").encode("utf-8")
+    ).hexdigest()[:16]
+    last = pd.Timestamp(ohlc.date.iloc[-1])
+    meta = {
+        "first_date": str(pd.Timestamp(ohlc.date.iloc[0]).date()),
+        "n_bars": int(len(ohlc)),
+        "ipo_in_range": False,
+        "dropped_ipo_bars": 0,
+        "dropped_unclosed_bar": False,
+        "reference_cutoff": cutoff,
+        "source": "sina_us_daily+sina_qfq_factor",
+        "market": "us",
+        **history_meta,
+    }
+    data_version = f"us_{code[3:]}_{last:%Y%m%d}_{version}"
+    return ohlc, data_version, meta
+
+
 @lru_cache(maxsize=4)
 def _reference_calendar(cutoff: pd.Timestamp) -> pd.DatetimeIndex:
     raw = tencent_raw("sh000001", start=DEFAULT_START)
@@ -273,10 +321,21 @@ def _reference_calendar(cutoff: pd.Timestamp) -> pd.DatetimeIndex:
     return pd.DatetimeIndex(prices["date"]).normalize()
 
 
+@lru_cache(maxsize=4)
+def _us_reference_calendar(cutoff: pd.Timestamp) -> pd.DatetimeIndex:
+    prices, _, _ = load_us_stock("US_SPY")
+    cutoff = pd.Timestamp(cutoff).normalize()
+    prices = prices.loc[prices["date"] <= cutoff].reset_index(drop=True)
+    if prices.empty:
+        raise RuntimeError("Sina SPY reference calendar has no closed bars")
+    return pd.DatetimeIndex(prices["date"]).normalize()
+
+
 def _trading_days_stale(
     last_bar: pd.Timestamp,
     asof: pd.Timestamp | None = None,
     cutoff: pd.Timestamp | None = None,
+    market: str = "cn",
 ) -> tuple[int | None, str | None]:
     try:
         cutoff = (
@@ -284,9 +343,11 @@ def _trading_days_stale(
             if cutoff is None
             else pd.Timestamp(cutoff).normalize()
         )
-        calendar = _reference_calendar(cutoff)
+        calendar = (
+            _us_reference_calendar(cutoff) if market == "us" else _reference_calendar(cutoff)
+        )
         if calendar.empty:
-            raise RuntimeError("Tencent sh000001 reference calendar is empty")
+            raise RuntimeError(f"{market} reference calendar is empty")
     except Exception as exc:
         return None, (
             "参考指数交易日历获取失败，未能判断停牌或退市状态 "
@@ -341,6 +402,8 @@ def _tencent_stock_name(code6: str) -> str | None:
 
 
 def _name_and_st(code6: str) -> tuple[str | None, bool | None]:
+    if code6.startswith("US_"):
+        return US_NAMES.get(code6[3:], code6[3:]), False
     names = {}
     if NAMES_PATH.exists():
         try:
@@ -406,9 +469,14 @@ def _stock_status_meta(
 ) -> dict:
     result = _eligibility(ohlc, st)
     last_bar = pd.Timestamp(ohlc.date.iloc[-1])
-    trading_days_stale, reference_error = _trading_days_stale(
-        last_bar, reference_asof, meta.get("reference_cutoff")
-    )
+    if meta.get("market") == "us":
+        trading_days_stale, reference_error = _trading_days_stale(
+            last_bar, reference_asof, meta.get("reference_cutoff"), "us"
+        )
+    else:
+        trading_days_stale, reference_error = _trading_days_stale(
+            last_bar, reference_asof, meta.get("reference_cutoff")
+        )
     result["trading_days_stale"] = trading_days_stale
     result["dropped_unclosed_bar"] = bool(meta.get("dropped_unclosed_bar", False))
     if reference_error is not None:
@@ -466,13 +534,18 @@ def _fit_logp(ohlc: pd.DataFrame) -> pd.Series:
     )
 
 
-def _display_calendar(index: pd.DatetimeIndex, asof: pd.Timestamp) -> pd.DatetimeIndex:
-    """t_c/情景分位折算日期用的日历：个股自身 bar 日期（≤ as-of）∪ 参考指数（sh000001）在 as-of 之后、
+def _display_calendar(
+    index: pd.DatetimeIndex, asof: pd.Timestamp, market: str = "cn"
+) -> pd.DatetimeIndex:
+    """t_c/情景分位折算日期用的日历：个股自身 bar 日期（≤ as-of）∪ 参考指数在 as-of 之后、
     今日收盘截止前已知的交易日。只影响展示日期（不含价格，无数学泄漏）；参考日历不可得时退回 bar 日期，
     `_to_cal` 对超出部分按工作日外推。"""
     base = pd.DatetimeIndex(index[index <= asof])
     try:
-        ref = _reference_calendar(_close_cutoff(_now()))
+        cutoff = _close_cutoff(_now())
+        ref = (
+            _us_reference_calendar(cutoff) if market == "us" else _reference_calendar(cutoff)
+        )
     except Exception:
         return base
     future = ref[ref > pd.Timestamp(asof).normalize()]
@@ -492,7 +565,7 @@ def _record(
     procs: int | None = None,
     reference_asof: pd.Timestamp | None = None,
 ) -> dict:
-    sym = universe._sym(code6)
+    sym = _symbol(code6)
     derived = _derived(fits)
     rule_frame = rules(derived)
     record = build_record(
@@ -500,7 +573,7 @@ def _record(
         str(asof.date()),
         derived,
         rule_frame,
-        _display_calendar(logp.index, asof),
+        _display_calendar(logp.index, asof, "us" if meta.get("market") == "us" else "cn"),
         ohlc,
         data_version=data_version,
     )
@@ -527,6 +600,23 @@ def _record(
         "evidence": STOCK_EVIDENCE,
         "note": STOCK_NOTE,
     }
+    if meta.get("market") == "us":
+        history_meta = {
+            key: meta.get(key)
+            for key in ("history_start", "raw_gap", "history_note")
+        }
+        record.update(history_meta)
+        record["stock_meta"].update(history_meta)
+        record.update(
+            {
+                "evidence": STOCK_EVIDENCE,
+                "source": "sina_us_daily+sina_qfq_factor",
+                "license_note": "新浪美股数据，许可未确认，仅供个人研究",
+                "adjust": "multiplicative back-adjusted (splits + cash dividends)",
+                "dip": None,
+                "dip_note": "美股暂无抄底事件库",
+            }
+        )
     if trust_boot > 0 and len(fits):
         from ..lppls.trust import trust
 
@@ -573,8 +663,9 @@ def predict(
         procs=procs,
         reference_asof=cutoff if asof is not None else None,
     )
-    ohlc_pit.attrs["sym"] = universe._sym(code)
-    record["dip"] = build_panel(ohlc_pit)
+    ohlc_pit.attrs["sym"] = _symbol(code)
+    if not code.startswith("US_"):
+        record["dip"] = build_panel(ohlc_pit)
     return record
 
 
@@ -698,7 +789,7 @@ def history(
         cached = cached.sort_values(["asof", "n"], kind="stable").reset_index(drop=True)
         cached.to_parquet(cache_path, index=False)
 
-    sym = universe._sym(code)
+    sym = _symbol(code)
     frames = []
     for date in asofs:
         available = logp.loc[logp.index <= date]
@@ -716,7 +807,9 @@ def history(
             derived,
             rule_frame,
             date,
-            logp.index,
+            _display_calendar(
+                logp.index, date, "us" if meta.get("market") == "us" else "cn"
+            ),
             close,
             STOCK_EVIDENCE,
             include_scenarios=True,
@@ -725,7 +818,7 @@ def history(
 
     confirmed_tops = _confirmed_tops(logp)
     tops = [{k: v for k, v in event.items() if k != "evidence"} for event in confirmed_tops]
-    return {
+    result = {
         "symbol": sym,
         "model_version": f"{MODEL_VERSION}+{variant}",
         "evidence": STOCK_EVIDENCE,
@@ -741,6 +834,24 @@ def history(
             "ipo_in_range": bool(meta["ipo_in_range"]),
         },
     }
+    if meta.get("market") == "us":
+        history_meta = {
+            key: meta.get(key)
+            for key in ("history_start", "raw_gap", "history_note")
+        }
+        result.update(history_meta)
+        result["stock_meta"].update(history_meta)
+        result.update(
+            {
+                "evidence": STOCK_EVIDENCE,
+                "source": "sina_us_daily+sina_qfq_factor",
+                "license_note": "新浪美股数据，许可未确认，仅供个人研究",
+                "adjust": "multiplicative back-adjusted (splits + cash dividends)",
+                "dip": None,
+                "dip_note": "美股暂无抄底事件库",
+            }
+        )
+    return result
 
 
 def main() -> None:
@@ -762,18 +873,19 @@ def main() -> None:
         trust_boot=args.trust_boot,
     )
     record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
-    path = args.out / f"{args.code6}.json"
+    code = _validate_code(args.code6)
+    path = args.out / f"{code}.json"
     path.write_text(json.dumps(record, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     print(path)
     if args.history_weeks > 0:
         history_record = history(
-            args.code6,
+            code,
             weeks=args.history_weeks,
             variant=args.variant,
             procs=args.procs,
         )
         history_record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
-        history_path = args.out / f"{args.code6}_history.json"
+        history_path = args.out / f"{code}_history.json"
         history_path.write_text(
             json.dumps(history_record, ensure_ascii=False, indent=1, default=str),
             encoding="utf-8",
