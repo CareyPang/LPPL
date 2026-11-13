@@ -110,4 +110,4 @@
 
 本轮从当前main隔离开发，借鉴已有PR50分支的异步任务实现，并保留主线后续的个股名称/数据版本处理；没有把PR50的设计演示、P1来源代码或模型研究整段覆盖到main。为完成用户授权的端到端状态协议，同步更新了既有数据入口 `lppl-data.js`，页面没有增加直接fetch或本地模型。
 
-PR只运行离线CI。`stock_query`、`stock_nightly`移除了自动派发Pages；stock-results结果写入代码保留，但本轮未调用它对远端写入。新Worker需两个Durable Object绑定；旧部署不会因提交Draft PR自动获得这些能力。不得在新workflow/Worker未就绪时单独上线前端。正式部署、合并、域名和购买均等待用户另行明确授权。
+新增P0任务链的PR路径只运行离线CI。既有 `nt_etf_daily` 会因适配层文件改动自动运行只读来源smoke，其发布步骤由非PR条件阻止。`stock_query`、`stock_nightly`移除了自动派发Pages；stock-results结果写入代码保留，但本轮未调用它对远端写入。新Worker需两个Durable Object绑定；旧部署不会因提交Draft PR自动获得这些能力。不得在新workflow/Worker未就绪时单独上线前端。正式部署、合并、域名和购买均等待用户另行明确授权。

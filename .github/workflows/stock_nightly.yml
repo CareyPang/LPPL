@@ -2,7 +2,7 @@ name: stock_nightly
 
 on:
   schedule:
-    # 09:40 UTC = 17:40 Beijing, Monâ€“Fri: after the 15:30 close cutoff used by the stock engine
+    # 09:40 UTC = 17:40 Beijing, Mon-Fri: after the 15:30 close cutoff used by the stock engine
     - cron: "40 9 * * 1-5"
     # 10:40 UTC = 18:40 Beijing: CSI500, split into ten shards
     - cron: "40 10 * * 1-5"
@@ -27,7 +27,7 @@ on:
           - stk_full
         default: stk_lite
       shards:
-        description: Number of parallel shards (1â€“10)
+        description: Number of parallel shards (1-10)
         type: string
         default: "6"
   pull_request:
@@ -127,7 +127,7 @@ jobs:
             echo "variant must be stk_lite or stk_full" >&2; exit 1
           fi
           if [[ ! "$shards" =~ ^[0-9]{1,2}$ ]] || (( 10#$shards < 1 || 10#$shards > 10 )); then
-            echo "shards must be 1â€“10" >&2; exit 1
+            echo "shards must be 1-10" >&2; exit 1
           fi
           shards=$((10#$shards))
           matrix=$(python3 -c "import json,sys;print(json.dumps(list(range(int(sys.argv[1])))))" "$shards")

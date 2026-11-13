@@ -114,6 +114,8 @@ stock/jobs/JOB_ID/CODE_error.json
 
 没有协调绑定时旧只读路径继续工作（公共指针30秒、任务结果300秒缓存），但不声称有持久化观察时间。源码、模型和数据版本与任务编号仍必须单独核对。
 
+有绑定但已没有该任务记录时，任务专属产物仍可按资产、job_id、mode及源码SHA格式读取；`identity_verified_against=artifact_metadata_only` 明示无法与原任务记录比较。保留任务时为 `retained_job`。二者都不把读取时间升级为公开首发证据。
+
 ## 协调与额度
 
 - `STOCK_JOBS / StockQueryState`：每股票持久任务与序列化请求；不能用 KV 的先读后写冒充原子去重。
