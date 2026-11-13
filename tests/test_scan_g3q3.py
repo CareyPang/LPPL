@@ -4,8 +4,6 @@ import os
 import subprocess
 import sys
 
-import pytest
-
 CODE = r"""
 import json, sys, numpy as np
 from research.features import lppls_scan as L
@@ -28,7 +26,6 @@ def _run(**env):
     return json.loads(p.stdout.strip().splitlines()[-1])
 
 
-@pytest.mark.slow
 def test_flags_off_identical_and_flags_on_append_only():
     off = _run()
     on = _run(LPPLS_G3="1", LPPLS_Q3="5")
