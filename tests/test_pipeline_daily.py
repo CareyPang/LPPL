@@ -4,8 +4,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from research.eval import export_contract
 from research.eval.export_contract import _price_history
-from research.pipeline import daily
+from research.features import lppls_scan
+from research.features.lppls_rules import SCALES_FCO
+from research.features.lppls_scan import full_windows, unique_windows
+from research.pipeline import daily, stock, universe
 
 
 def test_price_history_contains_aligned_point_in_time_ohlcv():
@@ -45,3 +49,103 @@ def test_daily_frozen_smoke(tmp_path, monkeypatch):
     assert rec["top"]["p20"]["evidence"] == "fail_i_iii"
     assert rec["top"]["bubble"]["evidence"] == "descriptive"
     assert rec["data_version"].startswith("frozen_")
+
+
+def test_daily_and_stock_full_share_unique_windows_and_trust_targets(
+    tmp_path, monkeypatch
+):
+    from research.lppls import trust as trust_module
+
+    dates = pd.bdate_range("2010-01-04", periods=1600)
+    ohlc = pd.DataFrame({"date": dates, "close": 100.0})
+    captured = {}
+    monkeypatch.setattr(daily, "load_ohlc", lambda *_args: (ohlc, "fixture-v1"))
+
+    def fit_asof(_logp, asof, windows):
+        captured["windows"] = tuple(windows)
+        return pd.DataFrame({"date": asof, "n": windows})
+
+    def trust(_logp, _date, rows, b):
+        captured["trust_windows"] = rows.n.tolist()
+        captured["trust_boot"] = b
+        return {"fixture": True}
+
+    monkeypatch.setattr(daily, "fit_asof", fit_asof)
+    monkeypatch.setattr(daily, "_derived", lambda rows: rows)
+    monkeypatch.setattr(daily, "rules", lambda rows: pd.DataFrame(index=rows.index))
+    monkeypatch.setattr(daily, "build_record", lambda *_args, **_kwargs: {"top": {}})
+    monkeypatch.setattr(trust_module, "trust", trust)
+
+    daily.run(
+        "sh000001",
+        asof=str(dates[-1].date()),
+        out=tmp_path,
+        trust_boot=7,
+    )
+
+    assert len(captured["windows"]) == 181
+    assert len(set(captured["windows"])) == 181
+    assert captured["windows"] == stock._variant_windows("stk_full", len(ohlc))
+    assert stock._variant_windows("stk_lite", len(ohlc)) == tuple(universe.WINDOWS)
+    for n_bars in (100, 600, 1600):
+        old_full = tuple(
+            sorted(
+                {
+                    int(window)
+                    for window in (
+                        lppls_scan.XS_WINDOWS
+                        + lppls_scan.SHORT_WINDOWS
+                        + lppls_scan.IDX_WINDOWS
+                        + lppls_scan.XL_WINDOWS
+                    )
+                    if window <= n_bars
+                }
+            )
+        )
+        assert stock._variant_windows("stk_full", n_bars) == old_full
+        assert stock._variant_windows("stk_lite", n_bars) == tuple(universe.WINDOWS)
+    assert len(captured["trust_windows"]) == 26
+    assert len(set(captured["trust_windows"])) == 26
+    assert set(captured["trust_windows"]) == set(range(125, 751, 25))
+    stored = pd.read_parquet(
+        tmp_path / "fits" / f"sh000001_{dates[-1].date()}.parquet"
+    )
+    assert not stored.duplicated(["date", "n"]).any()
+
+
+def test_unique_windows_sorts_deduplicates_and_filters_by_bar_count():
+    assert unique_windows((20, 10, 20, 15), n_bars=15) == (10, 15)
+    assert full_windows(100) == tuple(
+        window for window in full_windows() if window <= 100
+    )
+
+
+def test_deduplicating_full_windows_preserves_six_to_twelve_month_top_window():
+    date = pd.Timestamp("2024-06-28")
+    cal = pd.bdate_range("2022-01-03", periods=800)
+    base = pd.DataFrame(
+        {
+            "date": date,
+            "n": [127, 152, 177, 202, 227],
+            "ahead": [10.0, 20.0, 30.0, 40.0, 50.0],
+        }
+    )
+    overlap = pd.DataFrame(
+        {
+            "date": date,
+            "n": [525, 550, 575, 600, 625, 650, 675, 700, 725, 750] * 2,
+            "ahead": [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0]
+            * 2,
+        }
+    )
+    duplicated = pd.concat([base, overlap], ignore_index=True)
+    deduplicated = duplicated.drop_duplicates(["date", "n"], keep="first")
+
+    before = export_contract._top_window(
+        export_contract.scale_windows(duplicated, SCALES_FCO), cal, date
+    )
+    after = export_contract._top_window(
+        export_contract.scale_windows(deduplicated, SCALES_FCO), cal, date
+    )
+
+    assert before == after
