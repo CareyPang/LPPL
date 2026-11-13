@@ -82,10 +82,6 @@ td.r, th.r { text-align: right; }
 .news-grid > section { min-width: 0; }
 .news-list { display: grid; gap: var(--s2); min-width: 0; }
 .news-item a { display: block; overflow-wrap: anywhere; }
-.range-tabs { margin: var(--s2) 0 var(--s3); }
-.abnormal-table { min-width: 860px; }
-.range-table { min-width: 520px; }
-#s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
 .events-timeline { max-width: 100%; overflow-x: auto; }
 .events-days { display: grid; grid-template-columns: repeat(31, minmax(24px, 1fr)); gap: 4px; min-width: 930px; }
 .events-day { display: grid; grid-template-rows: auto 68px auto; gap: 3px; text-align: center; font: 10px var(--f-m); color: var(--ink-3); }
@@ -108,6 +104,10 @@ td.r, th.r { text-align: right; }
 .macro-source b, .macro-source small { display: block; }
 .macro-source small { color: var(--ink-3); margin-top: 3px; }
 .macro-terms { overflow-wrap: anywhere; }
+.range-tabs { margin: var(--s2) 0 var(--s3); }
+.abnormal-table { min-width: 860px; }
+.range-table { min-width: 520px; }
+#s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
 @media (max-width: 1000px) { .events-columns { grid-template-columns: 1fr; } }
@@ -133,25 +133,6 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 </header>
 
 <main>
-  <section class="sec wide" id="s-abnormal" aria-labelledby="h-abnormal">
-    <div class="sec-h">
-      <h2 id="h-abnormal">异动提醒</h2><span class="ev">descriptive</span><span class="src" id="src-abnormal"></span>
-    </div>
-    <div id="abnormal-body"></div>
-  </section>
-
-  <section class="sec wide" id="s-range" aria-labelledby="h-range">
-    <div class="sec-h">
-      <h2 id="h-range">区间统计</h2><span class="ev">descriptive</span><span class="src" id="src-range"></span>
-    </div>
-    <div class="chips range-tabs" role="group" aria-label="区间统计交易日窗口">
-      <button class="chip" type="button" data-range-window="5" aria-pressed="true">5日</button>
-      <button class="chip" type="button" data-range-window="10" aria-pressed="false">10日</button>
-      <button class="chip" type="button" data-range-window="20" aria-pressed="false">20日</button>
-    </div>
-    <div id="range-body"></div>
-  </section>
-
   <section class="sec wide" id="s-events" aria-labelledby="h-events">
     <div class="sec-h"><h2 id="h-events">事件日历</h2><span class="ev">descriptive</span><span class="src" id="src-events"></span></div>
     <div id="events-body"><p class="note">事件数据加载中…</p></div>
@@ -225,6 +206,25 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <section class="sec wide" id="s-macro" aria-labelledby="h-macro">
     <div class="sec-h"><h2 id="h-macro">全球宏观</h2><span class="ev">descriptive</span></div>
     <div id="macro-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-abnormal" aria-labelledby="h-abnormal">
+    <div class="sec-h">
+      <h2 id="h-abnormal">异动提醒</h2><span class="ev">descriptive</span><span class="src" id="src-abnormal"></span>
+    </div>
+    <div id="abnormal-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-range" aria-labelledby="h-range">
+    <div class="sec-h">
+      <h2 id="h-range">区间统计</h2><span class="ev">descriptive</span><span class="src" id="src-range"></span>
+    </div>
+    <div class="chips range-tabs" role="group" aria-label="区间统计交易日窗口">
+      <button class="chip" type="button" data-range-window="5" aria-pressed="true">5日</button>
+      <button class="chip" type="button" data-range-window="10" aria-pressed="false">10日</button>
+      <button class="chip" type="button" data-range-window="20" aria-pressed="false">20日</button>
+    </div>
+    <div id="range-body"></div>
   </section>
 </main>
 <div class="tip" id="tip" hidden></div>
