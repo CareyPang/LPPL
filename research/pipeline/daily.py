@@ -22,12 +22,10 @@ from ..features.lppls_scan import (
     BOX,
     BOXES,
     COLS,
-    IDX_WINDOWS,
-    SHORT_WINDOWS,
     STK_WINDOWS,
-    XL_WINDOWS,
-    XS_WINDOWS,
     fit_one,
+    full_windows,
+    unique_windows,
 )
 from ..lppls import core as _core
 
@@ -68,7 +66,7 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     date = pd.Timestamp(asof) if asof else logp.index[-1]
     ohlc_pit = ohlc[ohlc.date <= date]
     logp = logp[logp.index <= date]
-    ws = windows or (XS_WINDOWS + SHORT_WINDOWS + IDX_WINDOWS + XL_WINDOWS)
+    ws = full_windows(len(logp)) if windows is None else unique_windows(windows)
     d = _derived(fit_asof(logp, date, ws))
     rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc_pit, None, data_version=version)
     if trust_boot:
