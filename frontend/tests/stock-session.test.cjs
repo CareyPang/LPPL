@@ -201,6 +201,57 @@ test('fresh cached analysis does not dispatch a new calculation', async t => {
   assert.equal(h.session.snapshot().stale, false);
 });
 
+test('cached current response loads the published result without polling', async t => {
+  const result = current('000001');
+  let remoteCalls = 0;
+  const h = harness({
+    latest: async () => result,
+    market: async () => market('000001', { asof: result.asof, expected_source_sha: result.source_sha }),
+    request: async () => ({ cached: true, code: '000001', mode: 'current' }),
+    remote: async (_code, kind) => {
+      if (kind === 'latest') remoteCalls += 1;
+      return kind === 'latest' ? result : null;
+    },
+  });
+  t.after(() => h.session.destroy());
+  await h.session.select('000001');
+  const callsBeforeRequest = remoteCalls;
+  await h.session.request('000001');
+  assert.equal(remoteCalls, callsBeforeRequest + 1);
+  assert.equal(h.statuses.length, 0);
+  assert.equal(h.session.snapshot().current, result);
+  assert.equal(h.session.snapshot().currentStatus, 'current_ready');
+  assert.equal(h.session.snapshot().tasks.length, 0);
+  assert.equal(h.timers.size, 0);
+});
+
+test('cached history response loads current and history results without polling', async t => {
+  const latest = current('000001');
+  const history = { ...current('000001'), frames: [{ asof: '2026-11-05' }] };
+  const kinds = [];
+  const h = harness({
+    latest: async () => latest,
+    market: async () => market('000001', { asof: latest.asof, expected_source_sha: latest.source_sha }),
+    request: async () => ({ cached: true, code: '000001', mode: 'history' }),
+    remote: async (_code, kind) => {
+      kinds.push(kind);
+      return kind === 'latest' ? latest : history;
+    },
+  });
+  t.after(() => h.session.destroy());
+  await h.session.select('000001');
+  kinds.length = 0;
+  await h.session.request('000001', 'history');
+  assert.deepEqual(kinds, ['latest', 'history']);
+  assert.equal(h.statuses.length, 0);
+  assert.equal(h.session.snapshot().current, latest);
+  assert.equal(h.session.snapshot().history, history);
+  assert.equal(h.session.snapshot().currentStatus, 'current_ready');
+  assert.equal(h.session.snapshot().historyStatus, 'history_ready');
+  assert.equal(h.session.snapshot().tasks.length, 0);
+  assert.equal(h.timers.size, 0);
+});
+
 test('same-day result ordering compares timestamp instants across legacy timezone formats', async t => {
   const remote = deferred();
   const saved = current('000001', { generated_at: '2026-11-05T09:01:00Z' });
