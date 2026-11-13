@@ -1,6 +1,8 @@
 import json
 import os
 import subprocess
+import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -123,7 +125,7 @@ def test_run_batch_writes_error_file_and_continues(tmp_path, monkeypatch):
     assert json.loads((out / "000001.json").read_text(encoding="utf-8"))["asof"] == "2026-10-30"
     assert not (out / "000001_error.json").exists()
     err = json.loads((out / "000002_error.json").read_text(encoding="utf-8"))
-    assert err["error"].startswith("RuntimeError") and err["run_url"] == "https://x/1"
+    assert err["error_code"] == "COMPUTE_FAILED" and err["run_url"] == "https://x/1"
 
 
 def test_run_batch_failure_removes_stale_result_and_breadth_counts_error(tmp_path, monkeypatch):
@@ -146,7 +148,41 @@ def test_run_batch_failure_removes_stale_result_and_breadth_counts_error(tmp_pat
 
 
 def _git(*args, cwd=None):
-    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True, encoding="utf-8").stdout.strip()
+
+
+def test_nightly_success_and_error_have_consistent_source_and_unique_jobs(tmp_path, monkeypatch):
+    job = {"job_id": str(uuid.uuid4()), "requested_at": "2026-11-06T00:00:00Z", "source_sha": "b" * 40}
+
+    def predict(code, **kwargs):
+        if code == "000002":
+            raise RuntimeError("private internal diagnostic")
+        return _record(code) | {"model_version": "model-v1", "fit_code_version": "fit-v1", "data_version": "data-v1"}
+
+    monkeypatch.setattr(stock_batch.stock_pipeline, "predict", predict)
+    summary = stock_batch.run_batch(["000001", "000002"], "2026-10-30", tmp_path, job=job)
+    success = json.loads((tmp_path / "000001.json").read_text(encoding="utf-8"))
+    error = json.loads((tmp_path / "000002_error.json").read_text(encoding="utf-8"))
+    assert success["job_id"] != error["job_id"]
+    assert summary["source_sha"] == job["source_sha"]
+    for code, record in (("000001", success), ("000002", error)):
+        assert uuid.UUID(record["job_id"]).version == 4
+        assert record["source_sha"] == job["source_sha"]
+        assert record["batch_id"] == job["job_id"]
+        assert record["requested_at"] == job["requested_at"]
+        assert record["code"] == code and record["mode"] == "current"
+        assert record["schema_version"] == "stock_result_v1"
+    assert "private" not in error["error"]
+    assert success["fit_code_version"] == "fit-v1"
+
+
+def test_nightly_rejects_partial_job_metadata_before_computing(tmp_path, monkeypatch):
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("invalid identity must not start computation")
+
+    monkeypatch.setattr(stock_batch.stock_pipeline, "predict", unexpected)
+    with pytest.raises(ValueError):
+        stock_batch.run_batch(["000001"], "2026-10-30", tmp_path, job={"job_id": str(uuid.uuid4())})
 
 
 def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
@@ -188,8 +224,10 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
         "HISTORY_WEEKS": "0",
         "STOCK_RESULT_DIR": str(result_dir),
         "STOCK_RUN_URL": "https://example.test/runs/batch",
+        "STOCK_PYTHON": Path(sys.executable).as_posix(),
     }
-    subprocess.run(["bash", str(SCRIPT)], cwd=repo, env=env, check=True, capture_output=True, text=True)
+    bash = "C:/Program Files/Git/bin/bash.exe" if os.name == "nt" else "bash"
+    subprocess.run([bash, SCRIPT.as_posix()], cwd=repo, env=env, check=True, capture_output=True, text=True, encoding="utf-8")
 
     files = _git("--git-dir", str(origin), "ls-tree", "--name-only", "stock-results", "stock/").splitlines()
     assert sorted(files) == [

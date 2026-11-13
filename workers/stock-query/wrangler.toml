@@ -5,7 +5,17 @@ compatibility_date = "2026-11-02"
 [vars]
 ALLOWED_ORIGIN = "https://careypang.github.io"
 REPO = "CareyPang/LPPL"
+QUERIES_PER_HOUR = "60"
+QUERIES_PER_IP_10M = "5"
 
-[[kv_namespaces]]
-binding = "RL"
-id = "644e5b6d11bf439293a729f3af50816b"
+[[durable_objects.bindings]]
+name = "STOCK_JOBS"
+class_name = "StockQueryState"
+
+[[durable_objects.bindings]]
+name = "QUERY_BUDGET"
+class_name = "QueryBudget"
+
+[[migrations]]
+tag = "v1-stock-jobs"
+new_sqlite_classes = ["StockQueryState", "QueryBudget"]

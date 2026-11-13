@@ -2,7 +2,7 @@ name: stock_nightly
 
 on:
   schedule:
-    # 09:40 UTC = 17:40 Beijing, Mon–Fri: after the 15:30 close cutoff used by the stock engine
+    # 09:40 UTC = 17:40 Beijing, Mon-Fri: after the 15:30 close cutoff used by the stock engine
     - cron: "40 9 * * 1-5"
     # 10:40 UTC = 18:40 Beijing: CSI500, split into ten shards
     - cron: "40 10 * * 1-5"
@@ -27,24 +27,44 @@ on:
           - stk_full
         default: stk_lite
       shards:
-        description: Number of parallel shards (1–10)
+        description: Number of parallel shards (1-10)
         type: string
         default: "6"
   pull_request:
     paths:
       - .github/workflows/stock_nightly.yml
       - research/pipeline/stock_batch.py
+      - research/pipeline/stock_jobs.py
+      - research/pipeline/stock_publish.py
       - scripts/publish_stock_result.sh
+      - tests/test_stock_batch.py
 
 permissions:
   contents: read
 
 concurrency:
-  group: stock-nightly
+  group: stock-nightly-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
   cancel-in-progress: false
 
 jobs:
+  smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e '.[dev]'
+      - name: Offline batch and publication fixtures
+        run: python -m pytest tests/test_stock_batch.py tests/test_stock_jobs.py tests/test_publish_stock_result.py -m 'not network'
+
   plan:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       universe: ${{ steps.plan.outputs.universe }}
@@ -52,6 +72,9 @@ jobs:
       variant: ${{ steps.plan.outputs.variant }}
       matrix: ${{ steps.plan.outputs.matrix }}
       shards: ${{ steps.plan.outputs.shards }}
+      source_sha: ${{ steps.plan.outputs.source_sha }}
+      requested_at: ${{ steps.plan.outputs.requested_at }}
+      batch_id: ${{ steps.plan.outputs.batch_id }}
     env:
       INPUT_UNIVERSE: ${{ inputs.universe }}
       INPUT_ASOF: ${{ inputs.asof }}
@@ -59,18 +82,12 @@ jobs:
       INPUT_SHARDS: ${{ inputs.shards }}
       EVENT_SCHEDULE: ${{ github.event.schedule }}
     steps:
-      - name: Checkout PR merge commit for smoke runs
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
       - name: Checkout main for scheduled and dispatched runs
-        if: github.event_name != 'pull_request'
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -96,9 +113,6 @@ jobs:
               shards=10
             fi
           fi
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            shards=1
-          fi
           if [[ ! "$universe" =~ ^universe_[a-z0-9_]+\.json$ ]]; then
             echo "universe must look like universe_<name>.json" >&2; exit 1
           fi
@@ -113,7 +127,7 @@ jobs:
             echo "variant must be stk_lite or stk_full" >&2; exit 1
           fi
           if [[ ! "$shards" =~ ^[0-9]{1,2}$ ]] || (( 10#$shards < 1 || 10#$shards > 10 )); then
-            echo "shards must be 1–10" >&2; exit 1
+            echo "shards must be 1-10" >&2; exit 1
           fi
           shards=$((10#$shards))
           matrix=$(python3 -c "import json,sys;print(json.dumps(list(range(int(sys.argv[1])))))" "$shards")
@@ -123,10 +137,14 @@ jobs:
             printf 'variant=%s\n' "$variant"
             printf 'shards=%s\n' "$shards"
             printf 'matrix=%s\n' "$matrix"
+            printf 'source_sha=%s\n' "$(git rev-parse HEAD)"
+            printf 'requested_at=%s\n' "$(python -c 'from datetime import datetime,UTC; print(datetime.now(UTC).isoformat())')"
+            printf 'batch_id=%s\n' "$(python -c 'import uuid; print(uuid.uuid4())')"
           } >> "$GITHUB_OUTPUT"
 
   fit:
     needs: plan
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 300
     strategy:
@@ -134,18 +152,12 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
-      - name: Checkout PR merge commit for smoke runs
-        if: github.event_name == 'pull_request'
+      - name: Checkout the planned source commit
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.plan.outputs.source_sha }}
           fetch-depth: 1
-
-      - name: Checkout main for scheduled and dispatched runs
-        if: github.event_name != 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 1
+          persist-credentials: false
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -164,12 +176,15 @@ jobs:
           SHARD: ${{ matrix.shard }}
           SHARDS: ${{ needs.plan.outputs.shards }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SOURCE_SHA: ${{ needs.plan.outputs.source_sha }}
+          REQUESTED_AT: ${{ needs.plan.outputs.requested_at }}
+          BATCH_ID: ${{ needs.plan.outputs.batch_id }}
         run: |
           set -euo pipefail
           args=(run --universe "web/mock/data/$UNIVERSE" --asof "$ASOF" \
                 --shard "$SHARD/$SHARDS" --variant "$VARIANT" \
-                --procs 4 --out out/stock --run-url "$RUN_URL")
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then args+=(--limit 2); fi
+                --procs 4 --out out/stock --run-url "$RUN_URL" \
+                --batch-id "$BATCH_ID" --requested-at "$REQUESTED_AT" --source-sha "$SOURCE_SHA")
           python -m research.pipeline.stock_batch "${args[@]}"
 
       - name: Upload shard results
@@ -181,11 +196,10 @@ jobs:
 
   publish:
     needs: [plan, fit]
-    if: needs.fit.result == 'success'
+    if: github.event_name != 'pull_request' && needs.fit.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
     env:
       UNIVERSE: ${{ needs.plan.outputs.universe }}
       ASOF: ${{ needs.plan.outputs.asof }}
@@ -193,17 +207,10 @@ jobs:
       STOCK_RESULT_DIR: out/stock
       STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - name: Checkout PR merge commit for smoke runs
-        if: github.event_name == 'pull_request'
+      - name: Checkout the planned source commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-
-      - name: Checkout main for scheduled and dispatched runs
-        if: github.event_name != 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: main
+          ref: ${{ needs.plan.outputs.source_sha }}
           fetch-depth: 1
 
       - name: Download shard results
@@ -264,9 +271,3 @@ jobs:
         env:
           HISTORY_WEEKS: "0"
         run: bash scripts/publish_stock_result.sh
-
-      - name: Dispatch Pages build
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
