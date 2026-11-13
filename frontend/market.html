@@ -82,8 +82,20 @@ td.r, th.r { text-align: right; }
 .news-grid > section { min-width: 0; }
 .news-list { display: grid; gap: var(--s2); min-width: 0; }
 .news-item a { display: block; overflow-wrap: anywhere; }
+.macro-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--s4); }
+.macro-card { min-width: 0; border: 1px solid var(--grid); padding: var(--s3); }
+.macro-chart { display: block; width: 100%; max-width: 100%; height: auto; background: var(--bg); }
+.macro-chart text { fill: var(--ink-3); font: 10px var(--f-m); }
+.macro-legend { display: flex; flex-wrap: wrap; gap: var(--s3); color: var(--ink-2); font-size: 11px; }
+.macro-legend span::before { content: ""; display: inline-block; width: 12px; height: 2px; margin: 0 5px 3px 0; background: var(--macro-color); }
+.macro-sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s2); margin-top: var(--s3); }
+.macro-source { min-width: 0; border: 1px solid var(--grid); padding: var(--s2); font-size: 11px; overflow-wrap: anywhere; }
+.macro-source b, .macro-source small { display: block; }
+.macro-source small { color: var(--ink-3); margin-top: 3px; }
+.macro-terms { overflow-wrap: anywhere; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
+@media (max-width: 680px) { .macro-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -169,6 +181,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div class="sec-h"><h2 id="h-val">指数估值（中证官方）</h2><span class="ev">descriptive</span><span class="src" id="src-val"></span></div>
     <div id="val-body"></div>
   </section>
+
+  <section class="sec wide" id="s-macro" aria-labelledby="h-macro">
+    <div class="sec-h"><h2 id="h-macro">全球宏观</h2><span class="ev">descriptive</span></div>
+    <div id="macro-body"></div>
+  </section>
 </main>
 <div class="tip" id="tip" hidden></div>
 <footer>市场背景只作描述，不进入 LPPLS 报警或任何模型。</footer>
@@ -184,13 +201,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const money = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
   const pct = (v, d = 2) => num(v) ? (v > 0 ? '+' : '') + v.toFixed(d) + '%' : '—';
   const cls = (v) => num(v) ? (v > 0 ? 'up' : v < 0 ? 'dn' : '') : '';
+  const NYFED_ATTRIBUTION = 'The SOFR and EFFR are subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the SOFR and EFFR by LPPL, does not sanction or endorse any particular republication, and has no liability for your use.';
   const KINDS = { industry: '行业', concept: '概念', region: '地域' };
   const PERIODS = {
     today: { label: '今日', net: 'main_net', pct: 'pct_chg', share: 'main_pct' },
     '5d': { label: '5日', net: 'main_net_5d', pct: 'pct_5d', share: 'main_pct_5d' },
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
-  let M = null, kind = 'industry', period = 'today';
+  let M = null, Macro = null, kind = 'industry', period = 'today';
 
   function srcLine(names) {
     const S = (M && M.sources) || {};
@@ -498,11 +516,98 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        </tbody></table></div><p class="note">${E(V.note || '')}</p>`;
   }
 
+  function renderMacro() {
+    const box = $('macro-body');
+    if (!box) return;
+    const D = Macro || {}, T = D.treasury || {}, R = D.rates || {}, F = D.fx || {};
+    const S = D.sources || {};
+    const sourceLabels = { treasury: '美国财政部 Treasury', nyfed: '纽约联储 SOFR / EFFR', fed_h10: '美联储 H.10 汇率' };
+    const statusCards = Object.entries(sourceLabels).map(([key, label]) => {
+      const source = S[key] || {};
+      const state = source.ok ? '可用' : (source.stale
+        ? (source.asof ? 'stale · 使用上次数据' : 'stale · 无可用数据')
+        : '不可用');
+      const stateClass = source.ok ? '' : 'wn';
+      const details = [source.provider, source.asof ? `asof ${source.asof}` : '', state].filter(Boolean).join(' · ');
+      return `<div class="macro-source"><b>${E(label)} <span class="${stateClass}">${E(state)}</span></b>
+        <small>${E(details || '来源状态未知')}</small>${source.error ? `<small class="wn">${E(source.error)}</small>` : ''}</div>`;
+    }).join('');
+    const periods = [
+      { key: 'latest', label: '最新', color: '#4DA3FF' },
+      { key: '20d_ago', label: '20 个交易日前', color: '#FFB800' },
+      { key: '250d_ago', label: '250 个交易日前', color: '#00D4AA' },
+    ];
+    const tenors = Array.isArray(T.tenors) ? T.tenors : [];
+    const curves = periods.map((period) => ({ ...period, row: T[period.key] })).filter((item) => item.row && item.row.curve);
+    const values = curves.flatMap((item) => tenors.map((tenor) => item.row.curve[tenor]).filter(num));
+    let chart = '<p class="note">收益率曲线暂无可用数据。</p>';
+    if (values.length && tenors.length) {
+      const min = Math.min(...values), max = Math.max(...values);
+      const range = Math.max(max - min, 0.5);
+      const lo = min - range * 0.12, hi = max + range * 0.12;
+      const x0 = 48, x1 = 704, y0 = 18, y1 = 198;
+      const xAt = (index) => x0 + (tenors.length < 2 ? 0 : (x1 - x0) * index / (tenors.length - 1));
+      const yAt = (value) => y0 + (hi - value) * (y1 - y0) / (hi - lo);
+      const grid = Array.from({ length: 4 }, (_unused, index) => {
+        const value = lo + (hi - lo) * index / 3, y = yAt(value);
+        return `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#2A2A2A" />
+          <text x="3" y="${y + 3}">${value.toFixed(1)}%</text>`;
+      }).join('');
+      const labels = tenors.map((tenor, index) => index % 2 === 0 || index === tenors.length - 1
+        ? `<text x="${xAt(index)}" y="220" text-anchor="middle">${E(tenor.replace(' Yr', 'Y').replace(' Mo', 'M'))}</text>`
+        : '').join('');
+      const paths = curves.map((item) => {
+        const points = tenors.map((tenor, index) => {
+          const value = item.row.curve[tenor];
+          return num(value) ? `${index ? 'L' : 'M'}${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}` : '';
+        }).filter(Boolean).join(' ');
+        return `<path d="${points}" fill="none" stroke="${item.color}" stroke-width="2" />`;
+      }).join('');
+      chart = `<svg class="macro-chart" viewBox="0 0 720 232" role="img" aria-label="美国国债收益率曲线对比">
+        ${grid}${paths}${labels}</svg>
+        <div class="macro-legend">${curves.map((item) => `<span style="--macro-color:${item.color}">${E(item.label)} · ${E(item.row.date)}</span>`).join('')}</div>`;
+    }
+    const spreads = T.spreads || {};
+    const rateCard = (key, label) => {
+      const rate = (R[key] || {}).latest || {};
+      const rateSeries = Array.isArray((R[key] || {}).series) ? R[key].series : [];
+      const range = key === 'effr' && (num(rate.target_rate_from) || num(rate.target_rate_to))
+        ? `<small>目标区间 ${num(rate.target_rate_from) ? rate.target_rate_from.toFixed(2) : '—'}–${num(rate.target_rate_to) ? rate.target_rate_to.toFixed(2) : '—'}%</small>`
+        : '';
+      return `<div class="macro-card"><small>${label} · ${E(rate.date || '—')}</small>
+        <strong>${num(rate.rate) ? rate.rate.toFixed(2) + '%' : '—'}</strong>${range}
+        ${num(rate.volume_in_billions) ? `<small>成交量 ${rate.volume_in_billions.toFixed(1)} 十亿美元</small>` : ''}
+        <small>样本 n=${rateSeries.length}</small></div>`;
+    };
+    const fxRows = Object.values(F.series || {}).map((item) => `<tr>
+      <td>${E(item.label || item.code)}</td><td>${E(item.latest.date || '—')}</td>
+      <td class="r">${num(item.latest.value) ? item.latest.value.toFixed(4) : '—'}</td>
+      <td class="r">${Array.isArray(item.observations) ? item.observations.length : 0}</td>
+      <td>${E(item.quote || item.unit || '')}</td></tr>`).join('');
+    const fail = !Macro ? '<p class="fail">全球宏观数据加载中或不可用。</p>' : '';
+    box.innerHTML = fail + `<div class="macro-sources">${statusCards}</div>
+      <div class="macro-grid" style="margin-top:var(--s4)">
+        <section class="macro-card"><h3>美国国债收益率曲线</h3>${chart}
+          <div class="big" style="margin-top:var(--s3)">
+            <div><small>10Y − 2Y</small><strong>${num(spreads['10y_minus_2y']) ? spreads['10y_minus_2y'].toFixed(2) + ' pp' : '—'}</strong></div>
+            <div><small>10Y − 3M</small><strong>${num(spreads['10y_minus_3m']) ? spreads['10y_minus_3m'].toFixed(2) + ' pp' : '—'}</strong></div>
+          </div><p class="note">Treasury asof ${E(T.asof || '—')} · 历史曲线样本 n=${Array.isArray(T.series_250d) ? T.series_250d.length : 0} 个交易日观测。</p></section>
+        <section class="macro-card"><h3>隔夜利率</h3><div class="big">${rateCard('sofr', 'SOFR')}${rateCard('effr', 'EFFR')}</div>
+          <p class="note macro-terms">${E(R.attribution || NYFED_ATTRIBUTION)}</p></section>
+      </div>
+      <section class="macro-card" style="margin-top:var(--s4)"><h3>美元汇率（美联储 H.10）</h3>
+        <div class="table-scroll"><table><thead><tr><th>序列</th><th>数据日</th><th class="r">最新</th><th class="r">样本 n</th><th>报价方向</th></tr></thead>
+          <tbody>${fxRows || '<tr><td colspan="5">暂无可用汇率数据</td></tr>'}</tbody></table></div>
+        <p class="note">H.10 数据通常滞后约一周；asof ${E(F.asof || '—')}。</p></section>
+      <p class="note">${E(D.note || '只作背景，不进入模型。')} 历史分位，不是预测；本卡仅展示官方观测，不计算分位。</p>`;
+  }
+
   function renderAll() {
     $('asof').textContent = '截止 ' + (M.asof || '—') + ' · 生成 ' + String(M.generated_at || '').replace('T', ' ').slice(0, 16) + ' UTC';
     for (const fn of [renderBoard, renderLimit, renderSentiment, renderLadder, renderStrength, renderThemes, renderHot, renderLHB, renderNews, renderNB, renderMargin, renderVal]) {
       try { fn(); } catch (e) { console.error(e); }
     }
+    renderMacro();
   }
 
   document.addEventListener('click', (e) => {
@@ -516,6 +621,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (!d) { $('asof').textContent = '市场数据未加载'; document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>'; return; }
     M = d; renderAll();
   }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
+  LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
+    .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });
 })();
 </script>
 </body>
