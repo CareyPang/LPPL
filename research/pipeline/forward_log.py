@@ -67,6 +67,39 @@ def verify() -> pd.DataFrame:
     return led
 
 
+def check(max_stale_bdays: int = 5) -> dict:
+    """Phase 4 硬化核验：(1) 每条 ledger 的文件存在且 sha256 一致；(2) ledger 内 (asof, symbol) 无重复；
+    (3) 首次封存至今的工作日中缺封存的日期（节假日会被计入，需人工对照）与最近一次封存距今的工作日数（> max_stale_bdays 视为停更）；
+    (4) 字段漂移：首条记录的顶层键在后续文件中缺失为硬失败，新增键只记录；(5) model_version 分段。返回 dict，ok=False 表示有硬性失败（哈希/重复/漂移）。"""
+    led = verify()
+    out: dict = dict(n=int(len(led)), bad_hash=led.loc[~led.ok, "path"].tolist() if len(led) else [])
+    if len(led) == 0:
+        return dict(ok=False, reason="empty ledger", **out)
+    dup = led.duplicated(["asof", "symbol"], keep=False)
+    out["duplicates"] = led.loc[dup, ["asof", "symbol"]].to_dict("records")
+    asofs = sorted(set(led["asof"]))
+    bdays = pd.bdate_range(asofs[0], asofs[-1])
+    out["missing_bdays"] = [str(d.date()) for d in bdays if str(d.date()) not in set(asofs)]
+    today = datetime.now(UTC).date()
+    out["stale_bdays"] = int(len(pd.bdate_range(asofs[-1], today)) - 1)
+    out["stale"] = out["stale_bdays"] > max_stale_bdays
+    keys0, drift, added = None, [], []
+    for _, r in led[led.ok].iterrows():
+        k = set(json.loads(Path(r.path).read_text()).keys())
+        if keys0 is None:
+            keys0 = k
+            continue
+        if keys0 - k:
+            drift.append(dict(path=r.path, missing=sorted(keys0 - k)))
+        if k - keys0:
+            added.append(dict(path=r.path, extra=sorted(k - keys0)))
+    out["schema_drift"] = drift  # 首条记录有、后续缺失的顶层键：硬失败（复盘函数会读不到）
+    out["schema_added"] = added  # 后续新增的顶层键：只记录（契约加字段是允许的）
+    out["model_versions"] = led.groupby("model_version")["asof"].agg(["min", "max", "count"]).reset_index().to_dict("records")
+    out["ok"] = not out["bad_hash"] and not out["duplicates"] and not drift
+    return out
+
+
 def review(since: str = "2026-01-01") -> pd.DataFrame:
     from ..data import cache
     from ..eval.calibration_lppls import _null
@@ -111,14 +144,71 @@ def review(since: str = "2026-01-01") -> pd.DataFrame:
     return tab
 
 
+def _alarm_matrix(led: pd.DataFrame, cal: pd.DatetimeIndex, mature_end: int, q: float) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """成熟记录（asof 位置 ≤ mature_end）的 as-of 位置与各 (set, scale) 的报警布尔序列；置信度缺失按 0。"""
+    recs = []
+    for r in led.sort_values("asof").itertuples():
+        pos = cal.get_indexer([pd.Timestamp(r.asof)])[0]
+        if pos < 0 or pos > mature_end:
+            continue
+        ind = json.loads(Path(r.path).read_text()).get("top", {}).get("indicators", {})
+        recs.append((pos, {f"{st}__{sc}": float((ind.get(sc, {}).get("confidence") or {}).get(st) or 0.0) for sc in SCALES for st in SETS}))
+    gpos = np.array([p for p, _ in recs], dtype=int)
+    return gpos, {k: np.array([d[k] for _, d in recs]) >= q for k in [f"{st}__{sc}" for sc in SCALES for st in SETS]}
+
+
+def precision(since: str = "2026-01-01") -> pd.DataFrame:
+    """Phase 4 四指标落盘（顶部侧 T-top / P-top；底部侧契约里 state_p/thrust_p 为 null，无可评指标）：
+    对成熟记录（asof ≤ 最新日 − H）的首报（前 GAP 日无报警），用 research.eval.precision_baseline.episodes 的同一定义算
+    提前量 lead、命中 hit（H 日内有合格顶）、miss_up、avoid、fwd120；顶标签用最新行情重算（run_top.build）。写 forward_log/precision_<date>.csv。"""
+    from ..data import cache
+    from ..eval.precision_baseline import episodes, event_segments
+    from ..labels.run_top import build
+
+    led = verify()
+    led = led[(led["asof"] >= since) & led["ok"]]
+    rows = []
+    for s, g in led.groupby("symbol"):
+        ohlc = cache.load(s, auto_refresh=False)
+        px = ohlc.set_index(pd.to_datetime(ohlc["date"]))["close"] if "date" in ohlc.columns else ohlc["close"]
+        close = px.to_numpy(float)
+        cal = px.index
+        lab = build(s, cal, np.log(close))["main__y"]
+        epos = np.array([cal.get_indexer([end])[0] + 1 for _, end in event_segments(lab)], dtype=int)
+        epos = epos[(epos > 0) & (epos < len(cal))]
+        gpos, alarms = _alarm_matrix(g, cal, len(cal) - 1 - H, Q)
+        if len(gpos) == 0:
+            continue
+        for key, alarm in alarms.items():
+            if alarm.sum() == 0:
+                continue
+            e = episodes(s, "top", close, cal, gpos, alarm, epos)
+            rows.append(e.assign(indicator=key))
+    tab = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["symbol", "side", "date", "lead", "hit", "indicator"])
+    out = ROOT / f"precision_{datetime.now(UTC).date()}.csv"
+    tab.to_csv(out, index=False)
+    print(tab.round(3).to_string(index=False) if len(tab) else "成熟记录中无首报，暂无精度样本")
+    return tab
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["seal", "verify", "review"])
+    ap.add_argument("cmd", choices=["seal", "verify", "review", "check", "precision"])
     ap.add_argument("--since", default="2026-01-01")
+    ap.add_argument("--max-stale", type=int, default=5, help="最近一次封存距今工作日数上限，超过即判停更（exit 2）")
     a = ap.parse_args()
     if a.cmd == "seal":
         rows = seal()
         print(f"sealed {len(rows)}: " + ", ".join(f"{r['symbol']}@{r['asof']}" for r in rows))
+    elif a.cmd == "check":
+        c = check(a.max_stale)
+        print(json.dumps(c, ensure_ascii=False, indent=1))
+        if not c["ok"]:
+            raise SystemExit(1)
+        if c["stale"]:
+            raise SystemExit(2)
+    elif a.cmd == "precision":
+        precision(a.since)
     elif a.cmd == "verify":
         v = verify()
         print(v[["asof", "symbol", "ok"]].to_string(index=False) if len(v) else "ledger 为空")

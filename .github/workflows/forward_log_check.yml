@@ -1,0 +1,29 @@
+name: forward_log_check
+# Phase 4 前瞻日志硬化：每周核验 forward_log/ledger.jsonl 的哈希链、重复、缺日、字段漂移与停更。
+# exit 1 = 哈希/重复/漂移（硬失败）；exit 2 = 最近一次封存距今 > 5 个工作日（停更告警）。
+on:
+  schedule:
+    - cron: "0 2 * * 1" # 每周一 10:00 Asia/Shanghai
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Check forward log
+        run: python -m research.pipeline.forward_log check --max-stale 5 | tee forward_log_check.json
+      - name: Precision review of matured records (top side)
+        if: always()
+        run: python -m research.pipeline.forward_log precision || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: forward-log-check-${{ github.run_id }}
+          path: |
+            forward_log_check.json
+            forward_log/precision_*.csv
