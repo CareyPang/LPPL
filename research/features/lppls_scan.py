@@ -22,7 +22,7 @@ from ..eval.dataset import SPLITS, _snapshot, price_series
 from ..labels.run_top import INDEXES
 from ..lppls import core as _core
 from ..lppls.core import K_POWER, design, lin_fit
-from ..optim.optimizers import tcgrid_lm
+from ..optim.optimizers import de_lbfgsb, tcgrid_lm
 
 # 搜索域版本（预登记 v1.7 §17.1）：v1 = 宽域（v1.1 登记：m∈[0.01,2]、ω∈[1,50]、t_c≤t₂+0.2dt）；
 # v2 = 原型 engine.js / Filimonov–Sornette 2013 域（m∈[0.01,0.99]、ω∈[2,25]、t_c≤t₂+min(0.2dt,115)）。
@@ -54,6 +54,12 @@ STK_WINDOWS = tuple(range(125, 751, 25))
 MAX_GAP_SHARE = 0.10
 COLS = ["date", "n", "tc", "m", "w", "A", "B", "C1", "C2", "sse", "r2", "pow_tc", "pow_m", "pow_B", "pow_sse",
         "lomb_w", "lomb_pn", "df_t"]
+# §20 偏离 _g3：LPPLS_G3=1 → tcgrid_lm 与 de_lbfgsb 取最小 SSE（g3_src=哪一个赢）；§22 Q3：LPPLS_Q3=K>0 → 对过 box 的窗口做 K 个
+# 循环平移对照重拟，记 q3_p=(1+#{e*≤e})/(K+1)（e=√(SSE/n)/σ_y），未过 box 的窗口 q3_p=NaN。两者默认关闭，关闭时输出与现行逐位相同。
+G3 = os.environ.get("LPPLS_G3", "") == "1"
+Q3_K = int(os.environ.get("LPPLS_Q3", "0"))
+EXTRA_COLS = (["g3_src"] if G3 else []) + (["q3_p"] if Q3_K else [])
+COLS = COLS + EXTRA_COLS
 SHORT_WINDOWS = tuple(range(30, 121, 5))
 # 仅日更/产品显示用的补充窗口（FCO 六档中的 2–4 周与 2–6 年）；不进入开发/校准/测试段扫描与评价
 XS_WINDOWS = tuple(range(10, 21, 2))
@@ -111,13 +117,53 @@ def fit_one(y: np.ndarray) -> tuple:
         y = -y
     n_random = 3 if WINDOWS_MODE == "lite" else bx["n_random"]
     r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)
+    src = "tcgrid_lm"
+    if G3:
+        r2 = de_lbfgsb(t, y, lo, hi, seed=0)
+        if r2.sse < r.sse:
+            r, src = r2, "de_lbfgsb"
     s, beta = lin_fit(t, y, *r.theta)
     sst = float(((y - y.mean()) ** 2).sum())
     rp = tcgrid_lm(t, y, lo[:2], hi[:2], seed=0, k=K_POWER, n_random=n_random)
     sp, bp = lin_fit(t, y, rp.theta[0], rp.theta[1], 0.0, K_POWER)
-    return (n, *map(float, r.theta), *map(float, beta), float(s), 1 - s / sst,
-            float(rp.theta[0]), float(rp.theta[1]), float(bp[1]), float(sp),
-            *residual_tests(t, y, *r.theta, beta))
+    row = (n, *map(float, r.theta), *map(float, beta), float(s), 1 - s / sst,
+           float(rp.theta[0]), float(rp.theta[1]), float(bp[1]), float(sp),
+           *residual_tests(t, y, *r.theta, beta))
+    if G3:
+        row = (*row, src)
+    if Q3_K:
+        row = (*row, _q3_p(y, row, lo, hi, n_random))
+    return row
+
+
+def _box_pass(y: np.ndarray, row: tuple) -> bool:
+    from .lppls_rules import _derived, rules
+    d = dict(zip(COLS[1 : 1 + len(row)], row, strict=True))
+    d.update(y_std=float(np.std(y)), date=pd.Timestamp("2000-01-01"))
+    return bool(rules(_derived(pd.DataFrame([d]))).box.iloc[0])
+
+
+def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int) -> float:
+    """§22.1：对过 box 的窗口，K 个循环平移对照（偏移 round(n/K·j)，≥5 日）各重拟一次（同一优化器组合），
+    p=(1+#{e*≤e})/(K+1)。未过 box 返回 NaN（不算，省算力）。"""
+    if not _box_pass(y, row):
+        return float("nan")
+    n = len(y)
+    t = np.arange(n, dtype=float)
+    e = np.sqrt(row[COLS.index("sse") - 1] / n) / np.std(y)
+    r = np.diff(y)
+    cnt = 0
+    for j in range(1, Q3_K + 1):
+        k = max(5, int(round(n / Q3_K * j))) % (n - 1) or 5
+        ys = y[0] + np.concatenate([[0.0], np.cumsum(np.roll(r, k))])
+        f = tcgrid_lm(t, ys, lo, hi, seed=0, n_random=n_random)
+        if G3:
+            f2 = de_lbfgsb(t, ys, lo, hi, seed=0)
+            if f2.sse < f.sse:
+                f = f2
+        if np.sqrt(f.sse / n) / np.std(ys) <= e:
+            cnt += 1
+    return (1 + cnt) / (Q3_K + 1)
 
 
 def scan_dates(sym: str, dates: list[pd.Timestamp], windows: tuple[int, ...], cal: pd.DatetimeIndex) -> pd.DataFrame:

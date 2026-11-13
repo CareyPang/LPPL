@@ -465,6 +465,11 @@ Harding–Pagan 2002（JME）、Pagan–Sossounov 2003、Lunde–Timmermann 2004
   3. 前瞻日志：已封存条目保留原 `model_version`；修复合并后的新条目记 `prereg_v1.7_v2.1`，前瞻评价按 model_version 分段统计，不混算。
 - **产品影响**：合并后日更与个股按需计算立即使用 v2.1；`_to_cal`（F2）同时修复，未来 t_c 不再被截到 as-of 日（只影响展示，个股页仍按规则隐藏 t_c）。
 
+### 20.1 偏离 _g3：优化器补全（2026-11-13；用户 2026-11-13 授权"按建议顺序"，与 §22.3 开发段重扫合并）
+- **偏离内容**：`reports/optimizer_compare.md`（Phase 1a）实证：生产 `tcgrid_lm`（10 随机起点）在窗内 t_c、低 m（≈0.3）场景只有 77% 找到全局最小（lite 62%）；`de_lbfgsb`（差分进化 + L-BFGS-B）合成 648 序列 100% 找到且中位更快；真实开发段 2182 窗配对 SSE 更低 20.8%、更高 3.3%。窗外 t_c（报警最常见形态）六法完全一致。
+- **修法**：`LPPLS_G3=1` 时 `fit_one` 同时运行 `tcgrid_lm` 与 `de_lbfgsb`，取 SSE 更小者（列 `g3_src` 记录胜者）；严格不劣于现行。默认关闭，关闭时输出与现行逐位相同（`tests/test_scan_g3q3.py`）。
+- **处置**：与 §20 第 2 条同口径——只在开发段重扫一次（`data/features/lppls_v2_g3q3/`，与 Q3 同一次 Actions 矩阵 `lppls_rescan_g3q3.yml`），用 `original_standard` 出敏感性对照；校准段、测试段不重扫、不重评；不改任何判据与裁决；是否把生产默认改为 `_g3`（模型版本升 v2.2）另行裁决，须先看对照结果。
+
 ## 21. v1.8 框架升级草案（2026-11-03；**草案，待用户逐条确认后才执行**；确认前不改任何判据、代码默认值和线上模型）
 
 动机（用户 2026-11-03）："先升级框架"——a 分清泡沫与强趋势；b t_c 改区间；c 扩样本；d Ising 序参量；e 价格层条件分位与首次触及挑战者。依据：`reports/null_calibration_stock.md`（纯幂律/强漂移零假设下 STANDARD 窗口误报 21–52%，as-of 级"有合格拟合" 53–93%）、§19.1（t_c 分位窗覆盖 1–4%，LPPLS 置信度测试段未通过）、`reports/price_layer/dd_conditioning_explore.md`。
@@ -561,7 +566,7 @@ Q3 = 现行过滤集（box / STANDARD）**且** 循环平移对照通过。只�
 - **结论：Q3 通过合成门，进入 22.3 开发段。**
 
 ### 22.3 开发段（§21.6 顺序，只在合成门通过后）
-- 6 指数 2000–2018 重扫只对已过现行过滤集的窗口加算 Q3（Actions 矩阵，如 `_g2`），输出 `lppls_v2_q3/`；用 `original_standard` 报 A1/A2/零分布与分位窗覆盖，**另报剔除 2007/08/2014/15 后的 A1/A2**（主指标）与 Phase 0 的四个精度指标（`precision_baseline`）。
+- 6 指数 2000–2018 重扫只对已过现行过滤集（box）的窗口加算 Q3（Actions 矩阵 `lppls_rescan_g3q3.yml`，`LPPLS_Q3=20`，与 §20.1 `_g3` 合并为同一次重扫，拟合与对照重拟均用 `_g3` 优化器组合），输出 `lppls_v2_g3q3/`（列 `q3_p`、`g3_src`）；评价分三臂：现行（`lppls_v2`）、`_g3`（忽略 q3_p）、`_g3`∧Q3（box ∧ q3_p ≤ 0.10）；用 `original_standard` 报 A1/A2/零分布与分位窗覆盖，**另报剔除 2007/08/2014/15 后的 A1/A2**（主指标）与 Phase 0 的四个精度指标（`precision_baseline`）。
 - 通过：剔除两轮大顶后 A1 > A1_null 且 p_med ≤ 0.05 于 ≥ 4/6 指数，且全样本 A1/A2 不低于现行判据。
 - 确认样本（外部四指数、1990s）各跑一次，只报告。
 
