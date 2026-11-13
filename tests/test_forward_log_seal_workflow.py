@@ -1,34 +1,29 @@
-"""forward_log_seal.yml 结构检查：工作日定时、只提交 forward_log/、不改已跟踪的其他文件、失败不补封。"""
+"""forward_log_seal.yml 结构检查（纯文本，不依赖 PyYAML）：工作日定时、只提交 forward_log/、不改已跟踪的其他文件、失败不补封。"""
+import re
 from pathlib import Path
 
-import yaml
-
 WF = Path(__file__).resolve().parents[1] / ".github/workflows/forward_log_seal.yml"
+TXT = WF.read_text(encoding="utf-8")
 
 
-def _steps():
-    doc = yaml.safe_load(WF.read_text(encoding="utf-8"))
-    assert doc["permissions"] == {"contents": "write"}
-    cron = doc[True]["schedule"][0]["cron"] if True in doc else doc["on"]["schedule"][0]["cron"]
+def test_schedule_and_permissions():
+    cron = re.search(r'cron:\s*"([^"]+)"', TXT).group(1)
     assert cron.split()[-1] == "1-5", "只在工作日运行"
-    job = doc["jobs"]["seal"]
-    assert job["timeout-minutes"] <= 60
-    return job["steps"]
+    assert "workflow_dispatch" in TXT
+    assert re.search(r"permissions:\s*\n\s+contents: write", TXT)
+    assert int(re.search(r"timeout-minutes:\s*(\d+)", TXT).group(1)) <= 60
+    assert re.search(r"ref:\s*main", TXT), "必须在 main 上封存"
 
 
 def test_runs_daily_update_then_seals_only_forward_log():
-    steps = _steps()
-    run = "\n".join(s.get("run", "") for s in steps)
-    assert "scripts/daily_update.sh" in run
-    assert "git add forward_log/" in run
-    adds = [ln for ln in run.splitlines() if ln.strip().startswith("git add ")]
-    assert adds == ["          git add forward_log/"] or all("forward_log/" in a for a in adds)
-    assert "git checkout -- ." in run, "其余已跟踪文件改动不得进入 main"
-    assert "git push origin HEAD:main" in run
-    assert "forward_log check" in run
+    assert "bash scripts/daily_update.sh" in TXT
+    adds = [ln.strip() for ln in TXT.splitlines() if ln.strip().startswith("git add ")]
+    assert adds == ["git add forward_log/"], adds
+    assert "git checkout -- ." in TXT, "其余已跟踪文件改动不得进入 main"
+    assert "git push origin HEAD:main" in TXT
+    assert "forward_log check" in TXT
 
 
 def test_no_backfill_flags():
-    run = "\n".join(s.get("run", "") for s in _steps())
-    assert "--asof" not in run, "封存只取当日 as-of，不得回填历史日期"
-    assert "--frozen" not in run
+    assert "--asof" not in TXT, "封存只取当日 as-of，不得回填历史日期"
+    assert "--frozen" not in TXT
