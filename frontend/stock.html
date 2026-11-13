@@ -79,6 +79,22 @@
     .chip { border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
     .chip:hover { border-color: var(--cyan); color: var(--ink); }
     .chip .m { color: var(--ink-3); margin-left: 6px; font-size: 12px; }
+    .watch-controls { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+    .watch-toggle, .watch-remove { border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); color: var(--ink-2); padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .watch-toggle:hover, .watch-remove:hover { border-color: var(--cyan); color: var(--ink); }
+    .watch-toggle[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+    .watch-toggle:disabled { opacity: .5; cursor: not-allowed; }
+    .watch-section { margin-top: var(--s3); }
+    .watch-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--s2); }
+    .watch-head h2 { margin: 0; font-size: 18px; }
+    .watch-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 6px; }
+    .watch-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s2); min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); }
+    .watch-open { all: unset; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; min-width: 0; cursor: pointer; overflow-wrap: anywhere; }
+    .watch-open:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 6px; }
+    .watch-open b { color: var(--ink); font: 500 15px var(--serif); }
+    .watch-code, .watch-asof, .watch-empty { color: var(--ink-3); font-size: 12px; }
+    .watch-statuses { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .watch-statuses .state-pill { font-size: 12px; }
     .note { font-size: 13px; color: var(--ink-3); margin: var(--s4) 0 0; }
     .status { color: var(--cyan); font-size: 14px; margin: var(--s3) 0 0; min-height: 1.7em; }
     .status:empty { display: none; }
@@ -192,6 +208,7 @@
   <script src="app/stock-session.js"></script>
   <script src="app/stock-visibility.js"></script>
   <script src="app/stock-view.js"></script>
+  <script src="app/stock-watchlist.js"></script>
 </head>
 <body>
   <header class="bar">
@@ -220,6 +237,14 @@
         <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入六位代码，例如 301196" required>
         <button type="submit">查看股票</button>
       </form>
+      <div class="watch-controls">
+        <button type="button" class="watch-toggle" id="watch-toggle" aria-pressed="false" disabled>加入自选</button>
+        <span class="muted">仅保存在此浏览器，最多 50 只</span>
+      </div>
+      <section class="watch-section" id="watch-section" hidden aria-label="本地自选股票">
+        <div class="watch-head"><h2>本地自选</h2><span class="muted">只读已发布结果</span></div>
+        <ul class="watch-list" id="watch-list"></ul>
+      </section>
       <div class="name-hint" id="name-hint" aria-live="polite"></div>
       <div class="chips" id="chips"></div>
       <p id="query-status" class="status" role="status"></p>
@@ -861,15 +886,10 @@
     const stockEvidence = (d) => d.top?.evidence_override || d.top?.lppls_confidence?.evidence
       || d.top?.evidence || d.evidence || d.stock_meta?.evidence || null;
 
-    function summaryHtml(d, name) {
+    function summaryStates(d) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
       const window = top.window || {};
-      const indicators = top.indicators || {};
-      const shownScales = scales.filter((scale) => !hiddenEv(
-        confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
-      ) && Number.isFinite(indicators[scale]?.n_qualified_standard));
-      const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
       const signalEvidence = confidence.evidence || top.evidence || d.evidence || top.evidence_override;
       const canShowStatus = ['signal', 'no_qualified_fit', 't1_not_qualified'].includes(top.signal_status)
         && !hiddenEv(signalEvidence);
@@ -877,6 +897,21 @@
       const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有风险窗口']
         : top.signal_status === 'signal' ? ['hot', '有合格拟合']
           : ['', signalStatus[top.signal_status]];
+      const dipState = !d.dip ? ['', '暂无结果']
+        : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
+      return { topState, dipState, canShowStatus, hasWindow };
+    }
+
+    function summaryHtml(d, name) {
+      const top = d.top || {};
+      const confidence = top.lppls_confidence || {};
+      const window = top.window || {};
+      const { topState, dipState, canShowStatus, hasWindow } = summaryStates(d);
+      const indicators = top.indicators || {};
+      const shownScales = scales.filter((scale) => !hiddenEv(
+        confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
+      ) && Number.isFinite(indicators[scale]?.n_qualified_standard));
+      const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
       const topText = hasWindow
         ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
         : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
@@ -888,7 +923,6 @@
       const fh = dip.first_hit?.fh60 || {};
       const verdict = dip.oos || {};
       const inStructure = dip.in_structure === true;
-      const dipState = !d.dip ? ['', '暂无结果'] : inStructure ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
       let dipText = '暂无抄底面板结果。';
       if (d.dip) {
         dipText = inStructure
@@ -959,14 +993,115 @@
     $('code').addEventListener('input', () => {
       $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
       showHint();
+      updateWatchToggle();
     });
     const go = (code) => {
       $('code').value = code;
       showHint();
       $('search').requestSubmit();
     };
-    LPPL.stock.index().then((index) => {
-      nameIndex = { ...(index || {}), ...nameIndex };
+
+    const watchStorage = (() => {
+      try { return window.localStorage; } catch { return null; }
+    })();
+    const stockViewCode = /^(?:60|68|00|30|43|83|87|92)\d{4}$/;
+    let selectedCode = stockViewCode.test($('code').value.trim()) ? $('code').value.trim() : '';
+    let watchIndex = {};
+    let watchRenderSerial = 0;
+    const watchResultCache = new Map();
+
+    function currentWatchCode() {
+      return selectedCode && $('code').value.trim() === selectedCode ? selectedCode : '';
+    }
+    function updateWatchToggle() {
+      const code = currentWatchCode();
+      const included = code && StockWatchlist.read(watchStorage).includes(code);
+      $('watch-toggle').disabled = !code || !watchStorage;
+      $('watch-toggle').setAttribute('aria-pressed', String(!!included));
+      $('watch-toggle').textContent = included ? '已在自选 · 移除' : '加入自选';
+    }
+    function hasWatchStatuses(value) {
+      return value && typeof value === 'object'
+        && value.top && typeof value.top === 'object' && typeof value.top.signal_status === 'string'
+        && value.dip && typeof value.dip === 'object' && typeof value.dip.in_structure === 'boolean';
+    }
+    function watchResult(code) {
+      const indexed = watchIndex[code];
+      if (hasWatchStatuses(indexed)) return Promise.resolve({ data: indexed, error: false });
+      if (!watchResultCache.has(code)) {
+        watchResultCache.set(code, LPPL.stock.remote(code, 'latest')
+          .then(data => ({ data, error: false }))
+          .catch(() => ({ data: null, error: true })));
+      }
+      return watchResultCache.get(code);
+    }
+    async function renderWatchlist(refresh = false) {
+      const codes = StockWatchlist.read(watchStorage);
+      const section = $('watch-section');
+      section.hidden = codes.length === 0;
+      const serial = ++watchRenderSerial;
+      if (refresh) watchResultCache.clear();
+      const rows = await Promise.all(codes.map(async code => ({ code, ...await watchResult(code) })));
+      if (serial !== watchRenderSerial) return;
+      $('watch-list').innerHTML = rows.map(({ code, data, error }) => {
+        const name = realName(data?.name) || realName(watchIndex[code]?.name) || '';
+        const labels = data ? summaryStates(data) : null;
+        const status = data
+          ? `<span class="watch-asof">截至 ${esc(data.asof || '—')}</span><span class="watch-statuses"><span>逃顶 <span class="state-pill ${labels.topState[0]}">${esc(labels.topState[1])}</span></span><span>抄底 <span class="state-pill ${labels.dipState[0]}">${esc(labels.dipState[1])}</span></span></span>`
+          : `<span class="watch-empty">${error ? '暂时无法读取已发布结果' : '暂无已发布结果'}</span>`;
+        return `<li><button type="button" class="watch-open" data-watch-open="${esc(code)}"><b>${esc(name || code)}</b>${name ? `<span class="watch-code">${esc(code)}</span>` : ''}${status}</button><button type="button" class="watch-remove" data-watch-remove="${esc(code)}" aria-label="从自选移除 ${esc(code)}">移除</button></li>`;
+      }).join('');
+    }
+
+    $('search').addEventListener('submit', () => {
+      const code = $('code').value.trim();
+      selectedCode = stockViewCode.test(code) ? code : '';
+      updateWatchToggle();
+    });
+    $('watch-toggle').addEventListener('click', () => {
+      const code = currentWatchCode();
+      if (!code) return;
+      const list = StockWatchlist.read(watchStorage);
+      let next;
+      if (list.includes(code)) next = list.filter(value => value !== code);
+      else if (list.length >= StockWatchlist.MAX) {
+        $('query-status').textContent = `自选最多 ${StockWatchlist.MAX} 只。`;
+        return;
+      } else next = [code, ...list];
+      if (StockWatchlist.write(watchStorage, next) === null) {
+        $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+        return;
+      }
+      updateWatchToggle();
+      void renderWatchlist();
+    });
+    $('watch-list').addEventListener('click', event => {
+      const remove = event.target.closest('[data-watch-remove]');
+      if (remove) {
+        const saved = StockWatchlist.write(watchStorage,
+          StockWatchlist.read(watchStorage).filter(code => code !== remove.dataset.watchRemove));
+        if (saved === null) {
+          $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+          return;
+        }
+        updateWatchToggle();
+        void renderWatchlist();
+        return;
+      }
+      const open = event.target.closest('[data-watch-open]');
+      if (open && StockWatchlist.isValid(open.dataset.watchOpen)) go(open.dataset.watchOpen);
+    });
+    window.addEventListener('storage', event => {
+      if (event.key === StockWatchlist.KEY || event.key === null) {
+        updateWatchToggle();
+        void renderWatchlist(true);
+      }
+    });
+    updateWatchToggle();
+
+    const stockIndex = LPPL.stock.index().then((index) => {
+      watchIndex = index && typeof index === 'object' && !Array.isArray(index) ? index : {};
+      nameIndex = { ...watchIndex, ...nameIndex };
       $('chips').innerHTML = ['301196', '002490', '600519', '300750']
         .filter((code) => nameIndex[code])
         .map((code) => `<button class="chip" type="button" data-code="${code}">${esc(realName(nameIndex[code].name) || code)}<span class="m">${code}</span></button>`)
@@ -978,7 +1113,12 @@
         $('stock-code').textContent = name;
         $('stock-name').textContent = realName(nameIndex[name].name);
       }
-    }).catch(() => {});
+      return watchIndex;
+    }).catch(() => {
+      watchIndex = {};
+      return watchIndex;
+    });
+    void stockIndex.then(() => renderWatchlist());
 
   </script>
 </body>
