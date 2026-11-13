@@ -22,6 +22,15 @@ def test_runs_daily_update_then_seals_only_forward_log():
     assert "git checkout -- ." in TXT, "其余已跟踪文件改动不得进入 main"
     assert "git push origin HEAD:main" in TXT
     assert "forward_log check" in TXT
+    assert 'git config user.name' in TXT and 'git config user.email' in TXT, "rebase 需要提交者身份"
+
+
+def test_guard_discards_non_today_asof():
+    i = TXT.index("Guard")
+    j = TXT.index("Commit forward_log to main")
+    guard = TXT[i:j]
+    assert "Asia/Shanghai" in guard and 'git checkout -- forward_log/' in guard and "git clean -fdq forward_log/" in guard
+    assert i < j, "守卫必须在提交之前"
 
 
 def test_no_backfill_flags():
