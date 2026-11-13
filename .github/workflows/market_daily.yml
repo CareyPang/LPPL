@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - research/data/market_base.py
+      - research/data/events.py
       - research/data/abnormal.py
       - research/data/range_stats.py
       - frontend/market.html
@@ -59,6 +60,33 @@ jobs:
           echo "limit_ok=$limit_ok" >> "$GITHUB_OUTPUT"
           if [[ "$limit_ok" != "true" ]]; then
             echo "limit_pools failed; keeping the previous published snapshot"
+          fi
+      - name: Fetch and publish event calendar
+        if: ${{ always() && steps.install.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          git fetch --no-tags origin stock-results
+          mkdir -p out/events
+          if git cat-file -e origin/stock-results:events/events_latest.json 2>/dev/null; then
+            git show origin/stock-results:events/events_latest.json > out/events/previous.json
+            python -m research.data.events --date "$snapshot_date" --out out/events --previous out/events/previous.json
+          else
+            python -m research.data.events --date "$snapshot_date" --out out/events
+          fi
+          git switch -c events-publish origin/stock-results
+          mkdir -p events
+          cp out/events/events_latest.json events/events_latest.json
+          cp "out/events/events_${snapshot_date}.json" "events/events_${snapshot_date}.json"
+          git add events/events_latest.json "events/events_${snapshot_date}.json"
+          if ! git diff --cached --quiet; then
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "events: 发布事件日历 ${snapshot_date}"
+            git push origin HEAD:stock-results
+            gh workflow run pages.yml --ref main
           fi
       - name: Collect abnormal alerts
         id: abnormal
@@ -119,6 +147,9 @@ jobs:
           python-version: "3.12"
       - name: Install project
         run: python -m pip install -e .
+      - name: Smoke event calendar
+        continue-on-error: true
+        run: python -m research.data.events --out out/events
       - name: Smoke abnormal output
         continue-on-error: true
         run: python -m research.data.abnormal --market web/mock/data/market/market_latest.json --out out/abnormal

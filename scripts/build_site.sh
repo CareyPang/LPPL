@@ -18,6 +18,10 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
   if git -C "$ROOT" cat-file -e stock-results:market 2>/dev/null; then
     git -C "$ROOT" archive stock-results market | tar -x -C "$SITE/lab/mock/data/"
   fi
+  if git -C "$ROOT" cat-file -e stock-results:events/events_latest.json 2>/dev/null; then
+    mkdir -p "$SITE/lab/mock/data/events"
+    git -C "$ROOT" archive stock-results events | tar -x -C "$SITE/lab/mock/data/"
+  fi
   if git -C "$ROOT" cat-file -e stock-results:macro/macro_latest.json 2>/dev/null; then
     mkdir -p "$SITE/lab/mock/data/macro"
     git -C "$ROOT" archive stock-results macro | tar -x -C "$SITE/lab/mock/data/"

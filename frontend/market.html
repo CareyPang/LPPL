@@ -86,6 +86,17 @@ td.r, th.r { text-align: right; }
 .abnormal-table { min-width: 860px; }
 .range-table { min-width: 520px; }
 #s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
+.events-timeline { max-width: 100%; overflow-x: auto; }
+.events-days { display: grid; grid-template-columns: repeat(31, minmax(24px, 1fr)); gap: 4px; min-width: 930px; }
+.events-day { display: grid; grid-template-rows: auto 68px auto; gap: 3px; text-align: center; font: 10px var(--f-m); color: var(--ink-3); }
+.events-day-bar { display: flex; align-items: flex-end; background: var(--bg); border: 1px solid var(--grid); }
+.events-day-bar i { display: block; width: 100%; background: var(--warn); }
+.events-table { max-width: 100%; max-height: 320px; overflow: auto; }
+.events-table table { min-width: 680px; }
+.events-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+.events-columns > section { min-width: 0; }
+.events-filters { margin: var(--s2) 0 var(--s3); }
+.events-reason { white-space: normal; min-width: 140px; max-width: 260px; overflow-wrap: anywhere; }
 .macro-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--s4); }
 .macro-card { min-width: 0; border: 1px solid var(--grid); padding: var(--s3); }
 .macro-chart { display: block; width: 100%; max-width: 100%; height: auto; background: var(--bg); }
@@ -99,6 +110,7 @@ td.r, th.r { text-align: right; }
 .macro-terms { overflow-wrap: anywhere; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
+@media (max-width: 1000px) { .events-columns { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .macro-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 </style>
@@ -138,6 +150,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <button class="chip" type="button" data-range-window="20" aria-pressed="false">20日</button>
     </div>
     <div id="range-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-events" aria-labelledby="h-events">
+    <div class="sec-h"><h2 id="h-events">事件日历</h2><span class="ev">descriptive</span><span class="src" id="src-events"></span></div>
+    <div id="events-body"><p class="note">事件数据加载中…</p></div>
   </section>
 
   <section class="sec wide" id="s-board" aria-labelledby="h-board">
@@ -539,6 +556,39 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        </tbody></table></div><p class="note">${E(V.note || '')}</p>`;
   }
 
+  let Events = null, eventFilter = '全部';
+  function renderEvents() {
+    if (!Events) return;
+    const src = Events.sources || {}, lift = Events.lift || [], dividend = Events.dividend || [], forecast = Events.forecast || [];
+    $('src-events').textContent = ['lift', 'dividend', 'forecast'].map((k) => `${k} n=${src[k]?.n ?? 0}${src[k]?.stale ? ' stale' : ''}`).join(' · ');
+    const warnings = ['lift', 'dividend', 'forecast'].filter((k) => src[k]?.ok === false)
+      .map((k) => `<p class="warnl">${E(k)} 源不可用${src[k].stale ? '，沿用上次发布数据' : ''}：${E(src[k].error || '')}</p>`).join('');
+    const byDate = Events.by_date || {}, range = Events.window?.lift || [], days = [];
+    if (range.length === 2) {
+      const d = new Date(`${range[0]}T00:00:00Z`), last = new Date(`${range[1]}T00:00:00Z`);
+      while (d <= last) { days.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
+    }
+    const maxCap = Math.max(0, ...days.map((d) => byDate[d]?.lift_cap).filter(num));
+    const timeline = `<div class="events-timeline"><div class="events-days">${days.map((d) => {
+      const b = byDate[d], n = b ? b.lift_n : src.lift?.ok ? 0 : null, cap = b ? b.lift_cap : src.lift?.ok ? 0 : null;
+      const h = num(cap) && maxCap ? Math.max(1, cap / maxCap * 100) : 0;
+      return `<div class="events-day" title="${E(d)} 解禁 ${n ?? '—'} 批 · ${num(cap) ? (cap / 10000).toFixed(2) + '亿元' : '—'}"><span>${n ?? '—'}</span><div class="events-day-bar"><i style="height:${h.toFixed(1)}%"></i></div><small>${d.slice(5)}</small></div>`;
+    }).join('')}</div></div>`;
+    const top = [...lift].sort((a, b) => (b.lift_market_cap_10k ?? -Infinity) - (a.lift_market_cap_10k ?? -Infinity)).slice(0, 20);
+    const liftRows = top.map((r) => `<tr><td>${E(r.free_date)}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.free_shares_type || '—')}</td><td class="r">${num(r.current_free_shares_10k) ? r.current_free_shares_10k.toFixed(2) : '—'}</td><td class="r">${num(r.free_ratio) ? (r.free_ratio * 100).toFixed(2) + '%' : '—'}</td><td class="r">${num(r.lift_market_cap_10k) ? (r.lift_market_cap_10k / 10000).toFixed(2) : '—'}</td></tr>`).join('');
+    const divRows = dividend.map((r) => `<tr><td>${E(r.ex_dividend_date)}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.equity_record_date || '—')}</td><td class="r">${E(r.pretax_bonus_rmb_10 ?? '—')}</td><td>${E(r.assign_progress || '—')}</td><td>${E(r.plan_text || '')}</td></tr>`).join('');
+    const types = ['全部', '预增', '预减', '扭亏', '首亏'];
+    const rows = forecast.filter((r) => eventFilter === '全部' || r.predict_type === eventFilter).map((r) => {
+      const h = r.headline || {}, amount = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
+      const other = (r.other_indicators || []).map((i) => `<p>${E(i.indicator || '指标')} ${amount(i.amount_lower)}～${amount(i.amount_upper)}</p>`).join('');
+      return `<tr><td>${E(r.notice_date)}<br>${E(r.report_date || '—')}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.predict_type || '—')}</td><td>${amount(h.amount_lower)}～${amount(h.amount_upper)}</td><td>${h.change_pct_lower ?? '—'}～${h.change_pct_upper ?? '—'}%</td><td class="events-reason">${other}${E(h.reason || h.content || '')}</td></tr>`;
+    }).join('');
+    $('events-body').innerHTML = `${warnings}<p class="note">公告事件，来源东财数据中心，截至 ${E(Events.asof)}。未来窗口 ${E(range[0] || '—')} 至 ${E(range[1] || '—')} · 解禁市值单位亿元；派息元/10股。</p><h3>未来 30 日解禁时间轴</h3>${timeline}
+      <div class="events-columns"><section><h3>解禁市值前 20</h3><div class="events-table"><table><thead><tr><th>日期</th><th>代码 / 名称</th><th>类型</th><th>解禁股数（万股）</th><th>FREE_RATIO</th><th>市值（亿元）</th></tr></thead><tbody>${liftRows}</tbody></table></div></section>
+      <section><h3>除权除息</h3><div class="events-table"><table><thead><tr><th>除权日</th><th>代码 / 名称</th><th>登记日</th><th>派息（元/10股）</th><th>进度</th><th>方案</th></tr></thead><tbody>${divRows}</tbody></table></div></section></div>
+      <section><h3>近 30 日业绩预告</h3><div class="chips events-filters">${types.map((t) => `<button class="chip" data-event-filter="${E(t)}" aria-pressed="${t === eventFilter}">${E(t)}</button>`).join('')}</div><div class="events-table"><table><thead><tr><th>公告日 / 报告期</th><th>代码 / 名称</th><th>类型</th><th>归母净利润</th><th>同比</th><th>其他指标 / 说明</th></tr></thead><tbody>${rows}</tbody></table></div></section><p class="note">${E(Events.note || '')}</p>`;
+  }
+
   function renderMacro() {
     const box = $('macro-body');
     if (!box) return;
@@ -635,15 +685,21 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
   document.addEventListener('click', (e) => {
     const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
+    const ef = e.target.closest('[data-event-filter]');
     if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
     if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
+    if (ef) { eventFilter = ef.dataset.eventFilter; renderEvents(); }
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
   LPPL.market().then((d) => {
-    if (!d) { $('asof').textContent = '市场数据未加载'; document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>'; return; }
+    if (!d) { $('asof').textContent = '市场数据未加载'; M = {}; renderAll(); return; }
     M = d; renderAll();
   }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
+  LPPL.events().then((d) => {
+    if (!d) { $('events-body').innerHTML = '<p class="fail">事件数据文件未加载。</p>'; return; }
+    Events = d; renderEvents();
+  }).catch((e) => { $('events-body').innerHTML = `<p class="fail">${E(e.message || '事件数据加载失败')}</p>`; });
   LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
     .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });
 })();
