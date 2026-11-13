@@ -97,9 +97,19 @@ function resultFor(job, extra = {}) {
     requested_at: job.requested_at, ...extra };
 }
 
+function lastCloseDate(now = Date.now()) {
+  return new Date(lastCloseInstant(now) + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function previousDate(value) {
+  return new Date(Date.parse(`${value}T00:00:00Z`) - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 function publishedEntry(extra = {}) {
-  return { status: 'eligible', asof: '2026-11-12', fit_code_version: 'fit-v1', source_sha: SHA,
-    generated_at: new Date(lastCloseInstant(Date.now()) + 1000).toISOString(),
+  const lastClose = lastCloseInstant(Date.now());
+  return { status: 'eligible', asof: new Date(lastClose + 8 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    fit_code_version: 'fit-v1', source_sha: SHA,
+    generated_at: new Date(lastClose + 1000).toISOString(),
     history_compatible: false, history_asof: null, history_weeks: 0, ...extra };
 }
 
@@ -152,20 +162,28 @@ test('missing or broken coordination and secret fail closed', async () => {
 
 test('fresh published current result is returned before deduplication, budget or dispatch', async () => {
   await withUpstream(upstream(), async server => {
-    server.outputs.set('stock/index.json', { '600519': publishedEntry({ job_id: undefined }) });
+    const entry = publishedEntry();
+    server.outputs.set('stock/index.json', {
+      '600519': entry,
+      '600520': { status: 'eligible', payload: 'x'.repeat(100_000) },
+    });
     const env = environment();
     const response = await query(env);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
       schema_version: 'stock_query_v1', queued: false, cached: true, deduped: false,
-      code: '600519', mode: 'current', history_weeks: 0, asof: '2026-11-12',
-      generated_at: server.outputs.get('stock/index.json')['600519'].generated_at,
+      code: '600519', mode: 'current', history_weeks: 0, asof: entry.asof,
+      generated_at: entry.generated_at,
       job_id: null, source_sha: SHA, phase: 'current_ready', current_ready: true,
       history_ready: false, reuse_reason: 'published_after_last_close',
     });
     assert.equal(server.dispatches.length, 0);
     assert.equal(env.QUERY_BUDGET.storage.get('global')?.values.size ?? 0, 0);
     assert.equal(server.calls.filter(url => url.includes('/contents/stock/index.json')).length, 1);
+    const stored = await env.STOCK_JOBS.storage.get('600519').get('published_stock_index');
+    assert.deepEqual(Object.keys(stored).sort(), ['at', 'value']);
+    assert.deepEqual(stored.value, entry);
+    assert.equal(Object.hasOwn(stored.value, '600520'), false);
   });
 });
 
@@ -192,6 +210,42 @@ test('nightly published result without a job id is reused with null job_id', asy
   });
 });
 
+test('nightly result older than the last-close date dispatches despite a fresh generated_at', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry();
+    entry.asof = previousDate(entry.asof);
+    delete entry.job_id;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 202);
+    assert.equal(server.dispatches.length, 1);
+  });
+});
+
+test('nightly result on the last-close date is reusable without a job id', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry();
+    delete entry.job_id;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).cached, true);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
+test('query result produced after close may reuse an older asof', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry({ job_id: '00000000-0000-4000-8000-000000000001' });
+    entry.asof = previousDate(entry.asof);
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).job_id, entry.job_id);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
 test('missing, unreadable or malformed published index falls through to dispatch', async () => {
   for (const [label, response] of [
     ['404', new Response(null, { status: 404 })],
@@ -201,23 +255,26 @@ test('missing, unreadable or malformed published index falls through to dispatch
     const server = upstream({ handle: async url =>
       url.includes('/contents/stock/index.json') ? response : undefined });
     await withUpstream(server, async () => {
-      assert.equal((await query(environment())).status, 202, label);
+      const env = environment();
+      assert.equal((await query(env)).status, 202, label);
       assert.equal(server.dispatches.length, 1, label);
+      assert.equal((await env.STOCK_JOBS.storage.get('600519').get('published_stock_index')).value, null);
     });
   }
 });
 
 test('published history requires sufficient weeks and matching current asof', async () => {
   await withUpstream(upstream(), async server => {
-    server.outputs.set('stock/index.json', { '600519': publishedEntry({
-      history_compatible: true, history_asof: '2026-11-12', history_weeks: 26,
-    }) });
+    const entry = publishedEntry({ history_compatible: true, history_weeks: 26 });
+    entry.history_asof = entry.asof;
+    server.outputs.set('stock/index.json', { '600519': entry });
     const response = await query(environment(), { code: '600519', mode: 'history', history_weeks: 104 });
     assert.equal(response.status, 202);
     assert.equal(server.dispatches.length, 1);
   });
   await withUpstream(upstream(), async server => {
-    const entry = publishedEntry({ history_compatible: true, history_asof: '2026-11-12', history_weeks: 104 });
+    const entry = publishedEntry({ history_compatible: true, history_weeks: 104 });
+    entry.history_asof = entry.asof;
     server.outputs.set('stock/index.json', { '600519': entry });
     const response = await query(environment(), { code: '600519', mode: 'history', history_weeks: 26 });
     assert.equal(response.status, 200);

@@ -375,6 +375,17 @@ def test_nightly_current_without_job_id_survives_older_query_record(tmp_path):
     assert json.loads((published / "index.json").read_text())["600519"] == index_before
 
 
+def test_requested_at_without_job_id_is_rejected(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    _write(out, "600519.json", {
+        "code": "600519",
+        "requested_at": "2026-11-06T00:30:00Z",
+        "source_sha": "a" * 40,
+    })
+    with pytest.raises(ValueError, match="job_id, requested_at and source_sha must be supplied together"):
+        merge_results(published, out, ["600519"])
+
+
 def test_new_failure_preserves_current_result_and_status(tmp_path):
     published, out = tmp_path / "stock", tmp_path / "out"
     latest = _job_record()

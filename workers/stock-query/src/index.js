@@ -33,10 +33,14 @@ function validAsOfDate(value) {
 function reusableCurrent(entry, now) {
   const generatedAt = Object.hasOwn(entry || {}, 'current_generated_at')
     ? entry.current_generated_at : entry?.generated_at;
+  const lastClose = lastCloseInstant(now);
+  const lastCloseDate = new Date(lastClose + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const queryRun = typeof entry?.job_id === 'string' && entry.job_id.length > 0;
   return entry && typeof entry === 'object' && SUCCESS_STATUSES.has(entry.status)
     && validAsOfDate(entry.asof) && typeof entry.fit_code_version === 'string' && entry.fit_code_version.length > 0
     && SHA_PATTERN.test(entry.source_sha || '') && timestamp(generatedAt) !== null
-    && Date.parse(generatedAt) >= lastCloseInstant(now);
+    && Date.parse(generatedAt) >= lastClose
+    && (entry.asof >= lastCloseDate || queryRun);
 }
 
 async function readPublishedIndex(env) {
@@ -354,12 +358,12 @@ export class StockQueryState extends SerializedObject {
       try {
         const response = await readPublishedIndex(this.env);
         if (response.status === 200 && response.data && typeof response.data === 'object'
-            && !Array.isArray(response.data)) value = response.data;
+            && !Array.isArray(response.data)) value = response.data[code] ?? null;
       } catch { /* An unavailable or malformed index falls through to normal dispatch. */ }
       cachedIndex = { at: Date.now(), value };
       await this.ctx.storage.put(indexKey, cachedIndex);
     }
-    const published = cachedIndex.value?.[code];
+    const published = cachedIndex.value;
     if (reusableCurrent(published, Date.now()) &&
         (mode === 'current' || (published.history_compatible === true
           && published.history_asof === published.asof

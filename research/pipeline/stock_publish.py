@@ -107,7 +107,7 @@ def merge_results(stock_dir: Path, result_dir: Path, codes: list[str], *, varian
             value = read_record(path)
             if value.get("code", code) != code:
                 raise ValueError("result code does not match its filename")
-            if value.get("job_id") is not None:
+            if value.get("job_id") is not None or value.get("requested_at") is not None:
                 job = cli_job(value.get("job_id"), value.get("requested_at"), value.get("source_sha"))
                 expected = "history" if suffix == "_history" else "current"
                 if suffix != "_error" and value.get("mode") != expected:
