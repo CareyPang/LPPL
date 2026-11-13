@@ -189,6 +189,29 @@
       e[mode + 'Status'] = 'submitting'; delete e.issues[mode]; emit();
       try {
         const result = await api.request(code, { mode, historyWeeks: mode === 'history' ? 104 : 0 });
+        if (result?.cached === true) {
+          if (result.code !== code || result.mode !== mode) throw Error('已发布结果身份不匹配。');
+          const [latest, history] = await Promise.all([
+            api.remote(code, 'latest'),
+            mode === 'history' ? api.remote(code, 'history') : Promise.resolve(null),
+          ]);
+          if (!latest || latest.symbol !== symbol(code) ||
+              (mode === 'history' && (!history || history.symbol !== symbol(code)))) {
+            throw Error('已发布结果暂时无法读取，请稍后重试。');
+          }
+          applyCurrent(e, latest);
+          e.currentStatus = 'current_ready';
+          e.refreshFailed = false;
+          e.stale = stale(e.current, e.market);
+          if (mode === 'history') {
+            applyHistory(e, history);
+            e.historyStatus = 'history_ready';
+          }
+          e.autoAttempted = true;
+          delete e.issues[mode];
+          emit();
+          return result;
+        }
         if (!JOB.test(String(result?.job_id)) || !Number.isFinite(Date.parse(result.requested_at))) {
           throw Error('查询服务尚未支持可恢复任务，请稍后重试。');
         }

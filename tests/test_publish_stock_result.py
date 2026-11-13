@@ -308,32 +308,71 @@ def _write(directory, name, record):
 def test_history_only_publishes_job_result_without_replacing_current(tmp_path):
     origin, repo = _repositories(tmp_path)
     out = repo / "out"
-    current = _job_record()
+    current = _job_record() | {"generated_at": "2026-11-06T00:00:00Z"}
     _write(out, "600519.json", current)
     _publish(repo, out, "600519", weeks="0")
     (out / "600519.json").unlink()
-    history = _job_record("history", "2026-11-06T00:01:00Z")
+    history = _job_record("history", "2026-11-06T00:01:00Z") | {
+        "generated_at": "2026-11-06T00:01:00Z",
+    }
     _write(out, "600519_history.json", history)
     _publish(repo, out, "600519", weeks="104")
     assert _remote_json(origin, "stock/600519.json") == current
     assert _remote_json(origin, "stock/600519_history.json") == history
     assert _remote_json(origin, f"stock/jobs/{history['job_id']}/600519_history.json") == history
-    assert _remote_json(origin, "stock/index.json")["600519"]["history_weeks"] == 2
+    entry = _remote_json(origin, "stock/index.json")["600519"]
+    assert entry["history_weeks"] == 2
+    assert entry["current_generated_at"] == current["generated_at"]
+    assert entry["history_generated_at"] == history["generated_at"]
 
 
 def test_late_job_and_error_are_archived_without_overwriting_new_good_result(tmp_path):
     published, out = tmp_path / "stock", tmp_path / "out"
-    latest = _job_record(requested_at="2026-11-06T01:00:00Z")
+    latest = _job_record(requested_at="2026-11-06T01:00:00Z") | {
+        "generated_at": "2026-11-06T01:00:00Z",
+    }
     _write(out, "600519.json", latest)
     merge_results(published, out, ["600519"])
-    old = _job_record(requested_at="2026-11-06T00:00:00Z")
+    index_before = json.loads((published / "index.json").read_text())["600519"]
+    assert index_before["current_generated_at"] == latest["generated_at"]
+    assert index_before["history_generated_at"] is None
+    old = _job_record(requested_at="2026-11-06T00:00:00Z") | {
+        "generated_at": "2026-11-06T00:00:00Z",
+    }
     error = old | {"error": "old failure", "error_code": "COMPUTE_FAILED"}
     _write(out, "600519.json", old)
     _write(out, "600519_error.json", error)
     merge_results(published, out, ["600519"])
     assert json.loads((published / "600519.json").read_text()) == latest
+    assert json.loads((published / "index.json").read_text())["600519"] == index_before
     assert not (published / "600519_error.json").exists()
     assert (published / "jobs" / old["job_id"] / "600519_error.json").exists()
+
+
+def test_nightly_current_without_job_id_survives_older_query_record(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    nightly = {
+        "code": "600519",
+        "symbol": "sh600519",
+        "asof": "2026-11-05",
+        "generated_at": "2026-11-06T01:00:00Z",
+        "source_sha": "a" * 40,
+        "fit_code_version": "fit-v1",
+        "stock_meta": {"status": "eligible", "variant": "stk_lite"},
+    }
+    _write(out, "600519.json", nightly)
+    merge_results(published, out, ["600519"])
+    index_before = json.loads((published / "index.json").read_text())["600519"]
+    assert index_before["current_generated_at"] == nightly["generated_at"]
+
+    query = _job_record(requested_at="2026-11-06T00:30:00Z") | {
+        "asof": nightly["asof"], "generated_at": "2026-11-06T00:30:00Z",
+    }
+    _write(out, "600519.json", query)
+    merge_results(published, out, ["600519"])
+
+    assert json.loads((published / "600519.json").read_text()) == nightly
+    assert json.loads((published / "index.json").read_text())["600519"] == index_before
 
 
 def test_new_failure_preserves_current_result_and_status(tmp_path):

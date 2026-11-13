@@ -8,6 +8,41 @@ const SUFFIXES = { latest: '.json', history: '_history.json', error: '_error.jso
 const ACTIVE = new Set(['dispatching', 'dispatch_unknown', 'pending', 'queued', 'requested', 'waiting', 'in_progress']);
 const MARKET_TTL_MS = 60_000;
 const STATUS_TTL_MS = 10_000;
+const INDEX_TTL_MS = 60_000;
+const SUCCESS_STATUSES = new Set([
+  'success', 'eligible', 'insufficient_history', 'st_degenerate', 'degenerate',
+  'st', 'suspended', 'delisted_or_long_suspended',
+]);
+
+export function lastCloseInstant(now = new Date()) {
+  const instant = now instanceof Date ? now.getTime() : Number(now);
+  if (!Number.isFinite(instant)) return NaN;
+  const shanghai = new Date(instant + 8 * 60 * 60 * 1000);
+  let cutoff = Date.UTC(shanghai.getUTCFullYear(), shanghai.getUTCMonth(), shanghai.getUTCDate(), 7, 30);
+  if (cutoff > instant) cutoff -= 24 * 60 * 60 * 1000;
+  while ([0, 6].includes(new Date(cutoff).getUTCDay())) cutoff -= 24 * 60 * 60 * 1000;
+  return cutoff;
+}
+
+function validAsOfDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && Number.isFinite(Date.parse(`${value}T00:00:00Z`))
+    && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+}
+
+function reusableCurrent(entry, now) {
+  const generatedAt = Object.hasOwn(entry || {}, 'current_generated_at')
+    ? entry.current_generated_at : entry?.generated_at;
+  return entry && typeof entry === 'object' && SUCCESS_STATUSES.has(entry.status)
+    && validAsOfDate(entry.asof) && typeof entry.fit_code_version === 'string' && entry.fit_code_version.length > 0
+    && SHA_PATTERN.test(entry.source_sha || '') && timestamp(generatedAt) !== null
+    && Date.parse(generatedAt) >= lastCloseInstant(now);
+}
+
+async function readPublishedIndex(env) {
+  return fetchJSON(`https://api.github.com/repos/${repo(env)}/contents/stock/index.json?ref=stock-results`,
+    { headers: githubHeaders(env, 'application/vnd.github.raw') });
+}
 
 function timestamp(value) {
   return typeof value === 'string' && ISO_PATTERN.test(value) && Number.isFinite(Date.parse(value))
@@ -312,12 +347,51 @@ export class StockQueryState extends SerializedObject {
   }
 
   async query({ code, mode, history_weeks, ip }) {
+    const indexKey = 'published_stock_index';
+    let cachedIndex = await this.ctx.storage.get(indexKey);
+    if (!cachedIndex || Date.now() - cachedIndex.at >= INDEX_TTL_MS) {
+      let value = null;
+      try {
+        const response = await readPublishedIndex(this.env);
+        if (response.status === 200 && response.data && typeof response.data === 'object'
+            && !Array.isArray(response.data)) value = response.data;
+      } catch { /* An unavailable or malformed index falls through to normal dispatch. */ }
+      cachedIndex = { at: Date.now(), value };
+      await this.ctx.storage.put(indexKey, cachedIndex);
+    }
+    const published = cachedIndex.value?.[code];
+    if (reusableCurrent(published, Date.now()) &&
+        (mode === 'current' || (published.history_compatible === true
+          && published.history_asof === published.asof
+          && Number.isInteger(published.history_weeks) && published.history_weeks >= history_weeks))) {
+      return Response.json({
+        schema_version: 'stock_query_v1',
+        queued: false,
+        cached: true,
+        deduped: false,
+        code,
+        mode,
+        history_weeks: mode === 'history' ? published.history_weeks : 0,
+        asof: published.asof,
+        generated_at: Object.hasOwn(published, 'current_generated_at')
+          ? published.current_generated_at : published.generated_at,
+        job_id: published.job_id ?? null,
+        source_sha: published.source_sha,
+        phase: `${mode}_ready`,
+        current_ready: true,
+        history_ready: mode === 'history',
+        reuse_reason: 'published_after_last_close',
+      });
+    }
     const activeId = await this.ctx.storage.get(`active:${mode}`);
     if (activeId) {
       const active = await this.ctx.storage.get(`job:${activeId}`);
       if (active && ACTIVE.has(active.status)) {
         try { await this.refresh(active); } catch { /* Fail closed: reuse rather than risk another dispatch. */ }
-        if (ACTIVE.has(active.status)) return Response.json(jobResponse(active, true), { status: 202 });
+        const sufficientHistory = mode !== 'history' || active.history_weeks >= history_weeks;
+        if (ACTIVE.has(active.status) && sufficientHistory) {
+          return Response.json(jobResponse(active, true), { status: 202 });
+        }
       }
     }
     const budget = await reserve(this.env, ip);
