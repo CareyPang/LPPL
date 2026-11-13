@@ -5,7 +5,9 @@ import csv
 import json
 import re
 from datetime import date, datetime
+from html import unescape
 from pathlib import Path
+from statistics import median
 
 import pandas as pd
 import requests
@@ -19,6 +21,7 @@ SSE_URL = "https://query.sse.com.cn/commonQuery.do"
 SZSE_URL = "https://fund.szse.cn/api/report/ShowReport/data"
 HOLDER_PAGE = "https://stock.finance.sina.com.cn/fundInfo/view/FundInfo_JJCYR.php"
 HOLDER_API = "https://stock.finance.sina.com.cn/fundInfo/api/openapi.php/CaihuiFundInfoService.getFundHolder"
+HOLDER_STRUCTURE_URL = "https://fundf10.eastmoney.com/FundArchivesDatas.aspx"
 CFFEX_URL = "http://www.cffex.com.cn/sj/ccpm/{ym}/{dd}/{product}_1.csv"
 NT_MATCH = ("中央汇金", "汇金资管", "汇金资产管理", "汇金投资", "社保基金", "全国社保", "社会保障基金", "证金", "中国证券金融", "国新", "诚通")
 GROUPS = (("中央汇金", ("中央汇金",)), ("汇金资管", ("汇金资管", "汇金资产管理", "汇金投资")), ("社保基金", ("社保基金", "全国社保", "社会保障基金")), ("证金公司", ("证金", "中国证券金融")), ("国新诚通", ("国新", "诚通")))
@@ -31,6 +34,12 @@ INDEX_BY_CATEGORY = {
 }
 ALL_SHARE_INDEX = "sh000985"
 NOTE = "汇金重仓 ETF 份额变化（申赎估算）。全市场申赎合计，不能全部归因于国家队；不进入模型，不构成买卖建议。"
+FLAG_MIN_YI = 5.0
+FLAG_SHARE_PCT = 0.03
+FLAG_MEDIAN_MULT = 5.0
+FLAG_LOOKBACK = 60
+FLAG_MIN_OBS = 20
+FLAG_NOTE = "阈值为经验参数，不是监管标准；份额变化是全市场申赎，不能直接算作国家队买卖。"
 HEADERS = {**UA, "Referer": "https://www.sse.com.cn/"}
 
 
@@ -207,6 +216,152 @@ def _holders(session, code):
     return result
 
 
+def _parse_holder_structure(payload: str) -> dict:
+    match = re.search(r'\bcontent\s*:\s*"((?:\\.|[^"\\])*)"', payload, re.S)
+    if not match:
+        raise RuntimeError("holder structure response lacks content")
+    try:
+        content = unescape(json.loads(f'"{match.group(1)}"'))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("holder structure content is not valid JavaScript text") from exc
+    table = re.search(r"<table\b[^>]*>(.*?)</table>", content, re.I | re.S)
+    if not table:
+        raise RuntimeError("holder structure response lacks table")
+    rows = []
+    for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", table.group(1), re.I | re.S):
+        cells = re.findall(r"<t[hd]\b[^>]*>(.*?)</t[hd]>", row, re.I | re.S)
+        if cells:
+            values = [
+                re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]*>", "", cell))).strip()
+                for cell in cells
+            ]
+            rows.append(values)
+    expected = ["公告日期", "机构持有比例", "个人持有比例", "内部持有比例", "总份额（亿份）"]
+    if not rows or rows[0] != expected:
+        raise RuntimeError(f"holder structure header changed: {rows[0] if rows else None!r}")
+    records = []
+    for row in rows[1:]:
+        if len(row) != len(expected):
+            raise RuntimeError("holder structure row has unexpected column count")
+        try:
+            report_date = date.fromisoformat(row[0]).isoformat()
+        except ValueError as exc:
+            raise RuntimeError(f"invalid holder structure report date: {row[0]!r}") from exc
+        ratios = [_structure_number(value) for value in row[1:4]]
+        records.append(
+            {
+                "report_date": report_date,
+                "inst_ratio": ratios[0],
+                "retail_ratio": ratios[1],
+                "internal_ratio": ratios[2],
+                "total_shares_yi": _structure_number(row[4]),
+            }
+        )
+    if not records:
+        raise RuntimeError("holder structure table has no data rows")
+    records.sort(key=lambda record: record["report_date"], reverse=True)
+    return {**records[0], "history": records[1:4]}
+
+
+def _structure_number(value):
+    cleaned = value.replace("%", "").replace("％", "").strip()
+    if cleaned in {"", "-", "--", "---", "—"}:
+        return None
+    return _number(cleaned)
+
+
+def _holder_structure(session, code):
+    response = _request(
+        session,
+        HOLDER_STRUCTURE_URL,
+        params={"type": "cyrjg", "code": code},
+        headers={"Referer": "https://fundf10.eastmoney.com/"},
+    )
+    return _parse_holder_structure(response.text)
+
+
+def _holder_structure_with_fallback(session, code, previous):
+    checked = pd.to_datetime((previous or {}).get("checked_at"), errors="coerce", utc=True)
+    if pd.notna(checked) and (pd.Timestamp.now(tz="UTC") - checked).days < 7:
+        return previous, None
+    try:
+        result = _holder_structure(session, code)
+        result["checked_at"] = datetime.now().astimezone().isoformat()
+        return result, None
+    except Exception as exc:
+        fallback = previous or {
+            "report_date": None,
+            "inst_ratio": None,
+            "retail_ratio": None,
+            "internal_ratio": None,
+            "total_shares_yi": None,
+            "history": [],
+            "checked_at": None,
+        }
+        return fallback, f"{code}: {type(exc).__name__}: {exc}"
+
+
+def _flag_flow_series(series: list) -> list:
+    output = []
+    previous_flows = []
+    for index, row in enumerate(series):
+        day, shares, close, flow = row[:4]
+        previous_shares = series[index - 1][1] if index else None
+        share_pct = (
+            abs(shares - previous_shares) / previous_shares
+            if shares is not None and previous_shares is not None and previous_shares > 0
+            else None
+        )
+        prior_window = previous_flows[-FLAG_LOOKBACK:]
+        n_obs = len(prior_window)
+        median_mult = None
+        median_trigger = False
+        if flow is not None and n_obs >= FLAG_MIN_OBS:
+            typical = median(prior_window)
+            median_trigger = abs(flow) >= FLAG_MEDIAN_MULT * typical
+            if typical > 0:
+                median_mult = abs(flow) / typical
+        flag = None
+        if flow is not None and abs(flow) >= FLAG_MIN_YI:
+            share_trigger = share_pct is not None and share_pct >= FLAG_SHARE_PCT
+            if share_trigger or median_trigger:
+                flag = "large_in" if flow > 0 else "large_out"
+        basis = {
+            "share_pct": round(share_pct, 6) if share_pct is not None else None,
+            "median_mult": round(median_mult, 6) if median_mult is not None else None,
+            "n_obs": n_obs,
+        }
+        output.append([day, shares, close, flow, flag, basis])
+        if flow is not None:
+            previous_flows.append(abs(flow))
+    return output
+
+
+def _flags_latest(etfs: list[dict]) -> list[dict]:
+    rows = [
+        {
+            "code": etf["code"],
+            "name": etf["name"],
+            "category": etf["category"],
+            "flow_yi": etf["latest"]["flow_yi"],
+            "flag": etf["latest"]["flag"],
+            "flag_basis": etf["latest"]["flag_basis"],
+        }
+        for etf in etfs
+        if etf["latest"]["flag"] is not None
+    ]
+    return sorted(rows, key=lambda row: abs(row["flow_yi"]), reverse=True)
+
+
+def _flag_rule_text() -> str:
+    return (
+        f"|单日流量|≥{FLAG_MIN_YI:g}亿元，且（|份额变化|/前一日份额≥"
+        f"{FLAG_SHARE_PCT:.0%}，或超过前{FLAG_LOOKBACK}个非空流量中位数的"
+        f"{FLAG_MEDIAN_MULT:g}倍，中位数样本至少{FLAG_MIN_OBS}个）；缺失流量不标记且"
+        "不计入中位数。"
+    )
+
+
 def _prices(universe, start, end):
     out, errors = {}, []
     for item in universe:
@@ -261,6 +416,7 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
     previous_by_code = {e["code"]: e for e in (prev or {}).get("etfs", [])}
     etfs = []
     holders_errors = []
+    holder_structure_errors = []
     for item in universe:
         old = previous_by_code.get(item["code"], {})
         old_series = old.get("series", []) if not backfill_start else []
@@ -289,7 +445,20 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             except Exception as exc:
                 holders_errors.append(f"{item['code']}: {type(exc).__name__}: {exc}")
                 holder = holder or {"report_date": None, "nt": [], "nt_shares_yi": None, "nt_ratio": None, "checked_at": None}
-        latest = series[-1] if series else [asof, None, None, None]
+        holder_structure, structure_error = _holder_structure_with_fallback(
+            session, item["code"], old.get("holder_structure")
+        )
+        if structure_error:
+            holder_structure_errors.append(structure_error)
+        series = _flag_flow_series(series)
+        latest = series[-1] if series else [
+            asof,
+            None,
+            None,
+            None,
+            None,
+            {"share_pct": None, "median_mult": None, "n_obs": 0},
+        ]
         latest_shares, prior_shares = _latest_share_observations(series)
         latest_shares_yi = latest_shares[1] if latest_shares else None
         prev_shares = holder.get("nt_shares_yi") if holder else None
@@ -303,14 +472,21 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "chg_yi": latest_shares_yi - prior_shares[1] if latest_shares and prior_shares else None,
             "flow_yi": latest[3], **{k: v[0] for k,v in windows.items()}, "flow_ytd": sum(ytd) if ytd else None,
             "flow_ytd_n_days": len(ytd),
-            **{f"{k}_n_days": v[1] for k,v in windows.items()}},
+            **{f"{k}_n_days": v[1] for k,v in windows.items()},
+            "flag": latest[4],
+            "flag_basis": latest[5]},
             "holders": holder,
+            "holder_structure": holder_structure,
             "shares_vs_report": latest_shares_yi/report_total if report_total and latest_shares_yi is not None else None})
     sources = {
         "prices": {"ok": not price_errors, "error": "; ".join(price_errors) if price_errors else None},
         "sse_shares": {"ok": bool(sh) and not sse_errors, "error": "; ".join(sse_errors) if sse_errors else None},
         "szse_shares": {"ok": len(sz) == sum(x["exchange"] == "SZ" for x in universe) and not szse_errors, "error": "; ".join(szse_errors) if szse_errors else None},
         "holders": {"ok": not holders_errors, "error": "; ".join(holders_errors) if holders_errors else None},
+        "holder_structure": {
+            "ok": not holder_structure_errors,
+            "error": "; ".join(holder_structure_errors) if holder_structure_errors else None,
+        },
     }
     cffex = {"date": asof, "products": []}
     try:
@@ -353,10 +529,12 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "d21":_sum_latest(group, "flow_21d"),"report_shares_yi":sum(e["holders"].get("nt_shares_yi") or 0 for e in group),
             "latest_shares_yi":sum(e["latest"]["shares_yi"] or 0 for e in group),
             "nt_value_yi":sum(e["holders"].get("nt_value_yi") or 0 for e in group)})
+    flags_latest = _flags_latest(etfs)
     return {"asof":asof,"generated_at":datetime.now().astimezone().isoformat(),"sources":sources,"universe":universe,
         "etfs":etfs,"categories":categories,"totals":totals,"daily":totals_daily,"cffex":cffex,
         "indices":indices,"index_by_category":INDEX_BY_CATEGORY,"all_share_index":ALL_SHARE_INDEX,
-        "notes":[NOTE,"中信期货代客为全部客户合计，常被视作机构套保参考，不等于国家队。"]}
+        "flags_latest":flags_latest,"flag_rule":_flag_rule_text(),
+        "notes":[NOTE,FLAG_NOTE,"中信期货代客为全部客户合计，常被视作机构套保参考，不等于国家队。"]}
 
 
 def write_snapshot(data: dict, out: Path):

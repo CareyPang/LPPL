@@ -47,6 +47,66 @@ def test_cffex_fixture_aggregates_client_long_short():
     assert result["net_short"] == result["short"] - result["long"]
 
 
+def test_holder_structure_fixture_parses_latest_and_previous_three_rows():
+    structure = nt_etf._parse_holder_structure(
+        (FIXTURES / "holder_structure.js").read_text(encoding="utf-8")
+    )
+
+    assert structure["report_date"] == "2026-06-30"
+    assert structure["inst_ratio"] == 61.65
+    assert structure["retail_ratio"] == 32.95
+    assert structure["internal_ratio"] == 5.4
+    assert structure["total_shares_yi"] == 189.15
+    assert [row["report_date"] for row in structure["history"]] == [
+        "2025-12-31",
+        "2025-06-30",
+        "2024-12-31",
+    ]
+
+
+def test_holder_structure_header_mismatch_raises():
+    payload = (FIXTURES / "holder_structure.js").read_text(encoding="utf-8")
+    payload = payload.replace("总份额（亿份）", "总份额")
+
+    with pytest.raises(RuntimeError, match="header changed"):
+        nt_etf._parse_holder_structure(payload)
+
+
+def test_holder_structure_placeholder_is_null_not_zero():
+    payload = (FIXTURES / "holder_structure.js").read_text(encoding="utf-8")
+    payload = payload.replace(
+        "<td>2025-12-31</td><td>60.12%</td>",
+        "<td>2025-12-31</td><td>---</td>",
+    )
+
+    structure = nt_etf._parse_holder_structure(payload)
+
+    assert structure["history"][0]["inst_ratio"] is None
+
+
+def test_holder_structure_failure_falls_back_to_previous_snapshot(monkeypatch):
+    previous = {
+        "report_date": "2025-12-31",
+        "inst_ratio": 60.12,
+        "retail_ratio": 34.1,
+        "internal_ratio": 5.78,
+        "total_shares_yi": 177.5,
+        "history": [],
+        "checked_at": "2025-12-31T00:00:00+00:00",
+    }
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("fixture failure")
+
+    monkeypatch.setattr(nt_etf, "_holder_structure", fail)
+    result, error = nt_etf._holder_structure_with_fallback(
+        object(), "510300", previous
+    )
+
+    assert result is previous
+    assert error == "510300: RuntimeError: fixture failure"
+
+
 def test_flow_is_none_if_either_share_observation_is_missing():
     assert nt_etf.flow_yuan(2, 1, 3) == 3
     assert nt_etf.flow_yuan(None, 1, 3) is None
@@ -56,6 +116,92 @@ def test_flow_is_none_if_either_share_observation_is_missing():
     )
     assert latest[0] == "2026-11-12"
     assert previous[0] == "2026-11-10"
+
+
+def test_flag_flow_series_share_change_trigger():
+    series = nt_etf._flag_flow_series(
+        [["2026-11-10", 100.0, 1.0, None], ["2026-11-11", 104.0, 2.0, 8.0]]
+    )
+
+    assert series[-1][4] == "large_in"
+    assert series[-1][5] == {
+        "share_pct": 0.04,
+        "median_mult": None,
+        "n_obs": 0,
+    }
+
+
+def test_flag_flow_series_median_multiple_trigger():
+    prior = [[f"2026-10-{day:02d}", 100.0, 1.0, 1.0] for day in range(1, 21)]
+    prior.append(["2026-11-11", 100.5, 1.0, 6.0])
+
+    series = nt_etf._flag_flow_series(prior)
+
+    assert series[-1][4] == "large_in"
+    assert series[-1][5]["share_pct"] == 0.005
+    assert series[-1][5]["median_mult"] == 6.0
+    assert series[-1][5]["n_obs"] == nt_etf.FLAG_MIN_OBS
+
+
+def test_flag_flow_series_below_minimum_is_not_flagged():
+    series = nt_etf._flag_flow_series(
+        [["2026-11-10", 100.0, 1.0, 1.0], ["2026-11-11", 105.0, 1.0, 4.99]]
+    )
+
+    assert series[-1][4] is None
+
+
+def test_null_flow_is_not_flagged_or_counted_in_median_history():
+    prior = [[f"2026-10-{day:02d}", 100.0, 1.0, 1.0] for day in range(1, 21)]
+    prior.extend(
+        [
+            ["2026-11-10", None, 1.0, None],
+            ["2026-11-11", 100.0, 1.0, 6.0],
+        ]
+    )
+
+    series = nt_etf._flag_flow_series(prior)
+
+    assert series[-2][4] is None
+    assert series[-1][4] == "large_in"
+    assert series[-1][5]["n_obs"] == nt_etf.FLAG_MIN_OBS
+    assert series[-1][5]["median_mult"] == 6.0
+
+
+def test_fewer_than_minimum_median_observations_uses_share_change_only():
+    prior = [[f"2026-11-{day:02d}", 100.0, 1.0, 1.0] for day in range(1, 11)]
+    no_share_change = nt_etf._flag_flow_series(
+        [*prior, ["2026-11-11", 100.5, 1.0, 6.0]]
+    )
+    with_share_change = nt_etf._flag_flow_series(
+        [*prior, ["2026-11-11", 104.0, 2.0, 8.0]]
+    )
+
+    assert no_share_change[-1][4] is None
+    assert no_share_change[-1][5]["median_mult"] is None
+    assert no_share_change[-1][5]["n_obs"] == 10
+    assert with_share_change[-1][4] == "large_in"
+    assert with_share_change[-1][5]["median_mult"] is None
+
+
+def test_flags_latest_keeps_flagged_rows_sorted_by_absolute_flow():
+    def etf(code, flow, flag):
+        return {
+            "code": code,
+            "name": code,
+            "category": "沪深300",
+            "latest": {
+                "flow_yi": flow,
+                "flag": flag,
+                "flag_basis": {"share_pct": None, "median_mult": None, "n_obs": 0},
+            },
+        }
+
+    rows = nt_etf._flags_latest(
+        [etf("510300", 6.0, "large_in"), etf("510310", -8.0, "large_out"), etf("510330", 99, None)]
+    )
+
+    assert [row["code"] for row in rows] == ["510310", "510300"]
 
 
 def test_share_source_failure_does_not_block_szse(monkeypatch):
