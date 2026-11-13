@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - research/data/abnormal.py
+      - research/data/range_stats.py
       - research/data/market_base.py
       - research/data/events.py
       - frontend/market.html
@@ -37,6 +39,14 @@ jobs:
       - name: Install project
         id: install
         run: python -m pip install -e .
+      - name: Collect board range statistics
+        id: range_stats
+        if: always() && steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          git fetch --no-tags origin stock-results:refs/remotes/origin/stock-results
+          python -m research.data.range_stats --git-ref origin/stock-results --out out/range
       - name: Fetch market review
         id: fetch
         shell: bash
@@ -45,6 +55,11 @@ jobs:
           snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
           echo "asof=$snapshot_date" >> "$GITHUB_OUTPUT"
           python -m research.data.market_base --date "$snapshot_date" --out out/market
+          abnormal_ok=false
+          if python -m research.data.abnormal --market out/market/market_latest.json --out out/abnormal; then
+            abnormal_ok=true
+          fi
+          echo "abnormal_ok=$abnormal_ok" >> "$GITHUB_OUTPUT"
           python - <<'PY'
           import json
           from pathlib import Path
@@ -87,26 +102,36 @@ jobs:
             gh workflow run pages.yml --ref main
           fi
       - name: Publish to stock-results
-        if: steps.fetch.outputs.limit_ok == 'true'
+        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.range_stats.outcome == 'success')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           snapshot_date="${{ steps.fetch.outputs.asof }}"
-          git fetch --no-tags origin stock-results
+          git fetch --no-tags origin stock-results:refs/remotes/origin/stock-results
           git switch -c market-publish origin/stock-results
           mkdir -p market
-          cp out/market/market_latest.json market/market_latest.json
-          cp "out/market/market_${snapshot_date}.json" "market/${snapshot_date}.json"
-          git add market/market_latest.json "market/${snapshot_date}.json"
+          if [[ "${{ steps.fetch.outputs.limit_ok }}" == "true" ]]; then
+            cp out/market/market_latest.json market/market_latest.json
+            cp "out/market/market_${snapshot_date}.json" "market/${snapshot_date}.json"
+            git add market/market_latest.json "market/${snapshot_date}.json"
+          fi
+          if [[ -f out/abnormal/abnormal_latest.json ]]; then
+            cp out/abnormal/abnormal_latest.json market/abnormal_latest.json
+            git add market/abnormal_latest.json
+          fi
+          if [[ -f out/range/range_latest.json ]]; then
+            cp out/range/range_latest.json market/range_latest.json
+            git add market/range_latest.json
+          fi
           if git diff --cached --quiet; then
-            echo "No market snapshot changes to publish"
+            echo "No market auxiliary output changes to publish"
             exit 0
           fi
           git -c user.name="github-actions[bot]" \
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -m "market: 发布市场复盘 ${snapshot_date}"
+            commit -m "market: 发布市场背景数据 ${snapshot_date:-auxiliary}"
           git push origin HEAD:stock-results
           gh workflow run pages.yml --ref main
 
@@ -145,3 +170,9 @@ jobs:
           name: market-smoke-${{ github.run_id }}
           path: out/market
           if-no-files-found: warn
+      - name: Smoke abnormal output
+        continue-on-error: true
+        run: python -m research.data.abnormal --market web/mock/data/market/market_latest.json --out out/abnormal
+      - name: Smoke range output
+        continue-on-error: true
+        run: python -m research.data.range_stats --history-dir web/mock/data/market --out out/range
