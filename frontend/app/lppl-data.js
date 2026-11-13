@@ -121,6 +121,8 @@
   const market = () => opt('market/market_latest.json');
   const ntEtf = () => opt('nt_etf/nt_etf_latest.json');
   const events = () => opt('events/events_latest.json');
+  const abnormal = () => opt('market/abnormal_latest.json');
+  const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, ntEtf, events, macro };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, ntEtf, events, abnormal, rangeStats, macro };
 })(window);
