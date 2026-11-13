@@ -27,6 +27,7 @@ EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 EM_BOARD_STRENGTH_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 EM_BOARD_STRENGTH_FALLBACK_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_HISTORY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+EM_HISTORY_REFERENCE_BK = "BK0475"
 EM_POOL_URL = "https://push2ex.eastmoney.com"
 EM_ULIST_URL = "https://push2delay.eastmoney.com/api/qt/ulist.np/get"
 EM_HOT_RANK_URL = "https://emappdata.eastmoney.com/stockrank/getAllCurrentList"
@@ -259,7 +260,13 @@ def _parse_board_page(payload: dict, period: str) -> tuple[list[dict], int]:
     return rows, total
 
 
-def _fetch_board_period(kind: str, period: str, client: EMClient) -> list[dict]:
+def _fetch_board_period_from_url(
+    kind: str,
+    period: str,
+    client: EMClient,
+    url: str,
+    fallback_url: str | None = None,
+) -> list[dict]:
     params = {
         "pz": "200",
         "po": "1",
@@ -275,9 +282,9 @@ def _fetch_board_period(kind: str, period: str, client: EMClient) -> list[dict]:
     page = 1
     while True:
         payload = client.get_json(
-            EM_BOARD_URL,
+            url,
             {**params, "pn": str(page)},
-            fallback_url=EM_BOARD_FALLBACK_URL,
+            fallback_url=fallback_url,
         )
         page_rows, total = _parse_board_page(payload, period)
         if expected_total is None:
@@ -298,14 +305,37 @@ def _fetch_board_period(kind: str, period: str, client: EMClient) -> list[dict]:
     return rows
 
 
-def board_flow_snapshot(kind: str, client: EMClient | None = None) -> pd.DataFrame:
+def _fetch_board_period(
+    kind: str,
+    period: str,
+    client: EMClient,
+    urls: tuple[str, ...] | None = None,
+) -> list[dict]:
+    if urls is None:
+        return _fetch_board_period_from_url(
+            kind, period, client, EM_BOARD_URL, fallback_url=EM_BOARD_FALLBACK_URL
+        )
+    errors = []
+    for url in urls:
+        try:
+            return _fetch_board_period_from_url(kind, period, client, url)
+        except Exception as exc:  # noqa: BLE001 — try the next Eastmoney host
+            errors.append(f"{urlparse(url).hostname}: {_error(exc)}")
+    raise RuntimeError("Eastmoney board hosts failed: " + "; ".join(errors))
+
+
+def board_flow_snapshot(
+    kind: str,
+    client: EMClient | None = None,
+    urls: tuple[str, ...] | None = None,
+) -> pd.DataFrame:
     if kind not in BOARD_FS:
         raise ValueError(f"kind must be one of {tuple(BOARD_FS)}")
     client = client or EMClient()
     merged = {}
     order = []
     for period in ("today", "5d", "10d"):
-        for row in _fetch_board_period(kind, period, client):
+        for row in _fetch_board_period(kind, period, client, urls=urls):
             code = row["code"]
             if code not in merged:
                 merged[code] = {"code": code, "name": row["name"]}
@@ -395,6 +425,8 @@ def _parse_board_history(payload: dict) -> pd.DataFrame:
     data = payload.get("data")
     if not isinstance(data, dict) or not isinstance(data.get("klines"), list):
         raise RuntimeError("Eastmoney board-history response lacks data.klines")
+    if not data["klines"]:
+        raise RuntimeError("Eastmoney board-history response contains no rows")
     rows = []
     for line in data["klines"]:
         parts = str(line).split(",")
@@ -453,7 +485,7 @@ def _verify_history_order(snapshot: dict, history: pd.DataFrame, asof: str) -> l
 
 
 def board_flow_history(bk: str, client: EMClient | None = None) -> pd.DataFrame:
-    if not re.fullmatch(r"BK[0-9A-Za-z]+", str(bk)):
+    if not re.fullmatch(r"BK\d{4}", str(bk)):
         raise ValueError(f"invalid Eastmoney board code: {bk!r}")
     client = client or EMClient()
     payload = client.get_json(
@@ -1558,41 +1590,32 @@ def _refresh_margin_frame(asof: str, cache: Path) -> tuple[pd.DataFrame, str | N
             temp_cache = Path(directory)
             recent_sse.to_parquet(temp_cache / "sse_margin.parquet", index=False)
             szse_path = temp_cache / "szse_margin.parquet"
+            missing_dates = set()
             try:
                 fetch_szse(calendar, szse_path, pause=0.8)
             except Exception as exc:
                 errors.append(f"SZSE margin fetcher failed: {_error(exc)}")
+                missing_dates.update(value.date().isoformat() for value in calendar)
 
             if not szse_path.exists():
                 pd.DataFrame(columns=["date", *SZSE_RENAME]).to_parquet(szse_path, index=False)
-                errors.append("SZSE margin fetcher returned no rows")
             szse = pd.read_parquet(szse_path)
-            latest_sse_date = calendar.max()
-            if "date" not in szse or latest_sse_date not in set(
-                pd.to_datetime(szse.get("date", pd.Series(dtype="datetime64[ns]")), errors="coerce")
-                .dt.normalize()
-                .dropna()
-            ):
-                errors.append(
-                    f"SZSE margin fetcher returned no row for latest SSE date {latest_sse_date.date()}"
-                )
             failed_path = szse_path.with_suffix(".failed.json")
             if failed_path.exists():
                 failed = json.loads(failed_path.read_text(encoding="utf-8"))
-                if failed:
-                    details = ", ".join(f"{row[0]}:{row[1]}" for row in failed)
-                    errors.append(f"SZSE margin fetcher failed dates: {details}")
-            fresh = load_margin(temp_cache)
-            latest = fresh.loc[pd.to_datetime(fresh["date"]).dt.normalize() == latest_sse_date]
-            required_balances = ("fin_balance_all", "total_balance_all")
-            if latest.empty or any(
-                _number(latest.iloc[-1][field]) is None for field in required_balances
-            ):
-                errors.append(
-                    f"margin refresh lacks required SSE/SZSE balances for {latest_sse_date.date()}"
+                missing_dates.update(str(row[0]) for row in failed if row)
+            szse_dates = set()
+            if "date" in szse:
+                szse_dates = set(
+                    pd.to_datetime(szse["date"], errors="coerce").dt.normalize().dropna()
                 )
+            missing_dates.update(
+                value.date().isoformat() for value in calendar if value not in szse_dates
+            )
+            fresh = load_margin(temp_cache)
 
         merged = _merge_margin_frames(base, fresh)
+        merged.attrs["missing_dates"] = sorted(missing_dates)
         return merged, "; ".join(errors) or None, calendar
     except Exception as exc:
         return base, "; ".join(part for part in (cache_error, _error(exc)) if part), calendar
@@ -1603,31 +1626,33 @@ def _margin_snapshot(asof: str, cache: Path = MARGIN_CACHE) -> dict:
     if frame.empty:
         reason = f"margin data unavailable after refresh: {refresh_error}" if refresh_error else "margin cache contains no rows"
         raise RuntimeError(reason)
+    missing_dates = list(frame.attrs.get("missing_dates", []))
     frame = frame.sort_values("date").reset_index(drop=True)
     frame["date"] = pd.to_datetime(frame["date"])
     frame["avail_date"] = pd.to_datetime(frame["avail_date"])
     asof_date = pd.Timestamp(asof).normalize()
-    eligible = frame.loc[
-        frame["avail_date"].notna()
-        & (frame["avail_date"] <= asof_date)
-        & (frame["date"] <= asof_date)
+    complete = frame.loc[
+        frame[["fin_balance_sse", "fin_balance_szse", "fin_balance_all", "total_balance_all"]]
+        .notna()
+        .all(axis=1)
+    ]
+    eligible = complete.loc[
+        complete["avail_date"].notna()
+        & (complete["avail_date"] <= asof_date)
+        & (complete["date"] <= asof_date)
     ]
     if eligible.empty:
         raise RuntimeError(f"margin cache has no T+1-available rows as of {asof}")
-    if len(eligible) < 21:
-        coverage_error = (
-            f"margin has {len(eligible)} T+1-available rows; "
-            "at least 21 are required for a 20-trading-day change"
-        )
-        refresh_error = "; ".join(part for part in (refresh_error, coverage_error) if part)
     latest = eligible.iloc[-1]
     prior = eligible.iloc[-21] if len(eligible) >= 21 else None
     fields = ("fin_balance_all", "total_balance_all")
     result = {
+        "asof": latest["date"].date().isoformat(),
         "date": latest["date"].date().isoformat(),
         "latest_date": latest["date"].date().isoformat(),
         "available_date": latest["avail_date"].date().isoformat(),
         "rows_available": len(eligible),
+        "_missing_dates": missing_dates,
     }
     for field in ("fin_balance_sse", "fin_balance_szse"):
         result[field] = _number(latest[field])
@@ -1682,19 +1707,30 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
     for kind in BOARD_FS:
         host = "push2delay.eastmoney.com"
         try:
-            frame = board_flow_snapshot(kind, em)
+            if kind == "region":
+                frame = board_flow_snapshot(
+                    kind,
+                    em,
+                    urls=(EM_BOARD_STRENGTH_URL, EM_BOARD_STRENGTH_FALLBACK_URL),
+                )
+            else:
+                frame = board_flow_snapshot(kind, em)
             board_flow[kind] = frame.to_dict("records")
             board_flow["provider"][kind] = "eastmoney"
             board_frames.append(frame)
-            sources[f"board_flow_{kind}"] = _source_meta(
+            source = _source_meta(
                 frame.attrs.get("url_host", host), True
             )
+            source["provider"] = "eastmoney"
+            sources[f"board_flow_{kind}"] = source
         except Exception as exc:
             eastmoney_error = _error(exc)
             if kind not in ("industry", "concept"):
-                sources[f"board_flow_{kind}"] = _source_meta(
-                    host, False, eastmoney_error
-                )
+                sources["board_flow_region"] = {
+                    "ok": False,
+                    "provider": None,
+                    "reason": "东财地域板块接口不可用，新浪无地域分类",
+                }
                 continue
             try:
                 frame = sina_board_flow_snapshot(kind, session)
@@ -1710,32 +1746,64 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
                 sources[f"board_flow_{kind}"] = source
 
     history_sample = None
+    history_snapshot_provider = board_flow["provider"]["industry"]
+    history_verify_reason = (
+        "snapshot 来自新浪，无法交叉核对列顺序"
+        if history_snapshot_provider != "eastmoney"
+        else None
+    )
+    history_code = None
+    reference_board = history_snapshot_provider != "eastmoney"
     try:
-        if board_flow["provider"]["industry"] != "eastmoney":
-            raise RuntimeError(
-                "industry board snapshot is not from Eastmoney; cannot verify history fields"
-            )
         industry = board_flow["industry"]
         if not industry:
-            raise RuntimeError("industry board snapshot unavailable; cannot verify history fields")
+            raise RuntimeError("industry board snapshot unavailable; cannot query history")
         snapshot = industry[0]
-        bk = snapshot["code"]
-        history = board_flow_history(bk, em)
-        verified_fields = _verify_history_order(snapshot, history, asof)
+        history_code = (
+            EM_HISTORY_REFERENCE_BK if reference_board else snapshot["code"]
+        )
+        history = board_flow_history(history_code, em)
+        if not reference_board:
+            verified_fields = _verify_history_order(snapshot, history, asof)
+            verified = True
+            verify_reason = None
+        else:
+            verified_fields = []
+            verified = False
+            verify_reason = history_verify_reason
         history_sample = {
-            "code": bk,
+            "code": history_code,
+            "reference_board": reference_board,
             "rows": history.to_dict("records"),
-            "column_order_verified": True,
+            "column_order_verified": verified,
+            "verified": verified,
             "verified_asof": asof,
             "matched_fields": verified_fields,
         }
-        sources["board_flow_history"] = _source_meta(
+        if verify_reason:
+            history_sample["verify_reason"] = verify_reason
+        source = _source_meta(
             history.attrs.get("url_host", "push2his.eastmoney.com"), True
         )
+        source.update(
+            provider="eastmoney",
+            code=history_code,
+            reference_board=reference_board,
+            verified=verified,
+        )
+        if verify_reason:
+            source["verify_reason"] = verify_reason
+        sources["board_flow_history"] = source
     except Exception as exc:
-        sources["board_flow_history"] = _source_meta(
+        source = _source_meta(
             "push2his.eastmoney.com", False, _error(exc)
         )
+        source["provider"] = "eastmoney"
+        if history_code is not None:
+            source.update(code=history_code, reference_board=reference_board)
+        if history_verify_reason:
+            source.update(verified=False, verify_reason=history_verify_reason)
+        sources["board_flow_history"] = source
     board_flow["history_sample"] = history_sample
 
     limit_section = {"evidence": "descriptive", "note": DESCRIPTIVE_NOTE}
@@ -1905,15 +1973,22 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
     try:
         margin_data = _margin_snapshot(asof)
         refresh_error = margin_data.pop("_refresh_error", None)
+        missing_dates = margin_data.pop("_missing_dates", [])
         margin_section["data"] = margin_data
         errors = []
         if refresh_error:
             errors.append(f"margin refresh failed: {refresh_error}")
-        if margin_data["stale"]:
+        trading_days_stale = margin_data.get("trading_days_stale")
+        age_exceeds_limit = (
+            trading_days_stale > 5
+            if trading_days_stale is not None
+            else bool(margin_data["stale"])
+        )
+        if age_exceeds_limit:
             errors.append(
                 "margin stale: latest_date="
                 f"{margin_data['latest_date']}, "
-                f"{margin_data['trading_days_stale']} trading days since availability"
+                f"{trading_days_stale} trading days since availability"
             )
         balance_sse = margin_data.get("fin_balance_sse")
         balance_szse = margin_data.get("fin_balance_szse")
@@ -1921,10 +1996,26 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
             ratio = balance_szse / balance_sse if balance_sse > 0 else float("inf")
             if not 0.3 <= ratio <= 3:
                 errors.append(f"SZSE/SSE ratio out of range: {ratio:.4f}")
-        sources["margin"] = _source_meta("sse.szse.official", not errors, "; ".join(errors) or None)
+        source = _source_meta("sse.szse.official", not errors, "; ".join(errors) or None)
+        source.update(
+            provider="sse.szse.official",
+            asof=margin_data.get("asof", margin_data.get("latest_date")),
+            stale=bool(age_exceeds_limit or margin_data["stale"] or missing_dates),
+            missing_dates=missing_dates,
+            trading_days_stale=trading_days_stale,
+        )
+        sources["margin"] = source
     except Exception as exc:
         margin_section["data"] = None
-        sources["margin"] = _source_meta("sse.szse.official", False, _error(exc))
+        source = _source_meta("sse.szse.official", False, _error(exc))
+        source.update(
+            provider="sse.szse.official",
+            asof=None,
+            stale=True,
+            missing_dates=[],
+            trading_days_stale=None,
+        )
+        sources["margin"] = source
 
     return {
         "asof": asof,

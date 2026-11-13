@@ -122,5 +122,6 @@
   const ntEtf = () => opt('nt_etf/nt_etf_latest.json');
   const abnormal = () => opt('market/abnormal_latest.json');
   const rangeStats = () => opt('market/range_latest.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, ntEtf, abnormal, rangeStats };
+  const macro = () => opt('macro/macro_latest.json');
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, ntEtf, abnormal, rangeStats, macro };
 })(window);
