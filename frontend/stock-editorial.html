@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a20">
+  <title>个股观察 · 临界点</title>
+  <style>
+    :root {
+      --bg: #071a20;
+      --bg-deep: #041116;
+      --panel: rgba(14, 43, 49, .76);
+      --panel-strong: #102f35;
+      --line: rgba(173, 226, 218, .18);
+      --line-strong: rgba(173, 226, 218, .34);
+      --ink: #edf5f1;
+      --ink-2: #c5d8d3;
+      --ink-3: #8ca7a7;
+      --wave: #8fe0d2;
+      --sun: #f3c770;
+      --top: #ff8578;
+      --bottom: #64d6b7;
+      --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+      --sans: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      --serif: "Noto Serif SC", "Songti SC", serif;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .28);
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg-deep); }
+    body { margin: 0; color: var(--ink); font: 14px/1.65 var(--sans); background:
+      radial-gradient(900px 520px at 78% -10%, rgba(64, 168, 156, .18), transparent 62%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 72%); min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--wave); outline-offset: 3px; }
+    .shell { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar { position: sticky; top: 0; z-index: 4; border-bottom: 1px solid rgba(173, 226, 218, .12); background: rgba(4, 17, 22, .72); backdrop-filter: blur(18px); }
+    .topbar-in { min-height: 68px; display: flex; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: .14em; }
+    .mark { width: 24px; height: 24px; border: 1px solid var(--wave); border-radius: 50%; position: relative; }
+    .mark::before { content: ""; position: absolute; width: 6px; height: 6px; left: 50%; top: 50%; margin: -3px; border-radius: 50%; background: var(--wave); }
+    .crumb { color: var(--ink-3); font-size: 12px; }
+    .topbar nav { margin-left: auto; display: flex; align-items: center; gap: 18px; color: var(--ink-2); font-size: 12px; }
+    .topbar nav a:hover { color: var(--wave); }
+    .hero { padding: 74px 0 42px; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr); align-items: end; gap: 52px; }
+    .eyebrow { margin: 0 0 14px; color: var(--sun); font: 11px var(--mono); letter-spacing: .18em; text-transform: uppercase; }
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 16px; max-width: 650px; font: 500 clamp(34px, 5vw, 68px)/1.13 var(--serif); letter-spacing: .04em; }
+    .lede { max-width: 570px; margin-bottom: 0; color: var(--ink-2); font-size: 16px; line-height: 1.85; }
+    .search-card { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgba(30, 83, 87, .72), rgba(9, 34, 40, .76)); box-shadow: var(--shadow); }
+    .search-label { display: block; margin-bottom: 10px; color: var(--ink-3); font: 11px var(--mono); letter-spacing: .12em; }
+    .search-row { display: flex; gap: 10px; }
+    .search-row input { min-width: 0; flex: 1; height: 50px; padding: 0 15px; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink); background: rgba(1, 15, 20, .46); font: 15px var(--mono); }
+    .search-row input::placeholder { color: #75908f; }
+    .search-row button, .cta { border: 0; border-radius: 10px; padding: 0 19px; color: #062027; background: var(--wave); font-weight: 600; transition: transform .2s, filter .2s; }
+    .search-row button:hover, .cta:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--ink-2); background: rgba(255,255,255,.04); font: 11px var(--mono); }
+    .chip:hover { border-color: var(--wave); color: var(--wave); }
+    .status { min-height: 24px; margin: 13px 0 0; color: var(--ink-3); font-size: 12px; }
+    .status[data-kind="error"] { color: var(--top); }
+    .status[data-kind="ok"] { color: var(--bottom); }
+    .search-card.is-loading .search-row button { color: transparent; pointer-events: none; position: relative; }
+    .search-card.is-loading .search-row button::after { content: ""; position: absolute; left: 50%; top: 50%; width: 15px; height: 15px; margin: -8px; border: 2px solid rgba(6, 32, 39, .28); border-top-color: #062027; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result { display: none; padding-bottom: 72px; }
+    .result.is-ready { display: block; animation: rise .48s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .identity { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 24px 0 19px; border-bottom: 1px solid var(--line); }
+    .identity h2 { margin-bottom: 5px; font: 500 clamp(26px, 4vw, 44px)/1.2 var(--serif); }
+    .identity .code { color: var(--ink-3); font: 12px var(--mono); }
+    .badge { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid rgba(100, 214, 183, .36); border-radius: 999px; color: var(--bottom); background: rgba(100, 214, 183, .08); font-size: 12px; white-space: nowrap; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(100, 214, 183, .12); }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+    .card { min-width: 0; padding: 21px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); }
+    .card-k { margin-bottom: 14px; color: var(--ink-3); font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    .card h3 { margin: 0 0 8px; font-size: 20px; font-weight: 500; }
+    .card p { margin-bottom: 0; color: var(--ink-2); line-height: 1.75; }
+    .card .meta { margin-top: 14px; color: var(--ink-3); font: 11px/1.7 var(--mono); }
+    .index-switcher { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+    .index-switcher button { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: rgba(255,255,255,.035); font: 11px var(--mono); }
+    .index-switcher button:hover, .index-switcher button[aria-pressed="true"] { border-color: var(--sun); color: var(--sun); background: rgba(243, 199, 112, .1); }
+    .index-link { display: inline-flex; align-items: center; gap: 8px; color: var(--sun); font-weight: 600; }
+    .index-link::after { content: "↗"; font-size: 17px; }
+    .state { display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 6px; color: var(--sun); background: rgba(243, 199, 112, .11); font: 11px var(--mono); }
+    .state[data-tone="bottom"] { color: var(--bottom); background: rgba(100, 214, 183, .1); }
+    .state[data-tone="top"] { color: var(--top); background: rgba(255, 133, 120, .1); }
+    .chain { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 0; margin-top: 28px; border: 1px solid var(--line); border-radius: 15px; overflow: hidden; background: rgba(10, 32, 38, .72); }
+    .step { position: relative; padding: 19px 22px; border-right: 1px solid var(--line); }
+    .step:last-child { border-right: 0; }
+    .step-no { display: block; margin-bottom: 7px; color: var(--sun); font: 11px var(--mono); }
+    .step strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .step span { color: var(--ink-3); font-size: 12px; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 28px; }
+    .cta { display: inline-flex; align-items: center; min-height: 46px; }
+    .secondary { display: inline-flex; align-items: center; min-height: 46px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink-2); }
+    .secondary:hover { border-color: var(--wave); color: var(--wave); }
+    details { margin-top: 28px; border-top: 1px solid var(--line); }
+    summary { padding: 17px 0; color: var(--ink-2); cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; float: right; color: var(--wave); font: 20px var(--mono); }
+    details[open] summary::after { content: "−"; }
+    .boundary { max-width: 850px; padding: 0 0 17px; color: var(--ink-3); font-size: 12px; line-height: 1.8; }
+    .empty { display: none; margin-top: 22px; padding: 23px; border: 1px dashed var(--line-strong); border-radius: 14px; color: var(--ink-2); background: rgba(255,255,255,.025); }
+    .empty.is-visible { display: block; }
+    .empty strong { display: block; margin-bottom: 5px; color: var(--ink); }
+    .recent { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 10px; color: var(--ink-3); font-size: 11px; }
+    .recent[hidden] { display: none; }
+    .recent button { border: 0; padding: 0; color: var(--ink-2); background: transparent; font: 11px var(--mono); text-decoration: underline; text-underline-offset: 3px; }
+    .recent button:hover { color: var(--wave); }
+    .result:focus { outline: 0; }
+    @media (prefers-reduced-motion: reduce) { .result.is-ready { animation: none; } .search-card.is-loading .search-row button::after { animation: none; } }
+    @media (max-width: 840px) {
+      .shell { width: min(100% - 32px, 680px); }
+      .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 52px; }
+      .cards { grid-template-columns: 1fr; }
+      .chain { grid-template-columns: 1fr; }
+      .step { border-right: 0; border-bottom: 1px solid var(--line); }
+      .step:last-child { border-bottom: 0; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: calc(100% - 24px); }
+      .topbar-in { min-height: 58px; gap: 10px; }
+      .crumb, .topbar nav a:first-child { display: none; }
+      .topbar nav { gap: 12px; }
+      .hero { padding: 39px 0 27px; }
+      h1 { font-size: 37px; }
+      .lede { font-size: 14px; }
+      .search-card { padding: 14px; border-radius: 14px; }
+      .search-row { align-items: stretch; flex-direction: column; }
+      .search-row input, .search-row button { width: 100%; min-height: 48px; }
+      .identity { align-items: flex-start; flex-direction: column; }
+      .identity h2 { font-size: 31px; }
+      .card { padding: 18px; }
+      .actions > * { width: 100%; justify-content: center; }
+      .result { padding-bottom: 42px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-in shell">
+      <a class="brand" href="home.html"><span class="mark" aria-hidden="true"></span><span>临界点</span></a>
+      <span class="crumb">/ 个股观察</span>
+      <nav aria-label="主要导航"><a href="index.html">研究工作站</a><a href="backtest.html">历史回测</a></nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Stock observatory · editorial preview</p>
+        <h1>个股观察，<br>从所属指数开始。</h1>
+        <p class="lede">先确认个股与研究对象的关系，再进入指数研究。个股页只呈现映射、数据截止和证据边界，不把指数结论冒充成个股预测。</p>
+      </div>
+      <form class="search-card" id="search-form">
+        <label class="search-label" for="stock-code">输入 6 位代码或名称</label>
+        <div class="search-row"><input id="stock-code" inputmode="numeric" autocomplete="off" placeholder="例如 600519" aria-describedby="status"><button type="submit">查看个股</button></div>
+        <div class="chips" aria-label="示例代码"><button class="chip" type="button" data-code="600519">600519 贵州茅台</button><button class="chip" type="button" data-code="000858">000858 五粮液</button><button class="chip" type="button" data-code="601318">601318 中国平安</button></div>
+        <div class="recent" id="recent" hidden><span>最近查看</span><span id="recent-list"></span></div>
+        <p class="status" id="status" aria-live="polite">输入代码后，页面会读取当前目录中的成分映射与指数研究快照。</p>
+      </form>
+    </section>
+
+    <section class="empty" id="empty" aria-live="polite"><strong>没有找到可用映射</strong><span id="empty-copy">请检查代码，或先确认它是否在当前成分快照中。</span></section>
+
+    <section class="result" id="result" tabindex="-1" aria-live="polite">
+      <div class="identity"><div><h2 id="stock-name" tabindex="-1">—</h2><span class="code" id="stock-meta">—</span></div><span class="badge">映射已确认</span></div>
+      <div class="cards">
+        <article class="card"><p class="card-k">所属指数</p><h3 id="index-name">—</h3><p id="index-copy">—</p><p class="meta" id="index-meta">—</p><div class="index-switcher" id="index-switcher" aria-label="切换所属指数"></div></article>
+        <article class="card"><p class="card-k">指数研究状态</p><h3 id="signal">—</h3><p id="signal-copy">—</p><p class="meta" id="signal-meta">—</p></article>
+        <article class="card"><p class="card-k">个股数据状态</p><h3><span class="state">描述性入口</span></h3><p>当前页面不对个股本身给出 LPPLS 顶部或底部结论。</p><p class="meta">证据边界：无个股预测信息</p></article>
+      </div>
+      <div class="chain" aria-label="研究关系链"><div class="step"><span class="step-no">01 / INPUT</span><strong id="chain-stock">个股代码</strong><span>输入与名称识别</span></div><div class="step"><span class="step-no">02 / MAPPING</span><strong id="chain-index">所属指数</strong><span>来自当前成分快照，非 PIT</span></div><div class="step"><span class="step-no">03 / RESEARCH</span><strong>指数工作站</strong><span>打开已发布的研究证据</span></div></div>
+      <div class="actions"><a class="cta" id="dashboard-link" href="#">打开指数研究</a><a class="secondary" id="workstation-link" href="#">进入工作站</a><a class="secondary" href="lab/stock.html">查看原个股入口</a></div>
+      <details><summary>方法与证据边界</summary><p class="boundary">成分关系来自当前静态目录的最近公布名单，属于非 PIT 映射；页面不会把指数状态转写为个股预测，也不会在前端重算模型。指数卡片只读取已有研究快照，未提供的字段保持空缺。</p><p class="boundary" id="evidence-detail"></p></details>
+    </section>
+  </main>
+
+  <script src="app/lppl-data.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      const form = $('search-form'), searchCard = form, input = $('stock-code'), submitButton = form.querySelector('button[type="submit"]');
+      const result = $('result'), empty = $('empty'), status = $('status'), recent = $('recent'), recentList = $('recent-list');
+      const RECENT_KEY = 'lppl.stock.editorial.recent.v1';
+      const state = { data: null, row: null, indexes: [], selected: '', requestId: 0 };
+      let catalogPromise;
+      function catalog() { return catalogPromise || (catalogPromise = LPPL.catalog()); }
+      function setStatus(text, kind) { status.textContent = text; status.dataset.kind = kind || ''; }
+      function setLoading(on) {
+        searchCard.classList.toggle('is-loading', on);
+        searchCard.setAttribute('aria-busy', String(on));
+        submitButton.disabled = on;
+      }
+      function indexInfo(data, sym) { return (data.index_names && data.index_names[sym]) || (LPPL.resolve(sym) || {}).name || sym; }
+      function supportedIndexes(row) {
+        const supported = new Set((LPPL.SYMS || []).map((x) => x.sym));
+        return (row.member_of || []).filter((sym) => supported.has(sym));
+      }
+      function readRecent() {
+        try { const value = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(value) ? value.filter((x) => x && x.code).slice(0, 3) : []; }
+        catch { return []; }
+      }
+      function writeRecent(row) {
+        try {
+          const next = [{ code: row.code, name: row.name }, ...readRecent().filter((x) => x.code !== row.code)].slice(0, 3);
+          localStorage.setItem(RECENT_KEY, JSON.stringify(next)); renderRecent(next);
+        } catch { /* Storage can be disabled in private browsing; search still works. */ }
+      }
+      function renderRecent(items = readRecent()) {
+        recentList.replaceChildren();
+        recent.hidden = !items.length;
+        for (const item of items) {
+          const button = document.createElement('button'); button.type = 'button'; button.dataset.code = item.code;
+          button.textContent = `${item.code} ${item.name || ''}`.trim();
+          button.addEventListener('click', () => { input.value = item.code; submit(item.code); });
+          recentList.append(button);
+        }
+      }
+      async function lookup(raw) {
+        const query = String(raw || '').trim();
+        const data = await catalog();
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+        const row = rows.find((item) => item.type === 'stock' && (item.code === query || item.symbol === query || item.name === query));
+        const indexes = row ? supportedIndexes(row) : [];
+        return { data, row, indexes };
+      }
+      function renderIndexSwitcher() {
+        const box = $('index-switcher'); box.replaceChildren();
+        for (const sym of state.indexes) {
+          const button = document.createElement('button'); button.type = 'button'; button.dataset.index = sym;
+          button.textContent = indexInfo(state.data, sym); button.setAttribute('aria-pressed', String(sym === state.selected));
+          button.addEventListener('click', () => selectIndex(sym)); box.append(button);
+        }
+      }
+      async function selectIndex(sym) {
+        if (!state.row || !state.indexes.includes(sym)) return;
+        state.selected = sym; renderIndexSwitcher(); setStatus(`正在读取 ${indexInfo(state.data, sym)} 的研究快照…`);
+        try {
+          const snapshot = await LPPL.load(sym);
+          if (state.selected !== sym) return;
+          const indexName = indexInfo(state.data, sym);
+          $('index-name').textContent = indexName;
+          $('index-copy').textContent = '当前研究入口对应这个指数，不将其状态延伸为个股预测。';
+          $('index-meta').textContent = `成员来源：${state.data.membership_source || '当前目录'} · 截止 ${state.data.source_date?.[sym] || '未提供'}`;
+          const conclusion = snapshot?.top?.status || snapshot?.top?.label || snapshot?.top?.conclusion || '已发布研究快照';
+          const detail = snapshot?.top?.description || snapshot?.top?.note || '打开工作站查看结论与证据。';
+          $('signal').textContent = conclusion; $('signal-copy').textContent = detail;
+          $('signal-meta').textContent = `数据截止：${snapshot?.asof || '未提供'} · 仅显示已有证据`;
+          $('chain-index').textContent = indexName;
+          $('dashboard-link').href = `lab/dashboard.html?sym=${encodeURIComponent(sym)}_latest`;
+          $('workstation-link').href = `index.html?code=${encodeURIComponent(sym)}`;
+          $('evidence-detail').textContent = `当前选择：${indexName}（${sym}）。研究快照由现有适配层读取，未提供的指标不在此页补算。`;
+          setStatus('已找到成分映射，可以进入指数研究。', 'ok');
+        } catch (error) { setStatus(error.message || '指数快照未加载', 'error'); }
+      }
+      function render(found) {
+        state.data = found.data; state.row = found.row; state.indexes = found.indexes; state.selected = found.indexes[0] || '';
+        if (!state.row || !state.indexes.length) {
+          result.classList.remove('is-ready'); empty.classList.add('is-visible');
+          $('empty-copy').textContent = state.row ? '当前目录有这只个股，但没有可进入的六个指数研究对象。' : '请使用当前成分目录中的 6 位代码或名称。';
+          return;
+        }
+        empty.classList.remove('is-visible'); result.classList.add('is-ready');
+        const name = state.row.name || state.row.code;
+        $('stock-name').textContent = name; $('stock-meta').textContent = `${state.row.code} · ${state.row.exchange || '交易所未提供'} · ${state.row.board || '板块未提供'}`;
+        $('chain-stock').textContent = `${state.row.code} ${name}`; renderIndexSwitcher(); writeRecent(state.row);
+        selectIndex(state.selected);
+        requestAnimationFrame(() => result.focus({ preventScroll: false }));
+      }
+      async function submit(value) {
+        const query = String(value || '').trim();
+        if (!query) { setStatus('请输入 6 位代码或完整名称。', 'error'); input.focus(); return; }
+        const id = ++state.requestId; setLoading(true); setStatus('正在读取目录与指数快照…'); empty.classList.remove('is-visible'); result.classList.remove('is-ready');
+        try { const found = await lookup(query); if (id === state.requestId) render(found); }
+        catch (error) { if (id !== state.requestId) return; result.classList.remove('is-ready'); empty.classList.add('is-visible'); $('empty-copy').textContent = error.message || '数据暂时无法加载。'; setStatus('数据未加载', 'error'); }
+        finally { if (id === state.requestId) setLoading(false); }
+      }
+      function resetSearch() { input.value = ''; result.classList.remove('is-ready'); empty.classList.remove('is-visible'); setStatus('输入代码后，页面会读取当前目录中的成分映射与指数研究快照。'); input.focus(); }
+      form.addEventListener('submit', (event) => { event.preventDefault(); submit(input.value); });
+      input.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault(); resetSearch(); } });
+      document.querySelectorAll('[data-code]').forEach((chip) => chip.addEventListener('click', () => { input.value = chip.dataset.code; submit(chip.dataset.code); }));
+      renderRecent();
+      const initial = new URLSearchParams(location.search).get('code');
+      if (initial) { input.value = initial; submit(initial); }
+    })();
+  </script>
+</body>
+</html>
+
+
