@@ -1,0 +1,80 @@
+name: forward_log_seal
+# 前瞻日志每日封存：跑 scripts/daily_update.sh（6 指数最新 as-of 拟合 → 契约 JSON → forward_log seal），
+# 只把 forward_log/ 的新增提交到 main（追加式，不改已封存文件）。取数走 research.data.cache（腾讯/新浪，限速）。
+# 取数失败的交易日不补封（补了就不是 PIT）；缺日由 forward_log_check 周检报告。
+
+on:
+  schedule:
+    - cron: "30 10 * * 1-5" # 18:30 Asia/Shanghai, weekdays（收盘后，market_daily 之后半小时）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forward-log-seal
+  cancel-in-progress: false
+
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Daily update + seal
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/daily_update.sh
+          python -m research.pipeline.forward_log verify | tail -8
+      - name: Guard — only today's as-of may be sealed (no backfill)
+        shell: bash
+        run: |
+          set -euo pipefail
+          today="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          new_asofs="$(git diff -U0 -- forward_log/ledger.jsonl | { grep '^+{' || true; } | python -c 'import sys,json; print(" ".join(sorted({json.loads(l[1:])["asof"] for l in sys.stdin})))')"
+          echo "today=$today new_asofs=[$new_asofs]"
+          if [[ -z "$new_asofs" ]]; then
+            echo "nothing newly sealed"
+          elif [[ "$new_asofs" != "$today" ]]; then
+            echo "::warning::sealed as-of ($new_asofs) != today ($today): data not refreshed to today or stale run; discarding — a missed day is left missing, not backfilled"
+            git checkout -- forward_log/
+            git clean -fdq forward_log/
+          fi
+      - name: Commit forward_log to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add forward_log/
+          if git diff --cached --quiet; then
+            echo "No new sealed records (already sealed for this as-of, or no trading day)"
+            exit 0
+          fi
+          git commit -m "forward_log: 封存 $(python -c 'import json,pathlib; r=[json.loads(x) for x in pathlib.Path("forward_log/ledger.jsonl").read_text().splitlines() if x.strip()]; print(r[-1]["asof"])')"
+          git checkout -- .   # 丢弃 daily_update 对 web/mock/data 等已跟踪文件的改动，只提交 forward_log/
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Post-check (hash / stale)
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          # `check` 子命令随 PR #54 引入；未合并时退回 `verify`（只核哈希）
+          if python -c "from research.pipeline.forward_log import check" 2>/dev/null; then
+            python -m research.pipeline.forward_log check --max-stale 5; rc=$?
+            if [[ $rc -eq 2 ]]; then echo "::warning::forward_log stale (> 5 bdays since last seal)"; exit 0; fi
+            exit $rc
+          else
+            python -m research.pipeline.forward_log verify | grep -q " False" && { echo "::error::hash mismatch"; exit 1; } || echo "verify ok (check unavailable until PR #54 merges)"
+          fi
