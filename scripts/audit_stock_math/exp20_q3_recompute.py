@@ -7,14 +7,16 @@ import os
 import sys
 from multiprocessing import Pool
 
-os.environ.setdefault("LPPLS_BOX", "v2")
-os.environ["LPPLS_G3"] = "1"
-os.environ.setdefault("LPPLS_Q3", "20")
+# 只服务 lppls_v2_g3q3（v2 搜索域、_g3 优化器组合、K=20），不继承外部环境
+os.environ.update(LPPLS_BOX="v2", LPPLS_G3="1", LPPLS_Q3="20")
+os.environ.pop("LPPLS_WINDOWS", None)
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from research.features import lppls_scan as L  # noqa: E402
 from research.lppls import core  # noqa: E402
+
+assert L.BOX == "v2" and L.G3 and L.Q3_K == 20 and L.WINDOWS_MODE == "full", (L.BOX, L.G3, L.Q3_K, L.WINDOWS_MODE)
 
 _LP: dict[str, np.ndarray] = {}
 _POS: dict[str, dict] = {}
