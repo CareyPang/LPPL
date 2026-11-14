@@ -196,6 +196,7 @@ def compute_bottom_signal(ebs: pd.DataFrame, pbn: pd.DataFrame) -> dict:
     summary = {
         "n_events": len(events),
         "n_with_250d": len(with_250),
+        "n_up_250": up_250,
         "share_up_250": up_250 / len(with_250) if with_250 else None,
         "median_ret_250": _median(with_250),
         "median_post_min": _median(post_mins),

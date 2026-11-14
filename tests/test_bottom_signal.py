@@ -107,3 +107,4 @@ def test_partial_event_window_is_excluded_from_median_post_min():
     assert partial_event["post_min_complete"] is False
     assert full_event["post_min"] != partial_event["post_min"]
     assert result["summary"]["median_post_min"] == pytest.approx(full_event["post_min"])
+    assert result["summary"]["n_up_250"] == 1

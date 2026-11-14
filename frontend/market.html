@@ -734,7 +734,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const events = Array.isArray(data.events) ? data.events : [];
     const sampleN = Number.isFinite(summary.n_events) ? summary.n_events : events.length;
     const outcomes = events.filter((event) => Number.isFinite(event.ret_250));
-    const upCount = outcomes.filter((event) => event.ret_250 > 0).length;
+    const upCount = Number.isFinite(summary.n_up_250)
+      ? summary.n_up_250
+      : outcomes.filter((event) => event.ret_250 > 0).length;
     const percent = (value, digits = 2) =>
       Number.isFinite(value) ? `${(value * 100).toFixed(digits)}%` : '—';
     const signedPercent = (value) =>
