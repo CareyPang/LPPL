@@ -59,6 +59,12 @@ def compute_series(ebs: pd.DataFrame, pbn: pd.DataFrame) -> pd.DataFrame:
     pbn_ratio = _dated_series(
         pbn, "date", "below_net_asset_ratio", "pbn_ratio"
     )
+    for source, values in ((ERP_SOURCE, erp), (PBN_SOURCE, pbn_ratio)):
+        count = int(values.count())
+        if count < MIN_PERIODS:
+            raise ValueError(
+                f"{source} has only {count} non-null values; requires {MIN_PERIODS}"
+            )
     pbn_aligned = (
         pbn_ratio.reindex(pbn_ratio.index.union(erp.index))
         .sort_index()

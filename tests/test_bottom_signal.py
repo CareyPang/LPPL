@@ -81,3 +81,11 @@ def test_snapshot_serializes_nan_as_null_and_rounds_floats(tmp_path):
     assert saved["events"][0]["ret_120"] is None
     assert saved["events"][0]["ret_250"] is None
     assert "NaN" not in serialized
+
+
+def test_empty_pbn_source_fails_instead_of_returning_unlit_signal():
+    ebs, _, _ = _frames()
+    pbn = pd.DataFrame(columns=["date", "below_net_asset_ratio"])
+
+    with pytest.raises(ValueError, match="stock_a_below_net_asset_statistics"):
+        compute_series(ebs, pbn)
