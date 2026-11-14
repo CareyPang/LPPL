@@ -5,9 +5,7 @@ import argparse
 import json
 import math
 import time
-from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -272,7 +270,9 @@ def _option_summary(underlying: str) -> dict:
 
 
 def collect(previous=None) -> tuple[dict, dict]:
-    today = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
+    from ..data.trading_date import latest_closed_trading_day
+
+    today = latest_closed_trading_day()
     shares = _share_history()
     share_data = {
         code: _share_summary(shares, code, previous)

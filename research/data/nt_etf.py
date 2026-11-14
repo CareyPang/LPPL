@@ -409,12 +409,22 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
     start = start or asof
     session = session or requests.Session()
     prices, price_errors = _prices(universe, start, asof)
-    calendar = sorted({day for values in prices.values() for day in values})
-    if not calendar:
-        calendar = [asof]
-    sh, sz, sse_errors, szse_errors = _fetch_shares(universe, calendar, start, asof, session)
     previous_by_code = {e["code"]: e for e in (prev or {}).get("etfs", [])}
+    sse_codes = {item["code"] for item in universe if item["exchange"] == "SH"}
+    previous_sse_days = set()
+    if not backfill_start:
+        for code in sse_codes:
+            for row in previous_by_code.get(code, {}).get("series", []):
+                if len(row) > 1 and row[1] is not None and row[0] <= asof:
+                    previous_sse_days.add(row[0])
+    calendar = sorted(
+        day
+        for day in {day for values in prices.values() for day in values}
+        if day <= asof and day not in previous_sse_days
+    )
+    sh, sz, sse_errors, szse_errors = _fetch_shares(universe, calendar, start, asof, session)
     etfs = []
+    sse_share_days = {}
     holders_errors = []
     holder_structure_errors = []
     for item in universe:
@@ -426,6 +436,9 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             for day, values in sh.items():
                 if item["code"] in values:
                     share_map[day] = values[item["code"]]["shares_10k"] / 10000
+            sse_share_days[item["code"]] = {
+                day for day, value in share_map.items() if value is not None and day <= asof
+            }
         else:
             for day, value in sz.get(item["code"], {}).items():
                 share_map[day] = value / 10000
@@ -461,6 +474,10 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
         ]
         latest_shares, prior_shares = _latest_share_observations(series)
         latest_shares_yi = latest_shares[1] if latest_shares else None
+        shares_asof = max(
+            (day for day, shares in share_map.items() if shares is not None and day <= asof),
+            default=None,
+        )
         prev_shares = holder.get("nt_shares_yi") if holder else None
         nt_ratio = holder.get("nt_ratio") if holder else None
         report_total = prev_shares / nt_ratio * 100 if prev_shares is not None and nt_ratio else None
@@ -469,6 +486,8 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
         holder = {**(holder or {}), "nt_value_yi": prev_shares * latest[2] if prev_shares is not None and latest[2] is not None else None}
         etfs.append({**item, "series": series, "latest": {"shares_yi": latest_shares_yi,
             "shares_date": latest_shares[0] if latest_shares else None,
+            "shares_asof": shares_asof,
+            "shares_stale": shares_asof != asof,
             "chg_yi": latest_shares_yi - prior_shares[1] if latest_shares and prior_shares else None,
             "flow_yi": latest[3], **{k: v[0] for k,v in windows.items()}, "flow_ytd": sum(ytd) if ytd else None,
             "flow_ytd_n_days": len(ytd),
@@ -478,9 +497,14 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "holders": holder,
             "holder_structure": holder_structure,
             "shares_vs_report": latest_shares_yi/report_total if report_total and latest_shares_yi is not None else None})
+    available_sse_days = set.union(*sse_share_days.values()) if sse_share_days else set()
     sources = {
         "prices": {"ok": not price_errors, "error": "; ".join(price_errors) if price_errors else None},
-        "sse_shares": {"ok": bool(sh) and not sse_errors, "error": "; ".join(sse_errors) if sse_errors else None},
+        "sse_shares": {
+            "ok": asof in available_sse_days,
+            "latest_day": max(available_sse_days, default=None),
+            "error": "; ".join(sse_errors) if sse_errors else None,
+        },
         "szse_shares": {"ok": len(sz) == sum(x["exchange"] == "SZ" for x in universe) and not szse_errors, "error": "; ".join(szse_errors) if szse_errors else None},
         "holders": {"ok": not holders_errors, "error": "; ".join(holders_errors) if holders_errors else None},
         "holder_structure": {
