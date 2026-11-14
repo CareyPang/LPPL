@@ -745,8 +745,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <td>${esc(event.date || '—')}</td><td class="r">${signedPercent(event.post_min)}</td>
       <td>${esc(event.post_min_date || '—')}</td><td class="r">${signedPercent(event.ret_120)}</td>
       <td class="r">${signedPercent(event.ret_250)}</td></tr>`).join('');
-    const notes = (Array.isArray(data.notes) ? data.notes : [])
-      .filter((note) => !/买入|卖出/.test(String(note)));
+    const notes = Array.isArray(data.notes) ? data.notes : [];
     const sources = Object.values(data.sources || {}).length ? 'AkShare' : '—';
     $('src-bottom').textContent = `${sources} · 截至 ${data.asof || '—'} · 样本 n=${sampleN}`;
     bottomBody.innerHTML = `<div class="big">
