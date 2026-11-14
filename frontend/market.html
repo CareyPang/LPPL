@@ -818,6 +818,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const n = day ? lag(day) : null;
     const st = n == null ? '<td>—</td>' : n >= 1 ? `<td class="up">晚 ${n} 个工作日</td>` : '<td class="dn">最新</td>';
     const bad = Object.entries(d.sources || {}).filter(([, v]) => v && v.ok === false).map(([k]) => NAMES[k] || k);
+    if (d.source && d.source.ok === false) bad.push(d.source.reason || '数据源');
+    if (d.n_error > 0) bad.push(`${d.n_error} 只个股计算失败`);
+    if (d.n_missing > 0) bad.push(`${d.n_missing} 只个股缺结果`);
     return `<tr><td>${E(name)}</td><td>${E(day || '—')}</td><td>${E(gen ? bj(gen) : '—')}</td>${st}<td>${bad.length ? `<span class="wn">${E(bad.join('、'))}</span>` : '—'}</td></tr>`;
   };
   Promise.all(D.map(([, f]) => f().catch(() => null))).then((list) => {
