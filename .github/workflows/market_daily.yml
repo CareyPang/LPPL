@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - research/data/abnormal.py
+      - research/data/bottom_signal.py
       - research/data/range_stats.py
       - research/data/market_base.py
       - research/data/events.py
@@ -60,6 +61,11 @@ jobs:
             abnormal_ok=true
           fi
           echo "abnormal_ok=$abnormal_ok" >> "$GITHUB_OUTPUT"
+          bottom_ok=false
+          if python -m research.data.bottom_signal --out out/bottom; then
+            bottom_ok=true
+          fi
+          echo "bottom_ok=$bottom_ok" >> "$GITHUB_OUTPUT"
           python - <<'PY'
           import json
           from pathlib import Path
@@ -102,7 +108,7 @@ jobs:
             gh workflow run pages.yml --ref main
           fi
       - name: Publish to stock-results
-        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.range_stats.outcome == 'success')
+        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.range_stats.outcome == 'success')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -120,6 +126,10 @@ jobs:
           if [[ -f out/abnormal/abnormal_latest.json ]]; then
             cp out/abnormal/abnormal_latest.json market/abnormal_latest.json
             git add market/abnormal_latest.json
+          fi
+          if [[ -f out/bottom/bottom_signal_latest.json ]]; then
+            cp out/bottom/bottom_signal_latest.json market/bottom_signal_latest.json
+            git add market/bottom_signal_latest.json
           fi
           if [[ -f out/range/range_latest.json ]]; then
             cp out/range/range_latest.json market/range_latest.json
@@ -173,6 +183,9 @@ jobs:
       - name: Smoke abnormal output
         continue-on-error: true
         run: python -m research.data.abnormal --market web/mock/data/market/market_latest.json --out out/abnormal
+      - name: Smoke bottom signal
+        continue-on-error: true
+        run: python -m research.data.bottom_signal --out out/bottom
       - name: Smoke range output
         continue-on-error: true
         run: python -m research.data.range_stats --history-dir web/mock/data/market --out out/range

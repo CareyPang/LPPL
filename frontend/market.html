@@ -208,6 +208,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div id="macro-body"></div>
   </section>
 
+  <section class="sec wide" id="s-bottom" aria-labelledby="h-bottom">
+    <div class="sec-h">
+      <h2 id="h-bottom">底部区间信号</h2><span class="ev">descriptive</span><span class="src" id="src-bottom"></span>
+    </div>
+    <div id="bottom-body"><p class="note">底部区间信号加载中。</p></div>
+  </section>
+
   <section class="sec wide" id="s-abnormal" aria-labelledby="h-abnormal">
     <div class="sec-h">
       <h2 id="h-abnormal">异动提醒</h2><span class="ev">descriptive</span><span class="src" id="src-abnormal"></span>
@@ -712,7 +719,47 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const pct = (value) => Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—';
   const cash = (value) => Number.isFinite(value) ? value.toLocaleString('zh-CN', { maximumFractionDigits: 0 }) : '—';
   const abnormalBody = $('abnormal-body');
+  const bottomBody = $('bottom-body');
   let rangeData = null, rangeWindow = '5';
+
+  function renderBottom(data) {
+    if (!data) {
+      $('src-bottom').textContent = '数据未加载';
+      bottomBody.innerHTML = '<p class="fail">底部区间信号数据未加载。</p>';
+      return;
+    }
+    const current = data.current || {};
+    const summary = data.summary || {};
+    const baseline = data.baseline || {};
+    const events = Array.isArray(data.events) ? data.events : [];
+    const sampleN = Number.isFinite(summary.n_events) ? summary.n_events : events.length;
+    const outcomes = events.filter((event) => Number.isFinite(event.ret_250));
+    const upCount = Number.isFinite(summary.n_up_250)
+      ? summary.n_up_250
+      : outcomes.filter((event) => event.ret_250 > 0).length;
+    const percent = (value, digits = 2) =>
+      Number.isFinite(value) ? `${(value * 100).toFixed(digits)}%` : '—';
+    const signedPercent = (value) =>
+      Number.isFinite(value) ? `${value > 0 ? '+' : ''}${(value * 100).toFixed(2)}%` : '—';
+    const reading = (label, value, rank) => `<div><small>${label}</small>
+      <strong>${percent(value)}</strong><small>近3年分位 ${percent(rank, 1)}</small></div>`;
+    const rows = events.map((event) => `<tr>
+      <td>${esc(event.date || '—')}</td><td class="r">${signedPercent(event.post_min)}${event.post_min_complete === false ? '（未满250日）' : ''}</td>
+      <td>${esc(event.post_min_date || '—')}</td><td class="r">${signedPercent(event.ret_120)}</td>
+      <td class="r">${signedPercent(event.ret_250)}</td></tr>`).join('');
+    const notes = Array.isArray(data.notes) ? data.notes : [];
+    const sources = Object.values(data.sources || {}).length ? 'AkShare' : '—';
+    $('src-bottom').textContent = `${sources} · 截至 ${data.asof || '—'} · 样本 n=${sampleN}`;
+    bottomBody.innerHTML = `<div class="big">
+        ${reading('股债利差', current.erp, current.erp_pct)}
+        ${reading('破净股占比', current.pbn_ratio, current.pbn_pct)}
+      </div>
+      <p class="note">触发阈值：两项近3年分位均 ≥ 90%。当前状态：${current.signal ? '<span class="wn">亮</span>' : '未亮'}；最近触发日期 ${esc(current.last_event_date || '—')}。</p>
+      <p class="note">历史 ${summary.n_events ?? events.length} 次触发，之后 250 日上涨 ${upCount}/${summary.n_with_250d ?? outcomes.length}（下跌日基准 ${percent(baseline.share_up_250, 1)}）。</p>
+      ${events.length ? `<div class="table-scroll"><table><thead><tr><th>触发日</th><th class="r">之后最低</th><th>最低日</th><th class="r">后120日</th><th class="r">后250日</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="note">暂无历史触发样本。</p>'}
+      <p class="note">历史分位，不是预测。</p>
+      ${notes.length ? `<ul class="note">${notes.map((note) => `<li>${esc(note)}</li>`).join('')}</ul>` : ''}`;
+  }
 
   function renderAbnormal(data) {
     if (!data) {
@@ -760,6 +807,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       ${renderTable('industry', '行业板块')}${renderTable('concept', '概念板块')}`;
   }
 
+  LPPL.bottomSignal().then(renderBottom).catch(() => renderBottom(null));
   LPPL.abnormal().then(renderAbnormal).catch(() => renderAbnormal(null));
   LPPL.rangeStats().then((data) => { rangeData = data; renderRange(); }).catch(() => {
     $('src-range').textContent = '数据未加载';
