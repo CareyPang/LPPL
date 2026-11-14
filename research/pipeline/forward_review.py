@@ -1,8 +1,8 @@
 """前瞻日志季度复盘（计划 H）：对 ledger 中某季度的封存记录出表，只做描述，不做预测。
 
 每标的：封存天数 n、哈希核验失败数、`model_version`/`data_version` 分段、报警事件簇（指标置信度 ≥ Q 的连续封存日）、
-已成熟记录数（asof ≤ 最新交易日 − H）；A1/A2 只有在成熟记录 ≥ 8 且报警 ≥ 3 时才由 forward_log.review 计算，这里不算。
-缺日清单：季度内（自 ledger 首日起、截至最后一次封存）交易日历上没有该标的封存的日期——按 §22 规则缺日只标注、不回填。
+已成熟记录数（asof 之后行情日历上已有 ≥H 个交易日，同 forward_log.review）；A1/A2 只有在成熟记录 ≥ 8 且报警 ≥ 3 时才由 forward_log.review 计算，这里不算。
+缺日清单：季度内（自 ledger 首日起、截至 ledger 最后一次封存）交易日历上没有该标的封存的日期；整季无封存的标的也列出——按 §22 规则缺日只标注、不回填。
 证据等级固定为 `descriptive`，直到 ledger 覆盖 ≥ 6 个季度（见 docs/plan_continuation_2026_11.md H）。
 用法：python -m research.pipeline.forward_review 2026Q4 [--root forward_log] [--out reports/forward_review_2026Q4.csv]
 独立于 forward_log.py 的 check/precision（PR #54），避免两支同时改同一文件。"""
@@ -82,20 +82,37 @@ def trading_days(start: pd.Timestamp, end: pd.Timestamp, symbol: str) -> pd.Date
     return pd.bdate_range(start, end)
 
 
+def _mature_end(symbol: str) -> pd.Timestamp:
+    """与 forward_log.review 同口径：asof 之后在可得行情日历上还有 ≥H 个交易日才算成熟；无缓存时退回工作日历。"""
+    try:
+        from ..data import cache
+        ohlc = cache.load(symbol, auto_refresh=False)
+        d = pd.DatetimeIndex(pd.to_datetime(ohlc["date"] if "date" in ohlc.columns else ohlc.index)).sort_values()
+        if len(d) > H:
+            return d[-1 - H]
+    except Exception:  # noqa: BLE001
+        pass
+    return pd.Timestamp.today().normalize() - pd.tseries.offsets.BDay(H)
+
+
 def review_quarter(q: str, root: Path = Path("forward_log")) -> tuple[pd.DataFrame, pd.DataFrame, str]:
     start, end = quarter_range(q)
     led = load_ledger(root)
     n_quarters = pd.to_datetime(led["asof"]).dt.to_period("Q").nunique() if len(led) else 0
     evidence = "descriptive" if n_quarters < MIN_QUARTERS else "forward_reviewable"
     led["asof_ts"] = pd.to_datetime(led["asof"])  # DataFrame.asof 是方法名，必须下标取列
-    first = led.asof_ts.min() if len(led) else start  # 缺日只从 ledger 首日起算（日志启动前不是缺日）
+    # 缺日区间按整个 ledger 定：从 ledger 首日起（日志启动前不是缺日）、到 ledger 最后一次封存止（停更后又恢复时，
+    # 季度末尾的停更段也要列出）；标的集合也取整个 ledger（整季无封存的标的记 n_sealed=0、全季缺日）
+    first = led.asof_ts.min() if len(led) else start
+    last = led.asof_ts.max() if len(led) else start
+    all_syms = sorted(led.symbol.unique())
     led = led[(led.asof_ts >= start) & (led.asof_ts <= end)].sort_values(["symbol", "asof"])
     rows, missing = [], []
-    if len(led):
-        last = led.asof_ts.max()
-        mature_end = pd.Timestamp.today().normalize() - pd.tseries.offsets.BDay(H)
-        for s, g in led.groupby("symbol"):
+    if all_syms and last >= start and first <= end:  # 季度与 ledger 覆盖期有交集才出表
+        for s in all_syms:
+            g = led[led.symbol == s]
             ok = g[g.ok]
+            mature_end = _mature_end(s)
             n_cl, cl = _clusters(ok)
             rows.append(dict(symbol=s, n_sealed=len(g), n_tampered=int((~g.ok).sum()), n_mature=int((ok.asof_ts <= mature_end).sum()),
                              n_alarm_clusters=n_cl, alarm_clusters=cl, model_versions=_segments(g, "model_version"),

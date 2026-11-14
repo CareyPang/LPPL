@@ -32,6 +32,7 @@ def test_injections(tmp_path, monkeypatch):
     import research.pipeline.forward_review as fr
 
     monkeypatch.setattr(fr, "trading_days", lambda s, e, sym: pd.bdate_range(s, e))
+    monkeypatch.setattr(fr, "_mature_end", lambda sym: pd.Timestamp("2026-10-06"))
     days = [d.date().isoformat() for d in pd.bdate_range("2026-10-05", "2026-10-13")]  # 7 个工作日
     for i, d in enumerate(days):
         if d == "2026-10-08":
@@ -51,6 +52,27 @@ def test_injections(tmp_path, monkeypatch):
     assert t.loc["sz399001", "n_alarm_clusters"] == 0
     assert "m1:2026-10-05..2026-10-07(n=3)" in t.loc["sh000001", "model_versions"] and "m2:" in t.loc["sh000001", "model_versions"]
     assert set(miss[miss.symbol == "sh000001"].date) == {"2026-10-08"} and set(miss[miss.symbol == "sz399001"].date) == {"2026-10-08"}
+    assert t.loc["sh000001", "n_mature"] == 2  # 10-05、10-06 ≤ 成熟截止（按行情日历，非自然日）
     # 季度外无记录
     tab2, miss2, _ = review_quarter("2026Q3", tmp_path)
     assert len(tab2) == 0 and len(miss2) == 0
+
+
+def test_outage_tail_and_absent_symbol(tmp_path, monkeypatch):
+    """停更后次季恢复：本季最后一次封存之后的交易日也是缺日；整季无封存的标的要出现在表里。"""
+    import research.pipeline.forward_review as fr
+
+    monkeypatch.setattr(fr, "trading_days", lambda s, e, sym: pd.bdate_range(s, e))
+    monkeypatch.setattr(fr, "_mature_end", lambda sym: pd.Timestamp("2000-01-01"))
+    for d in ("2026-12-28", "2026-12-29"):
+        _mk(tmp_path, d, "sh000001")
+        _mk(tmp_path, d, "sz399001")
+    _mk(tmp_path, "2027-01-05", "sh000001")  # 次季恢复，且 sz399001 未恢复
+    tab, miss, _ = review_quarter("2026Q4", tmp_path)
+    assert set(miss[miss.symbol == "sh000001"].date) == {"2026-12-30", "2026-12-31"}
+    assert set(miss[miss.symbol == "sz399001"].date) == {"2026-12-30", "2026-12-31"}
+    tab2, miss2, _ = review_quarter("2027Q1", tmp_path)
+    t2 = tab2.set_index("symbol")
+    assert t2.loc["sz399001", "n_sealed"] == 0 and t2.loc["sh000001", "n_sealed"] == 1
+    assert set(miss2[miss2.symbol == "sz399001"].date) == {"2027-01-01", "2027-01-04", "2027-01-05"}
+    assert set(miss2[miss2.symbol == "sh000001"].date) == {"2027-01-01", "2027-01-04"}
