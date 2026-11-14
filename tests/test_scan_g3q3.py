@@ -53,3 +53,4 @@ def test_q3_shifts_distinct_and_bounded():
         assert min(ks) >= 5 and max(ks) <= n - 6, (n, ks)
     assert q3_shifts(30, 20) == list(range(5, 25))
     assert q3_shifts(20, 20) == list(range(5, 15))  # 可用偏移不足时全部取用
+    assert q3_shifts(250, 1) == [124]  # K=1 不除零

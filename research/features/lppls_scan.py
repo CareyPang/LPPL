@@ -149,6 +149,8 @@ def q3_shifts(n: int, k: int) -> list[int]:
     lo, hi = 5, n - 6
     if hi - lo + 1 <= k:
         return list(range(lo, hi + 1))
+    if k == 1:
+        return [(lo + hi) // 2]
     return [lo + int(round((hi - lo) * j / (k - 1))) for j in range(k)]
 
 
