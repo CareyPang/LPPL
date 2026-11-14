@@ -30,6 +30,10 @@ on:
         description: Number of parallel shards (1–10)
         type: string
         default: "6"
+      retry_of:
+        description: Source run ID for a one-time retry; suppresses another retry
+        type: string
+        default: ""
   pull_request:
     paths:
       - .github/workflows/stock_nightly.yml
@@ -40,7 +44,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: stock-nightly
+  # Retry runs need a separate pending slot so dispatches cannot replace scheduled runs.
+  group: ${{ inputs.retry_of && 'stock-nightly-retry' || 'stock-nightly' }}
   cancel-in-progress: false
 
 jobs:
@@ -124,6 +129,12 @@ jobs:
             printf 'shards=%s\n' "$shards"
             printf 'matrix=%s\n' "$matrix"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Record retry origin
+        env:
+          RETRY_OF: ${{ inputs.retry_of }}
+        run: |
+          printf 'retry_of: %s\n' "${RETRY_OF:-none}" >> "$GITHUB_STEP_SUMMARY"
 
   fit:
     needs: plan
@@ -270,3 +281,37 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run pages.yml --ref main
+
+  retry:
+    needs: [plan, fit]
+    if: >-
+      always() &&
+      needs.plan.result == 'success' &&
+      needs.fit.result == 'failure' &&
+      github.event_name != 'pull_request' &&
+      !inputs.retry_of
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PLAN_UNIVERSE: ${{ needs.plan.outputs.universe }}
+      PLAN_VARIANT: ${{ needs.plan.outputs.variant }}
+      PLAN_SHARDS: ${{ needs.plan.outputs.shards }}
+      PLAN_ASOF: ${{ needs.plan.outputs.asof }}
+    steps:
+      - name: Record retry dispatch
+        env:
+          RETRY_OF: ${{ inputs.retry_of }}
+        run: |
+          printf 'retry_of input: %s\n' "${RETRY_OF:-none}" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Dispatching retry_of: %s\n' "$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dispatch one retry with the resolved plan
+        run: |
+          gh workflow run stock_nightly.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f "universe=$PLAN_UNIVERSE" \
+            -f "variant=$PLAN_VARIANT" \
+            -f "shards=$PLAN_SHARDS" \
+            -f "asof=$PLAN_ASOF" \
+            -f "retry_of=$GITHUB_RUN_ID"
