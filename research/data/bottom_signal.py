@@ -168,6 +168,7 @@ def compute_bottom_signal(ebs: pd.DataFrame, pbn: pd.DataFrame) -> dict:
                 if post_min_index is not None
                 else None
             ),
+            "post_min_complete": index + FORWARD_DAYS < len(closes),
             **returns,
         }
 
@@ -186,7 +187,11 @@ def compute_bottom_signal(ebs: pd.DataFrame, pbn: pd.DataFrame) -> dict:
         )
 
     with_250 = [event["ret_250"] for event in events if event["ret_250"] is not None]
-    post_mins = [event["post_min"] for event in events if event["post_min"] is not None]
+    post_mins = [
+        event["post_min"]
+        for event in events
+        if event["ret_250"] is not None and event["post_min"] is not None
+    ]
     up_250 = sum(value > 0 for value in with_250)
     summary = {
         "n_events": len(events),

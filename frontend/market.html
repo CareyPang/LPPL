@@ -742,7 +742,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const reading = (label, value, rank) => `<div><small>${label}</small>
       <strong>${percent(value)}</strong><small>近3年分位 ${percent(rank, 1)}</small></div>`;
     const rows = events.map((event) => `<tr>
-      <td>${esc(event.date || '—')}</td><td class="r">${signedPercent(event.post_min)}</td>
+      <td>${esc(event.date || '—')}</td><td class="r">${signedPercent(event.post_min)}${event.post_min_complete === false ? '（未满250日）' : ''}</td>
       <td>${esc(event.post_min_date || '—')}</td><td class="r">${signedPercent(event.ret_120)}</td>
       <td class="r">${signedPercent(event.ret_250)}</td></tr>`).join('');
     const notes = Array.isArray(data.notes) ? data.notes : [];

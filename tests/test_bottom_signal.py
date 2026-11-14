@@ -89,3 +89,21 @@ def test_empty_pbn_source_fails_instead_of_returning_unlit_signal():
 
     with pytest.raises(ValueError, match="stock_a_below_net_asset_statistics"):
         compute_series(ebs, pbn)
+
+
+def test_partial_event_window_is_excluded_from_median_post_min():
+    ebs, pbn, dates = _frames(1000)
+    for index in (600, 900):
+        ebs.loc[index, "股债利差"] = 5.0
+        pbn.loc[index, "below_net_asset_ratio"] = 5.0
+    ebs.loc[901:, "沪深300指数"] = 180.0
+
+    result = compute_bottom_signal(ebs, pbn)
+    full_event, partial_event = result["events"]
+
+    assert full_event["date"] == dates[600].date().isoformat()
+    assert full_event["post_min_complete"] is True
+    assert partial_event["date"] == dates[900].date().isoformat()
+    assert partial_event["post_min_complete"] is False
+    assert full_event["post_min"] != partial_event["post_min"]
+    assert result["summary"]["median_post_min"] == pytest.approx(full_event["post_min"])
