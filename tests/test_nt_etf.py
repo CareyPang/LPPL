@@ -308,6 +308,42 @@ def test_no_price_days_do_not_invent_an_sse_query_date(monkeypatch, tmp_path):
     assert payload["sources"]["sse_shares"]["latest_day"] == "2026-11-12"
 
 
+def test_sse_query_retries_day_missing_for_one_priced_etf(monkeypatch, tmp_path):
+    universe = [
+        {"code": "510300", "name": "测试沪深300", "category": "测试", "exchange": "SH"},
+        {"code": "510500", "name": "测试中证500", "category": "测试", "exchange": "SH"},
+    ]
+    previous = {
+        "asof": "2026-11-12",
+        "etfs": [
+            {
+                "code": "510300",
+                "series": [["2026-11-12", 1.0, 4.0, None]],
+                "holders": {"nt_shares_yi": None, "nt_ratio": None},
+            },
+            {
+                "code": "510500",
+                "series": [["2026-11-11", 0.8, 1.3, None]],
+                "holders": {"nt_shares_yi": None, "nt_ratio": None},
+            },
+        ],
+    }
+
+    _, calls = _fetch_fixture(
+        monkeypatch,
+        tmp_path,
+        universe,
+        previous,
+        {
+            "510300": {"2026-11-12": 4.1},
+            "510500": {"2026-11-12": 1.4},
+        },
+        ({}, {}, [], []),
+    )
+
+    assert calls["days"] == ["2026-11-12"]
+
+
 @pytest.mark.parametrize(
     ("asof_shares", "expected_ok"),
     [(True, True), (False, False)],

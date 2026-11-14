@@ -411,12 +411,21 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
     prices, price_errors = _prices(universe, start, asof)
     previous_by_code = {e["code"]: e for e in (prev or {}).get("etfs", [])}
     sse_codes = {item["code"] for item in universe if item["exchange"] == "SH"}
-    previous_sse_days = set()
+    previous_sse_share_days = {code: set() for code in sse_codes}
     if not backfill_start:
         for code in sse_codes:
             for row in previous_by_code.get(code, {}).get("series", []):
                 if len(row) > 1 and row[1] is not None and row[0] <= asof:
-                    previous_sse_days.add(row[0])
+                    previous_sse_share_days[code].add(row[0])
+    previous_sse_days = {
+        day
+        for day in {day for values in prices.values() for day in values}
+        if all(
+            day in previous_sse_share_days[code]
+            for code in sse_codes
+            if day in prices.get(code, {})
+        )
+    }
     calendar = sorted(
         day
         for day in {day for values in prices.values() for day in values}
