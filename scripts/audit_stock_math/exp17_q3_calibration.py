@@ -1,7 +1,7 @@
 # ruff: noqa: E402, E702
 """§22.2 Q3 合成标定（草案 v1.9；只在合成数据上运行）。
 每个任务 = 一条序列 × lite 16 窗（universe.WINDOWS）。窗口过现行过滤集（box 或 STANDARD）时计算 Q3：
-  对窗口对数收益 r 做 K=20 个循环平移（偏移 round(n/K·j)，≥5 日），y* = y₀ + cumsum(roll(r,k))，同一 fit_one 重拟，
+  对窗口对数收益 r 做 K=20 个互不相同的循环平移（偏移 lppls_scan.q3_shifts：等距落在 [5, n−6]，§22.1.1），y* = y₀ + cumsum(roll(r,k))，同一 fit_one 重拟，
   e = √(SSE/n)/σ_y；p = (1 + #{e* ≤ e})/(K+1)；f* = 对照中过现行过滤集的比例。
 零假设六类沿用 exp7（KINDS）；合成泡沫：强（涨幅 0.6，CF=0.1，exp2 设置）与中等（涨幅 0.3，CF=0.05），t_c 窗外 +5%dt / 窗内 −5%dt 各半。
 用法：PYTHONPATH=. LPPLS_BOX=v2 python scripts/audit_stock_math/exp17_q3_calibration.py <procs> <null_reps> <bub_seeds>"""
@@ -53,14 +53,14 @@ def q3(y):
         return d
     e = np.sqrt(d["sse"] / n) / np.std(y)
     es, fb, fs = [], 0, 0
-    for j in range(1, K + 1):
-        k = max(5, int(round(n / K * j))) % (n - 1) or 5
+    ks = lppls_scan.q3_shifts(n, K)
+    for k in ks:
         ys = y[0] + np.concatenate([[0.0], np.cumsum(np.roll(r, k))])
         rs = lppls_scan.fit_one(ys)
         ds, b2, s2 = filt(rs, n, ys)
         es.append(np.sqrt(ds["sse"] / n) / np.std(ys)); fb += b2; fs += s2
     es = np.array(es)
-    d.update(e=e, e_star_med=float(np.median(es)), q3_p=(1 + int((es <= e).sum())) / (K + 1), f_box=fb / K, f_std=fs / K)
+    d.update(e=e, e_star_med=float(np.median(es)), q3_p=(1 + int((es <= e).sum())) / (len(ks) + 1), f_box=fb / len(ks), f_std=fs / len(ks))
     return d
 
 

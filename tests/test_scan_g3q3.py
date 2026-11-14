@@ -43,3 +43,13 @@ def test_flags_off_identical_and_flags_on_append_only():
     q_bub, q_gbm = float(on["bub"][18]), float(on["gbm"][18])
     assert 1 / 6 <= q_bub <= 1.0
     assert q_gbm != q_gbm or 1 / 6 <= q_gbm <= 1.0  # 未过 box → NaN
+
+
+def test_q3_shifts_distinct_and_bounded():
+    from research.features.lppls_scan import q3_shifts
+    for n in (30, 35, 60, 125, 250, 750):
+        ks = q3_shifts(n, 20)
+        assert len(ks) == 20 and len(set(ks)) == 20, (n, ks)
+        assert min(ks) >= 5 and max(ks) <= n - 6, (n, ks)
+    assert q3_shifts(30, 20) == list(range(5, 25))
+    assert q3_shifts(20, 20) == list(range(5, 15))  # 可用偏移不足时全部取用

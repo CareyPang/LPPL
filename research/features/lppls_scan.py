@@ -143,8 +143,17 @@ def _box_pass(y: np.ndarray, row: tuple) -> bool:
     return bool(rules(_derived(pd.DataFrame([d]))).box.iloc[0])
 
 
+def q3_shifts(n: int, k: int) -> list[int]:
+    """§22.1.1：K 个互不相同的循环平移偏移，等距落在 [5, n−6]（离恒等平移两侧都 ≥5 日）。
+    原写法 round(n/K·j) mod (n−1) 在 j=K 时给出偏移 1（近恒等），n=30 时偏移 5 重复三次。可用偏移不足 K 个时全部取用。"""
+    lo, hi = 5, n - 6
+    if hi - lo + 1 <= k:
+        return list(range(lo, hi + 1))
+    return [lo + int(round((hi - lo) * j / (k - 1))) for j in range(k)]
+
+
 def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int) -> float:
-    """§22.1：对过 box 的窗口，K 个循环平移对照（偏移 round(n/K·j)，≥5 日）各重拟一次（同一优化器组合），
+    """§22.1（偏移集按 §22.1.1 更正）：对过 box 的窗口，K 个互不相同的循环平移对照（q3_shifts）各重拟一次（同一优化器组合），
     p=(1+#{e*≤e})/(K+1)。未过 box 返回 NaN（不算，省算力）。"""
     if not _box_pass(y, row):
         return float("nan")
@@ -153,8 +162,8 @@ def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int) -> float:
     e = np.sqrt(row[COLS.index("sse") - 1] / n) / np.std(y)
     r = np.diff(y)
     cnt = 0
-    for j in range(1, Q3_K + 1):
-        k = max(5, int(round(n / Q3_K * j))) % (n - 1) or 5
+    ks = q3_shifts(n, Q3_K)
+    for k in ks:
         ys = y[0] + np.concatenate([[0.0], np.cumsum(np.roll(r, k))])
         f = tcgrid_lm(t, ys, lo, hi, seed=0, n_random=n_random)
         if G3:
@@ -163,7 +172,7 @@ def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int) -> float:
                 f = f2
         if np.sqrt(f.sse / n) / np.std(ys) <= e:
             cnt += 1
-    return (1 + cnt) / (Q3_K + 1)
+    return (1 + cnt) / (len(ks) + 1)
 
 
 def scan_dates(sym: str, dates: list[pd.Timestamp], windows: tuple[int, ...], cal: pd.DatetimeIndex) -> pd.DataFrame:
