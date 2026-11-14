@@ -45,9 +45,14 @@ jobs:
           git switch -c dip-env-publish origin/stock-results
           mkdir -p stock/dip_env/options
           cp out/stock/_dip_env.json stock/_dip_env.json
-          cp "out/stock/dip_env/options/${snapshot_date}.json" \
-            "stock/dip_env/options/${snapshot_date}.json"
-          git add stock/_dip_env.json "stock/dip_env/options/${snapshot_date}.json"
+          if [[ -f "out/stock/dip_env/options/${snapshot_date}.json" ]]; then
+            cp "out/stock/dip_env/options/${snapshot_date}.json" \
+              "stock/dip_env/options/${snapshot_date}.json"
+            git add "stock/dip_env/options/${snapshot_date}.json"
+          else
+            echo "options archive skipped (intraday)"
+          fi
+          git add stock/_dip_env.json
           if git diff --cached --quiet; then
             echo "No environment snapshot changes to publish"
             exit 0

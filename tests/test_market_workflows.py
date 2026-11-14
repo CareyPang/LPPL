@@ -57,3 +57,20 @@ def test_nt_etf_workflow_bootstraps_and_uses_trading_date():
     assert 'snapshot_date="$(python -m research.data.trading_date)"' in collect["run"]
     assert '--previous "$PREVIOUS_PATH"' in collect["run"]
     assert '("sse_shares","szse_shares")' in gate["run"]
+
+
+def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
+    workflow = _workflow("dip_env.yml")
+    publish = next(
+        step
+        for step in workflow["jobs"]["collect"]["steps"]
+        if step.get("name") == "Publish to stock-results"
+    )
+    run = publish["run"]
+    archive = 'out/stock/dip_env/options/${snapshot_date}.json'
+
+    assert f'if [[ -f "{archive}" ]]; then' in run
+    assert f'cp "{archive}"' in run
+    assert 'git add "stock/dip_env/options/${snapshot_date}.json"' in run
+    assert 'echo "options archive skipped (intraday)"' in run
+    assert "git add stock/_dip_env.json" in run
