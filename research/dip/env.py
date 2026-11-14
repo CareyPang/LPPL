@@ -5,9 +5,7 @@ import argparse
 import json
 import math
 import time
-from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -271,8 +269,26 @@ def _option_summary(underlying: str) -> dict:
         }
 
 
-def collect(previous=None) -> tuple[dict, dict]:
-    today = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
+def _options_session_in_progress(now: pd.Timestamp, label: str) -> bool:
+    current = pd.Timestamp(now)
+    if current.tzinfo is None:
+        current = current.tz_localize("Asia/Shanghai")
+    else:
+        current = current.tz_convert("Asia/Shanghai")
+    minute = current.hour * 60 + current.minute
+    return (
+        current.date().isoformat() > label
+        and current.weekday() < 5
+        and 9 * 60 + 15 <= minute < 15 * 60 + 30
+    )
+
+
+def collect(previous=None, now: pd.Timestamp | None = None) -> tuple[dict, dict]:
+    from ..data.trading_date import latest_closed_trading_day
+    from ..pipeline.stock import _now
+
+    current = _now() if now is None else pd.Timestamp(now)
+    today = latest_closed_trading_day(current)
     shares = _share_history()
     share_data = {
         code: _share_summary(shares, code, previous)
@@ -286,7 +302,13 @@ def collect(previous=None) -> tuple[dict, dict]:
         "shares": share_data,
         "options": options,
     }
-    return _json_safe(snapshot), _json_safe({"asof": today, "options": options})
+    archive = {"asof": today, "options": options}
+    if _options_session_in_progress(current, today):
+        note = "盘中期权报价不是收盘快照，未写入日期归档"
+        snapshot["options_archive_note"] = note
+        archive["archive_skipped"] = True
+        archive["archive_note"] = note
+    return _json_safe(snapshot), _json_safe(archive)
 
 
 def main() -> None:
@@ -299,20 +321,25 @@ def main() -> None:
         if previous_path.exists() and previous_path.stat().st_size
         else None
     )
-    snapshot, options = collect(previous)
+    from ..pipeline.stock import _now
+
+    snapshot, options = collect(previous, now=_now())
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "_dip_env.json").write_text(
         json.dumps(snapshot, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
     archive = args.out / "dip_env" / "options" / f"{options['asof']}.json"
-    archive.parent.mkdir(parents=True, exist_ok=True)
-    archive.write_text(
-        json.dumps(options, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    if options.get("archive_skipped"):
+        print(f"skip options archive {archive}: {options['archive_note']}")
+    else:
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        archive.write_text(
+            json.dumps(options, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+            encoding="utf-8",
+        )
+        print(archive)
     print(args.out / "_dip_env.json")
-    print(archive)
 
 
 if __name__ == "__main__":

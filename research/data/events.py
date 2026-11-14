@@ -486,14 +486,16 @@ def write_snapshot(payload: dict, out: Path) -> tuple[Path, Path]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--date",
-        default=datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat(),
-    )
+    parser.add_argument("--date")
     parser.add_argument("--out", type=Path, default=DATA_DIR)
     parser.add_argument("--previous", type=Path, default=DATA_DIR / "events_latest.json")
     args = parser.parse_args(argv)
-    asof = _as_date(args.date)
+    asof = args.date
+    if asof is None:
+        from .trading_date import latest_closed_trading_day
+
+        asof = latest_closed_trading_day()
+    asof = _as_date(asof)
     payload = fetch_events(asof, previous_path=args.previous)
     latest, dated = write_snapshot(payload, args.out)
     print(
