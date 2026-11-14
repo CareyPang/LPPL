@@ -51,6 +51,8 @@ def rules(d: pd.DataFrame) -> pd.DataFrame:
     r["box"] = (d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & d.ahead.between(0, 90)
     r["lit2"] = ((d.B < 0) & d.m.between(0.01, 1.2) & d.w.between(2, 25) & d.ahead.between(-0.2 * d.dt, 0.12 * d.dt)
                  & (d.osc >= 2.5) & (d.D >= 0.8) & (d.rel_err <= 0.14))
+    if "q3_p" in d.columns:  # §22.3 研究臂：box ∧ 窗口级循环平移对照 p≤0.10（仅含 q3_p 列的研究扫描）
+        r["box_q3"] = r.box & (d.q3_p <= 0.10)
     return r
 
 
