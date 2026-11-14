@@ -44,7 +44,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: stock-nightly
+  # Retry runs need a separate pending slot so dispatches cannot replace scheduled runs.
+  group: ${{ inputs.retry_of && 'stock-nightly-retry' || 'stock-nightly' }}
   cancel-in-progress: false
 
 jobs:

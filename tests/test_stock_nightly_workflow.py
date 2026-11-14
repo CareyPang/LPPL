@@ -19,6 +19,7 @@ def test_stock_nightly_retry_is_guarded_and_reuses_resolved_plan():
     workflow = _workflow()
     retry = workflow["jobs"]["retry"]
     condition = retry["if"]
+    concurrency_group = workflow["concurrency"]["group"]
     run_step = next(
         step
         for step in retry["steps"]
@@ -31,6 +32,9 @@ def test_stock_nightly_retry_is_guarded_and_reuses_resolved_plan():
     assert "needs.fit.result == 'failure'" in condition
     assert "github.event_name != 'pull_request'" in condition
     assert "!inputs.retry_of" in condition
+    assert "inputs.retry_of" in concurrency_group
+    assert "stock-nightly-retry" in concurrency_group
+    assert "stock-nightly" in concurrency_group
     assert retry["permissions"]["actions"] == "write"
     assert retry["env"]["GH_TOKEN"] == "${{ github.token }}"
     assert {
