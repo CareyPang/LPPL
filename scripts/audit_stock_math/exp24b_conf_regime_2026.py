@@ -71,7 +71,7 @@ for sym in A_SH + ("NDX", "IXIC"):
             w = p[i : i + 61]
             fw.append(dict(sym=sym, date=d.date(), **{k: r[k] for k in f.columns if k.startswith("conf_")},
                            mdd60=(w / np.maximum.accumulate(w)).min() - 1,
-                           ret250=p[i] / p[max(0, i - 250) : i + 1].min() - 1))
+                           ret250=p[i] / p[i - 250] - 1))  # 同 W7 panel 的 runup250（秩相同）
 F = pd.DataFrame(fw)
 F.to_csv(f"{OUT}/fwd2026_mdd60.csv", index=False)
 A = F[F.sym.isin(A_SH)]
