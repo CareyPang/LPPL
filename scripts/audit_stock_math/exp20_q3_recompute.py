@@ -57,13 +57,15 @@ def main(procs: int, *files: str) -> None:
         sym = os.path.basename(f).split("__")[0].split(".")[0]
         df = pd.read_parquet(f)
         msk = df.q3_p.notna().to_numpy()
-        df.loc[msk, ["date", "n", "q3_p"]].to_csv(f + ".q3_old.csv", index=False)
+        # 旧值先写 .tmp，parquet 写回成功后再改名为 .q3_old.csv；中途被杀不会留下“已重算”标记
+        df.loc[msk, ["date", "n", "q3_p"]].to_csv(f + ".q3_old.csv.tmp", index=False)
         fit_cols = L.COLS[1 : L.COLS.index("g3_src")]
         tasks = [(sym, r.date, int(r.n), tuple(float(getattr(r, c)) for c in fit_cols)) for r in df[msk].itertuples(index=False)]
         with Pool(procs, initializer=_init) as p:
             vals = p.map(_one, tasks, chunksize=4)
         df.loc[msk, "q3_p"] = vals
         df.to_parquet(f, index=False)
+        os.replace(f + ".q3_old.csv.tmp", f + ".q3_old.csv")
         print(f"{f}: recomputed {len(vals)}; pass≤0.10 {int((np.array(vals) <= 0.10).sum())}", flush=True)
 
 
