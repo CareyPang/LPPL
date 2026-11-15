@@ -12,7 +12,7 @@
     const doc = options.document || root.document;
     const $ = id => doc.getElementById(id);
     let days = 120, prices = [], selected = -1, lastCurrent, lastHistory, lastMarket, lastCode;
-    let state = null;
+    let state = null, staticCode = null, staticGeneration = 0, closed = false;
     let storage;
     try { storage = root.localStorage; } catch { /* Storage is optional. */ }
 
@@ -100,6 +100,7 @@
       } else { $('market-date').textContent = ''; readout(); }
     }
     function update(next) {
+      if (staticCode) return;
       state = next;
       const changed = lastCode !== next.code;
       if (changed) {
@@ -162,7 +163,48 @@
       }));
     }
     const session = root.StockSession.create({ api: options.api, storage, onChange: update });
-    function select(code) {
+    function select(input) {
+      let code = options.normalizeCode ? options.normalizeCode(input) : input;
+      if (!code) {
+        $('query-status').textContent = '请输入六位 A 股股票代码或观察清单中的美股代码。';
+        return;
+      }
+      if (options.isStaticCode?.(code)) {
+        const generation = ++staticGeneration;
+        staticCode = code;
+        $('code').value = code;
+        const url = new URL(root.location.href); url.searchParams.set('code', code);
+        root.history.replaceState(null, '', url);
+        lastCode = null; lastCurrent = null; lastHistory = null; lastMarket = null;
+        state = null;
+        $('asof').textContent = '—';
+        $('results').hidden = true;
+        $('market-panel').hidden = true;
+        $('task-stages').hidden = true;
+        $('analysis-pending').hidden = true;
+        $('refresh-current').disabled = true;
+        $('compute-history').disabled = true;
+        $('resume-jobs').hidden = true;
+        $('first-visible-note').textContent = '';
+        visibility?.observe(null, null);
+        $('query-status').textContent = '读取已发布美股结果…';
+        void Promise.resolve().then(() => options.loadStaticCode(code)).then(result => {
+          if (closed || generation !== staticGeneration || staticCode !== code) return;
+          if (!result?.current) throw Error('该美股的预计算结果暂不可用。');
+          options.renderResult(result.current, result.history || null);
+          $('query-status').textContent = result.refreshFailed
+            ? `已加载 ${result.current.asof || '—'} 的预计算结果；最近一次夜间刷新失败，结果未更新。`
+            : result.history
+              ? '已加载预计算的当前结果和历史回测。'
+              : '已加载预计算的当前结果；历史回测文件暂不可用。';
+        }).catch(error => {
+          if (closed || generation !== staticGeneration || staticCode !== code) return;
+          $('query-status').textContent = error.message || '美股预计算结果暂不可用。';
+        });
+        return;
+      }
+      staticCode = null;
+      staticGeneration += 1;
       if (!/^(?:60|68|00|30|43|83|87|92)\d{4}$/.test(code)) {
         $('query-status').textContent = '请输入支持的六位 A 股股票代码。';
         return;
@@ -194,7 +236,12 @@
     const observer = root.ResizeObserver ? new root.ResizeObserver(draw) : null;
     observer?.observe($('market-panel'));
     root.addEventListener('pagehide', event => {
-      if (!event.persisted) { session.destroy(); observer?.disconnect(); visibility?.destroy(); }
+      if (!event.persisted) {
+        closed = true;
+        session.destroy();
+        observer?.disconnect();
+        visibility?.destroy();
+      }
     });
     root.addEventListener('pageshow', event => {
       if (event.persisted && state) void session.select(state.code);

@@ -55,6 +55,25 @@ test('market and saved results use the configured unified adapter endpoints', as
   assert.ok(h.requests.every(r => r.options.signal instanceof AbortSignal));
 });
 
+test('US watchlist records stay on published JSON and are rejected by Worker routes', async () => {
+  const h = setup(async url => response({ path: url }));
+  await h.api.stock.usIndex();
+  await h.api.stock.latest('nvda');
+  await h.api.stock.history('US_NVDA');
+  await h.api.stock.error('US_NVDA');
+  assert.deepEqual(h.requests.map(r => r.url), [
+    '/snapshots/stock/us_index.json',
+    '/snapshots/stock/US_NVDA.json',
+    '/snapshots/stock/US_NVDA_history.json',
+    '/snapshots/stock/US_NVDA_error.json',
+  ]);
+  assert.throws(() => h.api.stock.market('US_NVDA'), /美股仅支持观察清单/);
+  assert.throws(() => h.api.stock.request('US_NVDA'), /美股仅支持观察清单/);
+  assert.throws(() => h.api.stock.status('US_NVDA'), /美股仅支持观察清单/);
+  await assert.rejects(h.api.stock.remote('US_NVDA'), /美股仅支持观察清单/);
+  assert.equal(h.requests.length, 4);
+});
+
 test('default dispatch asks only for current analysis', async () => {
   const h = setup();
   await h.api.stock.request('000001');

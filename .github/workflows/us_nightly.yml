@@ -1,0 +1,165 @@
+name: us_nightly
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: us-nightly
+  cancel-in-progress: false
+
+jobs:
+  shards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Generate this shard's current and history records
+        run: >-
+          python -m research.pipeline.us_nightly
+          --shard "${{ matrix.shard }}" --shards 6
+          --out out/stock --history-weeks 104 --procs 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: us-stock-shard-${{ matrix.shard }}
+          path: out/stock/US_*.json
+          if-no-files-found: warn
+      - name: Publish this shard to stock-results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin stock-results
+          git switch -c us-publish FETCH_HEAD
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p stock
+          shopt -s nullglob
+          files=(out/stock/US_*.json)
+          if ((${#files[@]} == 0)); then
+            echo "Shard produced no ticker files"
+            exit 0
+          fi
+          for file in "${files[@]}"; do
+            name="${file##*/}"
+            cp "$file" "stock/$name"
+            git add "stock/$name"
+            if [[ "$name" == US_*.json && "$name" != *_history.json && "$name" != *_error.json ]]; then
+              old_error="stock/${name%.json}_error.json"
+              if [[ -f "$old_error" ]]; then
+                git rm "$old_error"
+              fi
+            fi
+          done
+          if git diff --cached --quiet; then
+            echo "No ticker records changed for this shard"
+            exit 0
+          fi
+          git commit -m "美股：发布观察清单分片结果"
+          delays=(10 15 20 25 30)
+          for attempt in 1 2 3 4 5; do
+            if git fetch --no-tags origin stock-results; then
+              if git rebase FETCH_HEAD; then
+                if git push origin HEAD:stock-results; then
+                  exit 0
+                fi
+              else
+                git rebase --abort || true
+              fi
+            fi
+            if ((attempt < 5)); then
+              sleep "${delays[$((attempt - 1))]}"
+            fi
+          done
+          echo "Failed to publish shard after five attempts" >&2
+          exit 1
+
+  index:
+    needs: shards
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: code
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          ref: stock-results
+          path: results
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install index builder
+        run: python -m pip install -e ./code
+      - name: Rebuild stock/us_index.json from published records
+        env:
+          STOCK_RESULTS_DIR: ${{ github.workspace }}/results/stock
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from research.pipeline.us_nightly import build_index
+
+          stock_dir = Path(os.environ["STOCK_RESULTS_DIR"])
+          stock_dir.mkdir(parents=True, exist_ok=True)
+          index = build_index(stock_dir)
+          (stock_dir / "us_index.json").write_text(
+              json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8"
+          )
+          print(f"Updated stock/us_index.json with {len(index)} tickers")
+          PY
+      - name: Publish index and trigger Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: results
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stock/us_index.json
+          if ! git diff --cached --quiet; then
+            git commit -m "美股：更新观察清单索引"
+            delays=(10 15 20 25 30)
+            for attempt in 1 2 3 4 5; do
+              if git fetch --no-tags origin stock-results; then
+                if git rebase FETCH_HEAD; then
+                  if git push origin HEAD:stock-results; then
+                    break
+                  fi
+                else
+                  git rebase --abort || true
+                fi
+              fi
+              if ((attempt == 5)); then
+                echo "Failed to publish index after five attempts" >&2
+                exit 1
+              fi
+              sleep "${delays[$((attempt - 1))]}"
+            done
+          else
+            echo "US index is unchanged"
+          fi
+          gh workflow run pages.yml --ref main

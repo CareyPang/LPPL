@@ -231,10 +231,10 @@
     <section class="hero">
       <div class="eyebrow">Stock · 逃顶 / 抄底</div>
       <h1>个股风险与深跌结构</h1>
-      <p class="lead">输入 A 股六位代码，先查看日线行情和已有分析。当前分析在后台独立更新，历史回放由你按需启动。</p>
+      <p class="lead">输入 A 股六位代码，先查看日线行情和已有分析；也可查看美股观察清单的预计算结果。A 股当前分析在后台独立更新，历史回放由你按需启动。</p>
       <form class="search" id="search">
-        <label for="code">六位股票代码</label>
-        <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入六位代码，例如 301196" required>
+        <label for="code">股票代码</label>
+        <input id="code" inputmode="text" autocomplete="off" maxlength="10" placeholder="输入六位代码或美股代码，例如 301196 或 NVDA" required>
         <button type="submit">查看股票</button>
       </form>
       <div class="watch-controls">
@@ -319,7 +319,7 @@
             <h3>历史情景回放 · 按需生成</h3>
             <div id="history-note" class="disclaimer"></div>
             <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
-            <p class="disclaimer">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
+            <p class="disclaimer" id="price-note">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
           </section>
         </div>
       </section>
@@ -678,10 +678,13 @@
       }).join('');
     }
 
-    async function renderDip(d) {
+    async function renderDip(d, record) {
       const host = $('dip-panel');
       if (!d) {
-        host.innerHTML = '<p class="muted">暂无抄底面板结果。</p><p class="dip-disclaimer">历史分位，不是预测。</p>';
+        const note = record?.symbol?.startsWith('US_')
+          ? (record.dip_note || '美股暂无抄底事件库')
+          : '暂无抄底面板结果。';
+        host.innerHTML = `<p class="muted">${esc(note)}</p>`;
         return;
       }
       const state = d.state || {};
@@ -884,11 +887,24 @@
     }
 
     let nameIndex = {};
-    const code6 = (symbol) => String(symbol || '').replace(/^[a-z]{2}/i, '');
+    let usIndex = [];
+    let usIndexPromise = Promise.resolve();
+    const code6 = (symbol) => String(symbol || '').startsWith('US_')
+      ? String(symbol).slice(3)
+      : String(symbol || '').replace(/^[a-z]{2}/i, '');
+    const normalizeCode = (value) => {
+      const code = String(value || '').trim();
+      if (/^\d{6}$/.test(code)) return code;
+      const ticker = code.replace(/^US_/i, '');
+      return /^[A-Z.]{1,6}$/i.test(ticker) ? `US_${ticker.toUpperCase()}` : null;
+    };
+    const usEntry = (code) => usIndex.find((entry) => entry.ticker === code.slice(3));
     const realName = (name, symbol) =>
       name && !/^(sh|sz|bj)?\d{6}$/i.test(String(name)) ? String(name) : '';
     const stockName = (d) =>
-      realName(d.name, d.symbol) || realName(nameIndex[code6(d.symbol)]?.name) || '';
+      realName(d.name, d.symbol)
+      || realName(nameIndex[code6(d.symbol)]?.name)
+      || (d.symbol?.startsWith('US_') ? usEntry(d.symbol)?.name : '');
     const signCls = (value) =>
       value == null || !Number.isFinite(Number(value)) || Number(value) === 0 ? '' : Number(value) > 0 ? 'pos' : 'neg';
     const tile = (label, value, cls = '', sub = '') =>
@@ -907,7 +923,8 @@
       const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有风险窗口']
         : top.signal_status === 'signal' ? ['hot', '有合格拟合']
           : ['', signalStatus[top.signal_status]];
-      const dipState = !d.dip ? ['', '暂无结果']
+      const us = d.symbol?.startsWith('US_');
+      const dipState = !d.dip ? ['', us ? '暂无事件库' : '暂无结果']
         : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
       return { topState, dipState, canShowStatus, hasWindow };
     }
@@ -933,7 +950,8 @@
       const fh = dip.first_hit?.fh60 || {};
       const verdict = dip.oos || {};
       const inStructure = dip.in_structure === true;
-      let dipText = '暂无抄底面板结果。';
+      const us = d.symbol?.startsWith('US_');
+      let dipText = us ? (d.dip_note || '美股暂无抄底事件库') : '暂无抄底面板结果。';
       if (d.dip) {
         dipText = inStructure
           ? `距 ${state.peak_date || '—'} 高点已跌 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}，波动处于近 5 年 ${dipPct(state.rv20_pct5y)} 分位。历史上 ${dnum(full.n)} 个类似事件，120 个交易日后收益中位数 ${dipPct(q.r120?.[2])}，一半落在 ${dipPct(q.r120?.[1])} 至 ${dipPct(q.r120?.[3])} 之间。`
@@ -962,7 +980,11 @@
           <h3>抄底 <span class="state-pill ${dipState[0]}">${esc(dipState[1])}</span></h3>
           <p>${esc(dipText)}</p>
           <div class="tiles">${dipTiles}</div>
-          ${inStructure ? `<p class="sum-foot">60 日内先涨 15% 的历史比例 ${dipPct(fh.hist?.U)}，随机波动对照 ${dipPct(fh.rw?.U)}。${esc(oos)}历史分位，不是预测。</p>` : `<p class="sum-foot">${esc(oos)}历史分位，不是预测。</p>`}
+          ${us
+            ? `<p class="sum-foot">${esc(d.dip_note || '美股暂无抄底事件库')}</p>`
+            : inStructure
+              ? `<p class="sum-foot">60 日内先涨 15% 的历史比例 ${dipPct(fh.hist?.U)}，随机波动对照 ${dipPct(fh.rw?.U)}。${esc(oos)}历史分位，不是预测。</p>`
+              : `<p class="sum-foot">${esc(oos)}历史分位，不是预测。</p>`}
         </section>
       `;
     }
@@ -978,11 +1000,17 @@
         : evidence ? evLabel(evidence) : '证据状态未知';
       document.title = `${name || code6(d.symbol)} · 临界点个股`;
       $('summary').innerHTML = summaryHtml(d, name);
-      $('stock-meta').textContent =
-        `${d.symbol || ''} · 数据截至 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
+      const us = d.symbol?.startsWith('US_');
+      $('stock-meta').innerHTML =
+        `${esc(d.symbol || '')} · 数据截至 ${esc(d.asof || '—')} · ${us ? '后复权(美元)' : '后复权'} · 后端 ${esc(d.data_version || '—')}`
+        + (d.license_note ? ` <span class="badge">${esc(d.license_note)}</span>` : '');
+      $('price-note').textContent = us
+        ? '后复权收盘（美元）；显示的 t_c 情景区间均为未校准，仅供参考。'
+        : '后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。';
+      $('plot').setAttribute('aria-label', us ? '后复权收盘（美元）与历史情景区间' : '后复权收盘与历史情景区间');
       $('risk').innerHTML = riskHtml(d);
       drawHistory(d, history);
-      renderDip(d.dip);
+      renderDip(d.dip, d);
       const code = code6(d.symbol);
       if (code) nameIndex[code] = { name, asof: d.asof };
       showHint();
@@ -1009,21 +1037,63 @@
       } catch (_) { panel.hidden = true; }
     }
 
+    async function loadStaticUS(code) {
+      await usIndexPromise;
+      const entry = usEntry(code);
+      if (!entry) {
+        throw Error(`美股目前只支持观察清单：${usIndex.map((item) => item.ticker).join('、')}`);
+      }
+      if (entry.ok !== true) {
+        const failure = await LPPL.stock.error(code);
+        throw Error(failure?.error || '该美股的预计算结果暂不可用。');
+      }
+      const [current, history] = await Promise.all([
+        LPPL.stock.latest(code),
+        LPPL.stock.history(code),
+      ]);
+      if (!current) throw Error('该美股的预计算结果暂不可用；不会发起在线查询。');
+      return { current, history, refreshFailed: entry.refresh_failed === true };
+    }
+
     StockView.mount({
       api: LPPL.stock,
+      normalizeCode,
+      isStaticCode: code => code.startsWith('US_'),
+      loadStaticCode: loadStaticUS,
       renderResult: (current, history) => {
         render(current, history);
         const c = code6(current && current.symbol);
-        if (c) renderRecentEvents(c);
+        if (/^\d{6}$/.test(c || '')) {
+          renderRecentEvents(c);
+        } else {
+          $('stock-events').hidden = true;
+          $('recent-events').hidden = true;
+        }
       },
     });
     $('search').addEventListener('submit', () => {
-      const c = $('code').value.trim();
-      if (/^\d{6}$/.test(c)) renderRecentEvents(c);
+      const c = normalizeCode($('code').value.trim());
+      if (/^\d{6}$/.test(c || '')) {
+        renderRecentEvents(c);
+      } else {
+        eventsSerial += 1;
+        $('stock-events').hidden = true;
+        $('recent-events').hidden = true;
+      }
     });
 
     const showHint = () => {
       const code = $('code').value.trim();
+      const normalized = normalizeCode(code);
+      if (normalized?.startsWith('US_')) {
+        const entry = usEntry(normalized);
+        $('name-hint').innerHTML = entry
+          ? `<b>${esc(entry.name)}</b>${entry.ok
+            ? `已有 ${esc(entry.asof || '')} 的预计算结果${entry.refresh_failed ? '（最近刷新失败）' : ''}`
+            : '结果暂不可用'}`
+          : `<span class="muted">美股目前只支持观察清单：${usIndex.map((item) => esc(item.ticker)).join('、')}</span>`;
+        return;
+      }
       const hit = /^\d{6}$/.test(code) ? nameIndex[code] : null;
       const name = realName(hit?.name);
       $('name-hint').innerHTML = !/^\d{6}$/.test(code)
@@ -1033,7 +1103,6 @@
           : '<span class="muted">暂无已保存结果；先显示行情，当前分析将单独排队计算</span>';
     };
     $('code').addEventListener('input', () => {
-      $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
       showHint();
       updateWatchToggle();
     });
@@ -1162,6 +1231,11 @@
     });
     void stockIndex.then(() => renderWatchlist());
 
+    usIndexPromise = LPPL.stock.usIndex().then((index) => {
+      usIndex = Array.isArray(index) ? index : [];
+      showHint();
+    }).catch(() => {});
+
     const initial = new URLSearchParams(location.search).get('code');
     if (initial && /^\d{6}$/.test(initial)) renderRecentEvents(initial);
 
@@ -1176,6 +1250,7 @@
         const code = document.getElementById('code').value.trim();
         if (!/^\d{6}$/.test(code)) return;
         const data = await LPPL.abnormal().catch(() => null);
+        if (document.getElementById('code').value.trim() !== code) return;
         const item = (data?.items || []).find((candidate) => candidate.code === code);
         if (!item) { section.hidden = true; return; }
         section.hidden = false;
