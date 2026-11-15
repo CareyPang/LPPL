@@ -45,8 +45,8 @@ def older(incoming: dict, published: dict) -> bool:
         return _date(record.get("asof") or (frames[-1].get("asof") if frames else None))
 
     new_date, old_date = asof(incoming), asof(published)
-    if new_date and old_date and new_date < old_date:
-        return True
+    if new_date and old_date and new_date != old_date:
+        return new_date < old_date
     new_time, old_time = _timestamp(incoming), _timestamp(published)
     return bool(new_time and old_time and new_time < old_time)
 

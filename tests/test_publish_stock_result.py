@@ -477,3 +477,14 @@ def test_old_nightly_cannot_roll_back_breadth(tmp_path):
     _write(out, "breadth_sh000300.json", {"asof": "2026-11-04", "generated_at": "2026-11-06T02:00:00Z", "n": 250})
     merge_results(published, out, ["600519"])
     assert json.loads((published / "breadth_sh000300.json").read_text()) == latest
+
+
+def test_older_prefers_newer_asof_over_earlier_request_time():
+    from research.pipeline import stock_publish
+
+    incoming = {"asof": "2026-11-14", "requested_at": "2026-11-14T10:00:00Z"}
+    published = {"asof": "2026-11-13", "requested_at": "2026-11-14T12:00:00Z"}
+    assert stock_publish.older(incoming, published) is False
+    assert stock_publish.older(published, incoming) is True
+    same_day_earlier = {"asof": "2026-11-13", "requested_at": "2026-11-14T09:00:00Z"}
+    assert stock_publish.older(same_day_earlier, published) is True
