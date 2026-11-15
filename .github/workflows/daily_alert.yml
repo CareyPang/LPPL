@@ -47,13 +47,15 @@ jobs:
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          DISPLAY_TITLE: ${{ github.event.workflow_run.display_title }}
         run: |
           python -m research.data.daily_alert run \
             --workflow "$WORKFLOW_NAME" \
             --conclusion "$CONCLUSION" \
             --url "$RUN_URL" \
             --started "$RUN_STARTED_AT" \
-            --sha "$HEAD_SHA"
+            --sha "$HEAD_SHA" \
+            --display-title "$DISPLAY_TITLE"
 
   stale-check:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

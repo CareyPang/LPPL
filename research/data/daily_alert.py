@@ -27,6 +27,12 @@ def plan_stale_alert(stale_count: int, open_issue_number: int | None) -> str:
     return "close" if open_issue_number is not None else "noop"
 
 
+def alert_key(workflow: str, display_title: str) -> str:
+    if display_title.startswith(f"{workflow} · "):
+        return display_title
+    return workflow
+
+
 def find_open_issue_number(issues: list[dict], title: str) -> int | None:
     for issue in issues:
         if issue.get("title") == title:
@@ -79,10 +85,10 @@ def _beijing_started(started: str) -> str:
 
 
 def _run_body(
-    workflow: str, conclusion: str, url: str, started: str, sha: str
+    key: str, conclusion: str, url: str, started: str, sha: str
 ) -> str:
     return (
-        f"日更工作流失败：{workflow}\n\n"
+        f"日更工作流失败：{key}\n\n"
         f"- 结论：{conclusion}\n"
         f"- 开始时间（北京时间）：{_beijing_started(started)}\n"
         f"- 提交：`{sha[:7]}`\n"
@@ -111,12 +117,18 @@ def _stale_body(report: dict, markdown: str) -> str:
 
 
 def handle_run_alert(
-    workflow: str, conclusion: str, url: str, started: str, sha: str
+    workflow: str,
+    conclusion: str,
+    url: str,
+    started: str,
+    sha: str,
+    display_title: str = "",
 ) -> str:
     if conclusion not in {"failure", "timed_out", "success"}:
         return "noop"
 
-    title = f"日更失败：{workflow}"
+    key = alert_key(workflow, display_title)
+    title = f"日更失败：{key}"
     _ensure_label()
     open_issue_number = _open_issue_number(title)
     action = plan_run_alert(workflow, conclusion, open_issue_number)
@@ -128,7 +140,7 @@ def handle_run_alert(
                 "--title",
                 title,
                 "--body",
-                _run_body(workflow, conclusion, url, started, sha),
+                _run_body(key, conclusion, url, started, sha),
                 "--label",
                 DAILY_ALERT_LABEL,
             ]
@@ -212,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("--url", required=True)
     run_parser.add_argument("--started", required=True)
     run_parser.add_argument("--sha", required=True)
+    run_parser.add_argument("--display-title", default="")
 
     stale_parser = subparsers.add_parser("stale")
     stale_parser.add_argument("--report", required=True)
@@ -220,7 +233,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "run":
         action = handle_run_alert(
-            args.workflow, args.conclusion, args.url, args.started, args.sha
+            args.workflow,
+            args.conclusion,
+            args.url,
+            args.started,
+            args.sha,
+            args.display_title,
         )
     else:
         report = json.loads(open(args.report, encoding="utf-8").read())

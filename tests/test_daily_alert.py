@@ -48,6 +48,29 @@ def test_issue_lookup_requires_exact_title():
     assert daily_alert.find_open_issue_number(issues, "日更失败：nt_etf_daily") is None
 
 
+@pytest.mark.parametrize(
+    ("workflow", "display_title", "expected"),
+    [
+        (
+            "stock_nightly",
+            "stock_nightly · universe_csi300.json",
+            "stock_nightly · universe_csi300.json",
+        ),
+        (
+            "stock_nightly",
+            "stock_nightly · universe_csi500.json",
+            "stock_nightly · universe_csi500.json",
+        ),
+        ("market_daily", "Fix market snapshot", "market_daily"),
+        ("macro_daily", "", "macro_daily"),
+    ],
+)
+def test_alert_key_uses_universe_title_only_for_stock_nightly(
+    workflow, display_title, expected
+):
+    assert daily_alert.alert_key(workflow, display_title) == expected
+
+
 def test_failure_creates_chinese_issue_with_required_run_details(monkeypatch):
     monkeypatch.setenv("GH_TOKEN", "not-a-real-token")
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
@@ -62,19 +85,22 @@ def test_failure_creates_chinese_issue_with_required_run_details(monkeypatch):
     monkeypatch.setattr(daily_alert.subprocess, "run", fake_run)
 
     action = daily_alert.handle_run_alert(
-        "market_daily",
+        "stock_nightly",
         "failure",
         "https://github.com/owner/repo/actions/runs/123",
         "2026-11-13T17:30:00Z",
         "abcdef123456",
+        "stock_nightly · universe_csi500.json",
     )
 
     assert action == "create"
     assert calls[0][1:4] == ["label", "create", "daily-alert"]
     create = calls[-1]
     assert create[1:3] == ["issue", "create"]
-    assert create[create.index("--title") + 1] == "日更失败：market_daily"
+    alert_title = "日更失败：stock_nightly · universe_csi500.json"
+    assert create[create.index("--title") + 1] == alert_title
     body = create[create.index("--body") + 1]
+    assert "日更工作流失败：stock_nightly · universe_csi500.json" in body
     assert "结论：failure" in body
     assert "开始时间（北京时间）：2026-11-14 01:30:00" in body
     assert "提交：`abcdef1`" in body
