@@ -45,3 +45,10 @@ test('exact code wins over an earlier prefix and the result limit is respected',
   assert.equal(StockSearch.match(rows, '0', 2).length, 2);
   assert.deepEqual(StockSearch.match(rows, '   '), []);
 });
+
+test('the selected hit is kept only while its query is current', () => {
+  const hits = [{ h: 'stock.html?code=600519' }, { h: 'stock.html?code=000858' }];
+  assert.equal(StockSearch.selectedMatch(hits, '五粮液', '五粮液', 1), hits[1]);
+  assert.equal(StockSearch.selectedMatch(hits, '五粮液', '贵州茅台', 1), null);
+  assert.equal(StockSearch.selectedMatch([], '五粮液', '五粮液', 0), null);
+});

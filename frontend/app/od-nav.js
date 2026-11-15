@@ -223,7 +223,7 @@
     '<input id="odn-q-i" type="search" autocomplete="off" spellcheck="false" placeholder="搜索指数、股票或拼音" aria-controls="odn-q-l" aria-expanded="false">' +
     '<kbd aria-hidden="true">/</kbd><ul id="odn-q-l" class="odn-pop odn-ql" role="listbox" hidden></ul>';
   right.appendChild(srch);
-  var qi = srch.querySelector('input'), ql = srch.querySelector('ul'), hits = [], sel = 0;
+  var qi = srch.querySelector('input'), ql = srch.querySelector('ul'), hits = [], sel = 0, hitsQuery = null;
   function suggest(v) {
     var s = v.trim().replace(/\.(SH|SZ)$/i, ''), lo = s.toLowerCase(), out = [];
     if (!s) return out;
@@ -269,20 +269,23 @@
   }
   qi.addEventListener('input', function () {
     hits = suggest(qi.value);
+    hitsQuery = qi.value;
     sel = 0;
     draw();
     loadStockSearchRows().then(function (rows) {
       if (!rows || !qi.value.trim()) return;
       hits = suggest(qi.value);
+      hitsQuery = qi.value;
       sel = 0;
       draw();
     });
   });
   qi.addEventListener('focus', function () {
-    if (qi.value) { hits = suggest(qi.value); draw(); }
+    if (qi.value) { hits = suggest(qi.value); hitsQuery = qi.value; draw(); }
     loadStockSearchRows().then(function (rows) {
       if (!rows || !qi.value.trim()) return;
       hits = suggest(qi.value);
+      hitsQuery = qi.value;
       sel = 0;
       draw();
     });
@@ -300,10 +303,17 @@
     e.preventDefault();
     var query = qi.value;
     function submitMatches() {
-      hits = suggest(query);
-      sel = 0;
-      draw();
-      if (hits.length) location.href = hits[0].h;
+      var selected = window.StockSearch && typeof window.StockSearch.selectedMatch === 'function'
+        ? window.StockSearch.selectedMatch(hits, query, hitsQuery, sel)
+        : query === hitsQuery && hits[sel] ? hits[sel] : null;
+      if (!selected) {
+        hits = suggest(query);
+        hitsQuery = query;
+        sel = 0;
+        draw();
+        selected = hits[0];
+      }
+      if (selected) location.href = selected.h;
     }
     if (/^\d{6}$/.test(query.trim()) || /^US_[A-Z.]{1,6}$/i.test(query.trim())) {
       submitMatches();

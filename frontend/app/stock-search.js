@@ -77,5 +77,10 @@
     return result;
   }
 
-  return { match: match };
+  function selectedMatch(hits, query, hitsQuery, selectedIndex) {
+    if (String(query == null ? '' : query) !== String(hitsQuery == null ? '' : hitsQuery) || !Array.isArray(hits)) return null;
+    return hits[selectedIndex] || null;
+  }
+
+  return { match: match, selectedMatch: selectedMatch };
 });
