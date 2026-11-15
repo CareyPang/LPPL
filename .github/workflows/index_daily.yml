@@ -105,7 +105,9 @@ jobs:
               fi
               if (( attempt < 3 )); then
                 git fetch --no-tags origin stock-results
-                git rebase origin/stock-results
+                git -c user.name="github-actions[bot]" \
+                  -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                  rebase origin/stock-results
               fi
             done
             if [[ "$pushed" != true ]]; then

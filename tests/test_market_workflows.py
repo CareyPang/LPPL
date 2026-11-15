@@ -97,3 +97,10 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     assert publish["if"] == (
         "github.event_name != 'pull_request' && steps.run.outputs.success_count != '0'"
     )
+    publish_lines = [line.strip() for line in publish["run"].splitlines()]
+    rebase_line = publish_lines.index("rebase origin/stock-results")
+    assert publish_lines[rebase_line - 2 : rebase_line + 1] == [
+        'git -c user.name="github-actions[bot]" \\',
+        '-c user.email="41898282+github-actions[bot]@users.noreply.github.com" \\',
+        "rebase origin/stock-results",
+    ]
