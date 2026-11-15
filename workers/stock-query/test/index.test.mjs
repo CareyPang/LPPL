@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import worker, {
+  replayFailureActive,
   StockQueryState,
   QueryBudget,
   normalizeMarket,
@@ -1065,7 +1066,7 @@ test('POST /replay dispatches index_replay once the stored result is missing and
       return new Response(null, { status: 204 });
     }
     if (String(url).includes('/contents/index/replay/sh000001_2015-06-10.json')) {
-      return new Response(JSON.stringify({ status: 'failed', error: 'as-of 2015-06-10 不是交易日' }), { status: 200 });
+      return new Response(JSON.stringify({ status: 'failed', error: 'as-of 2015-06-10 不是交易日', permanent: true, failed_at: '2020-01-01T00:00:00+00:00' }), { status: 200 });
     }
     return new Response('{}', { status: 404 });
   } }, async () => {
@@ -1083,6 +1084,54 @@ test('POST /replay dispatches index_replay once the stored result is missing and
     const failed = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000001', asof: '2015-06-10' } }), env);
     assert.equal(failed.status, 200);
     assert.equal((await failed.json()).status, 'failed');
+    assert.equal(dispatches.length, 1);
+  });
+});
+
+test('POST /replay does not dispatch again while a run for the same sym+asof is queued or running', async () => {
+  const dispatches = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    if (String(url).endsWith('/dispatches')) { dispatches.push(init.body); return new Response(null, { status: 204 }); }
+    if (String(url).includes('/actions/workflows/index_replay.yml/runs')) {
+      return new Response(JSON.stringify({ workflow_runs: [
+        { display_title: 'index_replay sh000300 2015-06-12', status: 'in_progress' },
+        { display_title: 'index_replay sh000001 2015-06-12', status: 'completed' },
+      ] }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  } }, async () => {
+    const env = environment();
+    const busy = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000300', asof: '2015-06-12' } }), env);
+    assert.equal(busy.status, 202);
+    assert.equal((await busy.json()).status, 'pending');
+    assert.equal(dispatches.length, 0);
+    const fresh = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000001', asof: '2015-06-12' } }), env);
+    assert.equal(fresh.status, 202);
+    assert.equal(dispatches.length, 1);
+  });
+});
+
+test('transient replay failures expire after 30 minutes and are re-dispatched; permanent ones are not', async () => {
+  const now = Date.now();
+  assert.equal(replayFailureActive({ status: 'failed', permanent: true, failed_at: '2020-01-01T00:00:00Z' }, now), true);
+  assert.equal(replayFailureActive({ status: 'failed', failed_at: new Date(now - 5 * 60_000).toISOString() }, now), true);
+  assert.equal(replayFailureActive({ status: 'failed', failed_at: new Date(now - 31 * 60_000).toISOString() }, now), false);
+  assert.equal(replayFailureActive({ status: 'failed' }, now), false);
+  const dispatches = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    if (String(url).endsWith('/dispatches')) { dispatches.push(init.body); return new Response(null, { status: 204 }); }
+    if (String(url).includes('/contents/index/replay/sh000905_2015-06-12.json')) {
+      return new Response(JSON.stringify({ status: 'failed', error: '数据源超时', failed_at: new Date(now - 40 * 60_000).toISOString() }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  } }, async () => {
+    const env = environment();
+    const get = await worker.fetch(request('/replay/result?sym=sh000905&asof=2015-06-12'), env);
+    assert.equal(get.status, 200);
+    assert.equal((await get.json()).status, 'failed');
+    assert.equal(dispatches.length, 0);
+    const post = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000905', asof: '2015-06-12' } }), env);
+    assert.equal(post.status, 202);
     assert.equal(dispatches.length, 1);
   });
 });

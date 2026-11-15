@@ -317,6 +317,27 @@ export function replayRequest(sym, asof, now = new Date()) {
   return null;
 }
 
+const REPLAY_RETRY_AFTER_MS = 30 * 60_000;
+
+/** 失败结果是否仍然“有效”：非交易日等永久失败一直有效；数据源等临时失败 30 分钟后允许重算 */
+export function replayFailureActive(data, now = Date.now()) {
+  if (!data || data.status !== 'failed') return false;
+  if (data.permanent) return true;
+  const at = Date.parse(data.failed_at || '');
+  return Number.isFinite(at) && now - at < REPLAY_RETRY_AFTER_MS;
+}
+
+/** 同一 sym+asof 是否已有排队/运行中的 index_replay（按 run-name 匹配），有则不再 dispatch */
+async function replayRunActive(env, sym, asof) {
+  const title = `index_replay ${sym} ${asof}`;
+  const since = new Date(Date.now() - 45 * 60_000).toISOString();
+  const url = `https://api.github.com/repos/${repo(env)}/actions/workflows/index_replay.yml/runs?per_page=30&event=repository_dispatch&created=${encodeURIComponent('>=' + since)}`;
+  const response = await fetchJSON(url, { headers: githubHeaders(env) });
+  if (response.status !== 200) return false;
+  return (response.data?.workflow_runs || []).some((run) => (run.display_title || run.name) === title
+    && ['queued', 'in_progress', 'waiting', 'pending', 'requested'].includes(run.status));
+}
+
 async function readReplay(env, sym, asof) {
   return fetchJSON(`https://api.github.com/repos/${repo(env)}/contents/index/replay/${sym}_${asof}.json?ref=stock-results`,
     { headers: githubHeaders(env, 'application/vnd.github.raw') });
@@ -344,11 +365,20 @@ async function indexReplay(request, env, url) {
     const existing = await readReplay(env, sym, asof);
     if (existing.status === 200 && existing.data && typeof existing.data === 'object') {
       const failed = existing.data.status === 'failed';
-      return jsonResponse(request, env, failed ? { ...existing.data, sym, asof } : { status: 'ready', sym, asof, result: existing.data },
-        200, { 'Cache-Control': failed ? 'max-age=60' : 'public, max-age=3600' });
+      if (!failed) {
+        return jsonResponse(request, env, { status: 'ready', sym, asof, result: existing.data }, 200, { 'Cache-Control': 'public, max-age=3600' });
+      }
+      if (!isPost || replayFailureActive(existing.data)) {
+        return jsonResponse(request, env, { ...existing.data, sym, asof, retry_after_minutes: existing.data.permanent ? null : 30 }, 200, { 'Cache-Control': 'no-store' });
+      }
+    } else if (existing.status !== 404) {
+      throw new Error('replay_store_unavailable');
     }
-    if (existing.status !== 404) throw new Error('replay_store_unavailable');
     if (!isPost) return jsonResponse(request, env, { status: 'missing', sym, asof }, 404, { 'Cache-Control': 'no-store' });
+    if (await replayRunActive(env, sym, asof)) {
+      return jsonResponse(request, env, { status: 'pending', sym, asof, job_id: null, eta_minutes: 10,
+        message: `后台已在按 ${asof} 当日及以前的数据计算，约 10 分钟；算完会保存` }, 202, { 'Cache-Control': 'no-store' });
+    }
     const budget = await reserve(env, request.headers.get('CF-Connecting-IP') || 'unknown', 'query');
     if (!budget.ok) return budget;
     const job_id = crypto.randomUUID();

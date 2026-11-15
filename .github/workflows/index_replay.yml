@@ -1,4 +1,5 @@
 name: index_replay
+run-name: index_replay ${{ github.event.client_payload.sym || inputs.sym || 'pr' }} ${{ github.event.client_payload.asof || inputs.asof || '' }}
 
 on:
   workflow_dispatch:
@@ -76,8 +77,10 @@ jobs:
             python - "$SYM" "$ASOF" "$JOB_ID" "$msg" <<'PY'
           import json, sys, datetime as dt
           sym, asof, job_id, msg = sys.argv[1:5]
+          permanent = "不是交易日" in msg
           json.dump({"status": "failed", "sym": sym, "asof": asof, "job_id": job_id or None,
-                     "error": msg or "计算失败", "failed_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")},
+                     "error": msg or "计算失败", "permanent": permanent,
+                     "failed_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")},
                     open(f"out/index/{sym}_{asof}.json", "w"), ensure_ascii=False)
           PY
           fi

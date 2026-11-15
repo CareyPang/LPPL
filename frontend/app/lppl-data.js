@@ -99,9 +99,18 @@
     if (asof) {
       const ok = REPLAYS[S.sym] || [];
       if (!ok.includes(asof)) {
-        const R = await replay.result(S.sym, asof);
+        const key = S.sym + '@' + asof;
+        let R = await replay.result(S.sym, asof);
         if (R.status === 'ready' && R.result) return pack(R.result, S, asof, false, true);
-        if (R.status === 'failed') throw new Error('该日期回看计算失败：' + (R.error || '未知原因') + '。可换一个交易日重试');
+        const stale = R.status === 'failed' && !R.permanent && !R.retry_after_minutes;
+        if ((R.status === 'missing' || stale) && !replayRequested.has(key)) {
+          replayRequested.add(key);
+          R = await replay.request(S.sym, asof);
+          if (R.status === 'ready' && R.result) return pack(R.result, S, asof, false, true);
+        }
+        if (R.status === 'failed') {
+          throw new Error('该日期回看计算失败：' + (R.error || '未知原因') + (R.permanent ? '。请换一个交易日' : '。' + (R.retry_after_minutes || 30) + ' 分钟后可重试'));
+        }
         const e = new Error(R.message || ('该日期的回看结果还没有算过，已提交后台按 ' + asof + ' 当日及以前的数据现算，约 10 分钟'));
         e.pending = true; e.sym = S.sym; e.asof = asof; e.job_id = R.job_id || null;
         throw e;
@@ -115,13 +124,15 @@
     return { raw: J, top: J.top || {}, bottom: J.bottom || {}, sym: S, name: J.name || S.name, asof: J.asof || asof, latest, replayed, bars: B, T: B.length - 1 };
   }
 
-  /** 通用回看：任选站点指数 + 日期。result() 先查已存结果（404 时自动触发后台计算，返回 pending）；页面每 30 秒重试 */
+  /** 通用回看：任选站点指数 + 日期。result() 只读已存结果（404 → missing，不触发计算）；
+      request() 触发一次后台计算，同一页面对同一 sym+asof 只 POST 一次，之后每 30 秒只 GET */
+  const replayRequested = new Set();
   const replay = {
     result: async (sym, asof) => {
       const q = '?sym=' + encodeURIComponent(sym) + '&asof=' + encodeURIComponent(asof);
       const r = await fetch(queryApi() + '/replay/result' + q, { cache: 'no-store' });
       if (r.status === 200) return r.json();
-      if (r.status === 404) return replay.request(sym, asof);
+      if (r.status === 404) return { status: 'missing', sym, asof };
       const err = await r.json().catch(() => ({}));
       throw new Error(err.error || ('回看服务错误 ' + r.status));
     },

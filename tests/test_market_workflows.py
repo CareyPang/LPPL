@@ -122,6 +122,7 @@ def test_index_replay_workflow_accepts_dispatch_and_publishes_under_index_replay
     steps = {step.get("name"): step for step in workflow["jobs"]["replay"]["steps"] if step.get("name")}
 
     assert triggers["repository_dispatch"] == {"types": ["index_replay"]}
+    assert workflow["run-name"].startswith("index_replay ${{ github.event.client_payload.sym || inputs.sym")
     assert set(triggers["workflow_dispatch"]["inputs"]) == {"sym", "asof", "job_id"}
     assert workflow["permissions"] == {"contents": "write"}
     assert "index-replay-" in workflow["concurrency"]["group"]
@@ -136,6 +137,7 @@ def test_index_replay_workflow_accepts_dispatch_and_publishes_under_index_replay
     assert run["if"] == "github.event_name != 'pull_request'"
     assert 'python -m research.pipeline.daily "$SYM" --asof "$ASOF" --out out/index' in run["run"]
     assert '"status": "failed"' in run["run"]
+    assert 'permanent = "不是交易日" in msg' in run["run"]
 
     publish = steps["Publish to stock-results"]
     assert publish["if"] == "github.event_name != 'pull_request'"
