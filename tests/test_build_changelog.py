@@ -84,7 +84,13 @@ def test_build_includes_main_snapshots_and_stock_results_history(tmp_path):
     git(tmp_path, "switch", "-c", "stock-results")
     stock_path = "index/sh000001_latest.json"
     write_json(tmp_path, stock_path, index_document("2026-11-15", "v3", "signal"))
-    git(tmp_path, "add", stock_path)
+    stock_market_path = "market/market_latest.json"
+    write_json(
+        tmp_path,
+        stock_market_path,
+        {"asof": "2026-11-15", "sources": {"eastmoney": {"ok": True}, "sina": {"ok": True}}},
+    )
+    git(tmp_path, "add", stock_path, stock_market_path)
     commit(tmp_path, "publish stock result", "2026-11-15T12:00:00+00:00")
     git(tmp_path, "update-ref", "refs/remotes/origin/stock-results", "HEAD")
     git(tmp_path, "switch", "main")
@@ -124,7 +130,15 @@ def test_build_includes_main_snapshots_and_stock_results_history(tmp_path):
     assert history[0]["snapshot"]["数据版本"] == "v3"
     assert history[1]["snapshot"]["顶部结构状态"] == "主尺度没有合格拟合"
     assert history[1]["snapshot"]["检验 · 测试段"] == "可显示（ok）"
-    assert report["files"]["market"][0]["snapshot"]["数据源可用"] == "1 / 2"
+    market_history = report["files"]["market"]
+    assert [entry["subject"] for entry in market_history] == [
+        "publish stock result",
+        "publish v2",
+        "publish v1",
+    ]
+    assert market_history[0]["source"] == "stock-results"
+    assert market_history[0]["snapshot"]["截止日"] == "2026-11-15"
+    assert market_history[1]["snapshot"]["数据源可用"] == "1 / 2"
     assert all(not report["files"][symbol] for symbol in set(report["files"]) - {"sh000001", "market"})
 
 

@@ -141,7 +141,20 @@ def build(root: Path) -> dict:
         )[:100]
 
     market_path = "web/mock/data/market/market_latest.json"
-    files["market"] = _entries(root, "market", "HEAD", market_path, None)[:100]
+    merged = {}
+    stock_market_path = "market/market_latest.json"
+    for ref, source in sources:
+        path = stock_market_path if source == "stock-results" else market_path
+        for entry in _entries(root, "market", ref, path, source):
+            merged.setdefault(entry["sha"], entry)
+    files["market"] = sorted(
+        merged.values(),
+        key=lambda entry: (
+            datetime.fromisoformat(entry["date"]).timestamp(),
+            entry["sha"],
+        ),
+        reverse=True,
+    )[:100]
     return {"files": files}
 
 
