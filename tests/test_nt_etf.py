@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from research.data import nt_etf
@@ -224,3 +225,182 @@ def test_share_source_failure_does_not_block_szse(monkeypatch):
     )
     assert not sh and sz["159919"]
     assert sse_errors and not szse_errors
+
+
+def _fetch_fixture(monkeypatch, tmp_path, universe, previous, prices, share_result):
+    universe_path = tmp_path / "universe.json"
+    universe_path.write_text(json.dumps(universe), encoding="utf-8")
+    monkeypatch.setattr(nt_etf, "UNIVERSE_PATH", universe_path)
+    monkeypatch.setattr(nt_etf, "_prices", lambda *_: (prices, []))
+    calls = {}
+
+    def fetch_shares(_universe, days, *_args):
+        calls["days"] = days
+        return share_result
+
+    monkeypatch.setattr(nt_etf, "_fetch_shares", fetch_shares)
+    monkeypatch.setattr(
+        nt_etf,
+        "_holders",
+        lambda *_: {
+            "report_date": None,
+            "nt": [],
+            "nt_shares_yi": None,
+            "nt_ratio": None,
+            "checked_at": None,
+        },
+    )
+    monkeypatch.setattr(
+        nt_etf,
+        "_holder_structure_with_fallback",
+        lambda _session, _code, holder_structure: (holder_structure, None),
+    )
+    monkeypatch.setattr(
+        nt_etf,
+        "_request",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("offline")),
+    )
+    monkeypatch.setattr(
+        nt_etf,
+        "tencent_raw",
+        lambda *_args, **_kwargs: pd.DataFrame(
+            columns=["date", "open", "high", "low", "close"]
+        ),
+    )
+    return nt_etf.fetch(
+        "2026-11-13",
+        previous=previous,
+        session=object(),
+    ), calls
+
+
+def _previous_etf(code, series):
+    return {
+        "asof": "2026-11-12",
+        "etfs": [
+            {
+                "code": code,
+                "series": series,
+                "holders": {"nt_shares_yi": None, "nt_ratio": None},
+            }
+        ],
+    }
+
+
+def test_no_price_days_do_not_invent_an_sse_query_date(monkeypatch, tmp_path):
+    universe = [{"code": "510300", "name": "测试ETF", "category": "测试", "exchange": "SH"}]
+    previous = _previous_etf(
+        "510300",
+        [["2026-11-12", 1.0, 4.0, None]],
+    )
+
+    payload, calls = _fetch_fixture(
+        monkeypatch,
+        tmp_path,
+        universe,
+        previous,
+        {},
+        ({}, {}, [], []),
+    )
+
+    assert calls["days"] == []
+    assert payload["sources"]["sse_shares"]["ok"] is False
+    assert payload["sources"]["sse_shares"]["latest_day"] == "2026-11-12"
+
+
+def test_sse_query_retries_day_missing_for_one_priced_etf(monkeypatch, tmp_path):
+    universe = [
+        {"code": "510300", "name": "测试沪深300", "category": "测试", "exchange": "SH"},
+        {"code": "510500", "name": "测试中证500", "category": "测试", "exchange": "SH"},
+    ]
+    previous = {
+        "asof": "2026-11-12",
+        "etfs": [
+            {
+                "code": "510300",
+                "series": [["2026-11-12", 1.0, 4.0, None]],
+                "holders": {"nt_shares_yi": None, "nt_ratio": None},
+            },
+            {
+                "code": "510500",
+                "series": [["2026-11-11", 0.8, 1.3, None]],
+                "holders": {"nt_shares_yi": None, "nt_ratio": None},
+            },
+        ],
+    }
+
+    _, calls = _fetch_fixture(
+        monkeypatch,
+        tmp_path,
+        universe,
+        previous,
+        {
+            "510300": {"2026-11-12": 4.1},
+            "510500": {"2026-11-12": 1.4},
+        },
+        ({}, {}, [], []),
+    )
+
+    assert calls["days"] == ["2026-11-12"]
+
+
+@pytest.mark.parametrize(
+    ("asof_shares", "expected_ok"),
+    [(True, True), (False, False)],
+)
+def test_sse_ok_requires_shares_for_asof(
+    monkeypatch, tmp_path, asof_shares, expected_ok
+):
+    universe = [{"code": "510300", "name": "测试ETF", "category": "测试", "exchange": "SH"}]
+    previous = _previous_etf(
+        "510300",
+        [["2026-11-12", 1.0, 4.0, None]],
+    )
+    sh = (
+        {"2026-11-13": {"510300": {"shares_10k": 10500}}}
+        if asof_shares
+        else {}
+    )
+    errors = [] if asof_shares else ["2026-11-13: ConnectionError: reset"]
+
+    payload, calls = _fetch_fixture(
+        monkeypatch,
+        tmp_path,
+        universe,
+        previous,
+        {"510300": {"2026-11-12": 4.0, "2026-11-13": 4.1}},
+        (sh, {}, errors, []),
+    )
+
+    assert calls["days"] == ["2026-11-13"]
+    assert payload["sources"]["sse_shares"]["ok"] is expected_ok
+    assert payload["sources"]["sse_shares"]["latest_day"] == (
+        "2026-11-13" if asof_shares else "2026-11-12"
+    )
+    if not asof_shares:
+        assert "2026-11-13" in payload["sources"]["sse_shares"]["error"]
+
+
+def test_failed_szse_refresh_keeps_previous_shares_and_marks_them_stale(
+    monkeypatch, tmp_path
+):
+    universe = [{"code": "159919", "name": "测试ETF", "category": "测试", "exchange": "SZ"}]
+    previous = _previous_etf(
+        "159919",
+        [["2026-11-12", 2.5, 1.2, None]],
+    )
+
+    payload, _ = _fetch_fixture(
+        monkeypatch,
+        tmp_path,
+        universe,
+        previous,
+        {"159919": {"2026-11-13": 1.1}},
+        ({}, {}, [], ["159919: ConnectionError: reset"]),
+    )
+
+    etf = payload["etfs"][0]
+    assert payload["sources"]["szse_shares"]["ok"] is False
+    assert etf["latest"]["shares_yi"] == 2.5
+    assert etf["latest"]["shares_asof"] == "2026-11-12"
+    assert etf["latest"]["shares_stale"] is True
