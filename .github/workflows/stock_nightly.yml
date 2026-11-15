@@ -1,4 +1,5 @@
 name: stock_nightly
+run-name: ${{ github.event_name == 'pull_request' && format('stock_nightly · PR {0}', github.event.pull_request.number) || format('stock_nightly · {0}', inputs.universe || (github.event.schedule == '40 10 * * 1-5' && 'universe_csi500.json' || 'universe_csi300.json')) }}
 
 on:
   schedule:
