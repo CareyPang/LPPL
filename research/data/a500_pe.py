@@ -245,8 +245,13 @@ def update(
     if daily.empty:
         return history
     minimum = math.ceil(0.95 * n_constituents)
-    last_date = history.index.max() if len(history) else pd.Timestamp.min
-    additions = daily.loc[(daily.index > last_date) & daily["n"].ge(minimum)]
+    first_date = history.index.min() if len(history) else pd.Timestamp.min
+    eligible = (
+        (daily.index > first_date)
+        & ~daily.index.isin(history.index)
+        & daily["n"].ge(minimum)
+    )
+    additions = daily.loc[eligible]
     if additions.empty:
         return history
     return pd.concat([history, additions]).sort_index()

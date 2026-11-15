@@ -103,6 +103,65 @@ def test_update_appends_only_new_dates_with_95_percent_coverage():
     assert result.loc["2026-11-16", "n"] == 4
 
 
+def test_update_backfills_qualifying_gaps_without_rewriting_history():
+    history = pd.DataFrame(
+        {
+            "n": [4],
+            "mcap": [400.0],
+            "earn": [40.0],
+            "pe_ttm": [10.0],
+        },
+        index=pd.DatetimeIndex(["2026-11-13"], name="date"),
+    )
+
+    def rows_for(day, codes, mcap=100, pe=10):
+        return pd.DataFrame(
+            [
+                {
+                    "SECURITY_CODE": f"{code:06}",
+                    "TRADE_DATE": day,
+                    "TOTAL_MARKET_CAP": mcap,
+                    "PE_TTM": pe,
+                }
+                for code in codes
+            ]
+        )
+
+    first_rows = pd.concat(
+        [
+            rows_for("2026-11-16", range(1, 4)),
+            rows_for("2026-11-17", range(1, 5)),
+        ],
+        ignore_index=True,
+    )
+    first = a500_pe.update(history, n_constituents=4, rows=first_rows)
+    second_rows = pd.concat(
+        [
+            rows_for("2026-11-16", range(1, 5)),
+            rows_for("2026-11-17", range(1, 5), mcap=999),
+            rows_for("2026-11-18", range(1, 5)),
+        ],
+        ignore_index=True,
+    )
+
+    second = a500_pe.update(first, n_constituents=4, rows=second_rows)
+
+    assert first.index.strftime("%Y-%m-%d").tolist() == [
+        "2026-11-13",
+        "2026-11-17",
+    ]
+    assert second.index.strftime("%Y-%m-%d").tolist() == [
+        "2026-11-13",
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+    ]
+    assert second.loc["2026-11-13", "mcap"] == 400
+    assert second.loc["2026-11-16", "n"] == 4
+    assert second.loc["2026-11-17", "mcap"] == 400
+    assert second.loc["2026-11-18", "n"] == 4
+
+
 def test_fetch_recent_retries_with_required_params_and_timeout(monkeypatch):
     calls = []
 
