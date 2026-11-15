@@ -439,22 +439,33 @@ SINA_REGIONS = {
     "650000": "新疆",
 }
 SINA_PAGE_PAUSE = 0.2
+SINA_PAGE_RETRIES = 3
 
 
 def _sina_pages(session, url: str, params: dict, page_size: int) -> list[dict]:
     rows: list[dict] = []
     for page in range(1, 200):
-        response = session.get(
-            url,
-            params={**params, "page": page, "num": page_size},
-            headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"},
-            timeout=20,
-            allow_redirects=True,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, list):
-            raise RuntimeError(f"Sina {url.rsplit('/', 1)[-1]} page {page} is not an array")
+        payload = None
+        for attempt in range(SINA_PAGE_RETRIES):
+            try:
+                response = session.get(
+                    url,
+                    params={**params, "page": page, "num": page_size},
+                    headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"},
+                    timeout=20,
+                    allow_redirects=True,
+                )
+                response.raise_for_status()
+                payload = response.json()
+                if not isinstance(payload, list):
+                    raise RuntimeError(
+                        f"Sina {url.rsplit('/', 1)[-1]} page {page} is not an array"
+                    )
+                break
+            except Exception:
+                if attempt == SINA_PAGE_RETRIES - 1:
+                    raise
+                time.sleep(SINA_PAGE_PAUSE * (attempt + 1) * 5)
         rows.extend(item for item in payload if isinstance(item, dict))
         if len(payload) < page_size:
             break
