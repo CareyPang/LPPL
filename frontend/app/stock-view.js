@@ -181,6 +181,7 @@
         $('results').hidden = true;
         $('market-panel').hidden = true;
         $('task-stages').hidden = true;
+        $('analysis-pending').hidden = true;
         $('refresh-current').disabled = true;
         $('compute-history').disabled = true;
         $('resume-jobs').hidden = true;
