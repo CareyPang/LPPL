@@ -1,6 +1,8 @@
 import json
 import os
 import subprocess
+import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -123,7 +125,7 @@ def test_run_batch_writes_error_file_and_continues(tmp_path, monkeypatch):
     assert json.loads((out / "000001.json").read_text(encoding="utf-8"))["asof"] == "2026-10-30"
     assert not (out / "000001_error.json").exists()
     err = json.loads((out / "000002_error.json").read_text(encoding="utf-8"))
-    assert err["error"].startswith("RuntimeError") and err["run_url"] == "https://x/1"
+    assert err["error_code"] == "COMPUTE_FAILED" and err["run_url"] == "https://x/1"
 
 
 def test_run_batch_failure_removes_stale_result_and_breadth_counts_error(tmp_path, monkeypatch):
@@ -146,7 +148,41 @@ def test_run_batch_failure_removes_stale_result_and_breadth_counts_error(tmp_pat
 
 
 def _git(*args, cwd=None):
-    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True, encoding="utf-8").stdout.strip()
+
+
+def test_nightly_success_and_error_have_consistent_source_and_unique_jobs(tmp_path, monkeypatch):
+    job = {"job_id": str(uuid.uuid4()), "requested_at": "2026-11-06T00:00:00Z", "source_sha": "b" * 40}
+
+    def predict(code, **kwargs):
+        if code == "000002":
+            raise RuntimeError("private internal diagnostic")
+        return _record(code) | {"model_version": "model-v1", "fit_code_version": "fit-v1", "data_version": "data-v1"}
+
+    monkeypatch.setattr(stock_batch.stock_pipeline, "predict", predict)
+    summary = stock_batch.run_batch(["000001", "000002"], "2026-10-30", tmp_path, job=job)
+    success = json.loads((tmp_path / "000001.json").read_text(encoding="utf-8"))
+    error = json.loads((tmp_path / "000002_error.json").read_text(encoding="utf-8"))
+    assert success["job_id"] != error["job_id"]
+    assert summary["source_sha"] == job["source_sha"]
+    for code, record in (("000001", success), ("000002", error)):
+        assert uuid.UUID(record["job_id"]).version == 4
+        assert record["source_sha"] == job["source_sha"]
+        assert record["batch_id"] == job["job_id"]
+        assert record["requested_at"] == job["requested_at"]
+        assert record["code"] == code and record["mode"] == "current"
+        assert record["schema_version"] == "stock_result_v1"
+    assert "private" not in error["error"]
+    assert success["fit_code_version"] == "fit-v1"
+
+
+def test_nightly_rejects_partial_job_metadata_before_computing(tmp_path, monkeypatch):
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("invalid identity must not start computation")
+
+    monkeypatch.setattr(stock_batch.stock_pipeline, "predict", unexpected)
+    with pytest.raises(ValueError):
+        stock_batch.run_batch(["000001"], "2026-10-30", tmp_path, job={"job_id": str(uuid.uuid4())})
 
 
 def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
@@ -188,8 +224,10 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
         "HISTORY_WEEKS": "0",
         "STOCK_RESULT_DIR": str(result_dir),
         "STOCK_RUN_URL": "https://example.test/runs/batch",
+        "STOCK_PYTHON": Path(sys.executable).as_posix(),
     }
-    subprocess.run(["bash", str(SCRIPT)], cwd=repo, env=env, check=True, capture_output=True, text=True)
+    bash = "C:/Program Files/Git/bin/bash.exe" if os.name == "nt" else "bash"
+    subprocess.run([bash, SCRIPT.as_posix()], cwd=repo, env=env, check=True, capture_output=True, text=True, encoding="utf-8")
 
     files = _git("--git-dir", str(origin), "ls-tree", "--name-only", "stock-results", "stock/").splitlines()
     assert sorted(files) == [
@@ -206,6 +244,79 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
     index = json.loads(_git("--git-dir", str(origin), "show", "stock-results:stock/index.json"))
     assert index["000001"]["status"] == "eligible" and index["000001"]["asof"] == "2026-10-30"
     assert index["000002"]["status"] == "error" and index["000002"]["run_url"] == "https://example.test/runs/batch"
+
+
+def test_batch_publisher_preserves_newer_breadth_but_replaces_equal_or_newer(tmp_path):
+    origin = tmp_path / "origin.git"
+    repo = tmp_path / "repo"
+    _git("init", "--bare", "--initial-branch=main", str(origin))
+    repo.mkdir()
+    _git("init", "--initial-branch=main", cwd=repo)
+    _git("config", "user.name", "T", cwd=repo)
+    _git("config", "user.email", "t@example.com", cwd=repo)
+    (repo / "README.md").write_text("x\n", encoding="utf-8")
+    _git("add", "README.md", cwd=repo)
+    _git("commit", "-m", "init", cwd=repo)
+    _git("remote", "add", "origin", str(origin), cwd=repo)
+    _git("push", "-u", "origin", "main", cwd=repo)
+
+    stock_dir = repo / "stock"
+    stock_dir.mkdir()
+    (stock_dir / "breadth_sh000300.json").write_text(
+        json.dumps({"index": "sh000300", "asof": "2026-11-13", "n": 300}),
+        encoding="utf-8",
+    )
+    _git("checkout", "-b", "stock-results", cwd=repo)
+    _git("add", "stock/breadth_sh000300.json", cwd=repo)
+    _git("commit", "-m", "existing breadth", cwd=repo)
+    _git("push", "-u", "origin", "stock-results", cwd=repo)
+    _git("checkout", "main", cwd=repo)
+
+    result_dir = repo / "out" / "stock"
+    result_dir.mkdir(parents=True)
+    (result_dir / "000001.json").write_text(
+        json.dumps(_record("000001")), encoding="utf-8"
+    )
+    breadth_path = result_dir / "breadth_sh000300.json"
+    batch_marker = result_dir / "_batch_0_of_1.json"
+    batch_marker.write_text("{}", encoding="utf-8")
+    env = os.environ | {
+        "CODE": "",
+        "VARIANT": "stk_lite",
+        "HISTORY_WEEKS": "0",
+        "STOCK_RESULT_DIR": str(result_dir),
+        "STOCK_RUN_URL": "https://example.test/runs/batch",
+    }
+
+    def publish_breadth(asof, n):
+        breadth_path.write_text(
+            json.dumps({"index": "sh000300", "asof": asof, "n": n}),
+            encoding="utf-8",
+        )
+        return subprocess.run(
+            ["bash", str(SCRIPT)],
+            cwd=repo,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    older = publish_breadth("2026-11-12", 200)
+    assert "skip breadth breadth_sh000300.json: published asof 2026-11-13 newer than batch 2026-11-12" in older.stdout
+    assert json.loads(
+        _git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json")
+    ) == {"index": "sh000300", "asof": "2026-11-13", "n": 300}
+
+    publish_breadth("2026-11-13", 301)
+    assert json.loads(
+        _git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json")
+    ) == {"index": "sh000300", "asof": "2026-11-13", "n": 301}
+
+    publish_breadth("2026-11-14", 302)
+    assert json.loads(
+        _git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json")
+    ) == {"index": "sh000300", "asof": "2026-11-14", "n": 302}
 
 
 def test_qualified_skips_display_only_scales():

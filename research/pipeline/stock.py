@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timezone
+import tempfile
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
@@ -35,6 +35,7 @@ from ..features.lppls_rules import rules  # noqa: E402
 from ..lppls import core as _core  # noqa: E402
 from ..pipeline import universe  # noqa: E402
 from ..pipeline.daily import fit_asof  # noqa: E402
+from ..pipeline.stock_jobs import atomic_json, attach_job, cli_job  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 NAMES_PATH = ROOT / "web/mock/data/stock_names.json"
@@ -367,13 +368,7 @@ def _variant_windows(variant: str, n_bars: int) -> tuple[int, ...]:
     if variant == "stk_lite":
         return tuple(universe.WINDOWS)
     if variant == "stk_full":
-        windows = (
-            lppls_scan.XS_WINDOWS
-            + lppls_scan.SHORT_WINDOWS
-            + lppls_scan.IDX_WINDOWS
-            + lppls_scan.XL_WINDOWS
-        )
-        return tuple(sorted({int(n) for n in windows if n <= n_bars}))
+        return lppls_scan.full_windows(n_bars)
     raise ValueError(f"unknown stock variant: {variant}")
 
 
@@ -494,36 +489,188 @@ def _stock_status_meta(
 
 
 def _version() -> str:
-    _set_allow_inside()
-    digest = hashlib.sha1()
-    for path in (
-        ROOT / "research/lppls/core.py",
-        ROOT / "research/optim/optimizers.py",
-        ROOT / "research/features/lppls_scan.py",
-        ROOT / "research/pipeline/daily.py",
-        ROOT / "research/pipeline/universe.py",
-    ):
+    # Include the optimizer and local numerical dependencies in the cache key.
+    # This keeps current and explicitly requested history jobs compatible while
+    # preserving the main branch's v2 box and sign configuration.
+    # Fingerprinting must not change the active numerical engine. Actual fit
+    # execution sets its v2 mode in _fit_pairs; hash the intended configuration.
+    _ensure_v2_box()
+    digest = hashlib.sha256()
+    paths = sorted(set(
+        list((ROOT / "research/lppls").glob("*.py"))
+        + list((ROOT / "research/optim").glob("*.py"))
+        + list((ROOT / "research/features").glob("*.py"))
+        + [
+            ROOT / "research/pipeline/daily.py",
+            ROOT / "research/pipeline/universe.py",
+            ROOT / "research/pipeline/stock.py",
+            ROOT / "pyproject.toml",
+        ]
+    ))
+    for path in paths:
+        digest.update(str(path.relative_to(ROOT)).replace("\\", "/").encode())
         digest.update(path.read_bytes())
-    digest.update(
-        json.dumps(
-            {
-                "box": lppls_scan.BOX,
-                "allow_inside": _core.ALLOW_INSIDE,
-                "box_config": lppls_scan.BOXES[lppls_scan.BOX],
-            },
-            sort_keys=True,
-        ).encode("utf-8")
-    )
-    return digest.hexdigest()[:12]
+    import scipy
+
+    config = {
+        "box": lppls_scan.BOX,
+        "bounds": lppls_scan.BOXES[lppls_scan.BOX],
+        "sign": lppls_scan.SIGN,
+        "anchor": lppls_scan.ANCHOR,
+        "windows_mode": lppls_scan.WINDOWS_MODE,
+        "allow_inside": bool(lppls_scan.BOXES[lppls_scan.BOX]["inside"]),
+        "numpy": np.__version__,
+        "scipy": scipy.__version__,
+        "pandas": pd.__version__,
+    }
+    digest.update(json.dumps(config, sort_keys=True).encode())
+    return digest.hexdigest()
 
 
 def _fit_input_version(
     logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]
 ) -> str:
-    available = logp.loc[logp.index <= asof].to_numpy(dtype=float)
+    series = logp.loc[logp.index <= asof]
+    available = series.to_numpy(dtype="<f8")
+    windows = tuple(n for n in windows if n <= len(available))
     n = max(windows, default=len(available))
-    payload = np.round(available[-n:], 10).tobytes()
-    return hashlib.sha1(payload).hexdigest()[:12]
+    digest = hashlib.sha256()
+    digest.update(available[-n:].tobytes())
+    digest.update(series.index[-n:].asi8.astype("<i8").tobytes())
+    digest.update(json.dumps({"asof": str(asof), "windows": list(windows)}).encode())
+    return digest.hexdigest()
+
+
+def _price_frame_sha256(ohlc: pd.DataFrame) -> str:
+    frame = ohlc.copy()
+    frame["date"] = pd.to_datetime(frame["date"]).dt.strftime("%Y-%m-%d")
+    frame = frame.sort_values("date", kind="stable").reset_index(drop=True)
+    payload = frame.to_csv(index=False, float_format="%.17g").encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _price_snapshot_paths(
+    code: str, data_version: str, snapshot_dir: Path
+) -> tuple[Path, Path]:
+    path = Path(snapshot_dir) / code / "prices" / f"{data_version}.parquet"
+    return path, path.with_suffix(".json")
+
+
+def _seal_price_snapshot(
+    code: str,
+    ohlc: pd.DataFrame,
+    data_version: str,
+    meta: dict,
+    snapshot_dir: Path,
+) -> dict:
+    path, metadata_path = _price_snapshot_paths(code, data_version, snapshot_dir)
+    input_hash = _price_frame_sha256(ohlc)
+    if path.exists() or metadata_path.exists():
+        if not path.exists() or not metadata_path.exists():
+            raise RuntimeError(
+                f"incomplete sealed price snapshot for {code} {data_version}"
+            )
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        existing_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        saved = pd.read_parquet(path)
+        if (
+            metadata.get("data_version") != data_version
+            or metadata.get("sha256") != existing_hash
+            or metadata.get("prices_sha256") != _price_frame_sha256(saved)
+            or metadata.get("prices_sha256") != input_hash
+        ):
+            raise RuntimeError(
+                f"sealed price snapshot changed for {code} {data_version}"
+            )
+        return {
+            "path": str(path),
+            "sha256": existing_hash,
+            "data_version": data_version,
+        }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ohlc.to_parquet(path, index=False)
+    snapshot_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    atomic_json(
+        metadata_path,
+        {
+            "data_version": data_version,
+            "sha256": snapshot_hash,
+            "prices_sha256": input_hash,
+            "meta": meta,
+        },
+    )
+    return {
+        "path": str(path),
+        "sha256": snapshot_hash,
+        "data_version": data_version,
+    }
+
+
+def _load_price_snapshot(
+    code: str,
+    data_version: str,
+    snapshot_dir: Path,
+    reference: dict | None = None,
+) -> tuple[pd.DataFrame, str, dict]:
+    path, metadata_path = _price_snapshot_paths(code, data_version, snapshot_dir)
+    if not path.exists() or not metadata_path.exists():
+        raise FileNotFoundError(
+            f"sealed price snapshot is missing for {code} {data_version}"
+        )
+    if reference is not None:
+        if reference.get("data_version") != data_version:
+            raise ValueError(f"current record snapshot version mismatch for {code}")
+        if Path(reference.get("path", "")).resolve() != path.resolve():
+            raise ValueError(f"current record snapshot path mismatch for {code}")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    snapshot_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    if (
+        metadata.get("data_version") != data_version
+        or metadata.get("sha256") != snapshot_hash
+        or (reference is not None and reference.get("sha256") != snapshot_hash)
+    ):
+        raise ValueError(
+            f"sealed price snapshot checksum mismatch for {code} {data_version}"
+        )
+    ohlc = pd.read_parquet(path)
+    if metadata.get("prices_sha256") != _price_frame_sha256(ohlc):
+        raise ValueError(
+            f"sealed price snapshot content mismatch for {code} {data_version}"
+        )
+    return ohlc, data_version, metadata.get("meta", {})
+
+
+def _load_latest_price_snapshot(
+    code: str, snapshot_dir: Path
+) -> tuple[pd.DataFrame, str, dict]:
+    directory = Path(snapshot_dir) / code / "prices"
+    metadata_paths = sorted(directory.glob("*.json"))
+    if not metadata_paths:
+        raise FileNotFoundError(f"no sealed price snapshot found for {code}")
+    metadata_path = metadata_paths[-1]
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    data_version = metadata.get("data_version")
+    if not data_version or metadata_path.stem != data_version:
+        raise ValueError(f"invalid sealed price snapshot metadata: {metadata_path}")
+    reference = {
+        "path": str(metadata_path.with_suffix(".parquet")),
+        "sha256": metadata.get("sha256"),
+        "data_version": data_version,
+    }
+    return _load_price_snapshot(code, data_version, snapshot_dir, reference)
+
+
+def _snapshot_through(
+    snapshot: tuple[pd.DataFrame, str, dict], asof: str
+) -> tuple[pd.DataFrame, str, dict]:
+    ohlc, data_version, meta = snapshot
+    cutoff = pd.Timestamp(asof).normalize()
+    dates = pd.to_datetime(ohlc["date"]).dt.normalize()
+    ohlc = ohlc.loc[dates <= cutoff].reset_index(drop=True)
+    if ohlc.empty:
+        raise ValueError(f"sealed price snapshot has no bars through {cutoff.date()}")
+    return ohlc, data_version, meta
 
 
 def _fit_logp(ohlc: pd.DataFrame) -> pd.Series:
@@ -568,12 +715,17 @@ def _record(
     sym = _symbol(code6)
     derived = _derived(fits)
     rule_frame = rules(derived)
+    display_calendar = (
+        _display_calendar(logp.index, asof, "us")
+        if meta.get("market") == "us"
+        else _display_calendar(logp.index, asof)
+    )
     record = build_record(
         sym,
         str(asof.date()),
         derived,
         rule_frame,
-        _display_calendar(logp.index, asof, "us" if meta.get("market") == "us" else "cn"),
+        display_calendar,
         ohlc,
         data_version=data_version,
     )
@@ -632,6 +784,7 @@ def predict(
     asof: str | None = None,
     procs: int | None = None,
     trust_boot: int = 0,
+    cache_dir: Path | None = None,
 ) -> dict:
     _ensure_v2_box()
     code = _validate_code(code6)
@@ -649,7 +802,12 @@ def predict(
     windows = _variant_windows(variant, len(available))
     if eligibility["n_bars"] < 500:
         windows = ()
-    fits = _fit_pairs(available, [(date, n) for n in windows if n <= len(available)], procs)
+    if cache_dir is None:
+        # Preserve the public Python API's historical no-disk default. The CLI
+        # explicitly enables the same cache used by history.
+        fits = _fit_pairs(available, [(date, n) for n in windows if n <= len(available)], procs)
+    else:
+        fits = _cached_fits(code, variant, available, [date], windows, procs, cache_dir)[date]
     record = _record(
         code,
         variant,
@@ -666,6 +824,22 @@ def predict(
     ohlc_pit.attrs["sym"] = _symbol(code)
     if not code.startswith("US_"):
         record["dip"] = build_panel(ohlc_pit)
+    record["data_version"] = data_version
+    record["fit_code_version"] = _version()
+    record["fit_input_hash"] = _fit_input_version(full_logp, date, windows)
+    # Cheap input fingerprints only, not historical fits. They let publication
+    # keep old frames after append-only data updates while rejecting restatements.
+    record["history_input_hashes"] = {
+        str(day.date()): _fit_input_version(available, day, windows)
+        # A history requested midweek ends on that day; the next day's weekly
+        # endpoint changes. Include every day, plus one boundary week of slack.
+        for day in available.index[available.index >= date - pd.Timedelta(weeks=157)]
+    }
+    if cache_dir is not None:
+        snapshot_ref = _seal_price_snapshot(code, ohlc, data_version, meta, cache_dir)
+        snapshot_ref["asof"] = str(date.date())
+        record["stock_meta"]["price_snapshot"] = snapshot_ref
+    attach_job(record, {}, code, "current")
     return record
 
 
@@ -708,6 +882,55 @@ def _cache_frame(path: Path) -> pd.DataFrame:
     return cached[FIT_CACHE_COLUMNS]
 
 
+def _atomic_parquet(frame: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".fits-", suffix=".parquet", dir=path.parent)
+    os.close(fd)
+    try:
+        frame.to_parquet(temporary, index=False)
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def _cached_fits(code, variant, logp, asofs, windows, procs, cache_dir):
+    code_version = _version()
+    cache_path = Path(cache_dir) / code / variant / "fits.parquet"
+    cached = _cache_frame(cache_path)
+    input_versions = {date: _fit_input_version(logp, date, windows) for date in asofs}
+    existing = {
+        (pd.Timestamp(row.asof), int(row.n), str(row.data_version), str(row.code_version))
+        for row in cached.itertuples()
+    }
+    missing = [
+        (date, n) for date in asofs for n in windows
+        if len(logp.loc[:date]) >= 500 and n <= len(logp.loc[:date])
+        and (date, n, input_versions[date], code_version) not in existing
+    ]
+    new_fits = _fit_pairs(logp, missing, procs)
+    if len(new_fits):
+        append = new_fits[lppls_scan.COLS].copy()
+        append["asof"] = pd.to_datetime(append.date).dt.normalize()
+        append["data_version"] = [input_versions[pd.Timestamp(date)] for date in append.date]
+        append["code_version"] = code_version
+        cached = append[FIT_CACHE_COLUMNS].copy() if cached.empty else pd.concat(
+            [cached, append[FIT_CACHE_COLUMNS]], ignore_index=True
+        )
+        cached = cached.drop_duplicates(subset=FIT_CACHE_KEY, keep="last")
+        cached = cached.sort_values(["asof", "n"], kind="stable").reset_index(drop=True)
+        _atomic_parquet(cached, cache_path)
+    return {
+        date: _add_y_std(cached.loc[
+            (pd.to_datetime(cached["asof"]) == date)
+            & (cached.data_version == input_versions[date])
+            & (cached.code_version == code_version)
+            & (cached.n.isin(windows))
+            & (cached.n <= len(logp.loc[:date])), lppls_scan.COLS
+        ], logp).reset_index(drop=True)
+        for date in asofs
+    }
+
+
 def _confirmed_tops(logp: pd.Series) -> list[dict]:
     x = logp.to_numpy(dtype=float)
     indices = ps_tops(logp)
@@ -730,96 +953,50 @@ def history(
     variant: str = "stk_lite",
     procs: int | None = None,
     cache_dir: Path = Path("data/stock"),
+    price_snapshot: tuple[pd.DataFrame, str, dict] | None = None,
 ) -> dict:
     _ensure_v2_box()
     code = _validate_code(code6)
     if variant not in ("stk_lite", "stk_full"):
         raise ValueError(f"unknown stock variant: {variant}")
-    ohlc, data_version, meta = load_stock(code)
+    ohlc, data_version, meta = (
+        price_snapshot if price_snapshot is not None else load_stock(code)
+    )
     logp = _fit_logp(ohlc)
     asofs = _weekly_asofs(logp, weeks)
     windows = _variant_windows(variant, len(logp))
-    code_version = _version()
-    cache_path = Path(cache_dir) / code / variant / "fits.parquet"
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cached = _cache_frame(cache_path)
-    input_versions = {
-        date: _fit_input_version(logp, date, windows)
-        for date in asofs
-    }
-    existing_keys = {
-        (
-            str(pd.Timestamp(row.asof).date()),
-            int(row.n),
-            str(row.data_version),
-            str(row.code_version),
-        )
-        for row in cached.itertuples()
-    }
-    missing_pairs = []
-    for date in asofs:
-        available = logp.loc[logp.index <= date]
-        if len(available) < 500:
-            continue
-        missing_pairs.extend(
-            (date, n)
-            for n in windows
-            if n <= len(available)
-            and (
-                str(date.date()),
-                int(n),
-                input_versions[date],
-                code_version,
-            )
-            not in existing_keys
-        )
-    new_fits = _fit_pairs(logp, missing_pairs, procs)
-    if len(new_fits):
-        append = new_fits[lppls_scan.COLS].copy()
-        append["asof"] = pd.to_datetime(append.date).dt.normalize()
-        append["data_version"] = [
-            input_versions[pd.Timestamp(date)] for date in append.date
-        ]
-        append["code_version"] = code_version
-        if cached.empty:
-            cached = append[FIT_CACHE_COLUMNS].copy()
-        else:
-            cached = pd.concat([cached, append[FIT_CACHE_COLUMNS]], ignore_index=True)
-        cached = cached.drop_duplicates(subset=FIT_CACHE_KEY, keep="first")
-        cached = cached.sort_values(["asof", "n"], kind="stable").reset_index(drop=True)
-        cached.to_parquet(cache_path, index=False)
+    fits_by_date = _cached_fits(code, variant, logp, asofs, windows, procs, cache_dir)
 
     sym = _symbol(code)
     frames = []
     for date in asofs:
-        available = logp.loc[logp.index <= date]
-        key_rows = cached[
-            (pd.to_datetime(cached["asof"]) == date)
-            & (cached.data_version == input_versions[date])
-            & (cached.code_version == code_version)
-            & (cached.n <= len(available))
-        ]
-        fits = _add_y_std(key_rows[lppls_scan.COLS], logp)
+        fits = fits_by_date[date]
         derived = _derived(fits)
         rule_frame = rules(derived)
         close = float(ohlc.loc[ohlc.date == date, "close"].iloc[-1])
+        display_calendar = (
+            _display_calendar(logp.index, date, "us")
+            if meta.get("market") == "us"
+            else _display_calendar(logp.index, date)
+        )
         frame = _history_frame(
             derived,
             rule_frame,
             date,
-            _display_calendar(
-                logp.index, date, "us" if meta.get("market") == "us" else "cn"
-            ),
+            display_calendar,
             close,
             STOCK_EVIDENCE,
             include_scenarios=True,
         )
+        frame["fit_input_hash"] = _fit_input_version(logp, date, windows)
         frames.append(frame)
 
     confirmed_tops = _confirmed_tops(logp)
     tops = [{k: v for k, v in event.items() if k != "evidence"} for event in confirmed_tops]
-    result = {
+    record = {
         "symbol": sym,
+        "asof": str(logp.index[-1].date()),
+        "fit_code_version": _version(),
         "model_version": f"{MODEL_VERSION}+{variant}",
         "evidence": STOCK_EVIDENCE,
         "rule": "每个截止日仅用此前个股拟合生成的情景区间；个股未经过样本外检验",
@@ -839,9 +1016,9 @@ def history(
             key: meta.get(key)
             for key in ("history_start", "raw_gap", "history_note")
         }
-        result.update(history_meta)
-        result["stock_meta"].update(history_meta)
-        result.update(
+        record.update(history_meta)
+        record["stock_meta"].update(history_meta)
+        record.update(
             {
                 "evidence": STOCK_EVIDENCE,
                 "source": "sina_us_daily+sina_qfq_factor",
@@ -851,7 +1028,8 @@ def history(
                 "dip_note": "美股暂无抄底事件库",
             }
         )
-    return result
+    attach_job(record, {}, code, "history")
+    return record
 
 
 def main() -> None:
@@ -860,36 +1038,77 @@ def main() -> None:
     parser.add_argument("--variant", choices=("stk_lite", "stk_full"), default="stk_lite")
     parser.add_argument("--asof")
     parser.add_argument("--history-weeks", type=int, default=0)
+    parser.add_argument("--phase", choices=("current", "history"), default=None)
+    parser.add_argument("--cache-dir", type=Path, default=Path("data/stock"))
+    parser.add_argument("--job-id")
+    parser.add_argument("--requested-at")
+    parser.add_argument("--source-sha")
     parser.add_argument("--procs", type=int)
     parser.add_argument("--trust-boot", type=int, default=0)
     parser.add_argument("--out", type=Path, default=Path("web/mock/data/stock"))
     args = parser.parse_args()
+    if not 0 <= args.history_weeks <= 156:
+        parser.error("history-weeks must be from 0 through 156")
+    if args.phase == "current" and args.history_weeks:
+        parser.error("current phase must use --history-weeks 0")
+    if args.phase == "history" and (not args.history_weeks or args.asof):
+        parser.error("history phase requires positive history-weeks and no --asof")
+    job = cli_job(args.job_id, args.requested_at, args.source_sha)
     args.out.mkdir(parents=True, exist_ok=True)
-    record = predict(
-        args.code6,
-        variant=args.variant,
-        asof=args.asof,
-        procs=args.procs,
-        trust_boot=args.trust_boot,
-    )
-    record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
     code = _validate_code(args.code6)
-    path = args.out / f"{code}.json"
-    path.write_text(json.dumps(record, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
-    print(path)
+    current_record = None
+    if args.phase != "history":
+        record = predict(
+            code, variant=args.variant, asof=args.asof, procs=args.procs,
+            trust_boot=args.trust_boot, cache_dir=args.cache_dir,
+        )
+        attach_job(record, job, code, "current")
+        current_record = record
+        path = args.out / f"{code}.json"
+        atomic_json(path, record)
+        print(path)
+    elif args.history_weeks > 0:
+        current_path = args.out / f"{code}.json"
+        if current_path.exists():
+            current_record = json.loads(current_path.read_text(encoding="utf-8"))
     if args.history_weeks > 0:
+        snapshot = None
+        current_asof = current_record["asof"] if current_record is not None else None
+        snapshot_ref = (
+            (current_record.get("stock_meta") or {}).get("price_snapshot")
+            if current_record is not None
+            else None
+        )
+        if snapshot_ref:
+            snapshot = _load_price_snapshot(
+                code, current_record["data_version"], args.cache_dir, snapshot_ref
+            )
+        else:
+            try:
+                snapshot = _load_latest_price_snapshot(code, args.cache_dir)
+            except FileNotFoundError:
+                # Nightly batches publish current records without a sealed snapshot
+                # and this runner has no cache: seal one through the current asof now.
+                predict(
+                    code, variant=args.variant, asof=current_asof, procs=args.procs,
+                    trust_boot=args.trust_boot, cache_dir=args.cache_dir,
+                )
+                snapshot = _load_latest_price_snapshot(code, args.cache_dir)
+        snapshot = _snapshot_through(
+            snapshot,
+            current_asof or str(pd.Timestamp(snapshot[0].date.iloc[-1]).date()),
+        )
         history_record = history(
             code,
             weeks=args.history_weeks,
             variant=args.variant,
             procs=args.procs,
+            cache_dir=args.cache_dir,
+            price_snapshot=snapshot,
         )
-        history_record["generated_at"] = datetime.now(timezone.utc).isoformat()  # noqa: UP017
+        attach_job(history_record, job, code, "history")
         history_path = args.out / f"{code}_history.json"
-        history_path.write_text(
-            json.dumps(history_record, ensure_ascii=False, indent=1, default=str),
-            encoding="utf-8",
-        )
+        atomic_json(history_path, history_record)
         print(history_path)
 
 

@@ -60,6 +60,24 @@ XS_WINDOWS = tuple(range(10, 21, 2))
 XL_WINDOWS = tuple(range(525, 1501, 25))
 
 
+def unique_windows(windows: tuple[int, ...], n_bars: int | None = None) -> tuple[int, ...]:
+    return tuple(
+        sorted(
+            {
+                int(n)
+                for n in windows
+                if n_bars is None or int(n) <= n_bars
+            }
+        )
+    )
+
+
+def full_windows(n_bars: int | None = None) -> tuple[int, ...]:
+    return unique_windows(
+        XS_WINDOWS + SHORT_WINDOWS + IDX_WINDOWS + XL_WINDOWS, n_bars
+    )
+
+
 def residual_tests(t: np.ndarray, y: np.ndarray, tc: float, m: float, w: float, beta: np.ndarray) -> tuple[float, float, float]:
     """Jiang 2010 §2.3–2.4 的两项：去趋势残差 r=(y−A−B f)/f 对 ln|t_c−t| 的 Lomb 峰频与归一化峰功率；
     拟合残差的 DF 回归 t 统计量（Δe_t = c + ρ e_{t−1}，t_ρ；越负越平稳，渐近 5% 临界值约 −2.86）。"""

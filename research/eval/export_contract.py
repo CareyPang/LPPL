@@ -104,6 +104,7 @@ def _scenario_records(q: pd.DataFrame, scen: pd.DataFrame, gg: pd.DataFrame,
          "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
          "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975),
          "tc_mode_date": _to_cal(cal, date, x.tc_mode),
+         "representative_rule": "minimum_sse_over_n_minus_7",
          "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
         for x in scen.itertuples()
     ]
@@ -115,7 +116,7 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
     dd = d[d.date == date]
     rr = r.loc[dd.index]
     fit_rows = dd.loc[rr.box]
-    q = fit_rows[["n", "ahead"]]
+    q = fit_rows[["n", "ahead", "sse"]]
     sw = scale_windows(q, SCALES_FCO) if len(q) else pd.DataFrame()
     windows = {scale: None for scale in HISTORY_SCALES}
     for row in sw.itertuples():
@@ -137,6 +138,23 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
         scen = scenarios(q) if len(q) else pd.DataFrame()
         frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date)
     return frame
+
+
+def _top_window(sw: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+    w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
+    if len(w612):
+        return {
+            "start": _to_cal(cal, date, float(w612.q20.iloc[0])),
+            "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
+            "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）",
+            "evidence": "dev",
+        }
+    return {
+        "start": None,
+        "end": None,
+        "rule": "6–12 月档无合格拟合",
+        "evidence": "dev",
+    }
 
 
 def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: int = 120) -> dict:
@@ -401,7 +419,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     """由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
     date = pd.Timestamp(asof)
     q = d[(d.date == date) & r.box]
-    scen = scenarios(q[["n", "ahead"]]) if len(q) else pd.DataFrame()
+    scen = scenarios(q[["n", "ahead", "sse"]]) if len(q) else pd.DataFrame()
     sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
     rb = regime_bands(ohlc)
     prev_month = (date - pd.offsets.MonthBegin(1) - pd.Timedelta(days=1)).strftime("%Y-%m")
@@ -415,10 +433,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     m_eval = dd.n <= nmax  # 泡沫状态与总信号只用评价过的三档（≤504 日）；六档补充窗口仅作显示
     bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc)
     bottom_objects = _bottom_objects(sym, asof, cal, ohlc)
-    w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
-    window = ({"start": _to_cal(cal, date, float(w612.q20.iloc[0])), "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
-               "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）", "evidence": "dev"}
-              if len(w612) else {"start": None, "end": None, "rule": "6–12 月档无合格拟合", "evidence": "dev"})
+    window = _top_window(sw, cal, date)
     rec = {
         "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
         "top": {
