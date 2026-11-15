@@ -66,10 +66,10 @@
     var rows = p.rows || [];
     if (rows.length && StockSearch) {
       /* 指数的拼音首字母只在 stock_list 行里，所以筛“指数”时也要查这里 */
-      StockSearch.match(rows, q, limit).forEach(function (row) {
+      var pool = filter === 'all' ? rows : rows.filter(function (r) { return (kindOf(r) === 'index') === (filter === 'index'); });
+      StockSearch.match(pool, q, limit).forEach(function (row) {
         var k = kindOf(row);
-        if (k === 'index') { if (filter === 'stock') return; add(hit('index', row.code, row.code, row.name, { published: true })); return; }
-        if (filter === 'index') return;
+        if (k === 'index') { add(hit('index', row.code, row.code, row.name, { published: true })); return; }
         add(hit(k, row.code, '', row.name, { published: pub.has(row.code) }));
       });
     }
