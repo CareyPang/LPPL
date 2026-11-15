@@ -196,7 +196,7 @@
 
 合并顺序：#22 → #23 → #24 → #25 → #27（每合一个，把下一个的 base 改回 main）。
 
-| K §22 Q3 + `_g3` 开发段 | Q3 合成门通过（box/α=0.10/无 f*，§22.2.1）；`_g3` 登记 §20.1；开发段重扫开关与四臂评价脚本；§22.3.1 门结果产出前写定 | 待合并；开发段重扫本机进行中 | #55，`reports/q3_calibration.md`、`scripts/audit_stock_math/exp18_dev_eval.py` |
+| K §22 Q3 + `_g3` 开发段 | Q3 合成门通过（box/α=0.10/无 f*，§22.2.1）；`_g3` 登记 §20.1；开发段重扫开关与四臂评价脚本；§22.3.1 门结果产出前写定 | 开发段 B 门**未通过**（`g3_q3` 0/6，A2 −0.29）→ Q3 只作描述字段，路线关闭；`_g3` 无害（A1 +0.007、Jaccard 0.90），是否改生产默认待裁决；`reports/q3_dev.md`、§22.3.2 | #55，`reports/q3_calibration.md`、`scripts/audit_stock_math/exp18_dev_eval.py` |
 | L Phase 0–4 精度计划 | 尺子、优化器、聚合、逃顶价格、抄底分型、底部链、日志硬化（总表） | 待合并 | #54，`reports/precision_program_summary.md` |
 | M 前瞻日志定时封存 | `forward_log_seal.yml` 工作日封存并提交 main | 待合并（合并前 ledger 停在 2026-10-30） | #69 |
 
