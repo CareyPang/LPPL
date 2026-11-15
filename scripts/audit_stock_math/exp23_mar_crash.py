@@ -43,7 +43,7 @@ def mar_fit(x: np.ndarray, r: int) -> dict:
     """MAR(r,1)：φ(L)(1−ψL⁻¹)x_t = ε_t，ε~t(ν,σ)。近似 ML（丢首 r、末 1 个观测）。"""
     def resid(th):
         phi, psi = th[0], th[1]
-        v = x[1:] - phi * x[:-1] if r == 1 else x
+        v = x[1:] - phi * x[:-1] if r == 1 else x[1:]  # r=0 也丢首个观测，使两种 r 的似然覆盖同一组 498 个残差
         return v[:-1] - psi * v[1:]
     def nll(th):
         return -float(np.sum(t_logpdf(resid(th), np.exp(th[2]), np.exp(th[3]))))
