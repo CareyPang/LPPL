@@ -71,7 +71,12 @@
       StockSearch.match(rows, q, filter === 'all' ? limit : Math.max(limit * 20, 400)).forEach(function (row) {
         if (took >= limit) return;
         var k = kindOf(row);
-        if (k === 'index') { if (filter === 'stock') return; took++; add(hit('index', row.code, row.code, row.name, { published: true })); return; }
+        if (k === 'index') {
+          if (filter === 'stock') return; took++;
+          var G = typeof window !== 'undefined' ? window : {}, R = G.LPPL && G.LPPL.resolve ? G.LPPL.resolve(row.code) : null;
+          /* 统一成六位代码 + 完整 symbol，和图表页记录的“最近访问”是同一条 */
+          add(hit('index', R ? R.code : row.code, R ? R.sym : row.code, row.name, { published: true })); return;
+        }
         if (filter === 'index') return;
         took++;
         add(hit(k, row.code, '', row.name, { published: pub.has(row.code) }));
