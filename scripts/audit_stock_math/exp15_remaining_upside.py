@@ -24,6 +24,7 @@ from research.price_layer.e_dev import block_ci, pinball
 
 EX = {2007, 2008, 2014, 2015}
 H = 250
+DEV_END = pd.Timestamp("2018-12-31")  # 目标 y 的 250 日窗须整体落在开发段内，不读校准段价格
 FEATS = ["u_A", "runup", "m_med", "w_med", "ahead_med"]
 
 
@@ -44,7 +45,7 @@ def panel(sym: str, feat_dir: str, lo_date: str) -> pd.DataFrame:
             if len(ok) / len(g) < 0.10 or len(ok) < 3:
                 continue
             tp = int(pos[date])
-            if tp + H >= len(close):
+            if tp + H >= len(close) or cal[tp + H] > DEV_END:
                 continue
             pt = close[tp]
             A_med = float(np.median(ok.A))
