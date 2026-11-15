@@ -22,7 +22,11 @@
     if (loadedFor === S.sym) return;
     loadedFor = S.sym;
     panel.set(null);
-    LPPL.strategy(S.sym).then(function (J) { if (loadedFor === S.sym) panel.set(J); });
+    LPPL.strategy(S.sym).then(function (J) { if (loadedFor === S.sym) panel.set(J); }).catch(function () {
+      if (loadedFor !== S.sym) return;
+      loadedFor = '';
+      document.getElementById('strategy-panel').innerHTML = '<p class="sp-gate">策略数据读取失败（网络或服务器错误），不是“未发布”。请稍后重试。</p>';
+    });
   }
   function show(view, push) {
     var strat = view === 'strategy';

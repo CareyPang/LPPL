@@ -6,9 +6,13 @@
   const hasCode = !!new URLSearchParams(location.search).get('code');
   let mounted = false;
   const watch = {
-    has: (row) => row.type === 'index'
-      ? !!(window.IndexWatchlist && IndexWatchlist.has(row.watchKey))
-      : StockWatchlist.read(localStorage).includes(row.watchKey),
+    has: (row) => {
+      try {
+        return row.type === 'index'
+          ? !!(window.IndexWatchlist && IndexWatchlist.has(row.watchKey))
+          : StockWatchlist.read(localStorage).includes(row.watchKey);
+      } catch (e) { return false; } /* 浏览器禁用本地存储时目录仍可浏览，只是不能收藏 */
+    },
     toggle: (row) => {
       if (row.type === 'index') { if (window.IndexWatchlist) IndexWatchlist.toggle(row.watchKey); return; }
       const list = StockWatchlist.read(localStorage);
