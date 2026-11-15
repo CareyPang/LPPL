@@ -85,6 +85,7 @@ function setupView() {
 
   return {
     elements,
+    window,
     onChange,
     setMarket(price) {
       onChange({
@@ -122,4 +123,15 @@ test('selecting a non-last quote updates all four stats and its date label', () 
   assert.equal(view.elements.get('quote-low').textContent, '10.00');
   assert.equal(view.elements.get('quote-selected-date').textContent, '2026-11-12');
   assert.match(view.elements.get('quote-readout').textContent, /2026-11-12/);
+});
+
+test('chart zoom and pan clamp to the available bars and a 20-bar minimum', () => {
+  const { zoom, pan } = setupView().window.StockChartWindow;
+
+  assert.deepEqual({ ...zoom(10, 110, 200, 2, 0.5) }, { start: 35, end: 85 });
+  assert.deepEqual({ ...zoom(5, 25, 100, 100, 0.5) }, { start: 5, end: 25 });
+  assert.deepEqual({ ...zoom(0, 100, 100, 0.1, 0.5) }, { start: 0, end: 100 });
+  assert.deepEqual({ ...zoom(0, 10, 10, 2, 0.5) }, { start: 0, end: 10 });
+  assert.deepEqual({ ...pan(0, 40, 100, -100) }, { start: 0, end: 40 });
+  assert.deepEqual({ ...pan(60, 100, 100, 100) }, { start: 60, end: 100 });
 });
