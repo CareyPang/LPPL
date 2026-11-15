@@ -505,6 +505,15 @@
     if (more) {
       new MutationObserver(syncMore).observe(morePop, { attributes: true, subtree: true, attributeFilter: ['aria-current'] });
       morePop.addEventListener('click', function () { more.open = false; });
+      /* .odn-sub 横向可滚动会把下拉裁掉：打开时改为 fixed 定位，贴在按钮下方 */
+      var placeMore = function () {
+        if (!more.open) { morePop.style.cssText = ''; return; }
+        var r = moreSum.getBoundingClientRect();
+        morePop.style.cssText = 'position:fixed;top:' + (r.bottom + 6) + 'px;left:' + Math.max(8, Math.min(r.left, window.innerWidth - 200)) + 'px;right:auto';
+      };
+      more.addEventListener('toggle', placeMore);
+      addEventListener('resize', placeMore);
+      addEventListener('scroll', function () { if (more.open) more.open = false; }, { passive: true });
       syncMore();
     }
     var first = true;
