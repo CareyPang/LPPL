@@ -332,8 +332,15 @@ def fetch_ak_em_stock(
 ) -> pd.DataFrame:
     import akshare as ak
 
+    fetcher = getattr(ak, "stock_zh_a_hist", None)
+    if fetcher is None:
+        version = getattr(ak, "__version__", "unknown")
+        raise RuntimeError(
+            f"akshare.stock_zh_a_hist unavailable in akshare {version}"
+        )
+
     return _ak_source(
-        ak.stock_zh_a_hist,
+        fetcher,
         "ak_em_stock",
         timeout,
         symbol=six,
