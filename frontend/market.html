@@ -569,6 +569,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       return `${withDate ? `${parts.year}-${parts.month}-${parts.day} ` : ''}${parts.hour}:${parts.minute}${withSeconds ? `:${parts.second}` : ''}`;
     };
     const render = () => {
+      $('src-news').innerHTML = state.isLive
+        ? '财联社 · 东方财富 实时（Worker 60 秒缓存）'
+        : srcLine(['news_cls', 'news_eastmoney']);
       const sourceErrors = state.sourceErrors.length
         ? `<p class="fail news-status">${state.sourceErrors.map((message) => E(message)).join('<br>')}</p>`
         : '';
