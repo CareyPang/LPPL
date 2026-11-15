@@ -302,6 +302,103 @@ async function fetchLiveNewsSources() {
   ]);
 }
 
+export const REPLAY_SYMS = new Set(['sh000001', 'sh000016', 'sh000300', 'sh000905', 'sh000688', 'sz399001', 'sz399006']);
+const REPLAY_MIN_ASOF = '2005-01-04';
+
+export function replayRequest(sym, asof, now = new Date()) {
+  if (!REPLAY_SYMS.has(sym)) return { error_code: 'INVALID_SYM', error: '只支持 7 个站点指数的回看' };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asof || '')) return { error_code: 'INVALID_ASOF', error: '日期格式应为 YYYY-MM-DD' };
+  const d = new Date(`${asof}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== asof) return { error_code: 'INVALID_ASOF', error: '日期无效' };
+  if (asof < REPLAY_MIN_ASOF) return { error_code: 'INVALID_ASOF', error: `回看日期不早于 ${REPLAY_MIN_ASOF}` };
+  if (asof > closedCutoff(now)) return { error_code: 'INVALID_ASOF', error: '回看日期不能晚于最近已收盘交易日' };
+  const day = d.getUTCDay();
+  if (day === 0 || day === 6) return { error_code: 'INVALID_ASOF', error: '该日期是周末，不是交易日' };
+  return null;
+}
+
+const REPLAY_RETRY_AFTER_MS = 30 * 60_000;
+
+/** 失败结果是否仍然“有效”：非交易日等永久失败一直有效；数据源等临时失败 30 分钟后允许重算 */
+export function replayFailureActive(data, now = Date.now()) {
+  if (!data || data.status !== 'failed') return false;
+  if (data.permanent) return true;
+  const at = Date.parse(data.failed_at || '');
+  return Number.isFinite(at) && now - at < REPLAY_RETRY_AFTER_MS;
+}
+
+/** 同一 sym+asof 是否已有排队/运行中的 index_replay（按 run-name 匹配），有则不再 dispatch */
+async function replayRunActive(env, sym, asof) {
+  const title = `index_replay ${sym} ${asof}`;
+  const since = new Date(Date.now() - 45 * 60_000).toISOString();
+  const url = `https://api.github.com/repos/${repo(env)}/actions/workflows/index_replay.yml/runs?per_page=30&event=repository_dispatch&created=${encodeURIComponent('>=' + since)}`;
+  const response = await fetchJSON(url, { headers: githubHeaders(env) });
+  if (response.status !== 200) return false;
+  return (response.data?.workflow_runs || []).some((run) => (run.display_title || run.name) === title
+    && ['queued', 'in_progress', 'waiting', 'pending', 'requested'].includes(run.status));
+}
+
+async function readReplay(env, sym, asof) {
+  return fetchJSON(`https://api.github.com/repos/${repo(env)}/contents/index/replay/${sym}_${asof}.json?ref=stock-results`,
+    { headers: githubHeaders(env, 'application/vnd.github.raw') });
+}
+
+/** 任选指数 + 日期的 as-of 回看：结果已存在直接返回；否则触发 index_replay 工作流（约 10 分钟），页面轮询 /replay/result */
+async function indexReplay(request, env, url) {
+  const isPost = url.pathname === '/replay';
+  if (request.method !== (isPost ? 'POST' : 'GET')) {
+    return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
+  }
+  let sym, asof;
+  if (isPost) {
+    let body;
+    try { body = await request.json(); } catch { return jsonResponse(request, env, { error_code: 'INVALID_BODY', error: '请求体不是 JSON' }, 400); }
+    sym = body?.sym; asof = body?.asof;
+  } else {
+    sym = url.searchParams.get('sym'); asof = url.searchParams.get('asof');
+  }
+  sym = String(sym || '').toLowerCase(); asof = String(asof || '');
+  const invalid = replayRequest(sym, asof);
+  if (invalid) return jsonResponse(request, env, invalid, 400);
+  if (!env.GH_TOKEN) return jsonResponse(request, env, { error_code: 'SERVICE_UNAVAILABLE', error: '回看服务未配置' }, 503);
+  try {
+    const existing = await readReplay(env, sym, asof);
+    if (existing.status === 200 && existing.data && typeof existing.data === 'object') {
+      const failed = existing.data.status === 'failed';
+      if (!failed) {
+        return jsonResponse(request, env, { status: 'ready', sym, asof, result: existing.data }, 200, { 'Cache-Control': 'public, max-age=3600' });
+      }
+      if (replayFailureActive(existing.data)) {
+        const left = existing.data.permanent ? null
+          : Math.max(1, Math.ceil((REPLAY_RETRY_AFTER_MS - (Date.now() - Date.parse(existing.data.failed_at))) / 60_000));
+        return jsonResponse(request, env, { ...existing.data, sym, asof, retry_after_minutes: left }, 200, { 'Cache-Control': 'no-store' });
+      }
+      /* 过期的临时失败：GET 当作缺失（前端据此 POST 一次），POST 往下走重新 dispatch */
+    } else if (existing.status !== 404) {
+      throw new Error('replay_store_unavailable');
+    }
+    if (!isPost) return jsonResponse(request, env, { status: 'missing', sym, asof }, 404, { 'Cache-Control': 'no-store' });
+    if (await replayRunActive(env, sym, asof)) {
+      return jsonResponse(request, env, { status: 'pending', sym, asof, job_id: null, eta_minutes: 10,
+        message: `后台已在按 ${asof} 当日及以前的数据计算，约 10 分钟；算完会保存` }, 202, { 'Cache-Control': 'no-store' });
+    }
+    const budget = await reserve(env, request.headers.get('CF-Connecting-IP') || 'unknown', 'query');
+    if (!budget.ok) return budget;
+    const job_id = crypto.randomUUID();
+    const response = await fetchJSON(`https://api.github.com/repos/${repo(env)}/dispatches`, {
+      method: 'POST', headers: githubHeaders(env),
+      body: JSON.stringify({ event_type: 'index_replay', client_payload: { sym, asof, job_id } }),
+    });
+    if (response.status !== 204) {
+      return jsonResponse(request, env, { error_code: 'DISPATCH_FAILED', error: '回看任务未能提交，请稍后重试' }, 502);
+    }
+    return jsonResponse(request, env, { status: 'pending', sym, asof, job_id, eta_minutes: 10,
+      message: `已提交后台计算：只用 ${asof} 当日及以前的数据重新拟合，约 10 分钟；算完会保存，同一日期以后直接显示` }, 202, { 'Cache-Control': 'no-store' });
+  } catch {
+    return jsonResponse(request, env, { error_code: 'UPSTREAM_UNAVAILABLE', error: '回看服务暂时不可用，请稍后重试' }, 502);
+  }
+}
+
 async function liveNews(request, env) {
   const origin = request.headers.get('Origin') || 'none';
   const cacheKey = new Request(`https://lppl-stock-query.invalid/news?origin=${encodeURIComponent(origin)}`);
@@ -816,7 +913,7 @@ export default {
         gh_token,
         repo: repo(env),
         allowed_origin: env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
-        routes: ['/health', '/market', '/news', '/query', '/status', '/result'],
+        routes: ['/health', '/market', '/news', '/query', '/status', '/result', '/replay', '/replay/result'],
       }, ok ? 200 : 503);
     }
     if (url.pathname === '/news') {
@@ -824,6 +921,9 @@ export default {
         return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
       }
       return liveNews(request, env);
+    }
+    if (url.pathname === '/replay' || url.pathname === '/replay/result') {
+      return indexReplay(request, env, url);
     }
     const routes = { '/market': 'GET', '/query': 'POST', '/status': 'GET', '/result': 'GET' };
     if (!routes[url.pathname]) return jsonResponse(request, env, { error_code: 'NOT_FOUND', error: '接口不存在' }, 404);

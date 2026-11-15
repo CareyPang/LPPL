@@ -855,7 +855,24 @@ window.CP = { dateAt(bars, idx) {
 
   function err(m) { $('err').textContent = m || ''; $('err').hidden = !m; }
   function prog(s, p) { $('ld-fill').style.transform = 'scaleX(' + p + ')'; $('ld-s').textContent = s + ' · ' + Math.round(p * 100) + '%'; }
+  let replayWait = null, replayTimer = 0;
+  const REPLAY_RETRY_MS = 30000, REPLAY_MAX_TRIES = 40;
+  function scheduleReplay(job, e) {
+    clearTimeout(replayTimer);
+    const tries = (job.tries || 0) + 1;
+    if (tries > REPLAY_MAX_TRIES) {
+      err('数据未加载：' + job.code + ' 截止 ' + job.asof + ' 的回看超过 20 分钟仍未完成，请稍后再打开同一日期（结果算完会保存）');
+      return null;
+    }
+    const mins = Math.max(0, Math.round((REPLAY_MAX_TRIES - tries) * REPLAY_RETRY_MS / 60000 - 10));
+    replayTimer = setTimeout(() => { if (!busy) { want = { ...job, tries }; pump(); } else want = { ...job, tries }; }, REPLAY_RETRY_MS);
+    return {
+      title: '后台正在按 ' + job.asof + ' 当日及以前的数据现算（历史回看，不是预测）',
+      sub: (e.message || '约 10 分钟') + '。页面每 30 秒自动检查一次，第 ' + tries + ' 次；算完会保存，以后打开同一日期直接显示' + (mins ? '' : ''),
+    };
+  }
   function request(code, asof) {
+    clearTimeout(replayTimer); replayWait = null;
     want = { code, asof };
     if (!busy) pump();
   }
@@ -868,14 +885,16 @@ window.CP = { dateAt(bars, idx) {
       $('ld').hidden = false;
       try {
         const R = await getAnalysis(job.code, job.asof, prog);
-        if (!want) { curCode = R.sym.label; cur = R; err(''); render(R); syncWatch(); }
+        if (!want) { replayWait = null; curCode = R.sym.label; cur = R; err(''); render(R); syncWatch(); }
       } catch (e) {
         stopPlay(); clearView();
+        if (e && e.pending) { replayWait = scheduleReplay(job, e); continue; }
         const detail = String((e && e.message) || e);
         err(detail.startsWith('数据未加载') ? detail : '数据未加载：' + detail);
       }
     }
     busy = false; $('go').disabled = false;
+    if (replayWait) { $('ld').hidden = false; $('ld-t').textContent = replayWait.title; $('ld-s').textContent = replayWait.sub; return; }
     if (cur) $('ld').hidden = true;
     else { $('ld-t').textContent = '数据未加载'; $('ld-s').textContent = '请检查代码和回放日期后重试'; }
     if (playing) schedulePlay();
