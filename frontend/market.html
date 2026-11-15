@@ -115,6 +115,19 @@ td.r, th.r { text-align: right; }
 .tag-card b, .news-item b { display: block; }
 .tag-card small, .news-item small { color: var(--ink-3); }
 .news-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.news-feed { display: grid; gap: var(--s2); min-width: 0; }
+.news-day { display: flex; align-items: center; gap: var(--s2); margin: var(--s3) 0 var(--s1); font-size: 12px; color: var(--ink-3); }
+.news-day::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.news-card { display: grid; gap: var(--s1); min-width: 0; padding: var(--s3); border: 1px solid var(--grid); border-radius: 10px; background: var(--surface); }
+.news-card a, .news-card b { display: block; font-size: 15px; font-weight: 600; line-height: 1.5; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.news-card a:hover { text-decoration: underline; }
+.news-meta { display: flex; align-items: center; gap: var(--s2); font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.news-src { padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; font-size: 11px; line-height: 1.5; white-space: nowrap; }
+.news-src.cls { color: var(--up); } .news-src.em { color: var(--real); }
+.news-rel { margin-left: auto; white-space: nowrap; }
+.news-filter { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s2) 0 var(--s1); }
+.news-filter button { font: inherit; font-size: 12px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.news-filter button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
 .news-grid > section { min-width: 0; }
 .news-list { display: grid; gap: var(--s2); min-width: 0; }
 .news-item a { display: block; overflow-wrap: anywhere; }
@@ -659,8 +672,60 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const N = M.news || {}, clsRows = Array.isArray(N.cls) ? N.cls : [];
     const emRows = Array.isArray(N.eastmoney) ? N.eastmoney : [];
     $('src-news').innerHTML = srcLine(['news_cls', 'news_eastmoney']);
-    const list = (rows) => rows.length ? `<div class="news-list">${rows.map((r) =>
-      `<article class="news-item"><small>${E(r.time || '—')}</small>${/^https?:\/\//i.test(r.url) ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`}</article>`).join('')}</div>` : '<p class="note">暂无快讯。</p>';
+    const SRC = { cls: '财联社', em: '东方财富' };
+    const bjDate = (value) => {
+      const t = typeof value === 'string' ? value.trim() : '';
+      const d = new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(t) ? `${t.slice(0, 16).replace(' ', 'T')}:00+08:00` : t);
+      return Number.isFinite(d.getTime()) ? d : null;
+    };
+    const bjParts = (d) => Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d).map((x) => [x.type, x.value]));
+    const relTime = (d, now) => {
+      if (!d) return '';
+      const m = Math.round((now - d.getTime()) / 60000);
+      if (m < 1) return '刚刚';
+      if (m < 60) return `${m} 分钟前`;
+      if (m < 24 * 60) return `${Math.floor(m / 60)} 小时前`;
+      return `${Math.floor(m / 1440)} 天前`;
+    };
+    const dayLabel = (ymd, todayYmd) => {
+      const [y, mo, da] = ymd.split('-');
+      const md = `${Number(mo)}月${Number(da)}日`;
+      if (ymd === todayYmd) return `今天 · ${md}`;
+      const yd = new Date(`${todayYmd}T00:00:00+08:00`); yd.setUTCDate(yd.getUTCDate() - 1);
+      if (ymd === bjParts(yd).year + '-' + bjParts(yd).month + '-' + bjParts(yd).day) return `昨天 · ${md}`;
+      return `${y}年${md}`;
+    };
+    const feed = (rows, filter) => {
+      const now = Date.now(), tp = bjParts(new Date(now)), todayYmd = `${tp.year}-${tp.month}-${tp.day}`;
+      const items = [
+        ...(filter === 'em' ? [] : rows.cls.map((r) => ({ ...r, k: 'cls' }))),
+        ...(filter === 'cls' ? [] : rows.eastmoney.map((r) => ({ ...r, k: 'em' }))),
+      ].map((r) => ({ ...r, d: bjDate(r.time), ks: [r.k] })).sort((a, b) => (b.d?.getTime() || 0) - (a.d?.getTime() || 0));
+      const seen = new Map();
+      for (const r of items) {
+        const key = String(r.title || '').replace(/^财联社\d+月\d+日电[，,]?/, '').replace(/[\s，,。.！!：:；;“”"'（）()【】\[\]]/g, '').slice(0, 40);
+        const prev = seen.get(key);
+        if (prev && Math.abs((prev.d?.getTime() || 0) - (r.d?.getTime() || 0)) <= 6 * 3600 * 1000) {
+          if (!prev.ks.includes(r.k)) prev.ks.push(r.k);
+          if (!/^https?:\/\//i.test(prev.url) && /^https?:\/\//i.test(r.url)) prev.url = r.url;
+          if (!prev.d && r.d) prev.d = r.d;
+          r.dup = true;
+        } else seen.set(key, r);
+      }
+      const shown = items.filter((r) => !r.dup).slice(0, 80);
+      const chips = `<div class="news-filter" role="group" aria-label="快讯来源">${[['all', '全部'], ['cls', '财联社'], ['em', '东方财富']].map(([k, t]) =>
+        `<button type="button" data-news-filter="${k}" aria-pressed="${filter === k}">${t}</button>`).join('')}</div>`;
+      if (!shown.length) return chips + '<p class="note">暂无快讯。</p>';
+      let lastDay = '', html = '';
+      for (const r of shown) {
+        const pp = r.d ? bjParts(r.d) : null, ymd = pp ? `${pp.year}-${pp.month}-${pp.day}` : '';
+        if (ymd && ymd !== lastDay) { html += `<div class="news-day">${E(dayLabel(ymd, todayYmd))}</div>`; lastDay = ymd; }
+        const hm = pp ? `${pp.hour}:${pp.minute}` : E(r.time || '—');
+        const title = /^https?:\/\//i.test(r.url) ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`;
+        html += `<article class="news-card"><div class="news-meta">${r.ks.map((k) => `<span class="news-src ${k}">${SRC[k]}</span>`).join('')}<span class="m">${hm}</span><span class="news-rel">${E(relTime(r.d, now))}</span></div>${title}</article>`;
+      }
+      return chips + `<div class="news-feed">${html}</div>`;
+    };
     if (newsRefreshState) {
       newsRefreshState.render();
       return;
@@ -668,6 +733,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
     const state = {
       rows: { cls: clsRows, eastmoney: emRows },
+      filter: 'all',
       sourceErrors: [],
       status: '',
       statusClass: 'note',
@@ -707,9 +773,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         ? `<p class="fail">${state.initialErrors}</p>` : '';
       $('news-body').innerHTML = (state.status ? `<p class="${state.statusClass} news-status">${E(state.status)}</p>` : '') +
         initialErrors + sourceErrors +
-        `<div class="news-grid"><section><h3>财联社电报</h3>${list(state.rows.cls)}</section><section><h3>东方财富</h3>${list(state.rows.eastmoney)}</section></div>` +
+        feed(state.rows, state.filter) +
         (!state.isLive && state.note ? `<p class="note">${E(state.note)}</p>` : '');
     };
+    $('news-body').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-news-filter]');
+      if (!btn) return;
+      state.filter = btn.dataset.newsFilter;
+      render();
+    });
     const refresh = async (force = false) => {
       if (document.visibilityState !== 'visible') return;
       if (state.inFlight) {
