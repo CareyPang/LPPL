@@ -47,6 +47,9 @@ main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap
 .fail { border: 1px solid var(--up); color: var(--up); padding: var(--s2) var(--s3); font-size: 12px; margin: var(--s2) 0; word-break: break-all; }
 .warnl { border-left: 2px solid var(--warn); color: var(--ink-2); padding: var(--s1) var(--s3); font-size: 12px; margin: var(--s2) 0; word-break: break-all; }
 .note { font-size: 12px; color: var(--ink-3); margin: var(--s2) 0 0; }
+.stale { border-color: var(--warn); border-left-width: 3px; color: var(--ink-2); font-size: 13px; padding: var(--s3) var(--s4); }
+.stale b { color: var(--warn); font-weight: 600; }
+.stale a { color: var(--warn); text-decoration: underline; }
 .chips { display: flex; gap: var(--s1); flex-wrap: wrap; }
 .chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 30px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
 .chip[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
@@ -127,6 +130,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 <script src="app/od-nav.js" data-section="market"></script>
 
 <main>
+  <div class="sec wide stale" id="stale-banner" role="status" hidden></div>
   <section class="sec wide" id="s-events" aria-labelledby="h-events">
     <div class="sec-h"><h2 id="h-events">事件日历</h2><span class="ev">descriptive</span><span class="src" id="src-events"></span></div>
     <div id="events-body"><p class="note">事件数据加载中…</p></div>
@@ -853,11 +857,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     return n;
   };
-  const row = (name, d) => {
-    if (!d) return `<tr><td>${E(name)}</td><td>—</td><td>—</td><td class="up">未加载</td><td>—</td></tr>`;
+  const info = (d) => {
     const gen = d.generated_at || d.generated || null;
     const day = d.asof || (gen ? bj(gen).slice(0, 10) : null);
-    const n = day ? lag(day) : null;
+    return { gen, day, n: day ? lag(day) : null };
+  };
+  const row = (name, d) => {
+    if (!d) return `<tr><td>${E(name)}</td><td>—</td><td>—</td><td class="up">未加载</td><td>—</td></tr>`;
+    const { gen, day, n } = info(d);
     const st = n == null ? '<td>—</td>' : n >= 1 ? `<td class="up">晚 ${n} 个工作日</td>` : '<td class="dn">最新</td>';
     const bad = Object.entries(d.sources || {}).filter(([, v]) => v && v.ok === false).map(([k]) => NAMES[k] || k);
     if (d.source && d.source.ok === false) bad.push(d.source.reason || '数据源');
@@ -869,6 +876,17 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     document.getElementById('fresh-body').innerHTML =
       `<div class="table-scroll"><table style="min-width:640px"><thead><tr><th>数据</th><th>数据日期</th><th>生成时间（北京）</th><th>状态</th><th>失败的来源</th></tr></thead><tbody>${D.map(([n], i) => row(n, list[i])).join('')}</tbody></table></div>` +
       '<p class="note">交易日的数据按次日 06:00（北京）前应发布计算；只扣周末、不扣节假日，节后第一天可能误报。“失败的来源”指这份数据里有部分来源没取到，其余部分照常发布。</p>';
+    const late = D.map(([name], i) => {
+      const d = list[i];
+      if (!d) return `${name} 未加载`;
+      const { day, n } = info(d);
+      return n >= 1 ? `${name} 截至 ${day}（晚 ${n} 个工作日）` : null;
+    }).filter(Boolean);
+    const banner = document.getElementById('stale-banner');
+    banner.hidden = !late.length;
+    if (late.length) {
+      banner.innerHTML = `<b>部分数据未按时更新</b>：${E(late.join('；'))}。页面显示的是最近一次发布的数据，其余数据照常更新；详见页底 <a href="#s-fresh">数据更新状态</a>。`;
+    }
   });
 })();
 </script>
