@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from research.eval.dataset import price_series  # noqa: E402
 
 THETAS = (0.5, 0.6, 0.7, 0.8)
+DEV_END = pd.Timestamp("2018-12-31")
 SRC = Path("reports/precision_baseline")
 OUT = Path("reports/bottom_regime_s23")
 
@@ -33,7 +34,7 @@ def regime(dd60: float, dd250: float, theta: float) -> str:
 
 def main() -> None:
     B = pd.read_csv(SRC / "bottom_types.csv", parse_dates=["date"])
-    B = B[B.btype.isin(["panic", "slow"])].copy()
+    B = B[B.btype.isin(["panic", "slow"]) & (B.date <= DEV_END)].copy()
     cache: dict[str, np.ndarray] = {}
     d60, d250 = [], []
     for r in B.itertuples():

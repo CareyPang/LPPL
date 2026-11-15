@@ -143,7 +143,7 @@
 ## 5. 个股引擎（PR #23；数学审计与研究方案见 PR #28）
 - 数学/数值审计：`reports/stock_math_audit.md`（F1 `grid_profile` 窗内 t_c、F2 `_to_cal` 已修，§20 偏离登记，`MODEL_VERSION=prereg_v1.7_v2.1`）。文献：`docs/literature_stock_math.md`（两批共 63 篇全文）。
 - **研究方案**：`docs/research_plan_stock_math.md`（WP0 基线收尾 → WP1 零假设误报率标定 → WP2 t_c 区间/Trust → WP3 = Q-STK1 执行计划 → WP4 广度 → WP5 尾部层草案 → WP6 背景层；个股维持 `research_candidate`，任何 WP 运行前不改判据）。
-- **2026-11-15 §23 / WP4 / WP6 开发段一次运行**：§23 底部体制代理未过门（一致率指数 0.349、成分股 0.504 < 0.70），不加字段；WP4/WP6 只作描述（`reports/s23_wp4_wp6.md`）。LPPLS 拟合准确性专项草案 `docs/plan_lppls_fit_accuracy.md`（F1 数值 → F2 t_c 剖面辨识度 → F3 残差模型 → F4 Lagrange 正则选 t1；只写未跑）。
+- **2026-11-15 §23 / WP4 / WP6 开发段一次运行**：§23 底部体制代理未过门（一致率指数 0.293、成分股 0.470 < 0.70），不加字段；WP4/WP6 只作描述（`reports/s23_wp4_wp6.md`）。LPPLS 拟合准确性专项草案 `docs/plan_lppls_fit_accuracy.md`（F1 数值 → F2 t_c 剖面辨识度 → F3 残差模型 → F4 Lagrange 正则选 t1；只写未跑）。
 - 接口：`predict(code6, variant, asof)` 当前预测（秒级）；`history(code6, weeks)` 近 2 年周度回放（首次 3–4.5 分钟，缓存后 5–10 秒）。
 - 规则：上市满 500 交易日；剔除上市首 60 日；停牌不插值；一字板比例 >20% 标 degenerate；退市/长期停牌 `in_stats=false`。
 - 缓存键 `(code, asof, variant, data_version, code_version)` → `data/stock/<code>/<variant>/fits.parquet`，已有键永不重算。
