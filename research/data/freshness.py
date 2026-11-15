@@ -19,6 +19,12 @@ DATASETS = [
     ("dip_env", "指数/ETF 环境", "stock/_dip_env.json"),
     ("breadth_sh000300", "沪深300 个股批量", "stock/breadth_sh000300.json"),
     ("breadth_sh000905", "中证500 个股批量", "stock/breadth_sh000905.json"),
+    ("index_sh000001", "上证指数 LPPLS", "index/sh000001_latest.json"),
+    ("index_sh000016", "上证50 LPPLS", "index/sh000016_latest.json"),
+    ("index_sh000300", "沪深300 LPPLS", "index/sh000300_latest.json"),
+    ("index_sh000905", "中证500 LPPLS", "index/sh000905_latest.json"),
+    ("index_sz399001", "深证成指 LPPLS", "index/sz399001_latest.json"),
+    ("index_sz399006", "创业板指 LPPLS", "index/sz399006_latest.json"),
 ]
 
 

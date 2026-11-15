@@ -4,7 +4,7 @@
 - 拟合：与 v2 扫描同一函数 ``lppls_scan.fit_one``（需 ``LPPLS_BOX=v2``），窗口 = 短尺度 30–120 + 125–750 日；
   只算 as-of 一日，约 145 次拟合。
 - 输出：``web/mock/data/<sym>_latest.json``（``--asof`` 指定则为 ``<sym>_<asof>.json``）。p20 需校准后的前推模型，日更暂为 None。
-用法：LPPLS_BOX=v2 python -m research.pipeline.daily sh000001 [--frozen] [--asof 2018-12-28] [--windows 125,250,500]
+用法：LPPLS_BOX=v2 python -m research.pipeline.daily sh000001 [--frozen] [--asof 2018-12-28] [--windows 125,250,500] [--out DIR]
 """
 from __future__ import annotations
 
@@ -86,9 +86,10 @@ def main() -> None:
     ap.add_argument("--frozen", action="store_true")
     ap.add_argument("--asof")
     ap.add_argument("--windows", help="逗号分隔窗口长度（自检用）")
+    ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
     ws = tuple(int(x) for x in a.windows.split(",")) if a.windows else None
-    p = run(a.sym, a.frozen, a.asof, ws)
+    p = run(a.sym, a.frozen, a.asof, ws, out=a.out)
     rec = json.loads(p.read_text())
     print(p, json.dumps(rec["top"]["lppls_confidence"], ensure_ascii=False))
 

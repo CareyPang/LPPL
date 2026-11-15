@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -49,6 +50,31 @@ def test_daily_frozen_smoke(tmp_path, monkeypatch):
     assert rec["top"]["p20"]["evidence"] == "fail_i_iii"
     assert rec["top"]["bubble"]["evidence"] == "descriptive"
     assert rec["data_version"].startswith("frozen_")
+
+
+def test_daily_cli_accepts_custom_output_directory(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_run(sym, frozen=False, asof=None, windows=None, out=daily.OUT, **kwargs):
+        captured.update(sym=sym, asof=asof, out=out)
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / f"{sym}_{asof}.json"
+        path.write_text(
+            json.dumps({"top": {"lppls_confidence": {"fixture": 1}}}),
+            encoding="utf-8",
+        )
+        return path
+
+    monkeypatch.setattr(daily, "run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["daily", "sh000001", "--asof", "2026-11-13", "--out", str(tmp_path)],
+    )
+
+    daily.main()
+
+    assert captured == {"sym": "sh000001", "asof": "2026-11-13", "out": tmp_path}
 
 
 def test_daily_and_stock_full_share_unique_windows_and_trust_targets(
