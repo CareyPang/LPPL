@@ -421,9 +421,22 @@
     setInterval(update, 1500); /* 个股页的板块在查询后才出现 */
     subTabs.forEach(function (t) {
       t.a.addEventListener('click', function (e) {
-        var n = document.getElementById(t.ids[0]);
-        if (!n || !n.getClientRects().length) { e.preventDefault(); return; }
+        var id = null, n = null;
+        for (var i = 0; i < t.ids.length; i++) {
+          var candidate = document.getElementById(t.ids[i]);
+          if (candidate && candidate.getClientRects().length) {
+            id = t.ids[i];
+            n = candidate;
+            break;
+          }
+        }
+        if (!n) { e.preventDefault(); return; }
         n.style.scrollMarginTop = off() + 'px';
+        if (id !== t.ids[0]) {
+          e.preventDefault();
+          location.hash = id;
+          n.scrollIntoView();
+        }
       });
     });
   }
