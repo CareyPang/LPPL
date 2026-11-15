@@ -83,7 +83,7 @@
         '<div class="sp-grid">' + M.metrics.map(function (x) { return '<div class="sp-kv"><span>' + esc(x.label) + '</span><b class="m' + (x.shown ? '' : ' off') + '">' + esc(x.text) + '</b></div>'; }).join('') + '</div>';
     } else if (tab === 'trades') {
       body = M.trades.length ? '<div class="sp-tw"><table class="sp-t"><thead><tr><th>#</th><th>买入</th><th>卖出</th><th>持有(日)</th><th>收益</th><th>段</th></tr></thead><tbody>' +
-        M.trades.map(function (t, i) { return '<tr data-trade="' + i + '"><td class="m">' + (i + 1) + '</td><td class="m">' + esc(t.entry) + '</td><td class="m">' + esc(t.exit || '持有中') + '</td><td class="m">' + (t.bars != null ? t.bars : '—') + '</td><td class="m ' + (Number(t.ret) >= 0 ? 'up' : 'dn') + '">' + (M.shown ? fmt(t.ret, 'pct') : '—') + '</td><td>' + esc(t.segment || '') + '</td></tr>'; }).join('') +
+        M.trades.map(function (t, i) { return '<tr data-trade="' + i + '"><td class="m">' + (i + 1) + '</td><td class="m">' + esc(t.entry) + '</td><td class="m">' + esc(t.exit || '持有中') + '</td><td class="m">' + (M.shown && t.bars != null ? t.bars : '—') + '</td><td class="m ' + (Number(t.ret) >= 0 ? 'up' : 'dn') + '">' + (M.shown ? fmt(t.ret, 'pct') : '—') + '</td><td>' + esc(t.segment || '') + '</td></tr>'; }).join('') +
         '</tbody></table></div>' : '<p class="sp-empty">该区间没有交易记录。</p>';
     } else {
       var P = M.props;
