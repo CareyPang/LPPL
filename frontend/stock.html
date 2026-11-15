@@ -152,7 +152,7 @@
     .cat-f { display: flex; gap: 4px; flex-wrap: wrap; }
     .cat-f button { border: 1px solid var(--line); border-radius: 999px; background: var(--glass); color: var(--ink-2); font-size: 12px; padding: 5px 11px; cursor: pointer; }
     .cat-f button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
-    .cat-tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .cat-tw {position:relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .cat-t { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
     .cat-t th, .cat-t td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
     .cat-t.dense th, .cat-t.dense td { padding: 5px 8px; font-size: 13px; }
@@ -1330,6 +1330,7 @@
       $('watch-toggle').setAttribute('aria-pressed', String(!!included));
       $('watch-toggle').textContent = included ? '已在自选 · 移除' : '加入自选';
     }
+    addEventListener('lppl-watch', () => { try { updateWatchToggle(); } catch (e) { /* ignore */ } }); /* 同页自选抽屉里移除时同步按钮 */
     function hasWatchStatuses(value) {
       return value && typeof value === 'object'
         && value.top && typeof value.top === 'object' && typeof value.top.signal_status === 'string'
