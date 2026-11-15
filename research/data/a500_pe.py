@@ -201,8 +201,8 @@ def aggregate(rows: pd.DataFrame) -> pd.DataFrame:
     frame["earn"] = frame["mcap"].where(frame["pe_ttm"].notna() & frame["pe_ttm"].ne(0))
     frame["earn"] = frame["earn"] / frame["pe_ttm"]
 
-    counts = frame.groupby("date")["code"].nunique().rename("n")
     valid = frame.dropna(subset=["mcap", "earn"])
+    counts = valid.groupby("date")["code"].nunique().rename("n")
     totals = valid.groupby("date").agg(mcap=("mcap", "sum"), earn=("earn", "sum"))
     result = counts.to_frame().join(totals, how="left")
     result["pe_ttm"] = result["mcap"] / result["earn"].where(result["earn"].ne(0))

@@ -22,6 +22,18 @@ def test_aggregate_excludes_zero_pe_and_keeps_negative_pe():
                 "PE_TTM": "0",
             },
             {
+                "SECURITY_CODE": "000004",
+                "TRADE_DATE": "2026-11-16",
+                "TOTAL_MARKET_CAP": "400",
+                "PE_TTM": None,
+            },
+            {
+                "SECURITY_CODE": "000005",
+                "TRADE_DATE": "2026-11-16",
+                "TOTAL_MARKET_CAP": None,
+                "PE_TTM": "10",
+            },
+            {
                 "SECURITY_CODE": "000003",
                 "TRADE_DATE": "2026-11-17",
                 "TOTAL_MARKET_CAP": "50",
@@ -32,7 +44,7 @@ def test_aggregate_excludes_zero_pe_and_keeps_negative_pe():
 
     result = a500_pe.aggregate(rows)
 
-    assert result.loc["2026-11-16", "n"] == 2
+    assert result.loc["2026-11-16", "n"] == 1
     assert result.loc["2026-11-16", "mcap"] == 100
     assert result.loc["2026-11-16", "earn"] == 10
     assert result.loc["2026-11-16", "pe_ttm"] == 10
