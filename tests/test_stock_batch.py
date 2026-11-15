@@ -208,6 +208,79 @@ def test_publisher_batch_mode_publishes_all_codes_and_breadth(tmp_path):
     assert index["000002"]["status"] == "error" and index["000002"]["run_url"] == "https://example.test/runs/batch"
 
 
+def test_batch_publisher_preserves_newer_breadth_but_replaces_equal_or_newer(tmp_path):
+    origin = tmp_path / "origin.git"
+    repo = tmp_path / "repo"
+    _git("init", "--bare", "--initial-branch=main", str(origin))
+    repo.mkdir()
+    _git("init", "--initial-branch=main", cwd=repo)
+    _git("config", "user.name", "T", cwd=repo)
+    _git("config", "user.email", "t@example.com", cwd=repo)
+    (repo / "README.md").write_text("x\n", encoding="utf-8")
+    _git("add", "README.md", cwd=repo)
+    _git("commit", "-m", "init", cwd=repo)
+    _git("remote", "add", "origin", str(origin), cwd=repo)
+    _git("push", "-u", "origin", "main", cwd=repo)
+
+    stock_dir = repo / "stock"
+    stock_dir.mkdir()
+    (stock_dir / "breadth_sh000300.json").write_text(
+        json.dumps({"index": "sh000300", "asof": "2026-11-13", "n": 300}),
+        encoding="utf-8",
+    )
+    _git("checkout", "-b", "stock-results", cwd=repo)
+    _git("add", "stock/breadth_sh000300.json", cwd=repo)
+    _git("commit", "-m", "existing breadth", cwd=repo)
+    _git("push", "-u", "origin", "stock-results", cwd=repo)
+    _git("checkout", "main", cwd=repo)
+
+    result_dir = repo / "out" / "stock"
+    result_dir.mkdir(parents=True)
+    (result_dir / "000001.json").write_text(
+        json.dumps(_record("000001")), encoding="utf-8"
+    )
+    breadth_path = result_dir / "breadth_sh000300.json"
+    batch_marker = result_dir / "_batch_0_of_1.json"
+    batch_marker.write_text("{}", encoding="utf-8")
+    env = os.environ | {
+        "CODE": "",
+        "VARIANT": "stk_lite",
+        "HISTORY_WEEKS": "0",
+        "STOCK_RESULT_DIR": str(result_dir),
+        "STOCK_RUN_URL": "https://example.test/runs/batch",
+    }
+
+    def publish_breadth(asof, n):
+        breadth_path.write_text(
+            json.dumps({"index": "sh000300", "asof": asof, "n": n}),
+            encoding="utf-8",
+        )
+        return subprocess.run(
+            ["bash", str(SCRIPT)],
+            cwd=repo,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    older = publish_breadth("2026-11-12", 200)
+    assert "skip breadth breadth_sh000300.json: published asof 2026-11-13 newer than batch 2026-11-12" in older.stdout
+    assert json.loads(
+        _git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json")
+    ) == {"index": "sh000300", "asof": "2026-11-13", "n": 300}
+
+    publish_breadth("2026-11-13", 301)
+    assert json.loads(
+        _git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json")
+    ) == {"index": "sh000300", "asof": "2026-11-13", "n": 301}
+
+    publish_breadth("2026-11-14", 302)
+    assert json.loads(
+        _git("--git-dir", str(origin), "show", "stock-results:stock/breadth_sh000300.json")
+    ) == {"index": "sh000300", "asof": "2026-11-14", "n": 302}
+
+
 def test_qualified_skips_display_only_scales():
     rec = _record("000001", std612=0.5, conf612=0.6)
     rec["top"]["indicators"]["2-4w"] = {"n_windows": 6, "confidence": {"standard": 1.0}, "display_only": True}
