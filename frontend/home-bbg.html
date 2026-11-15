@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>临界点 · LPPL &lt;GO&gt;</title>
+<style>
+:root{--bg:#000;--p:#0a0a0a;--line:#262626;--amb:#ffa028;--ambd:#b36f12;--ink:#e6e6e6;--mute:#9a9a9a;--hdr:#1a1a1a;--blu:#3d7eff;--up:#ff4040;--dn:#2ecc71;
+--mono:"Cascadia Mono","JetBrains Mono",Consolas,"Microsoft YaHei",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 var(--mono);font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1px solid var(--amb);outline-offset:1px}
+.mast{display:flex;align-items:center;gap:0;height:26px;background:var(--hdr);border-bottom:1px solid var(--line);font-size:12px}
+.mast .b{background:var(--amb);color:#000;font-weight:700;padding:0 10px;height:100%;display:flex;align-items:center}
+.mast span{padding:0 12px;color:var(--mute);border-right:1px solid var(--line)}
+.mast .sw{margin-left:auto;display:flex;height:100%}
+.mast .sw a{display:flex;align-items:center;padding:0 12px;color:var(--mute);border-left:1px solid var(--line)}
+.mast .sw a[aria-current]{background:#333;color:var(--amb)}
+.mast .sw a:hover{color:var(--amb)}
+.clk{color:var(--amb)!important}
+.cmd{display:flex;align-items:center;height:34px;padding:0 10px;background:#000;border-bottom:1px solid var(--ambd)}
+.cmd label{color:var(--mute);margin-right:10px}
+.cmd input{flex:1;background:transparent;border:0;color:var(--amb);font:600 15px var(--mono);text-transform:uppercase;caret-color:var(--amb);outline:0}
+.cmd .go{background:#1f7a3c;color:#fff;font:700 12px var(--mono);border:0;padding:4px 12px;cursor:pointer}
+.cmd .go:hover{background:#28994c}
+.title{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;padding:14px 12px 12px;border-bottom:1px solid var(--line)}
+h1{margin:0;font:700 clamp(24px,3.6vw,44px)/1.1 var(--mono);color:#fff;letter-spacing:.02em}
+h1 em{font-style:normal;color:var(--amb)}
+.title p{margin:6px 0 0;color:var(--mute)}
+.title .q{color:#7a7a7a;font-style:italic}
+.btns{display:flex;gap:6px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid var(--amb);color:var(--amb);font-weight:700}
+.btn kbd{font:inherit;background:var(--amb);color:#000;padding:0 4px}
+.btn:hover{background:var(--amb);color:#000}.btn:hover kbd{background:#000;color:var(--amb)}
+.grid{display:grid;grid-template-columns:1.6fr 1fr;grid-template-rows:auto auto;gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.pn{background:var(--p);min-width:0;display:flex;flex-direction:column}
+.pn:target,.pn.on{box-shadow:inset 0 0 0 1px var(--amb)}
+.ph{display:flex;align-items:center;gap:10px;height:22px;padding:0 8px;background:var(--hdr);font-size:12px;border-bottom:1px solid var(--line)}
+.ph b{color:#000;background:var(--amb);padding:0 5px}
+.ph .t{color:#fff;font-weight:700}.ph .r{margin-left:auto;color:var(--mute)}
+.pb{padding:8px;flex:1}
+.qt{display:flex;gap:20px;align-items:baseline;margin-bottom:4px}
+.qt .v{font:700 22px var(--mono);color:#fff}
+.qt .l{color:var(--mute)}
+.ch{position:relative;height:clamp(240px,34vw,400px)}
+.ch svg{display:block;width:100%;height:100%}
+.ch .gl{stroke:#1c1c1c}.ch text{fill:var(--mute);font:11px var(--mono)}
+.ch .ln{fill:none;stroke:var(--amb);stroke-width:1.3;vector-effect:non-scaling-stroke}
+.ch .ar{fill:rgba(255,160,40,.08)}
+.xh{stroke:#555}
+.ro{position:absolute;left:8px;top:4px;color:var(--mute);font-size:12px;pointer-events:none}.ro b{color:#fff;font-weight:400}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--mute);font-weight:400;border-bottom:1px solid var(--line);padding:3px 6px}
+td{padding:5px 6px;border-bottom:1px solid #141414}
+tr.k{cursor:pointer}tr.k:hover td{background:#141414}
+td.c{color:var(--amb)}td.s{color:var(--mute)}td.n{text-align:right}td.s small{display:block;color:#ffcf8a}
+.ol{margin:0;padding:0;list-style:none}
+.ol li{display:grid;grid-template-columns:28px 1fr;padding:6px 0;border-bottom:1px solid #141414}
+.ol li b{color:var(--amb)}.ol li span{color:var(--mute)}.ol li strong{color:#fff;font-weight:700}
+.ol a:hover strong{color:var(--amb)}
+.foot{display:flex;flex-wrap:wrap;gap:4px 18px;padding:6px 12px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line)}
+.foot b{color:var(--amb);font-weight:400}
+.disc{padding:10px 12px 18px;color:#7a7a7a;font-size:12px}
+.blink{animation:bl 1s steps(1) infinite}@keyframes bl{50%{opacity:0}}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.title{grid-template-columns:1fr}.mast span.hm{display:none}}
+@media(prefers-reduced-motion:reduce){.blink{animation:none}}
+</style></head><body>
+<script src="app/od-nav.js" data-section="home"></script>
+<form class="cmd" id="cmd" autocomplete="off"><label for="ci">&gt;</label><input id="ci" value="SH000001 &lt;INDEX&gt; LPPL" aria-label="指令行：输入指数代码后按回车进入终端" spellcheck="false"><button class="go" type="submit">GO</button></form>
+<div class="title">
+ <div><h1>浪成于<em>微澜</em>之间</h1><p>启于青萍之末，满于狂澜之巅。</p><p class="q">Does the flap of a butterfly’s wings in Brazil set off a tornado in Texas?</p></div>
+ <div class="btns"><a class="btn" href="index.html"><kbd>↵</kbd>进入终端</a><a class="btn" href="backtest.html"><kbd>B</kbd>查看回测</a></div>
+</div>
+<main class="grid">
+ <section class="pn" id="p1"><div class="ph"><b>1</b><span class="t">走势 GP</span><span class="r" id="p1r">SH000001 · 日线收盘</span></div>
+  <div class="pb"><div class="qt"><span class="l">上证指数</span><span class="v" id="px">—</span><span id="chg"></span><span class="l" id="hl"></span></div>
+  <div class="ch" id="chart"><svg id="svg" role="img" aria-label="上证指数收盘价走势"></svg><div class="ro" id="ro"></div></div></div></section>
+ <section class="pn" id="p2"><div class="ph"><b>2</b><span class="t">六指数 MON</span><span class="r">来源：后端发布</span></div>
+  <div class="pb"><table><thead><tr><th>代码</th><th>名称</th><th style="text-align:right">收盘</th><th style="text-align:right">涨跌</th><th>状态</th></tr></thead><tbody id="tb"></tbody></table>
+  <p style="color:#7a7a7a;margin:10px 0 0">证据不足时只显示状态。顶部区间只显示起止日期，无目标价。</p></div></section>
+ <section class="pn" id="p3"><div class="ph"><b>3</b><span class="t">历史回放 HIST</span><span class="r">截止日前数据</span></div>
+  <div class="pb"><ul class="ol">
+   <li><b>1)</b><a href="index.html?code=sh000001&asof=2007-10-12"><strong>2007-10-12</strong> <span>上证指数 · 回放</span></a></li>
+   <li><b>2)</b><a href="index.html?code=sh000001&asof=2015-06-12"><strong>2015-06-12</strong> <span>上证指数 · 回放</span></a></li>
+   <li><b>3)</b><a href="backtest.html"><strong>全历史回测</strong> <span>开发 / 校准 / 测试 三段</span></a></li></ul></div></section>
+ <section class="pn" id="p4"><div class="ph"><b>4</b><span class="t">方法 DES</span><span class="r">三层检验</span></div>
+  <div class="pb"><ul class="ol">
+   <li><b>T</b><div><strong>时间层</strong> <span>多窗口 LPPLS 拟合，只汇总成时间区间。</span></div></li>
+   <li><b>P</b><div><strong>价格层</strong> <span>历史分布与首达统计，只描述不预测。</span></div></li>
+   <li><b>E</b><div><strong>事件层</strong> <span>样本外与基率、纯幂律对比，失败结果保留。</span></div></li></ul></div></section>
+</main>
+<div class="foot"><span><b>1–4</b> 切换面板</span><span><b>↵</b> 进入终端</span><span><b>B</b> 回测</span><span><b>/</b> 指令行</span></div>
+<p class="disc" id="disc">数据读取中。所有数值仅作历史描述，不是预测，不构成投资建议。</p>
+<script src="app/home-data.js"></script>
+<script src="app/lppl-data.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tb=$('tb');
+const row=(r,x)=>`<tr class="k" tabindex="0" data-c="${r.sym}"><td class="c">${r.sym.toUpperCase()}</td><td>${E(r.name)}</td>${x}</tr>`;
+tb.innerHTML=LPPL.SYMS.map(s=>row(s,'<td class="n">—</td><td class="n">—</td><td class="s">读取中…</td>')).join('');
+const go=r=>{if(r)location.href='index.html?code='+r.dataset.c};
+tb.addEventListener('click',e=>go(e.target.closest('tr')));
+tb.addEventListener('keydown',e=>{if(e.key==='Enter')go(e.target.closest('tr'))});
+const ci=$('ci');
+$('cmd').addEventListener('submit',e=>{e.preventDefault();const m=ci.value.toLowerCase().match(/s[hz]\d{6}/);location.href='index.html'+(m?'?code='+m[0]:'')});
+const pn=[...document.querySelectorAll('.pn')];
+addEventListener('keydown',e=>{const tg=e.target;if(tg===ci||/INPUT|SELECT|TEXTAREA/.test(tg.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;
+ if(/^[1-4]$/.test(e.key)){pn.forEach(p=>p.classList.remove('on'));const p=pn[+e.key-1];p.classList.add('on');p.scrollIntoView({block:'nearest'});const f=p.querySelector('a,tr[tabindex]');f&&f.focus()}
+ else if(e.key==='Enter'&&tg===document.body)location.href='index.html';
+ else if(e.key==='b'||e.key==='B')location.href='backtest.html';
+ else if(e.key==='/'){e.preventDefault();ci.focus();ci.select()}});
+const NS='http://www.w3.org/2000/svg',svg=$('svg'),box=$('chart'),ro=$('ro');
+const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+let B=[],pts=[],xs;
+function draw(){if(!B.length)return;const W=box.clientWidth,H=box.clientHeight,n=B.length,last=n-1,w=B.map(b=>b.close);svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML='';
+ const L=4,R=52,T=22,Bt=18,mn=Math.min(...w)*.98,mx=Math.max(...w)*1.02,x=i=>L+i/(n-1)*(W-L-R),y=v=>T+(1-(v-mn)/(mx-mn))*(H-T-Bt);
+ for(let k=0;k<=5;k++){const v=mn+(mx-mn)*k/5,yy=y(v);svg.append(el('line',{class:'gl',x1:L,x2:W-R,y1:yy,y2:yy}));const t=el('text',{x:W-R+6,y:yy+4});t.textContent=Math.round(v);svg.append(t)}
+ let pk=B[0].date.slice(0,7),lx=-1e9;for(let i=1;i<n;i++){const k=B[i].date.slice(0,7);if(k!==pk){pk=k;const xx=x(i);if(xx-lx<64)continue;lx=xx;svg.append(el('line',{class:'gl',x1:xx,x2:xx,y1:T,y2:H-Bt}));const t=el('text',{x:xx+3,y:H-4});t.textContent=k;svg.append(t)}}
+ pts=w.map((v,i)=>[x(i),y(v)]);const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');
+ svg.append(el('path',{class:'ar',d:d+`L${pts[last][0]} ${H-Bt}L${pts[0][0]} ${H-Bt}Z`}),el('path',{class:'ln',d}));
+ const p=pts[last];svg.append(el('rect',{x:W-R+1,y:p[1]-8,width:50,height:16,fill:'#ffa028'}));const t=el('text',{x:W-R+5,y:p[1]+4,style:'fill:#000;font-weight:700'});t.textContent=w[last].toFixed(0);svg.append(t);
+ xs=[el('line',{class:'xh',y1:T,y2:H-Bt,visibility:'hidden'}),el('line',{class:'xh',x1:L,x2:W-R,visibility:'hidden'})];svg.append(...xs);rd(last)}
+function rd(i){const b=B[i];if(b)ro.innerHTML=`<b>${b.date}</b> CLOSE <b>${b.close.toFixed(2)}</b>`}
+box.addEventListener('pointermove',e=>{if(!pts.length)return;const mx=e.clientX-box.getBoundingClientRect().left;let i=0,bd=1e9;pts.forEach((p,k)=>{const d=Math.abs(p[0]-mx);if(d<bd){bd=d;i=k}});const p=pts[i];
+ xs[0].setAttribute('x1',p[0]);xs[0].setAttribute('x2',p[0]);xs[1].setAttribute('y1',p[1]);xs[1].setAttribute('y2',p[1]);xs.forEach(z=>z.setAttribute('visibility','visible'));rd(i)});
+box.addEventListener('pointerleave',()=>{if(xs){xs.forEach(z=>z.setAttribute('visibility','hidden'));rd(B.length-1)}});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(draw,120)});
+HOMEDATA.all().then(L=>{
+ tb.innerHTML=L.map(r=>{if(r.error)return row(r,'<td class="n">—</td><td class="n">—</td><td class="s">数据未加载</td>');
+  const c=r.last.close/r.prev.close-1,cl=c>=0?'var(--up)':'var(--dn)';
+  return row(r,`<td class="n">${r.last.close.toFixed(2)}</td><td class="n" style="color:${cl}">${(c>=0?'+':'')+(c*100).toFixed(2)}%</td><td class="s">${E(r.status)}${r.windowText?`<small>${E(r.windowText)}</small>`:''}</td>`)}).join('');
+ const S=L.find(r=>r.sym==='sh000001'&&!r.error);
+ if(!S){$('px').textContent='—';$('disc').textContent='数据未加载。';return}
+ B=S.bars;const w=B.map(b=>b.close);$('px').textContent=S.last.close.toFixed(2);
+ const c=(S.last.close/S.prev.close-1)*100,ce=$('chg');ce.textContent=(c>=0?'+':'')+c.toFixed(2)+'%';ce.style.color=c>=0?'var(--up)':'var(--dn)';
+ $('hl').textContent='区间高 '+Math.max(...w).toFixed(0)+' / 低 '+Math.min(...w).toFixed(0);
+ $('p1r').textContent='SH000001 · 日线收盘 · '+B[0].date.slice(0,7)+' 至 '+S.asof;
+ $('disc').textContent='后端已发布数据，截至 '+S.asof+'。所有数值仅作历史描述，不是预测，不构成投资建议。';draw();
+});
+})();</script></body></html>

@@ -111,27 +111,14 @@ a { color: var(--ink-2); text-decoration: none; }
 </head>
 <body>
 
-<header class="bar">
-  <div class="bar-in od-row">
-    <div class="brand od-fixed">临界点回测<small>LPPLS · 历史情景区间</small></div>
-    <nav class="nav od-row" aria-label="页面导航">
-      <a href="home.html">首页</a>
-      <a href="index.html">终端</a>
-      <a href="backtest.html" aria-current="page">回测</a>
-      <a href="market.html">市场</a>
-      <a href="nt.html">国家队ETF</a>
-      <a href="stock.html">个股</a>
-      <a href="lab/dashboard.html">研究仪表盘</a>
-      <a href="lab/guide.html">用户指南</a>
-    </nav>
-  </div>
-</header>
-
-<div class="strip od-row" aria-label="指数与区间">
+<div data-od-sub>
   <div class="od-row od-fixed" id="syms" role="group" aria-label="指数" style="--od-gap:0"></div>
+</div>
+<div data-od-tools>
   <span class="strip-k">区间</span>
   <div class="chips od-row od-fixed" id="ranges" role="group" aria-label="时间区间预设"></div>
 </div>
+<script src="app/od-nav.js" data-section="backtest"></script>
 
 <main class="app">
   <div class="left">

@@ -211,21 +211,8 @@
   <script src="app/stock-watchlist.js"></script>
 </head>
 <body>
-  <header class="bar">
-    <div class="bar-in">
-      <a class="brand" href="home.html"><span class="mark" aria-hidden="true"></span>临界点</a>
-      <nav class="nav" aria-label="页面导航">
-        <a href="home.html">首页</a>
-        <a href="index.html">终端</a>
-        <a href="backtest.html">回测</a>
-        <a href="market.html">市场</a>
-        <a href="nt.html">国家队ETF</a>
-        <a href="stock.html" aria-current="page">个股</a>
-        <a href="lab/guide.html">用户指南</a>
-      </nav>
-      <span class="asof" id="asof">—</span>
-    </div>
-  </header>
+  <span class="asof" id="asof" data-od-asof>—</span>
+  <script src="app/od-nav.js" data-section="stock"></script>
 
   <main>
     <section class="hero">

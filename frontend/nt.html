@@ -13,8 +13,8 @@
 </style>
 </head>
 <body>
-<header class="bar"><div class="barin"><a class="brand" href="home.html">临界点 · 国家队ETF</a><nav aria-label="页面导航">
-<a href="home.html">首页</a><a href="index.html">终端</a><a href="backtest.html">回测</a><a href="market.html">市场</a><a href="nt.html" aria-current="page">国家队ETF</a><a href="stock.html">个股</a><a href="lab/guide.html">用户指南</a></nav><span class="asof" id="asof">加载中…</span></div></header>
+<span class="asof" id="asof" data-od-asof>加载中…</span>
+<script src="app/od-nav.js" data-section="nt"></script>
 <main>
 <section class="card wide"><h1>国家队ETF份额与申赎估算</h1><p class="sub">按 ETF 份额变化 × 不复权收盘价估算，金额单位：亿元。统计为全市场申赎合计。</p><div class="kpis" id="kpis"></div><div class="disclaimer">汇金重仓 ETF 份额变化（申赎估算）。全市场申赎合计，不能全部归因于国家队；持仓披露约滞后 6 个月，归属仅按披露名称匹配。仅作描述，不构成买卖建议。</div><p class="sub err" id="source-warning"></p></section>
 <section class="card wide"><h2>最新一日异常申赎</h2><div id="flags-latest"></div><p class="sub" id="flag-rule"></p><p class="disclaimer">阈值为经验参数，不是监管标准；份额变化是全市场申赎，不能直接算作国家队买卖。</p></section>

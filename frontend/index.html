@@ -259,9 +259,7 @@ footer p { margin: 0; max-width: 110ch; }
 </head>
 <body>
 
-<header class="bar">
-  <div class="bar-in od-row">
-    <div class="brand od-fixed">临界点终端<small>LPPLS · 顶底分离</small></div>
+<div data-od-tools>
     <div class="cmd od-row od-fill" role="search">
       <label for="code" class="od-fixed">代码</label>
       <input class="in od-fill" id="code" value="上证指数" autocomplete="off" spellcheck="false" aria-describedby="err" />
@@ -269,28 +267,19 @@ footer p { margin: 0; max-width: 110ch; }
       <input class="in od-fixed" id="asof" type="date" />
       <button class="go od-fixed" id="go" type="button">分析</button>
     </div>
-    <nav class="nav od-row od-fixed" aria-label="其他页面">
-      <a href="backtest.html">回测</a>
-      <a href="market.html">市场</a>
-      <a href="nt.html">国家队ETF</a>
-      <a href="stock.html">个股</a>
-      <a href="lab/dashboard.html">研究仪表盘</a>
-      <a href="lab/guide.html">用户指南</a>
-    </nav>
-  </div>
-  <p class="err" id="err" role="alert" hidden></p>
-</header>
-
-<div class="strip od-row" aria-label="指数行情与快捷回放">
-  <div class="od-row od-fixed" id="ticker" style="--od-gap:0"></div>
-  <span class="strip-k">快捷回放</span>
-  <div class="chips od-row od-fixed">
-    <button class="chip" type="button" data-c="上证指数" data-d="2007-10-12">上证 · 2007-10-12 回放</button>
-    <button class="chip" type="button" data-c="上证指数" data-d="2015-06-12">上证 · 2015-06-12 回放</button>
-    <button class="chip" type="button" data-c="沪深300" data-d="">沪深300 · 最新</button>
-    <button class="chip" type="button" data-c="创业板指" data-d="">创业板 · 最新</button>
+</div>
+<div data-od-sub>
+  <div class="od-row od-fixed" id="ticker" style="--od-gap:0" aria-label="指数"></div>
+</div>
+<div data-od-sub>
+  <span class="strip-k">回放</span>
+  <div class="chips od-row od-fixed" aria-label="历史回放">
+    <button class="chip" type="button" data-c="上证指数" data-d="2007-10-12">2007-10-12</button>
+    <button class="chip" type="button" data-c="上证指数" data-d="2015-06-12">2015-06-12</button>
   </div>
 </div>
+<script src="app/od-nav.js" data-section="terminal"></script>
+<p class="err" id="err" role="alert" hidden></p>
 
 <main class="app">
   <div class="tool" role="toolbar" aria-label="图表工具" aria-orientation="vertical">
