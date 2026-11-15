@@ -93,12 +93,14 @@
   function pushRecent(storage, item) {
     if (!storage || !item || !item.code) return readRecent(storage);
     var rec = { code: String(item.code), sym: String(item.sym || ''), name: String(item.name || item.code), kind: item.kind || kindOf(item) };
-    var old = readRecent(storage), prev = old.filter(function (x) { return x.code === rec.code; })[0];
+    var isIdx = function (x) { return x.kind === 'index'; };
+    var same = function (x) { return x.code === rec.code && isIdx(x) === isIdx(rec); }; /* 指数 000001 与个股 000001 是两个目标 */
+    var old = readRecent(storage), prev = old.filter(same)[0];
     if (prev) {
       if (rec.name === rec.code && prev.name !== prev.code) rec.name = prev.name; /* 页面只知道代码时沿用已记住的名称 */
       if (!rec.sym && prev.sym) rec.sym = prev.sym;
     }
-    var list = old.filter(function (x) { return x.code !== rec.code; });
+    var list = old.filter(function (x) { return !same(x); });
     list.unshift(rec);
     list = list.slice(0, RECENT_MAX);
     try { storage.setItem(RECENT_KEY, JSON.stringify(list)); } catch (e) { /* 存储不可用 */ }

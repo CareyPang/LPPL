@@ -68,6 +68,9 @@ test('recent list dedupes, keeps newest first and caps at RECENT_MAX', () => {
   assert.deepEqual(list.map((x) => x.code), ['600519', 'sh000001']);
   OdSearch.pushRecent(st, { code: '600519', name: '600519', kind: 'stock' });
   assert.equal(OdSearch.readRecent(st)[0].name, '贵州茅台');
+  OdSearch.pushRecent(st, { code: '000001', name: '平安银行', kind: 'stock' });
+  OdSearch.pushRecent(st, { code: '000001', sym: 'sh000001', name: '上证指数', kind: 'index' });
+  assert.deepEqual(OdSearch.readRecent(st).slice(0, 2).map((x) => x.kind), ['index', 'stock']);
   for (let i = 0; i < 12; i += 1) OdSearch.pushRecent(st, { code: String(100000 + i), name: 'x' + i });
   assert.equal(OdSearch.readRecent(st).length, OdSearch.RECENT_MAX);
   const hits = OdSearch.recentHits(st);
