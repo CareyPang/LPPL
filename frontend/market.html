@@ -76,6 +76,30 @@ td.r, th.r { text-align: right; }
 .bars-x span { flex: 1; text-align: center; }
 .scroll { max-height: 300px; overflow: auto; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
+.flow-rank-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s3); }
+.flow-rank-grid > section { min-width: 0; }
+.flow-rank-grid h3 { margin: 0 0 var(--s1); font-size: 13px; }
+.flow-rank-grid table { table-layout: fixed; }
+.flow-rank-grid td:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.limit-tabs { display: flex; flex-wrap: wrap; gap: var(--s1); margin: var(--s3) 0; }
+.limit-tabs .chip { min-height: 36px; }
+.limit-tabs small { margin-left: 3px; font: 10px var(--f-m); }
+.limit-table { table-layout: fixed; }
+.limit-table .name-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.limit-table .name-cell small, .limit-table .time-cell small { display: block; color: var(--ink-3); font: 10px var(--f-m); }
+.limit-table .reason-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.return-tag { display: inline-block; margin-left: 3px; padding: 1px 3px; background: var(--up); color: var(--bg); font: 9px var(--f-u); }
+.sort-button { border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.dist-chart { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 3px; height: 130px; margin: var(--s3) 0 var(--s1); }
+.dist-col { display: grid; grid-template-rows: 16px minmax(0, 1fr) 24px; min-width: 0; text-align: center; }
+.dist-count { font: 9px var(--f-m); color: var(--ink-2); white-space: nowrap; }
+.dist-track { display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
+.dist-bar { width: 72%; min-height: 1px; }
+.dist-label { align-self: end; font: 9px/1.1 var(--f-m); color: var(--ink-3); overflow-wrap: anywhere; }
+.sentiment-ratio { display: flex; width: 100%; height: 8px; overflow: hidden; background: var(--grid); }
+.sentiment-ratio .up { background: var(--up); }
+.sentiment-ratio .dn { background: var(--dn); }
+.volume-compare { margin: var(--s2) 0; font: 12px var(--f-m); color: var(--ink-2); }
 .ladder { display: grid; gap: 1px; border: 1px solid var(--line); background: var(--line); }
 .ladder-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); min-height: 58px; background: var(--surface); }
 .ladder-label { display: grid; place-items: center start; padding: var(--s2) var(--s3); color: var(--ink-2); border-right: 1px solid var(--line); font: 600 12px var(--f-m); }
@@ -124,6 +148,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 680px) { .macro-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .tm { height: 520px; } }
+@media (max-width: 599px) { .flow-rank-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -259,6 +284,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
   let M = null, Macro = null, kind = 'industry', period = 'today';
+  let limitTab = '1', limitSort = 'first_seal', limitSortDir = 1;
   let boardBox = null, pinnedTile = null;
   const tip = $('tip');
   document.addEventListener('pointerdown', (event) => {
@@ -351,11 +377,16 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       return;
     }
     const lead = prov === 'sina' ? '净额（流入−流出）' : '主力净额';
+    const ranked = (direction) => [...rows].sort((a, b) => direction * (b[P.net] - a[P.net])).slice(0, 10);
+    const flowRankTable = (title, list) => `<section><h3>${title}</h3><table><thead><tr><th>名称</th><th class="r">净额 亿</th><th class="r">涨跌幅</th></tr></thead><tbody>
+      ${list.map((r) => `<tr><td title="${E(r.name)}">${E(r.name)}</td><td class="r">${yi(r[P.net])}</td><td class="r">${pct(r[P.pct], 1)}</td></tr>`).join('')}
+      </tbody></table></section>`;
+    const flowTables = `<div class="flow-rank-grid">${flowRankTable('净流入前 10', ranked(1))}${flowRankTable('净流出前 10', ranked(-1))}</div>`;
     html += `<div class="tm" id="tm" role="img" aria-label="${KINDS[kind]}板块${P.label}${lead}热力图，共 ${rows.length} 个板块"></div>
       <div class="legend"><span>面积 = |${lead}|</span><span>颜色 = ${P.label}涨跌幅</span>
       <i style="background:rgba(17,132,90,1)"></i>−4%<i style="background:rgba(17,132,90,.3)"></i><i style="background:rgba(214,48,58,.3)"></i><i style="background:rgba(214,48,58,1)"></i>+4%
       <span>边框实线 = 净流入，虚线 = 净流出</span><span>n = ${rows.length}</span></div>
-      ${historyNote}<p class="note">${E(bf.note || '')}</p>`;
+      ${flowTables}${historyNote}<p class="note">${E(bf.note || '')}</p>`;
     $('board-body').innerHTML = html;
     const box = $('tm'), W = box.clientWidth, H = box.clientHeight;
     const items = rows.map((r) => ({ r, v: Math.abs(r[P.net]) })).filter((it) => it.v > 0).sort((a, b) => b.v - a.v);
@@ -403,20 +434,85 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const L = M.limit_pools || {};
     $('src-limit').innerHTML = srcLine(['limit_pools']);
     const f = failMsg(['limit_pools']);
-    if (!num(L.zt)) { $('limit-body').innerHTML = `<p class="fail">${f || '该源本次未取到：无数据'}</p>`; return; }
     const dist = Object.entries(L.streak_dist || {}).map(([k, v]) => [+k, v]).sort((a, b) => a[0] - b[0]);
     const mx = Math.max(1, ...dist.map((d) => d[1]));
-    const top = ((L.top20 || {}).zt || []);
+    const hasZtRows = Array.isArray(L.zt_rows);
+    const ztRows = hasZtRows ? L.zt_rows : (((L.top20 || {}).zt || []));
+    const zbRows = Array.isArray(L.zb_rows) ? L.zb_rows : null;
+    const dtRows = Array.isArray(L.dt_rows) ? L.dt_rows : null;
+    const streak = (row) => Number.isFinite(Number(row.streak)) ? Number(row.streak) : null;
+    const countStreak = (min, maxValue) => ztRows.filter((row) => {
+      const value = streak(row);
+      return value !== null && value >= min && (maxValue === null || value <= maxValue);
+    }).length;
+    const oldDist = L.streak_dist || {};
+    const higherCount = ztRows.filter((row) => (streak(row) ?? 0) >= 5).length ||
+      Object.entries(oldDist).filter(([key]) => Number(key) >= 5).reduce((sum, [, value]) => sum + Number(value || 0), 0);
+    const groups = [
+      { id: '1', label: '一板', rows: ztRows.filter((row) => streak(row) === 1), count: hasZtRows ? countStreak(1, 1) : Number(oldDist['1'] || 0) },
+      { id: '2', label: '二板', rows: ztRows.filter((row) => streak(row) === 2), count: hasZtRows ? countStreak(2, 2) : Number(oldDist['2'] || 0) },
+      { id: '3', label: '三板', rows: ztRows.filter((row) => streak(row) === 3), count: hasZtRows ? countStreak(3, 3) : Number(oldDist['3'] || 0) },
+      { id: '4', label: '四板', rows: ztRows.filter((row) => streak(row) === 4), count: hasZtRows ? countStreak(4, 4) : Number(oldDist['4'] || 0) },
+      { id: '5', label: '更高', rows: ztRows.filter((row) => (streak(row) ?? 0) >= 5), count: higherCount },
+      { id: 'zb', label: '炸板', rows: zbRows || [], count: num(L.zb) ? L.zb : (zbRows || []).length },
+      { id: 'dt', label: '跌停', rows: dtRows || [], count: num(L.dt) ? L.dt : (dtRows || []).length }
+    ];
+    if (!groups.some((group) => group.id === limitTab)) limitTab = '1';
+    const active = groups.find((group) => group.id === limitTab);
+    const numberValue = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+    const money = (value) => {
+      if (!numberValue(value)) return '—';
+      const amount = Number(value);
+      return amount >= 1e8 ? `${(amount / 1e8).toFixed(2)}亿` : `${(amount / 1e4).toFixed(0)}万`;
+    };
+    const time = (value) => value ? String(value).slice(0, 5) : '—';
+    let content = '';
+    if (active.id === 'zb' || active.id === 'dt') {
+      const rows = active.id === 'zb' ? zbRows : dtRows;
+      if (!rows) content = `<p class="note">旧版数据未包含${active.label}明细。</p>`;
+      else if (!rows.length) content = `<p class="note">暂无${active.label}明细。</p>`;
+      else if (active.id === 'zb') content = `<div class="scroll"><table class="limit-table"><thead><tr><th>名称</th><th>首封时间</th><th class="r">炸板次数</th><th class="r">涨跌幅</th></tr></thead><tbody>
+        ${rows.map((row) => `<tr><td class="name-cell">${E(row.name || '—')}<small>${E(row.code || '—')}</small></td><td>${E(time(row.first_seal))}</td><td class="r">${E(row.break_times ?? '—')}</td><td class="r">${pct(row.pct)}</td></tr>`).join('')}
+        </tbody></table></div>`;
+      else content = `<div class="scroll"><table class="limit-table"><thead><tr><th>名称</th><th class="r">封单</th><th class="r">连续跌停天数</th><th class="r">开板次数</th></tr></thead><tbody>
+        ${rows.map((row) => `<tr><td class="name-cell">${E(row.name || '—')}<small>${E(row.code || '—')}</small></td><td class="r">${E(money(row.seal_fund))}</td><td class="r">${E(row.days ?? '—')}</td><td class="r">${E(row.open_times ?? '—')}</td></tr>`).join('')}
+        </tbody></table></div>`;
+    } else if (!active.rows.length) {
+      content = `<p class="note">暂无${active.label}明细。</p>`;
+    } else {
+      const reasonCounts = new Map();
+      ztRows.forEach((row) => {
+        const tag = String(row.reason || '').split('+')[0].trim();
+        if (tag) reasonCounts.set(tag, (reasonCounts.get(tag) || 0) + 1);
+      });
+      const sorted = [...active.rows].sort((a, b) => {
+        const left = limitSort === 'first_seal' ? String(a.first_seal || '') : Number(a.seal_fund || 0);
+        const right = limitSort === 'first_seal' ? String(b.first_seal || '') : Number(b.seal_fund || 0);
+        return (left < right ? -1 : left > right ? 1 : 0) * limitSortDir;
+      });
+      content = `<div class="scroll"><table class="limit-table"><thead><tr><th>名称 / 代码</th><th><button class="sort-button" data-limit-sort="first_seal">涨停时间 ↕</button></th><th>涨停原因</th><th class="r"><button class="sort-button" data-limit-sort="seal_fund">封单 ↕</button></th></tr></thead><tbody>
+        ${sorted.map((row) => {
+          const tag = String(row.reason || '').split('+')[0].trim();
+          const reason = tag ? `${tag} (${reasonCounts.get(tag) || 0})` : '—';
+          const shownReason = reason.length > 17 ? `${reason.slice(0, 17)}…` : reason;
+          const dayBoard = numberValue(row.zt_days) && numberValue(row.zt_ct)
+            ? (Number(row.zt_days) > Number(row.zt_ct) ? `${row.zt_days}天${row.zt_ct}板` : '—')
+            : '—';
+          return `<tr><td class="name-cell"><strong>${E(row.name || '—')}</strong>${Number(row.break_times) > 0 ? '<span class="return-tag">回封</span>' : ''}<small>${E(row.code || '—')}</small></td>
+            <td class="time-cell">${E(time(row.first_seal))}<small>${E(dayBoard)}</small></td>
+            <td class="reason-cell" title="${E(reason)}">${E(shownReason)}</td><td class="r">${E(money(row.seal_fund))}</td></tr>`;
+        }).join('')}
+        </tbody></table></div>`;
+    }
     $('limit-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
-      `<div class="big"><div><small>涨停</small><strong class="up">${L.zt}</strong></div><div><small>炸板</small><strong class="wn">${L.zb ?? '—'}</strong></div>
+      `<div class="big"><div><small>涨停</small><strong class="up">${L.zt ?? '—'}</strong></div><div><small>炸板</small><strong class="wn">${L.zb ?? '—'}</strong></div>
        <div><small>跌停</small><strong class="dn">${L.dt ?? '—'}</strong></div><div><small>炸板率</small><strong>${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
        <div><small>最高连板</small><strong>${L.max_streak ?? '—'}</strong></div></div>
        <div class="bars" aria-label="连板分布">${dist.map((d) => `<div style="height:${(d[1] / mx * 100).toFixed(0)}%"><em>${d[1]}</em></div>`).join('')}</div>
        <div class="bars-x">${dist.map((d) => `<span>${d[0]}板</span>`).join('')}</div>
-       <p class="note">交易日 ${E(L.date || '—')} · 涨停前 ${top.length} 只（按封板时间）</p>
-       <div class="scroll"><table><thead><tr><th>代码</th><th>名称</th><th class="r">连板</th><th class="r">首封</th></tr></thead><tbody>
-       ${top.map((r) => `<tr><td>${E(r.code)}</td><td>${E(r.name)}</td><td class="r">${E(r.streak ?? '—')}</td><td class="r">${E(r.limit_time || '—')}</td></tr>`).join('')}
-       </tbody></table></div><p class="note">${E(L.note || '')}</p>`;
+       <p class="note">交易日 ${E(L.date || '—')}</p>
+       <div class="limit-tabs" role="tablist" aria-label="涨跌停明细">${groups.map((group) => `<button class="chip" role="tab" aria-selected="${group.id === limitTab}" aria-pressed="${group.id === limitTab}" data-limit-tab="${group.id}">${group.label}<small>${group.count}</small></button>`).join('')}</div>
+       <div role="tabpanel">${content}</div><p class="note">${E(L.note || '')}</p>`;
   }
 
   function renderSentiment() {
@@ -426,6 +522,28 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const errors = failMsg(['breadth', 'limit_pools']);
     const levels = (P.levels || []).map((r) =>
       `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r">${E(r.n_up)}</td></tr>`).join('');
+    const buckets = [
+      ['zt', '涨停', 'up'], ['gt10', '>10%', 'up'], ['7_10', '7~10%', 'up'],
+      ['3_7', '3~7%', 'up'], ['0_3', '0~3%', 'up'], ['flat', '平', 'flat'],
+      ['m0_3', '0~3%', 'down'], ['m3_7', '3~7%', 'down'], ['m7_10', '7~10%', 'down'],
+      ['lt10', '<−10%', 'down'], ['dt', '跌停', 'down']
+    ];
+    const chartData = B.dist && typeof B.dist === 'object' ? B.dist : null;
+    const maxBucket = chartData ? Math.max(1, ...buckets.map(([key]) => Number(chartData[key] || 0))) : 1;
+    const chart = chartData ? `<div class="dist-chart" role="img" aria-label="全市场涨跌幅分布">
+      ${buckets.map(([key, label, side]) => {
+        const value = Number(chartData[key] || 0), height = Math.max(value ? 3 : 1, value / maxBucket * 100);
+        const color = side === 'up' ? 'var(--up)' : side === 'down' ? 'var(--dn)' : 'var(--ink-3)';
+        return `<div class="dist-col"><span class="dist-count">${value}</span><div class="dist-track"><i class="dist-bar" style="height:${height}%;background:${color}"></i></div><span class="dist-label">${label}</span></div>`;
+      }).join('')}</div>` : `<p class="note">涨跌幅分布本次未取到${B.dist_error ? `：${E(B.dist_error)}` : ''}</p>`;
+    const upCount = chartData ? buckets.filter((item) => item[2] === 'up').reduce((sum, [key]) => sum + Number(chartData[key] || 0), 0) : 0;
+    const downCount = chartData ? buckets.filter((item) => item[2] === 'down').reduce((sum, [key]) => sum + Number(chartData[key] || 0), 0) : 0;
+    const ratioTotal = upCount + downCount || 1;
+    const currentAmount = Number(B.amount_yuan), previousAmount = Number(B.amount_prev_yuan);
+    const changeAmount = currentAmount - previousAmount, changePct = changeAmount / previousAmount * 100;
+    const comparison = Number.isFinite(currentAmount) && Number.isFinite(previousAmount) && previousAmount > 0
+      ? `，较 ${E(B.amount_prev_date || '—')} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%（${changeAmount >= 0 ? '+' : ''}${(changeAmount / 1e8).toFixed(1)} 亿）`
+      : '';
     $('sentiment-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
       `<div class="big">
         <div><small>上涨家数</small><strong class="up">${E(B.up ?? '—')}</strong></div>
@@ -438,6 +556,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <div><small>昨日涨停今日上涨比例（n=${E(S.yzt_n ?? '—')}）</small><strong>${num(S.yzt_up_share) ? (S.yzt_up_share * 100).toFixed(1) + '%' : '—'}</strong></div>
         <div><small>晋级率（n=${E(P.n_prev_total ?? '—')}）</small><strong>${num(P.rate) ? (P.rate * 100).toFixed(1) + '%' : '—'}</strong></div>
       </div>
+      <h3>市场涨跌分布 · n=${E(B.dist_n ?? '—')}</h3>${chart}
+      ${chartData ? `<div class="sentiment-ratio" aria-hidden="true"><i class="up" style="width:${(upCount / ratioTotal * 100).toFixed(1)}%"></i><i class="dn" style="width:${(downCount / ratioTotal * 100).toFixed(1)}%"></i></div><p class="note">涨 ${upCount} 家 / 跌 ${downCount} 家 · ${E(B.dist_source || 'sina hs_a')}</p>` : ''}
+      <p class="volume-compare">成交额 ${yi(B.amount_yuan)} 亿${comparison}</p>
       <div class="table-scroll" style="margin-top:12px"><table style="min-width:360px"><thead><tr><th>昨日连板</th><th class="r">前日涨停数</th><th class="r">晋级数</th></tr></thead><tbody>${levels || '<tr><td colspan="3">暂无晋级分层数据</td></tr>'}</tbody></table></div>
       <p class="note">${E(B.note || '')} ${E(L.note || '')}</p>`;
   }
@@ -725,9 +846,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   document.addEventListener('click', (e) => {
     const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
     const ef = e.target.closest('[data-event-filter]');
+    const poolTab = e.target.closest('[data-limit-tab]');
+    const poolSort = e.target.closest('[data-limit-sort]');
     if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
     if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
     if (ef) { eventFilter = ef.dataset.eventFilter; renderEvents(); }
+    if (poolTab) { limitTab = poolTab.dataset.limitTab; renderLimit(); }
+    if (poolSort) {
+      const key = poolSort.dataset.limitSort;
+      if (limitSort === key) limitSortDir *= -1;
+      else { limitSort = key; limitSortDir = key === 'seal_fund' ? -1 : 1; }
+      renderLimit();
+    }
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
