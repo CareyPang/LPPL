@@ -40,13 +40,6 @@
   var SUB = {
     market: MARKET_SUB,
     nt: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
-    home: [
-      { t: '首页风格', h: '#', label: true },
-      { t: '蓝白（正式）', h: 'home.html', file: 'home.html' },
-      { t: 'TradingView', h: 'home-tv.html', file: 'home-tv.html' },
-      { t: '彭博', h: 'home-bbg.html', file: 'home-bbg.html' },
-      { t: '海面', h: 'home-ocean.html', file: 'home-ocean.html' }
-    ],
     stock: [
       { t: '查询', h: '#search', ids: ['search'] },
       { t: '本地自选', h: '#watch-section', ids: ['watch-section'] },
@@ -108,7 +101,22 @@
 '.odn-tools .strip-k{font-size:12px;color:#8c8c8c;white-space:nowrap}' +
 '.odn-tools .chips{display:flex;gap:4px;padding:0!important}' +
 '.odn-tools .chip{border-radius:999px!important}' +
+'.odn-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}' +
+'.odn-q{position:relative;display:flex;align-items:center}' +
+'.odn-q input{width:220px;height:34px;padding:0 30px 0 34px;border:1px solid #333;border-radius:999px;background:#1a1a1a url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 fill=%27none%27 stroke=%27%238c8c8c%27 stroke-width=%272%27%3E%3Ccircle cx=%277%27 cy=%277%27 r=%275%27/%3E%3Cpath d=%27M11 11l3.5 3.5%27/%3E%3C/svg%3E") no-repeat 12px 50%;color:#fff;font:14px "Microsoft YaHei UI","PingFang SC",system-ui,sans-serif;transition:border-color .15s,width .15s}' +
+'.odn-q input::placeholder{color:#8c8c8c}.odn-q input:focus{outline:none;border-color:#2962ff;width:260px}' +
+'.odn-q input::-webkit-search-cancel-button{display:none}' +
+'.odn-q kbd{position:absolute;right:10px;font:11px/16px Consolas,monospace;color:#8c8c8c;border:1px solid #444;border-radius:4px;padding:0 5px;pointer-events:none}' +
+'.odn-q input:focus+kbd{display:none}' +
+'.odn-ql{list-style:none;margin:0;left:0;right:auto;min-width:100%;width:300px}' +
+'.odn-ql a{display:flex!important;justify-content:space-between;gap:12px}.odn-ql a span{color:#8c8c8c;font-size:12px}' +
+'.odn-ql li[aria-selected=true] a{background:#2e2e2e;color:#fff}' +
+'.odn-qe{padding:9px 12px;color:#8c8c8c;font-size:13px}' +
+'.odn-light .odn-q input{background-color:#f0f3fa;border-color:#e0e3eb;color:#131722}.odn-light .odn-q input::placeholder{color:#6a6d78}.odn-light .odn-q input:focus{background-color:#fff;border-color:#1f5fd6}' +
+'.odn-light .odn-q kbd{color:#6a6d78;border-color:#d6dae3}.odn-light .odn-ql a span{color:#6a6d78}.odn-light .odn-ql li[aria-selected=true] a{background:#f0f3fa;color:#131722}' +
 '@media (max-width:1100px){.odn-asof{display:none}}' +
+'@media (max-width:760px){.odn-q input{width:150px}.odn-q input:focus{width:180px}.odn-q kbd{display:none}}' +
+'@media (max-width:420px){.odn-q input{width:110px}}' +
 '@media (max-width:860px){.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-brand{margin-right:8px}}' +
 '@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}}' +
 '.odn.odn-light{background:#fff;border-bottom-color:#e6e9ef;color:#131722}' +
@@ -156,6 +164,72 @@
   var right = el('div', 'odn-r');
   var asofSlot = el('div', 'odn-asof');
   right.appendChild(asofSlot);
+
+  /* ---------- 全站搜索：指数名/代码 → 终端；6 位代码或美股代码 → 个股 ---------- */
+  var IDX = (window.LPPL && window.LPPL.SYMS) || [
+    { sym: 'sh000001', name: '上证指数', code: '000001', alias: ['上证', '上证综指'] },
+    { sym: 'sh000016', name: '上证50', code: '000016', alias: [] },
+    { sym: 'sh000300', name: '沪深300', code: '000300', alias: [] },
+    { sym: 'sh000905', name: '中证500', code: '000905', alias: [] },
+    { sym: 'sz399001', name: '深证成指', code: '399001', alias: ['深证'] },
+    { sym: 'sz399006', name: '创业板指', code: '399006', alias: ['创业板'] }
+  ];
+  var srch = el('form', 'odn-q');
+  srch.setAttribute('role', 'search');
+  srch.innerHTML = '<label class="odn-vh" for="odn-q-i">搜索指数或股票代码</label>' +
+    '<input id="odn-q-i" type="search" autocomplete="off" spellcheck="false" placeholder="搜索指数 / 代码" aria-controls="odn-q-l" aria-expanded="false">' +
+    '<kbd aria-hidden="true">/</kbd><ul id="odn-q-l" class="odn-pop odn-ql" role="listbox" hidden></ul>';
+  right.appendChild(srch);
+  var qi = srch.querySelector('input'), ql = srch.querySelector('ul'), hits = [], sel = 0;
+  function suggest(v) {
+    var s = v.trim().replace(/\.(SH|SZ)$/i, ''), lo = s.toLowerCase(), out = [];
+    if (!s) return out;
+    IDX.forEach(function (x) {
+      var names = [x.name, x.code, x.sym].concat(x.alias || []);
+      if (names.some(function (n) { return n.toLowerCase().indexOf(lo) >= 0; }))
+        out.push({ t: x.name, s: '指数 · ' + x.code + ' · 终端', h: 'index.html?code=' + x.sym });
+    });
+    if (/^\d{6}$/.test(s)) out.push({ t: s, s: '个股 · A 股', h: 'stock.html?code=' + s });
+    else if (/^(US_)?[A-Za-z.]{1,6}$/i.test(s)) { var u = s.replace(/^US_/i, '').toUpperCase(); out.push({ t: u, s: '个股 · 美股观察清单', h: 'stock.html?code=US_' + u }); }
+    return out.slice(0, 8);
+  }
+  function draw() {
+    if (!hits.length) {
+      ql.innerHTML = qi.value.trim() ? '<li class="odn-qe">没有匹配：可输入指数名、6 位代码或美股代码</li>' : '';
+    } else {
+      ql.innerHTML = hits.map(function (h, i) {
+        return '<li role="option" id="odn-q-' + i + '" aria-selected="' + (i === sel) + '"><a href="' + h.h + '"><b>' + esc(h.t) + '</b><span>' + esc(h.s) + '</span></a></li>';
+      }).join('');
+    }
+    var open = !!ql.innerHTML;
+    ql.hidden = !open;
+    qi.setAttribute('aria-expanded', String(open));
+    if (hits.length) qi.setAttribute('aria-activedescendant', 'odn-q-' + sel); else qi.removeAttribute('aria-activedescendant');
+  }
+  qi.addEventListener('input', function () { hits = suggest(qi.value); sel = 0; draw(); });
+  qi.addEventListener('focus', function () { if (qi.value) { hits = suggest(qi.value); draw(); } });
+  qi.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!hits.length) return;
+      e.preventDefault();
+      sel = (sel + (e.key === 'ArrowDown' ? 1 : hits.length - 1)) % hits.length;
+      draw();
+    } else if (e.key === 'Escape') { ql.hidden = true; qi.setAttribute('aria-expanded', 'false'); qi.blur(); }
+  });
+  qi.addEventListener('blur', function () { setTimeout(function () { ql.hidden = true; qi.setAttribute('aria-expanded', 'false'); }, 150); });
+  srch.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hits = suggest(qi.value);
+    if (hits.length) location.href = hits[Math.min(sel, hits.length - 1)].h; else draw();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target, tag = t && t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+    e.preventDefault();
+    qi.focus();
+    qi.select();
+  });
   var menu = el('details', 'odn-menu');
   menu.innerHTML = '<summary aria-label="打开导航菜单">☰</summary><div class="odn-pop">' +
     MAIN.map(function (m) { return '<a href="' + m.h + '"' + (isMain(m) ? ' aria-current="page"' : '') + '>' + esc(m.t) + '</a>'; }).join('') + '</div>';
