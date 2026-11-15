@@ -1154,6 +1154,7 @@
       loadStockRows().then(() => renderCodeSuggestions());
     });
     codeInput.addEventListener('keydown', (event) => {
+      if (event.isComposing || event.keyCode === 229) return;
       if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && codeMatches.length) {
         event.preventDefault();
         const step = event.key === 'ArrowDown' ? 1 : -1;

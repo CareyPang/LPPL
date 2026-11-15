@@ -293,6 +293,7 @@
     });
   });
   qi.addEventListener('keydown', function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       if (!hits.length) return;
       e.preventDefault();
