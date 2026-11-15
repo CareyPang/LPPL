@@ -954,26 +954,32 @@ def main() -> None:
         if current_path.exists():
             current_record = json.loads(current_path.read_text(encoding="utf-8"))
     if args.history_weeks > 0:
-        if current_record is not None:
-            snapshot_ref = (current_record.get("stock_meta") or {}).get(
-                "price_snapshot"
-            )
-            if not snapshot_ref:
-                raise ValueError(f"current record has no sealed price snapshot for {code}")
-            snapshot = _snapshot_through(
-                _load_price_snapshot(
-                    code,
-                    current_record["data_version"],
-                    args.cache_dir,
-                    snapshot_ref,
-                ),
-                current_record["asof"],
+        snapshot = None
+        current_asof = current_record["asof"] if current_record is not None else None
+        snapshot_ref = (
+            (current_record.get("stock_meta") or {}).get("price_snapshot")
+            if current_record is not None
+            else None
+        )
+        if snapshot_ref:
+            snapshot = _load_price_snapshot(
+                code, current_record["data_version"], args.cache_dir, snapshot_ref
             )
         else:
-            snapshot = _load_latest_price_snapshot(code, args.cache_dir)
-            snapshot = _snapshot_through(
-                snapshot, str(pd.Timestamp(snapshot[0].date.iloc[-1]).date())
-            )
+            try:
+                snapshot = _load_latest_price_snapshot(code, args.cache_dir)
+            except FileNotFoundError:
+                # Nightly batches publish current records without a sealed snapshot
+                # and this runner has no cache: seal one through the current asof now.
+                predict(
+                    code, variant=args.variant, asof=current_asof, procs=args.procs,
+                    trust_boot=args.trust_boot, cache_dir=args.cache_dir,
+                )
+                snapshot = _load_latest_price_snapshot(code, args.cache_dir)
+        snapshot = _snapshot_through(
+            snapshot,
+            current_asof or str(pd.Timestamp(snapshot[0].date.iloc[-1]).date()),
+        )
         history_record = history(
             args.code6,
             weeks=args.history_weeks,

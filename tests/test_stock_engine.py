@@ -1300,3 +1300,42 @@ def test_thursday_history_stays_compatible_after_friday_append(monkeypatch, tmp_
     assert current["asof"] == "2026-11-06"
     assert current["history_input_hashes"]["2026-11-05"] == history["frames"][-1]["fit_input_hash"]
     assert history_compatible(history, current)
+
+
+def test_history_phase_seals_snapshot_when_nightly_current_has_none(tmp_path, monkeypatch):
+    output = tmp_path / "output"
+    output.mkdir()
+    cache_dir = tmp_path / "cache"
+    prices = _ohlc(20)
+    asof = str(prices.date.iloc[-3].date())
+    (output / "600519.json").write_text(
+        json.dumps({"asof": asof, "variant": "stk_lite", "data_version": "nightly",
+                    "stock_meta": {"status": "ok"}}),
+        encoding="utf-8",
+    )
+    calls = []
+
+    def fake_predict(code, **kwargs):
+        calls.append(("predict", code, kwargs))
+        stock._seal_price_snapshot(
+            code, prices, "vintage_20261105_fixture", {"source": "fixture"}, kwargs["cache_dir"]
+        )
+        return {}
+
+    def fake_history(code, **kwargs):
+        calls.append(("history", code, kwargs))
+        return {"model_version": "model", "fit_code_version": "fits", "data_version": "data",
+                "frames": [{"asof": asof}]}
+
+    monkeypatch.setattr(stock, "predict", fake_predict)
+    monkeypatch.setattr(stock, "history", fake_history)
+    monkeypatch.setattr(sys, "argv", ["stock", "600519", "--phase", "history", "--history-weeks", "104",
+        "--job-id", "35fb2d27-e5cf-4820-bb27-c3d099540c1a", "--requested-at", "2026-11-06T00:00:00Z",
+        "--source-sha", "a" * 40, "--out", str(output), "--cache-dir", str(cache_dir)])
+    stock.main()
+    predict_call = next(call for call in calls if call[0] == "predict")
+    assert predict_call[2]["asof"] == asof
+    assert predict_call[2]["cache_dir"] == cache_dir
+    history_call = next(call for call in calls if call[0] == "history")
+    assert str(history_call[2]["price_snapshot"][0].date.iloc[-1].date()) == asof
+    assert (output / "600519_history.json").exists()
