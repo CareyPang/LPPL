@@ -122,7 +122,7 @@
       loadCatalog().then(function (rows) {
         if (!rows) return;
         var row = null;
-        for (var i = 0; i < rows.length; i++) if (rows[i].code === code) { row = rows[i]; break; }
+        for (var i = 0; i < rows.length; i++) if (rows[i].symbol ? rows[i].symbol === d.symbol : rows[i].code === code) { row = rows[i]; break; } /* 按完整 symbol 比对：sz000001 平安银行 ≠ sh000001 上证指数 */
         if (!row || !row.member_of || !row.member_of.length) return;
         $('sh-mem').innerHTML = '属于：' + row.member_of.map(function (m) {
           return '<a href="index.html?code=' + encodeURIComponent(m) + '">' + esc(rows.names[m] || m) + '</a>';
