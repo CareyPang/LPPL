@@ -341,7 +341,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
           : '')
       : '';
     let html = '';
-    if (S.fallback_from) html += `<p class="warnl">东财本次未取到，已改用新浪口径（${E(S.fallback_from).slice(0, 160)}）。</p>`;
+    if (S.fallback_from) html += `<p class="warnl" title="${E(S.fallback_from)}">东财暂不可用，本次数据来自新浪（口径：净额 = 流入 − 流出）。</p>`;
     if (S.reason) html += `<p class="fail">${E(S.reason)}</p>`;
     if (!rows.length) {
       boardBox = null; pinnedTile = null; tip.hidden = true;
