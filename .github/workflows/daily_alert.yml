@@ -1,0 +1,91 @@
+name: daily_alert
+
+on:
+  workflow_run:
+    workflows:
+      - market_daily
+      - macro_daily
+      - nt_etf_daily
+      - dip_env
+      - stock_nightly
+      - us_nightly
+    types:
+      - completed
+  schedule:
+    - cron: "0 1 * * 2-6"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-alert-${{ github.event.workflow_run.name || 'stale' }}
+  cancel-in-progress: false
+
+jobs:
+  run-alert:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event != 'pull_request' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Update workflow failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python -m research.data.daily_alert run \
+            --workflow "$WORKFLOW_NAME" \
+            --conclusion "$CONCLUSION" \
+            --url "$RUN_URL" \
+            --started "$RUN_STARTED_AT" \
+            --sha "$HEAD_SHA"
+
+  stale-check:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Fetch published stock-results snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin stock-results:refs/remotes/origin/stock-results
+          mkdir -p published
+          git archive origin/stock-results | tar -x -C published
+      - name: Check published data freshness
+        run: |
+          python -m research.data.freshness \
+            --root published \
+            --json out/freshness.json \
+            --markdown out/freshness.md
+      - name: Update stale data issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m research.data.daily_alert stale \
+            --report out/freshness.json \
+            --markdown out/freshness.md
