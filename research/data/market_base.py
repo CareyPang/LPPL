@@ -421,6 +421,103 @@ def sina_board_flow_snapshot(kind: str, session=None) -> pd.DataFrame:
     ) from errors[-1]
 
 
+SINA_NODE_URL = (
+    "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+    "Market_Center.getHQNodeData"
+)
+SINA_STOCK_FLOW_URL = (
+    "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+    "MoneyFlow.ssl_bkzj_ssggzj"
+)
+SINA_REGIONS = {
+    "110000": "北京", "120000": "天津", "130000": "河北", "140000": "山西", "150000": "内蒙古",
+    "210000": "辽宁", "220000": "吉林", "230000": "黑龙江", "310000": "上海", "320000": "江苏",
+    "330000": "浙江", "340000": "安徽", "350000": "福建", "360000": "江西", "370000": "山东",
+    "410000": "河南", "420000": "湖北", "430000": "湖南", "440000": "广东", "450000": "广西",
+    "460000": "海南", "500000": "重庆", "510000": "四川", "520000": "贵州", "530000": "云南",
+    "540000": "西藏", "610000": "陕西", "620000": "甘肃", "630000": "青海", "640000": "宁夏",
+    "650000": "新疆",
+}
+SINA_PAGE_PAUSE = 0.2
+
+
+def _sina_pages(session, url: str, params: dict, page_size: int) -> list[dict]:
+    rows: list[dict] = []
+    for page in range(1, 200):
+        response = session.get(
+            url,
+            params={**params, "page": page, "num": page_size},
+            headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"},
+            timeout=20,
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise RuntimeError(f"Sina {url.rsplit('/', 1)[-1]} page {page} is not an array")
+        rows.extend(item for item in payload if isinstance(item, dict))
+        if len(payload) < page_size:
+            break
+        time.sleep(SINA_PAGE_PAUSE)
+    return rows
+
+
+def sina_region_flow_snapshot(session=None) -> pd.DataFrame:
+    """地域板块回退：新浪 diyu_<省码> 成分 × 新浪全市场个股资金流聚合（只有当日）。"""
+    session = session or requests.Session()
+    flows = {}
+    for item in _sina_pages(
+        session,
+        SINA_STOCK_FLOW_URL,
+        {"sort": "netamount", "asc": 0, "bankuai": "", "shichang": ""},
+        1000,
+    ):
+        symbol = str(item.get("symbol") or "")
+        if symbol:
+            flows[symbol] = item
+    if not flows:
+        raise RuntimeError("Sina stock money-flow list is empty")
+    rows = []
+    for region_code, region_name in SINA_REGIONS.items():
+        members = _sina_pages(
+            session,
+            SINA_NODE_URL,
+            {"sort": "symbol", "asc": 1, "node": f"diyu_{region_code}"},
+            100,
+        )
+        pct, net, amount, matched = [], 0.0, 0.0, 0
+        for member in members:
+            flow = flows.get(str(member.get("symbol") or ""))
+            if flow is None:
+                continue
+            change = _number(flow.get("changeratio"))
+            turnover = _number(flow.get("amount"))
+            net_amount = _number(flow.get("netamount"))
+            if change is None or turnover is None or net_amount is None:
+                continue
+            matched += 1
+            pct.append(change)
+            net += net_amount
+            amount += turnover
+        if not matched:
+            continue
+        rows.append(
+            {
+                "code": f"diyu_{region_code}",
+                "name": region_name,
+                "pct_chg": sum(pct) / len(pct) * 100,
+                "main_net": net,
+                "main_pct": net / amount * 100 if amount else None,
+                **{column: None for column in BOARD_COLUMNS[5:]},
+            }
+        )
+    if not rows:
+        raise RuntimeError("Sina region boards matched no money-flow rows")
+    frame = pd.DataFrame(rows, columns=BOARD_COLUMNS)
+    frame.attrs["url_host"] = SINA_BOARD_HOST
+    return frame
+
+
 def _parse_board_history(payload: dict) -> pd.DataFrame:
     data = payload.get("data")
     if not isinstance(data, dict) or not isinstance(data.get("klines"), list):
@@ -1725,15 +1822,11 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
             sources[f"board_flow_{kind}"] = source
         except Exception as exc:
             eastmoney_error = _error(exc)
-            if kind not in ("industry", "concept"):
-                sources["board_flow_region"] = {
-                    "ok": False,
-                    "provider": None,
-                    "reason": "东财地域板块接口不可用，新浪无地域分类",
-                }
-                continue
             try:
-                frame = sina_board_flow_snapshot(kind, session)
+                if kind == "region":
+                    frame = sina_region_flow_snapshot(session)
+                else:
+                    frame = sina_board_flow_snapshot(kind, session)
                 board_flow[kind] = frame.to_dict("records")
                 board_flow["provider"][kind] = "sina"
                 board_frames.append(frame)

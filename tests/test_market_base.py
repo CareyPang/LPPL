@@ -648,6 +648,11 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
         "limit_pools",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("pool unavailable")),
     )
@@ -683,7 +688,7 @@ def test_fetch_market_uses_sina_fallback_and_marks_history_unverified(monkeypatc
     fallback_calls = []
     history_calls = []
 
-    def eastmoney(kind, _client):
+    def eastmoney(kind, _client, **_kwargs):
         raise RuntimeError(f"Eastmoney {kind} unavailable")
 
     def sina(kind, session):
@@ -698,6 +703,11 @@ def test_fetch_market_uses_sina_fallback_and_marks_history_unverified(monkeypatc
 
     monkeypatch.setattr(market, "board_flow_snapshot", eastmoney)
     monkeypatch.setattr(market, "sina_board_flow_snapshot", sina)
+    monkeypatch.setattr(
+        market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
     monkeypatch.setattr(market, "board_flow_history", history)
     monkeypatch.setattr(
         market,
@@ -750,12 +760,11 @@ def test_fetch_market_uses_sina_fallback_and_marks_history_unverified(monkeypatc
         assert source["ok"] is True
         assert source["url_host"] == market.SINA_BOARD_HOST
         assert source["fallback_from"] == f"RuntimeError: Eastmoney {kind} unavailable"
-    assert payload["sources"]["board_flow_region"]["ok"] is False
-    assert payload["sources"]["board_flow_region"]["provider"] is None
-    assert payload["sources"]["board_flow_region"]["reason"] == (
-        "东财地域板块接口不可用，新浪无地域分类"
-    )
-    assert "fallback_from" not in payload["sources"]["board_flow_region"]
+    region_source = payload["sources"]["board_flow_region"]
+    assert region_source["ok"] is False
+    assert region_source["url_host"] == market.SINA_BOARD_HOST
+    assert region_source["error"] == "RuntimeError: Sina region unavailable"
+    assert region_source["fallback_from"] == "RuntimeError: Eastmoney region unavailable"
     assert payload["board_flow"]["history_sample"]["verified"] is False
     assert payload["board_flow"]["history_sample"]["code"] == "BK0475"
     assert payload["board_flow"]["history_sample"]["reference_board"] is True
@@ -849,6 +858,11 @@ def test_board_region_both_eastmoney_hosts_fail_with_explicit_reason(monkeypatch
     monkeypatch.setattr(market, "board_flow_snapshot", board)
     monkeypatch.setattr(
         market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
         "limit_pools",
         lambda *_args, **_kwargs: {"zt": 0, "zt_rows": [], "top20": {"zt": []}},
     )
@@ -873,11 +887,11 @@ def test_board_region_both_eastmoney_hosts_fail_with_explicit_reason(monkeypatch
     assert calls == [market.EM_BOARD_STRENGTH_URL, market.EM_BOARD_STRENGTH_FALLBACK_URL]
     assert payload["board_flow"]["region"] == []
     assert payload["board_flow"]["provider"]["region"] is None
-    assert payload["sources"]["board_flow_region"] == {
-        "ok": False,
-        "provider": None,
-        "reason": "东财地域板块接口不可用，新浪无地域分类",
-    }
+    region_source = payload["sources"]["board_flow_region"]
+    assert region_source["ok"] is False
+    assert region_source["url_host"] == market.SINA_BOARD_HOST
+    assert region_source["error"] == "RuntimeError: Sina region unavailable"
+    assert "Eastmoney board hosts failed" in region_source["fallback_from"]
 
 
 def test_board_flow_history_accepts_eastmoney_reference_code():
@@ -904,7 +918,7 @@ def test_board_flow_history_rejects_sina_category_code():
 def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
     fallback_calls = []
 
-    def eastmoney(kind, _client):
+    def eastmoney(kind, _client, **_kwargs):
         raise RuntimeError(f"Eastmoney {kind} unavailable")
 
     def sina(kind, _session):
@@ -913,6 +927,11 @@ def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
 
     monkeypatch.setattr(market, "board_flow_snapshot", eastmoney)
     monkeypatch.setattr(market, "sina_board_flow_snapshot", sina)
+    monkeypatch.setattr(
+        market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
     monkeypatch.setattr(
         market,
         "limit_pools",
@@ -1232,3 +1251,57 @@ def test_board_csv_is_written_only_with_rows(tmp_path):
 
     assert board_csv is not None and board_csv.exists()
     assert pd.read_csv(board_csv).columns.tolist() == list(market.BOARD_COLUMNS)
+
+
+def test_sina_region_flow_snapshot_aggregates_members_by_province(monkeypatch):
+    monkeypatch.setattr(market.time, "sleep", lambda _: None)
+    monkeypatch.setattr(market, "SINA_REGIONS", {"440000": "广东", "630000": "青海"})
+    flows = [
+        {"symbol": "sz000001", "changeratio": "0.02", "amount": "1000", "netamount": "100"},
+        {"symbol": "sh600000", "changeratio": "-0.01", "amount": "3000", "netamount": "-300"},
+        {"symbol": "sh600001", "changeratio": "0.05", "amount": "500", "netamount": "50"},
+    ]
+    members = {
+        "diyu_440000": [{"symbol": "sz000001"}, {"symbol": "sh600000"}, {"symbol": "sz300999"}],
+        "diyu_630000": [{"symbol": "sh600001"}],
+    }
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, params, headers, timeout, allow_redirects):
+            self.calls.append((url, params))
+            assert headers["Referer"] == "https://finance.sina.com.cn/"
+            if url == market.SINA_STOCK_FLOW_URL:
+                return Response(flows if params["page"] == 1 else [])
+            return Response(members[params["node"]] if params["page"] == 1 else [])
+
+    session = Session()
+    frame = market.sina_region_flow_snapshot(session)
+
+    assert frame.columns.tolist() == list(market.BOARD_COLUMNS)
+    assert frame.attrs["url_host"] == market.SINA_BOARD_HOST
+    assert frame["code"].tolist() == ["diyu_440000", "diyu_630000"]
+    guangdong = frame.iloc[0]
+    assert guangdong["name"] == "广东"
+    assert guangdong["pct_chg"] == pytest.approx(0.5)
+    assert guangdong["main_net"] == pytest.approx(-200)
+    assert guangdong["main_pct"] == pytest.approx(-5.0)
+    assert guangdong["pct_5d"] is None
+    assert session.calls[0][0] == market.SINA_STOCK_FLOW_URL
+    assert session.calls[0][1]["num"] == 1000
+    assert [params["node"] for url, params in session.calls if url == market.SINA_NODE_URL] == [
+        "diyu_440000",
+        "diyu_630000",
+    ]
