@@ -128,18 +128,39 @@ def fetch_recent(code: str, page_size: int = 30) -> pd.DataFrame:
     ) from last_error
 
 
-def fetch_recent_many(codes: list[str]) -> tuple[pd.DataFrame, int]:
+def fetch_recent_many(
+    codes: list[str], deadline_s: float = 1800
+) -> tuple[pd.DataFrame, int]:
     frames = []
     failed_count = 0
+    consecutive_failures = 0
+    deadline = time.monotonic() + deadline_s
+
+    def check_deadline() -> None:
+        if time.monotonic() >= deadline:
+            raise RuntimeError("东财估值整体获取超过时限")
+
     for index, code in enumerate(codes):
+        check_deadline()
         try:
             frame = fetch_recent(code)
+        except Exception as exc:
+            failed_count += 1
+            consecutive_failures += 1
+            check_deadline()
+            if consecutive_failures >= 20:
+                raise RuntimeError(
+                    f"东财估值连续失败：连续 {consecutive_failures} 只"
+                ) from exc
+        else:
+            consecutive_failures = 0
+            check_deadline()
             if not frame.empty:
                 frames.append(frame)
-        except Exception:
-            failed_count += 1
         if index + 1 < len(codes):
             time.sleep(0.4)
+            check_deadline()
+    check_deadline()
     if not frames:
         rows = pd.DataFrame(
             columns=["SECURITY_CODE", "TRADE_DATE", "TOTAL_MARKET_CAP", "PE_TTM"]

@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pandas as pd
 import pytest
 
@@ -164,6 +166,49 @@ def test_fetch_recent_many_skips_failures_and_update_applies_coverage_gate(
         assert updated.loc["2026-11-16", "n"] == 19
     else:
         assert updated.index.strftime("%Y-%m-%d").tolist() == ["2026-11-13"]
+
+
+def test_fetch_recent_many_aborts_after_20_consecutive_failures(monkeypatch):
+    calls = []
+
+    def fail(code):
+        calls.append(code)
+        raise RuntimeError("synthetic fetch failure")
+
+    monkeypatch.setattr(a500_pe, "fetch_recent", fail)
+    monkeypatch.setattr(a500_pe.time, "sleep", lambda seconds: None)
+
+    with pytest.raises(RuntimeError, match="东财估值连续失败"):
+        a500_pe.fetch_recent_many([f"{code:06}" for code in range(1, 30)])
+
+    assert len(calls) == 20
+
+
+def test_fetch_recent_many_enforces_overall_deadline(monkeypatch):
+    class FakeClock:
+        now = 0.0
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.now += seconds
+
+    clock = FakeClock()
+
+    def fetch(code):
+        clock.now += 3
+        return pd.DataFrame()
+
+    monkeypatch.setattr(
+        a500_pe,
+        "time",
+        SimpleNamespace(monotonic=clock.monotonic, sleep=clock.sleep),
+    )
+    monkeypatch.setattr(a500_pe, "fetch_recent", fetch)
+
+    with pytest.raises(RuntimeError, match="东财估值整体获取超过时限"):
+        a500_pe.fetch_recent_many(["000001", "000002"], deadline_s=5)
 
 
 def test_load_history_uses_baseline_when_incremental_file_is_missing(monkeypatch, tmp_path):
