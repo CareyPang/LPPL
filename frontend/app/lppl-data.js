@@ -180,6 +180,7 @@
   /** 市场背景（descriptive）；缺文件返回 null */
   const market = () => opt('market/market_latest.json');
   const liveNews = () => queryJSON('/news');
+  const stockList = () => opt('market/stock_list.json');
   const ntEtf = () => opt('nt_etf/nt_etf_latest.json');
   const events = () => opt('events/events_latest.json');
   const abnormal = () => opt('market/abnormal_latest.json');
@@ -187,5 +188,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, stockList, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
 })(window);

@@ -440,6 +440,10 @@ SINA_REGIONS = {
 }
 SINA_PAGE_PAUSE = 0.2
 SINA_PAGE_RETRIES = 3
+SINA_DIST_KEYS = (
+    "zt", "gt10", "7_10", "3_7", "0_3", "flat",
+    "m0_3", "m3_7", "m7_10", "lt10", "dt",
+)
 
 
 def _sina_pages(session, url: str, params: dict, page_size: int) -> list[dict]:
@@ -471,6 +475,60 @@ def _sina_pages(session, url: str, params: dict, page_size: int) -> list[dict]:
             break
         time.sleep(SINA_PAGE_PAUSE)
     return rows
+
+
+def _normalize_limit_code(value) -> str:
+    code = str(value or "").strip().lower()
+    if code.startswith(("sh", "sz", "bj")):
+        code = code[2:]
+    return code.zfill(6) if code.isdigit() else code
+
+
+def _sina_breadth_dist(
+    rows: list[dict],
+    zt_codes: set[str] | None = None,
+    dt_codes: set[str] | None = None,
+) -> dict:
+    limit_sets_available = zt_codes is not None and dt_codes is not None
+    buckets = dict.fromkeys(SINA_DIST_KEYS, 0)
+    count = 0
+    for row in rows:
+        if "changepercent" not in row:
+            raise RuntimeError("Sina hs_a row lacks changepercent")
+        pct = _number(row["changepercent"])
+        if pct is None:
+            continue
+        count += 1
+        code = _normalize_limit_code(row.get("code"))
+        if limit_sets_available and code in zt_codes:
+            key = "zt"
+        elif limit_sets_available and code in dt_codes:
+            key = "dt"
+        elif pct > 10:
+            key = "gt10"
+        elif pct > 7:
+            key = "7_10"
+        elif pct > 3:
+            key = "3_7"
+        elif pct > 0:
+            key = "0_3"
+        elif pct == 0:
+            key = "flat"
+        elif pct >= -3:
+            key = "m0_3"
+        elif pct >= -7:
+            key = "m3_7"
+        elif pct >= -10:
+            key = "m7_10"
+        else:
+            key = "lt10"
+        buckets[key] += 1
+    return {
+        "dist": buckets,
+        "dist_n": count,
+        "dist_source": "sina hs_a",
+        "dist_limit_sets": limit_sets_available,
+    }
 
 
 def sina_region_flow_snapshot(session=None) -> pd.DataFrame:
@@ -682,6 +740,48 @@ def _limit_zt_row(row: dict) -> dict:
         "amount": _number(row["amount"]),
         "turnover": _number(row["hs"]),
         "reason": None,
+        **_limit_zttj_fields(row),
+    }
+
+
+def _limit_zttj_fields(row: dict) -> dict:
+    zttj = row.get("zttj")
+    if not isinstance(zttj, dict):
+        zttj = {}
+    return {
+        "zt_days": _int(zttj["days"], "zttj.days") if zttj.get("days") is not None else None,
+        "zt_ct": _int(zttj["ct"], "zttj.ct") if zttj.get("ct") is not None else None,
+    }
+
+
+def _limit_zb_row(row: dict) -> dict:
+    return {
+        "code": str(row["c"]),
+        "name": str(row["n"]),
+        "pct": _number(row.get("zdp")),
+        "first_seal": _fmt_limit_time(row.get("fbt")),
+        "break_times": _int(row["zbc"], "zbc") if row.get("zbc") is not None else None,
+        "amount": _number(row.get("amount")),
+        "turnover": _number(row.get("hs")),
+        "amplitude": _number(row.get("zf")),
+        "industry": str(row["hybk"]) if row.get("hybk") is not None else None,
+        **_limit_zttj_fields(row),
+    }
+
+
+def _limit_dt_row(row: dict) -> dict:
+    return {
+        "code": str(row["c"]),
+        "name": str(row["n"]),
+        "pct": _number(row.get("zdp")),
+        "last_seal": _fmt_limit_time(row.get("lbt")),
+        "seal_fund": _number(row.get("fund")),
+        "board_amount": _number(row.get("fba")),
+        "days": _int(row["days"], "days") if row.get("days") is not None else None,
+        "open_times": _int(row["oc"], "oc") if row.get("oc") is not None else None,
+        "amount": _number(row.get("amount")),
+        "turnover": _number(row.get("hs")),
+        "industry": str(row["hybk"]) if row.get("hybk") is not None else None,
     }
 
 
@@ -800,6 +900,8 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
             for kind, pool in pools.items()
         },
         "zt_rows": zt_rows,
+        "zb_rows": [_limit_zb_row(row) for row in zb],
+        "dt_rows": [_limit_dt_row(row) for row in dt],
         "yesterday_rows": [_yesterday_pool_row(row) for row in yesterday_rows],
         "sentiment": sentiment,
         "promotion": promotion,
@@ -1209,7 +1311,12 @@ def _parse_em_news(payload: dict) -> list[dict]:
     return rows
 
 
-def fetch_breadth(client: EMClient | None = None) -> dict:
+def fetch_breadth(
+    client: EMClient | None = None,
+    session=None,
+    zt_rows: list[dict] | None = None,
+    dt_rows: list[dict] | None = None,
+) -> dict:
     client = client or EMClient()
     payload = client.get_json(
         EM_ULIST_URL,
@@ -1220,7 +1327,67 @@ def fetch_breadth(client: EMClient | None = None) -> dict:
             "invt": "2",
         },
     )
-    return _parse_breadth(payload)
+    result = _parse_breadth(payload)
+    limit_sets_available = zt_rows is not None and dt_rows is not None
+    zt_codes = (
+        {_normalize_limit_code(row.get("code")) for row in zt_rows}
+        if limit_sets_available else None
+    )
+    dt_codes = (
+        {_normalize_limit_code(row.get("code")) for row in dt_rows}
+        if limit_sets_available else None
+    )
+    try:
+        sina_rows = _sina_pages(
+            session or requests.Session(),
+            SINA_NODE_URL,
+            {"sort": "symbol", "asc": 1, "node": "hs_a"},
+            100,
+        )
+        result.update(_sina_breadth_dist(sina_rows, zt_codes, dt_codes))
+    except Exception as exc:  # noqa: BLE001 — distribution is optional to index breadth
+        result.update(
+            dist=None,
+            dist_n=None,
+            dist_source="sina hs_a",
+            dist_limit_sets=limit_sets_available,
+            dist_error=_error(exc),
+        )
+    return result
+
+
+def select_previous_market_snapshot(snapshots: list[dict], asof: str) -> dict | None:
+    current_date = pd.Timestamp(asof).date()
+    candidates = []
+    for snapshot in snapshots:
+        if not isinstance(snapshot, dict):
+            continue
+        try:
+            snapshot_date = pd.Timestamp(snapshot.get("asof")).date()
+            breadth = snapshot.get("breadth")
+            if not isinstance(breadth, dict):
+                continue
+            amount = _number(breadth.get("amount_yuan"))
+        except (TypeError, ValueError, RuntimeError):
+            continue
+        if snapshot_date < current_date and amount is not None and math.isfinite(amount):
+            candidates.append((snapshot_date, amount))
+    if not candidates:
+        return None
+    snapshot_date, amount = max(candidates, key=lambda item: item[0])
+    return {"asof": snapshot_date.isoformat(), "amount_yuan": amount}
+
+
+def load_previous_market_snapshot(prev_dir: Path | None, asof: str) -> dict | None:
+    if prev_dir is None or not prev_dir.is_dir():
+        return None
+    snapshots = []
+    for path in prev_dir.glob("????-??-??.json"):
+        try:
+            snapshots.append(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, json.JSONDecodeError):
+            continue
+    return select_previous_market_snapshot(snapshots, asof)
 
 
 def fetch_themes(asof: str, session=None) -> dict:
@@ -1803,7 +1970,12 @@ def _error(exc: Exception) -> str:
     return f"{type(exc).__name__}: {exc}"
 
 
-def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None) -> dict:
+def fetch_market(
+    asof: str,
+    em_client: EMClient | None = None,
+    http_session=None,
+    previous_dir: Path | None = None,
+) -> dict:
     em = em_client or EMClient()
     session = http_session or requests.Session()
     sources = {}
@@ -1945,8 +2117,17 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
         "note": "实时市场宽度快照；仅在收盘后同日运行时有效。" + DESCRIPTIVE_NOTE,
     }
     try:
-        breadth_section.update(fetch_breadth(em))
+        limit_rows_available = sources["limit_pools"]["ok"]
+        zt_rows = limit_section.get("zt_rows") if limit_rows_available else None
+        dt_rows = limit_section.get("dt_rows") if limit_rows_available else None
+        breadth_data = fetch_breadth(em, session, zt_rows, dt_rows)
+        previous = load_previous_market_snapshot(previous_dir, asof)
+        breadth_data["amount_prev_yuan"] = previous["amount_yuan"] if previous else None
+        breadth_data["amount_prev_date"] = previous["asof"] if previous else None
+        breadth_section.update(breadth_data)
         sources["breadth"] = _source_meta(em.url_host, True)
+        if breadth_data.get("dist_error"):
+            sources["breadth"]["dist_error"] = breadth_data["dist_error"]
     except Exception as exc:
         breadth_section["data"] = None
         sources["breadth"] = _source_meta("push2delay.eastmoney.com", False, _error(exc))
@@ -2181,6 +2362,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--date")
     parser.add_argument("--out", type=Path, default=Path("web/mock/data/market"))
+    parser.add_argument("--prev-dir", type=Path)
     args = parser.parse_args(argv)
     asof = args.date
     if asof is None:
@@ -2188,7 +2370,7 @@ def main(argv: list[str] | None = None) -> int:
 
         asof = latest_closed_trading_day()
     pd.Timestamp(asof)
-    payload = fetch_market(asof)
+    payload = fetch_market(asof, previous_dir=args.prev_dir)
     latest, dated, board = write_snapshot(payload, args.out)
     public = {key: value for key, value in payload.items() if not key.startswith("_")}
     row_counts = {

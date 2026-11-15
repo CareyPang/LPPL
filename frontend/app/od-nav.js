@@ -119,7 +119,7 @@
 '@media (max-width:760px){.odn-q input{width:150px}.odn-q input:focus{width:180px}.odn-q kbd{display:none}}' +
 '@media (max-width:420px){.odn-q input{width:110px}}' +
 '@media (max-width:860px){.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-brand{margin-right:8px}}' +
-'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}}' +
+'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 120px));max-width:calc(100vw - 24px)}}' +
 '.odn.odn-light{background:#fff;border-bottom-color:#e6e9ef;color:#131722}' +
 '.odn-light .odn-brand{color:#131722}.odn-light .odn-brand i{background:#1f5fd6}' +
 '.odn-light .odn-main a{color:#4c525e}.odn-light .odn-main a:hover{color:#131722;background:#f0f3fa}.odn-light .odn-main a[aria-current]{color:#131722;background:#e9edf5}' +
@@ -180,28 +180,85 @@
     { sym: 'sz399001', name: '深证成指', code: '399001', alias: ['深证'] },
     { sym: 'sz399006', name: '创业板指', code: '399006', alias: ['创业板'] }
   ];
+  var stockSearchUrl = me && me.src ? new URL('stock-search.js', me.src).href : 'app/stock-search.js';
+  var stockSearchScriptPromise = null, stockRowsPromise = null, stockRows = null;
+  function loadStockSearchModule() {
+    if (window.StockSearch) return Promise.resolve(true);
+    if (stockSearchScriptPromise) return stockSearchScriptPromise;
+    stockSearchScriptPromise = new Promise(function (resolve) {
+      var script = document.createElement('script');
+      script.src = stockSearchUrl;
+      script.onload = function () {
+        var loaded = !!window.StockSearch;
+        if (!loaded) stockSearchScriptPromise = null;
+        resolve(loaded);
+      };
+      script.onerror = function () {
+        stockSearchScriptPromise = null;
+        resolve(false);
+      };
+      document.head.appendChild(script);
+    });
+    return stockSearchScriptPromise;
+  }
+  function loadStockSearchRows() {
+    if (stockRows) return Promise.resolve(stockRows);
+    if (stockRowsPromise) return stockRowsPromise;
+    stockRowsPromise = loadStockSearchModule().then(function (loaded) {
+      if (!loaded || !window.LPPL || typeof window.LPPL.stockList !== 'function') return null;
+      return window.LPPL.stockList();
+    }).then(function (data) {
+      stockRows = data && Array.isArray(data.rows) ? data.rows : null;
+      if (!stockRows) stockRowsPromise = null;
+      return stockRows;
+    }).catch(function () {
+      stockRowsPromise = null;
+      return null;
+    });
+    return stockRowsPromise;
+  }
   var srch = el('form', 'odn-q');
   srch.setAttribute('role', 'search');
-  srch.innerHTML = '<label class="odn-vh" for="odn-q-i">搜索指数或股票代码</label>' +
-    '<input id="odn-q-i" type="search" autocomplete="off" spellcheck="false" placeholder="搜索指数 / 代码" aria-controls="odn-q-l" aria-expanded="false">' +
+  srch.innerHTML = '<label class="odn-vh" for="odn-q-i">搜索指数、股票名称或拼音</label>' +
+    '<input id="odn-q-i" type="search" autocomplete="off" spellcheck="false" placeholder="搜索指数、股票或拼音" aria-controls="odn-q-l" aria-expanded="false">' +
     '<kbd aria-hidden="true">/</kbd><ul id="odn-q-l" class="odn-pop odn-ql" role="listbox" hidden></ul>';
   right.appendChild(srch);
-  var qi = srch.querySelector('input'), ql = srch.querySelector('ul'), hits = [], sel = 0;
+  var qi = srch.querySelector('input'), ql = srch.querySelector('ul'), hits = [], sel = 0, hitsQuery = null;
   function suggest(v) {
     var s = v.trim().replace(/\.(SH|SZ)$/i, ''), lo = s.toLowerCase(), out = [];
     if (!s) return out;
+    var seen = Object.create(null);
+    function add(hit) {
+      if (!seen[hit.h]) {
+        seen[hit.h] = true;
+        out.push(hit);
+      }
+    }
     IDX.forEach(function (x) {
       var names = [x.name, x.code, x.sym].concat(x.alias || []);
       if (names.some(function (n) { return n.toLowerCase().indexOf(lo) >= 0; }))
-        out.push({ t: x.name, s: '指数 · ' + x.code + ' · 终端', h: 'index.html?code=' + x.sym });
+        add({ t: x.name, s: '指数 · ' + x.code + ' · 终端', h: 'index.html?code=' + x.sym });
     });
-    if (/^\d{6}$/.test(s)) out.push({ t: s, s: '个股 · A 股', h: 'stock.html?code=' + s });
-    else if (/^(US_)?[A-Za-z.]{1,6}$/i.test(s)) { var u = s.replace(/^US_/i, '').toUpperCase(); out.push({ t: u, s: '个股 · 美股观察清单', h: 'stock.html?code=US_' + u }); }
+    if (stockRows && window.StockSearch) {
+      window.StockSearch.match(stockRows, s, 8).forEach(function (row) {
+        var kind = row.kind === 'index' ? '指数' : row.kind === 'us' ? '美股' : 'A 股';
+        var href = row.kind === 'index'
+          ? 'index.html?code=' + encodeURIComponent(row.code)
+          : 'stock.html?code=' + encodeURIComponent(row.code);
+        add({ t: row.name, s: kind + ' · ' + row.code, h: href });
+      });
+      var codeFallback = window.StockSearch.codeFallback(stockRows, s);
+      if (codeFallback) add(codeFallback);
+    } else if (/^\d{6}$/.test(s)) add({ t: s, s: '个股 · A 股', h: 'stock.html?code=' + s });
+    else if (/^(US_)?[A-Za-z.]{1,6}$/i.test(s)) {
+      var u = s.replace(/^US_/i, '').toUpperCase();
+      add({ t: u, s: '个股 · 美股观察清单', h: 'stock.html?code=US_' + u });
+    }
     return out.slice(0, 8);
   }
   function draw() {
     if (!hits.length) {
-      ql.innerHTML = qi.value.trim() ? '<li class="odn-qe">没有匹配：可输入指数名、6 位代码或美股代码</li>' : '';
+      ql.innerHTML = qi.value.trim() ? '<li class="odn-qe">没有匹配：可输入股票名、拼音、6 位代码或美股代码</li>' : '';
     } else {
       ql.innerHTML = hits.map(function (h, i) {
         return '<li role="option" id="odn-q-' + i + '" aria-selected="' + (i === sel) + '"><a href="' + h.h + '"><b>' + esc(h.t) + '</b><span>' + esc(h.s) + '</span></a></li>';
@@ -212,9 +269,31 @@
     qi.setAttribute('aria-expanded', String(open));
     if (hits.length) qi.setAttribute('aria-activedescendant', 'odn-q-' + sel); else qi.removeAttribute('aria-activedescendant');
   }
-  qi.addEventListener('input', function () { hits = suggest(qi.value); sel = 0; draw(); });
-  qi.addEventListener('focus', function () { if (qi.value) { hits = suggest(qi.value); draw(); } });
+  qi.addEventListener('input', function () {
+    hits = suggest(qi.value);
+    hitsQuery = qi.value;
+    sel = 0;
+    draw();
+    loadStockSearchRows().then(function (rows) {
+      if (!rows || !qi.value.trim()) return;
+      hits = suggest(qi.value);
+      hitsQuery = qi.value;
+      sel = 0;
+      draw();
+    });
+  });
+  qi.addEventListener('focus', function () {
+    if (qi.value) { hits = suggest(qi.value); hitsQuery = qi.value; draw(); }
+    loadStockSearchRows().then(function (rows) {
+      if (!rows || !qi.value.trim()) return;
+      hits = suggest(qi.value);
+      hitsQuery = qi.value;
+      sel = 0;
+      draw();
+    });
+  });
   qi.addEventListener('keydown', function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       if (!hits.length) return;
       e.preventDefault();
@@ -225,8 +304,25 @@
   qi.addEventListener('blur', function () { setTimeout(function () { ql.hidden = true; qi.setAttribute('aria-expanded', 'false'); }, 150); });
   srch.addEventListener('submit', function (e) {
     e.preventDefault();
-    hits = suggest(qi.value);
-    if (hits.length) location.href = hits[Math.min(sel, hits.length - 1)].h; else draw();
+    var query = qi.value;
+    function submitMatches() {
+      var selected = window.StockSearch && typeof window.StockSearch.selectedMatch === 'function'
+        ? window.StockSearch.selectedMatch(hits, query, hitsQuery, sel)
+        : query === hitsQuery && hits[sel] ? hits[sel] : null;
+      if (!selected) {
+        hits = suggest(query);
+        hitsQuery = query;
+        sel = 0;
+        draw();
+        selected = hits[0];
+      }
+      if (selected) location.href = selected.h;
+    }
+    if (/^\d{6}$/.test(query.trim()) || /^US_[A-Z.]{1,6}$/i.test(query.trim())) {
+      submitMatches();
+    } else {
+      loadStockSearchRows().then(submitMatches);
+    }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
