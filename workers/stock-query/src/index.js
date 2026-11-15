@@ -368,9 +368,12 @@ async function indexReplay(request, env, url) {
       if (!failed) {
         return jsonResponse(request, env, { status: 'ready', sym, asof, result: existing.data }, 200, { 'Cache-Control': 'public, max-age=3600' });
       }
-      if (!isPost || replayFailureActive(existing.data)) {
-        return jsonResponse(request, env, { ...existing.data, sym, asof, retry_after_minutes: existing.data.permanent ? null : 30 }, 200, { 'Cache-Control': 'no-store' });
+      if (replayFailureActive(existing.data)) {
+        const left = existing.data.permanent ? null
+          : Math.max(1, Math.ceil((REPLAY_RETRY_AFTER_MS - (Date.now() - Date.parse(existing.data.failed_at))) / 60_000));
+        return jsonResponse(request, env, { ...existing.data, sym, asof, retry_after_minutes: left }, 200, { 'Cache-Control': 'no-store' });
       }
+      /* 过期的临时失败：GET 当作缺失（前端据此 POST 一次），POST 往下走重新 dispatch */
     } else if (existing.status !== 404) {
       throw new Error('replay_store_unavailable');
     }

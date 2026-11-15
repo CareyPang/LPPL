@@ -1083,8 +1083,13 @@ test('POST /replay dispatches index_replay once the stored result is missing and
 
     const failed = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000001', asof: '2015-06-10' } }), env);
     assert.equal(failed.status, 200);
-    assert.equal((await failed.json()).status, 'failed');
+    const failedBody = await failed.json();
+    assert.equal(failedBody.status, 'failed');
+    assert.equal(failedBody.retry_after_minutes, null);
     assert.equal(dispatches.length, 1);
+    const failedGet = await worker.fetch(request('/replay/result?sym=sh000001&asof=2015-06-10'), env);
+    assert.equal(failedGet.status, 200);
+    assert.equal((await failedGet.json()).status, 'failed');
   });
 });
 
@@ -1127,8 +1132,8 @@ test('transient replay failures expire after 30 minutes and are re-dispatched; p
   } }, async () => {
     const env = environment();
     const get = await worker.fetch(request('/replay/result?sym=sh000905&asof=2015-06-12'), env);
-    assert.equal(get.status, 200);
-    assert.equal((await get.json()).status, 'failed');
+    assert.equal(get.status, 404);
+    assert.equal((await get.json()).status, 'missing');
     assert.equal(dispatches.length, 0);
     const post = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000905', asof: '2015-06-12' } }), env);
     assert.equal(post.status, 202);

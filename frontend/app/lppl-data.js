@@ -102,11 +102,10 @@
         const key = S.sym + '@' + asof;
         let R = await replay.result(S.sym, asof);
         if (R.status === 'ready' && R.result) return pack(R.result, S, asof, false, true);
-        const stale = R.status === 'failed' && !R.permanent && !R.retry_after_minutes;
-        if ((R.status === 'missing' || stale) && !replayRequested.has(key)) {
-          replayRequested.add(key);
+        if (R.status === 'missing' && !replayRequested.has(key)) {
           R = await replay.request(S.sym, asof);
           if (R.status === 'ready' && R.result) return pack(R.result, S, asof, false, true);
+          if (R.status === 'pending') replayRequested.add(key);
         }
         if (R.status === 'failed') {
           throw new Error('该日期回看计算失败：' + (R.error || '未知原因') + (R.permanent ? '。请换一个交易日' : '。' + (R.retry_after_minutes || 30) + ' 分钟后可重试'));
