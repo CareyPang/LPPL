@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import worker, { StockQueryState, QueryBudget, normalizeMarket, closedCutoff, fetchJSON } from '../src/index.js';
+import worker, { StockQueryState, QueryBudget, normalizeMarket, closedCutoff, fetchJSON, lastCloseInstant } from '../src/index.js';
 
 const ORIGIN = 'https://careypang.github.io';
 const SHA = 'a'.repeat(40);
@@ -97,6 +97,35 @@ function resultFor(job, extra = {}) {
     requested_at: job.requested_at, ...extra };
 }
 
+function lastCloseDate(now = Date.now()) {
+  return new Date(lastCloseInstant(now) + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function previousDate(value) {
+  return new Date(Date.parse(`${value}T00:00:00Z`) - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function publishedEntry(extra = {}) {
+  const lastClose = lastCloseInstant(Date.now());
+  return { status: 'eligible', asof: new Date(lastClose + 8 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    fit_code_version: 'fit-v1', source_sha: SHA,
+    generated_at: new Date(lastClose + 1000).toISOString(),
+    history_compatible: false, history_asof: null, history_weeks: 0, ...extra };
+}
+
+test('lastCloseInstant uses the latest weekday close in Shanghai time', () => {
+  const cases = [
+    ['Tuesday before close', '2026-11-10T07:29:59Z', '2026-11-09T07:30:00.000Z'],
+    ['Tuesday after close', '2026-11-10T07:30:00Z', '2026-11-10T07:30:00.000Z'],
+    ['Saturday', '2026-11-14T04:00:00Z', '2026-11-13T07:30:00.000Z'],
+    ['Sunday', '2026-11-15T04:00:00Z', '2026-11-13T07:30:00.000Z'],
+    ['Monday morning', '2026-11-09T01:00:00Z', '2026-11-06T07:30:00.000Z'],
+  ];
+  for (const [label, now, expected] of cases) {
+    assert.equal(new Date(lastCloseInstant(Date.parse(now))).toISOString(), expected, label);
+  }
+});
+
 test('CORS, methods and invalid inputs fail before upstream requests', async () => {
   await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
     const env = environment();
@@ -128,6 +157,151 @@ test('missing or broken coordination and secret fail closed', async () => {
       assert.equal(response.status, 503);
       assert.match((await response.json()).error_code, /UNAVAILABLE/);
     }
+  });
+});
+
+test('fresh published current result is returned before deduplication, budget or dispatch', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry();
+    server.outputs.set('stock/index.json', {
+      '600519': entry,
+      '600520': { status: 'eligible', payload: 'x'.repeat(100_000) },
+    });
+    const env = environment();
+    const response = await query(env);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      schema_version: 'stock_query_v1', queued: false, cached: true, deduped: false,
+      code: '600519', mode: 'current', history_weeks: 0, asof: entry.asof,
+      generated_at: entry.generated_at,
+      job_id: null, source_sha: SHA, phase: 'current_ready', current_ready: true,
+      history_ready: false, reuse_reason: 'published_after_last_close',
+    });
+    assert.equal(server.dispatches.length, 0);
+    assert.equal(env.QUERY_BUDGET.storage.get('global')?.values.size ?? 0, 0);
+    assert.equal(server.calls.filter(url => url.includes('/contents/stock/index.json')).length, 1);
+    const stored = await env.STOCK_JOBS.storage.get('600519').get('published_stock_index');
+    assert.deepEqual(Object.keys(stored).sort(), ['at', 'value']);
+    assert.deepEqual(stored.value, entry);
+    assert.equal(Object.hasOwn(stored.value, '600520'), false);
+  });
+});
+
+test('published result before the last close is recomputed', async () => {
+  await withUpstream(upstream(), async server => {
+    server.outputs.set('stock/index.json', { '600519': publishedEntry({
+      generated_at: new Date(lastCloseInstant(Date.now()) - 1).toISOString(),
+    }) });
+    const response = await query(environment());
+    assert.equal(response.status, 202);
+    assert.equal(server.dispatches.length, 1);
+  });
+});
+
+test('nightly published result without a job id is reused with null job_id', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry();
+    delete entry.job_id;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).job_id, null);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
+test('nightly result older than the last-close date dispatches despite a fresh generated_at', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry();
+    entry.asof = previousDate(entry.asof);
+    delete entry.job_id;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 202);
+    assert.equal(server.dispatches.length, 1);
+  });
+});
+
+test('nightly result on the last-close date is reusable without a job id', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry();
+    delete entry.job_id;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).cached, true);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
+test('query result produced after close may reuse an older asof', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry({ job_id: '00000000-0000-4000-8000-000000000001' });
+    entry.asof = previousDate(entry.asof);
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment());
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).job_id, entry.job_id);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
+test('missing, unreadable or malformed published index falls through to dispatch', async () => {
+  for (const [label, response] of [
+    ['404', new Response(null, { status: 404 })],
+    ['500', new Response(null, { status: 500 })],
+    ['malformed', new Response('not-json', { status: 200 })],
+  ]) {
+    const server = upstream({ handle: async url =>
+      url.includes('/contents/stock/index.json') ? response : undefined });
+    await withUpstream(server, async () => {
+      const env = environment();
+      assert.equal((await query(env)).status, 202, label);
+      assert.equal(server.dispatches.length, 1, label);
+      assert.equal((await env.STOCK_JOBS.storage.get('600519').get('published_stock_index')).value, null);
+    });
+  }
+});
+
+test('published history requires sufficient weeks and matching current asof', async () => {
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry({ history_compatible: true, history_weeks: 26 });
+    entry.history_asof = entry.asof;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment(), { code: '600519', mode: 'history', history_weeks: 104 });
+    assert.equal(response.status, 202);
+    assert.equal(server.dispatches.length, 1);
+  });
+  await withUpstream(upstream(), async server => {
+    const entry = publishedEntry({ history_compatible: true, history_weeks: 104 });
+    entry.history_asof = entry.asof;
+    server.outputs.set('stock/index.json', { '600519': entry });
+    const response = await query(environment(), { code: '600519', mode: 'history', history_weeks: 26 });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).history_weeks, 104);
+    assert.equal(server.dispatches.length, 0);
+  });
+});
+
+test('active history upgrades only to a larger requested range', async () => {
+  await withUpstream(upstream(), async server => {
+    const env = environment();
+    const first = await (await query(env, { code: '600519', mode: 'history', history_weeks: 26 })).json();
+    const larger = await (await query(env, { code: '600519', mode: 'history', history_weeks: 104 })).json();
+    assert.notEqual(larger.job_id, first.job_id);
+    assert.equal(larger.history_weeks, 104);
+    const storage = env.STOCK_JOBS.storage.get('600519');
+    assert.equal((await storage.get('active:history')), larger.job_id);
+    assert.ok(await storage.get(`job:${first.job_id}`), 'the smaller job remains queryable');
+    assert.equal(server.dispatches.length, 2);
+  });
+  await withUpstream(upstream(), async server => {
+    const env = environment();
+    const first = await (await query(env, { code: '600519', mode: 'history', history_weeks: 104 })).json();
+    const smaller = await (await query(env, { code: '600519', mode: 'history', history_weeks: 26 })).json();
+    assert.equal(smaller.job_id, first.job_id);
+    assert.equal(smaller.deduped, true);
+    assert.equal(server.dispatches.length, 1);
   });
 });
 

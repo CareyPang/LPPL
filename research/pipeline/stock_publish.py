@@ -107,7 +107,7 @@ def merge_results(stock_dir: Path, result_dir: Path, codes: list[str], *, varian
             value = read_record(path)
             if value.get("code", code) != code:
                 raise ValueError("result code does not match its filename")
-            if any(key in value for key in ("job_id", "requested_at", "source_sha")):
+            if value.get("job_id") is not None or value.get("requested_at") is not None:
                 job = cli_job(value.get("job_id"), value.get("requested_at"), value.get("source_sha"))
                 expected = "history" if suffix == "_history" else "current"
                 if suffix != "_error" and value.get("mode") != expected:
@@ -160,6 +160,8 @@ def merge_results(stock_dir: Path, result_dir: Path, codes: list[str], *, varian
             "history_weeks": len(frames),
             "history_compatible": bool(history and current),
             "history_asof": frames[-1].get("asof") if frames else None,
+            "current_generated_at": current.get("generated_at") if current else None,
+            "history_generated_at": history.get("generated_at") if history else None,
             "generated_at": datetime.now(UTC).isoformat(),
             "run_url": run_url,
             "status": (str(meta.get("status") or "success") if current
