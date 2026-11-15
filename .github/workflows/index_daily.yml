@@ -96,7 +96,22 @@ jobs:
             git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit -m "index: 发布 6 指数 LPPLS ${ASOF}"
-            git push origin HEAD:stock-results
+            pushed=false
+            for attempt in 1 2 3; do
+              echo "stock-results push attempt ${attempt}/3"
+              if git push origin HEAD:stock-results; then
+                pushed=true
+                break
+              fi
+              if (( attempt < 3 )); then
+                git fetch --no-tags origin stock-results
+                git rebase origin/stock-results
+              fi
+            done
+            if [[ "$pushed" != true ]]; then
+              echo "Failed to publish index snapshots after 3 attempts" >&2
+              exit 1
+            fi
           fi
           gh workflow run pages.yml --ref main
       - name: Upload index artifacts
