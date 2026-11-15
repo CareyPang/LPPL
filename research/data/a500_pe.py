@@ -128,19 +128,25 @@ def fetch_recent(code: str, page_size: int = 30) -> pd.DataFrame:
     ) from last_error
 
 
-def fetch_recent_many(codes: list[str]) -> pd.DataFrame:
+def fetch_recent_many(codes: list[str]) -> tuple[pd.DataFrame, int]:
     frames = []
+    failed_count = 0
     for index, code in enumerate(codes):
-        frame = fetch_recent(code)
-        if not frame.empty:
-            frames.append(frame)
+        try:
+            frame = fetch_recent(code)
+            if not frame.empty:
+                frames.append(frame)
+        except Exception:
+            failed_count += 1
         if index + 1 < len(codes):
             time.sleep(0.4)
     if not frames:
-        return pd.DataFrame(
+        rows = pd.DataFrame(
             columns=["SECURITY_CODE", "TRADE_DATE", "TOTAL_MARKET_CAP", "PE_TTM"]
         )
-    return pd.concat(frames, ignore_index=True)
+    else:
+        rows = pd.concat(frames, ignore_index=True)
+    return rows, failed_count
 
 
 def _numeric(values: pd.Series) -> pd.Series:

@@ -330,11 +330,12 @@ def _add_a500(
         codes = a500_pe.constituents()
         if not codes:
             raise ValueError("未能读取中证A500成分股")
-        rows = a500_pe.fetch_recent_many(codes)
+        rows, fetch_failed = a500_pe.fetch_recent_many(codes)
         updated = a500_pe.update(history, len(codes), rows)
         if output_path is not None:
             a500_pe.write_history(updated, output_path)
         result = _a500_payload(ak, pbn, updated)
+        result["fetch_failed"] = int(fetch_failed)
         payload["a500"] = result
     except Exception as exc:
         payload["a500"] = None

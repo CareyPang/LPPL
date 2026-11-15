@@ -131,7 +131,9 @@ def test_a500_failure_does_not_change_hs300_result(monkeypatch, tmp_path):
     monkeypatch.setattr(bottom_signal.a500_pe, "load_history", lambda path: history)
     monkeypatch.setattr(bottom_signal.a500_pe, "constituents", lambda: ["000001"])
     monkeypatch.setattr(
-        bottom_signal.a500_pe, "fetch_recent_many", lambda codes: pd.DataFrame()
+        bottom_signal.a500_pe,
+        "fetch_recent_many",
+        lambda codes: (pd.DataFrame(), 0),
     )
     monkeypatch.setattr(
         bottom_signal.a500_pe, "update", lambda hist, n_constituents, rows: history
@@ -147,6 +149,36 @@ def test_a500_failure_does_not_change_hs300_result(monkeypatch, tmp_path):
     assert result["a500"] is None
     assert result["a500_error"] == "RuntimeError: A500 source unavailable"
     assert pd.read_csv(history_path)["date"].tolist() == ["2026-11-13"]
+
+
+def test_a500_payload_reports_constituent_fetch_failures(monkeypatch, tmp_path):
+    ebs, pbn, _ = _frames()
+    fake_ak = SimpleNamespace(
+        stock_a_below_net_asset_statistics=lambda symbol: pbn,
+        stock_ebs_lg=lambda: ebs,
+    )
+    history = pd.DataFrame(
+        {"n": [1], "mcap": [100.0], "earn": [10.0], "pe_ttm": [10.0]},
+        index=pd.DatetimeIndex(["2026-11-13"], name="date"),
+    )
+    monkeypatch.setitem(sys.modules, "akshare", fake_ak)
+    monkeypatch.setattr(bottom_signal.a500_pe, "load_history", lambda path: history)
+    monkeypatch.setattr(bottom_signal.a500_pe, "constituents", lambda: ["000001"])
+    monkeypatch.setattr(
+        bottom_signal.a500_pe,
+        "fetch_recent_many",
+        lambda codes: (pd.DataFrame(), 2),
+    )
+    monkeypatch.setattr(
+        bottom_signal.a500_pe, "update", lambda hist, n_constituents, rows: history
+    )
+    monkeypatch.setattr(
+        bottom_signal, "_a500_payload", lambda ak, pbn, history: {"sources": {}}
+    )
+
+    result = bottom_signal.fetch_live(a500_out=tmp_path / "a500_pe_hist.csv")
+
+    assert result["a500"]["fetch_failed"] == 2
 
 
 def test_a500_uses_renamed_akshare_functions_when_needed(monkeypatch):

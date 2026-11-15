@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from research.data import a500_pe
 
@@ -120,6 +121,49 @@ def test_fetch_recent_retries_with_required_params_and_timeout(monkeypatch):
     }
     assert calls[-1][3] == 30
     assert result.loc[0, "SECURITY_CODE"] == "000001"
+
+
+@pytest.mark.parametrize("n_failures", [1, 2])
+def test_fetch_recent_many_skips_failures_and_update_applies_coverage_gate(
+    monkeypatch, n_failures
+):
+    codes = [f"{code:06}" for code in range(1, 21)]
+    failed_codes = set(codes[:n_failures])
+
+    def fetch(code):
+        if code in failed_codes:
+            raise RuntimeError("synthetic fetch failure")
+        return pd.DataFrame(
+            [
+                {
+                    "SECURITY_CODE": code,
+                    "TRADE_DATE": "2026-11-16",
+                    "TOTAL_MARKET_CAP": 100,
+                    "PE_TTM": 10,
+                }
+            ]
+        )
+
+    monkeypatch.setattr(a500_pe, "fetch_recent", fetch)
+    monkeypatch.setattr(a500_pe.time, "sleep", lambda seconds: None)
+
+    rows, failed_count = a500_pe.fetch_recent_many(codes)
+    history = pd.DataFrame(
+        {"n": [20], "mcap": [2000.0], "earn": [200.0], "pe_ttm": [10.0]},
+        index=pd.DatetimeIndex(["2026-11-13"], name="date"),
+    )
+    updated = a500_pe.update(history, n_constituents=20, rows=rows)
+
+    assert failed_count == n_failures
+    assert len(rows) == 20 - n_failures
+    if n_failures == 1:
+        assert updated.index.strftime("%Y-%m-%d").tolist() == [
+            "2026-11-13",
+            "2026-11-16",
+        ]
+        assert updated.loc["2026-11-16", "n"] == 19
+    else:
+        assert updated.index.strftime("%Y-%m-%d").tolist() == ["2026-11-13"]
 
 
 def test_load_history_uses_baseline_when_incremental_file_is_missing(monkeypatch, tmp_path):
