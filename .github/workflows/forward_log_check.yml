@@ -20,7 +20,7 @@ jobs:
         run: python -m research.pipeline.forward_log check --max-stale 5 | tee forward_log_check.json
       - name: Precision review of matured records (top side)
         if: always()
-        run: python -m research.pipeline.forward_log precision || true
+        run: python -m research.pipeline.forward_log precision --refresh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

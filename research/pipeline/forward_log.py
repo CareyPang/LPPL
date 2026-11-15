@@ -157,7 +157,7 @@ def _alarm_matrix(led: pd.DataFrame, cal: pd.DatetimeIndex, mature_end: int, q: 
     return gpos, {k: np.array([d[k] for _, d in recs]) >= q for k in [f"{st}__{sc}" for sc in SCALES for st in SETS]}
 
 
-def precision(since: str = "2026-01-01") -> pd.DataFrame:
+def precision(since: str = "2026-01-01", refresh: bool = False) -> pd.DataFrame:
     """Phase 4 四指标落盘（顶部侧 T-top / P-top；底部侧契约里 state_p/thrust_p 为 null，无可评指标）：
     对成熟记录（asof ≤ 最新日 − H）的首报（前 GAP 日无报警），用 research.eval.precision_baseline.episodes 的同一定义算
     提前量 lead、命中 hit（H 日内有合格顶）、miss_up、avoid、fwd120；顶标签用最新行情重算（run_top.build）。写 forward_log/precision_<date>.csv。"""
@@ -169,7 +169,7 @@ def precision(since: str = "2026-01-01") -> pd.DataFrame:
     led = led[(led["asof"] >= since) & led["ok"]]
     rows = []
     for s, g in led.groupby("symbol"):
-        ohlc = cache.load(s, auto_refresh=False)
+        ohlc = cache.load(s, auto_refresh=refresh)
         px = ohlc.set_index(pd.to_datetime(ohlc["date"]))["close"] if "date" in ohlc.columns else ohlc["close"]
         close = px.to_numpy(float)
         cal = px.index
@@ -196,6 +196,7 @@ def main() -> None:
     ap.add_argument("cmd", choices=["seal", "verify", "review", "check", "precision"])
     ap.add_argument("--since", default="2026-01-01")
     ap.add_argument("--max-stale", type=int, default=5, help="最近一次封存距今工作日数上限，超过即判停更（exit 2）")
+    ap.add_argument("--refresh", action="store_true", help="precision：本地无价格缓存时联网取数（CI 全新 runner 需要；默认只读缓存）")
     a = ap.parse_args()
     if a.cmd == "seal":
         rows = seal()
@@ -208,7 +209,7 @@ def main() -> None:
         if c["stale"]:
             raise SystemExit(2)
     elif a.cmd == "precision":
-        precision(a.since)
+        precision(a.since, refresh=a.refresh)
     elif a.cmd == "verify":
         v = verify()
         print(v[["asof", "symbol", "ok"]].to_string(index=False) if len(v) else "ledger 为空")
