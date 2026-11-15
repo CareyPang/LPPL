@@ -2,7 +2,7 @@
    只负责画法，不含任何数据或模型计算。输入全部来自 window.LPPL 取回的静态 JSON。 */
 (function (G) {
   'use strict';
-  const WARN = '#FFB800', REAL = '#4DA3FF';
+  const WARN = '#9A5B00', REAL = '#1F5FD6';
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; };
   const CPSCN = {
     WARN, REAL, rgba,

@@ -4,27 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>临界点 · 个股</title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="description" content="输入六位代码查看个股日线与逃顶、抄底结构，支持本地自选。">
+<meta name="theme-color" content="#1f5fd6">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="临界点">
+<meta property="og:title" content="临界点 · 个股">
+<meta property="og:description" content="输入六位代码查看个股日线与逃顶、抄底结构，支持本地自选。">
+<meta name="twitter:card" content="summary">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #05131A;
-      --bg-2: #0A1E27;
-      --glass: rgba(255, 255, 255, .035);
-      --glass-2: rgba(255, 255, 255, .06);
-      --line: rgba(159, 227, 224, .14);
-      --line-2: rgba(159, 227, 224, .26);
-      --ink: #EAF3F4;
-      --ink-2: rgba(234, 243, 244, .74);
-      --ink-3: rgba(234, 243, 244, .52);
-      --cyan: #9FE3E0;
-      --amber: #F5B700;
-      --warn: #FFB259;
-      --up: #FF6B73;
-      --down: #3DD6B5;
-      --real: #9FE3E0;
-      --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+      --bg: #F6F8FB;
+      --bg-2: #F6F8FB;
+      --glass: #FFFFFF;
+      --glass-2: #F0F3FA;
+      --line: #E3E7EE;
+      --line-2: #C9D1DE;
+      --ink: #131722;
+      --ink-2: #4C525E;
+      --ink-3: #6A6D78;
+      --cyan: #1F5FD6;
+      --amber: #9A5B00;
+      --warn: #9A5B00;
+      --up: #D6303A;
+      --down: #11845A;
+      --real: #1F5FD6;
+      --serif: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", system-ui, sans-serif;
       --f-u: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", "Noto Sans CJK SC", system-ui, sans-serif;
       --f-m: "JetBrains Mono", "Cascadia Mono", Consolas, "Noto Sans SC", "Microsoft YaHei UI", monospace;
       --r: 16px;
@@ -34,9 +41,7 @@
     html, body { margin: 0; }
     body {
       background:
-        radial-gradient(1200px 520px at 78% -10%, rgba(159, 227, 224, .12), transparent 60%),
-        radial-gradient(900px 600px at -10% 10%, rgba(245, 183, 0, .05), transparent 60%),
-        linear-gradient(180deg, var(--bg-2), var(--bg) 640px);
+        var(--bg);
       background-color: var(--bg);
       color: var(--ink);
       font: 400 15px/1.7 var(--f-u);
@@ -51,7 +56,7 @@
     [hidden] { display: none !important; }
 
     .bar { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      background: rgba(5, 19, 26, .72); border-bottom: 1px solid var(--line); }
+      background: rgba(255, 255, 255, .92); border-bottom: 1px solid var(--line); }
     .bar-in { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: var(--s5); padding: 14px var(--s5); flex-wrap: wrap; }
     .brand { display: flex; align-items: center; gap: 10px; font: 600 17px/1 var(--serif); letter-spacing: .12em; color: var(--ink); }
     .brand .mark { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--cyan); position: relative; }
@@ -71,14 +76,30 @@
     .search label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font: 500 20px var(--f-m); letter-spacing: .18em; padding: 8px 0; }
     .search input::placeholder { color: var(--ink-3); letter-spacing: .06em; font: 400 15px var(--f-u); }
-    .search button { border: 0; border-radius: 999px; background: var(--cyan); color: #05222A; font-weight: 600; padding: 12px 28px; cursor: pointer; transition: transform .15s, background .2s; }
-    .search button:hover { background: #C3F1EF; transform: translateY(-1px); }
+    .search button { border: 0; border-radius: 999px; background: var(--cyan); color: #FFFFFF; font-weight: 600; padding: 12px 28px; cursor: pointer; transition: transform .15s, background .2s; }
+    .search button:hover { background: #1A51B8; transform: translateY(-1px); }
     .name-hint { min-height: 26px; margin: var(--s3) 0 0 22px; font-size: 14px; color: var(--ink-2); }
     .name-hint b { color: var(--ink); font-family: var(--serif); font-size: 16px; margin-right: 8px; }
     .chips { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s3); }
     .chip { border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
     .chip:hover { border-color: var(--cyan); color: var(--ink); }
     .chip .m { color: var(--ink-3); margin-left: 6px; font-size: 12px; }
+    .watch-controls { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+    .watch-toggle, .watch-remove { border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); color: var(--ink-2); padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .watch-toggle:hover, .watch-remove:hover { border-color: var(--cyan); color: var(--ink); }
+    .watch-toggle[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+    .watch-toggle:disabled { opacity: .5; cursor: not-allowed; }
+    .watch-section { margin-top: var(--s3); }
+    .watch-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--s2); }
+    .watch-head h2 { margin: 0; font-size: 18px; }
+    .watch-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 6px; }
+    .watch-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s2); min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); }
+    .watch-open { all: unset; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; min-width: 0; cursor: pointer; overflow-wrap: anywhere; }
+    .watch-open:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 6px; }
+    .watch-open b { color: var(--ink); font: 500 15px var(--serif); }
+    .watch-code, .watch-asof, .watch-empty { color: var(--ink-3); font-size: 12px; }
+    .watch-statuses { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .watch-statuses .state-pill { font-size: 12px; }
     .note { font-size: 13px; color: var(--ink-3); margin: var(--s4) 0 0; }
     .status { color: var(--cyan); font-size: 14px; margin: var(--s3) 0 0; min-height: 1.7em; }
     .status:empty { display: none; }
@@ -89,7 +110,7 @@
     .stock-head h2 { font: 600 clamp(28px, 3.4vw, 40px)/1.15 var(--serif); letter-spacing: .06em; margin: 0; }
     .stock-head .code { font: 500 18px var(--f-m); color: var(--ink-2); letter-spacing: .08em; }
     .stock-meta { width: 100%; font-size: 13px; color: var(--ink-3); }
-    .ev-pill { margin-left: auto; font-size: 12px; color: var(--warn); border: 1px solid rgba(255, 178, 89, .5); border-radius: 999px; padding: 3px 12px; }
+    .ev-pill { margin-left: auto; font-size: 12px; color: var(--warn); border: 1px solid rgba(154, 91, 0, .45); border-radius: 999px; padding: 3px 12px; }
 
     .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); margin-top: var(--s5); }
     .sum-card { border: 1px solid var(--line); border-radius: var(--r); background: var(--glass); padding: var(--s5); min-width: 0; position: relative; overflow: hidden; }
@@ -97,12 +118,12 @@
     .sum-card.top { --accent: var(--amber); }
     .sum-card.dip { --accent: var(--cyan); }
     .sum-card h3 { font: 600 20px var(--serif); margin: 0 0 var(--s2); display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
-    .state-pill { font: 500 12px var(--f-u); border-radius: 999px; padding: 2px 10px; background: rgba(255, 255, 255, .08); color: var(--ink-2); letter-spacing: 0; }
-    .state-pill.hot { background: rgba(245, 183, 0, .16); color: var(--amber); }
-    .state-pill.on { background: rgba(159, 227, 224, .14); color: var(--cyan); }
+    .state-pill { font: 500 12px var(--f-u); border-radius: 999px; padding: 2px 10px; background: #EEF1F6; color: var(--ink-2); letter-spacing: 0; }
+    .state-pill.hot { background: #FDF3E1; color: var(--amber); }
+    .state-pill.on { background: #E8EFFC; color: var(--cyan); }
     .sum-card p { margin: 0 0 var(--s4); color: var(--ink-2); font-size: 15px; }
     .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
-    .tile { background: rgba(0, 0, 0, .18); border-radius: 12px; padding: var(--s3); min-width: 0; }
+    .tile { background: #F6F8FB; border-radius: 12px; padding: var(--s3); min-width: 0; }
     .tile small { display: block; font-size: 12px; color: var(--ink-3); line-height: 1.4; }
     .tile b { display: block; font-size: 22px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
     .tile .sub { font-size: 12px; color: var(--ink-3); }
@@ -123,12 +144,12 @@
     .scroll { max-width: 100%; overflow-x: auto; }
     .table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; white-space: nowrap; }
-    .table th { font: 500 12px var(--f-u); color: var(--ink-3); background: rgba(255, 255, 255, .02); }
-    .table tbody tr:hover { background: rgba(159, 227, 224, .04); }
+    .table th { font: 500 12px var(--f-u); color: var(--ink-3); background: #F6F8FB; }
+    .table tbody tr:hover { background: #F3F6FC; }
     .range { color: var(--amber); }
     .disclaimer, .dip-disclaimer { font-size: 12.5px; color: var(--ink-3); margin: var(--s3) 0 0; }
-    .badge { display: inline-block; border: 1px solid rgba(255, 178, 89, .55); color: var(--warn); border-radius: 999px; padding: 2px 10px; margin: 0 var(--s2) var(--s2) 0; font-size: 12px; }
-    .plot { height: 300px; width: 100%; display: block; background: rgba(0, 0, 0, .18); border-radius: 12px; margin-top: var(--s3); }
+    .badge { display: inline-block; border: 1px solid rgba(154, 91, 0, .45); color: var(--warn); border-radius: 999px; padding: 2px 10px; margin: 0 var(--s2) var(--s2) 0; font-size: 12px; }
+    .plot { height: 300px; width: 100%; display: block; background: #F6F8FB; border-radius: 12px; margin-top: var(--s3); }
     .dip-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--s4); }
     .dip-values > div { min-width: 0; border-bottom: 1px solid var(--line); padding: 10px 0; overflow-wrap: anywhere; }
     .dip-label { display: block; color: var(--ink-3); font-size: 12.5px; }
@@ -141,10 +162,10 @@
     .dip-quantile { table-layout: fixed; min-width: 640px; }
     .dip-quantile th, .dip-quantile td { white-space: normal; padding: 10px 8px; }
     .dip-quantile th:first-child, .dip-quantile td:first-child { width: 132px; font-family: var(--f-u); }
-    .scroll { scrollbar-color: rgba(159, 227, 224, .3) transparent; scrollbar-width: thin; }
+    .scroll { scrollbar-color: rgba(31, 95, 214, .3) transparent; scrollbar-width: thin; }
     .dip-stale { color: var(--warn); font-size: 12.5px; }
     .env-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
-    .env-item { border: 1px solid var(--line); border-radius: 12px; background: rgba(0, 0, 0, .14); padding: var(--s4); min-width: 0; }
+    .env-item { border: 1px solid var(--line); border-radius: 12px; background: #F6F8FB; padding: var(--s4); min-width: 0; }
     .env-item b { font-size: 15px; }
     .env-item small { display: block; color: var(--ink-3); font-size: 12px; margin-top: var(--s2); }
     .anomalies { padding-left: 20px; font-size: 13px; color: var(--ink-2); margin: var(--s1) 0 0; }
@@ -166,51 +187,109 @@
       .card, .dip-card, .sum-card { padding: var(--s4); }
       .ev-pill { margin-left: 0; }
     }
+    [hidden] { display: none !important; }
+    .task-tools, .stages, .recent, .periods { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .task-tools button, .recent button, .periods button { min-height: 44px; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--glass); cursor: pointer; }
+    .task-tools button:disabled { opacity: .5; cursor: wait; }
+    .periods button[aria-pressed="true"], .recent button[aria-current="true"] { border-color: var(--cyan); background: #E8EFFC; }
+    .stages span { padding: 5px 10px; border-radius: 8px; background: var(--glass); font-size: 12px; }
+    .market-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .market-header h2 { margin: 0; }
+    .market-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+    .market-stats small { display: block; color: var(--ink-3); }
+    .market-stats strong { font: 500 20px var(--f-m); }
+    .market-canvas { display: block; width: 100%; height: 340px; touch-action: pan-y; }
+    .date-control { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+    .date-control input { flex: 1; min-width: 0; accent-color: var(--cyan); }
+    .quote-selected-date { margin: 12px 0 -8px; color: var(--ink-3); font: 12px var(--f-m); }
+    .quote-readout, .visibility-note { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+    .pending-result { border: 1px solid var(--line); padding: 16px; border-radius: var(--r); color: var(--ink-2); }
+    @media (max-width: 560px) {
+      .market-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .market-canvas { height: 300px; }
+      .task-tools button { flex: 1 1 130px; }
+    }
   </style>
   <script src="app/lppl-data.js"></script>
+  <script src="app/stock-session.js"></script>
+  <script src="app/stock-visibility.js"></script>
+  <script src="app/stock-view.js"></script>
+  <script src="app/stock-watchlist.js"></script>
 </head>
 <body>
-  <header class="bar">
-    <div class="bar-in">
-      <a class="brand" href="home.html"><span class="mark" aria-hidden="true"></span>临界点</a>
-      <nav class="nav" aria-label="页面导航">
-        <a href="home.html">首页</a>
-        <a href="index.html">终端</a>
-        <a href="backtest.html">回测</a>
-        <a href="market.html">市场</a>
-        <a href="nt.html">国家队ETF</a>
-        <a href="stock.html" aria-current="page">个股</a>
-        <a href="lab/guide.html">用户指南</a>
-      </nav>
-      <span class="asof" id="asof">—</span>
-    </div>
-  </header>
+  <span class="asof" id="asof" data-od-asof>—</span>
+  <script src="app/od-nav.js" data-section="stock"></script>
 
   <main>
     <section class="hero">
       <div class="eyebrow">Stock · 逃顶 / 抄底</div>
       <h1>个股风险与深跌结构</h1>
-      <p class="lead">输入 A 股六位代码，同时看两件事：现在有没有泡沫风险窗口；如果已经大跌，历史上类似的股票后来怎样。</p>
+      <p class="lead">输入 A 股六位代码，先查看日线行情和已有分析；也可查看美股观察清单的预计算结果。A 股当前分析在后台独立更新，历史回放由你按需启动。</p>
       <form class="search" id="search">
-        <label for="code">六位股票代码</label>
-        <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入六位代码，例如 301196" required>
-        <button type="submit">分析</button>
+        <label for="code">股票代码</label>
+        <input id="code" inputmode="text" autocomplete="off" maxlength="10" placeholder="输入六位代码或美股代码，例如 301196 或 NVDA" required>
+        <button type="submit">查看股票</button>
       </form>
+      <div class="watch-controls">
+        <button type="button" class="watch-toggle" id="watch-toggle" aria-pressed="false" disabled>加入自选</button>
+        <span class="muted">仅保存在此浏览器，最多 50 只</span>
+      </div>
+      <section class="watch-section" id="watch-section" hidden aria-label="本地自选股票">
+        <div class="watch-head"><h2>本地自选</h2><span class="muted">只读已发布结果</span></div>
+        <ul class="watch-list" id="watch-list"></ul>
+      </section>
       <div class="name-hint" id="name-hint" aria-live="polite"></div>
       <div class="chips" id="chips"></div>
       <p id="query-status" class="status" role="status"></p>
+      <div id="recent-stocks" class="recent" aria-label="最近查看和进行中的任务"></div>
+      <div id="task-stages" class="stages" hidden aria-live="polite">
+        <span id="market-stage"></span><span id="current-stage"></span><span id="history-stage"></span>
+      </div>
+      <div class="task-tools">
+        <button id="refresh-current" type="button" disabled>更新当前分析</button>
+        <button id="compute-history" type="button" disabled>生成历史回放</button>
+        <button id="resume-jobs" type="button" hidden>继续查看任务</button>
+      </div>
       <section id="stock-events" class="card" hidden aria-labelledby="stock-events-title">
         <h2 id="stock-events-title">近期事件</h2><div id="stock-events-body"></div>
       </section>
       <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
     </section>
 
+    <section class="card" id="market-panel" hidden aria-label="独立日线行情">
+      <div class="market-header">
+        <div><h2 id="market-name">正在读取行情</h2><p class="note" id="market-date"></p></div>
+        <div class="periods" aria-label="图表显示范围">
+          <button type="button" data-days="20" aria-pressed="false">1个月</button>
+          <button type="button" data-days="60" aria-pressed="false">3个月</button>
+          <button type="button" data-days="120" aria-pressed="true">6个月</button>
+          <button type="button" data-days="250" aria-pressed="false">1年</button>
+        </div>
+      </div>
+      <p id="quote-selected-date" class="quote-selected-date" hidden></p>
+      <div class="market-stats" id="market-stats" hidden>
+        <div><small>收盘</small><strong id="quote-close">—</strong></div>
+        <div><small>开盘</small><strong id="quote-open">—</strong></div>
+        <div><small>最高</small><strong id="quote-high">—</strong></div>
+        <div><small>最低</small><strong id="quote-low">—</strong></div>
+      </div>
+      <p id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
+      <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量" hidden></canvas>
+      <div class="date-control" id="date-control" hidden>
+        <label for="quote-date">查看日期</label><input type="range" id="quote-date" min="0" max="0" value="0" step="1">
+      </div>
+      <p id="quote-readout" class="quote-readout" aria-live="polite"></p>
+      <p class="note">红涨绿跌；行情为已收盘、未复权日线。成交量保留供应商原始单位；模型历史使用后复权数据，价格刻度分别显示。</p>
+    </section>
+    <div id="analysis-pending" class="pending-result" hidden>当前分析在后台更新，行情和已有结果可继续查看。</div>
+
     <section id="results" hidden>
       <div class="stock-head">
         <h2 id="stock-name">—</h2>
         <span class="code" id="stock-code"></span>
-        <span class="ev-pill">研究候选 · 未经样本外检验</span>
+        <span class="ev-pill" id="stock-evidence">证据状态未知</span>
         <div class="stock-meta" id="stock-meta"></div>
+        <p class="visibility-note" id="first-visible-note"></p>
       </div>
       <div class="summary" id="summary"></div>
 
@@ -231,10 +310,10 @@
             <div id="risk"></div>
           </section>
           <section class="card wide">
-            <h3>104 周历史情景区间</h3>
+            <h3>历史情景回放 · 按需生成</h3>
             <div id="history-note" class="disclaimer"></div>
             <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
-            <p class="disclaimer">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
+            <p class="disclaimer" id="price-note">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
           </section>
         </div>
       </section>
@@ -277,6 +356,7 @@
         dev_only: '仅开发段',
         dev_failed: '开发段未通过',
         none: '无证据',
+        research_candidate: '研究候选',
       })[evidence] || evidence || '无证据';
     const pct = (value) =>
       value == null || !Number.isFinite(Number(value))
@@ -441,7 +521,7 @@
       const low = Math.min(...closes);
       const high = Math.max(...closes);
       const y = (value) => height - 8 - (value - low) / (high - low || 1) * (height - 16);
-      context.strokeStyle = 'rgba(159,227,224,.08)';
+      context.strokeStyle = '#EEF1F6';
       for (let index = 1; index < 4; index += 1) {
         context.beginPath();
         context.moveTo(0, height * index / 4);
@@ -455,12 +535,12 @@
               continue;
             }
             const left = frame.asof < scenario.q20_date ? scenario.q20_date : frame.asof;
-            context.fillStyle = 'rgba(245,183,0,.16)';
+            context.fillStyle = 'rgba(154,91,0,.18)';
             context.fillRect(x(left), 4, Math.max(1, x(scenario.q80_date) - x(left)), 8);
           }
         }
       }
-      context.strokeStyle = '#9FE3E0';
+      context.strokeStyle = '#1F5FD6';
       context.lineWidth = 1.5;
       context.beginPath();
       closes.forEach((close, index) => {
@@ -592,10 +672,13 @@
       }).join('');
     }
 
-    async function renderDip(d) {
+    async function renderDip(d, record) {
       const host = $('dip-panel');
       if (!d) {
-        host.innerHTML = '<p class="muted">暂无抄底面板结果。</p><p class="dip-disclaimer">历史分位，不是预测。</p>';
+        const note = record?.symbol?.startsWith('US_')
+          ? (record.dip_note || '美股暂无抄底事件库')
+          : '暂无抄底面板结果。';
+        host.innerHTML = `<p class="muted">${esc(note)}</p>`;
         return;
       }
       const state = d.state || {};
@@ -798,30 +881,62 @@
     }
 
     let nameIndex = {};
-    const code6 = (symbol) => String(symbol || '').replace(/^[a-z]{2}/i, '');
+    let usIndex = [];
+    let usIndexPromise = Promise.resolve();
+    const code6 = (symbol) => String(symbol || '').startsWith('US_')
+      ? String(symbol).slice(3)
+      : String(symbol || '').replace(/^[a-z]{2}/i, '');
+    const normalizeCode = (value) => {
+      const code = String(value || '').trim();
+      if (/^\d{6}$/.test(code)) return code;
+      const ticker = code.replace(/^US_/i, '');
+      return /^[A-Z.]{1,6}$/i.test(ticker) ? `US_${ticker.toUpperCase()}` : null;
+    };
+    const usEntry = (code) => usIndex.find((entry) => entry.ticker === code.slice(3));
     const realName = (name, symbol) =>
       name && !/^(sh|sz|bj)?\d{6}$/i.test(String(name)) ? String(name) : '';
     const stockName = (d) =>
-      realName(d.name, d.symbol) || realName(nameIndex[code6(d.symbol)]?.name) || '';
+      realName(d.name, d.symbol)
+      || realName(nameIndex[code6(d.symbol)]?.name)
+      || (d.symbol?.startsWith('US_') ? usEntry(d.symbol)?.name : '');
     const signCls = (value) =>
       value == null || !Number.isFinite(Number(value)) || Number(value) === 0 ? '' : Number(value) > 0 ? 'pos' : 'neg';
     const tile = (label, value, cls = '', sub = '') =>
       `<div class="tile"><small>${esc(label)}</small><b class="${cls}">${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`;
+    const stockEvidence = (d) => d.top?.evidence_override || d.top?.lppls_confidence?.evidence
+      || d.top?.evidence || d.evidence || d.stock_meta?.evidence || null;
+
+    function summaryStates(d) {
+      const top = d.top || {};
+      const confidence = top.lppls_confidence || {};
+      const window = top.window || {};
+      const signalEvidence = confidence.evidence || top.evidence || d.evidence || top.evidence_override;
+      const canShowStatus = ['signal', 'no_qualified_fit', 't1_not_qualified'].includes(top.signal_status)
+        && !hiddenEv(signalEvidence);
+      const hasWindow = canShowStatus && window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
+      const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有风险窗口']
+        : top.signal_status === 'signal' ? ['hot', '有合格拟合']
+          : ['', signalStatus[top.signal_status]];
+      const us = d.symbol?.startsWith('US_');
+      const dipState = !d.dip ? ['', us ? '暂无事件库' : '暂无结果']
+        : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
+      return { topState, dipState, canShowStatus, hasWindow };
+    }
 
     function summaryHtml(d, name) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
       const window = top.window || {};
+      const { topState, dipState, canShowStatus, hasWindow } = summaryStates(d);
       const indicators = top.indicators || {};
       const shownScales = scales.filter((scale) => !hiddenEv(
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
-      ));
+      ) && Number.isFinite(indicators[scale]?.n_qualified_standard));
       const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
-      const hasWindow = window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
-      const topState = hasWindow ? ['hot', '有风险窗口'] : top.signal_status === 'signal' ? ['hot', '有合格拟合'] : ['', '不在风险窗口'];
       const topText = hasWindow
         ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
-        : `${signalStatus[top.signal_status] || '暂无结果'}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '说明价格走势不符合 LPPLS 泡沫形态，不代表不会下跌。' : ''}`;
+        : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
+          : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '本次没有通过过滤规则的拟合，不代表不会下跌。' : ''}`;
       const dip = d.dip || {};
       const state = dip.state || {};
       const full = dip.similar?.full || {};
@@ -829,17 +944,17 @@
       const fh = dip.first_hit?.fh60 || {};
       const verdict = dip.oos || {};
       const inStructure = dip.in_structure === true;
-      const dipState = !d.dip ? ['', '暂无结果'] : inStructure ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
-      let dipText = '暂无抄底面板结果。';
+      const us = d.symbol?.startsWith('US_');
+      let dipText = us ? (d.dip_note || '美股暂无抄底事件库') : '暂无抄底面板结果。';
       if (d.dip) {
         dipText = inStructure
           ? `距 ${state.peak_date || '—'} 高点已跌 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}，波动处于近 5 年 ${dipPct(state.rv20_pct5y)} 分位。历史上 ${dnum(full.n)} 个类似事件，120 个交易日后收益中位数 ${dipPct(q.r120?.[2])}，一半落在 ${dipPct(q.r120?.[1])} 至 ${dipPct(q.r120?.[3])} 之间。`
           : `不满足“此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日”，不做相似事件对照。距 ${state.peak_date || '—'} 高点 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}。`;
       }
       const topTiles = [
-        tile('合格拟合的尺度', `${qualified.length} / ${shownScales.length || 6}`),
-        tile('风险窗口', hasWindow ? `${window.start} – ${window.end}` : '无'),
-        tile('证据等级', '研究候选'),
+        tile('合格拟合的尺度', shownScales.length ? `${qualified.length} / ${shownScales.length}` : '—'),
+        tile('风险窗口', hasWindow ? `${window.start} – ${window.end}` : canShowStatus ? '本次未形成' : '—'),
+        tile('证据等级', stockEvidence(d) ? evLabel(stockEvidence(d)) : '证据状态未知'),
       ].join('');
       const dipTiles = d.dip ? [
         tile('距高点跌幅', dipPct(state.dd), signCls(state.dd)),
@@ -859,7 +974,11 @@
           <h3>抄底 <span class="state-pill ${dipState[0]}">${esc(dipState[1])}</span></h3>
           <p>${esc(dipText)}</p>
           <div class="tiles">${dipTiles}</div>
-          ${inStructure ? `<p class="sum-foot">60 日内先涨 15% 的历史比例 ${dipPct(fh.hist?.U)}，随机波动对照 ${dipPct(fh.rw?.U)}。${esc(oos)}历史分位，不是预测。</p>` : `<p class="sum-foot">${esc(oos)}历史分位，不是预测。</p>`}
+          ${us
+            ? `<p class="sum-foot">${esc(d.dip_note || '美股暂无抄底事件库')}</p>`
+            : inStructure
+              ? `<p class="sum-foot">60 日内先涨 15% 的历史比例 ${dipPct(fh.hist?.U)}，随机波动对照 ${dipPct(fh.rw?.U)}。${esc(oos)}历史分位，不是预测。</p>`
+              : `<p class="sum-foot">${esc(oos)}历史分位，不是预测。</p>`}
         </section>
       `;
     }
@@ -870,16 +989,27 @@
       const name = stockName(d);
       $('stock-name').textContent = name || code6(d.symbol) || '—';
       $('stock-code').textContent = name ? code6(d.symbol) : '';
+      const evidence = stockEvidence(d);
+      $('stock-evidence').textContent = evidence === 'research_candidate' ? '研究候选 · 未经样本外检验'
+        : evidence ? evLabel(evidence) : '证据状态未知';
       document.title = `${name || code6(d.symbol)} · 临界点个股`;
       $('summary').innerHTML = summaryHtml(d, name);
-      $('stock-meta').textContent =
-        `${d.symbol || ''} · 数据截至 ${d.asof || '—'} · 后端 ${d.data_version || '—'}`;
+      const us = d.symbol?.startsWith('US_');
+      $('stock-meta').innerHTML =
+        `${esc(d.symbol || '')} · 数据截至 ${esc(d.asof || '—')} · ${us ? '后复权(美元)' : '后复权'} · 后端 ${esc(d.data_version || '—')}`
+        + (d.license_note ? ` <span class="badge">${esc(d.license_note)}</span>` : '');
+      $('price-note').textContent = us
+        ? '后复权收盘（美元）；显示的 t_c 情景区间均为未校准，仅供参考。'
+        : '后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。';
+      $('plot').setAttribute('aria-label', us ? '后复权收盘（美元）与历史情景区间' : '后复权收盘与历史情景区间');
       $('risk').innerHTML = riskHtml(d);
       drawHistory(d, history);
-      renderDip(d.dip);
+      renderDip(d.dip, d);
+      const code = code6(d.symbol);
+      if (code) nameIndex[code] = { name, asof: d.asof };
+      showHint();
     }
 
-    let serial = 0;
     let eventsSerial = 0;
     async function renderRecentEvents(code) {
       const request = ++eventsSerial, panel = $('stock-events');
@@ -901,123 +1031,182 @@
       } catch (_) { panel.hidden = true; }
     }
 
-    async function query(code, id) {
-      const api = LPPL.stock;
-      const queued = await api.request(code);
-      const since = queued?.since;
-      const timestamp = Date.parse(since);
-      if (!Number.isFinite(timestamp)) {
-        throw Error('查询服务未返回有效任务时间');
+    async function loadStaticUS(code) {
+      await usIndexPromise;
+      const entry = usEntry(code);
+      if (!entry) {
+        throw Error(`美股目前只支持观察清单：${usIndex.map((item) => item.ticker).join('、')}`);
       }
-      const start = Date.now();
-      const currentDeadline = start + 600000;
-      const totalDeadline = start + 2400000;
-      let latest = null;
-      while (Date.now() < currentDeadline) {
-        latest = await api.remote(code, 'latest').catch(() => null);
-        if (latest && Date.parse(latest.generated_at) >= timestamp - 60000) {
-          break;
-        }
-        const status = await api.status(code, since).catch(() => null);
-        if (status?.status === 'completed' && status.conclusion !== 'success') {
-          throw Error('当前结果计算失败');
-        }
-        $('query-status').textContent = '当前结果计算中…';
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        if (id !== serial) {
-          return;
-        }
+      if (entry.ok !== true) {
+        const failure = await LPPL.stock.error(code);
+        throw Error(failure?.error || '该美股的预计算结果暂不可用。');
       }
-      if (!latest || Date.parse(latest.generated_at) < timestamp - 60000) {
-        throw Error('当前结果暂未返回，请稍后刷新');
-      }
-      render(latest, null);
-      $('query-status').textContent = '当前结果已就绪；历史回测后台计算中。';
-      while (Date.now() < totalDeadline && id === serial) {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        const status = await api.status(code, since).catch(() => null);
-        if (status?.status !== 'completed') {
-          continue;
-        }
-        if (status.conclusion === 'success') {
-          const [current, history] = await Promise.all([
-            api.remote(code, 'latest'),
-            api.remote(code, 'history'),
-          ]);
-          if (current) {
-            render(current, history);
-            $('query-status').textContent = '历史回测已更新。';
-            return;
-          }
+      const [current, history] = await Promise.all([
+        LPPL.stock.latest(code),
+        LPPL.stock.history(code),
+      ]);
+      if (!current) throw Error('该美股的预计算结果暂不可用；不会发起在线查询。');
+      return { current, history, refreshFailed: entry.refresh_failed === true };
+    }
+
+    StockView.mount({
+      api: LPPL.stock,
+      normalizeCode,
+      isStaticCode: code => code.startsWith('US_'),
+      loadStaticCode: loadStaticUS,
+      renderResult: (current, history) => {
+        render(current, history);
+        const c = code6(current && current.symbol);
+        if (/^\d{6}$/.test(c || '')) {
+          renderRecentEvents(c);
         } else {
-          $('query-status').textContent = '历史回测未能完成；当前结果仍可查看。';
-          return;
+          $('stock-events').hidden = true;
+          $('recent-events').hidden = true;
         }
+      },
+    });
+    $('search').addEventListener('submit', () => {
+      const c = normalizeCode($('code').value.trim());
+      if (/^\d{6}$/.test(c || '')) {
+        renderRecentEvents(c);
+      } else {
+        eventsSerial += 1;
+        $('stock-events').hidden = true;
+        $('recent-events').hidden = true;
       }
-      $('query-status').textContent = '历史回测后台仍在计算；当前结果可先查看。';
-    }
-
-    async function loadCode(code) {
-      const id = ++serial;
-      $('query-status').textContent = '读取缓存结果…';
-      try {
-        const [current, history] = await Promise.all([
-          LPPL.stock.latest(code),
-          LPPL.stock.history(code),
-        ]);
-        if (id !== serial) {
-          return;
-        }
-        if (current) {
-          render(current, history);
-          $('query-status').textContent = history
-            ? '缓存的当前结果和历史回测已加载。'
-            : '历史回测文件暂不可用';
-          return;
-        }
-        await query(code, id);
-      } catch (error) {
-        if (id === serial) {
-          $('query-status').textContent = error.message || '数据未加载。';
-        }
-      }
-    }
-
-    $('search').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const code = $('code').value.trim();
-      if (!/^\d{6}$/.test(code)) {
-        $('query-status').textContent = '请输入六位数字代码。';
-        return;
-      }
-      const url = new URL(location.href);
-      url.searchParams.set('code', code);
-      history.replaceState(null, '', url);
-      renderRecentEvents(code);
-      loadCode(code);
     });
 
     const showHint = () => {
       const code = $('code').value.trim();
+      const normalized = normalizeCode(code);
+      if (normalized?.startsWith('US_')) {
+        const entry = usEntry(normalized);
+        $('name-hint').innerHTML = entry
+          ? `<b>${esc(entry.name)}</b>${entry.ok
+            ? `已有 ${esc(entry.asof || '')} 的预计算结果${entry.refresh_failed ? '（最近刷新失败）' : ''}`
+            : '结果暂不可用'}`
+          : `<span class="muted">美股目前只支持观察清单：${usIndex.map((item) => esc(item.ticker)).join('、')}</span>`;
+        return;
+      }
       const hit = /^\d{6}$/.test(code) ? nameIndex[code] : null;
       const name = realName(hit?.name);
       $('name-hint').innerHTML = !/^\d{6}$/.test(code)
         ? ''
         : hit
           ? `<b>${esc(name || code)}</b>已有 ${esc(hit.asof || '')} 的结果，打开即可查看`
-          : '<span class="muted">这只股票还没算过，首次查询约 1–2 分钟出当前结果</span>';
+          : '<span class="muted">暂无已保存结果；先显示行情，当前分析将单独排队计算</span>';
     };
     $('code').addEventListener('input', () => {
-      $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
       showHint();
+      updateWatchToggle();
     });
     const go = (code) => {
       $('code').value = code;
       showHint();
       $('search').requestSubmit();
     };
-    LPPL.stock.index().then((index) => {
-      nameIndex = index || {};
+
+    const watchStorage = (() => {
+      try { return window.localStorage; } catch { return null; }
+    })();
+    const stockViewCode = /^(?:60|68|00|30|43|83|87|92)\d{4}$/;
+    let selectedCode = stockViewCode.test($('code').value.trim()) ? $('code').value.trim() : '';
+    let watchIndex = {};
+    let watchRenderSerial = 0;
+    const watchResultCache = new Map();
+
+    function currentWatchCode() {
+      return selectedCode && $('code').value.trim() === selectedCode ? selectedCode : '';
+    }
+    function updateWatchToggle() {
+      const code = currentWatchCode();
+      const included = code && StockWatchlist.read(watchStorage).includes(code);
+      $('watch-toggle').disabled = !code || !watchStorage;
+      $('watch-toggle').setAttribute('aria-pressed', String(!!included));
+      $('watch-toggle').textContent = included ? '已在自选 · 移除' : '加入自选';
+    }
+    function hasWatchStatuses(value) {
+      return value && typeof value === 'object'
+        && value.top && typeof value.top === 'object' && typeof value.top.signal_status === 'string'
+        && value.dip && typeof value.dip === 'object' && typeof value.dip.in_structure === 'boolean';
+    }
+    function watchResult(code) {
+      const indexed = watchIndex[code];
+      if (hasWatchStatuses(indexed)) return Promise.resolve({ data: indexed, error: false });
+      if (!watchResultCache.has(code)) {
+        watchResultCache.set(code, LPPL.stock.remote(code, 'latest')
+          .then(data => ({ data, error: false }))
+          .catch(() => ({ data: null, error: true })));
+      }
+      return watchResultCache.get(code);
+    }
+    async function renderWatchlist(refresh = false) {
+      const codes = StockWatchlist.read(watchStorage);
+      const section = $('watch-section');
+      section.hidden = codes.length === 0;
+      const serial = ++watchRenderSerial;
+      if (refresh) watchResultCache.clear();
+      const rows = await Promise.all(codes.map(async code => ({ code, ...await watchResult(code) })));
+      if (serial !== watchRenderSerial) return;
+      $('watch-list').innerHTML = rows.map(({ code, data, error }) => {
+        const name = realName(data?.name) || realName(watchIndex[code]?.name) || '';
+        const labels = data ? summaryStates(data) : null;
+        const status = data
+          ? `<span class="watch-asof">截至 ${esc(data.asof || '—')}</span><span class="watch-statuses"><span>逃顶 <span class="state-pill ${labels.topState[0]}">${esc(labels.topState[1])}</span></span><span>抄底 <span class="state-pill ${labels.dipState[0]}">${esc(labels.dipState[1])}</span></span></span>`
+          : `<span class="watch-empty">${error ? '暂时无法读取已发布结果' : '暂无已发布结果'}</span>`;
+        return `<li><button type="button" class="watch-open" data-watch-open="${esc(code)}"><b>${esc(name || code)}</b>${name ? `<span class="watch-code">${esc(code)}</span>` : ''}${status}</button><button type="button" class="watch-remove" data-watch-remove="${esc(code)}" aria-label="从自选移除 ${esc(code)}">移除</button></li>`;
+      }).join('');
+    }
+
+    $('search').addEventListener('submit', () => {
+      const code = $('code').value.trim();
+      selectedCode = stockViewCode.test(code) ? code : '';
+      updateWatchToggle();
+    });
+    $('watch-toggle').addEventListener('click', () => {
+      const code = currentWatchCode();
+      if (!code) return;
+      const list = StockWatchlist.read(watchStorage);
+      let next;
+      if (list.includes(code)) next = list.filter(value => value !== code);
+      else if (list.length >= StockWatchlist.MAX) {
+        $('query-status').textContent = `自选最多 ${StockWatchlist.MAX} 只。`;
+        return;
+      } else next = [code, ...list];
+      if (StockWatchlist.write(watchStorage, next) === null) {
+        $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+        return;
+      }
+      updateWatchToggle();
+      void renderWatchlist();
+    });
+    $('watch-list').addEventListener('click', event => {
+      const remove = event.target.closest('[data-watch-remove]');
+      if (remove) {
+        const saved = StockWatchlist.write(watchStorage,
+          StockWatchlist.read(watchStorage).filter(code => code !== remove.dataset.watchRemove));
+        if (saved === null) {
+          $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+          return;
+        }
+        updateWatchToggle();
+        void renderWatchlist();
+        return;
+      }
+      const open = event.target.closest('[data-watch-open]');
+      if (open && StockWatchlist.isValid(open.dataset.watchOpen)) go(open.dataset.watchOpen);
+    });
+    window.addEventListener('storage', event => {
+      if (event.key === StockWatchlist.KEY || event.key === null) {
+        updateWatchToggle();
+        void renderWatchlist(true);
+      }
+    });
+    updateWatchToggle();
+
+    const stockIndex = LPPL.stock.index().then((index) => {
+      watchIndex = index && typeof index === 'object' && !Array.isArray(index) ? index : {};
+      nameIndex = { ...watchIndex, ...nameIndex };
       $('chips').innerHTML = ['301196', '002490', '600519', '300750']
         .filter((code) => nameIndex[code])
         .map((code) => `<button class="chip" type="button" data-code="${code}">${esc(realName(nameIndex[code].name) || code)}<span class="m">${code}</span></button>`)
@@ -1029,16 +1218,21 @@
         $('stock-code').textContent = name;
         $('stock-name').textContent = realName(nameIndex[name].name);
       }
+      return watchIndex;
+    }).catch(() => {
+      watchIndex = {};
+      return watchIndex;
+    });
+    void stockIndex.then(() => renderWatchlist());
+
+    usIndexPromise = LPPL.stock.usIndex().then((index) => {
+      usIndex = Array.isArray(index) ? index : [];
+      showHint();
     }).catch(() => {});
 
     const initial = new URLSearchParams(location.search).get('code');
-    if (initial && /^\d{6}$/.test(initial)) {
-      $('code').value = initial;
-      renderRecentEvents(initial);
-      loadCode(initial);
-    }
-  </script>
-  <script>
+    if (initial && /^\d{6}$/.test(initial)) renderRecentEvents(initial);
+
     (() => {
       const section = document.getElementById('recent-events');
       const row = document.getElementById('stock-abnormal-row');
@@ -1050,6 +1244,7 @@
         const code = document.getElementById('code').value.trim();
         if (!/^\d{6}$/.test(code)) return;
         const data = await LPPL.abnormal().catch(() => null);
+        if (document.getElementById('code').value.trim() !== code) return;
         const item = (data?.items || []).find((candidate) => candidate.code === code);
         if (!item) { section.hidden = true; return; }
         section.hidden = false;

@@ -12,4 +12,6 @@ jobs:
           node-version: "20"
       - run: pip install -e ".[dev]"
       - run: ruff check research tests
+      - name: Verify stock browser and Worker contracts
+        run: node --test frontend/tests/*.test.cjs workers/stock-query/test/*.test.mjs
       - run: pytest -m "not network"

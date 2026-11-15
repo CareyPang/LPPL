@@ -1,0 +1,125 @@
+name: index_daily
+
+on:
+  schedule:
+    - cron: "0 10 * * 1-5"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/index_daily.yml
+      - research/pipeline/daily.py
+      - scripts/build_site.sh
+      - research/data/freshness.py
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: index-daily
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || 'main' }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run latest closed-day index fits
+        id: run
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/index
+          asof="$(python -c 'from research.data.trading_date import latest_closed_trading_day; print(latest_closed_trading_day())')"
+          symbols=(sh000001 sh000016 sh000300 sh000905 sz399001 sz399006)
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            symbols=(sh000001)
+          fi
+          success_count=0
+          for sym in "${symbols[@]}"; do
+            echo "::group::${sym} asof=${asof}"
+            if LPPLS_BOX=v2 python -m research.pipeline.daily "$sym" \
+              --asof "$asof" --out out/index; then
+              success_count=$((success_count + 1))
+            else
+              result=$?
+              echo "::warning::${sym} failed with exit code ${result}; skipping"
+            fi
+            echo "::endgroup::"
+          done
+          {
+            printf 'asof=%s\n' "$asof"
+            printf 'success_count=%s\n' "$success_count"
+          } >> "$GITHUB_OUTPUT"
+          printf 'asof=%s; successful symbols=%s/%s\n' \
+            "$asof" "$success_count" "${#symbols[@]}" >> "$GITHUB_STEP_SUMMARY"
+          if (( success_count == 0 )); then
+            echo "No index fits succeeded" >&2
+            exit 1
+          fi
+      - name: Publish to stock-results
+        if: github.event_name != 'pull_request' && steps.run.outputs.success_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASOF: ${{ steps.run.outputs.asof }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin stock-results
+          git switch -c index-publish origin/stock-results
+          mkdir -p index
+          published=()
+          for sym in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
+            source="out/index/${sym}_${ASOF}.json"
+            if [[ -f "$source" ]]; then
+              target="index/${sym}_latest.json"
+              cp "$source" "$target"
+              published+=("$target")
+            fi
+          done
+          if (( ${#published[@]} == 0 )); then
+            echo "No index JSON files found to publish" >&2
+            exit 1
+          fi
+          git add "${published[@]}"
+          if git diff --cached --quiet; then
+            echo "No index snapshots changed"
+          else
+            git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "index: 发布 6 指数 LPPLS ${ASOF}"
+            pushed=false
+            for attempt in 1 2 3; do
+              echo "stock-results push attempt ${attempt}/3"
+              if git push origin HEAD:stock-results; then
+                pushed=true
+                break
+              fi
+              if (( attempt < 3 )); then
+                git fetch --no-tags origin stock-results
+                git -c user.name="github-actions[bot]" \
+                  -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                  rebase origin/stock-results
+              fi
+            done
+            if [[ "$pushed" != true ]]; then
+              echo "Failed to publish index snapshots after 3 attempts" >&2
+              exit 1
+            fi
+          fi
+          gh workflow run pages.yml --ref main
+      - name: Upload index artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: index-daily-${{ github.run_id }}
+          path: out/index/*.json
+          if-no-files-found: warn

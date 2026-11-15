@@ -4,7 +4,7 @@
 - 拟合：与 v2 扫描同一函数 ``lppls_scan.fit_one``（需 ``LPPLS_BOX=v2``），窗口 = 短尺度 30–120 + 125–750 日；
   只算 as-of 一日，约 145 次拟合。
 - 输出：``web/mock/data/<sym>_latest.json``（``--asof`` 指定则为 ``<sym>_<asof>.json``）。p20 需校准后的前推模型，日更暂为 None。
-用法：LPPLS_BOX=v2 python -m research.pipeline.daily sh000001 [--frozen] [--asof 2018-12-28] [--windows 125,250,500]
+用法：LPPLS_BOX=v2 python -m research.pipeline.daily sh000001 [--frozen] [--asof 2018-12-28] [--windows 125,250,500] [--out DIR]
 """
 from __future__ import annotations
 
@@ -22,12 +22,10 @@ from ..features.lppls_scan import (
     BOX,
     BOXES,
     COLS,
-    IDX_WINDOWS,
-    SHORT_WINDOWS,
     STK_WINDOWS,
-    XL_WINDOWS,
-    XS_WINDOWS,
     fit_one,
+    full_windows,
+    unique_windows,
 )
 from ..lppls import core as _core
 
@@ -68,7 +66,7 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     date = pd.Timestamp(asof) if asof else logp.index[-1]
     ohlc_pit = ohlc[ohlc.date <= date]
     logp = logp[logp.index <= date]
-    ws = windows or (XS_WINDOWS + SHORT_WINDOWS + IDX_WINDOWS + XL_WINDOWS)
+    ws = full_windows(len(logp)) if windows is None else unique_windows(windows)
     d = _derived(fit_asof(logp, date, ws))
     rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc_pit, None, data_version=version)
     if trust_boot:
@@ -88,9 +86,10 @@ def main() -> None:
     ap.add_argument("--frozen", action="store_true")
     ap.add_argument("--asof")
     ap.add_argument("--windows", help="逗号分隔窗口长度（自检用）")
+    ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
     ws = tuple(int(x) for x in a.windows.split(",")) if a.windows else None
-    p = run(a.sym, a.frozen, a.asof, ws)
+    p = run(a.sym, a.frozen, a.asof, ws, out=a.out)
     rec = json.loads(p.read_text())
     print(p, json.dumps(rec["top"]["lppls_confidence"], ensure_ascii=False))
 
