@@ -79,6 +79,22 @@
     .chip { border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: border-color .2s, color .2s; }
     .chip:hover { border-color: var(--cyan); color: var(--ink); }
     .chip .m { color: var(--ink-3); margin-left: 6px; font-size: 12px; }
+    .watch-controls { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+    .watch-toggle, .watch-remove { border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); color: var(--ink-2); padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .watch-toggle:hover, .watch-remove:hover { border-color: var(--cyan); color: var(--ink); }
+    .watch-toggle[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+    .watch-toggle:disabled { opacity: .5; cursor: not-allowed; }
+    .watch-section { margin-top: var(--s3); }
+    .watch-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--s2); }
+    .watch-head h2 { margin: 0; font-size: 18px; }
+    .watch-list { list-style: none; margin: var(--s2) 0 0; padding: 0; display: grid; gap: 6px; }
+    .watch-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s2); min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass); }
+    .watch-open { all: unset; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; min-width: 0; cursor: pointer; overflow-wrap: anywhere; }
+    .watch-open:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 6px; }
+    .watch-open b { color: var(--ink); font: 500 15px var(--serif); }
+    .watch-code, .watch-asof, .watch-empty { color: var(--ink-3); font-size: 12px; }
+    .watch-statuses { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .watch-statuses .state-pill { font-size: 12px; }
     .note { font-size: 13px; color: var(--ink-3); margin: var(--s4) 0 0; }
     .status { color: var(--cyan); font-size: 14px; margin: var(--s3) 0 0; min-height: 1.7em; }
     .status:empty { display: none; }
@@ -166,8 +182,33 @@
       .card, .dip-card, .sum-card { padding: var(--s4); }
       .ev-pill { margin-left: 0; }
     }
+    [hidden] { display: none !important; }
+    .task-tools, .stages, .recent, .periods { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .task-tools button, .recent button, .periods button { min-height: 44px; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--glass); cursor: pointer; }
+    .task-tools button:disabled { opacity: .5; cursor: wait; }
+    .periods button[aria-pressed="true"], .recent button[aria-current="true"] { border-color: var(--cyan); background: rgba(159,227,224,.1); }
+    .stages span { padding: 5px 10px; border-radius: 8px; background: var(--glass); font-size: 12px; }
+    .market-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .market-header h2 { margin: 0; }
+    .market-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+    .market-stats small { display: block; color: var(--ink-3); }
+    .market-stats strong { font: 500 20px var(--f-m); }
+    .market-canvas { display: block; width: 100%; height: 340px; }
+    .date-control { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+    .date-control input { flex: 1; min-width: 0; accent-color: var(--cyan); }
+    .quote-readout, .visibility-note { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+    .pending-result { border: 1px solid var(--line); padding: 16px; border-radius: var(--r); color: var(--ink-2); }
+    @media (max-width: 560px) {
+      .market-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .market-canvas { height: 300px; }
+      .task-tools button { flex: 1 1 130px; }
+    }
   </style>
   <script src="app/lppl-data.js"></script>
+  <script src="app/stock-session.js"></script>
+  <script src="app/stock-visibility.js"></script>
+  <script src="app/stock-view.js"></script>
+  <script src="app/stock-watchlist.js"></script>
 </head>
 <body>
   <header class="bar">
@@ -190,27 +231,71 @@
     <section class="hero">
       <div class="eyebrow">Stock · 逃顶 / 抄底</div>
       <h1>个股风险与深跌结构</h1>
-      <p class="lead">输入 A 股六位代码，同时看两件事：现在有没有泡沫风险窗口；如果已经大跌，历史上类似的股票后来怎样。</p>
+      <p class="lead">输入 A 股六位代码，先查看日线行情和已有分析。当前分析在后台独立更新，历史回放由你按需启动。</p>
       <form class="search" id="search">
         <label for="code">六位股票代码</label>
         <input id="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="输入六位代码，例如 301196" required>
-        <button type="submit">分析</button>
+        <button type="submit">查看股票</button>
       </form>
+      <div class="watch-controls">
+        <button type="button" class="watch-toggle" id="watch-toggle" aria-pressed="false" disabled>加入自选</button>
+        <span class="muted">仅保存在此浏览器，最多 50 只</span>
+      </div>
+      <section class="watch-section" id="watch-section" hidden aria-label="本地自选股票">
+        <div class="watch-head"><h2>本地自选</h2><span class="muted">只读已发布结果</span></div>
+        <ul class="watch-list" id="watch-list"></ul>
+      </section>
       <div class="name-hint" id="name-hint" aria-live="polite"></div>
       <div class="chips" id="chips"></div>
       <p id="query-status" class="status" role="status"></p>
+      <div id="recent-stocks" class="recent" aria-label="最近查看和进行中的任务"></div>
+      <div id="task-stages" class="stages" hidden aria-live="polite">
+        <span id="market-stage"></span><span id="current-stage"></span><span id="history-stage"></span>
+      </div>
+      <div class="task-tools">
+        <button id="refresh-current" type="button" disabled>更新当前分析</button>
+        <button id="compute-history" type="button" disabled>生成历史回放</button>
+        <button id="resume-jobs" type="button" hidden>继续查看任务</button>
+      </div>
       <section id="stock-events" class="card" hidden aria-labelledby="stock-events-title">
         <h2 id="stock-events-title">近期事件</h2><div id="stock-events-body"></div>
       </section>
       <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
     </section>
 
+    <section class="card" id="market-panel" hidden aria-label="独立日线行情">
+      <div class="market-header">
+        <div><h2 id="market-name">正在读取行情</h2><p class="note" id="market-date"></p></div>
+        <div class="periods" aria-label="图表显示范围">
+          <button type="button" data-days="20" aria-pressed="false">1个月</button>
+          <button type="button" data-days="60" aria-pressed="false">3个月</button>
+          <button type="button" data-days="120" aria-pressed="true">6个月</button>
+          <button type="button" data-days="250" aria-pressed="false">1年</button>
+        </div>
+      </div>
+      <div class="market-stats" id="market-stats" hidden>
+        <div><small>最近收盘</small><strong id="quote-close">—</strong></div>
+        <div><small>当日开盘</small><strong id="quote-open">—</strong></div>
+        <div><small>当日最高</small><strong id="quote-high">—</strong></div>
+        <div><small>当日最低</small><strong id="quote-low">—</strong></div>
+      </div>
+      <p id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
+      <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量" hidden></canvas>
+      <div class="date-control" id="date-control" hidden>
+        <label for="quote-date">查看日期</label><input type="range" id="quote-date" min="0" max="0" value="0" step="1">
+      </div>
+      <p id="quote-readout" class="quote-readout" aria-live="polite"></p>
+      <p class="note">红涨绿跌；行情为已收盘、未复权日线。成交量保留供应商原始单位；模型历史使用后复权数据，价格刻度分别显示。</p>
+    </section>
+    <div id="analysis-pending" class="pending-result" hidden>当前分析在后台更新，行情和已有结果可继续查看。</div>
+
     <section id="results" hidden>
       <div class="stock-head">
         <h2 id="stock-name">—</h2>
         <span class="code" id="stock-code"></span>
-        <span class="ev-pill">研究候选 · 未经样本外检验</span>
+        <span class="ev-pill" id="stock-evidence">证据状态未知</span>
         <div class="stock-meta" id="stock-meta"></div>
+        <p class="visibility-note" id="first-visible-note"></p>
       </div>
       <div class="summary" id="summary"></div>
 
@@ -231,7 +316,7 @@
             <div id="risk"></div>
           </section>
           <section class="card wide">
-            <h3>104 周历史情景区间</h3>
+            <h3>历史情景回放 · 按需生成</h3>
             <div id="history-note" class="disclaimer"></div>
             <canvas class="plot" id="plot" aria-label="后复权收盘与历史情景区间"></canvas>
             <p class="disclaimer">后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。</p>
@@ -277,6 +362,7 @@
         dev_only: '仅开发段',
         dev_failed: '开发段未通过',
         none: '无证据',
+        research_candidate: '研究候选',
       })[evidence] || evidence || '无证据';
     const pct = (value) =>
       value == null || !Number.isFinite(Number(value))
@@ -807,21 +893,39 @@
       value == null || !Number.isFinite(Number(value)) || Number(value) === 0 ? '' : Number(value) > 0 ? 'pos' : 'neg';
     const tile = (label, value, cls = '', sub = '') =>
       `<div class="tile"><small>${esc(label)}</small><b class="${cls}">${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`;
+    const stockEvidence = (d) => d.top?.evidence_override || d.top?.lppls_confidence?.evidence
+      || d.top?.evidence || d.evidence || d.stock_meta?.evidence || null;
+
+    function summaryStates(d) {
+      const top = d.top || {};
+      const confidence = top.lppls_confidence || {};
+      const window = top.window || {};
+      const signalEvidence = confidence.evidence || top.evidence || d.evidence || top.evidence_override;
+      const canShowStatus = ['signal', 'no_qualified_fit', 't1_not_qualified'].includes(top.signal_status)
+        && !hiddenEv(signalEvidence);
+      const hasWindow = canShowStatus && window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
+      const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有风险窗口']
+        : top.signal_status === 'signal' ? ['hot', '有合格拟合']
+          : ['', signalStatus[top.signal_status]];
+      const dipState = !d.dip ? ['', '暂无结果']
+        : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
+      return { topState, dipState, canShowStatus, hasWindow };
+    }
 
     function summaryHtml(d, name) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
       const window = top.window || {};
+      const { topState, dipState, canShowStatus, hasWindow } = summaryStates(d);
       const indicators = top.indicators || {};
       const shownScales = scales.filter((scale) => !hiddenEv(
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
-      ));
+      ) && Number.isFinite(indicators[scale]?.n_qualified_standard));
       const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
-      const hasWindow = window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
-      const topState = hasWindow ? ['hot', '有风险窗口'] : top.signal_status === 'signal' ? ['hot', '有合格拟合'] : ['', '不在风险窗口'];
       const topText = hasWindow
         ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
-        : `${signalStatus[top.signal_status] || '暂无结果'}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '说明价格走势不符合 LPPLS 泡沫形态，不代表不会下跌。' : ''}`;
+        : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
+          : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '本次没有通过过滤规则的拟合，不代表不会下跌。' : ''}`;
       const dip = d.dip || {};
       const state = dip.state || {};
       const full = dip.similar?.full || {};
@@ -829,7 +933,6 @@
       const fh = dip.first_hit?.fh60 || {};
       const verdict = dip.oos || {};
       const inStructure = dip.in_structure === true;
-      const dipState = !d.dip ? ['', '暂无结果'] : inStructure ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
       let dipText = '暂无抄底面板结果。';
       if (d.dip) {
         dipText = inStructure
@@ -837,9 +940,9 @@
           : `不满足“此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日”，不做相似事件对照。距 ${state.peak_date || '—'} 高点 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}。`;
       }
       const topTiles = [
-        tile('合格拟合的尺度', `${qualified.length} / ${shownScales.length || 6}`),
-        tile('风险窗口', hasWindow ? `${window.start} – ${window.end}` : '无'),
-        tile('证据等级', '研究候选'),
+        tile('合格拟合的尺度', shownScales.length ? `${qualified.length} / ${shownScales.length}` : '—'),
+        tile('风险窗口', hasWindow ? `${window.start} – ${window.end}` : canShowStatus ? '本次未形成' : '—'),
+        tile('证据等级', stockEvidence(d) ? evLabel(stockEvidence(d)) : '证据状态未知'),
       ].join('');
       const dipTiles = d.dip ? [
         tile('距高点跌幅', dipPct(state.dd), signCls(state.dd)),
@@ -870,6 +973,9 @@
       const name = stockName(d);
       $('stock-name').textContent = name || code6(d.symbol) || '—';
       $('stock-code').textContent = name ? code6(d.symbol) : '';
+      const evidence = stockEvidence(d);
+      $('stock-evidence').textContent = evidence === 'research_candidate' ? '研究候选 · 未经样本外检验'
+        : evidence ? evLabel(evidence) : '证据状态未知';
       document.title = `${name || code6(d.symbol)} · 临界点个股`;
       $('summary').innerHTML = summaryHtml(d, name);
       $('stock-meta').textContent =
@@ -877,9 +983,11 @@
       $('risk').innerHTML = riskHtml(d);
       drawHistory(d, history);
       renderDip(d.dip);
+      const code = code6(d.symbol);
+      if (code) nameIndex[code] = { name, asof: d.asof };
+      showHint();
     }
 
-    let serial = 0;
     let eventsSerial = 0;
     async function renderRecentEvents(code) {
       const request = ++eventsSerial, panel = $('stock-events');
@@ -901,100 +1009,17 @@
       } catch (_) { panel.hidden = true; }
     }
 
-    async function query(code, id) {
-      const api = LPPL.stock;
-      const queued = await api.request(code);
-      const since = queued?.since;
-      const timestamp = Date.parse(since);
-      if (!Number.isFinite(timestamp)) {
-        throw Error('查询服务未返回有效任务时间');
-      }
-      const start = Date.now();
-      const currentDeadline = start + 600000;
-      const totalDeadline = start + 2400000;
-      let latest = null;
-      while (Date.now() < currentDeadline) {
-        latest = await api.remote(code, 'latest').catch(() => null);
-        if (latest && Date.parse(latest.generated_at) >= timestamp - 60000) {
-          break;
-        }
-        const status = await api.status(code, since).catch(() => null);
-        if (status?.status === 'completed' && status.conclusion !== 'success') {
-          throw Error('当前结果计算失败');
-        }
-        $('query-status').textContent = '当前结果计算中…';
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        if (id !== serial) {
-          return;
-        }
-      }
-      if (!latest || Date.parse(latest.generated_at) < timestamp - 60000) {
-        throw Error('当前结果暂未返回，请稍后刷新');
-      }
-      render(latest, null);
-      $('query-status').textContent = '当前结果已就绪；历史回测后台计算中。';
-      while (Date.now() < totalDeadline && id === serial) {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-        const status = await api.status(code, since).catch(() => null);
-        if (status?.status !== 'completed') {
-          continue;
-        }
-        if (status.conclusion === 'success') {
-          const [current, history] = await Promise.all([
-            api.remote(code, 'latest'),
-            api.remote(code, 'history'),
-          ]);
-          if (current) {
-            render(current, history);
-            $('query-status').textContent = '历史回测已更新。';
-            return;
-          }
-        } else {
-          $('query-status').textContent = '历史回测未能完成；当前结果仍可查看。';
-          return;
-        }
-      }
-      $('query-status').textContent = '历史回测后台仍在计算；当前结果可先查看。';
-    }
-
-    async function loadCode(code) {
-      const id = ++serial;
-      $('query-status').textContent = '读取缓存结果…';
-      try {
-        const [current, history] = await Promise.all([
-          LPPL.stock.latest(code),
-          LPPL.stock.history(code),
-        ]);
-        if (id !== serial) {
-          return;
-        }
-        if (current) {
-          render(current, history);
-          $('query-status').textContent = history
-            ? '缓存的当前结果和历史回测已加载。'
-            : '历史回测文件暂不可用';
-          return;
-        }
-        await query(code, id);
-      } catch (error) {
-        if (id === serial) {
-          $('query-status').textContent = error.message || '数据未加载。';
-        }
-      }
-    }
-
-    $('search').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const code = $('code').value.trim();
-      if (!/^\d{6}$/.test(code)) {
-        $('query-status').textContent = '请输入六位数字代码。';
-        return;
-      }
-      const url = new URL(location.href);
-      url.searchParams.set('code', code);
-      history.replaceState(null, '', url);
-      renderRecentEvents(code);
-      loadCode(code);
+    StockView.mount({
+      api: LPPL.stock,
+      renderResult: (current, history) => {
+        render(current, history);
+        const c = code6(current && current.symbol);
+        if (c) renderRecentEvents(c);
+      },
+    });
+    $('search').addEventListener('submit', () => {
+      const c = $('code').value.trim();
+      if (/^\d{6}$/.test(c)) renderRecentEvents(c);
     });
 
     const showHint = () => {
@@ -1005,19 +1030,120 @@
         ? ''
         : hit
           ? `<b>${esc(name || code)}</b>已有 ${esc(hit.asof || '')} 的结果，打开即可查看`
-          : '<span class="muted">这只股票还没算过，首次查询约 1–2 分钟出当前结果</span>';
+          : '<span class="muted">暂无已保存结果；先显示行情，当前分析将单独排队计算</span>';
     };
     $('code').addEventListener('input', () => {
       $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
       showHint();
+      updateWatchToggle();
     });
     const go = (code) => {
       $('code').value = code;
       showHint();
       $('search').requestSubmit();
     };
-    LPPL.stock.index().then((index) => {
-      nameIndex = index || {};
+
+    const watchStorage = (() => {
+      try { return window.localStorage; } catch { return null; }
+    })();
+    const stockViewCode = /^(?:60|68|00|30|43|83|87|92)\d{4}$/;
+    let selectedCode = stockViewCode.test($('code').value.trim()) ? $('code').value.trim() : '';
+    let watchIndex = {};
+    let watchRenderSerial = 0;
+    const watchResultCache = new Map();
+
+    function currentWatchCode() {
+      return selectedCode && $('code').value.trim() === selectedCode ? selectedCode : '';
+    }
+    function updateWatchToggle() {
+      const code = currentWatchCode();
+      const included = code && StockWatchlist.read(watchStorage).includes(code);
+      $('watch-toggle').disabled = !code || !watchStorage;
+      $('watch-toggle').setAttribute('aria-pressed', String(!!included));
+      $('watch-toggle').textContent = included ? '已在自选 · 移除' : '加入自选';
+    }
+    function hasWatchStatuses(value) {
+      return value && typeof value === 'object'
+        && value.top && typeof value.top === 'object' && typeof value.top.signal_status === 'string'
+        && value.dip && typeof value.dip === 'object' && typeof value.dip.in_structure === 'boolean';
+    }
+    function watchResult(code) {
+      const indexed = watchIndex[code];
+      if (hasWatchStatuses(indexed)) return Promise.resolve({ data: indexed, error: false });
+      if (!watchResultCache.has(code)) {
+        watchResultCache.set(code, LPPL.stock.remote(code, 'latest')
+          .then(data => ({ data, error: false }))
+          .catch(() => ({ data: null, error: true })));
+      }
+      return watchResultCache.get(code);
+    }
+    async function renderWatchlist(refresh = false) {
+      const codes = StockWatchlist.read(watchStorage);
+      const section = $('watch-section');
+      section.hidden = codes.length === 0;
+      const serial = ++watchRenderSerial;
+      if (refresh) watchResultCache.clear();
+      const rows = await Promise.all(codes.map(async code => ({ code, ...await watchResult(code) })));
+      if (serial !== watchRenderSerial) return;
+      $('watch-list').innerHTML = rows.map(({ code, data, error }) => {
+        const name = realName(data?.name) || realName(watchIndex[code]?.name) || '';
+        const labels = data ? summaryStates(data) : null;
+        const status = data
+          ? `<span class="watch-asof">截至 ${esc(data.asof || '—')}</span><span class="watch-statuses"><span>逃顶 <span class="state-pill ${labels.topState[0]}">${esc(labels.topState[1])}</span></span><span>抄底 <span class="state-pill ${labels.dipState[0]}">${esc(labels.dipState[1])}</span></span></span>`
+          : `<span class="watch-empty">${error ? '暂时无法读取已发布结果' : '暂无已发布结果'}</span>`;
+        return `<li><button type="button" class="watch-open" data-watch-open="${esc(code)}"><b>${esc(name || code)}</b>${name ? `<span class="watch-code">${esc(code)}</span>` : ''}${status}</button><button type="button" class="watch-remove" data-watch-remove="${esc(code)}" aria-label="从自选移除 ${esc(code)}">移除</button></li>`;
+      }).join('');
+    }
+
+    $('search').addEventListener('submit', () => {
+      const code = $('code').value.trim();
+      selectedCode = stockViewCode.test(code) ? code : '';
+      updateWatchToggle();
+    });
+    $('watch-toggle').addEventListener('click', () => {
+      const code = currentWatchCode();
+      if (!code) return;
+      const list = StockWatchlist.read(watchStorage);
+      let next;
+      if (list.includes(code)) next = list.filter(value => value !== code);
+      else if (list.length >= StockWatchlist.MAX) {
+        $('query-status').textContent = `自选最多 ${StockWatchlist.MAX} 只。`;
+        return;
+      } else next = [code, ...list];
+      if (StockWatchlist.write(watchStorage, next) === null) {
+        $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+        return;
+      }
+      updateWatchToggle();
+      void renderWatchlist();
+    });
+    $('watch-list').addEventListener('click', event => {
+      const remove = event.target.closest('[data-watch-remove]');
+      if (remove) {
+        const saved = StockWatchlist.write(watchStorage,
+          StockWatchlist.read(watchStorage).filter(code => code !== remove.dataset.watchRemove));
+        if (saved === null) {
+          $('query-status').textContent = '浏览器不允许本地保存，自选未保存。';
+          return;
+        }
+        updateWatchToggle();
+        void renderWatchlist();
+        return;
+      }
+      const open = event.target.closest('[data-watch-open]');
+      if (open && StockWatchlist.isValid(open.dataset.watchOpen)) go(open.dataset.watchOpen);
+    });
+    window.addEventListener('storage', event => {
+      if (event.key === StockWatchlist.KEY || event.key === null) {
+        updateWatchToggle();
+        void renderWatchlist(true);
+      }
+    });
+    updateWatchToggle();
+
+    const stockIndex = LPPL.stock.index().then((index) => {
+      watchIndex = index && typeof index === 'object' && !Array.isArray(index) ? index : {};
+      nameIndex = { ...watchIndex, ...nameIndex };
       $('chips').innerHTML = ['301196', '002490', '600519', '300750']
         .filter((code) => nameIndex[code])
         .map((code) => `<button class="chip" type="button" data-code="${code}">${esc(realName(nameIndex[code].name) || code)}<span class="m">${code}</span></button>`)
@@ -1029,16 +1155,16 @@
         $('stock-code').textContent = name;
         $('stock-name').textContent = realName(nameIndex[name].name);
       }
-    }).catch(() => {});
+      return watchIndex;
+    }).catch(() => {
+      watchIndex = {};
+      return watchIndex;
+    });
+    void stockIndex.then(() => renderWatchlist());
 
     const initial = new URLSearchParams(location.search).get('code');
-    if (initial && /^\d{6}$/.test(initial)) {
-      $('code').value = initial;
-      renderRecentEvents(initial);
-      loadCode(initial);
-    }
-  </script>
-  <script>
+    if (initial && /^\d{6}$/.test(initial)) renderRecentEvents(initial);
+
     (() => {
       const section = document.getElementById('recent-events');
       const row = document.getElementById('stock-abnormal-row');
