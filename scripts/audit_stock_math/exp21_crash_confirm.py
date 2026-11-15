@@ -52,15 +52,17 @@ def s_stat(y: np.ndarray, dy: np.ndarray, m: int, n: int) -> np.ndarray:
     return out
 
 
-def monitor(y: np.ndarray) -> list[tuple[int, int]]:
-    """返回 [(泡沫触发日, 崩盘确认日)]（价格索引）。滚动训练期：e 日临界值 = [e−K−M−N−TRAIN, e−K−M−N] 内统计量的 max/min。"""
+def monitor(y: np.ndarray, i_start: int = 0) -> list[tuple[int, int]]:
+    """返回 [(泡沫触发日, 崩盘确认日)]（价格索引；未确认的泡沫确认日为 −1）。滚动训练期：e 日临界值 = [e−K−M−N−TRAIN, e−K−M−N] 内统计量的 max/min；
+    FIXED 时临界值冻结在开发段起点（i_start）后首个可用日。"""
     dy = np.diff(y)
     A, S = a_stat(dy, K), s_stat(y, dy, M, N)
     lag = K + M + N
     Amax = pd.Series(A).rolling(TRAIN, min_periods=TRAIN).max().shift(lag).to_numpy()
     Smin = pd.Series(S).rolling(TRAIN, min_periods=TRAIN).min().shift(lag).to_numpy()
     if FIXED:
-        i0 = int(np.argmax(np.isfinite(Amax) & np.isfinite(Smin)))
+        ok = np.isfinite(Amax) & np.isfinite(Smin) & (np.arange(len(A)) >= i_start)
+        i0 = int(np.argmax(ok))
         Amax = np.where(np.arange(len(A)) >= i0, Amax[i0], np.nan); Smin = np.where(np.arange(len(S)) >= i0, Smin[i0], np.nan)
     state, t_dia, resume, out = "bubble", -1, -1, []
     for e in range(len(dy)):
@@ -72,6 +74,8 @@ def monitor(y: np.ndarray) -> list[tuple[int, int]]:
                 out.append((t_dia + 1, e + 1)); state, resume = "wait", e + K
         elif e >= resume:
             state = "bubble"
+    if state == "crash":
+        out.append((t_dia + 1, -1))
     return out
 
 
@@ -113,20 +117,21 @@ def score(c: int, events: np.ndarray, close: np.ndarray, side: int) -> dict:
 def run_side(sym: str, logp: pd.Series, events: np.ndarray, side: int) -> tuple[pd.DataFrame, dict]:
     y = side * logp.to_numpy(); close = np.exp(logp.to_numpy()); cal = logp.index
     rows = []
-    for t0, c in monitor(y):
-        if cal[c] < START or cal[c] > END:
+    i_start = int(np.searchsorted(cal, START))
+    sd = "top" if side > 0 else "bottom"
+    for t0, c in monitor(y, i_start):
+        if cal[t0] < START or cal[t0] > END:
             continue
-        r = dict(symbol=sym, side="top" if side > 0 else "bottom", t_bubble=cal[t0], rule="smin", date=cal[c], **score(c, events, close, side))
-        rows.append(r)
-        for name, cb in baselines(close, t0, side).items():
-            if cb is not None and cb < len(close):
-                rows.append(dict(symbol=sym, side=r["side"], t_bubble=cal[t0], rule=name, date=cal[cb], **score(cb, events, close, side)))
+        sig = dict(baselines(close, t0, side), smin=(c if c >= 0 else None))
+        for name, cb in sig.items():
+            if cb is not None and cb < len(close) and START <= cal[cb] <= END:
+                rows.append(dict(symbol=sym, side=sd, t_bubble=cal[t0], rule=name, date=cal[cb], **score(cb, events, close, side)))
     df = pd.DataFrame(rows)
     # 零对照：对数收益循环平移（≥250 日），重跑状态机，事件固定
     rng = np.random.default_rng(SEED); dy = np.diff(y); hits, reps = [], []
     for _ in range(N_NULL):
         k = int(rng.integers(MIN_SHIFT, len(dy) - MIN_SHIFT)); yy = np.concatenate([[y[0]], y[0] + np.cumsum(np.roll(dy, k))])
-        cs = [c for _, c in monitor(yy) if START <= cal[c] <= END]
+        cs = [c for _, c in monitor(yy, i_start) if c >= 0 and START <= cal[c] <= END]
         hits.append(np.mean([score(c, events, close, side)["hit"] for c in cs]) if cs else np.nan)
         reps.append((sum(score(c, events, close, side)["hit"] for c in cs), len(cs)))
     if N_NULL == 0:
@@ -149,8 +154,12 @@ def gate(df: pd.DataFrame, null: dict) -> dict:
             tab = gs.groupby("rule").agg(plag=("plag", "median"), fr=("false", "mean"))
             if "smin" not in tab.index or tab.drop("smin").empty:
                 continue
-            best = tab.drop("smin").plag.max()
-            if (tab.loc["smin", "plag"] >= best or (np.isnan(best) and np.isfinite(tab.loc["smin", "plag"]))) and tab.loc["smin", "fr"] <= tab.drop("smin").fr.min():
+            b = tab.drop("smin")
+            if b.plag.notna().any():
+                best = b.plag.idxmax()
+                if tab.loc["smin", "plag"] >= b.loc[best, "plag"] and tab.loc["smin", "fr"] <= b.loc[best, "fr"]:
+                    ok += 1
+            elif np.isfinite(tab.loc["smin", "plag"]):
                 ok += 1
         return ok
     def g3(d):
@@ -158,7 +167,10 @@ def gate(df: pd.DataFrame, null: dict) -> dict:
         if "smin" not in tab.index:
             return False
         b = tab.drop("smin")
-        return bool(tab.loc["smin", "plag"] >= b.plag.max() and tab.loc["smin", "fr"] <= b.fr.min())
+        if not b.plag.notna().any():
+            return bool(np.isfinite(tab.loc["smin", "plag"]))
+        best = b.plag.idxmax()
+        return bool(tab.loc["smin", "plag"] >= b.loc[best, "plag"] and tab.loc["smin", "fr"] <= b.loc[best, "fr"])
     ex = df[~df.ev_year.isin(EX)]
     n2 = g2(ex)
     return dict(G1=bool(g1), G1_hit=float(s.hit.mean()) if len(s) else np.nan, **null, G2_pass_idx=n2, G2=n2 >= 4, G3=g3(df), PASS=bool(g1 and n2 >= 4 and g3(df)))
