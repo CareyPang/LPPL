@@ -202,7 +202,7 @@ a { color: var(--ink-2); text-decoration: none; }
   const q = new URLSearchParams(location.search);
   if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
 
-  $('syms').innerHTML = LPPL.SYMS.map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
+  $('syms').innerHTML = LPPL.SYMS.filter((s) => s.history !== false).map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
   $('ranges').innerHTML = RANGES.map((r, i) => `<button class="chip" type="button" data-r="${i}" aria-pressed="false">${E(r[0])}</button>`).join('');
   $('syms').onclick = (e) => { const b = e.target.closest('[data-s]'); if (b) { st.sym = b.dataset.s; load(); } };
   $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { setPreset(+b.dataset.r); } };

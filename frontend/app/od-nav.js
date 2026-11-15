@@ -177,6 +177,7 @@
     { sym: 'sh000016', name: '上证50', code: '000016', alias: [] },
     { sym: 'sh000300', name: '沪深300', code: '000300', alias: [] },
     { sym: 'sh000905', name: '中证500', code: '000905', alias: [] },
+    { sym: 'sh000688', name: '科创50', code: '000688', alias: ['科创板50'] },
     { sym: 'sz399001', name: '深证成指', code: '399001', alias: ['深证'] },
     { sym: 'sz399006', name: '创业板指', code: '399006', alias: ['创业板'] }
   ];

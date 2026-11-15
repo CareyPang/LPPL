@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           mkdir -p out/index
           asof="$(python -c 'from research.data.trading_date import latest_closed_trading_day; print(latest_closed_trading_day())')"
-          symbols=(sh000001 sh000016 sh000300 sh000905 sz399001 sz399006)
+          symbols=(sh000001 sh000016 sh000300 sh000905 sh000688 sz399001 sz399006)
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             symbols=(sh000001)
           fi
@@ -77,7 +77,7 @@ jobs:
           git switch -c index-publish origin/stock-results
           mkdir -p index
           published=()
-          for sym in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
+          for sym in sh000001 sh000016 sh000300 sh000905 sh000688 sz399001 sz399006; do
             source="out/index/${sym}_${ASOF}.json"
             if [[ -f "$source" ]]; then
               target="index/${sym}_latest.json"
@@ -95,7 +95,7 @@ jobs:
           else
             git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -m "index: 发布 6 指数 LPPLS ${ASOF}"
+              commit -m "index: 发布 7 指数 LPPLS ${ASOF}"
             pushed=false
             for attempt in 1 2 3; do
               echo "stock-results push attempt ${attempt}/3"

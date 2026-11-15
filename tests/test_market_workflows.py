@@ -102,7 +102,7 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
 
     assert triggers["schedule"] == [{"cron": "0 10 * * 1-5"}]
     assert triggers["workflow_dispatch"] is None
-    assert 'symbols=(sh000001 sh000016 sh000300 sh000905 sz399001 sz399006)' in run_index["run"]
+    assert 'symbols=(sh000001 sh000016 sh000300 sh000905 sh000688 sz399001 sz399006)' in run_index["run"]
     assert 'symbols=(sh000001)' in run_index["run"]
     assert publish["if"] == (
         "github.event_name != 'pull_request' && steps.run.outputs.success_count != '0'"
