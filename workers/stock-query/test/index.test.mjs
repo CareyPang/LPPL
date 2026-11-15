@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import worker, {
+  replayFailureActive,
   StockQueryState,
   QueryBudget,
   normalizeMarket,
@@ -81,7 +82,7 @@ test('health reports configured bindings without exposing the token', async () =
     assert.equal(health.gh_token, true);
     assert.equal(health.repo, 'example/stocks');
     assert.equal(health.allowed_origin, 'https://example.test');
-    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/query', '/status', '/result']);
+    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/query', '/status', '/result', '/replay', '/replay/result']);
   });
 });
 
@@ -1015,5 +1016,127 @@ test('news route preserves the existing OPTIONS and Origin checks', async () => 
     assert.equal(forbidden.status, 403);
     assert.equal(forbidden.headers.get('Access-Control-Allow-Origin'), null);
     assert.equal((await worker.fetch(request('/news', { method: 'POST' }), env)).status, 405);
+  });
+});
+
+test('replay validation rejects unsupported symbols, bad dates, weekends and future days', async () => {
+  const env = environment();
+  const bad = async (body) => {
+    const res = await worker.fetch(request('/replay', { method: 'POST', body }), env);
+    assert.equal(res.status, 400);
+    return (await res.json()).error_code;
+  };
+  assert.equal(await bad({ sym: 'sh600519', asof: '2015-06-12' }), 'INVALID_SYM');
+  assert.equal(await bad({ sym: 'sh000001', asof: '2015/06/12' }), 'INVALID_ASOF');
+  assert.equal(await bad({ sym: 'sh000001', asof: '2015-06-13' }), 'INVALID_ASOF');
+  assert.equal(await bad({ sym: 'sh000001', asof: '2004-12-31' }), 'INVALID_ASOF');
+  assert.equal(await bad({ sym: 'sh000001', asof: '2999-01-04' }), 'INVALID_ASOF');
+  const get = await worker.fetch(request('/replay/result?sym=sh000001&asof=2015-06-12', { method: 'POST' }), env);
+  assert.equal(get.status, 405);
+});
+
+test('GET /replay/result returns the stored result and 404 when missing without dispatching', async () => {
+  const calls = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    calls.push([String(url), init.method || 'GET']);
+    if (String(url).includes('/contents/index/replay/sh000300_2015-06-12.json')) {
+      return new Response(JSON.stringify({ name: '沪深300', asof: '2015-06-12', top: {} }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  } }, async () => {
+    const env = environment();
+    const hit = await worker.fetch(request('/replay/result?sym=sh000300&asof=2015-06-12'), env);
+    assert.equal(hit.status, 200);
+    const body = await hit.json();
+    assert.equal(body.status, 'ready');
+    assert.equal(body.result.asof, '2015-06-12');
+    const miss = await worker.fetch(request('/replay/result?sym=sh000688&asof=2024-06-28'), env);
+    assert.equal(miss.status, 404);
+    assert.equal((await miss.json()).status, 'missing');
+    assert.ok(calls.every(([url, method]) => !url.endsWith('/dispatches') && method === 'GET'));
+  });
+});
+
+test('POST /replay dispatches index_replay once the stored result is missing and surfaces failed results', async () => {
+  const dispatches = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    if (String(url).endsWith('/dispatches')) {
+      dispatches.push(JSON.parse(init.body));
+      assert.equal(init.headers.Authorization, `Bearer ${TOKEN}`);
+      return new Response(null, { status: 204 });
+    }
+    if (String(url).includes('/contents/index/replay/sh000001_2015-06-10.json')) {
+      return new Response(JSON.stringify({ status: 'failed', error: 'as-of 2015-06-10 不是交易日', permanent: true, failed_at: '2020-01-01T00:00:00+00:00' }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  } }, async () => {
+    const env = environment();
+    const res = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'SH000905', asof: '2015-06-12' } }), env);
+    assert.equal(res.status, 202);
+    const body = await res.json();
+    assert.equal(body.status, 'pending');
+    assert.equal(body.sym, 'sh000905');
+    assert.equal(dispatches.length, 1);
+    assert.equal(dispatches[0].event_type, 'index_replay');
+    assert.deepEqual(Object.keys(dispatches[0].client_payload).sort(), ['asof', 'job_id', 'sym']);
+    assert.equal(dispatches[0].client_payload.job_id, body.job_id);
+
+    const failed = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000001', asof: '2015-06-10' } }), env);
+    assert.equal(failed.status, 200);
+    const failedBody = await failed.json();
+    assert.equal(failedBody.status, 'failed');
+    assert.equal(failedBody.retry_after_minutes, null);
+    assert.equal(dispatches.length, 1);
+    const failedGet = await worker.fetch(request('/replay/result?sym=sh000001&asof=2015-06-10'), env);
+    assert.equal(failedGet.status, 200);
+    assert.equal((await failedGet.json()).status, 'failed');
+  });
+});
+
+test('POST /replay does not dispatch again while a run for the same sym+asof is queued or running', async () => {
+  const dispatches = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    if (String(url).endsWith('/dispatches')) { dispatches.push(init.body); return new Response(null, { status: 204 }); }
+    if (String(url).includes('/actions/workflows/index_replay.yml/runs')) {
+      return new Response(JSON.stringify({ workflow_runs: [
+        { display_title: 'index_replay sh000300 2015-06-12', status: 'in_progress' },
+        { display_title: 'index_replay sh000001 2015-06-12', status: 'completed' },
+      ] }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  } }, async () => {
+    const env = environment();
+    const busy = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000300', asof: '2015-06-12' } }), env);
+    assert.equal(busy.status, 202);
+    assert.equal((await busy.json()).status, 'pending');
+    assert.equal(dispatches.length, 0);
+    const fresh = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000001', asof: '2015-06-12' } }), env);
+    assert.equal(fresh.status, 202);
+    assert.equal(dispatches.length, 1);
+  });
+});
+
+test('transient replay failures expire after 30 minutes and are re-dispatched; permanent ones are not', async () => {
+  const now = Date.now();
+  assert.equal(replayFailureActive({ status: 'failed', permanent: true, failed_at: '2020-01-01T00:00:00Z' }, now), true);
+  assert.equal(replayFailureActive({ status: 'failed', failed_at: new Date(now - 5 * 60_000).toISOString() }, now), true);
+  assert.equal(replayFailureActive({ status: 'failed', failed_at: new Date(now - 31 * 60_000).toISOString() }, now), false);
+  assert.equal(replayFailureActive({ status: 'failed' }, now), false);
+  const dispatches = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    if (String(url).endsWith('/dispatches')) { dispatches.push(init.body); return new Response(null, { status: 204 }); }
+    if (String(url).includes('/contents/index/replay/sh000905_2015-06-12.json')) {
+      return new Response(JSON.stringify({ status: 'failed', error: '数据源超时', failed_at: new Date(now - 40 * 60_000).toISOString() }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  } }, async () => {
+    const env = environment();
+    const get = await worker.fetch(request('/replay/result?sym=sh000905&asof=2015-06-12'), env);
+    assert.equal(get.status, 404);
+    assert.equal((await get.json()).status, 'missing');
+    assert.equal(dispatches.length, 0);
+    const post = await worker.fetch(request('/replay', { method: 'POST', body: { sym: 'sh000905', asof: '2015-06-12' } }), env);
+    assert.equal(post.status, 202);
+    assert.equal(dispatches.length, 1);
   });
 });
