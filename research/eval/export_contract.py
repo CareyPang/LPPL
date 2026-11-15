@@ -424,7 +424,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     rb = regime_bands(ohlc)
     prev_month = (date - pd.offsets.MonthBegin(1) - pd.Timedelta(days=1)).strftime("%Y-%m")
     band = rb.loc[prev_month] if prev_month in rb.index else None
-    names = {"sh000001": "上证指数", "sh000016": "上证50", "sh000300": "沪深300", "sh000905": "中证500", "sz399001": "深证成指", "sz399006": "创业板指"}
+    names = {"sh000001": "上证指数", "sh000016": "上证50", "sh000300": "沪深300", "sh000905": "中证500", "sh000688": "科创50", "sz399001": "深证成指", "sz399006": "创业板指"}
     dd = d[d.date == date]
     rr = r.loc[dd.index]
     gg = grid_rules(dd)

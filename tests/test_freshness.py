@@ -87,6 +87,7 @@ def test_check_includes_all_index_lppls_datasets(tmp_path, monkeypatch):
         ("index_sh000016", "上证50 LPPLS", "index/sh000016_latest.json"),
         ("index_sh000300", "沪深300 LPPLS", "index/sh000300_latest.json"),
         ("index_sh000905", "中证500 LPPLS", "index/sh000905_latest.json"),
+        ("index_sh000688", "科创50 LPPLS", "index/sh000688_latest.json"),
         ("index_sz399001", "深证成指 LPPLS", "index/sz399001_latest.json"),
         ("index_sz399006", "创业板指 LPPLS", "index/sz399006_latest.json"),
     ]
