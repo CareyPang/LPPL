@@ -27,3 +27,5 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
     git -C "$ROOT" archive stock-results macro | tar -x -C "$SITE/lab/mock/data/"
   fi
 fi
+mkdir -p "$SITE/lab/mock/data"
+python3 "$ROOT/scripts/build_changelog.py" --root "$ROOT" --out "$SITE/lab/mock/data/changelog.json"

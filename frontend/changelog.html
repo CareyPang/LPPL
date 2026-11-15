@@ -87,12 +87,9 @@ footer{border-top:1px solid var(--line);padding:20px 24px 32px;text-align:center
 (function(){
 'use strict';
 const $=id=>document.getElementById(id),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const REPO='CareyPang/LPPL',API='https://api.github.com/repos/'+REPO+'/commits',RAW='https://raw.githubusercontent.com/'+REPO+'/';
+const REPO='CareyPang/LPPL';
 const DIR='web/mock/data/';
 const FILES=LPPL.SYMS.map(s=>({k:s.sym,t:s.name,p:DIR+s.sym+'_latest.json'})).concat([{k:'market',t:'市场数据',p:DIR+'market/market_latest.json'}]);
-const SIG={signal:'有合格拟合：顶部结构',no_qualified_fit:'主尺度没有合格拟合',t1_not_qualified:'泡沫起点未达标准',not_computed:'未计算'};
-const SPLIT={dev:'开发段',cal:'校准段',test:'测试段'};
-const CACHE='lppl.changelog.v1',TTL=10*60e3;
 let LOG=[],BYFILE={},filter='all';
 
 /* ---------- 当前版本：经 LPPL 读取 ---------- */
@@ -105,69 +102,35 @@ function current(){
  });
 }
 
-/* ---------- 历次提交：GitHub 公开接口（未登录每小时 60 次，结果缓存 10 分钟） ---------- */
-function readCache(){try{const c=JSON.parse(sessionStorage.getItem(CACHE)||'null');if(c&&Date.now()-c.at<TTL)return c.data}catch{}return null}
-function saveCache(data){try{sessionStorage.setItem(CACHE,JSON.stringify({at:Date.now(),data}))}catch{}}
-async function listFile(f){
- const r=await fetch(API+'?path='+encodeURIComponent(f.p)+'&per_page=100',{headers:{Accept:'application/vnd.github+json'}});
- if(r.status===403||r.status===429){
-  const reset=+r.headers.get('X-RateLimit-Reset');
-  const e=Error('GitHub 接口已达到未登录访问上限（每小时 60 次）'+(reset?'，约 '+new Date(reset*1e3).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' 后恢复':'')+'。');
-  e.limit=true;throw e;
- }
- if(!r.ok)throw Error('GitHub 接口返回 HTTP '+r.status+'。');
- const J=await r.json();
- return J.map(c=>({sha:c.sha,date:(c.commit.committer||c.commit.author).date,msg:(c.commit.message||'').split('\n')[0]}));
-}
-async function loadLog(){
- let data=readCache();
- if(!data){
-  const lists=await Promise.all(FILES.map(f=>listFile(f).then(L=>[f.k,L])));
-  data=Object.fromEntries(lists);saveCache(data);
- }
- BYFILE=data;
+/* ---------- 历次提交：构建时生成的静态摘要 ---------- */
+function loadLog(data){
+ BYFILE=Object.fromEntries(FILES.map(f=>[f.k,Array.isArray(data?.files?.[f.k])?data.files[f.k]:[]]));
  const map=new Map();
- FILES.forEach(f=>(data[f.k]||[]).forEach(c=>{
-  if(!map.has(c.sha))map.set(c.sha,{sha:c.sha,date:c.date,msg:c.msg,files:[]});
-  map.get(c.sha).files.push(f.k);
+ FILES.forEach(f=>(BYFILE[f.k]||[]).forEach(c=>{
+  if(!map.has(c.sha))map.set(c.sha,{sha:c.sha,date:c.date,subject:c.subject,files:[],sources:[]});
+  const item=map.get(c.sha);
+  item.files.push(f.k);
+  if(c.source&&!item.sources.includes(c.source))item.sources.push(c.source);
  }));
  LOG=[...map.values()].sort((a,b)=>b.date.localeCompare(a.date));
 }
 
-/* ---------- 某一版的摘要：只取版本、日期与状态文字，不取任何被隐藏的数值 ---------- */
-const snapCache=new Map();
-function snap(file,sha){
- const key=file+'@'+sha;
- if(!snapCache.has(key)){
-  const f=FILES.find(x=>x.k===file);
-  snapCache.set(key,fetch(RAW+sha+'/'+f.p).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(J=>{
-   if(file==='market'){
-    const S=J.sources||{},v=Object.values(S);
-    return {'截止日':J.asof||'—','数据源可用':v.length?v.filter(x=>x&&x.ok).length+' / '+v.length:'—'};
-   }
-   const lv=J.evidence_levels||{},o={'截止日':J.asof||'—','数据版本':J.data_version||'—','模型版本':J.model_version||'—','顶部结构状态':SIG[(J.top||{}).signal_status]||(J.top||{}).signal_status||'—'};
-   (J.validation||[]).forEach(v=>{o['检验 · '+(SPLIT[v.split]||v.split)]=lv[v.status]?lv[v.status]+'（'+v.status+'）':String(v.status||'—')});
-   return o;
-  }));
-  snapCache.get(key).catch(()=>snapCache.delete(key));
- }
- return snapCache.get(key);
-}
 function prevSha(file,sha){const L=BYFILE[file]||[],i=L.findIndex(c=>c.sha===sha);return i>=0&&i+1<L.length?L[i+1].sha:null}
 
 async function diffHtml(c){
  const files=c.files.filter(k=>filter==='all'||k===filter);
- const parts=await Promise.all(files.map(async k=>{
+ const parts=files.map(k=>{
   const f=FILES.find(x=>x.k===k),ps=prevSha(k,c.sha);
-  try{
-   const [now,before]=await Promise.all([snap(k,c.sha),ps?snap(k,ps):Promise.resolve(null)]);
+  const entries=BYFILE[k]||[],now=entries.find(x=>x.sha===c.sha)?.snapshot;
+  const before=ps?entries.find(x=>x.sha===ps)?.snapshot:null;
+  if(!now)return `<h3 style="margin:4px 0 6px;font-size:14px">${E(f.t)}</h3><p class="warn">这一版的静态摘要暂不可用。</p>`;
    const keys=[...new Set(Object.keys(now).concat(before?Object.keys(before):[]))];
    const rows=keys.map(x=>{const a=before?before[x]:undefined,b=now[x];const chg=!before||a!==b;
     return `<tr class="${chg?'chg':''}"><td class="f">${E(x)}</td><td class="v">${before?E(a??'—'):'<span class="same">首个版本</span>'}</td><td class="v${chg&&before?' n':''}">${E(b??'—')}${!chg?' <span class="same">未变</span>':''}</td></tr>`}).join('');
    return `<h3 style="margin:4px 0 6px;font-size:14px">${E(f.t)}</h3><table><thead><tr><th>字段</th><th>上一版</th><th>本版</th></tr></thead><tbody>${rows}</tbody></table>`;
-  }catch(e){return `<h3 style="margin:4px 0 6px;font-size:14px">${E(f.t)}</h3><p class="warn">这一版的文件未读取：${E(e.message||'网络不可用')}。</p>`}
- }));
- return parts.join('<div style="height:10px"></div>')+`<div class="sha">提交 <a class="m" href="https://github.com/${REPO}/commit/${c.sha}" rel="noopener">${c.sha.slice(0,7)}</a></div>`;
+ });
+ const sources=c.sources.map(source=>`<span class="tag">${E(source)}</span>`).join('');
+ return parts.join('<div style="height:10px"></div>')+`<div class="sha">提交 <a class="m" href="https://github.com/${REPO}/commit/${c.sha}" rel="noopener">${c.sha.slice(0,7)}</a> ${sources}</div>`;
 }
 
 /* ---------- 渲染 ---------- */
@@ -184,7 +147,7 @@ function draw(){
  $('tl').innerHTML=L.map((c,i)=>{
   const isCur=c.files.some(k=>latest[k]===c.sha);
   const tags=c.files.map(k=>{const f=FILES.find(x=>x.k===k);return `<span class="tag${latest[k]===c.sha?' now':''}">${E(f.t)}${latest[k]===c.sha?' · 当前':''}</span>`}).join('');
-  return `<li class="it${isCur?' cur':''}"><div class="ib"><button type="button" class="ih" aria-expanded="false" aria-controls="b-${i}" data-sha="${c.sha}"><span class="d">${fmt(c.date)}</span><span class="msg" title="${E(c.msg)}">${E(c.msg||'数据更新')}</span><span class="ch">差异</span><span class="tags">${tags}</span></button><div class="body" id="b-${i}" hidden></div></div></li>`}).join('')||'<li class="it"><p class="note">没有记录。</p></li>';
+  return `<li class="it${isCur?' cur':''}"><div class="ib"><button type="button" class="ih" aria-expanded="false" aria-controls="b-${i}" data-sha="${c.sha}"><span class="d">${fmt(c.date)}</span><span class="msg" title="${E(c.subject)}">${E(c.subject||'数据更新')}</span><span class="ch">差异</span><span class="tags">${tags}</span></button><div class="body" id="b-${i}" hidden></div></div></li>`}).join('')||'<li class="it"><p class="note">没有记录。</p></li>';
 }
 $('filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filter=b.dataset.f;draw()});
 $('tl').addEventListener('click',async e=>{
@@ -199,9 +162,19 @@ $('tl').addEventListener('click',async e=>{
 });
 function start(){
  $('state').innerHTML='<span class="sk"></span><span class="sk" style="width:60%"></span>';$('tl').innerHTML='';
- loadLog().then(draw).catch(e=>{
-  $('state').innerHTML=`<p class="warn">历次版本未加载：${E(e.message||'网络不可用')}这里只显示上方的当前版本。<button type="button" class="retry" id="retry">重试</button></p>`;
-  $('retry').onclick=start;
+ LPPL.changelog().then(data=>{
+  loadLog(data||{});
+  if(!LOG.length){
+   drawFilters();
+   $('state').innerHTML='<p class="warn">历次版本记录暂不可用；当前版本仍可在上方查看。</p>';
+   $('tl').innerHTML='';
+   return;
+  }
+  draw();
+ }).catch(()=>{
+  drawFilters();
+  $('state').innerHTML='<p class="warn">历次版本记录暂不可用；当前版本仍可在上方查看。</p>';
+  $('tl').innerHTML='';
  });
 }
 current();start();
