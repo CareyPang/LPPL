@@ -1330,6 +1330,7 @@
       $('watch-toggle').setAttribute('aria-pressed', String(!!included));
       $('watch-toggle').textContent = included ? '已在自选 · 移除' : '加入自选';
     }
+    addEventListener('lppl-watch', () => { try { updateWatchToggle(); } catch (e) { /* ignore */ } }); /* 同页自选抽屉里移除时同步按钮 */
     function hasWatchStatuses(value) {
       return value && typeof value === 'object'
         && value.top && typeof value.top === 'object' && typeof value.top.signal_status === 'string'

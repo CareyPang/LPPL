@@ -1056,6 +1056,7 @@ window.CP = { dateAt(bars, idx) {
     syncWatch(); drawTicker();
   });
   addEventListener('storage', (e) => { if (e.key === IndexWatchlist.KEY) { syncWatch(); drawTicker(); } });
+  addEventListener('lppl-watch', () => { syncWatch(); drawTicker(); }); /* 同页自选抽屉里移除时同步 ☆ 按钮 */
   function drawTicker() {
     const W = IndexWatchlist.read(), L = tickerData;
     const mine = W.map((s) => L.find((D) => D.sym.sym === s)).filter(Boolean);
