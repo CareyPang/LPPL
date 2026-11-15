@@ -74,7 +74,7 @@ def mar_prob(y: np.ndarray, rng: np.random.Generator) -> dict:
     xs = np.empty((M, Hm)); prev = np.full(M, x[-1])
     for i in range(Hm):
         prev = phi * prev + u[:, i]; xs[:, i] = prev
-    trend = b[0] + b[1] * (W + np.arange(1, Hm + 1))
+    trend = b[0] + b[1] * (W - 1 + np.arange(1, Hm + 1))  # 窗内最后一日为 W−1，预测期 T+i 对应 W−1+i
     ratio = np.exp(trend[None, :] + xs - y[-1])
     out = dict(**{k: f[k] for k in ("r", "phi", "psi", "sig", "nu")}, ess=float(1 / np.sum(w**2)))
     for H in HS:
