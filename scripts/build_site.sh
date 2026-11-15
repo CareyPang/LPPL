@@ -28,7 +28,7 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
   fi
   if git -C "$ROOT" cat-file -e stock-results:index 2>/dev/null; then
     git -C "$ROOT" archive stock-results index | tar -x -C "$SITE/lab/mock/data/"
-    python - "$SITE/lab/mock/data/index" "$SITE/lab/mock/data" <<'PY'
+    python3 - "$SITE/lab/mock/data/index" "$SITE/lab/mock/data" <<'PY'
 import json
 import shutil
 import sys
