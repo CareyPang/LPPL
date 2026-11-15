@@ -89,8 +89,9 @@ def main() -> None:
         own = df[name].expanding(52).apply(lambda x: (x[:-1] < x[-1]).mean(), raw=True).to_numpy()
         ts[name], ts[f"{name}_null_pct"], ts[f"{name}_own_pct"] = obs[:, j], np_, own
         for lab, pct in (("null_pct", np_), ("own_pct", own)):
-            hi = pct >= 0.95
-            rows.append(dict(indicator=name, ref=lab, n_asof=int(np.isfinite(pct).sum()), share_ge95=float(np.nanmean(hi)),
+            fin = np.isfinite(pct)
+            hi = fin & (pct >= 0.95)
+            rows.append(dict(indicator=name, ref=lab, n_asof=int(fin.sum()), share_ge95=float(hi[fin].mean()),
                              top_rate_ge95=float(has_top[hi].mean()) if hi.any() else np.nan, top_rate_all=float(has_top[np.isfinite(pct)].mean())))
     S = pd.DataFrame(rows)
     OUT.mkdir(parents=True, exist_ok=True)
