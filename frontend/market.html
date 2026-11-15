@@ -59,7 +59,6 @@ main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap
 .tile b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile span { font-family: var(--f-m); opacity: .9; }
 .tip { position: fixed; z-index: 9; pointer-events: none; max-width: calc(100vw - 16px); background: var(--surface-2); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.5 var(--f-m); white-space: normal; }
-@media (max-width: 560px) { .tm { height: 520px; } }
 .legend { display: flex; align-items: center; gap: var(--s2); font-size: 11px; color: var(--ink-3); margin-top: var(--s2); flex-wrap: wrap; }
 .legend i { display: inline-block; width: 18px; height: 10px; }
 .big { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--s2); }
@@ -124,6 +123,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 1000px) { .events-columns { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .macro-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .tm { height: 520px; } }
 </style>
 </head>
 <body>
@@ -374,13 +374,22 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       tip.style.left = Math.max(8, Math.min(clientX + 14, innerWidth - tip.offsetWidth - 8)) + 'px';
       tip.style.top = Math.max(8, Math.min(clientY + 14, innerHeight - tip.offsetHeight - 8)) + 'px';
     }
+    function tileAt(event) {
+      const direct = event.target.closest('.tile');
+      if (direct) return direct;
+      return [...box.querySelectorAll('.tile')].reverse().find((element) => {
+        const rect = element.getBoundingClientRect();
+        return event.clientX >= rect.left && event.clientX <= rect.right &&
+          event.clientY >= rect.top && event.clientY <= rect.bottom;
+      }) || null;
+    }
     box.onmousemove = (e) => {
-      const el = e.target.closest('.tile'); if (!el) { if (pinnedTile === null) tip.hidden = true; return; }
+      const el = tileAt(e); if (!el) { if (pinnedTile === null) tip.hidden = true; return; }
       if (pinnedTile !== null) return;
       showTileTip(el, e.clientX, e.clientY);
     };
     box.onclick = (e) => {
-      const el = e.target.closest('.tile');
+      const el = tileAt(e);
       if (!el) { pinnedTile = null; tip.hidden = true; return; }
       const index = Number(el.dataset.i);
       if (pinnedTile === index) { pinnedTile = null; tip.hidden = true; return; }
