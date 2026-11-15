@@ -147,7 +147,7 @@ def test_ak_stock_fetchers_forward_timeout_and_normalize(
             }
         )
 
-    monkeypatch.setattr(ak, function_name, fake_ak_fetcher)
+    monkeypatch.setattr(ak, function_name, fake_ak_fetcher, raising=False)
     result = fetcher("sh", "600519", False, adjust="qfq")
 
     assert calls == [{**expected_kwargs, "timeout": 15}]
@@ -161,6 +161,41 @@ def test_ak_stock_fetchers_forward_timeout_and_normalize(
         "volume": 10.0,
         "amount": 15.0,
     }
+
+
+def test_missing_ak_em_history_function_falls_back_with_versioned_error(monkeypatch):
+    import akshare as ak
+
+    monkeypatch.delattr(ak, "stock_zh_a_hist", raising=False)
+    with pytest.raises(RuntimeError) as error:
+        sources.fetch_ak_em_stock("sh", "600519", False)
+    assert str(error.value) == (
+        f"akshare.stock_zh_a_hist unavailable in akshare {ak.__version__}"
+    )
+
+    calls = []
+
+    def fail(name):
+        def _fail(*_args, **_kwargs):
+            calls.append(name)
+            raise RuntimeError("offline")
+
+        return _fail
+
+    def succeed(*_args, **_kwargs):
+        calls.append("ak_tx_stock")
+        return _prices()
+
+    monkeypatch.setitem(sources.SOURCES, "tencent_sina", fail("tencent_sina"))
+    monkeypatch.setitem(sources.SOURCES, "ak_sina_stock", fail("ak_sina_stock"))
+    monkeypatch.setitem(sources.SOURCES, "eastmoney", fail("eastmoney"))
+    monkeypatch.setitem(sources.SOURCES, "ak_tx_stock", succeed)
+
+    frame, source = cache.download("600519", retries=1, backoff=0)
+
+    assert source == "ak_tx_stock"
+    assert len(frame) == len(_prices())
+    assert calls == ["tencent_sina", "ak_sina_stock", "eastmoney", "ak_tx_stock"]
 
 
 def test_rate_limit_enforces_interval(monkeypatch):

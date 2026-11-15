@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import random
 import re
+import statistics
 import tempfile
 import time
-from datetime import date, datetime, timezone
+import uuid
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -20,12 +24,23 @@ from .margin import SZSE_RENAME, fetch_sse, fetch_szse, load_margin
 
 EM_BOARD_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+EM_BOARD_STRENGTH_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+EM_BOARD_STRENGTH_FALLBACK_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_HISTORY_URL = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+EM_HISTORY_REFERENCE_BK = "BK0475"
 EM_POOL_URL = "https://push2ex.eastmoney.com"
+EM_ULIST_URL = "https://push2delay.eastmoney.com/api/qt/ulist.np/get"
+EM_HOT_RANK_URL = "https://emappdata.eastmoney.com/stockrank/getAllCurrentList"
+EM_DATACENTER_URL = "https://datacenter-web.eastmoney.com/api/data/v1/get"
+EM_FAST_NEWS_URL = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
+THS_HARDEN_URL = "http://zx.10jqka.com.cn/event/api/getharden"
+THS_HOT_URL = "https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock"
+CLS_ROLL_URL = "https://www.cls.cn/v1/roll/get_roll_list"
 SINA_BOARD_URL = (
     "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
     "MoneyFlow.ssl_bkzj_bk"
 )
+SINA_CONCEPT_BOARD_URL = "https://vip.stock.finance.sina.com.cn/q/view/newFLJK.php"
 SINA_BOARD_HOST = "vip.stock.finance.sina.com.cn"
 HKEX_URL = "https://www.hkex.com.hk/chi/csm/DailyStat/data_tab_daily_{date}c.js"
 CSINDEX_URL = (
@@ -172,6 +187,30 @@ class EMClient:
             raise RuntimeError("Eastmoney response is not a JSON object")
         return payload
 
+    def post_json(self, url, body, headers=None):
+        if self.last_call is not None:
+            elapsed = time.monotonic() - self.last_call
+            delay = max(0.0, 0.6 - elapsed) + self.jitter(0.0, 0.4)
+            self.sleep(delay)
+        try:
+            response = self.session.post(
+                url,
+                json=body,
+                headers=headers,
+                timeout=15,
+                allow_redirects=True,
+            )
+        finally:
+            self.last_call = time.monotonic()
+        if response.status_code == 403:
+            raise EMBlocked(f"Eastmoney returned HTTP 403 for {url}")
+        response.raise_for_status()
+        self.last_url = response.url
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise RuntimeError("Eastmoney response is not a JSON object")
+        return payload
+
     @property
     def url_host(self):
         return urlparse(self.last_url).hostname or "unknown"
@@ -221,7 +260,13 @@ def _parse_board_page(payload: dict, period: str) -> tuple[list[dict], int]:
     return rows, total
 
 
-def _fetch_board_period(kind: str, period: str, client: EMClient) -> list[dict]:
+def _fetch_board_period_from_url(
+    kind: str,
+    period: str,
+    client: EMClient,
+    url: str,
+    fallback_url: str | None = None,
+) -> list[dict]:
     params = {
         "pz": "200",
         "po": "1",
@@ -237,9 +282,9 @@ def _fetch_board_period(kind: str, period: str, client: EMClient) -> list[dict]:
     page = 1
     while True:
         payload = client.get_json(
-            EM_BOARD_URL,
+            url,
             {**params, "pn": str(page)},
-            fallback_url=EM_BOARD_FALLBACK_URL,
+            fallback_url=fallback_url,
         )
         page_rows, total = _parse_board_page(payload, period)
         if expected_total is None:
@@ -260,14 +305,37 @@ def _fetch_board_period(kind: str, period: str, client: EMClient) -> list[dict]:
     return rows
 
 
-def board_flow_snapshot(kind: str, client: EMClient | None = None) -> pd.DataFrame:
+def _fetch_board_period(
+    kind: str,
+    period: str,
+    client: EMClient,
+    urls: tuple[str, ...] | None = None,
+) -> list[dict]:
+    if urls is None:
+        return _fetch_board_period_from_url(
+            kind, period, client, EM_BOARD_URL, fallback_url=EM_BOARD_FALLBACK_URL
+        )
+    errors = []
+    for url in urls:
+        try:
+            return _fetch_board_period_from_url(kind, period, client, url)
+        except Exception as exc:  # noqa: BLE001 — try the next Eastmoney host
+            errors.append(f"{urlparse(url).hostname}: {_error(exc)}")
+    raise RuntimeError("Eastmoney board hosts failed: " + "; ".join(errors))
+
+
+def board_flow_snapshot(
+    kind: str,
+    client: EMClient | None = None,
+    urls: tuple[str, ...] | None = None,
+) -> pd.DataFrame:
     if kind not in BOARD_FS:
         raise ValueError(f"kind must be one of {tuple(BOARD_FS)}")
     client = client or EMClient()
     merged = {}
     order = []
     for period in ("today", "5d", "10d"):
-        for row in _fetch_board_period(kind, period, client):
+        for row in _fetch_board_period(kind, period, client, urls=urls):
             code = row["code"]
             if code not in merged:
                 merged[code] = {"code": code, "name": row["name"]}
@@ -353,10 +421,124 @@ def sina_board_flow_snapshot(kind: str, session=None) -> pd.DataFrame:
     ) from errors[-1]
 
 
+SINA_NODE_URL = (
+    "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+    "Market_Center.getHQNodeData"
+)
+SINA_STOCK_FLOW_URL = (
+    "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+    "MoneyFlow.ssl_bkzj_ssggzj"
+)
+SINA_REGIONS = {
+    "110000": "北京", "120000": "天津", "130000": "河北", "140000": "山西", "150000": "内蒙古",
+    "210000": "辽宁", "220000": "吉林", "230000": "黑龙江", "310000": "上海", "320000": "江苏",
+    "330000": "浙江", "340000": "安徽", "350000": "福建", "360000": "江西", "370000": "山东",
+    "410000": "河南", "420000": "湖北", "430000": "湖南", "440000": "广东", "450000": "广西",
+    "460000": "海南", "500000": "重庆", "510000": "四川", "520000": "贵州", "530000": "云南",
+    "540000": "西藏", "610000": "陕西", "620000": "甘肃", "630000": "青海", "640000": "宁夏",
+    "650000": "新疆",
+}
+SINA_PAGE_PAUSE = 0.2
+SINA_PAGE_RETRIES = 3
+
+
+def _sina_pages(session, url: str, params: dict, page_size: int) -> list[dict]:
+    rows: list[dict] = []
+    for page in range(1, 200):
+        payload = None
+        for attempt in range(SINA_PAGE_RETRIES):
+            try:
+                response = session.get(
+                    url,
+                    params={**params, "page": page, "num": page_size},
+                    headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"},
+                    timeout=20,
+                    allow_redirects=True,
+                )
+                response.raise_for_status()
+                payload = response.json()
+                if not isinstance(payload, list):
+                    raise RuntimeError(
+                        f"Sina {url.rsplit('/', 1)[-1]} page {page} is not an array"
+                    )
+                break
+            except Exception:
+                if attempt == SINA_PAGE_RETRIES - 1:
+                    raise
+                time.sleep(SINA_PAGE_PAUSE * (attempt + 1) * 5)
+        rows.extend(item for item in payload if isinstance(item, dict))
+        if len(payload) < page_size:
+            break
+        time.sleep(SINA_PAGE_PAUSE)
+    return rows
+
+
+def sina_region_flow_snapshot(session=None) -> pd.DataFrame:
+    """地域板块回退：新浪 diyu_<省码> 成分 × 新浪全市场个股资金流聚合（只有当日）。"""
+    session = session or requests.Session()
+    flows = {}
+    for item in _sina_pages(
+        session,
+        SINA_STOCK_FLOW_URL,
+        {"sort": "netamount", "asc": 0, "bankuai": "", "shichang": ""},
+        1000,
+    ):
+        symbol = str(item.get("symbol") or "")
+        if symbol:
+            flows[symbol] = item
+    if not flows:
+        raise RuntimeError("Sina stock money-flow list is empty")
+    rows = []
+    missing = []
+    for region_code, region_name in SINA_REGIONS.items():
+        members = _sina_pages(
+            session,
+            SINA_NODE_URL,
+            {"sort": "symbol", "asc": 1, "node": f"diyu_{region_code}"},
+            100,
+        )
+        pct, net, amount, matched = [], 0.0, 0.0, 0
+        for member in members:
+            flow = flows.get(str(member.get("symbol") or ""))
+            if flow is None:
+                continue
+            change = _number(flow.get("changeratio"))
+            turnover = _number(flow.get("amount"))
+            net_amount = _number(flow.get("netamount"))
+            if change is None or turnover is None or net_amount is None:
+                continue
+            matched += 1
+            pct.append(change)
+            net += net_amount
+            amount += turnover
+        if not matched:
+            missing.append(region_name)
+            continue
+        rows.append(
+            {
+                "code": f"diyu_{region_code}",
+                "name": region_name,
+                "pct_chg": sum(pct) / len(pct) * 100,
+                "main_net": net,
+                "main_pct": net / amount * 100 if amount else None,
+                **{column: None for column in BOARD_COLUMNS[5:]},
+            }
+        )
+    if missing:
+        raise RuntimeError(
+            "Sina region boards matched no money-flow rows for: " + ", ".join(missing)
+        )
+    frame = pd.DataFrame(rows, columns=BOARD_COLUMNS)
+    frame.attrs["url_host"] = SINA_BOARD_HOST
+    return frame
+
+
 def _parse_board_history(payload: dict) -> pd.DataFrame:
     data = payload.get("data")
     if not isinstance(data, dict) or not isinstance(data.get("klines"), list):
         raise RuntimeError("Eastmoney board-history response lacks data.klines")
+    if not data["klines"]:
+        raise RuntimeError("Eastmoney board-history response contains no rows")
     rows = []
     for line in data["klines"]:
         parts = str(line).split(",")
@@ -415,7 +597,7 @@ def _verify_history_order(snapshot: dict, history: pd.DataFrame, asof: str) -> l
 
 
 def board_flow_history(bk: str, client: EMClient | None = None) -> pd.DataFrame:
-    if not re.fullmatch(r"BK[0-9A-Za-z]+", str(bk)):
+    if not re.fullmatch(r"BK\d{4}", str(bk)):
         raise ValueError(f"invalid Eastmoney board code: {bk!r}")
     client = client or EMClient()
     payload = client.get_json(
@@ -482,6 +664,87 @@ def _limit_display_row(row: dict, pool: str) -> dict:
     }
 
 
+def _limit_zt_row(row: dict) -> dict:
+    required = {"c", "n", "lbc", "fbt", "lbt", "fund", "zbc", "hybk", "zdp", "amount", "hs"}
+    missing = required - set(row)
+    if missing:
+        raise RuntimeError("Eastmoney ZT fields missing: " + ", ".join(sorted(missing)))
+    return {
+        "code": str(row["c"]),
+        "name": str(row["n"]),
+        "streak": _int(row["lbc"], "lbc"),
+        "first_seal": _fmt_limit_time(row["fbt"]),
+        "last_seal": _fmt_limit_time(row["lbt"]),
+        "seal_fund": _number(row["fund"]),
+        "break_times": _int(row["zbc"], "zbc"),
+        "industry": str(row["hybk"]) if row["hybk"] is not None else None,
+        "pct": _number(row["zdp"]),
+        "amount": _number(row["amount"]),
+        "turnover": _number(row["hs"]),
+        "reason": None,
+    }
+
+
+def _yesterday_pool_row(row: dict) -> dict:
+    required = {"c", "n", "p", "zdp", "hs", "yfbt", "ylbc", "hybk"}
+    missing = required - set(row)
+    if missing:
+        raise RuntimeError("Eastmoney yesterday-ZT fields missing: " + ", ".join(sorted(missing)))
+    return {
+        "code": str(row["c"]),
+        "name": str(row["n"]),
+        "close": _number(row["p"]),
+        "pct": _number(row["zdp"]),
+        "turnover": _number(row["hs"]),
+        "first_seal": _fmt_limit_time(row["yfbt"]),
+        "level": _int(row["ylbc"], "ylbc"),
+        "industry": str(row["hybk"]) if row["hybk"] is not None else None,
+    }
+
+
+def _promotion_summary(yesterday_rows: list[dict], today_rows: list[dict]) -> tuple[dict, dict]:
+    previous = [_yesterday_pool_row(row) for row in yesterday_rows]
+    today = [_limit_zt_row(row) for row in today_rows]
+    today_by_code = {row["code"]: row for row in today}
+    pct_values = [row["pct"] for row in previous if row["pct"] is not None]
+    sentiment = {
+        "yzt_n": len(pct_values),
+        "yzt_mean_pct": statistics.mean(pct_values) if pct_values else None,
+        "yzt_median_pct": statistics.median(pct_values) if pct_values else None,
+        "yzt_up_share": (
+            sum(value > 0 for value in pct_values) / len(pct_values) if pct_values else None
+        ),
+    }
+    levels: dict[int, list[dict]] = {}
+    for row in previous:
+        levels.setdefault(row["level"], []).append(row)
+    promotion_rows = []
+    total_previous = 0
+    total_up = 0
+    grouped: dict[str, dict[str, int]] = {}
+    for level, rows in sorted(levels.items()):
+        key = "5+" if level >= 5 else str(level)
+        counts = grouped.setdefault(key, {"n_prev": 0, "n_up": 0})
+        counts["n_prev"] += len(rows)
+        counts["n_up"] += sum(
+            today_by_code.get(row["code"], {}).get("streak") == row["level"] + 1
+            for row in rows
+        )
+        total_previous += len(rows)
+        total_up += sum(
+            today_by_code.get(row["code"], {}).get("streak") == row["level"] + 1
+            for row in rows
+        )
+    for key, counts in grouped.items():
+        promotion_rows.append({"k": key, **counts})
+    return sentiment, {
+        "levels": promotion_rows,
+        "n_prev_total": total_previous,
+        "n_up_total": total_up,
+        "rate": total_up / total_previous if total_previous else None,
+    }
+
+
 def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
     compact_date = date_value.replace("-", "")
     if not re.fullmatch(r"\d{8}", compact_date):
@@ -502,7 +765,22 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
             url, params, headers={"Referer": "https://quote.eastmoney.com/"}
         )
         pools[kind] = _parse_pool(payload, compact_date)
+    yesterday_payload = client.get_json(
+        f"{EM_POOL_URL}/getYesterdayZTPool",
+        {
+            "ut": LIMIT_UT,
+            "dpt": "wz.ztzt",
+            "Pageindex": 0,
+            "pagesize": 10000,
+            "sort": "zs:desc",
+            "date": compact_date,
+        },
+        headers={"Referer": "https://quote.eastmoney.com/"},
+    )
+    yesterday_rows = _parse_pool(yesterday_payload, compact_date)
     zt, zb, dt = (pools[k] for k in ("zt", "zb", "dt"))
+    zt_rows = [_limit_zt_row(row) for row in zt]
+    sentiment, promotion = _promotion_summary(yesterday_rows, zt)
     streak_dist: dict[str, int] = {}
     for row in zt:
         streak = _int(row["lbc"], "lbc")
@@ -521,7 +799,614 @@ def limit_pools(date_value: str, client: EMClient | None = None) -> dict:
             kind: [_limit_display_row(row, kind) for row in pool[:20]]
             for kind, pool in pools.items()
         },
+        "zt_rows": zt_rows,
+        "yesterday_rows": [_yesterday_pool_row(row) for row in yesterday_rows],
+        "sentiment": sentiment,
+        "promotion": promotion,
     }
+
+
+def _row_list(value, field: str) -> list[dict]:
+    if isinstance(value, dict):
+        rows = list(value.values())
+    elif isinstance(value, list):
+        rows = value
+    else:
+        raise RuntimeError(f"{field} must be a list or object")
+    if any(not isinstance(row, dict) for row in rows):
+        raise RuntimeError(f"{field} contains a non-object row")
+    return rows
+
+
+def _payload_diff(payload: dict, source: str) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or "diff" not in data:
+        raise RuntimeError(f"{source} response lacks data.diff")
+    return _row_list(data["diff"], f"{source} data.diff")
+
+
+def _parse_breadth(payload: dict) -> dict:
+    rows = _payload_diff(payload, "Eastmoney breadth")
+    required = {"f12", "f14", "f104", "f105", "f106", "f6"}
+    indices = []
+    for row in rows:
+        missing = required - set(row)
+        if missing:
+            raise RuntimeError("Eastmoney breadth fields missing: " + ", ".join(sorted(missing)))
+        indices.append(
+            {
+                "code": str(row["f12"]),
+                "name": str(row["f14"]),
+                "up": _int(row["f104"], "f104"),
+                "down": _int(row["f105"], "f105"),
+                "flat": _int(row["f106"], "f106"),
+                "amount_yuan": _number(row["f6"]),
+            }
+        )
+        if indices[-1]["amount_yuan"] is None:
+            raise RuntimeError("Eastmoney breadth f6 is not numeric")
+    if len(indices) != 2:
+        raise RuntimeError(f"Eastmoney breadth returned {len(indices)} index rows; expected 2")
+    return {
+        "up": sum(row["up"] for row in indices),
+        "down": sum(row["down"] for row in indices),
+        "flat": sum(row["flat"] for row in indices),
+        "amount_yuan": sum(row["amount_yuan"] or 0 for row in indices),
+        "indices": indices,
+        "snapshot_at": _now(),
+        "note": "这是实时快照，仅在收盘后同日运行时有效。" + DESCRIPTIVE_NOTE,
+    }
+
+
+def _split_theme_reason(reason: str) -> list[str]:
+    if not isinstance(reason, str):
+        raise RuntimeError("THS theme reason is not a string")
+    return [
+        tag
+        for raw in reason.split("+")
+        if (tag := raw.strip().strip(" \t\r\n“”\"'"))
+    ]
+
+
+def _theme_tags(rows: list[dict]) -> list[dict]:
+    tag_codes: dict[str, set[str]] = {}
+    for row in rows:
+        missing = {"code", "reason"} - set(row)
+        if missing:
+            raise RuntimeError("THS theme tag fields missing: " + ", ".join(sorted(missing)))
+        for tag in _split_theme_reason(row["reason"]):
+            tag_codes.setdefault(tag, set()).add(str(row["code"]))
+    tags = [
+        {"tag": tag, "n": len(codes), "codes": sorted(codes)}
+        for tag, codes in tag_codes.items()
+    ]
+    tags.sort(key=lambda row: (-row["n"], row["tag"]))
+    return tags[:30]
+
+
+def _parse_themes(payload: dict) -> dict:
+    if "data" not in payload or not isinstance(payload["data"], list):
+        raise RuntimeError("THS harden response lacks data array")
+    if payload.get("errocode") not in (None, 0, "0"):
+        raise RuntimeError(f"THS harden error: {payload.get('errormsg', '')}")
+    rows = []
+    for item in payload["data"]:
+        if not isinstance(item, dict):
+            raise RuntimeError("THS harden row is not an object")
+        required = {"name", "code", "reason"}
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("THS harden fields missing: " + ", ".join(sorted(missing)))
+        code = str(item["code"])
+        row = {
+            "code": code,
+            "name": str(item["name"]),
+            "reason": item["reason"],
+            "pct": _number(item.get("zhangfu")),
+            "turnover": _number(item.get("huanshou")),
+            "amount": _number(item.get("chengjiaoe")),
+        }
+        rows.append(row)
+    return {"harden_rows": rows, "tags": _theme_tags(payload["data"])}
+
+
+def _rank_board_strength(
+    rows: list[dict],
+    zt_codes: set[str] | None,
+    tag_codes: dict[str, set[str]] | None,
+):
+    for row in rows:
+        row["zt_n"] = (
+            len(zt_codes & tag_codes.get(row["name"], set()))
+            if tag_codes is not None and zt_codes is not None
+            else None
+        )
+    rows.sort(
+        key=lambda row: (
+            row["zt_n"] is None,
+            -(row["zt_n"] or 0),
+            -(row["pct"] if row["pct"] is not None else float("-inf")),
+        )
+    )
+    return rows[:30]
+
+
+def _parse_board_strength(payload: dict, zt_codes: set[str] | None, tag_codes: dict[str, set[str]] | None):
+    rows = _payload_diff(payload, "Eastmoney concept boards")
+    required = {"f12", "f14", "f3", "f6", "f104", "f105", "f128", "f136", "f140"}
+    output = []
+    for item in rows:
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("Eastmoney concept fields missing: " + ", ".join(sorted(missing)))
+        name = str(item["f14"])
+        if name.startswith("昨日"):
+            continue
+        up = _int(item["f104"], "f104")
+        down = _int(item["f105"], "f105")
+        output.append(
+            {
+                "code": str(item["f12"]),
+                "name": name,
+                "pct": _number(item["f3"]),
+                "amount": _number(item["f6"]),
+                "up": up,
+                "down": down,
+                "up_share": up / (up + down) if up + down else None,
+                "leader_name": str(item["f128"]) if item["f128"] is not None else None,
+                "leader_code": str(item["f140"]) if item["f140"] is not None else None,
+                "leader_pct": _number(item["f136"]),
+            }
+        )
+    return _rank_board_strength(output, zt_codes, tag_codes)
+
+
+def _parse_sina_concept_boards(
+    text: str,
+    zt_codes: set[str] | None,
+    tag_codes: dict[str, set[str]] | None,
+) -> list[dict]:
+    match = re.search(
+        r"^\s*var\s+S_Finance_bankuai_class\s*=\s*(\{.*\})\s*;?\s*$",
+        text.lstrip("\ufeff"),
+        re.DOTALL,
+    )
+    if not match:
+        raise RuntimeError("Sina concept-board response lacks S_Finance_bankuai_class")
+    try:
+        payload = json.loads(match.group(1))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("Sina concept-board response is not valid JSON") from exc
+    if not isinstance(payload, dict) or not payload:
+        raise RuntimeError("Sina concept-board response is empty")
+
+    output = []
+    for key, value in payload.items():
+        if not isinstance(value, str):
+            raise RuntimeError("Sina concept-board row is not a string")
+        fields = value.split(",")
+        if len(fields) < 8:
+            raise RuntimeError("Sina concept-board row lacks required fields")
+        code, name = fields[0].strip() or str(key), fields[1].strip()
+        if not code or not name:
+            raise RuntimeError("Sina concept-board row lacks code/name")
+        if name.startswith("昨日"):
+            continue
+        output.append(
+            {
+                "code": code,
+                "name": name,
+                "pct": _number(fields[5]),
+                "amount": _number(fields[7]),
+                "up": None,
+                "down": None,
+                "up_share": None,
+                "leader_code": fields[8].strip() or None if len(fields) > 8 else None,
+                "leader_pct": _number(fields[9]) if len(fields) > 9 else None,
+                "leader_name": fields[12].strip() or None if len(fields) > 12 else None,
+            }
+        )
+    return _rank_board_strength(output, zt_codes, tag_codes)
+
+
+def _parse_ths_hot(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or "stock_list" not in data:
+        raise RuntimeError("THS hot response lacks data.stock_list")
+    rows = _row_list(data["stock_list"], "THS hot stock_list")
+    output = []
+    for item in rows[:50]:
+        required = {"order", "code", "name", "rate", "rise_and_fall", "hot_rank_chg"}
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("THS hot fields missing: " + ", ".join(sorted(missing)))
+        tag = item.get("tag")
+        if tag is not None and not isinstance(tag, dict):
+            raise RuntimeError("THS hot tag must be an object when present")
+        concepts = (tag or {}).get("concept_tag", [])
+        if not isinstance(concepts, list):
+            raise RuntimeError("THS hot tag.concept_tag must be an array")
+        output.append(
+            {
+                "rank": _int(item["order"], "order"),
+                "code": str(item["code"]),
+                "name": str(item["name"]),
+                "heat": _number(item["rate"]),
+                "pct": _number(item["rise_and_fall"]),
+                "rank_chg": _number(item["hot_rank_chg"]),
+                "concepts": [str(value) for value in concepts],
+                "popularity_tag": (
+                    str(tag["popularity_tag"]) if tag and tag.get("popularity_tag") is not None else None
+                ),
+            }
+        )
+    return output
+
+
+def _parse_em_hot_rank(payload: dict, quotes_payload: dict) -> list[dict]:
+    if "data" not in payload:
+        raise RuntimeError("Eastmoney hot-rank response lacks data")
+    ranked = _row_list(payload["data"], "Eastmoney hot-rank data")
+    quotes = _payload_diff(quotes_payload, "Eastmoney hot-rank quote")
+    quote_fields = {"f12", "f14", "f2", "f3"}
+    quote_by_code = {}
+    for row in quotes:
+        missing = quote_fields - set(row)
+        if missing:
+            raise RuntimeError("Eastmoney hot quote fields missing: " + ", ".join(sorted(missing)))
+        quote_by_code[str(row["f12"])] = {
+            "name": str(row["f14"]),
+            "price": _number(row["f2"]),
+            "pct": _number(row["f3"]),
+        }
+    output = []
+    for item in ranked[:50]:
+        required = {"sc", "rk", "hisRc"}
+        missing = required - set(item)
+        if missing:
+            raise RuntimeError("Eastmoney hot-rank fields missing: " + ", ".join(sorted(missing)))
+        source_code = str(item["sc"])
+        if len(source_code) < 6:
+            raise RuntimeError(f"invalid Eastmoney hot-rank code: {source_code!r}")
+        code = source_code[-6:]
+        quote = quote_by_code.get(code)
+        if quote is None:
+            raise RuntimeError(f"Eastmoney hot-rank quote missing for {code}")
+        output.append(
+            {
+                "rank": _int(item["rk"], "rk"),
+                "code": code,
+                **quote,
+                "rank_chg": _number(item["hisRc"]),
+            }
+        )
+    return output
+
+
+def _parse_dragon_tiger(payload: dict, asof: str) -> dict:
+    result = payload.get("result")
+    if not isinstance(result, dict) or "data" not in result:
+        raise RuntimeError("Eastmoney LHB response lacks result.data")
+    rows = result["data"]
+    if not isinstance(rows, list):
+        raise RuntimeError("Eastmoney LHB result.data must be an array")
+    required = {
+        "TRADE_DATE",
+        "SECURITY_CODE",
+        "SECURITY_NAME_ABBR",
+        "EXPLANATION",
+        "CLOSE_PRICE",
+        "CHANGE_RATE",
+        "BILLBOARD_NET_AMT",
+        "TURNOVERRATE",
+    }
+    grouped = {}
+    for item in rows:
+        if not isinstance(item, dict):
+            raise RuntimeError("Eastmoney LHB row is not an object")
+        missing = required - set(item)
+        buy_field = "BUY_AMT" if "BUY_AMT" in item else "BILLBOARD_BUY_AMT"
+        sell_field = "SELL_AMT" if "SELL_AMT" in item else "BILLBOARD_SELL_AMT"
+        if buy_field not in item:
+            missing.add("BUY_AMT/BILLBOARD_BUY_AMT")
+        if sell_field not in item:
+            missing.add("SELL_AMT/BILLBOARD_SELL_AMT")
+        if missing:
+            raise RuntimeError("Eastmoney LHB fields missing: " + ", ".join(sorted(missing)))
+        trade_date = str(item["TRADE_DATE"])[:10]
+        if trade_date != asof:
+            raise RuntimeError(f"Eastmoney LHB TRADE_DATE {trade_date} does not match {asof}")
+        code = str(item["SECURITY_CODE"])
+        if code not in grouped:
+            grouped[code] = {
+                "code": code,
+                "name": str(item["SECURITY_NAME_ABBR"]),
+                "reason": [],
+                "close": _number(item["CLOSE_PRICE"]),
+                "pct": _number(item["CHANGE_RATE"]),
+                "net": _number(item["BILLBOARD_NET_AMT"]),
+                "buy": _number(item[buy_field]),
+                "sell": _number(item[sell_field]),
+                "turnover": _number(item["TURNOVERRATE"]),
+            }
+        reason = item["EXPLANATION"]
+        if reason and str(reason) not in grouped[code]["reason"]:
+            grouped[code]["reason"].append(str(reason))
+    stocks = list(grouped.values())
+    for row in stocks:
+        row["reason"] = "；".join(row["reason"])
+    return {
+        "date": str(rows[0]["TRADE_DATE"])[:10] if rows else asof,
+        "n_stocks": len(stocks),
+        "top_buy": sorted(stocks, key=lambda row: row["net"] or 0, reverse=True)[:20],
+        "top_sell": sorted(stocks, key=lambda row: row["net"] or 0)[:10],
+    }
+
+
+def _cls_query(params: dict[str, str]) -> tuple[str, str]:
+    qs = "&".join(f"{key}={params[key]}" for key in sorted(params))
+    sign = hashlib.md5(hashlib.sha1(qs.encode("utf-8")).hexdigest().encode("ascii")).hexdigest()
+    return qs, sign
+
+
+def _parse_cls_news(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("roll_data"), list):
+        raise RuntimeError("CLS response lacks data.roll_data")
+    rows = []
+    for item in data["roll_data"][:30]:
+        if not isinstance(item, dict) or not {"title", "brief", "ctime"} <= set(item):
+            raise RuntimeError("CLS roll item lacks title, brief, or ctime")
+        title = str(item["title"] or str(item["brief"] or "")[:80])
+        stamp = _number(item["ctime"])
+        if stamp is None:
+            raise RuntimeError("CLS ctime is not a timestamp")
+        row = {
+            "source": "财联社",
+            "time": datetime.fromtimestamp(stamp, ZoneInfo("Asia/Shanghai")).strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+            "title": title,
+        }
+        for field in ("shareurl", "share_url", "detail_url", "url"):
+            if item.get(field):
+                row["url"] = str(item[field])
+                break
+        rows.append(row)
+    return rows
+
+
+def _parse_em_news(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("fastNewsList"), list):
+        raise RuntimeError("Eastmoney fast-news response lacks data.fastNewsList")
+    rows = []
+    for item in data["fastNewsList"][:30]:
+        if not isinstance(item, dict) or not {"title", "summary", "showTime"} <= set(item):
+            raise RuntimeError("Eastmoney fast-news item lacks title, summary, or showTime")
+        title = str(item["title"] or str(item["summary"] or "")[:80])
+        try:
+            stamp = pd.Timestamp(str(item["showTime"]))
+            if pd.isna(stamp):
+                raise ValueError("timestamp is not a date")
+            stamp = (
+                stamp.tz_localize("Asia/Shanghai")
+                if stamp.tzinfo is None
+                else stamp.tz_convert("Asia/Shanghai")
+            )
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f"invalid Eastmoney showTime: {item['showTime']!r}") from exc
+        row = {
+            "source": "东方财富",
+            "time": stamp.strftime("%Y-%m-%d %H:%M"),
+            "title": title,
+        }
+        for field in ("shareUrl", "share_url", "detailUrl", "detail_url", "url"):
+            if item.get(field):
+                row["url"] = str(item[field])
+                break
+        rows.append(row)
+    return rows
+
+
+def fetch_breadth(client: EMClient | None = None) -> dict:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_ULIST_URL,
+        {
+            "secids": "1.000001,0.399001",
+            "fields": "f12,f14,f104,f105,f106,f6",
+            "fltt": "2",
+            "invt": "2",
+        },
+    )
+    return _parse_breadth(payload)
+
+
+def fetch_themes(asof: str, session=None) -> dict:
+    session = session or requests.Session()
+    url = f"{THS_HARDEN_URL}/date/{asof}/orderby/date/orderway/desc/charset/GBK/"
+    response = session.get(url, headers={"User-Agent": UA}, timeout=15)
+    response.raise_for_status()
+    return _parse_themes(response.json())
+
+
+def fetch_board_strength(
+    zt_rows: list[dict] | None,
+    themes: dict | None,
+    client=None,
+    session=None,
+    source_info: dict | None = None,
+) -> list[dict]:
+    client = client or EMClient()
+    session = session or requests.Session()
+    tag_codes = None
+    if themes is not None:
+        tag_codes = {}
+        for row in themes["harden_rows"]:
+            for tag in _split_theme_reason(row["reason"]):
+                tag_codes.setdefault(tag, set()).add(row["code"])
+    zt_codes = {row["code"] for row in zt_rows} if zt_rows is not None else None
+    params = {
+        "fs": "m:90+t:3",
+        "fid": "f3",
+        "po": "1",
+        "pz": "500",
+        "pn": "1",
+        "fields": "f12,f14,f3,f6,f104,f105,f128,f136,f140",
+    }
+    errors = []
+    for url in (EM_BOARD_STRENGTH_URL, EM_BOARD_STRENGTH_FALLBACK_URL):
+        host = urlparse(url).hostname or "unknown"
+        try:
+            payload = client.get_json(url, params)
+            rows = _parse_board_strength(payload, zt_codes, tag_codes)
+            info = {"provider": "eastmoney", "url_host": host}
+            if errors:
+                info["fallback_from"] = "; ".join(errors)
+            if source_info is not None:
+                source_info.update(info)
+            return rows
+        except Exception as exc:  # noqa: BLE001 — try the next provider on any source failure
+            errors.append(f"{host}: {_error(exc)}")
+
+    try:
+        response = session.get(
+            SINA_CONCEPT_BOARD_URL,
+            params={"param": "class"},
+            headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"},
+            timeout=15,
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+        text = response.content.decode("gbk")
+        rows = _parse_sina_concept_boards(text, zt_codes, tag_codes)
+        info = {
+            "provider": "sina",
+            "url_host": SINA_BOARD_HOST,
+            "fallback_from": "; ".join(errors),
+        }
+        if source_info is not None:
+            source_info.update(info)
+        return rows
+    except Exception as exc:  # noqa: BLE001 — preserve independent source failure
+        if source_info is not None:
+            source_info.update(
+                {
+                    "provider": None,
+                    "url_host": SINA_BOARD_HOST,
+                    "fallback_from": "; ".join(errors),
+                }
+            )
+        errors.append(f"{SINA_BOARD_HOST}: {_error(exc)}")
+        raise RuntimeError("Board-strength providers failed: " + "; ".join(errors)) from exc
+
+
+def fetch_ths_hot(session=None) -> list[dict]:
+    session = session or requests.Session()
+    response = session.get(
+        THS_HOT_URL,
+        params={"stock_type": "a", "type": "day", "list_type": "normal"},
+        headers={"User-Agent": UA},
+        timeout=15,
+    )
+    response.raise_for_status()
+    return _parse_ths_hot(response.json())
+
+
+def fetch_em_hot_rank(client=None) -> list[dict]:
+    client = client or EMClient()
+    payload = client.post_json(
+        EM_HOT_RANK_URL,
+        {
+            "appId": "appId01",
+            "globalId": "786e4c21-70dc-435a-93bb-38",
+            "marketType": "",
+            "pageNo": 1,
+            "pageSize": 50,
+        },
+        headers={"User-Agent": UA},
+    )
+    ranked = _row_list(payload.get("data"), "Eastmoney hot-rank data")
+    if not ranked:
+        return []
+    secids = []
+    for item in ranked[:50]:
+        if "sc" not in item:
+            raise RuntimeError("Eastmoney hot-rank row lacks sc")
+        code = str(item["sc"])
+        market_code = code[:2].upper()
+        prefix = {"SZ": "0.", "SH": "1.", "BJ": "0."}.get(market_code)
+        if prefix is None:
+            raise RuntimeError(f"unknown Eastmoney hot-rank market: {code!r}")
+        secids.append(prefix + code[2:])
+    quotes_payload = client.get_json(
+        EM_ULIST_URL,
+        {
+            "ut": "f057cbcbce2a86e2866ab8877db1d059",
+            "fltt": "2",
+            "invt": "2",
+            "fields": "f14,f3,f12,f2",
+            "secids": ",".join(secids),
+        },
+        headers={"Referer": "https://quote.eastmoney.com/"},
+    )
+    return _parse_em_hot_rank(payload, quotes_payload)
+
+
+def fetch_dragon_tiger(asof: str, client=None) -> dict:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_DATACENTER_URL,
+        {
+            "reportName": "RPT_DAILYBILLBOARD_DETAILSNEW",
+            "columns": "ALL",
+            "filter": f"(TRADE_DATE>='{asof}')(TRADE_DATE<='{asof}')",
+            "pageSize": "500",
+            "sortColumns": "BILLBOARD_NET_AMT",
+            "sortTypes": "-1",
+            "source": "WEB",
+            "client": "WEB",
+        },
+    )
+    return _parse_dragon_tiger(payload, asof)
+
+
+def fetch_cls_news(session=None) -> list[dict]:
+    session = session or requests.Session()
+    params = {
+        "appName": "CailianpressWeb",
+        "os": "web",
+        "sv": "7.7.5",
+        "last_time": "",
+        "refresh_type": "1",
+        "rn": "50",
+    }
+    qs, sign = _cls_query(params)
+    response = session.get(
+        f"{CLS_ROLL_URL}?{qs}&sign={sign}",
+        headers={"User-Agent": UA, "Referer": "https://www.cls.cn/"},
+        timeout=15,
+    )
+    response.raise_for_status()
+    return _parse_cls_news(response.json())
+
+
+def fetch_em_news(client: EMClient | None = None) -> list[dict]:
+    client = client or EMClient()
+    payload = client.get_json(
+        EM_FAST_NEWS_URL,
+        {
+            "client": "web",
+            "biz": "web_724",
+            "fastColumn": 102,
+            "sortEnd": "",
+            "pageSize": 50,
+            "req_trace": str(uuid.uuid4()),
+        },
+        headers={"Referer": "https://kuaixun.eastmoney.com/"},
+    )
+    return _parse_em_news(payload)
 
 
 def _json_from_js(text: str) -> dict | list:
@@ -817,41 +1702,32 @@ def _refresh_margin_frame(asof: str, cache: Path) -> tuple[pd.DataFrame, str | N
             temp_cache = Path(directory)
             recent_sse.to_parquet(temp_cache / "sse_margin.parquet", index=False)
             szse_path = temp_cache / "szse_margin.parquet"
+            missing_dates = set()
             try:
                 fetch_szse(calendar, szse_path, pause=0.8)
             except Exception as exc:
                 errors.append(f"SZSE margin fetcher failed: {_error(exc)}")
+                missing_dates.update(value.date().isoformat() for value in calendar)
 
             if not szse_path.exists():
                 pd.DataFrame(columns=["date", *SZSE_RENAME]).to_parquet(szse_path, index=False)
-                errors.append("SZSE margin fetcher returned no rows")
             szse = pd.read_parquet(szse_path)
-            latest_sse_date = calendar.max()
-            if "date" not in szse or latest_sse_date not in set(
-                pd.to_datetime(szse.get("date", pd.Series(dtype="datetime64[ns]")), errors="coerce")
-                .dt.normalize()
-                .dropna()
-            ):
-                errors.append(
-                    f"SZSE margin fetcher returned no row for latest SSE date {latest_sse_date.date()}"
-                )
             failed_path = szse_path.with_suffix(".failed.json")
             if failed_path.exists():
                 failed = json.loads(failed_path.read_text(encoding="utf-8"))
-                if failed:
-                    details = ", ".join(f"{row[0]}:{row[1]}" for row in failed)
-                    errors.append(f"SZSE margin fetcher failed dates: {details}")
-            fresh = load_margin(temp_cache)
-            latest = fresh.loc[pd.to_datetime(fresh["date"]).dt.normalize() == latest_sse_date]
-            required_balances = ("fin_balance_all", "total_balance_all")
-            if latest.empty or any(
-                _number(latest.iloc[-1][field]) is None for field in required_balances
-            ):
-                errors.append(
-                    f"margin refresh lacks required SSE/SZSE balances for {latest_sse_date.date()}"
+                missing_dates.update(str(row[0]) for row in failed if row)
+            szse_dates = set()
+            if "date" in szse:
+                szse_dates = set(
+                    pd.to_datetime(szse["date"], errors="coerce").dt.normalize().dropna()
                 )
+            missing_dates.update(
+                value.date().isoformat() for value in calendar if value not in szse_dates
+            )
+            fresh = load_margin(temp_cache)
 
         merged = _merge_margin_frames(base, fresh)
+        merged.attrs["missing_dates"] = sorted(missing_dates)
         return merged, "; ".join(errors) or None, calendar
     except Exception as exc:
         return base, "; ".join(part for part in (cache_error, _error(exc)) if part), calendar
@@ -862,31 +1738,33 @@ def _margin_snapshot(asof: str, cache: Path = MARGIN_CACHE) -> dict:
     if frame.empty:
         reason = f"margin data unavailable after refresh: {refresh_error}" if refresh_error else "margin cache contains no rows"
         raise RuntimeError(reason)
+    missing_dates = list(frame.attrs.get("missing_dates", []))
     frame = frame.sort_values("date").reset_index(drop=True)
     frame["date"] = pd.to_datetime(frame["date"])
     frame["avail_date"] = pd.to_datetime(frame["avail_date"])
     asof_date = pd.Timestamp(asof).normalize()
-    eligible = frame.loc[
-        frame["avail_date"].notna()
-        & (frame["avail_date"] <= asof_date)
-        & (frame["date"] <= asof_date)
+    complete = frame.loc[
+        frame[["fin_balance_sse", "fin_balance_szse", "fin_balance_all", "total_balance_all"]]
+        .notna()
+        .all(axis=1)
+    ]
+    eligible = complete.loc[
+        complete["avail_date"].notna()
+        & (complete["avail_date"] <= asof_date)
+        & (complete["date"] <= asof_date)
     ]
     if eligible.empty:
         raise RuntimeError(f"margin cache has no T+1-available rows as of {asof}")
-    if len(eligible) < 21:
-        coverage_error = (
-            f"margin has {len(eligible)} T+1-available rows; "
-            "at least 21 are required for a 20-trading-day change"
-        )
-        refresh_error = "; ".join(part for part in (refresh_error, coverage_error) if part)
     latest = eligible.iloc[-1]
     prior = eligible.iloc[-21] if len(eligible) >= 21 else None
     fields = ("fin_balance_all", "total_balance_all")
     result = {
+        "asof": latest["date"].date().isoformat(),
         "date": latest["date"].date().isoformat(),
         "latest_date": latest["date"].date().isoformat(),
         "available_date": latest["avail_date"].date().isoformat(),
         "rows_available": len(eligible),
+        "_missing_dates": missing_dates,
     }
     for field in ("fin_balance_sse", "fin_balance_szse"):
         result[field] = _number(latest[field])
@@ -941,22 +1819,29 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
     for kind in BOARD_FS:
         host = "push2delay.eastmoney.com"
         try:
-            frame = board_flow_snapshot(kind, em)
+            if kind == "region":
+                frame = board_flow_snapshot(
+                    kind,
+                    em,
+                    urls=(EM_BOARD_STRENGTH_URL, EM_BOARD_STRENGTH_FALLBACK_URL),
+                )
+            else:
+                frame = board_flow_snapshot(kind, em)
             board_flow[kind] = frame.to_dict("records")
             board_flow["provider"][kind] = "eastmoney"
             board_frames.append(frame)
-            sources[f"board_flow_{kind}"] = _source_meta(
+            source = _source_meta(
                 frame.attrs.get("url_host", host), True
             )
+            source["provider"] = "eastmoney"
+            sources[f"board_flow_{kind}"] = source
         except Exception as exc:
             eastmoney_error = _error(exc)
-            if kind not in ("industry", "concept"):
-                sources[f"board_flow_{kind}"] = _source_meta(
-                    host, False, eastmoney_error
-                )
-                continue
             try:
-                frame = sina_board_flow_snapshot(kind, session)
+                if kind == "region":
+                    frame = sina_region_flow_snapshot(session)
+                else:
+                    frame = sina_board_flow_snapshot(kind, session)
                 board_flow[kind] = frame.to_dict("records")
                 board_flow["provider"][kind] = "sina"
                 board_frames.append(frame)
@@ -969,32 +1854,64 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
                 sources[f"board_flow_{kind}"] = source
 
     history_sample = None
+    history_snapshot_provider = board_flow["provider"]["industry"]
+    history_verify_reason = (
+        "snapshot 来自新浪，无法交叉核对列顺序"
+        if history_snapshot_provider != "eastmoney"
+        else None
+    )
+    history_code = None
+    reference_board = history_snapshot_provider != "eastmoney"
     try:
-        if board_flow["provider"]["industry"] != "eastmoney":
-            raise RuntimeError(
-                "industry board snapshot is not from Eastmoney; cannot verify history fields"
-            )
         industry = board_flow["industry"]
         if not industry:
-            raise RuntimeError("industry board snapshot unavailable; cannot verify history fields")
+            raise RuntimeError("industry board snapshot unavailable; cannot query history")
         snapshot = industry[0]
-        bk = snapshot["code"]
-        history = board_flow_history(bk, em)
-        verified_fields = _verify_history_order(snapshot, history, asof)
+        history_code = (
+            EM_HISTORY_REFERENCE_BK if reference_board else snapshot["code"]
+        )
+        history = board_flow_history(history_code, em)
+        if not reference_board:
+            verified_fields = _verify_history_order(snapshot, history, asof)
+            verified = True
+            verify_reason = None
+        else:
+            verified_fields = []
+            verified = False
+            verify_reason = history_verify_reason
         history_sample = {
-            "code": bk,
+            "code": history_code,
+            "reference_board": reference_board,
             "rows": history.to_dict("records"),
-            "column_order_verified": True,
+            "column_order_verified": verified,
+            "verified": verified,
             "verified_asof": asof,
             "matched_fields": verified_fields,
         }
-        sources["board_flow_history"] = _source_meta(
+        if verify_reason:
+            history_sample["verify_reason"] = verify_reason
+        source = _source_meta(
             history.attrs.get("url_host", "push2his.eastmoney.com"), True
         )
+        source.update(
+            provider="eastmoney",
+            code=history_code,
+            reference_board=reference_board,
+            verified=verified,
+        )
+        if verify_reason:
+            source["verify_reason"] = verify_reason
+        sources["board_flow_history"] = source
     except Exception as exc:
-        sources["board_flow_history"] = _source_meta(
+        source = _source_meta(
             "push2his.eastmoney.com", False, _error(exc)
         )
+        source["provider"] = "eastmoney"
+        if history_code is not None:
+            source.update(code=history_code, reference_board=reference_board)
+        if history_verify_reason:
+            source.update(verified=False, verify_reason=history_verify_reason)
+        sources["board_flow_history"] = source
     board_flow["history_sample"] = history_sample
 
     limit_section = {"evidence": "descriptive", "note": DESCRIPTIVE_NOTE}
@@ -1005,6 +1922,121 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
         limit_section["data"] = None
         sources["limit_pools"] = _source_meta(
             "push2ex.eastmoney.com", False, _error(exc)
+        )
+
+    themes_section = {
+        "evidence": "descriptive",
+        "note": "同花顺题材涨停统计，只作标签与当日归类。" + DESCRIPTIVE_NOTE,
+    }
+    themes_data = None
+    try:
+        themes_data = fetch_themes(asof, session)
+        themes_section.update(themes_data)
+        sources["themes"] = _source_meta("zx.10jqka.com.cn", True)
+        reasons = {row["code"]: row["reason"] for row in themes_data["harden_rows"]}
+        for row in limit_section.get("zt_rows", []):
+            row["reason"] = reasons.get(row["code"])
+    except Exception as exc:
+        themes_section["data"] = None
+        sources["themes"] = _source_meta("zx.10jqka.com.cn", False, _error(exc))
+
+    breadth_section = {
+        "evidence": "descriptive",
+        "note": "实时市场宽度快照；仅在收盘后同日运行时有效。" + DESCRIPTIVE_NOTE,
+    }
+    try:
+        breadth_section.update(fetch_breadth(em))
+        sources["breadth"] = _source_meta(em.url_host, True)
+    except Exception as exc:
+        breadth_section["data"] = None
+        sources["breadth"] = _source_meta("push2delay.eastmoney.com", False, _error(exc))
+
+    board_strength_section = {
+        "evidence": "descriptive",
+        "note": "按涨停家数排序，相同再按涨幅。" + DESCRIPTIVE_NOTE,
+        "provider": None,
+    }
+    board_strength_source = {}
+    try:
+        zt_rows = limit_section.get("zt_rows") if sources["limit_pools"]["ok"] else None
+        board_strength_section["rows"] = fetch_board_strength(
+            zt_rows,
+            themes_data,
+            em,
+            session=session,
+            source_info=board_strength_source,
+        )
+        provider = board_strength_source.get("provider", "eastmoney")
+        board_strength_section["provider"] = provider
+        source = _source_meta(
+            board_strength_source.get("url_host", em.url_host), True
+        )
+        source["provider"] = provider
+        if board_strength_source.get("fallback_from"):
+            source["fallback_from"] = board_strength_source["fallback_from"]
+        sources["board_strength"] = source
+    except Exception as exc:
+        board_strength_section["data"] = None
+        board_strength_section["provider"] = board_strength_source.get("provider")
+        source = _source_meta(
+            board_strength_source.get("url_host", "push2.eastmoney.com"),
+            False,
+            _error(exc),
+        )
+        source["provider"] = board_strength_source.get("provider")
+        if board_strength_source.get("fallback_from"):
+            source["fallback_from"] = board_strength_source["fallback_from"]
+        sources["board_strength"] = source
+
+    hot_section = {
+        "evidence": "descriptive",
+        "note": "热榜仅反映来源自身排序与标签。" + DESCRIPTIVE_NOTE,
+        "ths": None,
+        "eastmoney": None,
+    }
+    try:
+        hot_section["ths"] = fetch_ths_hot(session)
+        sources["hot_ths"] = _source_meta("dq.10jqka.com.cn", True)
+    except Exception as exc:
+        sources["hot_ths"] = _source_meta("dq.10jqka.com.cn", False, _error(exc))
+    try:
+        hot_section["eastmoney"] = fetch_em_hot_rank(em)
+        sources["hot_eastmoney"] = _source_meta("emappdata.eastmoney.com", True)
+    except Exception as exc:
+        sources["hot_eastmoney"] = _source_meta(
+            "emappdata.eastmoney.com", False, _error(exc)
+        )
+
+    dragon_tiger_section = {
+        "evidence": "descriptive",
+        "note": "盘后龙虎榜按证券代码汇总；不展示营业部或席位。" + DESCRIPTIVE_NOTE,
+    }
+    try:
+        dragon_tiger_section.update(fetch_dragon_tiger(asof, em))
+        sources["dragon_tiger"] = _source_meta("datacenter-web.eastmoney.com", True)
+    except Exception as exc:
+        dragon_tiger_section["data"] = None
+        sources["dragon_tiger"] = _source_meta(
+            "datacenter-web.eastmoney.com", False, _error(exc)
+        )
+
+    news_section = {
+        "evidence": "descriptive",
+        "note": "标题来自第三方，只作资讯索引，不进入模型。" + DESCRIPTIVE_NOTE,
+        "cls": None,
+        "eastmoney": None,
+    }
+    try:
+        news_section["cls"] = fetch_cls_news(session)
+        sources["news_cls"] = _source_meta("www.cls.cn", True)
+    except Exception as exc:
+        sources["news_cls"] = _source_meta("www.cls.cn", False, _error(exc))
+    try:
+        news_section["eastmoney"] = fetch_em_news(em)
+        sources["news_eastmoney"] = _source_meta("np-weblist.eastmoney.com", True)
+    except Exception as exc:
+        sources["news_eastmoney"] = _source_meta(
+            "np-weblist.eastmoney.com", False, _error(exc)
         )
 
     northbound = {
@@ -1049,15 +2081,22 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
     try:
         margin_data = _margin_snapshot(asof)
         refresh_error = margin_data.pop("_refresh_error", None)
+        missing_dates = margin_data.pop("_missing_dates", [])
         margin_section["data"] = margin_data
         errors = []
         if refresh_error:
             errors.append(f"margin refresh failed: {refresh_error}")
-        if margin_data["stale"]:
+        trading_days_stale = margin_data.get("trading_days_stale")
+        age_exceeds_limit = (
+            trading_days_stale > 5
+            if trading_days_stale is not None
+            else bool(margin_data["stale"])
+        )
+        if age_exceeds_limit:
             errors.append(
                 "margin stale: latest_date="
                 f"{margin_data['latest_date']}, "
-                f"{margin_data['trading_days_stale']} trading days since availability"
+                f"{trading_days_stale} trading days since availability"
             )
         balance_sse = margin_data.get("fin_balance_sse")
         balance_szse = margin_data.get("fin_balance_szse")
@@ -1065,10 +2104,26 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
             ratio = balance_szse / balance_sse if balance_sse > 0 else float("inf")
             if not 0.3 <= ratio <= 3:
                 errors.append(f"SZSE/SSE ratio out of range: {ratio:.4f}")
-        sources["margin"] = _source_meta("sse.szse.official", not errors, "; ".join(errors) or None)
+        source = _source_meta("sse.szse.official", not errors, "; ".join(errors) or None)
+        source.update(
+            provider="sse.szse.official",
+            asof=margin_data.get("asof", margin_data.get("latest_date")),
+            stale=bool(age_exceeds_limit or margin_data["stale"] or missing_dates),
+            missing_dates=missing_dates,
+            trading_days_stale=trading_days_stale,
+        )
+        sources["margin"] = source
     except Exception as exc:
         margin_section["data"] = None
-        sources["margin"] = _source_meta("sse.szse.official", False, _error(exc))
+        source = _source_meta("sse.szse.official", False, _error(exc))
+        source.update(
+            provider="sse.szse.official",
+            asof=None,
+            stale=True,
+            missing_dates=[],
+            trading_days_stale=None,
+        )
+        sources["margin"] = source
 
     return {
         "asof": asof,
@@ -1076,6 +2131,12 @@ def fetch_market(asof: str, em_client: EMClient | None = None, http_session=None
         "sources": sources,
         "board_flow": board_flow,
         "limit_pools": limit_section,
+        "breadth": breadth_section,
+        "themes": themes_section,
+        "board_strength": board_strength_section,
+        "hot": hot_section,
+        "dragon_tiger": dragon_tiger_section,
+        "news": news_section,
         "northbound": northbound,
         "valuation": valuation,
         "margin": margin_section,
@@ -1118,11 +2179,16 @@ def write_snapshot(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--date", default=date.today().isoformat())
+    parser.add_argument("--date")
     parser.add_argument("--out", type=Path, default=Path("web/mock/data/market"))
     args = parser.parse_args(argv)
-    pd.Timestamp(args.date)
-    payload = fetch_market(args.date)
+    asof = args.date
+    if asof is None:
+        from .trading_date import latest_closed_trading_day
+
+        asof = latest_closed_trading_day()
+    pd.Timestamp(asof)
+    payload = fetch_market(asof)
     latest, dated, board = write_snapshot(payload, args.out)
     public = {key: value for key, value in payload.items() if not key.startswith("_")}
     row_counts = {

@@ -65,8 +65,54 @@ td.r, th.r { text-align: right; }
 .bars-x { display: flex; gap: var(--s2); font: 10px var(--f-m); color: var(--ink-3); }
 .bars-x span { flex: 1; text-align: center; }
 .scroll { max-height: 300px; overflow: auto; }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.ladder { display: grid; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.ladder-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); min-height: 58px; background: var(--surface); }
+.ladder-label { display: grid; place-items: center start; padding: var(--s2) var(--s3); color: var(--ink-2); border-right: 1px solid var(--line); font: 600 12px var(--f-m); }
+.ladder-cells { display: flex; gap: var(--s2); padding: var(--s2); flex-wrap: wrap; align-items: stretch; }
+.ladder-card { min-width: 120px; flex: 1 1 120px; border: 1px solid var(--grid); padding: var(--s2); }
+.ladder-card b { display: block; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ladder-card small { display: block; margin-top: 3px; color: var(--ink-3); font: 10px var(--f-m); overflow-wrap: anywhere; }
+.ladder-note { margin-top: var(--s2); color: var(--ink-3); font-size: 11px; }
+.tag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s2); }
+.tag-card, .news-item { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
+.tag-card b, .news-item b { display: block; }
+.tag-card small, .news-item small { color: var(--ink-3); }
+.news-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.news-grid > section { min-width: 0; }
+.news-list { display: grid; gap: var(--s2); min-width: 0; }
+.news-item a { display: block; overflow-wrap: anywhere; }
+.events-timeline { max-width: 100%; overflow-x: auto; }
+.events-days { display: grid; grid-template-columns: repeat(31, minmax(24px, 1fr)); gap: 4px; min-width: 930px; }
+.events-day { display: grid; grid-template-rows: auto 68px auto; gap: 3px; text-align: center; font: 10px var(--f-m); color: var(--ink-3); }
+.events-day-bar { display: flex; align-items: flex-end; background: var(--bg); border: 1px solid var(--grid); }
+.events-day-bar i { display: block; width: 100%; background: var(--warn); }
+.events-table { max-width: 100%; max-height: 320px; overflow: auto; }
+.events-table table { min-width: 680px; }
+.events-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+.events-columns > section { min-width: 0; }
+.events-filters { margin: var(--s2) 0 var(--s3); }
+.events-reason { white-space: normal; min-width: 140px; max-width: 260px; overflow-wrap: anywhere; }
+.macro-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--s4); }
+.macro-card { min-width: 0; border: 1px solid var(--grid); padding: var(--s3); }
+.macro-chart { display: block; width: 100%; max-width: 100%; height: auto; background: var(--bg); }
+.macro-chart text { fill: var(--ink-3); font: 10px var(--f-m); }
+.macro-legend { display: flex; flex-wrap: wrap; gap: var(--s3); color: var(--ink-2); font-size: 11px; }
+.macro-legend span::before { content: ""; display: inline-block; width: 12px; height: 2px; margin: 0 5px 3px 0; background: var(--macro-color); }
+.macro-sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s2); margin-top: var(--s3); }
+.macro-source { min-width: 0; border: 1px solid var(--grid); padding: var(--s2); font-size: 11px; overflow-wrap: anywhere; }
+.macro-source b, .macro-source small { display: block; }
+.macro-source small { color: var(--ink-3); margin-top: 3px; }
+.macro-terms { overflow-wrap: anywhere; }
+.range-tabs { margin: var(--s2) 0 var(--s3); }
+.abnormal-table { min-width: 860px; }
+.range-table { min-width: 520px; }
+#s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
+@media (max-width: 1000px) { .events-columns { grid-template-columns: 1fr; } }
+@media (max-width: 680px) { .macro-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -78,6 +124,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <a href="index.html">终端</a>
       <a href="backtest.html">回测</a>
       <a href="market.html" aria-current="page">市场</a>
+      <a href="nt.html">国家队ETF</a>
       <a href="stock.html">个股</a>
       <a href="lab/guide.html">用户指南</a>
     </nav>
@@ -86,6 +133,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 </header>
 
 <main>
+  <section class="sec wide" id="s-events" aria-labelledby="h-events">
+    <div class="sec-h"><h2 id="h-events">事件日历</h2><span class="ev">descriptive</span><span class="src" id="src-events"></span></div>
+    <div id="events-body"><p class="note">事件数据加载中…</p></div>
+  </section>
+
   <section class="sec wide" id="s-board" aria-labelledby="h-board">
     <div class="sec-h">
       <h2 id="h-board">板块资金流热力图</h2><span class="ev">descriptive</span>
@@ -99,6 +151,41 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <section class="sec" id="s-limit" aria-labelledby="h-limit">
     <div class="sec-h"><h2 id="h-limit">涨停情绪</h2><span class="ev">descriptive</span><span class="src" id="src-limit"></span></div>
     <div id="limit-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-sentiment" aria-labelledby="h-sentiment">
+    <div class="sec-h"><h2 id="h-sentiment">市场情绪</h2><span class="ev">descriptive</span><span class="src" id="src-sentiment"></span></div>
+    <div id="sentiment-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-ladder" aria-labelledby="h-ladder">
+    <div class="sec-h"><h2 id="h-ladder">连板天梯</h2><span class="ev">descriptive</span><span class="src" id="src-ladder"></span></div>
+    <div id="ladder-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-strength" aria-labelledby="h-strength">
+    <div class="sec-h"><h2 id="h-strength">板块强度</h2><span class="ev">descriptive</span><span class="src" id="src-strength"></span></div>
+    <div id="strength-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-themes" aria-labelledby="h-themes">
+    <div class="sec-h"><h2 id="h-themes">题材涨停</h2><span class="ev">descriptive</span><span class="src" id="src-themes"></span></div>
+    <div id="themes-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-hot" aria-labelledby="h-hot">
+    <div class="sec-h"><h2 id="h-hot">强势股与人气</h2><span class="ev">descriptive</span><span class="src" id="src-hot"></span></div>
+    <div id="hot-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-lhb" aria-labelledby="h-lhb">
+    <div class="sec-h"><h2 id="h-lhb">盘后龙虎榜</h2><span class="ev">descriptive</span><span class="src" id="src-lhb"></span></div>
+    <div id="lhb-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-news" aria-labelledby="h-news">
+    <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
+    <div id="news-body"></div>
   </section>
 
   <section class="sec" id="s-nb" aria-labelledby="h-nb">
@@ -115,6 +202,34 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div class="sec-h"><h2 id="h-val">指数估值（中证官方）</h2><span class="ev">descriptive</span><span class="src" id="src-val"></span></div>
     <div id="val-body"></div>
   </section>
+
+  <section class="sec wide" id="s-macro" aria-labelledby="h-macro">
+    <div class="sec-h"><h2 id="h-macro">全球宏观</h2><span class="ev">descriptive</span></div>
+    <div id="macro-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-abnormal" aria-labelledby="h-abnormal">
+    <div class="sec-h">
+      <h2 id="h-abnormal">异动提醒</h2><span class="ev">descriptive</span><span class="src" id="src-abnormal"></span>
+    </div>
+    <div id="abnormal-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-range" aria-labelledby="h-range">
+    <div class="sec-h">
+      <h2 id="h-range">区间统计</h2><span class="ev">descriptive</span><span class="src" id="src-range"></span>
+    </div>
+    <div class="chips range-tabs" role="group" aria-label="区间统计交易日窗口">
+      <button class="chip" type="button" data-range-window="5" aria-pressed="true">5日</button>
+      <button class="chip" type="button" data-range-window="10" aria-pressed="false">10日</button>
+      <button class="chip" type="button" data-range-window="20" aria-pressed="false">20日</button>
+    </div>
+    <div id="range-body"></div>
+  </section>
+  <section class="sec wide" id="s-fresh" aria-labelledby="h-fresh">
+    <div class="sec-h"><h2 id="h-fresh">数据更新状态</h2><span class="src" id="src-fresh"></span></div>
+    <div id="fresh-body"><p class="note">加载中…</p></div>
+  </section>
 </main>
 <div class="tip" id="tip" hidden></div>
 <footer>市场背景只作描述，不进入 LPPLS 报警或任何模型。</footer>
@@ -127,22 +242,26 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
   const yi = (v, d = 1) => num(v) ? (v / 1e8).toFixed(d) : '—';
+  const money = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
   const pct = (v, d = 2) => num(v) ? (v > 0 ? '+' : '') + v.toFixed(d) + '%' : '—';
   const cls = (v) => num(v) ? (v > 0 ? 'up' : v < 0 ? 'dn' : '') : '';
+  const NYFED_ATTRIBUTION = 'The SOFR and EFFR are subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the SOFR and EFFR by LPPL, does not sanction or endorse any particular republication, and has no liability for your use.';
   const KINDS = { industry: '行业', concept: '概念', region: '地域' };
   const PERIODS = {
     today: { label: '今日', net: 'main_net', pct: 'pct_chg', share: 'main_pct' },
     '5d': { label: '5日', net: 'main_net_5d', pct: 'pct_5d', share: 'main_pct_5d' },
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
-  let M = null, kind = 'industry', period = 'today';
+  let M = null, Macro = null, kind = 'industry', period = 'today';
 
   function srcLine(names) {
     const S = (M && M.sources) || {};
     const metas = names.map((n) => S[n]).filter(Boolean);
     if (!metas.length) return '';
     const m = metas[0];
-    return E((m.url_host || '') + ' · ' + String(m.fetched_at || '').replace('T', ' ').slice(0, 16) + ' UTC');
+    const host = m.url_host || m.provider || '';
+    const fetched = m.fetched_at ? String(m.fetched_at).replace('T', ' ').slice(0, 16) + ' UTC' : '';
+    return E([host, fetched].filter(Boolean).join(' · '));
   }
   function failMsg(names) {
     const S = (M && M.sources) || {};
@@ -199,10 +318,21 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const P = PERIODS[period], rows = (bf[kind] || []).filter((r) => num(r[P.net]));
     const fails = failMsg(['board_flow_' + kind]);
     const S = (M.sources || {})['board_flow_' + kind] || {};
+    const historySource = (M.sources || {}).board_flow_history || {};
+    const historyNote = kind === 'industry'
+      ? (historySource.verify_reason
+        ? `<p class="warnl">板块历史数据：${E(historySource.verify_reason)}</p>`
+        : '') + (historySource.ok === false
+          ? `<p class="fail">板块历史数据不可用：${E(historySource.error || historySource.reason || '该源本次未取到')}</p>`
+          : '')
+      : '';
     let html = '';
     if (S.fallback_from) html += `<p class="warnl">东财本次未取到，已改用新浪口径（${E(S.fallback_from).slice(0, 160)}）。</p>`;
+    if (S.reason) html += `<p class="fail">${E(S.reason)}</p>`;
     if (!rows.length) {
-      $('board-body').innerHTML = html + `<p class="fail">${fails || '该源本次未取到：无数据'}</p><p class="note">${E(bf.note || '')}</p>`;
+      const emptyMessage = S.reason ? '' : (fails || '该源本次未取到：无数据');
+      $('board-body').innerHTML = html + (emptyMessage ? `<p class="fail">${E(emptyMessage)}</p>` : '') +
+        historyNote + `<p class="note">${E(bf.note || '')}</p>`;
       return;
     }
     const lead = prov === 'sina' ? '净额（流入−流出）' : '主力净额';
@@ -210,7 +340,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <div class="legend"><span>面积 = |${lead}|</span><span>颜色 = ${P.label}涨跌幅</span>
       <i style="background:rgba(0,212,170,1)"></i>−4%<i style="background:rgba(0,212,170,.3)"></i><i style="background:rgba(255,71,87,.3)"></i><i style="background:rgba(255,71,87,1)"></i>+4%
       <span>边框实线 = 净流入，虚线 = 净流出</span><span>n = ${rows.length}</span></div>
-      <p class="note">${E(bf.note || '')}</p>`;
+      ${historyNote}<p class="note">${E(bf.note || '')}</p>`;
     $('board-body').innerHTML = html;
     const box = $('tm'), W = box.clientWidth, H = box.clientHeight;
     const items = rows.map((r) => ({ r, v: Math.abs(r[P.net]) })).filter((it) => it.v > 0).sort((a, b) => b.v - a.v);
@@ -253,6 +383,124 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        </tbody></table></div><p class="note">${E(L.note || '')}</p>`;
   }
 
+  function renderSentiment() {
+    const B = M.breadth || {}, L = M.limit_pools || {};
+    const S = L.sentiment || {}, P = L.promotion || {};
+    $('src-sentiment').innerHTML = srcLine(['breadth', 'limit_pools']);
+    const errors = failMsg(['breadth', 'limit_pools']);
+    const levels = (P.levels || []).map((r) =>
+      `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r">${E(r.n_up)}</td></tr>`).join('');
+    $('sentiment-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="big">
+        <div><small>上涨家数</small><strong class="up">${E(B.up ?? '—')}</strong></div>
+        <div><small>下跌家数</small><strong class="dn">${E(B.down ?? '—')}</strong></div>
+        <div><small>平盘家数</small><strong>${E(B.flat ?? '—')}</strong></div>
+        <div><small>成交额（亿元）</small><strong>${yi(B.amount_yuan)}</strong></div>
+        <div><small>涨停 / 跌停 / 炸板率</small><strong>${E(L.zt ?? '—')} / ${E(L.dt ?? '—')} / ${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+        <div><small>昨日涨停今日均值</small><strong class="${cls(S.yzt_mean_pct)}">${pct(S.yzt_mean_pct)}</strong></div>
+        <div><small>昨日涨停今日中位数</small><strong class="${cls(S.yzt_median_pct)}">${pct(S.yzt_median_pct)}</strong></div>
+        <div><small>昨日涨停今日上涨比例（n=${E(S.yzt_n ?? '—')}）</small><strong>${num(S.yzt_up_share) ? (S.yzt_up_share * 100).toFixed(1) + '%' : '—'}</strong></div>
+        <div><small>晋级率（n=${E(P.n_prev_total ?? '—')}）</small><strong>${num(P.rate) ? (P.rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+      </div>
+      <div class="table-scroll" style="margin-top:12px"><table style="min-width:360px"><thead><tr><th>昨日连板</th><th class="r">前日涨停数</th><th class="r">晋级数</th></tr></thead><tbody>${levels || '<tr><td colspan="3">暂无晋级分层数据</td></tr>'}</tbody></table></div>
+      <p class="note">${E(B.note || '')} ${E(L.note || '')}</p>`;
+  }
+
+  function renderLadder() {
+    const L = M.limit_pools || {}, items = Array.isArray(L.zt_rows) ? L.zt_rows : [];
+    $('src-ladder').innerHTML = srcLine(['limit_pools']);
+    const errors = failMsg(['limit_pools']);
+    if (!items.length) {
+      $('ladder-body').innerHTML = `<p class="fail">${errors || '该源本次未取到：没有连板明细'}</p>`;
+      return;
+    }
+    const promotions = new Map((L.promotion && L.promotion.levels || []).map((row) => [String(row.k), row]));
+    const grouped = new Map();
+    for (const item of items) {
+      const streak = Number(item.streak);
+      if (!Number.isFinite(streak)) continue;
+      if (!grouped.has(streak)) grouped.set(streak, []);
+      grouped.get(streak).push(item);
+    }
+    const rows = [...grouped.keys()].sort((a, b) => b - a).map((streak) => {
+      const prev = streak - 1, key = prev >= 5 ? '5+' : String(prev);
+      const p = promotions.get(key), members = grouped.get(streak);
+      return `<div class="ladder-row"><div class="ladder-label">${streak}板</div><div class="ladder-cells">${members.map((r) =>
+        `<div class="ladder-card"><b>${E(r.name)}</b>
+          <small>${E(r.code)} · 首封 ${E(r.first_seal || '—')} · 炸板 ${E(r.break_times ?? '—')}</small>
+          <small>昨日${E(prev >= 5 ? '5+' : prev)}板 ${E(p ? p.n_prev : 0)} 只，晋级 ${E(p ? p.n_up : 0)} 只</small>
+          <small>题材 ${E(String(r.reason || '—').slice(0, 64))}</small></div>`).join('')}</div></div>`;
+    });
+    $('ladder-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="ladder" role="table" aria-label="${E(L.date || M.asof || '—')} 连板天梯">${rows.join('')}</div>
+      <p class="ladder-note">交易日 ${E(M.asof || '—')} · 当前全部涨停明细；仅描述当日市场结构，不是强弱或收益预测。</p>`;
+  }
+
+  function renderStrength() {
+    const B = M.board_strength || {}, rows = Array.isArray(B.rows) ? B.rows : [];
+    const provider = B.provider === 'sina' ? '新浪' : B.provider === 'eastmoney' ? '东方财富' : '—';
+    $('src-strength').innerHTML = srcLine(['board_strength']);
+    const errors = failMsg(['board_strength']);
+    $('strength-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<p class="note">数据源：${E(provider)}。${E(B.note || '按涨停家数排序，相同再按涨幅。')}</p>` +
+      (rows.length ? `<div class="table-scroll"><table style="min-width:760px"><thead><tr><th>板块</th><th class="r">涨停家数</th><th class="r">涨幅</th><th class="r">上涨占比</th><th class="r">成交额（亿）</th><th>领涨股</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="r">${E(r.zt_n ?? '—')}</td><td class="r ${cls(r.pct)}">${pct(r.pct)}</td><td class="r">${num(r.up_share) ? (r.up_share * 100).toFixed(1) + '%' : '—'}</td><td class="r">${yi(r.amount)}</td><td>${E(r.leader_name || '—')} ${E(r.leader_code || '')} <small>${pct(r.leader_pct)}</small></td></tr>`).join('')}
+      </tbody></table></div>` : `<p class="note">${errors ? '' : '当前没有可展示的概念板块。'}</p>`);
+  }
+
+  function renderThemes() {
+    const T = M.themes || {}, tags = Array.isArray(T.tags) ? T.tags : [];
+    $('src-themes').innerHTML = srcLine(['themes']);
+    const errors = failMsg(['themes']);
+    const names = new Map((T.harden_rows || []).map((r) => [String(r.code), r.name]));
+    $('themes-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      (tags.length ? `<div class="tag-grid">${tags.map((r) => {
+        const stocks = (r.codes || []).slice(0, 5).map((code) => names.get(String(code)) || code);
+        return `<article class="tag-card"><b>${E(r.tag)} <small>n=${E(r.n)}</small></b><small>${stocks.map(E).join(' · ')}</small></article>`;
+      }).join('')}</div>` : `<p class="note">${errors ? '' : '当日没有可用题材标签。'}</p>`) +
+      `<p class="note">${E(T.note || '')}</p>`;
+  }
+
+  function renderHot() {
+    const H = M.hot || {}, T = M.themes || {};
+    const themes = Array.isArray(T.harden_rows) ? T.harden_rows.slice(0, 30) : [];
+    const ths = Array.isArray(H.ths) ? H.ths.slice(0, 20) : [];
+    const em = Array.isArray(H.eastmoney) ? H.eastmoney.slice(0, 20) : [];
+    $('src-hot').innerHTML = srcLine(['themes', 'hot_ths', 'hot_eastmoney']);
+    const errors = failMsg(['themes', 'hot_ths', 'hot_eastmoney']);
+    const table = (rows) => `<div class="table-scroll"><table style="min-width:520px"><thead><tr><th>排名</th><th>名称</th><th>涨幅</th><th>标签</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    $('hot-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="news-grid">
+        <section><h3>涨停揭秘</h3>${themes.length ? table(themes.map((r, i) => `<tr><td>${i + 1}</td><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="up">${pct(r.pct)}</td><td>${E(String(r.reason || '').slice(0, 100))}</td></tr>`).join('')) : '<p class="note">暂无可用题材归因。</p>'}</section>
+        <section><h3>同花顺热榜</h3>${ths.length ? table(ths.map((r) => `<tr><td>${E(r.rank)}</td><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="${cls(r.pct)}">${pct(r.pct)}</td><td>${E(r.popularity_tag)} · ${E((r.concepts || []).join('、'))}</td></tr>`).join('')) : '<p class="note">暂无热榜数据。</p>'}</section>
+        <section><h3>东财人气榜</h3>${em.length ? table(em.map((r) => `<tr><td>${E(r.rank)}</td><td>${E(r.name)} <small>${E(r.code)}</small></td><td class="${cls(r.pct)}">${pct(r.pct)}</td><td>排名变化 ${E(r.rank_chg ?? '—')}</td></tr>`).join('')) : '<p class="note">暂无人气榜数据。</p>'}</section>
+      </div><p class="note">${E(H.note || '')}</p>`;
+  }
+
+  function renderLHB() {
+    const D = M.dragon_tiger || {}, data = D.data === null ? null : D;
+    $('src-lhb').innerHTML = srcLine(['dragon_tiger']);
+    const errors = failMsg(['dragon_tiger']);
+    const table = (rows) => rows.length ? `<div class="table-scroll"><table style="min-width:720px"><thead><tr><th>名称</th><th>上榜原因</th><th class="r">涨跌幅</th><th class="r">净买额</th><th class="r">买入</th><th class="r">卖出</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${E(r.name)} <small>${E(r.code)}</small></td><td>${E(r.reason)}</td><td class="r ${cls(r.pct)}">${pct(r.pct)}</td><td class="r">${money(r.net)}</td><td class="r">${money(r.buy)}</td><td class="r">${money(r.sell)}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">当日无龙虎榜记录。</p>';
+    $('lhb-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      (data ? `<p class="note">交易日 ${E(data.date || M.asof || '—')} · ${E(data.n_stocks ?? 0)} 只</p><div class="news-grid"><section><h3>净买入前 20</h3>${table(data.top_buy || [])}</section><section><h3>净卖出前 10</h3>${table(data.top_sell || [])}</section></div>` : '') +
+      `<p class="note">${E(D.note || '')}</p>`;
+  }
+
+  function renderNews() {
+    const N = M.news || {}, clsRows = Array.isArray(N.cls) ? N.cls : [];
+    const emRows = Array.isArray(N.eastmoney) ? N.eastmoney : [];
+    $('src-news').innerHTML = srcLine(['news_cls', 'news_eastmoney']);
+    const errors = failMsg(['news_cls', 'news_eastmoney']);
+    const list = (rows) => rows.length ? `<div class="news-list">${rows.map((r) =>
+      `<article class="news-item"><small>${E(r.time || '—')}</small>${r.url ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`}</article>`).join('')}</div>` : '<p class="note">暂无快讯。</p>';
+    $('news-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="news-grid"><section><h3>财联社电报</h3>${list(clsRows)}</section><section><h3>东方财富</h3>${list(emRows)}</section></div>
+      <p class="note">${E(N.note || '')}</p>`;
+  }
+
   function renderNB() {
     const N = M.northbound || {}, d = N.data || {};
     $('src-nb').innerHTML = srcLine(['northbound']);
@@ -276,7 +524,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-mg').innerHTML = srcLine(['margin']);
     const S = (M.sources || {}).margin || {};
     if (!num(d.fin_balance_all)) { $('mg-body').innerHTML = `<p class="fail">${failMsg(['margin']) || '该源本次未取到：无数据'}</p>`; return; }
-    $('mg-body').innerHTML = (S.ok === false ? `<p class="warnl">本次刷新失败：${E(S.error || '')}<br>下面显示的是已入库的 ${E(d.date)} 数据。</p>` : '') +
+    const missingDates = Array.isArray(S.missing_dates) ? S.missing_dates : [];
+    const status = [];
+    if (S.ok === false) status.push(`本次刷新失败：${S.error || '来源不可用'}；下面显示已入库数据`);
+    if (S.asof) status.push(`最后完整数据日：${S.asof}`);
+    if (S.stale) status.push('当前数据不完整或已滞后');
+    if (missingDates.length) status.push(`缺失日期：${missingDates.join('、')}`);
+    $('mg-body').innerHTML = (status.length
+      ? `<p class="${S.stale || S.ok === false ? 'warnl' : 'note'}">${status.map(E).join('<br>')}</p>`
+      : '') +
       `<div class="big"><div><small>融资余额合计（亿元）</small><strong>${yi(d.fin_balance_all, 0)}</strong></div>
        <div><small>20 日变化</small><strong class="${cls(d.fin_balance_all_change_20d)}">${num(d.fin_balance_all_change_20d_pct) ? pct(d.fin_balance_all_change_20d_pct * 100, 1) : '—'}</strong></div></div>
        <table style="margin-top:12px"><tbody>
@@ -285,7 +541,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        <tr><td>两融余额合计（亿元）</td><td class="r">${yi(d.total_balance_all, 0)}</td></tr>
        <tr><td>20 日变化（亿元）</td><td class="r ${cls(d.fin_balance_all_change_20d)}">${yi(d.fin_balance_all_change_20d, 0)}</td></tr>
        <tr><td>数据日 / 可用日（T+1）</td><td class="r">${E(d.date || '—')} / ${E(d.available_date || '—')}</td></tr>
-       <tr><td>状态</td><td class="r">${d.stale ? '<span class="wn">stale · 滞后 ' + E(d.trading_days_stale) + ' 个交易日</span>' : '最新'}</td></tr>
+       <tr><td>状态</td><td class="r">${(S.stale || d.stale) ? '<span class="wn">stale · 完整数据日 ' + E(S.asof || d.latest_date || '—') + '</span>' : '最新'}</td></tr>
        </tbody></table><p class="note">${E(G.note || '')}</p>`;
   }
 
@@ -304,24 +560,274 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
        </tbody></table></div><p class="note">${E(V.note || '')}</p>`;
   }
 
+  let Events = null, eventFilter = '全部';
+  function renderEvents() {
+    if (!Events) return;
+    const src = Events.sources || {}, lift = Events.lift || [], dividend = Events.dividend || [], forecast = Events.forecast || [];
+    $('src-events').textContent = ['lift', 'dividend', 'forecast'].map((k) => `${k} n=${src[k]?.n ?? 0}${src[k]?.stale ? ' stale' : ''}`).join(' · ');
+    const warnings = ['lift', 'dividend', 'forecast'].filter((k) => src[k]?.ok === false)
+      .map((k) => `<p class="warnl">${E(k)} 源不可用${src[k].stale ? '，沿用上次发布数据' : ''}：${E(src[k].error || '')}</p>`).join('');
+    const byDate = Events.by_date || {}, range = Events.window?.lift || [], days = [];
+    if (range.length === 2) {
+      const d = new Date(`${range[0]}T00:00:00Z`), last = new Date(`${range[1]}T00:00:00Z`);
+      while (d <= last) { days.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
+    }
+    const maxCap = Math.max(0, ...days.map((d) => byDate[d]?.lift_cap).filter(num));
+    const timeline = `<div class="events-timeline"><div class="events-days">${days.map((d) => {
+      const b = byDate[d], n = b ? b.lift_n : src.lift?.ok ? 0 : null, cap = b ? b.lift_cap : src.lift?.ok ? 0 : null;
+      const h = num(cap) && maxCap ? Math.max(1, cap / maxCap * 100) : 0;
+      return `<div class="events-day" title="${E(d)} 解禁 ${n ?? '—'} 批 · ${num(cap) ? (cap / 10000).toFixed(2) + '亿元' : '—'}"><span>${n ?? '—'}</span><div class="events-day-bar"><i style="height:${h.toFixed(1)}%"></i></div><small>${d.slice(5)}</small></div>`;
+    }).join('')}</div></div>`;
+    const top = [...lift].sort((a, b) => (b.lift_market_cap_10k ?? -Infinity) - (a.lift_market_cap_10k ?? -Infinity)).slice(0, 20);
+    const liftRows = top.map((r) => `<tr><td>${E(r.free_date)}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.free_shares_type || '—')}</td><td class="r">${num(r.current_free_shares_10k) ? r.current_free_shares_10k.toFixed(2) : '—'}</td><td class="r">${num(r.free_ratio) ? (r.free_ratio * 100).toFixed(2) + '%' : '—'}</td><td class="r">${num(r.lift_market_cap_10k) ? (r.lift_market_cap_10k / 10000).toFixed(2) : '—'}</td></tr>`).join('');
+    const divRows = dividend.map((r) => `<tr><td>${E(r.ex_dividend_date)}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.equity_record_date || '—')}</td><td class="r">${E(r.pretax_bonus_rmb_10 ?? '—')}</td><td>${E(r.assign_progress || '—')}</td><td>${E(r.plan_text || '')}</td></tr>`).join('');
+    const types = ['全部', '预增', '预减', '扭亏', '首亏'];
+    const rows = forecast.filter((r) => eventFilter === '全部' || r.predict_type === eventFilter).map((r) => {
+      const h = r.headline || {}, amount = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
+      const other = (r.other_indicators || []).map((i) => `<p>${E(i.indicator || '指标')} ${amount(i.amount_lower)}～${amount(i.amount_upper)}</p>`).join('');
+      return `<tr><td>${E(r.notice_date)}<br>${E(r.report_date || '—')}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.predict_type || '—')}</td><td>${amount(h.amount_lower)}～${amount(h.amount_upper)}</td><td>${h.change_pct_lower ?? '—'}～${h.change_pct_upper ?? '—'}%</td><td class="events-reason">${other}${E(h.reason || h.content || '')}</td></tr>`;
+    }).join('');
+    $('events-body').innerHTML = `${warnings}<p class="note">公告事件，来源东财数据中心，截至 ${E(Events.asof)}。未来窗口 ${E(range[0] || '—')} 至 ${E(range[1] || '—')} · 解禁市值单位亿元；派息元/10股。</p><h3>未来 30 日解禁时间轴</h3>${timeline}
+      <div class="events-columns"><section><h3>解禁市值前 20</h3><div class="events-table"><table><thead><tr><th>日期</th><th>代码 / 名称</th><th>类型</th><th>解禁股数（万股）</th><th>FREE_RATIO</th><th>市值（亿元）</th></tr></thead><tbody>${liftRows}</tbody></table></div></section>
+      <section><h3>除权除息</h3><div class="events-table"><table><thead><tr><th>除权日</th><th>代码 / 名称</th><th>登记日</th><th>派息（元/10股）</th><th>进度</th><th>方案</th></tr></thead><tbody>${divRows}</tbody></table></div></section></div>
+      <section><h3>近 30 日业绩预告</h3><div class="chips events-filters">${types.map((t) => `<button class="chip" data-event-filter="${E(t)}" aria-pressed="${t === eventFilter}">${E(t)}</button>`).join('')}</div><div class="events-table"><table><thead><tr><th>公告日 / 报告期</th><th>代码 / 名称</th><th>类型</th><th>归母净利润</th><th>同比</th><th>其他指标 / 说明</th></tr></thead><tbody>${rows}</tbody></table></div></section><p class="note">${E(Events.note || '')}</p>`;
+  }
+
+  function renderMacro() {
+    const box = $('macro-body');
+    if (!box) return;
+    const D = Macro || {}, T = D.treasury || {}, R = D.rates || {}, F = D.fx || {};
+    const S = D.sources || {};
+    const sourceLabels = { treasury: '美国财政部 Treasury', nyfed: '纽约联储 SOFR / EFFR', fed_h10: '美联储 H.10 汇率' };
+    const statusCards = Object.entries(sourceLabels).map(([key, label]) => {
+      const source = S[key] || {};
+      const state = source.ok ? '可用' : (source.stale
+        ? (source.asof ? 'stale · 使用上次数据' : 'stale · 无可用数据')
+        : '不可用');
+      const stateClass = source.ok ? '' : 'wn';
+      const details = [source.provider, source.asof ? `asof ${source.asof}` : '', state].filter(Boolean).join(' · ');
+      return `<div class="macro-source"><b>${E(label)} <span class="${stateClass}">${E(state)}</span></b>
+        <small>${E(details || '来源状态未知')}</small>${source.error ? `<small class="wn">${E(source.error)}</small>` : ''}</div>`;
+    }).join('');
+    const periods = [
+      { key: 'latest', label: '最新', color: '#4DA3FF' },
+      { key: '20d_ago', label: '20 个交易日前', color: '#FFB800' },
+      { key: '250d_ago', label: '250 个交易日前', color: '#00D4AA' },
+    ];
+    const tenors = Array.isArray(T.tenors) ? T.tenors : [];
+    const curves = periods.map((period) => ({ ...period, row: T[period.key] })).filter((item) => item.row && item.row.curve);
+    const values = curves.flatMap((item) => tenors.map((tenor) => item.row.curve[tenor]).filter(num));
+    let chart = '<p class="note">收益率曲线暂无可用数据。</p>';
+    if (values.length && tenors.length) {
+      const min = Math.min(...values), max = Math.max(...values);
+      const range = Math.max(max - min, 0.5);
+      const lo = min - range * 0.12, hi = max + range * 0.12;
+      const x0 = 48, x1 = 704, y0 = 18, y1 = 198;
+      const xAt = (index) => x0 + (tenors.length < 2 ? 0 : (x1 - x0) * index / (tenors.length - 1));
+      const yAt = (value) => y0 + (hi - value) * (y1 - y0) / (hi - lo);
+      const grid = Array.from({ length: 4 }, (_unused, index) => {
+        const value = lo + (hi - lo) * index / 3, y = yAt(value);
+        return `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#2A2A2A" />
+          <text x="3" y="${y + 3}">${value.toFixed(1)}%</text>`;
+      }).join('');
+      const labels = tenors.map((tenor, index) => index % 2 === 0 || index === tenors.length - 1
+        ? `<text x="${xAt(index)}" y="220" text-anchor="middle">${E(tenor.replace(' Yr', 'Y').replace(' Mo', 'M'))}</text>`
+        : '').join('');
+      const paths = curves.map((item) => {
+        const points = tenors.map((tenor, index) => {
+          const value = item.row.curve[tenor];
+          return num(value) ? `${index ? 'L' : 'M'}${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}` : '';
+        }).filter(Boolean).join(' ');
+        return `<path d="${points}" fill="none" stroke="${item.color}" stroke-width="2" />`;
+      }).join('');
+      chart = `<svg class="macro-chart" viewBox="0 0 720 232" role="img" aria-label="美国国债收益率曲线对比">
+        ${grid}${paths}${labels}</svg>
+        <div class="macro-legend">${curves.map((item) => `<span style="--macro-color:${item.color}">${E(item.label)} · ${E(item.row.date)}</span>`).join('')}</div>`;
+    }
+    const spreads = T.spreads || {};
+    const rateCard = (key, label) => {
+      const rate = (R[key] || {}).latest || {};
+      const rateSeries = Array.isArray((R[key] || {}).series) ? R[key].series : [];
+      const range = key === 'effr' && (num(rate.target_rate_from) || num(rate.target_rate_to))
+        ? `<small>目标区间 ${num(rate.target_rate_from) ? rate.target_rate_from.toFixed(2) : '—'}–${num(rate.target_rate_to) ? rate.target_rate_to.toFixed(2) : '—'}%</small>`
+        : '';
+      return `<div class="macro-card"><small>${label} · ${E(rate.date || '—')}</small>
+        <strong>${num(rate.rate) ? rate.rate.toFixed(2) + '%' : '—'}</strong>${range}
+        ${num(rate.volume_in_billions) ? `<small>成交量 ${rate.volume_in_billions.toFixed(1)} 十亿美元</small>` : ''}
+        <small>样本 n=${rateSeries.length}</small></div>`;
+    };
+    const fxRows = Object.values(F.series || {}).map((item) => `<tr>
+      <td>${E(item.label || item.code)}</td><td>${E(item.latest.date || '—')}</td>
+      <td class="r">${num(item.latest.value) ? item.latest.value.toFixed(4) : '—'}</td>
+      <td class="r">${Array.isArray(item.observations) ? item.observations.length : 0}</td>
+      <td>${E(item.quote || item.unit || '')}</td></tr>`).join('');
+    const fail = !Macro ? '<p class="fail">全球宏观数据加载中或不可用。</p>' : '';
+    box.innerHTML = fail + `<div class="macro-sources">${statusCards}</div>
+      <div class="macro-grid" style="margin-top:var(--s4)">
+        <section class="macro-card"><h3>美国国债收益率曲线</h3>${chart}
+          <div class="big" style="margin-top:var(--s3)">
+            <div><small>10Y − 2Y</small><strong>${num(spreads['10y_minus_2y']) ? spreads['10y_minus_2y'].toFixed(2) + ' pp' : '—'}</strong></div>
+            <div><small>10Y − 3M</small><strong>${num(spreads['10y_minus_3m']) ? spreads['10y_minus_3m'].toFixed(2) + ' pp' : '—'}</strong></div>
+          </div><p class="note">Treasury asof ${E(T.asof || '—')} · 历史曲线样本 n=${Array.isArray(T.series_250d) ? T.series_250d.length : 0} 个交易日观测。</p></section>
+        <section class="macro-card"><h3>隔夜利率</h3><div class="big">${rateCard('sofr', 'SOFR')}${rateCard('effr', 'EFFR')}</div>
+          <p class="note macro-terms">${E(R.attribution || NYFED_ATTRIBUTION)}</p></section>
+      </div>
+      <section class="macro-card" style="margin-top:var(--s4)"><h3>美元汇率（美联储 H.10）</h3>
+        <div class="table-scroll"><table><thead><tr><th>序列</th><th>数据日</th><th class="r">最新</th><th class="r">样本 n</th><th>报价方向</th></tr></thead>
+          <tbody>${fxRows || '<tr><td colspan="5">暂无可用汇率数据</td></tr>'}</tbody></table></div>
+        <p class="note">H.10 数据通常滞后约一周；asof ${E(F.asof || '—')}。</p></section>
+      <p class="note">${E(D.note || '只作背景，不进入模型。')} 历史分位，不是预测；本卡仅展示官方观测，不计算分位。</p>`;
+  }
   function renderAll() {
     $('asof').textContent = '截止 ' + (M.asof || '—') + ' · 生成 ' + String(M.generated_at || '').replace('T', ' ').slice(0, 16) + ' UTC';
-    for (const fn of [renderBoard, renderLimit, renderNB, renderMargin, renderVal]) {
+    for (const fn of [renderBoard, renderLimit, renderSentiment, renderLadder, renderStrength, renderThemes, renderHot, renderLHB, renderNews, renderNB, renderMargin, renderVal]) {
       try { fn(); } catch (e) { console.error(e); }
     }
+    renderMacro();
   }
 
   document.addEventListener('click', (e) => {
     const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
+    const ef = e.target.closest('[data-event-filter]');
     if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
     if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
+    if (ef) { eventFilter = ef.dataset.eventFilter; renderEvents(); }
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
   LPPL.market().then((d) => {
-    if (!d) { $('asof').textContent = '市场数据未加载'; document.querySelector('main').innerHTML = '<p class="fail">市场背景数据文件不存在（market/market_latest.json）。</p>'; return; }
+    if (!d) { $('asof').textContent = '市场数据未加载'; M = {}; renderAll(); return; }
     M = d; renderAll();
   }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
+  LPPL.events().then((d) => {
+    if (!d) { $('events-body').innerHTML = '<p class="fail">事件数据文件未加载。</p>'; return; }
+    Events = d; renderEvents();
+  }).catch((e) => { $('events-body').innerHTML = `<p class="fail">${E(e.message || '事件数据加载失败')}</p>`; });
+  LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
+    .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });
+})();
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[ch]);
+  const pct = (value) => Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—';
+  const cash = (value) => Number.isFinite(value) ? value.toLocaleString('zh-CN', { maximumFractionDigits: 0 }) : '—';
+  const abnormalBody = $('abnormal-body');
+  let rangeData = null, rangeWindow = '5';
+
+  function renderAbnormal(data) {
+    if (!data) {
+      $('src-abnormal').textContent = '数据未加载';
+      abnormalBody.innerHTML = '<p class="fail">异动提醒数据未加载。</p>';
+      return;
+    }
+    const source = data.source || {};
+    $('src-abnormal').textContent =
+      `${source.provider || '—'} · 截至 ${data.asof || '—'} · 缺失 ${source.missing ?? 0}`;
+    const items = data.items || [];
+    const missing = (source.missing_codes || []).slice(0, 5)
+      .map((item) => `${item.code}: ${item.error}`).join('；');
+    abnormalBody.innerHTML = `<p class="note">${esc(data.note || '')} 候选 ${source.candidate_count ?? 0}，可计算 ${source.available_count ?? 0}，接近阈值 ${data.counts?.near ?? 0}，停牌/无当日数据 ${data.counts?.stale_bar ?? 0}。${missing ? `缺失样例：${esc(missing)}` : ''}</p>
+      ${items.length ? `<div class="table-scroll"><table class="abnormal-table"><thead><tr><th>代码</th><th>名称</th><th>板块</th><th class="r">3日偏离</th><th class="r">10日偏离</th><th class="r">30日偏离</th><th>最近阈值</th><th class="r">剩余</th><th>状态</th></tr></thead><tbody>
+      ${items.map((item) => `<tr><td>${esc(item.code)}</td><td>${esc(item.name || '—')}</td><td>${esc(item.board)}</td>
+        <td class="r">${pct(item.dev_3d)}</td><td class="r">${pct(item.dev_10d)}</td><td class="r">${pct(item.dev_30d)}</td>
+        <td>${item.threshold ? `${esc(item.threshold.window)} ${item.threshold.direction === 'up' ? '↑' : '↓'} ${pct(item.threshold.threshold_pct)}` : '—'}</td>
+        <td class="r">${Number.isFinite(item.remaining_pp) ? `${item.remaining_pp.toFixed(2)}pp` : '—'}</td>
+        <td>${item.stale_bar ? `<span class="wn">停牌/无当日数据${item.last_bar_date ? ` · 截至 ${esc(item.last_bar_date)}` : ''}</span>` : item.triggered ? '<span class="up">已达规则阈值</span>' : item.near ? '<span class="wn">接近</span>' : '观察'}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">当前没有可展示的候选股票。</p>'}`;
+  }
+
+  function renderRange() {
+    if (!rangeData) return;
+    const source = rangeData.source || {};
+    const windowData = rangeData.windows?.[rangeWindow] || {};
+    const skipReasons = {
+      short_history: '历史不足',
+      provider_mismatch: '来源不一致，已跳过',
+      provider_missing: '来源缺失，已跳过',
+      board_missing_from_window: '窗口内未每日出现，已跳过',
+      missing_metric: '指标缺失，已跳过',
+      duplicate_board_name: '板块名称重复，已跳过',
+    };
+    $('src-range').textContent =
+      `${source.provider || '—'} · 截至 ${rangeData.asof || '—'} · 可用 ${rangeData.n_days ?? 0} 日`;
+    const renderTable = (kind, label) => {
+      const rows = windowData[kind] || [];
+      return `<h3>${label}</h3>${rows.length ? `<div class="table-scroll"><table class="range-table"><thead><tr><th>板块</th><th>来源</th><th class="r">${rangeWindow}日复合涨跌</th><th class="r">${rangeWindow}日主力净流入合计（元）</th><th>说明</th></tr></thead><tbody>
+        ${rows.map((row) => `<tr><td>${esc(row.name)}</td><td>${esc(row.provider || '—')}</td><td class="r">${pct(row.return_pct)}</td><td class="r">${cash(row.net_flow)}</td><td>${esc(skipReasons[row.skip_reason] || row.skip_reason || '完整窗口')}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="note">该窗口暂无可用板块。</p>'}`;
+    };
+    $('range-body').innerHTML = `<p class="note">${esc(rangeData.note || '')}；当前 ${rangeWindow} 个交易日窗口，历史可用 ${rangeData.n_days ?? 0} 日。</p>
+      ${renderTable('industry', '行业板块')}${renderTable('concept', '概念板块')}`;
+  }
+
+  LPPL.abnormal().then(renderAbnormal).catch(() => renderAbnormal(null));
+  LPPL.rangeStats().then((data) => { rangeData = data; renderRange(); }).catch(() => {
+    $('src-range').textContent = '数据未加载';
+    $('range-body').innerHTML = '<p class="fail">区间统计数据未加载。</p>';
+  });
+  document.querySelectorAll('[data-range-window]').forEach((button) => {
+    button.addEventListener('click', () => {
+      rangeWindow = button.dataset.rangeWindow;
+      document.querySelectorAll('[data-range-window]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      renderRange();
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const NAMES = { dragon_tiger: '龙虎榜', board_flow_region: '地域板块资金流', board_flow_industry: '行业资金流', board_flow_concept: '概念资金流', sse_shares: '上交所份额', szse_shares: '深交所份额', cffex: '中金所持仓', holders: '持有人', holder_structure: '持有人结构', prices: '行情', indices: '指数' };
+  const D = [
+    ['市场复盘', () => LPPL.market()],
+    ['事件日历', () => LPPL.events()],
+    ['异动提醒', () => LPPL.abnormal()],
+    ['区间统计', () => LPPL.rangeStats()],
+    ['全球宏观', () => LPPL.macro()],
+    ['国家队 ETF', () => LPPL.ntEtf()],
+    ['指数/ETF 环境', () => LPPL.stock.dipEnv()],
+    ['沪深300 个股批量', () => LPPL.stock.breadth('sh000300')],
+    ['中证500 个股批量', () => LPPL.stock.breadth('sh000905')],
+  ];
+  const bj = (iso) => {
+    const t = new Date(iso);
+    if (isNaN(t)) return null;
+    return new Date(t.getTime() + 8 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+  };
+  // 交易日 D 的数据最晚在 D+1 06:00（北京）前发布：数一下数据日期之后、到“北京时间减 30 小时”那天为止的工作日（不扣节假日）
+  const lag = (day) => {
+    const end = new Date(Date.now() + 8 * 3600e3 - 30 * 3600e3).toISOString().slice(0, 10);
+    let n = 0;
+    for (let d = new Date(day + 'T00:00:00Z'); ; ) {
+      d.setUTCDate(d.getUTCDate() + 1);
+      const iso = d.toISOString().slice(0, 10);
+      if (iso > end) break;
+      if (d.getUTCDay() % 6) n += 1;
+    }
+    return n;
+  };
+  const row = (name, d) => {
+    if (!d) return `<tr><td>${E(name)}</td><td>—</td><td>—</td><td class="up">未加载</td><td>—</td></tr>`;
+    const gen = d.generated_at || d.generated || null;
+    const day = d.asof || (gen ? bj(gen).slice(0, 10) : null);
+    const n = day ? lag(day) : null;
+    const st = n == null ? '<td>—</td>' : n >= 1 ? `<td class="up">晚 ${n} 个工作日</td>` : '<td class="dn">最新</td>';
+    const bad = Object.entries(d.sources || {}).filter(([, v]) => v && v.ok === false).map(([k]) => NAMES[k] || k);
+    if (d.source && d.source.ok === false) bad.push(d.source.reason || '数据源');
+    if (d.n_error > 0) bad.push(`${d.n_error} 只个股计算失败`);
+    if (d.n_missing > 0) bad.push(`${d.n_missing} 只个股缺结果`);
+    return `<tr><td>${E(name)}</td><td>${E(day || '—')}</td><td>${E(gen ? bj(gen) : '—')}</td>${st}<td>${bad.length ? `<span class="wn">${E(bad.join('、'))}</span>` : '—'}</td></tr>`;
+  };
+  Promise.all(D.map(([, f]) => f().catch(() => null))).then((list) => {
+    document.getElementById('fresh-body').innerHTML =
+      `<div class="table-scroll"><table style="min-width:640px"><thead><tr><th>数据</th><th>数据日期</th><th>生成时间（北京）</th><th>状态</th><th>失败的来源</th></tr></thead><tbody>${D.map(([n], i) => row(n, list[i])).join('')}</tbody></table></div>` +
+      '<p class="note">交易日的数据按次日 06:00（北京）前应发布计算；只扣周末、不扣节假日，节后第一天可能误报。“失败的来源”指这份数据里有部分来源没取到，其余部分照常发布。</p>';
+  });
 })();
 </script>
 </body>
