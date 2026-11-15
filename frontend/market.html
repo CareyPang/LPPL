@@ -226,6 +226,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     </div>
     <div id="range-body"></div>
   </section>
+  <section class="sec wide" id="s-fresh" aria-labelledby="h-fresh">
+    <div class="sec-h"><h2 id="h-fresh">数据更新状态</h2><span class="src" id="src-fresh"></span></div>
+    <div id="fresh-body"><p class="note">加载中…</p></div>
+  </section>
 </main>
 <div class="tip" id="tip" hidden></div>
 <footer>市场背景只作描述，不进入 LPPLS 报警或任何模型。</footer>
@@ -771,6 +775,58 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       document.querySelectorAll('[data-range-window]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
       renderRange();
     });
+  });
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const NAMES = { dragon_tiger: '龙虎榜', board_flow_region: '地域板块资金流', board_flow_industry: '行业资金流', board_flow_concept: '概念资金流', sse_shares: '上交所份额', szse_shares: '深交所份额', cffex: '中金所持仓', holders: '持有人', holder_structure: '持有人结构', prices: '行情', indices: '指数' };
+  const D = [
+    ['市场复盘', () => LPPL.market()],
+    ['事件日历', () => LPPL.events()],
+    ['异动提醒', () => LPPL.abnormal()],
+    ['区间统计', () => LPPL.rangeStats()],
+    ['全球宏观', () => LPPL.macro()],
+    ['国家队 ETF', () => LPPL.ntEtf()],
+    ['指数/ETF 环境', () => LPPL.stock.dipEnv()],
+    ['沪深300 个股批量', () => LPPL.stock.breadth('sh000300')],
+    ['中证500 个股批量', () => LPPL.stock.breadth('sh000905')],
+  ];
+  const bj = (iso) => {
+    const t = new Date(iso);
+    if (isNaN(t)) return null;
+    return new Date(t.getTime() + 8 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+  };
+  // 交易日 D 的数据最晚在 D+1 06:00（北京）前发布：数一下数据日期之后、到“北京时间减 30 小时”那天为止的工作日（不扣节假日）
+  const lag = (day) => {
+    const end = new Date(Date.now() + 8 * 3600e3 - 30 * 3600e3).toISOString().slice(0, 10);
+    let n = 0;
+    for (let d = new Date(day + 'T00:00:00Z'); ; ) {
+      d.setUTCDate(d.getUTCDate() + 1);
+      const iso = d.toISOString().slice(0, 10);
+      if (iso > end) break;
+      if (d.getUTCDay() % 6) n += 1;
+    }
+    return n;
+  };
+  const row = (name, d) => {
+    if (!d) return `<tr><td>${E(name)}</td><td>—</td><td>—</td><td class="up">未加载</td><td>—</td></tr>`;
+    const gen = d.generated_at || d.generated || null;
+    const day = d.asof || (gen ? bj(gen).slice(0, 10) : null);
+    const n = day ? lag(day) : null;
+    const st = n == null ? '<td>—</td>' : n >= 1 ? `<td class="up">晚 ${n} 个工作日</td>` : '<td class="dn">最新</td>';
+    const bad = Object.entries(d.sources || {}).filter(([, v]) => v && v.ok === false).map(([k]) => NAMES[k] || k);
+    if (d.source && d.source.ok === false) bad.push(d.source.reason || '数据源');
+    if (d.n_error > 0) bad.push(`${d.n_error} 只个股计算失败`);
+    if (d.n_missing > 0) bad.push(`${d.n_missing} 只个股缺结果`);
+    return `<tr><td>${E(name)}</td><td>${E(day || '—')}</td><td>${E(gen ? bj(gen) : '—')}</td>${st}<td>${bad.length ? `<span class="wn">${E(bad.join('、'))}</span>` : '—'}</td></tr>`;
+  };
+  Promise.all(D.map(([, f]) => f().catch(() => null))).then((list) => {
+    document.getElementById('fresh-body').innerHTML =
+      `<div class="table-scroll"><table style="min-width:640px"><thead><tr><th>数据</th><th>数据日期</th><th>生成时间（北京）</th><th>状态</th><th>失败的来源</th></tr></thead><tbody>${D.map(([n], i) => row(n, list[i])).join('')}</tbody></table></div>` +
+      '<p class="note">交易日的数据按次日 06:00（北京）前应发布计算；只扣周末、不扣节假日，节后第一天可能误报。“失败的来源”指这份数据里有部分来源没取到，其余部分照常发布。</p>';
   });
 })();
 </script>
