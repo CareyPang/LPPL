@@ -164,11 +164,57 @@ def test_us_stock_loader_preserves_gap_metadata(monkeypatch):
         "load_us_prices",
         lambda ticker, start: (prices, "version", history_meta),
     )
-    monkeypatch.setattr(stock, "_close_cutoff", lambda now: pd.Timestamp("2026-11-11"))
+    monkeypatch.setattr(stock, "_now", lambda: pd.Timestamp("2026-11-12 12:00"))
 
     _, _, meta = stock.load_us_stock("US_NVDA")
 
     assert {key: meta[key] for key in history_meta} == history_meta
+
+
+@pytest.mark.parametrize(
+    ("now", "expected"),
+    [
+        (pd.Timestamp("2026-11-14 04:00"), "2026-11-12"),
+        (pd.Timestamp("2026-11-13 17:00", tz="America/New_York"), "2026-11-13"),
+        (pd.Timestamp("2026-07-15 03:00"), "2026-07-13"),
+        (pd.Timestamp("2026-07-14 17:00", tz="America/New_York"), "2026-07-14"),
+    ],
+)
+def test_us_close_cutoff_uses_new_york_close_across_dst(now, expected):
+    assert stock._us_close_cutoff(now) == pd.Timestamp(expected)
+
+
+@pytest.mark.parametrize(
+    ("now", "expected_dates"),
+    [
+        ("2026-11-14 04:00", ["2026-11-12"]),
+        ("2026-11-14 06:00", ["2026-11-12", "2026-11-13"]),
+    ],
+)
+def test_us_stock_loader_excludes_unclosed_intraday_bar(
+    monkeypatch, now, expected_dates
+):
+    prices = pd.DataFrame(
+        {
+            "date": ["2026-11-12", "2026-11-13"],
+            "open": [100, 101],
+            "high": [102, 103],
+            "low": [99, 100],
+            "close": [101, 102],
+            "volume": [10, 11],
+        }
+    )
+    monkeypatch.setattr(
+        stock.us_stock,
+        "load_us_prices",
+        lambda ticker, start: (prices, "version", {}),
+    )
+    monkeypatch.setattr(stock, "_now", lambda: pd.Timestamp(now))
+
+    ohlc, _, meta = stock.load_us_stock("US_NVDA")
+
+    assert ohlc.date.dt.strftime("%Y-%m-%d").tolist() == expected_dates
+    assert meta["reference_cutoff"] == pd.Timestamp(expected_dates[-1])
 
 
 def test_us_reference_calendar_uses_spy(monkeypatch):

@@ -152,6 +152,19 @@ def _close_cutoff(now: pd.Timestamp) -> pd.Timestamp:
     return cutoff
 
 
+def _us_close_cutoff(now: pd.Timestamp) -> pd.Timestamp:
+    current = pd.Timestamp(now)
+    if current.tzinfo is None:
+        current = current.tz_localize("Asia/Shanghai")
+    else:
+        current = current.tz_convert("Asia/Shanghai")
+    current = current.tz_convert("America/New_York")
+    cutoff = current.tz_localize(None).normalize()
+    if current.hour * 60 + current.minute < 16 * 60 + 30:
+        cutoff -= pd.Timedelta(days=1)
+    return cutoff
+
+
 def _drop_unclosed_bars(
     frame: pd.DataFrame, now: pd.Timestamp
 ) -> tuple[pd.DataFrame, bool]:
@@ -285,7 +298,7 @@ def load_us_stock(
     if not code.startswith("US_"):
         raise ValueError(f"not a US ticker: {ticker!r}")
     now = _now()
-    cutoff = _close_cutoff(now)
+    cutoff = _us_close_cutoff(now)
     requested_start = str(pd.Timestamp(start or DEFAULT_START).date())
     ohlc, _, history_meta = us_stock.load_us_prices(code[3:], start=requested_start)
     ohlc = _normalise_prices(ohlc)
