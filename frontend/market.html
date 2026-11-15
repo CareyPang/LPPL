@@ -753,7 +753,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <td class="r">${signedPercent(event.ret_250)}</td></tr>`).join('');
     const notes = Array.isArray(data.notes) ? data.notes : [];
     const sources = Object.values(data.sources || {}).length ? 'AkShare' : '—';
-    $('src-bottom').textContent = `${sources} · 截至 ${data.asof || '—'} · 样本 n=${sampleN}`;
+    $('src-bottom').textContent = `${sources} · 口径 沪深300（A500 版待补） · 截至 ${data.asof || '—'} · 样本 n=${sampleN}`;
     bottomBody.innerHTML = `<div class="big">
         ${reading('股债利差', current.erp, current.erp_pct)}
         ${reading('破净股占比', current.pbn_ratio, current.pbn_pct)}
