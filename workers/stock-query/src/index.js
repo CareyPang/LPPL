@@ -180,6 +180,15 @@ function shanghaiTime(date) {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
+function safeNewsUrl(value) {
+  try {
+    const url = new URL(String(value));
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function parseClsNews(payload) {
   const rows = payload?.data?.roll_data;
   if (!Array.isArray(rows)) throw new Error('invalid_response');
@@ -194,12 +203,10 @@ function parseClsNews(payload) {
       time: shanghaiTime(new Date(timestamp * 1000)),
       title: String(item.title || String(item.brief || '').slice(0, 80)),
     };
-    for (const field of ['shareurl', 'share_url', 'detail_url', 'url']) {
-      if (item[field]) {
-        row.url = String(item[field]);
-        break;
-      }
-    }
+    const url = ['shareurl', 'share_url', 'detail_url', 'url']
+      .map((field) => safeNewsUrl(item[field]))
+      .find(Boolean);
+    if (url) row.url = url;
     return row;
   });
 }
@@ -226,12 +233,10 @@ function parseEastmoneyNews(payload) {
       time: parseEastmoneyNewsTime(item.showTime),
       title: String(item.title || String(item.summary || '').slice(0, 80)),
     };
-    for (const field of ['shareUrl', 'share_url', 'detailUrl', 'detail_url', 'url']) {
-      if (item[field]) {
-        row.url = String(item[field]);
-        break;
-      }
-    }
+    const url = ['shareUrl', 'share_url', 'detailUrl', 'detail_url', 'url']
+      .map((field) => safeNewsUrl(item[field]))
+      .find(Boolean);
+    if (url) row.url = url;
     return row;
   });
 }

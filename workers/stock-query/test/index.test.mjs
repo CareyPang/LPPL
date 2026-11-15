@@ -895,6 +895,19 @@ test('GET /news fetches CLS and Eastmoney with signed params and parses Shanghai
   });
 });
 
+test('GET /news omits a CLS URL with an unsafe scheme', async () => {
+  const clsPayload = clsNewsFixture();
+  clsPayload.data.roll_data[0].shareurl = 'javascript:alert(1)';
+  await withUpstream({ fetch: async (url) => String(url).includes('www.cls.cn')
+    ? Response.json(clsPayload)
+    : Response.json(eastmoneyNewsFixture()) }, async () => {
+    const response = await worker.fetch(request('/news'), environment());
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(Object.hasOwn(result.cls[0], 'url'), false);
+  });
+});
+
 test('GET /news succeeds when one source fails and reports its error', async () => {
   await withUpstream({ fetch: async (url) => String(url).includes('www.cls.cn')
     ? new Response('<html>blocked</html>', { status: 403 })

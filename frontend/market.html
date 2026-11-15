@@ -532,7 +532,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const emRows = Array.isArray(N.eastmoney) ? N.eastmoney : [];
     $('src-news').innerHTML = srcLine(['news_cls', 'news_eastmoney']);
     const list = (rows) => rows.length ? `<div class="news-list">${rows.map((r) =>
-      `<article class="news-item"><small>${E(r.time || '—')}</small>${r.url ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`}</article>`).join('')}</div>` : '<p class="note">暂无快讯。</p>';
+      `<article class="news-item"><small>${E(r.time || '—')}</small>${/^https?:\/\//i.test(r.url) ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`}</article>`).join('')}</div>` : '<p class="note">暂无快讯。</p>';
     if (newsRefreshState) {
       newsRefreshState.render();
       return;
