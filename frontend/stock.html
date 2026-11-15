@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>临界点 · 个股</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
-<meta name="description" content="输入六位代码查看个股日线与逃顶、抄底结构，支持本地自选。">
+<meta name="description" content="输入股票代码、名称或拼音首字母查看个股日线与逃顶、抄底结构，支持本地自选。">
 <meta name="theme-color" content="#1f5fd6">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="临界点">
 <meta property="og:title" content="临界点 · 个股">
-<meta property="og:description" content="输入六位代码查看个股日线与逃顶、抄底结构，支持本地自选。">
+<meta property="og:description" content="输入股票代码、名称或拼音首字母查看个股日线与逃顶、抄底结构，支持本地自选。">
 <meta name="twitter:card" content="summary">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet">
@@ -72,12 +72,20 @@
     .hero h1 { font: 600 clamp(32px, 4.4vw, 52px)/1.2 var(--serif); letter-spacing: .06em; margin: var(--s3) 0 var(--s3); }
     .hero .lead { color: var(--ink-2); font-size: 16px; max-width: 640px; margin: 0 0 var(--s5); }
     .search { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; background: var(--glass-2); border: 1px solid var(--line-2);
-      border-radius: 999px; padding: 6px 6px 6px 22px; max-width: 560px; }
+      position: relative; overflow: visible; border-radius: 999px; padding: 6px 6px 6px 22px; max-width: 560px; }
     .search label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font: 500 20px var(--f-m); letter-spacing: .18em; padding: 8px 0; }
     .search input::placeholder { color: var(--ink-3); letter-spacing: .06em; font: 400 15px var(--f-u); }
     .search button { border: 0; border-radius: 999px; background: var(--cyan); color: #FFFFFF; font-weight: 600; padding: 12px 28px; cursor: pointer; transition: transform .15s, background .2s; }
     .search button:hover { background: #1A51B8; transform: translateY(-1px); }
+    .stock-suggestions { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; max-height: min(60vh, 420px);
+      overflow: auto; list-style: none; margin: 0; padding: 4px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--glass); }
+    .stock-suggestion { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-height: 44px;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+    .stock-suggestion[aria-selected="true"] { background: var(--glass-2); }
+    .stock-suggestion-name { min-width: 0; overflow-wrap: anywhere; color: var(--ink); }
+    .stock-suggestion-meta { display: flex; align-items: center; gap: var(--s2); color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+    .stock-suggestion-code { color: var(--ink-2); font-family: var(--f-m); }
     .name-hint { min-height: 26px; margin: var(--s3) 0 0 22px; font-size: 14px; color: var(--ink-2); }
     .name-hint b { color: var(--ink); font-family: var(--serif); font-size: 16px; margin-right: 8px; }
     .chips { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s3); }
@@ -211,6 +219,7 @@
     }
   </style>
   <script src="app/lppl-data.js"></script>
+  <script src="app/stock-search.js"></script>
   <script src="app/stock-session.js"></script>
   <script src="app/stock-visibility.js"></script>
   <script src="app/stock-view.js"></script>
@@ -224,11 +233,14 @@
     <section class="hero">
       <div class="eyebrow">Stock · 逃顶 / 抄底</div>
       <h1>个股风险与深跌结构</h1>
-      <p class="lead">输入 A 股六位代码，先查看日线行情和已有分析；也可查看美股观察清单的预计算结果。A 股当前分析在后台独立更新，历史回放由你按需启动。</p>
+      <p class="lead">输入代码、名称或拼音首字母，先查看日线行情和已有分析；也可查看美股观察清单的预计算结果。A 股当前分析在后台独立更新，历史回放由你按需启动。</p>
       <form class="search" id="search">
-        <label for="code">股票代码</label>
-        <input id="code" inputmode="text" autocomplete="off" maxlength="10" placeholder="输入六位代码或美股代码，例如 301196 或 NVDA" required>
+        <label for="code">股票代码或名称</label>
+        <input id="code" inputmode="text" autocomplete="off" role="combobox" aria-autocomplete="list"
+          aria-controls="code-suggestions" aria-expanded="false"
+          placeholder="输入代码、名称或拼音首字母，例如 600519、茅台、gzmt" required>
         <button type="submit">查看股票</button>
+        <ul class="stock-suggestions" id="code-suggestions" role="listbox" aria-label="股票搜索建议" hidden></ul>
       </form>
       <div class="watch-controls">
         <button type="button" class="watch-toggle" id="watch-toggle" aria-pressed="false" disabled>加入自选</button>
@@ -1049,6 +1061,136 @@
       return { current, history, refreshFailed: entry.refresh_failed === true };
     }
 
+    function setupStockAutocomplete() {
+    const codeInput = $('code');
+    const codeForm = $('search');
+    const codeSuggestions = $('code-suggestions');
+    let stockRows = null;
+    let stockRowsPromise = null;
+    let codeMatches = [];
+    let activeCodeMatch = -1;
+    const loadStockRows = () => {
+      if (stockRows) return Promise.resolve(stockRows);
+      if (!stockRowsPromise) {
+        stockRowsPromise = LPPL.stockList().then((data) => {
+          stockRows = data && Array.isArray(data.rows) ? data.rows : null;
+          if (!stockRows) stockRowsPromise = null;
+          return stockRows;
+        }).catch(() => {
+          stockRowsPromise = null;
+          return null;
+        });
+      }
+      return stockRowsPromise;
+    };
+    const closeCodeSuggestions = () => {
+      codeSuggestions.hidden = true;
+      codeInput.setAttribute('aria-expanded', 'false');
+      codeInput.removeAttribute('aria-activedescendant');
+      activeCodeMatch = -1;
+    };
+    const setActiveCodeMatch = (index) => {
+      activeCodeMatch = index;
+      Array.from(codeSuggestions.children).forEach((option, optionIndex) => {
+        option.setAttribute('aria-selected', String(optionIndex === activeCodeMatch));
+      });
+      const active = codeSuggestions.children[activeCodeMatch];
+      if (active) {
+        codeInput.setAttribute('aria-activedescendant', active.id);
+        active.scrollIntoView({ block: 'nearest' });
+      } else {
+        codeInput.removeAttribute('aria-activedescendant');
+      }
+    };
+    const chooseStock = (row, submit) => {
+      if (row.kind === 'index') {
+        location.href = `index.html?code=${encodeURIComponent(row.code)}`;
+        return;
+      }
+      codeInput.value = row.code;
+      closeCodeSuggestions();
+      if (submit) codeForm.requestSubmit();
+    };
+    const renderCodeSuggestions = () => {
+      const query = codeInput.value.trim();
+      codeMatches = stockRows && window.StockSearch
+        ? window.StockSearch.match(stockRows, query, 10)
+        : [];
+      codeSuggestions.replaceChildren();
+      if (!codeMatches.length) {
+        closeCodeSuggestions();
+        return;
+      }
+      codeMatches.forEach((row, index) => {
+        const option = document.createElement('li');
+        option.id = `code-option-${index}`;
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', 'false');
+        option.className = 'stock-suggestion';
+        const name = document.createElement('span');
+        name.className = 'stock-suggestion-name';
+        name.textContent = row.name;
+        const meta = document.createElement('span');
+        meta.className = 'stock-suggestion-meta';
+        const code = document.createElement('span');
+        code.className = 'stock-suggestion-code';
+        code.textContent = row.code;
+        const kind = document.createElement('span');
+        kind.textContent = row.kind === 'a' ? 'A股' : row.kind === 'us' ? '美股' : '指数';
+        meta.append(code, kind);
+        option.append(name, meta);
+        option.addEventListener('click', () => chooseStock(row, true));
+        codeSuggestions.appendChild(option);
+      });
+      codeSuggestions.hidden = false;
+      codeInput.setAttribute('aria-expanded', 'true');
+      setActiveCodeMatch(0);
+    };
+    codeInput.addEventListener('focus', () => {
+      loadStockRows().then(() => renderCodeSuggestions());
+    });
+    codeInput.addEventListener('input', () => {
+      renderCodeSuggestions();
+      loadStockRows().then(() => renderCodeSuggestions());
+    });
+    codeInput.addEventListener('keydown', (event) => {
+      if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && codeMatches.length) {
+        event.preventDefault();
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        const current = activeCodeMatch < 0 ? 0 : activeCodeMatch;
+        setActiveCodeMatch((current + step + codeMatches.length) % codeMatches.length);
+      } else if (event.key === 'Enter' && !codeSuggestions.hidden && codeMatches.length) {
+        event.preventDefault();
+        chooseStock(codeMatches[Math.max(activeCodeMatch, 0)], true);
+      } else if (event.key === 'Escape') {
+        closeCodeSuggestions();
+      }
+    });
+    codeInput.addEventListener('blur', () => {
+      setTimeout(closeCodeSuggestions, 150);
+    });
+    codeForm.addEventListener('submit', (event) => {
+      const query = codeInput.value.trim();
+      if (!query || /^\d{6}$/.test(query) || /^US_[A-Z.]{1,6}$/i.test(query)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      loadStockRows().then((rows) => {
+        const match = rows && window.StockSearch.match(rows, query, 1)[0];
+        if (match) {
+          chooseStock(match, true);
+          return;
+        }
+        const ticker = query.replace(/^US_/i, '');
+        if (/^[A-Z.]{1,6}$/i.test(ticker)) {
+          codeInput.value = `US_${ticker.toUpperCase()}`;
+          codeForm.requestSubmit();
+          return;
+        }
+        $('query-status').textContent = '没有找到匹配的股票，请检查代码、名称或拼音首字母。';
+      });
+    }, true);
+    }
+
     StockView.mount({
       api: LPPL.stock,
       normalizeCode,
@@ -1065,6 +1207,7 @@
         }
       },
     });
+    setupStockAutocomplete();
     $('search').addEventListener('submit', () => {
       const c = normalizeCode($('code').value.trim());
       if (/^\d{6}$/.test(c || '')) {
