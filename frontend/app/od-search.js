@@ -63,14 +63,18 @@
         }
       });
     }
+    var rows = p.rows || [];
+    if (rows.length && StockSearch) {
+      /* 指数的拼音首字母只在 stock_list 行里，所以筛“指数”时也要查这里 */
+      StockSearch.match(rows, q, limit).forEach(function (row) {
+        var k = kindOf(row);
+        if (k === 'index') { if (filter === 'stock') return; add(hit('index', row.code, row.code, row.name, { published: true })); return; }
+        if (filter === 'index') return;
+        add(hit(k, row.code, '', row.name, { published: pub.has(row.code) }));
+      });
+    }
     if (filter === 'all' || filter === 'stock') {
-      var rows = p.rows || [];
       if (rows.length && StockSearch) {
-        StockSearch.match(rows, q, limit).forEach(function (row) {
-          var k = kindOf(row);
-          if (k === 'index') { if (filter === 'stock') return; add(hit('index', row.code, row.code, row.name, { published: true })); return; }
-          add(hit(k, row.code, '', row.name, { published: pub.has(row.code) }));
-        });
         var fb = StockSearch.codeFallback(rows, q);
         if (fb && !seen[fb.h]) add(hit('stock', q, '', fb.t, { published: pub.has(q) }));
       } else if (/^\d{6}$/.test(q)) add(hit('stock', q, '', q, { published: pub.has(q) }));

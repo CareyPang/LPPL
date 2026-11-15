@@ -44,6 +44,13 @@ test('search merges indices and stocks, dedupes the same target and tags publish
   assert.equal(mt[0].h, 'stock.html?code=600519');
 });
 
+test('index filter still matches index pinyin from the stock list rows', () => {
+  const hits = OdSearch.search({ idx, rows, query: 'szzs', filter: 'index' });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].kind, 'index');
+  assert.equal(hits[0].h, 'index.html?code=sh000001');
+});
+
 test('filter restricts kinds: index only / stock only', () => {
   const onlyIdx = OdSearch.search({ idx, rows, query: '000001', filter: 'index' });
   assert.ok(onlyIdx.length === 1 && onlyIdx[0].kind === 'index');
