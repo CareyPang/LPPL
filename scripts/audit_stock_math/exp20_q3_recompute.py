@@ -51,6 +51,9 @@ def _one(args):
 
 def main(procs: int, *files: str) -> None:
     for f in files:
+        if os.path.exists(f + ".q3_old.csv"):
+            print(f, "skip: q3_old.csv exists (already recomputed)", flush=True)
+            continue
         sym = os.path.basename(f).split("__")[0].split(".")[0]
         df = pd.read_parquet(f)
         msk = df.q3_p.notna().to_numpy()
