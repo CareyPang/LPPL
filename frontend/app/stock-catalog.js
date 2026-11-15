@@ -116,11 +116,17 @@
       var a = e.target.closest('a[data-i]');
       if (a && o.onOpen) { var row = el.__rows[Number(a.dataset.i)]; if (row && row.type === 'stock') { e.preventDefault(); o.onOpen(row); } }
     });
-    el.addEventListener('input', function (e) {
-      if (!e.target.classList.contains('cat-q')) return;
-      var pos = e.target.selectionStart;
-      state.q = e.target.value; draw();
+    function applyQuery(t) {
+      var pos = t.selectionStart;
+      state.q = t.value; draw();
       var q = el.querySelector('.cat-q'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (err) { /* ignore */ } }
+    }
+    el.addEventListener('input', function (e) {
+      if (!e.target.classList.contains('cat-q') || e.isComposing) return; /* 中文输入法合成中不重绘，否则候选被打断 */
+      applyQuery(e.target);
+    });
+    el.addEventListener('compositionend', function (e) {
+      if (e.target.classList.contains('cat-q')) applyQuery(e.target);
     });
     draw();
     return { redraw: draw, state: state, rows: all };
