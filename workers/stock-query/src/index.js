@@ -9,6 +9,11 @@ const ACTIVE = new Set(['dispatching', 'dispatch_unknown', 'pending', 'queued', 
 const MARKET_TTL_MS = 60_000;
 const STATUS_TTL_MS = 10_000;
 const INDEX_TTL_MS = 60_000;
+const NEWS_TTL_SECONDS = 60;
+const NEWS_TIMEOUT_MS = 6000;
+const CLS_ROLL_URL = 'https://www.cls.cn/v1/roll/get_roll_list';
+const EM_FAST_NEWS_URL = 'https://np-weblist.eastmoney.com/comm/web/getFastNewsList';
+const NEWS_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36';
 const SUCCESS_STATUSES = new Set([
   'success', 'eligible', 'insufficient_history', 'st_degenerate', 'degenerate',
   'st', 'suspended', 'delisted_or_long_suspended',
@@ -93,6 +98,258 @@ export async function fetchJSON(url, init = {}, timeoutMs = 8000) {
     if (text.length > 2_000_000) throw new Error('upstream_body_too_large');
     return { status: response.status, data: text ? JSON.parse(text) : null };
   } finally { clearTimeout(timer); }
+}
+
+const MD5_SHIFTS = [
+  7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+  5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+  4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+  6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+];
+const MD5_CONSTANTS = Array.from({ length: 64 }, (_unused, i) =>
+  Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000) >>> 0);
+
+export function md5(value) {
+  const bytes = new TextEncoder().encode(String(value));
+  const length = Math.ceil((bytes.length + 9) / 64) * 64;
+  const padded = new Uint8Array(length);
+  padded.set(bytes);
+  padded[bytes.length] = 0x80;
+  const view = new DataView(padded.buffer);
+  const bitLength = bytes.length * 8;
+  view.setUint32(length - 8, bitLength >>> 0, true);
+  view.setUint32(length - 4, Math.floor(bitLength / 0x100000000), true);
+
+  let a0 = 0x67452301;
+  let b0 = 0xefcdab89;
+  let c0 = 0x98badcfe;
+  let d0 = 0x10325476;
+  for (let offset = 0; offset < length; offset += 64) {
+    let a = a0, b = b0, c = c0, d = d0;
+    const words = Array.from({ length: 16 }, (_unused, i) => view.getUint32(offset + i * 4, true));
+    for (let i = 0; i < 64; i += 1) {
+      let f, g;
+      if (i < 16) {
+        f = (b & c) | (~b & d);
+        g = i;
+      } else if (i < 32) {
+        f = (d & b) | (~d & c);
+        g = (5 * i + 1) % 16;
+      } else if (i < 48) {
+        f = b ^ c ^ d;
+        g = (3 * i + 5) % 16;
+      } else {
+        f = c ^ (b | ~d);
+        g = (7 * i) % 16;
+      }
+      const sum = (f + a + MD5_CONSTANTS[i] + words[g]) >>> 0;
+      const shift = MD5_SHIFTS[i];
+      const rotated = ((sum << shift) | (sum >>> (32 - shift))) >>> 0;
+      a = d;
+      d = c;
+      c = b;
+      b = (b + rotated) >>> 0;
+    }
+    a0 = (a0 + a) >>> 0;
+    b0 = (b0 + b) >>> 0;
+    c0 = (c0 + c) >>> 0;
+    d0 = (d0 + d) >>> 0;
+  }
+  const digest = new Uint8Array(16);
+  const digestView = new DataView(digest.buffer);
+  [a0, b0, c0, d0].forEach((word, i) => digestView.setUint32(i * 4, word, true));
+  return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function clsSignature(query) {
+  const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(query));
+  const sha1 = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return md5(sha1);
+}
+
+function shanghaiTime(date) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
+function parseClsNews(payload) {
+  const rows = payload?.data?.roll_data;
+  if (!Array.isArray(rows)) throw new Error('invalid_response');
+  return rows.slice(0, 30).map((item) => {
+    if (!item || typeof item !== 'object' || !['title', 'brief', 'ctime'].every((key) => key in item)) {
+      throw new Error('invalid_response');
+    }
+    const timestamp = Number(item.ctime);
+    if (!Number.isFinite(timestamp)) throw new Error('invalid_response');
+    const row = {
+      source: '财联社',
+      time: shanghaiTime(new Date(timestamp * 1000)),
+      title: String(item.title || String(item.brief || '').slice(0, 80)),
+    };
+    for (const field of ['shareurl', 'share_url', 'detail_url', 'url']) {
+      if (item[field]) {
+        row.url = String(item[field]);
+        break;
+      }
+    }
+    return row;
+  });
+}
+
+function parseEastmoneyNewsTime(value) {
+  const text = String(value || '').trim();
+  const localTime = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(text);
+  const normalized = localTime ? `${text.replace(' ', 'T')}+08:00` : text;
+  const date = new Date(normalized);
+  if (!Number.isFinite(date.getTime())) throw new Error('invalid_response');
+  return shanghaiTime(date);
+}
+
+function parseEastmoneyNews(payload) {
+  const rows = payload?.data?.fastNewsList;
+  if (!Array.isArray(rows)) throw new Error('invalid_response');
+  return rows.slice(0, 30).map((item) => {
+    if (!item || typeof item !== 'object'
+      || !['title', 'summary', 'showTime'].every((key) => key in item)) {
+      throw new Error('invalid_response');
+    }
+    const row = {
+      source: '东方财富',
+      time: parseEastmoneyNewsTime(item.showTime),
+      title: String(item.title || String(item.summary || '').slice(0, 80)),
+    };
+    for (const field of ['shareUrl', 'share_url', 'detailUrl', 'detail_url', 'url']) {
+      if (item[field]) {
+        row.url = String(item[field]);
+        break;
+      }
+    }
+    return row;
+  });
+}
+
+export async function fetchNewsSource(url, headers, parser, timeoutMs = NEWS_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { headers, signal: controller.signal });
+    if (!response.ok) return { ok: false, error: `http_${response.status}`, rows: [] };
+    let payload;
+    try { payload = await response.json(); }
+    catch { return { ok: false, error: 'invalid_json', rows: [] }; }
+    try { return { ok: true, rows: parser(payload) }; }
+    catch { return { ok: false, error: 'invalid_response', rows: [] }; }
+  } catch (error) {
+    return {
+      ok: false,
+      error: controller.signal.aborted || error?.name === 'AbortError' ? 'timeout' : 'request_failed',
+      rows: [],
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchLiveNewsSources() {
+  const clsParams = {
+    appName: 'CailianpressWeb',
+    os: 'web',
+    sv: '7.7.5',
+    last_time: '',
+    refresh_type: '1',
+    rn: '50',
+  };
+  const clsQuery = Object.keys(clsParams).sort().map((key) => `${key}=${clsParams[key]}`).join('&');
+  const clsSign = await clsSignature(clsQuery);
+  const clsUrl = `${CLS_ROLL_URL}?${clsQuery}&sign=${clsSign}`;
+  const clsHeaders = {
+    Accept: 'application/json, text/plain, */*',
+    Referer: 'https://www.cls.cn/',
+    'User-Agent': NEWS_USER_AGENT,
+  };
+
+  const emParams = new URLSearchParams({
+    client: 'web',
+    biz: 'web_724',
+    fastColumn: '102',
+    sortEnd: '',
+    pageSize: '50',
+    req_trace: crypto.randomUUID(),
+  });
+  const emHeaders = {
+    Accept: 'application/json, text/plain, */*',
+    Referer: 'https://kuaixun.eastmoney.com/',
+    'User-Agent': NEWS_USER_AGENT,
+  };
+  return Promise.all([
+    fetchNewsSource(clsUrl, clsHeaders, parseClsNews),
+    fetchNewsSource(`${EM_FAST_NEWS_URL}?${emParams}`, emHeaders, parseEastmoneyNews),
+  ]);
+}
+
+async function liveNews(request, env) {
+  const origin = request.headers.get('Origin') || 'none';
+  const cacheKey = new Request(`https://lppl-stock-query.invalid/news?origin=${encodeURIComponent(origin)}`);
+  let cache = null;
+  try {
+    if (typeof caches !== 'undefined' && caches.default) cache = caches.default;
+  } catch { cache = null; }
+  if (cache) {
+    try {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const response = new Response(cached.body, {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers: cached.headers,
+        });
+        response.headers.set('X-News-Cache', 'HIT');
+        return response;
+      }
+    } catch { cache = null; }
+  }
+
+  const [cls, eastmoney] = await fetchLiveNewsSources();
+  const fetchedAt = new Date().toISOString();
+  const sources = {
+    cls: { ok: cls.ok, ...(cls.error ? { error: cls.error } : {}) },
+    eastmoney: { ok: eastmoney.ok, ...(eastmoney.error ? { error: eastmoney.error } : {}) },
+  };
+  if (!cls.ok && !eastmoney.ok) {
+    return jsonResponse(request, env, {
+      ok: false,
+      error_code: 'NEWS_UNAVAILABLE',
+      error: '实时快讯来源暂不可用',
+      fetched_at: fetchedAt,
+      cls: [],
+      eastmoney: [],
+      sources,
+    }, 502, { 'X-News-Cache': cache ? 'MISS' : 'BYPASS' });
+  }
+
+  const response = jsonResponse(request, env, {
+    ok: true,
+    fetched_at: fetchedAt,
+    cls: cls.rows,
+    eastmoney: eastmoney.rows,
+    sources,
+  }, 200, {
+    'Cache-Control': `public, max-age=${NEWS_TTL_SECONDS}`,
+    'X-News-Cache': cache ? 'MISS' : 'BYPASS',
+  });
+  if (cache) {
+    try { await cache.put(cacheKey, response.clone()); }
+    catch { /* A cache failure must not hide available live data. */ }
+  }
+  return response;
 }
 
 async function mainSHA(env, timeoutMs = 8000) {
@@ -552,8 +809,14 @@ export default {
         gh_token,
         repo: repo(env),
         allowed_origin: env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
-        routes: ['/health', '/market', '/query', '/status', '/result'],
+        routes: ['/health', '/market', '/news', '/query', '/status', '/result'],
       }, ok ? 200 : 503);
+    }
+    if (url.pathname === '/news') {
+      if (request.method !== 'GET') {
+        return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
+      }
+      return liveNews(request, env);
     }
     const routes = { '/market': 'GET', '/query': 'POST', '/status': 'GET', '/result': 'GET' };
     if (!routes[url.pathname]) return jsonResponse(request, env, { error_code: 'NOT_FOUND', error: '接口不存在' }, 404);

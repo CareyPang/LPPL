@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import worker, { StockQueryState, QueryBudget, normalizeMarket, closedCutoff, fetchJSON, lastCloseInstant } from '../src/index.js';
+import worker, {
+  StockQueryState,
+  QueryBudget,
+  normalizeMarket,
+  closedCutoff,
+  fetchJSON,
+  fetchNewsSource,
+  lastCloseInstant,
+  md5,
+} from '../src/index.js';
 
 const ORIGIN = 'https://careypang.github.io';
 const SHA = 'a'.repeat(40);
@@ -72,7 +81,7 @@ test('health reports configured bindings without exposing the token', async () =
     assert.equal(health.gh_token, true);
     assert.equal(health.repo, 'example/stocks');
     assert.equal(health.allowed_origin, 'https://example.test');
-    assert.deepEqual(health.routes, ['/health', '/market', '/query', '/status', '/result']);
+    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/query', '/status', '/result']);
   });
 });
 
@@ -795,5 +804,191 @@ test('scoped result without retained job still validates mode and version metada
     server.outputs.set(`stock/jobs/${job.job_id}/600519.json`, resultFor(job));
     const data = await (await worker.fetch(request(`/result?code=600519&job_id=${job.job_id}`), env)).json();
     assert.equal(data.delivery_observation.identity_verified_against, 'artifact_metadata_only');
+  });
+});
+
+function clsNewsFixture() {
+  return { data: { roll_data: [{
+    title: '财联社测试快讯',
+    brief: '摘要',
+    ctime: Date.parse('2026-11-15T06:30:00Z') / 1000,
+    shareurl: 'https://www.cls.cn/detail/1',
+  }] } };
+}
+
+function eastmoneyNewsFixture() {
+  return { data: { fastNewsList: [{
+    title: '东方财富测试快讯',
+    summary: '摘要',
+    showTime: '2026-11-15 14:32:00',
+    shareUrl: 'https://kuaixun.eastmoney.com/detail/1',
+  }] } };
+}
+
+async function withCaches(cache, callback) {
+  const hadCaches = Object.hasOwn(globalThis, 'caches');
+  const previous = globalThis.caches;
+  globalThis.caches = { default: cache };
+  try { await callback(); }
+  finally {
+    if (hadCaches) globalThis.caches = previous;
+    else delete globalThis.caches;
+  }
+}
+
+function memoryCache() {
+  const entries = new Map();
+  return {
+    get size() { return entries.size; },
+    async match(request) { return entries.get(String(request.url))?.clone(); },
+    async put(request, response) { entries.set(String(request.url), response.clone()); },
+  };
+}
+
+test('MD5 helper matches hashlib vectors and the CLS query digest', () => {
+  assert.equal(md5(''), 'd41d8cd98f00b204e9800998ecf8427e');
+  assert.equal(md5('abc'), '900150983cd24fb0d6963f7d28e17f72');
+  assert.equal(md5('7cb2289dd0100f885293f6de731effdd8a27bde3'), 'b849fe86598f3ceca205eda7b33a49a1');
+});
+
+test('GET /news fetches CLS and Eastmoney with signed params and parses Shanghai times', async () => {
+  const calls = [];
+  await withUpstream({ fetch: async (url, init) => {
+    const text = String(url);
+    calls.push(text);
+    assert.equal(init.headers['User-Agent'], 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36');
+    if (text.startsWith('https://www.cls.cn/')) {
+      assert.equal(init.headers.Referer, 'https://www.cls.cn/');
+      const parsed = new URL(text);
+      assert.equal(parsed.searchParams.get('appName'), 'CailianpressWeb');
+      assert.equal(parsed.searchParams.get('rn'), '50');
+      assert.equal(parsed.searchParams.get('sign'), 'b849fe86598f3ceca205eda7b33a49a1');
+      return Response.json(clsNewsFixture());
+    }
+    if (text.startsWith('https://np-weblist.eastmoney.com/')) {
+      assert.equal(init.headers.Referer, 'https://kuaixun.eastmoney.com/');
+      const parsed = new URL(text);
+      assert.equal(parsed.searchParams.get('client'), 'web');
+      assert.equal(parsed.searchParams.get('biz'), 'web_724');
+      assert.equal(parsed.searchParams.get('fastColumn'), '102');
+      return Response.json(eastmoneyNewsFixture());
+    }
+    assert.fail(`Unexpected news request: ${text}`);
+  } }, async () => {
+    const response = await worker.fetch(request('/news'), environment());
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'public, max-age=60');
+    assert.equal(response.headers.get('X-News-Cache'), 'BYPASS');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), ORIGIN);
+    const result = await response.json();
+    assert.equal(result.ok, true);
+    assert.ok(Number.isFinite(Date.parse(result.fetched_at)));
+    assert.deepEqual(result.sources, { cls: { ok: true }, eastmoney: { ok: true } });
+    assert.equal(result.cls[0].source, '财联社');
+    assert.equal(result.cls[0].time, '2026-11-15 14:30');
+    assert.equal(result.cls[0].title, '财联社测试快讯');
+    assert.equal(result.cls[0].url, 'https://www.cls.cn/detail/1');
+    assert.equal(result.eastmoney[0].source, '东方财富');
+    assert.equal(result.eastmoney[0].time, '2026-11-15 14:32');
+    assert.equal(result.eastmoney[0].url, 'https://kuaixun.eastmoney.com/detail/1');
+    assert.equal(calls.length, 2);
+  });
+});
+
+test('GET /news succeeds when one source fails and reports its error', async () => {
+  await withUpstream({ fetch: async (url) => String(url).includes('www.cls.cn')
+    ? new Response('<html>blocked</html>', { status: 403 })
+    : Response.json(eastmoneyNewsFixture()) }, async () => {
+    const response = await worker.fetch(request('/news'), environment());
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.sources.cls.ok, false);
+    assert.equal(result.sources.cls.error, 'http_403');
+    assert.equal(result.sources.eastmoney.ok, true);
+    assert.equal(result.cls.length, 0);
+    assert.equal(result.eastmoney.length, 1);
+  });
+});
+
+test('GET /news returns NEWS_UNAVAILABLE when both sources fail', async () => {
+  const cache = memoryCache();
+  await withCaches(cache, async () => {
+    await withUpstream({ fetch: async () => new Response('<html>blocked</html>', { status: 503 }) }, async () => {
+      const response = await worker.fetch(request('/news'), environment());
+      assert.equal(response.status, 502);
+      const result = await response.json();
+      assert.equal(result.error_code, 'NEWS_UNAVAILABLE');
+      assert.equal(result.sources.cls.error, 'http_503');
+      assert.equal(result.sources.eastmoney.error, 'http_503');
+      assert.equal(cache.size, 0);
+    });
+  });
+});
+
+test('GET /news treats non-JSON source content as a source failure', async () => {
+  await withUpstream({ fetch: async (url) => String(url).includes('www.cls.cn')
+    ? new Response('<html>not json</html>')
+    : Response.json(eastmoneyNewsFixture()) }, async () => {
+    const response = await worker.fetch(request('/news'), environment());
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.sources.cls.ok, false);
+    assert.equal(result.sources.cls.error, 'invalid_json');
+    assert.equal(result.sources.eastmoney.ok, true);
+  });
+});
+
+test('news source fetch reports an AbortController timeout', async () => {
+  await withUpstream({ fetch: async (_url, init) => new Promise((_resolve, reject) => {
+    init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), { once: true });
+  }) }, async () => {
+    const result = await fetchNewsSource('https://news.test/', {}, () => [], 5);
+    assert.deepEqual(result, { ok: false, error: 'timeout', rows: [] });
+  });
+});
+
+test('GET /news preserves a successful source when the other source times out', async () => {
+  await withUpstream({ fetch: async (url) => String(url).includes('www.cls.cn')
+    ? Promise.reject(new DOMException('aborted', 'AbortError'))
+    : Response.json(eastmoneyNewsFixture()) }, async () => {
+    const response = await worker.fetch(request('/news'), environment());
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.deepEqual(result.sources.cls, { ok: false, error: 'timeout' });
+    assert.equal(result.sources.eastmoney.ok, true);
+  });
+});
+
+test('GET /news caches successful source data and reports a cache hit', async () => {
+  const cache = memoryCache();
+  let calls = 0;
+  await withCaches(cache, async () => {
+    await withUpstream({ fetch: async (url) => {
+      calls += 1;
+      return String(url).includes('www.cls.cn')
+        ? Response.json(clsNewsFixture())
+        : Response.json(eastmoneyNewsFixture());
+    } }, async () => {
+      const first = await worker.fetch(request('/news'), environment());
+      const second = await worker.fetch(request('/news'), environment());
+      assert.equal(first.headers.get('X-News-Cache'), 'MISS');
+      assert.equal(second.headers.get('X-News-Cache'), 'HIT');
+      assert.equal(second.headers.get('Cache-Control'), 'public, max-age=60');
+      assert.equal(calls, 2);
+      assert.equal(cache.size, 1);
+    });
+  });
+});
+
+test('news route preserves the existing OPTIONS and Origin checks', async () => {
+  await withUpstream({ fetch: async () => assert.fail('news route should not fetch') }, async () => {
+    const env = environment();
+    const options = await worker.fetch(request('/news', { method: 'OPTIONS' }), env);
+    assert.equal(options.status, 204);
+    assert.equal(options.headers.get('Access-Control-Allow-Origin'), ORIGIN);
+    const forbidden = await worker.fetch(request('/news', { origin: 'https://evil.test' }), env);
+    assert.equal(forbidden.status, 403);
+    assert.equal(forbidden.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal((await worker.fetch(request('/news', { method: 'POST' }), env)).status, 405);
   });
 });
