@@ -81,6 +81,39 @@ def test_check_counts_trading_days_and_returns_stale_items(tmp_path, monkeypatch
     assert len(report["stale"]) == len(freshness.DATASETS)
 
 
+def test_check_includes_all_index_lppls_datasets(tmp_path, monkeypatch):
+    expected = [
+        ("index_sh000001", "上证指数 LPPLS", "index/sh000001_latest.json"),
+        ("index_sh000016", "上证50 LPPLS", "index/sh000016_latest.json"),
+        ("index_sh000300", "沪深300 LPPLS", "index/sh000300_latest.json"),
+        ("index_sh000905", "中证500 LPPLS", "index/sh000905_latest.json"),
+        ("index_sz399001", "深证成指 LPPLS", "index/sz399001_latest.json"),
+        ("index_sz399006", "创业板指 LPPLS", "index/sz399006_latest.json"),
+    ]
+    for _, _, relative_path in expected:
+        path = tmp_path / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"asof": "2026-11-16"}), encoding="utf-8")
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(["2026-11-16"]),
+    )
+
+    report = freshness.check(
+        tmp_path, pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai")
+    )
+
+    configured = [item for item in freshness.DATASETS if item[0].startswith("index_")]
+    index_items = [item for item in report["items"] if item["key"].startswith("index_")]
+    assert configured == expected
+    assert [(item["key"], item["label"], item["path"]) for item in index_items] == expected
+    assert all(
+        (item["day"], item["lag"], item["status"]) == ("2026-11-16", 0, "ok")
+        for item in index_items
+    )
+
+
 def test_markdown_uses_chinese_status_table():
     text = freshness.render_markdown(
         {

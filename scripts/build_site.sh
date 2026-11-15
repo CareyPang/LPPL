@@ -26,6 +26,40 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
     mkdir -p "$SITE/lab/mock/data/macro"
     git -C "$ROOT" archive stock-results macro | tar -x -C "$SITE/lab/mock/data/"
   fi
+  if git -C "$ROOT" cat-file -e stock-results:index 2>/dev/null; then
+    git -C "$ROOT" archive stock-results index | tar -x -C "$SITE/lab/mock/data/"
+    python3 - "$SITE/lab/mock/data/index" "$SITE/lab/mock/data" <<'PY'
+import json
+import shutil
+import sys
+from datetime import date
+from pathlib import Path
+
+source_dir, target_dir = map(Path, sys.argv[1:])
+
+
+def asof(path: Path) -> date | None:
+    try:
+        return date.fromisoformat(json.loads(path.read_text(encoding="utf-8"))["asof"])
+    except (KeyError, OSError, TypeError, ValueError):
+        return None
+
+
+for source in sorted(source_dir.glob("*_latest.json")):
+    target = target_dir / source.name
+    published_asof = asof(source)
+    committed_asof = asof(target) if target.exists() else None
+    if published_asof is None:
+        print(f"skip index {source.name}: invalid published asof")
+        continue
+    if target.exists() and (
+        committed_asof is None or published_asof < committed_asof
+    ):
+        print(f"skip index {source.name}: published asof {published_asof} older or invalid")
+        continue
+    shutil.copyfile(source, target)
+PY
+  fi
 fi
 mkdir -p "$SITE/lab/mock/data"
 python3 "$ROOT/scripts/build_changelog.py" --root "$ROOT" --out "$SITE/lab/mock/data/changelog.json"
