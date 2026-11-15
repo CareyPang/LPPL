@@ -115,8 +115,9 @@
       var tags = [us ? '美股' : '个股']; var b = board(code); if (b && !us) tags.push(b);
       if (d.stock_meta && d.stock_meta.st) tags.push('ST');
       $('sh-tags').innerHTML = tags.map(function (t) { return '<i>' + esc(t) + '</i>'; }).join('');
-      var chart = $('sh-chart'), S = root.LPPL && root.LPPL.resolve ? root.LPPL.resolve(code) : null;
-      if (S && S.sym) { chart.hidden = false; chart.href = 'index.html?code=' + encodeURIComponent(S.sym); } else chart.hidden = true;
+      var chart = $('sh-chart'), SYMS = (root.LPPL && root.LPPL.SYMS) || [];
+      var S = SYMS.filter(function (x) { return x.sym === d.symbol; })[0]; /* 按完整 symbol 比对：sz000001 平安银行 ≠ sh000001 上证指数 */
+      if (S) { chart.hidden = false; chart.href = 'index.html?code=' + encodeURIComponent(S.sym); } else chart.hidden = true;
       $('sh-mem').innerHTML = '';
       loadCatalog().then(function (rows) {
         if (!rows) return;

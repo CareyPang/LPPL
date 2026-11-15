@@ -323,7 +323,8 @@
   modal.innerHTML = '<div class="odm" role="dialog" aria-modal="true" aria-label="搜索标的">' +
     '<div class="odm-in"><label class="odn-vh" for="odm-i">搜索标的</label>' +
     '<input id="odm-i" type="text" autocomplete="off" spellcheck="false" placeholder="名称、拼音首字母或代码，如 茅台 / gzmt / 600519" aria-controls="odm-l" aria-expanded="true" role="combobox" aria-autocomplete="list">' +
-    '<kbd aria-hidden="true">Esc</kbd></div>' +
+    '<kbd aria-hidden="true">Esc</kbd>' +
+    '<button type="button" class="odm-x" aria-label="关闭搜索" style="margin-left:6px;border:0;background:none;font-size:22px;line-height:1;color:inherit;cursor:pointer;padding:0 6px">×</button></div>' +
     '<div class="odm-f" role="group" aria-label="类型">' + FILTERS.map(function (f) {
       return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (f[0] === 'all') + '">' + f[1] + '</button>';
     }).join('') + '</div>' +
@@ -399,7 +400,7 @@
     } else if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
   });
   modal.addEventListener('click', function (e) {
-    if (e.target === modal) { closeSearch(); return; }
+    if (e.target === modal || e.target.closest('.odm-x')) { closeSearch(); return; }
     var f = e.target.closest('button[data-f]');
     if (f) {
       mFilter = f.dataset.f;
