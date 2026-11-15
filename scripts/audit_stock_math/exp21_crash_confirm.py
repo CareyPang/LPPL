@@ -123,14 +123,15 @@ def run_side(sym: str, logp: pd.Series, events: np.ndarray, side: int) -> tuple[
                 rows.append(dict(symbol=sym, side=r["side"], t_bubble=cal[t0], rule=name, date=cal[cb], **score(cb, events, close, side)))
     df = pd.DataFrame(rows)
     # 零对照：对数收益循环平移（≥250 日），重跑状态机，事件固定
-    rng = np.random.default_rng(SEED); dy = np.diff(y); hits = []
+    rng = np.random.default_rng(SEED); dy = np.diff(y); hits, reps = [], []
     for _ in range(N_NULL):
         k = int(rng.integers(MIN_SHIFT, len(dy) - MIN_SHIFT)); yy = np.concatenate([[y[0]], y[0] + np.cumsum(np.roll(dy, k))])
         cs = [c for _, c in monitor(yy) if START <= cal[c] <= END]
         hits.append(np.mean([score(c, events, close, side)["hit"] for c in cs]) if cs else np.nan)
+        reps.append((sum(score(c, events, close, side)["hit"] for c in cs), len(cs)))
     if N_NULL == 0:
         hits = [np.nan]
-    return df, dict(null_hit_mean=float(np.nanmean(hits)), null_hit_p95=float(np.nanquantile(hits, 0.95)), null_n=int(np.sum(np.isfinite(hits))))
+    return df, dict(reps=reps, null_hit_mean=float(np.nanmean(hits)), null_hit_p95=float(np.nanquantile(hits, 0.95)), null_n=int(np.sum(np.isfinite(hits))))
 
 
 def summarize(df: pd.DataFrame, exclude: bool) -> pd.DataFrame:
@@ -177,15 +178,19 @@ if __name__ == "__main__":
                 df["ev_year"] = [cal[int(e)].year if e >= 0 else df.date.iloc[i].year for i, e in enumerate(df.ev)]
                 all_rows.append(df)
             nulls[(sym, side)] = null
-            print(sym, "top" if side > 0 else "bottom", f"smin_confirms={int((df.rule == 'smin').sum()) if len(df) else 0}", null, flush=True)
+            print(sym, "top" if side > 0 else "bottom", f"smin_confirms={int((df.rule == 'smin').sum()) if len(df) else 0}", {k: v for k, v in null.items() if k != "reps"}, flush=True)
     E = pd.concat(all_rows, ignore_index=True); E.to_csv(OUT / "events.csv", index=False)
     pd.set_option("display.width", 220)
     for side in ("top", "bottom"):
         d = E[E.side == side]
         if d.empty:
             print(side, "no events"); continue
-        null_pool = {k: float(np.nanmean([v[k] for (s, sd), v in nulls.items() if sd == (1 if side == "top" else -1)])) for k in ("null_hit_mean", "null_hit_p95")}
-        null_pool["null_n"] = int(sum(v["null_n"] for (s, sd), v in nulls.items() if sd == (1 if side == "top" else -1)))
+        # 合并零对照：第 i 次平移在 6 指数上的命中数/确认数相加后取比率，再取 200 次的均值与 95 分位
+        sd_ = 1 if side == "top" else -1
+        R = np.array([v["reps"] for (_s, sd), v in nulls.items() if sd == sd_], dtype=float)  # (指数, 次, 2)
+        pooled_hits = R[:, :, 0].sum(0) / np.maximum(R[:, :, 1].sum(0), 1) if R.size else np.array([np.nan])
+        null_pool = dict(null_hit_mean=float(np.nanmean(pooled_hits)), null_hit_p95=float(np.nanquantile(pooled_hits, 0.95)) if R.size else np.nan,
+                         null_n=int(R.shape[1]) if R.size else 0, null_confirms_med=float(np.median(R[:, :, 1].sum(0))) if R.size else np.nan)
         full = summarize(d, False); full["sample"] = "all"; ex = summarize(d, True); ex["sample"] = "ex_extreme"
         tab = pd.concat([full, ex]); tab.to_csv(OUT / f"summary_{side}.csv", index=False)
         pooled = d.groupby("rule").agg(n=("hit", "size"), hit_rate=("hit", "mean"), false_rate=("false", "mean"), lag_med=("lag", "median"), plag_med=("plag", "median"))
