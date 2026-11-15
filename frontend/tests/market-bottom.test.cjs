@@ -58,13 +58,18 @@ test('bottom signal renders separate HS300 and A500 panels and sample counts', (
     baseline: panel('2024-01-19').baseline,
     notes: ['HS300 note'],
     sources: { ebs: 'AkShare' },
-    a500: panel('2024-06-25'),
+    a500: { ...panel('2024-06-25'), asof: '2026-11-12' },
   });
 
   assert.match(elements['bottom-body'].innerHTML, /沪深300/);
   assert.match(elements['bottom-body'].innerHTML, /中证A500/);
   assert.match(elements['bottom-body'].innerHTML, /2024-01-19/);
   assert.match(elements['bottom-body'].innerHTML, /2024-06-25/);
+  assert.match(elements['bottom-body'].innerHTML, /截至 2026-11-13/);
+  assert.match(
+    elements['bottom-body'].innerHTML,
+    /截至 2026-11-12，晚于沪深300（2026-11-13）/,
+  );
   assert.match(elements['bottom-body'].innerHTML, /历史分位，不是预测。/);
   assert.equal(
     elements['src-bottom'].textContent,
