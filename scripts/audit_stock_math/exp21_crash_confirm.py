@@ -131,7 +131,7 @@ def run_side(sym: str, logp: pd.Series, events: np.ndarray, side: int) -> tuple[
     rng = np.random.default_rng(SEED); dy = np.diff(y); hits, reps = [], []
     for _ in range(N_NULL):
         k = int(rng.integers(MIN_SHIFT, len(dy) - MIN_SHIFT)); yy = np.concatenate([[y[0]], y[0] + np.cumsum(np.roll(dy, k))])
-        cs = [c for _, c in monitor(yy, i_start) if c >= 0 and START <= cal[c] <= END]
+        cs = [c for t0, c in monitor(yy, i_start) if c >= 0 and START <= cal[t0] <= END and START <= cal[c] <= END]
         hits.append(np.mean([score(c, events, close, side)["hit"] for c in cs]) if cs else np.nan)
         reps.append((sum(score(c, events, close, side)["hit"] for c in cs), len(cs)))
     if N_NULL == 0:
