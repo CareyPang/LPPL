@@ -342,7 +342,7 @@
           const midpoint = (points[0].x + points[1].x) / 2;
           const distance = Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y));
           const scaled = zoom(pinch.start, pinch.end, allPrices.length, distance / pinch.distance, pinch.anchor);
-          const deltaBars = -(midpoint - pinch.midpoint) / pinch.plotWidth * (pinch.end - pinch.start);
+          const deltaBars = -(midpoint - pinch.midpoint) / pinch.plotWidth * (scaled.end - scaled.start);
           const moved = pan(scaled.start, scaled.end, allPrices.length, deltaBars);
           setWindow(moved.start, moved.end, selected);
         } else if (pointers.size === 1) {
