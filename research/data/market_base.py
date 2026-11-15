@@ -489,6 +489,7 @@ def sina_region_flow_snapshot(session=None) -> pd.DataFrame:
     if not flows:
         raise RuntimeError("Sina stock money-flow list is empty")
     rows = []
+    missing = []
     for region_code, region_name in SINA_REGIONS.items():
         members = _sina_pages(
             session,
@@ -511,6 +512,7 @@ def sina_region_flow_snapshot(session=None) -> pd.DataFrame:
             net += net_amount
             amount += turnover
         if not matched:
+            missing.append(region_name)
             continue
         rows.append(
             {
@@ -522,8 +524,10 @@ def sina_region_flow_snapshot(session=None) -> pd.DataFrame:
                 **{column: None for column in BOARD_COLUMNS[5:]},
             }
         )
-    if not rows:
-        raise RuntimeError("Sina region boards matched no money-flow rows")
+    if missing:
+        raise RuntimeError(
+            "Sina region boards matched no money-flow rows for: " + ", ".join(missing)
+        )
     frame = pd.DataFrame(rows, columns=BOARD_COLUMNS)
     frame.attrs["url_host"] = SINA_BOARD_HOST
     return frame

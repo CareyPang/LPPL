@@ -1283,6 +1283,8 @@ def test_sina_region_flow_snapshot_aggregates_members_by_province(monkeypatch):
         def get(self, url, params, headers, timeout, allow_redirects):
             self.calls.append((url, params))
             assert headers["Referer"] == "https://finance.sina.com.cn/"
+            if len(self.calls) == 1:
+                raise RuntimeError("temporary failure")
             if url == market.SINA_STOCK_FLOW_URL:
                 return Response(flows if params["page"] == 1 else [])
             return Response(members[params["node"]] if params["page"] == 1 else [])
@@ -1299,9 +1301,37 @@ def test_sina_region_flow_snapshot_aggregates_members_by_province(monkeypatch):
     assert guangdong["main_net"] == pytest.approx(-200)
     assert guangdong["main_pct"] == pytest.approx(-5.0)
     assert guangdong["pct_5d"] is None
-    assert session.calls[0][0] == market.SINA_STOCK_FLOW_URL
+    assert session.calls[0][0] == session.calls[1][0] == market.SINA_STOCK_FLOW_URL
+    assert session.calls[0][1] == session.calls[1][1]
     assert session.calls[0][1]["num"] == 1000
     assert [params["node"] for url, params in session.calls if url == market.SINA_NODE_URL] == [
         "diyu_440000",
         "diyu_630000",
     ]
+
+
+def test_sina_region_flow_snapshot_rejects_partial_provinces(monkeypatch):
+    monkeypatch.setattr(market.time, "sleep", lambda _: None)
+    monkeypatch.setattr(market, "SINA_REGIONS", {"440000": "广东", "630000": "青海"})
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    class Session:
+        def get(self, url, params, headers, timeout, allow_redirects):
+            if params["page"] > 1:
+                return Response([])
+            if url == market.SINA_STOCK_FLOW_URL:
+                return Response([{"symbol": "sz000001", "changeratio": "0.01",
+                                  "amount": "100", "netamount": "1"}])
+            return Response([{"symbol": "sz000001"}] if params["node"] == "diyu_440000" else [])
+
+    with pytest.raises(RuntimeError, match="青海"):
+        market.sina_region_flow_snapshot(Session())
