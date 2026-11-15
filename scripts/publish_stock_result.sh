@@ -153,7 +153,48 @@ PY
     fi
   done
   for bf in "${BREADTH_FILES[@]}"; do
-    cp "$bf" "$build_dir/stock/$(basename "$bf")"
+    name="$(basename "$bf")"
+    published="$build_dir/stock/$name"
+    if [[ -f "$published" ]]; then
+      comparison="$(
+        python - "$published" "$bf" <<'PY'
+import json
+import sys
+from datetime import date
+from pathlib import Path
+
+
+def _asof(path):
+    try:
+        record = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    value = record.get("asof")
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.isoformat() == value else None
+
+
+published_asof = _asof(sys.argv[1])
+batch_asof = _asof(sys.argv[2])
+if published_asof is not None and batch_asof is not None and published_asof > batch_asof:
+    print(f"{published_asof.isoformat()}\t{batch_asof.isoformat()}")
+PY
+      )"
+      if [[ -n "$comparison" ]]; then
+        published_asof="${comparison%%$'\t'*}"
+        batch_asof="${comparison#*$'\t'}"
+        echo "skip breadth $name: published asof $published_asof newer than batch $batch_asof"
+        continue
+      fi
+    fi
+    cp "$bf" "$published"
   done
 
   STOCK_INDEX_FILE="$build_dir/stock/index.json" \

@@ -1,0 +1,98 @@
+name: macro_daily
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research/data/global_macro.py
+      - tests/test_global_macro.py
+      - tests/fixtures/global_macro/**
+      - frontend/market.html
+      - frontend/app/lppl-data.js
+      - scripts/build_site.sh
+      - .github/workflows/macro_daily.yml
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: macro-daily
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || 'main' }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Fetch previous published macro snapshot
+        run: |
+          mkdir -p out/macro
+          git fetch --no-tags origin stock-results || true
+          if git show origin/stock-results:macro/macro_latest.json > out/macro/previous.json 2>/dev/null; then
+            echo "previous snapshot found"
+          else
+            rm -f out/macro/previous.json
+          fi
+      - name: Collect official macro context
+        id: fetch
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ -f out/macro/previous.json ]]; then args+=(--previous out/macro/previous.json); fi
+          python -m research.data.global_macro --out out/macro "${args[@]}"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("out/macro/macro_latest.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          for name, source in data.get("sources", {}).items():
+              status = "ok" if source.get("ok") else "err"
+              print(f"{name}: {status} asof={source.get('asof')} stale={source.get('stale')} {source.get('error') or ''}")
+          print(f"asof={data['asof']}")
+          print(f"publishable={any(source.get('ok') for source in data['sources'].values()) or Path('out/macro/previous.json').exists()}")
+          PY
+          snapshot_date="$(python -c 'import json; print(json.load(open("out/macro/macro_latest.json"))["asof"])')"
+          publishable="$(python -c 'import json,pathlib; d=json.load(open("out/macro/macro_latest.json")); print(str(any(s.get("ok") for s in d["sources"].values()) or pathlib.Path("out/macro/previous.json").exists()).lower())')"
+          echo "asof=$snapshot_date" >> "$GITHUB_OUTPUT"
+          echo "publishable=$publishable" >> "$GITHUB_OUTPUT"
+      - name: Publish to stock-results
+        if: github.event_name != 'pull_request' && steps.fetch.outputs.publishable == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot_date="${{ steps.fetch.outputs.asof }}"
+          git fetch --no-tags origin stock-results
+          git switch -c macro-publish origin/stock-results
+          mkdir -p macro
+          cp out/macro/macro_latest.json macro/macro_latest.json
+          cp "out/macro/macro_${snapshot_date}.json" "macro/macro_${snapshot_date}.json"
+          git add macro/macro_latest.json "macro/macro_${snapshot_date}.json"
+          if git diff --cached --quiet; then
+            echo "No macro snapshot changes to publish"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "macro: 发布全球宏观 ${snapshot_date}"
+          git push origin HEAD:stock-results
+          gh workflow run pages.yml --ref main
+      - name: Upload macro smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macro-snapshot-${{ github.run_id }}
+          path: out/macro/macro_*.json
+          if-no-files-found: warn

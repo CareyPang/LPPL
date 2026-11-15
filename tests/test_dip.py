@@ -1,5 +1,6 @@
 import hashlib
 import json
+import sys
 from types import SimpleNamespace
 
 import numpy as np
@@ -293,6 +294,48 @@ def test_share_http_403_carries_forward_previous_data(monkeypatch):
     assert summary["latest_shares_yi"] == 10.0
     assert summary["stale"] is True
     assert summary["as_of"] == "2025-12-31"
+
+
+@pytest.mark.parametrize(
+    ("now_text", "label", "should_write"),
+    [
+        ("2026-11-16 10:00", "2026-11-13", False),
+        ("2026-11-14 01:30", "2026-11-13", True),
+        ("2026-11-16 16:00", "2026-11-16", True),
+    ],
+)
+def test_options_archive_is_only_written_for_closed_snapshots(
+    tmp_path, monkeypatch, capsys, now_text, label, should_write
+):
+    now = pd.Timestamp(now_text, tz="Asia/Shanghai")
+    monkeypatch.setattr(stock, "_now", lambda: now)
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda _cutoff: pd.DatetimeIndex([pd.Timestamp(label)]),
+    )
+    monkeypatch.setattr(env, "_share_history", lambda: pd.DataFrame())
+    monkeypatch.setattr(env, "_share_summary", lambda *_args: {"available": True})
+    monkeypatch.setattr(env, "_option_summary", lambda code: {"code": code})
+    monkeypatch.setattr(sys, "argv", ["dip-env", "--out", str(tmp_path)])
+
+    archive = tmp_path / "dip_env" / "options" / f"{label}.json"
+    archive.parent.mkdir(parents=True)
+    archive.write_text("previous archive", encoding="utf-8")
+
+    env.main()
+
+    if should_write:
+        payload = json.loads(archive.read_text(encoding="utf-8"))
+        assert payload["asof"] == label
+        assert payload["options"]["510300"] == {"code": "510300"}
+    else:
+        assert archive.read_text(encoding="utf-8") == "previous archive"
+        snapshot = json.loads(
+            (tmp_path / "_dip_env.json").read_text(encoding="utf-8")
+        )
+        assert "options_archive_note" in snapshot
+        assert "skip options archive" in capsys.readouterr().out
 
 
 def test_summary_reports_valid_sample_count_for_each_outcome():

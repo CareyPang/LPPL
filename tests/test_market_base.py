@@ -1,10 +1,13 @@
 import hashlib
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
+from research.data import margin as margin_module
 from research.data import market_base as market
 
 FIXTURES = Path(__file__).parent / "fixtures" / "market"
@@ -98,6 +101,11 @@ def test_board_history_parser_uses_field_order():
         "large_net": float(values[4]),
         "super_net": float(values[5]),
     }
+
+
+def test_board_history_rejects_empty_push2his_response():
+    with pytest.raises(RuntimeError, match="contains no rows"):
+        market._parse_board_history({"data": {"klines": []}})
 
 
 def test_board_history_order_matches_board_snapshot():
@@ -363,24 +371,95 @@ def test_concept_strength_excludes_yesterday_meta_boards():
     assert all(not row["name"].startswith("昨日") for row in result)
 
 
-def test_board_strength_uses_push2delay_after_push2_failure():
+def test_board_strength_non_json_push2_response_uses_push2delay():
     payload = fixture("market_review_board_strength.json")
 
     class Client:
         calls = []
 
-        def get_json(self, url, params, fallback_url=None):
+        def get_json(self, url, params):
             self.calls.append(url)
-            if url == market.EM_BOARD_FALLBACK_URL:
-                self.calls.append(fallback_url)
+            if url == market.EM_BOARD_STRENGTH_URL:
+                raise json.JSONDecodeError("Expecting value", "<html>", 0)
+            if url == market.EM_BOARD_STRENGTH_FALLBACK_URL:
                 return payload
             raise AssertionError(f"unexpected board host: {url}")
 
     client = Client()
-    rows = market.fetch_board_strength([], None, client)
+    source_info = {}
+    rows = market.fetch_board_strength([], None, client, source_info=source_info)
 
     assert rows
-    assert client.calls == [market.EM_BOARD_FALLBACK_URL, market.EM_BOARD_URL]
+    assert client.calls == [
+        market.EM_BOARD_STRENGTH_URL,
+        market.EM_BOARD_STRENGTH_FALLBACK_URL,
+    ]
+    assert source_info["provider"] == "eastmoney"
+    assert "JSONDecodeError" in source_info["fallback_from"]
+
+
+def test_board_strength_falls_back_to_sina_when_both_eastmoney_hosts_fail():
+    fixture_text = (FIXTURES / "market_review_sina_concept_boards.js").read_text(
+        encoding="utf-8"
+    )
+
+    class Client:
+        calls = []
+
+        def get_json(self, url, params):
+            self.calls.append(url)
+            raise RuntimeError("Eastmoney unavailable")
+
+    class Response:
+        content = fixture_text.encode("gbk")
+
+        def raise_for_status(self):
+            return None
+
+    class Session:
+        calls = []
+
+        def get(self, url, **kwargs):
+            self.calls.append((url, kwargs))
+            return Response()
+
+    client, session, source_info = Client(), Session(), {}
+    rows = market.fetch_board_strength(
+        [{"code": "000001"}],
+        {"harden_rows": [{"code": "000001", "reason": "“华为汽车”"}]},
+        client,
+        session=session,
+        source_info=source_info,
+    )
+
+    assert client.calls == [
+        market.EM_BOARD_STRENGTH_URL,
+        market.EM_BOARD_STRENGTH_FALLBACK_URL,
+    ]
+    assert len(session.calls) == 1
+    url, request = session.calls[0]
+    assert url == market.SINA_CONCEPT_BOARD_URL
+    assert request["params"] == {"param": "class"}
+    assert request["headers"]["Referer"] == "https://finance.sina.com.cn/"
+    assert source_info["provider"] == "sina"
+    assert source_info["url_host"] == market.SINA_BOARD_HOST
+    assert "push2.eastmoney.com" in source_info["fallback_from"]
+    assert "push2delay.eastmoney.com" in source_info["fallback_from"]
+    assert rows == [
+        {
+            "code": "gn_hwqc",
+            "name": "华为汽车",
+            "pct": -2.8870452265041,
+            "amount": 31520738736.0,
+            "up": None,
+            "down": None,
+            "up_share": None,
+            "leader_code": "sh603178",
+            "leader_pct": 0.583,
+            "leader_name": "圣龙股份",
+            "zt_n": 1,
+        }
+    ]
 
 
 def test_lhb_groups_codes_joins_reasons_and_rejects_stale_trade_date():
@@ -569,6 +648,11 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
         "limit_pools",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("pool unavailable")),
     )
@@ -599,24 +683,31 @@ def test_partial_failure_still_writes_both_json_files(tmp_path, monkeypatch):
     assert saved["board_flow"]["concept"] == []
 
 
-def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkeypatch):
+def test_fetch_market_uses_sina_fallback_and_marks_history_unverified(monkeypatch):
     fixture_payload = fixture("sina_board_flow.json")
     fallback_calls = []
     history_calls = []
 
-    def eastmoney(kind, _client):
+    def eastmoney(kind, _client, **_kwargs):
         raise RuntimeError(f"Eastmoney {kind} unavailable")
 
     def sina(kind, session):
         fallback_calls.append((kind, session))
         return market._parse_sina_board_flow(fixture_payload)
 
-    def history(*_args, **_kwargs):
-        history_calls.append(True)
-        raise AssertionError("Sina fallback must not be used for history")
+    def history(code, *_args, **_kwargs):
+        history_calls.append(code)
+        frame = pd.DataFrame([{"date": "2026-11-02"}])
+        frame.attrs["url_host"] = "push2his.eastmoney.com"
+        return frame
 
     monkeypatch.setattr(market, "board_flow_snapshot", eastmoney)
     monkeypatch.setattr(market, "sina_board_flow_snapshot", sina)
+    monkeypatch.setattr(
+        market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
     monkeypatch.setattr(market, "board_flow_history", history)
     monkeypatch.setattr(
         market,
@@ -636,6 +727,17 @@ def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkey
     )
     stub_market_additions(monkeypatch)
 
+    def board_strength(*_args, source_info=None, **_kwargs):
+        source_info.update(
+            {
+                "provider": "sina",
+                "url_host": market.SINA_BOARD_HOST,
+                "fallback_from": "push2.eastmoney.com: RuntimeError",
+            }
+        )
+        return []
+
+    monkeypatch.setattr(market, "fetch_board_strength", board_strength)
     session = object()
     payload = market.fetch_market(
         "2026-11-02",
@@ -645,7 +747,7 @@ def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkey
 
     assert [kind for kind, _ in fallback_calls] == ["industry", "concept"]
     assert all(request_session is session for _, request_session in fallback_calls)
-    assert history_calls == []
+    assert history_calls == [market.EM_HISTORY_REFERENCE_BK]
     assert payload["board_flow"]["provider"] == {
         "industry": "sina",
         "concept": "sina",
@@ -658,16 +760,165 @@ def test_fetch_market_uses_sina_fallback_and_keeps_history_eastmoney_only(monkey
         assert source["ok"] is True
         assert source["url_host"] == market.SINA_BOARD_HOST
         assert source["fallback_from"] == f"RuntimeError: Eastmoney {kind} unavailable"
-    assert payload["sources"]["board_flow_region"]["ok"] is False
-    assert "fallback_from" not in payload["sources"]["board_flow_region"]
-    assert payload["board_flow"]["history_sample"] is None
-    assert payload["sources"]["board_flow_history"]["ok"] is False
+    region_source = payload["sources"]["board_flow_region"]
+    assert region_source["ok"] is False
+    assert region_source["url_host"] == market.SINA_BOARD_HOST
+    assert region_source["error"] == "RuntimeError: Sina region unavailable"
+    assert region_source["fallback_from"] == "RuntimeError: Eastmoney region unavailable"
+    assert payload["board_flow"]["history_sample"]["verified"] is False
+    assert payload["board_flow"]["history_sample"]["code"] == "BK0475"
+    assert payload["board_flow"]["history_sample"]["reference_board"] is True
+    assert payload["board_flow"]["history_sample"]["verify_reason"] == (
+        "snapshot 来自新浪，无法交叉核对列顺序"
+    )
+    assert payload["sources"]["board_flow_history"]["ok"] is True
+    assert payload["sources"]["board_flow_history"]["code"] == "BK0475"
+    assert payload["sources"]["board_flow_history"]["reference_board"] is True
+    assert payload["sources"]["board_flow_history"]["verified"] is False
+    assert "new_dzxx" not in history_calls
+    assert payload["board_strength"]["provider"] == "sina"
+    assert payload["sources"]["board_strength"]["provider"] == "sina"
+    assert payload["sources"]["board_strength"]["fallback_from"] == (
+        "push2.eastmoney.com: RuntimeError"
+    )
+
+
+def test_board_region_non_json_response_falls_back_to_push2delay():
+    row = {
+        "f12": "BK001",
+        "f14": "区域板块",
+        "f3": "1.2",
+        "f62": "100",
+        "f184": "2",
+        "f204": "领涨股",
+        "f66": "10",
+        "f72": "20",
+        "f78": "30",
+        "f84": "40",
+        "f109": "1.1",
+        "f164": "90",
+        "f165": "1.8",
+        "f257": "领涨股",
+        "f160": "0.9",
+        "f174": "80",
+        "f175": "1.7",
+    }
+
+    class Client:
+        def __init__(self):
+            self.calls = []
+            self.last_url = ""
+
+        @property
+        def url_host(self):
+            return (
+                "push2delay.eastmoney.com"
+                if "push2delay" in self.last_url
+                else "push2.eastmoney.com"
+            )
+
+        def get_json(self, url, _params, fallback_url=None):
+            assert fallback_url is None
+            self.calls.append(url)
+            if "push2.eastmoney.com" in url:
+                raise json.JSONDecodeError("not JSON", "", 0)
+            self.last_url = url
+            return {"data": {"total": 1, "diff": [row]}}
+
+    client = Client()
+    result = market.board_flow_snapshot(
+        "region",
+        client,
+        urls=(market.EM_BOARD_STRENGTH_URL, market.EM_BOARD_STRENGTH_FALLBACK_URL),
+    )
+
+    assert result.iloc[0]["name"] == "区域板块"
+    assert client.calls == [
+        market.EM_BOARD_STRENGTH_URL,
+        market.EM_BOARD_STRENGTH_FALLBACK_URL,
+    ] * 3
+    assert result.attrs["url_host"] == "push2delay.eastmoney.com"
+
+
+def test_board_region_both_eastmoney_hosts_fail_with_explicit_reason(monkeypatch):
+    calls = []
+    original_board_flow_snapshot = market.board_flow_snapshot
+
+    class Client:
+        def get_json(self, url, _params, fallback_url=None):
+            assert fallback_url is None
+            calls.append(url)
+            raise RuntimeError("HTTP 502")
+
+    def board(kind, _client, urls=None):
+        if kind == "region":
+            return original_board_flow_snapshot(kind, Client(), urls=urls)
+        return pd.DataFrame(columns=market.BOARD_COLUMNS)
+
+    monkeypatch.setattr(market, "board_flow_snapshot", board)
+    monkeypatch.setattr(
+        market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: {"zt": 0, "zt_rows": [], "top20": {"zt": []}},
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(market, "csindex_valuation", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        market,
+        "_margin_snapshot",
+        lambda *_args, **_kwargs: {
+            "latest_date": "2026-11-12",
+            "asof": "2026-11-12",
+            "stale": False,
+            "trading_days_stale": 0,
+            "fin_balance_sse": 100,
+            "fin_balance_szse": 100,
+        },
+    )
+    stub_market_additions(monkeypatch)
+
+    payload = market.fetch_market("2026-11-12", em_client=market.EMClient())
+
+    assert calls == [market.EM_BOARD_STRENGTH_URL, market.EM_BOARD_STRENGTH_FALLBACK_URL]
+    assert payload["board_flow"]["region"] == []
+    assert payload["board_flow"]["provider"]["region"] is None
+    region_source = payload["sources"]["board_flow_region"]
+    assert region_source["ok"] is False
+    assert region_source["url_host"] == market.SINA_BOARD_HOST
+    assert region_source["error"] == "RuntimeError: Sina region unavailable"
+    assert "Eastmoney board hosts failed" in region_source["fallback_from"]
+
+
+def test_board_flow_history_accepts_eastmoney_reference_code():
+    calls = []
+
+    class Client:
+        url_host = "push2his.eastmoney.com"
+
+        def get_json(self, url, params, fallback_url=None):
+            calls.append((url, params, fallback_url))
+            return fixture("board_history.json")
+
+    history = market.board_flow_history("BK0475", Client())
+
+    assert len(history) > 0
+    assert calls[0][1]["secid"] == "90.BK0475"
+
+
+def test_board_flow_history_rejects_sina_category_code():
+    with pytest.raises(ValueError, match="invalid Eastmoney board code"):
+        market.board_flow_history("new_ysbz", object())
 
 
 def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
     fallback_calls = []
 
-    def eastmoney(kind, _client):
+    def eastmoney(kind, _client, **_kwargs):
         raise RuntimeError(f"Eastmoney {kind} unavailable")
 
     def sina(kind, _session):
@@ -676,6 +927,11 @@ def test_fetch_market_reports_both_eastmoney_and_sina_failures(monkeypatch):
 
     monkeypatch.setattr(market, "board_flow_snapshot", eastmoney)
     monkeypatch.setattr(market, "sina_board_flow_snapshot", sina)
+    monkeypatch.setattr(
+        market,
+        "sina_region_flow_snapshot",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina region unavailable")),
+    )
     monkeypatch.setattr(
         market,
         "limit_pools",
@@ -799,6 +1055,110 @@ def test_margin_refresh_uses_existing_exchange_fetchers(tmp_path, monkeypatch):
     assert frame.iloc[-1]["total_balance_all"] == 40_200_000_302.0
 
 
+def test_fetch_szse_retries_failures_without_caching_missing_dates(tmp_path, monkeypatch):
+    dates = pd.date_range("2026-10-28", periods=2, freq="D")
+    attempts = {}
+
+    def stock_margin_szse(date):
+        attempts[date] = attempts.get(date, 0) + 1
+        if date == dates[0].strftime("%Y%m%d") and attempts[date] == 1:
+            raise ConnectionError("temporary")
+        if date == dates[1].strftime("%Y%m%d"):
+            raise ConnectionError("unavailable")
+        return pd.DataFrame({"融资余额": [100.0]})
+
+    monkeypatch.setitem(
+        sys.modules,
+        "akshare",
+        SimpleNamespace(stock_margin_szse=stock_margin_szse),
+    )
+    monkeypatch.setattr(margin_module.time, "sleep", lambda *_args: None)
+    output = tmp_path / "szse_margin.parquet"
+
+    margin_module.fetch_szse(pd.DatetimeIndex(dates), output, pause=0)
+
+    saved = pd.read_parquet(output)
+    failed = json.loads(output.with_suffix(".failed.json").read_text(encoding="utf-8"))
+    assert attempts == {
+        dates[0].strftime("%Y%m%d"): 2,
+        dates[1].strftime("%Y%m%d"): 2,
+    }
+    assert pd.DatetimeIndex(saved["date"]).equals(pd.DatetimeIndex([dates[0]]))
+    assert failed == [[dates[1].date().isoformat(), "ConnectionError"]]
+
+
+def test_partial_szse_failure_publishes_latest_complete_margin_as_fresh(monkeypatch, tmp_path):
+    dates = pd.bdate_range("2026-10-01", periods=3)
+    asof = dates[-1].date().isoformat()
+    sse = pd.DataFrame(
+        {
+            "date": dates,
+            "fin_balance": [100_000_000_000.0] * len(dates),
+            "fin_buy": [10_000_000_000.0] * len(dates),
+            "sec_qty": [1.0] * len(dates),
+            "sec_balance": [20_000_000_000.0] * len(dates),
+            "sec_sell_qty": [1.0] * len(dates),
+            "total_balance": [200_000_000_000.0] * len(dates),
+        }
+    )
+
+    def fake_sse(*_args, **_kwargs):
+        return sse.copy()
+
+    def fake_szse(fetch_dates, out, pause):
+        assert pd.DatetimeIndex(fetch_dates).equals(pd.DatetimeIndex(dates))
+        assert pause == 0.8
+        rows = pd.DataFrame(
+            {
+                "date": dates[:-1],
+                "融资余额": [1000.0] * (len(dates) - 1),
+                "融资买入额": [100.0] * (len(dates) - 1),
+                "融券余量": [1.0] * (len(dates) - 1),
+                "融券余额": [200.0] * (len(dates) - 1),
+                "融券卖出量": [1.0] * (len(dates) - 1),
+                "融资融券余额": [2000.0] * (len(dates) - 1),
+            }
+        )
+        rows.to_parquet(out, index=False)
+        out.with_suffix(".failed.json").write_text(
+            json.dumps([[asof, "ConnectionError"]]), encoding="utf-8"
+        )
+
+    monkeypatch.setattr(market, "fetch_sse", fake_sse)
+    monkeypatch.setattr(market, "fetch_szse", fake_szse)
+    margin = market._margin_snapshot(asof, tmp_path)
+
+    assert margin["asof"] == dates[-2].date().isoformat()
+    assert margin["_missing_dates"] == [asof]
+    assert margin["latest_date"] == dates[-2].date().isoformat()
+    assert margin["fin_balance_szse"] == 100_000_000_000.0
+    assert margin["fin_balance_all"] == 200_000_000_000.0
+    assert margin["stale"] is False
+    assert "_refresh_error" not in margin
+
+    monkeypatch.setattr(
+        market,
+        "board_flow_snapshot",
+        lambda *_args, **_kwargs: pd.DataFrame(columns=market.BOARD_COLUMNS),
+    )
+    monkeypatch.setattr(
+        market,
+        "limit_pools",
+        lambda *_args, **_kwargs: {"zt": 0, "zt_rows": [], "top20": {"zt": []}},
+    )
+    monkeypatch.setattr(market, "hkex_northbound", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(market, "csindex_valuation", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(market, "_margin_snapshot", lambda *_args, **_kwargs: margin.copy())
+    stub_market_additions(monkeypatch)
+
+    payload = market.fetch_market(asof, em_client=market.EMClient())
+    source = payload["sources"]["margin"]
+    assert source["ok"] is True
+    assert source["stale"] is True
+    assert source["asof"] == dates[-2].date().isoformat()
+    assert source["missing_dates"] == [asof]
+
+
 def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
     monkeypatch.setattr(
         market,
@@ -831,6 +1191,9 @@ def test_stale_margin_marks_source_failed_but_keeps_data(monkeypatch):
     payload = market.fetch_market("2026-10-30", em_client=market.EMClient())
 
     assert payload["sources"]["margin"]["ok"] is False
+    assert payload["sources"]["margin"]["asof"] == "2026-10-20"
+    assert payload["sources"]["margin"]["stale"] is True
+    assert payload["sources"]["margin"]["missing_dates"] == []
     assert "fetch failed" in payload["sources"]["margin"]["error"]
     assert "stale" in payload["sources"]["margin"]["error"]
     assert "SZSE/SSE ratio out of range" in payload["sources"]["margin"]["error"]
@@ -888,3 +1251,87 @@ def test_board_csv_is_written_only_with_rows(tmp_path):
 
     assert board_csv is not None and board_csv.exists()
     assert pd.read_csv(board_csv).columns.tolist() == list(market.BOARD_COLUMNS)
+
+
+def test_sina_region_flow_snapshot_aggregates_members_by_province(monkeypatch):
+    monkeypatch.setattr(market.time, "sleep", lambda _: None)
+    monkeypatch.setattr(market, "SINA_REGIONS", {"440000": "广东", "630000": "青海"})
+    flows = [
+        {"symbol": "sz000001", "changeratio": "0.02", "amount": "1000", "netamount": "100"},
+        {"symbol": "sh600000", "changeratio": "-0.01", "amount": "3000", "netamount": "-300"},
+        {"symbol": "sh600001", "changeratio": "0.05", "amount": "500", "netamount": "50"},
+    ]
+    members = {
+        "diyu_440000": [{"symbol": "sz000001"}, {"symbol": "sh600000"}, {"symbol": "sz300999"}],
+        "diyu_630000": [{"symbol": "sh600001"}],
+    }
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, params, headers, timeout, allow_redirects):
+            self.calls.append((url, params))
+            assert headers["Referer"] == "https://finance.sina.com.cn/"
+            if len(self.calls) == 1:
+                raise RuntimeError("temporary failure")
+            if url == market.SINA_STOCK_FLOW_URL:
+                return Response(flows if params["page"] == 1 else [])
+            return Response(members[params["node"]] if params["page"] == 1 else [])
+
+    session = Session()
+    frame = market.sina_region_flow_snapshot(session)
+
+    assert frame.columns.tolist() == list(market.BOARD_COLUMNS)
+    assert frame.attrs["url_host"] == market.SINA_BOARD_HOST
+    assert frame["code"].tolist() == ["diyu_440000", "diyu_630000"]
+    guangdong = frame.iloc[0]
+    assert guangdong["name"] == "广东"
+    assert guangdong["pct_chg"] == pytest.approx(0.5)
+    assert guangdong["main_net"] == pytest.approx(-200)
+    assert guangdong["main_pct"] == pytest.approx(-5.0)
+    assert guangdong["pct_5d"] is None
+    assert session.calls[0][0] == session.calls[1][0] == market.SINA_STOCK_FLOW_URL
+    assert session.calls[0][1] == session.calls[1][1]
+    assert session.calls[0][1]["num"] == 1000
+    assert [params["node"] for url, params in session.calls if url == market.SINA_NODE_URL] == [
+        "diyu_440000",
+        "diyu_630000",
+    ]
+
+
+def test_sina_region_flow_snapshot_rejects_partial_provinces(monkeypatch):
+    monkeypatch.setattr(market.time, "sleep", lambda _: None)
+    monkeypatch.setattr(market, "SINA_REGIONS", {"440000": "广东", "630000": "青海"})
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    class Session:
+        def get(self, url, params, headers, timeout, allow_redirects):
+            if params["page"] > 1:
+                return Response([])
+            if url == market.SINA_STOCK_FLOW_URL:
+                return Response([{"symbol": "sz000001", "changeratio": "0.01",
+                                  "amount": "100", "netamount": "1"}])
+            return Response([{"symbol": "sz000001"}] if params["node"] == "diyu_440000" else [])
+
+    with pytest.raises(RuntimeError, match="青海"):
+        market.sina_region_flow_snapshot(Session())
