@@ -213,9 +213,40 @@ def test_a500_uses_renamed_akshare_functions_when_needed(monkeypatch):
     result = bottom_signal._a500_payload(fake_ak, pd.DataFrame(), history)
 
     assert calls == ["20050101"]
-    assert result["sources"]["close"] == "ak.stock_zh_index_daily(sh000510)"
+    assert result["sources"]["erp"].endswith(
+        "10 年国债收益率 ak.bond_zh_us_yield_em"
+    )
+    assert result["sources"]["close"] == "ak.index_zh_daily_sina(sh000510)"
     assert captured["frame"]["股债利差"].tolist() == pytest.approx([0.02, 0.019])
     assert captured["frame"]["沪深300指数"].tolist() == [100.0, 101.0]
+
+
+def test_a500_sources_prefer_legacy_akshare_functions_when_available(monkeypatch):
+    date = pd.to_datetime("2026-11-13")
+    fake_ak = SimpleNamespace(
+        bond_zh_us_rate=lambda start_date: pd.DataFrame(
+            {"日期": [date], "中国国债收益率10年": [3.1]}
+        ),
+        stock_zh_index_daily=lambda symbol: pd.DataFrame(
+            {"date": [date], "close": [101.0]}
+        ),
+    )
+    history = pd.DataFrame(
+        {"pe_ttm": [20.0]},
+        index=pd.DatetimeIndex([date], name="date"),
+    )
+    monkeypatch.setattr(
+        bottom_signal,
+        "compute_bottom_signal",
+        lambda frame, pbn: {"rule": bottom_signal.RULE, "notes": []},
+    )
+
+    result = bottom_signal._a500_payload(fake_ak, pd.DataFrame(), history)
+
+    assert result["sources"]["erp"].endswith(
+        "10 年国债收益率 ak.bond_zh_us_rate"
+    )
+    assert result["sources"]["close"] == "ak.stock_zh_index_daily(sh000510)"
 
 
 def test_cli_passes_a500_history_and_skip_flags(monkeypatch, tmp_path):

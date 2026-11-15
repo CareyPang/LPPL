@@ -276,9 +276,11 @@ def _source_series(
 def _a500_payload(ak, pbn: pd.DataFrame, history: pd.DataFrame) -> dict:
     pe = pd.to_numeric(history["pe_ttm"], errors="coerce").replace(0, float("nan"))
     pe = pe.dropna()
-    yield_fetcher = getattr(ak, "bond_zh_us_rate", None)
+    yield_source = "bond_zh_us_rate"
+    yield_fetcher = getattr(ak, yield_source, None)
     if yield_fetcher is None:
-        yield_fetcher = getattr(ak, "bond_zh_us_yield_em", None)
+        yield_source = "bond_zh_us_yield_em"
+        yield_fetcher = getattr(ak, yield_source, None)
     if yield_fetcher is None:
         raise AttributeError("AkShare 缺少中国国债收益率数据接口")
     rates = yield_fetcher(start_date="20050101")
@@ -289,9 +291,11 @@ def _a500_payload(ak, pbn: pd.DataFrame, history: pd.DataFrame) -> dict:
         .ffill()
         .reindex(pe.index)
     )
-    index_fetcher = getattr(ak, "stock_zh_index_daily", None)
+    index_source = "stock_zh_index_daily"
+    index_fetcher = getattr(ak, index_source, None)
     if index_fetcher is None:
-        index_fetcher = getattr(ak, "index_zh_daily_sina", None)
+        index_source = "index_zh_daily_sina"
+        index_fetcher = getattr(ak, index_source, None)
     if index_fetcher is None:
         raise AttributeError("AkShare 缺少中证A500指数日线数据接口")
     index = index_fetcher(symbol="sh000510")
@@ -314,9 +318,9 @@ def _a500_payload(ak, pbn: pd.DataFrame, history: pd.DataFrame) -> dict:
     result["sources"] = {
         "erp": (
             "中证A500 成分股合成滚动市盈率（东财 RPT_VALUEANALYSIS_DET 日更；"
-            "2026-11-13 前为研究重建）与 10 年国债收益率 ak.bond_zh_us_rate"
+            f"2026-11-13 前为研究重建）与 10 年国债收益率 ak.{yield_source}"
         ),
-        "close": "ak.stock_zh_index_daily(sh000510)",
+        "close": f"ak.{index_source}(sh000510)",
         "pbn_ratio": PBN_SOURCE,
     }
     return result
