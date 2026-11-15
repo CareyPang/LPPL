@@ -11,6 +11,10 @@ Worker 提供独立日线行情、当前分析排队、按需历史回放及任�
 
 ## API
 
+### `GET /health`
+
+无需 `code` 参数。返回服务名、ISO UTC 时间、Durable Object 绑定与 `GH_TOKEN` 的配置布尔值、仓库、允许的来源及路由列表；配置齐全时为200，否则为503。响应不含令牌值，并使用 `Cache-Control: no-store`。
+
 ### `GET /market?code=600519`
 
 独立读取腾讯 `fqkline` 接口的最多640根**不复权**日线。返回示例字段：

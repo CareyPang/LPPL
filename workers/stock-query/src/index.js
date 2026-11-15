@@ -538,6 +538,23 @@ export default {
       return jsonResponse(request, env, { error_code: 'ORIGIN_FORBIDDEN', error: '来源未获允许' }, 403);
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) });
+    if (url.pathname === '/health') {
+      if (request.method !== 'GET') {
+        return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
+      }
+      const gh_token = !!env.GH_TOKEN;
+      const ok = bindingsReady(env) && gh_token;
+      return jsonResponse(request, env, {
+        ok,
+        service: 'lppl-stock-query',
+        time: new Date().toISOString(),
+        bindings: { STOCK_JOBS: !!env.STOCK_JOBS, QUERY_BUDGET: !!env.QUERY_BUDGET },
+        gh_token,
+        repo: repo(env),
+        allowed_origin: env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
+        routes: ['/health', '/market', '/query', '/status', '/result'],
+      }, ok ? 200 : 503);
+    }
     const routes = { '/market': 'GET', '/query': 'POST', '/status': 'GET', '/result': 'GET' };
     if (!routes[url.pathname]) return jsonResponse(request, env, { error_code: 'NOT_FOUND', error: '接口不存在' }, 404);
     if (request.method !== routes[url.pathname]) return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);

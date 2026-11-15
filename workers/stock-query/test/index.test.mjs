@@ -56,6 +56,45 @@ function marketFixture(symbol = 'sh600519') {
   ] } } };
 }
 
+test('health reports configured bindings without exposing the token', async () => {
+  await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
+    const env = environment({ REPO: 'example/stocks', ALLOWED_ORIGIN: 'https://example.test' });
+    const response = await worker.fetch(request('/health', { origin: 'https://example.test' }), env);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    const text = await response.text();
+    assert.doesNotMatch(text, new RegExp(TOKEN));
+    const health = JSON.parse(text);
+    assert.equal(health.ok, true);
+    assert.equal(health.service, 'lppl-stock-query');
+    assert.ok(Number.isFinite(Date.parse(health.time)));
+    assert.deepEqual(health.bindings, { STOCK_JOBS: true, QUERY_BUDGET: true });
+    assert.equal(health.gh_token, true);
+    assert.equal(health.repo, 'example/stocks');
+    assert.equal(health.allowed_origin, 'https://example.test');
+    assert.deepEqual(health.routes, ['/health', '/market', '/query', '/status', '/result']);
+  });
+});
+
+test('health returns unavailable when token and bindings are missing', async () => {
+  await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
+    const response = await worker.fetch(request('/health'), {});
+    assert.equal(response.status, 503);
+    const health = await response.json();
+    assert.equal(health.ok, false);
+    assert.equal(health.gh_token, false);
+    assert.deepEqual(health.bindings, { STOCK_JOBS: false, QUERY_BUDGET: false });
+  });
+});
+
+test('health rejects non-GET methods', async () => {
+  await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
+    const response = await worker.fetch(request('/health', { method: 'POST' }), environment());
+    assert.equal(response.status, 405);
+    assert.equal((await response.json()).error_code, 'METHOD_NOT_ALLOWED');
+  });
+});
+
 function upstream(overrides = {}) {
   const calls = [];
   const dispatches = [];
