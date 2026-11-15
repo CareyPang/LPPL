@@ -112,3 +112,11 @@
 | `margin.data` | 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据；`fin_balance_sse`、`fin_balance_szse`、`fin_balance_all` 和变化值统一为人民币元。包含 `latest_date`、T+1 `available_date`、`stale`（距 asof 超过 5 个交易日为 true）。刷新失败、stale 或 SZSE/SSE 融资余额比率超出 `[0.3, 3]` 时 `sources.margin.ok=false`，仍展示可用数据。 |
 
 所有市场背景数值均带 `evidence: "descriptive"`；只能作为事实展示，不得转成预测、目标价或报警信号。
+
+## 7. 策略回放 strategy/<sym>.json
+
+前端组件 `frontend/app/strategy-panel.js`，适配层 `LPPL.strategy(sym)`（未发布返回 `null`，页面显示“策略回测结果未发布”，不得填充任何数字）。
+
+- 顶层：`rule_id`（事前登记规则 id，必填）、`prereg_doc`、`asof`、`segments{dev,cal,test:[start,end]}`、`metrics{dev|cal|test|all}`、`equity[{date,nav,bh_nav?}]`、`trades[{entry,exit|null,side,bars,ret,segment}]`、`properties{t_plus_1,limit_lock,fee_bps,stamp_bps,slippage_bps}`、`note`。
+- `metrics.<seg>.evidence` 走 §3 的门控：`show=false` 的等级只显示状态文字；所有汇总显示 `n_trades` 与“历史回放，不是预测”。比例用小数。
+- 口径：事前登记规则的历史回放，不是预测，不是收益承诺；不开放自由调参。字段示例见 `frontend/docs/strategy-request.md`。

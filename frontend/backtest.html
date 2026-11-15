@@ -114,6 +114,40 @@ a { color: var(--ink-2); text-decoration: none; }
   .lgd { margin-left: 0; }
 }
 @media (max-width: 480px) { .chart { min-height: 320px; } .nav { --od-gap: var(--s3); } }
+
+/* 回测双页签 + 策略报告 */
+.bt-views{display:flex;align-items:center;gap:4px;padding:0 16px;height:44px;border-bottom:1px solid var(--line,#E3E7EE);background:var(--surface,#fff)}
+.bt-views a{position:relative;padding:0 10px;height:44px;line-height:44px;font-weight:600;color:var(--ink-2,#4C525E);text-decoration:none}
+.bt-views a[aria-current]{color:var(--real,#1F5FD6)}.bt-views a[aria-current]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:var(--real,#1F5FD6)}
+.bt-views-note{margin-left:auto;font-size:12px;color:var(--ink-3,#6A6D78)}
+@media (max-width:640px){.bt-views-note{display:none}}
+.strategy-view{max-width:1100px;margin:0 auto;padding:16px}
+.sv-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}.sv-head h2{margin:0;font-size:20px}.sv-sub{color:var(--ink-3,#6A6D78);font-size:13px}
+.sp{border:1px solid var(--line,#E3E7EE);border-radius:14px;background:var(--surface,#fff);padding:16px;min-width:0}
+.sp .m{font-family:var(--f-m,monospace);font-variant-numeric:tabular-nums}
+.sp-unpub{padding:24px 8px;color:var(--ink-2,#4C525E);line-height:1.7}.sp-unpub-t{font-size:18px;font-weight:600;color:var(--ink,#131722);margin:0 0 8px}
+.sp-dim{color:var(--ink-3,#6A6D78);font-size:12px}
+.sp-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sp-segs{display:flex;gap:4px}.sp-segs button{font:600 12px/1 inherit;padding:7px 12px;border:1px solid var(--line,#E3E7EE);border-radius:999px;background:#fff;color:var(--ink-2,#4C525E);cursor:pointer}
+.sp-segs button[aria-pressed=true]{background:var(--ink,#131722);border-color:var(--ink,#131722);color:#fff}.sp-segs button:disabled{opacity:.4;cursor:not-allowed}
+.sp-ev{font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid currentColor}.sp-ev.ok{color:var(--real,#1F5FD6)}.sp-ev.off{color:var(--warn,#9A5B00)}
+.sp-n{font-size:12px;color:var(--ink-2,#4C525E)}
+.sp-tabs{display:flex;gap:4px;margin:12px 0 0;border-bottom:1px solid var(--line,#E3E7EE)}
+.sp-tabs a{position:relative;padding:0 10px;height:38px;line-height:38px;font-weight:600;color:var(--ink-2,#4C525E);text-decoration:none}
+.sp-tabs a[aria-current]{color:var(--real,#1F5FD6)}.sp-tabs a[aria-current]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--real,#1F5FD6)}
+.sp-body{padding-top:14px}
+.sp-chart{margin-bottom:12px}.sp-eq{width:100%;height:180px;display:block;border:1px solid var(--grid,#EEF1F6);border-radius:8px;background:#fff}
+.sp-band{opacity:.08}.sp-band.dev{fill:#6A6D78}.sp-band.cal{fill:#9A5B00}.sp-band.test{fill:#1F5FD6}
+.sp-nav{fill:none;stroke:#1F5FD6;stroke-width:1.6;vector-effect:non-scaling-stroke}.sp-bh{fill:none;stroke:#9aa0ab;stroke-width:1.2;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.sp-lgd{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-3,#6A6D78);margin-top:6px}.sp-lgd i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:5px}
+.sp-lgd i.nav{background:#1F5FD6}.sp-lgd i.bh{background:#9aa0ab}.sp-lgd i.b{height:10px;opacity:.25}.sp-lgd i.dev{background:#6A6D78}.sp-lgd i.cal{background:#9A5B00}.sp-lgd i.test{background:#1F5FD6}
+.sp-gate{color:var(--warn,#9A5B00);font-size:13px;background:#FFF6E5;border-radius:8px;padding:8px 12px}
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.sp-kv{border:1px solid var(--grid,#EEF1F6);border-radius:10px;padding:10px 12px;display:grid;gap:4px}.sp-kv span{font-size:12px;color:var(--ink-3,#6A6D78)}.sp-kv b{font-size:18px;font-weight:600}.sp-kv b.off{font-size:13px;color:var(--warn,#9A5B00)}
+.sp-tw{overflow-x:auto}.sp-t{width:100%;border-collapse:collapse;font-size:13px}.sp-t th,.sp-t td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6);text-align:right;white-space:nowrap}.sp-t th:first-child,.sp-t td:first-child,.sp-t td:nth-child(6),.sp-t th:nth-child(6){text-align:left}
+.sp-t .up{color:#D6303A}.sp-t .dn{color:#11845A}
+.sp-props{width:100%;border-collapse:collapse;font-size:13px}.sp-props th{text-align:left;color:var(--ink-3,#6A6D78);font-weight:500;padding:8px;width:150px;border-bottom:1px solid var(--grid,#EEF1F6)}.sp-props td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6)}
+.sp-empty{color:var(--ink-3,#6A6D78);padding:16px 0}
 </style>
 </head>
 <body>
@@ -126,6 +160,16 @@ a { color: var(--ink-2); text-decoration: none; }
   <div class="chips od-row od-fixed" id="ranges" role="group" aria-label="时间区间预设"></div>
 </div>
 <script src="app/od-nav.js" data-section="backtest"></script>
+
+<nav class="bt-views" aria-label="回测视图">
+  <a href="#view=scenario" data-view="scenario" aria-current="location">情景区间</a>
+  <a href="#view=strategy" data-view="strategy">策略回测</a>
+  <span class="bt-views-note">策略回测 = 事前登记规则的历史回放，不是预测</span>
+</nav>
+<section class="strategy-view" id="strategy-view" hidden aria-label="策略回测">
+  <div class="sv-head"><h2 id="sv-title">策略回放</h2><span class="sv-sub" id="sv-sub">—</span></div>
+  <div id="strategy-panel" class="sp"></div>
+</section>
 
 <main class="app">
   <div class="left">
@@ -463,5 +507,7 @@ a { color: var(--ink-2); text-decoration: none; }
   load();
 })();
 </script>
+<script src="app/strategy-panel.js"></script>
+<script src="app/backtest-views.js"></script>
 </body>
 </html>

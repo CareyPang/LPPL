@@ -152,6 +152,8 @@
 
   const catalog = () => getJSON('catalog.json');
   const history = (sym) => getJSON(sym + '_history.json');
+  /** 策略回放（事前登记规则的历史回放，不是预测）：未发布时返回 null，页面须显示“策略回测结果未发布” */
+  const strategy = (sym) => getJSON('strategy/' + sym + '.json').catch(() => null);
   const opt = (p) => getJSON(p).catch(() => null);
   const okCode = (c) => {
     const code = String(c).trim();
@@ -226,5 +228,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, ev, catalog, history, stock, market, stockList, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, market, stockList, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
 })(window);
