@@ -247,6 +247,8 @@
           : 'stock.html?code=' + encodeURIComponent(row.code);
         add({ t: row.name, s: kind + ' · ' + row.code, h: href });
       });
+      var codeFallback = window.StockSearch.codeFallback(stockRows, s);
+      if (codeFallback) add(codeFallback);
     } else if (/^\d{6}$/.test(s)) add({ t: s, s: '个股 · A 股', h: 'stock.html?code=' + s });
     else if (/^(US_)?[A-Za-z.]{1,6}$/i.test(s)) {
       var u = s.replace(/^US_/i, '').toUpperCase();

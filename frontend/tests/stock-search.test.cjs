@@ -52,3 +52,17 @@ test('the selected hit is kept only while its query is current', () => {
   assert.equal(StockSearch.selectedMatch(hits, '五粮液', '贵州茅台', 1), null);
   assert.equal(StockSearch.selectedMatch([], '五粮液', '五粮液', 0), null);
 });
+
+test('an unlisted six-digit A-share code retains the raw-code route', () => {
+  assert.deepEqual(StockSearch.codeFallback(rows, '920002'), {
+    t: '920002',
+    s: '个股 · A 股',
+    h: 'stock.html?code=920002',
+  });
+  assert.equal(StockSearch.codeFallback(rows, '600519'), null);
+  assert.deepEqual(StockSearch.codeFallback(rows, '920002.SH'), {
+    t: '920002',
+    s: '个股 · A 股',
+    h: 'stock.html?code=920002',
+  });
+});

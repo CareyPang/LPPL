@@ -82,5 +82,13 @@
     return hits[selectedIndex] || null;
   }
 
-  return { match: match, selectedMatch: selectedMatch };
+  function codeFallback(rows, query) {
+    var q = String(query == null ? '' : query).trim().replace(/\.(SH|SZ)$/i, '');
+    if (!/^\d{6}$/.test(q)) return null;
+    var source = Array.isArray(rows) ? rows : rows && Array.isArray(rows.rows) ? rows.rows : [];
+    var hasExactCode = match(rows, q, source.length).some(function (row) { return row.code === q; });
+    return hasExactCode ? null : { t: q, s: '个股 · A 股', h: 'stock.html?code=' + q };
+  }
+
+  return { match: match, selectedMatch: selectedMatch, codeFallback: codeFallback };
 });
