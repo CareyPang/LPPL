@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'home.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'home-ocean.html'), 'utf8');
 const start = html.indexOf('const SKY_ON =');
 const end = html.indexOf('// fi：滚动位置对应的帧', start);
 assert.ok(start >= 0 && end > start, 'Extract the actual horizon and scene mapping');

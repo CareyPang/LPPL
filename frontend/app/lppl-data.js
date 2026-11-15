@@ -185,5 +185,6 @@
   const bottomSignal = () => opt('market/bottom_signal_latest.json');
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, ntEtf, events, abnormal, bottomSignal, rangeStats, macro };
+  const changelog = () => opt('changelog.json');
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, ev, catalog, history, stock, market, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
 })(window);

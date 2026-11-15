@@ -61,3 +61,5 @@ for source in sorted(source_dir.glob("*_latest.json")):
 PY
   fi
 fi
+mkdir -p "$SITE/lab/mock/data"
+python3 "$ROOT/scripts/build_changelog.py" --root "$ROOT" --out "$SITE/lab/mock/data/changelog.json"

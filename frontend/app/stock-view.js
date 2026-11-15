@@ -8,10 +8,46 @@
   };
   const active = value => ['submitting', 'queued', 'running', 'current_running', 'history_running', 'publishing', 'reconnecting', 'reconciliation_required'].includes(value);
   const number = value => value != null && Number.isFinite(Number(value)) ? Number(value).toFixed(2) : '—';
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  function normalizedWindow(start, end, total) {
+    const count = Number.isFinite(Number(total)) ? Math.max(0, Math.floor(Number(total))) : 0;
+    if (!count) return { start: 0, end: 0 };
+    let first = clamp(Number.isFinite(Number(start)) ? Math.floor(Number(start)) : 0, 0, count);
+    let last = clamp(Number.isFinite(Number(end)) ? Math.floor(Number(end)) : 0, 0, count);
+    if (last < first) [first, last] = [last, first];
+    const size = Math.min(count, Math.max(Math.min(count, 20), last - first));
+    first = Math.min(first, count - size);
+    return { start: first, end: first + size };
+  }
+  function zoom(start, end, total, factor, anchorFrac) {
+    const base = normalizedWindow(start, end, total);
+    const count = Number.isFinite(Number(total)) ? Math.max(0, Math.floor(Number(total))) : 0;
+    if (!count) return base;
+    const scale = Number.isFinite(Number(factor)) && Number(factor) > 0 ? Number(factor) : 1;
+    const size = base.end - base.start;
+    const minSize = Math.min(count, 20);
+    const nextSize = clamp(Math.round(size / scale), minSize, count);
+    const anchor = clamp(Number.isFinite(Number(anchorFrac)) ? Number(anchorFrac) : .5, 0, 1);
+    const anchorIndex = base.start + size * anchor;
+    const nextStart = clamp(Math.round(anchorIndex - nextSize * anchor), 0, count - nextSize);
+    return { start: nextStart, end: nextStart + nextSize };
+  }
+  function pan(start, end, total, deltaBars) {
+    const base = normalizedWindow(start, end, total);
+    const count = Number.isFinite(Number(total)) ? Math.max(0, Math.floor(Number(total))) : 0;
+    if (!count) return base;
+    const size = base.end - base.start;
+    const delta = Number.isFinite(Number(deltaBars)) ? Math.round(Number(deltaBars)) : 0;
+    const nextStart = clamp(base.start + delta, 0, count - size);
+    return { start: nextStart, end: nextStart + size };
+  }
+  root.StockChartWindow = { zoom, pan };
+
   function mount(options) {
     const doc = options.document || root.document;
     const $ = id => doc.getElementById(id);
-    let days = 120, prices = [], selected = -1, lastCurrent, lastHistory, lastMarket, lastCode;
+    let days = 120, allPrices = [], prices = [], windowStart = 0, windowEnd = 0;
+    let selected = -1, lastCurrent, lastHistory, lastMarket, lastCode;
     let state = null, staticCode = null, staticGeneration = 0, closed = false;
     let storage;
     try { storage = root.localStorage; } catch { /* Storage is optional. */ }
@@ -24,11 +60,33 @@
     });
 
     function readout() {
-      const bar = prices[selected];
-      if (!bar) { $('quote-readout').textContent = ''; return; }
+      const bar = allPrices[selected];
+      if (!bar) {
+        $('quote-selected-date').textContent = '';
+        $('quote-readout').textContent = '';
+        for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = '—';
+        return;
+      }
+      for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = number(bar[key]);
+      $('quote-selected-date').textContent = bar.date + (selected === allPrices.length - 1 ? '（最新）' : '');
       $('quote-readout').textContent = bar.date + '  开 ' + number(bar.open) +
         '  高 ' + number(bar.high) + '  低 ' + number(bar.low) + '  收 ' + number(bar.close) + '  量 ' + number(bar.volume) + '（供应商原始单位）';
       $('quote-date').setAttribute('aria-valuetext', bar.date + '，收盘 ' + number(bar.close));
+    }
+    function setWindow(start, end, nextSelected = selected) {
+      const bounds = normalizedWindow(start, end, allPrices.length);
+      windowStart = bounds.start;
+      windowEnd = bounds.end;
+      prices = allPrices.slice(windowStart, windowEnd);
+      selected = prices.length
+        ? clamp(Number.isFinite(Number(nextSelected)) ? Math.round(Number(nextSelected)) : windowStart, windowStart, windowEnd - 1)
+        : -1;
+      const slider = $('quote-date');
+      slider.min = String(windowStart);
+      slider.max = String(Math.max(windowStart, windowEnd - 1));
+      slider.value = String(Math.max(0, selected));
+      if (prices.length) draw();
+      else readout();
     }
     function draw() {
       const canvas = $('market-plot');
@@ -53,12 +111,12 @@
       ctx.font = '11px Consolas, monospace';
       for (let i = 0; i <= 4; i++) {
         const p = min + (max - min) * i / 4;
-        ctx.strokeStyle = '#28332F'; ctx.beginPath(); ctx.moveTo(left, y(p)); ctx.lineTo(width - right, y(p)); ctx.stroke();
-        ctx.fillStyle = '#A7B4AF'; ctx.fillText(number(p), width - right + 8, y(p) + 4);
+        ctx.strokeStyle = '#E3E7EE'; ctx.beginPath(); ctx.moveTo(left, y(p)); ctx.lineTo(width - right, y(p)); ctx.stroke();
+        ctx.fillStyle = '#6A6D78'; ctx.fillText(number(p), width - right + 8, y(p) + 4);
       }
-      ctx.fillStyle = '#A7B4AF'; ctx.fillText('成交量', left, volumeTop - 6);
+      ctx.fillStyle = '#6A6D78'; ctx.fillText('成交量', left, volumeTop - 6);
       for (const [i, bar] of prices.entries()) {
-        ctx.strokeStyle = ctx.fillStyle = bar.close >= bar.open ? '#FF6B73' : '#3DD6B5';
+        ctx.strokeStyle = ctx.fillStyle = bar.close >= bar.open ? '#D6303A' : '#11845A';
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(x(i), y(bar.high)); ctx.lineTo(x(i), y(bar.low)); ctx.stroke();
         ctx.fillRect(x(i) - candleWidth / 2, Math.min(y(bar.open), y(bar.close)),
@@ -68,36 +126,38 @@
         ctx.fillRect(x(i) - candleWidth / 2, volumeBottom - volumeHeight, candleWidth, volumeHeight);
         ctx.globalAlpha = 1;
       }
-      if (prices[selected]) {
-        ctx.lineWidth = 1; ctx.strokeStyle = '#6D8680'; ctx.setLineDash([4, 4]);
-        ctx.beginPath(); ctx.moveTo(x(selected), top); ctx.lineTo(x(selected), height - bottom); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = '#E8F3EE'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selected].close), 3, 0, Math.PI * 2); ctx.fill();
+      const selectedVisible = selected - windowStart;
+      if (prices[selectedVisible]) {
+        ctx.lineWidth = 1; ctx.strokeStyle = '#9AA1AD'; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(x(selectedVisible), top); ctx.lineTo(x(selectedVisible), height - bottom); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selectedVisible), y(prices[selectedVisible].close), 3, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.fillStyle = '#A7B4AF';
+      ctx.fillStyle = '#6A6D78';
       ctx.fillText(prices[0].date, left, height - 9);
       ctx.textAlign = 'right'; ctx.fillText(prices[prices.length - 1].date, width - right, height - 9); ctx.textAlign = 'left';
       readout();
     }
     function showMarket(market) {
       const bars = market?.price || [];
-      prices = bars.filter(bar => bar && typeof bar.date === 'string' &&
+      allPrices = bars.filter(bar => bar && typeof bar.date === 'string' &&
         ['open', 'high', 'low', 'close', 'volume'].every(key => Number.isFinite(bar[key])) &&
         Math.min(bar.open, bar.high, bar.low, bar.close) > 0 && bar.volume >= 0 &&
-        bar.high >= Math.max(bar.open, bar.close, bar.low) && bar.low <= Math.min(bar.open, bar.close)).slice(-days);
-      selected = prices.length - 1;
-      const exists = prices.length > 0;
+        bar.high >= Math.max(bar.open, bar.close, bar.low) && bar.low <= Math.min(bar.open, bar.close));
+      const exists = allPrices.length > 0;
       $('market-stats').hidden = !exists;
       $('market-plot').hidden = !exists;
       $('date-control').hidden = !exists;
       $('market-empty').hidden = exists;
-      $('quote-date').max = String(Math.max(0, prices.length - 1));
-      $('quote-date').value = String(Math.max(0, selected));
+      $('quote-selected-date').hidden = !exists;
       if (exists) {
-        const latest = prices[prices.length - 1];
-        for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = number(latest[key]);
         $('market-date').textContent = '行情截至 ' + market.asof + ' · 未复权 · ' + (market.source || '日线数据');
-        draw();
-      } else { $('market-date').textContent = ''; readout(); }
+        windowEnd = allPrices.length;
+        windowStart = Math.max(0, windowEnd - days);
+        setWindow(windowStart, windowEnd, windowEnd - 1);
+      } else {
+        $('market-date').textContent = '';
+        setWindow(0, 0, -1);
+      }
     }
     function update(next) {
       if (staticCode) return;
@@ -223,16 +283,100 @@
     for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
       days = Number(button.dataset.days);
       for (const other of doc.querySelectorAll('[data-days]')) other.setAttribute('aria-pressed', String(other === button));
-      showMarket(state?.market);
+      const end = allPrices.length;
+      setWindow(Math.max(0, end - days), end, end - 1);
     });
-    $('quote-date').addEventListener('input', event => { selected = Number(event.target.value); draw(); });
-    $('market-plot').addEventListener('pointermove', event => {
+    $('quote-date').addEventListener('input', event => {
+      selected = clamp(Number(event.target.value), windowStart, windowEnd - 1);
+      draw();
+    });
+    const canvas = $('market-plot');
+    const pointers = new Map();
+    let drag = null, pinch = null;
+    function plotMetrics(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const plotWidth = Math.max(rect.width - 68, 1);
+      return {
+        rect,
+        plotWidth,
+        anchor: clamp((clientX - rect.left - 10) / plotWidth, 0, 1),
+      };
+    }
+    function selectAt(clientX) {
       if (!prices.length) return;
-      const rect = event.currentTarget.getBoundingClientRect();
-      const p = (event.clientX - rect.left - 10) / Math.max(rect.width - 68, 1);
-      selected = Math.max(0, Math.min(prices.length - 1, Math.round(p * (prices.length - 1))));
-      $('quote-date').value = String(selected); draw();
+      const { anchor } = plotMetrics(clientX);
+      selected = windowStart + Math.round(anchor * (prices.length - 1));
+      $('quote-date').value = String(selected);
+      draw();
+    }
+    function startPinch() {
+      const points = [...pointers.values()];
+      if (points.length < 2) { pinch = null; return; }
+      const midpoint = (points[0].x + points[1].x) / 2;
+      const { anchor, plotWidth } = plotMetrics(midpoint);
+      pinch = {
+        start: windowStart,
+        end: windowEnd,
+        distance: Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y)),
+        midpoint,
+        anchor,
+        plotWidth,
+      };
+    }
+    canvas.addEventListener('pointerdown', event => {
+      if (event.pointerType === 'touch') {
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        canvas.setPointerCapture?.(event.pointerId);
+        if (pointers.size === 2) startPinch();
+      } else if ((event.pointerType === 'mouse' || event.pointerType === 'pen') && event.button === 0) {
+        drag = { x: event.clientX, start: windowStart, end: windowEnd };
+        canvas.setPointerCapture?.(event.pointerId);
+      }
     });
+    canvas.addEventListener('pointermove', event => {
+      if (event.pointerType === 'touch') {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size >= 2 && pinch) {
+          const points = [...pointers.values()];
+          const midpoint = (points[0].x + points[1].x) / 2;
+          const distance = Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y));
+          const scaled = zoom(pinch.start, pinch.end, allPrices.length, distance / pinch.distance, pinch.anchor);
+          const deltaBars = -(midpoint - pinch.midpoint) / pinch.plotWidth * (scaled.end - scaled.start);
+          const moved = pan(scaled.start, scaled.end, allPrices.length, deltaBars);
+          setWindow(moved.start, moved.end, selected);
+        } else if (pointers.size === 1) {
+          selectAt(event.clientX);
+        }
+        return;
+      }
+      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+      if (drag && event.buttons) {
+        const { plotWidth } = plotMetrics(event.clientX);
+        const deltaBars = (drag.x - event.clientX) / plotWidth * (drag.end - drag.start);
+        const moved = pan(drag.start, drag.end, allPrices.length, deltaBars);
+        setWindow(moved.start, moved.end, selected);
+      } else if (!drag) {
+        selectAt(event.clientX);
+      }
+    });
+    const endPointer = event => {
+      if (event.pointerType === 'touch') {
+        pointers.delete(event.pointerId);
+        if (pointers.size < 2) pinch = null;
+      } else {
+        drag = null;
+      }
+    };
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('wheel', event => {
+      if (!allPrices.length) return;
+      event.preventDefault();
+      const { anchor } = plotMetrics(event.clientX);
+      const bounds = zoom(windowStart, windowEnd, allPrices.length, Math.exp(-event.deltaY * .002), anchor);
+      setWindow(bounds.start, bounds.end, selected);
+    }, { passive: false });
     const observer = root.ResizeObserver ? new root.ResizeObserver(draw) : null;
     observer?.observe($('market-panel'));
     root.addEventListener('pagehide', event => {
