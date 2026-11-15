@@ -12,7 +12,11 @@
     toggle: (row) => {
       if (row.type === 'index') { if (window.IndexWatchlist) IndexWatchlist.toggle(row.watchKey); return; }
       const list = StockWatchlist.read(localStorage);
-      const next = list.includes(row.watchKey) ? list.filter((c) => c !== row.watchKey) : [row.watchKey, ...list].slice(0, StockWatchlist.MAX);
+      if (!list.includes(row.watchKey) && list.length >= StockWatchlist.MAX) {
+        const st = $('query-status'); if (st) st.textContent = `自选最多 ${StockWatchlist.MAX} 只，请先移除一些。`;
+        return;
+      }
+      const next = list.includes(row.watchKey) ? list.filter((c) => c !== row.watchKey) : [row.watchKey, ...list];
       StockWatchlist.write(localStorage, next);
       try { window.dispatchEvent(new CustomEvent('lppl-watch')); } catch (e) { /* 无事件环境 */ }
     },
