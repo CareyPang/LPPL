@@ -20,6 +20,7 @@
   .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
   .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
   .chead.od-row { flex-wrap: wrap; } /* 390 宽时图表头部按钮换行，不再把页面撑到 438 */
+  @media (max-width: 520px) { .chead #toggles { flex: 1 1 100%; } }
   .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
   .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
   .od-fill    { flex: 1 1 0; min-width: 0; }
