@@ -78,7 +78,7 @@
       '<nav class="sp-tabs" aria-label="报告页签">' + TABS.map(function (t) { return '<a href="#" data-tab="' + t[0] + '"' + (tab === t[0] ? ' aria-current="location"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
     var body = '';
     if (tab === 'metrics') {
-      body = '<div class="sp-chart">' + equitySvg(M.equity, M.segments, 600, 180) + '<div class="sp-lgd"><span><i class="nav"></i>策略净值</span><span><i class="bh"></i>买入持有</span><span><i class="b dev"></i>开发</span><span><i class="b cal"></i>校准</span><span><i class="b test"></i>测试</span></div></div>' +
+      body = (M.shown ? '<div class="sp-chart">' + equitySvg(M.equity, M.segments, 600, 180) + '<div class="sp-lgd"><span><i class="nav"></i>策略净值</span><span><i class="bh"></i>买入持有</span><span><i class="b dev"></i>开发</span><span><i class="b cal"></i>校准</span><span><i class="b test"></i>测试</span></div></div>' : '') +
         (M.shown ? '' : '<p class="sp-gate">该区间证据等级为「' + esc(M.status) + '」，按规则不显示数值，只显示状态。</p>') +
         '<div class="sp-grid">' + M.metrics.map(function (x) { return '<div class="sp-kv"><span>' + esc(x.label) + '</span><b class="m' + (x.shown ? '' : ' off') + '">' + esc(x.text) + '</b></div>'; }).join('') + '</div>';
     } else if (tab === 'trades') {
