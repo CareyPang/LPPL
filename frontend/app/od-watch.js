@@ -122,6 +122,7 @@
     });
   }
   function open() {
+    cache = {}; /* 每次打开重新取价，避免一直显示首次打开时的旧数据 */
     box.hidden = false;
     requestAnimationFrame(function () { box.classList.add('on'); bg.classList.add('on'); });
     render();
