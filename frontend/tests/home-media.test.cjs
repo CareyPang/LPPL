@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'home.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'home-ocean.html'), 'utf8');
 const start = html.indexOf('/* ================= 帧序列 ================= */');
 const end = html.indexOf('/* ================= 数据（', start);
 assert.ok(start >= 0 && end > start, 'The media section must be extractable from the real page');

@@ -1024,7 +1024,11 @@ window.CP = { dateAt(bars, idx) {
     Promise.all(LPPL.SYMS.map((x) => LPPL.load(x.sym).catch(() => null))).then((L) => {
       $('ticker').innerHTML = L.filter(Boolean).map((D) => {
         const b = D.bars, q = b[b.length - 1], p = b[b.length - 2], ch = q.close / p.close - 1, cls = ch >= 0 ? 'up' : 'dn';
-        return `<button class="tk" type="button" data-c="${E(D.name)}" aria-current="false"><span class="tk-n">${E(D.name)} · ${q.date.slice(5, 7)}/${q.date.slice(8, 10)}</span><span class="tk-v ${cls}">${U.px(q.close)} ${U.sp(ch, 2)}</span></button>`;
+        /* 迷你走势：最近 60 个交易日收盘，颜色按区间涨跌（红涨绿跌） */
+        const s = b.slice(-60).map((x) => x.close), lo = Math.min(...s), hi = Math.max(...s), sw = 56, sh = 20;
+        const sp = s.map((v, i) => (i ? 'L' : 'M') + (1 + i / (s.length - 1) * (sw - 2)).toFixed(1) + ' ' + (2 + (1 - (v - lo) / ((hi - lo) || 1)) * (sh - 4)).toFixed(1)).join('');
+        const sc = s[s.length - 1] >= s[0] ? 'var(--up)' : 'var(--dn)';
+        return `<button class="tk" type="button" data-c="${E(D.name)}" aria-current="false" title="${E(D.name)} · ${q.date} · 迷你走势为最近 60 个交易日收盘"><span class="tk-n">${E(D.name)}</span><svg class="tk-s" viewBox="0 0 ${sw} ${sh}" aria-hidden="true"><path d="${sp}" stroke="${sc}"/></svg><span class="tk-v ${cls}">${U.px(q.close)} ${U.sp(ch, 2)}</span></button>`;
       }).join('');
       if (cur) document.querySelectorAll('.tk').forEach((x) => x.setAttribute('aria-current', String(x.dataset.c === cur.sym.label)));
     });
