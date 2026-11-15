@@ -87,7 +87,9 @@ td.r, th.r { text-align: right; }
 .limit-table { table-layout: fixed; }
 .limit-table .name-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .limit-table .name-cell small, .limit-table .time-cell small { display: block; color: var(--ink-3); font: 10px var(--f-m); }
-.limit-table .reason-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.limit-table .reason-cell { display: flex; align-items: center; gap: 3px; min-width: 0; white-space: nowrap; }
+.limit-table .reason-tag { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.limit-table .reason-count { flex: none; }
 .return-tag { display: inline-block; margin-left: 3px; padding: 1px 3px; background: var(--up); color: var(--bg); font: 9px var(--f-u); }
 .sort-button { border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .dist-chart { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 3px; height: 130px; margin: var(--s3) 0 var(--s1); }
@@ -377,7 +379,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       return;
     }
     const lead = prov === 'sina' ? '净额（流入−流出）' : '主力净额';
-    const ranked = (direction) => [...rows].sort((a, b) => direction * (b[P.net] - a[P.net])).slice(0, 10);
+    const ranked = (direction) => [...rows]
+      .filter((r) => direction > 0 ? r[P.net] > 0 : r[P.net] < 0)
+      .sort((a, b) => direction * (b[P.net] - a[P.net]))
+      .slice(0, 10);
     const flowRankTable = (title, list) => `<section><h3>${title}</h3><table><thead><tr><th>名称</th><th class="r">净额 亿</th><th class="r">涨跌幅</th></tr></thead><tbody>
       ${list.map((r) => `<tr><td title="${E(r.name)}">${E(r.name)}</td><td class="r">${yi(r[P.net])}</td><td class="r">${pct(r[P.pct], 1)}</td></tr>`).join('')}
       </tbody></table></section>`;
@@ -493,14 +498,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       content = `<div class="scroll"><table class="limit-table"><thead><tr><th>名称 / 代码</th><th><button class="sort-button" data-limit-sort="first_seal">涨停时间 ↕</button></th><th>涨停原因</th><th class="r"><button class="sort-button" data-limit-sort="seal_fund">封单 ↕</button></th></tr></thead><tbody>
         ${sorted.map((row) => {
           const tag = String(row.reason || '').split('+')[0].trim();
-          const reason = tag ? `${tag} (${reasonCounts.get(tag) || 0})` : '—';
-          const shownReason = reason.length > 17 ? `${reason.slice(0, 17)}…` : reason;
+          const reasonCount = tag ? reasonCounts.get(tag) || 0 : null;
+          const reason = tag ? `${tag} (${reasonCount})` : '—';
           const dayBoard = numberValue(row.zt_days) && numberValue(row.zt_ct)
             ? (Number(row.zt_days) > Number(row.zt_ct) ? `${row.zt_days}天${row.zt_ct}板` : '—')
             : '—';
-          return `<tr><td class="name-cell"><strong>${E(row.name || '—')}</strong>${Number(row.break_times) > 0 ? '<span class="return-tag">回封</span>' : ''}<small>${E(row.code || '—')}</small></td>
+          return `<tr><td class="name-cell"><strong>${E(row.name || '—')}</strong><small>${E(row.code || '—')}${Number(row.break_times) > 0 ? '<span class="return-tag">回封</span>' : ''}</small></td>
             <td class="time-cell">${E(time(row.first_seal))}<small>${E(dayBoard)}</small></td>
-            <td class="reason-cell" title="${E(reason)}">${E(shownReason)}</td><td class="r">${E(money(row.seal_fund))}</td></tr>`;
+            <td class="reason-cell" title="${E(reason)}"><span class="reason-tag">${E(tag || '—')}</span>${tag ? `<span class="reason-count">(${reasonCount})</span>` : ''}</td><td class="r">${E(money(row.seal_fund))}</td></tr>`;
         }).join('')}
         </tbody></table></div>`;
     }
