@@ -211,6 +211,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     env:
       UNIVERSE: ${{ needs.plan.outputs.universe }}
       ASOF: ${{ needs.plan.outputs.asof }}
