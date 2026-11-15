@@ -249,7 +249,9 @@ export async function fetchNewsSource(url, headers, parser, timeoutMs = NEWS_TIM
     if (!response.ok) return { ok: false, error: `http_${response.status}`, rows: [] };
     let payload;
     try { payload = await response.json(); }
-    catch { return { ok: false, error: 'invalid_json', rows: [] }; }
+    catch {
+      return { ok: false, error: controller.signal.aborted ? 'timeout' : 'invalid_json', rows: [] };
+    }
     try { return { ok: true, rows: parser(payload) }; }
     catch { return { ok: false, error: 'invalid_response', rows: [] }; }
   } catch (error) {

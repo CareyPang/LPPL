@@ -960,6 +960,18 @@ test('news source fetch reports an AbortController timeout', async () => {
   });
 });
 
+test('news source fetch reports timeout when JSON parsing aborts', async () => {
+  await withUpstream({ fetch: async (_url, init) => ({
+    ok: true,
+    json: () => new Promise((_resolve, reject) => {
+      init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), { once: true });
+    }),
+  }) }, async () => {
+    const result = await fetchNewsSource('https://news.test/', {}, () => [], 5);
+    assert.deepEqual(result, { ok: false, error: 'timeout', rows: [] });
+  });
+});
+
 test('GET /news preserves a successful source when the other source times out', async () => {
   await withUpstream({ fetch: async (url) => String(url).includes('www.cls.cn')
     ? Promise.reject(new DOMException('aborted', 'AbortError'))
