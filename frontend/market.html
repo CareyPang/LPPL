@@ -703,7 +703,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       ].map((r) => ({ ...r, d: bjDate(r.time), ks: [r.k] })).sort((a, b) => (b.d?.getTime() || 0) - (a.d?.getTime() || 0));
       const seen = new Map();
       for (const r of items) {
-        const key = String(r.title || '').replace(/^财联社\d+月\d+日电[，,]?/, '').replace(/[\s，,。.！!：:；;“”"'（）()【】\[\]]/g, '').slice(0, 40);
+        const key = String(r.title || '').replace(/^财联社\d+月\d+日电[，,]?/, '').replace(/[\s，,。！!：:；;“”"'（）()【】\[\]]/g, '').slice(0, 40);
         const prev = seen.get(key);
         if (prev && Math.abs((prev.d?.getTime() || 0) - (r.d?.getTime() || 0)) <= 6 * 3600 * 1000) {
           if (!prev.ks.includes(r.k)) prev.ks.push(r.k);
