@@ -42,13 +42,8 @@
   var SUB = {
     market: MARKET_SUB,
     nt: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
-    stock: [
-      { t: '查询', h: '#search', ids: ['search'] },
-      { t: '本地自选', h: '#watch-section', ids: ['watch-section'] },
-      { t: '近期事件', h: '#recent-events', ids: ['recent-events', 'stock-events'] },
-      { t: '逃顶', h: '#sec-top', ids: ['sec-top'] },
-      { t: '抄底', h: '#sec-dip', ids: ['sec-dip'] }
-    ]
+    /* 标的页的页签由页面自己的吸顶头部提供（app/stock-header.js），顶栏不再重复一层 */
+    stock: null
   };
 
   /* 视觉参照 TradingView：主页签一直可见；页面级子页签用底边下划线（切换视图），筛选器/指数条仍是圆角胶囊 */
@@ -328,7 +323,8 @@
   modal.innerHTML = '<div class="odm" role="dialog" aria-modal="true" aria-label="搜索标的">' +
     '<div class="odm-in"><label class="odn-vh" for="odm-i">搜索标的</label>' +
     '<input id="odm-i" type="text" autocomplete="off" spellcheck="false" placeholder="名称、拼音首字母或代码，如 茅台 / gzmt / 600519" aria-controls="odm-l" aria-expanded="true" role="combobox" aria-autocomplete="list">' +
-    '<kbd aria-hidden="true">Esc</kbd></div>' +
+    '<kbd aria-hidden="true">Esc</kbd>' +
+    '<button type="button" class="odm-x" aria-label="关闭搜索" style="margin-left:6px;border:0;background:none;font-size:22px;line-height:1;color:inherit;cursor:pointer;padding:0 6px">×</button></div>' +
     '<div class="odm-f" role="group" aria-label="类型">' + FILTERS.map(function (f) {
       return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (f[0] === 'all') + '">' + f[1] + '</button>';
     }).join('') + '</div>' +
@@ -404,7 +400,7 @@
     } else if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
   });
   modal.addEventListener('click', function (e) {
-    if (e.target === modal) { closeSearch(); return; }
+    if (e.target === modal || e.target.closest('.odm-x')) { closeSearch(); return; }
     var f = e.target.closest('button[data-f]');
     if (f) {
       mFilter = f.dataset.f;
