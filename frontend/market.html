@@ -487,8 +487,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     } else {
       const reasonCounts = new Map();
       ztRows.forEach((row) => {
-        const tag = String(row.reason || '').split('+')[0].trim();
-        if (tag) reasonCounts.set(tag, (reasonCounts.get(tag) || 0) + 1);
+        const tags = new Set(
+          String(row.reason || '').split('+').map((tag) => tag.trim()).filter(Boolean)
+        );
+        tags.forEach((tag) => reasonCounts.set(tag, (reasonCounts.get(tag) || 0) + 1));
       });
       const sorted = [...active.rows].sort((a, b) => {
         const left = limitSort === 'first_seal' ? String(a.first_seal || '') : Number(a.seal_fund || 0);
