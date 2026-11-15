@@ -40,7 +40,7 @@
     return {
       published: true, segment: segment, level: level, shown: ok, status: statusText(level),
       n: Number.isFinite(Number(m.n_trades)) ? Number(m.n_trades) : trades.length,
-      metrics: metrics, trades: trades, equity: equity, segments: data.segments || {}, props: data.properties || {},
+      metrics: metrics, trades: trades, equity: equity, segments: data.segments || {}, hasMetrics: data.metrics || {}, props: data.properties || {},
       rule: data.rule_id, prereg: data.prereg_doc || '', asof: data.asof || '', note: data.note || '',
     };
   }
@@ -73,7 +73,7 @@
         '<p class="sp-dim">规则与字段见 <a href="lab/guide.html">用户指南</a>；只开放事前登记的规则，不提供自由调参。历史回放不是预测，也不是收益承诺。</p></div>';
     }
     var head = '<div class="sp-head"><div class="sp-segs" role="group" aria-label="区间">' + SEGMENTS.map(function (s) {
-      return '<button type="button" data-seg="' + s[0] + '" aria-pressed="' + (M.segment === s[0]) + '"' + (s[0] !== 'all' && !M.segments[s[0]] ? ' disabled' : '') + '>' + s[1] + '</button>';
+      return '<button type="button" data-seg="' + s[0] + '" aria-pressed="' + (M.segment === s[0]) + '"' + (!M.hasMetrics[s[0]] ? ' disabled' : '') + '>' + s[1] + '</button>';
     }).join('') + '</div><span class="sp-ev ' + (M.shown ? 'ok' : 'off') + '">' + esc(M.status) + '</span><span class="sp-n m">n = ' + M.n + '</span><span class="sp-dim">历史回放，不是预测</span></div>' +
       '<nav class="sp-tabs" aria-label="报告页签">' + TABS.map(function (t) { return '<a href="#" data-tab="' + t[0] + '"' + (tab === t[0] ? ' aria-current="location"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
     var body = '';
