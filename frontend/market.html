@@ -92,6 +92,8 @@ td.r, th.r { text-align: right; }
 .news-grid > section { min-width: 0; }
 .news-list { display: grid; gap: var(--s2); min-width: 0; }
 .news-item a { display: block; overflow-wrap: anywhere; }
+.news-item b { overflow-wrap: anywhere; }
+.news-status { overflow-wrap: anywhere; }
 .events-timeline { max-width: 100%; overflow-x: auto; }
 .events-days { display: grid; grid-template-columns: repeat(31, minmax(24px, 1fr)); gap: 4px; min-width: 930px; }
 .events-day { display: grid; grid-template-rows: auto 68px auto; gap: 3px; text-align: center; font: 10px var(--f-m); color: var(--ink-3); }
@@ -258,7 +260,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     '5d': { label: '5日', net: 'main_net_5d', pct: 'pct_5d', share: 'main_pct_5d' },
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
-  let M = null, Macro = null, kind = 'industry', period = 'today';
+  let M = null, Macro = null, kind = 'industry', period = 'today', newsRefreshState = null;
   let boardBox = null, pinnedTile = null;
   const tip = $('tip');
   document.addEventListener('pointerdown', (event) => {
@@ -529,12 +531,104 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const N = M.news || {}, clsRows = Array.isArray(N.cls) ? N.cls : [];
     const emRows = Array.isArray(N.eastmoney) ? N.eastmoney : [];
     $('src-news').innerHTML = srcLine(['news_cls', 'news_eastmoney']);
-    const errors = failMsg(['news_cls', 'news_eastmoney']);
     const list = (rows) => rows.length ? `<div class="news-list">${rows.map((r) =>
       `<article class="news-item"><small>${E(r.time || '—')}</small>${r.url ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`}</article>`).join('')}</div>` : '<p class="note">暂无快讯。</p>';
-    $('news-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
-      `<div class="news-grid"><section><h3>财联社电报</h3>${list(clsRows)}</section><section><h3>东方财富</h3>${list(emRows)}</section></div>
-      <p class="note">${E(N.note || '')}</p>`;
+    if (newsRefreshState) {
+      newsRefreshState.render();
+      return;
+    }
+
+    const state = {
+      rows: { cls: clsRows, eastmoney: emRows },
+      sourceErrors: [],
+      status: '',
+      statusClass: 'note',
+      note: N.note || '',
+      initialErrors: failMsg(['news_cls', 'news_eastmoney']),
+      isLive: false,
+      lastLiveAt: null,
+      timer: null,
+      inFlight: false,
+      refreshAgain: false,
+      started: false,
+    };
+    newsRefreshState = state;
+    const beijingTime = (value, withSeconds, withDate = true) => {
+      const date = new Date(value || '');
+      if (!Number.isFinite(date.getTime())) return '时间未知';
+      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        ...(withSeconds ? { second: '2-digit' } : {}),
+        hourCycle: 'h23',
+      }).formatToParts(date).map((part) => [part.type, part.value]));
+      return `${withDate ? `${parts.year}-${parts.month}-${parts.day} ` : ''}${parts.hour}:${parts.minute}${withSeconds ? `:${parts.second}` : ''}`;
+    };
+    const render = () => {
+      const sourceErrors = state.sourceErrors.length
+        ? `<p class="fail news-status">${state.sourceErrors.map((message) => E(message)).join('<br>')}</p>`
+        : '';
+      const initialErrors = !state.isLive && state.initialErrors
+        ? `<p class="fail">${state.initialErrors}</p>` : '';
+      $('news-body').innerHTML = (state.status ? `<p class="${state.statusClass} news-status">${E(state.status)}</p>` : '') +
+        initialErrors + sourceErrors +
+        `<div class="news-grid"><section><h3>财联社电报</h3>${list(state.rows.cls)}</section><section><h3>东方财富</h3>${list(state.rows.eastmoney)}</section></div>` +
+        (!state.isLive && state.note ? `<p class="note">${E(state.note)}</p>` : '');
+    };
+    const refresh = async (force = false) => {
+      if (document.visibilityState !== 'visible') return;
+      if (state.inFlight) {
+        if (force) state.refreshAgain = true;
+        return;
+      }
+      state.inFlight = true;
+      try {
+        const data = await LPPL.liveNews();
+        if (!data || data.ok !== true) throw new Error('live_news_unavailable');
+        state.rows = {
+          cls: Array.isArray(data.cls) ? data.cls : [],
+          eastmoney: Array.isArray(data.eastmoney) ? data.eastmoney : [],
+        };
+        state.lastLiveAt = data.fetched_at || new Date().toISOString();
+        state.isLive = true;
+        state.statusClass = 'note';
+        state.status = `实时 · 更新于 ${beijingTime(state.lastLiveAt, true, false)}`;
+        state.sourceErrors = Object.entries(data.sources || {}).filter(([_source, source]) => source?.ok === false)
+          .map(([source, details]) => `${source === 'cls' ? '财联社' : '东方财富'} 实时不可用：${details.error || '来源暂不可用'}`);
+      } catch {
+        state.statusClass = 'fail';
+        const snapshotAt = beijingTime(M.generated_at, false);
+        state.status = state.isLive
+          ? `实时快讯暂不可用，保留最近一次实时更新 ${beijingTime(state.lastLiveAt, true, false)}；日更快照 ${snapshotAt}`
+          : `实时快讯暂不可用，显示 ${snapshotAt} 的日更快照`;
+      } finally {
+        state.inFlight = false;
+        render();
+        if (state.refreshAgain && document.visibilityState === 'visible') {
+          state.refreshAgain = false;
+          refresh();
+        }
+      }
+    };
+    const syncVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refresh(true);
+        if (!state.timer) state.timer = setInterval(refresh, 60_000);
+      } else if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+      }
+    };
+    render();
+    if (!state.started) {
+      state.started = true;
+      document.addEventListener('visibilitychange', syncVisibility);
+      syncVisibility();
+    }
   }
 
   function renderNB() {
