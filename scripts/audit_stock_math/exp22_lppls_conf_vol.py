@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from research.eval.dataset import price_series
 from research.eval.splits import cpcv_paths
 from research.features.lppls_rules import SCALES_FCO, _derived, rules
-from research.price_layer.e_dev import block_ci
+from research.price_layer.e_dev import B_BOOT, BLOCK, SEED
 
 INDEXES = ("sh000001", "sh000016", "sh000300", "sh000905", "sz399001", "sz399006")
 START, END = pd.Timestamp("2000-01-01"), pd.Timestamp("2018-12-31")
@@ -73,6 +73,16 @@ def cpcv_losses(P: pd.DataFrame, target: str, paths) -> pd.DataFrame:
     return pd.concat(out).set_index("date")
 
 
+def block_ci(df: pd.DataFrame, stat, tdays: pd.DatetimeIndex, level: float = 0.9):
+    """按交易日历 250 个交易日一块重抽（各指数共用块）；e_dev.block_ci 按样本日期计块，步长 5 时一块≈5 年，故此处按交易日位置分块。"""
+    blk = (pd.Series(np.arange(len(tdays)), index=tdays).reindex(df.index).to_numpy() // BLOCK).astype(int)
+    groups = [df[blk == g] for g in np.unique(blk)]
+    rng = np.random.default_rng(SEED)
+    vals = [stat(pd.concat([groups[i] for i in rng.integers(0, len(groups), len(groups))])) for _ in range(B_BOOT)]
+    a = (1 - level) / 2
+    return float(stat(df)), float(np.quantile(vals, a)), float(np.quantile(vals, 1 - a))
+
+
 def delta(df: pd.DataFrame, m: str, b: str, kind: str = "se") -> float:
     return float(1 - df[f"{kind}_{m}"].sum() / df[f"{kind}_{b}"].sum())
 
@@ -87,9 +97,9 @@ if __name__ == "__main__":
     for tg in TARGETS:
         L = cpcv_losses(P, tg, paths)
         ex = L[~L.index.year.isin(EX)]
-        row = dict(target=tg, n=len(P), n_paths=len(paths))
+        row = dict(target=tg, n=len(P), n_paths=len(paths), n_blocks=int(len(tdays) // BLOCK + 1))
         for kind in (("se", "ql") if tg.startswith("lrv") else ("se",)):
-            d, lo, hi = block_ci(L.rename(columns={f"{kind}_cand": "loss_m", f"{kind}_base": "loss_b"}), lambda df: 1 - df.loss_m.sum() / df.loss_b.sum())
+            d, lo, hi = block_ci(L.rename(columns={f"{kind}_cand": "loss_m", f"{kind}_base": "loss_b"}), lambda df: 1 - df.loss_m.sum() / df.loss_b.sum(), tdays)
             row.update({f"{kind}_delta": d, f"{kind}_lo": lo, f"{kind}_hi": hi, f"{kind}_delta_ex": delta(ex, "cand", "base", kind),
                         f"{kind}_d_harconf": delta(L, "har_conf", "har", kind), f"{kind}_d_harr1b1": delta(L, "har_r1b1", "har", kind)})
         row["pass"] = bool(row["se_lo"] > 0 and row["se_delta_ex"] > 0 and row["se_d_harconf"] > row["se_d_harr1b1"])
