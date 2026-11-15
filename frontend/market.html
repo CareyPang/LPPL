@@ -58,7 +58,8 @@ main { max-width: 1400px; margin: 0 auto; padding: var(--s4); display: grid; gap
 .tile { position: absolute; border: 1px solid var(--bg); overflow: hidden; padding: 3px 5px; font-size: 11px; line-height: 1.25; color: #fff; cursor: default; }
 .tile b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile span { font-family: var(--f-m); opacity: .9; }
-.tip { position: fixed; z-index: 9; pointer-events: none; background: var(--surface-2); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.5 var(--f-m); white-space: nowrap; }
+.tip { position: fixed; z-index: 9; pointer-events: none; max-width: calc(100vw - 16px); background: var(--surface-2); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.5 var(--f-m); white-space: normal; }
+@media (max-width: 560px) { .tm { height: 520px; } }
 .legend { display: flex; align-items: center; gap: var(--s2); font-size: 11px; color: var(--ink-3); margin-top: var(--s2); flex-wrap: wrap; }
 .legend i { display: inline-block; width: 18px; height: 10px; }
 .big { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--s2); }
@@ -258,6 +259,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
   let M = null, Macro = null, kind = 'industry', period = 'today';
+  let boardBox = null, pinnedTile = null;
+  const tip = $('tip');
+  document.addEventListener('pointerdown', (event) => {
+    if (boardBox && !boardBox.contains(event.target)) {
+      pinnedTile = null;
+      tip.hidden = true;
+    }
+  });
 
   function srcLine(names) {
     const S = (M && M.sources) || {};
@@ -335,6 +344,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (S.fallback_from) html += `<p class="warnl">东财本次未取到，已改用新浪口径（${E(S.fallback_from).slice(0, 160)}）。</p>`;
     if (S.reason) html += `<p class="fail">${E(S.reason)}</p>`;
     if (!rows.length) {
+      boardBox = null; pinnedTile = null; tip.hidden = true;
       const emptyMessage = S.reason ? '' : (fails || '该源本次未取到：无数据');
       $('board-body').innerHTML = html + (emptyMessage ? `<p class="fail">${E(emptyMessage)}</p>` : '') +
         historyNote + `<p class="note">${E(bf.note || '')}</p>`;
@@ -355,17 +365,29 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       const st = `left:${t.x.toFixed(1)}px;top:${t.y.toFixed(1)}px;width:${t.w.toFixed(1)}px;height:${t.h.toFixed(1)}px;background:${tileColor(r[P.pct])};color:${num(r[P.pct]) && Math.abs(r[P.pct]) >= 1.6 ? '#FFFFFF' : '#131722'};${r[P.net] < 0 ? 'outline:1px dashed rgba(19,23,34,.5);outline-offset:-3px;' : ''}`;
       return `<div class="tile" data-i="${i}" style="${st}">${show ? `<b>${E(r.name)}</b><span>${yi(r[P.net])}亿 ${pct(r[P.pct], 1)}</span>` : ''}</div>`;
     }).join('');
-    const tip = $('tip');
-    box.onmousemove = (e) => {
-      const el = e.target.closest('.tile'); if (!el) { tip.hidden = true; return; }
-      const r = tiles[+el.dataset.i].r;
+    boardBox = box; pinnedTile = null; tip.hidden = true;
+    function showTileTip(element, clientX, clientY) {
+      const r = tiles[+element.dataset.i].r;
       const lines = [`<b>${E(r.name)}</b>`, `${P.label}涨跌 ${pct(r[P.pct])}`, `${lead} ${yi(r[P.net], 2)} 亿`, `净占比 ${pct(r[P.share])}`];
       if (period === 'today' && prov !== 'sina') lines.push(`超大 ${yi(r.super_net, 2)} · 大 ${yi(r.large_net, 2)} · 中 ${yi(r.medium_net, 2)} · 小 ${yi(r.small_net, 2)} 亿`);
       tip.innerHTML = lines.join('<br>'); tip.hidden = false;
-      tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px';
-      tip.style.top = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8) + 'px';
+      tip.style.left = Math.max(8, Math.min(clientX + 14, innerWidth - tip.offsetWidth - 8)) + 'px';
+      tip.style.top = Math.max(8, Math.min(clientY + 14, innerHeight - tip.offsetHeight - 8)) + 'px';
+    }
+    box.onmousemove = (e) => {
+      const el = e.target.closest('.tile'); if (!el) { if (pinnedTile === null) tip.hidden = true; return; }
+      if (pinnedTile !== null) return;
+      showTileTip(el, e.clientX, e.clientY);
     };
-    box.onmouseleave = () => { tip.hidden = true; };
+    box.onclick = (e) => {
+      const el = e.target.closest('.tile');
+      if (!el) { pinnedTile = null; tip.hidden = true; return; }
+      const index = Number(el.dataset.i);
+      if (pinnedTile === index) { pinnedTile = null; tip.hidden = true; return; }
+      pinnedTile = index;
+      showTileTip(el, e.clientX, e.clientY);
+    };
+    box.onmouseleave = () => { if (pinnedTile === null) tip.hidden = true; };
   }
 
   function renderLimit() {
