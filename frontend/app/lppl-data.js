@@ -116,7 +116,10 @@
   const catalog = () => getJSON('catalog.json');
   const history = (sym) => getJSON(sym + '_history.json');
   /** 策略回放（事前登记规则的历史回放，不是预测）：未发布时返回 null，页面须显示“策略回测结果未发布” */
-  const strategy = (sym) => getJSON('strategy/' + sym + '.json').catch(() => null);
+  const strategy = (sym) => getJSON('strategy/' + sym + '.json').catch((e) => {
+    if (e && (e.status === 404 || /\b404\b/.test(String(e.message || e)))) return null; /* 未发布 */
+    throw e; /* 超时 / 5xx：是读取失败，不是未发布 */
+  });
   const opt = (p) => getJSON(p).catch(() => null);
   const okCode = (c) => {
     const code = String(c).trim();
