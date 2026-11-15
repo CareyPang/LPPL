@@ -25,7 +25,14 @@
 
     function readout() {
       const bar = prices[selected];
-      if (!bar) { $('quote-readout').textContent = ''; return; }
+      if (!bar) {
+        $('quote-selected-date').textContent = '';
+        $('quote-readout').textContent = '';
+        for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = '—';
+        return;
+      }
+      for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = number(bar[key]);
+      $('quote-selected-date').textContent = bar.date + (selected === prices.length - 1 ? '（最新）' : '');
       $('quote-readout').textContent = bar.date + '  开 ' + number(bar.open) +
         '  高 ' + number(bar.high) + '  低 ' + number(bar.low) + '  收 ' + number(bar.close) + '  量 ' + number(bar.volume) + '（供应商原始单位）';
       $('quote-date').setAttribute('aria-valuetext', bar.date + '，收盘 ' + number(bar.close));
@@ -90,11 +97,10 @@
       $('market-plot').hidden = !exists;
       $('date-control').hidden = !exists;
       $('market-empty').hidden = exists;
+      $('quote-selected-date').hidden = !exists;
       $('quote-date').max = String(Math.max(0, prices.length - 1));
       $('quote-date').value = String(Math.max(0, selected));
       if (exists) {
-        const latest = prices[prices.length - 1];
-        for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = number(latest[key]);
         $('market-date').textContent = '行情截至 ' + market.asof + ' · 未复权 · ' + (market.source || '日线数据');
         draw();
       } else { $('market-date').textContent = ''; readout(); }

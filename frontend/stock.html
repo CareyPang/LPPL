@@ -201,6 +201,7 @@
     .market-canvas { display: block; width: 100%; height: 340px; }
     .date-control { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
     .date-control input { flex: 1; min-width: 0; accent-color: var(--cyan); }
+    .quote-selected-date { margin: 12px 0 -8px; color: var(--ink-3); font: 12px var(--f-m); }
     .quote-readout, .visibility-note { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
     .pending-result { border: 1px solid var(--line); padding: 16px; border-radius: var(--r); color: var(--ink-2); }
     @media (max-width: 560px) {
@@ -265,11 +266,12 @@
           <button type="button" data-days="250" aria-pressed="false">1年</button>
         </div>
       </div>
+      <p id="quote-selected-date" class="quote-selected-date" hidden></p>
       <div class="market-stats" id="market-stats" hidden>
-        <div><small>最近收盘</small><strong id="quote-close">—</strong></div>
-        <div><small>当日开盘</small><strong id="quote-open">—</strong></div>
-        <div><small>当日最高</small><strong id="quote-high">—</strong></div>
-        <div><small>当日最低</small><strong id="quote-low">—</strong></div>
+        <div><small>收盘</small><strong id="quote-close">—</strong></div>
+        <div><small>开盘</small><strong id="quote-open">—</strong></div>
+        <div><small>最高</small><strong id="quote-high">—</strong></div>
+        <div><small>最低</small><strong id="quote-low">—</strong></div>
       </div>
       <p id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
       <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量" hidden></canvas>
