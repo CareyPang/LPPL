@@ -274,18 +274,21 @@ def test_us_nightly_index_builder_uses_current_and_error_files(tmp_path, monkeyp
             "name": us_nightly.US_NAMES["NVDA"],
             "asof": "2026-11-11",
             "ok": True,
+            "refresh_failed": False,
         },
         {
             "ticker": "AAPL",
             "name": us_nightly.US_NAMES["AAPL"],
             "asof": "2026-11-10",
-            "ok": False,
+            "ok": True,
+            "refresh_failed": True,
         },
         {
             "ticker": "AMD",
             "name": us_nightly.US_NAMES["AMD"],
             "asof": None,
             "ok": False,
+            "refresh_failed": True,
         },
     ]
 

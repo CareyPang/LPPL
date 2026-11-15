@@ -1052,7 +1052,7 @@
         LPPL.stock.history(code),
       ]);
       if (!current) throw Error('该美股的预计算结果暂不可用；不会发起在线查询。');
-      return { current, history };
+      return { current, history, refreshFailed: entry.refresh_failed === true };
     }
 
     StockView.mount({
@@ -1088,7 +1088,9 @@
       if (normalized?.startsWith('US_')) {
         const entry = usEntry(normalized);
         $('name-hint').innerHTML = entry
-          ? `<b>${esc(entry.name)}</b>${entry.ok ? `已有 ${esc(entry.asof || '')} 的预计算结果` : '结果暂不可用'}`
+          ? `<b>${esc(entry.name)}</b>${entry.ok
+            ? `已有 ${esc(entry.asof || '')} 的预计算结果${entry.refresh_failed ? '（最近刷新失败）' : ''}`
+            : '结果暂不可用'}`
           : `<span class="muted">美股目前只支持观察清单：${usIndex.map((item) => esc(item.ticker)).join('、')}</span>`;
         return;
       }

@@ -46,7 +46,8 @@ def build_index(stock_dir: Path) -> list[dict]:
                 "ticker": ticker,
                 "name": US_NAMES[ticker],
                 "asof": current.get("asof") if current else None,
-                "ok": current is not None and not error_path.is_file(),
+                "ok": current is not None,
+                "refresh_failed": error_path.is_file(),
             }
         )
     return index

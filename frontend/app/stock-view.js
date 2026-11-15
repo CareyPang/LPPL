@@ -191,9 +191,11 @@
           if (closed || generation !== staticGeneration || staticCode !== code) return;
           if (!result?.current) throw Error('该美股的预计算结果暂不可用。');
           options.renderResult(result.current, result.history || null);
-          $('query-status').textContent = result.history
-            ? '已加载预计算的当前结果和历史回测。'
-            : '已加载预计算的当前结果；历史回测文件暂不可用。';
+          $('query-status').textContent = result.refreshFailed
+            ? `已加载 ${result.current.asof || '—'} 的预计算结果；最近一次夜间刷新失败，结果未更新。`
+            : result.history
+              ? '已加载预计算的当前结果和历史回测。'
+              : '已加载预计算的当前结果；历史回测文件暂不可用。';
         }).catch(error => {
           if (closed || generation !== staticGeneration || staticCode !== code) return;
           $('query-status').textContent = error.message || '美股预计算结果暂不可用。';
