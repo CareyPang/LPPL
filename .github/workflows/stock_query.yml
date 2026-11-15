@@ -1,6 +1,6 @@
 name: stock_query
 
-run-name: stock_query ${{ github.event.client_payload.code || inputs.code || 'pr-smoke' }}
+run-name: stock_query ${{ github.event.client_payload.code || inputs.code || 'pr-smoke' }} ${{ github.event.client_payload.job_id || github.run_id }}
 
 on:
   workflow_dispatch:
@@ -12,326 +12,166 @@ on:
       variant:
         description: Stock fitting variant
         type: choice
-        options:
-          - stk_lite
-          - stk_full
+        options: [stk_lite, stk_full]
         default: stk_lite
+      mode:
+        description: Current analysis or explicitly requested historical frames
+        type: choice
+        options: [current, history]
+        default: current
       history_weeks:
-        description: Number of weekly history frames (0–156)
+        description: 0 for current; 1–156 for history (normally 104)
         type: string
-        default: "104"
+        default: "0"
   repository_dispatch:
     types: [stock_query]
   pull_request:
     paths:
       - .github/workflows/stock_query.yml
-      - research/pipeline/stock.py
+      - research/pipeline/stock*.py
       - scripts/publish_stock_result.sh
+      - tests/test_stock*.py
+      - tests/test_publish_stock_result.py
 
 permissions:
   contents: read
 
 concurrency:
-  group: stock-query-${{ github.event.client_payload.code || inputs.code || github.ref }}
+  group: stock-query-${{ github.event.client_payload.code || inputs.code || github.ref }}-${{ github.event.client_payload.mode || inputs.mode || 'current' }}
   cancel-in-progress: false
 
 jobs:
-  query:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.validate.outputs.code }}
       variant: ${{ steps.validate.outputs.variant }}
+      mode: ${{ steps.validate.outputs.mode }}
       weeks: ${{ steps.validate.outputs.weeks }}
-      query_failed: ${{ steps.run_query.outputs.failed }}
-    env:
-      INPUT_CODE: ${{ inputs.code }}
-      INPUT_VARIANT: ${{ inputs.variant }}
-      INPUT_HISTORY_WEEKS: ${{ inputs.history_weeks }}
-      DISPATCH_CODE: ${{ github.event.client_payload.code }}
-      DISPATCH_VARIANT: ${{ github.event.client_payload.variant }}
-      DISPATCH_HISTORY_WEEKS: ${{ github.event.client_payload.history_weeks }}
+      job_id: ${{ steps.validate.outputs.job_id }}
+      requested_at: ${{ steps.validate.outputs.requested_at }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
     steps:
-      - name: Checkout PR merge commit for smoke runs
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-
-      - name: Checkout main for dispatched runs
-        if: github.event_name != 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 1
-
-      - name: Validate query inputs
+          ref: ${{ github.event_name == 'pull_request' && github.sha || 'main' }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate server job identity and mode
         id: validate
-        shell: bash
+        run: python -m research.pipeline.stock_jobs validate-workflow
+      - name: Require the requested commit to belong to trusted main
+        if: github.event_name != 'pull_request'
+        env:
+          SOURCE_SHA: ${{ steps.validate.outputs.source_sha }}
         run: |
           set -euo pipefail
-          case "$GITHUB_EVENT_NAME" in
-            pull_request)
-              code=600519
-              variant=stk_lite
-              weeks=0
-              ;;
-            repository_dispatch)
-              code="${DISPATCH_CODE:-}"
-              variant="${DISPATCH_VARIANT:-stk_lite}"
-              weeks="${DISPATCH_HISTORY_WEEKS:-104}"
-              ;;
-            workflow_dispatch)
-              code="${INPUT_CODE:-}"
-              variant="${INPUT_VARIANT:-stk_lite}"
-              weeks="${INPUT_HISTORY_WEEKS:-104}"
-              ;;
-            *)
-              printf 'Unsupported event: %s\n' "$GITHUB_EVENT_NAME" >&2
-              exit 1
-              ;;
-          esac
+          git cat-file -e "$SOURCE_SHA^{commit}"
+          git merge-base --is-ancestor "$SOURCE_SHA" HEAD
 
-          if [[ ! "$code" =~ ^[0-9]{6}$ ]]; then
-            echo "code must be exactly six digits" >&2
-            exit 1
-          fi
-          if [[ ! "$variant" =~ ^(stk_lite|stk_full)$ ]]; then
-            echo "variant must be stk_lite or stk_full" >&2
-            exit 1
-          fi
-          if [[ ! "$weeks" =~ ^[0-9]{1,3}$ ]] || (( 10#$weeks > 156 )); then
-            echo "history_weeks must be an integer from 0 through 156" >&2
-            exit 1
-          fi
-          weeks=$((10#$weeks))
-
-          {
-            printf 'CODE=%s\n' "$code"
-            printf 'VARIANT=%s\n' "$variant"
-            printf 'WEEKS=%s\n' "$weeks"
-          } >> "$GITHUB_ENV"
-          {
-            printf 'code=%s\n' "$code"
-            printf 'variant=%s\n' "$variant"
-            printf 'weeks=%s\n' "$weeks"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+  query:
+    needs: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      query_failed: ${{ steps.compute.outputs.failed }}
+    env:
+      CODE: ${{ needs.prepare.outputs.code }}
+      VARIANT: ${{ needs.prepare.outputs.variant }}
+      MODE: ${{ needs.prepare.outputs.mode }}
+      WEEKS: ${{ needs.prepare.outputs.weeks }}
+      JOB_ID: ${{ needs.prepare.outputs.job_id }}
+      REQUESTED_AT: ${{ needs.prepare.outputs.requested_at }}
+      SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+      STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
+          cache: pip
       - name: Install project
+        if: github.event_name != 'pull_request'
         run: python -m pip install -e .
-
-      - name: Restore stock fit cache (current phase saves nothing; history job saves)
+      - name: Install smoke test dependencies
+        if: github.event_name == 'pull_request'
+        run: python -m pip install -e '.[dev]'
+      - name: Offline smoke tests
+        if: github.event_name == 'pull_request'
+        run: python -m pytest tests/test_stock_jobs.py tests/test_stock_engine.py -m 'not network' -k 'not parallel_and_serial_window_fits_match'
+      - name: Restore shared current and history fit cache
+        if: github.event_name != 'pull_request'
+        id: fit_cache
         uses: actions/cache/restore@v4
         with:
-          path: data/stock/${{ steps.validate.outputs.code }}
-          key: stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-${{ github.run_id }}
+          path: data/stock/${{ needs.prepare.outputs.code }}
+          key: stock-fits-v2-${{ needs.prepare.outputs.code }}-${{ needs.prepare.outputs.variant }}-${{ hashFiles('research/lppls/**/*.py', 'research/optim/**/*.py', 'research/features/**/*.py', 'research/pipeline/stock.py', 'research/pipeline/daily.py', 'pyproject.toml') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-
-            stock-fits-${{ steps.validate.outputs.code }}-${{ steps.validate.outputs.variant }}-
-
-      - name: Probe market-data endpoint reachability
+            stock-fits-v2-${{ needs.prepare.outputs.code }}-${{ needs.prepare.outputs.variant }}-${{ hashFiles('research/lppls/**/*.py', 'research/optim/**/*.py', 'research/features/**/*.py', 'research/pipeline/stock.py', 'research/pipeline/daily.py', 'pyproject.toml') }}-
+      - name: Compute only the requested phase
+        if: github.event_name != 'pull_request'
+        id: compute
         shell: bash
-        run: |
-          set -u
-          for host in qt.gtimg.cn web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
-            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
-              --connect-timeout 10 --max-time 20 "https://$host" || true)
-            printf '%s: %s\n' "$host" "${code:-000}"
-          done
-
-      - name: Run current stock query
-        id: run_query
-        shell: bash
-        env:
-          STOCK_STDERR: ${{ runner.temp }}/stock-query.stderr
         run: |
           set +e
           mkdir -p out/stock
           python -m research.pipeline.stock "$CODE" \
-            --variant "$VARIANT" \
-            --history-weeks 0 \
-            --procs 4 \
-            --out out/stock 2>"$STOCK_STDERR"
+            --variant "$VARIANT" --phase "$MODE" --history-weeks "$WEEKS" \
+            --job-id "$JOB_ID" --requested-at "$REQUESTED_AT" --source-sha "$SOURCE_SHA" \
+            --procs 4 --cache-dir data/stock --out out/stock
           result=$?
           set -e
+          if [[ -d "data/stock/$CODE" ]]; then echo "cache_ready=true" >> "$GITHUB_OUTPUT"; fi
           if (( result == 0 )); then
             echo "failed=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          else
+            python -m research.pipeline.stock_jobs error
+            echo "failed=true" >> "$GITHUB_OUTPUT"
           fi
-          python - <<'PY'
-          import json
-          import os
-          from datetime import datetime, timezone
-          from pathlib import Path
-
-          stderr = Path(os.environ["STOCK_STDERR"]).read_text(
-              encoding="utf-8", errors="replace"
-          ).splitlines()
-          run_url = (
-              f'{os.environ["GITHUB_SERVER_URL"]}/{os.environ["GITHUB_REPOSITORY"]}'
-              f'/actions/runs/{os.environ["GITHUB_RUN_ID"]}'
-          )
-          error = {
-              "code": os.environ["CODE"],
-              "error": "\n".join(stderr[-20:]),
-              "run_url": run_url,
-              "generated_at": datetime.now(timezone.utc).isoformat(),
-          }
-          path = Path("out/stock") / f'{os.environ["CODE"]}_error.json'
-          path.write_text(json.dumps(error, ensure_ascii=False, indent=2), encoding="utf-8")
-          PY
-          echo "failed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Upload current result
-        if: always()
+      - name: Save fits after current or history computation
+        if: always() && github.event_name != 'pull_request' && steps.compute.outputs.cache_ready == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: data/stock/${{ needs.prepare.outputs.code }}
+          key: ${{ steps.fit_cache.outputs.cache-primary-key }}
+      - name: Preserve result or public error
+        if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: stock-current
+          name: stock-result-${{ needs.prepare.outputs.job_id }}
           path: out/stock/
           if-no-files-found: error
-
-      - name: Fail current query after preserving its error result
-        if: steps.run_query.outputs.failed == 'true'
+      - name: Mark failed computation
+        if: steps.compute.outputs.failed == 'true'
         run: exit 1
 
-  publish_current:
-    needs: query
+  publish:
+    needs: [prepare, query]
     if: >-
-      always() &&
-      github.event_name != 'pull_request' &&
+      always() && !cancelled() && github.event_name != 'pull_request' &&
+      needs.prepare.result == 'success' &&
       (needs.query.result == 'success' || needs.query.outputs.query_failed == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
     env:
-      CODE: ${{ needs.query.outputs.code }}
-      VARIANT: ${{ needs.query.outputs.variant }}
-      HISTORY_WEEKS: "0"
+      CODE: ${{ needs.prepare.outputs.code }}
+      VARIANT: ${{ needs.prepare.outputs.variant }}
+      HISTORY_WEEKS: ${{ needs.prepare.outputs.weeks }}
       STOCK_RESULT_DIR: out/stock
       STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: main
-          fetch-depth: 1
-
-      - name: Download current result
-        uses: actions/download-artifact@v4
+          ref: ${{ needs.prepare.outputs.source_sha }}
+      - uses: actions/download-artifact@v4
         with:
-          name: stock-current
+          name: stock-result-${{ needs.prepare.outputs.job_id }}
           path: out/stock
-
-      - name: Publish current result to stock-results
+      - name: Publish immutable job result and compatible latest pointers
         run: bash scripts/publish_stock_result.sh
-
-      - name: Dispatch Pages build
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
-
-      - name: Fail after publishing a failed query
+      - name: Preserve failed job status after publishing its error
         if: needs.query.outputs.query_failed == 'true'
         run: exit 1
-
-  history:
-    needs: [query, publish_current]
-    if: >-
-      always() &&
-      !cancelled() &&
-      needs.query.result == 'success' &&
-      github.event_name != 'pull_request' &&
-      needs.query.outputs.weeks != '0'
-    runs-on: ubuntu-latest
-    env:
-      CODE: ${{ needs.query.outputs.code }}
-      VARIANT: ${{ needs.query.outputs.variant }}
-      WEEKS: ${{ needs.query.outputs.weeks }}
-    steps:
-      - name: Checkout main for dispatched runs
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 1
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install project
-        run: python -m pip install -e .
-
-      - name: Restore stock fit cache
-        uses: actions/cache@v4
-        with:
-          path: data/stock/${{ needs.query.outputs.code }}
-          key: stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-${{ github.run_id }}
-          restore-keys: |
-            stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-${{ hashFiles('research/lppls/core.py', 'research/optim/optimizers.py', 'research/features/lppls_scan.py', 'research/pipeline/daily.py', 'research/pipeline/universe.py') }}-
-            stock-fits-${{ needs.query.outputs.code }}-${{ needs.query.outputs.variant }}-
-
-      - name: Probe market-data endpoint reachability
-        shell: bash
-        run: |
-          set -u
-          for host in qt.gtimg.cn web.ifzq.gtimg.cn finance.sina.com.cn hq.sinajs.cn; do
-            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
-              --connect-timeout 10 --max-time 20 "https://$host" || true)
-            printf '%s: %s\n' "$host" "${code:-000}"
-          done
-
-      - name: Run stock history
-        run: |
-          mkdir -p out/stock
-          python -m research.pipeline.stock "$CODE" \
-            --variant "$VARIANT" \
-            --history-weeks "$WEEKS" \
-            --procs 4 \
-            --out out/stock
-
-      - name: Upload history result
-        uses: actions/upload-artifact@v4
-        with:
-          name: stock-history
-          path: out/stock/
-          if-no-files-found: error
-
-  publish_history:
-    needs: [query, history]
-    if: needs.history.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
-    env:
-      CODE: ${{ needs.query.outputs.code }}
-      VARIANT: ${{ needs.query.outputs.variant }}
-      HISTORY_WEEKS: ${{ needs.query.outputs.weeks }}
-      STOCK_RESULT_DIR: out/stock
-      STOCK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 1
-
-      - name: Download history result
-        uses: actions/download-artifact@v4
-        with:
-          name: stock-history
-          path: out/stock
-
-      - name: Publish history to stock-results
-        run: bash scripts/publish_stock_result.sh
-
-      - name: Dispatch Pages build
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main

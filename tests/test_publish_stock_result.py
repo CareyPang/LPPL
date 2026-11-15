@@ -1,7 +1,13 @@
 import json
 import os
 import subprocess
+import sys
+import uuid
 from pathlib import Path
+
+import pytest
+
+from research.pipeline.stock_publish import merge_results
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "publish_stock_result.sh"
 
@@ -13,6 +19,7 @@ def _git(*args, cwd=None):
         check=True,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     ).stdout.strip()
 
 
@@ -39,14 +46,17 @@ def _publish(repo, result_dir, code, *, variant="stk_lite", weeks="104"):
         "HISTORY_WEEKS": weeks,
         "STOCK_RESULT_DIR": str(result_dir),
         "STOCK_RUN_URL": f"https://example.test/runs/{code}",
+        "STOCK_PYTHON": Path(sys.executable).as_posix(),
     }
+    bash = "C:/Program Files/Git/bin/bash.exe" if os.name == "nt" else "bash"
     return subprocess.run(
-        ["bash", str(SCRIPT)],
+        [bash, SCRIPT.as_posix()],
         cwd=repo,
         env=env,
         check=True,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
 
 
@@ -65,13 +75,13 @@ def test_publisher_creates_orphan_updates_index_and_publishes_error(tmp_path):
                 "symbol": "sh600519",
                 "name": "贵州茅台",
                 "asof": "2026-10-30",
-                "stock_meta": {"status": "eligible"},
+                "stock_meta": {"status": "eligible", "variant": "stk_lite"},
             }
         ),
         encoding="utf-8",
     )
     (result_dir / "600519_history.json").write_text(
-        '{"symbol":"sh600519","frames":[]}', encoding="utf-8"
+        '{"symbol":"sh600519","variant":"stk_lite","frames":[]}', encoding="utf-8"
     )
 
     _publish(repo, result_dir, "600519")
@@ -105,7 +115,8 @@ def test_publisher_creates_orphan_updates_index_and_publishes_error(tmp_path):
 
     index = _remote_json(origin, "stock/index.json")
     assert set(index) == {"000002", "600519"}
-    assert index["000002"]["status"] == "error"
+    assert index["000002"]["status"] == "eligible"
+    assert "last_error" in index["000002"]
     assert index["000002"]["asof"] == "2026-10-30"
     assert index["000002"]["history_weeks"] == 0
     assert _git("--git-dir", str(origin), "show", "stock-results:stock/000002.json")
@@ -276,3 +287,143 @@ def test_batch_publisher_skips_older_records_and_replaces_with_newer(tmp_path):
     latest_index = _remote_json(origin, "stock/index.json")
     assert latest_index["000001"]["asof"] == "2026-11-03"
     assert latest_index["000001"]["history_weeks"] == 3
+
+
+def _job_record(mode="current", requested_at="2026-11-06T00:00:00Z", **extra):
+    record = {"code": "600519", "job_id": str(uuid.uuid4()), "mode": mode,
+              "requested_at": requested_at, "source_sha": "a" * 40,
+              "asof": "2026-11-05", "variant": "stk_lite", "data_version": "data-v1",
+              "model_version": "model-v1", "fit_code_version": "fit-v1",
+              "schema_version": "stock_result_v1", "stock_meta": {"status": "eligible"}}
+    if mode == "history":
+        record["frames"] = [{"asof": "2026-10-30"}, {"asof": "2026-11-05"}]
+    return record | extra
+
+
+def _write(directory, name, record):
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / name).write_text(json.dumps(record), encoding="utf-8")
+
+
+def test_history_only_publishes_job_result_without_replacing_current(tmp_path):
+    origin, repo = _repositories(tmp_path)
+    out = repo / "out"
+    current = _job_record()
+    _write(out, "600519.json", current)
+    _publish(repo, out, "600519", weeks="0")
+    (out / "600519.json").unlink()
+    history = _job_record("history", "2026-11-06T00:01:00Z")
+    _write(out, "600519_history.json", history)
+    _publish(repo, out, "600519", weeks="104")
+    assert _remote_json(origin, "stock/600519.json") == current
+    assert _remote_json(origin, "stock/600519_history.json") == history
+    assert _remote_json(origin, f"stock/jobs/{history['job_id']}/600519_history.json") == history
+    assert _remote_json(origin, "stock/index.json")["600519"]["history_weeks"] == 2
+
+
+def test_late_job_and_error_are_archived_without_overwriting_new_good_result(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    latest = _job_record(requested_at="2026-11-06T01:00:00Z")
+    _write(out, "600519.json", latest)
+    merge_results(published, out, ["600519"])
+    old = _job_record(requested_at="2026-11-06T00:00:00Z")
+    error = old | {"error": "old failure", "error_code": "COMPUTE_FAILED"}
+    _write(out, "600519.json", old)
+    _write(out, "600519_error.json", error)
+    merge_results(published, out, ["600519"])
+    assert json.loads((published / "600519.json").read_text()) == latest
+    assert not (published / "600519_error.json").exists()
+    assert (published / "jobs" / old["job_id"] / "600519_error.json").exists()
+
+
+def test_new_failure_preserves_current_result_and_status(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    latest = _job_record()
+    _write(out, "600519.json", latest)
+    merge_results(published, out, ["600519"])
+    (out / "600519.json").unlink()
+    error = _job_record(requested_at="2026-11-06T01:00:00Z", error="failed", error_code="COMPUTE_FAILED")
+    _write(out, "600519_error.json", error)
+    merge_results(published, out, ["600519"])
+    assert json.loads((published / "600519.json").read_text()) == latest
+    entry = json.loads((published / "index.json").read_text())["600519"]
+    assert entry["status"] == "eligible" and entry["last_error"]["job_id"] == error["job_id"]
+
+
+def test_job_result_is_immutable_and_path_identity_is_validated(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    record = _job_record()
+    _write(out, "600519.json", record)
+    merge_results(published, out, ["600519"])
+    _write(out, "600519.json", record | {"asof": "2026-11-06"})
+    with pytest.raises(ValueError, match="immutable"):
+        merge_results(published, out, ["600519"])
+    _write(out, "600519.json", record | {"job_id": "../../escape"})
+    with pytest.raises(ValueError):
+        merge_results(published, out, ["600519"])
+    assert json.loads((published / "600519.json").read_text()) == record
+
+
+def test_current_keeps_compatible_history_but_archives_incompatible_version(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    current, history = _job_record(), _job_record("history")
+    _write(out, "600519.json", current)
+    _write(out, "600519_history.json", history)
+    merge_results(published, out, ["600519"])
+    (out / "600519_history.json").unlink()
+    next_current = _job_record(requested_at="2026-11-06T01:00:00Z")
+    _write(out, "600519.json", next_current)
+    merge_results(published, out, ["600519"])
+    assert json.loads((published / "600519_history.json").read_text()) == history
+    _write(out, "600519.json", _job_record(requested_at="2026-11-06T02:00:00Z", fit_code_version="fit-v2"))
+    merge_results(published, out, ["600519"])
+    assert not (published / "600519_history.json").exists()
+    assert list((published / "archive").glob("600519_history-*.json"))
+    assert (published / "jobs" / history["job_id"] / "600519_history.json").exists()
+
+
+def test_append_only_data_keeps_history_but_restatement_retires_it(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    history = _job_record("history", frames=[{"asof": "2026-11-05", "fit_input_hash": "original"}])
+    _write(out, "600519.json", _job_record())
+    _write(out, "600519_history.json", history)
+    merge_results(published, out, ["600519"])
+    (out / "600519_history.json").unlink()
+    _write(out, "600519.json", _job_record(
+        requested_at="2026-11-06T01:00:00Z", data_version="next-day",
+        history_input_hashes={"2026-11-05": "original"},
+    ))
+    merge_results(published, out, ["600519"])
+    assert (published / "600519_history.json").exists()
+    _write(out, "600519.json", _job_record(
+        requested_at="2026-11-06T02:00:00Z", data_version="restated",
+        history_input_hashes={"2026-11-05": "revised"},
+    ))
+    merge_results(published, out, ["600519"])
+    assert not (published / "600519_history.json").exists()
+    assert json.loads((published / "index.json").read_text())["600519"]["history_weeks"] == 0
+
+
+def test_late_history_never_replaces_newer_history(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    _write(out, "600519.json", _job_record())
+    latest = _job_record("history", "2026-11-06T02:00:00Z")
+    _write(out, "600519_history.json", latest)
+    merge_results(published, out, ["600519"])
+    (out / "600519.json").unlink()
+    late = _job_record("history", "2026-11-06T01:00:00Z")
+    _write(out, "600519_history.json", late)
+    merge_results(published, out, ["600519"])
+    assert json.loads((published / "600519_history.json").read_text()) == latest
+    assert (published / "jobs" / late["job_id"] / "600519_history.json").exists()
+
+
+def test_old_nightly_cannot_roll_back_breadth(tmp_path):
+    published, out = tmp_path / "stock", tmp_path / "out"
+    _write(out, "600519.json", _job_record())
+    latest = {"asof": "2026-11-05", "generated_at": "2026-11-06T01:00:00Z", "n": 300}
+    _write(out, "breadth_sh000300.json", latest)
+    merge_results(published, out, ["600519"])
+    _write(out, "breadth_sh000300.json", {"asof": "2026-11-04", "generated_at": "2026-11-06T02:00:00Z", "n": 250})
+    merge_results(published, out, ["600519"])
+    assert json.loads((published / "breadth_sh000300.json").read_text()) == latest

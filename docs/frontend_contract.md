@@ -1,5 +1,7 @@
 # 前端数据契约（Open Design 交接）
 
+> 2026-11-13 个股异步 P0 补充：本文件的指数静态契约和 §3–4 证据规则保持不变；个股工作站新增的 `/market`、任务身份、独立 current/history、状态和可见时间见 [Worker API](../workers/stock-query/README.md) 及 [本轮验收报告](validation/2026-11-13-stock-current-first-p0.md)。下文旧版“后端不提供 API”仅描述初始静态交接，不用于否定个股异步接口。所有数据仍通过 `frontend/app/lppl-data.js` 进入页面。
+
 目的：外部前端（Open Design，目录 `frontend/`）只通过本文列出的静态 JSON 与后端对接。后端不提供 API 服务（规划 2027-H2），仓库数据源位于 `web/mock/data/`，GitHub Pages 发布路径为 `lab/mock/data/`（例如 `https://careypang.github.io/LPPL/lab/mock/data/…`）。字段含义以 `docs/product_contract.md` 和 `research/eval/export_contract.py` 为准，本文只是索引；字段改名放在前端适配层，后端 JSON 不为前端改名。
 
 ## 1. 文件清单

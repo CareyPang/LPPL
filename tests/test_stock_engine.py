@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -115,6 +116,9 @@ def _install_fake_model(monkeypatch):
     monkeypatch.setattr(stock, "_history_frame", _fake_history_frame)
     monkeypatch.setattr(stock, "build_record", _fake_record)
     monkeypatch.setattr(stock, "_variant_windows", lambda variant, n: (127, 152))
+    # Numerical/cache fixtures use their synthetic calendar, never a live
+    # reference-index fetch. Dedicated calendar tests exercise the real helper.
+    monkeypatch.setattr(stock, "_display_calendar", lambda index, _asof: index)
     monkeypatch.setattr(
         stock,
         "_trading_days_stale",
@@ -663,6 +667,15 @@ def test_model_code_version_does_not_call_git(monkeypatch):
     assert stock._version() == expected
 
 
+def test_model_code_version_does_not_mutate_active_engine(monkeypatch):
+    monkeypatch.setattr(stock._core, "ALLOW_INSIDE", False)
+    before = stock._version()
+    assert stock._core.ALLOW_INSIDE is False
+    monkeypatch.setattr(stock._core, "ALLOW_INSIDE", True)
+    assert stock._version() == before
+    assert stock._core.ALLOW_INSIDE is True
+
+
 def test_stock_fit_version_changes_with_optimizer_bytes(monkeypatch, tmp_path):
     dependencies = (
         "research/lppls/core.py",
@@ -670,6 +683,8 @@ def test_stock_fit_version_changes_with_optimizer_bytes(monkeypatch, tmp_path):
         "research/features/lppls_scan.py",
         "research/pipeline/daily.py",
         "research/pipeline/universe.py",
+        "research/pipeline/stock.py",
+        "pyproject.toml",
     )
     for relative in dependencies:
         target = tmp_path / relative
@@ -921,3 +936,118 @@ def test_name_and_st_returns_none_on_tencent_http_failure(monkeypatch, tmp_path)
 
     monkeypatch.setattr(stock.requests, "get", fail_http)
     assert stock._name_and_st("301196") == (None, None)
+
+def test_history_only_cli_never_predicts_and_preserves_job_identity(tmp_path, monkeypatch):
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("history must not recompute/fetch the current phase")
+
+    calls = []
+    monkeypatch.setattr(stock, "predict", unexpected)
+    monkeypatch.setattr(stock, "load_stock", unexpected)
+
+    def fake_history(code, **kwargs):
+        calls.append((code, kwargs))
+        return {"model_version": "model", "fit_code_version": "fits", "data_version": "data",
+                "frames": [{"asof": "2026-11-05"}]}
+
+    monkeypatch.setattr(stock, "history", fake_history)
+    job = "35fb2d27-e5cf-4820-bb27-c3d099540c1a"
+    monkeypatch.setattr(sys, "argv", ["stock", "600519", "--phase", "history", "--history-weeks", "104",
+        "--job-id", job, "--requested-at", "2026-11-06T00:00:00Z", "--source-sha", "a" * 40,
+        "--out", str(tmp_path), "--cache-dir", str(tmp_path / "fits")])
+    stock.main()
+    assert len(calls) == 1 and calls[0][1]["weeks"] == 104
+    assert not (tmp_path / "600519.json").exists()
+    record = json.loads((tmp_path / "600519_history.json").read_text())
+    assert (record["job_id"], record["mode"], record["code"]) == (job, "history", "600519")
+    assert record["frames"][0]["source_sha"] == "a" * 40
+    assert record["frames"][0]["fit_code_version"] == "fits"
+
+
+def test_current_cli_does_not_schedule_history(tmp_path, monkeypatch):
+    monkeypatch.setattr(stock, "predict", lambda *_args, **_kwargs: {"asof": "2026-11-05"})
+
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("current does not schedule history")
+
+    monkeypatch.setattr(stock, "history", unexpected)
+    monkeypatch.setattr(sys, "argv", ["stock", "600519", "--phase", "current", "--out", str(tmp_path)])
+    stock.main()
+    assert (tmp_path / "600519.json").exists()
+    assert not (tmp_path / "600519_history.json").exists()
+
+
+def test_current_and_history_reuse_identical_fit_cache(monkeypatch, tmp_path):
+    _install_fake_model(monkeypatch)
+    prices = _ohlc(600)
+    monkeypatch.setattr(stock, "load_stock", lambda *_args: (prices.copy(), "data-v1", {"ipo_in_range": False}))
+    monkeypatch.setattr(stock, "_name_and_st", lambda _code: ("sample", False))
+    calls = []
+
+    def fit(logp, date, windows):
+        calls.append((date, windows))
+        return _fake_fit_asof(logp, date, windows)
+
+    monkeypatch.setattr(stock, "fit_asof", fit)
+    current = stock.predict("600519", procs=1, cache_dir=tmp_path)
+    assert len(calls) == 2
+    calls.clear()
+    historical = stock.history("600519", weeks=1, procs=1, cache_dir=tmp_path)
+    assert calls == []
+    assert historical["frames"][-1]["scenarios"] == current["top"]["scenarios"]
+
+
+def test_cache_key_covers_exact_input_dates_configuration_and_optimizer(monkeypatch):
+    logp = stock._fit_logp(_ohlc(600))
+    windows = (127, 152)
+    before = stock._fit_input_version(logp, logp.index[-1], windows)
+    changed = logp.copy()
+    changed.iloc[-2] += 1e-12
+    assert stock._fit_input_version(changed, changed.index[-1], windows) != before
+    changed = logp.copy()
+    dates = changed.index.to_numpy(copy=True)
+    dates[-2] += np.timedelta64(1, "h")
+    changed.index = pd.DatetimeIndex(dates)
+    assert stock._fit_input_version(changed, changed.index[-1], windows) != before
+    version = stock._version()
+    monkeypatch.setattr(stock.lppls_scan, "SIGN", "neg")
+    assert stock._version() != version
+    monkeypatch.setattr(stock.lppls_scan, "SIGN", "pos")
+    original_read = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", lambda path: original_read(path) + (
+        b"\n# optimizer changed" if path.as_posix().endswith("optim/optimizers.py") else b""
+    ))
+    assert stock._version() != version
+
+
+def test_interrupted_cache_write_preserves_previous_file(tmp_path, monkeypatch):
+    path = tmp_path / "fits.parquet"
+    path.write_bytes(b"previous valid cache")
+
+    def interrupted(_frame, target, **_kwargs):
+        Path(target).write_bytes(b"partial new cache")
+        raise OSError("disk full")
+
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", interrupted)
+    with pytest.raises(OSError, match="disk full"):
+        stock._atomic_parquet(pd.DataFrame({"n": [127]}), path)
+    assert path.read_bytes() == b"previous valid cache"
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_thursday_history_stays_compatible_after_friday_append(monkeypatch, tmp_path):
+    from research.pipeline.stock_publish import history_compatible
+
+    _install_fake_model(monkeypatch)
+    start = str(pd.bdate_range(end="2026-11-05", periods=600)[0].date())
+    prices = [_ohlc(600, start=start)]
+    version = ["thursday"]
+    monkeypatch.setattr(stock, "load_stock", lambda *_args: (prices[0].copy(), version[0], {"ipo_in_range": False}))
+    monkeypatch.setattr(stock, "_name_and_st", lambda _code: ("sample", False))
+    history = stock.history("600519", weeks=2, procs=1, cache_dir=tmp_path)
+    assert history["frames"][-1]["asof"] == "2026-11-05"
+    prices[0], version[0] = _ohlc(601, start=start), "friday"
+    current = stock.predict("600519", procs=1, cache_dir=tmp_path)
+    assert current["asof"] == "2026-11-06"
+    assert current["history_input_hashes"]["2026-11-05"] == history["frames"][-1]["fit_input_hash"]
+    assert history_compatible(history, current)
