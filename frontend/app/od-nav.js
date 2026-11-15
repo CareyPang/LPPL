@@ -419,7 +419,7 @@
     if (li && Number(li.dataset.i) !== mSel) { mSel = Number(li.dataset.i); drawModal(); }
   });
   document.addEventListener('keydown', function (e) {
-    if (e.isComposing || e.keyCode === 229) return;
+    if (e.isComposing || e.keyCode === 229 || e.defaultPrevented) return; /* 图表等组件已处理（如按 0 复位）的按键不再呼出搜索 */
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openSearch(''); return; }
     if (modal.classList.contains('on')) {
       if (e.key === 'Escape') { closeSearch(); return; }
