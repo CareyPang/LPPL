@@ -6,12 +6,13 @@
   var panel = window.StrategyPanel ? StrategyPanel.mount({ el: document.getElementById('strategy-panel') }) : null;
   var loadedFor = '';
   function currentSym() {
-    var q = new URLSearchParams(location.search).get('code') || new URLSearchParams(location.search).get('sym');
-    var S = window.LPPL && q ? LPPL.resolve(q) : null;
-    if (S) return S;
+    /* 先看页面当前选中的指数（#sym-n），地址里的 ?code 只是初始值，用户切换后不能再钉住它 */
     var name = (document.getElementById('sym-n') || {}).textContent || '';
     var hit = (window.LPPL && LPPL.SYMS || []).filter(function (x) { return x.name === name.trim(); })[0];
-    return hit || (window.LPPL && LPPL.SYMS && LPPL.SYMS[0]) || null;
+    if (hit) return hit;
+    var q = new URLSearchParams(location.search).get('code') || new URLSearchParams(location.search).get('sym');
+    var S = window.LPPL && q ? LPPL.resolve(q) : null;
+    return S || (window.LPPL && LPPL.SYMS && LPPL.SYMS[0]) || null;
   }
   function loadStrategy() {
     var S = currentSym();
