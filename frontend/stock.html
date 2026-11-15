@@ -167,6 +167,7 @@
     .cat-note { color: var(--ink-3); font-size: 12px; margin: var(--s3) 0 0; }
     .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     /* 标的页头部 + sticky 页签 */
+    #sym-head { display: contents; } /* 让 .sh-tabs 的 sticky 容器是整个 #results，而不是只到页签条为止 */
     .sh-main { display: flex; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; align-items: flex-start; padding-bottom: var(--s4); }
     .sh-name { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; }
     .sh-name h2 { margin: 0; font: 600 clamp(26px, 3.2vw, 36px)/1.15 var(--serif); letter-spacing: .04em; }
