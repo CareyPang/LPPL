@@ -42,13 +42,8 @@
   var SUB = {
     market: MARKET_SUB,
     nt: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
-    stock: [
-      { t: '查询', h: '#search', ids: ['search'] },
-      { t: '本地自选', h: '#watch-section', ids: ['watch-section'] },
-      { t: '近期事件', h: '#recent-events', ids: ['recent-events', 'stock-events'] },
-      { t: '逃顶', h: '#sec-top', ids: ['sec-top'] },
-      { t: '抄底', h: '#sec-dip', ids: ['sec-dip'] }
-    ]
+    /* 标的页的页签由页面自己的吸顶头部提供（app/stock-header.js），顶栏不再重复一层 */
+    stock: null
   };
 
   /* 视觉参照 TradingView：主页签一直可见；页面级子页签用底边下划线（切换视图），筛选器/指数条仍是圆角胶囊 */
