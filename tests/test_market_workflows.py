@@ -46,6 +46,16 @@ def test_market_event_smoke_uses_trading_date_helper():
     )
 
 
+def test_market_build_loads_previous_stock_results_snapshots():
+    workflow = _workflow("market_daily.yml")
+    fetch = next(
+        step for step in workflow["jobs"]["collect"]["steps"] if step.get("id") == "fetch"
+    )
+
+    assert "git archive origin/stock-results market" in fetch["run"]
+    assert "--prev-dir out/previous-market" in fetch["run"]
+
+
 def test_nt_etf_workflow_bootstraps_and_uses_trading_date():
     workflow = _workflow("nt_etf_daily.yml")
     steps = workflow["jobs"]["collect"]["steps"]

@@ -254,9 +254,136 @@ def test_limit_pool_summary_uses_fraction_and_all_three_pools():
     assert result["max_streak"] == max(int(row["lbc"]) for row in zt)
     assert len(result["top20"]["zt"]) == zt_n
     assert len(result["zt_rows"]) == zt_n
+    zb_raw = payloads["getTopicZBPool"]["data"]["pool"][0]
+    zb_row = result["zb_rows"][0]
+    assert zb_row["code"] == zb_raw["c"]
+    assert zb_row["first_seal"] == market._fmt_limit_time(zb_raw["fbt"])
+    assert zb_row["break_times"] == zb_raw["zbc"]
+    assert zb_row["amplitude"] == zb_raw["zf"]
+    assert zb_row["zt_days"] == zb_raw["zttj"]["days"]
+    assert zb_row["zt_ct"] == zb_raw["zttj"]["ct"]
+    dt_raw = payloads["getTopicDTPool"]["data"]["pool"][0]
+    dt_row = result["dt_rows"][0]
+    assert dt_row["code"] == dt_raw["c"]
+    assert dt_row["last_seal"] == market._fmt_limit_time(dt_raw["lbt"])
+    assert dt_row["seal_fund"] == dt_raw["fund"]
+    assert dt_row["board_amount"] == dt_raw["fba"]
+    assert dt_row["days"] == dt_raw["days"]
+    assert dt_row["open_times"] == dt_raw["oc"]
     assert result["promotion"]["n_prev_total"] == len(
         payloads["getYesterdayZTPool"]["data"]["pool"]
     )
+
+
+def test_limit_zt_row_parses_optional_zttj_fields():
+    row = _today_zt_row("600000", 2)
+    row["zttj"] = {"days": 3, "ct": 2}
+
+    parsed = market._limit_zt_row(row)
+
+    assert parsed["zt_days"] == 3
+    assert parsed["zt_ct"] == 2
+    row.pop("zttj")
+    parsed_without_summary = market._limit_zt_row(row)
+    assert parsed_without_summary["zt_days"] is None
+    assert parsed_without_summary["zt_ct"] is None
+
+
+def test_sina_breadth_distribution_buckets_boundaries_and_limit_sets():
+    points = [
+        ("000001", 10.01, "gt10"),
+        ("000002", 10, "7_10"),
+        ("000003", 7.01, "7_10"),
+        ("000004", 7, "3_7"),
+        ("000005", 3.01, "3_7"),
+        ("000006", 3, "0_3"),
+        ("000007", 0, "flat"),
+        ("000008", -0.01, "m0_3"),
+        ("000009", -3, "m0_3"),
+        ("000010", -3.01, "m3_7"),
+        ("000011", -7, "m3_7"),
+        ("000012", -7.01, "m7_10"),
+        ("000013", -10, "m7_10"),
+        ("000014", -10.01, "lt10"),
+        ("000015", 10.01, "zt"),
+        ("000016", -10.01, "dt"),
+    ]
+    rows = [{"code": code, "changepercent": pct} for code, pct, _ in points]
+    rows[-2]["code"] = "sz000015"
+    result = market._sina_breadth_dist(rows, {"000015"}, {"000016"})
+
+    assert list(result["dist"]) == list(market.SINA_DIST_KEYS)
+    assert result["dist_n"] == len(points)
+    assert result["dist"] == {
+        "zt": 1,
+        "gt10": 1,
+        "7_10": 2,
+        "3_7": 2,
+        "0_3": 1,
+        "flat": 1,
+        "m0_3": 2,
+        "m3_7": 2,
+        "m7_10": 2,
+        "lt10": 1,
+        "dt": 1,
+    }
+    assert result["dist_limit_sets"] is True
+
+    without_limits = market._sina_breadth_dist(rows)
+    assert without_limits["dist_limit_sets"] is False
+    assert without_limits["dist"]["gt10"] == 2
+    assert without_limits["dist"]["lt10"] == 2
+    assert without_limits["dist"]["zt"] == without_limits["dist"]["dt"] == 0
+
+
+def test_fetch_breadth_keeps_index_data_when_sina_distribution_fails(monkeypatch):
+    class Client:
+        def get_json(self, *_args, **_kwargs):
+            return fixture("market_review_breadth.json")
+
+    monkeypatch.setattr(
+        market,
+        "_sina_pages",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("Sina unavailable")),
+    )
+
+    result = market.fetch_breadth(Client(), session=object())
+
+    assert result["up"] == sum(row["up"] for row in result["indices"])
+    assert result["dist"] is None
+    assert result["dist_source"] == "sina hs_a"
+    assert result["dist_limit_sets"] is False
+    assert "Sina unavailable" in result["dist_error"]
+
+
+def test_previous_market_snapshot_selects_latest_strictly_before_asof():
+    snapshots = [
+        {"asof": "2026-11-12", "breadth": {"amount_yuan": 100}},
+        {"asof": "2026-11-13", "breadth": {"amount_yuan": 130}},
+        {"asof": "2026-11-14", "breadth": {"amount_yuan": 150}},
+        {"asof": "bad-date", "breadth": {"amount_yuan": 180}},
+        {"asof": "2026-11-13", "breadth": {"amount_yuan": "bad"}},
+    ]
+
+    assert market.select_previous_market_snapshot(snapshots, "2026-11-14") == {
+        "asof": "2026-11-13",
+        "amount_yuan": 130.0,
+    }
+    assert market.select_previous_market_snapshot(snapshots, "2026-11-12") is None
+
+
+def test_load_previous_market_snapshot_skips_bad_files(tmp_path):
+    (tmp_path / "2026-11-12.json").write_text(
+        json.dumps({"asof": "2026-11-12", "breadth": {"amount_yuan": 100}}),
+        encoding="utf-8",
+    )
+    (tmp_path / "2026-11-13.json").write_text("{bad", encoding="utf-8")
+
+    assert market.load_previous_market_snapshot(tmp_path, "2026-11-14") == {
+        "asof": "2026-11-12",
+        "amount_yuan": 100.0,
+    }
+    assert market.load_previous_market_snapshot(tmp_path / "missing", "2026-11-14") is None
 
 
 def _yesterday_row(code, level, pct):

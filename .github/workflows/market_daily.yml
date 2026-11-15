@@ -59,7 +59,11 @@ jobs:
           set -euo pipefail
           snapshot_date="$(python -m research.data.trading_date)"
           echo "asof=$snapshot_date" >> "$GITHUB_OUTPUT"
-          python -m research.data.market_base --date "$snapshot_date" --out out/market
+          mkdir -p out/previous-market
+          if git cat-file -e origin/stock-results:market 2>/dev/null; then
+            git archive origin/stock-results market | tar -xf - -C out/previous-market --strip-components=1
+          fi
+          python -m research.data.market_base --date "$snapshot_date" --out out/market --prev-dir out/previous-market
           abnormal_ok=false
           if python -m research.data.abnormal --market out/market/market_latest.json --out out/abnormal; then
             abnormal_ok=true
