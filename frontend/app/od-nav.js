@@ -385,7 +385,9 @@
   function closeSearch() {
     if (!modal.classList.contains('on')) return;
     modal.classList.remove('on');
-    if (lastFocus && lastFocus.focus && lastFocus !== qi) lastFocus.focus();
+    mi.blur(); /* 不能把焦点留在隐藏的输入框里，否则全局“直接打字呼出搜索”会失效 */
+    if (lastFocus && lastFocus.focus && lastFocus !== qi && lastFocus !== mi) lastFocus.focus();
+    else if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
   mi.addEventListener('input', function () { mSel = 0; drawModal(); });
   mi.addEventListener('keydown', function (e) {
