@@ -16,6 +16,7 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e .
       - name: Check forward log
+        shell: bash
         run: python -m research.pipeline.forward_log check --max-stale 5 | tee forward_log_check.json
       - name: Precision review of matured records (top side)
         if: always()
