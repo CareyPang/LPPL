@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Fetch stock-results history
-        run: git fetch origin +refs/heads/stock-results:refs/remotes/origin/stock-results || true
+        run: git fetch origin +refs/heads/stock-results:refs/heads/stock-results +refs/heads/stock-results:refs/remotes/origin/stock-results || true
       - uses: actions/configure-pages@v5
         with:
           enablement: true   # 首次运行自动创建 Pages 站点（源=GitHub Actions），无需手动在 Settings 开启
