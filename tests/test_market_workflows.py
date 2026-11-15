@@ -114,3 +114,32 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
         '-c user.email="41898282+github-actions[bot]@users.noreply.github.com" \\',
         "rebase origin/stock-results",
     ]
+
+
+def test_index_replay_workflow_accepts_dispatch_and_publishes_under_index_replay():
+    workflow = _workflow("index_replay.yml")
+    triggers = workflow.get("on", workflow.get(True, {}))
+    steps = {step.get("name"): step for step in workflow["jobs"]["replay"]["steps"] if step.get("name")}
+
+    assert triggers["repository_dispatch"] == {"types": ["index_replay"]}
+    assert workflow["run-name"].startswith("index_replay ${{ github.event.client_payload.sym || inputs.sym")
+    assert set(triggers["workflow_dispatch"]["inputs"]) == {"sym", "asof", "job_id"}
+    assert workflow["permissions"] == {"contents": "write"}
+    assert "index-replay-" in workflow["concurrency"]["group"]
+    assert workflow["concurrency"]["cancel-in-progress"] is False
+
+    validate = steps["Validate request"]["run"]
+    for sym in ("sh000001", "sh000016", "sh000300", "sh000905", "sh000688", "sz399001", "sz399006"):
+        assert sym in validate
+    assert "asof must be YYYY-MM-DD" in validate
+
+    run = steps["Run as-of index fit"]
+    assert run["if"] == "github.event_name != 'pull_request'"
+    assert 'python -m research.pipeline.daily "$SYM" --asof "$ASOF" --out out/index' in run["run"]
+    assert '"status": "failed"' in run["run"]
+    assert 'permanent = "不是交易日" in msg' in run["run"]
+
+    publish = steps["Publish to stock-results"]
+    assert publish["if"] == "github.event_name != 'pull_request'"
+    assert 'target="index/replay/${SYM}_${ASOF}.json"' in publish["run"]
+    assert "git push origin HEAD:stock-results" in publish["run"]

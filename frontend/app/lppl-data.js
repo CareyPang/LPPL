@@ -99,13 +99,50 @@
     let file = S.sym + '_latest.json', latest = true;
     if (asof) {
       const ok = REPLAYS[S.sym] || [];
-      if (!ok.includes(asof)) throw new Error('该日期没有回放数据' + (ok.length ? '（' + S.name + '只开放 ' + ok.join('、') + '）' : '（' + S.name + '暂无回放）'));
+      if (!ok.includes(asof)) {
+        const key = S.sym + '@' + asof;
+        let R = await replay.result(S.sym, asof);
+        if (R.status === 'ready' && R.result) return pack(R.result, S, asof, false, true);
+        if (R.status === 'missing' && !replayRequested.has(key)) {
+          R = await replay.request(S.sym, asof);
+          if (R.status === 'ready' && R.result) return pack(R.result, S, asof, false, true);
+          if (R.status === 'pending') replayRequested.add(key);
+        }
+        if (R.status === 'failed') {
+          throw new Error('该日期回看计算失败：' + (R.error || '未知原因') + (R.permanent ? '。请换一个交易日' : '。' + (R.retry_after_minutes || 30) + ' 分钟后可重试'));
+        }
+        const e = new Error(R.message || ('该日期的回看结果还没有算过，已提交后台按 ' + asof + ' 当日及以前的数据现算，约 10 分钟'));
+        e.pending = true; e.sym = S.sym; e.asof = asof; e.job_id = R.job_id || null;
+        throw e;
+      }
       file = S.sym + '_' + asof + '.json'; latest = false;
     }
-    const J = await getJSON(file);
-    const B = bars(J.price_history);
-    return { raw: J, top: J.top || {}, bottom: J.bottom || {}, sym: S, name: J.name || S.name, asof: J.asof, latest, bars: B, T: B.length - 1 };
+    return pack(await getJSON(file), S, asof, latest, false);
   }
+  function pack(J, S, asof, latest, replayed) {
+    const B = bars(J.price_history);
+    return { raw: J, top: J.top || {}, bottom: J.bottom || {}, sym: S, name: J.name || S.name, asof: J.asof || asof, latest, replayed, bars: B, T: B.length - 1 };
+  }
+
+  /** 通用回看：任选站点指数 + 日期。result() 只读已存结果（404 → missing，不触发计算）；
+      request() 触发一次后台计算，同一页面对同一 sym+asof 只 POST 一次，之后每 30 秒只 GET */
+  const replayRequested = new Set();
+  const replay = {
+    result: async (sym, asof) => {
+      const q = '?sym=' + encodeURIComponent(sym) + '&asof=' + encodeURIComponent(asof);
+      const r = await fetch(queryApi() + '/replay/result' + q, { cache: 'no-store' });
+      if (r.status === 200) return r.json();
+      if (r.status === 404) return { status: 'missing', sym, asof };
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || ('回看服务错误 ' + r.status));
+    },
+    request: async (sym, asof) => {
+      const r = await fetch(queryApi() + '/replay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sym, asof }) });
+      const J = await r.json().catch(() => ({}));
+      if (r.status === 200 || r.status === 202) return J;
+      throw new Error(J.error || ('回看请求失败 ' + r.status));
+    },
+  };
 
   /** 证据等级 → {label, show}；show=false 时不得显示数值 */
   function ev(code, levels) {
@@ -191,5 +228,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, strategy, ev, catalog, history, stock, market, stockList, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, market, stockList, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
 })(window);
