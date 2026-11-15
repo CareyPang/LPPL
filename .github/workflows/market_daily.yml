@@ -10,6 +10,10 @@ on:
       - research/data/range_stats.py
       - research/data/market_base.py
       - research/data/events.py
+      - research/data/trading_date.py
+      - research/dip/env.py
+      - tests/test_trading_date.py
+      - tests/test_market_workflows.py
       - frontend/market.html
       - frontend/stock.html
       - frontend/app/lppl-data.js
@@ -52,7 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          snapshot_date="$(python -m research.data.trading_date)"
           echo "asof=$snapshot_date" >> "$GITHUB_OUTPUT"
           python -m research.data.market_base --date "$snapshot_date" --out out/market
           abnormal_ok=false
@@ -82,7 +86,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          snapshot_date="$(python -m research.data.trading_date)"
           git fetch --no-tags origin stock-results
           mkdir -p out/events
           if git cat-file -e origin/stock-results:events/events_latest.json 2>/dev/null; then
@@ -149,11 +153,11 @@ jobs:
         run: python -m pip install -e .
       - name: Smoke event calendar
         continue-on-error: true
-        run: python -m research.data.events --out out/events
+        run: python -m research.data.events --date "$(python -m research.data.trading_date)" --out out/events
       - name: Fetch without publishing and summarize sources
         shell: bash
         run: |
-          snapshot_date="$(python -c 'from datetime import datetime; from zoneinfo import ZoneInfo; print(datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat())')"
+          snapshot_date="$(python -m research.data.trading_date)"
           python -m research.data.market_base --date "$snapshot_date" --out out/market
           python - <<'PY'
           import json

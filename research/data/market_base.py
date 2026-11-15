@@ -10,7 +10,7 @@ import statistics
 import tempfile
 import time
 import uuid
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
@@ -2071,11 +2071,16 @@ def write_snapshot(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--date", default=date.today().isoformat())
+    parser.add_argument("--date")
     parser.add_argument("--out", type=Path, default=Path("web/mock/data/market"))
     args = parser.parse_args(argv)
-    pd.Timestamp(args.date)
-    payload = fetch_market(args.date)
+    asof = args.date
+    if asof is None:
+        from .trading_date import latest_closed_trading_day
+
+        asof = latest_closed_trading_day()
+    pd.Timestamp(asof)
+    payload = fetch_market(asof)
     latest, dated, board = write_snapshot(payload, args.out)
     public = {key: value for key, value in payload.items() if not key.startswith("_")}
     row_counts = {
