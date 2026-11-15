@@ -347,7 +347,7 @@
     if (!q) {
       mHits = S.recentHits(store()).map(function (h) { if (h.kind !== 'index' && h.t === h.code) { var n = nameOf(h.code); if (n) h.t = n; } return h; });
       if (mFilter !== 'all') mHits = mHits.filter(function (h) { return mFilter === 'index' ? h.kind === 'index' : h.kind !== 'index'; });
-      mSel = 0;
+      if (mSel >= mHits.length) mSel = 0;
       ml.innerHTML = mHits.length
         ? '<li class="odm-g">最近访问</li>' + mHits.map(function (h, i) { return hitHtml(h, i, i === mSel); }).join('')
         : '<li class="odm-e">输入股票名、拼音首字母、6 位代码或指数名；美股输代码（如 NVDA）。</li>';
