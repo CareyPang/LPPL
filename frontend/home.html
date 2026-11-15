@@ -272,7 +272,7 @@ function recent(asof){
 /* ---------- 首屏搜索框：交给全站搜索弹窗（od-nav.js） ---------- */
 (function(){
  const f=$('hsrch'),i=$('hs-i');if(!f)return;
- const open=()=>{if(window.OdNav&&OdNav.openSearch){OdNav.openSearch(i.value||'');i.value='';}else location.href='stock.html'};
+ const open=()=>{if(window.OdNav&&OdNav.openSearch){const v=i.value;i.value='';i.blur();OdNav.openSearch(v||'');}else location.href='stock.html'};
  i.addEventListener('focus',open);i.addEventListener('click',open);f.addEventListener('submit',e=>{e.preventDefault();open()});
 })();
 /* ---------- 入口缩略图：用真实数据 ---------- */
