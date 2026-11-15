@@ -74,3 +74,26 @@ def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
     assert 'git add "stock/dip_env/options/${snapshot_date}.json"' in run
     assert 'echo "options archive skipped (intraday)"' in run
     assert "git add stock/_dip_env.json" in run
+
+
+def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
+    workflow = _workflow("index_daily.yml")
+    triggers = workflow.get("on", workflow.get(True, {}))
+    run_index = next(
+        step
+        for step in workflow["jobs"]["update"]["steps"]
+        if step.get("name") == "Run latest closed-day index fits"
+    )
+    publish = next(
+        step
+        for step in workflow["jobs"]["update"]["steps"]
+        if step.get("name") == "Publish to stock-results"
+    )
+
+    assert triggers["schedule"] == [{"cron": "0 10 * * 1-5"}]
+    assert triggers["workflow_dispatch"] is None
+    assert 'symbols=(sh000001 sh000016 sh000300 sh000905 sz399001 sz399006)' in run_index["run"]
+    assert 'symbols=(sh000001)' in run_index["run"]
+    assert publish["if"] == (
+        "github.event_name != 'pull_request' && steps.run.outputs.success_count != '0'"
+    )

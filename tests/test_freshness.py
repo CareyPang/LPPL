@@ -81,6 +81,25 @@ def test_check_counts_trading_days_and_returns_stale_items(tmp_path, monkeypatch
     assert len(report["stale"]) == len(freshness.DATASETS)
 
 
+def test_check_includes_index_lppls_dataset(tmp_path, monkeypatch):
+    path = tmp_path / "index/sh000001_latest.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({"asof": "2026-11-16"}), encoding="utf-8")
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(["2026-11-16"]),
+    )
+
+    report = freshness.check(
+        tmp_path, pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai")
+    )
+
+    index = next(item for item in report["items"] if item["key"] == "index")
+    assert ("index", "6 指数 LPPLS", "index/sh000001_latest.json") in freshness.DATASETS
+    assert (index["day"], index["lag"], index["status"]) == ("2026-11-16", 0, "ok")
+
+
 def test_markdown_uses_chinese_status_table():
     text = freshness.render_markdown(
         {

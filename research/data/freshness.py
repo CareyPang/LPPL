@@ -19,6 +19,7 @@ DATASETS = [
     ("dip_env", "指数/ETF 环境", "stock/_dip_env.json"),
     ("breadth_sh000300", "沪深300 个股批量", "stock/breadth_sh000300.json"),
     ("breadth_sh000905", "中证500 个股批量", "stock/breadth_sh000905.json"),
+    ("index", "6 指数 LPPLS", "index/sh000001_latest.json"),
 ]
 
 
