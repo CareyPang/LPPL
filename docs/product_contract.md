@@ -83,3 +83,7 @@
 - `northbound` 只保存 HKEX 北向成交额、交易笔数与 ETF 成交额，成交额保留 HKEX 原值、不缩放。2024-08 后官方文件不提供买卖额或净额；字段名只能使用 turnover/trades，不得出现“净流入”。文件缺失返回 null。
 - `valuation.indices` 包含四个指定中证指数的日期、PE1/PE2、DY1/DY2 和可用时的滚动十年 PE1 分位；PE 为倍数，股息率为百分数。
 - `margin.data` 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据，`fin_balance_sse`、`fin_balance_szse`、`fin_balance_all` 与变化值均为人民币元，并遵循 T+1 可用日期；提供 `latest_date`、`stale` 和 `trading_days_stale`。距 asof 超过 5 个交易日、刷新失败或 SZSE/SSE 融资余额比率超出 `[0.3, 3]` 时，`sources.margin.ok=false`，但仍展示已有数据。
+
+## 底部区间信号 `bottom_signal_latest.json`
+
+该文件保留原沪深300顶层字段，并新增 `a500`。`a500` 成功时与原信号使用相同的事件、摘要、基准和当前读数结构；`a500` 数据不可用时为 `null`，并可附带简短的 `a500_error`，不影响沪深300结果。A500 股债利差使用成分股合成滚动市盈率的倒数减去 10 年国债收益率，市盈率为有效成分股总市值除以按市盈率推导的总盈利；零市盈率不计入，负市盈率保留。2026-11-13 前的 PE 历史来自研究重建，之后按当前成分股日更，只有成分覆盖达到 95% 的新日期才追加，已存历史不重写。历史回测仅作描述，不构成预测。

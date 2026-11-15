@@ -8,6 +8,8 @@ on:
     paths:
       - research/data/abnormal.py
       - research/data/bottom_signal.py
+      - research/data/a500_pe.py
+      - data/bottom/a500_pe_recon.parquet
       - research/data/range_stats.py
       - research/data/market_base.py
       - research/data/events.py
@@ -32,6 +34,7 @@ jobs:
   collect:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -66,7 +69,12 @@ jobs:
           fi
           echo "abnormal_ok=$abnormal_ok" >> "$GITHUB_OUTPUT"
           bottom_ok=false
-          if python -m research.data.bottom_signal --out out/bottom; then
+          mkdir -p out
+          git fetch --no-tags origin stock-results:refs/remotes/origin/stock-results
+          if git cat-file -e origin/stock-results:market/a500_pe_hist.csv 2>/dev/null; then
+            git show origin/stock-results:market/a500_pe_hist.csv > out/a500_pe_hist.csv
+          fi
+          if python -m research.data.bottom_signal --out out/bottom --a500-hist out/a500_pe_hist.csv; then
             bottom_ok=true
           fi
           echo "bottom_ok=$bottom_ok" >> "$GITHUB_OUTPUT"
@@ -135,6 +143,10 @@ jobs:
             cp out/bottom/bottom_signal_latest.json market/bottom_signal_latest.json
             git add market/bottom_signal_latest.json
           fi
+          if [[ -f out/bottom/a500_pe_hist.csv ]]; then
+            cp out/bottom/a500_pe_hist.csv market/a500_pe_hist.csv
+            git add market/a500_pe_hist.csv
+          fi
           if [[ -f out/range/range_latest.json ]]; then
             cp out/range/range_latest.json market/range_latest.json
             git add market/range_latest.json
@@ -152,6 +164,7 @@ jobs:
   smoke:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout PR merge commit
         uses: actions/checkout@v4

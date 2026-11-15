@@ -46,6 +46,29 @@ def test_market_event_smoke_uses_trading_date_helper():
     )
 
 
+def test_market_daily_persists_a500_history_and_runs_full_smoke():
+    workflow = _workflow("market_daily.yml")
+    collect = workflow["jobs"]["collect"]
+    fetch = next(step for step in collect["steps"] if step.get("id") == "fetch")
+    publish = next(
+        step
+        for step in collect["steps"]
+        if step.get("name") == "Publish to stock-results"
+    )
+    smoke = workflow["jobs"]["smoke"]
+    smoke_bottom = next(
+        step for step in smoke["steps"] if step.get("name") == "Smoke bottom signal"
+    )
+
+    assert collect["timeout-minutes"] >= 60
+    assert smoke["timeout-minutes"] >= 60
+    assert "git show origin/stock-results:market/a500_pe_hist.csv" in fetch["run"]
+    assert "--a500-hist out/a500_pe_hist.csv" in fetch["run"]
+    assert "cp out/bottom/a500_pe_hist.csv market/a500_pe_hist.csv" in publish["run"]
+    assert "git add market/a500_pe_hist.csv" in publish["run"]
+    assert "--no-a500" not in smoke_bottom["run"]
+
+
 def test_nt_etf_workflow_bootstraps_and_uses_trading_date():
     workflow = _workflow("nt_etf_daily.yml")
     steps = workflow["jobs"]["collect"]["steps"]
