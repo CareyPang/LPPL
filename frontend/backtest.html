@@ -27,9 +27,9 @@
 
 /* 与终端（index.html）同一套 Trading Terminal 设计变量：近黑底、细边线、直角、等宽数字。红涨绿跌；琥珀 = 情景区间，蓝 = 事后确认。 */
 :root {
-  --bg: #0D0D0D; --surface: #141414; --surface-2: #1A1A1A; --line: #2A2A2A; --grid: #1E1E1E;
-  --ink: #FFFFFF; --ink-2: #AAAAAA; --ink-3: #828282;
-  --warn: #FFB800; --real: #4DA3FF;
+  --bg: #F6F8FB; --surface: #FFFFFF; --surface-2: #F0F3FA; --line: #E3E7EE; --grid: #EEF1F6;
+  --ink: #131722; --ink-2: #4C525E; --ink-3: #6A6D78;
+  --warn: #9A5B00; --real: #1F5FD6;
   --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
   --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
@@ -77,15 +77,15 @@ a { color: var(--ink-2); text-decoration: none; }
 .lgd span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .sw { display: inline-block; width: 18px; height: 3px; background: var(--warn); }
 .sw.t { width: 0; height: 0; background: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--real); }
-.sw.s { width: 14px; height: 10px; background: rgba(77,163,255,.14); border: 1px solid rgba(77,163,255,.35); }
+.sw.s { width: 14px; height: 10px; background: rgba(31,95,214,.12); border: 1px solid rgba(31,95,214,.35); }
 .chart { position: relative; flex: 1; min-height: 380px; height: clamp(380px, 56vh, 720px); background: var(--bg); }
 .chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
 .chart canvas.grab { cursor: grabbing; }
-.tip { position: absolute; pointer-events: none; background: rgba(20,20,20,.96); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.6 var(--f-m); color: var(--ink-2); max-width: 320px; z-index: 2; }
+.tip { position: absolute; pointer-events: none; background: rgba(255,255,255,.97); border: 1px solid var(--line); padding: var(--s2) var(--s3); font: 12px/1.6 var(--f-m); color: var(--ink-2); max-width: 320px; z-index: 2; }
 .tip b { color: var(--ink); font-weight: 500; }
 .tip .re { color: var(--real); }
-.ld { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(13,13,13,.7); color: var(--ink-3); font-size: 13px; z-index: 3; }
-.ld.err { color: #FF8A94; padding: var(--s6); text-align: center; }
+.ld { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(246,248,251,.72); color: var(--ink-3); font-size: 13px; z-index: 3; }
+.ld.err { color: #A1202A; padding: var(--s6); text-align: center; }
 
 /* 时间轴刷选 */
 .brush { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s2) var(--s3) var(--s3); }
@@ -348,7 +348,7 @@ a { color: var(--ink-2); text-decoration: none; }
       CPSCN.drawTop(ctx, x, y);
       if (labelOk) { ctx.fillStyle = col.real; ctx.font = '11px ' + FM; ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
     }
-    if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba('#FFFFFF', 0.3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
+    if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba('#131722', 0.3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
     ctx.restore();
 
     const withW = vis.filter((f) => f.w0 != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
@@ -377,7 +377,7 @@ a { color: var(--ink-2); text-decoration: none; }
     for (let y = Math.ceil((y0 + 1) / ys) * ys; y <= y1; y += ys) { const x = Math.round(px(Date.UTC(y, 0, 1))) + 0.5; ctx.strokeStyle = col.grid; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, Hh); ctx.stroke(); ctx.fillText(y, x + 3, 11); }
     // 暗化窗口之外
     const xa = px(st.va), xb = px(st.vb);
-    ctx.fillStyle = 'rgba(13,13,13,.72)'; ctx.fillRect(0, 0, xa, Hh); ctx.fillRect(xb, 0, W - xb, Hh);
+    ctx.fillStyle = 'rgba(246,248,251,.8)'; ctx.fillRect(0, 0, xa, Hh); ctx.fillRect(xb, 0, W - xb, Hh);
     ctx.strokeStyle = col.warn; ctx.lineWidth = 1.5; ctx.strokeRect(Math.round(xa) + 0.5, 0.5, Math.max(2, xb - xa), Hh - 1);
     ctx.fillStyle = col.warn; ctx.fillRect(Math.round(xa) - 2, Hh / 2 - 10, 4, 20); ctx.fillRect(Math.round(xb) - 2, Hh / 2 - 10, 4, 20);
     ovG = { px, W, xa, xb };

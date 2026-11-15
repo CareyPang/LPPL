@@ -53,12 +53,12 @@
       ctx.font = '11px Consolas, monospace';
       for (let i = 0; i <= 4; i++) {
         const p = min + (max - min) * i / 4;
-        ctx.strokeStyle = '#28332F'; ctx.beginPath(); ctx.moveTo(left, y(p)); ctx.lineTo(width - right, y(p)); ctx.stroke();
-        ctx.fillStyle = '#A7B4AF'; ctx.fillText(number(p), width - right + 8, y(p) + 4);
+        ctx.strokeStyle = '#E3E7EE'; ctx.beginPath(); ctx.moveTo(left, y(p)); ctx.lineTo(width - right, y(p)); ctx.stroke();
+        ctx.fillStyle = '#6A6D78'; ctx.fillText(number(p), width - right + 8, y(p) + 4);
       }
-      ctx.fillStyle = '#A7B4AF'; ctx.fillText('成交量', left, volumeTop - 6);
+      ctx.fillStyle = '#6A6D78'; ctx.fillText('成交量', left, volumeTop - 6);
       for (const [i, bar] of prices.entries()) {
-        ctx.strokeStyle = ctx.fillStyle = bar.close >= bar.open ? '#FF6B73' : '#3DD6B5';
+        ctx.strokeStyle = ctx.fillStyle = bar.close >= bar.open ? '#D6303A' : '#11845A';
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(x(i), y(bar.high)); ctx.lineTo(x(i), y(bar.low)); ctx.stroke();
         ctx.fillRect(x(i) - candleWidth / 2, Math.min(y(bar.open), y(bar.close)),
@@ -69,11 +69,11 @@
         ctx.globalAlpha = 1;
       }
       if (prices[selected]) {
-        ctx.lineWidth = 1; ctx.strokeStyle = '#6D8680'; ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1; ctx.strokeStyle = '#9AA1AD'; ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.moveTo(x(selected), top); ctx.lineTo(x(selected), height - bottom); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = '#E8F3EE'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selected].close), 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selected].close), 3, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.fillStyle = '#A7B4AF';
+      ctx.fillStyle = '#6A6D78';
       ctx.fillText(prices[0].date, left, height - 9);
       ctx.textAlign = 'right'; ctx.fillText(prices[prices.length - 1].date, width - right, height - 9); ctx.textAlign = 'left';
       readout();

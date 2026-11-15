@@ -14,9 +14,9 @@
 <meta name="twitter:card" content="summary">
 <style>
 :root {
-  --bg: #0D0D0D; --surface: #141414; --surface-2: #1A1A1A; --line: #2A2A2A; --grid: #1E1E1E;
-  --ink: #FFFFFF; --ink-2: #AAAAAA; --ink-3: #828282;
-  --up: #FF4757; --dn: #00D4AA; --warn: #FFB800; --real: #4DA3FF;
+  --bg: #F6F8FB; --surface: #FFFFFF; --surface-2: #F0F3FA; --line: #E3E7EE; --grid: #EEF1F6;
+  --ink: #131722; --ink-2: #4C525E; --ink-3: #6A6D78;
+  --up: #D6303A; --dn: #11845A; --warn: #9A5B00; --real: #1F5FD6;
   --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
   --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
@@ -303,9 +303,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     return Math.max((short * short * mx) / (s * s), (s * s) / (short * short * mn));
   }
   function tileColor(p) {
-    if (!num(p)) return '#333';
+    if (!num(p)) return '#C3C9D4';
     const t = Math.min(1, Math.abs(p) / 4), a = 0.25 + 0.75 * t;
-    return p >= 0 ? `rgba(255,71,87,${a})` : `rgba(0,212,170,${a})`;
+    return p >= 0 ? `rgba(214,48,58,${a})` : `rgba(17,132,90,${a})`;
   }
 
   function renderBoard() {
@@ -339,7 +339,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const lead = prov === 'sina' ? '净额（流入−流出）' : '主力净额';
     html += `<div class="tm" id="tm" role="img" aria-label="${KINDS[kind]}板块${P.label}${lead}热力图，共 ${rows.length} 个板块"></div>
       <div class="legend"><span>面积 = |${lead}|</span><span>颜色 = ${P.label}涨跌幅</span>
-      <i style="background:rgba(0,212,170,1)"></i>−4%<i style="background:rgba(0,212,170,.3)"></i><i style="background:rgba(255,71,87,.3)"></i><i style="background:rgba(255,71,87,1)"></i>+4%
+      <i style="background:rgba(17,132,90,1)"></i>−4%<i style="background:rgba(17,132,90,.3)"></i><i style="background:rgba(214,48,58,.3)"></i><i style="background:rgba(214,48,58,1)"></i>+4%
       <span>边框实线 = 净流入，虚线 = 净流出</span><span>n = ${rows.length}</span></div>
       ${historyNote}<p class="note">${E(bf.note || '')}</p>`;
     $('board-body').innerHTML = html;
@@ -348,7 +348,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const tiles = squarify(items, 0, 0, W, H);
     box.innerHTML = tiles.map((t, i) => {
       const r = t.r, show = t.w > 46 && t.h > 30;
-      const st = `left:${t.x.toFixed(1)}px;top:${t.y.toFixed(1)}px;width:${t.w.toFixed(1)}px;height:${t.h.toFixed(1)}px;background:${tileColor(r[P.pct])};${r[P.net] < 0 ? 'outline:1px dashed rgba(255,255,255,.35);outline-offset:-3px;' : ''}`;
+      const st = `left:${t.x.toFixed(1)}px;top:${t.y.toFixed(1)}px;width:${t.w.toFixed(1)}px;height:${t.h.toFixed(1)}px;background:${tileColor(r[P.pct])};color:${num(r[P.pct]) && Math.abs(r[P.pct]) >= 1.6 ? '#FFFFFF' : '#131722'};${r[P.net] < 0 ? 'outline:1px dashed rgba(19,23,34,.5);outline-offset:-3px;' : ''}`;
       return `<div class="tile" data-i="${i}" style="${st}">${show ? `<b>${E(r.name)}</b><span>${yi(r[P.net])}亿 ${pct(r[P.pct], 1)}</span>` : ''}</div>`;
     }).join('');
     const tip = $('tip');
@@ -611,9 +611,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <small>${E(details || '来源状态未知')}</small>${source.error ? `<small class="wn">${E(source.error)}</small>` : ''}</div>`;
     }).join('');
     const periods = [
-      { key: 'latest', label: '最新', color: '#4DA3FF' },
-      { key: '20d_ago', label: '20 个交易日前', color: '#FFB800' },
-      { key: '250d_ago', label: '250 个交易日前', color: '#00D4AA' },
+      { key: 'latest', label: '最新', color: '#1F5FD6' },
+      { key: '20d_ago', label: '20 个交易日前', color: '#9A5B00' },
+      { key: '250d_ago', label: '250 个交易日前', color: '#11845A' },
     ];
     const tenors = Array.isArray(T.tenors) ? T.tenors : [];
     const curves = periods.map((period) => ({ ...period, row: T[period.key] })).filter((item) => item.row && item.row.curve);
@@ -628,7 +628,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       const yAt = (value) => y0 + (hi - value) * (y1 - y0) / (hi - lo);
       const grid = Array.from({ length: 4 }, (_unused, index) => {
         const value = lo + (hi - lo) * index / 3, y = yAt(value);
-        return `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#2A2A2A" />
+        return `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#E3E7EE" />
           <text x="3" y="${y + 3}">${value.toFixed(1)}%</text>`;
       }).join('');
       const labels = tenors.map((tenor, index) => index % 2 === 0 || index === tenors.length - 1

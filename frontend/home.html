@@ -64,6 +64,16 @@ section.w{background:#fff}
 .hd .more{margin-left:auto;color:var(--pri);font-weight:600;font-size:14px}
 .hd .more:hover{text-decoration:underline}
 .tag{display:inline-block;font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:0 10px;line-height:22px;vertical-align:3px}
+/* 我的自选 */
+#mine{padding:40px 0}
+.wl{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.wi{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s}
+.wi:hover{border-color:var(--pri)}
+.wi .t{display:flex;align-items:baseline;gap:8px}.wi .t b{font-size:15px}.wi .t small{font:12px var(--mono);color:var(--mute)}
+.wi .t em{margin-left:auto;font-style:normal;font-size:12px;color:var(--mute)}
+.wi .p{font:600 16px var(--mono)}.wi .s{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wi .s.on{color:var(--warn)}
+.wempty{margin:0;padding:18px 20px;border:1px dashed #cfd6e2;border-radius:12px;color:var(--ink2);font-size:14px;background:#fff}
+.wempty a{color:var(--pri);font-weight:600}
 /* 今日市场 */
 .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .kpi{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;transition:border-color .15s}
@@ -112,6 +122,8 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 </style>
 <script src="app/home-data.js"></script>
 <script src="app/lppl-data.js"></script>
+<script src="app/stock-watchlist.js"></script>
+<script src="app/watchlist.js"></script>
 </head><body>
 <script src="app/od-nav.js" data-section="home" data-theme="light"></script>
 <main>
@@ -130,6 +142,11 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
   <div class="pf"><span>迷你走势为最近 60 个交易日收盘</span><a href="index.html">打开终端 →</a></div>
  </div>
 </div>
+
+<section id="mine" aria-labelledby="h-mine"><div class="wrap">
+ <div class="hd"><h2 id="h-mine">我的自选</h2><p>只保存在这台设备的浏览器里，不上传。</p><a class="more" href="index.html">去终端添加 →</a></div>
+ <div id="wl"><p class="wempty">读取中…</p></div>
+</div></section>
 
 <section class="w" id="today"><div class="wrap">
  <div class="hd"><h2>今日市场</h2><span class="tag">描述，不是预测</span><p id="mk-d"></p><a class="more" href="market.html">查看市场 →</a></div>
@@ -165,7 +182,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
  <div class="fg">
   <div><div class="brand">临界点</div><p>A 股非线性动力学研究工作台。只读后端已发布的数据，页面不做任何模型计算。</p></div>
   <div><h4>产品</h4><a href="index.html">终端</a><a href="backtest.html">回测</a><a href="market.html">市场</a><a href="nt.html">国家队ETF</a><a href="stock.html">个股</a></div>
-  <div><h4>帮助</h4><a href="lab/guide.html">用户指南</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a></div>
+  <div><h4>帮助</h4><a href="lab/guide.html">用户指南</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a><a href="changelog.html">更新日志</a></div>
   <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
  </div>
  <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：腾讯、新浪；市场背景来源见市场页</span><span class="risk">风险提示：所有输出都是历史统计描述，不是预测，不构成投资建议。</span></div>
@@ -197,9 +214,27 @@ function loadIdx(){
   const S=ok.find(r=>r.sym==='sh000001')||ok[0],g=bizGap(S.asof);
   $('asof').textContent='数据截至 '+S.asof;
   $('stale').classList.toggle('on',g>5);$('stale').title='距今约 '+g+' 个交易日未更新';
+  IDXROWS=L;mine();
   thumbs(S);evidence(S.sym);
  });
 }
+/* ---------- 我的自选：指数用已读取的数据，个股只列代码 ---------- */
+let IDXROWS=null;
+function mine(){
+ const W=window.IndexWatchlist,box=$('wl');
+ if(!W||!W.available()){box.innerHTML='<p class="wempty">浏览器未开放本地存储，无法读取自选。</p>';return}
+ const I=W.read(),St=W.stocks();
+ if(!I.length&&!St.length){box.innerHTML='<p class="wempty">还没有自选。在<a href="index.html">终端</a>点「☆ 加自选」添加指数，在<a href="stock.html">个股</a>页点「加入自选」添加股票。</p>';return}
+ const R=IDXROWS||[];
+ const iHtml=I.map(sym=>{
+  const r=R.find(x=>x.sym===sym),nm=(LPPL.SYMS.find(x=>x.sym===sym)||{}).name||sym;
+  if(!r||r.error)return `<a class="wi" href="index.html?code=${sym}"><div class="t"><b>${E(nm)}</b><small>${sym}</small><em>指数</em></div><div class="s">${r?'数据未加载':'读取中…'}</div></a>`;
+  const ch=r.last.close/r.prev.close-1;
+  return `<a class="wi" href="index.html?code=${sym}"><div class="t"><b>${E(r.name)}</b><small>${sym}</small><em>指数</em></div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="s${r.windowText?' on':''}" title="${E(r.status)}">${E(r.status)}</div></a>`}).join('');
+ const sHtml=St.map(c=>`<a class="wi" href="stock.html?code=${c}"><div class="t"><b>${c}</b><em>个股</em></div><div class="s">打开个股页查看已发布结果</div></a>`).join('');
+ box.innerHTML='<div class="wl">'+iHtml+sHtml+'</div>';
+}
+addEventListener('storage',mine);addEventListener('lppl-watch',mine);
 /* ---------- 入口缩略图：用真实数据 ---------- */
 function thumbs(S){
  const c=S.bars.map(b=>b.close);
@@ -240,7 +275,7 @@ function market(){
   if(fl.length){const mx=Math.max(...fl.map(x=>Math.abs(x.pct_chg)))||1,bw=276/fl.length;fl.sort((a,b)=>b.pct_chg-a.pct_chg).forEach((x,i)=>{const h=Math.abs(x.pct_chg)/mx*44;t3.append(el('rect',{x:12+i*bw,y:x.pct_chg>=0?60-h:60,width:Math.max(2,bw-3),height:Math.max(1,h),rx:1.5,fill:x.pct_chg>=0?'#d6303a':'#11845a','fill-opacity':.85}))});t3.append(el('line',{x1:12,x2:288,y1:60,y2:60,stroke:'#c5ccd8'}))}
  }).catch(()=>{K.innerHTML='<p class="evnote" style="margin:0;grid-column:1/-1">市场数据未加载。</p>'});
 }
-loadIdx();market();
+mine();loadIdx();market();
 })();
 </script>
 </body></html>

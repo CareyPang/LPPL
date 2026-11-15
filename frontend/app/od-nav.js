@@ -12,7 +12,7 @@
   'use strict';
   var me = document.currentScript;
   var section = (me && me.dataset.section) || 'home';
-  var theme = (me && me.dataset.theme) || 'dark';
+  var theme = (me && me.dataset.theme) || 'light';
 
   var MAIN = [
     { k: 'home', t: '首页', h: 'home.html' },
@@ -23,7 +23,8 @@
   ];
   var HELP = [
     { t: '用户指南', h: 'lab/guide.html' },
-    { t: '研究仪表盘', h: 'lab/dashboard.html' }
+    { t: '研究仪表盘', h: 'lab/dashboard.html' },
+    { t: '更新日志', h: 'changelog.html' }
   ];
   /* 子页签：t 文字；h 链接；ids 属于该组的页面锚点（用于滚动高亮） */
   var MARKET_SUB = [
@@ -81,7 +82,7 @@
 '.odn-subw.fl::before,.odn-subw.fr::after{opacity:1}' +
 '.odn-sub{display:flex;flex-wrap:nowrap;font-size:14px;align-items:center;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none;padding:8px 0}' +
 '.odn-sub::-webkit-scrollbar{display:none}' +
-'.odn-sub>*{flex:none}' +
+'.odn-sub>*{flex:none}.odn-sub [hidden],.odn-tools [hidden]{display:none!important}' +
 '.odn-sub a.odn-t,.odn-sub .tk,.odn-sub .chip{display:inline-flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;height:36px!important;min-height:36px!important;padding:0 16px!important;margin:0!important;border:0!important;border-radius:999px!important;background:transparent!important;box-shadow:none!important;color:#b2b5be!important;font:600 14px/36px "Microsoft YaHei UI","PingFang SC",system-ui,sans-serif!important;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s}' +
 '.odn-sub a.odn-t:hover,.odn-sub .tk:hover,.odn-sub .chip:hover{background:#2a2a2a!important;color:#fff!important}' +
 '.odn-sub a.odn-t[aria-current],.odn-sub .tk[aria-current=true],.odn-sub .tk[aria-pressed=true],.odn-sub .chip[aria-current=true],.odn-sub .chip[aria-pressed=true]{background:#f2f2f2!important;color:#0f0f0f!important}' +
@@ -126,6 +127,11 @@
 '.odn-light .odn-subw::before{background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}.odn-light .odn-subw::after{background:linear-gradient(270deg,#fff,rgba(255,255,255,0))}' +
 '.odn-light .odn-sub a.odn-t{color:#4c525e!important}.odn-light .odn-sub a.odn-t:hover{background:#f0f3fa!important;color:#131722!important}' +
 '.odn-light .odn-sub a.odn-t[aria-current]{background:#131722!important;color:#fff!important}' +
+'.odn-light .odn-sub .tk,.odn-light .odn-sub .chip{color:#4c525e!important}' +
+'.odn-light .odn-sub .tk:hover,.odn-light .odn-sub .chip:hover{background:#f0f3fa!important;color:#131722!important}' +
+'.odn-light .odn-sub .tk[aria-current=true],.odn-light .odn-sub .tk[aria-pressed=true],.odn-light .odn-sub .chip[aria-current=true],.odn-light .odn-sub .chip[aria-pressed=true]{background:#e9f0fd!important;color:#1f5fd6!important}' +
+'.odn-light .odn-sub .tk[aria-current=true] .tk-v.up,.odn-light .odn-sub .tk[aria-current=true] .tk-v .up{color:#d6303a!important}.odn-light .odn-sub .tk[aria-current=true] .tk-v.dn,.odn-light .odn-sub .tk[aria-current=true] .tk-v .dn{color:#11845a!important}' +
+'.odn-light .odn-sub .strip-k,.odn-light .odn-tools .strip-k{color:#6a6d78}' +
 '.odn-light .odn-sub .odn-sep{background:#e0e3eb}.odn-light .odn-sub .odn-lb{color:#6a6d78}' +
 '.odn-light summary{color:#4c525e}.odn-light .odn-help summary{border-color:#d6dae3}.odn-light summary:hover,.odn-light details[open] summary{background:#f0f3fa;color:#131722}' +
 '.odn-light .odn-pop{background:#fff;border-color:#e6e9ef;box-shadow:0 16px 40px rgba(19,23,34,.14)}.odn-light .odn-pop a{color:#131722}.odn-light .odn-pop a:hover{background:#f0f3fa}.odn-light .odn-pop a[aria-current]{background:#131722;color:#fff}' +
@@ -235,7 +241,7 @@
     MAIN.map(function (m) { return '<a href="' + m.h + '"' + (isMain(m) ? ' aria-current="page"' : '') + '>' + esc(m.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(menu);
   var help = el('details', 'odn-help');
-  help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘">?</summary><div class="odn-pop">' +
+  help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、更新日志">?</summary><div class="odn-pop">' +
     HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(help);
   l1.appendChild(right);
@@ -321,8 +327,57 @@
   }
   syncReplay();
 
+  /* ---------- 市场页：子页签＝分组，只显示当前组；地址 hash 记住所在组 ---------- */
+  var GROUPED = section === 'market' && subTabs.length;
+  if (GROUPED) {
+    var DEF = 1; /* 默认：资金流 */
+    var groupOf = function (id) {
+      for (var i = 0; i < subTabs.length; i++) if (subTabs[i].ids.indexOf(id) >= 0) return i;
+      return -1;
+    };
+    /* 首屏：正文还没解析，先用 id 选择器隐藏其他组，避免整页闪一下 */
+    var g0 = groupOf(decodeURIComponent(location.hash.slice(1)));
+    if (g0 < 0) g0 = DEF;
+    var pre = [];
+    subTabs.forEach(function (t, i) { if (i !== g0) t.ids.forEach(function (id) { pre.push('#' + id); }); });
+    var gStyle = el('style');
+    gStyle.textContent = '.odn-gh{display:none!important}' + (pre.length ? pre.join(',') + '{display:none!important}' : '');
+    document.head.appendChild(gStyle);
+    var curG = -1;
+    var showGroup = function (g, anchor, push) {
+      if (g < 0) g = DEF;
+      var changed = g !== curG;
+      curG = g;
+      subTabs.forEach(function (t, i) {
+        t.ids.forEach(function (id) { var n = document.getElementById(id); if (n) n.classList.toggle('odn-gh', i !== g); });
+        if (i === g) {
+          t.a.setAttribute('aria-current', 'location');
+          var s = t.a.parentNode, l = t.a.offsetLeft, w = t.a.offsetWidth;
+          if (l < s.scrollLeft || l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l - 24;
+        } else t.a.removeAttribute('aria-current');
+      });
+      var h = '#' + (anchor || subTabs[g].ids[0]);
+      if (push && location.hash !== h && history.pushState) history.pushState(null, '', h);
+      if (changed) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); /* 让热力图等按新宽度重绘 */
+      var n = anchor && anchor !== subTabs[g].ids[0] ? document.getElementById(anchor) : null;
+      if (n) { n.style.scrollMarginTop = (hdr.getBoundingClientRect().height + 12) + 'px'; n.scrollIntoView(); }
+      else if (changed && push) window.scrollTo(0, 0);
+    };
+    var fromHash = function () {
+      gStyle.textContent = '.odn-gh{display:none!important}';
+      var id = decodeURIComponent(location.hash.slice(1));
+      showGroup(groupOf(id), groupOf(id) >= 0 ? id : '', false);
+    };
+    subTabs.forEach(function (t, i) {
+      t.a.addEventListener('click', function (e) { e.preventDefault(); showGroup(i, '', true); });
+    });
+    addEventListener('hashchange', fromHash);
+    addEventListener('popstate', fromHash);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fromHash); else fromHash();
+  }
+
   /* ---------- 子页签滚动高亮 ---------- */
-  if (subTabs.length) {
+  if (subTabs.length && !GROUPED) {
     var off = function () { return hdr.getBoundingClientRect().height + 12; };
     var targets = function () {
       var list = [];

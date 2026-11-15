@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>更新日志 · 临界点</title>
+<meta name="description" content="临界点已发布数据的历次更新：数据版本、模型版本、截止日与检验状态的变化，逐版公开。">
+<meta name="theme-color" content="#1f5fd6">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="临界点">
+<meta property="og:title" content="更新日志 · 临界点">
+<meta property="og:description" content="已发布数据的历次更新与版本差异，逐版公开。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--ink:#131722;--ink2:#434a59;--mute:#6a7180;--line:#e3e7ee;--line2:#eef1f6;--pri:#1f5fd6;--pri2:#e9f0fd;--up:#d6303a;--dn:#11845a;--warn:#9a5b00;--warnbg:#fff5e0;
+--sans:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;--mono:"JetBrains Mono","Cascadia Mono",Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans)}
+a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px;border-radius:6px}
+.m{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:960px;margin:0 auto;padding:40px 24px 64px}
+h1{margin:0;font-size:30px;line-height:1.3}
+.lead{margin:8px 0 0;color:var(--ink2)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:24px}
+.card h2{margin:0 0 12px;font-size:16px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kv div{border:1px solid var(--line2);border-radius:10px;padding:10px 14px;min-width:0}
+.kv small{display:block;color:var(--mute);font-size:12px}
+.kv b{display:block;font:600 14px var(--mono);overflow-wrap:anywhere}
+.note{margin:12px 0 0;font-size:13px;color:var(--mute)}
+.warn{margin:12px 0 0;padding:10px 14px;border-radius:10px;background:var(--warnbg);color:var(--warn);font-size:13px;border:1px solid #f1dfb8}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:28px 0 12px}
+.filters button{height:32px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink2);font:600 13px var(--sans);cursor:pointer}
+.filters button:hover{border-color:var(--pri);color:var(--pri)}
+.filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.tl{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);margin-left:8px}
+.it{position:relative;padding:0 0 18px 22px}
+.it::before{content:"";position:absolute;left:-7px;top:22px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #9fb6e3}
+.it.cur::before{background:var(--pri);border-color:var(--pri)}
+.ib{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ih{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 14px;align-items:baseline;width:100%;padding:14px 18px;cursor:pointer}
+.ih:hover{background:#f7f9fd}
+.ih:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+.ih .d{font:600 14px var(--mono)}
+.ih .msg{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2);font-size:14px}
+.ih .ch{color:var(--mute);font-size:13px;white-space:nowrap}
+.ih .ch::after{content:" ▾"}
+.ih[aria-expanded=true] .ch::after{content:" ▴"}
+.tags{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;color:var(--ink2);background:var(--line2);border-radius:999px;padding:0 9px;line-height:22px}
+.tag.now{color:var(--pri);background:var(--pri2);font-weight:600}
+.body{border-top:1px solid var(--line2);padding:14px 18px 16px;font-size:14px}
+.body table{width:100%;border-collapse:collapse;font-size:13px}
+.body th,.body td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+.body th{color:var(--mute);font-weight:500;font-size:12px}
+.body td.f{color:var(--ink2);white-space:nowrap}
+.body td.v{font-family:var(--mono);overflow-wrap:anywhere}
+.body .chg td.v.n{color:var(--pri);font-weight:600}
+.body .same{color:var(--mute)}
+.body .sha{margin-top:10px;font-size:12px;color:var(--mute)}
+.sk{display:block;height:14px;border-radius:6px;background:linear-gradient(90deg,#eef1f6 25%,#f6f8fb 50%,#eef1f6 75%);background-size:200% 100%;animation:sk 1.2s linear infinite;margin:8px 0}
+@keyframes sk{to{background-position:-200% 0}}
+.retry{margin-left:8px;height:30px;padding:0 14px;border-radius:999px;border:1px solid var(--warn);background:#fff;color:var(--warn);font:600 13px var(--sans);cursor:pointer}
+footer{border-top:1px solid var(--line);padding:20px 24px 32px;text-align:center;font-size:12px;color:var(--mute)}
+@media(max-width:640px){.wrap{padding:28px 16px 48px}.ih{grid-template-columns:auto minmax(0,1fr)}.ih .ch{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script src="app/home-data.js"></script>
+<script src="app/lppl-data.js"></script>
+</head><body>
+<script src="app/od-nav.js" data-section="changelog"></script>
+<main class="wrap">
+ <h1>更新日志</h1>
+ <p class="lead">后端每次发布数据都会留下一条记录。这里列出各版本的截止日、数据版本、模型版本和检验状态，以及与上一版相比哪些变了。</p>
+
+ <section class="card" aria-labelledby="h-now">
+  <h2 id="h-now">当前生效版本</h2>
+  <div class="kv" id="now"><span class="sk"></span></div>
+  <p class="note">页面只读后端已发布的结果，不做任何模型计算。证据不足的指标只显示状态文字，不显示数值。</p>
+ </section>
+
+ <div class="filters" id="filters" role="group" aria-label="按数据筛选"></div>
+ <div id="state" aria-live="polite"></div>
+ <ol class="tl" id="tl"></ol>
+</main>
+<footer>所有输出都是历史统计描述，不是预测，不构成投资建议。版本记录来自 GitHub 仓库 CareyPang/LPPL 的公开提交。</footer>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const REPO='CareyPang/LPPL',API='https://api.github.com/repos/'+REPO+'/commits',RAW='https://raw.githubusercontent.com/'+REPO+'/';
+const DIR='web/mock/data/';
+const FILES=LPPL.SYMS.map(s=>({k:s.sym,t:s.name,p:DIR+s.sym+'_latest.json'})).concat([{k:'market',t:'市场数据',p:DIR+'market/market_latest.json'}]);
+const SIG={signal:'有合格拟合：顶部结构',no_qualified_fit:'主尺度没有合格拟合',t1_not_qualified:'泡沫起点未达标准',not_computed:'未计算'};
+const SPLIT={dev:'开发段',cal:'校准段',test:'测试段'};
+const CACHE='lppl.changelog.v1',TTL=10*60e3;
+let LOG=[],BYFILE={},filter='all';
+
+/* ---------- 当前版本：经 LPPL 读取 ---------- */
+function current(){
+ Promise.all([LPPL.load('sh000001').catch(()=>null),LPPL.market?LPPL.market().catch(()=>null):Promise.resolve(null)]).then(([D,M])=>{
+  const c=[];
+  if(D){c.push(['指数数据截止',D.asof],['数据版本',D.raw.data_version||'—'],['模型版本',D.raw.model_version||'—'])}
+  if(M)c.push(['市场数据截止',M.asof||'—']);
+  $('now').innerHTML=c.length?c.map(([k,v])=>`<div><small>${E(k)}</small><b>${E(v)}</b></div>`).join(''):'<p class="warn" style="margin:0">当前版本未加载：数据服务暂时不可用。</p>';
+ });
+}
+
+/* ---------- 历次提交：GitHub 公开接口（未登录每小时 60 次，结果缓存 10 分钟） ---------- */
+function readCache(){try{const c=JSON.parse(sessionStorage.getItem(CACHE)||'null');if(c&&Date.now()-c.at<TTL)return c.data}catch{}return null}
+function saveCache(data){try{sessionStorage.setItem(CACHE,JSON.stringify({at:Date.now(),data}))}catch{}}
+async function listFile(f){
+ const r=await fetch(API+'?path='+encodeURIComponent(f.p)+'&per_page=100',{headers:{Accept:'application/vnd.github+json'}});
+ if(r.status===403||r.status===429){
+  const reset=+r.headers.get('X-RateLimit-Reset');
+  const e=Error('GitHub 接口已达到未登录访问上限（每小时 60 次）'+(reset?'，约 '+new Date(reset*1e3).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' 后恢复':'')+'。');
+  e.limit=true;throw e;
+ }
+ if(!r.ok)throw Error('GitHub 接口返回 HTTP '+r.status+'。');
+ const J=await r.json();
+ return J.map(c=>({sha:c.sha,date:(c.commit.committer||c.commit.author).date,msg:(c.commit.message||'').split('\n')[0]}));
+}
+async function loadLog(){
+ let data=readCache();
+ if(!data){
+  const lists=await Promise.all(FILES.map(f=>listFile(f).then(L=>[f.k,L])));
+  data=Object.fromEntries(lists);saveCache(data);
+ }
+ BYFILE=data;
+ const map=new Map();
+ FILES.forEach(f=>(data[f.k]||[]).forEach(c=>{
+  if(!map.has(c.sha))map.set(c.sha,{sha:c.sha,date:c.date,msg:c.msg,files:[]});
+  map.get(c.sha).files.push(f.k);
+ }));
+ LOG=[...map.values()].sort((a,b)=>b.date.localeCompare(a.date));
+}
+
+/* ---------- 某一版的摘要：只取版本、日期与状态文字，不取任何被隐藏的数值 ---------- */
+const snapCache=new Map();
+function snap(file,sha){
+ const key=file+'@'+sha;
+ if(!snapCache.has(key)){
+  const f=FILES.find(x=>x.k===file);
+  snapCache.set(key,fetch(RAW+sha+'/'+f.p).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(J=>{
+   if(file==='market'){
+    const S=J.sources||{},v=Object.values(S);
+    return {'截止日':J.asof||'—','数据源可用':v.length?v.filter(x=>x&&x.ok).length+' / '+v.length:'—'};
+   }
+   const lv=J.evidence_levels||{},o={'截止日':J.asof||'—','数据版本':J.data_version||'—','模型版本':J.model_version||'—','顶部结构状态':SIG[(J.top||{}).signal_status]||(J.top||{}).signal_status||'—'};
+   (J.validation||[]).forEach(v=>{o['检验 · '+(SPLIT[v.split]||v.split)]=lv[v.status]?lv[v.status]+'（'+v.status+'）':String(v.status||'—')});
+   return o;
+  }));
+  snapCache.get(key).catch(()=>snapCache.delete(key));
+ }
+ return snapCache.get(key);
+}
+function prevSha(file,sha){const L=BYFILE[file]||[],i=L.findIndex(c=>c.sha===sha);return i>=0&&i+1<L.length?L[i+1].sha:null}
+
+async function diffHtml(c){
+ const files=c.files.filter(k=>filter==='all'||k===filter);
+ const parts=await Promise.all(files.map(async k=>{
+  const f=FILES.find(x=>x.k===k),ps=prevSha(k,c.sha);
+  try{
+   const [now,before]=await Promise.all([snap(k,c.sha),ps?snap(k,ps):Promise.resolve(null)]);
+   const keys=[...new Set(Object.keys(now).concat(before?Object.keys(before):[]))];
+   const rows=keys.map(x=>{const a=before?before[x]:undefined,b=now[x];const chg=!before||a!==b;
+    return `<tr class="${chg?'chg':''}"><td class="f">${E(x)}</td><td class="v">${before?E(a??'—'):'<span class="same">首个版本</span>'}</td><td class="v${chg&&before?' n':''}">${E(b??'—')}${!chg?' <span class="same">未变</span>':''}</td></tr>`}).join('');
+   return `<h3 style="margin:4px 0 6px;font-size:14px">${E(f.t)}</h3><table><thead><tr><th>字段</th><th>上一版</th><th>本版</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }catch(e){return `<h3 style="margin:4px 0 6px;font-size:14px">${E(f.t)}</h3><p class="warn">这一版的文件未读取：${E(e.message||'网络不可用')}。</p>`}
+ }));
+ return parts.join('<div style="height:10px"></div>')+`<div class="sha">提交 <a class="m" href="https://github.com/${REPO}/commit/${c.sha}" rel="noopener">${c.sha.slice(0,7)}</a></div>`;
+}
+
+/* ---------- 渲染 ---------- */
+const fmt=d=>{const t=new Date(d);return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')};
+function drawFilters(){
+ const opts=[['all','全部']].concat(FILES.map(f=>[f.k,f.t]));
+ $('filters').innerHTML=opts.map(([k,t])=>`<button type="button" data-f="${k}" aria-pressed="${k===filter}">${E(t)}</button>`).join('');
+}
+function draw(){
+ drawFilters();
+ const L=LOG.filter(c=>filter==='all'||c.files.includes(filter));
+ const latest={};FILES.forEach(f=>{latest[f.k]=(BYFILE[f.k]||[])[0]?.sha});
+ $('state').innerHTML=`<p class="note" style="margin:0 0 12px">共 ${L.length} 次发布，按时间倒序。点开一条查看与上一版的差异。</p>`;
+ $('tl').innerHTML=L.map((c,i)=>{
+  const isCur=c.files.some(k=>latest[k]===c.sha);
+  const tags=c.files.map(k=>{const f=FILES.find(x=>x.k===k);return `<span class="tag${latest[k]===c.sha?' now':''}">${E(f.t)}${latest[k]===c.sha?' · 当前':''}</span>`}).join('');
+  return `<li class="it${isCur?' cur':''}"><div class="ib"><button type="button" class="ih" aria-expanded="false" aria-controls="b-${i}" data-sha="${c.sha}"><span class="d">${fmt(c.date)}</span><span class="msg" title="${E(c.msg)}">${E(c.msg||'数据更新')}</span><span class="ch">差异</span><span class="tags">${tags}</span></button><div class="body" id="b-${i}" hidden></div></div></li>`}).join('')||'<li class="it"><p class="note">没有记录。</p></li>';
+}
+$('filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filter=b.dataset.f;draw()});
+$('tl').addEventListener('click',async e=>{
+ const h=e.target.closest('.ih');if(!h)return;
+ const body=$(h.getAttribute('aria-controls')),open=h.getAttribute('aria-expanded')!=='true';
+ h.setAttribute('aria-expanded',String(open));body.hidden=!open;
+ if(open&&!body.dataset.done){
+  body.innerHTML='<span class="sk"></span><span class="sk" style="width:70%"></span>';
+  const c=LOG.find(x=>x.sha===h.dataset.sha);
+  body.innerHTML=await diffHtml(c);body.dataset.done='1';
+ }
+});
+function start(){
+ $('state').innerHTML='<span class="sk"></span><span class="sk" style="width:60%"></span>';$('tl').innerHTML='';
+ loadLog().then(draw).catch(e=>{
+  $('state').innerHTML=`<p class="warn">历次版本未加载：${E(e.message||'网络不可用')}这里只显示上方的当前版本。<button type="button" class="retry" id="retry">重试</button></p>`;
+  $('retry').onclick=start;
+ });
+}
+current();start();
+})();
+</script>
+</body></html>
