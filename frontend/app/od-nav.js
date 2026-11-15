@@ -378,6 +378,9 @@
     loadStockSearchRows().then(function () { if (modal.classList.contains('on')) drawModal(); });
     loadPublished().then(function () { if (modal.classList.contains('on')) drawModal(); });
   }
+  window.OdNav = window.OdNav || {};
+  window.OdNav.openSearch = openSearch;
+
   function closeSearch() {
     if (!modal.classList.contains('on')) return;
     modal.classList.remove('on');
