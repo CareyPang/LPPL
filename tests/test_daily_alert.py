@@ -133,7 +133,7 @@ def test_stale_issue_body_contains_freshness_table_and_calendar_note(monkeypatch
     assert create[create.index("--title") + 1] == "日更数据过期"
     body = create[create.index("--body") + 1]
     assert "| 数据 | 数据日期 | 晚几个交易日 | 状态 |" in body
-    assert "只按 A 股交易日计算（trading）；数据日期取 asof 或生成时间" in body
+    assert "按 A 股交易日历计算；" in body
 
 
 def test_stale_recovery_comment_links_current_workflow_run(monkeypatch):

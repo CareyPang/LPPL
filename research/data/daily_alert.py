@@ -100,10 +100,13 @@ def _current_run_url() -> str:
 
 
 def _stale_body(report: dict, markdown: str) -> str:
-    calendar_source = report.get("calendar_source", "weekday")
+    if report.get("calendar_source") == "trading":
+        basis = "按 A 股交易日历计算"
+    else:
+        basis = "交易日历获取失败，按工作日计算（未扣节假日）"
     return (
         f"{markdown.rstrip()}\n\n"
-        f"只按 A 股交易日计算（{calendar_source}）；数据日期取 asof 或生成时间"
+        f"{basis}；交易日 D 的数据应在 D+1 06:00（北京）前发布；数据日期取 asof 或生成时间。"
     )
 
 
