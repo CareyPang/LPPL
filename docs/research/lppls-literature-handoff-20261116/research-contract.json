@@ -1,5 +1,5 @@
 {
-  "schema_version": "lppls_research_handoff_v1",
+  "schema_version": "lppls_research_handoff_v2_ds_control",
   "status": "TASK_SPEC_NOT_EXECUTED",
   "production_change_allowed": false,
   "merge_allowed": false,
@@ -66,6 +66,30 @@
       "parent": "B0",
       "only_change": "deduplicated scale-balanced clustering",
       "fit_input": "same_window_and_fit_hashes_as_B0"
+    },
+    {
+      "id": "D1",
+      "type": "descriptive_structure_control",
+      "parent": "B0_attempt_ledger",
+      "method_id": "DS_PUBLIC_RATIO_FIXED_WINDOWS_1P5_V1",
+      "source": "Zhang_Zhang_Sornette_2016_confidence_ratio",
+      "official_product_equivalence": "NOT_ESTABLISHED",
+      "changes_existing_alerts": false,
+      "alert_metrics": "NOT_APPLICABLE"
+    },
+    {
+      "id": "G1",
+      "type": "conditional_preregistered_alert_control",
+      "parent": "B0",
+      "only_change": "gate existing B0 candidate with frozen D1 CI rule",
+      "execution_gate": "preregister with T06a before T03 or DEFERRED_NOT_PREREGISTERED",
+      "score_input": "COMPLETE ci_full_positive only",
+      "interval_generation": "unchanged B0 candidate",
+      "threshold": "calibration_only_then_frozen",
+      "not_combined_with": [
+        "W1",
+        "C1"
+      ]
     }
   ],
   "metrics": [
@@ -111,7 +135,9 @@
       "power",
       "interval_method",
       "multiplicity",
-      "meaningful_gain_and_cost_tolerance"
+      "meaningful_gain_and_cost_tolerance",
+      "D1_window_and_representative_contract",
+      "G1_include_or_defer_decision_and_separate_budget"
     ],
     "conditional_ledger": "separate; never rewrite natural first claim",
     "W1_subset_of_B0_required": true
@@ -136,11 +162,61 @@
     "T00",
     "T01",
     "T02",
+    "T07a",
     "T06a",
     "T03",
+    "T07b",
     "T04",
     "T05",
-    "T06b"
+    "T06b",
+    "T07c_if_preregistered"
   ],
-  "attempt_accounting": "separate window summary and attempt-level terminal states"
+  "attempt_accounting": "separate window summary and attempt-level terminal states",
+  "ds_confidence": {
+    "spec": "DS_CONFIDENCE_CONTROL.md",
+    "source_definition": "qualified fitting windows / all fitting windows; project adaptations declared separately",
+    "minimum_full_cycles": 1.5,
+    "time_domain": "tc>t2",
+    "window_set": "same predeclared B0 plan; no onset trimming",
+    "representative": "minimum SSE numerically valid candidate AFTER fixed attempts terminal; BEFORE structural qualification; tie by frozen attempt_id",
+    "seeds_are_votes": false,
+    "one_vote_per_window": true,
+    "global_identity": "optional only when both directions and joint classification verified: N=Q_positive+Q_negative+R_global+unknown",
+    "direction_identity": "primary: N=Q_direction+R_direction+U_solver+U_data+U_pending+U_contract",
+    "resolved": "Q_direction+R_direction",
+    "unknown": "U_solver+U_data+U_pending+U_contract",
+    "ci_full": "Q_direction/N only if N>0 and unknown==0; otherwise null",
+    "ci_resolved": "Q_direction/resolved only if resolved>0; otherwise null; conditional diagnostic",
+    "accounting_range": "[Q_direction/N,(Q_direction+unknown)/N] if N>0 else null; NOT statistical CI or event probability",
+    "coverage": "resolved/N if N>0 else null",
+    "statuses": [
+      "COMPLETE",
+      "INCOMPLETE",
+      "UNAVAILABLE",
+      "NO_WINDOWS",
+      "NOT_INSPECTED"
+    ],
+    "pooled": "unique windows; density sensitive",
+    "equal_scale_average": "custom separate name; null if any required scale unavailable",
+    "directions": "log P coordinates; report positive and negative separately only when search coverage and mapping verified",
+    "bootstrap_trust": "NOT_IN_SCOPE",
+    "commercial_bubble_score_or_combo": "NOT_REPLICATED",
+    "historical_snapshots": "append_only; first_visible_at=null; preserve simulated availability",
+    "three_panels": [
+      "D1 structural strength and completion",
+      "tc interval with actual generating method",
+      "alert effectiveness with actual strategy and evidence mode"
+    ],
+    "D1_preserves_hashes": [
+      "B0 intervals and alert scores",
+      "W1 intervals and alert scores",
+      "C1 intervals and alert scores"
+    ],
+    "G1_incomplete_policy": "no gate-trigger on incomplete CI; keep event denominator and failure attribution",
+    "G1_preregistration_status": "NOT_FROZEN_TASK_SPEC_ONLY",
+    "U_contract": "missing attempt ledger or per-window mapping/identity unverified; retain in unknown",
+    "unknown_priority": "contract identity, data, pending attempt, terminal solver invalid, resolved qualification; retain secondary reasons",
+    "window_plan_missing": "WINDOW_PLAN_UNVERIFIED error; never pretend N=0",
+    "uninspected_direction": "status NOT_INSPECTED; all directional counts and ratios null; no joint table; verified direction independent"
+  }
 }

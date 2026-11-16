@@ -2,7 +2,7 @@
 
 日期：2026-11-16。交付性质：文档与研究任务，不包含本轮新拟合结果。
 
-先读 [DEVIN_TASKS.md](DEVIN_TASKS.md)，再读 [research-contract.json](research-contract.json)、[文献报告](literature-review.md) 和 [证据目录](literature-evidence-index.json)。[HTML 阅读版](literature-review.html) 可下载后本地打开，无需部署。
+先读 [DEVIN_TASKS.md](DEVIN_TASKS.md)，再读 [research-contract.json](research-contract.json)、[文献报告](literature-review.md) 和 [证据目录](literature-evidence-index.json)。本次增补见 [DS 置信度独立研究对照](DS_CONFIDENCE_CONTROL.md)。[HTML 阅读版](literature-review.html) 可下载后本地打开，无需部署。
 
 ## 本轮固定目标
 
@@ -10,6 +10,7 @@
 - 重点研究 1–6 个月上涨后的阶段顶；局部顶分别评分，不以之后下跌 10% 定义成功。
 - 重点报告阶段顶漏报、首次正式提醒至少提前 **5 个交易日**的效果；含首尾不超过 10 个交易日的窗口作为独立联合指标。
 - 先统一拟合、日期、账本和评分口径，再比较 **B0 vs W1（仅窗口）**、**B0 vs C1（仅聚类）**。
+- 新增 D1：公开 DS 比例法的固定窗口研究改编，结构强度、tc候选区间、实际预警效果分开展示；G1 过滤提醒另作事前登记，不能借原策略成绩给 D1 背书。
 - 旧代码、旧协议、原始数据与结果只读保存；新产物独立版本、独立 run_id。
 - 只在研究分支交付 Draft PR；不合并、不部署、不发布、不修改生产模型默认值。
 
@@ -29,16 +30,21 @@
 | T00 | 当前 refs、旧报告与结果 | 基线/结果保留清单、#50/#99 对照表 | 无 |
 | T01 | 实际拟合入口 | 冻结的拟合/过滤/日期契约、语义测试 | T00 |
 | T02 | #50 例集与评价器 | 新版评分契约、手工真值、首次提醒账本 | T00、T01 |
-| T06a | 契约、开发资料和资源预算 | 运行前预算/统计/功效冻结 | T01、T02 |
+| T07a | 公开比例定义、B0计划 | D1窗口/分母/失败契约，G1若执行须独立登记 | T01、T02；与T06a共同在T03前冻结 |
+| T06a | 契约、开发资料和资源预算 | 运行前预算/统计/功效冻结 | T01、T02、T07a |
 | T03 | 统一契约 | B0 候选拟合与扫描账本、可重放基线 | T01、T02、T06a |
+| T07b | B0同一不可变attempt账本 | D1结构强度快照；不改原区间/提醒 | T03、T07a |
 | T04 | B0 同一候选全集 | W1 固定稀疏选窗单项对照 | T03 |
 | T05 | B0 同一窗口/拟合集 | C1 跨尺度聚类单项对照 | T03；结果解读在 T04 后 |
 | T06b | B0/W1/C1 | 配对统计、失败归因、不可变证据包 | T04、T05 |
+| T07c | B0候选、D1快照、已冻结G1规则 | G1门控与B0的独立效果对照；未登记则deferred | T06b、T07b |
 
-**本 PR 的完成不代表 T00–T06 已执行。** 任务均为交给 Devin 的下一阶段工作。工程通过与研究胜出分开；开发段改善只能写 `IMPROVED_DEV_ONLY`，`NO_CLEAR_GAIN`、`REGRESSION`、`INSUFFICIENT_EVIDENCE` 都是允许且必须如实交付的结果。
+**本 PR 的完成不代表 T00–T07 已执行。** 任务均为交给 Devin 的下一阶段工作。工程通过与研究胜出分开；开发段改善只能写 `IMPROVED_DEV_ONLY`，`NO_CLEAR_GAIN`、`REGRESSION`、`INSUFFICIENT_EVIDENCE` 都是允许且必须如实交付的结果。
 
 ## 与原文献报告的关系
 
 22 篇文献的阅读深度与代码审查事实保留。报告是 prior research snapshot；本入口对 #99 的最新研究处置覆盖原报告中“Lagrange/GLS/profile 值得下一步比较”的一般性排序。报告中的历史 V2588 参数不是当前生产参数配置，不得直接覆盖。
+
+D1是公开比例思想的项目改编，1.5、future-only、固定窗口、缺口核算和代表解规则都是明确登记的项目选择；不宣称复现当前 Sornette Finance Bubble Score/Combo，也不接入 Deep LPPLS 训练。历史文献报告Markdown/HTML保持本次修改前内容。
 
 公开版移除了本机绝对路径，保留源文件哈希和原论文链接；不随 PR 上传第三方论文全文、私人交接文档、行情原包或凭据。相关来源摘要均不升级为本项目预测性能。
