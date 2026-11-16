@@ -29,10 +29,10 @@
   ];
   /* 子页签：t 文字；h 链接；ids 属于该组的页面锚点（用于滚动高亮） */
   var MARKET_SUB = [
+    { t: '快讯', h: '#s-news', ids: ['s-news'] },
     { t: '事件日历', h: '#s-events', ids: ['s-events'] },
     { t: '资金流', h: '#s-board', ids: ['s-board'] },
     { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot', 's-lhb'] },
-    { t: '快讯', h: '#s-news', ids: ['s-news'] },
     { t: '北向与两融', h: '#s-nb', ids: ['s-nb', 's-mg'] },
     { t: '估值与宏观', h: '#s-val', ids: ['s-val', 's-macro'] },
     { t: '成长监控', h: '#s-growth', ids: ['s-growth'] },
@@ -582,7 +582,7 @@
   /* ---------- 市场页：子页签＝分组，只显示当前组；地址 hash 记住所在组 ---------- */
   var GROUPED = section === 'market' && subTabs.length;
   if (GROUPED) {
-    var DEF = 1; /* 默认：资金流 */
+    var DEF = 2; /* 默认：资金流 */
     var groupOf = function (id) {
       for (var i = 0; i < subTabs.length; i++) if (subTabs[i].ids.indexOf(id) >= 0) return i;
       return -1;
