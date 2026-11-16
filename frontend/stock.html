@@ -177,9 +177,7 @@
     .sh-mem { margin-top: 6px; font-size: 13px; color: var(--ink-3); } .sh-mem a { color: var(--cyan); text-decoration: none; } .sh-mem a:hover { text-decoration: underline; }
     .sh-r { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
     .sh-px b { font-size: 28px; font-weight: 600; } .sh-px span { margin-left: 8px; font-size: 15px; } .sh-px .up { color: var(--up); } .sh-px .dn { color: var(--dn, #11845A); }
-    .sh-asof { font-size: 12px; color: var(--ink-3); } .sh-stale { color: var(--warn); background: #FFF6E5; border-radius: 4px; padding: 1px 6px; } .sh-dim { color: var(--ink-3); }
-    .sh-live { max-width: 100%; font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
-    .sh-live[hidden] { display: none; } .sh-live-price.up { color: var(--up); } .sh-live-price.dn { color: var(--dn, #11845A); }
+    .sh-asof { font-size: 12px; color: var(--ink-3); }
     .sh-act { display: flex; gap: var(--s2); margin-top: 4px; }
     .sh-star, .sh-chart { border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); color: var(--ink-2); font: 600 13px var(--f-u); padding: 6px 14px; cursor: pointer; text-decoration: none; }
     .sh-star[aria-pressed="true"] { border-color: #D97706; color: #D97706; } .sh-star:disabled { opacity: .5; cursor: not-allowed; }
@@ -256,6 +254,7 @@
     .task-tools button, .recent button, .periods button { min-height: 44px; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--glass); cursor: pointer; }
     .task-tools button:disabled { opacity: .5; cursor: wait; }
     .periods button[aria-pressed="true"], .recent button[aria-current="true"] { border-color: var(--cyan); background: #E8EFFC; }
+    .periods .period-mode { align-self: center; color: var(--ink-3); font-size: 12px; padding: 0 4px; }
     .stages span { padding: 5px 10px; border-radius: 8px; background: var(--glass); font-size: 12px; }
     .market-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
     .market-header h2 { margin: 0; }
@@ -335,6 +334,7 @@
           <button type="button" data-days="60" aria-pressed="false">3个月</button>
           <button type="button" data-days="120" aria-pressed="true">6个月</button>
           <button type="button" data-days="250" aria-pressed="false">1年</button>
+          <span class="period-mode" id="range-mode" aria-live="polite">6个月</span>
         </div>
       </div>
       <p id="quote-selected-date" class="quote-selected-date" hidden></p>
@@ -346,6 +346,7 @@
       </div>
       <p id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
       <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量" hidden></canvas>
+      <p class="note" id="market-zoom-hint" hidden>Ctrl+滚轮缩放，拖动平移</p>
       <div class="date-control" id="date-control" hidden>
         <label for="quote-date">查看日期</label><input type="range" id="quote-date" min="0" max="0" value="0" step="1">
       </div>
@@ -989,8 +990,9 @@
         && !hiddenEv(signalEvidence);
       const hasWindow = canShowStatus && window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
       const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有风险窗口']
-        : top.signal_status === 'signal' ? ['hot', '有合格拟合']
-          : ['', signalStatus[top.signal_status]];
+        : top.signal_status === 'no_qualified_fit' ? ['', '分析已完成 · 本次未形成符合规则的顶部区间']
+          : top.signal_status === 'signal' ? ['hot', '有合格拟合']
+            : ['', signalStatus[top.signal_status]];
       const us = d.symbol?.startsWith('US_');
       const dipState = !d.dip ? ['', us ? '暂无事件库' : '暂无结果']
         : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
@@ -1007,10 +1009,15 @@
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
       ) && Number.isFinite(indicators[scale]?.n_qualified_standard));
       const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
+      const uncomputedScales = scales.filter((scale) => !hiddenEv(
+        confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
+      ) && !Number.isFinite(indicators[scale]?.n_qualified_standard));
       const topText = hasWindow
         ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
         : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
-          : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。${top.signal_status === 'no_qualified_fit' ? '本次没有通过过滤规则的拟合，不代表不会下跌。' : ''}`;
+          : top.signal_status === 'no_qualified_fit'
+            ? `已计算尺度：${shownScales.length ? shownScales.map((scale) => scaleName[scale]).join('、') : '无'}；未计算尺度：${uncomputedScales.length ? uncomputedScales.map((scale) => scaleName[scale]).join('、') : '无'}。这表示当前方法未给出有效区间，不能解释为风险较低。`
+            : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。`;
       const dip = d.dip || {};
       const state = dip.state || {};
       const full = dip.similar?.full || {};
@@ -1057,7 +1064,7 @@
       `;
     }
 
-    function render(d, history) {
+    function render(d, history, market) {
       $('results').hidden = false;
       $('asof').textContent = d.asof ? `截至 ${d.asof}` : '—';
       const name = stockName(d);
@@ -1068,11 +1075,19 @@
         : evidence ? evLabel(evidence) : '证据状态未知';
       document.title = `${name || code6(d.symbol)} · 临界点个股`;
       $('summary').innerHTML = summaryHtml(d, name);
-      if (window.StockHeaderView) StockHeaderView.update(d, name);
+      if (window.StockHeaderView) StockHeaderView.update(d, name, market);
       const us = d.symbol?.startsWith('US_');
+      const priceHistory = d.price_history || {};
+      const adjustedValue = Array.isArray(priceHistory.close) && priceHistory.close.length
+        ? priceHistory.close[priceHistory.close.length - 1] : null;
+      const adjustedClose = adjustedValue == null || !Number.isFinite(Number(adjustedValue))
+        ? null : Number(adjustedValue);
+      const adjustedDate = Array.isArray(priceHistory.dates) && priceHistory.dates.length
+        ? priceHistory.dates[priceHistory.dates.length - 1] : d.asof;
       $('stock-meta').innerHTML =
         `${esc(d.symbol || '')} · 数据截至 ${esc(d.asof || '—')} · ${us ? '后复权(美元)' : '后复权'} · 后端 ${esc(d.data_version || '—')}`
-        + (d.license_note ? ` <span class="badge">${esc(d.license_note)}</span>` : '');
+        + (d.license_note ? ` <span class="badge">${esc(d.license_note)}</span>` : '')
+        + `<br>后复权收盘 ${adjustedClose != null ? adjustedClose.toFixed(2) : '—'}（${esc(adjustedDate || '—')}） · 后复权，仅用于模型历史序列`;
       $('price-note').textContent = us
         ? '后复权收盘（美元）；显示的 t_c 情景区间均为未校准，仅供参考。'
         : '后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。';
@@ -1260,8 +1275,8 @@
       normalizeCode,
       isStaticCode: code => code.startsWith('US_'),
       loadStaticCode: loadStaticUS,
-      renderResult: (current, history) => {
-        render(current, history);
+      renderResult: (current, history, market) => {
+        render(current, history, market);
         const c = code6(current && current.symbol);
         if (/^\d{6}$/.test(c || '')) {
           renderRecentEvents(c);
@@ -1269,6 +1284,9 @@
           $('stock-events').hidden = true;
           $('recent-events').hidden = true;
         }
+      },
+      renderMarket: (current, market) => {
+        if (window.StockHeaderView) StockHeaderView.update(current, stockName(current), market);
       },
     });
     setupStockAutocomplete();
