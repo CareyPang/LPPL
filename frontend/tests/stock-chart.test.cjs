@@ -50,6 +50,13 @@ function setupView() {
     querySelector() { return null; }
   }
 
+  const rangeButtons = [20, 60, 120, 250].map(days => {
+    const button = new Element();
+    button.dataset.days = String(days);
+    button.textContent = { 20: '1个月', 60: '3个月', 120: '6个月', 250: '1年' }[days];
+    button.setAttribute('aria-pressed', String(days === 120));
+    return button;
+  });
   const doc = {
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, new Element(id));
@@ -58,11 +65,7 @@ function setupView() {
     createElement() { return new Element(); },
     querySelectorAll(selector) {
       if (selector !== '[data-days]') return [];
-      return [20, 60, 120, 250].map(days => {
-        const button = new Element();
-        button.dataset.days = String(days);
-        return button;
-      });
+      return rangeButtons;
     },
   };
   let onChange;
@@ -85,6 +88,7 @@ function setupView() {
 
   return {
     elements,
+    rangeButtons,
     window,
     onChange,
     setMarket(price) {
@@ -134,4 +138,51 @@ test('chart zoom and pan clamp to the available bars and a 20-bar minimum', () =
   assert.deepEqual({ ...zoom(0, 10, 10, 2, 0.5) }, { start: 0, end: 10 });
   assert.deepEqual({ ...pan(0, 40, 100, -100) }, { start: 0, end: 40 });
   assert.deepEqual({ ...pan(60, 100, 100, 100) }, { start: 60, end: 100 });
+});
+
+test('plain wheel scrolls normally while Ctrl or Meta wheel zooms into a custom range', () => {
+  const view = setupView();
+  view.setMarket(Array.from({ length: 250 }, (_, i) => ({
+    date: String(i + 1), open: 100 + i, high: 102 + i, low: 99 + i, close: 101 + i, volume: 1000 + i,
+  })));
+  const canvas = view.elements.get('market-plot');
+  let prevented = false;
+  canvas.handlers.wheel({ deltaY: 200, clientX: 200, ctrlKey: false, metaKey: false, preventDefault() { prevented = true; } });
+  assert.equal(prevented, false);
+  assert.equal(view.elements.get('range-mode').textContent, '6个月');
+
+  canvas.handlers.wheel({ deltaY: 200, clientX: 200, ctrlKey: true, metaKey: false, preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(view.elements.get('range-mode').textContent, '自定义');
+  assert.ok(view.rangeButtons.every(button => button.getAttribute('aria-pressed') === 'false'));
+
+  view.rangeButtons[1].handlers.click();
+  assert.equal(view.elements.get('range-mode').textContent, '3个月');
+  assert.deepEqual(view.rangeButtons.map(button => button.getAttribute('aria-pressed')), ['false', 'true', 'false', 'false']);
+
+  canvas.handlers.wheel({ deltaY: 200, clientX: 200, ctrlKey: false, metaKey: true, preventDefault() { prevented = true; } });
+  assert.equal(view.elements.get('range-mode').textContent, '自定义');
+});
+
+test('dragging and two-finger pinch mark changed windows as custom', () => {
+  const dragView = setupView();
+  dragView.setMarket(Array.from({ length: 250 }, (_, i) => ({
+    date: String(i + 1), open: 100 + i, high: 102 + i, low: 99 + i, close: 101 + i, volume: 1000 + i,
+  })));
+  const dragCanvas = dragView.elements.get('market-plot');
+  dragCanvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: 200 });
+  dragCanvas.handlers.pointermove({ pointerType: 'mouse', buttons: 1, clientX: 300 });
+  assert.equal(dragView.elements.get('range-mode').textContent, '自定义');
+  assert.ok(dragView.rangeButtons.every(button => button.getAttribute('aria-pressed') === 'false'));
+
+  const pinchView = setupView();
+  pinchView.setMarket(Array.from({ length: 250 }, (_, i) => ({
+    date: String(i + 1), open: 100 + i, high: 102 + i, low: 99 + i, close: 101 + i, volume: 1000 + i,
+  })));
+  const pinchCanvas = pinchView.elements.get('market-plot');
+  pinchCanvas.handlers.pointerdown({ pointerType: 'touch', pointerId: 1, clientX: 100, clientY: 100 });
+  pinchCanvas.handlers.pointerdown({ pointerType: 'touch', pointerId: 2, clientX: 300, clientY: 100 });
+  pinchCanvas.handlers.pointermove({ pointerType: 'touch', pointerId: 2, clientX: 340, clientY: 100 });
+  assert.equal(pinchView.elements.get('range-mode').textContent, '自定义');
+  assert.ok(pinchView.rangeButtons.every(button => button.getAttribute('aria-pressed') === 'false'));
 });

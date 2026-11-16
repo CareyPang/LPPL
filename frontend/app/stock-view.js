@@ -73,8 +73,15 @@
         '  高 ' + number(bar.high) + '  低 ' + number(bar.low) + '  收 ' + number(bar.close) + '  量 ' + number(bar.volume) + '（供应商原始单位）';
       $('quote-date').setAttribute('aria-valuetext', bar.date + '，收盘 ' + number(bar.close));
     }
-    function setWindow(start, end, nextSelected = selected) {
+    function setRangePreset(button) {
+      for (const other of doc.querySelectorAll('[data-days]')) {
+        other.setAttribute('aria-pressed', String(other === button));
+      }
+      $('range-mode').textContent = button ? button.textContent : '自定义';
+    }
+    function setWindow(start, end, nextSelected = selected, custom = false) {
       const bounds = normalizedWindow(start, end, allPrices.length);
+      const changed = bounds.start !== windowStart || bounds.end !== windowEnd;
       windowStart = bounds.start;
       windowEnd = bounds.end;
       prices = allPrices.slice(windowStart, windowEnd);
@@ -85,6 +92,7 @@
       slider.min = String(windowStart);
       slider.max = String(Math.max(windowStart, windowEnd - 1));
       slider.value = String(Math.max(0, selected));
+      if (custom && changed) setRangePreset(null);
       if (prices.length) draw();
       else readout();
     }
@@ -158,6 +166,8 @@
         $('market-date').textContent = '';
         setWindow(0, 0, -1);
       }
+      setRangePreset([...doc.querySelectorAll('[data-days]')].find(button => Number(button.dataset.days) === days));
+      $('market-zoom-hint').hidden = !exists;
     }
     function update(next) {
       if (staticCode) return;
@@ -169,7 +179,11 @@
       }
       $('market-panel').hidden = false; $('task-stages').hidden = false;
       $('market-name').textContent = (next.market?.name || next.current?.name || '股票') + ' · ' + next.code;
-      if (next.market && next.market !== lastMarket) { lastMarket = next.market; showMarket(next.market); }
+      if (next.market && next.market !== lastMarket) {
+        lastMarket = next.market;
+        showMarket(next.market);
+        if (next.current && next.current === lastCurrent) options.renderMarket?.(next.current, next.market);
+      }
       if (next.market) $('market-date').textContent = '行情截至 ' + next.market.asof +
         ' · 未复权 · ' + (next.market.source || '日线数据') +
         (next.marketStatus === 'stale' || next.market.stale === true ? ' · 缓存日线，刷新未完成' : '');
@@ -178,7 +192,7 @@
       const history = root.StockSession.compatible(next.current, next.history) ? next.history : null;
       if (next.current && (lastCurrent !== next.current || lastHistory !== history)) {
         lastCurrent = next.current; lastHistory = history;
-        options.renderResult(next.current, history);
+        options.renderResult(next.current, history, next.market);
         $('first-visible-note').textContent = '尚未记录此结果在本浏览器的可见时间。';
         visibility?.observe($('summary').querySelector('.top') || $('risk'), next.current);
         if (next.history && !history) $('history-note').textContent =
@@ -282,7 +296,7 @@
     });
     for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
       days = Number(button.dataset.days);
-      for (const other of doc.querySelectorAll('[data-days]')) other.setAttribute('aria-pressed', String(other === button));
+      setRangePreset(button);
       const end = allPrices.length;
       setWindow(Math.max(0, end - days), end, end - 1);
     });
@@ -344,7 +358,7 @@
           const scaled = zoom(pinch.start, pinch.end, allPrices.length, distance / pinch.distance, pinch.anchor);
           const deltaBars = -(midpoint - pinch.midpoint) / pinch.plotWidth * (scaled.end - scaled.start);
           const moved = pan(scaled.start, scaled.end, allPrices.length, deltaBars);
-          setWindow(moved.start, moved.end, selected);
+          setWindow(moved.start, moved.end, selected, true);
         } else if (pointers.size === 1) {
           selectAt(event.clientX);
         }
@@ -355,7 +369,7 @@
         const { plotWidth } = plotMetrics(event.clientX);
         const deltaBars = (drag.x - event.clientX) / plotWidth * (drag.end - drag.start);
         const moved = pan(drag.start, drag.end, allPrices.length, deltaBars);
-        setWindow(moved.start, moved.end, selected);
+        setWindow(moved.start, moved.end, selected, true);
       } else if (!drag) {
         selectAt(event.clientX);
       }
@@ -371,11 +385,11 @@
     canvas.addEventListener('pointerup', endPointer);
     canvas.addEventListener('pointercancel', endPointer);
     canvas.addEventListener('wheel', event => {
-      if (!allPrices.length) return;
+      if (!allPrices.length || (!event.ctrlKey && !event.metaKey)) return;
       event.preventDefault();
       const { anchor } = plotMetrics(event.clientX);
       const bounds = zoom(windowStart, windowEnd, allPrices.length, Math.exp(-event.deltaY * .002), anchor);
-      setWindow(bounds.start, bounds.end, selected);
+      setWindow(bounds.start, bounds.end, selected, true);
     }, { passive: false });
     const observer = root.ResizeObserver ? new root.ResizeObserver(draw) : null;
     observer?.observe($('market-panel'));
