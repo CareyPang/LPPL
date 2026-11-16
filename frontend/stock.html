@@ -1141,14 +1141,21 @@
 
     let stockView;
     let eventsSerial = 0;
+    let eventsCode = null;
     async function renderRecentEvents(code) {
+      const code6Value = String(code).replace(/^\D+/, '').slice(-6);
       const request = ++eventsSerial, panel = $('stock-events');
+      eventsCode = code6Value;
       panel.hidden = true;
+      $('stock-events-body').innerHTML = '';
       stockView?.setEvents([]);
       try {
         const data = await LPPL.events();
-        if (request !== eventsSerial || !data) return;
-        const code6Value = String(code).replace(/^\D+/, '').slice(-6);
+        if (request !== eventsSerial) return;
+        if (!data) {
+          eventsCode = null;
+          return;
+        }
         const shareCount = (v) => Number.isFinite(v) ? `${Number(v.toFixed(2))} 万股` : '— 万股';
         const marketCap = (v) => Number.isFinite(v) ? `${v.toFixed(2)} 万元` : '— 万元';
         const rows = [
@@ -1176,7 +1183,7 @@
             <span class="stock-event-text">${esc(row.text)}</span>
             <div class="stock-event-actions">
               <button type="button" data-action="focus" data-event-id="${esc(row.id)}">图上查看</button>
-              <button type="button" data-action="replay" data-event-id="${esc(row.id)}" title="${availability.ok ? '' : esc(availability.reason)}" ${availability.ok ? '' : 'disabled'}>回到当时</button>
+              <button type="button" data-action="replay" data-event-id="${esc(row.id)}" data-event-date="${esc(row.date)}" title="${availability.ok ? '' : esc(availability.reason)}" ${availability.ok ? '' : 'disabled'}>回到当时</button>
               <span class="event-status" aria-live="polite"></span>
             </div>
           </li>`;
@@ -1199,9 +1206,19 @@
         });
         panel.hidden = false;
       } catch (_) {
+        if (request === eventsSerial) eventsCode = null;
         stockView?.setEvents([]);
         panel.hidden = true;
       }
+    }
+
+    function refreshEventAvailability() {
+      document.querySelectorAll('#stock-events-list button[data-action="replay"]').forEach(button => {
+        const availability = stockView?.historyAvailability(button.dataset.eventDate)
+          || { ok: false, reason: '本股暂无历史补算' };
+        button.disabled = !availability.ok;
+        button.title = availability.ok ? '' : availability.reason;
+      });
     }
 
     async function loadStaticUS(code) {
@@ -1362,16 +1379,19 @@
         render(current, history, market);
         const c = code6(current && current.symbol);
         if (/^\d{6}$/.test(c || '')) {
-          renderRecentEvents(c);
+          if (eventsCode !== c) renderRecentEvents(c);
         } else {
+          eventsSerial += 1;
+          eventsCode = null;
+          stockView?.setEvents([]);
           $('stock-events').hidden = true;
           $('recent-events').hidden = true;
         }
+        refreshEventAvailability();
       },
       renderMarket: (current, market) => {
         if (window.StockHeaderView) StockHeaderView.update(current, stockName(current), market);
-        const c = code6(current && current.symbol);
-        if (/^\d{6}$/.test(c || '')) renderRecentEvents(c);
+        refreshEventAvailability();
       },
     });
     setupStockAutocomplete();
@@ -1381,6 +1401,8 @@
         renderRecentEvents(c);
       } else {
         eventsSerial += 1;
+        eventsCode = null;
+        stockView?.setEvents([]);
         $('stock-events').hidden = true;
         $('recent-events').hidden = true;
       }

@@ -624,12 +624,15 @@ test('selecting an out-of-view scale moves to latest while range presets count o
   assert.equal(Number(slider.max) - Number(slider.min) + 1, 20);
 });
 
-function replayFixture({ count = 250, historyDates = [], code = '601838' } = {}) {
+function replayFixture({
+  count = 250, historyDates = [], code = '601838', historyEvidence, scenarios = [],
+} = {}) {
   const view = setupView();
   const price = barsEnding('2026-11-16', count);
   const current = currentRecord(code, [], {});
-  const frames = historyDates.map(asof => ({ asof, scenarios: [] }));
+  const frames = historyDates.map(asof => ({ asof, scenarios }));
   const history = { symbol: current.symbol, asof: frames.at(-1)?.asof, frames };
+  if (historyEvidence !== undefined) history.evidence = historyEvidence;
   view.setState({
     code,
     market: marketRecord(code, price),
@@ -639,6 +642,18 @@ function replayFixture({ count = 250, historyDates = [], code = '601838' } = {})
   });
   return { view, price, current: { ...current, asof: price.at(-1).date }, history };
 }
+
+test('dev-only history evidence permits replay but hides scenario bands', () => {
+  const { view } = replayFixture({
+    count: 120,
+    historyDates: ['2026-10-20'],
+    historyEvidence: 'dev_only',
+    scenarios: [{ q20_date: '2026-10-21', q80_date: '2026-10-30' }],
+  });
+  assert.deepEqual({ ...view.view.enterHistory('2026-10-20') }, { ok: true });
+  assert.ok(!latestDraw(view).some(call =>
+    call.type === 'fillRect' && String(call.fillStyle).startsWith('rgba(31,95,214')));
+});
 
 test('focusDate centers an in-range bar, preserves mode, and writes focus without losing hash', () => {
   const view = setupView({ hash: '#scale=6-12m' });

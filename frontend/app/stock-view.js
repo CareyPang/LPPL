@@ -289,8 +289,11 @@
     function historyScenario(frame, current) {
       const calendar = current?.future_calendar;
       const closures = closuresFor(current);
-      const bands = (frame.scenarios || []).filter(item =>
-        typeof item?.q20_date === 'string' && typeof item?.q80_date === 'string')
+      const evidence = lastHistory?.evidence || lastHistory?.evidence_levels?.scenarios;
+      const hiddenEvidence = !evidence || typeof evidence !== 'string' || evidence === 'none'
+        || evidence.startsWith('fail') || evidence === 'dev_only' || evidence === 'dev_failed';
+      const bands = hiddenEvidence ? [] : (frame.scenarios || [])
+        .filter(item => typeof item?.q20_date === 'string' && typeof item?.q80_date === 'string')
         .map((item, index) => {
           const first = root.CPTradingDays.idxOf(allPrices, item.q20_date, closures);
           const last = root.CPTradingDays.idxOf(allPrices, item.q80_date, closures);
@@ -836,12 +839,12 @@
       if (state) for (const mode of ['current', 'history']) session.resume(state.code, mode);
     });
     $('stock-history-exit')?.addEventListener('click', exitHistory);
-      for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
-        days = Number(button.dataset.days);
-        setRangePreset(button);
-        const end = visibleLength();
-        setWindow(Math.max(0, end - days), end, end - 1);
-      });
+    for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
+      days = Number(button.dataset.days);
+      setRangePreset(button);
+      const end = visibleLength();
+      setWindow(Math.max(0, end - days), end, end - 1);
+    });
     $('quote-date').addEventListener('input', event => {
       selected = clamp(Number(event.target.value), windowStart, windowEnd - 1);
       draw();
