@@ -153,20 +153,20 @@ a { color: var(--ink-2); text-decoration: none; }
 .vh { margin: 0; font: 600 18px/1.35 var(--f-u); }
 .vh.t-warn { color: var(--warn); } .vh.t-bot { color: var(--dn); } .vh.t-real { color: var(--real); }
 .vs { margin: var(--s1) 0 0; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
-.phs { display: flex; width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; border: 1px solid var(--line); overscroll-behavior-x: contain; scrollbar-width: thin; }
-.phs button { flex: 0 0 92px; min-width: 92px; min-height: 36px; padding: 5px 4px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--ink-2); text-align: center; cursor: pointer; }
-.phs button:last-child { border-right: 0; }
+.phs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; min-width: 0; max-width: 100%; border: 1px solid var(--line); }
+.phs button { min-width: 0; min-height: 36px; padding: 5px 4px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: transparent; color: var(--ink-2); text-align: center; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.phs button:nth-child(3n), .phs button:last-child { border-right: 0; }
+.phs button:nth-last-child(-n+3) { border-bottom: 0; }
 .phs button:disabled { color: var(--ink-3); cursor: not-allowed; }
 .phs button[aria-checked="true"] { background: #F5E8D5; color: var(--ink); box-shadow: inset 0 -2px 0 var(--warn); }
 .phs button.hover { box-shadow: inset 0 0 0 2px var(--real); }
 .phs .n, .phs .ph-state { display: block; font-size: 10px; line-height: 1.2; }
 .phs .n { font-family: var(--f-m); }
-.phs .ph-value { display: block; font: 500 11px/1.25 var(--f-m); }
 .ph-tip { margin: var(--s2) 0 0; font-size: 12px; color: var(--ink-2); }
 .hist-blk > summary { cursor: pointer; list-style: none; }
 .hist-blk > summary::-webkit-details-marker { display: none; }
 .hist-summary { margin-left: 6px; font: 400 11px/1.3 var(--f-u); letter-spacing: 0; color: var(--ink-2); }
-.kv { list-style: none; margin: 0; padding: 0; }
+.kv { list-style: none; min-width: 0; margin: 0; padding: 0; }
 .kv li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); padding: 6px 0; border-bottom: 1px solid var(--grid); min-width: 0; }
 .kv li:last-child { border-bottom: 0; }
 .kv .k { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
@@ -256,9 +256,9 @@ footer p { margin: 0; max-width: 110ch; }
 }
 @media (max-width: 768px) {
   .bar-in { flex-wrap: wrap; }
-  .cmd { order: 3; flex-basis: 100%; max-width: none; }
+  .cmd { order: 3; flex-basis: 100%; width: 100%; min-width: 0; max-width: none; }
   .cmd label { display: none; }
-  #asof { width: 132px; }
+  #asof { width: 132px; min-width: 0; padding-left: 4px; padding-right: 4px; }
   .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "tool" "chart" "tl" "side" "bottom"; }
   .tool { flex-direction: row; justify-content: flex-start; padding: var(--s1) var(--s2); border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
   .tool hr { width: 0; height: 24px; border-top: 0; border-left: 1px solid var(--line); margin: 0 var(--s1); }
@@ -267,6 +267,11 @@ footer p { margin: 0; max-width: 110ch; }
   .chead { flex-wrap: wrap; }
   .side { display: flex; }
   .side .blk { border-right: 0; }
+  .kv li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; align-items: start; }
+  .kv .k { white-space: normal; }
+  .kv .v { width: 100%; text-align: left; }
+  .hist-blk > summary { min-width: 0; overflow-wrap: anywhere; }
+  .hist-summary { display: block; max-width: 100%; margin-left: 0; }
   .kpis { --od-cols: 2; }
   .kpi:nth-child(2) { border-right: 0; }
   .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
@@ -622,11 +627,11 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (realOn) for (let i = Math.max(i0, T + 1); i <= i1; i++) { lo = Math.min(lo, bars[i].close); hi = Math.max(hi, bars[i].close); }
       if (st.show.bot && rm.crash && vis(rm.crash.botLo, rm.crash.botHi)) { lo = Math.min(lo, rm.crash.pxLo); hi = Math.max(hi, rm.crash.pxHi); }
       if (st.show.wave && rm.crash && vis(rm.crash.botHi, rm.crash.botHi + 25)) hi = Math.max(hi, rm.crash.wave2);
-      if (st.show.top && rm.topPx && rm.topW && vis(rm.topW.lo, rm.topW.hi)) hi = Math.max(hi, rm.topPx[1]);
       if (!isFinite(lo)) { lo = bars[T].close * 0.9; hi = bars[T].close * 1.1; }
       const ly = [Math.log(lo), Math.log(hi)], lp = (ly[1] - ly[0]) * 0.07 || 0.02;
       ly[0] -= lp; ly[1] += lp;
       const [pt, pb] = g.price;
+      let selectedLabelY = pt + 14;
       const Y = (v) => pb - (Math.log(v) - ly[0]) / (ly[1] - ly[0]) * (pb - pt);
 
       // 右侧坐标轴底色
@@ -668,17 +673,25 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
       // ---- 主图叠加层 ----
       ctx.save(); ctx.beginPath(); ctx.rect(0, pt, g.W, pb - pt); ctx.clip();
-      st.scaleBands.forEach((band) => {
-        if (!vis(band.lo, band.hi)) return;
-        const x0 = X(band.lo), x1 = X(band.hi + 1), active = band.scale === st.scaleSelected;
-        const hovered = band.scale === st.scaleHover;
-        ctx.fillStyle = rgba(col.warn, active ? 0.12 : hovered ? 0.09 : 0.025);
-        ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
-        if (active || hovered) {
-          ctx.strokeStyle = rgba(col.warn, active ? 0.75 : 0.45);
+      const selectedBand = st.show.top ? st.scaleBands.find((band) => band.scale === st.scaleSelected) : null;
+      if (st.show.top) {
+        st.scaleBands.filter((band) => band.scale !== st.scaleSelected && vis(band.lo, band.hi)).forEach((band) => {
+          const x0 = X(band.lo), x1 = X(band.hi + 1), hovered = band.scale === st.scaleHover;
+          ctx.fillStyle = rgba(col.warn, hovered ? 0.06 : 0.025);
+          ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
+          ctx.strokeStyle = rgba(col.warn, hovered ? 0.38 : 0.18);
+          ctx.lineWidth = hovered ? 1 : 0.75;
           ctx.strokeRect(Math.round(x0) + 0.5, pt + 0.5, Math.max(1, Math.round(x1 - x0)), pb - pt - 1);
+        });
+        if (selectedBand && vis(selectedBand.lo, selectedBand.hi)) {
+          const x0 = X(selectedBand.lo), x1 = X(selectedBand.hi + 1);
+          ctx.fillStyle = rgba(col.warn, 0.16);
+          ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
+          ctx.strokeStyle = rgba(col.warn, 0.95); ctx.lineWidth = 2;
+          ctx.strokeRect(Math.round(x0) + 0.5, pt + 1, Math.max(1, Math.round(x1 - x0)), pb - pt - 2);
         }
-      });
+        ctx.lineWidth = 1;
+      }
       if (st.show.hist && R.hist) {
         const hv = R.hist.frames.filter((f) => vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))), dense = CPSCN.isDense(hv.length, g.W);
         for (const f of hv) {
@@ -690,16 +703,6 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           CPSCN.drawTop(ctx, x, y);
           tag('事后确认顶 ' + U.pct(t.dd, 0), x, Math.max(pt + 10, y - 18), '#FFFFFF', col.real, 'center');
         }
-      }
-      if (st.show.top && rm.altW && vis(rm.altW.lo, rm.altW.hi)) {
-        ctx.fillStyle = rgba(col.warn, 0.05); ctx.fillRect(X(rm.altW.lo), pt, Math.max(2, X(rm.altW.hi + 1) - X(rm.altW.lo)), pb - pt);
-      }
-      if (st.show.top && rm.topW && vis(rm.topW.lo, rm.topW.hi)) {
-        const x0 = X(rm.topW.lo), x1 = X(rm.topW.hi + 1);
-        ctx.fillStyle = rgba(col.warn, 0.10); ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
-        vline(x0, pt, pb, rgba(col.warn, 0.6)); vline(x1, pt, pb, rgba(col.warn, 0.6));
-        if (rm.topPx) { ctx.fillStyle = rgba(col.warn, 0.22); ctx.fillRect(x0, Y(rm.topPx[1]), Math.max(2, x1 - x0), Y(rm.topPx[0]) - Y(rm.topPx[1])); }
-        tag('情景区间 ' + U.md(rm.topW.loDate).replace('月', '/').replace('日', '') + '–' + U.md(rm.topW.hiDate).replace('月', '/').replace('日', '') + '（未校准，仅供参考）', (x0 + x1) / 2, pt + 30, '#FFFFFF', col.warn, 'center');
       }
       if (rm.crash && st.show.bot && vis(rm.crash.botLo, rm.crash.botHi)) {
         const c = rm.crash, x0 = X(c.botLo), x1 = X(c.botHi + 1), y0 = Y(c.pxHi), y1 = Y(c.pxLo);
@@ -755,11 +758,20 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           ctx.fillText(buy ? '买' : '卖', x, buy ? Y(q.low) + 28 : Y(q.high) - 28);
         });
       }
-      const hoveredBand = st.scaleBands.find((band) => band.scale === st.scaleHover);
-      if (hoveredBand) {
+      if (selectedBand && vis(selectedBand.lo, selectedBand.hi)) {
+        const label = SCN[selectedBand.scale] + ' 情景区间 ' +
+          U.md(selectedBand.q20_date).replace('月', '/').replace('日', '') + '–' +
+          U.md(selectedBand.q80_date).replace('月', '/').replace('日', '');
+        selectedLabelY = Math.min(pb - 12, pt + 48);
+        tag(label, 4, selectedLabelY, '#FFFFFF', col.warn, 'left');
+      }
+      const hoveredBand = st.show.top && st.scaleBands.find((band) => band.scale === st.scaleHover);
+      if (hoveredBand && hoveredBand.scale !== st.scaleSelected) {
         const center = (X(hoveredBand.lo) + X(hoveredBand.hi + 1)) / 2;
-        tag(SCN[hoveredBand.scale] + ' ' + hoveredBand.q20_date.slice(5) + '–' + hoveredBand.q80_date.slice(5),
-          center, pt + 14, '#FFFFFF', col.warn, 'center');
+        tag(SCN[hoveredBand.scale] + ' 情景区间 ' +
+          U.md(hoveredBand.q20_date).replace('月', '/').replace('日', '') + '–' +
+          U.md(hoveredBand.q80_date).replace('月', '/').replace('日', ''),
+          center, Math.min(pb - 12, selectedLabelY + 24), '#FFFFFF', col.warn, 'center');
       }
       ctx.restore();
 
@@ -825,6 +837,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
     function idxAt(x) { const g = geo(); return Math.round(st.a + x / (g.W / (st.b - st.a))); }
     function scaleAt(index) {
+      if (!st.show.top) return null;
       const candidates = st.scaleBands.filter((band) => index >= band.lo && index <= band.hi);
       candidates.sort((a, b) => Math.abs((a.lo + a.hi) / 2 - index) - Math.abs((b.lo + b.hi) / 2 - index));
       return candidates.length ? candidates[0].scale : null;
@@ -906,7 +919,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       onScaleHover(fn) { onScaleHover = fn; },
       onScaleSelect(fn) { onScaleSelect = fn; },
       hoverScale(scale) {
-        const hover = st.scaleBands.some((band) => band.scale === scale) ? scale : null;
+        const hover = st.show.top && st.scaleBands.some((band) => band.scale === scale) ? scale : null;
         if (hover !== st.scaleHover) { st.scaleHover = hover; onScaleHover(hover); draw(); }
       },
       set(R) {
@@ -1027,7 +1040,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     $('phs').innerHTML = currentScaleStates.map((state) => {
       const selected = state.scale === selectedScale;
       const value = state.selectable ? (state.confidence == null ? '未计算' : U.pct(state.confidence, 0)) : '';
-      return `<button type="button" role="radio" data-scale="${state.scale}" aria-checked="${selected}" aria-disabled="${!state.selectable}" tabindex="${selected ? 0 : -1}"${state.selectable ? '' : ' disabled'}><span class="n">${E(SCN[state.scale])}</span><span class="ph-value">${E(value)}</span><span class="ph-state">${E(state.status)}</span></button>`;
+      const status = [value, state.status].filter(Boolean).join(' · ');
+      return `<button type="button" role="radio" data-scale="${state.scale}" aria-checked="${selected}" aria-disabled="${!state.selectable}" tabindex="${selected ? 0 : -1}"${state.selectable ? '' : ' disabled'}><span class="n">${E(SCN[state.scale])}</span><span class="ph-state">${E(status)}</span></button>`;
     }).join('');
   }
 
