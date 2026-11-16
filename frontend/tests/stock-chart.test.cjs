@@ -689,6 +689,23 @@ test('focusDate in future slots selects the no-quote readout and rejects dates b
   assert.equal(view.view.focusDate('2027-02-01', 'forecast:2027-02-01:0').reason, '该日期超出图上范围');
 });
 
+test('out-of-range future focus leaves the current chart window and selection unchanged', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 250);
+  const windows = [{ scale: '6-12m', q20_date: '2027-01-04', q80_date: '2027-01-06', n: 4 }];
+  const current = currentRecord('601838', windows, { '6-12m': 'dev' }, { closures: ['2027-01-01'] });
+  view.setState({ code: '601838', market: marketRecord('601838', price), current });
+  view.view.focusDate(price[100].date);
+
+  const slider = view.elements.get('quote-date');
+  const before = { min: slider.min, max: slider.max, value: slider.value };
+  const result = view.view.focusDate('2027-02-01');
+
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, '该日期超出图上范围');
+  assert.deepEqual({ min: slider.min, max: slider.max, value: slider.value }, before);
+});
+
 test('historyAvailability returns the four settled precondition reasons', () => {
   const price = barsEnding('2026-11-16', 100);
   const noHistory = replayFixture({ count: 100 });

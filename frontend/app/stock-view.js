@@ -399,10 +399,11 @@
       } else {
         const span = Math.max(1, windowEnd - windowStart);
         const end = visibleLength();
-        setWindow(Math.max(0, end - span), end, selected);
-        const future = currentFutureSlots();
-        if (index >= windowEnd + future) return { ok: false, reason: '该日期超出图上范围' };
+        const start = Math.max(0, end - span);
+        const future = root.StockChartWindow.futureSlots(end, scenario?.bands || [], true);
+        if (index >= end + future) return { ok: false, reason: '该日期超出图上范围' };
         focusEvent = { date, eventId };
+        setWindow(start, end, selected);
         hoveredFutureDate = date;
         draw();
       }
