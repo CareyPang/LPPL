@@ -48,7 +48,7 @@ def data_day(payload: dict) -> str | None:
                 dates.append(date.fromisoformat(str(item["asof"])))
             except ValueError:
                 continue
-        return min(dates).isoformat() if dates else None
+        return max(dates).isoformat() if dates else None
 
     asof = payload.get("asof")
     if asof:

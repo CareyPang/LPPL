@@ -46,17 +46,18 @@ def test_data_day_prefers_asof_and_converts_generated_utc_to_beijing():
     assert freshness.data_day({}) is None
 
 
-def test_growth_snapshot_freshness_uses_oldest_indicator_data_date():
+def test_growth_snapshot_freshness_uses_newest_indicator_data_date():
     assert freshness.data_day(
         {
             "asof": "2026-11-16",
             "indicators": [
                 {"id": "fund_growth_position", "asof": None},
+                {"id": "semi_etf_flow", "asof": "2026-11-13"},
                 {"id": "us10y", "asof": "2026-11-13"},
                 {"id": "growth_rs", "asof": "2026-11-16"},
             ],
         }
-    ) == "2026-11-13"
+    ) == "2026-11-16"
 
 
 def test_check_uses_reference_calendar_and_marks_missing_or_invalid_files(
