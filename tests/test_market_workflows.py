@@ -89,24 +89,63 @@ def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
 def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     workflow = _workflow("index_daily.yml")
     triggers = workflow.get("on", workflow.get(True, {}))
+    plan = workflow["jobs"]["plan"]
+    fit = workflow["jobs"]["fit"]
+    publish_job = workflow["jobs"]["publish"]
+    plan_step = next(
+        step
+        for step in plan["steps"]
+        if step.get("name") == "Plan latest closed-day index fits"
+    )
     run_index = next(
         step
-        for step in workflow["jobs"]["update"]["steps"]
-        if step.get("name") == "Run latest closed-day index fits"
+        for step in fit["steps"]
+        if step.get("name") == "Run latest closed-day index fit"
     )
     publish = next(
         step
-        for step in workflow["jobs"]["update"]["steps"]
+        for step in publish_job["steps"]
         if step.get("name") == "Publish to stock-results"
+    )
+    upload = next(
+        step
+        for step in fit["steps"]
+        if step.get("name") == "Upload index fit artifact"
+    )
+    download = next(
+        step
+        for step in publish_job["steps"]
+        if step.get("name") == "Download index fit artifacts"
     )
 
     assert triggers["schedule"] == [{"cron": "0 10 * * 1-5"}]
     assert triggers["workflow_dispatch"] is None
-    assert 'symbols=(sh000001 sh000016 sh000300 sh000905 sh000688 sz399001 sz399006)' in run_index["run"]
-    assert 'symbols=(sh000001)' in run_index["run"]
-    assert publish["if"] == (
-        "github.event_name != 'pull_request' && steps.run.outputs.success_count != '0'"
+    assert 'asof="$(python -c \'from research.data.trading_date import latest_closed_trading_day; print(latest_closed_trading_day())\')"' in plan_step["run"]
+    assert 'symbols=\'["sh000001","sh000016","sh000300","sh000905","sh000688","sz399001","sz399006"]\'' in plan_step["run"]
+    assert 'symbols=\'["sh000001"]\'' in plan_step["run"]
+    assert fit["needs"] == "plan"
+    assert fit["timeout-minutes"] == 75
+    assert fit["strategy"]["fail-fast"] is False
+    assert fit["strategy"]["max-parallel"] == 7
+    assert 'LPPLS_BOX=v2 python -m research.pipeline.daily "$SYM"' in run_index["run"]
+    assert '--asof "$ASOF" --out out/index' in run_index["run"]
+    assert upload["with"]["name"] == (
+        "index-fit-${{ matrix.sym }}-${{ github.run_id }}-${{ github.run_attempt }}"
     )
+    assert upload["with"]["if-no-files-found"] == "warn"
+    assert publish_job["needs"] == ["plan", "fit"]
+    assert publish_job["if"] == (
+        "${{ !cancelled() && github.event_name != 'pull_request' }}"
+    )
+    assert download["with"]["pattern"] == (
+        "index-fit-*-${{ github.run_id }}-*"
+    )
+    assert "merge-multiple" not in download["with"]
+    assert download["with"]["path"] == "out/artifacts"
+    assert 'dir="$(ls -d "out/artifacts/index-fit-${sym}-${GITHUB_RUN_ID}-"*' in publish["run"]
+    assert 'source="$dir/${sym}_${ASOF}.json"' in publish["run"]
+    assert "Missing symbols:" in publish["run"]
+    assert 'if (( ${#published[@]} == 0 )); then' in publish["run"]
     publish_lines = [line.strip() for line in publish["run"].splitlines()]
     rebase_line = publish_lines.index("rebase origin/stock-results")
     assert publish_lines[rebase_line - 2 : rebase_line + 1] == [
