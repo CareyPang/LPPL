@@ -64,7 +64,7 @@
         price = Number(currentQuote.price);
         change = currentQuote.pct != null && Number.isFinite(Number(currentQuote.pct))
           ? Number(currentQuote.pct) / 100
-          : last && Number(last.close) ? price / Number(last.close) - 1 : null;
+          : Number(currentQuote.prev_close) ? price / Number(currentQuote.prev_close) - 1 : null;
         var timing = quoteTimeLabel(currentQuote.time, currentQuote.tz);
         label = (timing.time === '—' ? '报价时间未提供' : '报价 ' + timing.time) + ' · 不复权 · 腾讯行情，仅供参考';
       } else if (last && Number.isFinite(Number(last.close))) {
