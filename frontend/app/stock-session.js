@@ -236,7 +236,9 @@
       const e = entry(code);
       const generation = e.generation = (e.generation || 0) + 1;
       selected = code;
-      e.marketStatus = 'loading'; e.historyStatus = 'loading'; delete e.issues.market; emit();
+      e.marketStatus = 'loading';
+      if (!jobs.has(code + ':history')) e.historyStatus = 'loading';
+      delete e.issues.market; emit();
       for (const mode of MODES) {
         const job = jobs.get(code + ':' + mode);
         if (job) {
