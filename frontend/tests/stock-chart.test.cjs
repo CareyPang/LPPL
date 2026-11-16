@@ -585,6 +585,12 @@ test('hovering or tapping future slots shows a no-quote readout without extendin
   canvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: x, clientY: 100 });
   canvas.handlers.pointerup({ pointerType: 'mouse', clientX: x, clientY: 100 });
   assert.match(view.elements.get('quote-selected-date').textContent, /^2026-12-31 · 未来交易日，无行情$/);
+
+  canvas.handlers.pointerdown({ pointerType: 'touch', pointerId: 1, clientX: x, clientY: 100 });
+  canvas.handlers.pointerup({ pointerType: 'touch', pointerId: 1, clientX: x, clientY: 100 });
+  assert.match(view.elements.get('quote-readout').textContent, /^2026-12-31 · 未来交易日，无行情$/);
+  canvas.handlers.pointerleave({ pointerType: 'touch' });
+  assert.match(view.elements.get('quote-readout').textContent, /^2026-12-31 · 未来交易日，无行情$/);
 });
 
 test('selecting an out-of-view scale moves to latest while range presets count only real bars', () => {

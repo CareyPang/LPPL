@@ -786,7 +786,8 @@
     };
     canvas.addEventListener('pointerup', event => endPointer(event, true));
     canvas.addEventListener('pointercancel', event => endPointer(event, false));
-    canvas.addEventListener('pointerleave', () => {
+    canvas.addEventListener('pointerleave', event => {
+      if (event?.pointerType === 'touch') return;
       hoveredFutureDate = null;
       readout();
     });
