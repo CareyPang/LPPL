@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>图表库对比试验页 · LPPL</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #242936;
+      background: #f3f5f8;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 0; overflow-x: hidden; }
+    main { width: min(1440px, 100%); margin: 0 auto; padding: 20px; }
+    h1 { margin: 0; font-size: 22px; line-height: 1.4; }
+    h2 { margin: 0; font-size: 17px; }
+    .intro { margin: 6px 0 18px; color: #666d78; font-size: 13px; }
+    .panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .panel, .comparison { min-width: 0; background: #fff; border: 1px solid #e1e5eb; border-radius: 8px; padding: 16px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .panel-a iframe { display: block; width: 100%; height: 640px; border: 0; background: #fff; }
+    .chart-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 10px; }
+    .scale-chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+    .scale-chip { min-height: 32px; padding: 4px 10px; border: 1px solid #d6dbe3; border-radius: 4px; color: #48505c; background: #fff; cursor: pointer; }
+    .scale-chip[aria-pressed="true"] { color: #a96900; border-color: #d99a35; background: #fff8eb; }
+    .scale-chip:disabled { color: #868c96; background: #f6f7f9; cursor: not-allowed; }
+    .focus-date { display: flex; gap: 6px; align-items: center; }
+    .focus-date input, .focus-date button { min-height: 34px; border: 1px solid #d6dbe3; border-radius: 4px; padding: 4px 8px; background: #fff; color: inherit; }
+    .focus-date button { cursor: pointer; }
+    #lwc-chart { width: 100%; height: 500px; min-width: 0; }
+    .status { min-height: 20px; margin: 8px 0; color: #666d78; font-size: 12px; }
+    .readout { min-height: 24px; margin: 8px 0 0; color: #303744; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+    .comparison { margin-top: 16px; }
+    .comparison h2 { margin-bottom: 12px; }
+    .comparison-scroll { max-width: 100%; overflow-x: auto; }
+    table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 10px; border: 1px solid #e1e5eb; text-align: left; vertical-align: top; }
+    th { background: #f7f8fa; color: #5c6470; font-weight: 600; }
+    @media (max-width: 760px) {
+      main { padding: 12px; }
+      .panels { grid-template-columns: minmax(0, 1fr); }
+      .panel, .comparison { padding: 12px; }
+      .panel-a iframe { height: 640px; }
+      #lwc-chart { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>图表库对比试验页 · 不是线上图表</h1>
+    <p class="intro">现有图表与 Lightweight Charts 使用同一股票行情与当前结果；此页不替换线上图表。</p>
+    <p class="status" id="lab-status" role="status" aria-live="polite"></p>
+
+    <div class="panels">
+      <section class="panel panel-a" aria-labelledby="existing-title">
+        <div class="panel-heading"><h2 id="existing-title">现有图表</h2></div>
+        <iframe id="existing-frame" title="现有个股行情图表"></iframe>
+      </section>
+
+      <section class="panel panel-b" aria-labelledby="lwc-title">
+        <div class="panel-heading"><h2 id="lwc-title">Lightweight Charts 5.2.1</h2></div>
+        <div class="chart-tools">
+          <div class="scale-chips" id="scale-chips" role="group" aria-label="情景区间尺度"></div>
+          <div class="focus-date">
+            <label for="focus-date">日期</label>
+            <input id="focus-date" type="date">
+            <button id="locate-date" type="button">定位</button>
+          </div>
+        </div>
+        <div id="lwc-chart" role="region" aria-label="Lightweight Charts K线、成交量及情景区间"></div>
+        <p class="readout" id="crosshair-readout" aria-live="polite">将指针移到K线上查看行情。</p>
+      </section>
+    </div>
+
+    <section class="comparison" aria-labelledby="comparison-title">
+      <h2 id="comparison-title">静态对比</h2>
+      <div class="comparison-scroll">
+        <table>
+          <thead>
+            <tr><th>项目</th><th>现有图表</th><th>Lightweight Charts</th><th>观察</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">日期定位</th><td>日期滑块</td><td>日期输入 + 可见范围</td><td>—</td></tr>
+            <tr><th scope="row">未来空位</th><td>交易日索引预留</td><td>交易日 whitespace 点</td><td>—</td></tr>
+            <tr><th scope="row">区间绘制</th><td>Canvas</td><td>序列 pane primitive</td><td>—</td></tr>
+            <tr><th scope="row">触控缩放/拖动</th><td>自研 Pointer Events</td><td>水平拖动、捏合缩放</td><td>—</td></tr>
+            <tr><th scope="row">键盘</th><td>方向键、缩放快捷键</td><td>未增加自定义快捷键</td><td>—</td></tr>
+            <tr><th scope="row">体积(gzip KB)</th><td>—</td><td id="gzip-size">计算中…</td><td>—</td></tr>
+            <tr><th scope="row">许可/署名</th><td>—</td><td>Apache-2.0 · TradingView 署名</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app/lppl-data.js"></script>
+  <script src="app/trading-days.js"></script>
+  <script src="app/scale-bar.js"></script>
+  <script src="vendor/lightweight-charts/5.2.1/lightweight-charts.standalone.production.js"></script>
+  <script src="app/chart-lab.js"></script>
+</body>
+</html>
