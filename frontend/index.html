@@ -1304,8 +1304,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const direction = e.key === 'ArrowLeft' ? -1 : 1;
     const next = radios[(current + direction + radios.length) % radios.length];
     e.preventDefault();
-    next.focus();
     selectScale(next.dataset.scale);
+    const focused = $('phs').querySelector('button[role="radio"][data-scale="' + next.dataset.scale + '"]');
+    if (focused) focused.focus();
   });
   $('phs').addEventListener('pointerover', (e) => {
     const button = e.target.closest('button[role="radio"]');
