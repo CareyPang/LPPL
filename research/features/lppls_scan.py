@@ -204,15 +204,40 @@ def scan_dates(sym: str, dates: list[pd.Timestamp], windows: tuple[int, ...], ca
         i = pos.get(d)
         if i is None:
             continue
+        eligibility = window_eligibility(i, logp.index, windows, cal_pos)
         for n in windows:
-            if i + 1 < n:
+            if eligibility[n] is not None:
                 continue
             seg = logp.iloc[i + 1 - n : i + 1]
-            ncal = cal_pos[seg.index[-1]] - cal_pos[seg.index[0]] + 1 if seg.index[0] in cal_pos else n
-            if n < (1 - MAX_GAP_SHARE) * ncal:
-                continue
             rows.append((d, *fit_one(seg.to_numpy())))
     return pd.DataFrame(rows, columns=COLS)
+
+
+def window_eligibility(
+    asof_position: int,
+    series_index: pd.DatetimeIndex,
+    windows: tuple[int, ...],
+    calendar_positions: dict[pd.Timestamp, int],
+) -> dict[int, str | None]:
+    """Return legacy history/gap eligibility reasons for each planned window."""
+    if not 0 <= asof_position < len(series_index):
+        raise ValueError("asof_position is outside the price series")
+    result: dict[int, str | None] = {}
+    for window in windows:
+        if asof_position + 1 < window:
+            result[window] = "insufficient_history"
+            continue
+        start = series_index[asof_position + 1 - window]
+        if start in calendar_positions:
+            calendar_length = calendar_positions[series_index[asof_position]] - calendar_positions[start] + 1
+        else:
+            calendar_length = window
+        result[window] = (
+            "max_gap_share_exceeded"
+            if window < (1 - MAX_GAP_SHARE) * calendar_length
+            else None
+        )
+    return result
 
 
 def _task(args):
