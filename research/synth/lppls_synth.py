@@ -34,12 +34,11 @@ class Truth:
         return np.array([self.tc, self.m, self.w])
 
 
-def make_noise(n: int, sigma: float, kind: str, rng: np.random.Generator) -> np.ndarray:
+def make_noise(n: int, sigma: float, kind: str, rng: np.random.Generator, phi: float = 0.5) -> np.ndarray:
     z = rng.standard_normal(n)
     if kind == "iid":
         return sigma * z
     if kind == "ar1":
-        phi = 0.5
         e = np.empty(n)
         e[0] = z[0]
         for i in range(1, n):
@@ -58,7 +57,7 @@ def make_noise(n: int, sigma: float, kind: str, rng: np.random.Generator) -> np.
     raise ValueError(kind)
 
 
-def sample(n: int = 250, sigma: float = 0.02, noise: str = "iid", seed: int = 0, horizon=(5, 60)) -> tuple[np.ndarray, np.ndarray, Truth]:
+def sample(n: int = 250, sigma: float = 0.02, noise: str = "iid", seed: int = 0, horizon=(5, 60), phi: float = 0.5) -> tuple[np.ndarray, np.ndarray, Truth]:
     rng = np.random.default_rng(seed)
     tc = n - 1 + rng.uniform(*horizon)
     m = rng.uniform(0.2, 0.8)
@@ -72,5 +71,5 @@ def sample(n: int = 250, sigma: float = 0.02, noise: str = "iid", seed: int = 0,
     ph = rng.uniform(0, 2 * np.pi)
     C1, C2 = C * np.cos(ph), C * np.sin(ph)
     t = np.arange(n, dtype=float)
-    y = design(t, tc, m, w) @ np.array([A, B, C1, C2]) + make_noise(n, sigma, noise, rng)
+    y = design(t, tc, m, w) @ np.array([A, B, C1, C2]) + make_noise(n, sigma, noise, rng, phi)
     return t, y, Truth(tc, m, w, A, B, C1, C2, n, sigma, noise, seed)

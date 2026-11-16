@@ -98,7 +98,7 @@ def main():
     R["n_bin"] = pd.cut(R.n, N_BINS)
     R["dtc"] = (R.tc - R.tc_ref).abs()
     OUT.mkdir(parents=True, exist_ok=True)
-    R.to_parquet(OUT / "windows.parquet")
+    R.astype({"m_bin": str, "n_bin": str}).to_parquet(OUT / "windows.parquet")
     agg = dict(n=("miss", "size"), miss=("miss", "mean"), rel_med_miss=("rel", lambda x: x[x > TOL].median()),
                dtc_med_miss=("dtc", lambda x: x[R.loc[x.index, "miss"]].median()))
     S0 = R.groupby("method").agg(**agg)
