@@ -656,11 +656,12 @@
       const domain = Math.max(1, root.StockChartWindow.domainSlots(windowStart, windowEnd, future));
       const x = clientX - rect.left - 10;
       const inPlot = x >= 0 && x <= plotWidth;
+      const slot = clamp(x / plotWidth * domain, 0, domain);
       return {
         rect,
         plotWidth,
-        anchor: clamp(x / plotWidth, 0, 1),
-        slot: clamp(x / plotWidth * domain, 0, domain),
+        anchor: clamp(slot / Math.max(1, windowEnd - windowStart), 0, 1),
+        slot,
         domain,
         future,
         inPlot,

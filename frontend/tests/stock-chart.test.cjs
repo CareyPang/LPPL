@@ -224,6 +224,36 @@ test('plain wheel scrolls normally while Ctrl or Meta wheel zooms into a custom 
   assert.equal(view.elements.get('range-mode').textContent, '自定义');
 });
 
+test('zooming at the latest candle keeps the real-data window at the latest edge with future slots', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 120);
+  const windows = [{ scale: '6-12m', q20_date: '2026-12-30', q80_date: '2027-01-07', n: 4 }];
+  const evidence = { '6-12m': 'dev' };
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, evidence, { closures: [] }),
+  });
+
+  const states = view.window.ScaleBar.classify(evidence, {}, windows);
+  const bands = view.window.StockChartWindow.mapScenarioBands(price, windows, states, new Set());
+  const future = view.window.StockChartWindow.futureSlots(price.length, bands, true);
+  assert.ok(future > 0);
+  const domain = view.window.StockChartWindow.domainSlots(0, price.length, future);
+  const canvas = view.elements.get('market-plot');
+  const lastCandleX = 10 + (price.length - .5) / domain * (canvas.clientWidth - 68);
+
+  canvas.handlers.wheel({
+    deltaY: -200,
+    clientX: lastCandleX,
+    ctrlKey: true,
+    metaKey: false,
+    preventDefault() {},
+  });
+
+  assert.equal(Number(view.elements.get('quote-date').max), price.length - 1);
+});
+
 test('dragging and two-finger pinch mark changed windows as custom', () => {
   const dragView = setupView();
   dragView.setMarket(Array.from({ length: 250 }, (_, i) => ({
