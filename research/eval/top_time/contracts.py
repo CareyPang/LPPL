@@ -10,7 +10,7 @@ SCORING_CONTRACT_VERSION = "two_level_first_alert_v1"
 LABEL_VERSION = "two_level_close_10_10_63_42_v1"
 
 
-class LabelState(str, Enum):
+class LabelState(str, Enum):  # noqa: UP042
     UNKNOWN = "unknown"
     PENDING = "pending"
     NO_EVENT = "no_event"
