@@ -158,8 +158,8 @@ a { color: var(--ink-2); text-decoration: none; }
 .al-chip:hover{border-color:var(--ink-3);color:var(--ink)}.al-chip[aria-pressed=true]{border-color:var(--warn);color:var(--warn)}
 .al-count{margin:12px 0 6px;color:var(--ink-3);font-size:12px}
 .al-scroll{max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-.al-table{width:100%;min-width:960px}
-.al-row{display:grid;grid-template-columns:150px 90px 180px 100px 240px 200px;align-items:center;min-height:36px;color:var(--ink-2)}
+.al-table{width:100%;min-width:760px}
+.al-row{display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(70px,.6fr) minmax(170px,1.4fr) minmax(80px,.7fr) minmax(200px,1.7fr) minmax(110px,1fr);align-items:center;min-height:36px;color:var(--ink-2)}
 .al-row>span{min-width:0;padding:8px;border-bottom:1px solid var(--grid);font-size:12px}
 .al-row-head{min-height:32px;background:var(--surface-2);color:var(--ink-3);font-weight:600}
 .al-row-head>span{border-bottom-color:var(--line)}
@@ -167,7 +167,7 @@ a { color: var(--ink-2); text-decoration: none; }
 .al-row[data-alert-id]:hover{background:#F7F9FC;color:var(--ink)}
 .al-row[data-alert-id][aria-selected=true]{background:#FFF5E0;color:var(--ink)}
 .al-empty{margin:12px 0 0;padding:12px 0;color:var(--ink-3);font-size:13px}
-@media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:960px}}
+@media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:760px}}
 </style>
 </head>
 <body>
