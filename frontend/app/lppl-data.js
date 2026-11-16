@@ -290,6 +290,7 @@
   const bottomSignal = () => opt('market/bottom_signal_latest.json');
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
+  const growthMonitor = () => opt('growth/growth_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, market, stockList, liveNews, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, liveNews, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog };
 })(window);

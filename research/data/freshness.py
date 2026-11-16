@@ -15,6 +15,7 @@ DATASETS = [
     ("abnormal", "异动提醒", "market/abnormal_latest.json"),
     ("range", "区间统计", "market/range_latest.json"),
     ("macro", "全球宏观", "macro/macro_latest.json"),
+    ("growth", "成长监控", "growth/growth_latest.json"),
     ("nt_etf", "国家队 ETF", "nt_etf/nt_etf_latest.json"),
     ("dip_env", "指数/ETF 环境", "stock/_dip_env.json"),
     ("breadth_sh000300", "沪深300 个股批量", "stock/breadth_sh000300.json"),
@@ -37,6 +38,18 @@ def _beijing_time(value: pd.Timestamp) -> pd.Timestamp:
 
 
 def data_day(payload: dict) -> str | None:
+    indicators = payload.get("indicators")
+    if isinstance(indicators, list):
+        dates = []
+        for item in indicators:
+            if not isinstance(item, dict) or not item.get("asof"):
+                continue
+            try:
+                dates.append(date.fromisoformat(str(item["asof"])))
+            except ValueError:
+                continue
+        return min(dates).isoformat() if dates else None
+
     asof = payload.get("asof")
     if asof:
         try:

@@ -35,6 +35,7 @@
     { t: '快讯', h: '#s-news', ids: ['s-news'] },
     { t: '北向与两融', h: '#s-nb', ids: ['s-nb', 's-mg'] },
     { t: '估值与宏观', h: '#s-val', ids: ['s-val', 's-macro'] },
+    { t: '成长监控', h: '#s-growth', ids: ['s-growth'] },
     { t: '信号与统计', h: '#s-bottom', ids: ['s-bottom', 's-abnormal', 's-range'] },
     { t: '数据状态', h: '#s-fresh', ids: ['s-fresh'] },
     { t: '国家队ETF', h: 'nt.html', page: 'nt' }

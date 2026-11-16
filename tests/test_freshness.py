@@ -35,9 +35,28 @@ def test_data_day_prefers_asof_and_converts_generated_utc_to_beijing():
             "generated_at": "2026-11-13T17:30:00Z",
         }
     ) == "2026-11-13"
+    assert freshness.data_day(
+        {
+            "asof": "2026-11-16",
+            "indicators": [{"id": "us10y", "asof": None}],
+        }
+    ) is None
     assert freshness.data_day({"generated_at": "2026-11-13T17:30:00Z"}) == "2026-11-14"
     assert freshness.data_day({"generated": "2026-11-13T17:30:00+00:00"}) == "2026-11-14"
     assert freshness.data_day({}) is None
+
+
+def test_growth_snapshot_freshness_uses_oldest_indicator_data_date():
+    assert freshness.data_day(
+        {
+            "asof": "2026-11-16",
+            "indicators": [
+                {"id": "fund_growth_position", "asof": None},
+                {"id": "us10y", "asof": "2026-11-13"},
+                {"id": "growth_rs", "asof": "2026-11-16"},
+            ],
+        }
+    ) == "2026-11-13"
 
 
 def test_check_uses_reference_calendar_and_marks_missing_or_invalid_files(
@@ -113,6 +132,14 @@ def test_check_includes_all_index_lppls_datasets(tmp_path, monkeypatch):
         (item["day"], item["lag"], item["status"]) == ("2026-11-16", 0, "ok")
         for item in index_items
     )
+
+
+def test_growth_monitor_is_in_published_freshness_checks():
+    assert (
+        "growth",
+        "成长监控",
+        "growth/growth_latest.json",
+    ) in freshness.DATASETS
 
 
 def test_markdown_uses_chinese_status_table():

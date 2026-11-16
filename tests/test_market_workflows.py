@@ -69,6 +69,41 @@ def test_nt_etf_workflow_bootstraps_and_uses_trading_date():
     assert '("sse_shares","szse_shares")' in gate["run"]
 
 
+def test_growth_monitor_workflow_uses_macro_schedule_and_previous_snapshot():
+    workflow = _workflow("growth_daily.yml")
+    triggers = workflow.get("on", workflow.get(True, {}))
+    assert triggers["schedule"] == [{"cron": "30 22 * * 1-5"}]
+
+    steps = workflow["jobs"]["collect"]["steps"]
+    previous = next(step for step in steps if step.get("id") == "previous")
+    collect = next(step for step in steps if step.get("id") == "fetch")
+    assert "growth/growth_latest.json" in previous["run"]
+    assert 'research.data.trading_date' in collect["run"]
+    assert "research.data.growth_monitor" in collect["run"]
+    assert "--previous" in collect["run"]
+    artifact = next(
+        step for step in steps if step.get("name") == "Upload growth monitor artifact"
+    )
+    assert artifact["if"] == "always()"
+    assert artifact["uses"] == "actions/upload-artifact@v4"
+
+    publish = next(
+        step for step in steps if step.get("name") == "Publish to stock-results"
+    )
+    assert publish["if"] == (
+        "github.event_name != 'pull_request' && steps.fetch.outputs.publishable == 'true'"
+    )
+    assert "cp out/growth/growth_latest.json growth/growth_latest.json" in publish["run"]
+    assert "git push origin HEAD:stock-results" in publish["run"]
+    assert "gh workflow run pages.yml --ref main" in publish["run"]
+    build = (ROOT / "scripts/build_site.sh").read_text(encoding="utf-8")
+    assert 'git -C "$ROOT" archive stock-results growth' in build
+
+    alerts = _workflow("daily_alert.yml")
+    alert_triggers = alerts.get("on", alerts.get(True, {}))
+    assert "growth_daily" in alert_triggers["workflow_run"]["workflows"]
+
+
 def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
     workflow = _workflow("dip_env.yml")
     publish = next(
