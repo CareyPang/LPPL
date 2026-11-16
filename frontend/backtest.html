@@ -406,7 +406,6 @@ a { color: var(--ink-2); text-decoration: none; }
     const top = episode.next_top ? T(episode.next_top.date) : q80;
     const viewStart = T(episode.first_asof) - 90 * DAY;
     const viewEnd = Math.max(q80, top) + 90 * DAY;
-    st.tmin = Math.min(st.tmin, viewStart);
     st.tmax = Math.max(st.tmax, viewEnd);
     setView(viewStart, viewEnd);
     if (updateUrl !== false) writeAlertParam(st.alertId);
