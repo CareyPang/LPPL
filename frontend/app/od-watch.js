@@ -79,6 +79,7 @@
     var value = String(code || '');
     if (/^(?:sh|sz|bj)\d{6}$/i.test(value)) return value.toLowerCase();
     if (/^\d{6}$/.test(value)) {
+      if (/^92/.test(value)) return 'bj' + value;
       if (/^[69]/.test(value)) return 'sh' + value;
       if (/^[03]/.test(value)) return 'sz' + value;
       if (/^[48]/.test(value)) return 'bj' + value;
