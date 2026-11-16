@@ -158,12 +158,13 @@ a { color: var(--ink-2); text-decoration: none; }
 .al-chip:hover{border-color:var(--ink-3);color:var(--ink)}.al-chip[aria-pressed=true]{border-color:var(--warn);color:var(--warn)}
 .al-count{margin:12px 0 6px;color:var(--ink-3);font-size:12px}
 .al-scroll{max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-.al-table{width:100%;min-width:760px}
-.al-row{display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(70px,.6fr) minmax(170px,1.4fr) minmax(80px,.7fr) minmax(200px,1.7fr) minmax(110px,1fr);align-items:center;min-height:36px;color:var(--ink-2)}
+.al-table{width:100%;min-width:980px}
+.al-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(64px,.5fr) minmax(170px,1.3fr) minmax(190px,1.5fr) minmax(80px,.7fr) minmax(130px,1fr) minmax(130px,1fr);align-items:center;min-height:36px;color:var(--ink-2)}
 .al-row>span{min-width:0;padding:8px;border-bottom:1px solid var(--grid);font-size:12px}
 .al-row-head{min-height:32px;background:var(--surface-2);color:var(--ink-3);font-weight:600}
 .al-row-head>span{border-bottom-color:var(--line)}
 .al-row[data-alert-id]{cursor:pointer;outline-offset:-2px}
+.al-row[data-alert-id]:focus-visible{outline:2px solid var(--real)}
 .al-row[data-alert-id]:hover{background:#F7F9FC;color:var(--ink)}
 .al-row[data-alert-id][aria-selected=true]{background:#FFF5E0;color:var(--ink)}
 .al-empty{margin:12px 0 0;padding:12px 0;color:var(--ink-3);font-size:13px}
@@ -228,7 +229,8 @@ a { color: var(--ink-2); text-decoration: none; }
   <aside class="side" aria-label="说明">
     <section class="blk">
       <p class="blk-k">怎么看</p>
-      <p>每条横线从一个周度截止日的收盘价出发，向右延伸到模型那天算出的区间（合格拟合 t_c 的 20–80% 分位；未校准，仅供参考）。只用截止日当天及以前的数据。</p>
+      <p>每条横线从一个周度截止日的收盘价出发，向右延伸到主簇或次级簇区间；只用截止日当天及以前的数据。事后确认顶仅作对照，不是检验结果。</p>
+      <p id="cluster-footnote"></p>
       <p>蓝色三角是事后确认的顶：顶后 126 个交易日内回撤 ≥15%，回撤幅度是事后实测值。</p>
       <p>线太密时，把时间窗口缩小到几年再看；窗口较大时区间线自动变细、不画连接线。</p>
     </section>
@@ -262,10 +264,11 @@ a { color: var(--ink-2); text-decoration: none; }
         <div class="al-row al-row-head" role="row">
           <span role="columnheader">首次出现（截止日）</span>
           <span role="columnheader">持续周数</span>
-          <span role="columnheader">首次区间 q20–q80</span>
+          <span role="columnheader">首次主簇</span>
+          <span role="columnheader">次级簇</span>
           <span role="columnheader">所属段</span>
           <span role="columnheader">下一个事后确认顶</span>
-          <span role="columnheader">顶相对首次区间</span>
+          <span role="columnheader">顶相对主簇</span>
         </div>
         <div id="alert-rows" role="rowgroup"></div>
       </div>
@@ -276,6 +279,7 @@ a { color: var(--ink-2); text-decoration: none; }
 
 <script src="app/lppl-data.js"></script>
 <script src="app/scen-style.js"></script>
+<script src="app/top-clusters.js"></script>
 <script src="app/alert-ledger.js"></script>
 <script>
 (function () {
@@ -293,6 +297,7 @@ a { color: var(--ink-2); text-decoration: none; }
   const ymd = (t) => new Date(t).toISOString().slice(0, 10);
   const pct = (x) => (x * 100).toFixed(0) + '%';
   const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', alertId: null, alertFrame: null };
+  $('cluster-footnote').textContent = CPTopClusters.NOTE;
   const q = new URLSearchParams(location.search);
   if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
 
@@ -355,11 +360,23 @@ a { color: var(--ink-2); text-decoration: none; }
     let mx = st.H.fr[st.H.fr.length - 1].t;
     st.H.fr.forEach((frame) => {
       const window = frame.w[scale];
-      const w0 = window && window[0] ? T(window[0]) : NaN;
-      const w1 = window && window[1] ? T(window[1]) : NaN;
-      frame.w0 = Number.isFinite(w0) ? w0 : null;
-      frame.w1 = Number.isFinite(w1) ? w1 : null;
-      if (frame.w1 != null) mx = Math.max(mx, frame.w1);
+      const clusters = CPTopClusters.forScale(frame, scale);
+      frame.ranges = clusters === null
+        ? window && window[0] && window[1]
+          ? [{ rank: 'main', q20_date: window[0], q80_date: window[1], lo: T(window[0]), hi: T(window[1]), legacy: true }]
+          : []
+        : clusters.map((cluster) => ({
+          rank: cluster.rank,
+          share: cluster.share,
+          q20_date: cluster.q20_date,
+          q80_date: cluster.q80_date,
+          lo: T(cluster.q20_date),
+          hi: T(cluster.q80_date),
+        })).filter((range) => Number.isFinite(range.lo) && Number.isFinite(range.hi));
+      if (blockedAlertEvidence(st.H.evidence)) frame.ranges = [];
+      frame.w0 = frame.ranges[0]?.lo ?? null;
+      frame.w1 = frame.ranges[0]?.hi ?? null;
+      frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
     });
     st.tmax = mx + 30 * DAY;
     $('sym-c').textContent = '周度截止日 · ' + (scale === '6-12m' ? '6–12 月档' : '12–24 月档');
@@ -376,17 +393,32 @@ a { color: var(--ink-2); text-decoration: none; }
     caveat.textContent = evidence === 'dev_only'
       ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。'
       : '';
-    count.textContent = '共 ' + episodes.length + ' 次';
+    const showNumbers = evidence !== 'dev_only';
+    count.textContent = blocked ? '证据不足' : showNumbers ? '共 ' + episodes.length + ' 次' : '开发段证据，数值指标已隐藏';
     rows.innerHTML = episodes.map((episode) => {
       const id = episode.scale + ':' + episode.first_asof;
       const top = episode.next_top;
-      const topText = !top ? '无' : top.max_dd != null && Number.isFinite(Number(top.max_dd))
-        ? E(top.date) + ' · 回撤 ' + E(pct(Number(top.max_dd)))
-        : E(top.date);
-      const relation = { before: '早于区间', inside: '落在区间内', after: '晚于区间' }[episode.top_vs_window] || '无';
+      const topText = !top ? '无' : !showNumbers ? '事后确认' : top.max_dd != null && Number.isFinite(Number(top.max_dd))
+        ? '回撤 ' + E(pct(Number(top.max_dd)))
+        : '事后确认';
+      const clusters = episode.clusters;
+      const main = Array.isArray(clusters) ? clusters[0] : null;
+      const mainText = main
+        ? `${E(main.q20_date)} – ${E(main.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(main))}）` : ''}`
+        : clusters === null
+          ? `区间（本次结果未分簇） ${E(episode.window[0])} – ${E(episode.window[1])}`
+          : '—';
+      const secondaryText = Array.isArray(clusters) && clusters.length > 1
+        ? clusters.slice(1).map((cluster) =>
+          `${E(cluster.q20_date)} – ${E(cluster.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(cluster))}）` : ''}`
+        ).join('<br>')
+        : '—';
+      const relationValue = main ? episode.top_vs_main : episode.top_vs_window;
+      const relationLabel = { before: '早于区间', inside: '落在区间内', after: '晚于区间' }[relationValue] || '无';
+      const relation = main ? relationLabel : relationLabel + '（相对整体区间）';
       return `<div class="al-row" role="row" tabindex="0" aria-selected="${st.alertId === id}" data-alert-id="${E(id)}">` +
-        `<span role="cell">${E(episode.first_asof)}</span><span role="cell">${episode.weeks}</span>` +
-        `<span role="cell">${E(episode.window[0])} – ${E(episode.window[1])}</span>` +
+        `<span role="cell">${E(episode.first_asof)}</span><span role="cell">${showNumbers ? episode.weeks : '—'}</span>` +
+        `<span role="cell">${mainText}</span><span role="cell">${secondaryText}</span>` +
         `<span role="cell">${E(SPLIT[episode.split] || episode.split || '—')}</span>` +
         `<span role="cell">${topText}</span><span role="cell">${relation}</span></div>`;
     }).join('');
@@ -402,7 +434,8 @@ a { color: var(--ink-2); text-decoration: none; }
     st.alertId = episode.scale + ':' + episode.first_asof;
     st.alertFrame = frame;
     st.hover = { f: frame };
-    const q80 = T(episode.window[1]);
+    const main = Array.isArray(episode.clusters) ? episode.clusters[0] : null;
+    const q80 = T(main?.q80_date || episode.window[1]);
     const top = episode.next_top ? T(episode.next_top.date) : q80;
     const viewStart = T(episode.first_asof) - 90 * DAY;
     const viewEnd = Math.max(q80, top) + 90 * DAY;
@@ -456,7 +489,8 @@ a { color: var(--ink-2); text-decoration: none; }
     try {
       const H = await LPPL.history(st.sym);
       const fr = (Array.isArray(H.frames) ? H.frames : []).filter((f) => f.close != null).map((f) => ({
-        asof: f.asof, split: f.split, close: f.close, w: f.w || {}, t: T(f.asof), w0: null, w1: null,
+        asof: f.asof, split: f.split, close: f.close, w: f.w || {}, clusters: f.clusters,
+        t: T(f.asof), w0: null, w1: null, ranges: [],
       })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
       const last = fr[fr.length - 1].t;
@@ -550,14 +584,26 @@ a { color: var(--ink-2); text-decoration: none; }
     }
 
     ctx.save(); ctx.beginPath(); ctx.rect(pl, 0, W - pl - pr, Hh); ctx.clip();
-    // 情景区间（含区间完全在窗口内/部分在窗口内的帧）
+    // 聚类区间（含区间完全在窗口内/部分在窗口内的帧）
     const hot = st.hover && st.hover.f;
     for (const f of all) {
-      if (f.w0 == null || f.w1 < ta || f.t > tb) continue;
       if (f === hot) continue;
-      CPSCN.drawRange(ctx, { x0: X(f.t), xa: X(f.w0), xb: X(f.w1), y: Y(f.close), dense });
+      for (const range of f.ranges || []) {
+        if (range.hi < ta || f.t > tb) continue;
+        CPSCN.drawRange(ctx, {
+          x0: X(f.t), xa: X(range.lo), xb: X(range.hi), y: Y(f.close), dense,
+          secondary: range.rank === 'secondary',
+        });
+      }
     }
-    if (hot && hot.w0 != null) CPSCN.drawRange(ctx, { x0: X(hot.t), xa: X(hot.w0), xb: X(hot.w1), y: Y(hot.close), hot: true, dense });
+    if (hot) {
+      for (const range of hot.ranges || []) {
+        CPSCN.drawRange(ctx, {
+          x0: X(hot.t), xa: X(range.lo), xb: X(range.hi), y: Y(hot.close),
+          hot: true, dense, secondary: range.rank === 'secondary',
+        });
+      }
+    }
     // 收盘价线
     ctx.strokeStyle = col.ink2; ctx.lineWidth = 1.2; ctx.beginPath();
     let started = false;
@@ -571,14 +617,15 @@ a { color: var(--ink-2); text-decoration: none; }
       if (px === -Infinity) continue;
       const x = X(t.t), y = Y(px) - 6;
       CPSCN.drawTop(ctx, x, y);
-      if (labelOk) { ctx.fillStyle = col.real; ctx.font = '11px ' + FM; ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
+      if (labelOk && !blockedAlertEvidence(H.evidence) && H.evidence !== 'dev_only') { ctx.fillStyle = col.real; ctx.font = '11px ' + FM; ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
     }
     if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba('#131722', 0.3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
     ctx.restore();
 
-    const withW = vis.filter((f) => f.w0 != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
+    const showNumbers = !blockedAlertEvidence(H.evidence) && H.evidence !== 'dev_only';
+    const withW = vis.filter((f) => f.w?.[st.alertScale] != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
     const scaleName = st.alertScale === '6-12m' ? '6–12 月' : '12–24 月';
-    $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>周度截止日</td><td>${vis.length}</td></tr><tr><td>有 ${scaleName} 档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr><tr><td>显示方式</td><td>${dense ? '密集（细线）' : '标准'}</td></tr>`;
+    $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>周度截止日</td><td>${showNumbers ? vis.length : '—'}</td></tr><tr><td>有 ${scaleName} 档区间</td><td>${showNumbers ? withW : '—'}</td></tr><tr><td>事后确认顶</td><td>${showNumbers ? nt : '—'}</td></tr><tr><td>显示方式</td><td>${dense ? '密集（细线）' : '标准'}</td></tr>`;
     $('vr').textContent = ymd(ta) + ' – ' + ymd(Math.min(tb, st.tmax));
     $('sr').textContent = `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，${vis.length} 个周度截止日，${nt} 个事后确认顶。`;
   }
@@ -662,13 +709,32 @@ a { color: var(--ink-2); text-decoration: none; }
       if (!best || bd > 24) return hideTip();
       if (!st.hover || st.hover.f !== best) { st.hover = { f: best }; draw(); }
       const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * DAY), w = best.w || {};
-      const activeWindow = w[st.alertScale], otherScale = st.alertScale === '6-12m' ? '12-24m' : '6-12m';
-      const activeName = st.alertScale === '6-12m' ? '6–12 月' : '12–24 月';
-      const otherName = otherScale === '6-12m' ? '6–12 月' : '12–24 月';
+      const otherScale = st.alertScale === '6-12m' ? '12-24m' : '6-12m';
+      const clusterText = (scale) => {
+        const clusters = CPTopClusters.forScale(best, scale);
+        const name = scale === '6-12m' ? '6–12 月' : '12–24 月';
+        if (blockedAlertEvidence(st.H.evidence)) return `${name}档无证据`;
+        if (clusters === null) {
+          const window = w[scale];
+          return window
+            ? `${name}档区间（本次结果未分簇）<br>${E(window[0])} – ${E(window[1])}`
+            : `${name}档无区间`;
+        }
+        if (!clusters.length) return `${name}档本次未形成聚类区间`;
+        return `${name}档<br>` + clusters.map((cluster) =>
+          `${E(CPTopClusters.label(cluster))} ${E(cluster.q20_date)} – ${E(cluster.q80_date)}${st.H.evidence === 'dev_only' ? '' : `（${E(CPTopClusters.shareText(cluster))}）`}`
+        ).join('<br>');
+      };
+      const topText = top
+        ? st.H.evidence === 'dev_only'
+          ? '<br><span class="re">▼ 事后确认顶（事后实测）</span>'
+          : top.max_dd != null && Number.isFinite(Number(top.max_dd))
+            ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(Number(top.max_dd))}（事后实测）</span>`
+            : '<br><span class="re">▼ 事后确认顶（事后实测）</span>'
+        : '';
       tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${E(SPLIT[best.split] || best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
-        (best.w0 != null ? `${activeName}档情景区间<br><b>${E(activeWindow[0])} – ${E(activeWindow[1])}</b>（未校准，仅供参考）` : `${activeName}档无合格拟合`) +
-        (w[otherScale] ? `<br>${otherName}档 ${E(w[otherScale][0])} – ${E(w[otherScale][1])}（未校准，仅供参考）` : '') +
-        (top ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(top.max_dd)}（事后实测）</span>` : '');
+        clusterText(st.alertScale) + '<br>' + clusterText(otherScale) +
+        topText;
       tip.hidden = false;
       const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);
       tip.style.left = Math.max(8, tx) + 'px'; tip.style.top = Math.max(8, e.clientY - r.top - tip.offsetHeight - 12) + 'px';

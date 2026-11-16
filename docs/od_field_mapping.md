@@ -39,6 +39,11 @@
 | `/symbols?q=` | 搜索 | `catalog.json`（316 标的，前端本地过滤） | ✅ |
 | `/health`、`ping()` | 健康检查 | 静态站无 | ❌ 或改为"数据日期 = asof" |
 
+## 1.1 按尺度聚类区间
+
+- `top.scale_clusters[scale][]` 是当前结果按该尺度单独聚类的区间，只含 `rank`、`share`、`n`、`n_scale`、`q20_date`、`q80_date`。`rank` 为 `main` 或 `secondary`；`share` 是该尺度簇内拟合数占该尺度合格拟合数的比例，不是概率。区间为簇内 t_c 的 20–80% 分位，不是顶部日期。无簇时为空数组；旧结果缺字段时前端可回退到 `scale_windows`。
+- `frames[].clusters[scale][]` 是 `*_history.json` 的逐周对应字段，尺度仅含 `6-12m`、`12-24m`，字段和语义与 `top.scale_clusters` 相同。它独立于可选的历史 `scenarios` 字段导出。
+
 ## 2. home.html
 
 | OD 字段 | 我们的字段 | 处理 |

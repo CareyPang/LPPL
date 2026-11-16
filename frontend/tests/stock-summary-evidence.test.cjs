@@ -21,7 +21,8 @@ for (const evidence of [undefined, 'none', 'dev_only', 'dev_failed', 'fail_i_iii
     assert.match(result, /尚无可显示结果/);
     assert.match(result, /不能解释为没有风险/);
     assert.doesNotMatch(result, /不在风险窗口|0 \/ 6|2026-12-01|2026-12-10|研究候选/);
-    assert.match(result, /合格拟合的尺度<\/small><b class="">—/);
+    assert.match(result, /6–12 月主簇<\/small><b class="">无证据/);
+    assert.doesNotMatch(result, /合格拟合的尺度/);
   });
 }
 
@@ -38,7 +39,8 @@ test('a completed no-qualified-fit result lists computed scales without implying
     indicators: { '1-3m': { n_qualified_standard: 0 }, '3-6m': { n_qualified_standard: 0 } } } });
   assert.match(result, /分析已完成 · 本次未形成符合规则的顶部区间/);
   assert.match(result, /已计算尺度：1–3 月、3–6 月；未计算尺度：2–4 周、6–12 月、12–24 月、2–6 年/);
-  assert.match(result, /0 \/ 2/);
+  assert.match(result, /6–12 月主簇/);
+  assert.doesNotMatch(result, /合格拟合的尺度|0 \/ 2/);
   assert.match(result, /这表示当前方法未给出有效区间，不能解释为风险较低。/);
   assert.doesNotMatch(result, /尚无可显示结果|不在风险窗口|不代表不会下跌/);
 });
@@ -46,9 +48,10 @@ test('a completed no-qualified-fit result lists computed scales without implying
 test('a permitted research interval keeps its dates, evidence and uncalibrated wording', () => {
   const result = render({ top: { signal_status: 'signal', lppls_confidence: { evidence: 'research_candidate' },
     window: { start: '2026-12-01', end: '2026-12-10', evidence: 'research_candidate' },
+    scale_windows: [{ scale: '6-12m', q20_date: '2026-12-01', q80_date: '2026-12-10' }],
     indicators: { '1-3m': { n_qualified_standard: 3 } } } });
   assert.match(result, /2026-12-01 – 2026-12-10/);
   assert.match(result, /未校准，仅供参考/);
-  assert.match(result, /1 \/ 1/);
+  assert.doesNotMatch(result, /合格拟合的尺度|1 \/ 1/);
   assert.match(result, /研究候选/);
 });

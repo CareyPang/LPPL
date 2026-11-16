@@ -9,6 +9,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '..', 'app', 'stock-view.js'), 'utf8');
 const tradingDaysSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'trading-days.js'), 'utf8');
 const scaleBarSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'scale-bar.js'), 'utf8');
+const topClustersSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'top-clusters.js'), 'utf8');
 
 function setupView({ search = '', hash = '' } = {}) {
   const listeners = {};
@@ -135,6 +136,7 @@ function setupView({ search = '', hash = '' } = {}) {
   };
   vm.runInNewContext(tradingDaysSource, { window, URLSearchParams });
   vm.runInNewContext(scaleBarSource, { window, URLSearchParams });
+  vm.runInNewContext(topClustersSource, { window });
   vm.runInNewContext(source, { window, URLSearchParams, URL });
   const view = window.StockView.mount({ document: doc, api: {}, renderResult() {} });
 
@@ -338,7 +340,7 @@ test('future scenario bands reserve weekday slots with closures and draw no futu
     price, windows, states, new Set(['2027-01-01']),
   );
   assert.deepEqual({ ...bands[0] }, {
-    scale: '12-24m', lo: price.length + 1, hi: price.length + 3,
+    scale: '12-24m', rank: 'main', lo: price.length + 1, hi: price.length + 3,
     q20_date: '2027-01-04', q80_date: '2027-01-06',
   });
   assert.equal(view.window.StockChartWindow.futureSlots(price.length, bands, true), 7);
@@ -352,6 +354,27 @@ test('future scenario bands reserve weekday slots with closures and draw no futu
   assert.ok(futureArea);
   assert.ok(barFills.every(call => call.x + call.width <= futureArea.x + .01));
   assert.ok(calls.some(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情'));
+});
+
+test('scenario mapping preserves all per-scale clusters and ranks', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 30);
+  const windows = [{ scale: '6-12m', q20_date: '2026-11-10', q80_date: '2026-11-12', n: 6 }];
+  const states = view.window.ScaleBar.classify({ '6-12m': 'dev' }, {}, windows);
+  const clusters = {
+    '6-12m': [
+      { rank: 'secondary', share: 0.4, q20_date: '2026-11-13', q80_date: '2026-11-14' },
+      { rank: 'main', share: 0.6, q20_date: '2026-11-10', q80_date: '2026-11-12' },
+    ],
+  };
+
+  const bands = view.window.StockChartWindow.mapScenarioBands(
+    price, windows, states, new Set(), clusters,
+  );
+  assert.deepEqual(Array.from(bands, band => [band.rank, band.share, band.q20_date]), [
+    ['main', 0.6, '2026-11-10'],
+    ['secondary', 0.4, '2026-11-13'],
+  ]);
 });
 
 test('narrow chart uses a bounded short band label, left-aligns its first date, and moves the future note down', () => {

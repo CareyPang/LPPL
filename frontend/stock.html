@@ -302,6 +302,7 @@
   <script src="app/stock-visibility.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/scale-bar.js"></script>
+  <script src="app/top-clusters.js"></script>
   <script src="app/stock-view.js"></script>
   <script src="app/stock-watchlist.js"></script>
   <script src="app/watchlist.js"></script>
@@ -537,19 +538,67 @@
       `;
     }
 
+    function scaleClusterView(d, scale) {
+      const top = d.top || {};
+      const confidence = top.lppls_confidence || {};
+      const indicator = top.indicators?.[scale] || {};
+      const evidence = confidence.scale_evidence?.[scale]
+        || indicator.evidence
+        || confidence.evidence
+        || top.evidence
+        || d.evidence;
+      if (hiddenEv(evidence)) return { kind: 'hidden' };
+      const api = globalThis.CPTopClusters;
+      const clusters = api?.forScale(top, scale);
+      if (clusters !== null && clusters !== undefined) {
+        return clusters.length ? { kind: 'clusters', clusters } : { kind: 'empty' };
+      }
+      const window = (top.scale_windows || []).find(item => item.scale === scale);
+      if (window?.q20_date && window?.q80_date) return { kind: 'legacy', window };
+      if (indicator.signal_status === 'no_qualified_fit') return { kind: 'empty' };
+      return { kind: 'uncomputed' };
+    }
+
+    function clusterRangeText(cluster) {
+      const api = globalThis.CPTopClusters;
+      const label = api?.label(cluster) || (cluster.rank === 'main' ? '主簇' : '次级簇');
+      const share = api?.shareText(cluster) || `占 ${Math.round(Number(cluster.share) * 100)}%`;
+      return `${label} ${cluster.q20_date}–${cluster.q80_date}（${share}）`;
+    }
+
+    function clusterScaleText(d, scale, summary = false) {
+      const view = scaleClusterView(d, scale);
+      if (view.kind === 'hidden') return '无证据';
+      if (view.kind === 'uncomputed') return '未计算';
+      if (view.kind === 'empty') return summary ? '本次未形成' : '本次无合格拟合（不代表风险较低）';
+      if (view.kind === 'legacy') {
+        return `${view.window.q20_date} – ${view.window.q80_date}（区间，本次结果未分簇）`;
+      }
+      return summary
+        ? `${view.clusters[0].q20_date} – ${view.clusters[0].q80_date}（${globalThis.CPTopClusters?.shareText(view.clusters[0]) || ''}）`
+        : view.clusters.map(clusterRangeText).join('；');
+    }
+
     function riskHtml(d) {
       const top = d.top || {};
-      const window = top.window || {};
       const confidence = top.lppls_confidence || {};
       const indicators = top.indicators || {};
       const drawdown = top.drawdown_price || {};
       const status = signalStatus[top.signal_status] || '—';
+      const clusterRows = scales.map(scale => `
+        <tr>
+          <td>${scaleName[scale]}</td>
+          <td>${esc(clusterScaleText(d, scale))}</td>
+        </tr>
+      `).join('');
       const rows = scales.map((scale) => {
         const indicator = indicators[scale] || {};
         const evidence =
           confidence.scale_evidence?.[scale]
           || indicator.evidence
-          || confidence.evidence;
+          || confidence.evidence
+          || top.evidence
+          || d.evidence;
         const show = !hiddenEv(evidence);
         const rowStatus = signalStatus[indicator.signal_status] || '—';
         return `
@@ -562,44 +611,34 @@
           </tr>
         `;
       }).join('');
-      let range = '当前没有可显示的风险窗口。';
-      if (window.start && window.end && !hiddenEv(window.evidence || confidence.evidence)) {
-        range = `<p class="range">风险窗口：${esc(window.start)} – ${esc(window.end)}（未校准，仅供参考）</p>`;
-      }
-      const scenarios = (top.scenarios || []).filter((scenario) =>
-        scenario.q20_date
-        && scenario.q80_date
-        && !hiddenEv(
-          scenario.evidence
-          || confidence.scale_evidence?.[scenario.scale]
-          || confidence.evidence,
-        ));
-      const scenarioText = scenarios.map((scenario) => `
-        <p class="range">
-          ${esc(scaleName[scenario.scale] || scenario.scale || '情景')}：
-          ${esc(scenario.q20_date)} – ${esc(scenario.q80_date)}（未校准，仅供参考）
-        </p>
-      `).join('');
       return `
-        <h3>现在在风险窗口里吗？</h3>
-        <p>状态：${esc(status)}。个股开发段结果不代表预测。</p>
-        ${range}
-        ${scenarioText}
-        <h3 style="margin-top:24px">各尺度拟合</h3>
+        <h3>顶部聚类时间</h3>
         <div class="scroll">
           <table class="table">
-            <thead>
-              <tr>
-                <th>尺度</th>
-                <th>窗口数</th>
-                <th>合格拟合数</th>
-                <th>状态</th>
-                <th>证据</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
+            <thead><tr><th>尺度</th><th>聚类区间</th></tr></thead>
+            <tbody>${clusterRows}</tbody>
           </table>
         </div>
+        <p class="disclaimer">${esc(globalThis.CPTopClusters?.NOTE || '占比 = 占该尺度合格拟合的比例，不是概率；区间为簇内 t_c 的 20–80% 分位，不是顶部日期；未校准，仅供参考。')}</p>
+        <h3>状态</h3>
+        <p>状态：${esc(status)}。个股开发段结果不代表预测。</p>
+        <details class="fit-details">
+          <summary>拟合明细</summary>
+          <div class="scroll">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>尺度</th>
+                  <th>窗口数</th>
+                  <th>合格拟合数</th>
+                  <th>状态</th>
+                  <th>证据</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </details>
         <p class="disclaimer">无证据、失败或仅开发段结果不显示数值；风险时间只按区间展示。</p>
         <h3>历史回撤分布</h3>
         ${drawdownHtml(drawdown)}
@@ -1023,12 +1062,12 @@
     function summaryStates(d) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
-      const window = top.window || {};
       const signalEvidence = confidence.evidence || top.evidence || d.evidence || top.evidence_override;
       const canShowStatus = ['signal', 'no_qualified_fit', 't1_not_qualified'].includes(top.signal_status)
         && !hiddenEv(signalEvidence);
-      const hasWindow = canShowStatus && window.start && window.end && !hiddenEv(window.evidence || confidence.evidence);
-      const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有风险窗口']
+      const clusterView = scaleClusterView(d, '6-12m');
+      const hasWindow = canShowStatus && ['clusters', 'legacy'].includes(clusterView.kind);
+      const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有主簇区间']
         : top.signal_status === 'no_qualified_fit' ? ['', '分析已完成 · 本次未形成符合规则的顶部区间']
           : top.signal_status === 'signal' ? ['hot', '有合格拟合']
             : ['', signalStatus[top.signal_status]];
@@ -1041,18 +1080,16 @@
     function summaryHtml(d, name) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
-      const window = top.window || {};
       const { topState, dipState, canShowStatus, hasWindow } = summaryStates(d);
       const indicators = top.indicators || {};
       const shownScales = scales.filter((scale) => !hiddenEv(
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
       ) && Number.isFinite(indicators[scale]?.n_qualified_standard));
-      const qualified = shownScales.filter((scale) => Number(indicators[scale]?.n_qualified_standard) > 0);
       const uncomputedScales = scales.filter((scale) => !hiddenEv(
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
       ) && !Number.isFinite(indicators[scale]?.n_qualified_standard));
       const topText = hasWindow
-        ? `LPPLS 给出风险窗口 ${window.start} – ${window.end}（未校准，仅供参考）。这只是时间区间，不是顶部日期。`
+        ? `LPPLS 给出 6–12 月主簇 ${esc(clusterScaleText(d, '6-12m', true))}。这是时间区间，不是顶部日期（未校准，仅供参考）。`
         : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
           : top.signal_status === 'no_qualified_fit'
             ? `已计算尺度：${shownScales.length ? shownScales.map((scale) => scaleName[scale]).join('、') : '无'}；未计算尺度：${uncomputedScales.length ? uncomputedScales.map((scale) => scaleName[scale]).join('、') : '无'}。这表示当前方法未给出有效区间，不能解释为风险较低。`
@@ -1072,8 +1109,8 @@
           : `不满足“此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日”，不做相似事件对照。距 ${state.peak_date || '—'} 高点 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}。`;
       }
       const topTiles = [
-        tile('合格拟合的尺度', shownScales.length ? `${qualified.length} / ${shownScales.length}` : '—'),
-        tile('风险窗口', hasWindow ? `${window.start} – ${window.end}` : canShowStatus ? '本次未形成' : '—'),
+        tile('6–12 月主簇', clusterScaleText(d, '6-12m', true)),
+        tile('12–24 月主簇', clusterScaleText(d, '12-24m', true)),
         tile('证据等级', stockEvidence(d) ? evLabel(stockEvidence(d)) : '证据状态未知'),
       ].join('');
       const dipTiles = d.dip ? [
