@@ -83,8 +83,9 @@ def test_pre_change_tcgrid_lm_global_behavior_matches_pinned_golden(golden):
 
             expected = spec["legacy_global_results"][name]
             expected_theta = np.asarray(expected["theta"], dtype=float)
-            np.testing.assert_allclose(implicit.theta, expected_theta, rtol=1e-9, atol=0)
-            np.testing.assert_allclose(implicit.sse, expected["sse"], rtol=1e-9, atol=0)
+            # LM may converge slightly differently across runtimes along a flat valley.
+            np.testing.assert_allclose(implicit.theta, expected_theta, rtol=1e-5, atol=0)
+            np.testing.assert_allclose(implicit.sse, expected["sse"], rtol=1e-8, atol=0)
             if runtime_versions == golden["environment"]:
                 assert np.array_equal(implicit.theta, expected_theta)
                 assert implicit.sse == expected["sse"]

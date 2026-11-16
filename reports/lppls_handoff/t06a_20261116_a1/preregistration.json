@@ -1,0 +1,73 @@
+{
+  "schema_version": "t06a_t07a_prereg_v1",
+  "status": "FROZEN_BEFORE_T03",
+  "evidence_scope": "development_diagnostic",
+  "author": "lead; user approved primary metric 2026-11-16 (±10 sessions minus random placement)",
+  "inputs": {
+    "fit_contract": "reports/lppls_handoff/t01_20261116_a1/fit_contract_frozen.json",
+    "scoring_contract": "reports/lppls_handoff/t02_20261116_a1/scoring_contract_frozen.json",
+    "prices": "data/frozen/v20261024/<symbol>_qfq.parquet (hashes per T00 manifest)",
+    "pr50_reference_commit": "7f7fe930ab4065295718dfcfe89b87cedcaaf1fb"
+  },
+  "sample": {
+    "symbols": ["sh000001", "sh000016", "sh000300", "sh000905", "sz399001", "sz399006"],
+    "split": "dev only (already consumed; not a holdout)",
+    "asof_plan": "legacy research.features.lppls_scan index-group dev plan: every 5th session of the frozen calendar, last asof <= 2018-12-31; expected 4236 symbol-asofs (must equal #50 count, else stop and report)",
+    "price_maturation_until": "2019-12-31 (labels only; no 2019 predictions)",
+    "cal_test_confirmation_samples": "CLOSED"
+  },
+  "fit_budget": {
+    "window_grid": {"short": "30-60 step 5", "mid": "65-125 step 5", "medium": "130-250 step 5", "long": "255-500 step 5", "total": 95},
+    "eligibility": "window length <= available bars at asof and legacy MAX_GAP_SHARE rule; eligibility fixed from calendar/history before fitting",
+    "solver": "T01 future-only tcgrid_lm, n_random=10, seed 0, one attempt per window, no retries",
+    "numerical_failure": "recorded as attempt status, window unresolved; never dropped",
+    "expected_fits": "about 4236 x 95 = 402k minus ineligible",
+    "qualified": "T01 primary filter: g_fco_standard + tc>t2 + cycles_full>=1.5"
+  },
+  "arms": {
+    "B0": "or4_full rule of #50 on B0 fits: alarm if any of 4 scales has qualified/eligible >= 0.05 (scale status ok, >=3 eligible); interval = 20%/80% quantiles of ahead=tc-t2 over qualified fits of all 4 scales",
+    "W1": "identical to B0 but windows = window_clusters.selected_windows('thin') (7 per scale, 28 total, np.rint linspace indices); fits byte-identical subset of B0",
+    "C1": "cluster_cross_full rule of #50 on B0 fits: fixed-width <=10 bar dense cluster, >=3 windows, >=2 scales with support fraction >=0.05, weight 1/(4*M_s), rank (mass desc, scales desc, members desc, width asc, lo asc); interval = primary cluster lo/hi",
+    "calendar_fixed_10": "non-LPPL reference: sessions 5-14 after action on every planned asof",
+    "interval_to_sessions": "l = asof_pos + floor(lo), r = asof_pos + ceil(hi); hypothetical publish 17:00 Asia/Shanghai on asof, action = next session; no trimming",
+    "episodes": "T02 rules: first claim fixed, revisions never rescue, new episode only after expiry"
+  },
+  "metrics": {
+    "unit": "mature stage events in deployment scope (first planned asof + 63 sessions .. 2018-12-31), identical E for all arms; data failures stay in E with hit=0",
+    "first_claim": "first claim (any width/lead) of the episode associated with the event under T02 next-same-scope-event-within-H=63 matching",
+    "hit_k": "event_lead >= 1 and distance(event_session, [l,r]) <= k (0 if inside)",
+    "random_expectation_k": "for the same first claim: action A and width w fixed, start uniform over integers [A+1, max(A+1, A+63-w+1)]; r_k = P(hit_k); events without claim: r_k = 0",
+    "primary": "S10 = mean over E of (hit_10 - r_10)",
+    "secondary_reported_all": ["S0 (covering)", "S5", "S21", "StrictStageRecall5W10", "QualifiedStageRecall5", "no_formal_stage_alert_rate", "first_interval_stage_coverage", "resolved_claim_precision", "notifications_per_asset_year", "alert_occupied_sessions", "pending_unknown_data_failure_counts", "short scope separately"],
+    "tables": ["natural_budget_scores (primary)", "paired_budget_scores: same asset/asof joint opportunity diagnostic, separate ledger, not deployable"]
+  },
+  "statistics": {
+    "primary_comparisons": ["S10(W1) - S10(B0)", "S10(C1) - S10(B0)"],
+    "also_reported": "S10 per arm vs 0 (better than random placement?)",
+    "resampling": "paired block bootstrap, block = calendar year of event peak date shared across assets, 10000 resamples, seed 20261116, percentile CI",
+    "multiplicity": "Bonferroni over 2 primary comparisons: 97.5% two-sided CI",
+    "minimum_meaningful_gain": 0.05,
+    "cost_tolerance": "notifications_per_asset_year and alert_occupied_sessions each <= 1.25 x B0",
+    "outcome_rule": {
+      "IMPROVED_DEV_ONLY": "delta >= 0.05 and CI lower > 0 and cost within tolerance",
+      "REGRESSION": "CI upper < 0",
+      "INSUFFICIENT_EVIDENCE": "fewer than 30 evaluable mature stage events or CI width > 0.20",
+      "NO_CLEAR_GAIN": "otherwise"
+    },
+    "power_note": "with ~90 stage events the expected CI half-width is ~0.08-0.10, so the 0.05 gain may be undetectable; this is accepted and reported as INSUFFICIENT_EVIDENCE/NO_CLEAR_GAIN, never tuned",
+    "sensitivity_not_changing_primary": ["per asset", "excluding 2007 and 2015", "H vs random tiers"]
+  },
+  "execution": {
+    "pilot": "sh000300 asofs in 2015 only, separate run id, engineering + timing check only, no effect comparison read",
+    "full_run": "single run after pilot; no re-runs to change results; corrections appended as new run/attempt ids",
+    "compute": "GitHub Actions research workflow (workflow_dispatch, contents read, artifacts only)"
+  },
+  "D1_T07a": {
+    "method_id": "DS_PUBLIC_RATIO_FIXED_WINDOWS_1P5_V1",
+    "windows": "same 95-window B0 grid and eligibility; one representative per window = min SSE among numerically valid attempts; then T01 filter",
+    "counts": "Q=qualified, R=rejected, U=unresolved (numerical failure/missing/pending), N=not eligible; Q+R+U = eligible",
+    "ratio_full": "Q/(Q+R+U), non-null only if U=0; ratio_conditional = Q/(Q+R) named separately; per scale and pooled",
+    "alert_metrics": "NOT_APPLICABLE; not a top probability"
+  },
+  "G1": "DEFERRED_NOT_PREREGISTERED (no calibration split opened for threshold)"
+}
