@@ -40,7 +40,7 @@ def make_noise(n: int, sigma: float, kind: str, rng: np.random.Generator, phi: f
         return sigma * z
     if kind == "ar1":
         e = np.empty(n)
-        e[0] = z[0]
+        e[0] = z[0] / np.sqrt(1 - phi**2)
         for i in range(1, n):
             e[i] = phi * e[i - 1] + z[i]
         return sigma * e * np.sqrt(1 - phi**2)
