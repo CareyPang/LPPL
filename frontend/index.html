@@ -1076,8 +1076,10 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
   function selectScale(scale) {
     if (!cur || !currentScaleStates.some((state) => state.scale === scale && state.selectable)) return;
+    const hadFocus = $('phs').contains(document.activeElement);
     selectedScale = scale;
     renderScaleBar();
+    if (hadFocus) $('phs').querySelector('button[role="radio"][data-scale="' + scale + '"]')?.focus();
     renderKeyLocations(cur);
     CH.selectScale(scale);
     tryUrl(cur);
