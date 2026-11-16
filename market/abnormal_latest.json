@@ -1,6 +1,6 @@
 {
   "asof": "2026-11-16",
-  "generated": "2026-11-16T12:51:29.545683+00:00",
+  "generated": "2026-11-16T22:37:07.404617+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
@@ -359,6 +359,7 @@
       "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zt",
+        "hot_ths",
         "hot_eastmoney",
         "dragon_tiger"
       ],
@@ -1309,8 +1310,7 @@
       "last_bar_date": "2026-11-16",
       "stale_bar": false,
       "candidate_sources": [
-        "hot_ths",
-        "hot_eastmoney"
+        "hot_ths"
       ],
       "dev_3d": -14.998901495392113,
       "dev_10d": 16.085814453304536,
@@ -1411,43 +1411,6 @@
         "remaining_pp": 5.050719634531658
       },
       "remaining_pp": 5.050719634531658,
-      "near": false,
-      "triggered": false
-    },
-    {
-      "code": "001258",
-      "name": "立新能源",
-      "board": "深主板",
-      "benchmark": "sz399001",
-      "last_bar_date": "2026-11-16",
-      "stale_bar": false,
-      "candidate_sources": [
-        "hot_ths"
-      ],
-      "dev_3d": 14.941098972293988,
-      "dev_10d": 25.27699911860636,
-      "dev_30d": 14.613787653713416,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "up",
-        "threshold_pct": 20.0,
-        "remaining_pp": 5.058901027706012
-      },
-      "remaining_pp": 5.058901027706012,
       "near": false,
       "triggered": false
     },
@@ -1976,8 +1939,52 @@
       "remaining_pp": 6.684005057043235,
       "near": false,
       "triggered": false
+    },
+    {
+      "code": "002578",
+      "name": "闽发铝业",
+      "board": "深主板",
+      "benchmark": "sz399001",
+      "last_bar_date": "2026-11-16",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_dt",
+        "hot_ths"
+      ],
+      "dev_3d": -13.271143590635083,
+      "dev_10d": 46.18021477796667,
+      "dev_30d": 35.791920238664886,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "down",
+        "threshold_pct": -20.0,
+        "remaining_pp": 6.7288564093649175
+      },
+      "remaining_pp": 6.7288564093649175,
+      "near": false,
+      "triggered": false
     }
   ],
   "evidence": "descriptive",
-  "note": "异动提醒是对交易所异常波动规则的距离描述，不是预测或交易信号。"
+  "note": "异动提醒是对交易所异常波动规则的距离描述，不是预测或交易信号。",
+  "version": {
+    "kind": "abnormal",
+    "asof": "2026-11-16",
+    "file": "versions/abnormal/2026-11-16/20261116T223707Z_3eede0be.json.gz",
+    "sha256": "3eede0be79e7688e921e54372d1e051ec6da6451650641867630b698b341261d"
+  }
 }
