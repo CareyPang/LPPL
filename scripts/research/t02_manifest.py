@@ -377,8 +377,8 @@ def _write_report(
         "",
         "## 指标差异",
         "",
-        "| arm | scope | metric | PR #50 | T02 | 旧分母 | 新分母 |",
-        "|---|---|---|---:|---:|---:|---:|",
+        "| symbol | arm | scope | metric | PR #50 | T02 | 旧分母 | 新分母 |",
+        "|---|---|---|---|---:|---:|---:|---:|",
     ]
     metric_rows = {
         "stage": (
@@ -448,7 +448,8 @@ def _write_report(
             else:
                 old_denominator = new_denominator = "—"
             lines.append(
-                f"| {result['arm']} | {result['scope']} | {metric} | {old_value if old_value is not None else 'null'} "
+                f"| {result['symbol']} | {result['arm']} | {result['scope']} | {metric} | "
+                f"{old_value if old_value is not None else 'null'} "
                 f"| {new_value if new_value is not None else 'null'} "
                 f"| {old_denominator if old_denominator is not None else 'null'} "
                 f"| {new_denominator if new_denominator is not None else 'null'} |"
@@ -457,8 +458,8 @@ def _write_report(
         "",
         "### 数据可评价子集（独立 E）",
         "",
-        "| arm | scope | PR #50 E | PR #50 strict recall | T02 E | T02 strict recall |",
-        "|---|---|---:|---:|---:|---:|",
+        "| symbol | arm | scope | PR #50 E | PR #50 strict recall | T02 E | T02 strict recall |",
+        "|---|---|---|---:|---:|---:|---:|",
     ])
     for result in sorted(results, key=lambda row: (row["arm"], row["scope"])):
         old_subset = result["old_data_evaluable_subset"]
@@ -469,7 +470,7 @@ def _write_report(
             else "StrictShortRecall5W10"
         )
         lines.append(
-            f"| {result['arm']} | {result['scope']} | {old_subset['E']} "
+            f"| {result['symbol']} | {result['arm']} | {result['scope']} | {old_subset['E']} "
             f"| {old_subset['strict_recall'] if old_subset['strict_recall'] is not None else 'null'} "
             f"| {new_subset['E']} | {new_subset.get(strict_key) if new_subset.get(strict_key) is not None else 'null'} |"
         )

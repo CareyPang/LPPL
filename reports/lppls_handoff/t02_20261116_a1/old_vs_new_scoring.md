@@ -10,2533 +10,2533 @@
 
 ## 指标差异
 
-| arm | scope | metric | PR #50 | T02 | 旧分母 | 新分母 |
-|---|---|---|---:|---:|---:|---:|
-| calendar_fixed_10 | short | E | 115 | 115 | 115 | 115 |
-| calendar_fixed_10 | short | P | 227 | 228 | — | — |
-| calendar_fixed_10 | short | TP | 23 | 23 | — | — |
-| calendar_fixed_10 | short | FP | 204 | 205 | — | — |
-| calendar_fixed_10 | short | FN | 92 | 92 | — | — |
-| calendar_fixed_10 | short | no_formal_alert_rate | 0.034782608695652174 | 0.034782608695652174 | 115 | 115 |
-| calendar_fixed_10 | short | first_window_coverage | 0.2 | 0.2 | 115 | 115 |
-| calendar_fixed_10 | short | QualifiedShortRecall5 | 0.1678832116788321 | 0.2 | 115 | 115 |
-| calendar_fixed_10 | short | StrictShortRecall5W10 | 0.2 | 0.2 | 115 | 115 |
-| calendar_fixed_10 | short | strict_short_miss_rate | 0.8 | 0.8 | 115 | 115 |
-| calendar_fixed_10 | short | resolved_claim_precision | 0.1013215859030837 | 0.10087719298245613 | 227 | 228 |
-| calendar_fixed_10 | short | duplicate_notices | 105 | 105 | — | — |
-| calendar_fixed_10 | short | pending_claims | 0 | 0 | — | — |
-| calendar_fixed_10 | short | revisions | 690 | 681 | — | — |
-| calendar_fixed_10 | short | claim_notices | 907 | 907 | — | — |
-| calendar_fixed_10 | short | formal_alerts | not_defined | 907 | — | — |
-| calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | short | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
-| calendar_fixed_10 | short | alarm_occupied_days | 4527 | 4527 | — | — |
-| calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 4527 | — | — |
-| calendar_fixed_10 | short | E | 97 | 97 | 97 | 97 |
-| calendar_fixed_10 | short | P | 179 | 180 | — | — |
-| calendar_fixed_10 | short | TP | 20 | 20 | — | — |
-| calendar_fixed_10 | short | FP | 159 | 160 | — | — |
-| calendar_fixed_10 | short | FN | 77 | 77 | — | — |
-| calendar_fixed_10 | short | no_formal_alert_rate | 0.061855670103092786 | 0.061855670103092786 | 97 | 97 |
-| calendar_fixed_10 | short | first_window_coverage | 0.20618556701030927 | 0.20618556701030927 | 97 | 97 |
-| calendar_fixed_10 | short | QualifiedShortRecall5 | 0.18181818181818182 | 0.20618556701030927 | 97 | 97 |
-| calendar_fixed_10 | short | StrictShortRecall5W10 | 0.20618556701030927 | 0.20618556701030927 | 97 | 97 |
-| calendar_fixed_10 | short | strict_short_miss_rate | 0.7938144329896908 | 0.7938144329896908 | 97 | 97 |
-| calendar_fixed_10 | short | resolved_claim_precision | 0.11173184357541899 | 0.1111111111111111 | 179 | 180 |
-| calendar_fixed_10 | short | duplicate_notices | 79 | 79 | — | — |
-| calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
-| calendar_fixed_10 | short | revisions | 546 | 537 | — | — |
-| calendar_fixed_10 | short | claim_notices | 716 | 716 | — | — |
-| calendar_fixed_10 | short | formal_alerts | not_defined | 716 | — | — |
-| calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | short | alerts_per_asset_year | 48.68993297337554 | 48.68993297337554 | 14.705298534535274 | 14.705298534535274 |
-| calendar_fixed_10 | short | alarm_occupied_days | 3572 | 3572 | — | — |
-| calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 3572 | — | — |
-| calendar_fixed_10 | short | E | 90 | 90 | 90 | 90 |
-| calendar_fixed_10 | short | P | 164 | 164 | — | — |
-| calendar_fixed_10 | short | TP | 24 | 24 | — | — |
-| calendar_fixed_10 | short | FP | 140 | 140 | — | — |
-| calendar_fixed_10 | short | FN | 66 | 66 | — | — |
-| calendar_fixed_10 | short | no_formal_alert_rate | 0.05555555555555555 | 0.05555555555555555 | 90 | 90 |
-| calendar_fixed_10 | short | first_window_coverage | 0.26666666666666666 | 0.26666666666666666 | 90 | 90 |
-| calendar_fixed_10 | short | QualifiedShortRecall5 | 0.23076923076923078 | 0.26666666666666666 | 90 | 90 |
-| calendar_fixed_10 | short | StrictShortRecall5W10 | 0.26666666666666666 | 0.26666666666666666 | 90 | 90 |
-| calendar_fixed_10 | short | strict_short_miss_rate | 0.7333333333333334 | 0.7333333333333334 | 90 | 90 |
-| calendar_fixed_10 | short | resolved_claim_precision | 0.14634146341463414 | 0.14634146341463414 | 164 | 164 |
-| calendar_fixed_10 | short | duplicate_notices | 67 | 67 | — | — |
-| calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
-| calendar_fixed_10 | short | revisions | 501 | 492 | — | — |
-| calendar_fixed_10 | short | claim_notices | 655 | 655 | — | — |
-| calendar_fixed_10 | short | formal_alerts | not_defined | 655 | — | — |
-| calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | short | alerts_per_asset_year | 48.713874465485645 | 48.713874465485645 | 13.445861311320561 | 13.445861311320561 |
-| calendar_fixed_10 | short | alarm_occupied_days | 3267 | 3267 | — | — |
-| calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 3267 | — | — |
-| calendar_fixed_10 | short | E | 71 | 71 | 71 | 71 |
-| calendar_fixed_10 | short | P | 145 | 145 | — | — |
-| calendar_fixed_10 | short | TP | 10 | 10 | — | — |
-| calendar_fixed_10 | short | FP | 135 | 135 | — | — |
-| calendar_fixed_10 | short | FN | 61 | 61 | — | — |
-| calendar_fixed_10 | short | no_formal_alert_rate | 0.07042253521126761 | 0.07042253521126761 | 71 | 71 |
-| calendar_fixed_10 | short | first_window_coverage | 0.14084507042253522 | 0.14084507042253522 | 71 | 71 |
-| calendar_fixed_10 | short | QualifiedShortRecall5 | 0.11904761904761904 | 0.14084507042253522 | 71 | 71 |
-| calendar_fixed_10 | short | StrictShortRecall5W10 | 0.14084507042253522 | 0.14084507042253522 | 71 | 71 |
-| calendar_fixed_10 | short | strict_short_miss_rate | 0.8591549295774648 | 0.8591549295774648 | 71 | 71 |
-| calendar_fixed_10 | short | resolved_claim_precision | 0.06896551724137931 | 0.06896551724137931 | 145 | 145 |
-| calendar_fixed_10 | short | duplicate_notices | 67 | 67 | — | — |
-| calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
-| calendar_fixed_10 | short | revisions | 436 | 427 | — | — |
-| calendar_fixed_10 | short | claim_notices | 569 | 569 | — | — |
-| calendar_fixed_10 | short | formal_alerts | not_defined | 569 | — | — |
-| calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | short | alerts_per_asset_year | 48.727545720984764 | 48.727545720984764 | 11.677173384805984 | 11.677173384805984 |
-| calendar_fixed_10 | short | alarm_occupied_days | 2837 | 2837 | — | — |
-| calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 2837 | — | — |
-| calendar_fixed_10 | short | E | 122 | 122 | 122 | 122 |
-| calendar_fixed_10 | short | P | 228 | 228 | — | — |
-| calendar_fixed_10 | short | TP | 34 | 34 | — | — |
-| calendar_fixed_10 | short | FP | 194 | 194 | — | — |
-| calendar_fixed_10 | short | FN | 88 | 88 | — | — |
-| calendar_fixed_10 | short | no_formal_alert_rate | 0.03278688524590164 | 0.03278688524590164 | 122 | 122 |
-| calendar_fixed_10 | short | first_window_coverage | 0.2786885245901639 | 0.2786885245901639 | 122 | 122 |
-| calendar_fixed_10 | short | QualifiedShortRecall5 | 0.23943661971830985 | 0.2786885245901639 | 122 | 122 |
-| calendar_fixed_10 | short | StrictShortRecall5W10 | 0.2786885245901639 | 0.2786885245901639 | 122 | 122 |
-| calendar_fixed_10 | short | strict_short_miss_rate | 0.7213114754098361 | 0.7213114754098361 | 122 | 122 |
-| calendar_fixed_10 | short | resolved_claim_precision | 0.14912280701754385 | 0.14912280701754385 | 228 | 228 |
-| calendar_fixed_10 | short | duplicate_notices | 91 | 91 | — | — |
-| calendar_fixed_10 | short | pending_claims | 0 | 0 | — | — |
-| calendar_fixed_10 | short | revisions | 690 | 681 | — | — |
-| calendar_fixed_10 | short | claim_notices | 907 | 907 | — | — |
-| calendar_fixed_10 | short | formal_alerts | not_defined | 907 | — | — |
-| calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | short | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
-| calendar_fixed_10 | short | alarm_occupied_days | 4527 | 4527 | — | — |
-| calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 4527 | — | — |
-| calendar_fixed_10 | short | E | 57 | 57 | 57 | 57 |
-| calendar_fixed_10 | short | P | 101 | 102 | — | — |
-| calendar_fixed_10 | short | TP | 9 | 9 | — | — |
-| calendar_fixed_10 | short | FP | 92 | 93 | — | — |
-| calendar_fixed_10 | short | FN | 48 | 48 | — | — |
-| calendar_fixed_10 | short | no_formal_alert_rate | 0.10526315789473684 | 0.10526315789473684 | 57 | 57 |
-| calendar_fixed_10 | short | first_window_coverage | 0.15789473684210525 | 0.15789473684210525 | 57 | 57 |
-| calendar_fixed_10 | short | QualifiedShortRecall5 | 0.13636363636363635 | 0.15789473684210525 | 57 | 57 |
-| calendar_fixed_10 | short | StrictShortRecall5W10 | 0.15789473684210525 | 0.15789473684210525 | 57 | 57 |
-| calendar_fixed_10 | short | strict_short_miss_rate | 0.8421052631578947 | 0.8421052631578947 | 57 | 57 |
-| calendar_fixed_10 | short | resolved_claim_precision | 0.0891089108910891 | 0.08823529411764706 | 101 | 102 |
-| calendar_fixed_10 | short | duplicate_notices | 43 | 43 | — | — |
-| calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
-| calendar_fixed_10 | short | revisions | 312 | 303 | — | — |
-| calendar_fixed_10 | short | claim_notices | 404 | 404 | — | — |
-| calendar_fixed_10 | short | formal_alerts | not_defined | 404 | — | — |
-| calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | short | alerts_per_asset_year | 48.65083086053413 | 48.65083086053413 | 8.304071952196143 | 8.304071952196143 |
-| calendar_fixed_10 | short | alarm_occupied_days | 2012 | 2012 | — | — |
-| calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 2012 | — | — |
-| calendar_fixed_10 | stage | E | 22 | 22 | 22 | 22 |
-| calendar_fixed_10 | stage | P | 226 | 226 | — | — |
-| calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | FP | 226 | 226 | — | — |
-| calendar_fixed_10 | stage | FN | 22 | 22 | — | — |
-| calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 22 | 22 |
-| calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 22 | 22 |
-| calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
-| calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 226 | 226 |
-| calendar_fixed_10 | stage | duplicate_notices | 46 | 46 | — | — |
-| calendar_fixed_10 | stage | pending_claims | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | revisions | 690 | 681 | — | — |
-| calendar_fixed_10 | stage | claim_notices | 907 | 907 | — | — |
-| calendar_fixed_10 | stage | formal_alerts | not_defined | 907 | — | — |
-| calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | stage | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
-| calendar_fixed_10 | stage | alarm_occupied_days | 4527 | 4527 | — | — |
-| calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 4527 | — | — |
-| calendar_fixed_10 | stage | E | 13 | 13 | 13 | 13 |
-| calendar_fixed_10 | stage | P | 179 | 179 | — | — |
-| calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | FP | 179 | 179 | — | — |
-| calendar_fixed_10 | stage | FN | 13 | 13 | — | — |
-| calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 179 | 179 |
-| calendar_fixed_10 | stage | duplicate_notices | 30 | 30 | — | — |
-| calendar_fixed_10 | stage | pending_claims | 3 | 0 | — | — |
-| calendar_fixed_10 | stage | revisions | 546 | 537 | — | — |
-| calendar_fixed_10 | stage | claim_notices | 716 | 716 | — | — |
-| calendar_fixed_10 | stage | formal_alerts | not_defined | 716 | — | — |
-| calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | stage | alerts_per_asset_year | 48.68993297337554 | 48.68993297337554 | 14.705298534535274 | 14.705298534535274 |
-| calendar_fixed_10 | stage | alarm_occupied_days | 3572 | 3572 | — | — |
-| calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 3572 | — | — |
-| calendar_fixed_10 | stage | E | 14 | 14 | 14 | 14 |
-| calendar_fixed_10 | stage | P | 161 | 161 | — | — |
-| calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | FP | 161 | 161 | — | — |
-| calendar_fixed_10 | stage | FN | 14 | 14 | — | — |
-| calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 14 | 14 |
-| calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 161 | 161 |
-| calendar_fixed_10 | stage | duplicate_notices | 29 | 29 | — | — |
-| calendar_fixed_10 | stage | pending_claims | 6 | 2 | — | — |
-| calendar_fixed_10 | stage | revisions | 501 | 492 | — | — |
-| calendar_fixed_10 | stage | claim_notices | 655 | 655 | — | — |
-| calendar_fixed_10 | stage | formal_alerts | not_defined | 655 | — | — |
-| calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | stage | alerts_per_asset_year | 48.713874465485645 | 48.713874465485645 | 13.445861311320561 | 13.445861311320561 |
-| calendar_fixed_10 | stage | alarm_occupied_days | 3267 | 3267 | — | — |
-| calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 3267 | — | — |
-| calendar_fixed_10 | stage | E | 13 | 13 | 13 | 13 |
-| calendar_fixed_10 | stage | P | 141 | 141 | — | — |
-| calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | FP | 141 | 141 | — | — |
-| calendar_fixed_10 | stage | FN | 13 | 13 | — | — |
-| calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 141 | 141 |
-| calendar_fixed_10 | stage | duplicate_notices | 27 | 27 | — | — |
-| calendar_fixed_10 | stage | pending_claims | 5 | 1 | — | — |
-| calendar_fixed_10 | stage | revisions | 436 | 427 | — | — |
-| calendar_fixed_10 | stage | claim_notices | 569 | 569 | — | — |
-| calendar_fixed_10 | stage | formal_alerts | not_defined | 569 | — | — |
-| calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | stage | alerts_per_asset_year | 48.727545720984764 | 48.727545720984764 | 11.677173384805984 | 11.677173384805984 |
-| calendar_fixed_10 | stage | alarm_occupied_days | 2837 | 2837 | — | — |
-| calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 2837 | — | — |
-| calendar_fixed_10 | stage | E | 20 | 20 | 20 | 20 |
-| calendar_fixed_10 | stage | P | 226 | 226 | — | — |
-| calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | FP | 226 | 226 | — | — |
-| calendar_fixed_10 | stage | FN | 20 | 20 | — | — |
-| calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 20 | 20 |
-| calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
-| calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
-| calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 226 | 226 |
-| calendar_fixed_10 | stage | duplicate_notices | 41 | 41 | — | — |
-| calendar_fixed_10 | stage | pending_claims | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | revisions | 690 | 681 | — | — |
-| calendar_fixed_10 | stage | claim_notices | 907 | 907 | — | — |
-| calendar_fixed_10 | stage | formal_alerts | not_defined | 907 | — | — |
-| calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | stage | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
-| calendar_fixed_10 | stage | alarm_occupied_days | 4527 | 4527 | — | — |
-| calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 4527 | — | — |
-| calendar_fixed_10 | stage | E | 9 | 9 | 9 | 9 |
-| calendar_fixed_10 | stage | P | 97 | 98 | — | — |
-| calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
-| calendar_fixed_10 | stage | FP | 97 | 98 | — | — |
-| calendar_fixed_10 | stage | FN | 9 | 9 | — | — |
-| calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 9 | 9 |
-| calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 97 | 98 |
-| calendar_fixed_10 | stage | duplicate_notices | 20 | 20 | — | — |
-| calendar_fixed_10 | stage | pending_claims | 6 | 3 | — | — |
-| calendar_fixed_10 | stage | revisions | 312 | 303 | — | — |
-| calendar_fixed_10 | stage | claim_notices | 404 | 404 | — | — |
-| calendar_fixed_10 | stage | formal_alerts | not_defined | 404 | — | — |
-| calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
-| calendar_fixed_10 | stage | alerts_per_asset_year | 48.65083086053413 | 48.65083086053413 | 8.304071952196143 | 8.304071952196143 |
-| calendar_fixed_10 | stage | alarm_occupied_days | 2012 | 2012 | — | — |
-| calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 2012 | — | — |
-| cluster_any_full | short | E | 115 | 115 | 115 | 115 |
-| cluster_any_full | short | P | 50 | 35 | — | — |
-| cluster_any_full | short | TP | 1 | 2 | — | — |
-| cluster_any_full | short | FP | 49 | 33 | — | — |
-| cluster_any_full | short | FN | 114 | 113 | — | — |
-| cluster_any_full | short | no_formal_alert_rate | 0.6782608695652174 | 0.7391304347826086 | 115 | 115 |
-| cluster_any_full | short | first_window_coverage | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
-| cluster_any_full | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.017391304347826087 | 115 | 115 |
-| cluster_any_full | short | StrictShortRecall5W10 | 0.008695652173913044 | 0.017391304347826087 | 115 | 115 |
-| cluster_any_full | short | strict_short_miss_rate | 0.991304347826087 | 0.9826086956521739 | 115 | 115 |
-| cluster_any_full | short | resolved_claim_precision | 0.02 | 0.05714285714285714 | 50 | 35 |
-| cluster_any_full | short | duplicate_notices | 9 | 1 | — | — |
-| cluster_any_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | short | revisions | 148 | 46 | — | — |
-| cluster_any_full | short | claim_notices | 191 | 191 | — | — |
-| cluster_any_full | short | formal_alerts | not_defined | 81 | — | — |
-| cluster_any_full | short | observation_notices | not_defined | 110 | — | — |
-| cluster_any_full | short | alerts_per_asset_year | 10.21994103428069 | 10.21994103428069 | 18.688953229703554 | 18.688953229703554 |
-| cluster_any_full | short | alarm_occupied_days | 851 | 851 | — | — |
-| cluster_any_full | short | formal_alarm_occupied_days | not_defined | 419 | — | — |
-| cluster_any_full | short | E | 97 | 97 | 97 | 97 |
-| cluster_any_full | short | P | 31 | 20 | — | — |
-| cluster_any_full | short | TP | 0 | 1 | — | — |
-| cluster_any_full | short | FP | 31 | 19 | — | — |
-| cluster_any_full | short | FN | 97 | 96 | — | — |
-| cluster_any_full | short | no_formal_alert_rate | 0.7525773195876289 | 0.8144329896907216 | 97 | 97 |
-| cluster_any_full | short | first_window_coverage | 0.020618556701030927 | 0.010309278350515464 | 97 | 97 |
-| cluster_any_full | short | QualifiedShortRecall5 | 0.0 | 0.010309278350515464 | 97 | 97 |
-| cluster_any_full | short | StrictShortRecall5W10 | 0.0 | 0.010309278350515464 | 97 | 97 |
-| cluster_any_full | short | strict_short_miss_rate | 1.0 | 0.9896907216494846 | 97 | 97 |
-| cluster_any_full | short | resolved_claim_precision | 0.0 | 0.05 | 31 | 20 |
-| cluster_any_full | short | duplicate_notices | 6 | 1 | — | — |
-| cluster_any_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | short | revisions | 79 | 24 | — | — |
-| cluster_any_full | short | claim_notices | 110 | 110 | — | — |
-| cluster_any_full | short | formal_alerts | not_defined | 44 | — | — |
-| cluster_any_full | short | observation_notices | not_defined | 66 | — | — |
-| cluster_any_full | short | alerts_per_asset_year | 7.480296965183393 | 7.480296965183393 | 14.705298534535274 | 14.705298534535274 |
-| cluster_any_full | short | alarm_occupied_days | 512 | 512 | — | — |
-| cluster_any_full | short | formal_alarm_occupied_days | not_defined | 246 | — | — |
-| cluster_any_full | short | E | 90 | 90 | 90 | 90 |
-| cluster_any_full | short | P | 35 | 24 | — | — |
-| cluster_any_full | short | TP | 2 | 3 | — | — |
-| cluster_any_full | short | FP | 33 | 21 | — | — |
-| cluster_any_full | short | FN | 88 | 87 | — | — |
-| cluster_any_full | short | no_formal_alert_rate | 0.7222222222222222 | 0.7777777777777778 | 90 | 90 |
-| cluster_any_full | short | first_window_coverage | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
-| cluster_any_full | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.03333333333333333 | 90 | 90 |
-| cluster_any_full | short | StrictShortRecall5W10 | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
-| cluster_any_full | short | strict_short_miss_rate | 0.9777777777777777 | 0.9666666666666667 | 90 | 90 |
-| cluster_any_full | short | resolved_claim_precision | 0.05714285714285714 | 0.125 | 35 | 24 |
-| cluster_any_full | short | duplicate_notices | 6 | 2 | — | — |
-| cluster_any_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | short | revisions | 79 | 25 | — | — |
-| cluster_any_full | short | claim_notices | 114 | 114 | — | — |
-| cluster_any_full | short | formal_alerts | not_defined | 49 | — | — |
-| cluster_any_full | short | observation_notices | not_defined | 65 | — | — |
-| cluster_any_full | short | alerts_per_asset_year | 8.478445326817349 | 8.478445326817349 | 13.445861311320561 | 13.445861311320561 |
-| cluster_any_full | short | alarm_occupied_days | 610 | 610 | — | — |
-| cluster_any_full | short | formal_alarm_occupied_days | not_defined | 267 | — | — |
-| cluster_any_full | short | E | 71 | 71 | 71 | 71 |
-| cluster_any_full | short | P | 33 | 16 | — | — |
-| cluster_any_full | short | TP | 1 | 1 | — | — |
-| cluster_any_full | short | FP | 32 | 15 | — | — |
-| cluster_any_full | short | FN | 70 | 70 | — | — |
-| cluster_any_full | short | no_formal_alert_rate | 0.7183098591549296 | 0.8028169014084507 | 71 | 71 |
-| cluster_any_full | short | first_window_coverage | 0.028169014084507043 | 0.014084507042253521 | 71 | 71 |
-| cluster_any_full | short | QualifiedShortRecall5 | 0.023809523809523808 | 0.014084507042253521 | 71 | 71 |
-| cluster_any_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
-| cluster_any_full | short | strict_short_miss_rate | 0.9859154929577465 | 0.9859154929577465 | 71 | 71 |
-| cluster_any_full | short | resolved_claim_precision | 0.030303030303030304 | 0.0625 | 33 | 16 |
-| cluster_any_full | short | duplicate_notices | 10 | 0 | — | — |
-| cluster_any_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | short | revisions | 89 | 14 | — | — |
-| cluster_any_full | short | claim_notices | 122 | 122 | — | — |
-| cluster_any_full | short | formal_alerts | not_defined | 30 | — | — |
-| cluster_any_full | short | observation_notices | not_defined | 92 | — | — |
-| cluster_any_full | short | alerts_per_asset_year | 10.44773388042204 | 10.44773388042204 | 11.677173384805984 | 11.677173384805984 |
-| cluster_any_full | short | alarm_occupied_days | 542 | 542 | — | — |
-| cluster_any_full | short | formal_alarm_occupied_days | not_defined | 165 | — | — |
-| cluster_any_full | short | E | 122 | 122 | 122 | 122 |
-| cluster_any_full | short | P | 48 | 35 | — | — |
-| cluster_any_full | short | TP | 2 | 2 | — | — |
-| cluster_any_full | short | FP | 46 | 33 | — | — |
-| cluster_any_full | short | FN | 120 | 120 | — | — |
-| cluster_any_full | short | no_formal_alert_rate | 0.7377049180327869 | 0.7868852459016393 | 122 | 122 |
-| cluster_any_full | short | first_window_coverage | 0.02459016393442623 | 0.01639344262295082 | 122 | 122 |
-| cluster_any_full | short | QualifiedShortRecall5 | 0.014084507042253521 | 0.01639344262295082 | 122 | 122 |
-| cluster_any_full | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.01639344262295082 | 122 | 122 |
-| cluster_any_full | short | strict_short_miss_rate | 0.9836065573770492 | 0.9836065573770492 | 122 | 122 |
-| cluster_any_full | short | resolved_claim_precision | 0.041666666666666664 | 0.05714285714285714 | 48 | 35 |
-| cluster_any_full | short | duplicate_notices | 10 | 5 | — | — |
-| cluster_any_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | short | revisions | 113 | 40 | — | — |
-| cluster_any_full | short | claim_notices | 153 | 153 | — | — |
-| cluster_any_full | short | formal_alerts | not_defined | 75 | — | — |
-| cluster_any_full | short | observation_notices | not_defined | 78 | — | — |
-| cluster_any_full | short | alerts_per_asset_year | 8.186654336360972 | 8.186654336360972 | 18.688953229703554 | 18.688953229703554 |
-| cluster_any_full | short | alarm_occupied_days | 702 | 702 | — | — |
-| cluster_any_full | short | formal_alarm_occupied_days | not_defined | 416 | — | — |
-| cluster_any_full | short | E | 57 | 57 | 57 | 57 |
-| cluster_any_full | short | P | 20 | 11 | — | — |
-| cluster_any_full | short | TP | 0 | 0 | — | — |
-| cluster_any_full | short | FP | 20 | 11 | — | — |
-| cluster_any_full | short | FN | 57 | 57 | — | — |
-| cluster_any_full | short | no_formal_alert_rate | 0.7368421052631579 | 0.8596491228070176 | 57 | 57 |
-| cluster_any_full | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
-| cluster_any_full | short | QualifiedShortRecall5 | 0.0 | 0.0 | 57 | 57 |
-| cluster_any_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
-| cluster_any_full | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
-| cluster_any_full | short | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
-| cluster_any_full | short | duplicate_notices | 4 | 2 | — | — |
-| cluster_any_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | short | revisions | 42 | 15 | — | — |
-| cluster_any_full | short | claim_notices | 62 | 62 | — | — |
-| cluster_any_full | short | formal_alerts | not_defined | 26 | — | — |
-| cluster_any_full | short | observation_notices | not_defined | 36 | — | — |
-| cluster_any_full | short | alerts_per_asset_year | 7.466216617210684 | 7.466216617210684 | 8.304071952196143 | 8.304071952196143 |
-| cluster_any_full | short | alarm_occupied_days | 290 | 290 | — | — |
-| cluster_any_full | short | formal_alarm_occupied_days | not_defined | 142 | — | — |
-| cluster_any_full | stage | E | 22 | 22 | 22 | 22 |
-| cluster_any_full | stage | P | 50 | 35 | — | — |
-| cluster_any_full | stage | TP | 1 | 1 | — | — |
-| cluster_any_full | stage | FP | 49 | 34 | — | — |
-| cluster_any_full | stage | FN | 21 | 21 | — | — |
-| cluster_any_full | stage | no_formal_alert_rate | 0.2727272727272727 | 0.45454545454545453 | 22 | 22 |
-| cluster_any_full | stage | first_window_coverage | 0.09090909090909091 | 0.045454545454545456 | 22 | 22 |
-| cluster_any_full | stage | QualifiedStageRecall5 | 0.014598540145985401 | 0.045454545454545456 | 22 | 22 |
-| cluster_any_full | stage | StrictStageRecall5W10 | 0.045454545454545456 | 0.045454545454545456 | 22 | 22 |
-| cluster_any_full | stage | strict_stage_miss_rate | 0.9545454545454546 | 0.9545454545454546 | 22 | 22 |
-| cluster_any_full | stage | resolved_claim_precision | 0.02 | 0.02857142857142857 | 50 | 35 |
-| cluster_any_full | stage | duplicate_notices | 6 | 1 | — | — |
-| cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | stage | revisions | 148 | 46 | — | — |
-| cluster_any_full | stage | claim_notices | 191 | 191 | — | — |
-| cluster_any_full | stage | formal_alerts | not_defined | 81 | — | — |
-| cluster_any_full | stage | observation_notices | not_defined | 110 | — | — |
-| cluster_any_full | stage | alerts_per_asset_year | 10.21994103428069 | 10.21994103428069 | 18.688953229703554 | 18.688953229703554 |
-| cluster_any_full | stage | alarm_occupied_days | 851 | 851 | — | — |
-| cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 419 | — | — |
-| cluster_any_full | stage | E | 13 | 13 | 13 | 13 |
-| cluster_any_full | stage | P | 31 | 20 | — | — |
-| cluster_any_full | stage | TP | 1 | 1 | — | — |
-| cluster_any_full | stage | FP | 30 | 19 | — | — |
-| cluster_any_full | stage | FN | 12 | 12 | — | — |
-| cluster_any_full | stage | no_formal_alert_rate | 0.46153846153846156 | 0.6153846153846154 | 13 | 13 |
-| cluster_any_full | stage | first_window_coverage | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
-| cluster_any_full | stage | QualifiedStageRecall5 | 0.00909090909090909 | 0.07692307692307693 | 13 | 13 |
-| cluster_any_full | stage | StrictStageRecall5W10 | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
-| cluster_any_full | stage | strict_stage_miss_rate | 0.9230769230769231 | 0.9230769230769231 | 13 | 13 |
-| cluster_any_full | stage | resolved_claim_precision | 0.03225806451612903 | 0.05 | 31 | 20 |
-| cluster_any_full | stage | duplicate_notices | 1 | 0 | — | — |
-| cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | stage | revisions | 79 | 24 | — | — |
-| cluster_any_full | stage | claim_notices | 110 | 110 | — | — |
-| cluster_any_full | stage | formal_alerts | not_defined | 44 | — | — |
-| cluster_any_full | stage | observation_notices | not_defined | 66 | — | — |
-| cluster_any_full | stage | alerts_per_asset_year | 7.480296965183393 | 7.480296965183393 | 14.705298534535274 | 14.705298534535274 |
-| cluster_any_full | stage | alarm_occupied_days | 512 | 512 | — | — |
-| cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 246 | — | — |
-| cluster_any_full | stage | E | 14 | 14 | 14 | 14 |
-| cluster_any_full | stage | P | 35 | 24 | — | — |
-| cluster_any_full | stage | TP | 0 | 0 | — | — |
-| cluster_any_full | stage | FP | 35 | 24 | — | — |
-| cluster_any_full | stage | FN | 14 | 14 | — | — |
-| cluster_any_full | stage | no_formal_alert_rate | 0.42857142857142855 | 0.5714285714285714 | 14 | 14 |
-| cluster_any_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.0 | 35 | 24 |
-| cluster_any_full | stage | duplicate_notices | 5 | 2 | — | — |
-| cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | stage | revisions | 79 | 25 | — | — |
-| cluster_any_full | stage | claim_notices | 114 | 114 | — | — |
-| cluster_any_full | stage | formal_alerts | not_defined | 49 | — | — |
-| cluster_any_full | stage | observation_notices | not_defined | 65 | — | — |
-| cluster_any_full | stage | alerts_per_asset_year | 8.478445326817349 | 8.478445326817349 | 13.445861311320561 | 13.445861311320561 |
-| cluster_any_full | stage | alarm_occupied_days | 610 | 610 | — | — |
-| cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 267 | — | — |
-| cluster_any_full | stage | E | 13 | 13 | 13 | 13 |
-| cluster_any_full | stage | P | 33 | 16 | — | — |
-| cluster_any_full | stage | TP | 0 | 0 | — | — |
-| cluster_any_full | stage | FP | 33 | 16 | — | — |
-| cluster_any_full | stage | FN | 13 | 13 | — | — |
-| cluster_any_full | stage | no_formal_alert_rate | 0.38461538461538464 | 0.46153846153846156 | 13 | 13 |
-| cluster_any_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.0 | 33 | 16 |
-| cluster_any_full | stage | duplicate_notices | 8 | 1 | — | — |
-| cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | stage | revisions | 89 | 14 | — | — |
-| cluster_any_full | stage | claim_notices | 122 | 122 | — | — |
-| cluster_any_full | stage | formal_alerts | not_defined | 30 | — | — |
-| cluster_any_full | stage | observation_notices | not_defined | 92 | — | — |
-| cluster_any_full | stage | alerts_per_asset_year | 10.44773388042204 | 10.44773388042204 | 11.677173384805984 | 11.677173384805984 |
-| cluster_any_full | stage | alarm_occupied_days | 542 | 542 | — | — |
-| cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 165 | — | — |
-| cluster_any_full | stage | E | 20 | 20 | 20 | 20 |
-| cluster_any_full | stage | P | 48 | 35 | — | — |
-| cluster_any_full | stage | TP | 0 | 1 | — | — |
-| cluster_any_full | stage | FP | 48 | 34 | — | — |
-| cluster_any_full | stage | FN | 20 | 19 | — | — |
-| cluster_any_full | stage | no_formal_alert_rate | 0.4 | 0.45 | 20 | 20 |
-| cluster_any_full | stage | first_window_coverage | 0.0 | 0.05 | 20 | 20 |
-| cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.05 | 20 | 20 |
-| cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.05 | 20 | 20 |
-| cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 0.95 | 20 | 20 |
-| cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.02857142857142857 | 48 | 35 |
-| cluster_any_full | stage | duplicate_notices | 9 | 7 | — | — |
-| cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | stage | revisions | 113 | 40 | — | — |
-| cluster_any_full | stage | claim_notices | 153 | 153 | — | — |
-| cluster_any_full | stage | formal_alerts | not_defined | 75 | — | — |
-| cluster_any_full | stage | observation_notices | not_defined | 78 | — | — |
-| cluster_any_full | stage | alerts_per_asset_year | 8.186654336360972 | 8.186654336360972 | 18.688953229703554 | 18.688953229703554 |
-| cluster_any_full | stage | alarm_occupied_days | 702 | 702 | — | — |
-| cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 416 | — | — |
-| cluster_any_full | stage | E | 9 | 9 | 9 | 9 |
-| cluster_any_full | stage | P | 20 | 11 | — | — |
-| cluster_any_full | stage | TP | 0 | 0 | — | — |
-| cluster_any_full | stage | FP | 20 | 11 | — | — |
-| cluster_any_full | stage | FN | 9 | 9 | — | — |
-| cluster_any_full | stage | no_formal_alert_rate | 0.6666666666666666 | 0.7777777777777778 | 9 | 9 |
-| cluster_any_full | stage | first_window_coverage | 0.1111111111111111 | 0.0 | 9 | 9 |
-| cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
-| cluster_any_full | stage | duplicate_notices | 4 | 0 | — | — |
-| cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_any_full | stage | revisions | 42 | 15 | — | — |
-| cluster_any_full | stage | claim_notices | 62 | 62 | — | — |
-| cluster_any_full | stage | formal_alerts | not_defined | 26 | — | — |
-| cluster_any_full | stage | observation_notices | not_defined | 36 | — | — |
-| cluster_any_full | stage | alerts_per_asset_year | 7.466216617210684 | 7.466216617210684 | 8.304071952196143 | 8.304071952196143 |
-| cluster_any_full | stage | alarm_occupied_days | 290 | 290 | — | — |
-| cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 142 | — | — |
-| cluster_cross_full | short | E | 115 | 115 | 115 | 115 |
-| cluster_cross_full | short | P | 25 | 16 | — | — |
-| cluster_cross_full | short | TP | 3 | 3 | — | — |
-| cluster_cross_full | short | FP | 22 | 13 | — | — |
-| cluster_cross_full | short | FN | 112 | 112 | — | — |
-| cluster_cross_full | short | no_formal_alert_rate | 0.8173913043478261 | 0.8782608695652174 | 115 | 115 |
-| cluster_cross_full | short | first_window_coverage | 0.043478260869565216 | 0.02608695652173913 | 115 | 115 |
-| cluster_cross_full | short | QualifiedShortRecall5 | 0.029197080291970802 | 0.02608695652173913 | 115 | 115 |
-| cluster_cross_full | short | StrictShortRecall5W10 | 0.02608695652173913 | 0.02608695652173913 | 115 | 115 |
-| cluster_cross_full | short | strict_short_miss_rate | 0.9739130434782609 | 0.9739130434782609 | 115 | 115 |
-| cluster_cross_full | short | resolved_claim_precision | 0.12 | 0.1875 | 25 | 16 |
-| cluster_cross_full | short | duplicate_notices | 2 | 0 | — | — |
-| cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | short | revisions | 37 | 12 | — | — |
-| cluster_cross_full | short | claim_notices | 62 | 62 | — | — |
-| cluster_cross_full | short | formal_alerts | not_defined | 28 | — | — |
-| cluster_cross_full | short | observation_notices | not_defined | 34 | — | — |
-| cluster_cross_full | short | alerts_per_asset_year | 3.3174677702900675 | 3.3174677702900675 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_full | short | alarm_occupied_days | 364 | 364 | — | — |
-| cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 178 | — | — |
-| cluster_cross_full | short | E | 97 | 97 | 97 | 97 |
-| cluster_cross_full | short | P | 16 | 8 | — | — |
-| cluster_cross_full | short | TP | 0 | 0 | — | — |
-| cluster_cross_full | short | FP | 16 | 8 | — | — |
-| cluster_cross_full | short | FN | 97 | 97 | — | — |
-| cluster_cross_full | short | no_formal_alert_rate | 0.8762886597938144 | 0.9278350515463918 | 97 | 97 |
-| cluster_cross_full | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_full | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_full | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| cluster_cross_full | short | resolved_claim_precision | 0.0 | 0.0 | 16 | 8 |
-| cluster_cross_full | short | duplicate_notices | 3 | 0 | — | — |
-| cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | short | revisions | 33 | 5 | — | — |
-| cluster_cross_full | short | claim_notices | 49 | 49 | — | — |
-| cluster_cross_full | short | formal_alerts | not_defined | 13 | — | — |
-| cluster_cross_full | short | observation_notices | not_defined | 36 | — | — |
-| cluster_cross_full | short | alerts_per_asset_year | 3.332132284490784 | 3.332132284490784 | 14.705298534535274 | 14.705298534535274 |
-| cluster_cross_full | short | alarm_occupied_days | 261 | 261 | — | — |
-| cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 78 | — | — |
-| cluster_cross_full | short | E | 90 | 90 | 90 | 90 |
-| cluster_cross_full | short | P | 19 | 9 | — | — |
-| cluster_cross_full | short | TP | 2 | 3 | — | — |
-| cluster_cross_full | short | FP | 17 | 6 | — | — |
-| cluster_cross_full | short | FN | 88 | 87 | — | — |
-| cluster_cross_full | short | no_formal_alert_rate | 0.8444444444444444 | 0.9111111111111111 | 90 | 90 |
-| cluster_cross_full | short | first_window_coverage | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
-| cluster_cross_full | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.03333333333333333 | 90 | 90 |
-| cluster_cross_full | short | StrictShortRecall5W10 | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
-| cluster_cross_full | short | strict_short_miss_rate | 0.9777777777777777 | 0.9666666666666667 | 90 | 90 |
-| cluster_cross_full | short | resolved_claim_precision | 0.10526315789473684 | 0.3333333333333333 | 19 | 9 |
-| cluster_cross_full | short | duplicate_notices | 3 | 0 | — | — |
-| cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | short | revisions | 24 | 4 | — | — |
-| cluster_cross_full | short | claim_notices | 43 | 43 | — | — |
-| cluster_cross_full | short | formal_alerts | not_defined | 13 | — | — |
-| cluster_cross_full | short | observation_notices | not_defined | 30 | — | — |
-| cluster_cross_full | short | alerts_per_asset_year | 3.1980100794135615 | 3.1980100794135615 | 13.445861311320561 | 13.445861311320561 |
-| cluster_cross_full | short | alarm_occupied_days | 263 | 263 | — | — |
-| cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 80 | — | — |
-| cluster_cross_full | short | E | 71 | 71 | 71 | 71 |
-| cluster_cross_full | short | P | 18 | 7 | — | — |
-| cluster_cross_full | short | TP | 1 | 1 | — | — |
-| cluster_cross_full | short | FP | 17 | 6 | — | — |
-| cluster_cross_full | short | FN | 70 | 70 | — | — |
-| cluster_cross_full | short | no_formal_alert_rate | 0.8169014084507042 | 0.9154929577464789 | 71 | 71 |
-| cluster_cross_full | short | first_window_coverage | 0.028169014084507043 | 0.014084507042253521 | 71 | 71 |
-| cluster_cross_full | short | QualifiedShortRecall5 | 0.023809523809523808 | 0.014084507042253521 | 71 | 71 |
-| cluster_cross_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
-| cluster_cross_full | short | strict_short_miss_rate | 0.9859154929577465 | 0.9859154929577465 | 71 | 71 |
-| cluster_cross_full | short | resolved_claim_precision | 0.05555555555555555 | 0.14285714285714285 | 18 | 7 |
-| cluster_cross_full | short | duplicate_notices | 4 | 0 | — | — |
-| cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | short | revisions | 18 | 2 | — | — |
-| cluster_cross_full | short | claim_notices | 36 | 36 | — | — |
-| cluster_cross_full | short | formal_alerts | not_defined | 9 | — | — |
-| cluster_cross_full | short | observation_notices | not_defined | 27 | — | — |
-| cluster_cross_full | short | alerts_per_asset_year | 3.0829378663540448 | 3.0829378663540448 | 11.677173384805984 | 11.677173384805984 |
-| cluster_cross_full | short | alarm_occupied_days | 190 | 190 | — | — |
-| cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 57 | — | — |
-| cluster_cross_full | short | E | 122 | 122 | 122 | 122 |
-| cluster_cross_full | short | P | 20 | 11 | — | — |
-| cluster_cross_full | short | TP | 2 | 2 | — | — |
-| cluster_cross_full | short | FP | 18 | 9 | — | — |
-| cluster_cross_full | short | FN | 120 | 120 | — | — |
-| cluster_cross_full | short | no_formal_alert_rate | 0.8770491803278688 | 0.9344262295081968 | 122 | 122 |
-| cluster_cross_full | short | first_window_coverage | 0.02459016393442623 | 0.01639344262295082 | 122 | 122 |
-| cluster_cross_full | short | QualifiedShortRecall5 | 0.02112676056338028 | 0.01639344262295082 | 122 | 122 |
-| cluster_cross_full | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.01639344262295082 | 122 | 122 |
-| cluster_cross_full | short | strict_short_miss_rate | 0.9836065573770492 | 0.9836065573770492 | 122 | 122 |
-| cluster_cross_full | short | resolved_claim_precision | 0.1 | 0.18181818181818182 | 20 | 11 |
-| cluster_cross_full | short | duplicate_notices | 2 | 1 | — | — |
-| cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | short | revisions | 23 | 2 | — | — |
-| cluster_cross_full | short | claim_notices | 43 | 43 | — | — |
-| cluster_cross_full | short | formal_alerts | not_defined | 13 | — | — |
-| cluster_cross_full | short | observation_notices | not_defined | 30 | — | — |
-| cluster_cross_full | short | alerts_per_asset_year | 2.300824421330208 | 2.300824421330208 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_full | short | alarm_occupied_days | 277 | 277 | — | — |
-| cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 98 | — | — |
-| cluster_cross_full | short | E | 57 | 57 | 57 | 57 |
-| cluster_cross_full | short | P | 11 | 4 | — | — |
-| cluster_cross_full | short | TP | 0 | 0 | — | — |
-| cluster_cross_full | short | FP | 11 | 4 | — | — |
-| cluster_cross_full | short | FN | 57 | 57 | — | — |
-| cluster_cross_full | short | no_formal_alert_rate | 0.8421052631578947 | 0.9473684210526315 | 57 | 57 |
-| cluster_cross_full | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
-| cluster_cross_full | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.0 | 57 | 57 |
-| cluster_cross_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
-| cluster_cross_full | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
-| cluster_cross_full | short | resolved_claim_precision | 0.0 | 0.0 | 11 | 4 |
-| cluster_cross_full | short | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | short | revisions | 14 | 2 | — | — |
-| cluster_cross_full | short | claim_notices | 25 | 25 | — | — |
-| cluster_cross_full | short | formal_alerts | not_defined | 6 | — | — |
-| cluster_cross_full | short | observation_notices | not_defined | 19 | — | — |
-| cluster_cross_full | short | alerts_per_asset_year | 3.010571216617211 | 3.010571216617211 | 8.304071952196143 | 8.304071952196143 |
-| cluster_cross_full | short | alarm_occupied_days | 156 | 156 | — | — |
-| cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 46 | — | — |
-| cluster_cross_full | stage | E | 22 | 22 | 22 | 22 |
-| cluster_cross_full | stage | P | 25 | 16 | — | — |
-| cluster_cross_full | stage | TP | 0 | 0 | — | — |
-| cluster_cross_full | stage | FP | 25 | 16 | — | — |
-| cluster_cross_full | stage | FN | 22 | 22 | — | — |
-| cluster_cross_full | stage | no_formal_alert_rate | 0.5454545454545454 | 0.6363636363636364 | 22 | 22 |
-| cluster_cross_full | stage | first_window_coverage | 0.045454545454545456 | 0.0 | 22 | 22 |
-| cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
-| cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 25 | 16 |
-| cluster_cross_full | stage | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | stage | revisions | 37 | 12 | — | — |
-| cluster_cross_full | stage | claim_notices | 62 | 62 | — | — |
-| cluster_cross_full | stage | formal_alerts | not_defined | 28 | — | — |
-| cluster_cross_full | stage | observation_notices | not_defined | 34 | — | — |
-| cluster_cross_full | stage | alerts_per_asset_year | 3.3174677702900675 | 3.3174677702900675 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_full | stage | alarm_occupied_days | 364 | 364 | — | — |
-| cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 178 | — | — |
-| cluster_cross_full | stage | E | 13 | 13 | 13 | 13 |
-| cluster_cross_full | stage | P | 16 | 8 | — | — |
-| cluster_cross_full | stage | TP | 0 | 0 | — | — |
-| cluster_cross_full | stage | FP | 16 | 8 | — | — |
-| cluster_cross_full | stage | FN | 13 | 13 | — | — |
-| cluster_cross_full | stage | no_formal_alert_rate | 0.6153846153846154 | 0.6923076923076923 | 13 | 13 |
-| cluster_cross_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 16 | 8 |
-| cluster_cross_full | stage | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | stage | revisions | 33 | 5 | — | — |
-| cluster_cross_full | stage | claim_notices | 49 | 49 | — | — |
-| cluster_cross_full | stage | formal_alerts | not_defined | 13 | — | — |
-| cluster_cross_full | stage | observation_notices | not_defined | 36 | — | — |
-| cluster_cross_full | stage | alerts_per_asset_year | 3.332132284490784 | 3.332132284490784 | 14.705298534535274 | 14.705298534535274 |
-| cluster_cross_full | stage | alarm_occupied_days | 261 | 261 | — | — |
-| cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 78 | — | — |
-| cluster_cross_full | stage | E | 14 | 14 | 14 | 14 |
-| cluster_cross_full | stage | P | 19 | 9 | — | — |
-| cluster_cross_full | stage | TP | 0 | 0 | — | — |
-| cluster_cross_full | stage | FP | 19 | 9 | — | — |
-| cluster_cross_full | stage | FN | 14 | 14 | — | — |
-| cluster_cross_full | stage | no_formal_alert_rate | 0.7142857142857143 | 0.9285714285714286 | 14 | 14 |
-| cluster_cross_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 19 | 9 |
-| cluster_cross_full | stage | duplicate_notices | 2 | 0 | — | — |
-| cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | stage | revisions | 24 | 4 | — | — |
-| cluster_cross_full | stage | claim_notices | 43 | 43 | — | — |
-| cluster_cross_full | stage | formal_alerts | not_defined | 13 | — | — |
-| cluster_cross_full | stage | observation_notices | not_defined | 30 | — | — |
-| cluster_cross_full | stage | alerts_per_asset_year | 3.1980100794135615 | 3.1980100794135615 | 13.445861311320561 | 13.445861311320561 |
-| cluster_cross_full | stage | alarm_occupied_days | 263 | 263 | — | — |
-| cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 80 | — | — |
-| cluster_cross_full | stage | E | 13 | 13 | 13 | 13 |
-| cluster_cross_full | stage | P | 18 | 7 | — | — |
-| cluster_cross_full | stage | TP | 0 | 0 | — | — |
-| cluster_cross_full | stage | FP | 18 | 7 | — | — |
-| cluster_cross_full | stage | FN | 13 | 13 | — | — |
-| cluster_cross_full | stage | no_formal_alert_rate | 0.5384615384615384 | 0.7692307692307693 | 13 | 13 |
-| cluster_cross_full | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
-| cluster_cross_full | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
-| cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 18 | 7 |
-| cluster_cross_full | stage | duplicate_notices | 3 | 1 | — | — |
-| cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | stage | revisions | 18 | 2 | — | — |
-| cluster_cross_full | stage | claim_notices | 36 | 36 | — | — |
-| cluster_cross_full | stage | formal_alerts | not_defined | 9 | — | — |
-| cluster_cross_full | stage | observation_notices | not_defined | 27 | — | — |
-| cluster_cross_full | stage | alerts_per_asset_year | 3.0829378663540448 | 3.0829378663540448 | 11.677173384805984 | 11.677173384805984 |
-| cluster_cross_full | stage | alarm_occupied_days | 190 | 190 | — | — |
-| cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 57 | — | — |
-| cluster_cross_full | stage | E | 20 | 20 | 20 | 20 |
-| cluster_cross_full | stage | P | 20 | 11 | — | — |
-| cluster_cross_full | stage | TP | 0 | 0 | — | — |
-| cluster_cross_full | stage | FP | 20 | 11 | — | — |
-| cluster_cross_full | stage | FN | 20 | 20 | — | — |
-| cluster_cross_full | stage | no_formal_alert_rate | 0.65 | 0.75 | 20 | 20 |
-| cluster_cross_full | stage | first_window_coverage | 0.05 | 0.0 | 20 | 20 |
-| cluster_cross_full | stage | QualifiedStageRecall5 | 0.007042253521126761 | 0.0 | 20 | 20 |
-| cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
-| cluster_cross_full | stage | duplicate_notices | 2 | 2 | — | — |
-| cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | stage | revisions | 23 | 2 | — | — |
-| cluster_cross_full | stage | claim_notices | 43 | 43 | — | — |
-| cluster_cross_full | stage | formal_alerts | not_defined | 13 | — | — |
-| cluster_cross_full | stage | observation_notices | not_defined | 30 | — | — |
-| cluster_cross_full | stage | alerts_per_asset_year | 2.300824421330208 | 2.300824421330208 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_full | stage | alarm_occupied_days | 277 | 277 | — | — |
-| cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 98 | — | — |
-| cluster_cross_full | stage | E | 9 | 9 | 9 | 9 |
-| cluster_cross_full | stage | P | 11 | 4 | — | — |
-| cluster_cross_full | stage | TP | 0 | 0 | — | — |
-| cluster_cross_full | stage | FP | 11 | 4 | — | — |
-| cluster_cross_full | stage | FN | 9 | 9 | — | — |
-| cluster_cross_full | stage | no_formal_alert_rate | 0.7777777777777778 | 1.0 | 9 | 9 |
-| cluster_cross_full | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 11 | 4 |
-| cluster_cross_full | stage | duplicate_notices | 2 | 0 | — | — |
-| cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_full | stage | revisions | 14 | 2 | — | — |
-| cluster_cross_full | stage | claim_notices | 25 | 25 | — | — |
-| cluster_cross_full | stage | formal_alerts | not_defined | 6 | — | — |
-| cluster_cross_full | stage | observation_notices | not_defined | 19 | — | — |
-| cluster_cross_full | stage | alerts_per_asset_year | 3.010571216617211 | 3.010571216617211 | 8.304071952196143 | 8.304071952196143 |
-| cluster_cross_full | stage | alarm_occupied_days | 156 | 156 | — | — |
-| cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 46 | — | — |
-| cluster_cross_stable2 | short | E | 115 | 115 | 115 | 115 |
-| cluster_cross_stable2 | short | P | 9 | 3 | — | — |
-| cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | FP | 9 | 3 | — | — |
-| cluster_cross_stable2 | short | FN | 115 | 115 | — | — |
-| cluster_cross_stable2 | short | no_formal_alert_rate | 0.9391304347826087 | 0.9826086956521739 | 115 | 115 |
-| cluster_cross_stable2 | short | first_window_coverage | 0.0 | 0.0 | 115 | 115 |
-| cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 115 | 115 |
-| cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 115 | 115 |
-| cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 115 | 115 |
-| cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 9 | 3 |
-| cluster_cross_stable2 | short | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | revisions | 5 | 0 | — | — |
-| cluster_cross_stable2 | short | claim_notices | 14 | 14 | — | — |
-| cluster_cross_stable2 | short | formal_alerts | not_defined | 3 | — | — |
-| cluster_cross_stable2 | short | observation_notices | not_defined | 11 | — | — |
-| cluster_cross_stable2 | short | alerts_per_asset_year | 0.74910562554937 | 0.74910562554937 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_stable2 | short | alarm_occupied_days | 113 | 113 | — | — |
-| cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 30 | — | — |
-| cluster_cross_stable2 | short | E | 97 | 97 | 97 | 97 |
-| cluster_cross_stable2 | short | P | 8 | 3 | — | — |
-| cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | FP | 8 | 3 | — | — |
-| cluster_cross_stable2 | short | FN | 97 | 97 | — | — |
-| cluster_cross_stable2 | short | no_formal_alert_rate | 0.9278350515463918 | 0.9690721649484536 | 97 | 97 |
-| cluster_cross_stable2 | short | first_window_coverage | 0.020618556701030927 | 0.0 | 97 | 97 |
-| cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.01818181818181818 | 0.0 | 97 | 97 |
-| cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 8 | 3 |
-| cluster_cross_stable2 | short | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | revisions | 12 | 0 | — | — |
-| cluster_cross_stable2 | short | claim_notices | 20 | 20 | — | — |
-| cluster_cross_stable2 | short | formal_alerts | not_defined | 3 | — | — |
-| cluster_cross_stable2 | short | observation_notices | not_defined | 17 | — | — |
-| cluster_cross_stable2 | short | alerts_per_asset_year | 1.3600539936697078 | 1.3600539936697078 | 14.705298534535274 | 14.705298534535274 |
-| cluster_cross_stable2 | short | alarm_occupied_days | 140 | 140 | — | — |
-| cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 27 | — | — |
-| cluster_cross_stable2 | short | E | 90 | 90 | 90 | 90 |
-| cluster_cross_stable2 | short | P | 8 | 2 | — | — |
-| cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | FP | 8 | 2 | — | — |
-| cluster_cross_stable2 | short | FN | 90 | 90 | — | — |
-| cluster_cross_stable2 | short | no_formal_alert_rate | 0.9222222222222223 | 0.9777777777777777 | 90 | 90 |
-| cluster_cross_stable2 | short | first_window_coverage | 0.011111111111111112 | 0.0 | 90 | 90 |
-| cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
-| cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
-| cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
-| cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 8 | 2 |
-| cluster_cross_stable2 | short | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | revisions | 4 | 0 | — | — |
-| cluster_cross_stable2 | short | claim_notices | 12 | 12 | — | — |
-| cluster_cross_stable2 | short | formal_alerts | not_defined | 2 | — | — |
-| cluster_cross_stable2 | short | observation_notices | not_defined | 10 | — | — |
-| cluster_cross_stable2 | short | alerts_per_asset_year | 0.8924679291386682 | 0.8924679291386682 | 13.445861311320561 | 13.445861311320561 |
-| cluster_cross_stable2 | short | alarm_occupied_days | 96 | 96 | — | — |
-| cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 15 | — | — |
-| cluster_cross_stable2 | short | E | 71 | 71 | 71 | 71 |
-| cluster_cross_stable2 | short | P | 8 | 1 | — | — |
-| cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | FP | 8 | 1 | — | — |
-| cluster_cross_stable2 | short | FN | 71 | 71 | — | — |
-| cluster_cross_stable2 | short | no_formal_alert_rate | 0.8873239436619719 | 0.9859154929577465 | 71 | 71 |
-| cluster_cross_stable2 | short | first_window_coverage | 0.0 | 0.0 | 71 | 71 |
-| cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 71 | 71 |
-| cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 71 | 71 |
-| cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 71 | 71 |
-| cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 8 | 1 |
-| cluster_cross_stable2 | short | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | revisions | 1 | 0 | — | — |
-| cluster_cross_stable2 | short | claim_notices | 9 | 9 | — | — |
-| cluster_cross_stable2 | short | formal_alerts | not_defined | 1 | — | — |
-| cluster_cross_stable2 | short | observation_notices | not_defined | 8 | — | — |
-| cluster_cross_stable2 | short | alerts_per_asset_year | 0.7707344665885112 | 0.7707344665885112 | 11.677173384805984 | 11.677173384805984 |
-| cluster_cross_stable2 | short | alarm_occupied_days | 61 | 61 | — | — |
-| cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 7 | — | — |
-| cluster_cross_stable2 | short | E | 122 | 122 | 122 | 122 |
-| cluster_cross_stable2 | short | P | 6 | 0 | — | — |
-| cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | FP | 6 | 0 | — | — |
-| cluster_cross_stable2 | short | FN | 122 | 122 | — | — |
-| cluster_cross_stable2 | short | no_formal_alert_rate | 0.9672131147540983 | 1.0 | 122 | 122 |
-| cluster_cross_stable2 | short | first_window_coverage | 0.01639344262295082 | 0.0 | 122 | 122 |
-| cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 122 | 122 |
-| cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 122 | 122 |
-| cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 122 | 122 |
-| cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | null | 6 | 0 |
-| cluster_cross_stable2 | short | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | revisions | 6 | 0 | — | — |
-| cluster_cross_stable2 | short | claim_notices | 12 | 12 | — | — |
-| cluster_cross_stable2 | short | formal_alerts | not_defined | 0 | — | — |
-| cluster_cross_stable2 | short | observation_notices | not_defined | 12 | — | — |
-| cluster_cross_stable2 | short | alerts_per_asset_year | 0.6420905361851743 | 0.6420905361851743 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_stable2 | short | alarm_occupied_days | 99 | 99 | — | — |
-| cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 0 | — | — |
-| cluster_cross_stable2 | short | E | 57 | 57 | 57 | 57 |
-| cluster_cross_stable2 | short | P | 2 | 0 | — | — |
-| cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | FP | 2 | 0 | — | — |
-| cluster_cross_stable2 | short | FN | 57 | 57 | — | — |
-| cluster_cross_stable2 | short | no_formal_alert_rate | 0.9649122807017544 | 1.0 | 57 | 57 |
-| cluster_cross_stable2 | short | first_window_coverage | 0.0 | 0.0 | 57 | 57 |
-| cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 57 | 57 |
-| cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
-| cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
-| cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | null | 2 | 0 |
-| cluster_cross_stable2 | short | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | revisions | 0 | 0 | — | — |
-| cluster_cross_stable2 | short | claim_notices | 2 | 2 | — | — |
-| cluster_cross_stable2 | short | formal_alerts | not_defined | 0 | — | — |
-| cluster_cross_stable2 | short | observation_notices | not_defined | 2 | — | — |
-| cluster_cross_stable2 | short | alerts_per_asset_year | 0.24084569732937688 | 0.24084569732937688 | 8.304071952196143 | 8.304071952196143 |
-| cluster_cross_stable2 | short | alarm_occupied_days | 14 | 14 | — | — |
-| cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 0 | — | — |
-| cluster_cross_stable2 | stage | E | 22 | 22 | 22 | 22 |
-| cluster_cross_stable2 | stage | P | 9 | 3 | — | — |
-| cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | FP | 9 | 3 | — | — |
-| cluster_cross_stable2 | stage | FN | 22 | 22 | — | — |
-| cluster_cross_stable2 | stage | no_formal_alert_rate | 0.8181818181818182 | 1.0 | 22 | 22 |
-| cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 22 | 22 |
-| cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
-| cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 3 |
-| cluster_cross_stable2 | stage | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | revisions | 5 | 0 | — | — |
-| cluster_cross_stable2 | stage | claim_notices | 14 | 14 | — | — |
-| cluster_cross_stable2 | stage | formal_alerts | not_defined | 3 | — | — |
-| cluster_cross_stable2 | stage | observation_notices | not_defined | 11 | — | — |
-| cluster_cross_stable2 | stage | alerts_per_asset_year | 0.74910562554937 | 0.74910562554937 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_stable2 | stage | alarm_occupied_days | 113 | 113 | — | — |
-| cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 30 | — | — |
-| cluster_cross_stable2 | stage | E | 13 | 13 | 13 | 13 |
-| cluster_cross_stable2 | stage | P | 8 | 3 | — | — |
-| cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | FP | 8 | 3 | — | — |
-| cluster_cross_stable2 | stage | FN | 13 | 13 | — | — |
-| cluster_cross_stable2 | stage | no_formal_alert_rate | 0.8461538461538461 | 0.9230769230769231 | 13 | 13 |
-| cluster_cross_stable2 | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.00909090909090909 | 0.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 8 | 3 |
-| cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | revisions | 12 | 0 | — | — |
-| cluster_cross_stable2 | stage | claim_notices | 20 | 20 | — | — |
-| cluster_cross_stable2 | stage | formal_alerts | not_defined | 3 | — | — |
-| cluster_cross_stable2 | stage | observation_notices | not_defined | 17 | — | — |
-| cluster_cross_stable2 | stage | alerts_per_asset_year | 1.3600539936697078 | 1.3600539936697078 | 14.705298534535274 | 14.705298534535274 |
-| cluster_cross_stable2 | stage | alarm_occupied_days | 140 | 140 | — | — |
-| cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 27 | — | — |
-| cluster_cross_stable2 | stage | E | 14 | 14 | 14 | 14 |
-| cluster_cross_stable2 | stage | P | 8 | 2 | — | — |
-| cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | FP | 8 | 2 | — | — |
-| cluster_cross_stable2 | stage | FN | 14 | 14 | — | — |
-| cluster_cross_stable2 | stage | no_formal_alert_rate | 0.7857142857142857 | 1.0 | 14 | 14 |
-| cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 8 | 2 |
-| cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | revisions | 4 | 0 | — | — |
-| cluster_cross_stable2 | stage | claim_notices | 12 | 12 | — | — |
-| cluster_cross_stable2 | stage | formal_alerts | not_defined | 2 | — | — |
-| cluster_cross_stable2 | stage | observation_notices | not_defined | 10 | — | — |
-| cluster_cross_stable2 | stage | alerts_per_asset_year | 0.8924679291386682 | 0.8924679291386682 | 13.445861311320561 | 13.445861311320561 |
-| cluster_cross_stable2 | stage | alarm_occupied_days | 96 | 96 | — | — |
-| cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 15 | — | — |
-| cluster_cross_stable2 | stage | E | 13 | 13 | 13 | 13 |
-| cluster_cross_stable2 | stage | P | 8 | 1 | — | — |
-| cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | FP | 8 | 1 | — | — |
-| cluster_cross_stable2 | stage | FN | 13 | 13 | — | — |
-| cluster_cross_stable2 | stage | no_formal_alert_rate | 0.6153846153846154 | 1.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 8 | 1 |
-| cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | revisions | 1 | 0 | — | — |
-| cluster_cross_stable2 | stage | claim_notices | 9 | 9 | — | — |
-| cluster_cross_stable2 | stage | formal_alerts | not_defined | 1 | — | — |
-| cluster_cross_stable2 | stage | observation_notices | not_defined | 8 | — | — |
-| cluster_cross_stable2 | stage | alerts_per_asset_year | 0.7707344665885112 | 0.7707344665885112 | 11.677173384805984 | 11.677173384805984 |
-| cluster_cross_stable2 | stage | alarm_occupied_days | 61 | 61 | — | — |
-| cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 7 | — | — |
-| cluster_cross_stable2 | stage | E | 20 | 20 | 20 | 20 |
-| cluster_cross_stable2 | stage | P | 6 | 0 | — | — |
-| cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | FP | 6 | 0 | — | — |
-| cluster_cross_stable2 | stage | FN | 20 | 20 | — | — |
-| cluster_cross_stable2 | stage | no_formal_alert_rate | 0.85 | 1.0 | 20 | 20 |
-| cluster_cross_stable2 | stage | first_window_coverage | 0.1 | 0.0 | 20 | 20 |
-| cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
-| cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | null | 6 | 0 |
-| cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | revisions | 6 | 0 | — | — |
-| cluster_cross_stable2 | stage | claim_notices | 12 | 12 | — | — |
-| cluster_cross_stable2 | stage | formal_alerts | not_defined | 0 | — | — |
-| cluster_cross_stable2 | stage | observation_notices | not_defined | 12 | — | — |
-| cluster_cross_stable2 | stage | alerts_per_asset_year | 0.6420905361851743 | 0.6420905361851743 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_stable2 | stage | alarm_occupied_days | 99 | 99 | — | — |
-| cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 0 | — | — |
-| cluster_cross_stable2 | stage | E | 9 | 9 | 9 | 9 |
-| cluster_cross_stable2 | stage | P | 2 | 0 | — | — |
-| cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | FP | 2 | 0 | — | — |
-| cluster_cross_stable2 | stage | FN | 9 | 9 | — | — |
-| cluster_cross_stable2 | stage | no_formal_alert_rate | 0.7777777777777778 | 1.0 | 9 | 9 |
-| cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | null | 2 | 0 |
-| cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | revisions | 0 | 0 | — | — |
-| cluster_cross_stable2 | stage | claim_notices | 2 | 2 | — | — |
-| cluster_cross_stable2 | stage | formal_alerts | not_defined | 0 | — | — |
-| cluster_cross_stable2 | stage | observation_notices | not_defined | 2 | — | — |
-| cluster_cross_stable2 | stage | alerts_per_asset_year | 0.24084569732937688 | 0.24084569732937688 | 8.304071952196143 | 8.304071952196143 |
-| cluster_cross_stable2 | stage | alarm_occupied_days | 14 | 14 | — | — |
-| cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 0 | — | — |
-| cluster_cross_thin | short | E | 115 | 115 | 115 | 115 |
-| cluster_cross_thin | short | P | 23 | 18 | — | — |
-| cluster_cross_thin | short | TP | 5 | 5 | — | — |
-| cluster_cross_thin | short | FP | 18 | 13 | — | — |
-| cluster_cross_thin | short | FN | 110 | 110 | — | — |
-| cluster_cross_thin | short | no_formal_alert_rate | 0.8434782608695652 | 0.8695652173913043 | 115 | 115 |
-| cluster_cross_thin | short | first_window_coverage | 0.05217391304347826 | 0.043478260869565216 | 115 | 115 |
-| cluster_cross_thin | short | QualifiedShortRecall5 | 0.0364963503649635 | 0.043478260869565216 | 115 | 115 |
-| cluster_cross_thin | short | StrictShortRecall5W10 | 0.043478260869565216 | 0.043478260869565216 | 115 | 115 |
-| cluster_cross_thin | short | strict_short_miss_rate | 0.9565217391304348 | 0.9565217391304348 | 115 | 115 |
-| cluster_cross_thin | short | resolved_claim_precision | 0.21739130434782608 | 0.2777777777777778 | 23 | 18 |
-| cluster_cross_thin | short | duplicate_notices | 2 | 0 | — | — |
-| cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | short | revisions | 28 | 16 | — | — |
-| cluster_cross_thin | short | claim_notices | 51 | 51 | — | — |
-| cluster_cross_thin | short | formal_alerts | not_defined | 34 | — | — |
-| cluster_cross_thin | short | observation_notices | not_defined | 17 | — | — |
-| cluster_cross_thin | short | alerts_per_asset_year | 2.7288847787869908 | 2.7288847787869908 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_thin | short | alarm_occupied_days | 285 | 285 | — | — |
-| cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 201 | — | — |
-| cluster_cross_thin | short | E | 97 | 97 | 97 | 97 |
-| cluster_cross_thin | short | P | 14 | 9 | — | — |
-| cluster_cross_thin | short | TP | 0 | 0 | — | — |
-| cluster_cross_thin | short | FP | 14 | 9 | — | — |
-| cluster_cross_thin | short | FN | 97 | 97 | — | — |
-| cluster_cross_thin | short | no_formal_alert_rate | 0.8865979381443299 | 0.9072164948453608 | 97 | 97 |
-| cluster_cross_thin | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_thin | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| cluster_cross_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| cluster_cross_thin | short | resolved_claim_precision | 0.0 | 0.0 | 14 | 9 |
-| cluster_cross_thin | short | duplicate_notices | 3 | 0 | — | — |
-| cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | short | revisions | 31 | 17 | — | — |
-| cluster_cross_thin | short | claim_notices | 45 | 45 | — | — |
-| cluster_cross_thin | short | formal_alerts | not_defined | 26 | — | — |
-| cluster_cross_thin | short | observation_notices | not_defined | 19 | — | — |
-| cluster_cross_thin | short | alerts_per_asset_year | 3.0601214857568424 | 3.0601214857568424 | 14.705298534535274 | 14.705298534535274 |
-| cluster_cross_thin | short | alarm_occupied_days | 235 | 235 | — | — |
-| cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 151 | — | — |
-| cluster_cross_thin | short | E | 90 | 90 | 90 | 90 |
-| cluster_cross_thin | short | P | 16 | 10 | — | — |
-| cluster_cross_thin | short | TP | 1 | 3 | — | — |
-| cluster_cross_thin | short | FP | 15 | 7 | — | — |
-| cluster_cross_thin | short | FN | 89 | 87 | — | — |
-| cluster_cross_thin | short | no_formal_alert_rate | 0.8666666666666667 | 0.8888888888888888 | 90 | 90 |
-| cluster_cross_thin | short | first_window_coverage | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
-| cluster_cross_thin | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.03333333333333333 | 90 | 90 |
-| cluster_cross_thin | short | StrictShortRecall5W10 | 0.011111111111111112 | 0.03333333333333333 | 90 | 90 |
-| cluster_cross_thin | short | strict_short_miss_rate | 0.9888888888888889 | 0.9666666666666667 | 90 | 90 |
-| cluster_cross_thin | short | resolved_claim_precision | 0.0625 | 0.3 | 16 | 10 |
-| cluster_cross_thin | short | duplicate_notices | 3 | 0 | — | — |
-| cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | short | revisions | 20 | 6 | — | — |
-| cluster_cross_thin | short | claim_notices | 36 | 36 | — | — |
-| cluster_cross_thin | short | formal_alerts | not_defined | 16 | — | — |
-| cluster_cross_thin | short | observation_notices | not_defined | 20 | — | — |
-| cluster_cross_thin | short | alerts_per_asset_year | 2.677403787416005 | 2.677403787416005 | 13.445861311320561 | 13.445861311320561 |
-| cluster_cross_thin | short | alarm_occupied_days | 220 | 220 | — | — |
-| cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 108 | — | — |
-| cluster_cross_thin | short | E | 71 | 71 | 71 | 71 |
-| cluster_cross_thin | short | P | 17 | 7 | — | — |
-| cluster_cross_thin | short | TP | 1 | 1 | — | — |
-| cluster_cross_thin | short | FP | 16 | 6 | — | — |
-| cluster_cross_thin | short | FN | 70 | 70 | — | — |
-| cluster_cross_thin | short | no_formal_alert_rate | 0.8309859154929577 | 0.9295774647887324 | 71 | 71 |
-| cluster_cross_thin | short | first_window_coverage | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
-| cluster_cross_thin | short | QualifiedShortRecall5 | 0.011904761904761904 | 0.014084507042253521 | 71 | 71 |
-| cluster_cross_thin | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
-| cluster_cross_thin | short | strict_short_miss_rate | 0.9859154929577465 | 0.9859154929577465 | 71 | 71 |
-| cluster_cross_thin | short | resolved_claim_precision | 0.058823529411764705 | 0.14285714285714285 | 17 | 7 |
-| cluster_cross_thin | short | duplicate_notices | 3 | 0 | — | — |
-| cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | short | revisions | 12 | 3 | — | — |
-| cluster_cross_thin | short | claim_notices | 29 | 29 | — | — |
-| cluster_cross_thin | short | formal_alerts | not_defined | 10 | — | — |
-| cluster_cross_thin | short | observation_notices | not_defined | 19 | — | — |
-| cluster_cross_thin | short | alerts_per_asset_year | 2.4834777256740916 | 2.4834777256740916 | 11.677173384805984 | 11.677173384805984 |
-| cluster_cross_thin | short | alarm_occupied_days | 152 | 152 | — | — |
-| cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 62 | — | — |
-| cluster_cross_thin | short | E | 122 | 122 | 122 | 122 |
-| cluster_cross_thin | short | P | 20 | 11 | — | — |
-| cluster_cross_thin | short | TP | 2 | 2 | — | — |
-| cluster_cross_thin | short | FP | 18 | 9 | — | — |
-| cluster_cross_thin | short | FN | 120 | 120 | — | — |
-| cluster_cross_thin | short | no_formal_alert_rate | 0.9016393442622951 | 0.9426229508196722 | 122 | 122 |
-| cluster_cross_thin | short | first_window_coverage | 0.02459016393442623 | 0.01639344262295082 | 122 | 122 |
-| cluster_cross_thin | short | QualifiedShortRecall5 | 0.014084507042253521 | 0.01639344262295082 | 122 | 122 |
-| cluster_cross_thin | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.01639344262295082 | 122 | 122 |
-| cluster_cross_thin | short | strict_short_miss_rate | 0.9836065573770492 | 0.9836065573770492 | 122 | 122 |
-| cluster_cross_thin | short | resolved_claim_precision | 0.1 | 0.18181818181818182 | 20 | 11 |
-| cluster_cross_thin | short | duplicate_notices | 3 | 2 | — | — |
-| cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | short | revisions | 22 | 16 | — | — |
-| cluster_cross_thin | short | claim_notices | 42 | 42 | — | — |
-| cluster_cross_thin | short | formal_alerts | not_defined | 27 | — | — |
-| cluster_cross_thin | short | observation_notices | not_defined | 15 | — | — |
-| cluster_cross_thin | short | alerts_per_asset_year | 2.24731687664811 | 2.24731687664811 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_thin | short | alarm_occupied_days | 249 | 249 | — | — |
-| cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 161 | — | — |
-| cluster_cross_thin | short | E | 57 | 57 | 57 | 57 |
-| cluster_cross_thin | short | P | 9 | 5 | — | — |
-| cluster_cross_thin | short | TP | 1 | 1 | — | — |
-| cluster_cross_thin | short | FP | 8 | 4 | — | — |
-| cluster_cross_thin | short | FN | 56 | 56 | — | — |
-| cluster_cross_thin | short | no_formal_alert_rate | 0.8771929824561403 | 0.9298245614035088 | 57 | 57 |
-| cluster_cross_thin | short | first_window_coverage | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
-| cluster_cross_thin | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.017543859649122806 | 57 | 57 |
-| cluster_cross_thin | short | StrictShortRecall5W10 | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
-| cluster_cross_thin | short | strict_short_miss_rate | 0.9824561403508771 | 0.9824561403508771 | 57 | 57 |
-| cluster_cross_thin | short | resolved_claim_precision | 0.1111111111111111 | 0.2 | 9 | 5 |
-| cluster_cross_thin | short | duplicate_notices | 1 | 0 | — | — |
-| cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | short | revisions | 12 | 4 | — | — |
-| cluster_cross_thin | short | claim_notices | 21 | 21 | — | — |
-| cluster_cross_thin | short | formal_alerts | not_defined | 9 | — | — |
-| cluster_cross_thin | short | observation_notices | not_defined | 12 | — | — |
-| cluster_cross_thin | short | alerts_per_asset_year | 2.528879821958457 | 2.528879821958457 | 8.304071952196143 | 8.304071952196143 |
-| cluster_cross_thin | short | alarm_occupied_days | 117 | 117 | — | — |
-| cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 61 | — | — |
-| cluster_cross_thin | stage | E | 22 | 22 | 22 | 22 |
-| cluster_cross_thin | stage | P | 23 | 18 | — | — |
-| cluster_cross_thin | stage | TP | 1 | 1 | — | — |
-| cluster_cross_thin | stage | FP | 22 | 17 | — | — |
-| cluster_cross_thin | stage | FN | 21 | 21 | — | — |
-| cluster_cross_thin | stage | no_formal_alert_rate | 0.6363636363636364 | 0.6818181818181818 | 22 | 22 |
-| cluster_cross_thin | stage | first_window_coverage | 0.09090909090909091 | 0.045454545454545456 | 22 | 22 |
-| cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0072992700729927005 | 0.045454545454545456 | 22 | 22 |
-| cluster_cross_thin | stage | StrictStageRecall5W10 | 0.045454545454545456 | 0.045454545454545456 | 22 | 22 |
-| cluster_cross_thin | stage | strict_stage_miss_rate | 0.9545454545454546 | 0.9545454545454546 | 22 | 22 |
-| cluster_cross_thin | stage | resolved_claim_precision | 0.043478260869565216 | 0.05555555555555555 | 23 | 18 |
-| cluster_cross_thin | stage | duplicate_notices | 1 | 1 | — | — |
-| cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | stage | revisions | 28 | 16 | — | — |
-| cluster_cross_thin | stage | claim_notices | 51 | 51 | — | — |
-| cluster_cross_thin | stage | formal_alerts | not_defined | 34 | — | — |
-| cluster_cross_thin | stage | observation_notices | not_defined | 17 | — | — |
-| cluster_cross_thin | stage | alerts_per_asset_year | 2.7288847787869908 | 2.7288847787869908 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_thin | stage | alarm_occupied_days | 285 | 285 | — | — |
-| cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 201 | — | — |
-| cluster_cross_thin | stage | E | 13 | 13 | 13 | 13 |
-| cluster_cross_thin | stage | P | 14 | 9 | — | — |
-| cluster_cross_thin | stage | TP | 0 | 0 | — | — |
-| cluster_cross_thin | stage | FP | 14 | 9 | — | — |
-| cluster_cross_thin | stage | FN | 13 | 13 | — | — |
-| cluster_cross_thin | stage | no_formal_alert_rate | 0.6153846153846154 | 0.6153846153846154 | 13 | 13 |
-| cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 14 | 9 |
-| cluster_cross_thin | stage | duplicate_notices | 1 | 1 | — | — |
-| cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | stage | revisions | 31 | 17 | — | — |
-| cluster_cross_thin | stage | claim_notices | 45 | 45 | — | — |
-| cluster_cross_thin | stage | formal_alerts | not_defined | 26 | — | — |
-| cluster_cross_thin | stage | observation_notices | not_defined | 19 | — | — |
-| cluster_cross_thin | stage | alerts_per_asset_year | 3.0601214857568424 | 3.0601214857568424 | 14.705298534535274 | 14.705298534535274 |
-| cluster_cross_thin | stage | alarm_occupied_days | 235 | 235 | — | — |
-| cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 151 | — | — |
-| cluster_cross_thin | stage | E | 14 | 14 | 14 | 14 |
-| cluster_cross_thin | stage | P | 16 | 10 | — | — |
-| cluster_cross_thin | stage | TP | 0 | 0 | — | — |
-| cluster_cross_thin | stage | FP | 16 | 10 | — | — |
-| cluster_cross_thin | stage | FN | 14 | 14 | — | — |
-| cluster_cross_thin | stage | no_formal_alert_rate | 0.7142857142857143 | 0.7857142857142857 | 14 | 14 |
-| cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 16 | 10 |
-| cluster_cross_thin | stage | duplicate_notices | 2 | 0 | — | — |
-| cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | stage | revisions | 20 | 6 | — | — |
-| cluster_cross_thin | stage | claim_notices | 36 | 36 | — | — |
-| cluster_cross_thin | stage | formal_alerts | not_defined | 16 | — | — |
-| cluster_cross_thin | stage | observation_notices | not_defined | 20 | — | — |
-| cluster_cross_thin | stage | alerts_per_asset_year | 2.677403787416005 | 2.677403787416005 | 13.445861311320561 | 13.445861311320561 |
-| cluster_cross_thin | stage | alarm_occupied_days | 220 | 220 | — | — |
-| cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 108 | — | — |
-| cluster_cross_thin | stage | E | 13 | 13 | 13 | 13 |
-| cluster_cross_thin | stage | P | 17 | 7 | — | — |
-| cluster_cross_thin | stage | TP | 0 | 0 | — | — |
-| cluster_cross_thin | stage | FP | 17 | 7 | — | — |
-| cluster_cross_thin | stage | FN | 13 | 13 | — | — |
-| cluster_cross_thin | stage | no_formal_alert_rate | 0.5384615384615384 | 0.7692307692307693 | 13 | 13 |
-| cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 17 | 7 |
-| cluster_cross_thin | stage | duplicate_notices | 3 | 1 | — | — |
-| cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | stage | revisions | 12 | 3 | — | — |
-| cluster_cross_thin | stage | claim_notices | 29 | 29 | — | — |
-| cluster_cross_thin | stage | formal_alerts | not_defined | 10 | — | — |
-| cluster_cross_thin | stage | observation_notices | not_defined | 19 | — | — |
-| cluster_cross_thin | stage | alerts_per_asset_year | 2.4834777256740916 | 2.4834777256740916 | 11.677173384805984 | 11.677173384805984 |
-| cluster_cross_thin | stage | alarm_occupied_days | 152 | 152 | — | — |
-| cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 62 | — | — |
-| cluster_cross_thin | stage | E | 20 | 20 | 20 | 20 |
-| cluster_cross_thin | stage | P | 20 | 11 | — | — |
-| cluster_cross_thin | stage | TP | 0 | 0 | — | — |
-| cluster_cross_thin | stage | FP | 20 | 11 | — | — |
-| cluster_cross_thin | stage | FN | 20 | 20 | — | — |
-| cluster_cross_thin | stage | no_formal_alert_rate | 0.75 | 0.85 | 20 | 20 |
-| cluster_cross_thin | stage | first_window_coverage | 0.05 | 0.0 | 20 | 20 |
-| cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
-| cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
-| cluster_cross_thin | stage | duplicate_notices | 2 | 1 | — | — |
-| cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | stage | revisions | 22 | 16 | — | — |
-| cluster_cross_thin | stage | claim_notices | 42 | 42 | — | — |
-| cluster_cross_thin | stage | formal_alerts | not_defined | 27 | — | — |
-| cluster_cross_thin | stage | observation_notices | not_defined | 15 | — | — |
-| cluster_cross_thin | stage | alerts_per_asset_year | 2.24731687664811 | 2.24731687664811 | 18.688953229703554 | 18.688953229703554 |
-| cluster_cross_thin | stage | alarm_occupied_days | 249 | 249 | — | — |
-| cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 161 | — | — |
-| cluster_cross_thin | stage | E | 9 | 9 | 9 | 9 |
-| cluster_cross_thin | stage | P | 9 | 5 | — | — |
-| cluster_cross_thin | stage | TP | 0 | 0 | — | — |
-| cluster_cross_thin | stage | FP | 9 | 5 | — | — |
-| cluster_cross_thin | stage | FN | 9 | 9 | — | — |
-| cluster_cross_thin | stage | no_formal_alert_rate | 0.7777777777777778 | 1.0 | 9 | 9 |
-| cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 5 |
-| cluster_cross_thin | stage | duplicate_notices | 2 | 0 | — | — |
-| cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
-| cluster_cross_thin | stage | revisions | 12 | 4 | — | — |
-| cluster_cross_thin | stage | claim_notices | 21 | 21 | — | — |
-| cluster_cross_thin | stage | formal_alerts | not_defined | 9 | — | — |
-| cluster_cross_thin | stage | observation_notices | not_defined | 12 | — | — |
-| cluster_cross_thin | stage | alerts_per_asset_year | 2.528879821958457 | 2.528879821958457 | 8.304071952196143 | 8.304071952196143 |
-| cluster_cross_thin | stage | alarm_occupied_days | 117 | 117 | — | — |
-| cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 61 | — | — |
-| or2_full | short | E | 115 | 115 | 115 | 115 |
-| or2_full | short | P | 33 | 28 | — | — |
-| or2_full | short | TP | 2 | 2 | — | — |
-| or2_full | short | FP | 31 | 26 | — | — |
-| or2_full | short | FN | 113 | 113 | — | — |
-| or2_full | short | no_formal_alert_rate | 0.7478260869565218 | 0.782608695652174 | 115 | 115 |
-| or2_full | short | first_window_coverage | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
-| or2_full | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.017391304347826087 | 115 | 115 |
-| or2_full | short | StrictShortRecall5W10 | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
-| or2_full | short | strict_short_miss_rate | 0.9826086956521739 | 0.9826086956521739 | 115 | 115 |
-| or2_full | short | resolved_claim_precision | 0.06060606060606061 | 0.07142857142857142 | 33 | 28 |
-| or2_full | short | duplicate_notices | 2 | 1 | — | — |
-| or2_full | short | pending_claims | 0 | 0 | — | — |
-| or2_full | short | revisions | 149 | 67 | — | — |
-| or2_full | short | claim_notices | 175 | 175 | — | — |
-| or2_full | short | formal_alerts | not_defined | 95 | — | — |
-| or2_full | short | observation_notices | not_defined | 80 | — | — |
-| or2_full | short | alerts_per_asset_year | 9.363820319367125 | 9.363820319367125 | 18.688953229703554 | 18.688953229703554 |
-| or2_full | short | alarm_occupied_days | 718 | 718 | — | — |
-| or2_full | short | formal_alarm_occupied_days | not_defined | 373 | — | — |
-| or2_full | short | E | 97 | 97 | 97 | 97 |
-| or2_full | short | P | 18 | 14 | — | — |
-| or2_full | short | TP | 0 | 0 | — | — |
-| or2_full | short | FP | 18 | 14 | — | — |
-| or2_full | short | FN | 97 | 97 | — | — |
-| or2_full | short | no_formal_alert_rate | 0.8350515463917526 | 0.8762886597938144 | 97 | 97 |
-| or2_full | short | first_window_coverage | 0.010309278350515464 | 0.0 | 97 | 97 |
-| or2_full | short | QualifiedShortRecall5 | 0.00909090909090909 | 0.0 | 97 | 97 |
-| or2_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| or2_full | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| or2_full | short | resolved_claim_precision | 0.0 | 0.0 | 18 | 14 |
-| or2_full | short | duplicate_notices | 1 | 1 | — | — |
-| or2_full | short | pending_claims | 0 | 0 | — | — |
-| or2_full | short | revisions | 78 | 23 | — | — |
-| or2_full | short | claim_notices | 96 | 96 | — | — |
-| or2_full | short | formal_alerts | not_defined | 37 | — | — |
-| or2_full | short | observation_notices | not_defined | 59 | — | — |
-| or2_full | short | alerts_per_asset_year | 6.528259169614597 | 6.528259169614597 | 14.705298534535274 | 14.705298534535274 |
-| or2_full | short | alarm_occupied_days | 501 | 501 | — | — |
-| or2_full | short | formal_alarm_occupied_days | not_defined | 192 | — | — |
-| or2_full | short | E | 90 | 90 | 90 | 90 |
-| or2_full | short | P | 25 | 17 | — | — |
-| or2_full | short | TP | 0 | 0 | — | — |
-| or2_full | short | FP | 25 | 17 | — | — |
-| or2_full | short | FN | 90 | 90 | — | — |
-| or2_full | short | no_formal_alert_rate | 0.7777777777777778 | 0.8333333333333334 | 90 | 90 |
-| or2_full | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
-| or2_full | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
-| or2_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
-| or2_full | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
-| or2_full | short | resolved_claim_precision | 0.0 | 0.0 | 25 | 17 |
-| or2_full | short | duplicate_notices | 3 | 1 | — | — |
-| or2_full | short | pending_claims | 0 | 0 | — | — |
-| or2_full | short | revisions | 77 | 36 | — | — |
-| or2_full | short | claim_notices | 102 | 102 | — | — |
-| or2_full | short | formal_alerts | not_defined | 53 | — | — |
-| or2_full | short | observation_notices | not_defined | 49 | — | — |
-| or2_full | short | alerts_per_asset_year | 7.585977397678681 | 7.585977397678681 | 13.445861311320561 | 13.445861311320561 |
-| or2_full | short | alarm_occupied_days | 513 | 513 | — | — |
-| or2_full | short | formal_alarm_occupied_days | not_defined | 242 | — | — |
-| or2_full | short | E | 71 | 71 | 71 | 71 |
-| or2_full | short | P | 15 | 12 | — | — |
-| or2_full | short | TP | 1 | 0 | — | — |
-| or2_full | short | FP | 14 | 12 | — | — |
-| or2_full | short | FN | 70 | 71 | — | — |
-| or2_full | short | no_formal_alert_rate | 0.8309859154929577 | 0.8732394366197183 | 71 | 71 |
-| or2_full | short | first_window_coverage | 0.04225352112676056 | 0.0 | 71 | 71 |
-| or2_full | short | QualifiedShortRecall5 | 0.03571428571428571 | 0.0 | 71 | 71 |
-| or2_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.0 | 71 | 71 |
-| or2_full | short | strict_short_miss_rate | 0.9859154929577465 | 1.0 | 71 | 71 |
-| or2_full | short | resolved_claim_precision | 0.06666666666666667 | 0.0 | 15 | 12 |
-| or2_full | short | duplicate_notices | 1 | 1 | — | — |
-| or2_full | short | pending_claims | 0 | 0 | — | — |
-| or2_full | short | revisions | 80 | 27 | — | — |
-| or2_full | short | claim_notices | 95 | 95 | — | — |
-| or2_full | short | formal_alerts | not_defined | 39 | — | — |
-| or2_full | short | observation_notices | not_defined | 56 | — | — |
-| or2_full | short | alerts_per_asset_year | 8.135530480656508 | 8.135530480656508 | 11.677173384805984 | 11.677173384805984 |
-| or2_full | short | alarm_occupied_days | 498 | 498 | — | — |
-| or2_full | short | formal_alarm_occupied_days | not_defined | 148 | — | — |
-| or2_full | short | E | 122 | 122 | 122 | 122 |
-| or2_full | short | P | 27 | 21 | — | — |
-| or2_full | short | TP | 1 | 1 | — | — |
-| or2_full | short | FP | 26 | 20 | — | — |
-| or2_full | short | FN | 121 | 121 | — | — |
-| or2_full | short | no_formal_alert_rate | 0.819672131147541 | 0.8524590163934426 | 122 | 122 |
-| or2_full | short | first_window_coverage | 0.01639344262295082 | 0.00819672131147541 | 122 | 122 |
-| or2_full | short | QualifiedShortRecall5 | 0.014084507042253521 | 0.00819672131147541 | 122 | 122 |
-| or2_full | short | StrictShortRecall5W10 | 0.00819672131147541 | 0.00819672131147541 | 122 | 122 |
-| or2_full | short | strict_short_miss_rate | 0.9918032786885246 | 0.9918032786885246 | 122 | 122 |
-| or2_full | short | resolved_claim_precision | 0.037037037037037035 | 0.047619047619047616 | 27 | 21 |
-| or2_full | short | duplicate_notices | 2 | 0 | — | — |
-| or2_full | short | pending_claims | 0 | 0 | — | — |
-| or2_full | short | revisions | 110 | 32 | — | — |
-| or2_full | short | claim_notices | 128 | 128 | — | — |
-| or2_full | short | formal_alerts | not_defined | 53 | — | — |
-| or2_full | short | observation_notices | not_defined | 75 | — | — |
-| or2_full | short | alerts_per_asset_year | 6.848965719308526 | 6.848965719308526 | 18.688953229703554 | 18.688953229703554 |
-| or2_full | short | alarm_occupied_days | 641 | 641 | — | — |
-| or2_full | short | formal_alarm_occupied_days | not_defined | 228 | — | — |
-| or2_full | short | E | 57 | 57 | 57 | 57 |
-| or2_full | short | P | 10 | 8 | — | — |
-| or2_full | short | TP | 1 | 1 | — | — |
-| or2_full | short | FP | 9 | 7 | — | — |
-| or2_full | short | FN | 56 | 56 | — | — |
-| or2_full | short | no_formal_alert_rate | 0.8421052631578947 | 0.8771929824561403 | 57 | 57 |
-| or2_full | short | first_window_coverage | 0.03508771929824561 | 0.017543859649122806 | 57 | 57 |
-| or2_full | short | QualifiedShortRecall5 | 0.030303030303030304 | 0.017543859649122806 | 57 | 57 |
-| or2_full | short | StrictShortRecall5W10 | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
-| or2_full | short | strict_short_miss_rate | 0.9824561403508771 | 0.9824561403508771 | 57 | 57 |
-| or2_full | short | resolved_claim_precision | 0.1 | 0.125 | 10 | 8 |
-| or2_full | short | duplicate_notices | 0 | 0 | — | — |
-| or2_full | short | pending_claims | 0 | 0 | — | — |
-| or2_full | short | revisions | 32 | 16 | — | — |
-| or2_full | short | claim_notices | 42 | 42 | — | — |
-| or2_full | short | formal_alerts | not_defined | 24 | — | — |
-| or2_full | short | observation_notices | not_defined | 18 | — | — |
-| or2_full | short | alerts_per_asset_year | 5.057759643916914 | 5.057759643916914 | 8.304071952196143 | 8.304071952196143 |
-| or2_full | short | alarm_occupied_days | 276 | 276 | — | — |
-| or2_full | short | formal_alarm_occupied_days | not_defined | 123 | — | — |
-| or2_full | stage | E | 22 | 22 | 22 | 22 |
-| or2_full | stage | P | 33 | 28 | — | — |
-| or2_full | stage | TP | 0 | 0 | — | — |
-| or2_full | stage | FP | 33 | 28 | — | — |
-| or2_full | stage | FN | 22 | 22 | — | — |
-| or2_full | stage | no_formal_alert_rate | 0.45454545454545453 | 0.5454545454545454 | 22 | 22 |
-| or2_full | stage | first_window_coverage | 0.045454545454545456 | 0.0 | 22 | 22 |
-| or2_full | stage | QualifiedStageRecall5 | 0.0072992700729927005 | 0.0 | 22 | 22 |
-| or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 33 | 28 |
-| or2_full | stage | duplicate_notices | 3 | 0 | — | — |
-| or2_full | stage | pending_claims | 0 | 0 | — | — |
-| or2_full | stage | revisions | 149 | 67 | — | — |
-| or2_full | stage | claim_notices | 175 | 175 | — | — |
-| or2_full | stage | formal_alerts | not_defined | 95 | — | — |
-| or2_full | stage | observation_notices | not_defined | 80 | — | — |
-| or2_full | stage | alerts_per_asset_year | 9.363820319367125 | 9.363820319367125 | 18.688953229703554 | 18.688953229703554 |
-| or2_full | stage | alarm_occupied_days | 718 | 718 | — | — |
-| or2_full | stage | formal_alarm_occupied_days | not_defined | 373 | — | — |
-| or2_full | stage | E | 13 | 13 | 13 | 13 |
-| or2_full | stage | P | 18 | 14 | — | — |
-| or2_full | stage | TP | 0 | 0 | — | — |
-| or2_full | stage | FP | 18 | 14 | — | — |
-| or2_full | stage | FN | 13 | 13 | — | — |
-| or2_full | stage | no_formal_alert_rate | 0.5384615384615384 | 0.6923076923076923 | 13 | 13 |
-| or2_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 18 | 14 |
-| or2_full | stage | duplicate_notices | 1 | 0 | — | — |
-| or2_full | stage | pending_claims | 0 | 0 | — | — |
-| or2_full | stage | revisions | 78 | 23 | — | — |
-| or2_full | stage | claim_notices | 96 | 96 | — | — |
-| or2_full | stage | formal_alerts | not_defined | 37 | — | — |
-| or2_full | stage | observation_notices | not_defined | 59 | — | — |
-| or2_full | stage | alerts_per_asset_year | 6.528259169614597 | 6.528259169614597 | 14.705298534535274 | 14.705298534535274 |
-| or2_full | stage | alarm_occupied_days | 501 | 501 | — | — |
-| or2_full | stage | formal_alarm_occupied_days | not_defined | 192 | — | — |
-| or2_full | stage | E | 14 | 14 | 14 | 14 |
-| or2_full | stage | P | 25 | 17 | — | — |
-| or2_full | stage | TP | 0 | 0 | — | — |
-| or2_full | stage | FP | 25 | 17 | — | — |
-| or2_full | stage | FN | 14 | 14 | — | — |
-| or2_full | stage | no_formal_alert_rate | 0.35714285714285715 | 0.5 | 14 | 14 |
-| or2_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 25 | 17 |
-| or2_full | stage | duplicate_notices | 3 | 0 | — | — |
-| or2_full | stage | pending_claims | 0 | 0 | — | — |
-| or2_full | stage | revisions | 77 | 36 | — | — |
-| or2_full | stage | claim_notices | 102 | 102 | — | — |
-| or2_full | stage | formal_alerts | not_defined | 53 | — | — |
-| or2_full | stage | observation_notices | not_defined | 49 | — | — |
-| or2_full | stage | alerts_per_asset_year | 7.585977397678681 | 7.585977397678681 | 13.445861311320561 | 13.445861311320561 |
-| or2_full | stage | alarm_occupied_days | 513 | 513 | — | — |
-| or2_full | stage | formal_alarm_occupied_days | not_defined | 242 | — | — |
-| or2_full | stage | E | 13 | 13 | 13 | 13 |
-| or2_full | stage | P | 15 | 12 | — | — |
-| or2_full | stage | TP | 0 | 0 | — | — |
-| or2_full | stage | FP | 15 | 12 | — | — |
-| or2_full | stage | FN | 13 | 13 | — | — |
-| or2_full | stage | no_formal_alert_rate | 0.5384615384615384 | 0.6153846153846154 | 13 | 13 |
-| or2_full | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
-| or2_full | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
-| or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 15 | 12 |
-| or2_full | stage | duplicate_notices | 1 | 0 | — | — |
-| or2_full | stage | pending_claims | 0 | 0 | — | — |
-| or2_full | stage | revisions | 80 | 27 | — | — |
-| or2_full | stage | claim_notices | 95 | 95 | — | — |
-| or2_full | stage | formal_alerts | not_defined | 39 | — | — |
-| or2_full | stage | observation_notices | not_defined | 56 | — | — |
-| or2_full | stage | alerts_per_asset_year | 8.135530480656508 | 8.135530480656508 | 11.677173384805984 | 11.677173384805984 |
-| or2_full | stage | alarm_occupied_days | 498 | 498 | — | — |
-| or2_full | stage | formal_alarm_occupied_days | not_defined | 148 | — | — |
-| or2_full | stage | E | 20 | 20 | 20 | 20 |
-| or2_full | stage | P | 27 | 21 | — | — |
-| or2_full | stage | TP | 0 | 0 | — | — |
-| or2_full | stage | FP | 27 | 21 | — | — |
-| or2_full | stage | FN | 20 | 20 | — | — |
-| or2_full | stage | no_formal_alert_rate | 0.55 | 0.6 | 20 | 20 |
-| or2_full | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
-| or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
-| or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 27 | 21 |
-| or2_full | stage | duplicate_notices | 2 | 2 | — | — |
-| or2_full | stage | pending_claims | 0 | 0 | — | — |
-| or2_full | stage | revisions | 110 | 32 | — | — |
-| or2_full | stage | claim_notices | 128 | 128 | — | — |
-| or2_full | stage | formal_alerts | not_defined | 53 | — | — |
-| or2_full | stage | observation_notices | not_defined | 75 | — | — |
-| or2_full | stage | alerts_per_asset_year | 6.848965719308526 | 6.848965719308526 | 18.688953229703554 | 18.688953229703554 |
-| or2_full | stage | alarm_occupied_days | 641 | 641 | — | — |
-| or2_full | stage | formal_alarm_occupied_days | not_defined | 228 | — | — |
-| or2_full | stage | E | 9 | 9 | 9 | 9 |
-| or2_full | stage | P | 10 | 8 | — | — |
-| or2_full | stage | TP | 0 | 0 | — | — |
-| or2_full | stage | FP | 10 | 8 | — | — |
-| or2_full | stage | FN | 9 | 9 | — | — |
-| or2_full | stage | no_formal_alert_rate | 0.8888888888888888 | 0.8888888888888888 | 9 | 9 |
-| or2_full | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 10 | 8 |
-| or2_full | stage | duplicate_notices | 0 | 0 | — | — |
-| or2_full | stage | pending_claims | 0 | 0 | — | — |
-| or2_full | stage | revisions | 32 | 16 | — | — |
-| or2_full | stage | claim_notices | 42 | 42 | — | — |
-| or2_full | stage | formal_alerts | not_defined | 24 | — | — |
-| or2_full | stage | observation_notices | not_defined | 18 | — | — |
-| or2_full | stage | alerts_per_asset_year | 5.057759643916914 | 5.057759643916914 | 8.304071952196143 | 8.304071952196143 |
-| or2_full | stage | alarm_occupied_days | 276 | 276 | — | — |
-| or2_full | stage | formal_alarm_occupied_days | not_defined | 123 | — | — |
-| or4_full | short | E | 115 | 115 | 115 | 115 |
-| or4_full | short | P | 80 | 54 | — | — |
-| or4_full | short | TP | 1 | 1 | — | — |
-| or4_full | short | FP | 79 | 53 | — | — |
-| or4_full | short | FN | 114 | 114 | — | — |
-| or4_full | short | no_formal_alert_rate | 0.48695652173913045 | 0.6173913043478261 | 115 | 115 |
-| or4_full | short | first_window_coverage | 0.043478260869565216 | 0.008695652173913044 | 115 | 115 |
-| or4_full | short | QualifiedShortRecall5 | 0.0364963503649635 | 0.008695652173913044 | 115 | 115 |
-| or4_full | short | StrictShortRecall5W10 | 0.008695652173913044 | 0.008695652173913044 | 115 | 115 |
-| or4_full | short | strict_short_miss_rate | 0.991304347826087 | 0.991304347826087 | 115 | 115 |
-| or4_full | short | resolved_claim_precision | 0.0125 | 0.018518518518518517 | 80 | 54 |
-| or4_full | short | duplicate_notices | 15 | 5 | — | — |
-| or4_full | short | pending_claims | 0 | 0 | — | — |
-| or4_full | short | revisions | 189 | 71 | — | — |
-| or4_full | short | claim_notices | 261 | 261 | — | — |
-| or4_full | short | formal_alerts | not_defined | 125 | — | — |
-| or4_full | short | observation_notices | not_defined | 136 | — | — |
-| or4_full | short | alerts_per_asset_year | 13.965469162027542 | 13.965469162027542 | 18.688953229703554 | 18.688953229703554 |
-| or4_full | short | alarm_occupied_days | 1159 | 1159 | — | — |
-| or4_full | short | formal_alarm_occupied_days | not_defined | 480 | — | — |
-| or4_full | short | E | 97 | 97 | 97 | 97 |
-| or4_full | short | P | 61 | 40 | — | — |
-| or4_full | short | TP | 0 | 0 | — | — |
-| or4_full | short | FP | 61 | 40 | — | — |
-| or4_full | short | FN | 97 | 97 | — | — |
-| or4_full | short | no_formal_alert_rate | 0.5670103092783505 | 0.7010309278350515 | 97 | 97 |
-| or4_full | short | first_window_coverage | 0.020618556701030927 | 0.0 | 97 | 97 |
-| or4_full | short | QualifiedShortRecall5 | 0.01818181818181818 | 0.0 | 97 | 97 |
-| or4_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| or4_full | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| or4_full | short | resolved_claim_precision | 0.0 | 0.0 | 61 | 40 |
-| or4_full | short | duplicate_notices | 17 | 9 | — | — |
-| or4_full | short | pending_claims | 0 | 0 | — | — |
-| or4_full | short | revisions | 108 | 42 | — | — |
-| or4_full | short | claim_notices | 169 | 169 | — | — |
-| or4_full | short | formal_alerts | not_defined | 82 | — | — |
-| or4_full | short | observation_notices | not_defined | 87 | — | — |
-| or4_full | short | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
-| or4_full | short | alarm_occupied_days | 756 | 756 | — | — |
-| or4_full | short | formal_alarm_occupied_days | not_defined | 322 | — | — |
-| or4_full | short | E | 90 | 90 | 90 | 90 |
-| or4_full | short | P | 62 | 33 | — | — |
-| or4_full | short | TP | 1 | 1 | — | — |
-| or4_full | short | FP | 61 | 32 | — | — |
-| or4_full | short | FN | 89 | 89 | — | — |
-| or4_full | short | no_formal_alert_rate | 0.5555555555555556 | 0.7111111111111111 | 90 | 90 |
-| or4_full | short | first_window_coverage | 0.022222222222222223 | 0.011111111111111112 | 90 | 90 |
-| or4_full | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.011111111111111112 | 90 | 90 |
-| or4_full | short | StrictShortRecall5W10 | 0.011111111111111112 | 0.011111111111111112 | 90 | 90 |
-| or4_full | short | strict_short_miss_rate | 0.9888888888888889 | 0.9888888888888889 | 90 | 90 |
-| or4_full | short | resolved_claim_precision | 0.016129032258064516 | 0.030303030303030304 | 62 | 33 |
-| or4_full | short | duplicate_notices | 18 | 4 | — | — |
-| or4_full | short | pending_claims | 0 | 0 | — | — |
-| or4_full | short | revisions | 113 | 51 | — | — |
-| or4_full | short | claim_notices | 175 | 175 | — | — |
-| or4_full | short | formal_alerts | not_defined | 84 | — | — |
-| or4_full | short | observation_notices | not_defined | 91 | — | — |
-| or4_full | short | alerts_per_asset_year | 13.015157299938913 | 13.015157299938913 | 13.445861311320561 | 13.445861311320561 |
-| or4_full | short | alarm_occupied_days | 784 | 784 | — | — |
-| or4_full | short | formal_alarm_occupied_days | not_defined | 339 | — | — |
-| or4_full | short | E | 71 | 71 | 71 | 71 |
-| or4_full | short | P | 56 | 31 | — | — |
-| or4_full | short | TP | 1 | 2 | — | — |
-| or4_full | short | FP | 55 | 29 | — | — |
-| or4_full | short | FN | 70 | 69 | — | — |
-| or4_full | short | no_formal_alert_rate | 0.5352112676056338 | 0.647887323943662 | 71 | 71 |
-| or4_full | short | first_window_coverage | 0.04225352112676056 | 0.028169014084507043 | 71 | 71 |
-| or4_full | short | QualifiedShortRecall5 | 0.03571428571428571 | 0.028169014084507043 | 71 | 71 |
-| or4_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.028169014084507043 | 71 | 71 |
-| or4_full | short | strict_short_miss_rate | 0.9859154929577465 | 0.971830985915493 | 71 | 71 |
-| or4_full | short | resolved_claim_precision | 0.017857142857142856 | 0.06451612903225806 | 56 | 31 |
-| or4_full | short | duplicate_notices | 18 | 1 | — | — |
-| or4_full | short | pending_claims | 0 | 0 | — | — |
-| or4_full | short | revisions | 118 | 40 | — | — |
-| or4_full | short | claim_notices | 174 | 174 | — | — |
-| or4_full | short | formal_alerts | not_defined | 71 | — | — |
-| or4_full | short | observation_notices | not_defined | 103 | — | — |
-| or4_full | short | alerts_per_asset_year | 14.900866354044549 | 14.900866354044549 | 11.677173384805984 | 11.677173384805984 |
-| or4_full | short | alarm_occupied_days | 776 | 776 | — | — |
-| or4_full | short | formal_alarm_occupied_days | not_defined | 229 | — | — |
-| or4_full | short | E | 122 | 122 | 122 | 122 |
-| or4_full | short | P | 80 | 54 | — | — |
-| or4_full | short | TP | 2 | 3 | — | — |
-| or4_full | short | FP | 78 | 51 | — | — |
-| or4_full | short | FN | 120 | 119 | — | — |
-| or4_full | short | no_formal_alert_rate | 0.5737704918032787 | 0.6557377049180327 | 122 | 122 |
-| or4_full | short | first_window_coverage | 0.06557377049180328 | 0.02459016393442623 | 122 | 122 |
-| or4_full | short | QualifiedShortRecall5 | 0.056338028169014086 | 0.02459016393442623 | 122 | 122 |
-| or4_full | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.02459016393442623 | 122 | 122 |
-| or4_full | short | strict_short_miss_rate | 0.9836065573770492 | 0.9754098360655737 | 122 | 122 |
-| or4_full | short | resolved_claim_precision | 0.025 | 0.05555555555555555 | 80 | 54 |
-| or4_full | short | duplicate_notices | 19 | 4 | — | — |
-| or4_full | short | pending_claims | 0 | 0 | — | — |
-| or4_full | short | revisions | 169 | 63 | — | — |
-| or4_full | short | claim_notices | 240 | 240 | — | — |
-| or4_full | short | formal_alerts | not_defined | 117 | — | — |
-| or4_full | short | observation_notices | not_defined | 123 | — | — |
-| or4_full | short | alerts_per_asset_year | 12.841810723703487 | 12.841810723703487 | 18.688953229703554 | 18.688953229703554 |
-| or4_full | short | alarm_occupied_days | 1120 | 1120 | — | — |
-| or4_full | short | formal_alarm_occupied_days | not_defined | 418 | — | — |
-| or4_full | short | E | 57 | 57 | 57 | 57 |
-| or4_full | short | P | 37 | 22 | — | — |
-| or4_full | short | TP | 0 | 0 | — | — |
-| or4_full | short | FP | 37 | 22 | — | — |
-| or4_full | short | FN | 57 | 57 | — | — |
-| or4_full | short | no_formal_alert_rate | 0.5964912280701754 | 0.7017543859649122 | 57 | 57 |
-| or4_full | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
-| or4_full | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.0 | 57 | 57 |
-| or4_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
-| or4_full | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
-| or4_full | short | resolved_claim_precision | 0.0 | 0.0 | 37 | 22 |
-| or4_full | short | duplicate_notices | 11 | 3 | — | — |
-| or4_full | short | pending_claims | 0 | 0 | — | — |
-| or4_full | short | revisions | 58 | 24 | — | — |
-| or4_full | short | claim_notices | 96 | 96 | — | — |
-| or4_full | short | formal_alerts | not_defined | 46 | — | — |
-| or4_full | short | observation_notices | not_defined | 50 | — | — |
-| or4_full | short | alerts_per_asset_year | 11.56059347181009 | 11.56059347181009 | 8.304071952196143 | 8.304071952196143 |
-| or4_full | short | alarm_occupied_days | 416 | 416 | — | — |
-| or4_full | short | formal_alarm_occupied_days | not_defined | 188 | — | — |
-| or4_full | stage | E | 22 | 22 | 22 | 22 |
-| or4_full | stage | P | 80 | 54 | — | — |
-| or4_full | stage | TP | 0 | 0 | — | — |
-| or4_full | stage | FP | 80 | 54 | — | — |
-| or4_full | stage | FN | 22 | 22 | — | — |
-| or4_full | stage | no_formal_alert_rate | 0.13636363636363635 | 0.36363636363636365 | 22 | 22 |
-| or4_full | stage | first_window_coverage | 0.22727272727272727 | 0.0 | 22 | 22 |
-| or4_full | stage | QualifiedStageRecall5 | 0.0364963503649635 | 0.0 | 22 | 22 |
-| or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 80 | 54 |
-| or4_full | stage | duplicate_notices | 13 | 2 | — | — |
-| or4_full | stage | pending_claims | 0 | 0 | — | — |
-| or4_full | stage | revisions | 189 | 71 | — | — |
-| or4_full | stage | claim_notices | 261 | 261 | — | — |
-| or4_full | stage | formal_alerts | not_defined | 125 | — | — |
-| or4_full | stage | observation_notices | not_defined | 136 | — | — |
-| or4_full | stage | alerts_per_asset_year | 13.965469162027542 | 13.965469162027542 | 18.688953229703554 | 18.688953229703554 |
-| or4_full | stage | alarm_occupied_days | 1159 | 1159 | — | — |
-| or4_full | stage | formal_alarm_occupied_days | not_defined | 480 | — | — |
-| or4_full | stage | E | 13 | 13 | 13 | 13 |
-| or4_full | stage | P | 61 | 40 | — | — |
-| or4_full | stage | TP | 0 | 0 | — | — |
-| or4_full | stage | FP | 61 | 40 | — | — |
-| or4_full | stage | FN | 13 | 13 | — | — |
-| or4_full | stage | no_formal_alert_rate | 0.15384615384615385 | 0.38461538461538464 | 13 | 13 |
-| or4_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 61 | 40 |
-| or4_full | stage | duplicate_notices | 3 | 2 | — | — |
-| or4_full | stage | pending_claims | 0 | 0 | — | — |
-| or4_full | stage | revisions | 108 | 42 | — | — |
-| or4_full | stage | claim_notices | 169 | 169 | — | — |
-| or4_full | stage | formal_alerts | not_defined | 82 | — | — |
-| or4_full | stage | observation_notices | not_defined | 87 | — | — |
-| or4_full | stage | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
-| or4_full | stage | alarm_occupied_days | 756 | 756 | — | — |
-| or4_full | stage | formal_alarm_occupied_days | not_defined | 322 | — | — |
-| or4_full | stage | E | 14 | 14 | 14 | 14 |
-| or4_full | stage | P | 62 | 33 | — | — |
-| or4_full | stage | TP | 0 | 0 | — | — |
-| or4_full | stage | FP | 62 | 33 | — | — |
-| or4_full | stage | FN | 14 | 14 | — | — |
-| or4_full | stage | no_formal_alert_rate | 0.14285714285714285 | 0.35714285714285715 | 14 | 14 |
-| or4_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 62 | 33 |
-| or4_full | stage | duplicate_notices | 12 | 2 | — | — |
-| or4_full | stage | pending_claims | 0 | 0 | — | — |
-| or4_full | stage | revisions | 113 | 51 | — | — |
-| or4_full | stage | claim_notices | 175 | 175 | — | — |
-| or4_full | stage | formal_alerts | not_defined | 84 | — | — |
-| or4_full | stage | observation_notices | not_defined | 91 | — | — |
-| or4_full | stage | alerts_per_asset_year | 13.015157299938913 | 13.015157299938913 | 13.445861311320561 | 13.445861311320561 |
-| or4_full | stage | alarm_occupied_days | 784 | 784 | — | — |
-| or4_full | stage | formal_alarm_occupied_days | not_defined | 339 | — | — |
-| or4_full | stage | E | 13 | 13 | 13 | 13 |
-| or4_full | stage | P | 56 | 31 | — | — |
-| or4_full | stage | TP | 0 | 0 | — | — |
-| or4_full | stage | FP | 56 | 31 | — | — |
-| or4_full | stage | FN | 13 | 13 | — | — |
-| or4_full | stage | no_formal_alert_rate | 0.3076923076923077 | 0.46153846153846156 | 13 | 13 |
-| or4_full | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
-| or4_full | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
-| or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 56 | 31 |
-| or4_full | stage | duplicate_notices | 10 | 3 | — | — |
-| or4_full | stage | pending_claims | 0 | 0 | — | — |
-| or4_full | stage | revisions | 118 | 40 | — | — |
-| or4_full | stage | claim_notices | 174 | 174 | — | — |
-| or4_full | stage | formal_alerts | not_defined | 71 | — | — |
-| or4_full | stage | observation_notices | not_defined | 103 | — | — |
-| or4_full | stage | alerts_per_asset_year | 14.900866354044549 | 14.900866354044549 | 11.677173384805984 | 11.677173384805984 |
-| or4_full | stage | alarm_occupied_days | 776 | 776 | — | — |
-| or4_full | stage | formal_alarm_occupied_days | not_defined | 229 | — | — |
-| or4_full | stage | E | 20 | 20 | 20 | 20 |
-| or4_full | stage | P | 80 | 54 | — | — |
-| or4_full | stage | TP | 0 | 1 | — | — |
-| or4_full | stage | FP | 80 | 53 | — | — |
-| or4_full | stage | FN | 20 | 19 | — | — |
-| or4_full | stage | no_formal_alert_rate | 0.3 | 0.4 | 20 | 20 |
-| or4_full | stage | first_window_coverage | 0.0 | 0.05 | 20 | 20 |
-| or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.05 | 20 | 20 |
-| or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.05 | 20 | 20 |
-| or4_full | stage | strict_stage_miss_rate | 1.0 | 0.95 | 20 | 20 |
-| or4_full | stage | resolved_claim_precision | 0.0 | 0.018518518518518517 | 80 | 54 |
-| or4_full | stage | duplicate_notices | 11 | 6 | — | — |
-| or4_full | stage | pending_claims | 0 | 0 | — | — |
-| or4_full | stage | revisions | 169 | 63 | — | — |
-| or4_full | stage | claim_notices | 240 | 240 | — | — |
-| or4_full | stage | formal_alerts | not_defined | 117 | — | — |
-| or4_full | stage | observation_notices | not_defined | 123 | — | — |
-| or4_full | stage | alerts_per_asset_year | 12.841810723703487 | 12.841810723703487 | 18.688953229703554 | 18.688953229703554 |
-| or4_full | stage | alarm_occupied_days | 1120 | 1120 | — | — |
-| or4_full | stage | formal_alarm_occupied_days | not_defined | 418 | — | — |
-| or4_full | stage | E | 9 | 9 | 9 | 9 |
-| or4_full | stage | P | 38 | 22 | — | — |
-| or4_full | stage | TP | 0 | 0 | — | — |
-| or4_full | stage | FP | 38 | 22 | — | — |
-| or4_full | stage | FN | 9 | 9 | — | — |
-| or4_full | stage | no_formal_alert_rate | 0.3333333333333333 | 0.5555555555555556 | 9 | 9 |
-| or4_full | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 38 | 22 |
-| or4_full | stage | duplicate_notices | 7 | 1 | — | — |
-| or4_full | stage | pending_claims | 0 | 0 | — | — |
-| or4_full | stage | revisions | 58 | 24 | — | — |
-| or4_full | stage | claim_notices | 96 | 96 | — | — |
-| or4_full | stage | formal_alerts | not_defined | 46 | — | — |
-| or4_full | stage | observation_notices | not_defined | 50 | — | — |
-| or4_full | stage | alerts_per_asset_year | 11.56059347181009 | 11.56059347181009 | 8.304071952196143 | 8.304071952196143 |
-| or4_full | stage | alarm_occupied_days | 416 | 416 | — | — |
-| or4_full | stage | formal_alarm_occupied_days | not_defined | 188 | — | — |
-| or4_thin | short | E | 115 | 115 | 115 | 115 |
-| or4_thin | short | P | 84 | 56 | — | — |
-| or4_thin | short | TP | 0 | 1 | — | — |
-| or4_thin | short | FP | 84 | 55 | — | — |
-| or4_thin | short | FN | 115 | 114 | — | — |
-| or4_thin | short | no_formal_alert_rate | 0.48695652173913045 | 0.6173913043478261 | 115 | 115 |
-| or4_thin | short | first_window_coverage | 0.017391304347826087 | 0.008695652173913044 | 115 | 115 |
-| or4_thin | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.008695652173913044 | 115 | 115 |
-| or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.008695652173913044 | 115 | 115 |
-| or4_thin | short | strict_short_miss_rate | 1.0 | 0.991304347826087 | 115 | 115 |
-| or4_thin | short | resolved_claim_precision | 0.0 | 0.017857142857142856 | 84 | 56 |
-| or4_thin | short | duplicate_notices | 19 | 7 | — | — |
-| or4_thin | short | pending_claims | 0 | 0 | — | — |
-| or4_thin | short | revisions | 162 | 66 | — | — |
-| or4_thin | short | claim_notices | 238 | 238 | — | — |
-| or4_thin | short | formal_alerts | not_defined | 122 | — | — |
-| or4_thin | short | observation_notices | not_defined | 116 | — | — |
-| or4_thin | short | alerts_per_asset_year | 12.73479563433929 | 12.73479563433929 | 18.688953229703554 | 18.688953229703554 |
-| or4_thin | short | alarm_occupied_days | 964 | 964 | — | — |
-| or4_thin | short | formal_alarm_occupied_days | not_defined | 418 | — | — |
-| or4_thin | short | E | 97 | 97 | 97 | 97 |
-| or4_thin | short | P | 59 | 43 | — | — |
-| or4_thin | short | TP | 0 | 0 | — | — |
-| or4_thin | short | FP | 59 | 43 | — | — |
-| or4_thin | short | FN | 97 | 97 | — | — |
-| or4_thin | short | no_formal_alert_rate | 0.5773195876288659 | 0.6804123711340206 | 97 | 97 |
-| or4_thin | short | first_window_coverage | 0.010309278350515464 | 0.0 | 97 | 97 |
-| or4_thin | short | QualifiedShortRecall5 | 0.00909090909090909 | 0.0 | 97 | 97 |
-| or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| or4_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| or4_thin | short | resolved_claim_precision | 0.0 | 0.0 | 59 | 43 |
-| or4_thin | short | duplicate_notices | 16 | 10 | — | — |
-| or4_thin | short | pending_claims | 0 | 0 | — | — |
-| or4_thin | short | revisions | 110 | 54 | — | — |
-| or4_thin | short | claim_notices | 169 | 169 | — | — |
-| or4_thin | short | formal_alerts | not_defined | 97 | — | — |
-| or4_thin | short | observation_notices | not_defined | 72 | — | — |
-| or4_thin | short | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
-| or4_thin | short | alarm_occupied_days | 738 | 738 | — | — |
-| or4_thin | short | formal_alarm_occupied_days | not_defined | 316 | — | — |
-| or4_thin | short | E | 90 | 90 | 90 | 90 |
-| or4_thin | short | P | 58 | 36 | — | — |
-| or4_thin | short | TP | 0 | 0 | — | — |
-| or4_thin | short | FP | 58 | 36 | — | — |
-| or4_thin | short | FN | 90 | 90 | — | — |
-| or4_thin | short | no_formal_alert_rate | 0.5555555555555556 | 0.6888888888888889 | 90 | 90 |
-| or4_thin | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
-| or4_thin | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
-| or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
-| or4_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
-| or4_thin | short | resolved_claim_precision | 0.0 | 0.0 | 58 | 36 |
-| or4_thin | short | duplicate_notices | 15 | 6 | — | — |
-| or4_thin | short | pending_claims | 0 | 0 | — | — |
-| or4_thin | short | revisions | 100 | 47 | — | — |
-| or4_thin | short | claim_notices | 158 | 158 | — | — |
-| or4_thin | short | formal_alerts | not_defined | 83 | — | — |
-| or4_thin | short | observation_notices | not_defined | 75 | — | — |
-| or4_thin | short | alerts_per_asset_year | 11.750827733659133 | 11.750827733659133 | 13.445861311320561 | 13.445861311320561 |
-| or4_thin | short | alarm_occupied_days | 718 | 718 | — | — |
-| or4_thin | short | formal_alarm_occupied_days | not_defined | 301 | — | — |
-| or4_thin | short | E | 71 | 71 | 71 | 71 |
-| or4_thin | short | P | 50 | 28 | — | — |
-| or4_thin | short | TP | 3 | 3 | — | — |
-| or4_thin | short | FP | 47 | 25 | — | — |
-| or4_thin | short | FN | 68 | 68 | — | — |
-| or4_thin | short | no_formal_alert_rate | 0.5492957746478874 | 0.676056338028169 | 71 | 71 |
-| or4_thin | short | first_window_coverage | 0.056338028169014086 | 0.04225352112676056 | 71 | 71 |
-| or4_thin | short | QualifiedShortRecall5 | 0.047619047619047616 | 0.04225352112676056 | 71 | 71 |
-| or4_thin | short | StrictShortRecall5W10 | 0.04225352112676056 | 0.04225352112676056 | 71 | 71 |
-| or4_thin | short | strict_short_miss_rate | 0.9577464788732395 | 0.9577464788732395 | 71 | 71 |
-| or4_thin | short | resolved_claim_precision | 0.06 | 0.10714285714285714 | 50 | 28 |
-| or4_thin | short | duplicate_notices | 14 | 2 | — | — |
-| or4_thin | short | pending_claims | 0 | 0 | — | — |
-| or4_thin | short | revisions | 100 | 34 | — | — |
-| or4_thin | short | claim_notices | 150 | 150 | — | — |
-| or4_thin | short | formal_alerts | not_defined | 62 | — | — |
-| or4_thin | short | observation_notices | not_defined | 88 | — | — |
-| or4_thin | short | alerts_per_asset_year | 12.845574443141853 | 12.845574443141853 | 11.677173384805984 | 11.677173384805984 |
-| or4_thin | short | alarm_occupied_days | 543 | 543 | — | — |
-| or4_thin | short | formal_alarm_occupied_days | not_defined | 185 | — | — |
-| or4_thin | short | E | 122 | 122 | 122 | 122 |
-| or4_thin | short | P | 82 | 56 | — | — |
-| or4_thin | short | TP | 3 | 3 | — | — |
-| or4_thin | short | FP | 79 | 53 | — | — |
-| or4_thin | short | FN | 119 | 119 | — | — |
-| or4_thin | short | no_formal_alert_rate | 0.5409836065573771 | 0.6475409836065574 | 122 | 122 |
-| or4_thin | short | first_window_coverage | 0.04918032786885246 | 0.02459016393442623 | 122 | 122 |
-| or4_thin | short | QualifiedShortRecall5 | 0.04225352112676056 | 0.02459016393442623 | 122 | 122 |
-| or4_thin | short | StrictShortRecall5W10 | 0.02459016393442623 | 0.02459016393442623 | 122 | 122 |
-| or4_thin | short | strict_short_miss_rate | 0.9754098360655737 | 0.9754098360655737 | 122 | 122 |
-| or4_thin | short | resolved_claim_precision | 0.036585365853658534 | 0.05357142857142857 | 82 | 56 |
-| or4_thin | short | duplicate_notices | 17 | 4 | — | — |
-| or4_thin | short | pending_claims | 0 | 0 | — | — |
-| or4_thin | short | revisions | 153 | 70 | — | — |
-| or4_thin | short | claim_notices | 226 | 226 | — | — |
-| or4_thin | short | formal_alerts | not_defined | 126 | — | — |
-| or4_thin | short | observation_notices | not_defined | 100 | — | — |
-| or4_thin | short | alerts_per_asset_year | 12.092705098154116 | 12.092705098154116 | 18.688953229703554 | 18.688953229703554 |
-| or4_thin | short | alarm_occupied_days | 902 | 902 | — | — |
-| or4_thin | short | formal_alarm_occupied_days | not_defined | 382 | — | — |
-| or4_thin | short | E | 57 | 57 | 57 | 57 |
-| or4_thin | short | P | 36 | 24 | — | — |
-| or4_thin | short | TP | 0 | 0 | — | — |
-| or4_thin | short | FP | 36 | 24 | — | — |
-| or4_thin | short | FN | 57 | 57 | — | — |
-| or4_thin | short | no_formal_alert_rate | 0.6140350877192983 | 0.6842105263157895 | 57 | 57 |
-| or4_thin | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
-| or4_thin | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.0 | 57 | 57 |
-| or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
-| or4_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
-| or4_thin | short | resolved_claim_precision | 0.0 | 0.0 | 36 | 24 |
-| or4_thin | short | duplicate_notices | 12 | 4 | — | — |
-| or4_thin | short | pending_claims | 0 | 0 | — | — |
-| or4_thin | short | revisions | 53 | 29 | — | — |
-| or4_thin | short | claim_notices | 90 | 90 | — | — |
-| or4_thin | short | formal_alerts | not_defined | 53 | — | — |
-| or4_thin | short | observation_notices | not_defined | 37 | — | — |
-| or4_thin | short | alerts_per_asset_year | 10.838056379821959 | 10.838056379821959 | 8.304071952196143 | 8.304071952196143 |
-| or4_thin | short | alarm_occupied_days | 306 | 306 | — | — |
-| or4_thin | short | formal_alarm_occupied_days | not_defined | 176 | — | — |
-| or4_thin | stage | E | 22 | 22 | 22 | 22 |
-| or4_thin | stage | P | 83 | 56 | — | — |
-| or4_thin | stage | TP | 0 | 1 | — | — |
-| or4_thin | stage | FP | 83 | 55 | — | — |
-| or4_thin | stage | FN | 22 | 21 | — | — |
-| or4_thin | stage | no_formal_alert_rate | 0.13636363636363635 | 0.3181818181818182 | 22 | 22 |
-| or4_thin | stage | first_window_coverage | 0.13636363636363635 | 0.045454545454545456 | 22 | 22 |
-| or4_thin | stage | QualifiedStageRecall5 | 0.021897810218978103 | 0.045454545454545456 | 22 | 22 |
-| or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.045454545454545456 | 22 | 22 |
-| or4_thin | stage | strict_stage_miss_rate | 1.0 | 0.9545454545454546 | 22 | 22 |
-| or4_thin | stage | resolved_claim_precision | 0.0 | 0.017857142857142856 | 83 | 56 |
-| or4_thin | stage | duplicate_notices | 15 | 5 | — | — |
-| or4_thin | stage | pending_claims | 0 | 0 | — | — |
-| or4_thin | stage | revisions | 162 | 66 | — | — |
-| or4_thin | stage | claim_notices | 238 | 238 | — | — |
-| or4_thin | stage | formal_alerts | not_defined | 122 | — | — |
-| or4_thin | stage | observation_notices | not_defined | 116 | — | — |
-| or4_thin | stage | alerts_per_asset_year | 12.73479563433929 | 12.73479563433929 | 18.688953229703554 | 18.688953229703554 |
-| or4_thin | stage | alarm_occupied_days | 964 | 964 | — | — |
-| or4_thin | stage | formal_alarm_occupied_days | not_defined | 418 | — | — |
-| or4_thin | stage | E | 13 | 13 | 13 | 13 |
-| or4_thin | stage | P | 59 | 43 | — | — |
-| or4_thin | stage | TP | 0 | 0 | — | — |
-| or4_thin | stage | FP | 59 | 43 | — | — |
-| or4_thin | stage | FN | 13 | 13 | — | — |
-| or4_thin | stage | no_formal_alert_rate | 0.15384615384615385 | 0.38461538461538464 | 13 | 13 |
-| or4_thin | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| or4_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| or4_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| or4_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 59 | 43 |
-| or4_thin | stage | duplicate_notices | 3 | 3 | — | — |
-| or4_thin | stage | pending_claims | 0 | 0 | — | — |
-| or4_thin | stage | revisions | 110 | 54 | — | — |
-| or4_thin | stage | claim_notices | 169 | 169 | — | — |
-| or4_thin | stage | formal_alerts | not_defined | 97 | — | — |
-| or4_thin | stage | observation_notices | not_defined | 72 | — | — |
-| or4_thin | stage | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
-| or4_thin | stage | alarm_occupied_days | 738 | 738 | — | — |
-| or4_thin | stage | formal_alarm_occupied_days | not_defined | 316 | — | — |
-| or4_thin | stage | E | 14 | 14 | 14 | 14 |
-| or4_thin | stage | P | 58 | 36 | — | — |
-| or4_thin | stage | TP | 0 | 0 | — | — |
-| or4_thin | stage | FP | 58 | 36 | — | — |
-| or4_thin | stage | FN | 14 | 14 | — | — |
-| or4_thin | stage | no_formal_alert_rate | 0.21428571428571427 | 0.42857142857142855 | 14 | 14 |
-| or4_thin | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| or4_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| or4_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| or4_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 58 | 36 |
-| or4_thin | stage | duplicate_notices | 9 | 3 | — | — |
-| or4_thin | stage | pending_claims | 0 | 0 | — | — |
-| or4_thin | stage | revisions | 100 | 47 | — | — |
-| or4_thin | stage | claim_notices | 158 | 158 | — | — |
-| or4_thin | stage | formal_alerts | not_defined | 83 | — | — |
-| or4_thin | stage | observation_notices | not_defined | 75 | — | — |
-| or4_thin | stage | alerts_per_asset_year | 11.750827733659133 | 11.750827733659133 | 13.445861311320561 | 13.445861311320561 |
-| or4_thin | stage | alarm_occupied_days | 718 | 718 | — | — |
-| or4_thin | stage | formal_alarm_occupied_days | not_defined | 301 | — | — |
-| or4_thin | stage | E | 13 | 13 | 13 | 13 |
-| or4_thin | stage | P | 50 | 28 | — | — |
-| or4_thin | stage | TP | 2 | 2 | — | — |
-| or4_thin | stage | FP | 48 | 26 | — | — |
-| or4_thin | stage | FN | 11 | 11 | — | — |
-| or4_thin | stage | no_formal_alert_rate | 0.3076923076923077 | 0.38461538461538464 | 13 | 13 |
-| or4_thin | stage | first_window_coverage | 0.15384615384615385 | 0.15384615384615385 | 13 | 13 |
-| or4_thin | stage | QualifiedStageRecall5 | 0.023809523809523808 | 0.15384615384615385 | 13 | 13 |
-| or4_thin | stage | StrictStageRecall5W10 | 0.15384615384615385 | 0.15384615384615385 | 13 | 13 |
-| or4_thin | stage | strict_stage_miss_rate | 0.8461538461538461 | 0.8461538461538461 | 13 | 13 |
-| or4_thin | stage | resolved_claim_precision | 0.04 | 0.07142857142857142 | 50 | 28 |
-| or4_thin | stage | duplicate_notices | 8 | 2 | — | — |
-| or4_thin | stage | pending_claims | 0 | 0 | — | — |
-| or4_thin | stage | revisions | 100 | 34 | — | — |
-| or4_thin | stage | claim_notices | 150 | 150 | — | — |
-| or4_thin | stage | formal_alerts | not_defined | 62 | — | — |
-| or4_thin | stage | observation_notices | not_defined | 88 | — | — |
-| or4_thin | stage | alerts_per_asset_year | 12.845574443141853 | 12.845574443141853 | 11.677173384805984 | 11.677173384805984 |
-| or4_thin | stage | alarm_occupied_days | 543 | 543 | — | — |
-| or4_thin | stage | formal_alarm_occupied_days | not_defined | 185 | — | — |
-| or4_thin | stage | E | 20 | 20 | 20 | 20 |
-| or4_thin | stage | P | 82 | 56 | — | — |
-| or4_thin | stage | TP | 1 | 0 | — | — |
-| or4_thin | stage | FP | 81 | 56 | — | — |
-| or4_thin | stage | FN | 19 | 20 | — | — |
-| or4_thin | stage | no_formal_alert_rate | 0.3 | 0.45 | 20 | 20 |
-| or4_thin | stage | first_window_coverage | 0.1 | 0.0 | 20 | 20 |
-| or4_thin | stage | QualifiedStageRecall5 | 0.014084507042253521 | 0.0 | 20 | 20 |
-| or4_thin | stage | StrictStageRecall5W10 | 0.05 | 0.0 | 20 | 20 |
-| or4_thin | stage | strict_stage_miss_rate | 0.95 | 1.0 | 20 | 20 |
-| or4_thin | stage | resolved_claim_precision | 0.012195121951219513 | 0.0 | 82 | 56 |
-| or4_thin | stage | duplicate_notices | 12 | 7 | — | — |
-| or4_thin | stage | pending_claims | 0 | 0 | — | — |
-| or4_thin | stage | revisions | 153 | 70 | — | — |
-| or4_thin | stage | claim_notices | 226 | 226 | — | — |
-| or4_thin | stage | formal_alerts | not_defined | 126 | — | — |
-| or4_thin | stage | observation_notices | not_defined | 100 | — | — |
-| or4_thin | stage | alerts_per_asset_year | 12.092705098154116 | 12.092705098154116 | 18.688953229703554 | 18.688953229703554 |
-| or4_thin | stage | alarm_occupied_days | 902 | 902 | — | — |
-| or4_thin | stage | formal_alarm_occupied_days | not_defined | 382 | — | — |
-| or4_thin | stage | E | 9 | 9 | 9 | 9 |
-| or4_thin | stage | P | 37 | 24 | — | — |
-| or4_thin | stage | TP | 0 | 0 | — | — |
-| or4_thin | stage | FP | 37 | 24 | — | — |
-| or4_thin | stage | FN | 9 | 9 | — | — |
-| or4_thin | stage | no_formal_alert_rate | 0.4444444444444444 | 0.5555555555555556 | 9 | 9 |
-| or4_thin | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| or4_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| or4_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| or4_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 37 | 24 |
-| or4_thin | stage | duplicate_notices | 8 | 2 | — | — |
-| or4_thin | stage | pending_claims | 0 | 0 | — | — |
-| or4_thin | stage | revisions | 53 | 29 | — | — |
-| or4_thin | stage | claim_notices | 90 | 90 | — | — |
-| or4_thin | stage | formal_alerts | not_defined | 53 | — | — |
-| or4_thin | stage | observation_notices | not_defined | 37 | — | — |
-| or4_thin | stage | alerts_per_asset_year | 10.838056379821959 | 10.838056379821959 | 8.304071952196143 | 8.304071952196143 |
-| or4_thin | stage | alarm_occupied_days | 306 | 306 | — | — |
-| or4_thin | stage | formal_alarm_occupied_days | not_defined | 176 | — | — |
-| ref_12_24m | short | E | 115 | 115 | 115 | 115 |
-| ref_12_24m | short | P | 10 | 7 | — | — |
-| ref_12_24m | short | TP | 0 | 0 | — | — |
-| ref_12_24m | short | FP | 10 | 7 | — | — |
-| ref_12_24m | short | FN | 115 | 115 | — | — |
-| ref_12_24m | short | no_formal_alert_rate | 0.9304347826086956 | 0.9565217391304348 | 115 | 115 |
-| ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 115 | 115 |
-| ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 115 | 115 |
-| ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 115 | 115 |
-| ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 115 | 115 |
-| ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 10 | 7 |
-| ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | short | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | short | revisions | 68 | 14 | — | — |
-| ref_12_24m | short | claim_notices | 71 | 71 | — | — |
-| ref_12_24m | short | formal_alerts | not_defined | 21 | — | — |
-| ref_12_24m | short | observation_notices | not_defined | 50 | — | — |
-| ref_12_24m | short | alerts_per_asset_year | 3.799035672428948 | 3.799035672428948 | 18.688953229703554 | 18.688953229703554 |
-| ref_12_24m | short | alarm_occupied_days | 274 | 274 | — | — |
-| ref_12_24m | short | formal_alarm_occupied_days | not_defined | 73 | — | — |
-| ref_12_24m | short | E | 97 | 97 | 97 | 97 |
-| ref_12_24m | short | P | 9 | 7 | — | — |
-| ref_12_24m | short | TP | 0 | 0 | — | — |
-| ref_12_24m | short | FP | 9 | 7 | — | — |
-| ref_12_24m | short | FN | 97 | 97 | — | — |
-| ref_12_24m | short | no_formal_alert_rate | 0.9175257731958762 | 0.9381443298969072 | 97 | 97 |
-| ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
-| ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
-| ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 9 | 7 |
-| ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | short | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | short | revisions | 43 | 12 | — | — |
-| ref_12_24m | short | claim_notices | 52 | 52 | — | — |
-| ref_12_24m | short | formal_alerts | not_defined | 19 | — | — |
-| ref_12_24m | short | observation_notices | not_defined | 33 | — | — |
-| ref_12_24m | short | alerts_per_asset_year | 3.53614038354124 | 3.53614038354124 | 14.705298534535274 | 14.705298534535274 |
-| ref_12_24m | short | alarm_occupied_days | 237 | 237 | — | — |
-| ref_12_24m | short | formal_alarm_occupied_days | not_defined | 101 | — | — |
-| ref_12_24m | short | E | 90 | 90 | 90 | 90 |
-| ref_12_24m | short | P | 6 | 4 | — | — |
-| ref_12_24m | short | TP | 0 | 0 | — | — |
-| ref_12_24m | short | FP | 6 | 4 | — | — |
-| ref_12_24m | short | FN | 90 | 90 | — | — |
-| ref_12_24m | short | no_formal_alert_rate | 0.9444444444444444 | 0.9666666666666667 | 90 | 90 |
-| ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
-| ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
-| ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
-| ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
-| ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 6 | 4 |
-| ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | short | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | short | revisions | 18 | 2 | — | — |
-| ref_12_24m | short | claim_notices | 24 | 24 | — | — |
-| ref_12_24m | short | formal_alerts | not_defined | 6 | — | — |
-| ref_12_24m | short | observation_notices | not_defined | 18 | — | — |
-| ref_12_24m | short | alerts_per_asset_year | 1.7849358582773365 | 1.7849358582773365 | 13.445861311320561 | 13.445861311320561 |
-| ref_12_24m | short | alarm_occupied_days | 139 | 139 | — | — |
-| ref_12_24m | short | formal_alarm_occupied_days | not_defined | 29 | — | — |
-| ref_12_24m | short | E | 71 | 71 | 71 | 71 |
-| ref_12_24m | short | P | 7 | 4 | — | — |
-| ref_12_24m | short | TP | 1 | 0 | — | — |
-| ref_12_24m | short | FP | 6 | 4 | — | — |
-| ref_12_24m | short | FN | 70 | 71 | — | — |
-| ref_12_24m | short | no_formal_alert_rate | 0.9014084507042254 | 0.9577464788732394 | 71 | 71 |
-| ref_12_24m | short | first_window_coverage | 0.056338028169014086 | 0.0 | 71 | 71 |
-| ref_12_24m | short | QualifiedShortRecall5 | 0.03571428571428571 | 0.0 | 71 | 71 |
-| ref_12_24m | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.0 | 71 | 71 |
-| ref_12_24m | short | strict_short_miss_rate | 0.9859154929577465 | 1.0 | 71 | 71 |
-| ref_12_24m | short | resolved_claim_precision | 0.14285714285714285 | 0.0 | 7 | 4 |
-| ref_12_24m | short | duplicate_notices | 0 | 1 | — | — |
-| ref_12_24m | short | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | short | revisions | 49 | 3 | — | — |
-| ref_12_24m | short | claim_notices | 56 | 56 | — | — |
-| ref_12_24m | short | formal_alerts | not_defined | 7 | — | — |
-| ref_12_24m | short | observation_notices | not_defined | 49 | — | — |
-| ref_12_24m | short | alerts_per_asset_year | 4.795681125439625 | 4.795681125439625 | 11.677173384805984 | 11.677173384805984 |
-| ref_12_24m | short | alarm_occupied_days | 310 | 310 | — | — |
-| ref_12_24m | short | formal_alarm_occupied_days | not_defined | 28 | — | — |
-| ref_12_24m | short | E | 122 | 122 | 122 | 122 |
-| ref_12_24m | short | P | 11 | 8 | — | — |
-| ref_12_24m | short | TP | 0 | 0 | — | — |
-| ref_12_24m | short | FP | 11 | 8 | — | — |
-| ref_12_24m | short | FN | 122 | 122 | — | — |
-| ref_12_24m | short | no_formal_alert_rate | 0.9262295081967213 | 0.9508196721311475 | 122 | 122 |
-| ref_12_24m | short | first_window_coverage | 0.00819672131147541 | 0.0 | 122 | 122 |
-| ref_12_24m | short | QualifiedShortRecall5 | 0.007042253521126761 | 0.0 | 122 | 122 |
-| ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 122 | 122 |
-| ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 122 | 122 |
-| ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 11 | 8 |
-| ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | short | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | short | revisions | 68 | 15 | — | — |
-| ref_12_24m | short | claim_notices | 70 | 70 | — | — |
-| ref_12_24m | short | formal_alerts | not_defined | 23 | — | — |
-| ref_12_24m | short | observation_notices | not_defined | 47 | — | — |
-| ref_12_24m | short | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
-| ref_12_24m | short | alarm_occupied_days | 351 | 351 | — | — |
-| ref_12_24m | short | formal_alarm_occupied_days | not_defined | 86 | — | — |
-| ref_12_24m | short | E | 57 | 57 | 57 | 57 |
-| ref_12_24m | short | P | 6 | 2 | — | — |
-| ref_12_24m | short | TP | 0 | 0 | — | — |
-| ref_12_24m | short | FP | 6 | 2 | — | — |
-| ref_12_24m | short | FN | 57 | 57 | — | — |
-| ref_12_24m | short | no_formal_alert_rate | 0.9298245614035088 | 0.9824561403508771 | 57 | 57 |
-| ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 57 | 57 |
-| ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 57 | 57 |
-| ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
-| ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
-| ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 6 | 2 |
-| ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | short | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | short | revisions | 7 | 3 | — | — |
-| ref_12_24m | short | claim_notices | 13 | 13 | — | — |
-| ref_12_24m | short | formal_alerts | not_defined | 5 | — | — |
-| ref_12_24m | short | observation_notices | not_defined | 8 | — | — |
-| ref_12_24m | short | alerts_per_asset_year | 1.5654970326409496 | 1.5654970326409496 | 8.304071952196143 | 8.304071952196143 |
-| ref_12_24m | short | alarm_occupied_days | 128 | 128 | — | — |
-| ref_12_24m | short | formal_alarm_occupied_days | not_defined | 22 | — | — |
-| ref_12_24m | stage | E | 22 | 22 | 22 | 22 |
-| ref_12_24m | stage | P | 10 | 7 | — | — |
-| ref_12_24m | stage | TP | 0 | 0 | — | — |
-| ref_12_24m | stage | FP | 10 | 7 | — | — |
-| ref_12_24m | stage | FN | 22 | 22 | — | — |
-| ref_12_24m | stage | no_formal_alert_rate | 0.7272727272727273 | 0.9090909090909091 | 22 | 22 |
-| ref_12_24m | stage | first_window_coverage | 0.045454545454545456 | 0.0 | 22 | 22 |
-| ref_12_24m | stage | QualifiedStageRecall5 | 0.0072992700729927005 | 0.0 | 22 | 22 |
-| ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 10 | 7 |
-| ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | stage | revisions | 68 | 14 | — | — |
-| ref_12_24m | stage | claim_notices | 71 | 71 | — | — |
-| ref_12_24m | stage | formal_alerts | not_defined | 21 | — | — |
-| ref_12_24m | stage | observation_notices | not_defined | 50 | — | — |
-| ref_12_24m | stage | alerts_per_asset_year | 3.799035672428948 | 3.799035672428948 | 18.688953229703554 | 18.688953229703554 |
-| ref_12_24m | stage | alarm_occupied_days | 274 | 274 | — | — |
-| ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 73 | — | — |
-| ref_12_24m | stage | E | 13 | 13 | 13 | 13 |
-| ref_12_24m | stage | P | 9 | 7 | — | — |
-| ref_12_24m | stage | TP | 0 | 0 | — | — |
-| ref_12_24m | stage | FP | 9 | 7 | — | — |
-| ref_12_24m | stage | FN | 13 | 13 | — | — |
-| ref_12_24m | stage | no_formal_alert_rate | 0.7692307692307693 | 0.9230769230769231 | 13 | 13 |
-| ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 7 |
-| ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | stage | revisions | 43 | 12 | — | — |
-| ref_12_24m | stage | claim_notices | 52 | 52 | — | — |
-| ref_12_24m | stage | formal_alerts | not_defined | 19 | — | — |
-| ref_12_24m | stage | observation_notices | not_defined | 33 | — | — |
-| ref_12_24m | stage | alerts_per_asset_year | 3.53614038354124 | 3.53614038354124 | 14.705298534535274 | 14.705298534535274 |
-| ref_12_24m | stage | alarm_occupied_days | 237 | 237 | — | — |
-| ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 101 | — | — |
-| ref_12_24m | stage | E | 14 | 14 | 14 | 14 |
-| ref_12_24m | stage | P | 6 | 4 | — | — |
-| ref_12_24m | stage | TP | 0 | 0 | — | — |
-| ref_12_24m | stage | FP | 6 | 4 | — | — |
-| ref_12_24m | stage | FN | 14 | 14 | — | — |
-| ref_12_24m | stage | no_formal_alert_rate | 0.7142857142857143 | 0.8571428571428571 | 14 | 14 |
-| ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 6 | 4 |
-| ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | stage | revisions | 18 | 2 | — | — |
-| ref_12_24m | stage | claim_notices | 24 | 24 | — | — |
-| ref_12_24m | stage | formal_alerts | not_defined | 6 | — | — |
-| ref_12_24m | stage | observation_notices | not_defined | 18 | — | — |
-| ref_12_24m | stage | alerts_per_asset_year | 1.7849358582773365 | 1.7849358582773365 | 13.445861311320561 | 13.445861311320561 |
-| ref_12_24m | stage | alarm_occupied_days | 139 | 139 | — | — |
-| ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 29 | — | — |
-| ref_12_24m | stage | E | 13 | 13 | 13 | 13 |
-| ref_12_24m | stage | P | 7 | 4 | — | — |
-| ref_12_24m | stage | TP | 0 | 0 | — | — |
-| ref_12_24m | stage | FP | 7 | 4 | — | — |
-| ref_12_24m | stage | FN | 13 | 13 | — | — |
-| ref_12_24m | stage | no_formal_alert_rate | 0.7692307692307693 | 0.9230769230769231 | 13 | 13 |
-| ref_12_24m | stage | first_window_coverage | 0.15384615384615385 | 0.0 | 13 | 13 |
-| ref_12_24m | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
-| ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 7 | 4 |
-| ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | stage | revisions | 49 | 3 | — | — |
-| ref_12_24m | stage | claim_notices | 56 | 56 | — | — |
-| ref_12_24m | stage | formal_alerts | not_defined | 7 | — | — |
-| ref_12_24m | stage | observation_notices | not_defined | 49 | — | — |
-| ref_12_24m | stage | alerts_per_asset_year | 4.795681125439625 | 4.795681125439625 | 11.677173384805984 | 11.677173384805984 |
-| ref_12_24m | stage | alarm_occupied_days | 310 | 310 | — | — |
-| ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 28 | — | — |
-| ref_12_24m | stage | E | 20 | 20 | 20 | 20 |
-| ref_12_24m | stage | P | 11 | 8 | — | — |
-| ref_12_24m | stage | TP | 0 | 0 | — | — |
-| ref_12_24m | stage | FP | 11 | 8 | — | — |
-| ref_12_24m | stage | FN | 20 | 20 | — | — |
-| ref_12_24m | stage | no_formal_alert_rate | 0.8 | 0.85 | 20 | 20 |
-| ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
-| ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
-| ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 11 | 8 |
-| ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | stage | revisions | 68 | 15 | — | — |
-| ref_12_24m | stage | claim_notices | 70 | 70 | — | — |
-| ref_12_24m | stage | formal_alerts | not_defined | 23 | — | — |
-| ref_12_24m | stage | observation_notices | not_defined | 47 | — | — |
-| ref_12_24m | stage | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
-| ref_12_24m | stage | alarm_occupied_days | 351 | 351 | — | — |
-| ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 86 | — | — |
-| ref_12_24m | stage | E | 9 | 9 | 9 | 9 |
-| ref_12_24m | stage | P | 6 | 2 | — | — |
-| ref_12_24m | stage | TP | 0 | 0 | — | — |
-| ref_12_24m | stage | FP | 6 | 2 | — | — |
-| ref_12_24m | stage | FN | 9 | 9 | — | — |
-| ref_12_24m | stage | no_formal_alert_rate | 0.8888888888888888 | 1.0 | 9 | 9 |
-| ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 6 | 2 |
-| ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
-| ref_12_24m | stage | revisions | 7 | 3 | — | — |
-| ref_12_24m | stage | claim_notices | 13 | 13 | — | — |
-| ref_12_24m | stage | formal_alerts | not_defined | 5 | — | — |
-| ref_12_24m | stage | observation_notices | not_defined | 8 | — | — |
-| ref_12_24m | stage | alerts_per_asset_year | 1.5654970326409496 | 1.5654970326409496 | 8.304071952196143 | 8.304071952196143 |
-| ref_12_24m | stage | alarm_occupied_days | 128 | 128 | — | — |
-| ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 22 | — | — |
-| ref_6_12m | short | E | 115 | 115 | 115 | 115 |
-| ref_6_12m | short | P | 31 | 28 | — | — |
-| ref_6_12m | short | TP | 2 | 2 | — | — |
-| ref_6_12m | short | FP | 29 | 26 | — | — |
-| ref_6_12m | short | FN | 113 | 113 | — | — |
-| ref_6_12m | short | no_formal_alert_rate | 0.7652173913043478 | 0.782608695652174 | 115 | 115 |
-| ref_6_12m | short | first_window_coverage | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
-| ref_6_12m | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.017391304347826087 | 115 | 115 |
-| ref_6_12m | short | StrictShortRecall5W10 | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
-| ref_6_12m | short | strict_short_miss_rate | 0.9826086956521739 | 0.9826086956521739 | 115 | 115 |
-| ref_6_12m | short | resolved_claim_precision | 0.06451612903225806 | 0.07142857142857142 | 31 | 28 |
-| ref_6_12m | short | duplicate_notices | 2 | 1 | — | — |
-| ref_6_12m | short | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | short | revisions | 95 | 67 | — | — |
-| ref_6_12m | short | claim_notices | 126 | 126 | — | — |
-| ref_6_12m | short | formal_alerts | not_defined | 95 | — | — |
-| ref_6_12m | short | observation_notices | not_defined | 31 | — | — |
-| ref_6_12m | short | alerts_per_asset_year | 6.741950629944331 | 6.741950629944331 | 18.688953229703554 | 18.688953229703554 |
-| ref_6_12m | short | alarm_occupied_days | 502 | 502 | — | — |
-| ref_6_12m | short | formal_alarm_occupied_days | not_defined | 379 | — | — |
-| ref_6_12m | short | E | 97 | 97 | 97 | 97 |
-| ref_6_12m | short | P | 17 | 15 | — | — |
-| ref_6_12m | short | TP | 0 | 0 | — | — |
-| ref_6_12m | short | FP | 17 | 15 | — | — |
-| ref_6_12m | short | FN | 97 | 97 | — | — |
-| ref_6_12m | short | no_formal_alert_rate | 0.845360824742268 | 0.865979381443299 | 97 | 97 |
-| ref_6_12m | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
-| ref_6_12m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
-| ref_6_12m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
-| ref_6_12m | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
-| ref_6_12m | short | resolved_claim_precision | 0.0 | 0.0 | 17 | 15 |
-| ref_6_12m | short | duplicate_notices | 1 | 1 | — | — |
-| ref_6_12m | short | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | short | revisions | 58 | 37 | — | — |
-| ref_6_12m | short | claim_notices | 75 | 75 | — | — |
-| ref_6_12m | short | formal_alerts | not_defined | 52 | — | — |
-| ref_6_12m | short | observation_notices | not_defined | 23 | — | — |
-| ref_6_12m | short | alerts_per_asset_year | 5.100202476261404 | 5.100202476261404 | 14.705298534535274 | 14.705298534535274 |
-| ref_6_12m | short | alarm_occupied_days | 361 | 361 | — | — |
-| ref_6_12m | short | formal_alarm_occupied_days | not_defined | 256 | — | — |
-| ref_6_12m | short | E | 90 | 90 | 90 | 90 |
-| ref_6_12m | short | P | 24 | 19 | — | — |
-| ref_6_12m | short | TP | 0 | 0 | — | — |
-| ref_6_12m | short | FP | 24 | 19 | — | — |
-| ref_6_12m | short | FN | 90 | 90 | — | — |
-| ref_6_12m | short | no_formal_alert_rate | 0.7888888888888889 | 0.8111111111111111 | 90 | 90 |
-| ref_6_12m | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
-| ref_6_12m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
-| ref_6_12m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
-| ref_6_12m | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
-| ref_6_12m | short | resolved_claim_precision | 0.0 | 0.0 | 24 | 19 |
-| ref_6_12m | short | duplicate_notices | 3 | 1 | — | — |
-| ref_6_12m | short | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | short | revisions | 67 | 37 | — | — |
-| ref_6_12m | short | claim_notices | 91 | 91 | — | — |
-| ref_6_12m | short | formal_alerts | not_defined | 56 | — | — |
-| ref_6_12m | short | observation_notices | not_defined | 35 | — | — |
-| ref_6_12m | short | alerts_per_asset_year | 6.7678817959682345 | 6.7678817959682345 | 13.445861311320561 | 13.445861311320561 |
-| ref_6_12m | short | alarm_occupied_days | 427 | 427 | — | — |
-| ref_6_12m | short | formal_alarm_occupied_days | not_defined | 252 | — | — |
-| ref_6_12m | short | E | 71 | 71 | 71 | 71 |
-| ref_6_12m | short | P | 14 | 13 | — | — |
-| ref_6_12m | short | TP | 0 | 0 | — | — |
-| ref_6_12m | short | FP | 14 | 13 | — | — |
-| ref_6_12m | short | FN | 71 | 71 | — | — |
-| ref_6_12m | short | no_formal_alert_rate | 0.8309859154929577 | 0.8450704225352113 | 71 | 71 |
-| ref_6_12m | short | first_window_coverage | 0.0 | 0.0 | 71 | 71 |
-| ref_6_12m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 71 | 71 |
-| ref_6_12m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 71 | 71 |
-| ref_6_12m | short | strict_short_miss_rate | 1.0 | 1.0 | 71 | 71 |
-| ref_6_12m | short | resolved_claim_precision | 0.0 | 0.0 | 14 | 13 |
-| ref_6_12m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_6_12m | short | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | short | revisions | 31 | 24 | — | — |
-| ref_6_12m | short | claim_notices | 45 | 45 | — | — |
-| ref_6_12m | short | formal_alerts | not_defined | 37 | — | — |
-| ref_6_12m | short | observation_notices | not_defined | 8 | — | — |
-| ref_6_12m | short | alerts_per_asset_year | 3.853672332942556 | 3.853672332942556 | 11.677173384805984 | 11.677173384805984 |
-| ref_6_12m | short | alarm_occupied_days | 186 | 186 | — | — |
-| ref_6_12m | short | formal_alarm_occupied_days | not_defined | 144 | — | — |
-| ref_6_12m | short | E | 122 | 122 | 122 | 122 |
-| ref_6_12m | short | P | 19 | 17 | — | — |
-| ref_6_12m | short | TP | 1 | 1 | — | — |
-| ref_6_12m | short | FP | 18 | 16 | — | — |
-| ref_6_12m | short | FN | 121 | 121 | — | — |
-| ref_6_12m | short | no_formal_alert_rate | 0.8688524590163934 | 0.8770491803278688 | 122 | 122 |
-| ref_6_12m | short | first_window_coverage | 0.00819672131147541 | 0.00819672131147541 | 122 | 122 |
-| ref_6_12m | short | QualifiedShortRecall5 | 0.007042253521126761 | 0.00819672131147541 | 122 | 122 |
-| ref_6_12m | short | StrictShortRecall5W10 | 0.00819672131147541 | 0.00819672131147541 | 122 | 122 |
-| ref_6_12m | short | strict_short_miss_rate | 0.9918032786885246 | 0.9918032786885246 | 122 | 122 |
-| ref_6_12m | short | resolved_claim_precision | 0.05263157894736842 | 0.058823529411764705 | 19 | 17 |
-| ref_6_12m | short | duplicate_notices | 2 | 0 | — | — |
-| ref_6_12m | short | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | short | revisions | 51 | 28 | — | — |
-| ref_6_12m | short | claim_notices | 70 | 70 | — | — |
-| ref_6_12m | short | formal_alerts | not_defined | 45 | — | — |
-| ref_6_12m | short | observation_notices | not_defined | 25 | — | — |
-| ref_6_12m | short | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
-| ref_6_12m | short | alarm_occupied_days | 343 | 343 | — | — |
-| ref_6_12m | short | formal_alarm_occupied_days | not_defined | 216 | — | — |
-| ref_6_12m | short | E | 57 | 57 | 57 | 57 |
-| ref_6_12m | short | P | 9 | 8 | — | — |
-| ref_6_12m | short | TP | 1 | 1 | — | — |
-| ref_6_12m | short | FP | 8 | 7 | — | — |
-| ref_6_12m | short | FN | 56 | 56 | — | — |
-| ref_6_12m | short | no_formal_alert_rate | 0.8596491228070176 | 0.8771929824561403 | 57 | 57 |
-| ref_6_12m | short | first_window_coverage | 0.03508771929824561 | 0.017543859649122806 | 57 | 57 |
-| ref_6_12m | short | QualifiedShortRecall5 | 0.030303030303030304 | 0.017543859649122806 | 57 | 57 |
-| ref_6_12m | short | StrictShortRecall5W10 | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
-| ref_6_12m | short | strict_short_miss_rate | 0.9824561403508771 | 0.9824561403508771 | 57 | 57 |
-| ref_6_12m | short | resolved_claim_precision | 0.1111111111111111 | 0.125 | 9 | 8 |
-| ref_6_12m | short | duplicate_notices | 0 | 0 | — | — |
-| ref_6_12m | short | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | short | revisions | 26 | 14 | — | — |
-| ref_6_12m | short | claim_notices | 35 | 35 | — | — |
-| ref_6_12m | short | formal_alerts | not_defined | 22 | — | — |
-| ref_6_12m | short | observation_notices | not_defined | 13 | — | — |
-| ref_6_12m | short | alerts_per_asset_year | 4.214799703264095 | 4.214799703264095 | 8.304071952196143 | 8.304071952196143 |
-| ref_6_12m | short | alarm_occupied_days | 187 | 187 | — | — |
-| ref_6_12m | short | formal_alarm_occupied_days | not_defined | 110 | — | — |
-| ref_6_12m | stage | E | 22 | 22 | 22 | 22 |
-| ref_6_12m | stage | P | 31 | 28 | — | — |
-| ref_6_12m | stage | TP | 0 | 0 | — | — |
-| ref_6_12m | stage | FP | 31 | 28 | — | — |
-| ref_6_12m | stage | FN | 22 | 22 | — | — |
-| ref_6_12m | stage | no_formal_alert_rate | 0.5909090909090909 | 0.5909090909090909 | 22 | 22 |
-| ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 22 | 22 |
-| ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
-| ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
-| ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
-| ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 31 | 28 |
-| ref_6_12m | stage | duplicate_notices | 3 | 0 | — | — |
-| ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | stage | revisions | 95 | 67 | — | — |
-| ref_6_12m | stage | claim_notices | 126 | 126 | — | — |
-| ref_6_12m | stage | formal_alerts | not_defined | 95 | — | — |
-| ref_6_12m | stage | observation_notices | not_defined | 31 | — | — |
-| ref_6_12m | stage | alerts_per_asset_year | 6.741950629944331 | 6.741950629944331 | 18.688953229703554 | 18.688953229703554 |
-| ref_6_12m | stage | alarm_occupied_days | 502 | 502 | — | — |
-| ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 379 | — | — |
-| ref_6_12m | stage | E | 13 | 13 | 13 | 13 |
-| ref_6_12m | stage | P | 17 | 15 | — | — |
-| ref_6_12m | stage | TP | 0 | 0 | — | — |
-| ref_6_12m | stage | FP | 17 | 15 | — | — |
-| ref_6_12m | stage | FN | 13 | 13 | — | — |
-| ref_6_12m | stage | no_formal_alert_rate | 0.5384615384615384 | 0.5384615384615384 | 13 | 13 |
-| ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
-| ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
-| ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
-| ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
-| ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 17 | 15 |
-| ref_6_12m | stage | duplicate_notices | 2 | 1 | — | — |
-| ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | stage | revisions | 58 | 37 | — | — |
-| ref_6_12m | stage | claim_notices | 75 | 75 | — | — |
-| ref_6_12m | stage | formal_alerts | not_defined | 52 | — | — |
-| ref_6_12m | stage | observation_notices | not_defined | 23 | — | — |
-| ref_6_12m | stage | alerts_per_asset_year | 5.100202476261404 | 5.100202476261404 | 14.705298534535274 | 14.705298534535274 |
-| ref_6_12m | stage | alarm_occupied_days | 361 | 361 | — | — |
-| ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 256 | — | — |
-| ref_6_12m | stage | E | 14 | 14 | 14 | 14 |
-| ref_6_12m | stage | P | 24 | 19 | — | — |
-| ref_6_12m | stage | TP | 0 | 0 | — | — |
-| ref_6_12m | stage | FP | 24 | 19 | — | — |
-| ref_6_12m | stage | FN | 14 | 14 | — | — |
-| ref_6_12m | stage | no_formal_alert_rate | 0.35714285714285715 | 0.42857142857142855 | 14 | 14 |
-| ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
-| ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
-| ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
-| ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
-| ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 24 | 19 |
-| ref_6_12m | stage | duplicate_notices | 2 | 0 | — | — |
-| ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | stage | revisions | 67 | 37 | — | — |
-| ref_6_12m | stage | claim_notices | 91 | 91 | — | — |
-| ref_6_12m | stage | formal_alerts | not_defined | 56 | — | — |
-| ref_6_12m | stage | observation_notices | not_defined | 35 | — | — |
-| ref_6_12m | stage | alerts_per_asset_year | 6.7678817959682345 | 6.7678817959682345 | 13.445861311320561 | 13.445861311320561 |
-| ref_6_12m | stage | alarm_occupied_days | 427 | 427 | — | — |
-| ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 252 | — | — |
-| ref_6_12m | stage | E | 13 | 13 | 13 | 13 |
-| ref_6_12m | stage | P | 14 | 13 | — | — |
-| ref_6_12m | stage | TP | 1 | 1 | — | — |
-| ref_6_12m | stage | FP | 13 | 12 | — | — |
-| ref_6_12m | stage | FN | 12 | 12 | — | — |
-| ref_6_12m | stage | no_formal_alert_rate | 0.6153846153846154 | 0.6153846153846154 | 13 | 13 |
-| ref_6_12m | stage | first_window_coverage | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
-| ref_6_12m | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.07692307692307693 | 13 | 13 |
-| ref_6_12m | stage | StrictStageRecall5W10 | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
-| ref_6_12m | stage | strict_stage_miss_rate | 0.9230769230769231 | 0.9230769230769231 | 13 | 13 |
-| ref_6_12m | stage | resolved_claim_precision | 0.07142857142857142 | 0.07692307692307693 | 14 | 13 |
-| ref_6_12m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | stage | revisions | 31 | 24 | — | — |
-| ref_6_12m | stage | claim_notices | 45 | 45 | — | — |
-| ref_6_12m | stage | formal_alerts | not_defined | 37 | — | — |
-| ref_6_12m | stage | observation_notices | not_defined | 8 | — | — |
-| ref_6_12m | stage | alerts_per_asset_year | 3.853672332942556 | 3.853672332942556 | 11.677173384805984 | 11.677173384805984 |
-| ref_6_12m | stage | alarm_occupied_days | 186 | 186 | — | — |
-| ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 144 | — | — |
-| ref_6_12m | stage | E | 20 | 20 | 20 | 20 |
-| ref_6_12m | stage | P | 19 | 17 | — | — |
-| ref_6_12m | stage | TP | 0 | 0 | — | — |
-| ref_6_12m | stage | FP | 19 | 17 | — | — |
-| ref_6_12m | stage | FN | 20 | 20 | — | — |
-| ref_6_12m | stage | no_formal_alert_rate | 0.7 | 0.7 | 20 | 20 |
-| ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
-| ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
-| ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
-| ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
-| ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 19 | 17 |
-| ref_6_12m | stage | duplicate_notices | 1 | 1 | — | — |
-| ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | stage | revisions | 51 | 28 | — | — |
-| ref_6_12m | stage | claim_notices | 70 | 70 | — | — |
-| ref_6_12m | stage | formal_alerts | not_defined | 45 | — | — |
-| ref_6_12m | stage | observation_notices | not_defined | 25 | — | — |
-| ref_6_12m | stage | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
-| ref_6_12m | stage | alarm_occupied_days | 343 | 343 | — | — |
-| ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 216 | — | — |
-| ref_6_12m | stage | E | 9 | 9 | 9 | 9 |
-| ref_6_12m | stage | P | 9 | 8 | — | — |
-| ref_6_12m | stage | TP | 0 | 0 | — | — |
-| ref_6_12m | stage | FP | 9 | 8 | — | — |
-| ref_6_12m | stage | FN | 9 | 9 | — | — |
-| ref_6_12m | stage | no_formal_alert_rate | 0.8888888888888888 | 0.8888888888888888 | 9 | 9 |
-| ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
-| ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
-| ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
-| ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
-| ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 8 |
-| ref_6_12m | stage | duplicate_notices | 0 | 0 | — | — |
-| ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
-| ref_6_12m | stage | revisions | 26 | 14 | — | — |
-| ref_6_12m | stage | claim_notices | 35 | 35 | — | — |
-| ref_6_12m | stage | formal_alerts | not_defined | 22 | — | — |
-| ref_6_12m | stage | observation_notices | not_defined | 13 | — | — |
-| ref_6_12m | stage | alerts_per_asset_year | 4.214799703264095 | 4.214799703264095 | 8.304071952196143 | 8.304071952196143 |
-| ref_6_12m | stage | alarm_occupied_days | 187 | 187 | — | — |
-| ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 110 | — | — |
+| symbol | arm | scope | metric | PR #50 | T02 | 旧分母 | 新分母 |
+|---|---|---|---|---:|---:|---:|---:|
+| sh000001 | calendar_fixed_10 | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | calendar_fixed_10 | short | P | 227 | 228 | — | — |
+| sh000001 | calendar_fixed_10 | short | TP | 23 | 23 | — | — |
+| sh000001 | calendar_fixed_10 | short | FP | 204 | 205 | — | — |
+| sh000001 | calendar_fixed_10 | short | FN | 92 | 92 | — | — |
+| sh000001 | calendar_fixed_10 | short | no_formal_alert_rate | 0.034782608695652174 | 0.034782608695652174 | 115 | 115 |
+| sh000001 | calendar_fixed_10 | short | first_window_coverage | 0.2 | 0.2 | 115 | 115 |
+| sh000001 | calendar_fixed_10 | short | QualifiedShortRecall5 | 0.1678832116788321 | 0.2 | 115 | 115 |
+| sh000001 | calendar_fixed_10 | short | StrictShortRecall5W10 | 0.2 | 0.2 | 115 | 115 |
+| sh000001 | calendar_fixed_10 | short | strict_short_miss_rate | 0.8 | 0.8 | 115 | 115 |
+| sh000001 | calendar_fixed_10 | short | resolved_claim_precision | 0.1013215859030837 | 0.10087719298245613 | 227 | 228 |
+| sh000001 | calendar_fixed_10 | short | duplicate_notices | 105 | 105 | — | — |
+| sh000001 | calendar_fixed_10 | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | calendar_fixed_10 | short | revisions | 690 | 681 | — | — |
+| sh000001 | calendar_fixed_10 | short | claim_notices | 907 | 907 | — | — |
+| sh000001 | calendar_fixed_10 | short | formal_alerts | not_defined | 907 | — | — |
+| sh000001 | calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
+| sh000001 | calendar_fixed_10 | short | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | calendar_fixed_10 | short | alarm_occupied_days | 4527 | 4527 | — | — |
+| sh000001 | calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 4527 | — | — |
+| sh000016 | calendar_fixed_10 | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | calendar_fixed_10 | short | P | 179 | 180 | — | — |
+| sh000016 | calendar_fixed_10 | short | TP | 20 | 20 | — | — |
+| sh000016 | calendar_fixed_10 | short | FP | 159 | 160 | — | — |
+| sh000016 | calendar_fixed_10 | short | FN | 77 | 77 | — | — |
+| sh000016 | calendar_fixed_10 | short | no_formal_alert_rate | 0.061855670103092786 | 0.061855670103092786 | 97 | 97 |
+| sh000016 | calendar_fixed_10 | short | first_window_coverage | 0.20618556701030927 | 0.20618556701030927 | 97 | 97 |
+| sh000016 | calendar_fixed_10 | short | QualifiedShortRecall5 | 0.18181818181818182 | 0.20618556701030927 | 97 | 97 |
+| sh000016 | calendar_fixed_10 | short | StrictShortRecall5W10 | 0.20618556701030927 | 0.20618556701030927 | 97 | 97 |
+| sh000016 | calendar_fixed_10 | short | strict_short_miss_rate | 0.7938144329896908 | 0.7938144329896908 | 97 | 97 |
+| sh000016 | calendar_fixed_10 | short | resolved_claim_precision | 0.11173184357541899 | 0.1111111111111111 | 179 | 180 |
+| sh000016 | calendar_fixed_10 | short | duplicate_notices | 79 | 79 | — | — |
+| sh000016 | calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
+| sh000016 | calendar_fixed_10 | short | revisions | 546 | 537 | — | — |
+| sh000016 | calendar_fixed_10 | short | claim_notices | 716 | 716 | — | — |
+| sh000016 | calendar_fixed_10 | short | formal_alerts | not_defined | 716 | — | — |
+| sh000016 | calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
+| sh000016 | calendar_fixed_10 | short | alerts_per_asset_year | 48.68993297337554 | 48.68993297337554 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | calendar_fixed_10 | short | alarm_occupied_days | 3572 | 3572 | — | — |
+| sh000016 | calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 3572 | — | — |
+| sh000300 | calendar_fixed_10 | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | calendar_fixed_10 | short | P | 164 | 164 | — | — |
+| sh000300 | calendar_fixed_10 | short | TP | 24 | 24 | — | — |
+| sh000300 | calendar_fixed_10 | short | FP | 140 | 140 | — | — |
+| sh000300 | calendar_fixed_10 | short | FN | 66 | 66 | — | — |
+| sh000300 | calendar_fixed_10 | short | no_formal_alert_rate | 0.05555555555555555 | 0.05555555555555555 | 90 | 90 |
+| sh000300 | calendar_fixed_10 | short | first_window_coverage | 0.26666666666666666 | 0.26666666666666666 | 90 | 90 |
+| sh000300 | calendar_fixed_10 | short | QualifiedShortRecall5 | 0.23076923076923078 | 0.26666666666666666 | 90 | 90 |
+| sh000300 | calendar_fixed_10 | short | StrictShortRecall5W10 | 0.26666666666666666 | 0.26666666666666666 | 90 | 90 |
+| sh000300 | calendar_fixed_10 | short | strict_short_miss_rate | 0.7333333333333334 | 0.7333333333333334 | 90 | 90 |
+| sh000300 | calendar_fixed_10 | short | resolved_claim_precision | 0.14634146341463414 | 0.14634146341463414 | 164 | 164 |
+| sh000300 | calendar_fixed_10 | short | duplicate_notices | 67 | 67 | — | — |
+| sh000300 | calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
+| sh000300 | calendar_fixed_10 | short | revisions | 501 | 492 | — | — |
+| sh000300 | calendar_fixed_10 | short | claim_notices | 655 | 655 | — | — |
+| sh000300 | calendar_fixed_10 | short | formal_alerts | not_defined | 655 | — | — |
+| sh000300 | calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
+| sh000300 | calendar_fixed_10 | short | alerts_per_asset_year | 48.713874465485645 | 48.713874465485645 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | calendar_fixed_10 | short | alarm_occupied_days | 3267 | 3267 | — | — |
+| sh000300 | calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 3267 | — | — |
+| sh000905 | calendar_fixed_10 | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | calendar_fixed_10 | short | P | 145 | 145 | — | — |
+| sh000905 | calendar_fixed_10 | short | TP | 10 | 10 | — | — |
+| sh000905 | calendar_fixed_10 | short | FP | 135 | 135 | — | — |
+| sh000905 | calendar_fixed_10 | short | FN | 61 | 61 | — | — |
+| sh000905 | calendar_fixed_10 | short | no_formal_alert_rate | 0.07042253521126761 | 0.07042253521126761 | 71 | 71 |
+| sh000905 | calendar_fixed_10 | short | first_window_coverage | 0.14084507042253522 | 0.14084507042253522 | 71 | 71 |
+| sh000905 | calendar_fixed_10 | short | QualifiedShortRecall5 | 0.11904761904761904 | 0.14084507042253522 | 71 | 71 |
+| sh000905 | calendar_fixed_10 | short | StrictShortRecall5W10 | 0.14084507042253522 | 0.14084507042253522 | 71 | 71 |
+| sh000905 | calendar_fixed_10 | short | strict_short_miss_rate | 0.8591549295774648 | 0.8591549295774648 | 71 | 71 |
+| sh000905 | calendar_fixed_10 | short | resolved_claim_precision | 0.06896551724137931 | 0.06896551724137931 | 145 | 145 |
+| sh000905 | calendar_fixed_10 | short | duplicate_notices | 67 | 67 | — | — |
+| sh000905 | calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
+| sh000905 | calendar_fixed_10 | short | revisions | 436 | 427 | — | — |
+| sh000905 | calendar_fixed_10 | short | claim_notices | 569 | 569 | — | — |
+| sh000905 | calendar_fixed_10 | short | formal_alerts | not_defined | 569 | — | — |
+| sh000905 | calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
+| sh000905 | calendar_fixed_10 | short | alerts_per_asset_year | 48.727545720984764 | 48.727545720984764 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | calendar_fixed_10 | short | alarm_occupied_days | 2837 | 2837 | — | — |
+| sh000905 | calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 2837 | — | — |
+| sz399001 | calendar_fixed_10 | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | calendar_fixed_10 | short | P | 228 | 228 | — | — |
+| sz399001 | calendar_fixed_10 | short | TP | 34 | 34 | — | — |
+| sz399001 | calendar_fixed_10 | short | FP | 194 | 194 | — | — |
+| sz399001 | calendar_fixed_10 | short | FN | 88 | 88 | — | — |
+| sz399001 | calendar_fixed_10 | short | no_formal_alert_rate | 0.03278688524590164 | 0.03278688524590164 | 122 | 122 |
+| sz399001 | calendar_fixed_10 | short | first_window_coverage | 0.2786885245901639 | 0.2786885245901639 | 122 | 122 |
+| sz399001 | calendar_fixed_10 | short | QualifiedShortRecall5 | 0.23943661971830985 | 0.2786885245901639 | 122 | 122 |
+| sz399001 | calendar_fixed_10 | short | StrictShortRecall5W10 | 0.2786885245901639 | 0.2786885245901639 | 122 | 122 |
+| sz399001 | calendar_fixed_10 | short | strict_short_miss_rate | 0.7213114754098361 | 0.7213114754098361 | 122 | 122 |
+| sz399001 | calendar_fixed_10 | short | resolved_claim_precision | 0.14912280701754385 | 0.14912280701754385 | 228 | 228 |
+| sz399001 | calendar_fixed_10 | short | duplicate_notices | 91 | 91 | — | — |
+| sz399001 | calendar_fixed_10 | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | calendar_fixed_10 | short | revisions | 690 | 681 | — | — |
+| sz399001 | calendar_fixed_10 | short | claim_notices | 907 | 907 | — | — |
+| sz399001 | calendar_fixed_10 | short | formal_alerts | not_defined | 907 | — | — |
+| sz399001 | calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
+| sz399001 | calendar_fixed_10 | short | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | calendar_fixed_10 | short | alarm_occupied_days | 4527 | 4527 | — | — |
+| sz399001 | calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 4527 | — | — |
+| sz399006 | calendar_fixed_10 | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | calendar_fixed_10 | short | P | 101 | 102 | — | — |
+| sz399006 | calendar_fixed_10 | short | TP | 9 | 9 | — | — |
+| sz399006 | calendar_fixed_10 | short | FP | 92 | 93 | — | — |
+| sz399006 | calendar_fixed_10 | short | FN | 48 | 48 | — | — |
+| sz399006 | calendar_fixed_10 | short | no_formal_alert_rate | 0.10526315789473684 | 0.10526315789473684 | 57 | 57 |
+| sz399006 | calendar_fixed_10 | short | first_window_coverage | 0.15789473684210525 | 0.15789473684210525 | 57 | 57 |
+| sz399006 | calendar_fixed_10 | short | QualifiedShortRecall5 | 0.13636363636363635 | 0.15789473684210525 | 57 | 57 |
+| sz399006 | calendar_fixed_10 | short | StrictShortRecall5W10 | 0.15789473684210525 | 0.15789473684210525 | 57 | 57 |
+| sz399006 | calendar_fixed_10 | short | strict_short_miss_rate | 0.8421052631578947 | 0.8421052631578947 | 57 | 57 |
+| sz399006 | calendar_fixed_10 | short | resolved_claim_precision | 0.0891089108910891 | 0.08823529411764706 | 101 | 102 |
+| sz399006 | calendar_fixed_10 | short | duplicate_notices | 43 | 43 | — | — |
+| sz399006 | calendar_fixed_10 | short | pending_claims | 1 | 0 | — | — |
+| sz399006 | calendar_fixed_10 | short | revisions | 312 | 303 | — | — |
+| sz399006 | calendar_fixed_10 | short | claim_notices | 404 | 404 | — | — |
+| sz399006 | calendar_fixed_10 | short | formal_alerts | not_defined | 404 | — | — |
+| sz399006 | calendar_fixed_10 | short | observation_notices | not_defined | 0 | — | — |
+| sz399006 | calendar_fixed_10 | short | alerts_per_asset_year | 48.65083086053413 | 48.65083086053413 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | calendar_fixed_10 | short | alarm_occupied_days | 2012 | 2012 | — | — |
+| sz399006 | calendar_fixed_10 | short | formal_alarm_occupied_days | not_defined | 2012 | — | — |
+| sh000001 | calendar_fixed_10 | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | calendar_fixed_10 | stage | P | 226 | 226 | — | — |
+| sh000001 | calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
+| sh000001 | calendar_fixed_10 | stage | FP | 226 | 226 | — | — |
+| sh000001 | calendar_fixed_10 | stage | FN | 22 | 22 | — | — |
+| sh000001 | calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 226 | 226 |
+| sh000001 | calendar_fixed_10 | stage | duplicate_notices | 46 | 46 | — | — |
+| sh000001 | calendar_fixed_10 | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | calendar_fixed_10 | stage | revisions | 690 | 681 | — | — |
+| sh000001 | calendar_fixed_10 | stage | claim_notices | 907 | 907 | — | — |
+| sh000001 | calendar_fixed_10 | stage | formal_alerts | not_defined | 907 | — | — |
+| sh000001 | calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
+| sh000001 | calendar_fixed_10 | stage | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | calendar_fixed_10 | stage | alarm_occupied_days | 4527 | 4527 | — | — |
+| sh000001 | calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 4527 | — | — |
+| sh000016 | calendar_fixed_10 | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | calendar_fixed_10 | stage | P | 179 | 179 | — | — |
+| sh000016 | calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
+| sh000016 | calendar_fixed_10 | stage | FP | 179 | 179 | — | — |
+| sh000016 | calendar_fixed_10 | stage | FN | 13 | 13 | — | — |
+| sh000016 | calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 179 | 179 |
+| sh000016 | calendar_fixed_10 | stage | duplicate_notices | 30 | 30 | — | — |
+| sh000016 | calendar_fixed_10 | stage | pending_claims | 3 | 0 | — | — |
+| sh000016 | calendar_fixed_10 | stage | revisions | 546 | 537 | — | — |
+| sh000016 | calendar_fixed_10 | stage | claim_notices | 716 | 716 | — | — |
+| sh000016 | calendar_fixed_10 | stage | formal_alerts | not_defined | 716 | — | — |
+| sh000016 | calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
+| sh000016 | calendar_fixed_10 | stage | alerts_per_asset_year | 48.68993297337554 | 48.68993297337554 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | calendar_fixed_10 | stage | alarm_occupied_days | 3572 | 3572 | — | — |
+| sh000016 | calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 3572 | — | — |
+| sh000300 | calendar_fixed_10 | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | calendar_fixed_10 | stage | P | 161 | 161 | — | — |
+| sh000300 | calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
+| sh000300 | calendar_fixed_10 | stage | FP | 161 | 161 | — | — |
+| sh000300 | calendar_fixed_10 | stage | FN | 14 | 14 | — | — |
+| sh000300 | calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 161 | 161 |
+| sh000300 | calendar_fixed_10 | stage | duplicate_notices | 29 | 29 | — | — |
+| sh000300 | calendar_fixed_10 | stage | pending_claims | 6 | 2 | — | — |
+| sh000300 | calendar_fixed_10 | stage | revisions | 501 | 492 | — | — |
+| sh000300 | calendar_fixed_10 | stage | claim_notices | 655 | 655 | — | — |
+| sh000300 | calendar_fixed_10 | stage | formal_alerts | not_defined | 655 | — | — |
+| sh000300 | calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
+| sh000300 | calendar_fixed_10 | stage | alerts_per_asset_year | 48.713874465485645 | 48.713874465485645 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | calendar_fixed_10 | stage | alarm_occupied_days | 3267 | 3267 | — | — |
+| sh000300 | calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 3267 | — | — |
+| sh000905 | calendar_fixed_10 | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | calendar_fixed_10 | stage | P | 141 | 141 | — | — |
+| sh000905 | calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
+| sh000905 | calendar_fixed_10 | stage | FP | 141 | 141 | — | — |
+| sh000905 | calendar_fixed_10 | stage | FN | 13 | 13 | — | — |
+| sh000905 | calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 141 | 141 |
+| sh000905 | calendar_fixed_10 | stage | duplicate_notices | 27 | 27 | — | — |
+| sh000905 | calendar_fixed_10 | stage | pending_claims | 5 | 1 | — | — |
+| sh000905 | calendar_fixed_10 | stage | revisions | 436 | 427 | — | — |
+| sh000905 | calendar_fixed_10 | stage | claim_notices | 569 | 569 | — | — |
+| sh000905 | calendar_fixed_10 | stage | formal_alerts | not_defined | 569 | — | — |
+| sh000905 | calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
+| sh000905 | calendar_fixed_10 | stage | alerts_per_asset_year | 48.727545720984764 | 48.727545720984764 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | calendar_fixed_10 | stage | alarm_occupied_days | 2837 | 2837 | — | — |
+| sh000905 | calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 2837 | — | — |
+| sz399001 | calendar_fixed_10 | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | calendar_fixed_10 | stage | P | 226 | 226 | — | — |
+| sz399001 | calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
+| sz399001 | calendar_fixed_10 | stage | FP | 226 | 226 | — | — |
+| sz399001 | calendar_fixed_10 | stage | FN | 20 | 20 | — | — |
+| sz399001 | calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 226 | 226 |
+| sz399001 | calendar_fixed_10 | stage | duplicate_notices | 41 | 41 | — | — |
+| sz399001 | calendar_fixed_10 | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | calendar_fixed_10 | stage | revisions | 690 | 681 | — | — |
+| sz399001 | calendar_fixed_10 | stage | claim_notices | 907 | 907 | — | — |
+| sz399001 | calendar_fixed_10 | stage | formal_alerts | not_defined | 907 | — | — |
+| sz399001 | calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
+| sz399001 | calendar_fixed_10 | stage | alerts_per_asset_year | 48.53134302666276 | 48.53134302666276 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | calendar_fixed_10 | stage | alarm_occupied_days | 4527 | 4527 | — | — |
+| sz399001 | calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 4527 | — | — |
+| sz399006 | calendar_fixed_10 | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | calendar_fixed_10 | stage | P | 97 | 98 | — | — |
+| sz399006 | calendar_fixed_10 | stage | TP | 0 | 0 | — | — |
+| sz399006 | calendar_fixed_10 | stage | FP | 97 | 98 | — | — |
+| sz399006 | calendar_fixed_10 | stage | FN | 9 | 9 | — | — |
+| sz399006 | calendar_fixed_10 | stage | no_formal_alert_rate | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | calendar_fixed_10 | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | calendar_fixed_10 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | calendar_fixed_10 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | calendar_fixed_10 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | calendar_fixed_10 | stage | resolved_claim_precision | 0.0 | 0.0 | 97 | 98 |
+| sz399006 | calendar_fixed_10 | stage | duplicate_notices | 20 | 20 | — | — |
+| sz399006 | calendar_fixed_10 | stage | pending_claims | 6 | 3 | — | — |
+| sz399006 | calendar_fixed_10 | stage | revisions | 312 | 303 | — | — |
+| sz399006 | calendar_fixed_10 | stage | claim_notices | 404 | 404 | — | — |
+| sz399006 | calendar_fixed_10 | stage | formal_alerts | not_defined | 404 | — | — |
+| sz399006 | calendar_fixed_10 | stage | observation_notices | not_defined | 0 | — | — |
+| sz399006 | calendar_fixed_10 | stage | alerts_per_asset_year | 48.65083086053413 | 48.65083086053413 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | calendar_fixed_10 | stage | alarm_occupied_days | 2012 | 2012 | — | — |
+| sz399006 | calendar_fixed_10 | stage | formal_alarm_occupied_days | not_defined | 2012 | — | — |
+| sh000001 | cluster_any_full | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | cluster_any_full | short | P | 50 | 35 | — | — |
+| sh000001 | cluster_any_full | short | TP | 1 | 2 | — | — |
+| sh000001 | cluster_any_full | short | FP | 49 | 33 | — | — |
+| sh000001 | cluster_any_full | short | FN | 114 | 113 | — | — |
+| sh000001 | cluster_any_full | short | no_formal_alert_rate | 0.6782608695652174 | 0.7391304347826086 | 115 | 115 |
+| sh000001 | cluster_any_full | short | first_window_coverage | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | cluster_any_full | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | cluster_any_full | short | StrictShortRecall5W10 | 0.008695652173913044 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | cluster_any_full | short | strict_short_miss_rate | 0.991304347826087 | 0.9826086956521739 | 115 | 115 |
+| sh000001 | cluster_any_full | short | resolved_claim_precision | 0.02 | 0.05714285714285714 | 50 | 35 |
+| sh000001 | cluster_any_full | short | duplicate_notices | 9 | 1 | — | — |
+| sh000001 | cluster_any_full | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_any_full | short | revisions | 148 | 46 | — | — |
+| sh000001 | cluster_any_full | short | claim_notices | 191 | 191 | — | — |
+| sh000001 | cluster_any_full | short | formal_alerts | not_defined | 81 | — | — |
+| sh000001 | cluster_any_full | short | observation_notices | not_defined | 110 | — | — |
+| sh000001 | cluster_any_full | short | alerts_per_asset_year | 10.21994103428069 | 10.21994103428069 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_any_full | short | alarm_occupied_days | 851 | 851 | — | — |
+| sh000001 | cluster_any_full | short | formal_alarm_occupied_days | not_defined | 419 | — | — |
+| sh000016 | cluster_any_full | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | cluster_any_full | short | P | 31 | 20 | — | — |
+| sh000016 | cluster_any_full | short | TP | 0 | 1 | — | — |
+| sh000016 | cluster_any_full | short | FP | 31 | 19 | — | — |
+| sh000016 | cluster_any_full | short | FN | 97 | 96 | — | — |
+| sh000016 | cluster_any_full | short | no_formal_alert_rate | 0.7525773195876289 | 0.8144329896907216 | 97 | 97 |
+| sh000016 | cluster_any_full | short | first_window_coverage | 0.020618556701030927 | 0.010309278350515464 | 97 | 97 |
+| sh000016 | cluster_any_full | short | QualifiedShortRecall5 | 0.0 | 0.010309278350515464 | 97 | 97 |
+| sh000016 | cluster_any_full | short | StrictShortRecall5W10 | 0.0 | 0.010309278350515464 | 97 | 97 |
+| sh000016 | cluster_any_full | short | strict_short_miss_rate | 1.0 | 0.9896907216494846 | 97 | 97 |
+| sh000016 | cluster_any_full | short | resolved_claim_precision | 0.0 | 0.05 | 31 | 20 |
+| sh000016 | cluster_any_full | short | duplicate_notices | 6 | 1 | — | — |
+| sh000016 | cluster_any_full | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_any_full | short | revisions | 79 | 24 | — | — |
+| sh000016 | cluster_any_full | short | claim_notices | 110 | 110 | — | — |
+| sh000016 | cluster_any_full | short | formal_alerts | not_defined | 44 | — | — |
+| sh000016 | cluster_any_full | short | observation_notices | not_defined | 66 | — | — |
+| sh000016 | cluster_any_full | short | alerts_per_asset_year | 7.480296965183393 | 7.480296965183393 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_any_full | short | alarm_occupied_days | 512 | 512 | — | — |
+| sh000016 | cluster_any_full | short | formal_alarm_occupied_days | not_defined | 246 | — | — |
+| sh000300 | cluster_any_full | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | cluster_any_full | short | P | 35 | 24 | — | — |
+| sh000300 | cluster_any_full | short | TP | 2 | 3 | — | — |
+| sh000300 | cluster_any_full | short | FP | 33 | 21 | — | — |
+| sh000300 | cluster_any_full | short | FN | 88 | 87 | — | — |
+| sh000300 | cluster_any_full | short | no_formal_alert_rate | 0.7222222222222222 | 0.7777777777777778 | 90 | 90 |
+| sh000300 | cluster_any_full | short | first_window_coverage | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_any_full | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_any_full | short | StrictShortRecall5W10 | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_any_full | short | strict_short_miss_rate | 0.9777777777777777 | 0.9666666666666667 | 90 | 90 |
+| sh000300 | cluster_any_full | short | resolved_claim_precision | 0.05714285714285714 | 0.125 | 35 | 24 |
+| sh000300 | cluster_any_full | short | duplicate_notices | 6 | 2 | — | — |
+| sh000300 | cluster_any_full | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_any_full | short | revisions | 79 | 25 | — | — |
+| sh000300 | cluster_any_full | short | claim_notices | 114 | 114 | — | — |
+| sh000300 | cluster_any_full | short | formal_alerts | not_defined | 49 | — | — |
+| sh000300 | cluster_any_full | short | observation_notices | not_defined | 65 | — | — |
+| sh000300 | cluster_any_full | short | alerts_per_asset_year | 8.478445326817349 | 8.478445326817349 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_any_full | short | alarm_occupied_days | 610 | 610 | — | — |
+| sh000300 | cluster_any_full | short | formal_alarm_occupied_days | not_defined | 267 | — | — |
+| sh000905 | cluster_any_full | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | cluster_any_full | short | P | 33 | 16 | — | — |
+| sh000905 | cluster_any_full | short | TP | 1 | 1 | — | — |
+| sh000905 | cluster_any_full | short | FP | 32 | 15 | — | — |
+| sh000905 | cluster_any_full | short | FN | 70 | 70 | — | — |
+| sh000905 | cluster_any_full | short | no_formal_alert_rate | 0.7183098591549296 | 0.8028169014084507 | 71 | 71 |
+| sh000905 | cluster_any_full | short | first_window_coverage | 0.028169014084507043 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_any_full | short | QualifiedShortRecall5 | 0.023809523809523808 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_any_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_any_full | short | strict_short_miss_rate | 0.9859154929577465 | 0.9859154929577465 | 71 | 71 |
+| sh000905 | cluster_any_full | short | resolved_claim_precision | 0.030303030303030304 | 0.0625 | 33 | 16 |
+| sh000905 | cluster_any_full | short | duplicate_notices | 10 | 0 | — | — |
+| sh000905 | cluster_any_full | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_any_full | short | revisions | 89 | 14 | — | — |
+| sh000905 | cluster_any_full | short | claim_notices | 122 | 122 | — | — |
+| sh000905 | cluster_any_full | short | formal_alerts | not_defined | 30 | — | — |
+| sh000905 | cluster_any_full | short | observation_notices | not_defined | 92 | — | — |
+| sh000905 | cluster_any_full | short | alerts_per_asset_year | 10.44773388042204 | 10.44773388042204 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_any_full | short | alarm_occupied_days | 542 | 542 | — | — |
+| sh000905 | cluster_any_full | short | formal_alarm_occupied_days | not_defined | 165 | — | — |
+| sz399001 | cluster_any_full | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | cluster_any_full | short | P | 48 | 35 | — | — |
+| sz399001 | cluster_any_full | short | TP | 2 | 2 | — | — |
+| sz399001 | cluster_any_full | short | FP | 46 | 33 | — | — |
+| sz399001 | cluster_any_full | short | FN | 120 | 120 | — | — |
+| sz399001 | cluster_any_full | short | no_formal_alert_rate | 0.7377049180327869 | 0.7868852459016393 | 122 | 122 |
+| sz399001 | cluster_any_full | short | first_window_coverage | 0.02459016393442623 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_any_full | short | QualifiedShortRecall5 | 0.014084507042253521 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_any_full | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_any_full | short | strict_short_miss_rate | 0.9836065573770492 | 0.9836065573770492 | 122 | 122 |
+| sz399001 | cluster_any_full | short | resolved_claim_precision | 0.041666666666666664 | 0.05714285714285714 | 48 | 35 |
+| sz399001 | cluster_any_full | short | duplicate_notices | 10 | 5 | — | — |
+| sz399001 | cluster_any_full | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_any_full | short | revisions | 113 | 40 | — | — |
+| sz399001 | cluster_any_full | short | claim_notices | 153 | 153 | — | — |
+| sz399001 | cluster_any_full | short | formal_alerts | not_defined | 75 | — | — |
+| sz399001 | cluster_any_full | short | observation_notices | not_defined | 78 | — | — |
+| sz399001 | cluster_any_full | short | alerts_per_asset_year | 8.186654336360972 | 8.186654336360972 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_any_full | short | alarm_occupied_days | 702 | 702 | — | — |
+| sz399001 | cluster_any_full | short | formal_alarm_occupied_days | not_defined | 416 | — | — |
+| sz399006 | cluster_any_full | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | cluster_any_full | short | P | 20 | 11 | — | — |
+| sz399006 | cluster_any_full | short | TP | 0 | 0 | — | — |
+| sz399006 | cluster_any_full | short | FP | 20 | 11 | — | — |
+| sz399006 | cluster_any_full | short | FN | 57 | 57 | — | — |
+| sz399006 | cluster_any_full | short | no_formal_alert_rate | 0.7368421052631579 | 0.8596491228070176 | 57 | 57 |
+| sz399006 | cluster_any_full | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
+| sz399006 | cluster_any_full | short | QualifiedShortRecall5 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | cluster_any_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | cluster_any_full | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
+| sz399006 | cluster_any_full | short | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
+| sz399006 | cluster_any_full | short | duplicate_notices | 4 | 2 | — | — |
+| sz399006 | cluster_any_full | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_any_full | short | revisions | 42 | 15 | — | — |
+| sz399006 | cluster_any_full | short | claim_notices | 62 | 62 | — | — |
+| sz399006 | cluster_any_full | short | formal_alerts | not_defined | 26 | — | — |
+| sz399006 | cluster_any_full | short | observation_notices | not_defined | 36 | — | — |
+| sz399006 | cluster_any_full | short | alerts_per_asset_year | 7.466216617210684 | 7.466216617210684 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_any_full | short | alarm_occupied_days | 290 | 290 | — | — |
+| sz399006 | cluster_any_full | short | formal_alarm_occupied_days | not_defined | 142 | — | — |
+| sh000001 | cluster_any_full | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | cluster_any_full | stage | P | 50 | 35 | — | — |
+| sh000001 | cluster_any_full | stage | TP | 1 | 1 | — | — |
+| sh000001 | cluster_any_full | stage | FP | 49 | 34 | — | — |
+| sh000001 | cluster_any_full | stage | FN | 21 | 21 | — | — |
+| sh000001 | cluster_any_full | stage | no_formal_alert_rate | 0.2727272727272727 | 0.45454545454545453 | 22 | 22 |
+| sh000001 | cluster_any_full | stage | first_window_coverage | 0.09090909090909091 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | cluster_any_full | stage | QualifiedStageRecall5 | 0.014598540145985401 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | cluster_any_full | stage | StrictStageRecall5W10 | 0.045454545454545456 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | cluster_any_full | stage | strict_stage_miss_rate | 0.9545454545454546 | 0.9545454545454546 | 22 | 22 |
+| sh000001 | cluster_any_full | stage | resolved_claim_precision | 0.02 | 0.02857142857142857 | 50 | 35 |
+| sh000001 | cluster_any_full | stage | duplicate_notices | 6 | 1 | — | — |
+| sh000001 | cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_any_full | stage | revisions | 148 | 46 | — | — |
+| sh000001 | cluster_any_full | stage | claim_notices | 191 | 191 | — | — |
+| sh000001 | cluster_any_full | stage | formal_alerts | not_defined | 81 | — | — |
+| sh000001 | cluster_any_full | stage | observation_notices | not_defined | 110 | — | — |
+| sh000001 | cluster_any_full | stage | alerts_per_asset_year | 10.21994103428069 | 10.21994103428069 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_any_full | stage | alarm_occupied_days | 851 | 851 | — | — |
+| sh000001 | cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 419 | — | — |
+| sh000016 | cluster_any_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | cluster_any_full | stage | P | 31 | 20 | — | — |
+| sh000016 | cluster_any_full | stage | TP | 1 | 1 | — | — |
+| sh000016 | cluster_any_full | stage | FP | 30 | 19 | — | — |
+| sh000016 | cluster_any_full | stage | FN | 12 | 12 | — | — |
+| sh000016 | cluster_any_full | stage | no_formal_alert_rate | 0.46153846153846156 | 0.6153846153846154 | 13 | 13 |
+| sh000016 | cluster_any_full | stage | first_window_coverage | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
+| sh000016 | cluster_any_full | stage | QualifiedStageRecall5 | 0.00909090909090909 | 0.07692307692307693 | 13 | 13 |
+| sh000016 | cluster_any_full | stage | StrictStageRecall5W10 | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
+| sh000016 | cluster_any_full | stage | strict_stage_miss_rate | 0.9230769230769231 | 0.9230769230769231 | 13 | 13 |
+| sh000016 | cluster_any_full | stage | resolved_claim_precision | 0.03225806451612903 | 0.05 | 31 | 20 |
+| sh000016 | cluster_any_full | stage | duplicate_notices | 1 | 0 | — | — |
+| sh000016 | cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_any_full | stage | revisions | 79 | 24 | — | — |
+| sh000016 | cluster_any_full | stage | claim_notices | 110 | 110 | — | — |
+| sh000016 | cluster_any_full | stage | formal_alerts | not_defined | 44 | — | — |
+| sh000016 | cluster_any_full | stage | observation_notices | not_defined | 66 | — | — |
+| sh000016 | cluster_any_full | stage | alerts_per_asset_year | 7.480296965183393 | 7.480296965183393 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_any_full | stage | alarm_occupied_days | 512 | 512 | — | — |
+| sh000016 | cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 246 | — | — |
+| sh000300 | cluster_any_full | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | cluster_any_full | stage | P | 35 | 24 | — | — |
+| sh000300 | cluster_any_full | stage | TP | 0 | 0 | — | — |
+| sh000300 | cluster_any_full | stage | FP | 35 | 24 | — | — |
+| sh000300 | cluster_any_full | stage | FN | 14 | 14 | — | — |
+| sh000300 | cluster_any_full | stage | no_formal_alert_rate | 0.42857142857142855 | 0.5714285714285714 | 14 | 14 |
+| sh000300 | cluster_any_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.0 | 35 | 24 |
+| sh000300 | cluster_any_full | stage | duplicate_notices | 5 | 2 | — | — |
+| sh000300 | cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_any_full | stage | revisions | 79 | 25 | — | — |
+| sh000300 | cluster_any_full | stage | claim_notices | 114 | 114 | — | — |
+| sh000300 | cluster_any_full | stage | formal_alerts | not_defined | 49 | — | — |
+| sh000300 | cluster_any_full | stage | observation_notices | not_defined | 65 | — | — |
+| sh000300 | cluster_any_full | stage | alerts_per_asset_year | 8.478445326817349 | 8.478445326817349 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_any_full | stage | alarm_occupied_days | 610 | 610 | — | — |
+| sh000300 | cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 267 | — | — |
+| sh000905 | cluster_any_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | cluster_any_full | stage | P | 33 | 16 | — | — |
+| sh000905 | cluster_any_full | stage | TP | 0 | 0 | — | — |
+| sh000905 | cluster_any_full | stage | FP | 33 | 16 | — | — |
+| sh000905 | cluster_any_full | stage | FN | 13 | 13 | — | — |
+| sh000905 | cluster_any_full | stage | no_formal_alert_rate | 0.38461538461538464 | 0.46153846153846156 | 13 | 13 |
+| sh000905 | cluster_any_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.0 | 33 | 16 |
+| sh000905 | cluster_any_full | stage | duplicate_notices | 8 | 1 | — | — |
+| sh000905 | cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_any_full | stage | revisions | 89 | 14 | — | — |
+| sh000905 | cluster_any_full | stage | claim_notices | 122 | 122 | — | — |
+| sh000905 | cluster_any_full | stage | formal_alerts | not_defined | 30 | — | — |
+| sh000905 | cluster_any_full | stage | observation_notices | not_defined | 92 | — | — |
+| sh000905 | cluster_any_full | stage | alerts_per_asset_year | 10.44773388042204 | 10.44773388042204 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_any_full | stage | alarm_occupied_days | 542 | 542 | — | — |
+| sh000905 | cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 165 | — | — |
+| sz399001 | cluster_any_full | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | cluster_any_full | stage | P | 48 | 35 | — | — |
+| sz399001 | cluster_any_full | stage | TP | 0 | 1 | — | — |
+| sz399001 | cluster_any_full | stage | FP | 48 | 34 | — | — |
+| sz399001 | cluster_any_full | stage | FN | 20 | 19 | — | — |
+| sz399001 | cluster_any_full | stage | no_formal_alert_rate | 0.4 | 0.45 | 20 | 20 |
+| sz399001 | cluster_any_full | stage | first_window_coverage | 0.0 | 0.05 | 20 | 20 |
+| sz399001 | cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.05 | 20 | 20 |
+| sz399001 | cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.05 | 20 | 20 |
+| sz399001 | cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 0.95 | 20 | 20 |
+| sz399001 | cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.02857142857142857 | 48 | 35 |
+| sz399001 | cluster_any_full | stage | duplicate_notices | 9 | 7 | — | — |
+| sz399001 | cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_any_full | stage | revisions | 113 | 40 | — | — |
+| sz399001 | cluster_any_full | stage | claim_notices | 153 | 153 | — | — |
+| sz399001 | cluster_any_full | stage | formal_alerts | not_defined | 75 | — | — |
+| sz399001 | cluster_any_full | stage | observation_notices | not_defined | 78 | — | — |
+| sz399001 | cluster_any_full | stage | alerts_per_asset_year | 8.186654336360972 | 8.186654336360972 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_any_full | stage | alarm_occupied_days | 702 | 702 | — | — |
+| sz399001 | cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 416 | — | — |
+| sz399006 | cluster_any_full | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | cluster_any_full | stage | P | 20 | 11 | — | — |
+| sz399006 | cluster_any_full | stage | TP | 0 | 0 | — | — |
+| sz399006 | cluster_any_full | stage | FP | 20 | 11 | — | — |
+| sz399006 | cluster_any_full | stage | FN | 9 | 9 | — | — |
+| sz399006 | cluster_any_full | stage | no_formal_alert_rate | 0.6666666666666666 | 0.7777777777777778 | 9 | 9 |
+| sz399006 | cluster_any_full | stage | first_window_coverage | 0.1111111111111111 | 0.0 | 9 | 9 |
+| sz399006 | cluster_any_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_any_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_any_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | cluster_any_full | stage | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
+| sz399006 | cluster_any_full | stage | duplicate_notices | 4 | 0 | — | — |
+| sz399006 | cluster_any_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_any_full | stage | revisions | 42 | 15 | — | — |
+| sz399006 | cluster_any_full | stage | claim_notices | 62 | 62 | — | — |
+| sz399006 | cluster_any_full | stage | formal_alerts | not_defined | 26 | — | — |
+| sz399006 | cluster_any_full | stage | observation_notices | not_defined | 36 | — | — |
+| sz399006 | cluster_any_full | stage | alerts_per_asset_year | 7.466216617210684 | 7.466216617210684 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_any_full | stage | alarm_occupied_days | 290 | 290 | — | — |
+| sz399006 | cluster_any_full | stage | formal_alarm_occupied_days | not_defined | 142 | — | — |
+| sh000001 | cluster_cross_full | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | cluster_cross_full | short | P | 25 | 16 | — | — |
+| sh000001 | cluster_cross_full | short | TP | 3 | 3 | — | — |
+| sh000001 | cluster_cross_full | short | FP | 22 | 13 | — | — |
+| sh000001 | cluster_cross_full | short | FN | 112 | 112 | — | — |
+| sh000001 | cluster_cross_full | short | no_formal_alert_rate | 0.8173913043478261 | 0.8782608695652174 | 115 | 115 |
+| sh000001 | cluster_cross_full | short | first_window_coverage | 0.043478260869565216 | 0.02608695652173913 | 115 | 115 |
+| sh000001 | cluster_cross_full | short | QualifiedShortRecall5 | 0.029197080291970802 | 0.02608695652173913 | 115 | 115 |
+| sh000001 | cluster_cross_full | short | StrictShortRecall5W10 | 0.02608695652173913 | 0.02608695652173913 | 115 | 115 |
+| sh000001 | cluster_cross_full | short | strict_short_miss_rate | 0.9739130434782609 | 0.9739130434782609 | 115 | 115 |
+| sh000001 | cluster_cross_full | short | resolved_claim_precision | 0.12 | 0.1875 | 25 | 16 |
+| sh000001 | cluster_cross_full | short | duplicate_notices | 2 | 0 | — | — |
+| sh000001 | cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_cross_full | short | revisions | 37 | 12 | — | — |
+| sh000001 | cluster_cross_full | short | claim_notices | 62 | 62 | — | — |
+| sh000001 | cluster_cross_full | short | formal_alerts | not_defined | 28 | — | — |
+| sh000001 | cluster_cross_full | short | observation_notices | not_defined | 34 | — | — |
+| sh000001 | cluster_cross_full | short | alerts_per_asset_year | 3.3174677702900675 | 3.3174677702900675 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_cross_full | short | alarm_occupied_days | 364 | 364 | — | — |
+| sh000001 | cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 178 | — | — |
+| sh000016 | cluster_cross_full | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | cluster_cross_full | short | P | 16 | 8 | — | — |
+| sh000016 | cluster_cross_full | short | TP | 0 | 0 | — | — |
+| sh000016 | cluster_cross_full | short | FP | 16 | 8 | — | — |
+| sh000016 | cluster_cross_full | short | FN | 97 | 97 | — | — |
+| sh000016 | cluster_cross_full | short | no_formal_alert_rate | 0.8762886597938144 | 0.9278350515463918 | 97 | 97 |
+| sh000016 | cluster_cross_full | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_full | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_full | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | cluster_cross_full | short | resolved_claim_precision | 0.0 | 0.0 | 16 | 8 |
+| sh000016 | cluster_cross_full | short | duplicate_notices | 3 | 0 | — | — |
+| sh000016 | cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_cross_full | short | revisions | 33 | 5 | — | — |
+| sh000016 | cluster_cross_full | short | claim_notices | 49 | 49 | — | — |
+| sh000016 | cluster_cross_full | short | formal_alerts | not_defined | 13 | — | — |
+| sh000016 | cluster_cross_full | short | observation_notices | not_defined | 36 | — | — |
+| sh000016 | cluster_cross_full | short | alerts_per_asset_year | 3.332132284490784 | 3.332132284490784 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_cross_full | short | alarm_occupied_days | 261 | 261 | — | — |
+| sh000016 | cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 78 | — | — |
+| sh000300 | cluster_cross_full | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | cluster_cross_full | short | P | 19 | 9 | — | — |
+| sh000300 | cluster_cross_full | short | TP | 2 | 3 | — | — |
+| sh000300 | cluster_cross_full | short | FP | 17 | 6 | — | — |
+| sh000300 | cluster_cross_full | short | FN | 88 | 87 | — | — |
+| sh000300 | cluster_cross_full | short | no_formal_alert_rate | 0.8444444444444444 | 0.9111111111111111 | 90 | 90 |
+| sh000300 | cluster_cross_full | short | first_window_coverage | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_cross_full | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_cross_full | short | StrictShortRecall5W10 | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_cross_full | short | strict_short_miss_rate | 0.9777777777777777 | 0.9666666666666667 | 90 | 90 |
+| sh000300 | cluster_cross_full | short | resolved_claim_precision | 0.10526315789473684 | 0.3333333333333333 | 19 | 9 |
+| sh000300 | cluster_cross_full | short | duplicate_notices | 3 | 0 | — | — |
+| sh000300 | cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_cross_full | short | revisions | 24 | 4 | — | — |
+| sh000300 | cluster_cross_full | short | claim_notices | 43 | 43 | — | — |
+| sh000300 | cluster_cross_full | short | formal_alerts | not_defined | 13 | — | — |
+| sh000300 | cluster_cross_full | short | observation_notices | not_defined | 30 | — | — |
+| sh000300 | cluster_cross_full | short | alerts_per_asset_year | 3.1980100794135615 | 3.1980100794135615 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_cross_full | short | alarm_occupied_days | 263 | 263 | — | — |
+| sh000300 | cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 80 | — | — |
+| sh000905 | cluster_cross_full | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | cluster_cross_full | short | P | 18 | 7 | — | — |
+| sh000905 | cluster_cross_full | short | TP | 1 | 1 | — | — |
+| sh000905 | cluster_cross_full | short | FP | 17 | 6 | — | — |
+| sh000905 | cluster_cross_full | short | FN | 70 | 70 | — | — |
+| sh000905 | cluster_cross_full | short | no_formal_alert_rate | 0.8169014084507042 | 0.9154929577464789 | 71 | 71 |
+| sh000905 | cluster_cross_full | short | first_window_coverage | 0.028169014084507043 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_cross_full | short | QualifiedShortRecall5 | 0.023809523809523808 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_cross_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_cross_full | short | strict_short_miss_rate | 0.9859154929577465 | 0.9859154929577465 | 71 | 71 |
+| sh000905 | cluster_cross_full | short | resolved_claim_precision | 0.05555555555555555 | 0.14285714285714285 | 18 | 7 |
+| sh000905 | cluster_cross_full | short | duplicate_notices | 4 | 0 | — | — |
+| sh000905 | cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_cross_full | short | revisions | 18 | 2 | — | — |
+| sh000905 | cluster_cross_full | short | claim_notices | 36 | 36 | — | — |
+| sh000905 | cluster_cross_full | short | formal_alerts | not_defined | 9 | — | — |
+| sh000905 | cluster_cross_full | short | observation_notices | not_defined | 27 | — | — |
+| sh000905 | cluster_cross_full | short | alerts_per_asset_year | 3.0829378663540448 | 3.0829378663540448 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_cross_full | short | alarm_occupied_days | 190 | 190 | — | — |
+| sh000905 | cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 57 | — | — |
+| sz399001 | cluster_cross_full | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | cluster_cross_full | short | P | 20 | 11 | — | — |
+| sz399001 | cluster_cross_full | short | TP | 2 | 2 | — | — |
+| sz399001 | cluster_cross_full | short | FP | 18 | 9 | — | — |
+| sz399001 | cluster_cross_full | short | FN | 120 | 120 | — | — |
+| sz399001 | cluster_cross_full | short | no_formal_alert_rate | 0.8770491803278688 | 0.9344262295081968 | 122 | 122 |
+| sz399001 | cluster_cross_full | short | first_window_coverage | 0.02459016393442623 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_cross_full | short | QualifiedShortRecall5 | 0.02112676056338028 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_cross_full | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_cross_full | short | strict_short_miss_rate | 0.9836065573770492 | 0.9836065573770492 | 122 | 122 |
+| sz399001 | cluster_cross_full | short | resolved_claim_precision | 0.1 | 0.18181818181818182 | 20 | 11 |
+| sz399001 | cluster_cross_full | short | duplicate_notices | 2 | 1 | — | — |
+| sz399001 | cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_cross_full | short | revisions | 23 | 2 | — | — |
+| sz399001 | cluster_cross_full | short | claim_notices | 43 | 43 | — | — |
+| sz399001 | cluster_cross_full | short | formal_alerts | not_defined | 13 | — | — |
+| sz399001 | cluster_cross_full | short | observation_notices | not_defined | 30 | — | — |
+| sz399001 | cluster_cross_full | short | alerts_per_asset_year | 2.300824421330208 | 2.300824421330208 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_cross_full | short | alarm_occupied_days | 277 | 277 | — | — |
+| sz399001 | cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 98 | — | — |
+| sz399006 | cluster_cross_full | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | cluster_cross_full | short | P | 11 | 4 | — | — |
+| sz399006 | cluster_cross_full | short | TP | 0 | 0 | — | — |
+| sz399006 | cluster_cross_full | short | FP | 11 | 4 | — | — |
+| sz399006 | cluster_cross_full | short | FN | 57 | 57 | — | — |
+| sz399006 | cluster_cross_full | short | no_formal_alert_rate | 0.8421052631578947 | 0.9473684210526315 | 57 | 57 |
+| sz399006 | cluster_cross_full | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
+| sz399006 | cluster_cross_full | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.0 | 57 | 57 |
+| sz399006 | cluster_cross_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | cluster_cross_full | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
+| sz399006 | cluster_cross_full | short | resolved_claim_precision | 0.0 | 0.0 | 11 | 4 |
+| sz399006 | cluster_cross_full | short | duplicate_notices | 1 | 0 | — | — |
+| sz399006 | cluster_cross_full | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_cross_full | short | revisions | 14 | 2 | — | — |
+| sz399006 | cluster_cross_full | short | claim_notices | 25 | 25 | — | — |
+| sz399006 | cluster_cross_full | short | formal_alerts | not_defined | 6 | — | — |
+| sz399006 | cluster_cross_full | short | observation_notices | not_defined | 19 | — | — |
+| sz399006 | cluster_cross_full | short | alerts_per_asset_year | 3.010571216617211 | 3.010571216617211 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_cross_full | short | alarm_occupied_days | 156 | 156 | — | — |
+| sz399006 | cluster_cross_full | short | formal_alarm_occupied_days | not_defined | 46 | — | — |
+| sh000001 | cluster_cross_full | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | cluster_cross_full | stage | P | 25 | 16 | — | — |
+| sh000001 | cluster_cross_full | stage | TP | 0 | 0 | — | — |
+| sh000001 | cluster_cross_full | stage | FP | 25 | 16 | — | — |
+| sh000001 | cluster_cross_full | stage | FN | 22 | 22 | — | — |
+| sh000001 | cluster_cross_full | stage | no_formal_alert_rate | 0.5454545454545454 | 0.6363636363636364 | 22 | 22 |
+| sh000001 | cluster_cross_full | stage | first_window_coverage | 0.045454545454545456 | 0.0 | 22 | 22 |
+| sh000001 | cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 25 | 16 |
+| sh000001 | cluster_cross_full | stage | duplicate_notices | 1 | 0 | — | — |
+| sh000001 | cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_cross_full | stage | revisions | 37 | 12 | — | — |
+| sh000001 | cluster_cross_full | stage | claim_notices | 62 | 62 | — | — |
+| sh000001 | cluster_cross_full | stage | formal_alerts | not_defined | 28 | — | — |
+| sh000001 | cluster_cross_full | stage | observation_notices | not_defined | 34 | — | — |
+| sh000001 | cluster_cross_full | stage | alerts_per_asset_year | 3.3174677702900675 | 3.3174677702900675 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_cross_full | stage | alarm_occupied_days | 364 | 364 | — | — |
+| sh000001 | cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 178 | — | — |
+| sh000016 | cluster_cross_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | cluster_cross_full | stage | P | 16 | 8 | — | — |
+| sh000016 | cluster_cross_full | stage | TP | 0 | 0 | — | — |
+| sh000016 | cluster_cross_full | stage | FP | 16 | 8 | — | — |
+| sh000016 | cluster_cross_full | stage | FN | 13 | 13 | — | — |
+| sh000016 | cluster_cross_full | stage | no_formal_alert_rate | 0.6153846153846154 | 0.6923076923076923 | 13 | 13 |
+| sh000016 | cluster_cross_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 16 | 8 |
+| sh000016 | cluster_cross_full | stage | duplicate_notices | 1 | 0 | — | — |
+| sh000016 | cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_cross_full | stage | revisions | 33 | 5 | — | — |
+| sh000016 | cluster_cross_full | stage | claim_notices | 49 | 49 | — | — |
+| sh000016 | cluster_cross_full | stage | formal_alerts | not_defined | 13 | — | — |
+| sh000016 | cluster_cross_full | stage | observation_notices | not_defined | 36 | — | — |
+| sh000016 | cluster_cross_full | stage | alerts_per_asset_year | 3.332132284490784 | 3.332132284490784 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_cross_full | stage | alarm_occupied_days | 261 | 261 | — | — |
+| sh000016 | cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 78 | — | — |
+| sh000300 | cluster_cross_full | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | cluster_cross_full | stage | P | 19 | 9 | — | — |
+| sh000300 | cluster_cross_full | stage | TP | 0 | 0 | — | — |
+| sh000300 | cluster_cross_full | stage | FP | 19 | 9 | — | — |
+| sh000300 | cluster_cross_full | stage | FN | 14 | 14 | — | — |
+| sh000300 | cluster_cross_full | stage | no_formal_alert_rate | 0.7142857142857143 | 0.9285714285714286 | 14 | 14 |
+| sh000300 | cluster_cross_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 19 | 9 |
+| sh000300 | cluster_cross_full | stage | duplicate_notices | 2 | 0 | — | — |
+| sh000300 | cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_cross_full | stage | revisions | 24 | 4 | — | — |
+| sh000300 | cluster_cross_full | stage | claim_notices | 43 | 43 | — | — |
+| sh000300 | cluster_cross_full | stage | formal_alerts | not_defined | 13 | — | — |
+| sh000300 | cluster_cross_full | stage | observation_notices | not_defined | 30 | — | — |
+| sh000300 | cluster_cross_full | stage | alerts_per_asset_year | 3.1980100794135615 | 3.1980100794135615 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_cross_full | stage | alarm_occupied_days | 263 | 263 | — | — |
+| sh000300 | cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 80 | — | — |
+| sh000905 | cluster_cross_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | cluster_cross_full | stage | P | 18 | 7 | — | — |
+| sh000905 | cluster_cross_full | stage | TP | 0 | 0 | — | — |
+| sh000905 | cluster_cross_full | stage | FP | 18 | 7 | — | — |
+| sh000905 | cluster_cross_full | stage | FN | 13 | 13 | — | — |
+| sh000905 | cluster_cross_full | stage | no_formal_alert_rate | 0.5384615384615384 | 0.7692307692307693 | 13 | 13 |
+| sh000905 | cluster_cross_full | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_full | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 18 | 7 |
+| sh000905 | cluster_cross_full | stage | duplicate_notices | 3 | 1 | — | — |
+| sh000905 | cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_cross_full | stage | revisions | 18 | 2 | — | — |
+| sh000905 | cluster_cross_full | stage | claim_notices | 36 | 36 | — | — |
+| sh000905 | cluster_cross_full | stage | formal_alerts | not_defined | 9 | — | — |
+| sh000905 | cluster_cross_full | stage | observation_notices | not_defined | 27 | — | — |
+| sh000905 | cluster_cross_full | stage | alerts_per_asset_year | 3.0829378663540448 | 3.0829378663540448 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_cross_full | stage | alarm_occupied_days | 190 | 190 | — | — |
+| sh000905 | cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 57 | — | — |
+| sz399001 | cluster_cross_full | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | cluster_cross_full | stage | P | 20 | 11 | — | — |
+| sz399001 | cluster_cross_full | stage | TP | 0 | 0 | — | — |
+| sz399001 | cluster_cross_full | stage | FP | 20 | 11 | — | — |
+| sz399001 | cluster_cross_full | stage | FN | 20 | 20 | — | — |
+| sz399001 | cluster_cross_full | stage | no_formal_alert_rate | 0.65 | 0.75 | 20 | 20 |
+| sz399001 | cluster_cross_full | stage | first_window_coverage | 0.05 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_full | stage | QualifiedStageRecall5 | 0.007042253521126761 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
+| sz399001 | cluster_cross_full | stage | duplicate_notices | 2 | 2 | — | — |
+| sz399001 | cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_cross_full | stage | revisions | 23 | 2 | — | — |
+| sz399001 | cluster_cross_full | stage | claim_notices | 43 | 43 | — | — |
+| sz399001 | cluster_cross_full | stage | formal_alerts | not_defined | 13 | — | — |
+| sz399001 | cluster_cross_full | stage | observation_notices | not_defined | 30 | — | — |
+| sz399001 | cluster_cross_full | stage | alerts_per_asset_year | 2.300824421330208 | 2.300824421330208 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_cross_full | stage | alarm_occupied_days | 277 | 277 | — | — |
+| sz399001 | cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 98 | — | — |
+| sz399006 | cluster_cross_full | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | cluster_cross_full | stage | P | 11 | 4 | — | — |
+| sz399006 | cluster_cross_full | stage | TP | 0 | 0 | — | — |
+| sz399006 | cluster_cross_full | stage | FP | 11 | 4 | — | — |
+| sz399006 | cluster_cross_full | stage | FN | 9 | 9 | — | — |
+| sz399006 | cluster_cross_full | stage | no_formal_alert_rate | 0.7777777777777778 | 1.0 | 9 | 9 |
+| sz399006 | cluster_cross_full | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | cluster_cross_full | stage | resolved_claim_precision | 0.0 | 0.0 | 11 | 4 |
+| sz399006 | cluster_cross_full | stage | duplicate_notices | 2 | 0 | — | — |
+| sz399006 | cluster_cross_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_cross_full | stage | revisions | 14 | 2 | — | — |
+| sz399006 | cluster_cross_full | stage | claim_notices | 25 | 25 | — | — |
+| sz399006 | cluster_cross_full | stage | formal_alerts | not_defined | 6 | — | — |
+| sz399006 | cluster_cross_full | stage | observation_notices | not_defined | 19 | — | — |
+| sz399006 | cluster_cross_full | stage | alerts_per_asset_year | 3.010571216617211 | 3.010571216617211 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_cross_full | stage | alarm_occupied_days | 156 | 156 | — | — |
+| sz399006 | cluster_cross_full | stage | formal_alarm_occupied_days | not_defined | 46 | — | — |
+| sh000001 | cluster_cross_stable2 | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | cluster_cross_stable2 | short | P | 9 | 3 | — | — |
+| sh000001 | cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | short | FP | 9 | 3 | — | — |
+| sh000001 | cluster_cross_stable2 | short | FN | 115 | 115 | — | — |
+| sh000001 | cluster_cross_stable2 | short | no_formal_alert_rate | 0.9391304347826087 | 0.9826086956521739 | 115 | 115 |
+| sh000001 | cluster_cross_stable2 | short | first_window_coverage | 0.0 | 0.0 | 115 | 115 |
+| sh000001 | cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 115 | 115 |
+| sh000001 | cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 115 | 115 |
+| sh000001 | cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 115 | 115 |
+| sh000001 | cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 9 | 3 |
+| sh000001 | cluster_cross_stable2 | short | duplicate_notices | 1 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | short | revisions | 5 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | short | claim_notices | 14 | 14 | — | — |
+| sh000001 | cluster_cross_stable2 | short | formal_alerts | not_defined | 3 | — | — |
+| sh000001 | cluster_cross_stable2 | short | observation_notices | not_defined | 11 | — | — |
+| sh000001 | cluster_cross_stable2 | short | alerts_per_asset_year | 0.74910562554937 | 0.74910562554937 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_cross_stable2 | short | alarm_occupied_days | 113 | 113 | — | — |
+| sh000001 | cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 30 | — | — |
+| sh000016 | cluster_cross_stable2 | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | cluster_cross_stable2 | short | P | 8 | 3 | — | — |
+| sh000016 | cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | short | FP | 8 | 3 | — | — |
+| sh000016 | cluster_cross_stable2 | short | FN | 97 | 97 | — | — |
+| sh000016 | cluster_cross_stable2 | short | no_formal_alert_rate | 0.9278350515463918 | 0.9690721649484536 | 97 | 97 |
+| sh000016 | cluster_cross_stable2 | short | first_window_coverage | 0.020618556701030927 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.01818181818181818 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 8 | 3 |
+| sh000016 | cluster_cross_stable2 | short | duplicate_notices | 1 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | short | revisions | 12 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | short | claim_notices | 20 | 20 | — | — |
+| sh000016 | cluster_cross_stable2 | short | formal_alerts | not_defined | 3 | — | — |
+| sh000016 | cluster_cross_stable2 | short | observation_notices | not_defined | 17 | — | — |
+| sh000016 | cluster_cross_stable2 | short | alerts_per_asset_year | 1.3600539936697078 | 1.3600539936697078 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_cross_stable2 | short | alarm_occupied_days | 140 | 140 | — | — |
+| sh000016 | cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 27 | — | — |
+| sh000300 | cluster_cross_stable2 | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | cluster_cross_stable2 | short | P | 8 | 2 | — | — |
+| sh000300 | cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | short | FP | 8 | 2 | — | — |
+| sh000300 | cluster_cross_stable2 | short | FN | 90 | 90 | — | — |
+| sh000300 | cluster_cross_stable2 | short | no_formal_alert_rate | 0.9222222222222223 | 0.9777777777777777 | 90 | 90 |
+| sh000300 | cluster_cross_stable2 | short | first_window_coverage | 0.011111111111111112 | 0.0 | 90 | 90 |
+| sh000300 | cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
+| sh000300 | cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 8 | 2 |
+| sh000300 | cluster_cross_stable2 | short | duplicate_notices | 1 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | short | revisions | 4 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | short | claim_notices | 12 | 12 | — | — |
+| sh000300 | cluster_cross_stable2 | short | formal_alerts | not_defined | 2 | — | — |
+| sh000300 | cluster_cross_stable2 | short | observation_notices | not_defined | 10 | — | — |
+| sh000300 | cluster_cross_stable2 | short | alerts_per_asset_year | 0.8924679291386682 | 0.8924679291386682 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_cross_stable2 | short | alarm_occupied_days | 96 | 96 | — | — |
+| sh000300 | cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 15 | — | — |
+| sh000905 | cluster_cross_stable2 | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | cluster_cross_stable2 | short | P | 8 | 1 | — | — |
+| sh000905 | cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | short | FP | 8 | 1 | — | — |
+| sh000905 | cluster_cross_stable2 | short | FN | 71 | 71 | — | — |
+| sh000905 | cluster_cross_stable2 | short | no_formal_alert_rate | 0.8873239436619719 | 0.9859154929577465 | 71 | 71 |
+| sh000905 | cluster_cross_stable2 | short | first_window_coverage | 0.0 | 0.0 | 71 | 71 |
+| sh000905 | cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 71 | 71 |
+| sh000905 | cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 71 | 71 |
+| sh000905 | cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 71 | 71 |
+| sh000905 | cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | 0.0 | 8 | 1 |
+| sh000905 | cluster_cross_stable2 | short | duplicate_notices | 0 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | short | revisions | 1 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | short | claim_notices | 9 | 9 | — | — |
+| sh000905 | cluster_cross_stable2 | short | formal_alerts | not_defined | 1 | — | — |
+| sh000905 | cluster_cross_stable2 | short | observation_notices | not_defined | 8 | — | — |
+| sh000905 | cluster_cross_stable2 | short | alerts_per_asset_year | 0.7707344665885112 | 0.7707344665885112 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_cross_stable2 | short | alarm_occupied_days | 61 | 61 | — | — |
+| sh000905 | cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 7 | — | — |
+| sz399001 | cluster_cross_stable2 | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | cluster_cross_stable2 | short | P | 6 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | FP | 6 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | FN | 122 | 122 | — | — |
+| sz399001 | cluster_cross_stable2 | short | no_formal_alert_rate | 0.9672131147540983 | 1.0 | 122 | 122 |
+| sz399001 | cluster_cross_stable2 | short | first_window_coverage | 0.01639344262295082 | 0.0 | 122 | 122 |
+| sz399001 | cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 122 | 122 |
+| sz399001 | cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 122 | 122 |
+| sz399001 | cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 122 | 122 |
+| sz399001 | cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | null | 6 | 0 |
+| sz399001 | cluster_cross_stable2 | short | duplicate_notices | 0 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | revisions | 6 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | claim_notices | 12 | 12 | — | — |
+| sz399001 | cluster_cross_stable2 | short | formal_alerts | not_defined | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | short | observation_notices | not_defined | 12 | — | — |
+| sz399001 | cluster_cross_stable2 | short | alerts_per_asset_year | 0.6420905361851743 | 0.6420905361851743 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_cross_stable2 | short | alarm_occupied_days | 99 | 99 | — | — |
+| sz399001 | cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | cluster_cross_stable2 | short | P | 2 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | TP | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | FP | 2 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | FN | 57 | 57 | — | — |
+| sz399006 | cluster_cross_stable2 | short | no_formal_alert_rate | 0.9649122807017544 | 1.0 | 57 | 57 |
+| sz399006 | cluster_cross_stable2 | short | first_window_coverage | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | cluster_cross_stable2 | short | QualifiedShortRecall5 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | cluster_cross_stable2 | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | cluster_cross_stable2 | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
+| sz399006 | cluster_cross_stable2 | short | resolved_claim_precision | 0.0 | null | 2 | 0 |
+| sz399006 | cluster_cross_stable2 | short | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | revisions | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | claim_notices | 2 | 2 | — | — |
+| sz399006 | cluster_cross_stable2 | short | formal_alerts | not_defined | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | short | observation_notices | not_defined | 2 | — | — |
+| sz399006 | cluster_cross_stable2 | short | alerts_per_asset_year | 0.24084569732937688 | 0.24084569732937688 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_cross_stable2 | short | alarm_occupied_days | 14 | 14 | — | — |
+| sz399006 | cluster_cross_stable2 | short | formal_alarm_occupied_days | not_defined | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | cluster_cross_stable2 | stage | P | 9 | 3 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | FP | 9 | 3 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | FN | 22 | 22 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | no_formal_alert_rate | 0.8181818181818182 | 1.0 | 22 | 22 |
+| sh000001 | cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 3 |
+| sh000001 | cluster_cross_stable2 | stage | duplicate_notices | 1 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | revisions | 5 | 0 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | claim_notices | 14 | 14 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | formal_alerts | not_defined | 3 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | observation_notices | not_defined | 11 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | alerts_per_asset_year | 0.74910562554937 | 0.74910562554937 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_cross_stable2 | stage | alarm_occupied_days | 113 | 113 | — | — |
+| sh000001 | cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 30 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | cluster_cross_stable2 | stage | P | 8 | 3 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | FP | 8 | 3 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | FN | 13 | 13 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | no_formal_alert_rate | 0.8461538461538461 | 0.9230769230769231 | 13 | 13 |
+| sh000016 | cluster_cross_stable2 | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.00909090909090909 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 8 | 3 |
+| sh000016 | cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | revisions | 12 | 0 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | claim_notices | 20 | 20 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | formal_alerts | not_defined | 3 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | observation_notices | not_defined | 17 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | alerts_per_asset_year | 1.3600539936697078 | 1.3600539936697078 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_cross_stable2 | stage | alarm_occupied_days | 140 | 140 | — | — |
+| sh000016 | cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 27 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | cluster_cross_stable2 | stage | P | 8 | 2 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | FP | 8 | 2 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | FN | 14 | 14 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | no_formal_alert_rate | 0.7857142857142857 | 1.0 | 14 | 14 |
+| sh000300 | cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 8 | 2 |
+| sh000300 | cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | revisions | 4 | 0 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | claim_notices | 12 | 12 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | formal_alerts | not_defined | 2 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | observation_notices | not_defined | 10 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | alerts_per_asset_year | 0.8924679291386682 | 0.8924679291386682 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_cross_stable2 | stage | alarm_occupied_days | 96 | 96 | — | — |
+| sh000300 | cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 15 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | cluster_cross_stable2 | stage | P | 8 | 1 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | FP | 8 | 1 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | FN | 13 | 13 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | no_formal_alert_rate | 0.6153846153846154 | 1.0 | 13 | 13 |
+| sh000905 | cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | 0.0 | 8 | 1 |
+| sh000905 | cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | revisions | 1 | 0 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | claim_notices | 9 | 9 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | formal_alerts | not_defined | 1 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | observation_notices | not_defined | 8 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | alerts_per_asset_year | 0.7707344665885112 | 0.7707344665885112 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_cross_stable2 | stage | alarm_occupied_days | 61 | 61 | — | — |
+| sh000905 | cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 7 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | cluster_cross_stable2 | stage | P | 6 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | FP | 6 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | FN | 20 | 20 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | no_formal_alert_rate | 0.85 | 1.0 | 20 | 20 |
+| sz399001 | cluster_cross_stable2 | stage | first_window_coverage | 0.1 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | null | 6 | 0 |
+| sz399001 | cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | revisions | 6 | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | claim_notices | 12 | 12 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | formal_alerts | not_defined | 0 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | observation_notices | not_defined | 12 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | alerts_per_asset_year | 0.6420905361851743 | 0.6420905361851743 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_cross_stable2 | stage | alarm_occupied_days | 99 | 99 | — | — |
+| sz399001 | cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | cluster_cross_stable2 | stage | P | 2 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | TP | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | FP | 2 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | FN | 9 | 9 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | no_formal_alert_rate | 0.7777777777777778 | 1.0 | 9 | 9 |
+| sz399006 | cluster_cross_stable2 | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_stable2 | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_stable2 | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_stable2 | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | cluster_cross_stable2 | stage | resolved_claim_precision | 0.0 | null | 2 | 0 |
+| sz399006 | cluster_cross_stable2 | stage | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | revisions | 0 | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | claim_notices | 2 | 2 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | formal_alerts | not_defined | 0 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | observation_notices | not_defined | 2 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | alerts_per_asset_year | 0.24084569732937688 | 0.24084569732937688 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_cross_stable2 | stage | alarm_occupied_days | 14 | 14 | — | — |
+| sz399006 | cluster_cross_stable2 | stage | formal_alarm_occupied_days | not_defined | 0 | — | — |
+| sh000001 | cluster_cross_thin | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | cluster_cross_thin | short | P | 23 | 18 | — | — |
+| sh000001 | cluster_cross_thin | short | TP | 5 | 5 | — | — |
+| sh000001 | cluster_cross_thin | short | FP | 18 | 13 | — | — |
+| sh000001 | cluster_cross_thin | short | FN | 110 | 110 | — | — |
+| sh000001 | cluster_cross_thin | short | no_formal_alert_rate | 0.8434782608695652 | 0.8695652173913043 | 115 | 115 |
+| sh000001 | cluster_cross_thin | short | first_window_coverage | 0.05217391304347826 | 0.043478260869565216 | 115 | 115 |
+| sh000001 | cluster_cross_thin | short | QualifiedShortRecall5 | 0.0364963503649635 | 0.043478260869565216 | 115 | 115 |
+| sh000001 | cluster_cross_thin | short | StrictShortRecall5W10 | 0.043478260869565216 | 0.043478260869565216 | 115 | 115 |
+| sh000001 | cluster_cross_thin | short | strict_short_miss_rate | 0.9565217391304348 | 0.9565217391304348 | 115 | 115 |
+| sh000001 | cluster_cross_thin | short | resolved_claim_precision | 0.21739130434782608 | 0.2777777777777778 | 23 | 18 |
+| sh000001 | cluster_cross_thin | short | duplicate_notices | 2 | 0 | — | — |
+| sh000001 | cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_cross_thin | short | revisions | 28 | 16 | — | — |
+| sh000001 | cluster_cross_thin | short | claim_notices | 51 | 51 | — | — |
+| sh000001 | cluster_cross_thin | short | formal_alerts | not_defined | 34 | — | — |
+| sh000001 | cluster_cross_thin | short | observation_notices | not_defined | 17 | — | — |
+| sh000001 | cluster_cross_thin | short | alerts_per_asset_year | 2.7288847787869908 | 2.7288847787869908 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_cross_thin | short | alarm_occupied_days | 285 | 285 | — | — |
+| sh000001 | cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 201 | — | — |
+| sh000016 | cluster_cross_thin | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | cluster_cross_thin | short | P | 14 | 9 | — | — |
+| sh000016 | cluster_cross_thin | short | TP | 0 | 0 | — | — |
+| sh000016 | cluster_cross_thin | short | FP | 14 | 9 | — | — |
+| sh000016 | cluster_cross_thin | short | FN | 97 | 97 | — | — |
+| sh000016 | cluster_cross_thin | short | no_formal_alert_rate | 0.8865979381443299 | 0.9072164948453608 | 97 | 97 |
+| sh000016 | cluster_cross_thin | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_thin | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | cluster_cross_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | cluster_cross_thin | short | resolved_claim_precision | 0.0 | 0.0 | 14 | 9 |
+| sh000016 | cluster_cross_thin | short | duplicate_notices | 3 | 0 | — | — |
+| sh000016 | cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_cross_thin | short | revisions | 31 | 17 | — | — |
+| sh000016 | cluster_cross_thin | short | claim_notices | 45 | 45 | — | — |
+| sh000016 | cluster_cross_thin | short | formal_alerts | not_defined | 26 | — | — |
+| sh000016 | cluster_cross_thin | short | observation_notices | not_defined | 19 | — | — |
+| sh000016 | cluster_cross_thin | short | alerts_per_asset_year | 3.0601214857568424 | 3.0601214857568424 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_cross_thin | short | alarm_occupied_days | 235 | 235 | — | — |
+| sh000016 | cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 151 | — | — |
+| sh000300 | cluster_cross_thin | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | cluster_cross_thin | short | P | 16 | 10 | — | — |
+| sh000300 | cluster_cross_thin | short | TP | 1 | 3 | — | — |
+| sh000300 | cluster_cross_thin | short | FP | 15 | 7 | — | — |
+| sh000300 | cluster_cross_thin | short | FN | 89 | 87 | — | — |
+| sh000300 | cluster_cross_thin | short | no_formal_alert_rate | 0.8666666666666667 | 0.8888888888888888 | 90 | 90 |
+| sh000300 | cluster_cross_thin | short | first_window_coverage | 0.022222222222222223 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_cross_thin | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_cross_thin | short | StrictShortRecall5W10 | 0.011111111111111112 | 0.03333333333333333 | 90 | 90 |
+| sh000300 | cluster_cross_thin | short | strict_short_miss_rate | 0.9888888888888889 | 0.9666666666666667 | 90 | 90 |
+| sh000300 | cluster_cross_thin | short | resolved_claim_precision | 0.0625 | 0.3 | 16 | 10 |
+| sh000300 | cluster_cross_thin | short | duplicate_notices | 3 | 0 | — | — |
+| sh000300 | cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_cross_thin | short | revisions | 20 | 6 | — | — |
+| sh000300 | cluster_cross_thin | short | claim_notices | 36 | 36 | — | — |
+| sh000300 | cluster_cross_thin | short | formal_alerts | not_defined | 16 | — | — |
+| sh000300 | cluster_cross_thin | short | observation_notices | not_defined | 20 | — | — |
+| sh000300 | cluster_cross_thin | short | alerts_per_asset_year | 2.677403787416005 | 2.677403787416005 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_cross_thin | short | alarm_occupied_days | 220 | 220 | — | — |
+| sh000300 | cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 108 | — | — |
+| sh000905 | cluster_cross_thin | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | cluster_cross_thin | short | P | 17 | 7 | — | — |
+| sh000905 | cluster_cross_thin | short | TP | 1 | 1 | — | — |
+| sh000905 | cluster_cross_thin | short | FP | 16 | 6 | — | — |
+| sh000905 | cluster_cross_thin | short | FN | 70 | 70 | — | — |
+| sh000905 | cluster_cross_thin | short | no_formal_alert_rate | 0.8309859154929577 | 0.9295774647887324 | 71 | 71 |
+| sh000905 | cluster_cross_thin | short | first_window_coverage | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_cross_thin | short | QualifiedShortRecall5 | 0.011904761904761904 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_cross_thin | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.014084507042253521 | 71 | 71 |
+| sh000905 | cluster_cross_thin | short | strict_short_miss_rate | 0.9859154929577465 | 0.9859154929577465 | 71 | 71 |
+| sh000905 | cluster_cross_thin | short | resolved_claim_precision | 0.058823529411764705 | 0.14285714285714285 | 17 | 7 |
+| sh000905 | cluster_cross_thin | short | duplicate_notices | 3 | 0 | — | — |
+| sh000905 | cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_cross_thin | short | revisions | 12 | 3 | — | — |
+| sh000905 | cluster_cross_thin | short | claim_notices | 29 | 29 | — | — |
+| sh000905 | cluster_cross_thin | short | formal_alerts | not_defined | 10 | — | — |
+| sh000905 | cluster_cross_thin | short | observation_notices | not_defined | 19 | — | — |
+| sh000905 | cluster_cross_thin | short | alerts_per_asset_year | 2.4834777256740916 | 2.4834777256740916 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_cross_thin | short | alarm_occupied_days | 152 | 152 | — | — |
+| sh000905 | cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 62 | — | — |
+| sz399001 | cluster_cross_thin | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | cluster_cross_thin | short | P | 20 | 11 | — | — |
+| sz399001 | cluster_cross_thin | short | TP | 2 | 2 | — | — |
+| sz399001 | cluster_cross_thin | short | FP | 18 | 9 | — | — |
+| sz399001 | cluster_cross_thin | short | FN | 120 | 120 | — | — |
+| sz399001 | cluster_cross_thin | short | no_formal_alert_rate | 0.9016393442622951 | 0.9426229508196722 | 122 | 122 |
+| sz399001 | cluster_cross_thin | short | first_window_coverage | 0.02459016393442623 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_cross_thin | short | QualifiedShortRecall5 | 0.014084507042253521 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_cross_thin | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.01639344262295082 | 122 | 122 |
+| sz399001 | cluster_cross_thin | short | strict_short_miss_rate | 0.9836065573770492 | 0.9836065573770492 | 122 | 122 |
+| sz399001 | cluster_cross_thin | short | resolved_claim_precision | 0.1 | 0.18181818181818182 | 20 | 11 |
+| sz399001 | cluster_cross_thin | short | duplicate_notices | 3 | 2 | — | — |
+| sz399001 | cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_cross_thin | short | revisions | 22 | 16 | — | — |
+| sz399001 | cluster_cross_thin | short | claim_notices | 42 | 42 | — | — |
+| sz399001 | cluster_cross_thin | short | formal_alerts | not_defined | 27 | — | — |
+| sz399001 | cluster_cross_thin | short | observation_notices | not_defined | 15 | — | — |
+| sz399001 | cluster_cross_thin | short | alerts_per_asset_year | 2.24731687664811 | 2.24731687664811 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_cross_thin | short | alarm_occupied_days | 249 | 249 | — | — |
+| sz399001 | cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 161 | — | — |
+| sz399006 | cluster_cross_thin | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | cluster_cross_thin | short | P | 9 | 5 | — | — |
+| sz399006 | cluster_cross_thin | short | TP | 1 | 1 | — | — |
+| sz399006 | cluster_cross_thin | short | FP | 8 | 4 | — | — |
+| sz399006 | cluster_cross_thin | short | FN | 56 | 56 | — | — |
+| sz399006 | cluster_cross_thin | short | no_formal_alert_rate | 0.8771929824561403 | 0.9298245614035088 | 57 | 57 |
+| sz399006 | cluster_cross_thin | short | first_window_coverage | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | cluster_cross_thin | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | cluster_cross_thin | short | StrictShortRecall5W10 | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | cluster_cross_thin | short | strict_short_miss_rate | 0.9824561403508771 | 0.9824561403508771 | 57 | 57 |
+| sz399006 | cluster_cross_thin | short | resolved_claim_precision | 0.1111111111111111 | 0.2 | 9 | 5 |
+| sz399006 | cluster_cross_thin | short | duplicate_notices | 1 | 0 | — | — |
+| sz399006 | cluster_cross_thin | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_cross_thin | short | revisions | 12 | 4 | — | — |
+| sz399006 | cluster_cross_thin | short | claim_notices | 21 | 21 | — | — |
+| sz399006 | cluster_cross_thin | short | formal_alerts | not_defined | 9 | — | — |
+| sz399006 | cluster_cross_thin | short | observation_notices | not_defined | 12 | — | — |
+| sz399006 | cluster_cross_thin | short | alerts_per_asset_year | 2.528879821958457 | 2.528879821958457 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_cross_thin | short | alarm_occupied_days | 117 | 117 | — | — |
+| sz399006 | cluster_cross_thin | short | formal_alarm_occupied_days | not_defined | 61 | — | — |
+| sh000001 | cluster_cross_thin | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | cluster_cross_thin | stage | P | 23 | 18 | — | — |
+| sh000001 | cluster_cross_thin | stage | TP | 1 | 1 | — | — |
+| sh000001 | cluster_cross_thin | stage | FP | 22 | 17 | — | — |
+| sh000001 | cluster_cross_thin | stage | FN | 21 | 21 | — | — |
+| sh000001 | cluster_cross_thin | stage | no_formal_alert_rate | 0.6363636363636364 | 0.6818181818181818 | 22 | 22 |
+| sh000001 | cluster_cross_thin | stage | first_window_coverage | 0.09090909090909091 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0072992700729927005 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | cluster_cross_thin | stage | StrictStageRecall5W10 | 0.045454545454545456 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | cluster_cross_thin | stage | strict_stage_miss_rate | 0.9545454545454546 | 0.9545454545454546 | 22 | 22 |
+| sh000001 | cluster_cross_thin | stage | resolved_claim_precision | 0.043478260869565216 | 0.05555555555555555 | 23 | 18 |
+| sh000001 | cluster_cross_thin | stage | duplicate_notices | 1 | 1 | — | — |
+| sh000001 | cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | cluster_cross_thin | stage | revisions | 28 | 16 | — | — |
+| sh000001 | cluster_cross_thin | stage | claim_notices | 51 | 51 | — | — |
+| sh000001 | cluster_cross_thin | stage | formal_alerts | not_defined | 34 | — | — |
+| sh000001 | cluster_cross_thin | stage | observation_notices | not_defined | 17 | — | — |
+| sh000001 | cluster_cross_thin | stage | alerts_per_asset_year | 2.7288847787869908 | 2.7288847787869908 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | cluster_cross_thin | stage | alarm_occupied_days | 285 | 285 | — | — |
+| sh000001 | cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 201 | — | — |
+| sh000016 | cluster_cross_thin | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | cluster_cross_thin | stage | P | 14 | 9 | — | — |
+| sh000016 | cluster_cross_thin | stage | TP | 0 | 0 | — | — |
+| sh000016 | cluster_cross_thin | stage | FP | 14 | 9 | — | — |
+| sh000016 | cluster_cross_thin | stage | FN | 13 | 13 | — | — |
+| sh000016 | cluster_cross_thin | stage | no_formal_alert_rate | 0.6153846153846154 | 0.6153846153846154 | 13 | 13 |
+| sh000016 | cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 14 | 9 |
+| sh000016 | cluster_cross_thin | stage | duplicate_notices | 1 | 1 | — | — |
+| sh000016 | cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | cluster_cross_thin | stage | revisions | 31 | 17 | — | — |
+| sh000016 | cluster_cross_thin | stage | claim_notices | 45 | 45 | — | — |
+| sh000016 | cluster_cross_thin | stage | formal_alerts | not_defined | 26 | — | — |
+| sh000016 | cluster_cross_thin | stage | observation_notices | not_defined | 19 | — | — |
+| sh000016 | cluster_cross_thin | stage | alerts_per_asset_year | 3.0601214857568424 | 3.0601214857568424 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | cluster_cross_thin | stage | alarm_occupied_days | 235 | 235 | — | — |
+| sh000016 | cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 151 | — | — |
+| sh000300 | cluster_cross_thin | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | cluster_cross_thin | stage | P | 16 | 10 | — | — |
+| sh000300 | cluster_cross_thin | stage | TP | 0 | 0 | — | — |
+| sh000300 | cluster_cross_thin | stage | FP | 16 | 10 | — | — |
+| sh000300 | cluster_cross_thin | stage | FN | 14 | 14 | — | — |
+| sh000300 | cluster_cross_thin | stage | no_formal_alert_rate | 0.7142857142857143 | 0.7857142857142857 | 14 | 14 |
+| sh000300 | cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 16 | 10 |
+| sh000300 | cluster_cross_thin | stage | duplicate_notices | 2 | 0 | — | — |
+| sh000300 | cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | cluster_cross_thin | stage | revisions | 20 | 6 | — | — |
+| sh000300 | cluster_cross_thin | stage | claim_notices | 36 | 36 | — | — |
+| sh000300 | cluster_cross_thin | stage | formal_alerts | not_defined | 16 | — | — |
+| sh000300 | cluster_cross_thin | stage | observation_notices | not_defined | 20 | — | — |
+| sh000300 | cluster_cross_thin | stage | alerts_per_asset_year | 2.677403787416005 | 2.677403787416005 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | cluster_cross_thin | stage | alarm_occupied_days | 220 | 220 | — | — |
+| sh000300 | cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 108 | — | — |
+| sh000905 | cluster_cross_thin | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | cluster_cross_thin | stage | P | 17 | 7 | — | — |
+| sh000905 | cluster_cross_thin | stage | TP | 0 | 0 | — | — |
+| sh000905 | cluster_cross_thin | stage | FP | 17 | 7 | — | — |
+| sh000905 | cluster_cross_thin | stage | FN | 13 | 13 | — | — |
+| sh000905 | cluster_cross_thin | stage | no_formal_alert_rate | 0.5384615384615384 | 0.7692307692307693 | 13 | 13 |
+| sh000905 | cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 17 | 7 |
+| sh000905 | cluster_cross_thin | stage | duplicate_notices | 3 | 1 | — | — |
+| sh000905 | cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | cluster_cross_thin | stage | revisions | 12 | 3 | — | — |
+| sh000905 | cluster_cross_thin | stage | claim_notices | 29 | 29 | — | — |
+| sh000905 | cluster_cross_thin | stage | formal_alerts | not_defined | 10 | — | — |
+| sh000905 | cluster_cross_thin | stage | observation_notices | not_defined | 19 | — | — |
+| sh000905 | cluster_cross_thin | stage | alerts_per_asset_year | 2.4834777256740916 | 2.4834777256740916 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | cluster_cross_thin | stage | alarm_occupied_days | 152 | 152 | — | — |
+| sh000905 | cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 62 | — | — |
+| sz399001 | cluster_cross_thin | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | cluster_cross_thin | stage | P | 20 | 11 | — | — |
+| sz399001 | cluster_cross_thin | stage | TP | 0 | 0 | — | — |
+| sz399001 | cluster_cross_thin | stage | FP | 20 | 11 | — | — |
+| sz399001 | cluster_cross_thin | stage | FN | 20 | 20 | — | — |
+| sz399001 | cluster_cross_thin | stage | no_formal_alert_rate | 0.75 | 0.85 | 20 | 20 |
+| sz399001 | cluster_cross_thin | stage | first_window_coverage | 0.05 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 20 | 11 |
+| sz399001 | cluster_cross_thin | stage | duplicate_notices | 2 | 1 | — | — |
+| sz399001 | cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | cluster_cross_thin | stage | revisions | 22 | 16 | — | — |
+| sz399001 | cluster_cross_thin | stage | claim_notices | 42 | 42 | — | — |
+| sz399001 | cluster_cross_thin | stage | formal_alerts | not_defined | 27 | — | — |
+| sz399001 | cluster_cross_thin | stage | observation_notices | not_defined | 15 | — | — |
+| sz399001 | cluster_cross_thin | stage | alerts_per_asset_year | 2.24731687664811 | 2.24731687664811 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | cluster_cross_thin | stage | alarm_occupied_days | 249 | 249 | — | — |
+| sz399001 | cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 161 | — | — |
+| sz399006 | cluster_cross_thin | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | cluster_cross_thin | stage | P | 9 | 5 | — | — |
+| sz399006 | cluster_cross_thin | stage | TP | 0 | 0 | — | — |
+| sz399006 | cluster_cross_thin | stage | FP | 9 | 5 | — | — |
+| sz399006 | cluster_cross_thin | stage | FN | 9 | 9 | — | — |
+| sz399006 | cluster_cross_thin | stage | no_formal_alert_rate | 0.7777777777777778 | 1.0 | 9 | 9 |
+| sz399006 | cluster_cross_thin | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | cluster_cross_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | cluster_cross_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 5 |
+| sz399006 | cluster_cross_thin | stage | duplicate_notices | 2 | 0 | — | — |
+| sz399006 | cluster_cross_thin | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | cluster_cross_thin | stage | revisions | 12 | 4 | — | — |
+| sz399006 | cluster_cross_thin | stage | claim_notices | 21 | 21 | — | — |
+| sz399006 | cluster_cross_thin | stage | formal_alerts | not_defined | 9 | — | — |
+| sz399006 | cluster_cross_thin | stage | observation_notices | not_defined | 12 | — | — |
+| sz399006 | cluster_cross_thin | stage | alerts_per_asset_year | 2.528879821958457 | 2.528879821958457 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | cluster_cross_thin | stage | alarm_occupied_days | 117 | 117 | — | — |
+| sz399006 | cluster_cross_thin | stage | formal_alarm_occupied_days | not_defined | 61 | — | — |
+| sh000001 | or2_full | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | or2_full | short | P | 33 | 28 | — | — |
+| sh000001 | or2_full | short | TP | 2 | 2 | — | — |
+| sh000001 | or2_full | short | FP | 31 | 26 | — | — |
+| sh000001 | or2_full | short | FN | 113 | 113 | — | — |
+| sh000001 | or2_full | short | no_formal_alert_rate | 0.7478260869565218 | 0.782608695652174 | 115 | 115 |
+| sh000001 | or2_full | short | first_window_coverage | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | or2_full | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | or2_full | short | StrictShortRecall5W10 | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | or2_full | short | strict_short_miss_rate | 0.9826086956521739 | 0.9826086956521739 | 115 | 115 |
+| sh000001 | or2_full | short | resolved_claim_precision | 0.06060606060606061 | 0.07142857142857142 | 33 | 28 |
+| sh000001 | or2_full | short | duplicate_notices | 2 | 1 | — | — |
+| sh000001 | or2_full | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | or2_full | short | revisions | 149 | 67 | — | — |
+| sh000001 | or2_full | short | claim_notices | 175 | 175 | — | — |
+| sh000001 | or2_full | short | formal_alerts | not_defined | 95 | — | — |
+| sh000001 | or2_full | short | observation_notices | not_defined | 80 | — | — |
+| sh000001 | or2_full | short | alerts_per_asset_year | 9.363820319367125 | 9.363820319367125 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | or2_full | short | alarm_occupied_days | 718 | 718 | — | — |
+| sh000001 | or2_full | short | formal_alarm_occupied_days | not_defined | 373 | — | — |
+| sh000016 | or2_full | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | or2_full | short | P | 18 | 14 | — | — |
+| sh000016 | or2_full | short | TP | 0 | 0 | — | — |
+| sh000016 | or2_full | short | FP | 18 | 14 | — | — |
+| sh000016 | or2_full | short | FN | 97 | 97 | — | — |
+| sh000016 | or2_full | short | no_formal_alert_rate | 0.8350515463917526 | 0.8762886597938144 | 97 | 97 |
+| sh000016 | or2_full | short | first_window_coverage | 0.010309278350515464 | 0.0 | 97 | 97 |
+| sh000016 | or2_full | short | QualifiedShortRecall5 | 0.00909090909090909 | 0.0 | 97 | 97 |
+| sh000016 | or2_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | or2_full | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | or2_full | short | resolved_claim_precision | 0.0 | 0.0 | 18 | 14 |
+| sh000016 | or2_full | short | duplicate_notices | 1 | 1 | — | — |
+| sh000016 | or2_full | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | or2_full | short | revisions | 78 | 23 | — | — |
+| sh000016 | or2_full | short | claim_notices | 96 | 96 | — | — |
+| sh000016 | or2_full | short | formal_alerts | not_defined | 37 | — | — |
+| sh000016 | or2_full | short | observation_notices | not_defined | 59 | — | — |
+| sh000016 | or2_full | short | alerts_per_asset_year | 6.528259169614597 | 6.528259169614597 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | or2_full | short | alarm_occupied_days | 501 | 501 | — | — |
+| sh000016 | or2_full | short | formal_alarm_occupied_days | not_defined | 192 | — | — |
+| sh000300 | or2_full | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | or2_full | short | P | 25 | 17 | — | — |
+| sh000300 | or2_full | short | TP | 0 | 0 | — | — |
+| sh000300 | or2_full | short | FP | 25 | 17 | — | — |
+| sh000300 | or2_full | short | FN | 90 | 90 | — | — |
+| sh000300 | or2_full | short | no_formal_alert_rate | 0.7777777777777778 | 0.8333333333333334 | 90 | 90 |
+| sh000300 | or2_full | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | or2_full | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | or2_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | or2_full | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
+| sh000300 | or2_full | short | resolved_claim_precision | 0.0 | 0.0 | 25 | 17 |
+| sh000300 | or2_full | short | duplicate_notices | 3 | 1 | — | — |
+| sh000300 | or2_full | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | or2_full | short | revisions | 77 | 36 | — | — |
+| sh000300 | or2_full | short | claim_notices | 102 | 102 | — | — |
+| sh000300 | or2_full | short | formal_alerts | not_defined | 53 | — | — |
+| sh000300 | or2_full | short | observation_notices | not_defined | 49 | — | — |
+| sh000300 | or2_full | short | alerts_per_asset_year | 7.585977397678681 | 7.585977397678681 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | or2_full | short | alarm_occupied_days | 513 | 513 | — | — |
+| sh000300 | or2_full | short | formal_alarm_occupied_days | not_defined | 242 | — | — |
+| sh000905 | or2_full | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | or2_full | short | P | 15 | 12 | — | — |
+| sh000905 | or2_full | short | TP | 1 | 0 | — | — |
+| sh000905 | or2_full | short | FP | 14 | 12 | — | — |
+| sh000905 | or2_full | short | FN | 70 | 71 | — | — |
+| sh000905 | or2_full | short | no_formal_alert_rate | 0.8309859154929577 | 0.8732394366197183 | 71 | 71 |
+| sh000905 | or2_full | short | first_window_coverage | 0.04225352112676056 | 0.0 | 71 | 71 |
+| sh000905 | or2_full | short | QualifiedShortRecall5 | 0.03571428571428571 | 0.0 | 71 | 71 |
+| sh000905 | or2_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.0 | 71 | 71 |
+| sh000905 | or2_full | short | strict_short_miss_rate | 0.9859154929577465 | 1.0 | 71 | 71 |
+| sh000905 | or2_full | short | resolved_claim_precision | 0.06666666666666667 | 0.0 | 15 | 12 |
+| sh000905 | or2_full | short | duplicate_notices | 1 | 1 | — | — |
+| sh000905 | or2_full | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | or2_full | short | revisions | 80 | 27 | — | — |
+| sh000905 | or2_full | short | claim_notices | 95 | 95 | — | — |
+| sh000905 | or2_full | short | formal_alerts | not_defined | 39 | — | — |
+| sh000905 | or2_full | short | observation_notices | not_defined | 56 | — | — |
+| sh000905 | or2_full | short | alerts_per_asset_year | 8.135530480656508 | 8.135530480656508 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | or2_full | short | alarm_occupied_days | 498 | 498 | — | — |
+| sh000905 | or2_full | short | formal_alarm_occupied_days | not_defined | 148 | — | — |
+| sz399001 | or2_full | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | or2_full | short | P | 27 | 21 | — | — |
+| sz399001 | or2_full | short | TP | 1 | 1 | — | — |
+| sz399001 | or2_full | short | FP | 26 | 20 | — | — |
+| sz399001 | or2_full | short | FN | 121 | 121 | — | — |
+| sz399001 | or2_full | short | no_formal_alert_rate | 0.819672131147541 | 0.8524590163934426 | 122 | 122 |
+| sz399001 | or2_full | short | first_window_coverage | 0.01639344262295082 | 0.00819672131147541 | 122 | 122 |
+| sz399001 | or2_full | short | QualifiedShortRecall5 | 0.014084507042253521 | 0.00819672131147541 | 122 | 122 |
+| sz399001 | or2_full | short | StrictShortRecall5W10 | 0.00819672131147541 | 0.00819672131147541 | 122 | 122 |
+| sz399001 | or2_full | short | strict_short_miss_rate | 0.9918032786885246 | 0.9918032786885246 | 122 | 122 |
+| sz399001 | or2_full | short | resolved_claim_precision | 0.037037037037037035 | 0.047619047619047616 | 27 | 21 |
+| sz399001 | or2_full | short | duplicate_notices | 2 | 0 | — | — |
+| sz399001 | or2_full | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | or2_full | short | revisions | 110 | 32 | — | — |
+| sz399001 | or2_full | short | claim_notices | 128 | 128 | — | — |
+| sz399001 | or2_full | short | formal_alerts | not_defined | 53 | — | — |
+| sz399001 | or2_full | short | observation_notices | not_defined | 75 | — | — |
+| sz399001 | or2_full | short | alerts_per_asset_year | 6.848965719308526 | 6.848965719308526 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | or2_full | short | alarm_occupied_days | 641 | 641 | — | — |
+| sz399001 | or2_full | short | formal_alarm_occupied_days | not_defined | 228 | — | — |
+| sz399006 | or2_full | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | or2_full | short | P | 10 | 8 | — | — |
+| sz399006 | or2_full | short | TP | 1 | 1 | — | — |
+| sz399006 | or2_full | short | FP | 9 | 7 | — | — |
+| sz399006 | or2_full | short | FN | 56 | 56 | — | — |
+| sz399006 | or2_full | short | no_formal_alert_rate | 0.8421052631578947 | 0.8771929824561403 | 57 | 57 |
+| sz399006 | or2_full | short | first_window_coverage | 0.03508771929824561 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | or2_full | short | QualifiedShortRecall5 | 0.030303030303030304 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | or2_full | short | StrictShortRecall5W10 | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | or2_full | short | strict_short_miss_rate | 0.9824561403508771 | 0.9824561403508771 | 57 | 57 |
+| sz399006 | or2_full | short | resolved_claim_precision | 0.1 | 0.125 | 10 | 8 |
+| sz399006 | or2_full | short | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | or2_full | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | or2_full | short | revisions | 32 | 16 | — | — |
+| sz399006 | or2_full | short | claim_notices | 42 | 42 | — | — |
+| sz399006 | or2_full | short | formal_alerts | not_defined | 24 | — | — |
+| sz399006 | or2_full | short | observation_notices | not_defined | 18 | — | — |
+| sz399006 | or2_full | short | alerts_per_asset_year | 5.057759643916914 | 5.057759643916914 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | or2_full | short | alarm_occupied_days | 276 | 276 | — | — |
+| sz399006 | or2_full | short | formal_alarm_occupied_days | not_defined | 123 | — | — |
+| sh000001 | or2_full | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | or2_full | stage | P | 33 | 28 | — | — |
+| sh000001 | or2_full | stage | TP | 0 | 0 | — | — |
+| sh000001 | or2_full | stage | FP | 33 | 28 | — | — |
+| sh000001 | or2_full | stage | FN | 22 | 22 | — | — |
+| sh000001 | or2_full | stage | no_formal_alert_rate | 0.45454545454545453 | 0.5454545454545454 | 22 | 22 |
+| sh000001 | or2_full | stage | first_window_coverage | 0.045454545454545456 | 0.0 | 22 | 22 |
+| sh000001 | or2_full | stage | QualifiedStageRecall5 | 0.0072992700729927005 | 0.0 | 22 | 22 |
+| sh000001 | or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 33 | 28 |
+| sh000001 | or2_full | stage | duplicate_notices | 3 | 0 | — | — |
+| sh000001 | or2_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | or2_full | stage | revisions | 149 | 67 | — | — |
+| sh000001 | or2_full | stage | claim_notices | 175 | 175 | — | — |
+| sh000001 | or2_full | stage | formal_alerts | not_defined | 95 | — | — |
+| sh000001 | or2_full | stage | observation_notices | not_defined | 80 | — | — |
+| sh000001 | or2_full | stage | alerts_per_asset_year | 9.363820319367125 | 9.363820319367125 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | or2_full | stage | alarm_occupied_days | 718 | 718 | — | — |
+| sh000001 | or2_full | stage | formal_alarm_occupied_days | not_defined | 373 | — | — |
+| sh000016 | or2_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | or2_full | stage | P | 18 | 14 | — | — |
+| sh000016 | or2_full | stage | TP | 0 | 0 | — | — |
+| sh000016 | or2_full | stage | FP | 18 | 14 | — | — |
+| sh000016 | or2_full | stage | FN | 13 | 13 | — | — |
+| sh000016 | or2_full | stage | no_formal_alert_rate | 0.5384615384615384 | 0.6923076923076923 | 13 | 13 |
+| sh000016 | or2_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 18 | 14 |
+| sh000016 | or2_full | stage | duplicate_notices | 1 | 0 | — | — |
+| sh000016 | or2_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | or2_full | stage | revisions | 78 | 23 | — | — |
+| sh000016 | or2_full | stage | claim_notices | 96 | 96 | — | — |
+| sh000016 | or2_full | stage | formal_alerts | not_defined | 37 | — | — |
+| sh000016 | or2_full | stage | observation_notices | not_defined | 59 | — | — |
+| sh000016 | or2_full | stage | alerts_per_asset_year | 6.528259169614597 | 6.528259169614597 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | or2_full | stage | alarm_occupied_days | 501 | 501 | — | — |
+| sh000016 | or2_full | stage | formal_alarm_occupied_days | not_defined | 192 | — | — |
+| sh000300 | or2_full | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | or2_full | stage | P | 25 | 17 | — | — |
+| sh000300 | or2_full | stage | TP | 0 | 0 | — | — |
+| sh000300 | or2_full | stage | FP | 25 | 17 | — | — |
+| sh000300 | or2_full | stage | FN | 14 | 14 | — | — |
+| sh000300 | or2_full | stage | no_formal_alert_rate | 0.35714285714285715 | 0.5 | 14 | 14 |
+| sh000300 | or2_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 25 | 17 |
+| sh000300 | or2_full | stage | duplicate_notices | 3 | 0 | — | — |
+| sh000300 | or2_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | or2_full | stage | revisions | 77 | 36 | — | — |
+| sh000300 | or2_full | stage | claim_notices | 102 | 102 | — | — |
+| sh000300 | or2_full | stage | formal_alerts | not_defined | 53 | — | — |
+| sh000300 | or2_full | stage | observation_notices | not_defined | 49 | — | — |
+| sh000300 | or2_full | stage | alerts_per_asset_year | 7.585977397678681 | 7.585977397678681 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | or2_full | stage | alarm_occupied_days | 513 | 513 | — | — |
+| sh000300 | or2_full | stage | formal_alarm_occupied_days | not_defined | 242 | — | — |
+| sh000905 | or2_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | or2_full | stage | P | 15 | 12 | — | — |
+| sh000905 | or2_full | stage | TP | 0 | 0 | — | — |
+| sh000905 | or2_full | stage | FP | 15 | 12 | — | — |
+| sh000905 | or2_full | stage | FN | 13 | 13 | — | — |
+| sh000905 | or2_full | stage | no_formal_alert_rate | 0.5384615384615384 | 0.6153846153846154 | 13 | 13 |
+| sh000905 | or2_full | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
+| sh000905 | or2_full | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
+| sh000905 | or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 15 | 12 |
+| sh000905 | or2_full | stage | duplicate_notices | 1 | 0 | — | — |
+| sh000905 | or2_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | or2_full | stage | revisions | 80 | 27 | — | — |
+| sh000905 | or2_full | stage | claim_notices | 95 | 95 | — | — |
+| sh000905 | or2_full | stage | formal_alerts | not_defined | 39 | — | — |
+| sh000905 | or2_full | stage | observation_notices | not_defined | 56 | — | — |
+| sh000905 | or2_full | stage | alerts_per_asset_year | 8.135530480656508 | 8.135530480656508 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | or2_full | stage | alarm_occupied_days | 498 | 498 | — | — |
+| sh000905 | or2_full | stage | formal_alarm_occupied_days | not_defined | 148 | — | — |
+| sz399001 | or2_full | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | or2_full | stage | P | 27 | 21 | — | — |
+| sz399001 | or2_full | stage | TP | 0 | 0 | — | — |
+| sz399001 | or2_full | stage | FP | 27 | 21 | — | — |
+| sz399001 | or2_full | stage | FN | 20 | 20 | — | — |
+| sz399001 | or2_full | stage | no_formal_alert_rate | 0.55 | 0.6 | 20 | 20 |
+| sz399001 | or2_full | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 27 | 21 |
+| sz399001 | or2_full | stage | duplicate_notices | 2 | 2 | — | — |
+| sz399001 | or2_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | or2_full | stage | revisions | 110 | 32 | — | — |
+| sz399001 | or2_full | stage | claim_notices | 128 | 128 | — | — |
+| sz399001 | or2_full | stage | formal_alerts | not_defined | 53 | — | — |
+| sz399001 | or2_full | stage | observation_notices | not_defined | 75 | — | — |
+| sz399001 | or2_full | stage | alerts_per_asset_year | 6.848965719308526 | 6.848965719308526 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | or2_full | stage | alarm_occupied_days | 641 | 641 | — | — |
+| sz399001 | or2_full | stage | formal_alarm_occupied_days | not_defined | 228 | — | — |
+| sz399006 | or2_full | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | or2_full | stage | P | 10 | 8 | — | — |
+| sz399006 | or2_full | stage | TP | 0 | 0 | — | — |
+| sz399006 | or2_full | stage | FP | 10 | 8 | — | — |
+| sz399006 | or2_full | stage | FN | 9 | 9 | — | — |
+| sz399006 | or2_full | stage | no_formal_alert_rate | 0.8888888888888888 | 0.8888888888888888 | 9 | 9 |
+| sz399006 | or2_full | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or2_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or2_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or2_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | or2_full | stage | resolved_claim_precision | 0.0 | 0.0 | 10 | 8 |
+| sz399006 | or2_full | stage | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | or2_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | or2_full | stage | revisions | 32 | 16 | — | — |
+| sz399006 | or2_full | stage | claim_notices | 42 | 42 | — | — |
+| sz399006 | or2_full | stage | formal_alerts | not_defined | 24 | — | — |
+| sz399006 | or2_full | stage | observation_notices | not_defined | 18 | — | — |
+| sz399006 | or2_full | stage | alerts_per_asset_year | 5.057759643916914 | 5.057759643916914 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | or2_full | stage | alarm_occupied_days | 276 | 276 | — | — |
+| sz399006 | or2_full | stage | formal_alarm_occupied_days | not_defined | 123 | — | — |
+| sh000001 | or4_full | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | or4_full | short | P | 80 | 54 | — | — |
+| sh000001 | or4_full | short | TP | 1 | 1 | — | — |
+| sh000001 | or4_full | short | FP | 79 | 53 | — | — |
+| sh000001 | or4_full | short | FN | 114 | 114 | — | — |
+| sh000001 | or4_full | short | no_formal_alert_rate | 0.48695652173913045 | 0.6173913043478261 | 115 | 115 |
+| sh000001 | or4_full | short | first_window_coverage | 0.043478260869565216 | 0.008695652173913044 | 115 | 115 |
+| sh000001 | or4_full | short | QualifiedShortRecall5 | 0.0364963503649635 | 0.008695652173913044 | 115 | 115 |
+| sh000001 | or4_full | short | StrictShortRecall5W10 | 0.008695652173913044 | 0.008695652173913044 | 115 | 115 |
+| sh000001 | or4_full | short | strict_short_miss_rate | 0.991304347826087 | 0.991304347826087 | 115 | 115 |
+| sh000001 | or4_full | short | resolved_claim_precision | 0.0125 | 0.018518518518518517 | 80 | 54 |
+| sh000001 | or4_full | short | duplicate_notices | 15 | 5 | — | — |
+| sh000001 | or4_full | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | or4_full | short | revisions | 189 | 71 | — | — |
+| sh000001 | or4_full | short | claim_notices | 261 | 261 | — | — |
+| sh000001 | or4_full | short | formal_alerts | not_defined | 125 | — | — |
+| sh000001 | or4_full | short | observation_notices | not_defined | 136 | — | — |
+| sh000001 | or4_full | short | alerts_per_asset_year | 13.965469162027542 | 13.965469162027542 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | or4_full | short | alarm_occupied_days | 1159 | 1159 | — | — |
+| sh000001 | or4_full | short | formal_alarm_occupied_days | not_defined | 480 | — | — |
+| sh000016 | or4_full | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | or4_full | short | P | 61 | 40 | — | — |
+| sh000016 | or4_full | short | TP | 0 | 0 | — | — |
+| sh000016 | or4_full | short | FP | 61 | 40 | — | — |
+| sh000016 | or4_full | short | FN | 97 | 97 | — | — |
+| sh000016 | or4_full | short | no_formal_alert_rate | 0.5670103092783505 | 0.7010309278350515 | 97 | 97 |
+| sh000016 | or4_full | short | first_window_coverage | 0.020618556701030927 | 0.0 | 97 | 97 |
+| sh000016 | or4_full | short | QualifiedShortRecall5 | 0.01818181818181818 | 0.0 | 97 | 97 |
+| sh000016 | or4_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | or4_full | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | or4_full | short | resolved_claim_precision | 0.0 | 0.0 | 61 | 40 |
+| sh000016 | or4_full | short | duplicate_notices | 17 | 9 | — | — |
+| sh000016 | or4_full | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | or4_full | short | revisions | 108 | 42 | — | — |
+| sh000016 | or4_full | short | claim_notices | 169 | 169 | — | — |
+| sh000016 | or4_full | short | formal_alerts | not_defined | 82 | — | — |
+| sh000016 | or4_full | short | observation_notices | not_defined | 87 | — | — |
+| sh000016 | or4_full | short | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | or4_full | short | alarm_occupied_days | 756 | 756 | — | — |
+| sh000016 | or4_full | short | formal_alarm_occupied_days | not_defined | 322 | — | — |
+| sh000300 | or4_full | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | or4_full | short | P | 62 | 33 | — | — |
+| sh000300 | or4_full | short | TP | 1 | 1 | — | — |
+| sh000300 | or4_full | short | FP | 61 | 32 | — | — |
+| sh000300 | or4_full | short | FN | 89 | 89 | — | — |
+| sh000300 | or4_full | short | no_formal_alert_rate | 0.5555555555555556 | 0.7111111111111111 | 90 | 90 |
+| sh000300 | or4_full | short | first_window_coverage | 0.022222222222222223 | 0.011111111111111112 | 90 | 90 |
+| sh000300 | or4_full | short | QualifiedShortRecall5 | 0.019230769230769232 | 0.011111111111111112 | 90 | 90 |
+| sh000300 | or4_full | short | StrictShortRecall5W10 | 0.011111111111111112 | 0.011111111111111112 | 90 | 90 |
+| sh000300 | or4_full | short | strict_short_miss_rate | 0.9888888888888889 | 0.9888888888888889 | 90 | 90 |
+| sh000300 | or4_full | short | resolved_claim_precision | 0.016129032258064516 | 0.030303030303030304 | 62 | 33 |
+| sh000300 | or4_full | short | duplicate_notices | 18 | 4 | — | — |
+| sh000300 | or4_full | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | or4_full | short | revisions | 113 | 51 | — | — |
+| sh000300 | or4_full | short | claim_notices | 175 | 175 | — | — |
+| sh000300 | or4_full | short | formal_alerts | not_defined | 84 | — | — |
+| sh000300 | or4_full | short | observation_notices | not_defined | 91 | — | — |
+| sh000300 | or4_full | short | alerts_per_asset_year | 13.015157299938913 | 13.015157299938913 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | or4_full | short | alarm_occupied_days | 784 | 784 | — | — |
+| sh000300 | or4_full | short | formal_alarm_occupied_days | not_defined | 339 | — | — |
+| sh000905 | or4_full | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | or4_full | short | P | 56 | 31 | — | — |
+| sh000905 | or4_full | short | TP | 1 | 2 | — | — |
+| sh000905 | or4_full | short | FP | 55 | 29 | — | — |
+| sh000905 | or4_full | short | FN | 70 | 69 | — | — |
+| sh000905 | or4_full | short | no_formal_alert_rate | 0.5352112676056338 | 0.647887323943662 | 71 | 71 |
+| sh000905 | or4_full | short | first_window_coverage | 0.04225352112676056 | 0.028169014084507043 | 71 | 71 |
+| sh000905 | or4_full | short | QualifiedShortRecall5 | 0.03571428571428571 | 0.028169014084507043 | 71 | 71 |
+| sh000905 | or4_full | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.028169014084507043 | 71 | 71 |
+| sh000905 | or4_full | short | strict_short_miss_rate | 0.9859154929577465 | 0.971830985915493 | 71 | 71 |
+| sh000905 | or4_full | short | resolved_claim_precision | 0.017857142857142856 | 0.06451612903225806 | 56 | 31 |
+| sh000905 | or4_full | short | duplicate_notices | 18 | 1 | — | — |
+| sh000905 | or4_full | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | or4_full | short | revisions | 118 | 40 | — | — |
+| sh000905 | or4_full | short | claim_notices | 174 | 174 | — | — |
+| sh000905 | or4_full | short | formal_alerts | not_defined | 71 | — | — |
+| sh000905 | or4_full | short | observation_notices | not_defined | 103 | — | — |
+| sh000905 | or4_full | short | alerts_per_asset_year | 14.900866354044549 | 14.900866354044549 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | or4_full | short | alarm_occupied_days | 776 | 776 | — | — |
+| sh000905 | or4_full | short | formal_alarm_occupied_days | not_defined | 229 | — | — |
+| sz399001 | or4_full | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | or4_full | short | P | 80 | 54 | — | — |
+| sz399001 | or4_full | short | TP | 2 | 3 | — | — |
+| sz399001 | or4_full | short | FP | 78 | 51 | — | — |
+| sz399001 | or4_full | short | FN | 120 | 119 | — | — |
+| sz399001 | or4_full | short | no_formal_alert_rate | 0.5737704918032787 | 0.6557377049180327 | 122 | 122 |
+| sz399001 | or4_full | short | first_window_coverage | 0.06557377049180328 | 0.02459016393442623 | 122 | 122 |
+| sz399001 | or4_full | short | QualifiedShortRecall5 | 0.056338028169014086 | 0.02459016393442623 | 122 | 122 |
+| sz399001 | or4_full | short | StrictShortRecall5W10 | 0.01639344262295082 | 0.02459016393442623 | 122 | 122 |
+| sz399001 | or4_full | short | strict_short_miss_rate | 0.9836065573770492 | 0.9754098360655737 | 122 | 122 |
+| sz399001 | or4_full | short | resolved_claim_precision | 0.025 | 0.05555555555555555 | 80 | 54 |
+| sz399001 | or4_full | short | duplicate_notices | 19 | 4 | — | — |
+| sz399001 | or4_full | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | or4_full | short | revisions | 169 | 63 | — | — |
+| sz399001 | or4_full | short | claim_notices | 240 | 240 | — | — |
+| sz399001 | or4_full | short | formal_alerts | not_defined | 117 | — | — |
+| sz399001 | or4_full | short | observation_notices | not_defined | 123 | — | — |
+| sz399001 | or4_full | short | alerts_per_asset_year | 12.841810723703487 | 12.841810723703487 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | or4_full | short | alarm_occupied_days | 1120 | 1120 | — | — |
+| sz399001 | or4_full | short | formal_alarm_occupied_days | not_defined | 418 | — | — |
+| sz399006 | or4_full | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | or4_full | short | P | 37 | 22 | — | — |
+| sz399006 | or4_full | short | TP | 0 | 0 | — | — |
+| sz399006 | or4_full | short | FP | 37 | 22 | — | — |
+| sz399006 | or4_full | short | FN | 57 | 57 | — | — |
+| sz399006 | or4_full | short | no_formal_alert_rate | 0.5964912280701754 | 0.7017543859649122 | 57 | 57 |
+| sz399006 | or4_full | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
+| sz399006 | or4_full | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.0 | 57 | 57 |
+| sz399006 | or4_full | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | or4_full | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
+| sz399006 | or4_full | short | resolved_claim_precision | 0.0 | 0.0 | 37 | 22 |
+| sz399006 | or4_full | short | duplicate_notices | 11 | 3 | — | — |
+| sz399006 | or4_full | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | or4_full | short | revisions | 58 | 24 | — | — |
+| sz399006 | or4_full | short | claim_notices | 96 | 96 | — | — |
+| sz399006 | or4_full | short | formal_alerts | not_defined | 46 | — | — |
+| sz399006 | or4_full | short | observation_notices | not_defined | 50 | — | — |
+| sz399006 | or4_full | short | alerts_per_asset_year | 11.56059347181009 | 11.56059347181009 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | or4_full | short | alarm_occupied_days | 416 | 416 | — | — |
+| sz399006 | or4_full | short | formal_alarm_occupied_days | not_defined | 188 | — | — |
+| sh000001 | or4_full | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | or4_full | stage | P | 80 | 54 | — | — |
+| sh000001 | or4_full | stage | TP | 0 | 0 | — | — |
+| sh000001 | or4_full | stage | FP | 80 | 54 | — | — |
+| sh000001 | or4_full | stage | FN | 22 | 22 | — | — |
+| sh000001 | or4_full | stage | no_formal_alert_rate | 0.13636363636363635 | 0.36363636363636365 | 22 | 22 |
+| sh000001 | or4_full | stage | first_window_coverage | 0.22727272727272727 | 0.0 | 22 | 22 |
+| sh000001 | or4_full | stage | QualifiedStageRecall5 | 0.0364963503649635 | 0.0 | 22 | 22 |
+| sh000001 | or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 80 | 54 |
+| sh000001 | or4_full | stage | duplicate_notices | 13 | 2 | — | — |
+| sh000001 | or4_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | or4_full | stage | revisions | 189 | 71 | — | — |
+| sh000001 | or4_full | stage | claim_notices | 261 | 261 | — | — |
+| sh000001 | or4_full | stage | formal_alerts | not_defined | 125 | — | — |
+| sh000001 | or4_full | stage | observation_notices | not_defined | 136 | — | — |
+| sh000001 | or4_full | stage | alerts_per_asset_year | 13.965469162027542 | 13.965469162027542 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | or4_full | stage | alarm_occupied_days | 1159 | 1159 | — | — |
+| sh000001 | or4_full | stage | formal_alarm_occupied_days | not_defined | 480 | — | — |
+| sh000016 | or4_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | or4_full | stage | P | 61 | 40 | — | — |
+| sh000016 | or4_full | stage | TP | 0 | 0 | — | — |
+| sh000016 | or4_full | stage | FP | 61 | 40 | — | — |
+| sh000016 | or4_full | stage | FN | 13 | 13 | — | — |
+| sh000016 | or4_full | stage | no_formal_alert_rate | 0.15384615384615385 | 0.38461538461538464 | 13 | 13 |
+| sh000016 | or4_full | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 61 | 40 |
+| sh000016 | or4_full | stage | duplicate_notices | 3 | 2 | — | — |
+| sh000016 | or4_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | or4_full | stage | revisions | 108 | 42 | — | — |
+| sh000016 | or4_full | stage | claim_notices | 169 | 169 | — | — |
+| sh000016 | or4_full | stage | formal_alerts | not_defined | 82 | — | — |
+| sh000016 | or4_full | stage | observation_notices | not_defined | 87 | — | — |
+| sh000016 | or4_full | stage | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | or4_full | stage | alarm_occupied_days | 756 | 756 | — | — |
+| sh000016 | or4_full | stage | formal_alarm_occupied_days | not_defined | 322 | — | — |
+| sh000300 | or4_full | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | or4_full | stage | P | 62 | 33 | — | — |
+| sh000300 | or4_full | stage | TP | 0 | 0 | — | — |
+| sh000300 | or4_full | stage | FP | 62 | 33 | — | — |
+| sh000300 | or4_full | stage | FN | 14 | 14 | — | — |
+| sh000300 | or4_full | stage | no_formal_alert_rate | 0.14285714285714285 | 0.35714285714285715 | 14 | 14 |
+| sh000300 | or4_full | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 62 | 33 |
+| sh000300 | or4_full | stage | duplicate_notices | 12 | 2 | — | — |
+| sh000300 | or4_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | or4_full | stage | revisions | 113 | 51 | — | — |
+| sh000300 | or4_full | stage | claim_notices | 175 | 175 | — | — |
+| sh000300 | or4_full | stage | formal_alerts | not_defined | 84 | — | — |
+| sh000300 | or4_full | stage | observation_notices | not_defined | 91 | — | — |
+| sh000300 | or4_full | stage | alerts_per_asset_year | 13.015157299938913 | 13.015157299938913 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | or4_full | stage | alarm_occupied_days | 784 | 784 | — | — |
+| sh000300 | or4_full | stage | formal_alarm_occupied_days | not_defined | 339 | — | — |
+| sh000905 | or4_full | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | or4_full | stage | P | 56 | 31 | — | — |
+| sh000905 | or4_full | stage | TP | 0 | 0 | — | — |
+| sh000905 | or4_full | stage | FP | 56 | 31 | — | — |
+| sh000905 | or4_full | stage | FN | 13 | 13 | — | — |
+| sh000905 | or4_full | stage | no_formal_alert_rate | 0.3076923076923077 | 0.46153846153846156 | 13 | 13 |
+| sh000905 | or4_full | stage | first_window_coverage | 0.07692307692307693 | 0.0 | 13 | 13 |
+| sh000905 | or4_full | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
+| sh000905 | or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 56 | 31 |
+| sh000905 | or4_full | stage | duplicate_notices | 10 | 3 | — | — |
+| sh000905 | or4_full | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | or4_full | stage | revisions | 118 | 40 | — | — |
+| sh000905 | or4_full | stage | claim_notices | 174 | 174 | — | — |
+| sh000905 | or4_full | stage | formal_alerts | not_defined | 71 | — | — |
+| sh000905 | or4_full | stage | observation_notices | not_defined | 103 | — | — |
+| sh000905 | or4_full | stage | alerts_per_asset_year | 14.900866354044549 | 14.900866354044549 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | or4_full | stage | alarm_occupied_days | 776 | 776 | — | — |
+| sh000905 | or4_full | stage | formal_alarm_occupied_days | not_defined | 229 | — | — |
+| sz399001 | or4_full | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | or4_full | stage | P | 80 | 54 | — | — |
+| sz399001 | or4_full | stage | TP | 0 | 1 | — | — |
+| sz399001 | or4_full | stage | FP | 80 | 53 | — | — |
+| sz399001 | or4_full | stage | FN | 20 | 19 | — | — |
+| sz399001 | or4_full | stage | no_formal_alert_rate | 0.3 | 0.4 | 20 | 20 |
+| sz399001 | or4_full | stage | first_window_coverage | 0.0 | 0.05 | 20 | 20 |
+| sz399001 | or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.05 | 20 | 20 |
+| sz399001 | or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.05 | 20 | 20 |
+| sz399001 | or4_full | stage | strict_stage_miss_rate | 1.0 | 0.95 | 20 | 20 |
+| sz399001 | or4_full | stage | resolved_claim_precision | 0.0 | 0.018518518518518517 | 80 | 54 |
+| sz399001 | or4_full | stage | duplicate_notices | 11 | 6 | — | — |
+| sz399001 | or4_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | or4_full | stage | revisions | 169 | 63 | — | — |
+| sz399001 | or4_full | stage | claim_notices | 240 | 240 | — | — |
+| sz399001 | or4_full | stage | formal_alerts | not_defined | 117 | — | — |
+| sz399001 | or4_full | stage | observation_notices | not_defined | 123 | — | — |
+| sz399001 | or4_full | stage | alerts_per_asset_year | 12.841810723703487 | 12.841810723703487 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | or4_full | stage | alarm_occupied_days | 1120 | 1120 | — | — |
+| sz399001 | or4_full | stage | formal_alarm_occupied_days | not_defined | 418 | — | — |
+| sz399006 | or4_full | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | or4_full | stage | P | 38 | 22 | — | — |
+| sz399006 | or4_full | stage | TP | 0 | 0 | — | — |
+| sz399006 | or4_full | stage | FP | 38 | 22 | — | — |
+| sz399006 | or4_full | stage | FN | 9 | 9 | — | — |
+| sz399006 | or4_full | stage | no_formal_alert_rate | 0.3333333333333333 | 0.5555555555555556 | 9 | 9 |
+| sz399006 | or4_full | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or4_full | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or4_full | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or4_full | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | or4_full | stage | resolved_claim_precision | 0.0 | 0.0 | 38 | 22 |
+| sz399006 | or4_full | stage | duplicate_notices | 7 | 1 | — | — |
+| sz399006 | or4_full | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | or4_full | stage | revisions | 58 | 24 | — | — |
+| sz399006 | or4_full | stage | claim_notices | 96 | 96 | — | — |
+| sz399006 | or4_full | stage | formal_alerts | not_defined | 46 | — | — |
+| sz399006 | or4_full | stage | observation_notices | not_defined | 50 | — | — |
+| sz399006 | or4_full | stage | alerts_per_asset_year | 11.56059347181009 | 11.56059347181009 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | or4_full | stage | alarm_occupied_days | 416 | 416 | — | — |
+| sz399006 | or4_full | stage | formal_alarm_occupied_days | not_defined | 188 | — | — |
+| sh000001 | or4_thin | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | or4_thin | short | P | 84 | 56 | — | — |
+| sh000001 | or4_thin | short | TP | 0 | 1 | — | — |
+| sh000001 | or4_thin | short | FP | 84 | 55 | — | — |
+| sh000001 | or4_thin | short | FN | 115 | 114 | — | — |
+| sh000001 | or4_thin | short | no_formal_alert_rate | 0.48695652173913045 | 0.6173913043478261 | 115 | 115 |
+| sh000001 | or4_thin | short | first_window_coverage | 0.017391304347826087 | 0.008695652173913044 | 115 | 115 |
+| sh000001 | or4_thin | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.008695652173913044 | 115 | 115 |
+| sh000001 | or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.008695652173913044 | 115 | 115 |
+| sh000001 | or4_thin | short | strict_short_miss_rate | 1.0 | 0.991304347826087 | 115 | 115 |
+| sh000001 | or4_thin | short | resolved_claim_precision | 0.0 | 0.017857142857142856 | 84 | 56 |
+| sh000001 | or4_thin | short | duplicate_notices | 19 | 7 | — | — |
+| sh000001 | or4_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | or4_thin | short | revisions | 162 | 66 | — | — |
+| sh000001 | or4_thin | short | claim_notices | 238 | 238 | — | — |
+| sh000001 | or4_thin | short | formal_alerts | not_defined | 122 | — | — |
+| sh000001 | or4_thin | short | observation_notices | not_defined | 116 | — | — |
+| sh000001 | or4_thin | short | alerts_per_asset_year | 12.73479563433929 | 12.73479563433929 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | or4_thin | short | alarm_occupied_days | 964 | 964 | — | — |
+| sh000001 | or4_thin | short | formal_alarm_occupied_days | not_defined | 418 | — | — |
+| sh000016 | or4_thin | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | or4_thin | short | P | 59 | 43 | — | — |
+| sh000016 | or4_thin | short | TP | 0 | 0 | — | — |
+| sh000016 | or4_thin | short | FP | 59 | 43 | — | — |
+| sh000016 | or4_thin | short | FN | 97 | 97 | — | — |
+| sh000016 | or4_thin | short | no_formal_alert_rate | 0.5773195876288659 | 0.6804123711340206 | 97 | 97 |
+| sh000016 | or4_thin | short | first_window_coverage | 0.010309278350515464 | 0.0 | 97 | 97 |
+| sh000016 | or4_thin | short | QualifiedShortRecall5 | 0.00909090909090909 | 0.0 | 97 | 97 |
+| sh000016 | or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | or4_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | or4_thin | short | resolved_claim_precision | 0.0 | 0.0 | 59 | 43 |
+| sh000016 | or4_thin | short | duplicate_notices | 16 | 10 | — | — |
+| sh000016 | or4_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | or4_thin | short | revisions | 110 | 54 | — | — |
+| sh000016 | or4_thin | short | claim_notices | 169 | 169 | — | — |
+| sh000016 | or4_thin | short | formal_alerts | not_defined | 97 | — | — |
+| sh000016 | or4_thin | short | observation_notices | not_defined | 72 | — | — |
+| sh000016 | or4_thin | short | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | or4_thin | short | alarm_occupied_days | 738 | 738 | — | — |
+| sh000016 | or4_thin | short | formal_alarm_occupied_days | not_defined | 316 | — | — |
+| sh000300 | or4_thin | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | or4_thin | short | P | 58 | 36 | — | — |
+| sh000300 | or4_thin | short | TP | 0 | 0 | — | — |
+| sh000300 | or4_thin | short | FP | 58 | 36 | — | — |
+| sh000300 | or4_thin | short | FN | 90 | 90 | — | — |
+| sh000300 | or4_thin | short | no_formal_alert_rate | 0.5555555555555556 | 0.6888888888888889 | 90 | 90 |
+| sh000300 | or4_thin | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | or4_thin | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | or4_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
+| sh000300 | or4_thin | short | resolved_claim_precision | 0.0 | 0.0 | 58 | 36 |
+| sh000300 | or4_thin | short | duplicate_notices | 15 | 6 | — | — |
+| sh000300 | or4_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | or4_thin | short | revisions | 100 | 47 | — | — |
+| sh000300 | or4_thin | short | claim_notices | 158 | 158 | — | — |
+| sh000300 | or4_thin | short | formal_alerts | not_defined | 83 | — | — |
+| sh000300 | or4_thin | short | observation_notices | not_defined | 75 | — | — |
+| sh000300 | or4_thin | short | alerts_per_asset_year | 11.750827733659133 | 11.750827733659133 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | or4_thin | short | alarm_occupied_days | 718 | 718 | — | — |
+| sh000300 | or4_thin | short | formal_alarm_occupied_days | not_defined | 301 | — | — |
+| sh000905 | or4_thin | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | or4_thin | short | P | 50 | 28 | — | — |
+| sh000905 | or4_thin | short | TP | 3 | 3 | — | — |
+| sh000905 | or4_thin | short | FP | 47 | 25 | — | — |
+| sh000905 | or4_thin | short | FN | 68 | 68 | — | — |
+| sh000905 | or4_thin | short | no_formal_alert_rate | 0.5492957746478874 | 0.676056338028169 | 71 | 71 |
+| sh000905 | or4_thin | short | first_window_coverage | 0.056338028169014086 | 0.04225352112676056 | 71 | 71 |
+| sh000905 | or4_thin | short | QualifiedShortRecall5 | 0.047619047619047616 | 0.04225352112676056 | 71 | 71 |
+| sh000905 | or4_thin | short | StrictShortRecall5W10 | 0.04225352112676056 | 0.04225352112676056 | 71 | 71 |
+| sh000905 | or4_thin | short | strict_short_miss_rate | 0.9577464788732395 | 0.9577464788732395 | 71 | 71 |
+| sh000905 | or4_thin | short | resolved_claim_precision | 0.06 | 0.10714285714285714 | 50 | 28 |
+| sh000905 | or4_thin | short | duplicate_notices | 14 | 2 | — | — |
+| sh000905 | or4_thin | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | or4_thin | short | revisions | 100 | 34 | — | — |
+| sh000905 | or4_thin | short | claim_notices | 150 | 150 | — | — |
+| sh000905 | or4_thin | short | formal_alerts | not_defined | 62 | — | — |
+| sh000905 | or4_thin | short | observation_notices | not_defined | 88 | — | — |
+| sh000905 | or4_thin | short | alerts_per_asset_year | 12.845574443141853 | 12.845574443141853 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | or4_thin | short | alarm_occupied_days | 543 | 543 | — | — |
+| sh000905 | or4_thin | short | formal_alarm_occupied_days | not_defined | 185 | — | — |
+| sz399001 | or4_thin | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | or4_thin | short | P | 82 | 56 | — | — |
+| sz399001 | or4_thin | short | TP | 3 | 3 | — | — |
+| sz399001 | or4_thin | short | FP | 79 | 53 | — | — |
+| sz399001 | or4_thin | short | FN | 119 | 119 | — | — |
+| sz399001 | or4_thin | short | no_formal_alert_rate | 0.5409836065573771 | 0.6475409836065574 | 122 | 122 |
+| sz399001 | or4_thin | short | first_window_coverage | 0.04918032786885246 | 0.02459016393442623 | 122 | 122 |
+| sz399001 | or4_thin | short | QualifiedShortRecall5 | 0.04225352112676056 | 0.02459016393442623 | 122 | 122 |
+| sz399001 | or4_thin | short | StrictShortRecall5W10 | 0.02459016393442623 | 0.02459016393442623 | 122 | 122 |
+| sz399001 | or4_thin | short | strict_short_miss_rate | 0.9754098360655737 | 0.9754098360655737 | 122 | 122 |
+| sz399001 | or4_thin | short | resolved_claim_precision | 0.036585365853658534 | 0.05357142857142857 | 82 | 56 |
+| sz399001 | or4_thin | short | duplicate_notices | 17 | 4 | — | — |
+| sz399001 | or4_thin | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | or4_thin | short | revisions | 153 | 70 | — | — |
+| sz399001 | or4_thin | short | claim_notices | 226 | 226 | — | — |
+| sz399001 | or4_thin | short | formal_alerts | not_defined | 126 | — | — |
+| sz399001 | or4_thin | short | observation_notices | not_defined | 100 | — | — |
+| sz399001 | or4_thin | short | alerts_per_asset_year | 12.092705098154116 | 12.092705098154116 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | or4_thin | short | alarm_occupied_days | 902 | 902 | — | — |
+| sz399001 | or4_thin | short | formal_alarm_occupied_days | not_defined | 382 | — | — |
+| sz399006 | or4_thin | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | or4_thin | short | P | 36 | 24 | — | — |
+| sz399006 | or4_thin | short | TP | 0 | 0 | — | — |
+| sz399006 | or4_thin | short | FP | 36 | 24 | — | — |
+| sz399006 | or4_thin | short | FN | 57 | 57 | — | — |
+| sz399006 | or4_thin | short | no_formal_alert_rate | 0.6140350877192983 | 0.6842105263157895 | 57 | 57 |
+| sz399006 | or4_thin | short | first_window_coverage | 0.017543859649122806 | 0.0 | 57 | 57 |
+| sz399006 | or4_thin | short | QualifiedShortRecall5 | 0.015151515151515152 | 0.0 | 57 | 57 |
+| sz399006 | or4_thin | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | or4_thin | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
+| sz399006 | or4_thin | short | resolved_claim_precision | 0.0 | 0.0 | 36 | 24 |
+| sz399006 | or4_thin | short | duplicate_notices | 12 | 4 | — | — |
+| sz399006 | or4_thin | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | or4_thin | short | revisions | 53 | 29 | — | — |
+| sz399006 | or4_thin | short | claim_notices | 90 | 90 | — | — |
+| sz399006 | or4_thin | short | formal_alerts | not_defined | 53 | — | — |
+| sz399006 | or4_thin | short | observation_notices | not_defined | 37 | — | — |
+| sz399006 | or4_thin | short | alerts_per_asset_year | 10.838056379821959 | 10.838056379821959 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | or4_thin | short | alarm_occupied_days | 306 | 306 | — | — |
+| sz399006 | or4_thin | short | formal_alarm_occupied_days | not_defined | 176 | — | — |
+| sh000001 | or4_thin | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | or4_thin | stage | P | 83 | 56 | — | — |
+| sh000001 | or4_thin | stage | TP | 0 | 1 | — | — |
+| sh000001 | or4_thin | stage | FP | 83 | 55 | — | — |
+| sh000001 | or4_thin | stage | FN | 22 | 21 | — | — |
+| sh000001 | or4_thin | stage | no_formal_alert_rate | 0.13636363636363635 | 0.3181818181818182 | 22 | 22 |
+| sh000001 | or4_thin | stage | first_window_coverage | 0.13636363636363635 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | or4_thin | stage | QualifiedStageRecall5 | 0.021897810218978103 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.045454545454545456 | 22 | 22 |
+| sh000001 | or4_thin | stage | strict_stage_miss_rate | 1.0 | 0.9545454545454546 | 22 | 22 |
+| sh000001 | or4_thin | stage | resolved_claim_precision | 0.0 | 0.017857142857142856 | 83 | 56 |
+| sh000001 | or4_thin | stage | duplicate_notices | 15 | 5 | — | — |
+| sh000001 | or4_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | or4_thin | stage | revisions | 162 | 66 | — | — |
+| sh000001 | or4_thin | stage | claim_notices | 238 | 238 | — | — |
+| sh000001 | or4_thin | stage | formal_alerts | not_defined | 122 | — | — |
+| sh000001 | or4_thin | stage | observation_notices | not_defined | 116 | — | — |
+| sh000001 | or4_thin | stage | alerts_per_asset_year | 12.73479563433929 | 12.73479563433929 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | or4_thin | stage | alarm_occupied_days | 964 | 964 | — | — |
+| sh000001 | or4_thin | stage | formal_alarm_occupied_days | not_defined | 418 | — | — |
+| sh000016 | or4_thin | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | or4_thin | stage | P | 59 | 43 | — | — |
+| sh000016 | or4_thin | stage | TP | 0 | 0 | — | — |
+| sh000016 | or4_thin | stage | FP | 59 | 43 | — | — |
+| sh000016 | or4_thin | stage | FN | 13 | 13 | — | — |
+| sh000016 | or4_thin | stage | no_formal_alert_rate | 0.15384615384615385 | 0.38461538461538464 | 13 | 13 |
+| sh000016 | or4_thin | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or4_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | or4_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | or4_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 59 | 43 |
+| sh000016 | or4_thin | stage | duplicate_notices | 3 | 3 | — | — |
+| sh000016 | or4_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | or4_thin | stage | revisions | 110 | 54 | — | — |
+| sh000016 | or4_thin | stage | claim_notices | 169 | 169 | — | — |
+| sh000016 | or4_thin | stage | formal_alerts | not_defined | 97 | — | — |
+| sh000016 | or4_thin | stage | observation_notices | not_defined | 72 | — | — |
+| sh000016 | or4_thin | stage | alerts_per_asset_year | 11.49245624650903 | 11.49245624650903 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | or4_thin | stage | alarm_occupied_days | 738 | 738 | — | — |
+| sh000016 | or4_thin | stage | formal_alarm_occupied_days | not_defined | 316 | — | — |
+| sh000300 | or4_thin | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | or4_thin | stage | P | 58 | 36 | — | — |
+| sh000300 | or4_thin | stage | TP | 0 | 0 | — | — |
+| sh000300 | or4_thin | stage | FP | 58 | 36 | — | — |
+| sh000300 | or4_thin | stage | FN | 14 | 14 | — | — |
+| sh000300 | or4_thin | stage | no_formal_alert_rate | 0.21428571428571427 | 0.42857142857142855 | 14 | 14 |
+| sh000300 | or4_thin | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or4_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | or4_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | or4_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 58 | 36 |
+| sh000300 | or4_thin | stage | duplicate_notices | 9 | 3 | — | — |
+| sh000300 | or4_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | or4_thin | stage | revisions | 100 | 47 | — | — |
+| sh000300 | or4_thin | stage | claim_notices | 158 | 158 | — | — |
+| sh000300 | or4_thin | stage | formal_alerts | not_defined | 83 | — | — |
+| sh000300 | or4_thin | stage | observation_notices | not_defined | 75 | — | — |
+| sh000300 | or4_thin | stage | alerts_per_asset_year | 11.750827733659133 | 11.750827733659133 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | or4_thin | stage | alarm_occupied_days | 718 | 718 | — | — |
+| sh000300 | or4_thin | stage | formal_alarm_occupied_days | not_defined | 301 | — | — |
+| sh000905 | or4_thin | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | or4_thin | stage | P | 50 | 28 | — | — |
+| sh000905 | or4_thin | stage | TP | 2 | 2 | — | — |
+| sh000905 | or4_thin | stage | FP | 48 | 26 | — | — |
+| sh000905 | or4_thin | stage | FN | 11 | 11 | — | — |
+| sh000905 | or4_thin | stage | no_formal_alert_rate | 0.3076923076923077 | 0.38461538461538464 | 13 | 13 |
+| sh000905 | or4_thin | stage | first_window_coverage | 0.15384615384615385 | 0.15384615384615385 | 13 | 13 |
+| sh000905 | or4_thin | stage | QualifiedStageRecall5 | 0.023809523809523808 | 0.15384615384615385 | 13 | 13 |
+| sh000905 | or4_thin | stage | StrictStageRecall5W10 | 0.15384615384615385 | 0.15384615384615385 | 13 | 13 |
+| sh000905 | or4_thin | stage | strict_stage_miss_rate | 0.8461538461538461 | 0.8461538461538461 | 13 | 13 |
+| sh000905 | or4_thin | stage | resolved_claim_precision | 0.04 | 0.07142857142857142 | 50 | 28 |
+| sh000905 | or4_thin | stage | duplicate_notices | 8 | 2 | — | — |
+| sh000905 | or4_thin | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | or4_thin | stage | revisions | 100 | 34 | — | — |
+| sh000905 | or4_thin | stage | claim_notices | 150 | 150 | — | — |
+| sh000905 | or4_thin | stage | formal_alerts | not_defined | 62 | — | — |
+| sh000905 | or4_thin | stage | observation_notices | not_defined | 88 | — | — |
+| sh000905 | or4_thin | stage | alerts_per_asset_year | 12.845574443141853 | 12.845574443141853 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | or4_thin | stage | alarm_occupied_days | 543 | 543 | — | — |
+| sh000905 | or4_thin | stage | formal_alarm_occupied_days | not_defined | 185 | — | — |
+| sz399001 | or4_thin | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | or4_thin | stage | P | 82 | 56 | — | — |
+| sz399001 | or4_thin | stage | TP | 1 | 0 | — | — |
+| sz399001 | or4_thin | stage | FP | 81 | 56 | — | — |
+| sz399001 | or4_thin | stage | FN | 19 | 20 | — | — |
+| sz399001 | or4_thin | stage | no_formal_alert_rate | 0.3 | 0.45 | 20 | 20 |
+| sz399001 | or4_thin | stage | first_window_coverage | 0.1 | 0.0 | 20 | 20 |
+| sz399001 | or4_thin | stage | QualifiedStageRecall5 | 0.014084507042253521 | 0.0 | 20 | 20 |
+| sz399001 | or4_thin | stage | StrictStageRecall5W10 | 0.05 | 0.0 | 20 | 20 |
+| sz399001 | or4_thin | stage | strict_stage_miss_rate | 0.95 | 1.0 | 20 | 20 |
+| sz399001 | or4_thin | stage | resolved_claim_precision | 0.012195121951219513 | 0.0 | 82 | 56 |
+| sz399001 | or4_thin | stage | duplicate_notices | 12 | 7 | — | — |
+| sz399001 | or4_thin | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | or4_thin | stage | revisions | 153 | 70 | — | — |
+| sz399001 | or4_thin | stage | claim_notices | 226 | 226 | — | — |
+| sz399001 | or4_thin | stage | formal_alerts | not_defined | 126 | — | — |
+| sz399001 | or4_thin | stage | observation_notices | not_defined | 100 | — | — |
+| sz399001 | or4_thin | stage | alerts_per_asset_year | 12.092705098154116 | 12.092705098154116 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | or4_thin | stage | alarm_occupied_days | 902 | 902 | — | — |
+| sz399001 | or4_thin | stage | formal_alarm_occupied_days | not_defined | 382 | — | — |
+| sz399006 | or4_thin | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | or4_thin | stage | P | 37 | 24 | — | — |
+| sz399006 | or4_thin | stage | TP | 0 | 0 | — | — |
+| sz399006 | or4_thin | stage | FP | 37 | 24 | — | — |
+| sz399006 | or4_thin | stage | FN | 9 | 9 | — | — |
+| sz399006 | or4_thin | stage | no_formal_alert_rate | 0.4444444444444444 | 0.5555555555555556 | 9 | 9 |
+| sz399006 | or4_thin | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or4_thin | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or4_thin | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | or4_thin | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | or4_thin | stage | resolved_claim_precision | 0.0 | 0.0 | 37 | 24 |
+| sz399006 | or4_thin | stage | duplicate_notices | 8 | 2 | — | — |
+| sz399006 | or4_thin | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | or4_thin | stage | revisions | 53 | 29 | — | — |
+| sz399006 | or4_thin | stage | claim_notices | 90 | 90 | — | — |
+| sz399006 | or4_thin | stage | formal_alerts | not_defined | 53 | — | — |
+| sz399006 | or4_thin | stage | observation_notices | not_defined | 37 | — | — |
+| sz399006 | or4_thin | stage | alerts_per_asset_year | 10.838056379821959 | 10.838056379821959 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | or4_thin | stage | alarm_occupied_days | 306 | 306 | — | — |
+| sz399006 | or4_thin | stage | formal_alarm_occupied_days | not_defined | 176 | — | — |
+| sh000001 | ref_12_24m | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | ref_12_24m | short | P | 10 | 7 | — | — |
+| sh000001 | ref_12_24m | short | TP | 0 | 0 | — | — |
+| sh000001 | ref_12_24m | short | FP | 10 | 7 | — | — |
+| sh000001 | ref_12_24m | short | FN | 115 | 115 | — | — |
+| sh000001 | ref_12_24m | short | no_formal_alert_rate | 0.9304347826086956 | 0.9565217391304348 | 115 | 115 |
+| sh000001 | ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 115 | 115 |
+| sh000001 | ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 115 | 115 |
+| sh000001 | ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 115 | 115 |
+| sh000001 | ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 115 | 115 |
+| sh000001 | ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 10 | 7 |
+| sh000001 | ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
+| sh000001 | ref_12_24m | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | ref_12_24m | short | revisions | 68 | 14 | — | — |
+| sh000001 | ref_12_24m | short | claim_notices | 71 | 71 | — | — |
+| sh000001 | ref_12_24m | short | formal_alerts | not_defined | 21 | — | — |
+| sh000001 | ref_12_24m | short | observation_notices | not_defined | 50 | — | — |
+| sh000001 | ref_12_24m | short | alerts_per_asset_year | 3.799035672428948 | 3.799035672428948 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | ref_12_24m | short | alarm_occupied_days | 274 | 274 | — | — |
+| sh000001 | ref_12_24m | short | formal_alarm_occupied_days | not_defined | 73 | — | — |
+| sh000016 | ref_12_24m | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | ref_12_24m | short | P | 9 | 7 | — | — |
+| sh000016 | ref_12_24m | short | TP | 0 | 0 | — | — |
+| sh000016 | ref_12_24m | short | FP | 9 | 7 | — | — |
+| sh000016 | ref_12_24m | short | FN | 97 | 97 | — | — |
+| sh000016 | ref_12_24m | short | no_formal_alert_rate | 0.9175257731958762 | 0.9381443298969072 | 97 | 97 |
+| sh000016 | ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 9 | 7 |
+| sh000016 | ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
+| sh000016 | ref_12_24m | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | ref_12_24m | short | revisions | 43 | 12 | — | — |
+| sh000016 | ref_12_24m | short | claim_notices | 52 | 52 | — | — |
+| sh000016 | ref_12_24m | short | formal_alerts | not_defined | 19 | — | — |
+| sh000016 | ref_12_24m | short | observation_notices | not_defined | 33 | — | — |
+| sh000016 | ref_12_24m | short | alerts_per_asset_year | 3.53614038354124 | 3.53614038354124 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | ref_12_24m | short | alarm_occupied_days | 237 | 237 | — | — |
+| sh000016 | ref_12_24m | short | formal_alarm_occupied_days | not_defined | 101 | — | — |
+| sh000300 | ref_12_24m | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | ref_12_24m | short | P | 6 | 4 | — | — |
+| sh000300 | ref_12_24m | short | TP | 0 | 0 | — | — |
+| sh000300 | ref_12_24m | short | FP | 6 | 4 | — | — |
+| sh000300 | ref_12_24m | short | FN | 90 | 90 | — | — |
+| sh000300 | ref_12_24m | short | no_formal_alert_rate | 0.9444444444444444 | 0.9666666666666667 | 90 | 90 |
+| sh000300 | ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
+| sh000300 | ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 6 | 4 |
+| sh000300 | ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
+| sh000300 | ref_12_24m | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | ref_12_24m | short | revisions | 18 | 2 | — | — |
+| sh000300 | ref_12_24m | short | claim_notices | 24 | 24 | — | — |
+| sh000300 | ref_12_24m | short | formal_alerts | not_defined | 6 | — | — |
+| sh000300 | ref_12_24m | short | observation_notices | not_defined | 18 | — | — |
+| sh000300 | ref_12_24m | short | alerts_per_asset_year | 1.7849358582773365 | 1.7849358582773365 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | ref_12_24m | short | alarm_occupied_days | 139 | 139 | — | — |
+| sh000300 | ref_12_24m | short | formal_alarm_occupied_days | not_defined | 29 | — | — |
+| sh000905 | ref_12_24m | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | ref_12_24m | short | P | 7 | 4 | — | — |
+| sh000905 | ref_12_24m | short | TP | 1 | 0 | — | — |
+| sh000905 | ref_12_24m | short | FP | 6 | 4 | — | — |
+| sh000905 | ref_12_24m | short | FN | 70 | 71 | — | — |
+| sh000905 | ref_12_24m | short | no_formal_alert_rate | 0.9014084507042254 | 0.9577464788732394 | 71 | 71 |
+| sh000905 | ref_12_24m | short | first_window_coverage | 0.056338028169014086 | 0.0 | 71 | 71 |
+| sh000905 | ref_12_24m | short | QualifiedShortRecall5 | 0.03571428571428571 | 0.0 | 71 | 71 |
+| sh000905 | ref_12_24m | short | StrictShortRecall5W10 | 0.014084507042253521 | 0.0 | 71 | 71 |
+| sh000905 | ref_12_24m | short | strict_short_miss_rate | 0.9859154929577465 | 1.0 | 71 | 71 |
+| sh000905 | ref_12_24m | short | resolved_claim_precision | 0.14285714285714285 | 0.0 | 7 | 4 |
+| sh000905 | ref_12_24m | short | duplicate_notices | 0 | 1 | — | — |
+| sh000905 | ref_12_24m | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | ref_12_24m | short | revisions | 49 | 3 | — | — |
+| sh000905 | ref_12_24m | short | claim_notices | 56 | 56 | — | — |
+| sh000905 | ref_12_24m | short | formal_alerts | not_defined | 7 | — | — |
+| sh000905 | ref_12_24m | short | observation_notices | not_defined | 49 | — | — |
+| sh000905 | ref_12_24m | short | alerts_per_asset_year | 4.795681125439625 | 4.795681125439625 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | ref_12_24m | short | alarm_occupied_days | 310 | 310 | — | — |
+| sh000905 | ref_12_24m | short | formal_alarm_occupied_days | not_defined | 28 | — | — |
+| sz399001 | ref_12_24m | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | ref_12_24m | short | P | 11 | 8 | — | — |
+| sz399001 | ref_12_24m | short | TP | 0 | 0 | — | — |
+| sz399001 | ref_12_24m | short | FP | 11 | 8 | — | — |
+| sz399001 | ref_12_24m | short | FN | 122 | 122 | — | — |
+| sz399001 | ref_12_24m | short | no_formal_alert_rate | 0.9262295081967213 | 0.9508196721311475 | 122 | 122 |
+| sz399001 | ref_12_24m | short | first_window_coverage | 0.00819672131147541 | 0.0 | 122 | 122 |
+| sz399001 | ref_12_24m | short | QualifiedShortRecall5 | 0.007042253521126761 | 0.0 | 122 | 122 |
+| sz399001 | ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 122 | 122 |
+| sz399001 | ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 122 | 122 |
+| sz399001 | ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 11 | 8 |
+| sz399001 | ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
+| sz399001 | ref_12_24m | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | ref_12_24m | short | revisions | 68 | 15 | — | — |
+| sz399001 | ref_12_24m | short | claim_notices | 70 | 70 | — | — |
+| sz399001 | ref_12_24m | short | formal_alerts | not_defined | 23 | — | — |
+| sz399001 | ref_12_24m | short | observation_notices | not_defined | 47 | — | — |
+| sz399001 | ref_12_24m | short | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | ref_12_24m | short | alarm_occupied_days | 351 | 351 | — | — |
+| sz399001 | ref_12_24m | short | formal_alarm_occupied_days | not_defined | 86 | — | — |
+| sz399006 | ref_12_24m | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | ref_12_24m | short | P | 6 | 2 | — | — |
+| sz399006 | ref_12_24m | short | TP | 0 | 0 | — | — |
+| sz399006 | ref_12_24m | short | FP | 6 | 2 | — | — |
+| sz399006 | ref_12_24m | short | FN | 57 | 57 | — | — |
+| sz399006 | ref_12_24m | short | no_formal_alert_rate | 0.9298245614035088 | 0.9824561403508771 | 57 | 57 |
+| sz399006 | ref_12_24m | short | first_window_coverage | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | ref_12_24m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | ref_12_24m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 57 | 57 |
+| sz399006 | ref_12_24m | short | strict_short_miss_rate | 1.0 | 1.0 | 57 | 57 |
+| sz399006 | ref_12_24m | short | resolved_claim_precision | 0.0 | 0.0 | 6 | 2 |
+| sz399006 | ref_12_24m | short | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | ref_12_24m | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | ref_12_24m | short | revisions | 7 | 3 | — | — |
+| sz399006 | ref_12_24m | short | claim_notices | 13 | 13 | — | — |
+| sz399006 | ref_12_24m | short | formal_alerts | not_defined | 5 | — | — |
+| sz399006 | ref_12_24m | short | observation_notices | not_defined | 8 | — | — |
+| sz399006 | ref_12_24m | short | alerts_per_asset_year | 1.5654970326409496 | 1.5654970326409496 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | ref_12_24m | short | alarm_occupied_days | 128 | 128 | — | — |
+| sz399006 | ref_12_24m | short | formal_alarm_occupied_days | not_defined | 22 | — | — |
+| sh000001 | ref_12_24m | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | ref_12_24m | stage | P | 10 | 7 | — | — |
+| sh000001 | ref_12_24m | stage | TP | 0 | 0 | — | — |
+| sh000001 | ref_12_24m | stage | FP | 10 | 7 | — | — |
+| sh000001 | ref_12_24m | stage | FN | 22 | 22 | — | — |
+| sh000001 | ref_12_24m | stage | no_formal_alert_rate | 0.7272727272727273 | 0.9090909090909091 | 22 | 22 |
+| sh000001 | ref_12_24m | stage | first_window_coverage | 0.045454545454545456 | 0.0 | 22 | 22 |
+| sh000001 | ref_12_24m | stage | QualifiedStageRecall5 | 0.0072992700729927005 | 0.0 | 22 | 22 |
+| sh000001 | ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 10 | 7 |
+| sh000001 | ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000001 | ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | ref_12_24m | stage | revisions | 68 | 14 | — | — |
+| sh000001 | ref_12_24m | stage | claim_notices | 71 | 71 | — | — |
+| sh000001 | ref_12_24m | stage | formal_alerts | not_defined | 21 | — | — |
+| sh000001 | ref_12_24m | stage | observation_notices | not_defined | 50 | — | — |
+| sh000001 | ref_12_24m | stage | alerts_per_asset_year | 3.799035672428948 | 3.799035672428948 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | ref_12_24m | stage | alarm_occupied_days | 274 | 274 | — | — |
+| sh000001 | ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 73 | — | — |
+| sh000016 | ref_12_24m | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | ref_12_24m | stage | P | 9 | 7 | — | — |
+| sh000016 | ref_12_24m | stage | TP | 0 | 0 | — | — |
+| sh000016 | ref_12_24m | stage | FP | 9 | 7 | — | — |
+| sh000016 | ref_12_24m | stage | FN | 13 | 13 | — | — |
+| sh000016 | ref_12_24m | stage | no_formal_alert_rate | 0.7692307692307693 | 0.9230769230769231 | 13 | 13 |
+| sh000016 | ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 7 |
+| sh000016 | ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000016 | ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | ref_12_24m | stage | revisions | 43 | 12 | — | — |
+| sh000016 | ref_12_24m | stage | claim_notices | 52 | 52 | — | — |
+| sh000016 | ref_12_24m | stage | formal_alerts | not_defined | 19 | — | — |
+| sh000016 | ref_12_24m | stage | observation_notices | not_defined | 33 | — | — |
+| sh000016 | ref_12_24m | stage | alerts_per_asset_year | 3.53614038354124 | 3.53614038354124 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | ref_12_24m | stage | alarm_occupied_days | 237 | 237 | — | — |
+| sh000016 | ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 101 | — | — |
+| sh000300 | ref_12_24m | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | ref_12_24m | stage | P | 6 | 4 | — | — |
+| sh000300 | ref_12_24m | stage | TP | 0 | 0 | — | — |
+| sh000300 | ref_12_24m | stage | FP | 6 | 4 | — | — |
+| sh000300 | ref_12_24m | stage | FN | 14 | 14 | — | — |
+| sh000300 | ref_12_24m | stage | no_formal_alert_rate | 0.7142857142857143 | 0.8571428571428571 | 14 | 14 |
+| sh000300 | ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 6 | 4 |
+| sh000300 | ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000300 | ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | ref_12_24m | stage | revisions | 18 | 2 | — | — |
+| sh000300 | ref_12_24m | stage | claim_notices | 24 | 24 | — | — |
+| sh000300 | ref_12_24m | stage | formal_alerts | not_defined | 6 | — | — |
+| sh000300 | ref_12_24m | stage | observation_notices | not_defined | 18 | — | — |
+| sh000300 | ref_12_24m | stage | alerts_per_asset_year | 1.7849358582773365 | 1.7849358582773365 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | ref_12_24m | stage | alarm_occupied_days | 139 | 139 | — | — |
+| sh000300 | ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 29 | — | — |
+| sh000905 | ref_12_24m | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | ref_12_24m | stage | P | 7 | 4 | — | — |
+| sh000905 | ref_12_24m | stage | TP | 0 | 0 | — | — |
+| sh000905 | ref_12_24m | stage | FP | 7 | 4 | — | — |
+| sh000905 | ref_12_24m | stage | FN | 13 | 13 | — | — |
+| sh000905 | ref_12_24m | stage | no_formal_alert_rate | 0.7692307692307693 | 0.9230769230769231 | 13 | 13 |
+| sh000905 | ref_12_24m | stage | first_window_coverage | 0.15384615384615385 | 0.0 | 13 | 13 |
+| sh000905 | ref_12_24m | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.0 | 13 | 13 |
+| sh000905 | ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000905 | ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000905 | ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 7 | 4 |
+| sh000905 | ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000905 | ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | ref_12_24m | stage | revisions | 49 | 3 | — | — |
+| sh000905 | ref_12_24m | stage | claim_notices | 56 | 56 | — | — |
+| sh000905 | ref_12_24m | stage | formal_alerts | not_defined | 7 | — | — |
+| sh000905 | ref_12_24m | stage | observation_notices | not_defined | 49 | — | — |
+| sh000905 | ref_12_24m | stage | alerts_per_asset_year | 4.795681125439625 | 4.795681125439625 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | ref_12_24m | stage | alarm_occupied_days | 310 | 310 | — | — |
+| sh000905 | ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 28 | — | — |
+| sz399001 | ref_12_24m | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | ref_12_24m | stage | P | 11 | 8 | — | — |
+| sz399001 | ref_12_24m | stage | TP | 0 | 0 | — | — |
+| sz399001 | ref_12_24m | stage | FP | 11 | 8 | — | — |
+| sz399001 | ref_12_24m | stage | FN | 20 | 20 | — | — |
+| sz399001 | ref_12_24m | stage | no_formal_alert_rate | 0.8 | 0.85 | 20 | 20 |
+| sz399001 | ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 11 | 8 |
+| sz399001 | ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
+| sz399001 | ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | ref_12_24m | stage | revisions | 68 | 15 | — | — |
+| sz399001 | ref_12_24m | stage | claim_notices | 70 | 70 | — | — |
+| sz399001 | ref_12_24m | stage | formal_alerts | not_defined | 23 | — | — |
+| sz399001 | ref_12_24m | stage | observation_notices | not_defined | 47 | — | — |
+| sz399001 | ref_12_24m | stage | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | ref_12_24m | stage | alarm_occupied_days | 351 | 351 | — | — |
+| sz399001 | ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 86 | — | — |
+| sz399006 | ref_12_24m | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | ref_12_24m | stage | P | 6 | 2 | — | — |
+| sz399006 | ref_12_24m | stage | TP | 0 | 0 | — | — |
+| sz399006 | ref_12_24m | stage | FP | 6 | 2 | — | — |
+| sz399006 | ref_12_24m | stage | FN | 9 | 9 | — | — |
+| sz399006 | ref_12_24m | stage | no_formal_alert_rate | 0.8888888888888888 | 1.0 | 9 | 9 |
+| sz399006 | ref_12_24m | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | ref_12_24m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | ref_12_24m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | ref_12_24m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | ref_12_24m | stage | resolved_claim_precision | 0.0 | 0.0 | 6 | 2 |
+| sz399006 | ref_12_24m | stage | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | ref_12_24m | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | ref_12_24m | stage | revisions | 7 | 3 | — | — |
+| sz399006 | ref_12_24m | stage | claim_notices | 13 | 13 | — | — |
+| sz399006 | ref_12_24m | stage | formal_alerts | not_defined | 5 | — | — |
+| sz399006 | ref_12_24m | stage | observation_notices | not_defined | 8 | — | — |
+| sz399006 | ref_12_24m | stage | alerts_per_asset_year | 1.5654970326409496 | 1.5654970326409496 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | ref_12_24m | stage | alarm_occupied_days | 128 | 128 | — | — |
+| sz399006 | ref_12_24m | stage | formal_alarm_occupied_days | not_defined | 22 | — | — |
+| sh000001 | ref_6_12m | short | E | 115 | 115 | 115 | 115 |
+| sh000001 | ref_6_12m | short | P | 31 | 28 | — | — |
+| sh000001 | ref_6_12m | short | TP | 2 | 2 | — | — |
+| sh000001 | ref_6_12m | short | FP | 29 | 26 | — | — |
+| sh000001 | ref_6_12m | short | FN | 113 | 113 | — | — |
+| sh000001 | ref_6_12m | short | no_formal_alert_rate | 0.7652173913043478 | 0.782608695652174 | 115 | 115 |
+| sh000001 | ref_6_12m | short | first_window_coverage | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | ref_6_12m | short | QualifiedShortRecall5 | 0.014598540145985401 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | ref_6_12m | short | StrictShortRecall5W10 | 0.017391304347826087 | 0.017391304347826087 | 115 | 115 |
+| sh000001 | ref_6_12m | short | strict_short_miss_rate | 0.9826086956521739 | 0.9826086956521739 | 115 | 115 |
+| sh000001 | ref_6_12m | short | resolved_claim_precision | 0.06451612903225806 | 0.07142857142857142 | 31 | 28 |
+| sh000001 | ref_6_12m | short | duplicate_notices | 2 | 1 | — | — |
+| sh000001 | ref_6_12m | short | pending_claims | 0 | 0 | — | — |
+| sh000001 | ref_6_12m | short | revisions | 95 | 67 | — | — |
+| sh000001 | ref_6_12m | short | claim_notices | 126 | 126 | — | — |
+| sh000001 | ref_6_12m | short | formal_alerts | not_defined | 95 | — | — |
+| sh000001 | ref_6_12m | short | observation_notices | not_defined | 31 | — | — |
+| sh000001 | ref_6_12m | short | alerts_per_asset_year | 6.741950629944331 | 6.741950629944331 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | ref_6_12m | short | alarm_occupied_days | 502 | 502 | — | — |
+| sh000001 | ref_6_12m | short | formal_alarm_occupied_days | not_defined | 379 | — | — |
+| sh000016 | ref_6_12m | short | E | 97 | 97 | 97 | 97 |
+| sh000016 | ref_6_12m | short | P | 17 | 15 | — | — |
+| sh000016 | ref_6_12m | short | TP | 0 | 0 | — | — |
+| sh000016 | ref_6_12m | short | FP | 17 | 15 | — | — |
+| sh000016 | ref_6_12m | short | FN | 97 | 97 | — | — |
+| sh000016 | ref_6_12m | short | no_formal_alert_rate | 0.845360824742268 | 0.865979381443299 | 97 | 97 |
+| sh000016 | ref_6_12m | short | first_window_coverage | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | ref_6_12m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | ref_6_12m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 97 | 97 |
+| sh000016 | ref_6_12m | short | strict_short_miss_rate | 1.0 | 1.0 | 97 | 97 |
+| sh000016 | ref_6_12m | short | resolved_claim_precision | 0.0 | 0.0 | 17 | 15 |
+| sh000016 | ref_6_12m | short | duplicate_notices | 1 | 1 | — | — |
+| sh000016 | ref_6_12m | short | pending_claims | 0 | 0 | — | — |
+| sh000016 | ref_6_12m | short | revisions | 58 | 37 | — | — |
+| sh000016 | ref_6_12m | short | claim_notices | 75 | 75 | — | — |
+| sh000016 | ref_6_12m | short | formal_alerts | not_defined | 52 | — | — |
+| sh000016 | ref_6_12m | short | observation_notices | not_defined | 23 | — | — |
+| sh000016 | ref_6_12m | short | alerts_per_asset_year | 5.100202476261404 | 5.100202476261404 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | ref_6_12m | short | alarm_occupied_days | 361 | 361 | — | — |
+| sh000016 | ref_6_12m | short | formal_alarm_occupied_days | not_defined | 256 | — | — |
+| sh000300 | ref_6_12m | short | E | 90 | 90 | 90 | 90 |
+| sh000300 | ref_6_12m | short | P | 24 | 19 | — | — |
+| sh000300 | ref_6_12m | short | TP | 0 | 0 | — | — |
+| sh000300 | ref_6_12m | short | FP | 24 | 19 | — | — |
+| sh000300 | ref_6_12m | short | FN | 90 | 90 | — | — |
+| sh000300 | ref_6_12m | short | no_formal_alert_rate | 0.7888888888888889 | 0.8111111111111111 | 90 | 90 |
+| sh000300 | ref_6_12m | short | first_window_coverage | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | ref_6_12m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | ref_6_12m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 90 | 90 |
+| sh000300 | ref_6_12m | short | strict_short_miss_rate | 1.0 | 1.0 | 90 | 90 |
+| sh000300 | ref_6_12m | short | resolved_claim_precision | 0.0 | 0.0 | 24 | 19 |
+| sh000300 | ref_6_12m | short | duplicate_notices | 3 | 1 | — | — |
+| sh000300 | ref_6_12m | short | pending_claims | 0 | 0 | — | — |
+| sh000300 | ref_6_12m | short | revisions | 67 | 37 | — | — |
+| sh000300 | ref_6_12m | short | claim_notices | 91 | 91 | — | — |
+| sh000300 | ref_6_12m | short | formal_alerts | not_defined | 56 | — | — |
+| sh000300 | ref_6_12m | short | observation_notices | not_defined | 35 | — | — |
+| sh000300 | ref_6_12m | short | alerts_per_asset_year | 6.7678817959682345 | 6.7678817959682345 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | ref_6_12m | short | alarm_occupied_days | 427 | 427 | — | — |
+| sh000300 | ref_6_12m | short | formal_alarm_occupied_days | not_defined | 252 | — | — |
+| sh000905 | ref_6_12m | short | E | 71 | 71 | 71 | 71 |
+| sh000905 | ref_6_12m | short | P | 14 | 13 | — | — |
+| sh000905 | ref_6_12m | short | TP | 0 | 0 | — | — |
+| sh000905 | ref_6_12m | short | FP | 14 | 13 | — | — |
+| sh000905 | ref_6_12m | short | FN | 71 | 71 | — | — |
+| sh000905 | ref_6_12m | short | no_formal_alert_rate | 0.8309859154929577 | 0.8450704225352113 | 71 | 71 |
+| sh000905 | ref_6_12m | short | first_window_coverage | 0.0 | 0.0 | 71 | 71 |
+| sh000905 | ref_6_12m | short | QualifiedShortRecall5 | 0.0 | 0.0 | 71 | 71 |
+| sh000905 | ref_6_12m | short | StrictShortRecall5W10 | 0.0 | 0.0 | 71 | 71 |
+| sh000905 | ref_6_12m | short | strict_short_miss_rate | 1.0 | 1.0 | 71 | 71 |
+| sh000905 | ref_6_12m | short | resolved_claim_precision | 0.0 | 0.0 | 14 | 13 |
+| sh000905 | ref_6_12m | short | duplicate_notices | 0 | 0 | — | — |
+| sh000905 | ref_6_12m | short | pending_claims | 0 | 0 | — | — |
+| sh000905 | ref_6_12m | short | revisions | 31 | 24 | — | — |
+| sh000905 | ref_6_12m | short | claim_notices | 45 | 45 | — | — |
+| sh000905 | ref_6_12m | short | formal_alerts | not_defined | 37 | — | — |
+| sh000905 | ref_6_12m | short | observation_notices | not_defined | 8 | — | — |
+| sh000905 | ref_6_12m | short | alerts_per_asset_year | 3.853672332942556 | 3.853672332942556 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | ref_6_12m | short | alarm_occupied_days | 186 | 186 | — | — |
+| sh000905 | ref_6_12m | short | formal_alarm_occupied_days | not_defined | 144 | — | — |
+| sz399001 | ref_6_12m | short | E | 122 | 122 | 122 | 122 |
+| sz399001 | ref_6_12m | short | P | 19 | 17 | — | — |
+| sz399001 | ref_6_12m | short | TP | 1 | 1 | — | — |
+| sz399001 | ref_6_12m | short | FP | 18 | 16 | — | — |
+| sz399001 | ref_6_12m | short | FN | 121 | 121 | — | — |
+| sz399001 | ref_6_12m | short | no_formal_alert_rate | 0.8688524590163934 | 0.8770491803278688 | 122 | 122 |
+| sz399001 | ref_6_12m | short | first_window_coverage | 0.00819672131147541 | 0.00819672131147541 | 122 | 122 |
+| sz399001 | ref_6_12m | short | QualifiedShortRecall5 | 0.007042253521126761 | 0.00819672131147541 | 122 | 122 |
+| sz399001 | ref_6_12m | short | StrictShortRecall5W10 | 0.00819672131147541 | 0.00819672131147541 | 122 | 122 |
+| sz399001 | ref_6_12m | short | strict_short_miss_rate | 0.9918032786885246 | 0.9918032786885246 | 122 | 122 |
+| sz399001 | ref_6_12m | short | resolved_claim_precision | 0.05263157894736842 | 0.058823529411764705 | 19 | 17 |
+| sz399001 | ref_6_12m | short | duplicate_notices | 2 | 0 | — | — |
+| sz399001 | ref_6_12m | short | pending_claims | 0 | 0 | — | — |
+| sz399001 | ref_6_12m | short | revisions | 51 | 28 | — | — |
+| sz399001 | ref_6_12m | short | claim_notices | 70 | 70 | — | — |
+| sz399001 | ref_6_12m | short | formal_alerts | not_defined | 45 | — | — |
+| sz399001 | ref_6_12m | short | observation_notices | not_defined | 25 | — | — |
+| sz399001 | ref_6_12m | short | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | ref_6_12m | short | alarm_occupied_days | 343 | 343 | — | — |
+| sz399001 | ref_6_12m | short | formal_alarm_occupied_days | not_defined | 216 | — | — |
+| sz399006 | ref_6_12m | short | E | 57 | 57 | 57 | 57 |
+| sz399006 | ref_6_12m | short | P | 9 | 8 | — | — |
+| sz399006 | ref_6_12m | short | TP | 1 | 1 | — | — |
+| sz399006 | ref_6_12m | short | FP | 8 | 7 | — | — |
+| sz399006 | ref_6_12m | short | FN | 56 | 56 | — | — |
+| sz399006 | ref_6_12m | short | no_formal_alert_rate | 0.8596491228070176 | 0.8771929824561403 | 57 | 57 |
+| sz399006 | ref_6_12m | short | first_window_coverage | 0.03508771929824561 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | ref_6_12m | short | QualifiedShortRecall5 | 0.030303030303030304 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | ref_6_12m | short | StrictShortRecall5W10 | 0.017543859649122806 | 0.017543859649122806 | 57 | 57 |
+| sz399006 | ref_6_12m | short | strict_short_miss_rate | 0.9824561403508771 | 0.9824561403508771 | 57 | 57 |
+| sz399006 | ref_6_12m | short | resolved_claim_precision | 0.1111111111111111 | 0.125 | 9 | 8 |
+| sz399006 | ref_6_12m | short | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | ref_6_12m | short | pending_claims | 0 | 0 | — | — |
+| sz399006 | ref_6_12m | short | revisions | 26 | 14 | — | — |
+| sz399006 | ref_6_12m | short | claim_notices | 35 | 35 | — | — |
+| sz399006 | ref_6_12m | short | formal_alerts | not_defined | 22 | — | — |
+| sz399006 | ref_6_12m | short | observation_notices | not_defined | 13 | — | — |
+| sz399006 | ref_6_12m | short | alerts_per_asset_year | 4.214799703264095 | 4.214799703264095 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | ref_6_12m | short | alarm_occupied_days | 187 | 187 | — | — |
+| sz399006 | ref_6_12m | short | formal_alarm_occupied_days | not_defined | 110 | — | — |
+| sh000001 | ref_6_12m | stage | E | 22 | 22 | 22 | 22 |
+| sh000001 | ref_6_12m | stage | P | 31 | 28 | — | — |
+| sh000001 | ref_6_12m | stage | TP | 0 | 0 | — | — |
+| sh000001 | ref_6_12m | stage | FP | 31 | 28 | — | — |
+| sh000001 | ref_6_12m | stage | FN | 22 | 22 | — | — |
+| sh000001 | ref_6_12m | stage | no_formal_alert_rate | 0.5909090909090909 | 0.5909090909090909 | 22 | 22 |
+| sh000001 | ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 22 | 22 |
+| sh000001 | ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 22 | 22 |
+| sh000001 | ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 31 | 28 |
+| sh000001 | ref_6_12m | stage | duplicate_notices | 3 | 0 | — | — |
+| sh000001 | ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
+| sh000001 | ref_6_12m | stage | revisions | 95 | 67 | — | — |
+| sh000001 | ref_6_12m | stage | claim_notices | 126 | 126 | — | — |
+| sh000001 | ref_6_12m | stage | formal_alerts | not_defined | 95 | — | — |
+| sh000001 | ref_6_12m | stage | observation_notices | not_defined | 31 | — | — |
+| sh000001 | ref_6_12m | stage | alerts_per_asset_year | 6.741950629944331 | 6.741950629944331 | 18.688953229703554 | 18.688953229703554 |
+| sh000001 | ref_6_12m | stage | alarm_occupied_days | 502 | 502 | — | — |
+| sh000001 | ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 379 | — | — |
+| sh000016 | ref_6_12m | stage | E | 13 | 13 | 13 | 13 |
+| sh000016 | ref_6_12m | stage | P | 17 | 15 | — | — |
+| sh000016 | ref_6_12m | stage | TP | 0 | 0 | — | — |
+| sh000016 | ref_6_12m | stage | FP | 17 | 15 | — | — |
+| sh000016 | ref_6_12m | stage | FN | 13 | 13 | — | — |
+| sh000016 | ref_6_12m | stage | no_formal_alert_rate | 0.5384615384615384 | 0.5384615384615384 | 13 | 13 |
+| sh000016 | ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 13 | 13 |
+| sh000016 | ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 13 | 13 |
+| sh000016 | ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 17 | 15 |
+| sh000016 | ref_6_12m | stage | duplicate_notices | 2 | 1 | — | — |
+| sh000016 | ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
+| sh000016 | ref_6_12m | stage | revisions | 58 | 37 | — | — |
+| sh000016 | ref_6_12m | stage | claim_notices | 75 | 75 | — | — |
+| sh000016 | ref_6_12m | stage | formal_alerts | not_defined | 52 | — | — |
+| sh000016 | ref_6_12m | stage | observation_notices | not_defined | 23 | — | — |
+| sh000016 | ref_6_12m | stage | alerts_per_asset_year | 5.100202476261404 | 5.100202476261404 | 14.705298534535274 | 14.705298534535274 |
+| sh000016 | ref_6_12m | stage | alarm_occupied_days | 361 | 361 | — | — |
+| sh000016 | ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 256 | — | — |
+| sh000300 | ref_6_12m | stage | E | 14 | 14 | 14 | 14 |
+| sh000300 | ref_6_12m | stage | P | 24 | 19 | — | — |
+| sh000300 | ref_6_12m | stage | TP | 0 | 0 | — | — |
+| sh000300 | ref_6_12m | stage | FP | 24 | 19 | — | — |
+| sh000300 | ref_6_12m | stage | FN | 14 | 14 | — | — |
+| sh000300 | ref_6_12m | stage | no_formal_alert_rate | 0.35714285714285715 | 0.42857142857142855 | 14 | 14 |
+| sh000300 | ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 14 | 14 |
+| sh000300 | ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 14 | 14 |
+| sh000300 | ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 24 | 19 |
+| sh000300 | ref_6_12m | stage | duplicate_notices | 2 | 0 | — | — |
+| sh000300 | ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
+| sh000300 | ref_6_12m | stage | revisions | 67 | 37 | — | — |
+| sh000300 | ref_6_12m | stage | claim_notices | 91 | 91 | — | — |
+| sh000300 | ref_6_12m | stage | formal_alerts | not_defined | 56 | — | — |
+| sh000300 | ref_6_12m | stage | observation_notices | not_defined | 35 | — | — |
+| sh000300 | ref_6_12m | stage | alerts_per_asset_year | 6.7678817959682345 | 6.7678817959682345 | 13.445861311320561 | 13.445861311320561 |
+| sh000300 | ref_6_12m | stage | alarm_occupied_days | 427 | 427 | — | — |
+| sh000300 | ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 252 | — | — |
+| sh000905 | ref_6_12m | stage | E | 13 | 13 | 13 | 13 |
+| sh000905 | ref_6_12m | stage | P | 14 | 13 | — | — |
+| sh000905 | ref_6_12m | stage | TP | 1 | 1 | — | — |
+| sh000905 | ref_6_12m | stage | FP | 13 | 12 | — | — |
+| sh000905 | ref_6_12m | stage | FN | 12 | 12 | — | — |
+| sh000905 | ref_6_12m | stage | no_formal_alert_rate | 0.6153846153846154 | 0.6153846153846154 | 13 | 13 |
+| sh000905 | ref_6_12m | stage | first_window_coverage | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
+| sh000905 | ref_6_12m | stage | QualifiedStageRecall5 | 0.011904761904761904 | 0.07692307692307693 | 13 | 13 |
+| sh000905 | ref_6_12m | stage | StrictStageRecall5W10 | 0.07692307692307693 | 0.07692307692307693 | 13 | 13 |
+| sh000905 | ref_6_12m | stage | strict_stage_miss_rate | 0.9230769230769231 | 0.9230769230769231 | 13 | 13 |
+| sh000905 | ref_6_12m | stage | resolved_claim_precision | 0.07142857142857142 | 0.07692307692307693 | 14 | 13 |
+| sh000905 | ref_6_12m | stage | duplicate_notices | 0 | 0 | — | — |
+| sh000905 | ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
+| sh000905 | ref_6_12m | stage | revisions | 31 | 24 | — | — |
+| sh000905 | ref_6_12m | stage | claim_notices | 45 | 45 | — | — |
+| sh000905 | ref_6_12m | stage | formal_alerts | not_defined | 37 | — | — |
+| sh000905 | ref_6_12m | stage | observation_notices | not_defined | 8 | — | — |
+| sh000905 | ref_6_12m | stage | alerts_per_asset_year | 3.853672332942556 | 3.853672332942556 | 11.677173384805984 | 11.677173384805984 |
+| sh000905 | ref_6_12m | stage | alarm_occupied_days | 186 | 186 | — | — |
+| sh000905 | ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 144 | — | — |
+| sz399001 | ref_6_12m | stage | E | 20 | 20 | 20 | 20 |
+| sz399001 | ref_6_12m | stage | P | 19 | 17 | — | — |
+| sz399001 | ref_6_12m | stage | TP | 0 | 0 | — | — |
+| sz399001 | ref_6_12m | stage | FP | 19 | 17 | — | — |
+| sz399001 | ref_6_12m | stage | FN | 20 | 20 | — | — |
+| sz399001 | ref_6_12m | stage | no_formal_alert_rate | 0.7 | 0.7 | 20 | 20 |
+| sz399001 | ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 20 | 20 |
+| sz399001 | ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 20 | 20 |
+| sz399001 | ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 19 | 17 |
+| sz399001 | ref_6_12m | stage | duplicate_notices | 1 | 1 | — | — |
+| sz399001 | ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
+| sz399001 | ref_6_12m | stage | revisions | 51 | 28 | — | — |
+| sz399001 | ref_6_12m | stage | claim_notices | 70 | 70 | — | — |
+| sz399001 | ref_6_12m | stage | formal_alerts | not_defined | 45 | — | — |
+| sz399001 | ref_6_12m | stage | observation_notices | not_defined | 25 | — | — |
+| sz399001 | ref_6_12m | stage | alerts_per_asset_year | 3.74552812774685 | 3.74552812774685 | 18.688953229703554 | 18.688953229703554 |
+| sz399001 | ref_6_12m | stage | alarm_occupied_days | 343 | 343 | — | — |
+| sz399001 | ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 216 | — | — |
+| sz399006 | ref_6_12m | stage | E | 9 | 9 | 9 | 9 |
+| sz399006 | ref_6_12m | stage | P | 9 | 8 | — | — |
+| sz399006 | ref_6_12m | stage | TP | 0 | 0 | — | — |
+| sz399006 | ref_6_12m | stage | FP | 9 | 8 | — | — |
+| sz399006 | ref_6_12m | stage | FN | 9 | 9 | — | — |
+| sz399006 | ref_6_12m | stage | no_formal_alert_rate | 0.8888888888888888 | 0.8888888888888888 | 9 | 9 |
+| sz399006 | ref_6_12m | stage | first_window_coverage | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | ref_6_12m | stage | QualifiedStageRecall5 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | ref_6_12m | stage | StrictStageRecall5W10 | 0.0 | 0.0 | 9 | 9 |
+| sz399006 | ref_6_12m | stage | strict_stage_miss_rate | 1.0 | 1.0 | 9 | 9 |
+| sz399006 | ref_6_12m | stage | resolved_claim_precision | 0.0 | 0.0 | 9 | 8 |
+| sz399006 | ref_6_12m | stage | duplicate_notices | 0 | 0 | — | — |
+| sz399006 | ref_6_12m | stage | pending_claims | 0 | 0 | — | — |
+| sz399006 | ref_6_12m | stage | revisions | 26 | 14 | — | — |
+| sz399006 | ref_6_12m | stage | claim_notices | 35 | 35 | — | — |
+| sz399006 | ref_6_12m | stage | formal_alerts | not_defined | 22 | — | — |
+| sz399006 | ref_6_12m | stage | observation_notices | not_defined | 13 | — | — |
+| sz399006 | ref_6_12m | stage | alerts_per_asset_year | 4.214799703264095 | 4.214799703264095 | 8.304071952196143 | 8.304071952196143 |
+| sz399006 | ref_6_12m | stage | alarm_occupied_days | 187 | 187 | — | — |
+| sz399006 | ref_6_12m | stage | formal_alarm_occupied_days | not_defined | 110 | — | — |
 
 ### 数据可评价子集（独立 E）
 
-| arm | scope | PR #50 E | PR #50 strict recall | T02 E | T02 strict recall |
-|---|---|---:|---:|---:|---:|
-| calendar_fixed_10 | short | 115 | 0.2 | 115 | 0.2 |
-| calendar_fixed_10 | short | 97 | 0.20618556701030927 | 97 | 0.20618556701030927 |
-| calendar_fixed_10 | short | 90 | 0.26666666666666666 | 90 | 0.26666666666666666 |
-| calendar_fixed_10 | short | 71 | 0.14084507042253522 | 71 | 0.14084507042253522 |
-| calendar_fixed_10 | short | 122 | 0.2786885245901639 | 122 | 0.2786885245901639 |
-| calendar_fixed_10 | short | 57 | 0.15789473684210525 | 57 | 0.15789473684210525 |
-| calendar_fixed_10 | stage | 22 | 0.0 | 22 | 0.0 |
-| calendar_fixed_10 | stage | 13 | 0.0 | 13 | 0.0 |
-| calendar_fixed_10 | stage | 14 | 0.0 | 14 | 0.0 |
-| calendar_fixed_10 | stage | 13 | 0.0 | 13 | 0.0 |
-| calendar_fixed_10 | stage | 20 | 0.0 | 20 | 0.0 |
-| calendar_fixed_10 | stage | 9 | 0.0 | 9 | 0.0 |
-| cluster_any_full | short | 115 | 0.008695652173913044 | 115 | 0.017391304347826087 |
-| cluster_any_full | short | 90 | 0.0 | 90 | 0.011111111111111112 |
-| cluster_any_full | short | 85 | 0.023529411764705882 | 85 | 0.03529411764705882 |
-| cluster_any_full | short | 65 | 0.015384615384615385 | 65 | 0.015384615384615385 |
-| cluster_any_full | short | 122 | 0.01639344262295082 | 122 | 0.01639344262295082 |
-| cluster_any_full | short | 49 | 0.0 | 49 | 0.0 |
-| cluster_any_full | stage | 22 | 0.045454545454545456 | 22 | 0.045454545454545456 |
-| cluster_any_full | stage | 13 | 0.07692307692307693 | 13 | 0.07692307692307693 |
-| cluster_any_full | stage | 13 | 0.0 | 13 | 0.0 |
-| cluster_any_full | stage | 11 | 0.0 | 11 | 0.0 |
-| cluster_any_full | stage | 20 | 0.0 | 20 | 0.05 |
-| cluster_any_full | stage | 8 | 0.0 | 8 | 0.0 |
-| cluster_cross_full | short | 115 | 0.02608695652173913 | 115 | 0.02608695652173913 |
-| cluster_cross_full | short | 90 | 0.0 | 90 | 0.0 |
-| cluster_cross_full | short | 85 | 0.023529411764705882 | 85 | 0.03529411764705882 |
-| cluster_cross_full | short | 65 | 0.015384615384615385 | 65 | 0.015384615384615385 |
-| cluster_cross_full | short | 122 | 0.01639344262295082 | 122 | 0.01639344262295082 |
-| cluster_cross_full | short | 49 | 0.0 | 49 | 0.0 |
-| cluster_cross_full | stage | 22 | 0.0 | 22 | 0.0 |
-| cluster_cross_full | stage | 13 | 0.0 | 13 | 0.0 |
-| cluster_cross_full | stage | 13 | 0.0 | 13 | 0.0 |
-| cluster_cross_full | stage | 11 | 0.0 | 11 | 0.0 |
-| cluster_cross_full | stage | 20 | 0.0 | 20 | 0.0 |
-| cluster_cross_full | stage | 8 | 0.0 | 8 | 0.0 |
-| cluster_cross_stable2 | short | 114 | 0.0 | 114 | 0.0 |
-| cluster_cross_stable2 | short | 90 | 0.0 | 90 | 0.0 |
-| cluster_cross_stable2 | short | 85 | 0.0 | 85 | 0.0 |
-| cluster_cross_stable2 | short | 65 | 0.0 | 65 | 0.0 |
-| cluster_cross_stable2 | short | 122 | 0.0 | 122 | 0.0 |
-| cluster_cross_stable2 | short | 49 | 0.0 | 49 | 0.0 |
-| cluster_cross_stable2 | stage | 22 | 0.0 | 22 | 0.0 |
-| cluster_cross_stable2 | stage | 13 | 0.0 | 13 | 0.0 |
-| cluster_cross_stable2 | stage | 13 | 0.0 | 13 | 0.0 |
-| cluster_cross_stable2 | stage | 11 | 0.0 | 11 | 0.0 |
-| cluster_cross_stable2 | stage | 20 | 0.0 | 20 | 0.0 |
-| cluster_cross_stable2 | stage | 8 | 0.0 | 8 | 0.0 |
-| cluster_cross_thin | short | 115 | 0.043478260869565216 | 115 | 0.043478260869565216 |
-| cluster_cross_thin | short | 88 | 0.0 | 88 | 0.0 |
-| cluster_cross_thin | short | 85 | 0.011764705882352941 | 85 | 0.03529411764705882 |
-| cluster_cross_thin | short | 63 | 0.015873015873015872 | 63 | 0.015873015873015872 |
-| cluster_cross_thin | short | 122 | 0.01639344262295082 | 122 | 0.01639344262295082 |
-| cluster_cross_thin | short | 48 | 0.020833333333333332 | 48 | 0.020833333333333332 |
-| cluster_cross_thin | stage | 22 | 0.045454545454545456 | 22 | 0.045454545454545456 |
-| cluster_cross_thin | stage | 12 | 0.0 | 12 | 0.0 |
-| cluster_cross_thin | stage | 13 | 0.0 | 13 | 0.0 |
-| cluster_cross_thin | stage | 11 | 0.0 | 11 | 0.0 |
-| cluster_cross_thin | stage | 20 | 0.0 | 20 | 0.0 |
-| cluster_cross_thin | stage | 8 | 0.0 | 8 | 0.0 |
-| or2_full | short | 115 | 0.017391304347826087 | 115 | 0.017391304347826087 |
-| or2_full | short | 90 | 0.0 | 90 | 0.0 |
-| or2_full | short | 85 | 0.0 | 85 | 0.0 |
-| or2_full | short | 65 | 0.015384615384615385 | 65 | 0.0 |
-| or2_full | short | 122 | 0.00819672131147541 | 122 | 0.00819672131147541 |
-| or2_full | short | 49 | 0.02040816326530612 | 49 | 0.02040816326530612 |
-| or2_full | stage | 22 | 0.0 | 22 | 0.0 |
-| or2_full | stage | 13 | 0.0 | 13 | 0.0 |
-| or2_full | stage | 13 | 0.0 | 13 | 0.0 |
-| or2_full | stage | 11 | 0.0 | 11 | 0.0 |
-| or2_full | stage | 20 | 0.0 | 20 | 0.0 |
-| or2_full | stage | 8 | 0.0 | 8 | 0.0 |
-| or4_full | short | 115 | 0.008695652173913044 | 115 | 0.008695652173913044 |
-| or4_full | short | 90 | 0.0 | 90 | 0.0 |
-| or4_full | short | 85 | 0.011764705882352941 | 85 | 0.011764705882352941 |
-| or4_full | short | 65 | 0.015384615384615385 | 65 | 0.03076923076923077 |
-| or4_full | short | 122 | 0.01639344262295082 | 122 | 0.02459016393442623 |
-| or4_full | short | 49 | 0.0 | 49 | 0.0 |
-| or4_full | stage | 22 | 0.0 | 22 | 0.0 |
-| or4_full | stage | 13 | 0.0 | 13 | 0.0 |
-| or4_full | stage | 13 | 0.0 | 13 | 0.0 |
-| or4_full | stage | 11 | 0.0 | 11 | 0.0 |
-| or4_full | stage | 20 | 0.0 | 20 | 0.05 |
-| or4_full | stage | 8 | 0.0 | 8 | 0.0 |
-| or4_thin | short | 115 | 0.0 | 115 | 0.008695652173913044 |
-| or4_thin | short | 88 | 0.0 | 88 | 0.0 |
-| or4_thin | short | 85 | 0.0 | 85 | 0.0 |
-| or4_thin | short | 63 | 0.047619047619047616 | 63 | 0.047619047619047616 |
-| or4_thin | short | 122 | 0.02459016393442623 | 122 | 0.02459016393442623 |
-| or4_thin | short | 48 | 0.0 | 48 | 0.0 |
-| or4_thin | stage | 22 | 0.0 | 22 | 0.045454545454545456 |
-| or4_thin | stage | 12 | 0.0 | 12 | 0.0 |
-| or4_thin | stage | 13 | 0.0 | 13 | 0.0 |
-| or4_thin | stage | 11 | 0.18181818181818182 | 11 | 0.18181818181818182 |
-| or4_thin | stage | 20 | 0.05 | 20 | 0.0 |
-| or4_thin | stage | 8 | 0.0 | 8 | 0.0 |
-| ref_12_24m | short | 115 | 0.0 | 115 | 0.0 |
-| ref_12_24m | short | 90 | 0.0 | 90 | 0.0 |
-| ref_12_24m | short | 85 | 0.0 | 85 | 0.0 |
-| ref_12_24m | short | 65 | 0.015384615384615385 | 65 | 0.0 |
-| ref_12_24m | short | 122 | 0.0 | 122 | 0.0 |
-| ref_12_24m | short | 49 | 0.0 | 49 | 0.0 |
-| ref_12_24m | stage | 22 | 0.0 | 22 | 0.0 |
-| ref_12_24m | stage | 13 | 0.0 | 13 | 0.0 |
-| ref_12_24m | stage | 13 | 0.0 | 13 | 0.0 |
-| ref_12_24m | stage | 11 | 0.0 | 11 | 0.0 |
-| ref_12_24m | stage | 20 | 0.0 | 20 | 0.0 |
-| ref_12_24m | stage | 8 | 0.0 | 8 | 0.0 |
-| ref_6_12m | short | 115 | 0.017391304347826087 | 115 | 0.017391304347826087 |
-| ref_6_12m | short | 93 | 0.0 | 93 | 0.0 |
-| ref_6_12m | short | 88 | 0.0 | 88 | 0.0 |
-| ref_6_12m | short | 68 | 0.0 | 68 | 0.0 |
-| ref_6_12m | short | 122 | 0.00819672131147541 | 122 | 0.00819672131147541 |
-| ref_6_12m | short | 52 | 0.019230769230769232 | 52 | 0.019230769230769232 |
-| ref_6_12m | stage | 22 | 0.0 | 22 | 0.0 |
-| ref_6_12m | stage | 13 | 0.0 | 13 | 0.0 |
-| ref_6_12m | stage | 14 | 0.0 | 14 | 0.0 |
-| ref_6_12m | stage | 12 | 0.08333333333333333 | 12 | 0.08333333333333333 |
-| ref_6_12m | stage | 20 | 0.0 | 20 | 0.0 |
-| ref_6_12m | stage | 9 | 0.0 | 9 | 0.0 |
+| symbol | arm | scope | PR #50 E | PR #50 strict recall | T02 E | T02 strict recall |
+|---|---|---|---:|---:|---:|---:|
+| sh000001 | calendar_fixed_10 | short | 115 | 0.2 | 115 | 0.2 |
+| sh000016 | calendar_fixed_10 | short | 97 | 0.20618556701030927 | 97 | 0.20618556701030927 |
+| sh000300 | calendar_fixed_10 | short | 90 | 0.26666666666666666 | 90 | 0.26666666666666666 |
+| sh000905 | calendar_fixed_10 | short | 71 | 0.14084507042253522 | 71 | 0.14084507042253522 |
+| sz399001 | calendar_fixed_10 | short | 122 | 0.2786885245901639 | 122 | 0.2786885245901639 |
+| sz399006 | calendar_fixed_10 | short | 57 | 0.15789473684210525 | 57 | 0.15789473684210525 |
+| sh000001 | calendar_fixed_10 | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | calendar_fixed_10 | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | calendar_fixed_10 | stage | 14 | 0.0 | 14 | 0.0 |
+| sh000905 | calendar_fixed_10 | stage | 13 | 0.0 | 13 | 0.0 |
+| sz399001 | calendar_fixed_10 | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | calendar_fixed_10 | stage | 9 | 0.0 | 9 | 0.0 |
+| sh000001 | cluster_any_full | short | 115 | 0.008695652173913044 | 115 | 0.017391304347826087 |
+| sh000016 | cluster_any_full | short | 90 | 0.0 | 90 | 0.011111111111111112 |
+| sh000300 | cluster_any_full | short | 85 | 0.023529411764705882 | 85 | 0.03529411764705882 |
+| sh000905 | cluster_any_full | short | 65 | 0.015384615384615385 | 65 | 0.015384615384615385 |
+| sz399001 | cluster_any_full | short | 122 | 0.01639344262295082 | 122 | 0.01639344262295082 |
+| sz399006 | cluster_any_full | short | 49 | 0.0 | 49 | 0.0 |
+| sh000001 | cluster_any_full | stage | 22 | 0.045454545454545456 | 22 | 0.045454545454545456 |
+| sh000016 | cluster_any_full | stage | 13 | 0.07692307692307693 | 13 | 0.07692307692307693 |
+| sh000300 | cluster_any_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | cluster_any_full | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | cluster_any_full | stage | 20 | 0.0 | 20 | 0.05 |
+| sz399006 | cluster_any_full | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | cluster_cross_full | short | 115 | 0.02608695652173913 | 115 | 0.02608695652173913 |
+| sh000016 | cluster_cross_full | short | 90 | 0.0 | 90 | 0.0 |
+| sh000300 | cluster_cross_full | short | 85 | 0.023529411764705882 | 85 | 0.03529411764705882 |
+| sh000905 | cluster_cross_full | short | 65 | 0.015384615384615385 | 65 | 0.015384615384615385 |
+| sz399001 | cluster_cross_full | short | 122 | 0.01639344262295082 | 122 | 0.01639344262295082 |
+| sz399006 | cluster_cross_full | short | 49 | 0.0 | 49 | 0.0 |
+| sh000001 | cluster_cross_full | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | cluster_cross_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | cluster_cross_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | cluster_cross_full | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | cluster_cross_full | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | cluster_cross_full | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | cluster_cross_stable2 | short | 114 | 0.0 | 114 | 0.0 |
+| sh000016 | cluster_cross_stable2 | short | 90 | 0.0 | 90 | 0.0 |
+| sh000300 | cluster_cross_stable2 | short | 85 | 0.0 | 85 | 0.0 |
+| sh000905 | cluster_cross_stable2 | short | 65 | 0.0 | 65 | 0.0 |
+| sz399001 | cluster_cross_stable2 | short | 122 | 0.0 | 122 | 0.0 |
+| sz399006 | cluster_cross_stable2 | short | 49 | 0.0 | 49 | 0.0 |
+| sh000001 | cluster_cross_stable2 | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | cluster_cross_stable2 | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | cluster_cross_stable2 | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | cluster_cross_stable2 | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | cluster_cross_stable2 | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | cluster_cross_stable2 | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | cluster_cross_thin | short | 115 | 0.043478260869565216 | 115 | 0.043478260869565216 |
+| sh000016 | cluster_cross_thin | short | 88 | 0.0 | 88 | 0.0 |
+| sh000300 | cluster_cross_thin | short | 85 | 0.011764705882352941 | 85 | 0.03529411764705882 |
+| sh000905 | cluster_cross_thin | short | 63 | 0.015873015873015872 | 63 | 0.015873015873015872 |
+| sz399001 | cluster_cross_thin | short | 122 | 0.01639344262295082 | 122 | 0.01639344262295082 |
+| sz399006 | cluster_cross_thin | short | 48 | 0.020833333333333332 | 48 | 0.020833333333333332 |
+| sh000001 | cluster_cross_thin | stage | 22 | 0.045454545454545456 | 22 | 0.045454545454545456 |
+| sh000016 | cluster_cross_thin | stage | 12 | 0.0 | 12 | 0.0 |
+| sh000300 | cluster_cross_thin | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | cluster_cross_thin | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | cluster_cross_thin | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | cluster_cross_thin | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | or2_full | short | 115 | 0.017391304347826087 | 115 | 0.017391304347826087 |
+| sh000016 | or2_full | short | 90 | 0.0 | 90 | 0.0 |
+| sh000300 | or2_full | short | 85 | 0.0 | 85 | 0.0 |
+| sh000905 | or2_full | short | 65 | 0.015384615384615385 | 65 | 0.0 |
+| sz399001 | or2_full | short | 122 | 0.00819672131147541 | 122 | 0.00819672131147541 |
+| sz399006 | or2_full | short | 49 | 0.02040816326530612 | 49 | 0.02040816326530612 |
+| sh000001 | or2_full | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | or2_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | or2_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | or2_full | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | or2_full | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | or2_full | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | or4_full | short | 115 | 0.008695652173913044 | 115 | 0.008695652173913044 |
+| sh000016 | or4_full | short | 90 | 0.0 | 90 | 0.0 |
+| sh000300 | or4_full | short | 85 | 0.011764705882352941 | 85 | 0.011764705882352941 |
+| sh000905 | or4_full | short | 65 | 0.015384615384615385 | 65 | 0.03076923076923077 |
+| sz399001 | or4_full | short | 122 | 0.01639344262295082 | 122 | 0.02459016393442623 |
+| sz399006 | or4_full | short | 49 | 0.0 | 49 | 0.0 |
+| sh000001 | or4_full | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | or4_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | or4_full | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | or4_full | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | or4_full | stage | 20 | 0.0 | 20 | 0.05 |
+| sz399006 | or4_full | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | or4_thin | short | 115 | 0.0 | 115 | 0.008695652173913044 |
+| sh000016 | or4_thin | short | 88 | 0.0 | 88 | 0.0 |
+| sh000300 | or4_thin | short | 85 | 0.0 | 85 | 0.0 |
+| sh000905 | or4_thin | short | 63 | 0.047619047619047616 | 63 | 0.047619047619047616 |
+| sz399001 | or4_thin | short | 122 | 0.02459016393442623 | 122 | 0.02459016393442623 |
+| sz399006 | or4_thin | short | 48 | 0.0 | 48 | 0.0 |
+| sh000001 | or4_thin | stage | 22 | 0.0 | 22 | 0.045454545454545456 |
+| sh000016 | or4_thin | stage | 12 | 0.0 | 12 | 0.0 |
+| sh000300 | or4_thin | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | or4_thin | stage | 11 | 0.18181818181818182 | 11 | 0.18181818181818182 |
+| sz399001 | or4_thin | stage | 20 | 0.05 | 20 | 0.0 |
+| sz399006 | or4_thin | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | ref_12_24m | short | 115 | 0.0 | 115 | 0.0 |
+| sh000016 | ref_12_24m | short | 90 | 0.0 | 90 | 0.0 |
+| sh000300 | ref_12_24m | short | 85 | 0.0 | 85 | 0.0 |
+| sh000905 | ref_12_24m | short | 65 | 0.015384615384615385 | 65 | 0.0 |
+| sz399001 | ref_12_24m | short | 122 | 0.0 | 122 | 0.0 |
+| sz399006 | ref_12_24m | short | 49 | 0.0 | 49 | 0.0 |
+| sh000001 | ref_12_24m | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | ref_12_24m | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | ref_12_24m | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000905 | ref_12_24m | stage | 11 | 0.0 | 11 | 0.0 |
+| sz399001 | ref_12_24m | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | ref_12_24m | stage | 8 | 0.0 | 8 | 0.0 |
+| sh000001 | ref_6_12m | short | 115 | 0.017391304347826087 | 115 | 0.017391304347826087 |
+| sh000016 | ref_6_12m | short | 93 | 0.0 | 93 | 0.0 |
+| sh000300 | ref_6_12m | short | 88 | 0.0 | 88 | 0.0 |
+| sh000905 | ref_6_12m | short | 68 | 0.0 | 68 | 0.0 |
+| sz399001 | ref_6_12m | short | 122 | 0.00819672131147541 | 122 | 0.00819672131147541 |
+| sz399006 | ref_6_12m | short | 52 | 0.019230769230769232 | 52 | 0.019230769230769232 |
+| sh000001 | ref_6_12m | stage | 22 | 0.0 | 22 | 0.0 |
+| sh000016 | ref_6_12m | stage | 13 | 0.0 | 13 | 0.0 |
+| sh000300 | ref_6_12m | stage | 14 | 0.0 | 14 | 0.0 |
+| sh000905 | ref_6_12m | stage | 12 | 0.08333333333333333 | 12 | 0.08333333333333333 |
+| sz399001 | ref_6_12m | stage | 20 | 0.0 | 20 | 0.0 |
+| sz399006 | ref_6_12m | stage | 9 | 0.0 | 9 | 0.0 |
 
 PR #50 的“precision”是其旧 evaluator 的 `TP/P`；T02 precision 只以 resolved first formal claims 为分母。`null` 表示分母为零，不转成100%。只有相同定义且分母相同的数值才可直接比较。
 旧列的 no-formal-alert/first-window coverage 使用 PR #50 的首条旧 claim 作为可计算代理；PR #50 没有 T02 的 formal-claim lifecycle，故该代理不等于 T02 定义。alerts/year 两侧按相同 action-session 范围和 asset-years 计算全部回放通知；occupied days 两侧按同一评分范围裁剪所有完整区间。T02 另列 formal-only 负担；PR #50 自身的 published-notification operational 指标不是该并列 burden。
