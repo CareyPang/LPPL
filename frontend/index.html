@@ -403,14 +403,10 @@ footer p { margin: 0; max-width: 110ch; }
   <p>研究原型，不构成投资建议。情景区间是合格拟合 t_c 的分位区间（未校准，仅供参考），不是峰值日预测；回撤和估值地板是历史分位，不是目标价。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
 </footer>
 
+<script src="app/trading-days.js"></script>
 <script>
 /* ui.js 只用到 CP.dateAt；前端不含模型引擎 */
-window.CP = { dateAt(bars, idx) {
-  if (idx < bars.length) return bars[Math.max(0, idx)].date;
-  let d = new Date(bars[bars.length - 1].date + 'T00:00:00Z'), k = idx - (bars.length - 1);
-  while (k > 0) { d = new Date(d.getTime() + 86400000); const w = d.getUTCDay(); if (w !== 0 && w !== 6) k--; }
-  return d.toISOString().slice(0, 10);
-}, PHASES: [], RULES: {} };
+window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 </script>
 <script src="app/ui.js"></script>
 <script src="app/lppl-data.js"></script>
@@ -421,6 +417,7 @@ window.CP = { dateAt(bars, idx) {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const U = CPUI, E = U.esc;
+  const idxOf = CPTradingDays.idxOf;
 
   /* ================= 图标（同一套线性图标：24 网格，1.6 描边，直角端点） ================= */
   const ICON = {
@@ -442,20 +439,14 @@ window.CP = { dateAt(bars, idx) {
      后端完成后，只需把 getAnalysis 改成请求后端（返回同样结构的对象）。
      当前实现：浏览器内计算，日线与信号带按标的缓存，拖动回放时不重复拉取。 */
   /* 后端静态 JSON → 图表视图（只做日期↔下标换算，不算任何模型值） */
-  function idxOf(bars, d) {
-    if (!d) return -1;
-    const N = bars.length, last = bars[N - 1].date;
-    if (d <= last) { const i = bars.findIndex((b) => b.date >= d); return i < 0 ? N - 1 : i; }
-    let k = N - 1, t = new Date(last + 'T00:00:00Z'); const e = new Date(d + 'T00:00:00Z');
-    while (t < e) { t = new Date(t.getTime() + 86400000); const w = t.getUTCDay(); if (w !== 0 && w !== 6) k++; }
-    return k;
-  }
   function toView(D) {
     const t = D.top, b = D.bars, w = t.window || {}, sc = t.scenarios || [];
+    const futureCalendar = D.raw?.future_calendar || null;
+    CPTradingDays.setClosures(futureCalendar?.closures || []);
     const win = (lo, hi) => (lo && hi ? { lo: idxOf(b, lo), hi: idxOf(b, hi), loDate: lo, hiDate: hi } : null);
     let s1 = 0, s2 = 0, n = 0;
     for (let i = Math.max(1, b.length - 60); i < b.length; i++) { const r = Math.log(b[i].close / b[i - 1].close); s1 += r; s2 += r * r; n++; }
-    return { J: D.raw, top: t, bars: b, T: D.T, asof: D.asof, latest: D.latest,
+    return { J: D.raw, top: t, bars: b, T: D.T, asof: D.asof, latest: D.latest, futureCalendar,
       sym: { label: D.name, code: D.sym.sym, isIndex: true }, data: { source: D.raw.data_version, name: D.name },
       rm: { topW: win(w.start, w.end), altW: sc[1] ? win(sc[1].q20_date, sc[1].q80_date) : null, topPx: null, crash: null,
         sigma: n ? Math.sqrt(Math.max(0, s2 / n - (s1 / n) ** 2)) : NaN },
@@ -1056,7 +1047,10 @@ window.CP = { dateAt(bars, idx) {
         `<span class="lg-k">低</span> <span class="${cls}">${U.px(q.low)}</span><span class="lg-k">收</span> <span class="${cls}">${U.px(q.close)}</span>` +
         `<span class="lg-k">${ch >= 0 ? '▲' : '▼'}</span> <span class="${cls}">${U.sp(ch, 2)}</span>`;
     } else {
-      $('legend').innerHTML = `<b>${E(nm)}</b><span class="lg-k">${CP.dateAt(bars, idx)} · 未来交易日（日期按工作日推算）</span>`;
+      const futureNote = R.futureCalendar
+        ? `未来交易日（已扣除交易所休市日；${E(R.futureCalendar.holidays_through || '未知日期')} 之后按工作日估算）`
+        : '未来交易日（日期按工作日推算）';
+      $('legend').innerHTML = `<b>${E(nm)}</b><span class="lg-k">${CP.dateAt(bars, idx)} · ${futureNote}</span>`;
     }
     // 右侧读数
     const d = CP.dateAt(bars, idx);

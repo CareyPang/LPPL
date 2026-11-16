@@ -65,7 +65,17 @@ def one(args) -> dict:
         date = logp.index[-1]
         _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])
         d = _derived(fit_asof(logp, date, WINDOWS))
-        rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc, None, data_version=f"vintage_{date:%Y%m%d}_{src}")
+        rec = build_record(
+            sym,
+            str(date.date()),
+            d,
+            rules(d),
+            logp.index,
+            ohlc,
+            None,
+            data_version=f"vintage_{date:%Y%m%d}_{src}",
+            market="cn",
+        )
         T = rec["top"]
         ind = {k: v for k, v in T["indicators"].items() if k in ("6-12m", "12-24m")}
         sc612 = next((s for s in T["scenarios"]), None)
@@ -76,6 +86,7 @@ def one(args) -> dict:
                "combo_p01": T["combo"].get("p0.1"), "longest_qualified_scale": T["bubble"].get("longest_qualified_scale"),
                "bubble_size_model": T["bubble"].get("size_model"), "bubble_duration_days": T["bubble"].get("duration_days"),
                "tc_representative": sc612["representative"]["tc"] if sc612 else None, "tc_q20_q80": [sc612["q20_date"], sc612["q80_date"]] if sc612 else None,
+               "future_calendar": rec["future_calendar"],
                "signal_status": T["signal_status"], "n_windows": int(len(d)), "secs": round(time.time() - t0, 1), "error": None}
     except Exception as e:  # noqa: BLE001 —— 单资产失败不拖垮全表，显式记录为失败状态（不填 0）
         row = {"symbol": sym, "name": name, "type": typ, "signal_status": "error", "error": f"{type(e).__name__}: {str(e)[:120]}",

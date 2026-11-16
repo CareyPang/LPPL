@@ -11,6 +11,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ..data.trading_calendar import (
+    future_calendar_metadata,
+    future_trading_days,
+)
 from ..features.lppls_rules import (
     SCALE_EVIDENCE,
     SCALES_FCO,
@@ -42,7 +46,9 @@ def _conf(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp) -> dict:
     return out
 
 
-def _to_cal(cal: pd.DatetimeIndex, date: pd.Timestamp, ahead: float) -> str:
+def _to_cal(
+    cal: pd.DatetimeIndex, date: pd.Timestamp, ahead: float, market: str = "cn"
+) -> str:
     """把 as-of 后 `ahead` 个交易日折算成日历日期；超出已知交易日历的部分按工作日外推（情景展示，非顶部日期）。"""
     i = cal.get_indexer([date])[0]
     j = int(round(i + ahead))
@@ -50,10 +56,10 @@ def _to_cal(cal: pd.DatetimeIndex, date: pd.Timestamp, ahead: float) -> str:
         return str(cal[0].date())
     if j < len(cal):
         return str(cal[j].date())
-    return str(pd.bdate_range(cal[-1], periods=j - len(cal) + 2)[-1].date())
+    return str(future_trading_days(cal[-1], j - len(cal) + 1, market)[-1].date())
 
 
-def record(sym: str, asof: str) -> dict:
+def record(sym: str, asof: str, market: str = "cn") -> dict:
     """开发段回放：从 v2 扫描 parquet 取 as-of 日拟合与 CPCV OOF p20。"""
     sc, _ = load(sym)
     d = _derived(sc)
@@ -65,7 +71,16 @@ def record(sym: str, asof: str) -> dict:
         o = pd.read_parquet(OOF_P20)
         o = o[(o.symbol == sym) & (o.date == date)]
         p20 = round(float(o.p.iloc[0]), 3) if len(o) else None
-    return build_record(sym, asof, d, r, cal, pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"), p20)
+    return build_record(
+        sym,
+        asof,
+        d,
+        r,
+        cal,
+        pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"),
+        p20,
+        market=market,
+    )
 
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
@@ -84,35 +99,42 @@ def _close(ohlc: pd.DataFrame, cal: pd.DatetimeIndex) -> pd.Series:
     return c.reindex(cal).ffill()
 
 
-def _fit_params(row: pd.Series, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+def _fit_params(
+    row: pd.Series,
+    gg: pd.DataFrame,
+    cal: pd.DatetimeIndex,
+    date: pd.Timestamp,
+    market: str = "cn",
+) -> dict:
     """FCO Scenario/F11 字段：t1、t2、tc、m、ω、D、振荡、loss、属于哪些过滤集。"""
     i0 = cal.get_indexer([date])[0]
-    return {"t1": str(cal[max(i0 - int(row.n) + 1, 0)].date()), "t2": str(date.date()), "tc": _to_cal(cal, date, float(row.ahead)),
+    return {"t1": str(cal[max(i0 - int(row.n) + 1, 0)].date()), "t2": str(date.date()), "tc": _to_cal(cal, date, float(row.ahead), market),
             "m": round(float(row.m), 3), "omega": round(float(row.w), 2), "damping": round(float(row.D), 2),
             "oscillations_half": round(float(row.osc), 2), "oscillations_cycles": round(float(row.n_osc), 2),
             "loss": round(float(row.sse / max(int(row.n) - 7, 1)), 6),
             "sets": [k for k, c in FCO_SETS.items() if bool(gg.loc[row.name, c])],
-            "curve": _curve(row, cal, date)}
+                "curve": _curve(row, cal, date, 120, market)}
 
 
 def _scenario_records(q: pd.DataFrame, scen: pd.DataFrame, gg: pd.DataFrame,
-                      cal: pd.DatetimeIndex, date: pd.Timestamp) -> list[dict]:
+                      cal: pd.DatetimeIndex, date: pd.Timestamp,
+                      market: str = "cn") -> list[dict]:
     return [
         {"share": round(float(x.share), 2), "dt_range": [int(x.dt_min), int(x.dt_max)],
          "ahead_mean": round(float(x.ahead_mean), 1), "ahead_sd": round(float(x.ahead_std), 1),
          "q20": round(float(x.q20), 1), "q80": round(float(x.q80), 1),
-         "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80),
-         "q025_date": _to_cal(cal, date, x.q025), "q975_date": _to_cal(cal, date, x.q975),
-         "tc_mode_date": _to_cal(cal, date, x.tc_mode),
+         "q20_date": _to_cal(cal, date, x.q20, market), "q80_date": _to_cal(cal, date, x.q80, market),
+         "q025_date": _to_cal(cal, date, x.q025, market), "q975_date": _to_cal(cal, date, x.q975, market),
+         "tc_mode_date": _to_cal(cal, date, x.tc_mode, market),
          "representative_rule": "minimum_sse_over_n_minus_7",
-         "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date)}
+         "representative": _fit_params(q.loc[x.rep_idx], gg, cal, date, market)}
         for x in scen.itertuples()
     ]
 
 
 def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
                    cal: pd.DatetimeIndex, close: float, split: str,
-                   include_scenarios: bool = False) -> dict:
+                   include_scenarios: bool = False, market: str = "cn") -> dict:
     dd = d[d.date == date]
     rr = r.loc[dd.index]
     fit_rows = dd.loc[rr.box]
@@ -122,8 +144,8 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
     for row in sw.itertuples():
         if row.scale in windows:
             windows[row.scale] = [
-                _to_cal(cal, date, float(row.q20)),
-                _to_cal(cal, date, float(row.q80)),
+                _to_cal(cal, date, float(row.q20), market),
+                _to_cal(cal, date, float(row.q80), market),
             ]
     conf = _conf(dd, rr, date)
     frame = {
@@ -136,16 +158,18 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
     if include_scenarios:
         gg = grid_rules(dd)
         scen = scenarios(q) if len(q) else pd.DataFrame()
-        frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date)
+        frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date, market)
     return frame
 
 
-def _top_window(sw: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+def _top_window(
+    sw: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp, market: str = "cn"
+) -> dict:
     w612 = sw[sw.scale == "6-12m"] if len(sw) else pd.DataFrame()
     if len(w612):
         return {
-            "start": _to_cal(cal, date, float(w612.q20.iloc[0])),
-            "end": _to_cal(cal, date, float(w612.q80.iloc[0])),
+            "start": _to_cal(cal, date, float(w612.q20.iloc[0]), market),
+            "end": _to_cal(cal, date, float(w612.q80.iloc[0]), market),
             "rule": "6–12 月档合格拟合 t_c 的 20–80% 分位窗（情景，非时点；开发段覆盖率低）",
             "evidence": "dev",
         }
@@ -157,7 +181,13 @@ def _top_window(sw: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> 
     }
 
 
-def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: int = 120) -> dict:
+def _curve(
+    row: pd.Series,
+    cal: pd.DatetimeIndex,
+    date: pd.Timestamp,
+    max_pts: int = 120,
+    market: str = "cn",
+) -> dict:
     """F11：代表拟合的模型价格曲线。fit = [t1, t2] 拟合段；extrapolation = (t2, t_c) 外推段（虚线，t_c 处奇点不画）。
     ln P(t) = A + B·(t_c−t)^m + C1·(t_c−t)^m cos(ω ln(t_c−t)) + C2·(t_c−t)^m sin(ω ln(t_c−t))，t 以窗口首日为 0。"""
     from ..lppls.core import design
@@ -175,7 +205,13 @@ def _curve(row: pd.Series, cal: pd.DatetimeIndex, date: pd.Timestamp, max_pts: i
         y = np.exp(X @ theta)
         step = max(1, int(np.ceil(len(t) / max_pts)))
         idx = np.unique(np.r_[np.arange(0, len(t), step), len(t) - 1])
-        return {"dates": [_to_cal(cal, date, float(start + k - i0)) for k in t[idx]], "price": [round(float(v), 4) for v in y[idx]]}
+        return {
+            "dates": [
+                _to_cal(cal, date, float(start + k - i0), market)
+                for k in t[idx]
+            ],
+            "price": [round(float(v), 4) for v in y[idx]],
+        }
 
     fit = seg(np.arange(n, dtype=float), True)
     ext_end = int(np.floor(tc)) if tc > n else n - 1
@@ -257,7 +293,13 @@ def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.Da
     return out
 
 
-def _tc_distribution(dd: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+def _tc_distribution(
+    dd: pd.DataFrame,
+    gg: pd.DataFrame,
+    cal: pd.DatetimeIndex,
+    date: pd.Timestamp,
+    market: str = "cn",
+) -> dict:
     """F09：合格（STANDARD）拟合的 t_c 数量分布，按尺度，5 交易日分箱；n 与直方图合计一致。"""
     out = {}
     for sc, (lo, hi) in SCALES_FCO6.items():
@@ -269,7 +311,7 @@ def _tc_distribution(dd: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, 
         edges = np.arange(np.floor(a.min() / 5) * 5, np.ceil(a.max() / 5) * 5 + 5.1, 5.0)
         h, e = np.histogram(a, bins=edges)
         out[sc] = {"n": int(len(a)), "bin_days": 5,
-                   "bins": [[_to_cal(cal, date, float(e[k])), _to_cal(cal, date, float(e[k + 1])), int(h[k])] for k in range(len(h)) if h[k] > 0]}
+                   "bins": [[_to_cal(cal, date, float(e[k]), market), _to_cal(cal, date, float(e[k + 1]), market), int(h[k])] for k in range(len(h)) if h[k] > 0]}
     return out
 
 
@@ -344,7 +386,14 @@ def _price_history(ohlc: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp
     }
 
 
-def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.DatetimeIndex, ohlc: pd.DataFrame) -> dict:
+def _bubble(
+    dd: pd.DataFrame,
+    gg: pd.DataFrame,
+    date: pd.Timestamp,
+    cal: pd.DatetimeIndex,
+    ohlc: pd.DataFrame,
+    market: str = "cn",
+) -> dict:
     """FCO 口径泡沫大小/持续时间（描述性）：起点 t1 = Lagrange 正则选窗（Demos–Sornette 2019，FCO 方法附录同）；
     size_model = P̂(t_c)/P(t1) − 1 = exp(A)/P(t1) − 1（FAQ："从泡沫起点到 t_c 处模型预测价格的轨迹幅度"）；
     size_realized = P(as-of)/P(t1) − 1（补充，非原版字段）；duration = t1 → as-of 交易日数；scale = 选中窗口所属尺度。
@@ -363,7 +412,7 @@ def _bubble(dd: pd.DataFrame, gg: pd.DataFrame, date: pd.Timestamp, cal: pd.Date
     longest = [k for k, (lo, hi) in SCALES_FCO.items() if (dd.n.between(lo, hi) & gg["g_fco_standard"]).any()]
     return {"start": str(cal[max(i0 - n + 1, 0)].date()), "duration_days": n, "scale": scale, "t1_qualified_standard": qualified,
             "size_model": round(float(np.exp(row.A) / p1 - 1), 3), "size_realized": round(float(close.iloc[i0]) / p1 - 1, 3),
-            "tc": _to_cal(cal, date, float(row.ahead)), "progress": None, "longest_qualified_scale": longest[-1] if longest else None,
+            "tc": _to_cal(cal, date, float(row.ahead), market), "progress": None, "longest_qualified_scale": longest[-1] if longest else None,
             "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
             "evidence": "descriptive", "signal_status": "signal" if qualified else "t1_not_qualified"}
 
@@ -415,7 +464,8 @@ def _bottom_objects(sym: str, asof: str, cal: pd.DatetimeIndex, ohlc: pd.DataFra
 
 
 def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
-                 p20: float | None = None, data_version: str = "frozen_v20261024") -> dict:
+                 p20: float | None = None, data_version: str = "frozen_v20261024",
+                 market: str = "cn") -> dict:
     """由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
     date = pd.Timestamp(asof)
     q = d[(d.date == date) & r.box]
@@ -431,11 +481,12 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     ind = _indicators(dd, rr, gg, cal, date)
     nmax = max(hi for _, hi in SCALES_FCO.values())
     m_eval = dd.n <= nmax  # 泡沫状态与总信号只用评价过的三档（≤504 日）；六档补充窗口仅作显示
-    bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc)
+    bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc, market)
     bottom_objects = _bottom_objects(sym, asof, cal, ohlc)
-    window = _top_window(sw, cal, date)
+    window = _top_window(sw, cal, date, market)
     rec = {
         "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
+        "future_calendar": future_calendar_metadata(cal, market),
         "top": {
             "p20": {"value": None, "evidence": "fail_i_iii",
                     "notes": ["冻结 p20=R2（GSADF）；校准段 ΔBrier +0.00077 [−0.0013, +0.0030] 未通过；测试段 −0.00158 [−0.00231, −0.00003] 点过线但留出 4/7 翻转（判据 iii 不满足），不显示概率",
@@ -445,18 +496,18 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                            "standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），"
                            "FCO 'oscillations≥2.5' 的口径未公开核验"},
             "combo": _combo(ind),
-            "tc_distribution": _tc_distribution(dd, gg, cal, date),
+            "tc_distribution": _tc_distribution(dd, gg, cal, date, market),
             "negative_bubble": _negative(sym, date, cal, np.log(_close(ohlc, cal))),
             "signal_status": "signal" if any(v.get("signal_status") == "signal" for k, v in ind.items() if k in SCALES_FCO) else "no_qualified_fit",
             "window": window,
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
                                  "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
-            "scenarios": _scenario_records(q, scen, gg, cal, date),
+            "scenarios": _scenario_records(q, scen, gg, cal, date, market),
             "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
                               "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
             "scale_windows": [
-                {"scale": x.scale, "q20_date": _to_cal(cal, date, x.q20), "q80_date": _to_cal(cal, date, x.q80), "n": int(x.n)}
+                {"scale": x.scale, "q20_date": _to_cal(cal, date, x.q20, market), "q80_date": _to_cal(cal, date, x.q80, market), "n": int(x.n)}
                 for x in sw.itertuples()
             ],
             "invalidation": {"rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）", "evidence": "rule"},
@@ -492,7 +543,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     return rec
 
 
-def movie(sym: str, a: str, b: str) -> list[dict]:
+def movie(sym: str, a: str, b: str, market: str = "cn") -> list[dict]:
     sc, _ = load(sym)
     d = _derived(sc)
     r = rules(d)
@@ -503,12 +554,12 @@ def movie(sym: str, a: str, b: str) -> list[dict]:
         sw = scale_windows(q[["n", "ahead"]], SCALES_FCO) if len(q) else pd.DataFrame()
         dd = d[d.date == date]
         frames.append({"asof": str(pd.Timestamp(date).date()), "confidence": _conf(d, r, date),
-                       "tc_distribution": _tc_distribution(dd, grid_rules(dd), cal, date),
-                       "tc_windows": {x.scale: [_to_cal(cal, date, x.q20), _to_cal(cal, date, x.q50), _to_cal(cal, date, x.q80)] for x in sw.itertuples()}})
+                       "tc_distribution": _tc_distribution(dd, grid_rules(dd), cal, date, market),
+                       "tc_windows": {x.scale: [_to_cal(cal, date, x.q20, market), _to_cal(cal, date, x.q50, market), _to_cal(cal, date, x.q80, market)] for x in sw.itertuples()}})
     return frames
 
 
-def history(sym: str) -> dict:
+def history(sym: str, market: str = "cn") -> dict:
     """Split-tagged, point-in-time scenario windows from the three frozen scan sources."""
     logp = price_series(sym)
     close = _close(pd.read_parquet(FROZEN / f"{sym}_qfq.parquet"), logp.index)
@@ -547,7 +598,11 @@ def history(sym: str) -> dict:
         split_values = dd["split"].unique()
         if len(split_values) != 1:
             raise ValueError(f"{sym} has multiple source splits on {date.date()}")
-        frames.append(_history_frame(d, r, date, cal, close.loc[date], str(split_values[0])))
+        frames.append(
+            _history_frame(
+                d, r, date, cal, close.loc[date], str(split_values[0]), market=market
+            )
+        )
 
     top_logp = load_drawdown_logp(sym)
     top_values = top_logp.to_numpy()
@@ -562,6 +617,7 @@ def history(sym: str) -> dict:
     ]
     return {
         "symbol": sym,
+        "future_calendar": future_calendar_metadata(cal, market),
         "model_version": MODEL_VERSION,
         "evidence": "dev_only",
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",

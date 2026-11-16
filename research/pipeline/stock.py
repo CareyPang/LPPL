@@ -20,6 +20,7 @@ import requests  # noqa: E402
 
 from ..data import cache, us_stock  # noqa: E402
 from ..data.sources import UA, sina_raw_daily  # noqa: E402
+from ..data.trading_calendar import future_calendar_metadata  # noqa: E402
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
 from ..data.us_watchlist import US_NAMES  # noqa: E402
 from ..dip.panel import build_panel  # noqa: E402
@@ -726,13 +727,10 @@ def _record(
     reference_asof: pd.Timestamp | None = None,
 ) -> dict:
     sym = _symbol(code6)
+    market = meta.get("market", "cn")
     derived = _derived(fits)
     rule_frame = rules(derived)
-    display_calendar = (
-        _display_calendar(logp.index, asof, "us")
-        if meta.get("market") == "us"
-        else _display_calendar(logp.index, asof)
-    )
+    display_calendar = _display_calendar(logp.index, asof, market)
     record = build_record(
         sym,
         str(asof.date()),
@@ -741,6 +739,7 @@ def _record(
         display_calendar,
         ohlc,
         data_version=data_version,
+        market=market,
     )
     name, st = _name_and_st(code6)
     eligibility = _stock_status_meta(ohlc, st, meta, reference_asof)
@@ -981,17 +980,14 @@ def history(
     fits_by_date = _cached_fits(code, variant, logp, asofs, windows, procs, cache_dir)
 
     sym = _symbol(code)
+    market = meta.get("market", "cn")
     frames = []
     for date in asofs:
         fits = fits_by_date[date]
         derived = _derived(fits)
         rule_frame = rules(derived)
         close = float(ohlc.loc[ohlc.date == date, "close"].iloc[-1])
-        display_calendar = (
-            _display_calendar(logp.index, date, "us")
-            if meta.get("market") == "us"
-            else _display_calendar(logp.index, date)
-        )
+        display_calendar = _display_calendar(logp.index, date, market)
         frame = _history_frame(
             derived,
             rule_frame,
@@ -1000,6 +996,7 @@ def history(
             close,
             STOCK_EVIDENCE,
             include_scenarios=True,
+            market=market,
         )
         frame["fit_input_hash"] = _fit_input_version(logp, date, windows)
         frames.append(frame)
@@ -1008,6 +1005,7 @@ def history(
     tops = [{k: v for k, v in event.items() if k != "evidence"} for event in confirmed_tops]
     record = {
         "symbol": sym,
+        "future_calendar": future_calendar_metadata(logp.index, market),
         "asof": str(logp.index[-1].date()),
         "fit_code_version": _version(),
         "model_version": f"{MODEL_VERSION}+{variant}",
