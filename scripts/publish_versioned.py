@@ -141,6 +141,77 @@ def _read_manifest(path: Path, kind: str, asof: str) -> dict[str, Any]:
     return manifest
 
 
+def _valid_asof(value: Any) -> date | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.isoformat() == value else None
+
+
+def _read_snapshot(path: Path) -> dict[str, Any] | None:
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    return record if isinstance(record, dict) else None
+
+
+def _maybe_utc_datetime(value: Any) -> datetime | None:
+    if not isinstance(value, (str, datetime)):
+        return None
+    try:
+        return _utc_datetime(value)
+    except ValueError:
+        return None
+
+
+def _snapshot_fetched_at(
+    root: Path, kind: str, record: dict[str, Any]
+) -> datetime | None:
+    reference = record.get("version")
+    if isinstance(reference, dict):
+        reference_kind = reference.get("kind", kind)
+        reference_asof = reference.get("asof") or record.get("asof")
+        reference_file = reference.get("file")
+        parsed_asof = _valid_asof(reference_asof)
+        if (
+            reference_kind == kind
+            and parsed_asof is not None
+            and isinstance(reference_file, str)
+        ):
+            relative_path = Path(reference_file)
+            if not relative_path.is_absolute() and ".." not in relative_path.parts:
+                manifest_path = (
+                    root / "versions" / kind / parsed_asof.isoformat() / "index.json"
+                )
+                try:
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                except (OSError, UnicodeError, json.JSONDecodeError):
+                    manifest = {}
+                versions = manifest.get("versions", []) if isinstance(manifest, dict) else []
+                if isinstance(versions, list):
+                    reference_sha = reference.get("sha256")
+                    for entry in versions:
+                        if (
+                            isinstance(entry, dict)
+                            and entry.get("file") == reference_file
+                            and (
+                                reference_sha is None
+                                or entry.get("sha256") == reference_sha
+                            )
+                        ):
+                            fetched_at = _maybe_utc_datetime(entry.get("fetched_at"))
+                            if fetched_at is not None:
+                                return fetched_at
+                            break
+    return _maybe_utc_datetime(
+        record.get("generated_at") or record.get("generated")
+    )
+
+
 def _root_index(root: Path, kind: str) -> dict[str, dict[str, Any]]:
     index = {}
     kind_dir = root / "versions" / kind
@@ -261,6 +332,7 @@ def publish_bytes(
         changed_paths.add(root_index_path.relative_to(root_path).as_posix())
 
     if update_snapshots:
+        incoming_fetched_at = _utc_datetime(normalized_fetched_at)
         version_ref = {
             "kind": kind,
             "asof": asof,
@@ -272,20 +344,40 @@ def publish_bytes(
         dated_template = KIND_PATHS[kind][1]
         if dated_template is not None:
             dated_path = root_path / dated_template.format(asof=asof)
-            if _write_if_changed(dated_path, _json_bytes(output_record)):
+            dated_record = _read_snapshot(dated_path)
+            dated_fetched_at = (
+                _snapshot_fetched_at(root_path, kind, dated_record)
+                if dated_record is not None
+                else None
+            )
+            if (
+                dated_fetched_at is None
+                or incoming_fetched_at >= dated_fetched_at
+            ) and _write_if_changed(dated_path, _json_bytes(output_record)):
                 changed_paths.add(dated_path.relative_to(root_path).as_posix())
 
         latest_path = root_path / KIND_PATHS[kind][0]
-        latest_asof = None
-        if latest_path.is_file():
-            try:
-                latest_record = json.loads(latest_path.read_text(encoding="utf-8"))
-                latest_value = latest_record.get("asof") if isinstance(latest_record, dict) else None
-                if isinstance(latest_value, str):
-                    latest_asof = date.fromisoformat(latest_value)
-            except (OSError, json.JSONDecodeError, ValueError):
-                latest_asof = None
-        if latest_asof is None or date.fromisoformat(asof) >= latest_asof:
+        latest_record = _read_snapshot(latest_path)
+        latest_asof = (
+            _valid_asof(latest_record.get("asof"))
+            if latest_record is not None
+            else None
+        )
+        update_latest = True
+        if latest_asof is not None:
+            incoming_asof = date.fromisoformat(asof)
+            if incoming_asof < latest_asof:
+                update_latest = False
+            elif incoming_asof == latest_asof:
+                latest_fetched_at = _snapshot_fetched_at(
+                    root_path, kind, latest_record
+                )
+                if (
+                    latest_fetched_at is not None
+                    and incoming_fetched_at < latest_fetched_at
+                ):
+                    update_latest = False
+        if update_latest:
             if _write_if_changed(latest_path, _json_bytes(output_record)):
                 changed_paths.add(latest_path.relative_to(root_path).as_posix())
 

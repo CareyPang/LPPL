@@ -205,6 +205,72 @@ def test_older_asof_gets_version_and_dated_file_without_replacing_latest(tmp_pat
     assert len(list_versions(root, "market", "2026-11-15")) == 1
 
 
+def test_late_older_same_asof_version_does_not_replace_newer_snapshots(tmp_path):
+    root = tmp_path / "stock-results"
+    newer = _source(
+        tmp_path,
+        _record("2026-11-16", "2026-11-16T11:00:00Z", "B"),
+        "newer.json",
+    )
+    older = _source(
+        tmp_path,
+        _record("2026-11-16", "2026-11-16T10:00:00Z", "A"),
+        "older.json",
+    )
+
+    publish_record("market", newer, root)
+    latest_path = root / "market/market_latest.json"
+    dated_path = root / "market/2026-11-16.json"
+    latest_before = latest_path.read_bytes()
+    dated_before = dated_path.read_bytes()
+    changed = publish_record("market", older, root)
+
+    assert latest_path.read_bytes() == latest_before
+    assert dated_path.read_bytes() == dated_before
+    assert "versions/market/2026-11-16/index.json" in changed
+    assert not any(
+        path in changed
+        for path in ("market/market_latest.json", "market/2026-11-16.json")
+    )
+    entries = list_versions(root, "market", "2026-11-16")
+    assert [entry["fetched_at"] for entry in entries] == [
+        "2026-11-16T11:00:00Z",
+        "2026-11-16T10:00:00Z",
+    ]
+    assert json.loads(latest_path.read_text(encoding="utf-8"))["value"] == "B"
+    assert json.loads(dated_path.read_text(encoding="utf-8"))["value"] == "B"
+    assert load_as_of(root, "market", "2026-11-16")["value"] == "B"
+
+
+@pytest.mark.parametrize(
+    ("existing_record", "expected_value"),
+    [
+        (_record("2026-11-16", "2026-11-16T11:00:00Z", "B"), "B"),
+        ({"asof": "2026-11-16", "value": "B"}, "A"),
+    ],
+)
+def test_legacy_snapshot_ordering_uses_generated_or_replaces_when_missing(
+    tmp_path, existing_record, expected_value
+):
+    root = tmp_path / "stock-results"
+    latest_path = root / "market/market_latest.json"
+    dated_path = root / "market/2026-11-16.json"
+    latest_path.parent.mkdir(parents=True)
+    raw = json.dumps(existing_record).encode("utf-8")
+    latest_path.write_bytes(raw)
+    dated_path.write_bytes(raw)
+    older = _source(
+        tmp_path,
+        _record("2026-11-16", "2026-11-16T10:00:00Z", "A"),
+        "incoming.json",
+    )
+
+    publish_record("market", older, root)
+
+    assert json.loads(latest_path.read_text(encoding="utf-8"))["value"] == expected_value
+    assert json.loads(dated_path.read_text(encoding="utf-8"))["value"] == expected_value
+
+
 def test_manifest_entries_remain_unchanged_after_append(tmp_path):
     root = tmp_path / "stock-results"
     first = _source(tmp_path, _record(value=1), "first.json")
