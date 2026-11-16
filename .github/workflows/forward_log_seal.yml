@@ -18,7 +18,7 @@ concurrency:
 jobs:
   seal:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 240 # 实测 GitHub runner 每个指数日更约 24–26 分钟（6 指数串行约 2.5 小时）；18:30 开跑，北京时间当日 22:30 前结束，guard 的"当日"判定不受影响
     steps:
       - name: Checkout main
         uses: actions/checkout@v4

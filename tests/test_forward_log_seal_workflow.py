@@ -11,7 +11,7 @@ def test_schedule_and_permissions():
     assert cron.split()[-1] == "1-5", "只在工作日运行"
     assert "workflow_dispatch" in TXT
     assert re.search(r"permissions:\s*\n\s+contents: write", TXT)
-    assert int(re.search(r"timeout-minutes:\s*(\d+)", TXT).group(1)) <= 60
+    assert 180 <= int(re.search(r"timeout-minutes:\s*(\d+)", TXT).group(1)) <= 300, "6 指数串行约 2.5 小时；上限保证北京时间当日结束"
     assert re.search(r"ref:\s*main", TXT), "必须在 main 上封存"
 
 
