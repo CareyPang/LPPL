@@ -125,7 +125,9 @@ def test_growth_monitor_workflow_uses_macro_schedule_and_previous_snapshot():
     assert publish["if"] == (
         "github.event_name != 'pull_request' && steps.fetch.outputs.publishable == 'true'"
     )
-    assert "cp out/growth/growth_latest.json growth/growth_latest.json" in publish["run"]
+    assert "--kind growth" in publish["run"]
+    assert "out/growth/growth_latest.json" in publish["run"]
+    assert "git add --" in publish["run"]
     assert "git push origin HEAD:stock-results" in publish["run"]
     assert "gh workflow run pages.yml --ref main" in publish["run"]
     build = (ROOT / "scripts/build_site.sh").read_text(encoding="utf-8")
@@ -134,6 +136,38 @@ def test_growth_monitor_workflow_uses_macro_schedule_and_previous_snapshot():
     alerts = _workflow("daily_alert.yml")
     alert_triggers = alerts.get("on", alerts.get(True, {}))
     assert "growth_daily" in alert_triggers["workflow_run"]["workflows"]
+
+
+def test_versioned_workflows_use_the_publisher_and_keep_stock_list_unversioned():
+    market = _workflow("market_daily.yml")
+    steps = {
+        step.get("name"): step
+        for step in market["jobs"]["collect"]["steps"]
+        if step.get("name")
+    }
+    event_publish = steps["Fetch and publish event calendar"]["run"]
+    market_publish = steps["Publish to stock-results"]["run"]
+
+    assert "--kind events" in event_publish
+    for kind in ("market", "abnormal", "bottom_signal", "range"):
+        assert f"publish_versioned {kind} " in market_publish
+    assert "cp out/market/stock_list.json market/stock_list.json" in market_publish
+    assert "git add market/stock_list.json" in market_publish
+    assert "cp out/market/market_latest.json" not in market_publish
+
+    for workflow_name, kind in (
+        ("macro_daily.yml", "macro"),
+        ("nt_etf_daily.yml", "nt_etf"),
+        ("growth_daily.yml", "growth"),
+    ):
+        workflow = _workflow(workflow_name)
+        publish = next(
+            step
+            for step in workflow["jobs"]["collect"]["steps"]
+            if step.get("name") == "Publish to stock-results"
+        )
+        assert f"--kind {kind}" in publish["run"]
+        assert "git add --" in publish["run"]
 
 
 def test_dip_env_workflow_publishes_when_options_archive_is_skipped():

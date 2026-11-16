@@ -88,12 +88,14 @@ jobs:
         run: |
           set -euo pipefail
           day="$(python -c 'import json; print(json.load(open("out/nt_etf/nt_etf_latest.json"))["asof"])')"
+          cp "$GITHUB_WORKSPACE/scripts/publish_versioned.py" "$RUNNER_TEMP/publish_versioned.py"
           git fetch --no-tags origin stock-results
           git switch -c nt-etf-publish origin/stock-results
-          mkdir -p nt_etf
-          cp out/nt_etf/nt_etf_latest.json nt_etf/nt_etf_latest.json
-          cp "out/nt_etf/nt_etf_${day}.json" "nt_etf/nt_etf_${day}.json"
-          git add nt_etf/nt_etf_latest.json "nt_etf/nt_etf_${day}.json"
+          nt_etf_paths="$(python "$RUNNER_TEMP/publish_versioned.py" --kind nt_etf --src "$GITHUB_WORKSPACE/out/nt_etf/nt_etf_latest.json" --root "$GITHUB_WORKSPACE")"
+          if [[ -n "$nt_etf_paths" ]]; then
+            mapfile -t nt_etf_paths_to_add <<< "$nt_etf_paths"
+            git add -- "${nt_etf_paths_to_add[@]}"
+          fi
           if ! git diff --cached --quiet; then
             git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "ETF: 发布国家队份额板 ${day}"
             git push origin HEAD:stock-results

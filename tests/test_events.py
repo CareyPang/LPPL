@@ -148,7 +148,20 @@ def test_failed_source_keeps_only_its_previous_rows():
         previous_path=FIXTURES / "events_previous.json",
     )
 
-    assert result["lift"] == fixture("events_previous.json")["lift"]
+    previous = fixture("events_previous.json")
+    assert [
+        {key: value for key, value in item.items() if key != "first_seen_at"}
+        for item in result["lift"]
+    ] == previous["lift"]
+    previous_first_seen = previous.get("generated") or result["generated"]
+    assert all(
+        item["first_seen_at"] == previous_first_seen for item in result["lift"]
+    )
+    assert all(
+        "first_seen_at" in item
+        for category in ("lift", "dividend", "forecast")
+        for item in result[category]
+    )
     assert result["sources"]["lift"]["ok"] is False
     assert result["sources"]["lift"]["stale"] is True
     assert "fixture source failure" in result["sources"]["lift"]["error"]
