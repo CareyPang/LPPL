@@ -342,7 +342,7 @@ a { color: var(--ink-2); text-decoration: none; }
   }
   function writeAlertParam(value) {
     const url = new URL(location.href);
-    if (value) url.searchParams.set('alert', value); else url.searchParams.delete('alert');
+    if (value) { url.searchParams.set('alert', value); url.searchParams.set('code', st.sym); } else url.searchParams.delete('alert');
     history.replaceState(null, '', url);
   }
   function blockedAlertEvidence(evidence) {
