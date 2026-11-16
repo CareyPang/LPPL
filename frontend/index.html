@@ -461,6 +461,35 @@ window.CP = { dateAt(bars, idx) {
         sigma: n ? Math.sqrt(Math.max(0, s2 / n - (s1 / n) ** 2)) : NaN },
       replay: null, tape: [], phase: { k: '' } };
   }
+  const quoteSessionDate = (quote) => {
+    const raw = String(quote?.time || '');
+    const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(raw) ||
+      /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(raw);
+    if (!match) return null;
+    let date = `${match[1]}-${match[2]}-${match[3]}`;
+    if (LPPL.quoteTimeLabel?.(quote.time, quote.tz).label === '盘中') {
+      const previous = new Date(date + 'T00:00:00Z');
+      do { previous.setUTCDate(previous.getUTCDate() - 1); }
+      while (previous.getUTCDay() === 0 || previous.getUTCDay() === 6);
+      date = previous.toISOString().slice(0, 10);
+    }
+    return date;
+  };
+  const weekdaySessions = (from, to) => {
+    let count = 0, date = new Date(from + 'T00:00:00Z'), end = new Date(to + 'T00:00:00Z');
+    while (date < end) {
+      date.setUTCDate(date.getUTCDate() + 1);
+      const day = date.getUTCDay();
+      if (day !== 0 && day !== 6) count++;
+    }
+    return count;
+  };
+  const isLatestClosed = (R) => !!R.latestClosedDate && R.asof === R.latestClosedDate;
+  const lagSessions = (R) => {
+    if (!R.latestClosedDate || R.latestClosedDate <= R.asof) return 0;
+    const known = R.bars.filter((bar) => bar.date > R.asof && bar.date <= R.latestClosedDate).length;
+    return known || weekdaySessions(R.asof, R.latestClosedDate);
+  };
   async function getAnalysis(code, asof, onProg) {
     onProg && onProg('读取后端数据', 0.5);
     const D = await LPPL.load(code, asof), R = toView(D);
@@ -734,7 +763,7 @@ window.CP = { dateAt(bars, idx) {
       const xt = X(T);
       if (xt >= 0 && xt <= g.W) {
         vline(xt, 0, g.bottom, col.ink2, [3, 3]);
-        tag((R.latest ? '最新 ' : '截止 ') + R.asof, xt, 10, '#FFFFFF', col.ink2, xt > g.W - 90 ? 'right' : 'center');
+        tag((isLatestClosed(R) ? '最新交易日 ' : R.latest ? '当前可用 ' : '截止日 ') + R.asof, xt, 10, '#FFFFFF', col.ink2, xt > g.W - 90 ? 'right' : 'center');
       }
       if (st.ghost >= 0 && st.ghost !== T) {
         const xg = X(st.ghost);
@@ -837,7 +866,7 @@ window.CP = { dateAt(bars, idx) {
   })();
 
   /* ================= 状态与调度 ================= */
-  let cur = null, curCode = '', busy = false, want = null, playing = false, tlTimer = 0, playTimer = 0, planTab = 0;
+  let cur = null, curCode = '', busy = false, want = null, playing = false, tlTimer = 0, playTimer = 0, planTab = 0, latestSessionRequest = 0;
 
   function clearView() {
     cur = null; curCode = '';
@@ -874,9 +903,21 @@ window.CP = { dateAt(bars, idx) {
     };
   }
   function request(code, asof) {
-    clearTimeout(replayTimer); replayWait = null;
+    clearTimeout(replayTimer); replayWait = null; latestSessionRequest++;
     want = { code, asof };
     if (!busy) pump();
+  }
+  function refreshLatestSession(R) {
+    const id = ++latestSessionRequest;
+    if (!R.latest || !LPPL.quote) return;
+    LPPL.quote([R.sym.code]).then((result) => {
+      if (id !== latestSessionRequest || cur !== R) return;
+      const quote = result?.quotes?.[R.sym.code], date = quoteSessionDate(quote);
+      if (!date) return;
+      R.latestClosedDate = date;
+      render(R);
+      syncWatch();
+    }).catch(() => {});
   }
   async function pump() {
     busy = true; $('go').disabled = true;
@@ -887,7 +928,7 @@ window.CP = { dateAt(bars, idx) {
       $('ld').hidden = false;
       try {
         const R = await getAnalysis(job.code, job.asof, prog);
-        if (!want) { replayWait = null; curCode = R.sym.label; cur = R; err(''); render(R); syncWatch(); }
+        if (!want) { replayWait = null; curCode = R.sym.label; cur = R; err(''); render(R); syncWatch(); refreshLatestSession(R); }
       } catch (e) {
         stopPlay(); clearView();
         if (e && e.pending) { replayWait = scheduleReplay(job, e); continue; }
@@ -909,13 +950,15 @@ window.CP = { dateAt(bars, idx) {
   function render(R) {
     const bars = R.bars, T = R.T, rm = R.rm, N = bars.length, last = bars[N - 1].date;
     const name = R.sym.isIndex ? R.sym.label : (R.data.name || R.sym.label);
+    const latestClosed = isLatestClosed(R), lag = lagSessions(R);
+    const latestKnown = !!R.latestClosedDate;
 
 
     $('sym-n').textContent = name;
     $('sym-c').textContent = R.sym.code + ' · 日线 · 对数坐标';
     $('mode').hidden = false;
-    $('mode').textContent = R.latest ? '最新' : '回放 · 截止 ' + R.asof;
-    $('mode').className = 'mode od-fixed' + (R.latest ? ' live' : '');
+    $('mode').textContent = R.latest ? (latestClosed ? '最新交易日' : '当前可用') : '回放 · 截止 ' + R.asof;
+    $('mode').className = 'mode od-fixed' + (latestClosed ? ' live' : '');
     $('code').value = curCode;
     $('asof').value = R.latest ? '' : R.asof;
     document.querySelectorAll('.tk').forEach((b) => b.setAttribute('aria-current', String(b.dataset.c === R.sym.label)));
@@ -926,7 +969,10 @@ window.CP = { dateAt(bars, idx) {
     $('px').textContent = U.px(c0);
     $('pxc').className = 'px-chg ' + (ch >= 0 ? 'up' : 'dn');
     $('pxc').textContent = (ch >= 0 ? '▲ ' : '▼ ') + U.px(Math.abs(c0 - c1)) + '  ' + U.sp(ch, 2);
-    $('pxs').textContent = (R.latest ? '最新交易日 ' : '截止日 ') + R.asof + ' · 日波动 ' + U.pct(rm.sigma, 2);
+    $('pxs').textContent = (R.latest
+      ? !latestKnown ? `当前可用分析截至 ${R.asof}（行情日期暂不可用）`
+        : latestClosed ? '最新交易日 ' + R.asof : `当前可用分析截至 ${R.asof}（落后 ${lag} 个交易日）`
+      : '截止日 ' + R.asof) + ' · 日波动 ' + U.pct(rm.sigma, 2);
 
     // 结论
     const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, LC = t.lppls_confidence || {};
@@ -1037,9 +1083,13 @@ window.CP = { dateAt(bars, idx) {
 
   function renderReplay(R) {
     const reps = LPPL.REPLAYS[R.sym.code] || [];
+    const currentStatus = !R.latestClosedDate
+      ? `当前可用分析截至 ${R.asof}（行情日期暂不可用）。`
+      : isLatestClosed(R) ? '当前是最新交易日。'
+        : `当前可用分析截至 ${R.asof}（落后 ${lagSessions(R)} 个交易日）。`;
     const chips = (R.latest ? '' : `<button class="chip" type="button" data-c="${E(R.sym.label)}" data-d="">回到最新</button>`) +
       reps.map((d) => `<button class="chip" type="button" data-c="${E(R.sym.label)}" data-d="${d}">${E(R.sym.label)} ${d}</button>`).join('');
-    $('p-replay').innerHTML = `<p class="tp-d">${R.latest ? '当前是最新交易日。' : '回放截止 ' + E(R.asof) + '：只用当时已确认的事件和已公布的 PE。'}后端只开放下列回放日期${reps.length ? '' : '（本标的暂无）'}；逐日动画见 <a href="lab/dashboard.html">研究仪表盘</a>。</p><div>${chips}</div>`;
+    $('p-replay').innerHTML = `<p class="tp-d">${R.latest ? currentStatus : '回放截止 ' + E(R.asof) + '：只用当时已确认的事件和已公布的 PE。'}后端只开放下列回放日期${reps.length ? '' : '（本标的暂无）'}；逐日动画见 <a href="lab/dashboard.html">研究仪表盘</a>。</p><div>${chips}</div>`;
   }
 
   function renderBench(R) {
