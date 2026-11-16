@@ -238,7 +238,8 @@ function paintQuotes(){
  let lab=null;
  rows.querySelectorAll('a.row[data-sym]').forEach(a=>{
   const q=QT[a.dataset.sym],p=a.querySelector('.p');if(!p)return;
-  if(p.dataset.c==null)p.dataset.c=p.innerHTML;
+  if(p.dataset.c==null){p.dataset.c=p.innerHTML;a.dataset.al=a.getAttribute('aria-label')||''}
+  a.setAttribute('aria-label',q?a.dataset.al.replace(/收盘 [\d.]+/,'实时 '+q.price.toFixed(2)+(Number.isFinite(q.pct)?'，涨跌 '+(q.pct>=0?'+':'')+q.pct.toFixed(2)+'%':'')+'（腾讯行情，不复权）'):a.dataset.al);
   if(q){p.innerHTML=qHtml(q);p.title='腾讯实时行情，仅供参考，不参与模型';if(!lab&&LPPL.quoteTimeLabel)lab=LPPL.quoteTimeLabel(q.time,q.tz)}
   else{p.innerHTML=p.dataset.c;p.title='日更收盘'}
  });
