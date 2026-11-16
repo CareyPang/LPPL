@@ -17,6 +17,11 @@ _HISTORY_INPUTS_READY = all(
 def test_history_contract_and_replay_window_consistency():
     rec = export_contract.history("sh000001")
     frames = rec["frames"]
+    assert rec["scale_evidence"] == {
+        scale: export_contract.SCALE_EVIDENCE[scale]
+        for scale in export_contract.HISTORY_SCALES
+    }
+    assert rec["evidence"] == "dev_only"
     asofs = [frame["asof"] for frame in frames]
     assert asofs == sorted(asofs)
     assert set(frame["split"] for frame in frames) <= {"dev", "cal", "test"}
@@ -46,6 +51,55 @@ def test_history_contract_and_replay_window_consistency():
     scale_window = next(window for window in replay["top"]["scale_windows"] if window["scale"] == "6-12m")
     assert frame_2015["w"]["6-12m"] == [scale_window["q20_date"], scale_window["q80_date"]]
     assert frame_2015["close"] == round(replay["price_history"]["close"][-1], 2)
+
+
+def test_history_contract_exposes_authoritative_per_scale_evidence(tmp_path, monkeypatch):
+    import pandas as pd
+
+    dates = pd.date_range("2024-01-01", periods=2, freq="7D")
+    logp = pd.Series(np.log([100.0, 101.0]), index=dates)
+    scan_path = tmp_path / "dev" / "symbol.parquet"
+    scan_path.parent.mkdir()
+    scan_path.touch()
+
+    def read_parquet(path):
+        if Path(path) == scan_path:
+            return pd.DataFrame({"date": [dates[1]], "n": [2]})
+        return pd.DataFrame()
+
+    monkeypatch.setattr(export_contract.pd, "read_parquet", read_parquet)
+    monkeypatch.setattr(export_contract, "price_series", lambda _sym: logp)
+    monkeypatch.setattr(export_contract, "_close", lambda *_args: pd.Series(100.0, index=dates))
+    monkeypatch.setattr(export_contract, "future_calendar_metadata", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "HISTORY_SCANS", {
+        "dev": scan_path.parent,
+        "cal": tmp_path / "cal",
+        "test": tmp_path / "test",
+    })
+    monkeypatch.setattr(export_contract, "_derived", lambda scan: scan)
+    monkeypatch.setattr(export_contract, "rules", lambda _d: None)
+    monkeypatch.setattr(
+        export_contract,
+        "_history_frame",
+        lambda _d, _r, date, _cal, close, split, **_kwargs: {
+            "asof": str(date.date()), "close": close, "split": split,
+        },
+    )
+    monkeypatch.setattr(export_contract, "load_drawdown_logp", lambda _sym: logp)
+    monkeypatch.setattr(
+        export_contract,
+        "qualified_turns",
+        lambda _values: (np.array([], dtype=int), np.array([], dtype=int)),
+    )
+
+    rec = export_contract.history("symbol")
+
+    assert rec["evidence"] == "dev_only"
+    assert rec["scale_evidence"] == {"6-12m": "dev", "12-24m": "dev"}
+    assert rec["scale_evidence"] == {
+        scale: export_contract.SCALE_EVIDENCE[scale]
+        for scale in export_contract.HISTORY_SCALES
+    }
 
 
 def test_to_cal_extrapolates_beyond_calendar_end():

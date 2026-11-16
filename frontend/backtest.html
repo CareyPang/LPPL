@@ -250,7 +250,7 @@ a { color: var(--ink-2); text-decoration: none; }
     <div class="al-head">
       <div class="al-title">
         <h2 id="alert-title">提醒明细（历史回放，不是当时发布）</h2>
-        <p class="al-note">按每周截止日当时可得数据回放；“事后确认顶”是之后才能确认的，只作对照，不是检验结果。</p>
+        <p class="al-note">按每周截止日当时可得数据回放；“事后确认顶”及回撤是之后才能确认的价格事实，不是模型顶部日期，只作对照，不是检验结果。</p>
         <p class="al-caveat" id="alert-caveat" hidden></p>
       </div>
       <div class="al-controls" id="alert-scales" role="group" aria-label="提醒区间尺度">
@@ -281,6 +281,7 @@ a { color: var(--ink-2); text-decoration: none; }
 <script src="app/scen-style.js"></script>
 <script src="app/top-clusters.js"></script>
 <script src="app/alert-ledger.js"></script>
+<script src="app/alert-evidence.js"></script>
 <script>
 (function () {
   'use strict';
@@ -351,8 +352,7 @@ a { color: var(--ink-2); text-decoration: none; }
     history.replaceState(null, '', url);
   }
   function blockedAlertEvidence(evidence) {
-    const value = String(evidence || '');
-    return !value || value === 'none' || value === 'dev_failed' || value.startsWith('fail');
+    return CPAlertEvidence.blocked(evidence);
   }
   function setAlertScaleData(scale) {
     st.alertScale = scale;
@@ -373,7 +373,7 @@ a { color: var(--ink-2); text-decoration: none; }
           lo: T(cluster.q20_date),
           hi: T(cluster.q80_date),
         })).filter((range) => Number.isFinite(range.lo) && Number.isFinite(range.hi));
-      if (blockedAlertEvidence(st.H.evidence)) frame.ranges = [];
+      if (blockedAlertEvidence(CPAlertEvidence.forScale(st.H, scale))) frame.ranges = [];
       frame.w0 = frame.ranges[0]?.lo ?? null;
       frame.w1 = frame.ranges[0]?.hi ?? null;
       frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
@@ -383,24 +383,26 @@ a { color: var(--ink-2); text-decoration: none; }
   }
   function renderAlertLedger() {
     const rows = $('alert-rows'), empty = $('alert-empty'), count = $('alert-count'), caveat = $('alert-caveat');
-    const evidence = st.H && st.H.evidence;
+    const evidence = CPAlertEvidence.forScale(st.H, st.alertScale);
     const blocked = !st.H || blockedAlertEvidence(evidence);
     const episodes = blocked ? [] : (st.H.alertEpisodes[st.alertScale] || []).slice().reverse();
     document.querySelectorAll('[data-alert-scale]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.alertScale === st.alertScale));
     });
-    caveat.hidden = !st.H || evidence !== 'dev_only';
+    caveat.hidden = !st.H || !['dev', 'dev_only'].includes(evidence);
     caveat.textContent = evidence === 'dev_only'
       ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。'
+      : evidence === 'dev'
+        ? '该尺度有开发段证据；占比是该尺度合格拟合数占比，不是概率。事后确认顶及回撤是事后价格事实，不是模型顶部日期；校准段、测试段的历史回放不代表通过检验。'
       : '';
-    const showNumbers = evidence !== 'dev_only';
+    const showNumbers = CPAlertEvidence.showsNumbers(st.H, st.alertScale);
     count.textContent = blocked ? '证据不足' : showNumbers ? '共 ' + episodes.length + ' 次' : '开发段证据，数值指标已隐藏';
     rows.innerHTML = episodes.map((episode) => {
       const id = episode.scale + ':' + episode.first_asof;
       const top = episode.next_top;
-      const topText = !top ? '无' : !showNumbers ? '事后确认' : top.max_dd != null && Number.isFinite(Number(top.max_dd))
-        ? '回撤 ' + E(pct(Number(top.max_dd)))
-        : '事后确认';
+      const topText = !top ? '无' : !showNumbers ? '事后确认'
+        : top.max_dd != null && Number.isFinite(Number(top.max_dd))
+          ? `${E(top.date)} · 回撤 ${E(pct(Number(top.max_dd)))}` : `${E(top.date)} · 事后确认`;
       const clusters = episode.clusters;
       const main = Array.isArray(clusters) ? clusters[0] : null;
       const mainText = main
@@ -500,17 +502,25 @@ a { color: var(--ink-2); text-decoration: none; }
         '6-12m': CPAlertLedger.episodes(H.frames, H.tops, '6-12m'),
         '12-24m': CPAlertLedger.episodes(H.frames, H.tops, '12-24m'),
       };
-      st.H = { evidence: H.evidence, rule: H.rule, model_version: H.model_version, fr, tops, alertEpisodes };
+      st.H = {
+        evidence: H.evidence,
+        scale_evidence: H.scale_evidence,
+        rule: H.rule,
+        model_version: H.model_version,
+        fr,
+        tops,
+        alertEpisodes,
+      };
       st.tmin = fr[0].t;
       setAlertScaleData(st.alertScale);
       const e = H.evidence;
-      $('ev').innerHTML = `<span class="evb">${E(e)}</span><p>${e === 'dev_only' ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。' : '证据等级以研究仪表盘为准。'}</p><p>${E(H.rule || '')}</p><p class="m" style="font-size:12px;color:var(--ink-3)">数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)} · 模型 ${E(H.model_version || '')}</p>`;
+      $('ev').innerHTML = `<span class="evb">${E(e)}</span><p>${e === 'dev_only' ? '全局历史证据为 dev_only；提醒明细按单尺度证据控制数值显示。校准段、测试段的帧是按同一规则回放，不代表通过检验。' : '证据等级以研究仪表盘为准。'}</p><p>${E(H.rule || '')}</p><p class="m" style="font-size:12px;color:var(--ink-3)">数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)} · 模型 ${E(H.model_version || '')}</p>`;
       ld.hidden = true;
       let initialAlert = null;
       const requestedAlert = new URL(location.href).searchParams.get('alert');
       if (requestedAlert) {
         const match = /^(6-12m|12-24m):(\d{4}-\d{2}-\d{2})$/.exec(requestedAlert);
-        initialAlert = match && !blockedAlertEvidence(e)
+        initialAlert = match && !blockedAlertEvidence(CPAlertEvidence.forScale(st.H, match[1]))
           ? (st.H.alertEpisodes[match[1]] || []).find((episode) => episode.first_asof === match[2]) || null
           : null;
         if (initialAlert) setAlertScaleData(initialAlert.scale);
@@ -617,17 +627,24 @@ a { color: var(--ink-2); text-decoration: none; }
       if (px === -Infinity) continue;
       const x = X(t.t), y = Y(px) - 6;
       CPSCN.drawTop(ctx, x, y);
-      if (labelOk && !blockedAlertEvidence(H.evidence) && H.evidence !== 'dev_only') { ctx.fillStyle = col.real; ctx.font = '11px ' + FM; ctx.textAlign = 'center'; ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12); }
+      if (labelOk && CPAlertEvidence.showsNumbers(H, st.alertScale)) {
+        ctx.fillStyle = col.real;
+        ctx.font = '11px ' + FM;
+        ctx.textAlign = 'center';
+        ctx.fillText(t.date.slice(0, 7) + ' ' + pct(t.max_dd), x, y - 12);
+      }
     }
     if (st.hover) { const x = Math.round(X(st.hover.f.t)) + 0.5; ctx.strokeStyle = rgba('#131722', 0.3); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, Hh - pb); ctx.stroke(); ctx.setLineDash([]); }
     ctx.restore();
 
-    const showNumbers = !blockedAlertEvidence(H.evidence) && H.evidence !== 'dev_only';
+    const showNumbers = CPAlertEvidence.showsNumbers(H, st.alertScale);
     const withW = vis.filter((f) => f.w?.[st.alertScale] != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
     const scaleName = st.alertScale === '6-12m' ? '6–12 月' : '12–24 月';
     $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>周度截止日</td><td>${showNumbers ? vis.length : '—'}</td></tr><tr><td>有 ${scaleName} 档区间</td><td>${showNumbers ? withW : '—'}</td></tr><tr><td>事后确认顶</td><td>${showNumbers ? nt : '—'}</td></tr><tr><td>显示方式</td><td>${dense ? '密集（细线）' : '标准'}</td></tr>`;
     $('vr').textContent = ymd(ta) + ' – ' + ymd(Math.min(tb, st.tmax));
-    $('sr').textContent = `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，${vis.length} 个周度截止日，${nt} 个事后确认顶。`;
+    $('sr').textContent = showNumbers
+      ? `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，${vis.length} 个周度截止日，${nt} 个事后确认顶。`
+      : `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，数值指标已隐藏。`;
   }
 
   /* ---------- 刷选时间轴 ---------- */
@@ -713,7 +730,9 @@ a { color: var(--ink-2); text-decoration: none; }
       const clusterText = (scale) => {
         const clusters = CPTopClusters.forScale(best, scale);
         const name = scale === '6-12m' ? '6–12 月' : '12–24 月';
-        if (blockedAlertEvidence(st.H.evidence)) return `${name}档无证据`;
+        const evidence = CPAlertEvidence.forScale(st.H, scale);
+        const showNumbers = CPAlertEvidence.showsNumbers(st.H, scale);
+        if (blockedAlertEvidence(evidence)) return `${name}档无证据`;
         if (clusters === null) {
           const window = w[scale];
           return window
@@ -722,14 +741,14 @@ a { color: var(--ink-2); text-decoration: none; }
         }
         if (!clusters.length) return `${name}档本次未形成聚类区间`;
         return `${name}档<br>` + clusters.map((cluster) =>
-          `${E(CPTopClusters.label(cluster))} ${E(cluster.q20_date)} – ${E(cluster.q80_date)}${st.H.evidence === 'dev_only' ? '' : `（${E(CPTopClusters.shareText(cluster))}）`}`
+          `${E(CPTopClusters.label(cluster))} ${E(cluster.q20_date)} – ${E(cluster.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(cluster))}）` : ''}`
         ).join('<br>');
       };
       const topText = top
-        ? st.H.evidence === 'dev_only'
+        ? !CPAlertEvidence.showsNumbers(st.H, st.alertScale)
           ? '<br><span class="re">▼ 事后确认顶（事后实测）</span>'
           : top.max_dd != null && Number.isFinite(Number(top.max_dd))
-            ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(Number(top.max_dd))}（事后实测）</span>`
+            ? `<br><span class="re">▼ 事后确认顶：${E(top.date)} · 回撤 ${pct(Number(top.max_dd))}（事后价格事实，非模型顶部日期）</span>`
             : '<br><span class="re">▼ 事后确认顶（事后实测）</span>'
         : '';
       tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${E(SPLIT[best.split] || best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +

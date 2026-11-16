@@ -656,6 +656,7 @@ def history(sym: str, market: str = "cn") -> dict:
         "future_calendar": future_calendar_metadata(cal, market),
         "model_version": MODEL_VERSION,
         "evidence": "dev_only",
+        "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "frames": frames,
         "tops": tops,
