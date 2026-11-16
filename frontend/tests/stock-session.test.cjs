@@ -454,6 +454,38 @@ test('current stays ready while an explicit history task moves from queued to hi
   assert.equal(h.session.snapshot().current.symbol, 'sz000001');
 });
 
+test('reselecting a code preserves the active watched history status after reads settle', async t => {
+  let phase = 'queued';
+  const saved = [{
+    code: '000001', mode: 'history', job_id: JOB,
+    requested_at: '2026-11-06T07:55:00Z', source_sha: SHA,
+  }];
+  const h = harness({
+    latest: async code => current(code),
+    history: async () => null,
+    market: async code => market(code),
+    remote: async (code, kind) => kind === 'history' ? null : current(code),
+    status: async (_code, options) => ({
+      job_id: options.jobId, phase,
+      status: phase === 'queued' ? 'queued' : 'in_progress',
+      current_ready: false, history_ready: false,
+    }),
+  }, saved);
+  t.after(() => h.session.destroy());
+
+  await h.session.select('000001');
+  await settle();
+  assert.equal(h.session.snapshot().historyStatus, 'queued');
+  phase = 'history_running';
+  await h.poll();
+  assert.equal(h.session.snapshot().historyStatus, 'history_running');
+
+  await h.session.select('000002');
+  await h.session.select('000001');
+  await settle();
+  assert.equal(h.session.snapshot().historyStatus, 'history_running');
+});
+
 test('stale terminal state keeps its reason and successful cutoff without pretending the failed job is ready', async t => {
   const h = harness({ latest: async () => current(), status: async () => ({
     job_id: JOB, phase: 'stale', status: 'completed', conclusion: 'failure', current_ready: false,
