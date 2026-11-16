@@ -30,6 +30,17 @@ def test_market_snapshot_dates_use_trading_date_helper():
     assert any('snapshot_date="${{ steps.fetch.outputs.asof }}"' in run for run in runs)
 
 
+def test_market_daily_uses_off_hour_schedules():
+    workflow = _workflow("market_daily.yml")
+    triggers = workflow.get("on", workflow.get(True, {}))
+
+    assert triggers["schedule"] == [
+        {"cron": "17 10 * * 1-5"},
+        {"cron": "47 12 * * 1-5"},
+        {"cron": "23 15 * * 1-5"},
+    ]
+
+
 def test_market_event_smoke_uses_trading_date_helper():
     workflow = _workflow("market_daily.yml")
     steps = [
@@ -153,12 +164,25 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
         if step.get("name") == "Download index fit artifacts"
     )
 
-    assert triggers["schedule"] == [{"cron": "0 10 * * 1-5"}]
+    assert triggers["schedule"] == [
+        {"cron": "17 10 * * 1-5"},
+        {"cron": "47 13 * * 1-5"},
+    ]
     assert triggers["workflow_dispatch"] is None
     assert 'asof="$(python -c \'from research.data.trading_date import latest_closed_trading_day; print(latest_closed_trading_day())\')"' in plan_step["run"]
     assert 'symbols=\'["sh000001","sh000016","sh000300","sh000905","sh000688","sz399001","sz399006"]\'' in plan_step["run"]
     assert 'symbols=\'["sh000001"]\'' in plan_step["run"]
+    assert plan["outputs"]["skip"] == "${{ steps.plan.outputs.skip }}"
+    assert 'skip=false' in plan_step["run"]
+    assert 'if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then' in plan_step["run"]
+    assert "git fetch --no-tags --depth=1 origin stock-results" in plan_step["run"]
+    assert 'json.loads(result.stdout)' in plan_step["run"]
+    assert 'origin/stock-results:index/{symbol}_latest.json' in plan_step["run"]
+    assert 'payload.get("asof") != asof' in plan_step["run"]
+    assert 'printf \'skip=%s\\n\' "$skip"' in plan_step["run"]
+    assert "$GITHUB_STEP_SUMMARY" in plan_step["run"]
     assert fit["needs"] == "plan"
+    assert fit["if"] == "needs.plan.outputs.skip != 'true'"
     assert fit["timeout-minutes"] == 75
     assert fit["strategy"]["fail-fast"] is False
     assert fit["strategy"]["max-parallel"] == 7
@@ -170,7 +194,7 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     assert upload["with"]["if-no-files-found"] == "warn"
     assert publish_job["needs"] == ["plan", "fit"]
     assert publish_job["if"] == (
-        "${{ !cancelled() && github.event_name != 'pull_request' }}"
+        "${{ !cancelled() && github.event_name != 'pull_request' && needs.plan.outputs.skip != 'true' }}"
     )
     assert download["with"]["pattern"] == (
         "index-fit-*-${{ github.run_id }}-*"

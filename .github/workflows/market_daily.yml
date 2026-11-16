@@ -2,7 +2,9 @@ name: market_daily
 
 on:
   schedule:
-    - cron: "0 10 * * 1-5" # 18:00 Asia/Shanghai, weekdays
+    - cron: "17 10 * * 1-5" # 18:17 Asia/Shanghai, weekdays
+    - cron: "47 12 * * 1-5" # 20:47 Asia/Shanghai, weekdays
+    - cron: "23 15 * * 1-5" # 23:23 Asia/Shanghai, weekdays
   workflow_dispatch:
   pull_request:
     paths:
