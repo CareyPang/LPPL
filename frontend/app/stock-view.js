@@ -41,24 +41,44 @@
     const nextStart = clamp(base.start + delta, 0, count - size);
     return { start: nextStart, end: nextStart + size };
   }
-  function mapScenarioBands(bars, windows, states, closures) {
+  function mapScenarioBands(bars, windows, states, closures, scaleClusters) {
     if (!bars.length || !root.CPTradingDays) return [];
     const selectable = new Set((states || [])
       .filter(state => state.selectable && state.hasWindow)
       .map(state => state.scale));
-    return (windows || []).filter(window => window && selectable.has(window.scale) &&
-      typeof window.q20_date === 'string' && typeof window.q80_date === 'string')
-      .map(window => {
-        const first = root.CPTradingDays.idxOf(bars, window.q20_date, closures);
-        const last = root.CPTradingDays.idxOf(bars, window.q80_date, closures);
-        return {
-          scale: window.scale,
-          lo: Math.min(first, last),
-          hi: Math.max(first, last),
-          q20_date: window.q20_date,
-          q80_date: window.q80_date,
-        };
+    const bands = [];
+    for (const scale of selectable) {
+      const clusters = root.CPTopClusters?.forScale({ scale_clusters: scaleClusters }, scale);
+      if (clusters !== null && clusters !== undefined) {
+        for (const cluster of clusters) {
+          const first = root.CPTradingDays.idxOf(bars, cluster.q20_date, closures);
+          const last = root.CPTradingDays.idxOf(bars, cluster.q80_date, closures);
+          bands.push({
+            scale,
+            rank: cluster.rank,
+            share: cluster.share,
+            lo: Math.min(first, last),
+            hi: Math.max(first, last),
+            q20_date: cluster.q20_date,
+            q80_date: cluster.q80_date,
+          });
+        }
+        continue;
+      }
+      const window = (windows || []).find(item => item && item.scale === scale);
+      if (!window || typeof window.q20_date !== 'string' || typeof window.q80_date !== 'string') continue;
+      const first = root.CPTradingDays.idxOf(bars, window.q20_date, closures);
+      const last = root.CPTradingDays.idxOf(bars, window.q80_date, closures);
+      bands.push({
+        scale,
+        rank: 'main',
+        lo: Math.min(first, last),
+        hi: Math.max(first, last),
+        q20_date: window.q20_date,
+        q80_date: window.q80_date,
       });
+    }
+    return bands;
   }
   function futureSlots(length, bands, atLatest) {
     if (!atLatest || !length || !bands.length) return 0;
@@ -250,7 +270,7 @@
       if (scaleNote) {
         scaleNote.hidden = false;
         scaleNote.textContent = scenario.states.find(state => state.scale === selectedScale)?.hasWindow
-          ? '情景区间是未校准的时间区间，不是顶部日期；只有 6–12 月、12–24 月有开发段证据。'
+          ? '选中尺度显示主簇和次级簇时间区间；占比不是概率，区间未校准，不是顶部日期。'
           : '该尺度本次无合格拟合；这不代表风险较低。';
       }
       if (calendarNote) {
@@ -292,19 +312,45 @@
       const evidence = lastHistory?.evidence || lastHistory?.evidence_levels?.scenarios;
       const hiddenEvidence = !evidence || typeof evidence !== 'string' || evidence === 'none'
         || evidence.startsWith('fail') || evidence === 'dev_only' || evidence === 'dev_failed';
-      const bands = hiddenEvidence ? [] : (frame.scenarios || [])
-        .filter(item => typeof item?.q20_date === 'string' && typeof item?.q80_date === 'string')
-        .map((item, index) => {
-          const first = root.CPTradingDays.idxOf(allPrices, item.q20_date, closures);
-          const last = root.CPTradingDays.idxOf(allPrices, item.q80_date, closures);
-          return {
-            scale: 'history-' + index,
-            lo: Math.min(first, last),
-            hi: Math.max(first, last),
-            q20_date: item.q20_date,
-            q80_date: item.q80_date,
-          };
-        });
+      let bands = [];
+      if (!hiddenEvidence) {
+        const historyScales = ['6-12m', '12-24m'];
+        const clustersByScale = historyScales.map(scale => [
+          scale,
+          root.CPTopClusters?.forScale(frame, scale),
+        ]);
+        const hasClusterMetadata = clustersByScale.some(([, clusters]) => clusters !== null && clusters !== undefined);
+        if (hasClusterMetadata) {
+          bands = clustersByScale.flatMap(([scale, clusters]) => (clusters || []).map(cluster => {
+            const first = root.CPTradingDays.idxOf(allPrices, cluster.q20_date, closures);
+            const last = root.CPTradingDays.idxOf(allPrices, cluster.q80_date, closures);
+            return {
+              scale: 'history-' + scale,
+              rank: cluster.rank,
+              share: cluster.share,
+              lo: Math.min(first, last),
+              hi: Math.max(first, last),
+              q20_date: cluster.q20_date,
+              q80_date: cluster.q80_date,
+            };
+          }));
+        } else {
+          bands = (frame.scenarios || [])
+            .filter(item => typeof item?.q20_date === 'string' && typeof item?.q80_date === 'string')
+            .map((item, index) => {
+              const first = root.CPTradingDays.idxOf(allPrices, item.q20_date, closures);
+              const last = root.CPTradingDays.idxOf(allPrices, item.q80_date, closures);
+              return {
+                scale: 'history-' + index,
+                rank: index === 0 ? 'main' : 'secondary',
+                lo: Math.min(first, last),
+                hi: Math.max(first, last),
+                q20_date: item.q20_date,
+                q80_date: item.q80_date,
+              };
+            });
+        }
+      }
       return { history: true, frame, closures, bands, missingCalendar: !calendar || typeof calendar !== 'object' };
     }
     function updateScenario(next) {
@@ -349,7 +395,9 @@
       }
       const calendar = current.future_calendar;
       const closures = new Set(Array.isArray(calendar?.closures) ? calendar.closures : []);
-      const bands = root.StockChartWindow.mapScenarioBands(allPrices, windows, states, closures);
+      const bands = root.StockChartWindow.mapScenarioBands(
+        allPrices, windows, states, closures, top.scale_clusters,
+      );
       scenario = {
         current,
         states,
@@ -553,16 +601,22 @@
         const x1 = xEdge(first), x2 = xEdge(afterLast);
         const selectedBand = historyMode || band.scale === selectedScale;
         const hoveredBand = !historyMode && band.scale === hoveredScale;
-        ctx.fillStyle = selectedBand ? 'rgba(31,95,214,.16)'
-          : hoveredBand ? 'rgba(31,95,214,.10)' : 'rgba(31,95,214,.045)';
+        const secondary = band.rank === 'secondary';
+        ctx.fillStyle = selectedBand
+          ? secondary ? 'rgba(31,95,214,.06)' : 'rgba(31,95,214,.16)'
+          : hoveredBand ? secondary ? 'rgba(31,95,214,.05)' : 'rgba(31,95,214,.10)'
+            : secondary ? 'rgba(31,95,214,.018)' : 'rgba(31,95,214,.045)';
         ctx.fillRect(x1, top, x2 - x1, priceBottom - top);
         ctx.strokeStyle = selectedBand ? '#1F5FD6'
           : hoveredBand ? 'rgba(31,95,214,.65)' : 'rgba(31,95,214,.25)';
-        ctx.lineWidth = selectedBand ? 2 : hoveredBand ? 1.5 : 1;
+        ctx.lineWidth = secondary
+          ? selectedBand ? 1.25 : hoveredBand ? 1 : 0.75
+          : selectedBand ? 2 : hoveredBand ? 1.5 : 1;
+        ctx.setLineDash(secondary ? [4, 3] : []);
         ctx.beginPath();
         ctx.moveTo(x1, top); ctx.lineTo(x2, top);
         ctx.lineTo(x2, priceBottom); ctx.lineTo(x1, priceBottom);
-        ctx.lineTo(x1, top); ctx.stroke();
+        ctx.lineTo(x1, top); ctx.stroke(); ctx.setLineDash([]);
         if (selectedBand) {
           bandLabels.push({ band, x1, x2 });
         }
@@ -586,13 +640,8 @@
         ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selectedVisible].close), 3, 0, Math.PI * 2); ctx.fill();
       }
       for (const { band, x1, x2 } of bandLabels) {
-        const fullLabel = historyMode
-          ? '补算情景 ' + shortDate(band.q20_date) + '–' + shortDate(band.q80_date)
-          : SCALE_NAMES[band.scale] + ' 情景区间 ' +
-            shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
-        const shortLabel = historyMode
-          ? '补算情景 ' + shortDate(band.q20_date) + '–' + shortDate(band.q80_date)
-          : shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
+        const fullLabel = shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
+        const shortLabel = fullLabel;
         const plotRight = width - right;
         const labelX = Math.max(left, x1 + 3);
         const labelY = top + 13;

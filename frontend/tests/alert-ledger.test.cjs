@@ -13,6 +13,7 @@ function frame(asof, window = ['2020-02-01', '2020-02-10'], options = {}) {
     close: options.close === undefined ? 100 : options.close,
     w: { '6-12m': window },
     conf: { '6-12m': 0.75 },
+    ...(options.clusters ? { clusters: options.clusters } : {}),
   };
 }
 
@@ -44,8 +45,11 @@ test('episode metadata uses the first and last windows and first-frame split', (
     split: 'dev',
     window: ['2020-02-01', '2020-02-10'],
     last_window: ['2020-02-04', '2020-02-13'],
+    clusters: null,
+    last_clusters: null,
     next_top: null,
     top_vs_window: null,
+    top_vs_main: null,
     days_to_top: null,
   });
 });
@@ -74,6 +78,69 @@ test('top relation classifies before, inclusive bounds, and after', () => {
   assert.equal(relation('2020-02-01'), 'inside');
   assert.equal(relation('2020-02-10'), 'inside');
   assert.equal(relation('2020-02-11'), 'after');
+});
+
+test('main-cluster relation classifies tops before, inside, and after the first cluster', () => {
+  const cluster = {
+    rank: 'main',
+    share: 0.6,
+    q20_date: '2020-02-01',
+    q80_date: '2020-02-10',
+  };
+  const relation = date => AlertLedger.episodes([
+    frame('2020-01-01', ['2020-01-20', '2020-02-20'], {
+      clusters: { '6-12m': [cluster] },
+    }),
+  ], [{ date, max_dd: -0.2 }], '6-12m')[0].top_vs_main;
+
+  assert.equal(relation('2020-01-31'), 'before');
+  assert.equal(relation('2020-02-01'), 'inside');
+  assert.equal(relation('2020-02-10'), 'inside');
+  assert.equal(relation('2020-02-11'), 'after');
+});
+
+test('episodes preserve first and last cluster arrays and fall back for legacy frames', () => {
+  const first = {
+    rank: 'secondary',
+    share: 0.4,
+    q20_date: '2020-02-05',
+    q80_date: '2020-02-15',
+  };
+  const main = {
+    rank: 'main',
+    share: 0.6,
+    q20_date: '2020-02-01',
+    q80_date: '2020-02-10',
+  };
+  const rows = AlertLedger.episodes([
+    frame('2020-01-01', ['2020-01-20', '2020-02-20'], {
+      clusters: { '6-12m': [first, main] },
+    }),
+    frame('2020-01-08', ['2020-01-22', '2020-02-22'], {
+      clusters: { '6-12m': [main] },
+    }),
+  ], [{ date: '2020-02-12', max_dd: -0.2 }], '6-12m');
+
+  assert.deepEqual(rows[0].clusters.map(cluster => cluster.rank), ['main', 'secondary']);
+  assert.deepEqual(rows[0].last_clusters, [main]);
+  assert.equal(rows[0].top_vs_window, 'inside');
+  assert.equal(rows[0].top_vs_main, 'after');
+
+  const legacy = AlertLedger.episodes([
+    frame('2020-01-01'),
+  ], [{ date: '2020-02-05', max_dd: -0.2 }], '6-12m')[0];
+  assert.equal(legacy.clusters, null);
+  assert.equal(legacy.top_vs_window, 'inside');
+  assert.equal(legacy.top_vs_main, null);
+});
+
+test('an explicit empty cluster list is not treated as missing metadata', () => {
+  const episode = AlertLedger.episodes([
+    frame('2020-01-01', undefined, { clusters: { '6-12m': [] } }),
+  ], [{ date: '2020-02-05', max_dd: -0.2 }], '6-12m')[0];
+
+  assert.deepEqual(episode.clusters, []);
+  assert.equal(episode.top_vs_main, null);
 });
 
 test('unsorted frames are ordered by asof and confidence is never returned', () => {

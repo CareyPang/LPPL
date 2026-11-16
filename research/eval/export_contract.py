@@ -26,7 +26,7 @@ from ..features.lppls_rules import (
 )
 from ..features.lppls_scan import BOX, BOXES
 from ..features.regime_bands import regime_bands
-from ..lppls.scenarios import scale_windows, scenarios
+from ..lppls.scenarios import MIN_FITS, scale_windows, scenarios
 from ..price_layer import bottom_cards
 from ..price_layer.drawdown_table import DUR_BINS, LOOK, RUNUP_BINS, qualified_turns
 from ..price_layer.drawdown_table import build as build_drawdown_table
@@ -94,6 +94,31 @@ HISTORY_SCANS = {
 HISTORY_SCALES = ("6-12m", "12-24m")
 
 
+def _scale_cluster_records(
+    q: pd.DataFrame,
+    cal: pd.DatetimeIndex,
+    date: pd.Timestamp,
+    market: str,
+    scales: dict[str, tuple[int, int]],
+) -> dict[str, list[dict]]:
+    out = {}
+    for scale, (lo, hi) in scales.items():
+        fits = q[q.n.between(lo, hi)]
+        clustered = scenarios(fits[["n", "ahead", "sse"]]) if len(fits) >= MIN_FITS else pd.DataFrame()
+        out[scale] = [
+            {
+                "rank": "main" if index == 0 else "secondary",
+                "share": round(float(row.share), 2),
+                "n": int(row.n),
+                "n_scale": int(len(fits)),
+                "q20_date": _to_cal(cal, date, float(row.q20), market),
+                "q80_date": _to_cal(cal, date, float(row.q80), market),
+            }
+            for index, row in enumerate(clustered.itertuples())
+        ]
+    return out
+
+
 def _close(ohlc: pd.DataFrame, cal: pd.DatetimeIndex) -> pd.Series:
     c = ohlc["close"] if isinstance(ohlc.index, pd.DatetimeIndex) else ohlc.set_index("date")["close"]
     return c.reindex(cal).ffill()
@@ -154,6 +179,13 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
         "close": round(float(close), 2),
         "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
         "w": windows,
+        "clusters": _scale_cluster_records(
+            q,
+            cal,
+            date,
+            market,
+            {scale: SCALES_FCO6[scale] for scale in HISTORY_SCALES},
+        ),
     }
     if include_scenarios:
         gg = grid_rules(dd)
@@ -506,6 +538,10 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "scenarios": _scenario_records(q, scen, gg, cal, date, market),
             "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
                               "簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
+            "scale_clusters": _scale_cluster_records(
+                q[["n", "ahead", "sse"]], cal, date, market, SCALES_FCO6
+            ),
+            "scale_clusters_note": "每个尺度内单独聚类（窗口长度与 t_c 标准化后 k-means，silhouette≥0.5 才分簇；簇内拟合<3 或占比<5% 不列）；share=簇内拟合数/该尺度合格拟合数，不是概率；簇间不平均；区间为簇内 t_c 20–80% 分位，不是顶部日期",
             "scale_windows": [
                 {"scale": x.scale, "q20_date": _to_cal(cal, date, x.q20, market), "q80_date": _to_cal(cal, date, x.q80, market), "n": int(x.n)}
                 for x in sw.itertuples()
@@ -620,6 +656,7 @@ def history(sym: str, market: str = "cn") -> dict:
         "future_calendar": future_calendar_metadata(cal, market),
         "model_version": MODEL_VERSION,
         "evidence": "dev_only",
+        "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "frames": frames,
         "tops": tops,

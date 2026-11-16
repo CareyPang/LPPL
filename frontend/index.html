@@ -374,8 +374,9 @@ footer p { margin: 0; max-width: 110ch; }
       <p class="ph-tip" id="ph-tip"></p>
     </section>
     <section class="blk">
-      <p class="blk-k">关键位置</p>
+      <p class="blk-k">顶部聚类时间</p>
       <ul class="kv" id="kv"></ul>
+      <p class="ph-tip" id="cluster-note"></p>
     </section>
     <details class="blk hist-blk" id="hist-blk">
       <summary class="blk-k">历史背景（历史分位，不是预测）<span class="hist-summary" id="hist-summary"></span></summary>
@@ -414,11 +415,12 @@ footer p { margin: 0; max-width: 110ch; }
 </main>
 
 <footer>
-  <p>研究原型，不构成投资建议。情景区间是合格拟合 t_c 的分位区间（未校准，仅供参考），不是峰值日预测；回撤和估值地板是历史分位，不是目标价。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
+  <p>研究原型，不构成投资建议。聚类区间为簇内合格拟合 t_c 的分位区间（未校准，仅供参考），占比不是概率，也不是峰值日预测；回撤和估值地板是历史分位，不是目标价。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
 </footer>
 
 <script src="app/trading-days.js"></script>
 <script src="app/scale-bar.js"></script>
+<script src="app/top-clusters.js"></script>
 <script>
 /* ui.js 只用到 CP.dateAt；前端不含模型引擎 */
 window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
@@ -533,11 +535,29 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     return (R.top.scale_windows || []).find((item) => item.scale === scale) || null;
   }
   function scaleBands(R) {
-    return scaleStates(R).filter((state) => state.selectable && state.hasWindow).map((state) => {
+    const bands = [];
+    scaleStates(R).filter((state) => state.selectable && state.hasWindow).forEach((state) => {
+      const clusters = CPTopClusters.forScale(R.top, state.scale);
+      if (clusters !== null) {
+        clusters.forEach((cluster) => {
+          bands.push({
+            scale: state.scale, rank: cluster.rank, share: cluster.share,
+            lo: idxOf(R.bars, cluster.q20_date), hi: idxOf(R.bars, cluster.q80_date),
+            q20_date: cluster.q20_date, q80_date: cluster.q80_date,
+          });
+        });
+        return;
+      }
       const window = scaleWindow(R, state.scale);
-      return { scale: state.scale, lo: idxOf(R.bars, window.q20_date), hi: idxOf(R.bars, window.q80_date),
-        q20_date: window.q20_date, q80_date: window.q80_date };
+      if (window) {
+        bands.push({
+          scale: state.scale, rank: 'main',
+          lo: idxOf(R.bars, window.q20_date), hi: idxOf(R.bars, window.q80_date),
+          q20_date: window.q20_date, q80_date: window.q80_date,
+        });
+      }
     });
+    return bands;
   }
 
   /* ================= 图表（Canvas：主图 + 成交量 + 顶部一致度，共用时间轴与光标） ================= */
@@ -673,23 +693,30 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
       // ---- 主图叠加层 ----
       ctx.save(); ctx.beginPath(); ctx.rect(0, pt, g.W, pb - pt); ctx.clip();
-      const selectedBand = st.show.top ? st.scaleBands.find((band) => band.scale === st.scaleSelected) : null;
+      const selectedBands = st.show.top ? st.scaleBands.filter((band) => band.scale === st.scaleSelected) : [];
       if (st.show.top) {
         st.scaleBands.filter((band) => band.scale !== st.scaleSelected && vis(band.lo, band.hi)).forEach((band) => {
+          const secondary = band.rank === 'secondary';
           const x0 = X(band.lo), x1 = X(band.hi + 1), hovered = band.scale === st.scaleHover;
-          ctx.fillStyle = rgba(col.warn, hovered ? 0.06 : 0.025);
+          ctx.fillStyle = rgba(col.warn, secondary ? hovered ? 0.035 : 0.012 : hovered ? 0.06 : 0.025);
           ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
           ctx.strokeStyle = rgba(col.warn, hovered ? 0.38 : 0.18);
-          ctx.lineWidth = hovered ? 1 : 0.75;
+          ctx.lineWidth = secondary ? 0.65 : hovered ? 1 : 0.75;
+          ctx.setLineDash(secondary ? [4, 3] : []);
           ctx.strokeRect(Math.round(x0) + 0.5, pt + 0.5, Math.max(1, Math.round(x1 - x0)), pb - pt - 1);
+          ctx.setLineDash([]);
         });
-        if (selectedBand && vis(selectedBand.lo, selectedBand.hi)) {
-          const x0 = X(selectedBand.lo), x1 = X(selectedBand.hi + 1);
-          ctx.fillStyle = rgba(col.warn, 0.16);
+        selectedBands.filter((band) => vis(band.lo, band.hi)).forEach((band) => {
+          const secondary = band.rank === 'secondary';
+          const x0 = X(band.lo), x1 = X(band.hi + 1);
+          ctx.fillStyle = rgba(col.warn, secondary ? 0.055 : 0.16);
           ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
-          ctx.strokeStyle = rgba(col.warn, 0.95); ctx.lineWidth = 2;
+          ctx.strokeStyle = rgba(col.warn, secondary ? 0.62 : 0.95);
+          ctx.lineWidth = secondary ? 1.25 : 2;
+          ctx.setLineDash(secondary ? [4, 3] : []);
           ctx.strokeRect(Math.round(x0) + 0.5, pt + 1, Math.max(1, Math.round(x1 - x0)), pb - pt - 2);
-        }
+          ctx.setLineDash([]);
+        });
         ctx.lineWidth = 1;
       }
       if (st.show.hist && R.hist) {
@@ -758,18 +785,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           ctx.fillText(buy ? '买' : '卖', x, buy ? Y(q.low) + 28 : Y(q.high) - 28);
         });
       }
-      if (selectedBand && vis(selectedBand.lo, selectedBand.hi)) {
-        const label = SCN[selectedBand.scale] + ' 情景区间 ' +
-          U.md(selectedBand.q20_date).replace('月', '/').replace('日', '') + '–' +
-          U.md(selectedBand.q80_date).replace('月', '/').replace('日', '');
-        selectedLabelY = Math.min(pb - 12, pt + 48);
+      selectedBands.filter((band) => vis(band.lo, band.hi)).forEach((band, index) => {
+        const label = U.md(band.q20_date).replace('月', '/').replace('日', '') + '–' +
+          U.md(band.q80_date).replace('月', '/').replace('日', '');
+        selectedLabelY = Math.min(pb - 12, pt + 48 + index * 20);
         tag(label, 4, selectedLabelY, '#FFFFFF', col.warn, 'left');
-      }
+      });
       const hoveredBand = st.show.top && st.scaleBands.find((band) => band.scale === st.scaleHover);
       if (hoveredBand && hoveredBand.scale !== st.scaleSelected) {
         const center = (X(hoveredBand.lo) + X(hoveredBand.hi + 1)) / 2;
-        tag(SCN[hoveredBand.scale] + ' 情景区间 ' +
-          U.md(hoveredBand.q20_date).replace('月', '/').replace('日', '') + '–' +
+        tag(U.md(hoveredBand.q20_date).replace('月', '/').replace('日', '') + '–' +
           U.md(hoveredBand.q80_date).replace('月', '/').replace('日', ''),
           center, Math.min(pb - 12, selectedLabelY + 24), '#FFFFFF', col.warn, 'center');
       }
@@ -1046,16 +1071,37 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   }
 
   function renderKeyLocations(R) {
-    const t = R.top, dp = t.drawdown_price || {}, vf = dp.valuation_floor;
-    const window = scaleWindow(R, selectedScale), scenarios = t.scenarios || [], kv = [];
-    kv.push(['情景区间', window
-      ? SCN[selectedScale] + ' ' + U.range(window.q20_date, window.q80_date, R.asof, R.bars[R.T].date) + ' · 开发段（未校准，仅供参考）'
-      : '该尺度本次无合格拟合；这不代表风险较低。', window ? 'wn' : '']);
-    kv.push(['情景占比', scenarios.length
-      ? scenarios.map((item) => U.pct(item.share, 0) + ' ' + U.md(item.q20_date) + '–' + U.md(item.q80_date) + '（未校准，仅供参考）').join('；')
-      : '无合格情景', '']);
+    const t = R.top, dp = t.drawdown_price || {}, vf = dp.valuation_floor, kv = [];
+    const confidence = t.lppls_confidence || {};
+    const indicators = t.indicators || {};
+    SCALES.forEach((scale) => {
+      const evidence = confidence.scale_evidence?.[scale]
+        || indicators[scale]?.evidence
+        || confidence.evidence
+        || t.evidence
+        || R.evidence;
+      let value;
+      if (!EV(evidence).show) value = '无证据';
+      else {
+        const clusters = CPTopClusters.forScale(t, scale);
+        if (clusters === null) {
+          const window = scaleWindow(R, scale);
+          value = window
+            ? `区间（本次结果未分簇）${window.q20_date}–${window.q80_date}`
+            : indicators[scale]?.signal_status === 'not_computed' ? '未计算' : '本次无合格拟合（不代表风险较低）';
+        } else if (!clusters.length) {
+          value = '本次无合格拟合（不代表风险较低）';
+        } else {
+          value = clusters.map((cluster) =>
+            `${CPTopClusters.label(cluster)} ${cluster.q20_date}–${cluster.q80_date}（${CPTopClusters.shareText(cluster)}）`
+          ).join('；');
+        }
+      }
+      kv.push([SCN[scale], value, '']);
+    });
     kv.push(['二波', '无有效预测', '']);
     $('kv').innerHTML = kv.map((row) => `<li><span class="k">${E(row[0])}</span><span class="v ${row[2]}">${E(row[1])}</span></li>`).join('');
+    $('cluster-note').textContent = CPTopClusters.NOTE;
 
     const history = [];
     if (dp.evidence === 'descriptive' && dp.max_dd) {
@@ -1235,9 +1281,14 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const t = R.top, I = t.indicators || {}, cb = t.combo || {};
     const cbTxt = EV(cb.evidence).show ? ['p0.1', 'p1', 'p10'].map((k) => k + ' ' + U.pct(cb[k], 1)).join(' · ') : '无证据';
     $('p-expert').innerHTML = `<p class="tp-d">六尺度为 FCO 公开口径（标准过滤集）。Combo（幂平均）：${E(cbTxt)} ${evb(cb.evidence)}。${E(cb.note || '')}</p>` +
-      '<div class="pn"><div class="scroll-x"><table><thead><tr><th>尺度</th><th>窗口数</th><th>合格拟合数</th><th>最佳起点 t1</th><th>t1 合格</th><th>状态</th><th>证据</th></tr></thead><tbody>' +
-      SCALES.map((k) => { const x = I[k] || {}; return `<tr><td>${E(SCN[k])}</td><td>${x.n_windows ?? '—'}</td><td>${x.n_qualified_standard ?? '—'}</td><td>${E(x.best_t1 || '—')}</td><td>${x.t1_qualified ? '是' : '否'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(((t.lppls_confidence || {}).scale_evidence || {})[k]).label)}</td></tr>`; }).join('') +
-      '</tbody></table></div></div>';
+      '<details class="pn"><summary class="blk-k">拟合明细</summary><div class="scroll-x"><table><thead><tr><th>尺度</th><th>窗口数</th><th>合格拟合数</th><th>最佳起点 t1</th><th>t1 合格</th><th>状态</th><th>证据</th></tr></thead><tbody>' +
+      SCALES.map((k) => {
+        const x = I[k] || {}, confidence = t.lppls_confidence || {};
+        const evidence = confidence.scale_evidence?.[k] || x.evidence || confidence.evidence || t.evidence || R.evidence;
+        const show = EV(evidence).show;
+        return `<tr><td>${E(SCN[k])}</td><td>${show ? x.n_windows ?? '—' : '—'}</td><td>${show ? x.n_qualified_standard ?? '—' : '—'}</td><td>${E(show ? x.best_t1 || '—' : '—')}</td><td>${show ? x.t1_qualified ? '是' : '否' : '—'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(evidence).label)}</td></tr>`;
+      }).join('') +
+      '</tbody></table></div></details>';
   }
 
   /* ================= 行情带（内置快照最后两日） ================= */

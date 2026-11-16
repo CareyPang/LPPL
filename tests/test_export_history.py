@@ -17,11 +17,17 @@ _HISTORY_INPUTS_READY = all(
 def test_history_contract_and_replay_window_consistency():
     rec = export_contract.history("sh000001")
     frames = rec["frames"]
+    assert rec["scale_evidence"] == {
+        scale: export_contract.SCALE_EVIDENCE[scale]
+        for scale in export_contract.HISTORY_SCALES
+    }
+    assert rec["evidence"] == "dev_only"
     asofs = [frame["asof"] for frame in frames]
     assert asofs == sorted(asofs)
     assert set(frame["split"] for frame in frames) <= {"dev", "cal", "test"}
 
     for frame in frames:
+        assert set(frame["clusters"]) == {"6-12m", "12-24m"}
         for value in frame["conf"].values():
             assert value is None or 0 <= value <= 1
         for window in frame["w"].values():
@@ -45,6 +51,55 @@ def test_history_contract_and_replay_window_consistency():
     scale_window = next(window for window in replay["top"]["scale_windows"] if window["scale"] == "6-12m")
     assert frame_2015["w"]["6-12m"] == [scale_window["q20_date"], scale_window["q80_date"]]
     assert frame_2015["close"] == round(replay["price_history"]["close"][-1], 2)
+
+
+def test_history_contract_exposes_authoritative_per_scale_evidence(tmp_path, monkeypatch):
+    import pandas as pd
+
+    dates = pd.date_range("2024-01-01", periods=2, freq="7D")
+    logp = pd.Series(np.log([100.0, 101.0]), index=dates)
+    scan_path = tmp_path / "dev" / "symbol.parquet"
+    scan_path.parent.mkdir()
+    scan_path.touch()
+
+    def read_parquet(path):
+        if Path(path) == scan_path:
+            return pd.DataFrame({"date": [dates[1]], "n": [2]})
+        return pd.DataFrame()
+
+    monkeypatch.setattr(export_contract.pd, "read_parquet", read_parquet)
+    monkeypatch.setattr(export_contract, "price_series", lambda _sym: logp)
+    monkeypatch.setattr(export_contract, "_close", lambda *_args: pd.Series(100.0, index=dates))
+    monkeypatch.setattr(export_contract, "future_calendar_metadata", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "HISTORY_SCANS", {
+        "dev": scan_path.parent,
+        "cal": tmp_path / "cal",
+        "test": tmp_path / "test",
+    })
+    monkeypatch.setattr(export_contract, "_derived", lambda scan: scan)
+    monkeypatch.setattr(export_contract, "rules", lambda _d: None)
+    monkeypatch.setattr(
+        export_contract,
+        "_history_frame",
+        lambda _d, _r, date, _cal, close, split, **_kwargs: {
+            "asof": str(date.date()), "close": close, "split": split,
+        },
+    )
+    monkeypatch.setattr(export_contract, "load_drawdown_logp", lambda _sym: logp)
+    monkeypatch.setattr(
+        export_contract,
+        "qualified_turns",
+        lambda _values: (np.array([], dtype=int), np.array([], dtype=int)),
+    )
+
+    rec = export_contract.history("symbol")
+
+    assert rec["evidence"] == "dev_only"
+    assert rec["scale_evidence"] == {"6-12m": "dev", "12-24m": "dev"}
+    assert rec["scale_evidence"] == {
+        scale: export_contract.SCALE_EVIDENCE[scale]
+        for scale in export_contract.HISTORY_SCALES
+    }
 
 
 def test_to_cal_extrapolates_beyond_calendar_end():
@@ -141,17 +196,79 @@ def test_current_and_history_representative_uses_adjusted_sse_and_keeps_index(
     historical = export_contract._history_frame(
         d, r, date, cal, 100.0, "dev", include_scenarios=True
     )
+    historical_without_scenarios = export_contract._history_frame(
+        d, r, date, cal, 100.0, "dev"
+    )
 
     assert seen == [
         (["n", "ahead", "sse"], [11, 37, 92]),
         (["n", "ahead", "sse"], [11, 37, 92]),
         (["n", "ahead", "sse"], [11, 37, 92]),
+        (["n", "ahead", "sse"], [11, 37, 92]),
+        (["n", "ahead", "sse"], [11, 37, 92]),
     ]
+    assert set(current["top"]["scale_clusters"]) == set(export_contract.SCALES_FCO6)
+    assert set(historical["clusters"]) == {"6-12m", "12-24m"}
+    assert historical_without_scenarios["clusters"] == historical["clusters"]
+    assert "scenarios" not in historical_without_scenarios
     for scenarios in (current["top"]["scenarios"], historical["scenarios"]):
         representative = scenarios[0]["representative"]
         assert scenarios[0]["representative_rule"] == "minimum_sse_over_n_minus_7"
         assert representative["m"] == 0.7
         assert representative["loss"] == round(6.6 / (40 - 7), 6)
+
+
+def test_scale_cluster_records_are_separate_ranked_and_calendar_adjusted():
+    import pandas as pd
+
+    fits = pd.DataFrame({
+        "n": [150] * 6,
+        "ahead": [9.0, 10.0, 11.0, 99.0, 100.0, 101.0],
+        "sse": [1.0] * 6,
+    })
+    cal = pd.bdate_range("2024-01-01", periods=300)
+    cal = cal[cal != pd.Timestamp("2024-01-15")]
+    date = cal[0]
+    clusters = export_contract._scale_cluster_records(
+        fits, cal, date, "cn", {"6-12m": (127, 252)}
+    )["6-12m"]
+
+    assert len(clusters) == 2
+    assert [cluster["rank"] for cluster in clusters] == ["main", "secondary"]
+    assert clusters[0]["share"] >= clusters[1]["share"]
+    assert [cluster["n"] for cluster in clusters] == [3, 3]
+    assert all(cluster["n_scale"] == 6 for cluster in clusters)
+    assert all(set(cluster) == {
+        "rank", "share", "n", "n_scale", "q20_date", "q80_date",
+    } for cluster in clusters)
+    first_ahead = export_contract.scenarios(fits).iloc[0].q20
+    assert clusters[0]["q20_date"] == export_contract._to_cal(cal, date, first_ahead, "cn")
+    assert "2024-01-15" not in {
+        value for cluster in clusters for value in (cluster["q20_date"], cluster["q80_date"])
+    }
+
+
+def test_scale_cluster_records_empty_for_too_few_fits_and_single_peak_is_main():
+    import pandas as pd
+
+    cal = pd.bdate_range("2024-01-01", periods=300)
+    date = cal[0]
+    too_few = pd.DataFrame({"n": [150, 150], "ahead": [10.0, 11.0], "sse": [1.0, 1.0]})
+    assert export_contract._scale_cluster_records(
+        too_few, cal, date, "cn", {"6-12m": (127, 252)}
+    )["6-12m"] == []
+
+    one_peak = pd.DataFrame({
+        "n": [150] * 4,
+        "ahead": [10.0, 11.0, 12.0, 13.0],
+        "sse": [1.0] * 4,
+    })
+    clusters = export_contract._scale_cluster_records(
+        one_peak, cal, date, "cn", {"6-12m": (127, 252)}
+    )["6-12m"]
+    assert len(clusters) == 1
+    assert clusters[0]["rank"] == "main"
+    assert clusters[0]["share"] == 1.0
 
 
 def test_indicators_boundary_share_and_display_only():
