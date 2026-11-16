@@ -1,14 +1,56 @@
 from datetime import date, timedelta
 
+import research.data.growth_monitor as growth_monitor
 from research.data.growth_monitor import (
+    _fetch_szse_with_retry,
     _realize_indicator,
     completed_weekly_flows,
     evaluate_growth_rs,
     evaluate_us10y,
+    parse_cnindex_payload,
     parse_nav_payload,
     semi_status,
     share_exclusion_reason,
 )
+
+
+def test_parse_cnindex_descending_daily_rows_by_named_close_column():
+    columns = [
+        "timestamp",
+        "current",
+        "high",
+        "open",
+        "low",
+        "close",
+        "chg",
+        "percent",
+        "amount",
+        "volume",
+        "avg",
+    ]
+
+    def row(day, close):
+        return [day, 1, 1, 1, 1, close, 0, 0, 0, 0, 0]
+
+    result = parse_cnindex_payload(
+        {
+            "data": {
+                "item": columns,
+                "data": [
+                    row("2026-11-16", 106),
+                    row("2026-11-13", 103),
+                    row("2026-11-13", 999),
+                    row("2026-11-12", float("nan")),
+                    row("invalid", 100),
+                ],
+            }
+        }
+    )
+
+    assert result == [
+        {"date": "2026-11-13", "close": 103.0},
+        {"date": "2026-11-16", "close": 106.0},
+    ]
 
 
 def test_growth_rs_requires_last_ten_sessions_above_ma20():
@@ -89,6 +131,50 @@ def test_share_jumps_and_fund_actions_are_excluded():
     assert share_exclusion_reason(None, 100, False) is None
 
 
+def test_szse_share_history_retries_transient_failures(monkeypatch):
+    calls = []
+    delays = []
+
+    def fetch_history(session, code, start, end):
+        calls.append((code, start, end))
+        if len(calls) < 3:
+            raise ConnectionError("reset")
+        return {"2026-11-13": 123.0}
+
+    monkeypatch.setattr(growth_monitor, "_szse_history", fetch_history)
+    monkeypatch.setattr(growth_monitor.time, "sleep", delays.append)
+
+    result, error = _fetch_szse_with_retry(
+        object(), {"code": "159995"}, "2026-08-01", "2026-11-16"
+    )
+
+    assert result == {"2026-11-13": 123.0}
+    assert error is None
+    assert len(calls) == 3
+    assert delays == [0.25, 0.5]
+
+
+def test_szse_share_history_reports_error_after_three_attempts(monkeypatch):
+    calls = []
+    delays = []
+
+    def fail(session, code, start, end):
+        calls.append(code)
+        raise ConnectionError("reset")
+
+    monkeypatch.setattr(growth_monitor, "_szse_history", fail)
+    monkeypatch.setattr(growth_monitor.time, "sleep", delays.append)
+
+    result, error = _fetch_szse_with_retry(
+        object(), {"code": "159995"}, "2026-08-01", "2026-11-16"
+    )
+
+    assert result == {}
+    assert error == "159995: ConnectionError: reset"
+    assert calls == ["159995", "159995", "159995"]
+    assert delays == [0.25, 0.5]
+
+
 def test_nav_split_fields_mark_action_days():
     result = parse_nav_payload(
         {
@@ -156,11 +242,13 @@ def test_failed_source_falls_back_to_previous_value_as_partial():
 
     assert result["status"] == "partial"
     assert result["asof"] == "2026-11-13"
-    assert "沿用上次数据" in result["note"]
+    assert "本次取数失败，沿用上次 2026-11-13 数据" in result["note"]
 
     previous["indicators"][0].update(
-        {"status": "missing", "asof": None, "value": None}
+        {"status": "met", "asof": None, "value": {"last_five": [4.2]}}
     )
-    assert _realize_indicator(
+    missing = _realize_indicator(
         previous, "us10y", "美债 10 年", "core", "美国财政部", fail
-    )["status"] == "missing"
+    )
+    assert missing["status"] == "missing"
+    assert missing["value"] is None

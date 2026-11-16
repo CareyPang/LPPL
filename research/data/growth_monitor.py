@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -10,7 +11,7 @@ from pathlib import Path
 import requests
 
 from .global_macro import fetch_treasury
-from .nt_etf import _fetch_shares, flow_yuan
+from .nt_etf import _fetch_shares, _szse_history, flow_yuan
 from .tencent_sina import tencent_raw
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +21,11 @@ NAV_HEADERS = {
     "Referer": "https://fundf10.eastmoney.com/",
     "User-Agent": "Mozilla/5.0 (compatible; LPPLGrowthMonitor/1.0)",
 }
+CNINDEX_URL = (
+    "https://hq.cnindex.com.cn/market/market/"
+    "getIndexDailyDataWithDataFormat"
+)
+CNINDEX_HEADERS = {"User-Agent": "Mozilla/5.0"}
 ETFS = (
     {"code": "159995", "name": "国证芯片", "exchange": "SZ"},
     {"code": "512480", "name": "中证全指半导体", "exchange": "SH"},
@@ -72,6 +78,31 @@ def parse_nav_payload(payload: dict) -> dict[str, dict]:
             or bool(str(row.get("FHFCZ") or "").strip()),
         }
     return output
+
+
+def parse_cnindex_payload(payload: dict) -> list[dict]:
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        raise ValueError("CNIndex response lacks data")
+    columns = data.get("item")
+    rows = data.get("data")
+    if not isinstance(columns, list) or "close" not in columns:
+        raise ValueError("CNIndex response lacks close column")
+    if not isinstance(rows, list):
+        raise ValueError("CNIndex response lacks daily rows")
+    close_index = columns.index("close")
+    by_date = {}
+    for row in rows:
+        if not isinstance(row, (list, tuple)) or len(row) <= close_index:
+            continue
+        try:
+            day = date.fromisoformat(str(row[0]).strip()).isoformat()
+        except ValueError:
+            continue
+        close = _number(row[close_index])
+        if close is not None:
+            by_date.setdefault(day, close)
+    return [{"date": day, "close": by_date[day]} for day in sorted(by_date)]
 
 
 def completed_weekly_flows(
@@ -317,12 +348,18 @@ def _fallback(
         ),
         None,
     )
-    if old and (old.get("asof") is not None or old.get("value") is not None):
+    if old and old.get("asof"):
         result = copy.deepcopy(old)
         result["status"] = "partial"
-        result["note"] = (
-            f"{result.get('note') or ''} 本次取数失败，沿用上次数据。"
-        ).strip()
+        previous_asof = str(result["asof"])
+        result["note"] = " ".join(
+            part
+            for part in (
+                result.get("note") or "",
+                f"本次取数失败，沿用上次 {previous_asof} 数据",
+            )
+            if part
+        )
         result["missing_reason"] = "本次来源暂不可用，显示上次可用数据。"
         return result
     return _indicator(
@@ -350,6 +387,36 @@ def _fetch_nav(session, code: str) -> dict[str, dict]:
     return parse_nav_payload(response.json())
 
 
+def _fetch_cnindex_980017(start: str, end: str, session) -> list[dict]:
+    response = session.get(
+        CNINDEX_URL,
+        params={
+            "indexCode": "980017",
+            "startDate": start,
+            "endDate": end,
+            "frequency": "day",
+        },
+        headers=CNINDEX_HEADERS,
+        timeout=25,
+    )
+    response.raise_for_status()
+    return parse_cnindex_payload(response.json())
+
+
+def _fetch_szse_with_retry(
+    session, item: dict, start: str, end: str
+) -> tuple[dict[str, float], str | None]:
+    for attempt in range(3):
+        try:
+            return _szse_history(session, item["code"], start, end), None
+        except Exception as exc:  # noqa: BLE001 — retry transient source errors
+            error = f"{item['code']}: {type(exc).__name__}: {exc}"
+            if attempt == 2:
+                return {}, error
+            time.sleep(0.25 * (attempt + 1))
+    return {}, f"{item['code']}: unknown share-history error"
+
+
 def _semi_etf_flow(asof: str, start: str, session) -> dict:
     price_maps = {}
     price_errors = []
@@ -366,13 +433,22 @@ def _semi_etf_flow(asof: str, start: str, session) -> dict:
             price_errors.append(f"{item['code']}: {type(exc).__name__}: {exc}")
 
     dates = sorted({day for values in price_maps.values() for day in values})
+    sh_etfs = tuple(item for item in ETFS if item["exchange"] == "SH")
     try:
-        shares_sh, shares_sz, sse_errors, szse_errors = _fetch_shares(
-            ETFS, dates, start, asof, session
+        shares_sh, _, sse_errors, _ = _fetch_shares(
+            sh_etfs, dates, start, asof, session
         )
     except Exception as exc:  # noqa: BLE001 — keep other indicators available
-        shares_sh, shares_sz = {}, {}
-        sse_errors, szse_errors = [f"{type(exc).__name__}: {exc}"], []
+        shares_sh = {}
+        sse_errors = [f"{type(exc).__name__}: {exc}"]
+    shares_sz, szse_errors = {}, []
+    for item in ETFS:
+        if item["exchange"] != "SZ":
+            continue
+        history, error = _fetch_szse_with_retry(session, item, start, asof)
+        shares_sz[item["code"]] = history
+        if error:
+            szse_errors.append(error)
 
     nav_maps = {}
     nav_errors = []
@@ -535,7 +611,7 @@ def fetch(asof: str, previous: dict | None = None, session=None) -> dict:
     date.fromisoformat(asof)
     session = session or requests.Session()
     etf_start = (date.fromisoformat(asof) - timedelta(days=112)).isoformat()
-    rs_start = (date.fromisoformat(asof) - timedelta(days=240)).isoformat()
+    rs_start = (date.fromisoformat(asof) - timedelta(days=150)).isoformat()
     indicators = [_pending_position()]
 
     def semi():
@@ -581,9 +657,9 @@ def fetch(asof: str, previous: dict | None = None, session=None) -> dict:
     )
 
     def growth_rs():
-        chip = tencent_raw("sz980017", start=rs_start, end=asof)
+        chip = _fetch_cnindex_980017(rs_start, asof, session)
         market = tencent_raw("sh000300", start=rs_start, end=asof)
-        evaluated = evaluate_growth_rs(_rows_from_frame(chip), _rows_from_frame(market))
+        evaluated = evaluate_growth_rs(chip, _rows_from_frame(market))
         return _indicator(
             "growth_rs",
             "成长相对强弱",
@@ -592,7 +668,7 @@ def fetch(asof: str, previous: dict | None = None, session=None) -> dict:
             evaluated["value"],
             "RS",
             evaluated["asof"],
-            "腾讯指数日线：sz980017 国证芯片、sh000300 沪深300",
+            "国证指数官网（980017 国证芯片）；腾讯日线（sh000300 沪深300）",
             RULES["growth_rs"],
             note=(
                 f"已连续站上 {evaluated['value']['consecutive_above_days']} 日；"
@@ -610,7 +686,7 @@ def fetch(asof: str, previous: dict | None = None, session=None) -> dict:
             "growth_rs",
             "成长相对强弱",
             "confirm",
-            "腾讯指数日线：sz980017 与 sh000300",
+            "国证指数官网（980017 国证芯片）；腾讯日线（sh000300 沪深300）",
             growth_rs,
         )
     )

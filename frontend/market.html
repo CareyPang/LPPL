@@ -270,7 +270,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   </section>
 
   <section class="sec wide" id="s-growth" aria-labelledby="h-growth">
-    <div class="sec-h"><h2 id="h-growth">成长股监控</h2><span class="ev">descriptive</span></div>
+    <div class="sec-h"><h2 id="h-growth">成长股监控</h2></div>
     <div id="growth-body"><p class="note">成长监控数据加载中…</p></div>
   </section>
 
@@ -1046,12 +1046,12 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const labels = {
       met: '满足',
       not_met: '未满足',
-      partial: '部分数据',
-      missing: '待数据',
+      partial: '数据不全',
+      missing: '缺数据',
       pending_definition: '待统一口径',
     };
     const amount = (value) => value != null && Number.isFinite(Number(value))
-      ? `${Number(value).toFixed(2)} 亿元`
+      ? `${Number(value).toFixed(2).replace(/^-/, '−')} 亿元`
       : '—';
     const lineChart = (rows, series, ariaLabel) => {
       if (!rows || rows.length < 2) return '';
@@ -1096,9 +1096,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       if (item.id === 'fund_growth_position') return '—（待统一口径）';
       if (item.id === 'semi_etf_flow') {
         const weeks = value?.last_two_complete_weeks || [];
-        return weeks.length
-          ? weeks.map((week) => `${week.week_start}–${week.week_end}：${amount(week.flow_yuan)}`).join('；')
-          : '—';
+        return `近两周净申购：${weeks.map((week) => amount(week.flow_yuan)).join(' / ') || '—'}`;
       }
       if (item.id === 'us10y') {
         return (value?.last_five || [])
@@ -1110,6 +1108,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     };
     const summary = data.summary || {};
     const confirmLabel = labels[summary.confirm_status] || '待数据';
+    const coreItems = data.indicators.filter((item) => item.role === 'core');
+    const pendingKinds = ['pending_definition', 'missing', 'partial']
+      .map((status) => {
+        const count = coreItems.filter((item) => item.status === status).length;
+        return count ? `${count} 项${labels[status]}` : '';
+      })
+      .filter(Boolean)
+      .join('，');
     const cards = data.indicators.map((item) => {
       const status = labels[item.status] || '待数据';
       let chart = '';
@@ -1123,21 +1129,30 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
           { key: 'ma20', color: '#9A5B00', label: 'MA20' },
         ], '成长相对强弱与 MA20');
       }
-      const extra = item.id === 'growth_rs' && item.value
-        ? `<p class="growth-meta">已连续站上 ${Number(item.value.consecutive_above_days)} 日 · 最近一次上穿 ${E(item.value.last_cross_date || '暂无')}</p>`
-        : '';
+      let extra = '';
+      if (item.id === 'semi_etf_flow') {
+        const weeks = item.value?.last_two_complete_weeks || [];
+        extra = weeks.length
+          ? `<p class="growth-meta">${weeks.map((week) => `${week.week_start}–${week.week_end}`).join(' / ')}</p>`
+          : '';
+      } else if (item.id === 'growth_rs' && item.value) {
+        extra = `<p class="growth-meta">已连续站上 ${Number(item.value.consecutive_above_days)} 日 · 最近一次上穿 ${E(item.value.last_cross_date || '暂无')}</p>`;
+      }
+      const note = item.id === 'fund_growth_position' && item.note === status
+        ? ''
+        : item.note;
       return `<article class="growth-card">
         <div class="growth-card-head"><h3>${E(item.name)}</h3><span class="growth-state ${E(item.status)}">${E(status)}</span></div>
         <p class="growth-value">最新值：${E(valueText(item))}</p>${extra}${chart}
-        <p class="growth-meta">可用观测 n=${Array.isArray(item.recent) ? item.recent.length : 0} · 历史分位，不是预测；本页不计算分位。</p>
         <p class="growth-meta">数据日期：${E(item.asof || '暂无可用日期')}</p>
         <p class="growth-meta">来源：${E(item.source || '—')}</p>
         <p class="growth-meta">规则：${E(item.rule || '—')}</p>
         <p class="growth-meta">缺失原因：${E(item.missing_reason || '无')}</p>
-        ${item.note ? `<p class="growth-meta">${E(item.note)}</p>` : ''}
+        ${note ? `<p class="growth-meta">${E(note)}</p>` : ''}
       </article>`;
     }).join('');
-    box.innerHTML = `<div class="growth-summary">核心条件满足 ${Number(summary.core_met) || 0}/3（另有 ${Number(summary.core_pending) || 0} 项待数据） · 确认项：${E(confirmLabel)}</div>
+    box.innerHTML = `<div class="growth-summary">核心条件满足 ${Number(summary.core_met) || 0}/3${pendingKinds ? `（${pendingKinds}）` : ''} · 确认项：${E(confirmLabel)}</div>
+      <p class="growth-meta">仅描述各项条件当前是否满足，不是预测，也不构成买卖建议。</p>
       <div class="growth-grid">${cards}</div>`;
   }
 
