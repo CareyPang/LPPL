@@ -121,6 +121,55 @@ def test_cli_prints_add_paths_and_reports_duplicate_skip(tmp_path, capsys):
     assert "identical content; skipped new version" in second.err
 
 
+def test_null_asof_cli_publishes_exact_unversioned_latest(tmp_path, capsys):
+    source = _source(tmp_path, {**_record(), "asof": None})
+    root = tmp_path / "stock-results"
+
+    assert (
+        publish_main(
+            ["--kind", "range", "--src", str(source), "--root", str(root)]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr()
+    latest_path = root / "market/range_latest.json"
+    assert latest_path.read_bytes() == source.read_bytes()
+    assert output.out.strip() == "market/range_latest.json"
+    assert "warning:" in output.err
+    assert "no asof" in output.err
+    assert not (root / "versions").exists()
+
+
+def test_missing_asof_does_not_replace_valid_latest(tmp_path, capsys):
+    root = tmp_path / "stock-results"
+    valid_source = _source(tmp_path, _record(), "valid.json")
+    publish_record("range", valid_source, root)
+    latest_path = root / "market/range_latest.json"
+    existing_latest = latest_path.read_bytes()
+    legacy_source = _source(
+        tmp_path,
+        {key: value for key, value in _record().items() if key != "asof"},
+        "legacy.json",
+    )
+
+    changed = publish_record("range", legacy_source, root)
+
+    output = capsys.readouterr()
+    assert changed == []
+    assert latest_path.read_bytes() == existing_latest
+    assert "warning:" in output.err
+    assert "no asof" in output.err
+    assert len(list_versions(root, "range", "2026-11-16")) == 1
+
+
+def test_invalid_non_null_asof_still_errors(tmp_path):
+    source = _source(tmp_path, {**_record(), "asof": "not-a-date"})
+
+    with pytest.raises(ValueError, match="invalid asof date"):
+        publish_record("range", source, tmp_path / "stock-results")
+
+
 def test_existing_version_file_with_different_content_is_an_error(tmp_path):
     source = _source(tmp_path, _record())
     raw = source.read_bytes()

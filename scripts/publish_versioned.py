@@ -180,6 +180,25 @@ def publish_bytes(
     record = json.loads(raw)
     if not isinstance(record, dict):
         raise ValueError("record must be a JSON object")
+    if record.get("asof") is None:
+        root_path = Path(root)
+        latest_path = root_path / KIND_PATHS[kind][0]
+        latest_asof = None
+        if latest_path.is_file():
+            try:
+                latest_record = json.loads(latest_path.read_text(encoding="utf-8"))
+                if isinstance(latest_record, dict):
+                    latest_asof = _asof(latest_record)
+            except (OSError, json.JSONDecodeError, ValueError):
+                pass
+        changed_paths = []
+        if latest_asof is None and _write_if_changed(latest_path, raw):
+            changed_paths.append(latest_path.relative_to(root_path).as_posix())
+        print(
+            f"warning: {kind} record has no asof; version history was skipped",
+            file=sys.stderr,
+        )
+        return changed_paths
     asof = _asof(record)
     fetched_value = fetched_at
     if fetched_value is None:
@@ -289,18 +308,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", required=True, type=Path)
     args = parser.parse_args(argv)
     record = json.loads(args.src.read_bytes())
-    asof = _asof(record)
-    latest_manifest = _read_manifest(
-        args.root / "versions" / args.kind / asof / "index.json",
-        args.kind,
-        asof,
-    )
-    sha256 = hashlib.sha256(args.src.read_bytes()).hexdigest()
-    if (
-        latest_manifest["versions"]
-        and latest_manifest["versions"][-1].get("sha256") == sha256
-    ):
-        print(f"{args.kind}/{asof}: identical content; skipped new version.", file=sys.stderr)
+    if not isinstance(record, dict):
+        raise ValueError("record must be a JSON object")
+    if record.get("asof") is not None:
+        asof = _asof(record)
+        latest_manifest = _read_manifest(
+            args.root / "versions" / args.kind / asof / "index.json",
+            args.kind,
+            asof,
+        )
+        sha256 = hashlib.sha256(args.src.read_bytes()).hexdigest()
+        if (
+            latest_manifest["versions"]
+            and latest_manifest["versions"][-1].get("sha256") == sha256
+        ):
+            print(
+                f"{args.kind}/{asof}: identical content; skipped new version.",
+                file=sys.stderr,
+            )
     for path in publish_record(args.kind, args.src, args.root):
         print(path)
     return 0
