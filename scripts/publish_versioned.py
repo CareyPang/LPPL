@@ -263,7 +263,7 @@ def publish_bytes(
             except (OSError, json.JSONDecodeError, ValueError):
                 pass
         changed_paths = []
-        if latest_asof is None and _write_if_changed(latest_path, raw):
+        if update_snapshots and latest_asof is None and _write_if_changed(latest_path, raw):
             changed_paths.append(latest_path.relative_to(root_path).as_posix())
         print(
             f"warning: {kind} record has no asof; version history was skipped",
