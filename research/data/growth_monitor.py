@@ -526,7 +526,11 @@ def _semi_etf_flow(asof: str, start: str, session) -> dict:
                 if nav_row and nav_row["nav"] is not None
                 else price_maps.get(code, {}).get(day)
             )
-            if (not nav_row or nav_row["nav"] is None) and close is not None:
+            if (
+                (not nav_row or nav_row["nav"] is None)
+                and close is not None
+                and day <= _last_complete_week_end(asof)
+            ):
                 reason = f"{day} 净值缺失，用收盘价近似"
                 if reason not in notes_by_code[code]:
                     notes_by_code[code].append(reason)
