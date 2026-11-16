@@ -10,4 +10,5 @@
   - `drawdown_price.value` 恒为 `null`，不得显示目标价。
   - 时间窗只显示为区间，不显示精确顶部日期。
 - 禁止新增或显示 `bubbleScore`、`bubbleMultiScaleScore`、`bubbleProgress`、`tcOffset`、t_c 概率密度及趋势/动量指标。
+  - 例外（用户确认）：市场页「成长监控」的“成长相对强弱”确认项可显示国证芯片/沪深300 比值、20 日均线、连续站上天数和最近上穿日期，仅作条件状态描述；其他页面不适用。
 - 本地预览：`bash scripts/build_site.sh && python -m http.server 8000 -d _site`。

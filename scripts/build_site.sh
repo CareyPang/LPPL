@@ -26,6 +26,10 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
     mkdir -p "$SITE/lab/mock/data/macro"
     git -C "$ROOT" archive stock-results macro | tar -x -C "$SITE/lab/mock/data/"
   fi
+  if git -C "$ROOT" cat-file -e stock-results:growth/growth_latest.json 2>/dev/null; then
+    mkdir -p "$SITE/lab/mock/data/growth"
+    git -C "$ROOT" archive stock-results growth | tar -x -C "$SITE/lab/mock/data/"
+  fi
   if git -C "$ROOT" cat-file -e stock-results:index 2>/dev/null; then
     git -C "$ROOT" archive stock-results index | tar -x -C "$SITE/lab/mock/data/"
     python3 - "$SITE/lab/mock/data/index" "$SITE/lab/mock/data" <<'PY'

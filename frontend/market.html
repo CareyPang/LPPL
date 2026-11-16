@@ -155,6 +155,31 @@ td.r, th.r { text-align: right; }
 .macro-source b, .macro-source small { display: block; }
 .macro-source small { color: var(--ink-3); margin-top: 3px; }
 .macro-terms { overflow-wrap: anywhere; }
+.growth-summary { border: 1px solid var(--grid); padding: var(--s3); margin-bottom: var(--s3); font-weight: 600; }
+.growth-summary, .growth-value, .growth-meta { min-width: 0; overflow-wrap: anywhere; }
+.growth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.growth-card { min-width: 0; border: 1px solid var(--grid); padding: var(--s3); }
+.growth-card h3 { margin: 0; font-size: 15px; }
+.growth-card-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
+.growth-state { flex: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 12px; }
+#s-growth, #s-growth .growth-grid, #s-growth .growth-card,
+#s-growth .growth-card-head, #s-growth .growth-card-head > * { min-width: 0; max-width: 100%; }
+#s-growth .growth-card-head { flex-wrap: wrap; align-items: flex-start; }
+#s-growth .growth-card-head h3 { flex: 1 1 120px; overflow-wrap: anywhere; }
+#s-growth .growth-state { flex: 0 1 auto; white-space: normal; overflow-wrap: anywhere; }
+.growth-state.met { color: var(--up); border-color: var(--up); }
+.growth-state.not_met, .growth-state.partial { color: var(--warn); border-color: var(--warn); }
+.growth-state.missing, .growth-state.pending_definition { color: var(--ink-3); }
+.growth-value { margin: var(--s2) 0; font-size: 14px; font-weight: 600; }
+.growth-meta { margin: var(--s1) 0; font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+.growth-chart { display: block; width: 100%; height: 120px; margin-top: var(--s2); background: var(--bg); }
+.growth-chart text { fill: var(--ink-3); font: 10px var(--f-m); }
+.growth-legend { display: flex; flex-wrap: wrap; gap: var(--s2); font-size: 11px; color: var(--ink-2); }
+.growth-legend span::before { content: ""; display: inline-block; width: 12px; height: 2px; margin: 0 5px 3px 0; background: var(--growth-color); }
+.growth-bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: center; gap: 3px; height: 100px; margin-top: var(--s2); }
+.growth-bars span { min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); }
+.growth-bars i { display: block; width: 70%; min-height: 2px; background: var(--up); }
+.growth-bars i.negative { background: var(--dn); }
 .range-tabs { margin: var(--s2) 0 var(--s3); }
 .abnormal-table { min-width: 860px; }
 .range-table { min-width: 520px; }
@@ -163,6 +188,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
 @media (max-width: 1000px) { .events-columns { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .macro-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 680px) { .growth-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .tm { height: 520px; } }
 @media (max-width: 599px) { .flow-rank-grid { grid-template-columns: minmax(0, 1fr); } }
@@ -249,6 +275,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div id="macro-body"></div>
   </section>
 
+  <section class="sec wide" id="s-growth" aria-labelledby="h-growth">
+    <div class="sec-h"><h2 id="h-growth">成长股监控</h2></div>
+    <div id="growth-body"><p class="note">成长监控数据加载中…</p></div>
+  </section>
+
   <section class="sec wide" id="s-bottom" aria-labelledby="h-bottom">
     <div class="sec-h">
       <h2 id="h-bottom">底部区间信号</h2><span class="ev">descriptive</span><span class="src" id="src-bottom"></span>
@@ -300,7 +331,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     '5d': { label: '5日', net: 'main_net_5d', pct: 'pct_5d', share: 'main_pct_5d' },
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
-  let M = null, Macro = null, kind = 'industry', period = 'today', newsRefreshState = null;
+  let M = null, Macro = null, Growth = null, kind = 'industry', period = 'today', newsRefreshState = null;
   let limitTab = '1', limitSort = 'first_seal', limitSortDir = 1;
   let boardBox = null, pinnedTile = null;
   const tip = $('tip');
@@ -1011,6 +1042,137 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <p class="note">H.10 数据通常滞后约一周；asof ${E(F.asof || '—')}。</p></section>
       <p class="note">${E(D.note || '只作背景，不进入模型。')} 历史分位，不是预测；本卡仅展示官方观测，不计算分位。</p>`;
   }
+  function renderGrowth(data) {
+    const box = $('growth-body');
+    if (!box) return;
+    if (!data || !Array.isArray(data.indicators)) {
+      box.innerHTML = '<p class="fail">成长监控数据未加载。</p>';
+      return;
+    }
+    const labels = {
+      met: '满足',
+      not_met: '未满足',
+      partial: '数据不全',
+      missing: '缺数据',
+      pending_definition: '待统一口径',
+    };
+    const amount = (value) => {
+      if (value == null || !Number.isFinite(Number(value))) return '—';
+      const number = Number(value);
+      const sign = number < 0 ? '−' : number > 0 ? '+' : '';
+      return `${sign}${Math.abs(number).toFixed(2)} 亿元`;
+    };
+    const lineChart = (rows, series, ariaLabel) => {
+      if (!rows || rows.length < 2) return '';
+      const values = rows.flatMap((row) => series
+        .map((item) => row[item.key])
+        .filter((value) => value != null && value !== '' && Number.isFinite(Number(value)))
+        .map(Number));
+      if (values.length < 2) return '';
+      const min = Math.min(...values), max = Math.max(...values);
+      const span = max - min || 1;
+      const paths = series.map((item) => {
+        const points = rows.map((row, index) => {
+          const value = row[item.key];
+          if (value == null || value === '' || !Number.isFinite(Number(value))) return null;
+          const x = 12 + index * 596 / Math.max(1, rows.length - 1);
+          const y = 12 + (max - Number(value)) * 88 / span;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).filter(Boolean);
+        return points.length > 1
+          ? `<path d="M${points.join(' L')}" fill="none" stroke="${item.color}" stroke-width="2"/>`
+          : '';
+      }).join('');
+      return `<svg class="growth-chart" viewBox="0 0 620 120" role="img" aria-label="${E(ariaLabel)}">
+        <path d="M12 100H608" stroke="var(--line)" fill="none"/>${paths}
+        <text x="12" y="115">${E(rows[0].date)}</text><text x="608" y="115" text-anchor="end">${E(rows.at(-1).date)}</text>
+      </svg><div class="growth-legend">${series.map((item) =>
+        `<span style="--growth-color:${item.color}">${E(item.label)}</span>`).join('')}</div>`;
+    };
+    const barChart = (rows) => {
+      if (!rows || !rows.length) return '';
+      const max = Math.max(1, ...rows.map((row) => Math.abs(Number(row.flow_yuan) || 0)));
+      return `<div class="growth-bars" role="img" aria-label="最近完整自然周篮子净申购">
+        ${rows.map((row) => {
+          const value = Number(row.flow_yuan);
+          const height = Number.isFinite(value) ? Math.max(3, Math.abs(value) / max * 80) : 3;
+          return `<span title="${E(row.week_end)} · ${amount(row.flow_yuan)}"><i class="${value < 0 ? 'negative' : ''}" style="height:${height.toFixed(1)}%"></i></span>`;
+        }).join('')}
+      </div>`;
+    };
+    const valueText = (item) => {
+      const value = item.value;
+      if (item.id === 'fund_growth_position') return '—（待统一口径）';
+      if (item.id === 'semi_etf_flow') {
+        const weeks = value?.last_two_complete_weeks || [];
+        return `近两周净申购：${weeks.map((week) => amount(week.flow_yuan)).join(' / ') || '—'}`;
+      }
+      if (item.id === 'us10y') {
+        const observations = value?.last_five || [];
+        const first = observations[0], latest = observations.at(-1);
+        return latest
+          ? `最近 ${observations.length} 个观测：${Number(first.value).toFixed(2)}%–${Number(latest.value).toFixed(2)}%（最新 ${Number(latest.value).toFixed(2)}%）`
+          : '—';
+      }
+      return value
+        ? `RS ${Number(value.latest_rs).toFixed(4)} · MA20 ${Number(value.ma20).toFixed(4)}`
+        : '—';
+    };
+    const summary = data.summary || {};
+    const confirmLabel = labels[summary.confirm_status] || '待数据';
+    const coreItems = data.indicators.filter((item) => item.role === 'core');
+    const pendingKinds = ['pending_definition', 'missing', 'partial']
+      .map((status) => {
+        const count = coreItems.filter((item) => item.status === status).length;
+        return count ? `${count} 项${labels[status]}` : '';
+      })
+      .filter(Boolean)
+      .join('，');
+    const cards = data.indicators.map((item) => {
+      const status = labels[item.status] || '待数据';
+      let chart = '';
+      if (item.id === 'semi_etf_flow') chart = barChart(item.recent);
+      if (item.id === 'us10y') {
+        chart = lineChart(item.recent, [{ key: 'value', color: '#1F5FD6', label: '10 Yr' }], '美国财政部 10 Yr 收益率');
+      }
+      if (item.id === 'growth_rs') {
+        chart = lineChart(item.recent, [
+          { key: 'rs', color: '#1F5FD6', label: 'RS' },
+          { key: 'ma20', color: '#9A5B00', label: 'MA20' },
+        ], '成长相对强弱与 MA20');
+      }
+      let extra = '';
+      if (item.id === 'semi_etf_flow') {
+        const weeks = item.value?.last_two_complete_weeks || [];
+        extra = weeks.length
+          ? `<p class="growth-meta">${weeks.map((week) => `${week.week_start}–${week.week_end}`).join(' / ')}</p>`
+          : '';
+      } else if (item.id === 'us10y') {
+        const observations = item.value?.last_five || [];
+        extra = observations.length
+          ? `<p class="growth-meta">${observations.map((row) => `${row.date} ${Number(row.value).toFixed(2)}%`).join('；')}</p>`
+          : '';
+      } else if (item.id === 'growth_rs' && item.value) {
+        extra = `<p class="growth-meta">已连续站上 ${Number(item.value.consecutive_above_days)} 日 · 最近一次上穿 ${E(item.value.last_cross_date || '暂无')}</p>`;
+      }
+      const note = item.id === 'fund_growth_position' && item.note === status
+        ? ''
+        : item.note;
+      return `<article class="growth-card">
+        <div class="growth-card-head"><h3>${E(item.name)}</h3><span class="growth-state ${E(item.status)}">${E(status)}</span></div>
+        <p class="growth-value">最新值：${E(valueText(item))}</p>${extra}${chart}
+        <p class="growth-meta">数据日期：${E(item.asof || '暂无可用日期')}</p>
+        <p class="growth-meta">来源：${E(item.source || '—')}</p>
+        <p class="growth-meta">规则：${E(item.rule || '—')}</p>
+        <p class="growth-meta">缺失原因：${E(item.missing_reason || '无')}</p>
+        ${note ? `<p class="growth-meta">${E(note)}</p>` : ''}
+      </article>`;
+    }).join('');
+    box.innerHTML = `<div class="growth-summary">核心条件满足 ${Number(summary.core_met) || 0}/3${pendingKinds ? `（${pendingKinds}）` : ''} · 确认项：${E(confirmLabel)}</div>
+      <p class="growth-meta">仅描述各项条件当前是否满足，不是预测，也不构成买卖建议。</p>
+      <div class="growth-grid">${cards}</div>`;
+  }
+
   function renderAll() {
     $('asof').textContent = '截止 ' + (M.asof || '—') + ' · 生成 ' + String(M.generated_at || '').replace('T', ' ').slice(0, 16) + ' UTC';
     for (const fn of [renderBoard, renderLimit, renderSentiment, renderLadder, renderStrength, renderThemes, renderHot, renderLHB, renderNews, renderNB, renderMargin, renderVal]) {
@@ -1047,6 +1209,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }).catch((e) => { $('events-body').innerHTML = `<p class="fail">${E(e.message || '事件数据加载失败')}</p>`; });
   LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
     .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });
+  LPPL.growthMonitor().then((d) => { Growth = d; renderGrowth(Growth); })
+    .catch((e) => { Growth = null; renderGrowth(Growth); console.error(e); });
 })();
 </script>
 <script>

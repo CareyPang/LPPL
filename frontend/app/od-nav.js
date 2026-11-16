@@ -35,6 +35,7 @@
     { t: '快讯', h: '#s-news', ids: ['s-news'] },
     { t: '北向与两融', h: '#s-nb', ids: ['s-nb', 's-mg'] },
     { t: '估值与宏观', h: '#s-val', ids: ['s-val', 's-macro'] },
+    { t: '成长监控', h: '#s-growth', ids: ['s-growth'] },
     { t: '信号与统计', h: '#s-bottom', ids: ['s-bottom', 's-abnormal', 's-range'] },
     { t: '数据状态', h: '#s-fresh', ids: ['s-fresh'] },
     { t: '国家队ETF', h: 'nt.html', page: 'nt' }
@@ -604,7 +605,8 @@
         if (i === g) {
           t.a.setAttribute('aria-current', 'location');
           var s = t.a.parentNode, l = t.a.offsetLeft, w = t.a.offsetWidth;
-          if (l < s.scrollLeft || l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l - 24;
+          if (l < s.scrollLeft) s.scrollLeft = Math.max(0, l - 24);
+          else if (l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l + w - s.clientWidth + 24;
         } else t.a.removeAttribute('aria-current');
       });
       var h = '#' + (anchor || subTabs[g].ids[0]);
@@ -658,7 +660,8 @@
           if (!t.a.hasAttribute('aria-current')) {
             t.a.setAttribute('aria-current', 'location');
             var s = t.a.parentNode, l = t.a.offsetLeft, w = t.a.offsetWidth;
-            if (l < s.scrollLeft || l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l - 24;
+            if (l < s.scrollLeft) s.scrollLeft = Math.max(0, l - 24);
+            else if (l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l + w - s.clientWidth + 24;
           }
         } else t.a.removeAttribute('aria-current');
       });
