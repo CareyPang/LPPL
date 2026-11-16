@@ -6,6 +6,8 @@ Window support and equal-scale mass are descriptive counts, not probabilities.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 
@@ -47,7 +49,10 @@ def selected_windows(mode: str = "full") -> dict[str, tuple[int, ...]]:
     }
 
 
-def prepare(fits: pd.DataFrame) -> pd.DataFrame:
+def prepare(
+    fits: pd.DataFrame,
+    qualified_predicate: Callable[[pd.DataFrame], pd.Series] | None = None,
+) -> pd.DataFrame:
     """Validate one as-of, preserving nonfinite failed fit rows in denominators."""
     missing = REQUIRED - set(fits)
     if missing:
@@ -66,12 +71,23 @@ def prepare(fits: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("duplicate window: retain the original one-best-fit choice; seeds are not votes")
     d["ahead"] = d.tc - (d.n - 1)
     d["osc_cycles"], d["osc_cycles_status"] = future_oscillations(d.tc, d.w, t2=d.n - 1)
-    d["qualified"] = (
-        np.isfinite(d[["tc", "m", "w", "B"]]).all(axis=1)
-        & (d.B < 0) & d.m.between(.1, .9) & d.w.between(6, 13)
-        & (d.ahead > 0) & (d.ahead <= MAX_AHEAD)
-        & (d.osc_cycles_status == "ok") & (d.osc_cycles >= MINIMUM_CYCLES)
-    )
+    if qualified_predicate is None:
+        d["qualified"] = (
+            np.isfinite(d[["tc", "m", "w", "B"]]).all(axis=1)
+            & (d.B < 0) & d.m.between(.1, .9) & d.w.between(6, 13)
+            & (d.ahead > 0) & (d.ahead <= MAX_AHEAD)
+            & (d.osc_cycles_status == "ok") & (d.osc_cycles >= MINIMUM_CYCLES)
+        )
+    else:
+        qualified = qualified_predicate(d)
+        if (
+            not isinstance(qualified, pd.Series)
+            or not qualified.index.equals(d.index)
+            or not pd.api.types.is_bool_dtype(qualified.dtype)
+            or qualified.isna().any()
+        ):
+            raise ValueError("qualified_predicate must return an aligned, non-null boolean Series")
+        d["qualified"] = qualified
     return d.sort_values("n").reset_index(drop=True)
 
 
@@ -138,7 +154,12 @@ def _clusters(records: list[dict], scales: dict) -> dict:
     }
 
 
-def analyze_asof(fits: pd.DataFrame, expected_windows, mode: str = "full") -> dict:
+def analyze_asof(
+    fits: pd.DataFrame,
+    expected_windows,
+    mode: str = "full",
+    qualified_predicate: Callable[[pd.DataFrame], pd.Series] | None = None,
+) -> dict:
     """Analyze one stored as-of using a separately established original fit grid.
 
     ``expected_windows`` must come from the original calendar/history/gap rules,
@@ -148,7 +169,7 @@ def analyze_asof(fits: pd.DataFrame, expected_windows, mode: str = "full") -> di
     """
     grids = selected_windows(mode)
     expected = _expected(expected_windows)
-    d = prepare(fits)
+    d = prepare(fits, qualified_predicate=qualified_predicate)
     scopes, records = {}, []
     for scale, grid in grids.items():
         planned = set(grid) & expected

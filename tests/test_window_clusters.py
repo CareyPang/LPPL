@@ -90,6 +90,24 @@ def test_invalid_and_past_fit_rows_stay_in_denominator_and_fail_qualification():
     assert result["scales"]["short"]["denominator"] == 7
 
 
+def test_qualification_predicate_can_inject_the_t01_filter_without_changing_default():
+    fits, expected = source({35: 10, 65: 10, 130: 10})
+    fits["m"] = 0.05
+    fits["w"] = 20.0
+    fits["t01_qualified"] = fits.n.isin([35, 65, 130])
+
+    legacy = analyze_asof(fits, expected)
+    t01 = analyze_asof(
+        fits,
+        expected,
+        qualified_predicate=lambda frame: frame["t01_qualified"],
+    )
+
+    assert all(scale["qualified_count"] == 0 for scale in legacy["scales"].values())
+    assert [record["n"] for record in t01["fits"] if record["qualified"]] == [35, 65, 130]
+    assert t01["clusters"]["cross"]["primary"]["supported_scales"] == ["short", "mid"]
+
+
 def test_cycle_gate_uses_complete_cycles_and_does_not_assume_five_bar_lead():
     fits, expected = source({30: 20, 35: 3, 40: 4, 45: 5})
     result = analyze_asof(fits, expected)
