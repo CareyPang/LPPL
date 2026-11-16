@@ -89,3 +89,26 @@ test('bandsFor returns only selectable scales with both dates and ignores other 
   assert.equal(JSON.stringify(bands).includes('representative'), false);
   assert.equal(JSON.stringify(bands).includes('share'), false);
 });
+
+test('pickCurrent prefers the candidate with the newer asof', () => {
+  const older = { asof: '2026-11-15', requested_at: '2026-11-17T10:00:00Z' };
+  const newer = { asof: '2026-11-16', requested_at: '2026-11-16T10:00:00Z' };
+
+  assert.equal(ChartLab.pickCurrent(older, newer), newer);
+  assert.equal(ChartLab.pickCurrent(newer, older), newer);
+});
+
+test('pickCurrent breaks equal-asof ties by requested or generated timestamp', () => {
+  const older = { asof: '2026-11-16', generated_at: '2026-11-17T10:00:00Z' };
+  const newer = { asof: '2026-11-16', requested_at: '2026-11-18T10:00:00Z' };
+
+  assert.equal(ChartLab.pickCurrent(older, newer), newer);
+});
+
+test('pickCurrent ignores null candidates', () => {
+  const available = { asof: '2026-11-16' };
+
+  assert.equal(ChartLab.pickCurrent(null, available), available);
+  assert.equal(ChartLab.pickCurrent(available, null), available);
+  assert.equal(ChartLab.pickCurrent(null, null), null);
+});

@@ -92,7 +92,23 @@
     });
   }
 
-  return { toCandles: toCandles, futureWhitespace: futureWhitespace, bandsFor: bandsFor };
+  function pickCurrent(a, b) {
+    if (!a) return b || null;
+    if (!b) return a;
+    var aAsOf = String(a.asof || ''), bAsOf = String(b.asof || '');
+    if (aAsOf !== bAsOf) return aAsOf > bAsOf ? a : b;
+    function stamp(value) {
+      return Date.parse(value.requested_at || value.generated_at || '') || 0;
+    }
+    return stamp(a) > stamp(b) ? a : b;
+  }
+
+  return {
+    toCandles: toCandles,
+    futureWhitespace: futureWhitespace,
+    bandsFor: bandsFor,
+    pickCurrent: pickCurrent,
+  };
 });
 
 (function (root) {
@@ -360,11 +376,15 @@
 
   async function load() {
     try {
-      var results = await Promise.all([
-        root.LPPL.stock.market(code),
-        root.LPPL.stock.latest(code),
+      var results = await Promise.allSettled([
+        Promise.resolve().then(function () { return root.LPPL.stock.market(code); }),
+        Promise.resolve().then(function () { return root.LPPL.stock.latest(code); }),
+        Promise.resolve().then(function () { return root.LPPL.stock.remote(code, 'latest'); }),
       ]);
-      var market = results[0], current = results[1];
+      var market = results[0].status === 'fulfilled' ? results[0].value : null;
+      var localCurrent = results[1].status === 'fulfilled' ? results[1].value : null;
+      var remoteCurrent = results[2].status === 'fulfilled' ? results[2].value : null;
+      var current = root.ChartLab.pickCurrent(localCurrent, remoteCurrent);
       if (!market || !current || !Array.isArray(market.price)) throw new Error('missing');
       candles = root.ChartLab.toCandles(market.price);
       if (!candles.length) throw new Error('missing');
