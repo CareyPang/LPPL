@@ -83,7 +83,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: index-fit-${{ matrix.sym }}-${{ github.run_id }}
+          name: index-fit-${{ matrix.sym }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/index/*.json
           if-no-files-found: warn
 
@@ -102,9 +102,8 @@ jobs:
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          pattern: index-fit-*-${{ github.run_id }}
-          merge-multiple: true
-          path: out/index
+          pattern: index-fit-*-${{ github.run_id }}-*
+          path: out/artifacts
       - name: Publish to stock-results
         env:
           GH_TOKEN: ${{ github.token }}
@@ -119,8 +118,13 @@ jobs:
           published_symbols=()
           missing_symbols=()
           for sym in sh000001 sh000016 sh000300 sh000905 sh000688 sz399001 sz399006; do
-            source="out/index/${sym}_${ASOF}.json"
-            if [[ -f "$source" ]]; then
+            dir="$(ls -d "out/artifacts/index-fit-${sym}-${GITHUB_RUN_ID}-"* 2>/dev/null | sort -V | tail -n 1 || true)"
+            if [[ -n "$dir" ]]; then
+              source="$dir/${sym}_${ASOF}.json"
+            else
+              source=""
+            fi
+            if [[ -n "$source" && -f "$source" ]]; then
               target="index/${sym}_latest.json"
               cp "$source" "$target"
               published+=("$target")
