@@ -91,13 +91,13 @@
             <tr><th>项目</th><th>现有图表</th><th>Lightweight Charts</th><th>观察</th></tr>
           </thead>
           <tbody>
-            <tr><th scope="row">日期定位</th><td>日期滑块</td><td>日期输入 + 可见范围</td><td>—</td></tr>
-            <tr><th scope="row">未来空位</th><td>交易日索引预留</td><td>交易日 whitespace 点</td><td>—</td></tr>
-            <tr><th scope="row">区间绘制</th><td>Canvas</td><td>序列 pane primitive</td><td>—</td></tr>
-            <tr><th scope="row">触控缩放/拖动</th><td>自研 Pointer Events</td><td>水平拖动、捏合缩放</td><td>—</td></tr>
-            <tr><th scope="row">键盘</th><td>方向键、缩放快捷键</td><td>未增加自定义快捷键</td><td>—</td></tr>
-            <tr><th scope="row">体积(gzip KB)</th><td>—</td><td id="gzip-size">计算中…</td><td>—</td></tr>
-            <tr><th scope="row">许可/署名</th><td>—</td><td>Apache-2.0 · TradingView 署名</td><td>—</td></tr>
+            <tr><th scope="row">日期定位</th><td>日期滑块</td><td>日期输入 + 可见范围</td><td>过去日期可按日期定位；未来空位里的日期不行（按日期设范围会忽略末尾空位），要改用序号范围</td></tr>
+            <tr><th scope="row">未来空位</th><td>交易日索引预留</td><td>交易日 whitespace 点</td><td>能留，但默认“适应全部”不显示，要自己设序号范围</td></tr>
+            <tr><th scope="row">区间绘制</th><td>Canvas</td><td>序列 pane primitive</td><td>没有现成矩形，要自写约 60 行绘制插件，标签位置也要自己处理</td></tr>
+            <tr><th scope="row">触控缩放/拖动</th><td>自研 Pointer Events</td><td>水平拖动、捏合缩放</td><td>自带，未在真机测试</td></tr>
+            <tr><th scope="row">键盘</th><td>方向键、缩放快捷键</td><td>未增加自定义快捷键</td><td>没有自带键盘操作，要自己加</td></tr>
+            <tr><th scope="row">体积(gzip KB)</th><td>—</td><td id="gzip-size">计算中…</td><td>多加载约 61 KB</td></tr>
+            <tr><th scope="row">许可/署名</th><td>—</td><td>Apache-2.0 · TradingView 署名</td><td>图上必须保留 TradingView 标志</td></tr>
           </tbody>
         </table>
       </div>
