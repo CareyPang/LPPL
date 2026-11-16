@@ -33,6 +33,12 @@
     var t = Date.parse(ymd + 'T00:00:00+08:00');
     return Number.isFinite(t) ? Math.floor((Date.now() - t) / 86400000) : NaN;
   }
+  function quoteTimeLabel(time, tz, now) {
+    var LPPL = root.LPPL;
+    return LPPL && typeof LPPL.quoteTimeLabel === 'function'
+      ? LPPL.quoteTimeLabel(time, tz, now)
+      : { label: '最新成交', time: '—', short: '—' };
+  }
   function mount(opts) {
     var doc = (opts && opts.document) || root.document;
     var host = doc.getElementById('sym-head');
@@ -40,12 +46,63 @@
     host.innerHTML =
       '<div class="sh-main" id="sh-main"><div class="sh-l"><div class="sh-name"><h2 id="sh-name">—</h2><span class="sh-code m" id="sh-code"></span></div>' +
       '<div class="sh-tags" id="sh-tags"></div><div class="sh-mem" id="sh-mem"></div></div>' +
-      '<div class="sh-r"><div class="sh-px"><b class="m" id="sh-close">—</b><span class="m" id="sh-chg"></span></div><div class="sh-asof" id="sh-asof"></div>' +
+      '<div class="sh-r"><div class="sh-px"><b class="m" id="sh-close">—</b><span class="m" id="sh-chg"></span></div><div class="sh-asof" id="sh-asof"></div><div class="sh-live" id="sh-live" hidden></div>' +
       '<div class="sh-act"><button type="button" class="sh-star" id="sh-star" aria-pressed="false">☆ 加自选</button><a class="sh-chart" id="sh-chart" hidden>完整图表 ›</a></div></div></div>' +
       '<nav class="sh-tabs" id="sh-tabs" aria-label="标的页签"><div class="sh-mini" id="sh-mini" aria-hidden="true"></div>' +
       TABS.map(function (t) { return '<a href="#' + t[2] + '" data-tab="' + t[0] + '" data-target="' + t[2] + '">' + t[1] + '</a>'; }).join('') + '</nav>';
     var $ = function (id) { return doc.getElementById(id); };
     var tabs = $('sh-tabs'), main = $('sh-main'), star = $('sh-star'), pageToggle = $('watch-toggle');
+    var liveTimer = null, liveSymbol = null, quoteRequest = 0;
+    function hideLiveQuote() {
+      var live = $('sh-live');
+      if (live) { live.hidden = true; live.textContent = ''; }
+    }
+    function clearLiveTimer() {
+      if (liveTimer !== null) root.clearInterval(liveTimer);
+      liveTimer = null;
+    }
+    function refreshLiveQuote(symbol) {
+      if (!symbol || !doc || doc.visibilityState !== 'visible') return;
+      var LPPL = root.LPPL, requestId = ++quoteRequest;
+      if (!LPPL || typeof LPPL.quote !== 'function') { hideLiveQuote(); return; }
+      var pending;
+      try { pending = LPPL.quote([symbol]); }
+      catch (e) { hideLiveQuote(); return; }
+      Promise.resolve(pending).then(function (result) {
+        if (requestId !== quoteRequest || symbol !== liveSymbol) return;
+        var quote = result && result.quotes && result.quotes[symbol];
+        if (!quote || (result.missing || []).includes(symbol) ||
+            !Number.isFinite(Number(quote.price)) || Number(quote.price) <= 0 ||
+            quote.pct == null || !Number.isFinite(Number(quote.pct))) {
+          hideLiveQuote();
+          return;
+        }
+        var live = $('sh-live'), timing = quoteTimeLabel(quote.time, quote.tz);
+        if (!live) return;
+        var pct = Number(quote.pct), tone = pct >= 0 ? 'up' : 'dn';
+        live.innerHTML = esc(timing.label) + ' <span class="sh-live-price ' + tone + '">' +
+          Number(quote.price).toFixed(2) + ' ' + (pct >= 0 ? '+' : '') + pct.toFixed(2) +
+          '%</span> · ' + esc(timing.time) + ' · 腾讯行情，不复权，仅供参考，不参与模型';
+        live.hidden = false;
+      }).catch(function () {
+        if (requestId === quoteRequest && symbol === liveSymbol) hideLiveQuote();
+      });
+    }
+    function scheduleLiveQuote() {
+      clearLiveTimer();
+      if (!liveSymbol || doc.visibilityState !== 'visible') return;
+      refreshLiveQuote(liveSymbol);
+      liveTimer = root.setInterval(function () {
+        if (doc.visibilityState === 'visible') refreshLiveQuote(liveSymbol);
+      }, 60000);
+    }
+    if (doc.addEventListener) doc.addEventListener('visibilitychange', function () {
+      if (doc.visibilityState === 'visible') scheduleLiveQuote();
+      else {
+        clearLiveTimer();
+        quoteRequest += 1;
+      }
+    });
     /* ☆ 复用页面已有的自选按钮逻辑（StockWatchlist），这里只做镜像 */
     if (pageToggle) {
       var mirror = function () {
@@ -111,6 +168,14 @@
       var age = daysSince(d.asof), stale = Number.isFinite(age) && age > 5;
       $('sh-asof').innerHTML = '<span class="' + (stale ? 'sh-stale' : '') + '">收盘 ' + esc(d.asof || '—') + (stale ? ' · 距今 ' + age + ' 天' : '') + '</span><span class="sh-dim"> · 后复权 · 不是实时价</span>';
       $('sh-mini').textContent = nm + ' ' + (last != null ? Number(last).toFixed(2) : '') + (chg != null ? ' ' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%' : '');
+      var symbol = String(d.symbol || '');
+      if (symbol !== liveSymbol) {
+        liveSymbol = symbol;
+        quoteRequest += 1;
+        clearLiveTimer();
+        hideLiveQuote();
+        scheduleLiveQuote();
+      }
       var us = /^US_/i.test(d.symbol || '');
       var tags = [us ? '美股' : '个股']; var b = board(code); if (b && !us) tags.push(b);
       if (d.stock_meta && d.stock_meta.st) tags.push('ST');
@@ -130,7 +195,7 @@
       });
       onScroll();
     }
-    return { update: update, setActive: setActive };
+    return { update: update, setActive: setActive, quoteTimeLabel: quoteTimeLabel };
   }
-  root.StockHeader = { mount: mount, TABS: TABS };
+  root.StockHeader = { mount: mount, TABS: TABS, quoteTimeLabel: quoteTimeLabel };
 })(typeof window !== 'undefined' ? window : globalThis);

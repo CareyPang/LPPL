@@ -223,6 +223,66 @@
   /** 市场背景（descriptive）；缺文件返回 null */
   const market = () => opt('market/market_latest.json');
   const liveNews = () => queryJSON('/news');
+  const quoteWorkerCode = (symbol) => {
+    const value = String(symbol ?? '');
+    if (/^(?:sh|sz|bj)\d{6}$/i.test(value)) return value.toLowerCase();
+    if (/^US_[A-Za-z.]{1,10}$/i.test(value)) return 'us' + value.slice(3).toUpperCase();
+    return null;
+  };
+  const quoteSymbol = (code) => {
+    if (/^(?:sh|sz|bj)\d{6}$/.test(code)) return code;
+    if (/^us[A-Za-z.]{1,10}$/.test(code)) return 'US_' + code.slice(2).toUpperCase();
+    return null;
+  };
+  const quoteTimeLabel = (time, tz, now) => {
+    const us = tz === 'America/New_York';
+    const zone = us ? 'America/New_York' : 'Asia/Shanghai';
+    const match = us
+      ? /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2})?$/.exec(String(time || ''))
+      : /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(?:\d{2})?$/.exec(String(time || ''));
+    if (!match) return { label: '最新成交', time: '—', short: '—' };
+    const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+    const hour = Number(match[4]), minute = Number(match[5]);
+    const stamp = new Date(Date.UTC(year, month - 1, day, hour, minute));
+    if (stamp.getUTCFullYear() !== year || stamp.getUTCMonth() !== month - 1 ||
+        stamp.getUTCDate() !== day || hour > 23 || minute > 59) {
+      return { label: '最新成交', time: '—', short: '—' };
+    }
+    const options = { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+    const parts = {};
+    new Intl.DateTimeFormat('en-US', options).formatToParts(now == null ? new Date() : new Date(now))
+      .forEach((part) => { if (part.type !== 'literal') parts[part.type] = part.value; });
+    const sameDay = parts.year === match[1] && parts.month === match[2] && parts.day === match[3];
+    const inSession = (value) => us
+      ? value >= 570 && value <= 960
+      : (value >= 555 && value <= 690) || (value >= 780 && value <= 900);
+    const quoteMinute = hour * 60 + minute, currentMinute = Number(parts.hour) * 60 + Number(parts.minute);
+    const short = match[4] + ':' + match[5];
+    return {
+      label: sameDay && inSession(quoteMinute) && inSession(currentMinute) ? '盘中' : '最新成交',
+      time: match[2] + '-' + match[3] + ' ' + short,
+      short,
+    };
+  };
+  const quote = async (symbols) => {
+    const codes = new Map();
+    for (const value of Array.isArray(symbols) ? symbols : []) {
+      const code = quoteWorkerCode(value);
+      if (code && !codes.has(code)) codes.set(code, quoteSymbol(code));
+    }
+    if (!codes.size) return { quotes: {} };
+    const data = await queryJSON('/quote?codes=' + encodeURIComponent([...codes.keys()].join(',')));
+    const result = data && typeof data === 'object' ? data : {};
+    const quotes = {};
+    for (const [code, value] of Object.entries(result.quotes || {})) {
+      const symbol = codes.get(code) || quoteSymbol(code);
+      if (symbol) quotes[symbol] = value;
+    }
+    const missing = (Array.isArray(result.missing) ? result.missing : [])
+      .map((code) => codes.get(code) || quoteSymbol(code))
+      .filter(Boolean);
+    return { ...result, quotes, missing };
+  };
   const stockList = () => opt('market/stock_list.json');
   const ntEtf = () => opt('nt_etf/nt_etf_latest.json');
   const events = () => opt('events/events_latest.json');
@@ -231,5 +291,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, market, stockList, liveNews, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, market, stockList, liveNews, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, changelog };
 })(window);

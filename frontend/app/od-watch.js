@@ -1,6 +1,6 @@
 /* 临界点 · 全局「☆ 自选」抽屉（Open Design 维护）
    任意页面从右侧滑出；指数自选读 IndexWatchlist（lppl.watchlist.idx.v1），个股自选读 StockWatchlist（lppl.watchlist.v1）。
-   行情 = 后端日更的收盘价与涨跌幅（不是实时价）；模型状态 = 已发布 JSON 的 signal_status 文案。
+   行情优先使用腾讯实时报价，缺失时回退到后端日更收盘价；模型状态 = 已发布 JSON 的 signal_status 文案。
    所有数据只经 window.LPPL 读取，本文件不计算任何模型值。 */
 (function () {
   'use strict';
@@ -21,11 +21,11 @@
 '.odw-v button[aria-pressed=true]{background:#131722;border-color:#131722;color:#fff}' +
 '.odw-b{flex:1;overflow-y:auto;padding:8px 8px 16px}' +
 '.odw-g{margin:8px 8px 2px;font-size:12px;color:#6a6d78}' +
-'.odw-i{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;color:inherit;text-decoration:none}' +
+'.odw-i{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,136px) 28px;align-items:center;gap:8px;padding:10px 8px;border-radius:10px;color:inherit;text-decoration:none}' +
 '.odw-i:hover{background:#f0f3fa}' +
 '.odw-i .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.odw-i .cd{font:12px Consolas,"Cascadia Mono",monospace;color:#6a6d78}' +
 '.odw-i .px{text-align:right;font:500 13px Consolas,"Cascadia Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}' +
-'.odw-i .px small{display:block;font-size:11px;color:#6a6d78}' +
+'.odw-i .px small{display:block;max-width:160px;white-space:normal;font-size:11px;color:#6a6d78}' +
 '.odw-i .up{color:#d6303a}.odw-i .dn{color:#11845a}' +
 '.odw-i .st{font-size:12px;color:#4c525e;text-align:right;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
 '.odw-i .rm{width:28px;height:28px;border:0;border-radius:999px;background:transparent;color:#9aa0ab;cursor:pointer;font:14px/1 system-ui}' +
@@ -57,7 +57,7 @@
   box.innerHTML = '<div class="odw-h"><b>☆ 自选</b><span class="n" id="odw-n"></span><button type="button" class="odw-x" aria-label="关闭自选">×</button></div>' +
     '<div class="odw-v" role="group" aria-label="显示"><button type="button" data-v="quote" aria-pressed="true">行情</button><button type="button" data-v="model" aria-pressed="false">模型状态</button></div>' +
     '<div class="odw-b" id="odw-b"></div>' +
-    '<div class="odw-f">行情为后端日更收盘价，不是实时价；模型状态来自已发布结果，描述历史结构，不是预测。自选只存在本浏览器。</div>';
+    '<div class="odw-f">行情优先显示腾讯实时报价（不复权，仅供参考，不参与模型）；取不到时显示后端日更收盘价。模型状态来自已发布结果，描述历史结构，不是预测。自选只存在本浏览器。</div>';
   document.body.appendChild(bg); document.body.appendChild(box);
   var body = box.querySelector('#odw-b'), nEl = box.querySelector('#odw-n');
 
@@ -68,12 +68,67 @@
   }
   function row(h) {
     var right = view === 'quote'
-      ? '<span class="px ' + (h.cls || '') + '">' + esc(h.px || '—') + '<small>' + esc(h.chg || (h.asof ? '收盘 ' + h.asof : '')) + '</small></span>'
+      ? '<span class="px ' + (h.cls || '') + '">' + esc(h.px || '—') + '<small>' + esc(h.chg || (h.asof ? '收盘 ' + h.asof : '')) + (h.period ? '<br>' + esc(h.period) : '') + '</small></span>'
       : '<span class="st" title="' + esc(h.status || '') + '">' + esc(h.status || '—') + '</span>';
     return '<div class="odw-i"><a class="nm" href="' + esc(h.h) + '" style="color:inherit;text-decoration:none;min-width:0">' + esc(h.name) + '<br><span class="cd">' + esc(h.code) + (h.asof && view === 'model' ? ' · ' + esc(h.asof) : '') + '</span></a>' +
       right + '<button type="button" class="rm" data-rm="' + esc(h.key) + '" data-kind="' + h.kind + '" aria-label="移除 ' + esc(h.name) + '">×</button></div>';
   }
   var cache = {};
+  var quotePromise = null;
+  function quoteSymbolFromCode(code) {
+    var value = String(code || '');
+    if (/^(?:sh|sz|bj)\d{6}$/i.test(value)) return value.toLowerCase();
+    if (/^\d{6}$/.test(value)) {
+      if (/^92/.test(value)) return 'bj' + value;
+      if (/^[69]/.test(value)) return 'sh' + value;
+      if (/^[03]/.test(value)) return 'sz' + value;
+      if (/^[48]/.test(value)) return 'bj' + value;
+    }
+    return null;
+  }
+  function watchQuoteSymbol(item) {
+    if (item.kind === 'stock') return quoteSymbolFromCode(item.key);
+    var direct = quoteSymbolFromCode(item.key);
+    if (direct) return direct;
+    var L = window.LPPL, resolved = L && L.resolve ? L.resolve(item.key) : null;
+    return quoteSymbolFromCode(resolved && resolved.code);
+  }
+  function liveQuotes(idx, stocks) {
+    if (!quotePromise) {
+      var L = window.LPPL;
+      var symbols = idx.map(function (sym) {
+        var direct = quoteSymbolFromCode(sym);
+        if (direct) return direct;
+        var resolved = L && L.resolve ? L.resolve(sym) : null;
+        return quoteSymbolFromCode(resolved && resolved.code);
+      }).concat(stocks.map(function (code) { return quoteSymbolFromCode(code); })).filter(Boolean);
+      symbols = Array.from(new Set(symbols));
+      quotePromise = !symbols.length || !L || typeof L.quote !== 'function'
+        ? Promise.resolve({ quotes: {} })
+        : Promise.resolve().then(function () { return L.quote(symbols); })
+          .then(function (result) { return result || { quotes: {} }; })
+          .catch(function () { return { quotes: {} }; });
+    }
+    return quotePromise;
+  }
+  function withLiveQuote(item, result) {
+    if (view !== 'quote' || !result || !result.quotes) return item;
+    var symbol = watchQuoteSymbol(item), quote = symbol && result.quotes[symbol];
+    if (!quote || !Number.isFinite(Number(quote.price)) || Number(quote.price) <= 0 ||
+        quote.pct == null || !Number.isFinite(Number(quote.pct))) return item;
+    var timing = window.LPPL && window.LPPL.quoteTimeLabel
+      ? window.LPPL.quoteTimeLabel(quote.time, quote.tz)
+      : { label: '最新成交', time: '—', short: '—' };
+    var pctValue = Number(quote.pct), changeValue = Number(quote.change);
+    var movement = Number.isFinite(changeValue) ? (changeValue >= 0 ? '+' : '') + changeValue.toFixed(2) + ' ' : '';
+    var period = timing.label === '盘中' ? '盘中 ' + timing.short : '最新 ' + timing.time;
+    return Object.assign({}, item, {
+      px: Number(quote.price).toFixed(2),
+      chg: movement + (pctValue >= 0 ? '+' : '') + pctValue.toFixed(2) + '%',
+      cls: pctValue >= 0 ? 'up' : 'dn',
+      period,
+    });
+  }
   function idxItem(sym) {
     var L = window.LPPL, S = L && L.resolve ? L.resolve(sym) : null;
     var base0 = { key: sym, kind: 'index', code: (S && S.code) || sym, name: (S && S.name) || sym, h: 'index.html?code=' + encodeURIComponent(sym) };
@@ -112,17 +167,22 @@
         return;
       }
       body.innerHTML = '<div class="odw-e">加载中…</div>';
-      Promise.all([Promise.all(idx.map(idxItem)), Promise.all(stocks.map(stkItem))]).then(function (r) {
+      Promise.all([
+        Promise.all(idx.map(idxItem)),
+        Promise.all(stocks.map(stkItem)),
+        view === 'quote' ? liveQuotes(idx, stocks) : Promise.resolve({ quotes: {} }),
+      ]).then(function (r) {
         if (my !== seq) return;
         var html = '';
-        if (r[0].length) html += '<div class="odw-g">指数</div>' + r[0].map(row).join('');
-        if (r[1].length) html += '<div class="odw-g">个股</div>' + r[1].map(row).join('');
+        if (r[0].length) html += '<div class="odw-g">指数</div>' + r[0].map(function (item) { return row(withLiveQuote(item, r[2])); }).join('');
+        if (r[1].length) html += '<div class="odw-g">个股</div>' + r[1].map(function (item) { return row(withLiveQuote(item, r[2])); }).join('');
         body.innerHTML = html;
       });
     });
   }
   function open() {
     cache = {}; /* 每次打开重新取价，避免一直显示首次打开时的旧数据 */
+    quotePromise = null;
     box.hidden = false;
     requestAnimationFrame(function () { box.classList.add('on'); bg.classList.add('on'); });
     render();

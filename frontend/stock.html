@@ -178,6 +178,8 @@
     .sh-r { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
     .sh-px b { font-size: 28px; font-weight: 600; } .sh-px span { margin-left: 8px; font-size: 15px; } .sh-px .up { color: var(--up); } .sh-px .dn { color: var(--dn, #11845A); }
     .sh-asof { font-size: 12px; color: var(--ink-3); } .sh-stale { color: var(--warn); background: #FFF6E5; border-radius: 4px; padding: 1px 6px; } .sh-dim { color: var(--ink-3); }
+    .sh-live { max-width: 100%; font-size: 12px; color: var(--ink-3); overflow-wrap: anywhere; }
+    .sh-live[hidden] { display: none; } .sh-live-price.up { color: var(--up); } .sh-live-price.dn { color: var(--dn, #11845A); }
     .sh-act { display: flex; gap: var(--s2); margin-top: 4px; }
     .sh-star, .sh-chart { border: 1px solid var(--line-2); border-radius: 999px; background: var(--glass); color: var(--ink-2); font: 600 13px var(--f-u); padding: 6px 14px; cursor: pointer; text-decoration: none; }
     .sh-star[aria-pressed="true"] { border-color: #D97706; color: #D97706; } .sh-star:disabled { opacity: .5; cursor: not-allowed; }
