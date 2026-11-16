@@ -1,6 +1,6 @@
 {
-  "schema_version": "lppls_warmstart_pilot_spec_v1",
-  "status": "TASK_SPEC_NOT_EXECUTED",
+  "schema_version": "lppls_warmstart_pilot_spec_v2",
+  "status": "SOURCE_PREFLIGHT_COMPLETE_CHECKPOINT_BLOCKED_EXPERIMENTS_NOT_RUN",
   "frozen_run_manifest_required": true,
   "base_main_sha": "e90f2de736ff7eb957946d4b5e627c334d702727",
   "references": {
@@ -36,7 +36,9 @@
       "id": "P",
       "pipeline": "one frozen P-LNN candidate + independent TRF",
       "fallback": "disabled; preserve failure",
-      "checkpoint": "RESOLVE_AND_HASH_BEFORE_RUN"
+      "checkpoint": "NOT_RUN_MODEL_UNAVAILABLE",
+      "checkpoint_sha256": null,
+      "weight_license": null
     }
   ],
   "common_fit": {
@@ -168,7 +170,8 @@
     "A resource isolation and B per-window equal-time cutoff",
     "budget failure tolerance and expand recommendation criterion",
     "data and label hash/maturity context",
-    "initial episode state and full H=63 action opportunities including next-session off-by-one; if unproven NOT_RUN_INITIAL_STATE, no hidden cold reset"
+    "initial episode state and full H=63 action opportunities including next-session off-by-one; if unproven NOT_RUN_INITIAL_STATE, no hidden cold reset",
+    "actual P checkpoint artifact and permission; source review complete but checkpoint remains unavailable"
   ],
   "allowed_outcomes": [
     "PILOT_FEASIBLE",
@@ -198,5 +201,62 @@
     "resolved_claim_precision": "pinned T02 union: action within scored block OR target event in E; resolved first formal claims only",
     "precision_action_cohort": "action within scored block; resolved first formal claims, retaining no-event/duplicate penalties, target may be outside E"
   },
-  "matched_notification_diagnostic": "same opportunity dates every fifth scored asof and at most one formal claim per opportunity; same ledger and current-only information; report underfill, never force equal actual counts with future top-K"
+  "matched_notification_diagnostic": "same opportunity dates every fifth scored asof and at most one formal claim per opportunity; same ledger and current-only information; report underfill, never force equal actual counts with future top-K",
+  "active_phase": "A_ONLY",
+  "source_verification": "source-verification.json",
+  "execution_instructions": "P_LNN_PREFLIGHT.md",
+  "phase_A_execution": {
+    "full_three_arm_status": "BLOCKED_CHECKPOINT_PROVENANCE",
+    "sample_cases": 84,
+    "planned_primary_slots": 252,
+    "D_G_partial_allowed": true,
+    "partial_status": "A_PARTIAL_DG_ONLY",
+    "P_missing_slots": 84,
+    "P_no_weight_action": "record NOT_RUN; no random network, no demo or automatic training",
+    "result_cache": "only identical task identities; cache retrieval never solver timing",
+    "stop_after": "A_REPORT and A_DECISION; B disabled"
+  },
+  "phase_B_execution": {
+    "enabled": false,
+    "status": "HOLD_PENDING_PHASE_A_REVIEW",
+    "requires": [
+      "complete audited three-arm A evidence",
+      "engineering fixtures PASS",
+      "cost and fit-quality review with documented rationale",
+      "A_DECISION.json and separate preregistered B enablement change before outcomes"
+    ],
+    "automatic_transition": false
+  },
+  "checkpoint_acceptance": {
+    "all_required": [
+      "source identity and immutable code commit",
+      "actual artifact bytes and SHA256",
+      "applicable code and weight permission",
+      "framework and exact architecture shapes",
+      "output order and fixed label scale",
+      "training distribution and model selection provenance",
+      "scaler, resampling and clock contract",
+      "restricted load and finite output fixtures"
+    ],
+    "metadata_only_is_sufficient": false,
+    "example_path_is_sufficient": false,
+    "current_download_url": null,
+    "load_tested": false,
+    "inference_tested": false
+  },
+  "deferred_methods": [
+    "P-L-GRU",
+    "P-L-LSTM",
+    "M-LNN retraining",
+    "G-LPPLS",
+    "neural posterior/SBI",
+    "RL/self-play"
+  ],
+  "handoff": {
+    "executor": "Devin",
+    "scope": "preflight plus bounded Phase A only",
+    "dispatch_evidence": "PR task documents and conversation handoff; external session start NOT_ESTABLISHED",
+    "no_training": true
+  },
+  "phase_specific_gate": "Resolve each arm/phase requirements before that work; B-only unresolved values do not block A, P-only unavailable checkpoint does not block correctly frozen D/G partial baseline"
 }

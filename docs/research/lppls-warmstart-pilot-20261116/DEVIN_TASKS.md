@@ -1,6 +1,8 @@
 # Devin任务：P-LNN初值＋独立精修的小样本公平对照
 
-状态：任务规格，不是已运行成绩。先读 [版本与范围](README.md)。所有空缺配置必须在实验前解析并封存；未解析时只允许工程fixture。
+状态：任务规格，不是已运行成绩。先读 [版本与范围](README.md)。各阶段及各臂所需配置必须在对应实验前解析并封存；B专属空缺不阻止合格A任务，P权重空缺不阻止已冻结D/G部分基线，但不能宣称三臂A完成。
+
+2026-11-16执行补充：[P-LNN预检与顺序](P_LNN_PREFLIGHT.md)为最新执行入口。公开代码审查完成，但可用checkpoint尚未建立，P当前NOT_RUN_MODEL_UNAVAILABLE。Devin先交来源预检、冻结84例和fixture，可按A限额准备/执行D/G部分基线；不能把两臂当三臂完成。取得可核权重才补P；本次先交A耗时/拟合质量报告，B保持禁用，GRU/LSTM及其他模型延期。
 
 ## W00 — 固定依赖与旧结果
 
@@ -69,7 +71,7 @@
 
 ## W05 — B阶段：有限连续块，验证实际提醒
 
-A工程通过且P可用后才执行。样本与提醒规则在读取任何B阶段效果前封存。不得重定义 #104 的已有smoke或研究结果。
+本节为后续预留，当前enabled=false。完整三臂A工程通过、P可用且耗时/拟合质量审查完成后，须另交A_DECISION.json和B启用变更；不能自动跳入。样本与提醒规则在读取任何B阶段效果前封存。不得重定义 #104 的已有smoke或研究结果。
 
 **预登记两档候选规模，按A的成本测量选择能满足预算的一档：**
 
@@ -130,5 +132,6 @@ A工程通过且P可用后才执行。样本与提醒规则在读取任何B阶�
 - [ ] 预算硬停止、续跑累计、未知分母、不可用P、计时冷热、代表先选后过滤均有手算fixture。
 - [ ] 交付 `pilot_manifest.json`、`checkpoint_provenance.json`、`sample_selection.json`、`cost_preflight.json`、`legacy_preserved.sha256`、`fit_attempts.*`、`init_refine_pairs.*`、`window_status.*`、`prediction_ledger.*`、`event_scores.*`、`timing_costs.csv`、`failure_pending.csv`、`PILOT_REPORT.md`。
 - [ ] 报告分清：结构强度、tc候选区间、实际预警效果。参数误差下降不自动等于阶段漏报减少。
+- [ ] 补交source_preflight、checkpoint_provenance、adapter_contract、fixture_results、A_REPORT、A_DECISION；P权重不存在/授权不明时保留null与NOT_RUN，不自动训练、不装整包替代核验。
 - [ ] 保留 #99 失败处置；不把H1/H2/H3、Q2、MPL、Ising、Q-DD2、PPE失败升级。下行/价格层不属于本次胜出判断。
 - [ ] 只交Draft研究PR和可审查证据；不部署、发布、合并、修改MODEL_VERSION或自动启动发布/模型workflow。
