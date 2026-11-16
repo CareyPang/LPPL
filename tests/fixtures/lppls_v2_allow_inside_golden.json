@@ -1,5 +1,10 @@
 {
   "description": "Pre-change tcgrid_lm golden outputs for the legacy global ALLOW_INSIDE behavior.",
+  "environment": {
+    "numpy": "2.5.4",
+    "python": "3.12.13",
+    "scipy": "1.18.1"
+  },
   "generator": {
     "construction": "design(t, tc, m, omega, allow_inside=True) @ beta + seeded Gaussian noise",
     "tc": 70.4,

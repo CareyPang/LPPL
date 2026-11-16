@@ -1,11 +1,13 @@
 import hashlib
 import json
 import math
+import platform
 from dataclasses import asdict, replace
 from pathlib import Path
 
 import numpy as np
 import pytest
+import scipy
 
 from research.lppls import core, future_contract
 from research.lppls.future_contract import (
@@ -53,24 +55,41 @@ def _window_input(series, *, search_bounds=FAST_SEARCH, seed_retries=((0, 0),), 
     return log_price, data_hash, result
 
 
-def test_pre_change_tcgrid_lm_global_behavior_matches_pinned_golden(golden, monkeypatch):
+def test_pre_change_tcgrid_lm_global_behavior_matches_pinned_golden(golden):
     series = np.asarray(golden["series"], dtype=float)
     time_grid = golden["time_grid"]
     t = time_grid["start"] + time_grid["step"] * np.arange(time_grid["count"], dtype=float)
     spec = golden["tcgrid_lm"]
-    for enabled, name in ((True, "allow_inside_true"), (False, "allow_inside_false")):
-        monkeypatch.setattr(core, "ALLOW_INSIDE", enabled)
-        result = tcgrid_lm(
-            t,
-            series,
-            np.asarray(spec["lo"], dtype=float),
-            np.asarray(spec["hi"], dtype=float),
-            seed=spec["seed"],
-            n_random=spec["n_random"],
-        )
-        expected = spec["legacy_global_results"][name]
-        assert np.array_equal(result.theta, np.asarray(expected["theta"], dtype=float))
-        assert result.sse == expected["sse"]
+    original_allow_inside = core.ALLOW_INSIDE
+    runtime_versions = {
+        "numpy": np.__version__,
+        "python": platform.python_version(),
+        "scipy": scipy.__version__,
+    }
+    try:
+        for enabled, name in ((True, "allow_inside_true"), (False, "allow_inside_false")):
+            core.ALLOW_INSIDE = enabled
+            fit_args = (
+                t,
+                series,
+                np.asarray(spec["lo"], dtype=float),
+                np.asarray(spec["hi"], dtype=float),
+            )
+            fit_kwargs = {"seed": spec["seed"], "n_random": spec["n_random"]}
+            implicit = tcgrid_lm(*fit_args, **fit_kwargs, allow_inside=None)
+            explicit = tcgrid_lm(*fit_args, **fit_kwargs, allow_inside=enabled)
+            assert np.array_equal(implicit.theta, explicit.theta)
+            assert implicit.sse == explicit.sse
+
+            expected = spec["legacy_global_results"][name]
+            expected_theta = np.asarray(expected["theta"], dtype=float)
+            np.testing.assert_allclose(implicit.theta, expected_theta, rtol=1e-9, atol=0)
+            np.testing.assert_allclose(implicit.sse, expected["sse"], rtol=1e-9, atol=0)
+            if runtime_versions == golden["environment"]:
+                assert np.array_equal(implicit.theta, expected_theta)
+                assert implicit.sse == expected["sse"]
+    finally:
+        core.ALLOW_INSIDE = original_allow_inside
 
 
 def test_cycles_full_hand_values_and_legacy_oscillation_conversion():
