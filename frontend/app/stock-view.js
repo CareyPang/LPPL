@@ -400,7 +400,7 @@
         const span = Math.max(1, windowEnd - windowStart);
         const end = visibleLength();
         const start = Math.max(0, end - span);
-        const future = root.StockChartWindow.futureSlots(end, scenario?.bands || [], true);
+        const future = scenario ? root.StockChartWindow.futureSlots(end, scenario.bands, true) : 0;
         if (index >= end + future) return { ok: false, reason: '该日期超出图上范围' };
         focusEvent = { date, eventId };
         setWindow(start, end, selected);
