@@ -19,13 +19,18 @@ function setupView({ search = '', hash = '' } = {}) {
     strokeStyle: '',
     lineWidth: 1,
     globalAlpha: 1,
+    font: '',
+    textAlign: 'left',
     setTransform() {},
     clearRect() { drawCalls.push({ type: 'clearRect' }); },
     beginPath() {},
     moveTo() {},
     lineTo() {},
     stroke() {},
-    fillText(text, x, y, maxWidth) { drawCalls.push({ type: 'fillText', text, x, y, maxWidth }); },
+    fillText(text, x, y, maxWidth) {
+      drawCalls.push({ type: 'fillText', text, x, y, maxWidth, textAlign: this.textAlign, font: this.font });
+    },
+    measureText(text) { return { width: String(text).length * 6 }; },
     setLineDash() {},
     arc() {},
     fill() {},
@@ -79,6 +84,7 @@ function setupView({ search = '', hash = '' } = {}) {
     return button;
   });
   doc = {
+    body: {},
     activeElement: null,
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, new Element(id));
@@ -97,6 +103,7 @@ function setupView({ search = '', hash = '' } = {}) {
   const location = new URL(`http://localhost/stock.html${search}${hash}`);
   const window = {
     document: doc,
+    getComputedStyle() { return { fontFamily: 'Arial, sans-serif' }; },
     location: {
       href: location.href,
       pathname: location.pathname,
@@ -310,6 +317,34 @@ test('future scenario bands reserve weekday slots with closures and draw no futu
   assert.ok(futureArea);
   assert.ok(barFills.every(call => call.x + call.width <= futureArea.x + .01));
   assert.ok(calls.some(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情'));
+});
+
+test('narrow chart keeps the selected-band label inside the price plot and uses the page CJK font', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-13', 120);
+  const windows = [{ scale: '6-12m', q20_date: '2026-12-30', q80_date: '2027-01-07', n: 4 }];
+  const canvas = view.elements.get('market-plot');
+  canvas.clientWidth = 390;
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, { '6-12m': 'dev' }, { closures: [] }),
+  });
+
+  const calls = latestDraw(view);
+  const label = calls.find(call =>
+    call.type === 'fillText' && call.text.startsWith('6–12 月 情景区间'));
+  assert.ok(label);
+  const measuredWidth = label.text.length * 6;
+  const labelX = label.textAlign === 'right' ? label.x - measuredWidth : label.x;
+  assert.ok(labelX + measuredWidth <= canvas.clientWidth - 58);
+  assert.equal(label.font, '11px Arial, sans-serif');
+  assert.equal(calls.find(call => call.type === 'fillText' && call.text === '成交量').font,
+    '11px Arial, sans-serif');
+  assert.equal(calls.find(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情').font,
+    '11px Arial, sans-serif');
+  assert.ok(calls.filter(call => call.type === 'fillText' && /^\d{4}-\d{2}-\d{2}$/.test(call.text))
+    .every(call => call.font === '11px Consolas, monospace'));
 });
 
 test('no qualifying bands keep the chart domain at real prices only', () => {
