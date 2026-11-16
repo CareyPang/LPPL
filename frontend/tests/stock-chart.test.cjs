@@ -7,38 +7,51 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'app', 'stock-view.js'), 'utf8');
+const tradingDaysSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'trading-days.js'), 'utf8');
+const scaleBarSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'scale-bar.js'), 'utf8');
 
-function setupView() {
+function setupView({ search = '', hash = '' } = {}) {
   const listeners = {};
   const elements = new Map();
+  const drawCalls = [];
   const context = {
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    globalAlpha: 1,
     setTransform() {},
-    clearRect() {},
+    clearRect() { drawCalls.push({ type: 'clearRect' }); },
     beginPath() {},
     moveTo() {},
     lineTo() {},
     stroke() {},
-    fillText() {},
+    fillText(text, x, y, maxWidth) { drawCalls.push({ type: 'fillText', text, x, y, maxWidth }); },
     setLineDash() {},
     arc() {},
     fill() {},
-    fillRect() {},
+    fillRect(x, y, width, height) {
+      drawCalls.push({ type: 'fillRect', x, y, width, height, fillStyle: this.fillStyle, globalAlpha: this.globalAlpha });
+    },
   };
+  let doc;
 
   class Element {
     constructor(id = '') {
       this.id = id;
       this.hidden = false;
+      this.disabled = false;
       this.value = '0';
       this.min = '0';
       this.max = '0';
       this.textContent = '';
+      this.className = '';
       this.dataset = {};
       this.attributes = {};
       this.handlers = {};
       this.clientWidth = 400;
       this.clientHeight = 260;
       this.style = {};
+      this.children = [];
     }
 
     addEventListener(name, handler) { this.handlers[name] = handler; }
@@ -47,7 +60,15 @@ function setupView() {
     getContext() { return context; }
     getBoundingClientRect() { return { left: 0, top: 0, width: this.clientWidth, height: this.clientHeight }; }
     replaceChildren(...children) { this.children = children; }
-    querySelector() { return null; }
+    querySelectorAll(selector) {
+      if (selector === '[data-scale]') return this.children.filter(child => child.dataset.scale);
+      return [];
+    }
+    querySelector(selector) {
+      const match = /^\[data-scale="([^"]+)"\]$/.exec(selector);
+      return match ? this.children.find(child => child.dataset.scale === match[1]) || null : null;
+    }
+    focus() { doc.activeElement = this; }
   }
 
   const rangeButtons = [20, 60, 120, 250].map(days => {
@@ -57,21 +78,40 @@ function setupView() {
     button.setAttribute('aria-pressed', String(days === 120));
     return button;
   });
-  const doc = {
+  doc = {
+    activeElement: null,
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, new Element(id));
       return elements.get(id);
     },
     createElement() { return new Element(); },
     querySelectorAll(selector) {
-      if (selector !== '[data-days]') return [];
-      return rangeButtons;
+      if (selector === '[data-days]') return rangeButtons;
+      if (selector === '[data-scale]') {
+        return [...elements.values()].flatMap(element => element.querySelectorAll(selector));
+      }
+      return [];
     },
   };
   let onChange;
+  const location = new URL(`http://localhost/stock.html${search}${hash}`);
   const window = {
     document: doc,
-    location: { search: '' },
+    location: {
+      href: location.href,
+      pathname: location.pathname,
+      search: location.search,
+      hash: location.hash,
+    },
+    history: {
+      replaceState(_state, _title, url) {
+        const next = new URL(String(url), window.location.href);
+        window.location.href = next.href;
+        window.location.pathname = next.pathname;
+        window.location.search = next.search;
+        window.location.hash = next.hash;
+      },
+    },
     devicePixelRatio: 1,
     StockSession: {
       create(options) {
@@ -83,18 +123,22 @@ function setupView() {
     },
     addEventListener(name, handler) { listeners[name] = handler; },
   };
-  vm.runInNewContext(source, { window, URLSearchParams });
-  window.StockView.mount({ document: doc, api: {} });
+  vm.runInNewContext(tradingDaysSource, { window, URLSearchParams });
+  vm.runInNewContext(scaleBarSource, { window, URLSearchParams });
+  vm.runInNewContext(source, { window, URLSearchParams, URL });
+  window.StockView.mount({ document: doc, api: {}, renderResult() {} });
 
   return {
     elements,
     rangeButtons,
     window,
     onChange,
-    setMarket(price) {
+    drawCalls,
+    scaleButtons() { return elements.get('stock-scales').children; },
+    setState(next) {
       onChange({
         code: '600519',
-        market: { name: '贵州茅台', asof: price.at(-1).date, source: 'test', price },
+        market: null,
         current: null,
         history: null,
         tasks: [],
@@ -103,6 +147,15 @@ function setupView() {
         marketStatus: 'ready',
         currentStatus: 'current_ready',
         historyStatus: 'idle',
+        ...next,
+      });
+    },
+    setMarket(price, options = {}) {
+      const code = options.code || '600519';
+      this.setState({
+        code,
+        market: { name: '测试股票', code, asof: price.at(-1).date, source: 'test', price, ...options.market },
+        current: options.current || null,
       });
     },
   };
@@ -185,4 +238,299 @@ test('dragging and two-finger pinch mark changed windows as custom', () => {
   pinchCanvas.handlers.pointermove({ pointerType: 'touch', pointerId: 2, clientX: 340, clientY: 100 });
   assert.equal(pinchView.elements.get('range-mode').textContent, '自定义');
   assert.ok(pinchView.rangeButtons.every(button => button.getAttribute('aria-pressed') === 'false'));
+});
+
+function barsEnding(lastDate, count) {
+  const dates = [];
+  let date = new Date(`${lastDate}T00:00:00Z`);
+  while (dates.length < count) {
+    const weekday = date.getUTCDay();
+    if (weekday !== 0 && weekday !== 6) dates.push(date.toISOString().slice(0, 10));
+    date = new Date(date.getTime() - 86400000);
+  }
+  return dates.reverse().map((value, index) => ({
+    date: value,
+    open: 100 + index,
+    high: 102 + index,
+    low: 99 + index,
+    close: 101 + index,
+    volume: 1000 + index,
+  }));
+}
+
+function currentRecord(code, windows, evidence, futureCalendar = { closures: [] }) {
+  return {
+    symbol: 'sh' + code,
+    asof: '2026-11-16',
+    future_calendar: futureCalendar,
+    top: {
+      scale_windows: windows,
+      lppls_confidence: { scale_evidence: evidence },
+    },
+  };
+}
+
+function marketRecord(code, price) {
+  return { code, name: '测试股票', asof: price.at(-1).date, source: 'test', price };
+}
+
+function latestDraw(view) {
+  const start = view.drawCalls.findLastIndex(call => call.type === 'clearRect');
+  return view.drawCalls.slice(start + 1);
+}
+
+function radio(view, scale) {
+  return view.scaleButtons().find(button => button.dataset.scale === scale);
+}
+
+test('future scenario bands reserve weekday slots with closures and draw no future candles or volume', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 30);
+  const windows = [{ scale: '12-24m', q20_date: '2027-01-04', q80_date: '2027-01-06', n: 4 }];
+  const evidence = { '12-24m': 'dev' };
+  const current = currentRecord('601838', windows, evidence, { closures: ['2027-01-01'] });
+  view.setState({ code: '601838', market: marketRecord('601838', price), current });
+
+  const states = view.window.ScaleBar.classify(evidence, {}, windows);
+  const bands = view.window.StockChartWindow.mapScenarioBands(
+    price, windows, states, new Set(['2027-01-01']),
+  );
+  assert.deepEqual({ ...bands[0] }, {
+    scale: '12-24m', lo: price.length + 1, hi: price.length + 3,
+    q20_date: '2027-01-04', q80_date: '2027-01-06',
+  });
+  assert.equal(view.window.StockChartWindow.futureSlots(price.length, bands, true), 7);
+  assert.equal(view.window.StockChartWindow.domainSlots(0, price.length, 7), 37);
+
+  const calls = latestDraw(view);
+  const barFills = calls.filter(call =>
+    call.type === 'fillRect' && ['#D6303A', '#11845A'].includes(call.fillStyle));
+  assert.equal(barFills.length, 60);
+  const futureArea = calls.find(call => call.type === 'fillRect' && call.fillStyle === '#F8FAFC');
+  assert.ok(futureArea);
+  assert.ok(barFills.every(call => call.x + call.width <= futureArea.x + .01));
+  assert.ok(calls.some(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情'));
+});
+
+test('no qualifying bands keep the chart domain at real prices only', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 30);
+  const evidence = { '6-12m': 'dev' };
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', [], evidence),
+  });
+  const slots = view.window.StockChartWindow.futureSlots(price.length, [], true);
+  assert.equal(slots, 0);
+  assert.equal(view.window.StockChartWindow.domainSlots(0, price.length, slots), price.length);
+  assert.ok(!latestDraw(view).some(call =>
+    call.type === 'fillText' && call.text === '未来交易日 · 无行情'));
+});
+
+test('historical chart windows do not get future slots', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 250);
+  const windows = [{ scale: '12-24m', q20_date: '2027-01-04', q80_date: '2027-01-06', n: 4 }];
+  const evidence = { '12-24m': 'dev' };
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, evidence, { closures: ['2027-01-01'] }),
+  });
+  const canvas = view.elements.get('market-plot');
+  canvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: 200 });
+  canvas.handlers.pointermove({ pointerType: 'mouse', buttons: 1, clientX: 300 });
+  canvas.handlers.pointerup({ pointerType: 'mouse', clientX: 300, clientY: 100 });
+
+  assert.ok(Number(view.elements.get('quote-date').max) < price.length - 1);
+  const bands = view.window.StockChartWindow.mapScenarioBands(
+    price, windows, view.window.ScaleBar.classify(evidence, {}, windows), new Set(['2027-01-01']),
+  );
+  assert.equal(view.window.StockChartWindow.futureSlots(price.length, bands, false), 0);
+  assert.ok(!latestDraw(view).some(call =>
+    call.type === 'fillText' && call.text === '未来交易日 · 无行情'));
+});
+
+test('same-code market refresh preserves a history window by date and advances a latest window by span', () => {
+  const historyView = setupView();
+  const oldBars = barsEnding('2026-11-16', 250);
+  historyView.setMarket(oldBars, { code: '601838' });
+  const canvas = historyView.elements.get('market-plot');
+  canvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: 200 });
+  canvas.handlers.pointermove({ pointerType: 'mouse', buttons: 1, clientX: 300 });
+  canvas.handlers.pointerup({ pointerType: 'mouse', clientX: 300, clientY: 100 });
+  const slider = historyView.elements.get('quote-date');
+  const preservedDates = [
+    oldBars[Number(slider.min)].date,
+    oldBars[Number(slider.max)].date,
+    oldBars[Number(slider.value)].date,
+  ];
+  const refreshedBars = barsEnding('2026-11-30', 260);
+  historyView.setMarket(refreshedBars, { code: '601838' });
+  assert.deepEqual([
+    refreshedBars[Number(slider.min)].date,
+    refreshedBars[Number(slider.max)].date,
+    refreshedBars[Number(slider.value)].date,
+  ], preservedDates);
+
+  const latestView = setupView();
+  latestView.setMarket(oldBars, { code: '601838' });
+  latestView.setMarket(refreshedBars, { code: '601838' });
+  const latestSlider = latestView.elements.get('quote-date');
+  assert.equal(Number(latestSlider.max), refreshedBars.length - 1);
+  assert.equal(Number(latestSlider.max) - Number(latestSlider.min) + 1, 120);
+});
+
+test('a result for a different symbol cannot display scenario bands or its scale bar', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 30);
+  const windows = [{ scale: '6-12m', q20_date: '2026-11-10', q80_date: '2026-11-16', n: 4 }];
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('600519', windows, { '6-12m': 'dev' }),
+  });
+  assert.equal(view.elements.get('stock-scales').hidden, true);
+  assert.ok(!latestDraw(view).some(call =>
+    call.type === 'fillRect' && String(call.fillStyle).startsWith('rgba(31,95,214')));
+});
+
+test('a window with no evidence stays disabled, says no evidence, and is not drawn', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 30);
+  const windows = [{ scale: '12-24m', q20_date: '2026-11-12', q80_date: '2026-11-16', n: 4 }];
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, { '6-12m': 'dev', '12-24m': 'none' }),
+  });
+  const button = radio(view, '12-24m');
+  assert.ok(button.disabled);
+  assert.match(button.textContent, /无证据/);
+  assert.ok(!latestDraw(view).some(call =>
+    call.type === 'fillRect' && String(call.fillStyle).startsWith('rgba(31,95,214')));
+});
+
+test('a click on a visible scenario band selects its scale and updates the query parameter', () => {
+  const view = setupView({ search: '?code=601838&scale=6-12m', hash: '#tab=top' });
+  const price = barsEnding('2026-11-16', 30);
+  const windows = [
+    { scale: '6-12m', q20_date: '2026-11-09', q80_date: '2026-11-11', n: 4 },
+    { scale: '12-24m', q20_date: '2026-11-12', q80_date: '2026-11-16', n: 4 },
+  ];
+  const evidence = { '6-12m': 'dev', '12-24m': 'dev' };
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, evidence),
+  });
+  assert.equal(radio(view, '6-12m').getAttribute('aria-checked'), 'true');
+  const bands = view.window.StockChartWindow.mapScenarioBands(
+    price, windows, view.window.ScaleBar.classify(evidence, {}, windows), new Set(),
+  );
+  const band = bands.find(item => item.scale === '12-24m');
+  const center = (band.lo + band.hi + 1) / 2;
+  const x = 10 + center / price.length * 332;
+  const canvas = view.elements.get('market-plot');
+  canvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: x, clientY: 70 });
+  canvas.handlers.pointerup({ pointerType: 'mouse', clientX: x, clientY: 70 });
+
+  assert.equal(radio(view, '12-24m').getAttribute('aria-checked'), 'true');
+  const url = new URL(view.window.location.href);
+  assert.equal(url.searchParams.get('scale'), '12-24m');
+  assert.equal(url.hash, '#tab=top');
+});
+
+test('scale radio arrows, Enter, and Space preserve focus after rerender', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 30);
+  const windows = [
+    { scale: '6-12m', q20_date: '2026-11-09', q80_date: '2026-11-11', n: 4 },
+    { scale: '12-24m', q20_date: '2026-11-12', q80_date: '2026-11-16', n: 4 },
+  ];
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, { '6-12m': 'dev', '12-24m': 'dev' }),
+  });
+  radio(view, '6-12m').focus();
+  let prevented = false;
+  radio(view, '6-12m').handlers.keydown({
+    key: 'ArrowRight',
+    preventDefault() { prevented = true; },
+  });
+  assert.ok(prevented);
+  assert.equal(view.window.document.activeElement.dataset.scale, '12-24m');
+  assert.equal(radio(view, '12-24m').getAttribute('aria-checked'), 'true');
+
+  radio(view, '12-24m').handlers.keydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(view.window.document.activeElement.dataset.scale, '12-24m');
+  radio(view, '12-24m').handlers.keydown({ key: ' ', preventDefault() {} });
+  assert.equal(view.window.document.activeElement.dataset.scale, '12-24m');
+  radio(view, '12-24m').handlers.keydown({ key: 'ArrowLeft', preventDefault() {} });
+  assert.equal(view.window.document.activeElement.dataset.scale, '6-12m');
+  assert.equal(radio(view, '6-12m').getAttribute('aria-checked'), 'true');
+});
+
+test('legacy results without future_calendar use weekday estimates and show the note', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 30);
+  const windows = [{ scale: '6-12m', q20_date: '2026-11-17', q80_date: '2026-11-19', n: 4 }];
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, { '6-12m': 'dev' }, null),
+  });
+  const note = view.elements.get('stock-calendar-note');
+  assert.equal(note.hidden, false);
+  assert.equal(note.textContent, '该结果未附休市日表，未来日期按工作日估算');
+  assert.equal(view.window.CPTradingDays.dateAt(price, price.length, new Set()), '2026-11-17');
+});
+
+test('hovering or tapping future slots shows a no-quote readout without extending the date slider', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 30);
+  const windows = [{ scale: '6-12m', q20_date: '2027-01-04', q80_date: '2027-01-06', n: 4 }];
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, { '6-12m': 'dev' }, { closures: ['2027-01-01'] }),
+  });
+  const canvas = view.elements.get('market-plot');
+  const x = 10 + (30.5 / 37) * 332;
+  canvas.handlers.pointermove({ pointerType: 'mouse', buttons: 0, clientX: x, clientY: 100 });
+  assert.match(view.elements.get('quote-readout').textContent, /^2026-12-31 · 未来交易日，无行情$/);
+  assert.equal(view.elements.get('quote-close').textContent, '—');
+  assert.equal(Number(view.elements.get('quote-date').max), price.length - 1);
+
+  canvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: x, clientY: 100 });
+  canvas.handlers.pointerup({ pointerType: 'mouse', clientX: x, clientY: 100 });
+  assert.match(view.elements.get('quote-selected-date').textContent, /^2026-12-31 · 未来交易日，无行情$/);
+});
+
+test('selecting an out-of-view scale moves to latest while range presets count only real bars', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 250);
+  const windows = [
+    { scale: '6-12m', q20_date: price[110].date, q80_date: price[115].date, n: 4 },
+    { scale: '12-24m', q20_date: '2027-01-04', q80_date: '2027-01-06', n: 4 },
+  ];
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current: currentRecord('601838', windows, { '6-12m': 'dev', '12-24m': 'dev' }, { closures: ['2027-01-01'] }),
+  });
+  const canvas = view.elements.get('market-plot');
+  canvas.handlers.pointerdown({ pointerType: 'mouse', button: 0, clientX: 200 });
+  canvas.handlers.pointermove({ pointerType: 'mouse', buttons: 1, clientX: 300 });
+  canvas.handlers.pointerup({ pointerType: 'mouse', clientX: 300, clientY: 100 });
+  radio(view, '12-24m').handlers.click();
+  const slider = view.elements.get('quote-date');
+  assert.equal(Number(slider.max), price.length - 1);
+  assert.equal(Number(slider.max) - Number(slider.min) + 1, 120);
+
+  view.rangeButtons[0].handlers.click();
+  assert.equal(Number(slider.max), price.length - 1);
+  assert.equal(Number(slider.max) - Number(slider.min) + 1, 20);
 });

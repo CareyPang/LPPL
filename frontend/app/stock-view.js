@@ -41,13 +41,51 @@
     const nextStart = clamp(base.start + delta, 0, count - size);
     return { start: nextStart, end: nextStart + size };
   }
-  root.StockChartWindow = { zoom, pan };
+  function mapScenarioBands(bars, windows, states, closures) {
+    if (!bars.length || !root.CPTradingDays) return [];
+    const selectable = new Set((states || [])
+      .filter(state => state.selectable && state.hasWindow)
+      .map(state => state.scale));
+    return (windows || []).filter(window => window && selectable.has(window.scale) &&
+      typeof window.q20_date === 'string' && typeof window.q80_date === 'string')
+      .map(window => {
+        const first = root.CPTradingDays.idxOf(bars, window.q20_date, closures);
+        const last = root.CPTradingDays.idxOf(bars, window.q80_date, closures);
+        return {
+          scale: window.scale,
+          lo: Math.min(first, last),
+          hi: Math.max(first, last),
+          q20_date: window.q20_date,
+          q80_date: window.q80_date,
+        };
+      });
+  }
+  function futureSlots(length, bands, atLatest) {
+    if (!atLatest || !length || !bands.length) return 0;
+    const furthest = Math.max(...bands.map(band => band.hi - (length - 1)));
+    return furthest > 0 ? Math.min(260, furthest + 3) : 0;
+  }
+  function domainSlots(start, end, future) {
+    return Math.max(0, end - start) + Math.max(0, future);
+  }
+  root.StockChartWindow = { zoom, pan, mapScenarioBands, futureSlots, domainSlots };
+
+  const SCALE_NAMES = {
+    '2-4w': '2–4 周',
+    '1-3m': '1–3 月',
+    '3-6m': '3–6 月',
+    '6-12m': '6–12 月',
+    '12-24m': '12–24 月',
+    '2-6y': '2–6 年',
+  };
 
   function mount(options) {
     const doc = options.document || root.document;
     const $ = id => doc.getElementById(id);
     let days = 120, allPrices = [], prices = [], windowStart = 0, windowEnd = 0;
-    let selected = -1, lastCurrent, lastHistory, lastMarket, lastCode;
+    let selected = -1, lastCurrent, lastHistory, lastMarket, lastCode, shownMarketCode;
+    let scenario = null, scenarioCode = null, selectedScale = root.ScaleBar?.DEFAULT_SCALE || '6-12m';
+    let hoveredScale = null, hoveredFutureDate = null, scaleInitialized = false;
     let state = null, staticCode = null, staticGeneration = 0, closed = false;
     let storage;
     try { storage = root.localStorage; } catch { /* Storage is optional. */ }
@@ -59,7 +97,199 @@
       },
     });
 
+    function normalizedCode(value) {
+      const text = String(value || '').toUpperCase();
+      if (/^US_/.test(text)) return text;
+      const match = text.match(/(\d{6})$/);
+      return match ? match[1] : text;
+    }
+    function shortDate(value) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+      return match ? Number(match[2]) + '/' + Number(match[3]) : String(value || '—');
+    }
+    function updateMarketDate(market, current, code, marketStatus) {
+      const text = [];
+      if (market?.asof) text.push('行情截至 ' + market.asof);
+      if (current?.asof && normalizedCode(current.symbol) === normalizedCode(code)) {
+        text.push('模型截至 ' + current.asof);
+      }
+      if (market) {
+        text.push('未复权');
+        text.push(market.source || '日线数据');
+      }
+      if (marketStatus === 'stale' || market?.stale === true) text.push('缓存日线，刷新未完成');
+      $('market-date').textContent = text.join(' · ');
+    }
+    function renderScaleBar(focusScale) {
+      const container = $('stock-scales');
+      if (!container) return;
+      const scaleNote = $('stock-scale-note');
+      const calendarNote = $('stock-calendar-note');
+      if (!scenario) {
+        container.hidden = true;
+        container.replaceChildren();
+        if (scaleNote) scaleNote.hidden = true;
+        if (calendarNote) calendarNote.hidden = true;
+        return;
+      }
+      const focusedScale = focusScale || doc.activeElement?.dataset?.scale;
+      const enabled = scenario.states.filter(state => state.selectable);
+      const tabStopScale = enabled.some(state => state.scale === selectedScale)
+        ? selectedScale : enabled[0]?.scale;
+      const buttons = scenario.states.map(state => {
+        const window = scenario.windows.find(item => item.scale === state.scale);
+        const status = !state.selectable ? '无证据'
+          : state.hasWindow && window?.q20_date && window?.q80_date
+            ? shortDate(window.q20_date) + '–' + shortDate(window.q80_date)
+            : '无合格拟合';
+        const button = doc.createElement('button');
+        button.type = 'button';
+        button.className = 'stock-scale-button';
+        button.dataset.scale = state.scale;
+        button.setAttribute('role', 'radio');
+        button.setAttribute('aria-checked', String(state.scale === selectedScale));
+        button.setAttribute('aria-label', SCALE_NAMES[state.scale] + ' ' + status);
+        button.setAttribute('tabindex', String(state.selectable && state.scale === tabStopScale ? 0 : -1));
+        button.disabled = !state.selectable;
+        button.textContent = SCALE_NAMES[state.scale] + '\n' + status;
+        button.addEventListener('click', () => selectScale(state.scale, true));
+        button.addEventListener('pointerenter', () => {
+          hoveredScale = state.scale;
+          draw();
+        });
+        button.addEventListener('pointerleave', () => {
+          if (hoveredScale === state.scale) {
+            hoveredScale = null;
+            draw();
+          }
+        });
+        button.addEventListener('keydown', event => {
+          const index = enabled.findIndex(item => item.scale === state.scale);
+          if (event.key === 'ArrowRight' || event.key === 'ArrowDown' ||
+              event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+            if (!enabled.length) return;
+            event.preventDefault();
+            const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+            const next = enabled[(index + direction + enabled.length) % enabled.length];
+            selectScale(next.scale, true);
+          } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+            event.preventDefault();
+            selectScale(state.scale, true);
+          }
+        });
+        return button;
+      });
+      container.replaceChildren(...buttons);
+      container.hidden = false;
+      if (focusedScale) {
+        const target = container.querySelector('[data-scale="' + focusedScale + '"]');
+        target?.focus();
+      }
+      if (scaleNote) {
+        scaleNote.hidden = false;
+        scaleNote.textContent = scenario.states.find(state => state.scale === selectedScale)?.hasWindow
+          ? '情景区间是未校准的时间区间，不是顶部日期；只有 6–12 月、12–24 月有开发段证据。'
+          : '该尺度本次无合格拟合；这不代表风险较低。';
+      }
+      if (calendarNote) {
+        calendarNote.hidden = !scenario.missingCalendar;
+        calendarNote.textContent = scenario.missingCalendar
+          ? '该结果未附休市日表，未来日期按工作日估算'
+          : '';
+      }
+    }
+    function writeScaleQuery(scale) {
+      if (!root.history?.replaceState || !root.location?.href) return;
+      const url = new URL(root.location.href);
+      url.searchParams.set('scale', scale);
+      root.history.replaceState(null, '', url);
+    }
+    function selectScale(scale, focus = false) {
+      if (!scenario || !scenario.states.some(state => state.scale === scale && state.selectable)) return;
+      selectedScale = scale;
+      const band = scenario.bands.find(item => item.scale === scale);
+      const future = root.StockChartWindow.futureSlots(
+        allPrices.length, scenario.bands, windowEnd === allPrices.length,
+      );
+      const visibleEnd = windowEnd + future;
+      if (band && (band.hi < windowStart || band.lo >= visibleEnd)) {
+        const span = Math.max(1, windowEnd - windowStart);
+        windowEnd = allPrices.length;
+        windowStart = Math.max(0, windowEnd - span);
+        setWindow(windowStart, windowEnd, selected);
+      }
+      renderScaleBar(focus ? scale : undefined);
+      updateChartAriaLabel();
+      draw();
+      writeScaleQuery(scale);
+      options.onScaleSelected?.(scale);
+    }
+    function updateScenario(next) {
+      const code = normalizedCode(next.code);
+      if (scenarioCode !== code) {
+        scenarioCode = code;
+        scaleInitialized = false;
+        selectedScale = root.ScaleBar?.DEFAULT_SCALE || '6-12m';
+      }
+      const current = next.current;
+      const market = next.market;
+      const currentCode = normalizedCode(current?.symbol);
+      const marketCode = normalizedCode(market?.code || next.code);
+      if (!root.ScaleBar || !root.CPTradingDays || !market ||
+          !current || !code || currentCode !== code || marketCode !== code || shownMarketCode !== code) {
+        scenario = null;
+        hoveredScale = null;
+        renderScaleBar();
+        updateChartAriaLabel();
+        draw();
+        return;
+      }
+      const top = current.top || {};
+      const confidence = top.lppls_confidence || {};
+      const windows = Array.isArray(top.scale_windows) ? top.scale_windows : [];
+      const states = root.ScaleBar.classify(confidence.scale_evidence, confidence, windows);
+      if (!scaleInitialized) {
+        const requested = new URLSearchParams(root.location.search).get('scale');
+        selectedScale = root.ScaleBar.parseHash(
+          'scale=' + encodeURIComponent(requested || ''), states,
+        );
+        scaleInitialized = true;
+      } else if (!states.some(state => state.scale === selectedScale && state.selectable)) {
+        selectedScale = root.ScaleBar.DEFAULT_SCALE;
+      }
+      const calendar = current.future_calendar;
+      const closures = new Set(Array.isArray(calendar?.closures) ? calendar.closures : []);
+      const bands = root.StockChartWindow.mapScenarioBands(allPrices, windows, states, closures);
+      scenario = {
+        current,
+        states,
+        windows,
+        closures,
+        bands,
+        missingCalendar: !calendar || typeof calendar !== 'object',
+      };
+      renderScaleBar();
+      updateChartAriaLabel();
+      draw();
+    }
+    function updateChartAriaLabel() {
+      const canvas = $('market-plot');
+      if (!canvas) return;
+      const band = scenario?.bands.find(item => item.scale === selectedScale);
+      const summary = band
+        ? '情景区间：' + SCALE_NAMES[band.scale] + ' ' + band.q20_date + ' 至 ' + band.q80_date + '（未校准）'
+        : '本次无合格情景区间';
+      canvas.setAttribute('aria-label',
+        '未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量；' + summary);
+    }
+
     function readout() {
+      if (hoveredFutureDate) {
+        for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = '—';
+        $('quote-selected-date').textContent = hoveredFutureDate + ' · 未来交易日，无行情';
+        $('quote-readout').textContent = hoveredFutureDate + ' · 未来交易日，无行情';
+        return;
+      }
       const bar = allPrices[selected];
       if (!bar) {
         $('quote-selected-date').textContent = '';
@@ -84,6 +314,7 @@
       const changed = bounds.start !== windowStart || bounds.end !== windowEnd;
       windowStart = bounds.start;
       windowEnd = bounds.end;
+      hoveredFutureDate = null;
       prices = allPrices.slice(windowStart, windowEnd);
       selected = prices.length
         ? clamp(Number.isFinite(Number(nextSelected)) ? Math.round(Number(nextSelected)) : windowStart, windowStart, windowEnd - 1)
@@ -109,13 +340,23 @@
       const low = Math.min(...prices.map(x => x.low)), high = Math.max(...prices.map(x => x.high));
       const pad = Math.max((high - low) * .12, Math.abs(high) * .01, .01);
       const min = low - pad, max = high + pad;
-      const plotWidth = width - left - right;
-      const candleWidth = Math.max(.8, Math.min(9, plotWidth / Math.max(prices.length, 1) * .65));
-      const x = i => left + (i + .5) / Math.max(prices.length, 1) * plotWidth;
+      const plotWidth = Math.max(1, width - left - right);
+      const future = scenario
+        ? root.StockChartWindow.futureSlots(allPrices.length, scenario.bands, windowEnd === allPrices.length)
+        : 0;
+      const domain = Math.max(1, root.StockChartWindow.domainSlots(windowStart, windowEnd, future));
+      const candleWidth = Math.max(.8, Math.min(9, plotWidth / domain * .65));
+      const xEdge = index => left + (index - windowStart) / domain * plotWidth;
+      const x = index => left + (index - windowStart + .5) / domain * plotWidth;
       const priceBottom = height * .69, volumeTop = height * .77, volumeBottom = height - bottom;
       const maxVolume = Math.max(1, ...prices.map(bar => bar.volume));
       const y = p => top + (max - p) / (max - min) * (priceBottom - top);
       ctx.clearRect(0, 0, width, height); ctx.lineWidth = 1;
+      if (future) {
+        const divider = xEdge(windowEnd);
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(divider, top, Math.max(0, width - right - divider), height - top - bottom);
+      }
       ctx.font = '11px Consolas, monospace';
       for (let i = 0; i <= 4; i++) {
         const p = min + (max - min) * i / 4;
@@ -123,45 +364,108 @@
         ctx.fillStyle = '#6A6D78'; ctx.fillText(number(p), width - right + 8, y(p) + 4);
       }
       ctx.fillStyle = '#6A6D78'; ctx.fillText('成交量', left, volumeTop - 6);
+      for (const band of scenario?.bands || []) {
+        const first = Math.max(windowStart, band.lo);
+        const afterLast = Math.min(windowEnd + future, band.hi + 1);
+        if (afterLast <= first) continue;
+        const x1 = xEdge(first), x2 = xEdge(afterLast);
+        const selectedBand = band.scale === selectedScale;
+        const hoveredBand = band.scale === hoveredScale;
+        ctx.fillStyle = selectedBand ? 'rgba(31,95,214,.16)'
+          : hoveredBand ? 'rgba(31,95,214,.10)' : 'rgba(31,95,214,.045)';
+        ctx.fillRect(x1, top, x2 - x1, priceBottom - top);
+        ctx.strokeStyle = selectedBand ? '#1F5FD6'
+          : hoveredBand ? 'rgba(31,95,214,.65)' : 'rgba(31,95,214,.25)';
+        ctx.lineWidth = selectedBand ? 2 : hoveredBand ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, top); ctx.lineTo(x2, top);
+        ctx.lineTo(x2, priceBottom); ctx.lineTo(x1, priceBottom);
+        ctx.lineTo(x1, top); ctx.stroke();
+        if (selectedBand) {
+          ctx.fillStyle = '#1F5FD6';
+          ctx.font = '11px sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(SCALE_NAMES[band.scale] + ' 情景区间 ' +
+            shortDate(band.q20_date) + '–' + shortDate(band.q80_date),
+          Math.max(left, x1 + 3), top + 13);
+        }
+      }
       for (const [i, bar] of prices.entries()) {
+        const globalIndex = windowStart + i;
         ctx.strokeStyle = ctx.fillStyle = bar.close >= bar.open ? '#D6303A' : '#11845A';
         ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(x(i), y(bar.high)); ctx.lineTo(x(i), y(bar.low)); ctx.stroke();
-        ctx.fillRect(x(i) - candleWidth / 2, Math.min(y(bar.open), y(bar.close)),
+        ctx.beginPath(); ctx.moveTo(x(globalIndex), y(bar.high)); ctx.lineTo(x(globalIndex), y(bar.low)); ctx.stroke();
+        ctx.fillRect(x(globalIndex) - candleWidth / 2, Math.min(y(bar.open), y(bar.close)),
           candleWidth, Math.max(1, Math.abs(y(bar.open) - y(bar.close))));
         const volumeHeight = bar.volume / maxVolume * (volumeBottom - volumeTop);
         ctx.globalAlpha = .55;
-        ctx.fillRect(x(i) - candleWidth / 2, volumeBottom - volumeHeight, candleWidth, volumeHeight);
+        ctx.fillRect(x(globalIndex) - candleWidth / 2, volumeBottom - volumeHeight, candleWidth, volumeHeight);
         ctx.globalAlpha = 1;
       }
       const selectedVisible = selected - windowStart;
       if (prices[selectedVisible]) {
         ctx.lineWidth = 1; ctx.strokeStyle = '#9AA1AD'; ctx.setLineDash([4, 4]);
-        ctx.beginPath(); ctx.moveTo(x(selectedVisible), top); ctx.lineTo(x(selectedVisible), height - bottom); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selectedVisible), y(prices[selectedVisible].close), 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x(selected), top); ctx.lineTo(x(selected), height - bottom); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selectedVisible].close), 3, 0, Math.PI * 2); ctx.fill();
       }
       ctx.fillStyle = '#6A6D78';
       ctx.fillText(prices[0].date, left, height - 9);
-      ctx.textAlign = 'right'; ctx.fillText(prices[prices.length - 1].date, width - right, height - 9); ctx.textAlign = 'left';
+      const endLabelX = future ? xEdge(windowEnd) - 3 : width - right;
+      ctx.textAlign = 'right'; ctx.fillText(prices[prices.length - 1].date, endLabelX, height - 9); ctx.textAlign = 'left';
+      if (future) {
+        const divider = xEdge(windowEnd);
+        ctx.strokeStyle = '#AAB3C2'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(divider, top); ctx.lineTo(divider, height - bottom); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#7B8492'; ctx.font = '10px sans-serif';
+        ctx.fillText('未来交易日 · 无行情', divider + 4, top + 13,
+          Math.max(0, width - right - divider - 6));
+      }
       readout();
     }
-    function showMarket(market) {
+    function showMarket(market, code, preserve = false) {
+      const previous = {
+        bars: allPrices,
+        start: windowStart,
+        end: windowEnd,
+        startDate: allPrices[windowStart]?.date,
+        endDate: allPrices[windowEnd - 1]?.date,
+        selectedDate: allPrices[selected]?.date,
+      };
+      const previousSpan = Math.max(1, previous.end - previous.start);
+      const wasAtLatest = previous.end === previous.bars.length;
       const bars = market?.price || [];
       allPrices = bars.filter(bar => bar && typeof bar.date === 'string' &&
         ['open', 'high', 'low', 'close', 'volume'].every(key => Number.isFinite(bar[key])) &&
         Math.min(bar.open, bar.high, bar.low, bar.close) > 0 && bar.volume >= 0 &&
         bar.high >= Math.max(bar.open, bar.close, bar.low) && bar.low <= Math.min(bar.open, bar.close));
       const exists = allPrices.length > 0;
+      shownMarketCode = exists ? normalizedCode(code || market?.code) : null;
       $('market-stats').hidden = !exists;
       $('market-plot').hidden = !exists;
       $('date-control').hidden = !exists;
       $('market-empty').hidden = exists;
       $('quote-selected-date').hidden = !exists;
       if (exists) {
-        $('market-date').textContent = '行情截至 ' + market.asof + ' · 未复权 · ' + (market.source || '日线数据');
-        windowEnd = allPrices.length;
-        windowStart = Math.max(0, windowEnd - days);
-        setWindow(windowStart, windowEnd, windowEnd - 1);
+        if (preserve && previous.bars.length && !wasAtLatest) {
+          const findDate = (date, fallback) => {
+            if (!date) return fallback;
+            const exact = allPrices.findIndex(bar => bar.date === date);
+            if (exact >= 0) return exact;
+            const next = allPrices.findIndex(bar => bar.date > date);
+            return next >= 0 ? next : allPrices.length - 1;
+          };
+          const start = findDate(previous.startDate, Math.max(0, allPrices.length - days));
+          const last = findDate(previous.endDate, Math.min(allPrices.length - 1, start + previousSpan - 1));
+          const selectedIndex = findDate(previous.selectedDate, last);
+          windowStart = Math.min(start, last);
+          windowEnd = Math.max(windowStart + 1, last + 1);
+          setWindow(windowStart, windowEnd, selectedIndex);
+        } else {
+          windowEnd = allPrices.length;
+          windowStart = Math.max(0, windowEnd - previousSpan);
+          if (!preserve || !previous.bars.length) windowStart = Math.max(0, windowEnd - days);
+          setWindow(windowStart, windowEnd, windowEnd - 1);
+        }
       } else {
         $('market-date').textContent = '';
         setWindow(0, 0, -1);
@@ -175,18 +479,15 @@
       const changed = lastCode !== next.code;
       if (changed) {
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
-        $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; visibility?.observe(null, null); showMarket(null);
+        $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; visibility?.observe(null, null); showMarket(null, next.code, false);
       }
       $('market-panel').hidden = false; $('task-stages').hidden = false;
       $('market-name').textContent = (next.market?.name || next.current?.name || '股票') + ' · ' + next.code;
       if (next.market && next.market !== lastMarket) {
         lastMarket = next.market;
-        showMarket(next.market);
+        showMarket(next.market, next.code, !changed);
         if (next.current && next.current === lastCurrent) options.renderMarket?.(next.current, next.market);
       }
-      if (next.market) $('market-date').textContent = '行情截至 ' + next.market.asof +
-        ' · 未复权 · ' + (next.market.source || '日线数据') +
-        (next.marketStatus === 'stale' || next.market.stale === true ? ' · 缓存日线，刷新未完成' : '');
       if (!next.market) $('market-empty').textContent = next.issues.market ||
         '正在读取已收盘日线；模型计算不会阻塞行情。';
       const history = root.StockSession.compatible(next.current, next.history) ? next.history : null;
@@ -198,6 +499,8 @@
         if (next.history && !history) $('history-note').textContent =
           '已有历史回放与当前模型版本尚未匹配，可重新生成；当前分析仍可查看。';
       }
+      updateScenario(next);
+      updateMarketDate(next.market, next.current, next.code, next.marketStatus);
       $('analysis-pending').hidden = !!next.current;
       $('analysis-pending').textContent = next.currentStatus === 'failed'
         ? '本次分析暂未完成。行情仍可查看，也可以稍后重试。'
@@ -306,22 +609,67 @@
     });
     const canvas = $('market-plot');
     const pointers = new Map();
-    let drag = null, pinch = null;
+    const touchStarts = new Map();
+    let drag = null, pinch = null, touchPinching = false;
+    function currentFutureSlots() {
+      return scenario
+        ? root.StockChartWindow.futureSlots(allPrices.length, scenario.bands, windowEnd === allPrices.length)
+        : 0;
+    }
     function plotMetrics(clientX) {
       const rect = canvas.getBoundingClientRect();
       const plotWidth = Math.max(rect.width - 68, 1);
+      const future = currentFutureSlots();
+      const domain = Math.max(1, root.StockChartWindow.domainSlots(windowStart, windowEnd, future));
+      const x = clientX - rect.left - 10;
+      const inPlot = x >= 0 && x <= plotWidth;
       return {
         rect,
         plotWidth,
-        anchor: clamp((clientX - rect.left - 10) / plotWidth, 0, 1),
+        anchor: clamp(x / plotWidth, 0, 1),
+        slot: clamp(x / plotWidth * domain, 0, domain),
+        domain,
+        future,
+        inPlot,
       };
     }
     function selectAt(clientX) {
       if (!prices.length) return;
-      const { anchor } = plotMetrics(clientX);
-      selected = windowStart + Math.round(anchor * (prices.length - 1));
+      const { slot } = plotMetrics(clientX);
+      selected = windowStart + clamp(Math.floor(slot), 0, prices.length - 1);
+      hoveredFutureDate = null;
       $('quote-date').value = String(selected);
       draw();
+    }
+    function inspectAt(clientX) {
+      if (!prices.length) return;
+      const point = plotMetrics(clientX);
+      if (point.inPlot && point.future && point.slot >= prices.length) {
+        const offset = Math.min(point.future - 1, Math.floor(point.slot - prices.length));
+        const index = windowEnd + offset;
+        hoveredFutureDate = root.CPTradingDays.dateAt(allPrices, index, scenario?.closures);
+        readout();
+      } else {
+        hoveredFutureDate = null;
+        selectAt(clientX);
+      }
+    }
+    function bandAt(clientX, clientY) {
+      if (!scenario?.bands.length) return null;
+      const point = plotMetrics(clientX);
+      const y = clientY - point.rect.top;
+      if (!point.inPlot || y < 20 || y > canvas.clientHeight * .69) return null;
+      const position = windowStart + point.slot;
+      return scenario.bands
+        .filter(band => position >= band.lo && position <= band.hi + 1)
+        .sort((a, b) =>
+          Math.abs(position - (a.lo + a.hi + 1) / 2) -
+          Math.abs(position - (b.lo + b.hi + 1) / 2))[0] || null;
+    }
+    function activateAt(clientX, clientY) {
+      inspectAt(clientX);
+      const band = bandAt(clientX, clientY);
+      if (band) selectScale(band.scale);
     }
     function startPinch() {
       const points = [...pointers.values()];
@@ -339,11 +687,16 @@
     }
     canvas.addEventListener('pointerdown', event => {
       if (event.pointerType === 'touch') {
+        if (!pointers.size) touchPinching = false;
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        touchStarts.set(event.pointerId, { x: event.clientX, y: event.clientY });
         canvas.setPointerCapture?.(event.pointerId);
-        if (pointers.size === 2) startPinch();
+        if (pointers.size === 2) {
+          touchPinching = true;
+          startPinch();
+        }
       } else if ((event.pointerType === 'mouse' || event.pointerType === 'pen') && event.button === 0) {
-        drag = { x: event.clientX, start: windowStart, end: windowEnd };
+        drag = { x: event.clientX, start: windowStart, end: windowEnd, moved: false };
         canvas.setPointerCapture?.(event.pointerId);
       }
     });
@@ -360,30 +713,49 @@
           const moved = pan(scaled.start, scaled.end, allPrices.length, deltaBars);
           setWindow(moved.start, moved.end, selected, true);
         } else if (pointers.size === 1) {
-          selectAt(event.clientX);
+          const start = touchStarts.get(event.pointerId);
+          if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) {
+            touchStarts.set(event.pointerId, null);
+          }
+          inspectAt(event.clientX);
         }
         return;
       }
       if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
       if (drag && event.buttons) {
-        const { plotWidth } = plotMetrics(event.clientX);
-        const deltaBars = (drag.x - event.clientX) / plotWidth * (drag.end - drag.start);
-        const moved = pan(drag.start, drag.end, allPrices.length, deltaBars);
-        setWindow(moved.start, moved.end, selected, true);
+        if (Math.abs(drag.x - event.clientX) > 5) drag.moved = true;
+        if (drag.moved) {
+          const { plotWidth } = plotMetrics(event.clientX);
+          const deltaBars = (drag.x - event.clientX) / plotWidth * (drag.end - drag.start);
+          const moved = pan(drag.start, drag.end, allPrices.length, deltaBars);
+          setWindow(moved.start, moved.end, selected, true);
+        }
       } else if (!drag) {
-        selectAt(event.clientX);
+        inspectAt(event.clientX);
       }
     });
-    const endPointer = event => {
+    const endPointer = (event, activate) => {
       if (event.pointerType === 'touch') {
+        const start = touchStarts.get(event.pointerId);
+        if (activate && start && !touchPinching && pointers.size === 1) {
+          activateAt(event.clientX, event.clientY);
+        }
         pointers.delete(event.pointerId);
+        touchStarts.delete(event.pointerId);
         if (pointers.size < 2) pinch = null;
+        if (!pointers.size) touchPinching = false;
       } else {
+        const previous = drag;
         drag = null;
+        if (activate && previous && !previous.moved) activateAt(event.clientX, event.clientY);
       }
     };
-    canvas.addEventListener('pointerup', endPointer);
-    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('pointerup', event => endPointer(event, true));
+    canvas.addEventListener('pointercancel', event => endPointer(event, false));
+    canvas.addEventListener('pointerleave', () => {
+      hoveredFutureDate = null;
+      readout();
+    });
     canvas.addEventListener('wheel', event => {
       if (!allPrices.length || (!event.ctrlKey && !event.metaKey)) return;
       event.preventDefault();
