@@ -73,7 +73,9 @@ def _fake_rules(fits):
     return pd.DataFrame({"box": np.ones(len(fits), dtype=bool)}, index=fits.index)
 
 
-def _fake_history_frame(d, r, date, cal, close, split, include_scenarios=False):
+def _fake_history_frame(
+    d, r, date, cal, close, split, include_scenarios=False, market="cn"
+):
     rows = d[d.date == date]
     scenarios = [
         {"n": int(row.n), "ahead": round(float(row.ahead), 4)}
@@ -90,7 +92,7 @@ def _fake_history_frame(d, r, date, cal, close, split, include_scenarios=False):
     }
 
 
-def _fake_record(sym, asof, d, r, cal, ohlc, data_version):
+def _fake_record(sym, asof, d, r, cal, ohlc, data_version, market="cn"):
     frame = _fake_history_frame(
         d, r, pd.Timestamp(asof), cal, float(ohlc.close.iloc[-1]), "stock", True
     )
@@ -118,7 +120,7 @@ def _install_fake_model(monkeypatch):
     monkeypatch.setattr(stock, "_variant_windows", lambda variant, n: (127, 152))
     # Numerical/cache fixtures use their synthetic calendar, never a live
     # reference-index fetch. Dedicated calendar tests exercise the real helper.
-    monkeypatch.setattr(stock, "_display_calendar", lambda index, _asof: index)
+    monkeypatch.setattr(stock, "_display_calendar", lambda index, _asof, market="cn": index)
     monkeypatch.setattr(
         stock,
         "_trading_days_stale",

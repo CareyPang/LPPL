@@ -126,11 +126,24 @@ def test_current_and_history_representative_uses_adjusted_sse_and_keeps_index(
     current = export_contract.build_record(
         "sh000001", str(date.date()), d, r, cal, ohlc
     )
+    assert current["future_calendar"]["market"] == "cn"
+    assert current["future_calendar"]["holidays_through"] == "2027-12-31"
+    assert current["future_calendar"]["closures"]
+    us = export_contract.build_record(
+        "US_SPY", str(date.date()), d, r, cal, ohlc, market="us"
+    )
+    assert us["future_calendar"] == {
+        "market": "us",
+        "holidays_through": None,
+        "closures": [],
+        "source": None,
+    }
     historical = export_contract._history_frame(
         d, r, date, cal, 100.0, "dev", include_scenarios=True
     )
 
     assert seen == [
+        (["n", "ahead", "sse"], [11, 37, 92]),
         (["n", "ahead", "sse"], [11, 37, 92]),
         (["n", "ahead", "sse"], [11, 37, 92]),
     ]

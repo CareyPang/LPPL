@@ -68,7 +68,17 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     logp = logp[logp.index <= date]
     ws = full_windows(len(logp)) if windows is None else unique_windows(windows)
     d = _derived(fit_asof(logp, date, ws))
-    rec = build_record(sym, str(date.date()), d, rules(d), logp.index, ohlc_pit, None, data_version=version)
+    rec = build_record(
+        sym,
+        str(date.date()),
+        d,
+        rules(d),
+        logp.index,
+        ohlc_pit,
+        None,
+        data_version=version,
+        market="cn",
+    )
     if trust_boot:
         from ..lppls.trust import trust
         rec["top"]["trust"] = trust(logp, date, d[d.n.isin(STK_WINDOWS)], b=trust_boot)
