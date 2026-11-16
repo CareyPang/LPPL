@@ -4,6 +4,31 @@
  "asof": "2026-11-16",
  "data_version": "vintage_20261116_tencent_sina_hfq_23826c9b",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "future_calendar": {
+  "market": "cn",
+  "holidays_through": "2027-12-31",
+  "closures": [
+   "2027-01-01",
+   "2027-02-05",
+   "2027-02-08",
+   "2027-02-09",
+   "2027-02-10",
+   "2027-02-11",
+   "2027-02-12",
+   "2027-04-05",
+   "2027-05-03",
+   "2027-05-04",
+   "2027-05-05",
+   "2027-06-09",
+   "2027-09-15",
+   "2027-10-01",
+   "2027-10-04",
+   "2027-10-05",
+   "2027-10-06",
+   "2027-10-07"
+  ],
+  "source": "国务院办公厅关于2027年部分节假日安排的通知（国办发明电〔2026〕10号，2026-11-05）https://www.gov.cn/zhengce/zhengceku/202611/content_7085102.htm"
+ },
  "top": {
   "p20": {
    "value": null,
@@ -210,6 +235,15 @@
   },
   "scenarios": [],
   "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
+  "scale_clusters": {
+   "2-4w": [],
+   "1-3m": [],
+   "3-6m": [],
+   "6-12m": [],
+   "12-24m": [],
+   "2-6y": []
+  },
+  "scale_clusters_note": "每个尺度内单独聚类（窗口长度与 t_c 标准化后 k-means，silhouette≥0.5 才分簇；簇内拟合<3 或占比<5% 不列）；share=簇内拟合数/该尺度合格拟合数，不是概率；簇间不平均；区间为簇内 t_c 20–80% 分位，不是顶部日期",
   "scale_windows": [],
   "invalidation": {
    "rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）",
@@ -5348,13 +5382,7 @@
   "eligibility_note": "符合统计纳入条件",
   "source": "tencent_fqkline",
   "evidence": "research_candidate",
-  "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据",
-  "price_snapshot": {
-   "path": "data/stock/600519/prices/vintage_20261116_tencent_sina_hfq_23826c9b.parquet",
-   "sha256": "dfbef46486e379953a4a21d349296894493dc2c5e9a91bd2c16280f30e6b2724",
-   "data_version": "vintage_20261116_tencent_sina_hfq_23826c9b",
-   "asof": "2026-11-16"
-  }
+  "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
  },
  "dip": {
   "evidence": "descriptive",
@@ -5430,7 +5458,7 @@
    "note": "波动体制，不是涨跌信号"
   }
  },
- "fit_code_version": "bc142deda241ece8d84394b777ccdc8695dc731f8ee0d545226126b634c15b45",
+ "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
  "fit_input_hash": "46aeee00d657ac507adc06b7e8002a82535526f1ea85bb11b9ed012933189548",
  "history_input_hashes": {
   "2023-11-13": "31e9b36265415ebf52fb14baa2f5c8806c99f44cb4125ffefdb6fd659ad75965",
@@ -6166,8 +6194,9 @@
  "code": "600519",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-16T07:38:17.632684+00:00",
- "job_id": "bb7f5b97-44f4-4449-82ec-3395b3b4f59c",
- "requested_at": "2026-11-16T07:36:38.121Z",
- "source_sha": "4a5e1375e6dbd9a5b442d16c876b69ccaff7d0b5"
+ "generated_at": "2026-11-16T20:01:59.870909+00:00",
+ "job_id": "875f0519-037e-4670-99f1-48d4e2021abc",
+ "requested_at": "2026-11-16T19:52:15.641056+00:00",
+ "source_sha": "60818b428396336fc99aae3076d4a918089a81d3",
+ "batch_id": "e2ce4d5f-9a11-4142-9eb7-2b92ef26a314"
 }

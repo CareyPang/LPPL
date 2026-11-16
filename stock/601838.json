@@ -550,6 +550,24 @@
    }
   ],
   "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
+  "scale_clusters": {
+   "2-4w": [],
+   "1-3m": [],
+   "3-6m": [],
+   "6-12m": [
+    {
+     "rank": "main",
+     "share": 1.0,
+     "n": 5,
+     "n_scale": 5,
+     "q20_date": "2026-12-28",
+     "q80_date": "2027-01-11"
+    }
+   ],
+   "12-24m": [],
+   "2-6y": []
+  },
+  "scale_clusters_note": "每个尺度内单独聚类（窗口长度与 t_c 标准化后 k-means，silhouette≥0.5 才分簇；簇内拟合<3 或占比<5% 不列）；share=簇内拟合数/该尺度合格拟合数，不是概率；簇间不平均；区间为簇内 t_c 20–80% 分位，不是顶部日期",
   "scale_windows": [
    {
     "scale": "6-12m",
@@ -5695,13 +5713,7 @@
   "eligibility_note": "符合统计纳入条件",
   "source": "tencent_fqkline",
   "evidence": "research_candidate",
-  "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据",
-  "price_snapshot": {
-   "path": "data/stock/601838/prices/vintage_20261116_tencent_sina_hfq_dba872ab.parquet",
-   "sha256": "8441db6bc54370b392cd2cb84a7370b07d879d4454ede5be754adca346ad576f",
-   "data_version": "vintage_20261116_tencent_sina_hfq_dba872ab",
-   "asof": "2026-11-16"
-  }
+  "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
  },
  "dip": {
   "evidence": "descriptive",
@@ -6513,8 +6525,9 @@
  "code": "601838",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-16T13:58:54.755592+00:00",
- "job_id": "eaf00f73-6224-4188-b5f7-6ff6b20284a6",
- "requested_at": "2026-11-16T13:57:19.553Z",
- "source_sha": "b1b9e87bed30e24cd59187533af405dde3fc8e40"
+ "generated_at": "2026-11-16T20:06:09.973507+00:00",
+ "job_id": "c467a1d9-6b30-49b0-aee0-8d7e20075ac6",
+ "requested_at": "2026-11-16T19:52:15.641056+00:00",
+ "source_sha": "60818b428396336fc99aae3076d4a918089a81d3",
+ "batch_id": "e2ce4d5f-9a11-4142-9eb7-2b92ef26a314"
 }
