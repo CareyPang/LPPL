@@ -359,6 +359,44 @@ def _read_previous(path: Path | None) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _event_identity(category: str, item: dict) -> tuple:
+    fields = {
+        "lift": ("code", "free_date", "free_shares_type"),
+        "dividend": ("code", "ex_dividend_date", "report_date", "assign_progress"),
+        "forecast": ("code", "notice_date", "report_date", "predict_type"),
+    }[category]
+    return tuple(item.get(field) for field in fields)
+
+
+def _carry_first_seen(
+    category: str,
+    rows: list[dict],
+    previous_rows: list[dict],
+    previous_generated: str | None,
+    generated: str,
+) -> list[dict]:
+    prior_times = {}
+    for item in previous_rows:
+        if isinstance(item, dict):
+            prior_times.setdefault(
+                _event_identity(category, item),
+                item.get("first_seen_at") or previous_generated or generated,
+            )
+
+    result = []
+    for item in rows:
+        if not isinstance(item, dict):
+            result.append(item)
+            continue
+        copied = dict(item)
+        copied["first_seen_at"] = (
+            prior_times.get(_event_identity(category, item))
+            or generated
+        )
+        result.append(copied)
+    return result
+
+
 def _source_meta(
     ok: bool,
     n: int,
@@ -456,9 +494,22 @@ def fetch_events(
                 error=f"{type(exc).__name__}: {exc}",
             )
 
+    generated = datetime.now().astimezone().isoformat()
+    for name in ("lift", "dividend", "forecast"):
+        old_rows = previous.get(name, [])
+        if not isinstance(old_rows, list):
+            old_rows = []
+        sections[name] = _carry_first_seen(
+            name,
+            sections[name],
+            old_rows,
+            previous.get("generated"),
+            generated,
+        )
+
     return {
         "asof": day.isoformat(),
-        "generated": datetime.now().astimezone().isoformat(),
+        "generated": generated,
         "window": {
             "lift": [lift_start.isoformat(), lift_end.isoformat()],
             "dividend": [lift_start.isoformat(), lift_end.isoformat()],

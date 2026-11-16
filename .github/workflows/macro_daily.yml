@@ -75,13 +75,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cp "$GITHUB_WORKSPACE/scripts/publish_versioned.py" "$RUNNER_TEMP/publish_versioned.py"
           snapshot_date="${{ steps.fetch.outputs.asof }}"
           git fetch --no-tags origin stock-results
           git switch -c macro-publish origin/stock-results
-          mkdir -p macro
-          cp out/macro/macro_latest.json macro/macro_latest.json
-          cp "out/macro/macro_${snapshot_date}.json" "macro/macro_${snapshot_date}.json"
-          git add macro/macro_latest.json "macro/macro_${snapshot_date}.json"
+          macro_paths="$(python "$RUNNER_TEMP/publish_versioned.py" --kind macro --src "$GITHUB_WORKSPACE/out/macro/macro_latest.json" --root "$GITHUB_WORKSPACE")"
+          if [[ -n "$macro_paths" ]]; then
+            mapfile -t macro_paths_to_add <<< "$macro_paths"
+            git add -- "${macro_paths_to_add[@]}"
+          fi
           if git diff --cached --quiet; then
             echo "No macro snapshot changes to publish"
             exit 0

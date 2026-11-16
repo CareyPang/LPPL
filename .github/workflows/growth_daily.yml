@@ -96,13 +96,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cp "$GITHUB_WORKSPACE/scripts/publish_versioned.py" "$RUNNER_TEMP/publish_versioned.py"
           snapshot_date="${{ steps.fetch.outputs.asof }}"
           git fetch --no-tags origin stock-results
           git switch -c growth-publish origin/stock-results
-          mkdir -p growth
-          cp out/growth/growth_latest.json growth/growth_latest.json
-          cp "out/growth/growth_${snapshot_date}.json" "growth/growth_${snapshot_date}.json"
-          git add growth/growth_latest.json "growth/growth_${snapshot_date}.json"
+          growth_paths="$(python "$RUNNER_TEMP/publish_versioned.py" --kind growth --src "$GITHUB_WORKSPACE/out/growth/growth_latest.json" --root "$GITHUB_WORKSPACE")"
+          if [[ -n "$growth_paths" ]]; then
+            mapfile -t growth_paths_to_add <<< "$growth_paths"
+            git add -- "${growth_paths_to_add[@]}"
+          fi
           if git diff --cached --quiet; then
             echo "No growth monitor snapshot changes to publish"
             exit 0
