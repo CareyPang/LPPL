@@ -319,7 +319,7 @@ test('future scenario bands reserve weekday slots with closures and draw no futu
   assert.ok(calls.some(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情'));
 });
 
-test('narrow chart keeps the selected-band label inside the price plot and uses the page CJK font', () => {
+test('narrow chart uses a bounded short band label, left-aligns its first date, and moves the future note down', () => {
   const view = setupView();
   const price = barsEnding('2026-11-13', 120);
   const windows = [{ scale: '6-12m', q20_date: '2026-12-30', q80_date: '2027-01-07', n: 4 }];
@@ -332,17 +332,30 @@ test('narrow chart keeps the selected-band label inside the price plot and uses 
   });
 
   const calls = latestDraw(view);
-  const label = calls.find(call =>
-    call.type === 'fillText' && call.text.startsWith('6–12 月 情景区间'));
+  const label = calls.find(call => call.type === 'fillText' && call.text === '12/30–1/7');
   assert.ok(label);
   const measuredWidth = label.text.length * 6;
   const labelX = label.textAlign === 'right' ? label.x - measuredWidth : label.x;
+  assert.equal(label.textAlign, 'right');
+  assert.ok(labelX >= 10);
   assert.ok(labelX + measuredWidth <= canvas.clientWidth - 58);
+  const labelBackground = calls.find(call =>
+    call.type === 'fillRect' && call.fillStyle === 'rgba(255,255,255,.88)');
+  assert.ok(labelBackground);
+  assert.equal(labelBackground.height, 16);
+  assert.equal(labelBackground.width, measuredWidth + 6);
+  assert.ok(labelBackground.x >= 10);
+  assert.ok(labelBackground.x + labelBackground.width <= canvas.clientWidth - 58);
+  assert.ok(calls.indexOf(labelBackground) < calls.indexOf(label));
   assert.equal(label.font, '11px Arial, sans-serif');
+  const firstDate = calls.find(call => call.type === 'fillText' && call.text === price[0].date);
+  assert.ok(firstDate);
+  assert.equal(firstDate.textAlign, 'left');
   assert.equal(calls.find(call => call.type === 'fillText' && call.text === '成交量').font,
     '11px Arial, sans-serif');
-  assert.equal(calls.find(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情').font,
-    '11px Arial, sans-serif');
+  const futureLabel = calls.find(call => call.type === 'fillText' && call.text === '未来交易日 · 无行情');
+  assert.equal(futureLabel.font, '11px Arial, sans-serif');
+  assert.ok(futureLabel.y >= canvas.clientHeight * .77);
   assert.ok(calls.filter(call => call.type === 'fillText' && /^\d{4}-\d{2}-\d{2}$/.test(call.text))
     .every(call => call.font === '11px Consolas, monospace'));
 });

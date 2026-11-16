@@ -353,7 +353,7 @@
       const priceBottom = height * .69, volumeTop = height * .77, volumeBottom = height - bottom;
       const maxVolume = Math.max(1, ...prices.map(bar => bar.volume));
       const y = p => top + (max - p) / (max - min) * (priceBottom - top);
-      ctx.clearRect(0, 0, width, height); ctx.lineWidth = 1;
+      ctx.clearRect(0, 0, width, height); ctx.lineWidth = 1; ctx.textAlign = 'left';
       if (future) {
         const divider = xEdge(windowEnd);
         ctx.fillStyle = '#F8FAFC';
@@ -367,6 +367,7 @@
       }
       ctx.font = cjkFont;
       ctx.fillStyle = '#6A6D78'; ctx.fillText('成交量', left, volumeTop - 6);
+      let selectedBandLabel = null;
       for (const band of scenario?.bands || []) {
         const first = Math.max(windowStart, band.lo);
         const afterLast = Math.min(windowEnd + future, band.hi + 1);
@@ -385,24 +386,7 @@
         ctx.lineTo(x2, priceBottom); ctx.lineTo(x1, priceBottom);
         ctx.lineTo(x1, top); ctx.stroke();
         if (selectedBand) {
-          const label = SCALE_NAMES[band.scale] + ' 情景区间 ' +
-            shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
-          const labelWidth = ctx.measureText(label).width;
-          const labelX = Math.max(left, x1 + 3);
-          const plotRight = width - right;
-          ctx.font = cjkFont;
-          ctx.fillStyle = '#1F5FD6';
-          if (labelX + labelWidth <= plotRight) {
-            ctx.textAlign = 'left';
-            ctx.fillText(label, labelX, top + 13);
-          } else {
-            const labelEnd = Math.max(left, Math.min(x2, plotRight) - 3);
-            const text = labelWidth > plotRight - left
-              ? shortDate(band.q20_date) + '–' + shortDate(band.q80_date)
-              : label;
-            ctx.textAlign = 'right';
-            ctx.fillText(text, labelEnd, top + 13);
-          }
+          selectedBandLabel = { band, x1, x2 };
         }
       }
       for (const [i, bar] of prices.entries()) {
@@ -423,8 +407,40 @@
         ctx.beginPath(); ctx.moveTo(x(selected), top); ctx.lineTo(x(selected), height - bottom); ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selectedVisible].close), 3, 0, Math.PI * 2); ctx.fill();
       }
+      if (selectedBandLabel) {
+        const { band, x1, x2 } = selectedBandLabel;
+        const fullLabel = SCALE_NAMES[band.scale] + ' 情景区间 ' +
+          shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
+        const shortLabel = shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
+        const plotRight = width - right;
+        const labelX = Math.max(left, x1 + 3);
+        const labelY = top + 13;
+        let label = fullLabel;
+        let labelWidth;
+        let textX = labelX;
+        let textAlign = 'left';
+        ctx.font = cjkFont;
+        labelWidth = ctx.measureText(label).width;
+        if (labelX + labelWidth > plotRight) {
+          label = shortLabel;
+          labelWidth = ctx.measureText(label).width;
+          textX = Math.max(left, Math.min(x2, plotRight) - 3);
+          textAlign = 'right';
+        }
+        const textLeft = textAlign === 'right' ? textX - labelWidth : textX;
+        const backgroundLeft = Math.max(left, textLeft - 3);
+        const backgroundRight = Math.min(plotRight, textLeft + labelWidth + 3);
+        ctx.fillStyle = 'rgba(255,255,255,.88)';
+        ctx.fillRect(backgroundLeft, labelY - 12,
+          Math.max(0, backgroundRight - backgroundLeft), 16);
+        ctx.fillStyle = '#1F5FD6';
+        ctx.textAlign = textAlign;
+        ctx.fillText(label, textX, labelY);
+        ctx.textAlign = 'left';
+      }
       ctx.fillStyle = '#6A6D78';
       ctx.font = '11px Consolas, monospace';
+      ctx.textAlign = 'left';
       ctx.fillText(prices[0].date, left, height - 9);
       const endLabelX = future ? xEdge(windowEnd) - 3 : width - right;
       ctx.textAlign = 'right'; ctx.fillText(prices[prices.length - 1].date, endLabelX, height - 9); ctx.textAlign = 'left';
@@ -434,7 +450,7 @@
         ctx.beginPath(); ctx.moveTo(divider, top); ctx.lineTo(divider, height - bottom); ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = '#7B8492'; ctx.font = cjkFont;
         ctx.textAlign = 'left';
-        ctx.fillText('未来交易日 · 无行情', divider + 4, top + 13,
+        ctx.fillText('未来交易日 · 无行情', divider + 4, volumeTop + 12,
           Math.max(0, width - right - divider - 6));
       }
       readout();
