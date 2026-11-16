@@ -41,6 +41,23 @@ def test_market_daily_uses_off_hour_schedules():
     ]
 
 
+def test_daily_workflows_accept_worker_repository_dispatch():
+    names = (
+        "market_daily",
+        "index_daily",
+        "dip_env",
+        "forward_log_seal",
+        "nt_etf_daily",
+        "macro_daily",
+        "growth_daily",
+        "us_nightly",
+    )
+    for name in names:
+        workflow = _workflow(f"{name}.yml")
+        triggers = workflow.get("on", workflow.get(True, {}))
+        assert triggers["repository_dispatch"] == {"types": [name]}
+
+
 def test_market_event_smoke_uses_trading_date_helper():
     workflow = _workflow("market_daily.yml")
     steps = [
@@ -69,6 +86,10 @@ def test_market_build_loads_previous_stock_results_snapshots():
 
 def test_nt_etf_workflow_bootstraps_and_uses_trading_date():
     workflow = _workflow("nt_etf_daily.yml")
+    assert workflow["concurrency"] == {
+        "group": "nt-etf-daily",
+        "cancel-in-progress": False,
+    }
     steps = workflow["jobs"]["collect"]["steps"]
     previous = next(step for step in steps if step.get("id") == "previous")
     collect = next(step for step in steps if step.get("name") == "Collect snapshot (PR smoke does not publish)")
@@ -174,7 +195,7 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     assert 'symbols=\'["sh000001"]\'' in plan_step["run"]
     assert plan["outputs"]["skip"] == "${{ steps.plan.outputs.skip }}"
     assert 'skip=false' in plan_step["run"]
-    assert 'if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then' in plan_step["run"]
+    assert 'if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "repository_dispatch" ]]; then' in plan_step["run"]
     assert "git fetch --no-tags --depth=1 origin stock-results" in plan_step["run"]
     assert 'json.loads(result.stdout)' in plan_step["run"]
     assert 'origin/stock-results:index/{symbol}_latest.json' in plan_step["run"]

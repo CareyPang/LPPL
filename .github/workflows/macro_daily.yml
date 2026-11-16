@@ -3,6 +3,8 @@ name: macro_daily
 on:
   schedule:
     - cron: "30 22 * * 1-5"
+  repository_dispatch:
+    types: [macro_daily]
   workflow_dispatch:
   pull_request:
     paths:

@@ -3,6 +3,8 @@ name: us_nightly
 on:
   schedule:
     - cron: "30 22 * * 1-5"
+  repository_dispatch:
+    types: [us_nightly]
   workflow_dispatch:
 
 permissions:

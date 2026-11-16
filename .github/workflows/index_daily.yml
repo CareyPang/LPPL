@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "17 10 * * 1-5"
     - cron: "47 13 * * 1-5"
+  repository_dispatch:
+    types: [index_daily]
   workflow_dispatch:
   pull_request:
     paths:
@@ -45,7 +47,7 @@ jobs:
             symbols='["sh000001"]'
           fi
           skip=false
-          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "repository_dispatch" ]]; then
             if git fetch --no-tags --depth=1 origin stock-results; then
               skip="$(
                 INDEX_SYMBOLS="$symbols" ASOF="$asof" python - <<'PY'
