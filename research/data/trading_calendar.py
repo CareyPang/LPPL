@@ -28,7 +28,9 @@ def cn_holiday_source() -> str:
 
 
 def future_calendar_metadata(
-    calendar: pd.DatetimeIndex, market: str = "cn"
+    calendar: pd.DatetimeIndex,
+    market: str = "cn",
+    asof: pd.Timestamp | None = None,
 ) -> dict:
     if market != "cn":
         return {
@@ -40,13 +42,27 @@ def future_calendar_metadata(
 
     closures, covered_through = load_cn_closures()
     last = pd.Timestamp(calendar[-1]).normalize()
+    calendar_days = {pd.Timestamp(date).normalize() for date in calendar}
+    if asof is None:
+        closure_days = {
+            date for date in closures if last < date <= covered_through
+        }
+    else:
+        asof = pd.Timestamp(asof).normalize()
+        closure_days = {
+            date
+            for date in pd.date_range(asof + pd.Timedelta(days=1), last, freq="B")
+            if date not in calendar_days
+        }
+        known_after = max(asof, last)
+        closure_days.update(
+            date for date in closures if known_after < date <= covered_through
+        )
     return {
         "market": market,
         "holidays_through": covered_through.date().isoformat(),
         "closures": sorted(
-            date.date().isoformat()
-            for date in closures
-            if last < date <= covered_through
+            date.date().isoformat() for date in closure_days
         ),
         "source": cn_holiday_source(),
     }

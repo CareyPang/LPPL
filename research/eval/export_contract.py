@@ -486,7 +486,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     window = _top_window(sw, cal, date, market)
     rec = {
         "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
-        "future_calendar": future_calendar_metadata(cal, market),
+        "future_calendar": future_calendar_metadata(cal, market, date),
         "top": {
             "p20": {"value": None, "evidence": "fail_i_iii",
                     "notes": ["冻结 p20=R2（GSADF）；校准段 ΔBrier +0.00077 [−0.0013, +0.0030] 未通过；测试段 −0.00158 [−0.00231, −0.00003] 点过线但留出 4/7 翻转（判据 iii 不满足），不显示概率",

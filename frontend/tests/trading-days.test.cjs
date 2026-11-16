@@ -69,6 +69,20 @@ test('dates after holiday coverage use plain weekdays', () => {
   assert.equal(TradingDays.idxOf(series, '2028-01-03', closures), 1);
 });
 
+test('replay bars skip weekdays omitted from the known calendar', () => {
+  const replayClosures = new Set([
+    '2026-10-01',
+    '2026-10-02',
+    '2026-10-05',
+    '2026-10-06',
+    '2026-10-07',
+    ...calendar.closures,
+  ]);
+  const series = bars('2026-09-25');
+  assert.equal(TradingDays.dateAt(series, 4, replayClosures), '2026-10-08');
+  assert.equal(TradingDays.idxOf(series, '2026-10-08', replayClosures), 4);
+});
+
 test('omitting closures preserves the previous weekday-only behavior', () => {
   const series = bars('2026-12-31');
   for (let index = 0; index <= 20; index++) {

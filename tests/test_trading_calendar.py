@@ -2,6 +2,7 @@ import pandas as pd
 
 from research.data.trading_calendar import (
     cn_holiday_source,
+    future_calendar_metadata,
     future_trading_days,
     load_cn_closures,
 )
@@ -41,3 +42,17 @@ def test_non_cn_market_keeps_plain_weekday_behavior():
     expected = pd.bdate_range(last + pd.Timedelta(days=1), periods=10)
 
     assert future_trading_days(last, 10, market="us").equals(expected)
+
+
+def test_replay_calendar_metadata_includes_missing_weekdays_until_calendar_end():
+    asof = pd.Timestamp("2026-09-25")
+    absent = pd.to_datetime(
+        ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07"]
+    )
+    calendar = pd.bdate_range("2026-09-01", "2026-10-15").difference(absent)
+
+    metadata = future_calendar_metadata(calendar, asof=asof)
+
+    expected = {date.strftime("%Y-%m-%d") for date in absent}
+    expected.update(date.date().isoformat() for date in load_cn_closures()[0])
+    assert metadata["closures"] == sorted(expected)

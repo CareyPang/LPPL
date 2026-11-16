@@ -20,8 +20,8 @@ import requests  # noqa: E402
 
 from ..data import cache, us_stock  # noqa: E402
 from ..data.sources import UA, sina_raw_daily  # noqa: E402
-from ..data.trading_calendar import future_calendar_metadata  # noqa: E402
 from ..data.tencent_sina import apply_factors, sina_factors, tencent_raw  # noqa: E402
+from ..data.trading_calendar import future_calendar_metadata  # noqa: E402
 from ..data.us_watchlist import US_NAMES  # noqa: E402
 from ..dip.panel import build_panel  # noqa: E402
 from ..eval.export_contract import (
@@ -1005,7 +1005,7 @@ def history(
     tops = [{k: v for k, v in event.items() if k != "evidence"} for event in confirmed_tops]
     record = {
         "symbol": sym,
-        "future_calendar": future_calendar_metadata(logp.index, market),
+        "future_calendar": future_calendar_metadata(logp.index, market, logp.index[-1]),
         "asof": str(logp.index[-1].date()),
         "fit_code_version": _version(),
         "model_version": f"{MODEL_VERSION}+{variant}",
