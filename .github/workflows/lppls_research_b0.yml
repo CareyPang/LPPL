@@ -1,0 +1,203 @@
+name: lppls_research_b0
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Exact 40-character commit SHA to scan
+        type: string
+        required: true
+      mode:
+        description: Research mode
+        type: choice
+        options:
+          - pilot
+          - full
+        default: full
+        required: true
+      symbols:
+        description: Comma-separated registered index symbols
+        type: string
+        required: true
+        default: "sh000001,sh000016,sh000300,sh000905,sz399001,sz399006"
+      shards:
+        description: Interleaved date shards per symbol (1–20)
+        type: number
+        required: true
+        default: 20
+      run_id:
+        description: Unique research run identifier
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lppls-research-b0-${{ inputs.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      ref: ${{ steps.plan.outputs.ref }}
+      mode: ${{ steps.plan.outputs.mode }}
+      symbols: ${{ steps.plan.outputs.symbols }}
+      shards: ${{ steps.plan.outputs.shards }}
+      run_id: ${{ steps.plan.outputs.run_id }}
+    env:
+      INPUT_REF: ${{ inputs.ref }}
+      INPUT_MODE: ${{ inputs.mode }}
+      INPUT_SYMBOLS: ${{ inputs.symbols }}
+      INPUT_SHARDS: ${{ inputs.shards }}
+      INPUT_RUN_ID: ${{ inputs.run_id }}
+    steps:
+      - id: plan
+        name: Validate inputs and build scan matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          ref = os.environ["INPUT_REF"]
+          mode = os.environ["INPUT_MODE"]
+          symbols_text = os.environ["INPUT_SYMBOLS"]
+          run_id = os.environ["INPUT_RUN_ID"]
+          try:
+              shards = int(os.environ["INPUT_SHARDS"])
+          except ValueError as exc:
+              raise SystemExit("shards must be an integer from 1 to 20") from exc
+          registered = [
+              "sh000001", "sh000016", "sh000300",
+              "sh000905", "sz399001", "sz399006",
+          ]
+          symbols = symbols_text.split(",")
+          if not re.fullmatch(r"[0-9a-f]{40}", ref):
+              raise SystemExit("ref must match ^[0-9a-f]{40}$")
+          if mode not in {"pilot", "full"}:
+              raise SystemExit("mode must be pilot or full")
+          if not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", run_id):
+              raise SystemExit("run_id must match ^[A-Za-z0-9_.-]{1,64}$")
+          if not 1 <= shards <= 20:
+              raise SystemExit("shards must be from 1 to 20")
+          if len(symbols) != len(set(symbols)) or any(symbol not in registered for symbol in symbols):
+              raise SystemExit("symbols must be unique registered development indices")
+          if mode == "full" and symbols != registered:
+              raise SystemExit("full mode requires all six registered symbols in order")
+          if mode == "pilot" and symbols != ["sh000300"]:
+              raise SystemExit("pilot mode is restricted to sh000300")
+          matrix = {
+              "include": [
+                  {"symbol": symbol, "shard": index, "shard_total": shards}
+                  for symbol in symbols
+                  for index in range(shards)
+              ]
+          }
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          with output.open("a", encoding="utf-8") as stream:
+              stream.write(f"ref={ref}\nmode={mode}\nsymbols={symbols_text}\n")
+              stream.write(f"shards={shards}\nrun_id={run_id}\n")
+              stream.write(f"matrix={json.dumps(matrix, separators=(',', ':'))}\n")
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.plan.outputs.ref }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Validate frozen as-of plan
+        env:
+          RESEARCH_MODE: ${{ steps.plan.outputs.mode }}
+        run: |
+          python - <<'PY'
+          import os
+          from research.features.lppls_scan import calendar
+          from scripts.research.t03_b0_scan import planned_asofs, verify_full_plan
+
+          sessions = calendar()
+          if os.environ["RESEARCH_MODE"] == "full":
+              count = verify_full_plan(sessions)
+              if count != 4236:
+                  raise SystemExit(f"full plan count mismatch: {count}")
+          else:
+              pilot = planned_asofs("sh000300", "pilot", sessions)
+              if not pilot:
+                  raise SystemExit("pilot plan has no 2015 sh000300 as-of sessions")
+          PY
+
+  scan:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.ref }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Scan shard
+        run: >-
+          python scripts/research/t03_b0_scan.py
+          --symbol "${{ matrix.symbol }}"
+          --shard "${{ matrix.shard }}/${{ matrix.shard_total }}"
+          --run-id "${{ needs.plan.outputs.run_id }}"
+          --mode "${{ needs.plan.outputs.mode }}"
+          --out "artifacts/${{ needs.plan.outputs.run_id }}/${{ matrix.symbol }}/shard-${{ matrix.shard }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t03-b0-${{ needs.plan.outputs.run_id }}-${{ matrix.symbol }}-${{ matrix.shard }}
+          path: artifacts/${{ needs.plan.outputs.run_id }}/${{ matrix.symbol }}/shard-${{ matrix.shard }}/
+          if-no-files-found: error
+          retention-days: 90
+
+  merge:
+    needs: [plan, scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.ref }}
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: t03-b0-${{ needs.plan.outputs.run_id }}-*
+          path: artifacts/${{ needs.plan.outputs.run_id }}/shards
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Merge and score
+        env:
+          INPUT_MODE: ${{ needs.plan.outputs.mode }}
+          INPUT_SYMBOLS: ${{ needs.plan.outputs.symbols }}
+          INPUT_SHARDS: ${{ needs.plan.outputs.shards }}
+          INPUT_RUN_ID: ${{ needs.plan.outputs.run_id }}
+        run: |
+          python scripts/research/t03_merge_and_score.py \
+            --inputs "artifacts/${INPUT_RUN_ID}/shards" \
+            --out "artifacts/${INPUT_RUN_ID}/final" \
+            --mode "$INPUT_MODE" \
+            --run-id "$INPUT_RUN_ID" \
+            --symbols "$INPUT_SYMBOLS" \
+            --shards "$INPUT_SHARDS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t03-b0-${{ needs.plan.outputs.run_id }}-final
+          path: artifacts/${{ needs.plan.outputs.run_id }}/final/
+          if-no-files-found: error
+          retention-days: 90
