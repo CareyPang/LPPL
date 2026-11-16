@@ -457,8 +457,8 @@
         else writeQueryParam('asof', null);
       }
       if (!initialFocusHandled && next.market && initialAsOfHandled) {
-        initialFocusHandled = true;
-        focusDate(pendingInitialFocus, null);
+        const result = focusDate(pendingInitialFocus, null);
+        if (result.ok || next.current) initialFocusHandled = true;
       }
     }
 

@@ -801,6 +801,25 @@ test('initial asof and focus query parameters apply once after market and histor
   assert.equal(new URL(invalid.window.location.href).searchParams.has('asof'), false);
 });
 
+test('initial future focus retries when current data arrives after market', () => {
+  const price = barsEnding('2026-12-30', 30);
+  const date = '2027-01-04';
+  const view = setupView({ search: `?code=601838&focus=${date}` });
+  const market = marketRecord('601838', price);
+  view.setState({ code: '601838', market, current: null });
+  assert.doesNotMatch(view.elements.get('quote-readout').textContent, /未来交易日，无行情/);
+
+  const windows = [{ scale: '6-12m', q20_date: date, q80_date: '2027-01-06', n: 4 }];
+  const current = {
+    ...currentRecord('601838', windows, { '6-12m': 'dev' }, { closures: ['2027-01-01'] }),
+    asof: price.at(-1).date,
+  };
+  view.setState({ code: '601838', market, current });
+
+  assert.match(view.elements.get('quote-readout').textContent, new RegExp(date + ' · 未来交易日，无行情'));
+  assert.equal(new URL(view.window.location.href).searchParams.get('focus'), date);
+});
+
 test('history mode draws event markers only through its cutoff', () => {
   const { view, price } = replayFixture({ count: 120, historyDates: ['2026-10-01'] });
   view.view.enterHistory('2026-10-15');
