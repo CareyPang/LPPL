@@ -213,7 +213,7 @@ const yuan=v=>v>=1e12?(v/1e12).toFixed(2)+' 万亿':(v/1e8).toFixed(0)+' 亿';
 const bizGap=d=>{let n=0,t=new Date(d+'T00:00:00'),e=new Date();e.setHours(0,0,0,0);while(t<e){t.setDate(t.getDate()+1);const w=t.getDay();if(w&&w<6)n++}return n};
 const shortDate=d=>d?String(d).slice(5):'—';
 const weekdayGap=(from,to)=>{let n=0,t=new Date(from+'T00:00:00Z'),e=new Date(to+'T00:00:00Z');while(t<e){t.setUTCDate(t.getUTCDate()+1);const w=t.getUTCDay();if(w&&w<6)n++}return n};
-const quoteSessionDate=q=>{const raw=String(q?.time||''),m=/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(raw)||/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(raw);if(!m)return null;let d=`${m[1]}-${m[2]}-${m[3]}`;if(LPPL.quoteTimeLabel?.(q.time,q.tz).label==='盘中'){const t=new Date(d+'T00:00:00Z');do{t.setUTCDate(t.getUTCDate()-1)}while(t.getUTCDay()===0||t.getUTCDay()===6);d=t.toISOString().slice(0,10)}return d};
+const quoteSessionDate=q=>{const raw=String(q?.time||''),m=/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(raw)||/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(raw);if(!m)return null;let d=`${m[1]}-${m[2]}-${m[3]}`;if(Number(m[4])*60+Number(m[5])<900){const t=new Date(d+'T00:00:00Z');do{t.setUTCDate(t.getUTCDate()-1)}while(t.getUTCDay()===0||t.getUTCDay()===6);d=t.toISOString().slice(0,10)}return d};
 
 /* ---------- 六指数面板 ---------- */
 const rows=$('rows');

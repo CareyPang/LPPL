@@ -467,7 +467,7 @@ window.CP = { dateAt(bars, idx) {
       /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(raw);
     if (!match) return null;
     let date = `${match[1]}-${match[2]}-${match[3]}`;
-    if (LPPL.quoteTimeLabel?.(quote.time, quote.tz).label === '盘中') {
+    if (Number(match[4]) * 60 + Number(match[5]) < 900) {
       const previous = new Date(date + 'T00:00:00Z');
       do { previous.setUTCDate(previous.getUTCDate() - 1); }
       while (previous.getUTCDay() === 0 || previous.getUTCDay() === 6);
