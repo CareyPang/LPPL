@@ -14,6 +14,7 @@ function setupView({ search = '', hash = '' } = {}) {
   const listeners = {};
   const elements = new Map();
   const drawCalls = [];
+  let currentPath = [];
   const context = {
     fillStyle: '',
     strokeStyle: '',
@@ -23,9 +24,9 @@ function setupView({ search = '', hash = '' } = {}) {
     textAlign: 'left',
     setTransform() {},
     clearRect() { drawCalls.push({ type: 'clearRect' }); },
-    beginPath() {},
-    moveTo() {},
-    lineTo() {},
+    beginPath() { currentPath = []; },
+    moveTo(x, y) { currentPath.push([x, y]); },
+    lineTo(x, y) { currentPath.push([x, y]); },
     stroke() {},
     fillText(text, x, y, maxWidth) {
       drawCalls.push({ type: 'fillText', text, x, y, maxWidth, textAlign: this.textAlign, font: this.font });
@@ -33,7 +34,7 @@ function setupView({ search = '', hash = '' } = {}) {
     measureText(text) { return { width: String(text).length * 6 }; },
     setLineDash() {},
     arc() {},
-    fill() {},
+    fill() { drawCalls.push({ type: 'fill', fillStyle: this.fillStyle, points: currentPath.slice() }); },
     fillRect(x, y, width, height) {
       drawCalls.push({ type: 'fillRect', x, y, width, height, fillStyle: this.fillStyle, globalAlpha: this.globalAlpha });
     },
@@ -125,7 +126,9 @@ function setupView({ search = '', hash = '' } = {}) {
         onChange = options.onChange;
         return { destroy() {}, select() {}, request() {}, resume() {} };
       },
-      compatible() { return false; },
+      compatible(current, history) {
+        return !!current && !!history && current.symbol === history.symbol && Array.isArray(history.frames);
+      },
       stale() { return false; },
     },
     addEventListener(name, handler) { listeners[name] = handler; },
@@ -133,12 +136,13 @@ function setupView({ search = '', hash = '' } = {}) {
   vm.runInNewContext(tradingDaysSource, { window, URLSearchParams });
   vm.runInNewContext(scaleBarSource, { window, URLSearchParams });
   vm.runInNewContext(source, { window, URLSearchParams, URL });
-  window.StockView.mount({ document: doc, api: {}, renderResult() {} });
+  const view = window.StockView.mount({ document: doc, api: {}, renderResult() {} });
 
   return {
     elements,
     rangeButtons,
     window,
+    view,
     onChange,
     drawCalls,
     scaleButtons() { return elements.get('stock-scales').children; },
@@ -163,6 +167,7 @@ function setupView({ search = '', hash = '' } = {}) {
         code,
         market: { name: '测试股票', code, asof: price.at(-1).date, source: 'test', price, ...options.market },
         current: options.current || null,
+        history: options.history || null,
       });
     },
   };
@@ -617,4 +622,163 @@ test('selecting an out-of-view scale moves to latest while range presets count o
   view.rangeButtons[0].handlers.click();
   assert.equal(Number(slider.max), price.length - 1);
   assert.equal(Number(slider.max) - Number(slider.min) + 1, 20);
+});
+
+function replayFixture({ count = 250, historyDates = [], code = '601838' } = {}) {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', count);
+  const current = currentRecord(code, [], {});
+  const frames = historyDates.map(asof => ({ asof, scenarios: [] }));
+  const history = { symbol: current.symbol, asof: frames.at(-1)?.asof, frames };
+  view.setState({
+    code,
+    market: marketRecord(code, price),
+    current: { ...current, asof: price.at(-1).date },
+    history: frames.length ? history : null,
+    historyStatus: frames.length ? 'history_ready' : 'idle',
+  });
+  return { view, price, current: { ...current, asof: price.at(-1).date }, history };
+}
+
+test('focusDate centers an in-range bar, preserves mode, and writes focus without losing hash', () => {
+  const view = setupView({ hash: '#scale=6-12m' });
+  const price = barsEnding('2026-11-16', 320);
+  view.setState({
+    code: '601838', market: marketRecord('601838', price),
+    current: { ...currentRecord('601838', [], {}), asof: price.at(-1).date },
+  });
+  const date = price[160].date;
+  const result = view.view.focusDate(date, 'lift:' + date + ':0');
+  const slider = view.elements.get('quote-date');
+  assert.deepEqual({ ...result }, { ok: true });
+  assert.equal(Number(slider.value), 160);
+  assert.ok(Number(slider.min) < 160 && Number(slider.max) > 160);
+  assert.equal(view.elements.get('stock-history-banner').hidden, true);
+  assert.equal(new URL(view.window.location.href).searchParams.get('focus'), date);
+  assert.equal(view.window.location.hash, '#scale=6-12m');
+});
+
+test('focusDate in future slots selects the no-quote readout and rejects dates beyond them', () => {
+  const view = setupView();
+  const price = barsEnding('2026-12-30', 30);
+  const current = currentRecord('601838', [
+    { scale: '6-12m', q20_date: '2027-01-04', q80_date: '2027-01-06', n: 4 },
+  ], { '6-12m': 'dev' }, { closures: ['2027-01-01'] });
+  view.setState({ code: '601838', market: marketRecord('601838', price), current });
+  const date = '2027-01-04';
+  view.view.setEvents([{ id: 'forecast:' + date + ':0', date }]);
+  assert.deepEqual({ ...view.view.focusDate(date, 'forecast:' + date + ':0') }, { ok: true });
+  assert.match(view.elements.get('quote-readout').textContent, /未来交易日，无行情/);
+  const markers = latestDraw(view).filter(call => call.type === 'fill' && call.fillStyle === '#1F5FD6');
+  assert.equal(markers.length, 1);
+  assert.equal(view.view.focusDate('2027-02-01', 'forecast:2027-02-01:0').reason, '该日期超出图上范围');
+});
+
+test('historyAvailability returns the four settled precondition reasons', () => {
+  const price = barsEnding('2026-11-16', 100);
+  const noHistory = replayFixture({ count: 100 });
+  assert.equal(noHistory.view.view.historyAvailability(price[40].date).reason, '本股暂无历史补算');
+  assert.equal(noHistory.view.view.enterHistory(price[40].date).reason, '本股暂无历史补算');
+
+  const frames = [price[20].date, price[60].date];
+  const available = replayFixture({ count: 100, historyDates: frames });
+  assert.equal(available.view.view.historyAvailability('2026-11-17').reason,
+    '事件日在模型截止日之后，没有对应补算');
+  assert.equal(available.view.view.enterHistory('2026-11-17').reason,
+    '事件日在模型截止日之后，没有对应补算');
+  assert.equal(available.view.view.historyAvailability(price[10].date).reason,
+    '事件日早于最早一次补算');
+  assert.equal(available.view.view.enterHistory(price[10].date).reason, '事件日早于最早一次补算');
+
+  const tooEarly = setupView();
+  const oldFrame = '2025-01-01';
+  const current = currentRecord('601838', [], {});
+  const shortPrice = barsEnding('2026-11-16', 100);
+  tooEarly.setState({
+    code: '601838', market: marketRecord('601838', shortPrice),
+    current: { ...current, asof: '2026-11-16' },
+    history: { symbol: current.symbol, asof: oldFrame, frames: [{ asof: oldFrame, scenarios: [] }] },
+  });
+  assert.equal(tooEarly.view.historyAvailability(shortPrice[0].date).reason,
+    '行情历史不够，无法显示当时 K 线');
+  assert.equal(tooEarly.view.enterHistory(shortPrice[0].date).reason,
+    '行情历史不够，无法显示当时 K 线');
+});
+
+test('enterHistory chooses the latest eligible frame and cuts the slider at its last real bar', () => {
+  const { view, price } = replayFixture({ count: 120, historyDates: ['2026-10-01', '2026-10-20'] });
+  const eventDate = '2026-10-15';
+  assert.deepEqual({ ...view.view.enterHistory(eventDate) }, { ok: true });
+  assert.match(view.elements.get('stock-history-banner-text').textContent, /截至 2026-10-01/);
+  assert.equal(Number(view.elements.get('quote-date').max), price.findIndex(bar => bar.date === '2026-10-01'));
+  assert.equal(view.elements.get('market-date').textContent, '历史补算截至 2026-10-01');
+  assert.ok(view.elements.get('stock-scales').hidden);
+  const cutoff = price.findIndex(bar => bar.date === '2026-10-01');
+  const beforeFailedFocus = Number(view.elements.get('quote-date').value);
+  assert.equal(view.view.focusDate('2026-10-02').reason,
+    '该日期在补算截止日之后，返回最新后可查看');
+  assert.equal(Number(view.elements.get('quote-date').value), beforeFailedFocus);
+  const candleFills = latestDraw(view).filter(call => call.type === 'fillRect' &&
+    ['#D6303A', '#11845A'].includes(call.fillStyle));
+  assert.equal(candleFills.length, (cutoff + 1) * 2);
+});
+
+test('history mode holds its cutoff through market updates and exit restores latest span', () => {
+  const { view, price, current, history } = replayFixture({
+    count: 120,
+    historyDates: ['2026-10-01'],
+  });
+  const eventDate = '2026-10-15';
+  view.view.enterHistory(eventDate);
+  const cutoff = price.findIndex(bar => bar.date === '2026-10-01');
+  const slider = view.elements.get('quote-date');
+  const span = Number(slider.max) - Number(slider.min) + 1;
+  const updated = [...price, { date: '2026-11-17', open: 220, high: 222, low: 219, close: 221, volume: 2000 }];
+  view.setState({
+    code: '601838', market: marketRecord('601838', updated),
+    current, history, historyStatus: 'history_ready',
+  });
+  assert.equal(Number(slider.max), cutoff);
+  assert.deepEqual({ ...view.view.exitHistory() }, { ok: true });
+  assert.equal(Number(slider.max), updated.length - 1);
+  assert.equal(Number(slider.max) - Number(slider.min) + 1, span);
+  assert.equal(new URL(view.window.location.href).searchParams.has('asof'), false);
+  assert.equal(view.elements.get('stock-scales').hidden, false);
+});
+
+test('initial asof and focus query parameters apply once after market and history load', () => {
+  const price = barsEnding('2026-11-16', 120);
+  const frameDate = price[80].date;
+  const view = setupView({ search: `?code=601838&asof=${frameDate}&focus=${price[40].date}`, hash: '#scale=6-12m' });
+  const current = currentRecord('601838', [], {});
+  const history = { symbol: current.symbol, asof: frameDate, frames: [{ asof: frameDate, scenarios: [] }] };
+  view.setState({
+    code: '601838', market: marketRecord('601838', price),
+    current: { ...current, asof: price.at(-1).date }, history, historyStatus: 'history_ready',
+  });
+  assert.equal(Number(view.elements.get('quote-date').max), 80);
+  assert.equal(Number(view.elements.get('quote-date').value), 40);
+  assert.equal(view.window.location.hash, '#scale=6-12m');
+  assert.equal(new URL(view.window.location.href).searchParams.get('focus'), price[40].date);
+
+  const invalid = setupView({ search: '?code=601838&asof=2025-01-01' });
+  invalid.setState({
+    code: '601838', market: marketRecord('601838', price),
+    current: { ...current, asof: price.at(-1).date }, history, historyStatus: 'history_ready',
+  });
+  assert.equal(new URL(invalid.window.location.href).searchParams.has('asof'), false);
+});
+
+test('history mode draws event markers only through its cutoff', () => {
+  const { view, price } = replayFixture({ count: 120, historyDates: ['2026-10-01'] });
+  view.view.enterHistory('2026-10-15');
+  const cutoffIndex = price.findIndex(bar => bar.date === '2026-10-01');
+  view.view.setEvents([
+    { id: 'lift:' + price[cutoffIndex - 10].date + ':0', date: price[cutoffIndex - 10].date },
+    { id: 'forecast:' + price[cutoffIndex + 10].date + ':0', date: price[cutoffIndex + 10].date },
+  ]);
+  const markers = latestDraw(view).filter(call =>
+    call.type === 'fill' && call.points.length === 3 && ['#1F5FD6', '#9AA1AD'].includes(call.fillStyle));
+  assert.equal(markers.length, 1);
+  assert.equal(markers[0].fillStyle, '#9AA1AD');
 });

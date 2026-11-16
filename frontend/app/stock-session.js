@@ -236,7 +236,7 @@
       const e = entry(code);
       const generation = e.generation = (e.generation || 0) + 1;
       selected = code;
-      e.marketStatus = 'loading'; delete e.issues.market; emit();
+      e.marketStatus = 'loading'; e.historyStatus = 'loading'; delete e.issues.market; emit();
       for (const mode of MODES) {
         const job = jobs.get(code + ':' + mode);
         if (job) {
@@ -269,8 +269,15 @@
         emit();
       });
       // History is deliberately outside the readiness barrier.
-      void Promise.resolve().then(() => api.history(code)).then(value => applyHistory(e, value)).catch(() => {});
-      void Promise.resolve().then(() => api.remote(code, 'history')).then(value => applyHistory(e, value)).catch(() => {});
+      const histories = [
+        Promise.resolve().then(() => api.history(code)).then(value => applyHistory(e, value)),
+        Promise.resolve().then(() => api.remote(code, 'history')).then(value => applyHistory(e, value)),
+      ];
+      void Promise.allSettled(histories).then(() => {
+        if (closed || generation !== e.generation) return;
+        if (e.historyStatus === 'loading') e.historyStatus = e.history ? 'history_ready' : 'idle';
+        emit();
+      });
       return Promise.allSettled([latest, remote, market]).then(async () => {
         if (closed || generation !== e.generation) return;
         e.stale = e.currentStatus === 'stale' || stale(e.current, e.market);

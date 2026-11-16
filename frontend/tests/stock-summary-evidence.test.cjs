@@ -9,7 +9,8 @@ const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '..', 'stock.html'), 'utf8');
 const inline = html.slice(html.lastIndexOf('  <script>') + '  <script>'.length);
 const context = vm.createContext({});
-vm.runInContext(inline.slice(0, inline.indexOf('    StockView.mount')) + '\nglobalThis.renderSummary = summaryHtml;', context);
+const mountCall = inline.search(/\bStockView\.mount\s*\(/);
+vm.runInContext(inline.slice(0, mountCall) + '\nglobalThis.renderSummary = summaryHtml;', context);
 const render = data => context.renderSummary(data);
 
 for (const evidence of [undefined, 'none', 'dev_only', 'dev_failed', 'fail_i_iii']) {

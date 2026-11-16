@@ -86,7 +86,14 @@
     let selected = -1, lastCurrent, lastHistory, lastMarket, lastCode, shownMarketCode;
     let scenario = null, scenarioCode = null, selectedScale = root.ScaleBar?.DEFAULT_SCALE || '6-12m';
     let hoveredScale = null, hoveredFutureDate = null, scaleInitialized = false;
+    let historyMode = false, historyFrame = null, historyCutoffIndex = -1;
+    let events = [], focusEvent = null;
     let state = null, staticCode = null, staticGeneration = 0, closed = false;
+    const initialParams = new URLSearchParams(root.location?.search || '');
+    let pendingInitialAsOf = initialParams.get('asof');
+    let pendingInitialFocus = initialParams.get('focus');
+    let initialAsOfHandled = !pendingInitialAsOf;
+    let initialFocusHandled = !pendingInitialFocus;
     let storage;
     try { storage = root.localStorage; } catch { /* Storage is optional. */ }
 
@@ -107,7 +114,47 @@
       const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
       return match ? Number(match[2]) + '/' + Number(match[3]) : String(value || '—');
     }
+    function visibleLength() {
+      return historyMode ? Math.max(0, historyCutoffIndex + 1) : allPrices.length;
+    }
+    function lastIndexAtOrBefore(bars, date) {
+      let index = -1;
+      for (let i = 0; i < bars.length && bars[i].date <= date; i++) index = i;
+      return index;
+    }
+    function frameAtOrBefore(date) {
+      let frame = null;
+      for (const candidate of lastHistory?.frames || []) {
+        if (candidate?.asof <= date && (!frame || candidate.asof > frame.asof)) frame = candidate;
+      }
+      return frame;
+    }
+    function closuresFor(current = lastCurrent) {
+      return new Set(Array.isArray(current?.future_calendar?.closures)
+        ? current.future_calendar.closures : []);
+    }
+    function writeQueryParam(name, value) {
+      if (!root.history?.replaceState || !root.location?.href) return;
+      const url = new URL(root.location.href);
+      if (value == null) url.searchParams.delete(name);
+      else url.searchParams.set(name, value);
+      root.history.replaceState(null, '', url);
+    }
+    function historyAvailability(date) {
+      if (!lastHistory) return { ok: false, reason: '本股暂无历史补算' };
+      if (date > lastCurrent?.asof) return { ok: false, reason: '事件日在模型截止日之后，没有对应补算' };
+      const frame = frameAtOrBefore(date);
+      if (!frame) return { ok: false, reason: '事件日早于最早一次补算' };
+      if (!allPrices.length || frame.asof < allPrices[0].date) {
+        return { ok: false, reason: '行情历史不够，无法显示当时 K 线' };
+      }
+      return { ok: true, reason: '' };
+    }
     function updateMarketDate(market, current, code, marketStatus) {
+      if (historyMode) {
+        $('market-date').textContent = '历史补算截至 ' + historyFrame.asof;
+        return;
+      }
       const text = [];
       if (market?.asof) text.push('行情截至 ' + market.asof);
       if (current?.asof && normalizedCode(current.symbol) === normalizedCode(code)) {
@@ -120,11 +167,26 @@
       if (marketStatus === 'stale' || market?.stale === true) text.push('缓存日线，刷新未完成');
       $('market-date').textContent = text.join(' · ');
     }
+    function renderHistoryBanner() {
+      const banner = $('stock-history-banner');
+      if (!banner) return;
+      banner.hidden = !historyMode;
+      if (historyMode) {
+        $('stock-history-banner-text').textContent =
+          '历史补算 · 截至 ' + historyFrame.asof + '（历史补算，不是当时发布）';
+      }
+    }
     function renderScaleBar(focusScale) {
       const container = $('stock-scales');
       if (!container) return;
       const scaleNote = $('stock-scale-note');
       const calendarNote = $('stock-calendar-note');
+      if (historyMode) {
+        container.hidden = true;
+        if (scaleNote) scaleNote.hidden = true;
+        if (calendarNote) calendarNote.hidden = true;
+        return;
+      }
       if (!scenario) {
         container.hidden = true;
         container.replaceChildren();
@@ -205,7 +267,7 @@
       root.history.replaceState(null, '', url);
     }
     function selectScale(scale, focus = false) {
-      if (!scenario || !scenario.states.some(state => state.scale === scale && state.selectable)) return;
+      if (historyMode || !scenario || !scenario.states.some(state => state.scale === scale && state.selectable)) return;
       selectedScale = scale;
       const band = scenario.bands.find(item => item.scale === scale);
       const future = root.StockChartWindow.futureSlots(
@@ -224,7 +286,32 @@
       writeScaleQuery(scale);
       options.onScaleSelected?.(scale);
     }
+    function historyScenario(frame, current) {
+      const calendar = current?.future_calendar;
+      const closures = closuresFor(current);
+      const bands = (frame.scenarios || []).filter(item =>
+        typeof item?.q20_date === 'string' && typeof item?.q80_date === 'string')
+        .map((item, index) => {
+          const first = root.CPTradingDays.idxOf(allPrices, item.q20_date, closures);
+          const last = root.CPTradingDays.idxOf(allPrices, item.q80_date, closures);
+          return {
+            scale: 'history-' + index,
+            lo: Math.min(first, last),
+            hi: Math.max(first, last),
+            q20_date: item.q20_date,
+            q80_date: item.q80_date,
+          };
+        });
+      return { history: true, frame, closures, bands, missingCalendar: !calendar || typeof calendar !== 'object' };
+    }
     function updateScenario(next) {
+      if (historyMode) {
+        scenario = historyScenario(historyFrame, next.current);
+        renderScaleBar();
+        updateChartAriaLabel();
+        draw();
+        return;
+      }
       const code = normalizedCode(next.code);
       if (scenarioCode !== code) {
         scenarioCode = code;
@@ -275,12 +362,100 @@
     function updateChartAriaLabel() {
       const canvas = $('market-plot');
       if (!canvas) return;
+      if (historyMode) {
+        canvas.setAttribute('aria-label', '历史补算截至 ' + historyFrame.asof + ' 的未复权日K线和成交量');
+        return;
+      }
       const band = scenario?.bands.find(item => item.scale === selectedScale);
       const summary = band
         ? '情景区间：' + SCALE_NAMES[band.scale] + ' ' + band.q20_date + ' 至 ' + band.q80_date + '（未校准）'
         : '本次无合格情景区间';
       canvas.setAttribute('aria-label',
         '未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量；' + summary);
+    }
+    function setEvents(items) {
+      events = Array.isArray(items) ? items.filter(item =>
+        item && typeof item.id === 'string' && typeof item.date === 'string') : [];
+      draw();
+    }
+    function focusDate(date, eventId) {
+      if (!allPrices.length || date < allPrices[0].date) {
+        return { ok: false, reason: '行情历史不够，图上无此日期' };
+      }
+      if (historyMode && date > historyFrame.asof) {
+        return { ok: false, reason: '该日期在补算截止日之后，返回最新后可查看' };
+      }
+      const closures = scenario?.closures || closuresFor();
+      const index = root.CPTradingDays.idxOf(allPrices, date, closures);
+      if (index < visibleLength()) {
+        const span = Math.max(1, windowEnd - windowStart);
+        const end = visibleLength();
+        const start = clamp(index - Math.floor(span / 2), 0, Math.max(0, end - span));
+        focusEvent = { date, eventId };
+        setWindow(start, Math.min(end, start + span), index);
+      } else {
+        const span = Math.max(1, windowEnd - windowStart);
+        const end = visibleLength();
+        setWindow(Math.max(0, end - span), end, selected);
+        const future = currentFutureSlots();
+        if (index >= windowEnd + future) return { ok: false, reason: '该日期超出图上范围' };
+        focusEvent = { date, eventId };
+        hoveredFutureDate = date;
+        draw();
+      }
+      writeQueryParam('focus', date);
+      return { ok: true };
+    }
+    function activateHistory(frame, eventDate, eventId) {
+      const cutoffIndex = lastIndexAtOrBefore(allPrices, frame.asof);
+      if (cutoffIndex < 0) return { ok: false, reason: '行情历史不够，无法显示当时 K 线' };
+      const span = Math.max(1, windowEnd - windowStart);
+      historyMode = true;
+      historyFrame = frame;
+      historyCutoffIndex = cutoffIndex;
+      focusEvent = null;
+      scenario = historyScenario(frame, lastCurrent);
+      renderHistoryBanner();
+      renderScaleBar();
+      updateChartAriaLabel();
+      updateMarketDate(state?.market, state?.current, state?.code, state?.marketStatus);
+      const end = cutoffIndex + 1;
+      setWindow(Math.max(0, end - span), end, end - 1);
+      writeQueryParam('asof', frame.asof);
+      if (eventDate && eventDate <= frame.asof) focusDate(eventDate, eventId);
+      return { ok: true };
+    }
+    function enterHistory(eventDate, eventId) {
+      const available = historyAvailability(eventDate);
+      if (!available.ok) return available;
+      return activateHistory(frameAtOrBefore(eventDate), eventDate, eventId);
+    }
+    function exitHistory() {
+      if (!historyMode) return { ok: true };
+      const span = Math.max(1, windowEnd - windowStart);
+      historyMode = false;
+      historyFrame = null;
+      historyCutoffIndex = -1;
+      renderHistoryBanner();
+      writeQueryParam('asof', null);
+      updateScenario(state || {});
+      updateMarketDate(state?.market, state?.current, state?.code, state?.marketStatus);
+      const end = allPrices.length;
+      setWindow(Math.max(0, end - span), end, selected);
+      return { ok: true };
+    }
+    function applyInitialUrl(next, history) {
+      if (!initialAsOfHandled && next.market && next.current &&
+          (history || next.history || next.historyStatus !== 'loading')) {
+        const frame = history?.frames?.find(item => item.asof === pendingInitialAsOf);
+        initialAsOfHandled = true;
+        if (frame && lastIndexAtOrBefore(allPrices, frame.asof) >= 0) activateHistory(frame, null, null);
+        else writeQueryParam('asof', null);
+      }
+      if (!initialFocusHandled && next.market && initialAsOfHandled) {
+        initialFocusHandled = true;
+        focusDate(pendingInitialFocus, null);
+      }
     }
 
     function readout() {
@@ -298,7 +473,8 @@
         return;
       }
       for (const key of ['close', 'open', 'high', 'low']) $('quote-' + key).textContent = number(bar[key]);
-      $('quote-selected-date').textContent = bar.date + (selected === allPrices.length - 1 ? '（最新）' : '');
+      $('quote-selected-date').textContent = bar.date + (selected === visibleLength() - 1
+        ? historyMode ? '（补算截止）' : '（最新）' : '');
       $('quote-readout').textContent = bar.date + '  开 ' + number(bar.open) +
         '  高 ' + number(bar.high) + '  低 ' + number(bar.low) + '  收 ' + number(bar.close) + '  量 ' + number(bar.volume) + '（供应商原始单位）';
       $('quote-date').setAttribute('aria-valuetext', bar.date + '，收盘 ' + number(bar.close));
@@ -310,7 +486,7 @@
       $('range-mode').textContent = button ? button.textContent : '自定义';
     }
     function setWindow(start, end, nextSelected = selected, custom = false) {
-      const bounds = normalizedWindow(start, end, allPrices.length);
+      const bounds = normalizedWindow(start, end, visibleLength());
       const changed = bounds.start !== windowStart || bounds.end !== windowEnd;
       windowStart = bounds.start;
       windowEnd = bounds.end;
@@ -343,9 +519,7 @@
       const pad = Math.max((high - low) * .12, Math.abs(high) * .01, .01);
       const min = low - pad, max = high + pad;
       const plotWidth = Math.max(1, width - left - right);
-      const future = scenario
-        ? root.StockChartWindow.futureSlots(allPrices.length, scenario.bands, windowEnd === allPrices.length)
-        : 0;
+      const future = currentFutureSlots();
       const domain = Math.max(1, root.StockChartWindow.domainSlots(windowStart, windowEnd, future));
       const candleWidth = Math.max(.8, Math.min(9, plotWidth / domain * .65));
       const xEdge = index => left + (index - windowStart) / domain * plotWidth;
@@ -367,14 +541,14 @@
       }
       ctx.font = cjkFont;
       ctx.fillStyle = '#6A6D78'; ctx.fillText('成交量', left, volumeTop - 6);
-      let selectedBandLabel = null;
+      const bandLabels = [];
       for (const band of scenario?.bands || []) {
         const first = Math.max(windowStart, band.lo);
         const afterLast = Math.min(windowEnd + future, band.hi + 1);
         if (afterLast <= first) continue;
         const x1 = xEdge(first), x2 = xEdge(afterLast);
-        const selectedBand = band.scale === selectedScale;
-        const hoveredBand = band.scale === hoveredScale;
+        const selectedBand = historyMode || band.scale === selectedScale;
+        const hoveredBand = !historyMode && band.scale === hoveredScale;
         ctx.fillStyle = selectedBand ? 'rgba(31,95,214,.16)'
           : hoveredBand ? 'rgba(31,95,214,.10)' : 'rgba(31,95,214,.045)';
         ctx.fillRect(x1, top, x2 - x1, priceBottom - top);
@@ -386,7 +560,7 @@
         ctx.lineTo(x2, priceBottom); ctx.lineTo(x1, priceBottom);
         ctx.lineTo(x1, top); ctx.stroke();
         if (selectedBand) {
-          selectedBandLabel = { band, x1, x2 };
+          bandLabels.push({ band, x1, x2 });
         }
       }
       for (const [i, bar] of prices.entries()) {
@@ -407,11 +581,14 @@
         ctx.beginPath(); ctx.moveTo(x(selected), top); ctx.lineTo(x(selected), height - bottom); ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = '#131722'; ctx.beginPath(); ctx.arc(x(selected), y(prices[selectedVisible].close), 3, 0, Math.PI * 2); ctx.fill();
       }
-      if (selectedBandLabel) {
-        const { band, x1, x2 } = selectedBandLabel;
-        const fullLabel = SCALE_NAMES[band.scale] + ' 情景区间 ' +
-          shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
-        const shortLabel = shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
+      for (const { band, x1, x2 } of bandLabels) {
+        const fullLabel = historyMode
+          ? '补算情景 ' + shortDate(band.q20_date) + '–' + shortDate(band.q80_date)
+          : SCALE_NAMES[band.scale] + ' 情景区间 ' +
+            shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
+        const shortLabel = historyMode
+          ? '补算情景 ' + shortDate(band.q20_date) + '–' + shortDate(band.q80_date)
+          : shortDate(band.q20_date) + '–' + shortDate(band.q80_date);
         const plotRight = width - right;
         const labelX = Math.max(left, x1 + 3);
         const labelY = top + 13;
@@ -437,6 +614,22 @@
         ctx.textAlign = textAlign;
         ctx.fillText(label, textX, labelY);
         ctx.textAlign = 'left';
+      }
+      const cutoffDate = historyFrame?.asof;
+      for (const event of events) {
+        if (event.date < allPrices[0]?.date) continue;
+        if (historyMode && event.date > cutoffDate) continue;
+        const index = root.CPTradingDays.idxOf(allPrices, event.date, scenario?.closures);
+        if (index < windowStart || index >= windowEnd + future) continue;
+        const focused = focusEvent &&
+          (focusEvent.eventId ? event.id === focusEvent.eventId : event.date === focusEvent.date);
+        const markerX = x(index), markerY = priceBottom - 1;
+        ctx.fillStyle = focused ? '#1F5FD6' : '#9AA1AD';
+        ctx.beginPath();
+        ctx.moveTo(markerX, markerY - 6);
+        ctx.lineTo(markerX - 3, markerY);
+        ctx.lineTo(markerX + 3, markerY);
+        ctx.fill();
       }
       ctx.fillStyle = '#6A6D78';
       ctx.font = '11px Consolas, monospace';
@@ -479,7 +672,12 @@
       $('market-empty').hidden = exists;
       $('quote-selected-date').hidden = !exists;
       if (exists) {
-        if (preserve && previous.bars.length && !wasAtLatest) {
+        if (historyMode) {
+          historyCutoffIndex = lastIndexAtOrBefore(allPrices, historyFrame.asof);
+          const end = Math.min(previous.end, historyCutoffIndex + 1);
+          const start = Math.min(previous.start, Math.max(0, end - previousSpan));
+          setWindow(start, end, selected);
+        } else if (preserve && previous.bars.length && !wasAtLatest) {
           const findDate = (date, fallback) => {
             if (!date) return fallback;
             const exact = allPrices.findIndex(bar => bar.date === date);
@@ -511,6 +709,12 @@
       state = next;
       const changed = lastCode !== next.code;
       if (changed) {
+        if (historyMode) {
+          historyMode = false; historyFrame = null; historyCutoffIndex = -1;
+          writeQueryParam('asof', null);
+          focusEvent = null;
+          renderHistoryBanner();
+        }
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
         $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; visibility?.observe(null, null); showMarket(null, next.code, false);
       }
@@ -534,6 +738,7 @@
       }
       updateScenario(next);
       updateMarketDate(next.market, next.current, next.code, next.marketStatus);
+      applyInitialUrl(next, history);
       $('analysis-pending').hidden = !!next.current;
       $('analysis-pending').textContent = next.currentStatus === 'failed'
         ? '本次分析暂未完成。行情仍可查看，也可以稍后重试。'
@@ -630,12 +835,13 @@
     $('resume-jobs').addEventListener('click', () => {
       if (state) for (const mode of ['current', 'history']) session.resume(state.code, mode);
     });
-    for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
-      days = Number(button.dataset.days);
-      setRangePreset(button);
-      const end = allPrices.length;
-      setWindow(Math.max(0, end - days), end, end - 1);
-    });
+    $('stock-history-exit')?.addEventListener('click', exitHistory);
+      for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
+        days = Number(button.dataset.days);
+        setRangePreset(button);
+        const end = visibleLength();
+        setWindow(Math.max(0, end - days), end, end - 1);
+      });
     $('quote-date').addEventListener('input', event => {
       selected = clamp(Number(event.target.value), windowStart, windowEnd - 1);
       draw();
@@ -645,9 +851,12 @@
     const touchStarts = new Map();
     let drag = null, pinch = null, touchPinching = false;
     function currentFutureSlots() {
-      return scenario
-        ? root.StockChartWindow.futureSlots(allPrices.length, scenario.bands, windowEnd === allPrices.length)
+      const atLatest = windowEnd === visibleLength();
+      const projected = scenario
+        ? root.StockChartWindow.futureSlots(visibleLength(), scenario.bands, atLatest)
         : 0;
+      const replayFuture = historyMode && atLatest ? Math.max(0, allPrices.length - visibleLength()) : 0;
+      return Math.max(projected, replayFuture);
     }
     function plotMetrics(clientX) {
       const rect = canvas.getBoundingClientRect();
@@ -742,9 +951,9 @@
           const points = [...pointers.values()];
           const midpoint = (points[0].x + points[1].x) / 2;
           const distance = Math.max(1, Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y));
-          const scaled = zoom(pinch.start, pinch.end, allPrices.length, distance / pinch.distance, pinch.anchor);
+          const scaled = zoom(pinch.start, pinch.end, visibleLength(), distance / pinch.distance, pinch.anchor);
           const deltaBars = -(midpoint - pinch.midpoint) / pinch.plotWidth * (scaled.end - scaled.start);
-          const moved = pan(scaled.start, scaled.end, allPrices.length, deltaBars);
+          const moved = pan(scaled.start, scaled.end, visibleLength(), deltaBars);
           setWindow(moved.start, moved.end, selected, true);
         } else if (pointers.size === 1) {
           const start = touchStarts.get(event.pointerId);
@@ -761,7 +970,7 @@
         if (drag.moved) {
           const { plotWidth } = plotMetrics(event.clientX);
           const deltaBars = (drag.x - event.clientX) / plotWidth * (drag.end - drag.start);
-          const moved = pan(drag.start, drag.end, allPrices.length, deltaBars);
+          const moved = pan(drag.start, drag.end, visibleLength(), deltaBars);
           setWindow(moved.start, moved.end, selected, true);
         }
       } else if (!drag) {
@@ -795,7 +1004,7 @@
       if (!allPrices.length || (!event.ctrlKey && !event.metaKey)) return;
       event.preventDefault();
       const { anchor } = plotMetrics(event.clientX);
-      const bounds = zoom(windowStart, windowEnd, allPrices.length, Math.exp(-event.deltaY * .002), anchor);
+      const bounds = zoom(windowStart, windowEnd, visibleLength(), Math.exp(-event.deltaY * .002), anchor);
       setWindow(bounds.start, bounds.end, selected, true);
     }, { passive: false });
     const observer = root.ResizeObserver ? new root.ResizeObserver(draw) : null;
@@ -811,9 +1020,10 @@
     root.addEventListener('pageshow', event => {
       if (event.persisted && state) void session.select(state.code);
     });
+    renderHistoryBanner();
     const initial = new URLSearchParams(root.location.search).get('code');
     if (initial) select(initial);
-    return session;
+    return Object.assign(session, { focusDate, historyAvailability, enterHistory, exitHistory, setEvents });
   }
   root.StockView = { mount };
 })(window);
