@@ -1162,7 +1162,7 @@ README = """# T00 冻结基线与旧结果保护
 
 - `preserved_legacy_sha256.json` 流式 SHA-256 固定 main 上 prereg 文档、被引用报告、全部 `data/frozen/**`、可识别的 tracked research results、PR #50 相关 replay/unit evidence、PR #99 F1–F4 报告/日志/生成器，以及 `/home/ubuntu/repos/LPPL/data/features/lppls_*` 本机扫描。
 - PR #99 中 F2/F3/F4 仍为 **FAILED**。三项均保留首轮 `run_r1.log` 与更正生成器后的 `run.log`；F4 两日志 hash 相同。合成生成器有 SHA-256，但无明确版本常量。
-- 本机扫描实测 10 个目录、323 个文件、367,492,055 字节（350.47 MiB），低于先前约 1.4 GB 的预估；原因 **NOT_ESTABLISHED**。这些文件仅哈希，没有复制进仓库。
+- 本机扫描实测 10 个目录、323 个文件、367,492,055 字节（350.47 MiB）。先前约 1.4 GB 来自 `du data/features`，统计整个目录，包含 `bottom_v1`、`daily_v1`、`thrust_v1`、`wells_v1` 等；`du -c data/features/lppls_*` 为 352M，与本次 `lppls_*` 流式哈希统计相符。这些文件仅哈希，没有复制进仓库。
 - PR #50 的 91 个阶段顶是已消费开发诊断，不是新 holdout。原拟合最后日是 2018-12-26，输入映射的预测/评价结束日是 2018-12-28，账本边界为 2018-12-31；2019 数据只用于标签成熟。没有找到独立的“2016–2025 新留出集”登记。
 - 仍有符合既有登记、尚未用于模型评价的确认样本候选：`a90s_v20261104` 的 1990 年代两指数（深证回算段单列）及 `ext_v20261029` 的 HSI/N225/NDX/SPX。T00 只读其说明/manifest 并哈希，未扫描或评价；按 Round 2/预登记授权继续保持关闭。
 
