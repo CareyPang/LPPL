@@ -134,6 +134,7 @@
     .tile { background: #F6F8FB; border-radius: 12px; padding: var(--s3); min-width: 0; }
     .tile small { display: block; font-size: 12px; color: var(--ink-3); line-height: 1.4; }
     .tile b { display: block; font-size: 22px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
+    .tile.range-tile b { font-size: clamp(10px, .8vw, 12px); letter-spacing: -.04em; white-space: nowrap; }
     .tile .sub { font-size: 12px; color: var(--ink-3); }
     .pos { color: var(--up); }
     .neg { color: var(--down); }
@@ -244,6 +245,7 @@
       .nav { gap: 14px; font-size: 13px; margin-left: 0; width: 100%; order: 3; }
       .asof { margin-left: auto; }
       .tiles, .dip-values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tile.range-tile b { font-size: 10px; letter-spacing: -.08em; }
       .search { padding-left: 16px; }
       .search button { padding: 10px 18px; }
       .card, .dip-card, .sum-card { padding: var(--s4); }
@@ -577,6 +579,20 @@
       return summary
         ? `${view.clusters[0].q20_date} – ${view.clusters[0].q80_date}（${globalThis.CPTopClusters?.shareText(view.clusters[0]) || ''}）`
         : view.clusters.map(clusterRangeText).join('；');
+    }
+
+    function clusterSummaryTile(d, scale) {
+      const view = scaleClusterView(d, scale);
+      const label = `${scaleName[scale]}主簇`;
+      if (view.kind !== 'clusters') return tile(label, clusterScaleText(d, scale, true));
+      const main = view.clusters[0];
+      return tile(
+        label,
+        `${main.q20_date} – ${main.q80_date}`,
+        'range-value',
+        globalThis.CPTopClusters?.shareText(main) || '',
+        'range-tile',
+      );
     }
 
     function riskHtml(d) {
@@ -1054,8 +1070,8 @@
       || (d.symbol?.startsWith('US_') ? usEntry(d.symbol)?.name : '');
     const signCls = (value) =>
       value == null || !Number.isFinite(Number(value)) || Number(value) === 0 ? '' : Number(value) > 0 ? 'pos' : 'neg';
-    const tile = (label, value, cls = '', sub = '') =>
-      `<div class="tile"><small>${esc(label)}</small><b class="${cls}">${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`;
+    const tile = (label, value, cls = '', sub = '', tileClass = '') =>
+      `<div class="tile${tileClass ? ` ${esc(tileClass)}` : ''}"><small>${esc(label)}</small><b class="${cls}">${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`;
     const stockEvidence = (d) => d.top?.evidence_override || d.top?.lppls_confidence?.evidence
       || d.top?.evidence || d.evidence || d.stock_meta?.evidence || null;
 
@@ -1065,22 +1081,28 @@
       const signalEvidence = confidence.evidence || top.evidence || d.evidence || top.evidence_override;
       const canShowStatus = ['signal', 'no_qualified_fit', 't1_not_qualified'].includes(top.signal_status)
         && !hiddenEv(signalEvidence);
+      const shownViews = scales.map(scale => [scale, scaleClusterView(d, scale)])
+        .filter(([, view]) => view.kind !== 'hidden');
+      const clusterScales = shownViews.filter(([, view]) => view.kind === 'clusters');
+      const allShownEmpty = shownViews.length > 0 && shownViews.every(([, view]) => view.kind === 'empty');
       const clusterView = scaleClusterView(d, '6-12m');
       const hasWindow = canShowStatus && ['clusters', 'legacy'].includes(clusterView.kind);
-      const topState = !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有主簇区间']
-        : top.signal_status === 'no_qualified_fit' ? ['', '分析已完成 · 本次未形成符合规则的顶部区间']
-          : top.signal_status === 'signal' ? ['hot', '有合格拟合']
-            : ['', signalStatus[top.signal_status]];
+      const topState = clusterScales.length ? ['hot', '有顶部聚类区间']
+        : allShownEmpty ? ['', '分析已完成 · 本次未形成顶部聚类区间']
+          : !canShowStatus ? ['', '尚无可显示结果'] : hasWindow ? ['hot', '有主簇区间']
+            : top.signal_status === 'no_qualified_fit' ? ['', '分析已完成 · 本次未形成符合规则的顶部区间']
+              : top.signal_status === 'signal' ? ['hot', '有合格拟合']
+                : ['', signalStatus[top.signal_status]];
       const us = d.symbol?.startsWith('US_');
       const dipState = !d.dip ? ['', us ? '暂无事件库' : '暂无结果']
         : d.dip.in_structure === true ? ['on', '大涨后深跌'] : ['', '不属于大涨后深跌'];
-      return { topState, dipState, canShowStatus, hasWindow };
+      return { topState, dipState, canShowStatus, hasWindow, shownViews, clusterScales, allShownEmpty };
     }
 
     function summaryHtml(d, name) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
-      const { topState, dipState, canShowStatus, hasWindow } = summaryStates(d);
+      const { topState, dipState, canShowStatus, hasWindow, shownViews, clusterScales, allShownEmpty } = summaryStates(d);
       const indicators = top.indicators || {};
       const shownScales = scales.filter((scale) => !hiddenEv(
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
@@ -1088,12 +1110,26 @@
       const uncomputedScales = scales.filter((scale) => !hiddenEv(
         confidence.scale_evidence?.[scale] || indicators[scale]?.evidence || confidence.evidence,
       ) && !Number.isFinite(indicators[scale]?.n_qualified_standard));
-      const topText = hasWindow
-        ? `LPPLS 给出 6–12 月主簇 ${esc(clusterScaleText(d, '6-12m', true))}。这是时间区间，不是顶部日期（未校准，仅供参考）。`
-        : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
-          : top.signal_status === 'no_qualified_fit'
-            ? `已计算尺度：${shownScales.length ? shownScales.map((scale) => scaleName[scale]).join('、') : '无'}；未计算尺度：${uncomputedScales.length ? uncomputedScales.map((scale) => scaleName[scale]).join('、') : '无'}。这表示当前方法未给出有效区间，不能解释为风险较低。`
-            : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。`;
+      const clusterLines = shownViews.map(([scale, view]) => {
+        if (view.kind === 'clusters') {
+          return `${scaleName[scale]}${view.clusters.map(cluster =>
+            `${globalThis.CPTopClusters?.label(cluster) || '聚类'} ${esc(cluster.q20_date)} – ${esc(cluster.q80_date)}（占该尺度合格拟合 ${Math.round(Number(cluster.share) * 100)}%）`
+          ).join('；')}`;
+        }
+        if (view.kind === 'empty') return `${scaleName[scale]} 本次未形成`;
+        if (view.kind === 'legacy') return `${scaleName[scale]} ${esc(view.window.q20_date)} – ${esc(view.window.q80_date)}（本次结果未分簇）`;
+        return `${scaleName[scale]} 未计算`;
+      }).filter(Boolean).join('；');
+      const topText = clusterScales.length
+        ? `${clusterLines}。区间不是顶部日期，未校准，仅供参考。`
+        : allShownEmpty
+          ? '分析已完成 · 本次未形成顶部聚类区间。区间不是顶部日期，未校准，仅供参考。'
+          : hasWindow
+            ? `LPPLS 给出 6–12 月时间区间 ${esc(clusterScaleText(d, '6-12m', true))}。这是时间区间，不是顶部日期（未校准，仅供参考）。`
+            : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
+              : top.signal_status === 'no_qualified_fit'
+                ? `已计算尺度：${shownScales.length ? shownScales.map((scale) => scaleName[scale]).join('、') : '无'}；未计算尺度：${uncomputedScales.length ? uncomputedScales.map((scale) => scaleName[scale]).join('、') : '无'}。这表示当前方法未给出有效区间，不能解释为风险较低。`
+                : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。`;
       const dip = d.dip || {};
       const state = dip.state || {};
       const full = dip.similar?.full || {};
@@ -1109,8 +1145,8 @@
           : `不满足“此前涨 ≥200%、跌 ≥40%、距高点 ≤250 个交易日”，不做相似事件对照。距 ${state.peak_date || '—'} 高点 ${dipPct(state.dd)}，近 20 日 ${dipPct(state.ret20)}。`;
       }
       const topTiles = [
-        tile('6–12 月主簇', clusterScaleText(d, '6-12m', true)),
-        tile('12–24 月主簇', clusterScaleText(d, '12-24m', true)),
+        clusterSummaryTile(d, '6-12m'),
+        clusterSummaryTile(d, '12-24m'),
         tile('证据等级', stockEvidence(d) ? evLabel(stockEvidence(d)) : '证据状态未知'),
       ].join('');
       const dipTiles = d.dip ? [
