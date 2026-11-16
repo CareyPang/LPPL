@@ -12,7 +12,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from .contracts import VERSION, LabelBook, Protocol, TopEvent
+from .contracts import LABEL_VERSION, VERSION, LabelBook, LabelState, Protocol, TopEvent
 
 _DEFAULT_PROTOCOL = Protocol()
 
@@ -56,6 +56,7 @@ class _Scan:
     known: list[bool]
     endpoint_known: list[bool]
     dependencies: list[tuple[int, int] | None]
+    reasons: list[str | None]
     pending: list[dict[str, Any]]
     excluded: list[dict[str, Any]]
 
@@ -241,10 +242,12 @@ def _scan_extrema(
                 support_start=start,
                 support_end=end,
                 available_session=data.available_at(start, end),
+                label_available_session=data.available_at(start, end),
+                label_version=LABEL_VERSION,
             )
         )
     pending.extend(_unknown_ranges(scale, reasons))
-    return _Scan(events, known, endpoint_known, dependencies, pending, excluded)
+    return _Scan(events, known, endpoint_known, dependencies, reasons, pending, excluded)
 
 
 def _rise(
@@ -405,6 +408,14 @@ def build_labels(
         if decision is None:
             stage.known[event.peak_session] = False
             stage.dependencies[event.peak_session] = None
+            unresolved = audit.get("unresolved_sessions", ())
+            reasons = [troughs.reasons[i] for i in unresolved if 0 <= i < len(troughs.reasons)]
+            stage.reasons[event.peak_session] = (
+                "RISE_UNMATURED_SUPPORT"
+                if reasons and all(reason in {"PENDING_GROUP_CLOSURE", "UNMATURED_RIGHT_CONTEXT"}
+                                   for reason in reasons)
+                else "RISE_SEARCH_UNRESOLVED"
+            )
             pending.append(audit)
             continue
         assert support is not None
@@ -415,6 +426,7 @@ def build_labels(
         event.rise_start = audit["rise_start"]
         event.support_start, event.support_end = support
         event.available_session = data.available_at(*support)
+        event.label_available_session = event.available_session
         selected_stage.append(event)
     events = sorted(short.events + selected_stage, key=lambda item: (item.peak_session, item.scale))
     links = _assign_families(events)
@@ -432,6 +444,8 @@ def build_labels(
         ]
     metadata = {
         "evaluator_version": VERSION,
+        "label_version": LABEL_VERSION,
+        "scoring_contract_version": "two_level_first_alert_v1",
         "config": config.to_dict(),
         "stage_target": "STAGE_RISE" if config.require_stage_rise else "STAGE_STRUCTURE",
         "rise_search_policy": "ENTIRE_FIXED_ENDPOINT_RANGE_RESOLVED_NO_FALLBACK",
@@ -455,6 +469,21 @@ def build_labels(
         "rise_audit": rise_audit,
         "family_links": links,
     }
+    states: dict[str, tuple[LabelState, ...]] = {}
+    for scale, scan in (("short", short), ("stage", stage)):
+        values = [
+            LabelState.NO_EVENT if known
+            else LabelState.PENDING if reason in {
+                "PENDING_GROUP_CLOSURE", "UNMATURED_RIGHT_CONTEXT",
+                "RISE_UNMATURED_SUPPORT",
+            }
+            else LabelState.UNKNOWN
+            for known, reason in zip(scan.known, scan.reasons, strict=True)
+        ]
+        for event in events:
+            if event.scale == scale:
+                values[event.peak_session] = LabelState.MATURE_EVENT
+        states[scale] = tuple(values)
     return LabelBook(
         symbol=symbol,
         sessions=data.sessions,
@@ -464,4 +493,5 @@ def build_labels(
         pending=pending,
         excluded=excluded,
         metadata=metadata,
+        states=states,
     )

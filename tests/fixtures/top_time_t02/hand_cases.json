@@ -1,0 +1,106 @@
+{
+  "schema_version": "t02_hand_cases_v1",
+  "evidence_status": "MANUALLY_AUTHORED_CONTRACT_EXAMPLES_NOT_MODEL_PERFORMANCE",
+  "scoring_contract_version": "two_level_first_alert_v1",
+  "cases": [
+    {
+      "id": "lead_4",
+      "action_session": 45,
+      "event_session": 49,
+      "interval_start": 49,
+      "interval_end": 58,
+      "expected": {"formal": false, "primary_cause": "insufficient_lead"},
+      "reason": "起点仅提前4个session，低于固定5日门槛。"
+    },
+    {
+      "id": "lead_5",
+      "action_session": 45,
+      "event_session": 50,
+      "interval_start": 50,
+      "interval_end": 59,
+      "expected": {"formal": true, "primary_cause": "success"},
+      "reason": "起点提前5个session且含端点宽度为10。"
+    },
+    {
+      "id": "width_10",
+      "action_session": 45,
+      "event_session": 55,
+      "interval_start": 50,
+      "interval_end": 59,
+      "expected": {"formal": true, "primary_cause": "success"},
+      "reason": "两端计入后的10日区间满足上限。"
+    },
+    {
+      "id": "width_11",
+      "action_session": 45,
+      "event_session": 55,
+      "interval_start": 50,
+      "interval_end": 60,
+      "expected": {"formal": false, "primary_cause": "too_wide"},
+      "reason": "两端计入后的11日区间超过固定上限。"
+    },
+    {
+      "id": "late_action",
+      "action_session": 55,
+      "event_session": 50,
+      "interval_start": 61,
+      "interval_end": 70,
+      "expected": {"formal": true, "primary_cause": "no_alert"},
+      "reason": "正式窗口虽合法，但行动日晚于该事件且不得回配旧峰。"
+    },
+    {
+      "id": "wrong_first_then_revision",
+      "action_session": 45,
+      "event_session": 60,
+      "interval_start": 50,
+      "interval_end": 59,
+      "revision_interval": [60, 69],
+      "expected": {"first_window_covered": false, "strict_success": false, "revisions": 1},
+      "reason": "同episode的后续正确修订不能挽救错误首窗。"
+    },
+    {
+      "id": "local_early_stage_late",
+      "short_event_session": 50,
+      "stage_event_session": 80,
+      "short_action_session": 45,
+      "stage_action_session": 75,
+      "expected": {"short_success": true, "stage_success": true, "stage_first_clock": 75},
+      "reason": "局部和阶段按各自同级事件及独立行动时钟评分。"
+    },
+    {
+      "id": "episode_switch",
+      "action_session": 45,
+      "event_session": 60,
+      "first_interval": [50, 59],
+      "second_action_session": 50,
+      "second_interval": [60, 69],
+      "expected": {"first_window_covered": false, "strict_success": false, "duplicate_notices": 1},
+      "reason": "换episode不能把同一事件的后发窗口改作首窗。"
+    },
+    {
+      "id": "unknown_anchor",
+      "action_session": 45,
+      "unknown_session": 50,
+      "event_session": 60,
+      "interval_start": 55,
+      "interval_end": 64,
+      "expected": {"target_status": "pending", "strict_success": false},
+      "reason": "未知锚点位于目标之前时必须pending，不能跳到后续事件。"
+    },
+    {
+      "id": "no_event",
+      "action_session": 45,
+      "interval_start": 50,
+      "interval_end": 59,
+      "expected": {"target_status": "no_event", "resolved_claims_denominator": 1},
+      "reason": "完整已知的63日范围内无同级事件时才可解析为no_event。"
+    },
+    {
+      "id": "data_failure",
+      "event_session": 60,
+      "data_evaluable": false,
+      "expected": {"E": 1, "no_formal_alert_rate": 1.0, "subset_E": 0},
+      "reason": "数据失败仍保留主表成熟事件分母，子集使用独立分母。"
+    }
+  ]
+}

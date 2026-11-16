@@ -1,0 +1,242 @@
+{
+  "claim_ledger": {
+    "append_only": true,
+    "kinds": [
+      "observation",
+      "formal",
+      "revision",
+      "new"
+    ],
+    "modes": {
+      "forward": {
+        "action_session": "next session after full-close publication under fixed calendar/cutoff",
+        "first_visible_at": "required from delivery evidence",
+        "full_close_data": "first_visible_at must be at or after the timezone-aware published_session_close_at evidence"
+      },
+      "historical_replay": {
+        "default_vintage_status": "HISTORICAL_VINTAGE_NOT_ESTABLISHED",
+        "first_visible_at": null,
+        "required": [
+          "simulated_available_at",
+          "simulated_action_session",
+          "delay_assumption"
+        ]
+      }
+    },
+    "required_identity_fields": [
+      "claim_id",
+      "parent_claim_id",
+      "episode_id",
+      "scope",
+      "first_interval_start",
+      "first_interval_end",
+      "first_clock_session",
+      "fixed_expiry_session"
+    ],
+    "scope_upgrade": "short-to-stage starts a separate stage first-clock"
+  },
+  "event_fields": [
+    "support_end",
+    "label_available_session",
+    "label_version"
+  ],
+  "formal_interval_gate": {
+    "future": "interval_start > action_session",
+    "horizon": "interval_end <= action_session + 63",
+    "inclusive_width": "interval_end - interval_start + 1 <= 10",
+    "minimum_lead": "interval_start - action_session >= 5",
+    "observation_interval_policy": "preserve full saved interval; never narrow",
+    "same_for_all_arms": true
+  },
+  "implementation_sources": {
+    "T02_ledger_and_scoring": "research/eval/top_time/t02.py",
+    "guarded_artifact_generator": "scripts/research/t02_manifest.py",
+    "label_states_and_events": "research/eval/top_time/contracts.py; research/eval/top_time/labels.py",
+    "legacy_evaluator": "research/eval/top_time/scoring.py (byte-identical PR #50 port)"
+  },
+  "label_states": [
+    "unknown",
+    "pending",
+    "no_event",
+    "mature_event"
+  ],
+  "label_version": "two_level_close_10_10_63_42_v1",
+  "legacy_amplitude_labels": {
+    "note": "T02 does not add a -10% drawdown requirement or overwrite legacy amplitude fields.",
+    "status": "UNCHANGED"
+  },
+  "local_data": {
+    "sh000001": {
+      "adjustment": "qfq (filename and frozen dataset contract)",
+      "first_date": "1990-12-19",
+      "input_status": "FROZEN_QFQ_NOT_HISTORICAL_PIT",
+      "last_date": "2026-10-23",
+      "matches_pr50_source_hash": true,
+      "path": "data/frozen/v20261024/sh000001_qfq.parquet",
+      "pr50_source_sha256": "82bc8177ab3b5fb13dace1dbd54c200d477a7c473fdebd457ad0d483b19d5784",
+      "rows": 8575,
+      "sha256": "82bc8177ab3b5fb13dace1dbd54c200d477a7c473fdebd457ad0d483b19d5784"
+    },
+    "sh000016": {
+      "adjustment": "qfq (filename and frozen dataset contract)",
+      "first_date": "2004-01-02",
+      "input_status": "FROZEN_QFQ_NOT_HISTORICAL_PIT",
+      "last_date": "2026-10-23",
+      "matches_pr50_source_hash": true,
+      "path": "data/frozen/v20261024/sh000016_qfq.parquet",
+      "pr50_source_sha256": "ef4bfceccc041d3efc1930f2b464718ec8fa732cdacf6f81b1e4676f7ac0707a",
+      "rows": 5537,
+      "sha256": "ef4bfceccc041d3efc1930f2b464718ec8fa732cdacf6f81b1e4676f7ac0707a"
+    },
+    "sh000300": {
+      "adjustment": "qfq (filename and frozen dataset contract)",
+      "first_date": "2005-04-08",
+      "input_status": "FROZEN_QFQ_NOT_HISTORICAL_PIT",
+      "last_date": "2026-10-23",
+      "matches_pr50_source_hash": true,
+      "path": "data/frozen/v20261024/sh000300_qfq.parquet",
+      "pr50_source_sha256": "beb9413e5357d3bcd8fd9004314e8151e3a65ca366ca3510ce7ad7f9e9bd97e9",
+      "rows": 5233,
+      "sha256": "beb9413e5357d3bcd8fd9004314e8151e3a65ca366ca3510ce7ad7f9e9bd97e9"
+    },
+    "sh000905": {
+      "adjustment": "qfq (filename and frozen dataset contract)",
+      "first_date": "2007-01-15",
+      "input_status": "FROZEN_QFQ_NOT_HISTORICAL_PIT",
+      "last_date": "2026-10-23",
+      "matches_pr50_source_hash": true,
+      "path": "data/frozen/v20261024/sh000905_qfq.parquet",
+      "pr50_source_sha256": "593c1b029011cbbf2a82adfe5ecca520cd583346605cf51a5333bc523c907890",
+      "rows": 4804,
+      "sha256": "593c1b029011cbbf2a82adfe5ecca520cd583346605cf51a5333bc523c907890"
+    },
+    "sz399001": {
+      "adjustment": "qfq (filename and frozen dataset contract)",
+      "first_date": "1993-01-03",
+      "input_status": "FROZEN_QFQ_NOT_HISTORICAL_PIT",
+      "last_date": "2026-10-23",
+      "matches_pr50_source_hash": true,
+      "path": "data/frozen/v20261024/sz399001_qfq.parquet",
+      "pr50_source_sha256": "10bb04c7fb796a342659926d471b59ef8a818dc9409a8412283d83d3c459f1b3",
+      "rows": 8216,
+      "sha256": "10bb04c7fb796a342659926d471b59ef8a818dc9409a8412283d83d3c459f1b3"
+    },
+    "sz399006": {
+      "adjustment": "qfq (filename and frozen dataset contract)",
+      "first_date": "2010-06-02",
+      "input_status": "FROZEN_QFQ_NOT_HISTORICAL_PIT",
+      "last_date": "2026-10-23",
+      "matches_pr50_source_hash": true,
+      "path": "data/frozen/v20261024/sz399006_qfq.parquet",
+      "pr50_source_sha256": "60b9ac7e3a9546d884b95ec574f8393acc769e1d5b1ce73e8558d2967ad0d36b",
+      "rows": 3979,
+      "sha256": "60b9ac7e3a9546d884b95ec574f8393acc769e1d5b1ce73e8558d2967ad0d36b"
+    }
+  },
+  "matching": {
+    "interval_used_to_choose_target": false,
+    "one_to_one": true,
+    "primary": "earliest formal claim for each event",
+    "revision_can_rescue_first_claim": false,
+    "target": "next same-scope event in (action_session, action_session + H]",
+    "tie_break": "first_clock_session, action_session, claim_id; event anchors by session then event_id",
+    "unknown_anchor": "pending; do not scan past"
+  },
+  "metrics": {
+    "E": "qualified mature events of the scored scope; stage E is qualified mature stage tops",
+    "QualifiedStageRecall5": "first interval contains stage event and event lead >= 5 / E",
+    "StrictStageRecall5W10": "QualifiedStageRecall5 plus inclusive width <= 10 and window start lead >= 5 / E",
+    "burden": [
+      "duplicate_notices",
+      "pending_claims",
+      "revisions",
+      "claim_notices",
+      "observation_notices",
+      "formal_alerts",
+      "alerts_per_asset_year",
+      "alarm_occupied_days",
+      "formal_alarm_occupied_days"
+    ],
+    "conditional_subset": "separate explicitly data-evaluable event IDs and denominator",
+    "first_window_coverage": "primary first interval contains event / E",
+    "main_denominator": "end-to-end; data/run failures remain in E",
+    "no_formal_alert_rate": "events without a primary formal claim / E",
+    "resolved_claim_precision": "strict primary successes / resolved first formal claims",
+    "strict_stage_miss_rate": "1 - StrictStageRecall5W10",
+    "unknown_labels": "listed as unknown/pending; never inserted into E",
+    "zero_denominator": null
+  },
+  "not_established": [
+    "Historical point-in-time vintage and original publication/first-visible timestamps.",
+    "Exchange-complete session calendar and actual execution/actionability; replay uses observed indices.",
+    "Historical availability of qfq adjustment factors and corporate-action vintages.",
+    "Predictive skill or any model improvement; no scan, refit, or prospective run was performed.",
+    "Whether PR #50 hypothetical forecasts were ever delivered to users."
+  ],
+  "parameter_status": "RESEARCH_DEFAULT_NOT_FROZEN",
+  "pr50_comparison": {
+    "differences": [
+      "new frozen scoring version while preserving parameter_status",
+      "known bool is surfaced as four explicit label states",
+      "label availability and version are explicit event fields",
+      "immutable append-only claim lifecycle and historical/forward evidence modes",
+      "PR #50 scores every saved forecast and records geometry failures; T02 keeps failing intervals as full-width observations and gates formal claims before event scoring",
+      "new scope metrics and explicit zero-denominator/null behavior"
+    ],
+    "evaluator_code": {
+      "byte_identical": true,
+      "path": "research/eval/top_time/scoring.py",
+      "pr50_sha256": "ab4cff21eee0230ce3a8762dd030b9150a12936ab402d1e8379e6c200d1ae0bb",
+      "working_sha256": "ab4cff21eee0230ce3a8762dd030b9150a12936ab402d1e8379e6c200d1ae0bb"
+    },
+    "evaluator_version": "top_time_evaluator_v1_dev",
+    "input_sha256": {
+      "daily_replay_ledger.csv.gz": "a6df55f1be2333dbfb1680a6573d9f3af6403cb309b0e0a3b3144f71a22c5a71",
+      "evaluations.jsonl.gz": "e5c72ea3371649f96b67ed52e4ef9a8ef4d2a19234e64a64f7367e2588766606",
+      "event_scores.csv": "192be7c6d9f2572ae99056ede31b1e5b2c8d98eea3a23c49fb22a2700dea5db2",
+      "hypothetical_forecasts.csv.gz": "f0dbd3769363b32333777d61183e97fd2971adff039a219b55f6874e32f17cb2",
+      "input_map.json": "f87ec2341044d5ab1b17b9f69859d8e045578a6d980201eb08564828bff15d53",
+      "label_books.jsonl.gz": "2d844d272bd5cb66fd13fda65a6fd4e30077d59c994fdd32972146de8609aa10",
+      "manifest.json": "4dd581cedbf4e3bb595cdfac392d57a49dd99146e1a1e0d80295c7d1135e6a15"
+    },
+    "numerical_defaults_match": true,
+    "source_sha": "7f7fe930ab4065295718dfcfe89b87cedcaaf1fb"
+  },
+  "research_defaults": {
+    "horizon_sessions": 63,
+    "maximum_inclusive_width_sessions": 10,
+    "minimum_event_lead_sessions": 5,
+    "price_field": "close",
+    "same_price_merge_gap_sessions": 5,
+    "short": {
+      "left_sessions": 10,
+      "right_sessions": 10
+    },
+    "stage": {
+      "left_sessions": 63,
+      "right_sessions": 42
+    },
+    "stage_rise": {
+      "maximum_sessions": 126,
+      "minimum_sessions": 21,
+      "required": true
+    },
+    "trough": {
+      "left_sessions": 21,
+      "right_sessions": 21
+    }
+  },
+  "scoring_contract_version": "two_level_first_alert_v1",
+  "sh000001_semantic_check": {
+    "data_sha256": "82bc8177ab3b5fb13dace1dbd54c200d477a7c473fdebd457ad0d483b19d5784",
+    "matches_pr50_source_hash": true,
+    "short_event": "mature_event",
+    "short_peak_price": "3084.93",
+    "short_support_end": "2024-04-10",
+    "stage_event": "mature_event",
+    "stage_peak_price": "3171.15",
+    "stage_support_end": "2024-07-25",
+    "status": "VERIFIED_ON_FROZEN_QFQ_SNAPSHOT"
+  },
+  "stage_eligibility_source": "explicit retrospective label rule; never inferred from fit-window length"
+}

@@ -2,9 +2,19 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from typing import Any
 
 VERSION = "top_time_evaluator_v1_dev"
+SCORING_CONTRACT_VERSION = "two_level_first_alert_v1"
+LABEL_VERSION = "two_level_close_10_10_63_42_v1"
+
+
+class LabelState(str, Enum):
+    UNKNOWN = "unknown"
+    PENDING = "pending"
+    NO_EVENT = "no_event"
+    MATURE_EVENT = "mature_event"
 
 
 @dataclass(frozen=True)
@@ -68,15 +78,17 @@ class TopEvent:
     family_id: str = ""
     family_ambiguous: bool = False
     rise_start: int | None = None
+    label_available_session: int | None = None
+    label_version: str = LABEL_VERSION
+
+    def __post_init__(self) -> None:
+        if self.label_available_session is None:
+            self.label_available_session = self.available_session
 
 
 @dataclass
 class LabelBook:
-    """known[scale][i] says event-anchor presence/absence at i is resolved.
-
-    False is unknown, including immature tails and missing inputs. It is never
-    a negative label. events contains only mature, eligible events.
-    """
+    """Calendar-aligned label states; the legacy known mask remains derived."""
 
     symbol: str
     sessions: tuple[str, ...]
@@ -86,6 +98,71 @@ class LabelBook:
     pending: list[dict[str, Any]] = field(default_factory=list)
     excluded: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    states: dict[str, tuple[LabelState, ...]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.states:
+            event_anchors = {(event.scale, event.peak_session) for event in self.events}
+            pending_anchors: set[tuple[str, int]] = set()
+            pending_ranges: dict[str, list[tuple[int, int]]] = {"short": [], "stage": []}
+            for row in self.pending:
+                scale = row.get("scale")
+                peak = row.get("peak_session")
+                reason = str(row.get("reason", ""))
+                if scale in pending_ranges and type(peak) is int and reason in {
+                    "PENDING_GROUP_CLOSURE", "UNMATURED_RIGHT_CONTEXT",
+                    "RISE_SEARCH_UNRESOLVED", "RISE_UNMATURED_SUPPORT",
+                }:
+                    pending_anchors.add((scale, peak))
+                if (
+                    scale in pending_ranges
+                    and row.get("kind") == "unresolved_anchor_range"
+                    and reason in {"PENDING_GROUP_CLOSURE", "UNMATURED_RIGHT_CONTEXT"}
+                    and type(row.get("start_session")) is int
+                    and type(row.get("end_session")) is int
+                ):
+                    pending_ranges[scale].append((row["start_session"], row["end_session"]))
+            derived: dict[str, tuple[LabelState, ...]] = {}
+            for scale in ("short", "stage"):
+                known = self.known.get(scale, (False,) * len(self.sessions))
+                values = [
+                    LabelState.NO_EVENT if resolved else LabelState.UNKNOWN
+                    for resolved in known
+                ]
+                for start, end in pending_ranges[scale]:
+                    for session in range(max(0, start), min(len(values) - 1, end) + 1):
+                        if values[session] is LabelState.UNKNOWN:
+                            values[session] = LabelState.PENDING
+                for pending_scale, session in pending_anchors:
+                    if pending_scale == scale and 0 <= session < len(values):
+                        values[session] = LabelState.PENDING
+                for event_scale, session in event_anchors:
+                    if event_scale == scale and 0 <= session < len(values):
+                        values[session] = LabelState.MATURE_EVENT
+                derived[scale] = tuple(values)
+            self.states = derived
+        for scale in ("short", "stage"):
+            values = self.states.get(scale)
+            if not isinstance(values, (tuple, list)) or len(values) != len(self.sessions):
+                raise ValueError(f"states[{scale}] must match the session calendar")
+            if any(not isinstance(value, LabelState) for value in values):
+                raise ValueError(f"states[{scale}] must use LabelState values")
+            known = self.known.get(scale, (False,) * len(self.sessions))
+            if len(known) != len(self.sessions):
+                raise ValueError(f"known[{scale}] must match the session calendar")
+            event_anchors = {
+                event.peak_session for event in self.events if event.scale == scale
+            }
+            for session, (state, resolved) in enumerate(zip(values, known, strict=True)):
+                if type(resolved) is not bool:
+                    raise ValueError("known entries must be booleans")
+                if (state in {LabelState.UNKNOWN, LabelState.PENDING}) == resolved:
+                    raise ValueError("unresolved states and legacy known mask disagree")
+                if (state is LabelState.MATURE_EVENT) != (session in event_anchors):
+                    raise ValueError("mature-event states must match explicit event anchors")
+
+    def state_at(self, scale: str, session: int) -> LabelState:
+        return self.states[scale][session]
 
 
 @dataclass(frozen=True)
