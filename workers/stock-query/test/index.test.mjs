@@ -82,7 +82,7 @@ test('health reports configured bindings without exposing the token', async () =
     assert.equal(health.gh_token, true);
     assert.equal(health.repo, 'example/stocks');
     assert.equal(health.allowed_origin, 'https://example.test');
-    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/query', '/status', '/result', '/replay', '/replay/result']);
+    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/quote', '/query', '/status', '/result', '/replay', '/replay/result']);
   });
 });
 
@@ -1016,6 +1016,124 @@ test('news route preserves the existing OPTIONS and Origin checks', async () => 
     assert.equal(forbidden.status, 403);
     assert.equal(forbidden.headers.get('Access-Control-Allow-Origin'), null);
     assert.equal((await worker.fetch(request('/news', { method: 'POST' }), env)).status, 405);
+  });
+});
+
+const TENCENT_QUOTE_FIXTURE = [
+  'v_sh600519="1~贵州茅台~600519~1435.26~1410.27~1404.00~41780~22449~19331~1435.00~1~1434.80~1~1434.68~1~1434.60~1~1434.55~1~1435.26~2~1435.27~3~1435.38~6~1435.49~9~1435.50~9~~20261113161455~24.99~1.77~1437.69~1394.00~1435.26/41780/5954834070~41780";',
+  'v_sh000688="1~科创50~000688~1279.66~1309.84~1330.28~9685614~0~0~0.00~0~0.00~0~0.00~0~0.00~0~0.00~0~0.00~0~0.00~0~0.00~0~0.00~0~0.00~0~~20261113161409~-30.18~-2.30~1342.13~1270.62~1279.66/9685614/100008480359";',
+  'v_usAAPL="200~苹果~AAPL.OQ~356.27~354.88~357.96~40027467~0~0~355.33~40~0~0~0~0~0~0~0~0~355.40~120~0~0~0~0~0~0~0~0~~2026-11-13 16:00:01~1.39~0.39~360.83~355.75~USD";',
+].join('\n');
+
+function tencentQuoteRow(code, { price = '0', prevClose = '1' } = {}) {
+  const fields = Array(35).fill('0');
+  fields[3] = price;
+  fields[4] = prevClose;
+  fields[30] = '20261113100000';
+  return `v_${code}="${fields.join('~')}";`;
+}
+
+test('GET /quote parses Tencent prices without returning names', async () => {
+  const calls = [];
+  await withUpstream({ fetch: async (url, init) => {
+    calls.push({ url: String(url), init });
+    return new Response(TENCENT_QUOTE_FIXTURE, { headers: { 'Content-Type': 'text/plain; charset=GBK' } });
+  } }, async () => {
+    const response = await worker.fetch(request('/quote?codes=sh600519,sh000688,usAAPL'), environment());
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'public, max-age=60');
+    assert.equal(response.headers.get('X-Quote-Cache'), 'BYPASS');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), ORIGIN);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, 'https://qt.gtimg.cn/q=sh000688,sh600519,usAAPL');
+    assert.ok(calls[0].init.signal instanceof AbortSignal);
+    const result = await response.json();
+    assert.equal(result.source, 'tencent');
+    assert.ok(Number.isFinite(Date.parse(result.fetched_at)));
+    assert.deepEqual(result.missing, []);
+    assert.deepEqual(result.quotes.sh600519, {
+      price: 1435.26, prev_close: 1410.27, open: 1404, high: 1437.69, low: 1394,
+      change: 24.99, pct: 1.77, time: '20261113161455', tz: 'Asia/Shanghai',
+    });
+    assert.deepEqual(result.quotes.sh000688, {
+      price: 1279.66, prev_close: 1309.84, open: 1330.28, high: 1342.13, low: 1270.62,
+      change: -30.18, pct: -2.3, time: '20261113161409', tz: 'Asia/Shanghai',
+    });
+    assert.deepEqual(result.quotes.usAAPL, {
+      price: 356.27, prev_close: 354.88, open: 357.96, high: 360.83, low: 355.75,
+      change: 1.39, pct: 0.39, time: '2026-11-13 16:00:01', tz: 'America/New_York',
+    });
+    assert.equal(Object.hasOwn(result.quotes.sh600519, 'name'), false);
+  });
+});
+
+test('GET /quote rejects empty, invalid, and over-limit code lists before fetching', async () => {
+  await withUpstream({ fetch: async () => assert.fail('invalid quote codes should not fetch') }, async () => {
+    for (const path of [
+      '/quote?codes=',
+      '/quote?codes=sh600519,US_AAPL',
+      '/quote?codes=' + Array(61).fill('sh600519').join(','),
+    ]) {
+      const response = await worker.fetch(request(path), environment());
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).error_code, 'INVALID_CODES');
+    }
+  });
+});
+
+test('GET /quote sends nonpositive prices to missing', async () => {
+  await withUpstream({ fetch: async () => new Response(tencentQuoteRow('sz000001')) }, async () => {
+    const response = await worker.fetch(request('/quote?codes=sz000001'), environment());
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.deepEqual(result.quotes, {});
+    assert.deepEqual(result.missing, ['sz000001']);
+  });
+});
+
+test('GET /quote returns 502 for an upstream failure without caching it', async () => {
+  const cache = memoryCache();
+  await withCaches(cache, async () => {
+    await withUpstream({ fetch: async () => new Response('blocked', { status: 503 }) }, async () => {
+      const response = await worker.fetch(request('/quote?codes=sh600519'), environment());
+      assert.equal(response.status, 502);
+      assert.equal((await response.json()).error_code, 'QUOTE_UPSTREAM_FAILED');
+      assert.equal(cache.size, 0);
+    });
+  });
+});
+
+test('GET /quote deduplicates and normalizes codes for a cached response', async () => {
+  const cache = memoryCache();
+  let calls = 0;
+  await withCaches(cache, async () => {
+    await withUpstream({ fetch: async () => {
+      calls += 1;
+      return new Response(TENCENT_QUOTE_FIXTURE);
+    } }, async () => {
+      const first = await worker.fetch(request('/quote?codes=sh600519,usaapl'), environment());
+      const second = await worker.fetch(request('/quote?codes=usAAPL,sh600519,sh600519'), environment());
+      assert.equal(first.headers.get('X-Quote-Cache'), 'MISS');
+      assert.equal(second.headers.get('X-Quote-Cache'), 'HIT');
+      assert.equal(second.headers.get('Cache-Control'), 'public, max-age=60');
+      assert.equal(calls, 1);
+      assert.equal(cache.size, 1);
+    });
+  });
+});
+
+test('quote route preserves OPTIONS, Origin, and method checks', async () => {
+  await withUpstream({ fetch: async () => assert.fail('quote request should not fetch') }, async () => {
+    const env = environment();
+    const options = await worker.fetch(request('/quote?codes=sh600519', { method: 'OPTIONS' }), env);
+    assert.equal(options.status, 204);
+    assert.equal(options.headers.get('Access-Control-Allow-Origin'), ORIGIN);
+    const forbidden = await worker.fetch(request('/quote?codes=sh600519', { origin: 'https://evil.test' }), env);
+    assert.equal(forbidden.status, 403);
+    assert.equal(forbidden.headers.get('Access-Control-Allow-Origin'), null);
+    const post = await worker.fetch(request('/quote?codes=sh600519', { method: 'POST' }), env);
+    assert.equal(post.status, 405);
+    assert.equal((await post.json()).error_code, 'METHOD_NOT_ALLOWED');
   });
 });
 

@@ -11,6 +11,9 @@ const STATUS_TTL_MS = 10_000;
 const INDEX_TTL_MS = 60_000;
 const NEWS_TTL_SECONDS = 60;
 const NEWS_TIMEOUT_MS = 8000;
+const QUOTE_TTL_SECONDS = 60;
+const QUOTE_TIMEOUT_MS = 5000;
+const QUOTE_CODE_PATTERN = /^(?:(?:sh|sz|bj)\d{6}|us[A-Za-z.]{1,10})$/;
 const CLS_ROLL_URL = 'https://www.cls.cn/v1/roll/get_roll_list';
 const EM_FAST_NEWS_URL = 'https://np-weblist.eastmoney.com/comm/web/getFastNewsList';
 const NEWS_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36';
@@ -454,6 +457,119 @@ async function liveNews(request, env) {
     catch { /* A cache failure must not hide available live data. */ }
   }
   return response;
+}
+
+function normalizeQuoteCode(value) {
+  if (typeof value !== 'string') return null;
+  if (/^(?:sh|sz|bj)\d{6}$/.test(value)) return value;
+  if (/^us[A-Za-z.]{1,10}$/.test(value)) return 'us' + value.slice(2).toUpperCase();
+  return null;
+}
+
+function normalizeQuoteCodes(value) {
+  if (typeof value !== 'string' || !value) return null;
+  const rawCodes = value.split(',').map(code => code.trim());
+  if (!rawCodes.length || rawCodes.length > 60 || rawCodes.some(code => !QUOTE_CODE_PATTERN.test(code))) return null;
+  const codes = rawCodes.map(normalizeQuoteCode);
+  if (codes.some(code => !code)) return null;
+  return [...new Set(codes)].sort();
+}
+
+function quoteNumber(fields, index) {
+  const raw = String(fields[index] ?? '').trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function parseTencentQuotes(text, codes) {
+  const requested = new Set(codes);
+  const quotes = {};
+  let matched = false;
+  for (const row of String(text).matchAll(/v_([A-Za-z0-9.]+)="([^"]*)"/g)) {
+    const code = row[1];
+    if (!requested.has(code)) continue;
+    matched = true;
+    const fields = row[2].split('~');
+    const price = quoteNumber(fields, 3);
+    if (price === null || price <= 0) continue;
+    quotes[code] = {
+      price,
+      prev_close: quoteNumber(fields, 4),
+      open: quoteNumber(fields, 5),
+      high: quoteNumber(fields, 33),
+      low: quoteNumber(fields, 34),
+      change: quoteNumber(fields, 31),
+      pct: quoteNumber(fields, 32),
+      time: String(fields[30] ?? ''),
+      tz: code.startsWith('us') ? 'America/New_York' : 'Asia/Shanghai',
+    };
+  }
+  return { matched, quotes, missing: codes.filter(code => !Object.hasOwn(quotes, code)) };
+}
+
+async function fetchTencentQuotes(codes) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), QUOTE_TIMEOUT_MS);
+  try {
+    const response = await fetch(`https://qt.gtimg.cn/q=${codes.join(',')}`, { signal: controller.signal });
+    if (!response.ok) throw new Error(`http_${response.status}`);
+    const parsed = parseTencentQuotes(await response.text(), codes);
+    if (!parsed.matched) throw new Error('invalid_response');
+    return parsed;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function liveQuote(request, env, url) {
+  const codes = normalizeQuoteCodes(url.searchParams.get('codes'));
+  if (!codes) {
+    return jsonResponse(request, env, { error_code: 'INVALID_CODES', error: '请输入有效的标的代码（最多 60 个）' }, 400);
+  }
+  const origin = request.headers.get('Origin') || 'none';
+  const cacheKey = new Request(`https://lppl-stock-query.invalid/quote?codes=${encodeURIComponent(codes.join(','))}&origin=${encodeURIComponent(origin)}`);
+  let cache = null;
+  try {
+    if (typeof caches !== 'undefined' && caches.default) cache = caches.default;
+  } catch { cache = null; }
+  if (cache) {
+    try {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const response = new Response(cached.body, {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers: cached.headers,
+        });
+        response.headers.set('X-Quote-Cache', 'HIT');
+        return response;
+      }
+    } catch { cache = null; }
+  }
+
+  try {
+    const data = await fetchTencentQuotes(codes);
+    const response = jsonResponse(request, env, {
+      source: 'tencent',
+      fetched_at: new Date().toISOString(),
+      quotes: data.quotes,
+      missing: data.missing,
+    }, 200, {
+      'Cache-Control': `public, max-age=${QUOTE_TTL_SECONDS}`,
+      'X-Quote-Cache': cache ? 'MISS' : 'BYPASS',
+    });
+    if (cache) {
+      try { await cache.put(cacheKey, response.clone()); }
+      catch { /* A cache failure must not hide available quote data. */ }
+    }
+    return response;
+  } catch {
+    return jsonResponse(request, env, {
+      error_code: 'QUOTE_UPSTREAM_FAILED',
+      error: '腾讯行情暂时不可用',
+    }, 502, { 'X-Quote-Cache': cache ? 'MISS' : 'BYPASS' });
+  }
 }
 
 async function mainSHA(env, timeoutMs = 8000) {
@@ -913,7 +1029,7 @@ export default {
         gh_token,
         repo: repo(env),
         allowed_origin: env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
-        routes: ['/health', '/market', '/news', '/query', '/status', '/result', '/replay', '/replay/result'],
+        routes: ['/health', '/market', '/news', '/quote', '/query', '/status', '/result', '/replay', '/replay/result'],
       }, ok ? 200 : 503);
     }
     if (url.pathname === '/news') {
@@ -921,6 +1037,12 @@ export default {
         return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
       }
       return liveNews(request, env);
+    }
+    if (url.pathname === '/quote') {
+      if (request.method !== 'GET') {
+        return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
+      }
+      return liveQuote(request, env, url);
     }
     if (url.pathname === '/replay' || url.pathname === '/replay/result') {
       return indexReplay(request, env, url);
