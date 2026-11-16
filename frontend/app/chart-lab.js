@@ -374,39 +374,47 @@
     }
   }
 
+  function showMissingMarket() {
+    states = root.ScaleBar.classify({}, {}, []);
+    bands = [];
+    selectedScale = null;
+    renderChips();
+    $('lab-status').textContent = '行情或模型结果未加载';
+  }
+
   async function load() {
-    try {
-      var results = await Promise.allSettled([
-        Promise.resolve().then(function () { return root.LPPL.stock.market(code); }),
-        Promise.resolve().then(function () { return root.LPPL.stock.latest(code); }),
-        Promise.resolve().then(function () { return root.LPPL.stock.remote(code, 'latest'); }),
-      ]);
-      var market = results[0].status === 'fulfilled' ? results[0].value : null;
-      var localCurrent = results[1].status === 'fulfilled' ? results[1].value : null;
-      var remoteCurrent = results[2].status === 'fulfilled' ? results[2].value : null;
-      var current = root.ChartLab.pickCurrent(localCurrent, remoteCurrent);
-      if (!market || !current || !Array.isArray(market.price)) throw new Error('missing');
-      candles = root.ChartLab.toCandles(market.price);
-      if (!candles.length) throw new Error('missing');
-      calendarBars = candles.map(function (bar) { return { date: bar.time }; });
-      chartStartDate = candles[0].time;
-      closures = new Set(current.future_calendar && current.future_calendar.closures || []);
-      bands = root.ChartLab.bandsFor(current);
-      states = statesFor(current);
-      selectedScale = bands.some(function (band) { return band.scale === root.ScaleBar.DEFAULT_SCALE; })
-        ? root.ScaleBar.DEFAULT_SCALE
-        : bands.length ? bands[0].scale : null;
-      $('focus-date').value = candles[candles.length - 1].time;
-      renderChips();
-      $('lab-status').textContent = '';
-      makeChart();
-    } catch (_) {
-      states = root.ScaleBar.classify({}, {}, []);
-      bands = [];
-      selectedScale = null;
-      renderChips();
-      $('lab-status').textContent = '行情或模型结果未加载';
+    var results = await Promise.allSettled([
+      Promise.resolve().then(function () { return root.LPPL.stock.market(code); }),
+      Promise.resolve().then(function () { return root.LPPL.stock.latest(code); }),
+      Promise.resolve().then(function () { return root.LPPL.stock.remote(code, 'latest'); }),
+    ]);
+    var market = results[0].status === 'fulfilled' ? results[0].value : null;
+    var localCurrent = results[1].status === 'fulfilled' ? results[1].value : null;
+    var remoteCurrent = results[2].status === 'fulfilled' ? results[2].value : null;
+    var current = root.ChartLab.pickCurrent(localCurrent, remoteCurrent);
+    if (!market || !Array.isArray(market.price)) {
+      showMissingMarket();
+      return;
     }
+    candles = root.ChartLab.toCandles(market.price);
+    if (!candles.length) {
+      showMissingMarket();
+      return;
+    }
+    calendarBars = candles.map(function (bar) { return { date: bar.time }; });
+    chartStartDate = candles[0].time;
+    closures = new Set(current && current.future_calendar && current.future_calendar.closures || []);
+    bands = current ? root.ChartLab.bandsFor(current) : [];
+    states = current ? statesFor(current) : root.ScaleBar.classify({}, {}, []);
+    selectedScale = current
+      ? bands.some(function (band) { return band.scale === root.ScaleBar.DEFAULT_SCALE; })
+        ? root.ScaleBar.DEFAULT_SCALE
+        : bands.length ? bands[0].scale : null
+      : null;
+    $('focus-date').value = candles[candles.length - 1].time;
+    renderChips();
+    $('lab-status').textContent = current ? '' : '模型结果未加载，只显示行情';
+    makeChart();
   }
 
   $('scale-chips').addEventListener('click', function (event) {
