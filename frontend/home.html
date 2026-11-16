@@ -218,7 +218,7 @@ function loadIdx(){
  skel();
  HOMEDATA.all().then(L=>{
   const ok=L.filter(r=>!r.error);
-  if(!ok.length){rows.innerHTML=`<li class="errbox">数据未加载：${E((L[0]||{}).error||'网络不可用')}<br><button type="button" id="retry">重试</button></li>`;$('asof').textContent='—';$('retry').onclick=loadIdx;return}
+  if(!ok.length){rows.innerHTML=`<li class="errbox">数据未加载：${E((L[0]||{}).error||'网络不可用')}<br><button type="button" id="retry">重试</button></li>`;$('asof').textContent='—';$('retry').onclick=loadIdx;IDXROWS=L;if(qTimer)refreshQuotes();else startQuotes();mine();return}
   rows.innerHTML=L.map(r=>{
    if(r.error)return `<li class="row"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-row:1/3">数据未加载</span></li>`;
    const s=r.bars.slice(-60).map(b=>b.close),ch=r.last.close/r.prev.close-1,sc=s[s.length-1]>=s[0]?'var(--up)':'var(--dn)';
