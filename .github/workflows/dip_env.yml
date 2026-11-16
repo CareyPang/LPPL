@@ -3,6 +3,8 @@ name: dip_env
 on:
   schedule:
     - cron: "30 10 * * 1-5" # 18:30 Asia/Shanghai, weekdays
+  repository_dispatch:
+    types: [dip_env]
   workflow_dispatch:
 
 permissions:

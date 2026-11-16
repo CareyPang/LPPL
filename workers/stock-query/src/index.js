@@ -21,6 +21,36 @@ const SUCCESS_STATUSES = new Set([
   'success', 'eligible', 'insufficient_history', 'st_degenerate', 'degenerate',
   'st', 'suspended', 'delisted_or_long_suspended',
 ]);
+const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+const QUARTER_HOUR_MS = 15 * 60 * 1000;
+const WORKER_CRON_SLOTS = [
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 18 * 60 + 15, eventTypes: ['market_daily', 'index_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 18 * 60 + 30, eventTypes: ['dip_env', 'forward_log_seal'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 20 * 60 + 45, eventTypes: ['market_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 21 * 60 + 45, eventTypes: ['index_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 23 * 60 + 15, eventTypes: ['nt_etf_daily'] },
+  { weekdays: [2, 3, 4, 5, 6], minuteOfDay: 6 * 60 + 30, eventTypes: ['macro_daily', 'growth_daily', 'us_nightly'] },
+  { weekdays: [2, 3, 4, 5, 6], minuteOfDay: 9 * 60 + 15, eventTypes: ['nt_etf_daily'] },
+];
+
+function beijingSlot(scheduledTimeMs) {
+  if (typeof scheduledTimeMs !== 'number' || !Number.isFinite(scheduledTimeMs)) return null;
+  const slotMs = Math.floor((scheduledTimeMs + BEIJING_OFFSET_MS) / QUARTER_HOUR_MS) * QUARTER_HOUR_MS;
+  const date = new Date(slotMs);
+  return {
+    weekday: date.getUTCDay(),
+    minuteOfDay: date.getUTCHours() * 60 + date.getUTCMinutes(),
+    label: `${date.toISOString().slice(0, 16).replace('T', ' ')} Asia/Shanghai`,
+  };
+}
+
+export function dispatchesForSlot(scheduledTimeMs) {
+  const slot = beijingSlot(scheduledTimeMs);
+  if (!slot) return [];
+  const match = WORKER_CRON_SLOTS.find(({ weekdays, minuteOfDay }) =>
+    weekdays.includes(slot.weekday) && minuteOfDay === slot.minuteOfDay);
+  return match ? [...match.eventTypes] : [];
+}
 
 export function lastCloseInstant(now = new Date()) {
   const instant = now instanceof Date ? now.getTime() : Number(now);
@@ -1008,6 +1038,33 @@ async function legacyStatus(request, env, code, since) {
 }
 
 export default {
+  async scheduled(event, env = {}, ctx) {
+    const eventTypes = dispatchesForSlot(event?.scheduledTime);
+    if (!eventTypes.length) return;
+    if (!env.GH_TOKEN) {
+      console.error('worker_cron dispatch skipped', { reason: 'GH_TOKEN is missing' });
+      return;
+    }
+    const slot = beijingSlot(event.scheduledTime).label;
+    const dispatches = eventTypes.map(async (event_type) => {
+      try {
+        const response = await fetchJSON(`https://api.github.com/repos/${repo(env)}/dispatches`, {
+          method: 'POST',
+          headers: githubHeaders(env),
+          body: JSON.stringify({
+            event_type,
+            client_payload: { source: 'worker_cron', slot },
+          }),
+        });
+        if (response.status !== 204) {
+          console.error('worker_cron dispatch failed', { event_type, status: response.status });
+        }
+      } catch {
+        console.error('worker_cron dispatch failed', { event_type, status: 'throw' });
+      }
+    });
+    ctx.waitUntil(Promise.allSettled(dispatches));
+  },
   async fetch(request, env = {}) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');

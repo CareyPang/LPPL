@@ -19,3 +19,6 @@ class_name = "QueryBudget"
 [[migrations]]
 tag = "v1-stock-jobs"
 new_sqlite_classes = ["StockQueryState", "QueryBudget"]
+
+[triggers]
+crons = ["*/15 * * * *"]

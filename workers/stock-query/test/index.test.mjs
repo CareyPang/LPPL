@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import worker, {
   replayFailureActive,
+  dispatchesForSlot,
   StockQueryState,
   QueryBudget,
   normalizeMarket,
@@ -1257,4 +1258,156 @@ test('transient replay failures expire after 30 minutes and are re-dispatched; p
     assert.equal(post.status, 202);
     assert.equal(dispatches.length, 1);
   });
+});
+
+function beijingTime(date, time) {
+  return Date.parse(`${date}T${time}:00+08:00`);
+}
+
+test('dispatchesForSlot maps every configured Beijing slot', () => {
+  const cases = [
+    ['2026-11-16', '18:15', ['market_daily', 'index_daily']],
+    ['2026-11-17', '18:30', ['dip_env', 'forward_log_seal']],
+    ['2026-11-18', '20:45', ['market_daily']],
+    ['2026-11-19', '21:45', ['index_daily']],
+    ['2026-11-20', '23:15', ['nt_etf_daily']],
+    ['2026-11-18', '06:30', ['macro_daily', 'growth_daily', 'us_nightly']],
+    ['2026-11-21', '09:15', ['nt_etf_daily']],
+  ];
+  for (const [date, time, eventTypes] of cases) {
+    assert.deepEqual(dispatchesForSlot(beijingTime(date, time)), eventTypes);
+  }
+});
+
+test('dispatchesForSlot floors to a quarter hour and respects Beijing weekday boundaries', () => {
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-16', '18:16')), [
+    'market_daily',
+    'index_daily',
+  ]);
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-20', '23:15')), ['nt_etf_daily']);
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-21', '18:15')), []);
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-21', '06:30')), [
+    'macro_daily',
+    'growth_daily',
+    'us_nightly',
+  ]);
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-23', '06:30')), []);
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-16', '18:00')), []);
+  assert.deepEqual(dispatchesForSlot(NaN), []);
+});
+
+test('scheduled dispatches mapped workflows with the Beijing slot payload', async () => {
+  const requests = [];
+  const waitUntilCalls = [];
+  await withUpstream({ fetch: async (url, init = {}) => {
+    requests.push({ url: String(url), init, body: JSON.parse(init.body) });
+    return new Response(null, { status: 204 });
+  } }, async () => {
+    await worker.scheduled(
+      { scheduledTime: beijingTime('2026-11-16', '18:15') },
+      { GH_TOKEN: TOKEN, REPO: 'example/daily' },
+      { waitUntil: promise => waitUntilCalls.push(promise) },
+    );
+    assert.equal(waitUntilCalls.length, 1);
+    await Promise.all(waitUntilCalls);
+  });
+
+  assert.deepEqual(requests.map(({ url }) => url), [
+    'https://api.github.com/repos/example/daily/dispatches',
+    'https://api.github.com/repos/example/daily/dispatches',
+  ]);
+  assert.deepEqual(requests.map(({ body }) => body), [
+    {
+      event_type: 'market_daily',
+      client_payload: { source: 'worker_cron', slot: '2026-11-16 18:15 Asia/Shanghai' },
+    },
+    {
+      event_type: 'index_daily',
+      client_payload: { source: 'worker_cron', slot: '2026-11-16 18:15 Asia/Shanghai' },
+    },
+  ]);
+  for (const { init } of requests) {
+    assert.equal(init.method, 'POST');
+    assert.equal(init.headers.Authorization, `Bearer ${TOKEN}`);
+    assert.equal(init.headers['User-Agent'], 'lppl-stock-query-worker');
+  }
+});
+
+test('scheduled logs non-204 statuses without throwing or retrying', async () => {
+  const requests = [];
+  const errors = [];
+  const originalError = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    await withUpstream({ fetch: async () => {
+      requests.push(true);
+      return new Response(null, { status: 500 });
+    } }, async () => {
+      const waitUntilCalls = [];
+      await worker.scheduled(
+        { scheduledTime: beijingTime('2026-11-16', '18:15') },
+        { GH_TOKEN: TOKEN },
+        { waitUntil: promise => waitUntilCalls.push(promise) },
+      );
+      await Promise.all(waitUntilCalls);
+    });
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.equal(requests.length, 2);
+  assert.equal(errors.length, 2);
+  assert.deepEqual(errors.map(([, details]) => [details.event_type, details.status]), [
+    ['market_daily', 500],
+    ['index_daily', 500],
+  ]);
+});
+
+test('scheduled logs and absorbs thrown dispatch errors', async () => {
+  const errors = [];
+  const originalError = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    await withUpstream({ fetch: async () => {
+      throw new Error('network down');
+    } }, async () => {
+      const waitUntilCalls = [];
+      await worker.scheduled(
+        { scheduledTime: beijingTime('2026-11-16', '18:15') },
+        { GH_TOKEN: TOKEN },
+        { waitUntil: promise => waitUntilCalls.push(promise) },
+      );
+      await Promise.all(waitUntilCalls);
+    });
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.equal(errors.length, 2);
+  assert.deepEqual(errors.map(([, details]) => [details.event_type, details.status]), [
+    ['market_daily', 'throw'],
+    ['index_daily', 'throw'],
+  ]);
+});
+
+test('scheduled reports a missing GitHub token without dispatching', async () => {
+  const errors = [];
+  const originalError = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
+      let waitUntilCalled = false;
+      await worker.scheduled(
+        { scheduledTime: beijingTime('2026-11-16', '18:15') },
+        {},
+        { waitUntil: () => { waitUntilCalled = true; } },
+      );
+      assert.equal(waitUntilCalled, false);
+    });
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.equal(errors.length, 1);
+  assert.match(errors[0][0], /worker_cron dispatch skipped/);
 });

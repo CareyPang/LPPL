@@ -2,7 +2,10 @@ name: index_daily
 
 on:
   schedule:
-    - cron: "0 10 * * 1-5"
+    - cron: "17 10 * * 1-5"
+    - cron: "47 13 * * 1-5"
+  repository_dispatch:
+    types: [index_daily]
   workflow_dispatch:
   pull_request:
     paths:
@@ -23,6 +26,7 @@ jobs:
     outputs:
       asof: ${{ steps.plan.outputs.asof }}
       symbols: ${{ steps.plan.outputs.symbols }}
+      skip: ${{ steps.plan.outputs.skip }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,15 +46,51 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             symbols='["sh000001"]'
           fi
+          skip=false
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" || "$GITHUB_EVENT_NAME" == "repository_dispatch" ]]; then
+            if git fetch --no-tags --depth=1 origin stock-results; then
+              skip="$(
+                INDEX_SYMBOLS="$symbols" ASOF="$asof" python - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          symbols = json.loads(os.environ["INDEX_SYMBOLS"])
+          asof = os.environ["ASOF"]
+          matches = True
+          for symbol in symbols:
+              result = subprocess.run(
+                  ["git", "show", f"origin/stock-results:index/{symbol}_latest.json"],
+                  capture_output=True,
+                  text=True,
+              )
+              if result.returncode:
+                  matches = False
+                  break
+              try:
+                  payload = json.loads(result.stdout)
+              except json.JSONDecodeError:
+                  matches = False
+                  break
+              if not isinstance(payload, dict) or payload.get("asof") != asof:
+                  matches = False
+                  break
+          print(str(matches).lower())
+          PY
+              )"
+            fi
+          fi
           {
             printf 'asof=%s\n' "$asof"
             printf 'symbols=%s\n' "$symbols"
+            printf 'skip=%s\n' "$skip"
           } >> "$GITHUB_OUTPUT"
-          printf 'asof=%s; planned symbols=%s\n' \
-            "$asof" "$symbols" >> "$GITHUB_STEP_SUMMARY"
+          printf 'asof=%s; planned symbols=%s; skip index fit=%s\n' \
+            "$asof" "$symbols" "$skip" >> "$GITHUB_STEP_SUMMARY"
 
   fit:
     needs: plan
+    if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     permissions:
@@ -89,7 +129,7 @@ jobs:
 
   publish:
     needs: [plan, fit]
-    if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.plan.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

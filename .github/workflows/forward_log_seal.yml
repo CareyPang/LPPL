@@ -6,6 +6,8 @@ name: forward_log_seal
 on:
   schedule:
     - cron: "30 10 * * 1-5" # 18:30 Asia/Shanghai, weekdays（收盘后，market_daily 之后半小时）
+  repository_dispatch:
+    types: [forward_log_seal]
   workflow_dispatch:
 
 permissions:
