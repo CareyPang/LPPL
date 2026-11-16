@@ -35,7 +35,15 @@
     .readout { min-height: 24px; margin: 8px 0 0; color: #303744; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
     .comparison { margin-top: 16px; }
     .comparison h2 { margin-bottom: 12px; }
-    .comparison-scroll { max-width: 100%; overflow-x: auto; }
+    .comparison-scroll {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+    }
     table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 9px 10px; border: 1px solid #e1e5eb; text-align: left; vertical-align: top; }
     th { background: #f7f8fa; color: #5c6470; font-weight: 600; }
@@ -43,7 +51,7 @@
       main { padding: 12px; }
       .panels { grid-template-columns: minmax(0, 1fr); }
       .panel, .comparison { padding: 12px; }
-      .panel-a iframe { height: 640px; }
+      .panel-a iframe { height: 560px; }
       #lwc-chart { height: 420px; }
     }
   </style>

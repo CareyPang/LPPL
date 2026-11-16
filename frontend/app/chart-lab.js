@@ -111,11 +111,33 @@
   };
   var code = new URLSearchParams(root.location.search).get('code') || '601838';
   if (!/^\d{6}$/.test(code)) code = '601838';
-  $('existing-frame').src = 'stock.html?code=' + encodeURIComponent(code);
+  var existingFrame = $('existing-frame');
+  function scrollExistingChartIntoView() {
+    var startedAt = Date.now();
+    function poll() {
+      try {
+        var frameDocument = existingFrame.contentDocument;
+        var plot = frameDocument && frameDocument.getElementById('market-plot');
+        if (plot) {
+          var style = frameDocument.defaultView.getComputedStyle(plot);
+          var rect = plot.getBoundingClientRect();
+          if (!plot.hidden && style.display !== 'none' && style.visibility !== 'hidden' &&
+              rect.width > 0 && rect.height > 0) {
+            plot.scrollIntoView({ block: 'start' });
+            return;
+          }
+        }
+      } catch (_) {}
+      if (Date.now() - startedAt < 15000) root.setTimeout(poll, 100);
+    }
+    poll();
+  }
+  existingFrame.addEventListener('load', scrollExistingChartIntoView);
+  existingFrame.src = 'stock.html?code=' + encodeURIComponent(code);
 
   var chart = null, candleSeries = null, volumeSeries = null, primitive = null;
   var candles = [], calendarBars = [], bands = [], states = [], closures = new Set();
-  var selectedScale = null;
+  var selectedScale = null, chartStartDate = null, chartEndDate = null, chartFutureCount = 0;
   var gzipUrl = 'vendor/lightweight-charts/5.2.1/lightweight-charts.standalone.production.js';
 
   function statesFor(current) {
@@ -173,11 +195,19 @@
           context.save();
           context.fillStyle = 'rgba(214, 153, 51, 0.16)';
           context.fillRect(left, 0, right - left, scope.bitmapSize.height);
-          context.fillStyle = '#85580c';
           context.font = (12 * scope.verticalPixelRatio) + 'px sans-serif';
+          context.textAlign = 'left';
+          var label = bandLabel(band);
+          var labelWidth = context.measureText(label).width;
+          var padding = 4 * scope.horizontalPixelRatio;
+          var labelX = Math.max(padding, Math.min(left + padding, scope.bitmapSize.width - padding - labelWidth));
+          context.fillStyle = 'rgba(255, 255, 255, 0.88)';
+          context.fillRect(labelX - padding / 2, 2 * scope.verticalPixelRatio,
+            labelWidth + padding, 17 * scope.verticalPixelRatio);
+          context.fillStyle = '#85580c';
           context.fillText(
-            bandLabel(band),
-            Math.min(right - 4 * scope.horizontalPixelRatio, left + 4 * scope.horizontalPixelRatio),
+            label,
+            labelX,
             16 * scope.verticalPixelRatio,
           );
           context.restore();
@@ -213,8 +243,15 @@
     if (primitive) candleSeries.detachPrimitive(primitive);
     primitive = band ? createBandPrimitive(chart, band) : null;
     if (primitive) candleSeries.attachPrimitive(primitive);
+    chartFutureCount = future.length;
+    chartEndDate = future.length ? future[future.length - 1].time : candles[candles.length - 1].time;
     renderChips();
-    if (fit) chart.timeScale().fitContent();
+    if (fit) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, candles.length - 120),
+        to: candles.length + future.length + 3,
+      });
+    }
   }
 
   function makeChart() {
@@ -274,13 +311,33 @@
   }
 
   function locateDate() {
-    if (!chart) return;
+    if (!chart || !chartStartDate || !chartEndDate) return;
     var date = $('focus-date').value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
-    chart.timeScale().setVisibleRange({
-      from: plusDays(date, -30),
-      to: plusDays(date, 30),
-    });
+    var focusDate = date < chartStartDate ? chartStartDate : date > chartEndDate ? chartEndDate : date;
+    var from = plusDays(focusDate, -30);
+    var to = plusDays(focusDate, 30);
+    if (from < chartStartDate) from = chartStartDate;
+    if (to > chartEndDate) to = chartEndDate;
+    function setLatestRange() {
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, candles.length - 120),
+        to: candles.length + chartFutureCount + 3,
+      });
+    }
+    if (from >= to) {
+      setLatestRange();
+      return;
+    }
+    if (focusDate > candles[candles.length - 1].time || to > candles[candles.length - 1].time) {
+      setLatestRange();
+      return;
+    }
+    try {
+      chart.timeScale().setVisibleRange({ from: from, to: to });
+    } catch (_) {
+      setLatestRange();
+    }
   }
 
   async function updateGzipSize() {
@@ -312,6 +369,7 @@
       candles = root.ChartLab.toCandles(market.price);
       if (!candles.length) throw new Error('missing');
       calendarBars = candles.map(function (bar) { return { date: bar.time }; });
+      chartStartDate = candles[0].time;
       closures = new Set(current.future_calendar && current.future_calendar.closures || []);
       bands = root.ChartLab.bandsFor(current);
       states = statesFor(current);
