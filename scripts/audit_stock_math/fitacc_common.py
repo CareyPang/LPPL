@@ -178,3 +178,71 @@ def box_row(t, y, theta, lo, hi):
 
 def box_pass(t, y, theta, lo, hi):
     return _box_pass(y, box_row(t, y, theta, lo, hi))
+
+
+# ---- §26 第二轮 ----
+def f_thresh(alpha, n, p=7):
+    """§26.1：c(α, N) = F_{1,N−p;1−α}/(N−p)。"""
+    from scipy.stats import f as fdist
+
+    return float(fdist.ppf(1 - alpha, 1, n - p) / (n - p))
+
+
+def profile_tc_rho(t, y, lo, hi, rho=0.0, n_tc=81, n_m=30, n_w=40, top=3):
+    """§26.1：白化剖面 S_ρ(t_c) = min_{m,ω} ‖P_ρ(y − Xβ)‖²；ρ=0 即 §25.2 的 profile_tc。"""
+    tcs = np.linspace(lo[0], hi[0], n_tc)
+    ms, ws = np.linspace(lo[1], hi[1], n_m), np.linspace(lo[2], hi[2], n_w)
+    g = grid_sse(t, y, tcs, ms, ws, rho)
+    P = np.full(n_tc, np.inf)
+    for i, tc in enumerate(tcs):
+        gi = g[i]
+        best = float(gi.min())
+        for flat in np.argsort(gi, axis=None)[:top]:
+            if not np.isfinite(gi.flat[flat]):
+                break
+            j, k = np.unravel_index(flat, gi.shape)
+            r = minimize(lambda x, tc=tc: lin_rho(t, y, np.array([tc, x[0], x[1]]), rho)[0], np.array([ms[j], ws[k]]),
+                         method="L-BFGS-B", bounds=[(lo[1], hi[1]), (lo[2], hi[2])],
+                         options=dict(maxiter=200, ftol=1e-12, gtol=1e-8))
+            best = min(best, float(r.fun))
+        P[i] = best
+    return tcs, P
+
+
+def ols_rho(t, y, lo, hi):
+    """OLS 全局解与其残差一阶自相关 ρ̂（截到 [0, 0.98]）。"""
+    th, _ = fit(t, y, lo, hi, 0.0)
+    _, b = lin_rho(t, y, th, 0.0)
+    return th, ac1(y - design(t, *th) @ b)
+
+
+def fit_ml_ar1(t, y, lo, hi, rho_max=0.98, xatol=0.005):
+    """§26.2：AR(1) 精确高斯似然联合估计。浓缩 −2ℓ(ρ) = N·log(S_ρ/N) − log(1−ρ²)，ρ 在 [0, ρ_max] 有界标量极小化。"""
+    from scipy.optimize import minimize_scalar
+
+    n = len(y)
+    cache = {}
+
+    def nll(rho):
+        th, s = fit(t, y, lo, hi, float(rho))
+        cache[float(rho)] = (th, s)
+        return n * np.log(s / n) - np.log(1 - rho**2)
+
+    r = minimize_scalar(nll, bounds=(0.0, rho_max), method="bounded", options=dict(xatol=xatol, maxiter=25))
+    th, s = cache[float(r.x)]
+    return th, float(r.x), len(cache)
+
+
+def kink_start(ns, chi2, edge=2):
+    """§26.3：对 ℓ(n)=log χ²_np(n) 做两段线性回归 ℓ ≈ a + b₀(n−n_k) + b₁(n−n_k)₊，取 RSS 最小的 n_k。"""
+    ns = np.asarray(ns, float)
+    ell = np.log(np.asarray(chi2, float))
+    best = (None, np.inf)
+    for k in range(edge, len(ns) - edge):
+        nk = ns[k]
+        X = np.column_stack([np.ones_like(ns), ns - nk, np.maximum(ns - nk, 0.0)])
+        b, *_ = np.linalg.lstsq(X, ell, rcond=None)
+        rss = float(((ell - X @ b) ** 2).sum())
+        if rss < best[1]:
+            best = (int(nk), rss)
+    return best[0]
