@@ -145,7 +145,7 @@ a { color: var(--ink-2); text-decoration: none; }
 
 /* ---------- 右侧结论栏 ---------- */
 .side { grid-area: side; border-left: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
-.blk { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+.blk { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); min-width: 0; }
 .blk-k { margin: 0 0 var(--s2); font: 500 11px/1 var(--f-u); letter-spacing: 0.1em; color: var(--ink-3); }
 .px-big { font: 600 28px/1 var(--f-m); white-space: nowrap; }
 .px-chg { font: 400 13px/1 var(--f-m); white-space: nowrap; }
@@ -153,15 +153,20 @@ a { color: var(--ink-2); text-decoration: none; }
 .vh { margin: 0; font: 600 18px/1.35 var(--f-u); }
 .vh.t-warn { color: var(--warn); } .vh.t-bot { color: var(--dn); } .vh.t-real { color: var(--real); }
 .vs { margin: var(--s1) 0 0; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
-.phs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); }
-.phs li { padding: 6px 2px; text-align: center; border-right: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
-.phs li:last-child { border-right: 0; }
-.phs .n { display: block; font: 400 10px/1 var(--f-m); margin-bottom: 2px; }
-.phs .past { color: var(--ink-2); }
-.phs .on { background: var(--warn); color: #FFFFFF; font-weight: 600; }
-.phs .on.ph-base, .phs .on.ph-wave2 { background: var(--dn); }
+.phs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; min-width: 0; max-width: 100%; border: 1px solid var(--line); }
+.phs button { min-width: 0; min-height: 36px; padding: 5px 4px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: transparent; color: var(--ink-2); text-align: center; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.phs button:nth-child(3n), .phs button:last-child { border-right: 0; }
+.phs button:nth-last-child(-n+3) { border-bottom: 0; }
+.phs button:disabled { color: var(--ink-3); cursor: not-allowed; }
+.phs button[aria-checked="true"] { background: #F5E8D5; color: var(--ink); box-shadow: inset 0 -2px 0 var(--warn); }
+.phs button.hover { box-shadow: inset 0 0 0 2px var(--real); }
+.phs .n, .phs .ph-state { display: block; font-size: 10px; line-height: 1.2; }
+.phs .n { font-family: var(--f-m); }
 .ph-tip { margin: var(--s2) 0 0; font-size: 12px; color: var(--ink-2); }
-.kv { list-style: none; margin: 0; padding: 0; }
+.hist-blk > summary { cursor: pointer; list-style: none; }
+.hist-blk > summary::-webkit-details-marker { display: none; }
+.hist-summary { margin-left: 6px; font: 400 11px/1.3 var(--f-u); letter-spacing: 0; color: var(--ink-2); }
+.kv { list-style: none; min-width: 0; margin: 0; padding: 0; }
 .kv li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); padding: 6px 0; border-bottom: 1px solid var(--grid); min-width: 0; }
 .kv li:last-child { border-bottom: 0; }
 .kv .k { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
@@ -251,9 +256,9 @@ footer p { margin: 0; max-width: 110ch; }
 }
 @media (max-width: 768px) {
   .bar-in { flex-wrap: wrap; }
-  .cmd { order: 3; flex-basis: 100%; max-width: none; }
+  .cmd { order: 3; flex-basis: 100%; width: 100%; min-width: 0; max-width: none; }
   .cmd label { display: none; }
-  #asof { width: 132px; }
+  #asof { width: 132px; min-width: 0; padding-left: 4px; padding-right: 4px; }
   .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "tool" "chart" "tl" "side" "bottom"; }
   .tool { flex-direction: row; justify-content: flex-start; padding: var(--s1) var(--s2); border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
   .tool hr { width: 0; height: 24px; border-top: 0; border-left: 1px solid var(--line); margin: 0 var(--s1); }
@@ -262,6 +267,11 @@ footer p { margin: 0; max-width: 110ch; }
   .chead { flex-wrap: wrap; }
   .side { display: flex; }
   .side .blk { border-right: 0; }
+  .kv li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; align-items: start; }
+  .kv .k { white-space: normal; }
+  .kv .v { width: 100%; text-align: left; }
+  .hist-blk > summary { min-width: 0; overflow-wrap: anywhere; }
+  .hist-summary { display: block; max-width: 100%; margin-left: 0; }
   .kpis { --od-cols: 2; }
   .kpi:nth-child(2) { border-right: 0; }
   .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
@@ -359,14 +369,18 @@ footer p { margin: 0; max-width: 110ch; }
       <p class="vs" id="vs"></p>
     </section>
     <section class="blk">
-      <p class="blk-k">六尺度置信度</p>
-      <ol class="phs" id="phs" aria-label="六尺度置信度"></ol>
+      <p class="blk-k">六尺度情景区间</p>
+      <div class="phs" id="phs" role="radiogroup" aria-label="六尺度情景区间"></div>
       <p class="ph-tip" id="ph-tip"></p>
     </section>
     <section class="blk">
       <p class="blk-k">关键位置</p>
       <ul class="kv" id="kv"></ul>
     </section>
+    <details class="blk hist-blk" id="hist-blk">
+      <summary class="blk-k">历史背景（历史分位，不是预测）<span class="hist-summary" id="hist-summary"></span></summary>
+      <ul class="kv" id="hist-kv"></ul>
+    </details>
     <section class="blk">
       <p class="blk-k">规则与证据</p>
       <div class="seg" role="tablist" aria-label="操作计划" id="seg">
@@ -404,6 +418,7 @@ footer p { margin: 0; max-width: 110ch; }
 </footer>
 
 <script src="app/trading-days.js"></script>
+<script src="app/scale-bar.js"></script>
 <script>
 /* ui.js 只用到 CP.dateAt；前端不含模型引擎 */
 window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
@@ -509,14 +524,29 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   const SCN = { '2-4w': '2–4 周', '1-3m': '1–3 月', '3-6m': '3–6 月', '6-12m': '6–12 月', '12-24m': '12–24 月', '2-6y': '2–6 年' };
   const SIG = { signal: '有合格 LPPLS 拟合：顶部结构', no_qualified_fit: '主尺度没有合格拟合', t1_not_qualified: '泡沫起点未达标准', not_computed: '未计算' };
   const REG = { HIGH_RISK: '高风险', LOW_RISK: '低风险', NEUTRAL: '中性', BULLISH: '上行', BEARISH: '下行' };
-  const shown = (scale) => { const se = (cur.top.lppls_confidence || {}).scale_evidence || {}; return se[scale] === 'dev'; };
+  let selectedScale = ScaleBar.DEFAULT_SCALE, currentScaleStates = [];
+  function scaleStates(R) {
+    const confidence = R.top.lppls_confidence || {};
+    return ScaleBar.classify(confidence.scale_evidence, confidence, R.top.scale_windows);
+  }
+  function scaleWindow(R, scale) {
+    return (R.top.scale_windows || []).find((item) => item.scale === scale) || null;
+  }
+  function scaleBands(R) {
+    return scaleStates(R).filter((state) => state.selectable && state.hasWindow).map((state) => {
+      const window = scaleWindow(R, state.scale);
+      return { scale: state.scale, lo: idxOf(R.bars, window.q20_date), hi: idxOf(R.bars, window.q80_date),
+        q20_date: window.q20_date, q80_date: window.q80_date };
+    });
+  }
 
   /* ================= 图表（Canvas：主图 + 成交量 + 顶部一致度，共用时间轴与光标） ================= */
   const CH = (function () {
     const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('chartwrap');
     const st = { R: null, a: 0, b: 100, maxI: 100, hover: -1, my: -1, ghost: -1, cross: true, W: 0, H: 0, dpr: 1, drag: null,
+      scaleBands: [], scaleSelected: ScaleBar.DEFAULT_SCALE, scaleHover: null,
       show: { top: true, hist: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
-    let col = {}, fm = 'monospace', fu = 'sans-serif', onHover = () => {};
+    let col = {}, fm = 'monospace', fu = 'sans-serif', onHover = () => {}, onScaleHover = () => {}, onScaleSelect = () => {};
     function readCol() {
       const s = getComputedStyle(document.documentElement), g = (n) => s.getPropertyValue(n).trim();
       col = { bg: g('--bg'), surface: g('--surface'), line: g('--line'), grid: g('--grid'), ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), up: g('--up'), dn: g('--dn'), warn: g('--warn'), real: g('--real'), bot: g('--bot'), wave: g('--wave') };
@@ -550,8 +580,13 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (rm.topW) b = Math.max(b, rm.topW.hi + 12);
       if (rm.crash) b = Math.max(b, rm.crash.botHi + 30);
       if (R.replay) b = Math.max(b, Math.min(N - 1, R.replay.wave2.i + 10));
-      b = Math.min(b, T + 150);
-      return [Math.max(-5, T - 160), b];
+      let a = Math.max(-5, T - 160);
+      const band = scaleBands(R).find((item) => item.scale === selectedScale);
+      if (band && (band.lo < a || band.hi > b)) {
+        const span = Math.max(b - a, band.hi - band.lo + 40), center = (band.lo + band.hi) / 2;
+        a = center - span / 2; b = center + span / 2;
+      }
+      return [a, b];
     }
     function clampView() {
       let span = st.b - st.a;
@@ -592,11 +627,11 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (realOn) for (let i = Math.max(i0, T + 1); i <= i1; i++) { lo = Math.min(lo, bars[i].close); hi = Math.max(hi, bars[i].close); }
       if (st.show.bot && rm.crash && vis(rm.crash.botLo, rm.crash.botHi)) { lo = Math.min(lo, rm.crash.pxLo); hi = Math.max(hi, rm.crash.pxHi); }
       if (st.show.wave && rm.crash && vis(rm.crash.botHi, rm.crash.botHi + 25)) hi = Math.max(hi, rm.crash.wave2);
-      if (st.show.top && rm.topPx && rm.topW && vis(rm.topW.lo, rm.topW.hi)) hi = Math.max(hi, rm.topPx[1]);
       if (!isFinite(lo)) { lo = bars[T].close * 0.9; hi = bars[T].close * 1.1; }
       const ly = [Math.log(lo), Math.log(hi)], lp = (ly[1] - ly[0]) * 0.07 || 0.02;
       ly[0] -= lp; ly[1] += lp;
       const [pt, pb] = g.price;
+      let selectedLabelY = pt + 14;
       const Y = (v) => pb - (Math.log(v) - ly[0]) / (ly[1] - ly[0]) * (pb - pt);
 
       // 右侧坐标轴底色
@@ -638,6 +673,25 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
       // ---- 主图叠加层 ----
       ctx.save(); ctx.beginPath(); ctx.rect(0, pt, g.W, pb - pt); ctx.clip();
+      const selectedBand = st.show.top ? st.scaleBands.find((band) => band.scale === st.scaleSelected) : null;
+      if (st.show.top) {
+        st.scaleBands.filter((band) => band.scale !== st.scaleSelected && vis(band.lo, band.hi)).forEach((band) => {
+          const x0 = X(band.lo), x1 = X(band.hi + 1), hovered = band.scale === st.scaleHover;
+          ctx.fillStyle = rgba(col.warn, hovered ? 0.06 : 0.025);
+          ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
+          ctx.strokeStyle = rgba(col.warn, hovered ? 0.38 : 0.18);
+          ctx.lineWidth = hovered ? 1 : 0.75;
+          ctx.strokeRect(Math.round(x0) + 0.5, pt + 0.5, Math.max(1, Math.round(x1 - x0)), pb - pt - 1);
+        });
+        if (selectedBand && vis(selectedBand.lo, selectedBand.hi)) {
+          const x0 = X(selectedBand.lo), x1 = X(selectedBand.hi + 1);
+          ctx.fillStyle = rgba(col.warn, 0.16);
+          ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
+          ctx.strokeStyle = rgba(col.warn, 0.95); ctx.lineWidth = 2;
+          ctx.strokeRect(Math.round(x0) + 0.5, pt + 1, Math.max(1, Math.round(x1 - x0)), pb - pt - 2);
+        }
+        ctx.lineWidth = 1;
+      }
       if (st.show.hist && R.hist) {
         const hv = R.hist.frames.filter((f) => vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))), dense = CPSCN.isDense(hv.length, g.W);
         for (const f of hv) {
@@ -649,16 +703,6 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           CPSCN.drawTop(ctx, x, y);
           tag('事后确认顶 ' + U.pct(t.dd, 0), x, Math.max(pt + 10, y - 18), '#FFFFFF', col.real, 'center');
         }
-      }
-      if (st.show.top && rm.altW && vis(rm.altW.lo, rm.altW.hi)) {
-        ctx.fillStyle = rgba(col.warn, 0.05); ctx.fillRect(X(rm.altW.lo), pt, Math.max(2, X(rm.altW.hi + 1) - X(rm.altW.lo)), pb - pt);
-      }
-      if (st.show.top && rm.topW && vis(rm.topW.lo, rm.topW.hi)) {
-        const x0 = X(rm.topW.lo), x1 = X(rm.topW.hi + 1);
-        ctx.fillStyle = rgba(col.warn, 0.10); ctx.fillRect(x0, pt, Math.max(2, x1 - x0), pb - pt);
-        vline(x0, pt, pb, rgba(col.warn, 0.6)); vline(x1, pt, pb, rgba(col.warn, 0.6));
-        if (rm.topPx) { ctx.fillStyle = rgba(col.warn, 0.22); ctx.fillRect(x0, Y(rm.topPx[1]), Math.max(2, x1 - x0), Y(rm.topPx[0]) - Y(rm.topPx[1])); }
-        tag('情景区间 ' + U.md(rm.topW.loDate).replace('月', '/').replace('日', '') + '–' + U.md(rm.topW.hiDate).replace('月', '/').replace('日', '') + '（未校准，仅供参考）', (x0 + x1) / 2, pt + 30, '#FFFFFF', col.warn, 'center');
       }
       if (rm.crash && st.show.bot && vis(rm.crash.botLo, rm.crash.botHi)) {
         const c = rm.crash, x0 = X(c.botLo), x1 = X(c.botHi + 1), y0 = Y(c.pxHi), y1 = Y(c.pxLo);
@@ -713,6 +757,21 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           ctx.font = '600 10px ' + fu; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           ctx.fillText(buy ? '买' : '卖', x, buy ? Y(q.low) + 28 : Y(q.high) - 28);
         });
+      }
+      if (selectedBand && vis(selectedBand.lo, selectedBand.hi)) {
+        const label = SCN[selectedBand.scale] + ' 情景区间 ' +
+          U.md(selectedBand.q20_date).replace('月', '/').replace('日', '') + '–' +
+          U.md(selectedBand.q80_date).replace('月', '/').replace('日', '');
+        selectedLabelY = Math.min(pb - 12, pt + 48);
+        tag(label, 4, selectedLabelY, '#FFFFFF', col.warn, 'left');
+      }
+      const hoveredBand = st.show.top && st.scaleBands.find((band) => band.scale === st.scaleHover);
+      if (hoveredBand && hoveredBand.scale !== st.scaleSelected) {
+        const center = (X(hoveredBand.lo) + X(hoveredBand.hi + 1)) / 2;
+        tag(SCN[hoveredBand.scale] + ' 情景区间 ' +
+          U.md(hoveredBand.q20_date).replace('月', '/').replace('日', '') + '–' +
+          U.md(hoveredBand.q80_date).replace('月', '/').replace('日', ''),
+          center, Math.min(pb - 12, selectedLabelY + 24), '#FFFFFF', col.warn, 'center');
       }
       ctx.restore();
 
@@ -777,6 +836,12 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     }
 
     function idxAt(x) { const g = geo(); return Math.round(st.a + x / (g.W / (st.b - st.a))); }
+    function scaleAt(index) {
+      if (!st.show.top) return null;
+      const candidates = st.scaleBands.filter((band) => index >= band.lo && index <= band.hi);
+      candidates.sort((a, b) => Math.abs((a.lo + a.hi) / 2 - index) - Math.abs((b.lo + b.hi) / 2 - index));
+      return candidates.length ? candidates[0].scale : null;
+    }
     function setHover(i) {
       if (!st.R) return;
       st.hover = i < 0 ? -1 : Math.max(0, Math.min(st.maxI, i));
@@ -804,13 +869,28 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         return;
       }
       st.my = y;
+      const scale = x > geo().W ? null : scaleAt(idxAt(x));
+      if (scale !== st.scaleHover) { st.scaleHover = scale; onScaleHover(scale); }
       if (x > geo().W) { setHover(-1); return; }
       setHover(idxAt(x));
     });
-    const endDrag = () => { st.drag = null; cv.classList.remove('grab'); };
+    const endDrag = (e) => {
+      const drag = st.drag;
+      if (e.type === 'pointerup' && drag && !drag.moved) {
+        const r = cv.getBoundingClientRect(), scale = scaleAt(idxAt(e.clientX - r.left));
+        if (scale) onScaleSelect(scale);
+      }
+      st.drag = null; cv.classList.remove('grab');
+    };
     cv.addEventListener('pointerup', endDrag);
     cv.addEventListener('pointercancel', endDrag);
-    cv.addEventListener('pointerleave', () => { if (!st.drag) { st.my = -1; setHover(-1); } });
+    cv.addEventListener('pointerleave', () => {
+      if (!st.drag) {
+        st.my = -1;
+        if (st.scaleHover) { st.scaleHover = null; onScaleHover(null); }
+        setHover(-1);
+      }
+    });
     cv.addEventListener('wheel', (e) => {
       if (!st.R) return;
       e.preventDefault();
@@ -836,13 +916,29 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
     const api = {
       onHover(fn) { onHover = fn; },
+      onScaleHover(fn) { onScaleHover = fn; },
+      onScaleSelect(fn) { onScaleSelect = fn; },
+      hoverScale(scale) {
+        const hover = st.show.top && st.scaleBands.some((band) => band.scale === scale) ? scale : null;
+        if (hover !== st.scaleHover) { st.scaleHover = hover; onScaleHover(hover); draw(); }
+      },
       set(R) {
         st.R = R; st.ghost = -1; st.hover = -1;
+        st.scaleBands = scaleBands(R); st.scaleSelected = selectedScale; st.scaleHover = null;
         const v = defView(R); st.a = v[0]; st.b = v[1];
-        st.maxI = Math.max(R.bars.length - 1, v[1]);
+        st.maxI = Math.max(R.bars.length - 1, v[1], ...st.scaleBands.map((band) => band.hi + 12));
         clampView(); draw();
       },
       clear() { st.R = null; st.ghost = -1; st.hover = -1; $('legend').innerHTML = ''; draw(); },
+      selectScale(scale) {
+        st.scaleSelected = scale;
+        const band = st.scaleBands.find((item) => item.scale === scale);
+        if (band && (band.lo < st.a || band.hi > st.b)) {
+          const span = Math.max(st.b - st.a, band.hi - band.lo + 40), center = (band.lo + band.hi) / 2;
+          st.a = center - span / 2; st.b = center + span / 2; clampView();
+        }
+        draw();
+      },
       reset() { if (!st.R) return; const v = defView(st.R); st.a = v[0]; st.b = v[1]; clampView(); draw(); },
       all() { if (!st.R) return; st.a = 0; st.b = st.maxI; clampView(); draw(); },
       zoom(f) { if (st.R) zoom(f); },
@@ -861,12 +957,14 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
   function clearView() {
     cur = null; curCode = '';
+    currentScaleStates = []; selectedScale = ScaleBar.DEFAULT_SCALE;
     CH.clear();
     $('sym-n').textContent = '—'; $('sym-c').textContent = '—';
     $('mode').hidden = true; $('mode').className = 'mode od-fixed';
     $('px').textContent = '—'; $('pxc').textContent = ''; $('pxs').textContent = '';
     $('vh').textContent = '—'; $('vh').className = 'vh'; $('vs').textContent = '';
     $('phs').innerHTML = ''; $('ph-tip').textContent = ''; $('kv').innerHTML = '';
+    $('hist-kv').innerHTML = ''; $('hist-summary').textContent = '';
     $('plan').innerHTML = ''; $('note').innerHTML = '';
     $('cur-d').textContent = '—'; $('cur-l').textContent = ''; $('cur-set').hidden = true;
     $('p-replay').innerHTML = ''; $('p-bench').innerHTML = ''; $('p-expert').innerHTML = '';
@@ -938,11 +1036,62 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   const PH_CLASS = { crit: 't-warn', crash: 't-warn', accel: 't-warn', base: 't-bot', wave2: 't-real' };
   const SIM_ST = { hold: '持有', alert: '预警后减仓一半', crash: '空仓等待底部', base: '分批建仓中', wave2: '二波持有' };
 
+  function renderScaleBar() {
+    $('phs').innerHTML = currentScaleStates.map((state) => {
+      const selected = state.scale === selectedScale;
+      const value = state.selectable ? (state.confidence == null ? '未计算' : U.pct(state.confidence, 0)) : '';
+      const status = [value, state.status].filter(Boolean).join(' · ');
+      return `<button type="button" role="radio" data-scale="${state.scale}" aria-checked="${selected}" aria-disabled="${!state.selectable}" tabindex="${selected ? 0 : -1}"${state.selectable ? '' : ' disabled'}><span class="n">${E(SCN[state.scale])}</span><span class="ph-state">${E(status)}</span></button>`;
+    }).join('');
+  }
+
+  function renderKeyLocations(R) {
+    const t = R.top, dp = t.drawdown_price || {}, vf = dp.valuation_floor;
+    const window = scaleWindow(R, selectedScale), scenarios = t.scenarios || [], kv = [];
+    kv.push(['情景区间', window
+      ? SCN[selectedScale] + ' ' + U.range(window.q20_date, window.q80_date, R.asof, R.bars[R.T].date) + ' · 开发段（未校准，仅供参考）'
+      : '该尺度本次无合格拟合；这不代表风险较低。', window ? 'wn' : '']);
+    kv.push(['情景占比', scenarios.length
+      ? scenarios.map((item) => U.pct(item.share, 0) + ' ' + U.md(item.q20_date) + '–' + U.md(item.q80_date) + '（未校准，仅供参考）').join('；')
+      : '无合格情景', '']);
+    kv.push(['二波', '无有效预测', '']);
+    $('kv').innerHTML = kv.map((row) => `<li><span class="k">${E(row[0])}</span><span class="v ${row[2]}">${E(row[1])}</span></li>`).join('');
+
+    const history = [];
+    if (dp.evidence === 'descriptive' && dp.max_dd) {
+      history.push(['顶后回撤', U.pct(dp.max_dd.q80, 0) + ' ～ ' + U.pct(dp.max_dd.q20, 0) + '，中位 ' + U.pct(dp.max_dd.q50, 0) + ' · n=' + dp.n, 'dn']);
+      if (dp.days_to_trough) history.push(['顶→谷时间', dp.days_to_trough.q20 + '–' + dp.days_to_trough.q80 + ' 个交易日 · n=' + dp.n, '']);
+    } else history.push(['顶后回撤', dp.table ? '无证据' : '回撤情景表未加载', '']);
+    history.push(['估值地板带', vf && vf.floor_band_points
+      ? vf.floor_band_points[0] + '–' + vf.floor_band_points[1] + ' 点 · PE ' + vf.pe_latest + '（' + vf.pe_date + '）· n=' + vf.n
+      : (vf && vf.note) || '不提供', '']);
+    if (dp.evidence === 'descriptive') {
+      history.push(['桶说明', (dp.bucket ? '桶：' + dp.bucket + '；' : '') + '历史分位，不是预测', '']);
+    }
+    $('hist-kv').innerHTML = history.map((row) => `<li><span class="k">${E(row[0])}</span><span class="v ${row[2]}">${E(row[1])}</span></li>`).join('');
+    $('hist-summary').textContent = dp.evidence === 'descriptive' && dp.max_dd
+      ? '顶后回撤中位 ' + U.pct(dp.max_dd.q50, 0) + ' · n=' + dp.n
+      : '暂无历史分位数据';
+  }
+
+  function selectScale(scale) {
+    if (!cur || !currentScaleStates.some((state) => state.scale === scale && state.selectable)) return;
+    const hadFocus = $('phs').contains(document.activeElement);
+    selectedScale = scale;
+    renderScaleBar();
+    if (hadFocus) $('phs').querySelector('button[role="radio"][data-scale="' + scale + '"]')?.focus();
+    renderKeyLocations(cur);
+    CH.selectScale(scale);
+    tryUrl(cur);
+  }
+
   function render(R) {
     const bars = R.bars, T = R.T, rm = R.rm, N = bars.length, last = bars[N - 1].date;
     const name = R.sym.isIndex ? R.sym.label : (R.data.name || R.sym.label);
     const latestClosed = isLatestClosed(R), lag = lagSessions(R);
     const latestKnown = !!R.latestClosedDate;
+    currentScaleStates = scaleStates(R);
+    selectedScale = ScaleBar.parseHash(location.hash, currentScaleStates);
 
 
     $('sym-n').textContent = name;
@@ -966,28 +1115,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       : '截止日 ' + R.asof) + ' · 日波动 ' + U.pct(rm.sigma, 2);
 
     // 结论
-    const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, LC = t.lppls_confidence || {};
+    const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {};
     $('vh').textContent = SIG[t.signal_status] || ('状态：' + (t.signal_status || '—'));
     $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
     $('vs').textContent = (w.start ? '6–12 月档情景区间 ' + U.range(w.start, w.end, R.asof, last) + '（未校准，仅供参考；开发段证据，不是峰值日预测）。' : (w.rule || '') + '。') +
       (rb.state ? ' 体制带 ' + rb.month + '：' + (REG[rb.state] || rb.state) + '（描述性）。' : '');
-    $('phs').innerHTML = SCALES.map((k) => { const v = LC[k], on = shown(k) && v > 0;
-      return `<li class="${on ? 'on' : ''}"><span class="n">${E(SCN[k])}</span>${v == null ? '未计算' : shown(k) ? U.pct(v, 0) : '无证据'}</li>`; }).join('');
+    renderScaleBar();
     $('ph-tip').textContent = '置信度 = 合格拟合占比，不是概率；只有 6–12 月、12–24 月档有开发段证据，其余档显示“无证据”。';
 
     // 关键位置
-    const dp = t.drawdown_price || {}, vf = dp.valuation_floor, kv = [];
-    const sc = t.scenarios || [];
-    kv.push(['情景区间', w.start ? U.range(w.start, w.end, R.asof, last) + ' · 开发段（未校准，仅供参考）' : '无（' + (w.rule || '无合格拟合') + '）', w.start ? 'wn' : '']);
-    kv.push(['情景占比', sc.length ? sc.map((x) => U.pct(x.share, 0) + ' ' + U.md(x.q20_date) + '–' + U.md(x.q80_date) + '（未校准，仅供参考）').join('；') : '无合格情景', '']);
-    if (dp.evidence === 'descriptive' && dp.max_dd) {
-      kv.push(['顶后回撤（历史分位）', U.pct(dp.max_dd.q80, 0) + ' ～ ' + U.pct(dp.max_dd.q20, 0) + '，中位 ' + U.pct(dp.max_dd.q50, 0) + ' · n=' + dp.n, 'dn']);
-      if (dp.days_to_trough) kv.push(['顶→谷时间（历史分位）', dp.days_to_trough.q20 + '–' + dp.days_to_trough.q80 + ' 个交易日 · n=' + dp.n, '']);
-    } else kv.push(['顶后回撤', dp.table ? '无证据' : '回撤情景表未加载', '']);
-    kv.push(['估值地板带', vf && vf.floor_band_points ? vf.floor_band_points[0] + '–' + vf.floor_band_points[1] + ' 点 · PE ' + vf.pe_latest + '（' + vf.pe_date + '）· n=' + vf.n : (vf && vf.note) || '不提供', '']);
-    kv.push(['二波', '无有效预测', '']);
-    $('kv').innerHTML = kv.map((r) => `<li><span class="k">${E(r[0])}</span><span class="v ${r[2]}">${E(r[1])}</span></li>`).join('') +
-      (dp.evidence === 'descriptive' ? '<li><span class="k"></span><span class="v">' + E((dp.bucket ? '桶：' + dp.bucket + '；' : '') + '历史分位，不是预测') + '</span></li>' : '');
+    renderKeyLocations(R);
 
     renderPlan();
     CH.set(R);
@@ -1007,18 +1144,19 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       const u = new URL(location.href);
       u.searchParams.set('code', curCode);
       if (R.latest) u.searchParams.delete('asof'); else u.searchParams.set('asof', R.asof);
+      u.hash = 'scale=' + encodeURIComponent(selectedScale);
       history.replaceState(null, '', u);
     } catch (e) { /* 预览沙盒可能禁止修改地址，忽略 */ }
   }
 
   function renderPlan() {
     if (!cur) return;
-    const R = cur, t = R.top, b = R.J.bottom || {}, dp = t.drawdown_price || {}, vf = dp.valuation_floor;
+    const R = cur, t = R.top, b = R.J.bottom || {};
     document.querySelectorAll('#seg [role=tab]').forEach((x, i) => { x.setAttribute('aria-selected', String(i === planTab)); x.tabIndex = i === planTab ? 0 : -1; });
     $('plan').setAttribute('aria-labelledby', 'sg-' + planTab);
     const P = [
-      { lead: '减仓执行规则只有开发段探索（dev_only），没有样本外证据，不给操作计划。', rows: [['失效条件', (t.invalidation || {}).rule || '—'], ['顶后回撤', dp.evidence === 'descriptive' && dp.max_dd ? '中位 ' + U.pct(dp.max_dd.q50, 0) + '（n=' + dp.n + '，历史分位，不是预测）' : '无证据']] },
-      { lead: '底部概率模型三段验证未通过，不显示概率，不预测起涨时间。', rows: [['底部状态', (b.state_p || {}).note || '—'], ['入场规则', (b.entry_rule || {}).note || '—'], ['估值地板带', vf && vf.floor_band_points ? vf.floor_band_points.join('–') + ' 点（n=' + vf.n + '，描述性）' : (vf && vf.note) || '不提供']] },
+      { lead: '减仓执行规则只有开发段探索（dev_only），没有样本外证据，不给操作计划。', rows: [['失效条件', (t.invalidation || {}).rule || '—']] },
+      { lead: '底部概率模型三段验证未通过，不显示概率，不预测起涨时间。', rows: [['底部状态', (b.state_p || {}).note || '—'], ['入场规则', (b.entry_rule || {}).note || '—']] },
       { lead: '二波收复比例统计尚未完成，当前无有效预测。', rows: [['二波', ((t.second_wave || {}).evidence || 'none') === 'none' ? '无证据' : '—']] },
     ][planTab];
     $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
@@ -1156,6 +1294,41 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   $('go').addEventListener('click', submit);
   $('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
   $('asof').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  $('phs').addEventListener('click', (e) => {
+    const button = e.target.closest('button[role="radio"]');
+    if (button && !button.disabled) selectScale(button.dataset.scale);
+  });
+  $('phs').addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const radios = [...$('phs').querySelectorAll('button[role="radio"]:not(:disabled)')];
+    if (!radios.length) return;
+    const current = radios.indexOf(e.target.closest('button[role="radio"]'));
+    const direction = e.key === 'ArrowLeft' ? -1 : 1;
+    const next = radios[(current + direction + radios.length) % radios.length];
+    e.preventDefault();
+    selectScale(next.dataset.scale);
+    const focused = $('phs').querySelector('button[role="radio"][data-scale="' + next.dataset.scale + '"]');
+    if (focused) focused.focus();
+  });
+  $('phs').addEventListener('pointerover', (e) => {
+    const button = e.target.closest('button[role="radio"]');
+    if (button && !button.disabled) CH.hoverScale(button.dataset.scale);
+  });
+  $('phs').addEventListener('pointerout', (e) => {
+    const button = e.target.closest('button[role="radio"]');
+    if (button && !button.contains(e.relatedTarget)) CH.hoverScale(null);
+  });
+  CH.onScaleHover((scale) => {
+    $('phs').querySelectorAll('button[role="radio"]').forEach((button) => {
+      button.classList.toggle('hover', button.dataset.scale === scale);
+    });
+  });
+  CH.onScaleSelect(selectScale);
+  window.addEventListener('hashchange', () => {
+    if (!cur) return;
+    const scale = ScaleBar.parseHash(location.hash, currentScaleStates);
+    if (scale !== selectedScale) selectScale(scale);
+  });
   document.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip, .tk');
     if (chip) { stopPlay(); $('code').value = chip.dataset.c; $('asof').value = chip.dataset.d || ''; request(chip.dataset.c, chip.dataset.d || ''); }
