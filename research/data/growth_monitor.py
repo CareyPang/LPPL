@@ -376,15 +376,52 @@ def _fallback(
     )
 
 
-def _fetch_nav(session, code: str) -> dict[str, dict]:
-    response = session.get(
-        NAV_URL,
-        params={"fundCode": code, "pageIndex": 1, "pageSize": 120},
-        headers=NAV_HEADERS,
-        timeout=25,
-    )
-    response.raise_for_status()
-    return parse_nav_payload(response.json())
+def _fetch_nav(session, code: str, start: str) -> dict[str, dict]:
+    output = {}
+    for page_index in range(1, 11):
+        response = session.get(
+            NAV_URL,
+            params={"fundCode": code, "pageIndex": page_index, "pageSize": 20},
+            headers=NAV_HEADERS,
+            timeout=25,
+        )
+        response.raise_for_status()
+        page = parse_nav_payload(response.json())
+        if not page:
+            break
+        output.update(page)
+        if min(page) <= start:
+            break
+        if page_index < 10:
+            time.sleep(0.2)
+    return {day: row for day, row in output.items() if day >= start}
+
+
+def _last_complete_week_end(asof: str) -> str:
+    asof_date = date.fromisoformat(asof)
+    days_since_friday = (asof_date.weekday() + 3) % 7
+    return (asof_date - timedelta(days=days_since_friday)).isoformat()
+
+
+def _share_error_notes(source: str, errors: list[str], cutoff: str) -> list[str]:
+    notes = []
+    for error in errors:
+        prefix = error.split(":", 1)[0]
+        try:
+            error_date = date.fromisoformat(prefix).isoformat()
+        except ValueError:
+            error_date = None
+        if error_date:
+            if error_date > cutoff:
+                continue
+            note = f"{source}份额 {error_date} 未发布"
+        elif prefix.isdigit() and len(prefix) == 6:
+            note = f"{source}份额 {prefix} 暂不可用"
+        else:
+            note = f"{source}份额来源暂不可用"
+        if note not in notes:
+            notes.append(note)
+    return notes
 
 
 def _fetch_cnindex_980017(start: str, end: str, session) -> list[dict]:
@@ -454,7 +491,7 @@ def _semi_etf_flow(asof: str, start: str, session) -> dict:
     nav_errors = []
     for item in ETFS:
         try:
-            nav_maps[item["code"]] = _fetch_nav(session, item["code"])
+            nav_maps[item["code"]] = _fetch_nav(session, item["code"], start)
         except Exception as exc:  # noqa: BLE001 — use market close when possible
             nav_maps[item["code"]] = {}
             nav_errors.append(f"{item['code']}: {type(exc).__name__}: {exc}")
@@ -490,7 +527,7 @@ def _semi_etf_flow(asof: str, start: str, session) -> dict:
                 else price_maps.get(code, {}).get(day)
             )
             if (not nav_row or nav_row["nav"] is None) and close is not None:
-                reason = "净值缺失，用收盘价近似"
+                reason = f"{day} 净值缺失，用收盘价近似"
                 if reason not in notes_by_code[code]:
                     notes_by_code[code].append(reason)
             exclusion = share_exclusion_reason(
@@ -550,14 +587,28 @@ def _semi_etf_flow(asof: str, start: str, session) -> dict:
     for code in codes:
         if notes_by_code[code]:
             notes.append(f"{code}：{'；'.join(notes_by_code[code][-4:])}")
+    for label, errors in (
+        ("ETF 行情", price_errors),
+        ("ETF 净值", nav_errors),
+        ("上交所份额", sse_errors),
+        ("深交所份额", szse_errors),
+    ):
+        if errors:
+            print(f"{label}取数错误：" + "；".join(errors))
     if price_errors:
-        notes.append("行情缺失：" + "；".join(price_errors))
+        codes_with_price_errors = [
+            error.split(":", 1)[0] for error in price_errors
+        ]
+        notes.append("行情来源暂不可用：" + "、".join(codes_with_price_errors))
     if nav_errors:
-        notes.append("单位净值来源不可用，已尽量用收盘价近似：" + "；".join(nav_errors))
-    if sse_errors:
-        notes.append("上交所份额来源：" + "；".join(sse_errors[-3:]))
-    if szse_errors:
-        notes.append("深交所份额来源：" + "；".join(szse_errors[-3:]))
+        codes_with_nav_errors = [error.split(":", 1)[0] for error in nav_errors]
+        notes.append(
+            "单位净值来源暂不可用，相关日期已用收盘价近似："
+            + "、".join(codes_with_nav_errors)
+        )
+    last_complete_week_end = _last_complete_week_end(asof)
+    notes.extend(_share_error_notes("上交所", sse_errors, last_complete_week_end))
+    notes.extend(_share_error_notes("深交所", szse_errors, last_complete_week_end))
     indicator_asof = next(
         (row["data_asof"] for row in reversed(weekly) if row["data_asof"]),
         latest_daily or latest_share_day,
@@ -594,9 +645,15 @@ def _realize_indicator(previous: dict | None, indicator_id: str, name: str, role
     try:
         result = callback()
     except Exception as exc:  # noqa: BLE001 — each source fails independently
+        if indicator_id == "semi_etf_flow":
+            print(f"半导体 ETF 采集错误：{type(exc).__name__}: {exc}")
         fallback = _fallback(previous, indicator_id, name, role, source)
         if fallback["status"] == "missing":
-            fallback["note"] = f"{type(exc).__name__}: {exc}"
+            fallback["note"] = (
+                "半导体 ETF 数据源本次取数失败。"
+                if indicator_id == "semi_etf_flow"
+                else f"{type(exc).__name__}: {exc}"
+            )
         return fallback
     if result["status"] == "missing":
         fallback = _fallback(previous, indicator_id, name, role, source)

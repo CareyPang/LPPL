@@ -2,8 +2,10 @@ from datetime import date, timedelta
 
 import research.data.growth_monitor as growth_monitor
 from research.data.growth_monitor import (
+    _fetch_nav,
     _fetch_szse_with_retry,
     _realize_indicator,
+    _share_error_notes,
     completed_weekly_flows,
     evaluate_growth_rs,
     evaluate_us10y,
@@ -202,6 +204,64 @@ def test_nav_split_fields_mark_action_days():
         "2026-11-12": {"nav": None, "action": True},
         "2026-11-13": {"nav": 1.2345, "action": True},
     }
+
+
+def test_fetch_nav_paginates_until_page_reaches_start_date(monkeypatch):
+    class Response:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"Data": {"LSJZList": self.rows}}
+
+    class Session:
+        def __init__(self):
+            self.pages = [
+                [
+                    {"FSRQ": "2026-11-13", "DWJZ": "1.13"},
+                    {"FSRQ": "2026-10-25", "DWJZ": "1.10"},
+                ],
+                [
+                    {"FSRQ": "2026-10-20", "DWJZ": "1.08"},
+                    {"FSRQ": "2026-10-19", "DWJZ": "1.07"},
+                ],
+            ]
+            self.params = []
+
+        def get(self, url, *, params, headers, timeout):
+            self.params.append(params)
+            return Response(self.pages.pop(0))
+
+    delays = []
+    monkeypatch.setattr(growth_monitor.time, "sleep", delays.append)
+    session = Session()
+
+    result = _fetch_nav(session, "512480", "2026-10-20")
+
+    assert result == {
+        "2026-11-13": {"nav": 1.13, "action": False},
+        "2026-10-25": {"nav": 1.10, "action": False},
+        "2026-10-20": {"nav": 1.08, "action": False},
+    }
+    assert [params["pageIndex"] for params in session.params] == [1, 2]
+    assert all(params["pageSize"] == 20 for params in session.params)
+    assert delays == [0.2]
+
+
+def test_share_error_notes_hide_unpublished_dates_and_raw_errors():
+    result = _share_error_notes(
+        "上交所",
+        [
+            "2026-11-16: RuntimeError: not published",
+            "2026-11-12: RuntimeError: connection reset",
+        ],
+        "2026-11-13",
+    )
+
+    assert result == ["上交所份额 2026-11-12 未发布"]
 
 
 def test_semi_etf_status_reports_partial_and_all_missing():

@@ -156,11 +156,17 @@ td.r, th.r { text-align: right; }
 .macro-source small { color: var(--ink-3); margin-top: 3px; }
 .macro-terms { overflow-wrap: anywhere; }
 .growth-summary { border: 1px solid var(--grid); padding: var(--s3); margin-bottom: var(--s3); font-weight: 600; }
+.growth-summary, .growth-value, .growth-meta { min-width: 0; overflow-wrap: anywhere; }
 .growth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
 .growth-card { min-width: 0; border: 1px solid var(--grid); padding: var(--s3); }
 .growth-card h3 { margin: 0; font-size: 15px; }
 .growth-card-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
 .growth-state { flex: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 12px; }
+#s-growth, #s-growth .growth-grid, #s-growth .growth-card,
+#s-growth .growth-card-head, #s-growth .growth-card-head > * { min-width: 0; max-width: 100%; }
+#s-growth .growth-card-head { flex-wrap: wrap; align-items: flex-start; }
+#s-growth .growth-card-head h3 { flex: 1 1 120px; overflow-wrap: anywhere; }
+#s-growth .growth-state { flex: 0 1 auto; white-space: normal; overflow-wrap: anywhere; }
 .growth-state.met { color: var(--up); border-color: var(--up); }
 .growth-state.not_met, .growth-state.partial { color: var(--warn); border-color: var(--warn); }
 .growth-state.missing, .growth-state.pending_definition { color: var(--ink-3); }
@@ -1050,9 +1056,12 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       missing: '缺数据',
       pending_definition: '待统一口径',
     };
-    const amount = (value) => value != null && Number.isFinite(Number(value))
-      ? `${Number(value).toFixed(2).replace(/^-/, '−')} 亿元`
-      : '—';
+    const amount = (value) => {
+      if (value == null || !Number.isFinite(Number(value))) return '—';
+      const number = Number(value);
+      const sign = number < 0 ? '−' : number > 0 ? '+' : '';
+      return `${sign}${Math.abs(number).toFixed(2)} 亿元`;
+    };
     const lineChart = (rows, series, ariaLabel) => {
       if (!rows || rows.length < 2) return '';
       const values = rows.flatMap((row) => series
@@ -1099,8 +1108,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         return `近两周净申购：${weeks.map((week) => amount(week.flow_yuan)).join(' / ') || '—'}`;
       }
       if (item.id === 'us10y') {
-        return (value?.last_five || [])
-          .map((row) => `${row.date} ${Number(row.value).toFixed(2)}%`).join('；') || '—';
+        const observations = value?.last_five || [];
+        const first = observations[0], latest = observations.at(-1);
+        return latest
+          ? `最近 ${observations.length} 个观测：${Number(first.value).toFixed(2)}%–${Number(latest.value).toFixed(2)}%（最新 ${Number(latest.value).toFixed(2)}%）`
+          : '—';
       }
       return value
         ? `RS ${Number(value.latest_rs).toFixed(4)} · MA20 ${Number(value.ma20).toFixed(4)}`
@@ -1134,6 +1146,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         const weeks = item.value?.last_two_complete_weeks || [];
         extra = weeks.length
           ? `<p class="growth-meta">${weeks.map((week) => `${week.week_start}–${week.week_end}`).join(' / ')}</p>`
+          : '';
+      } else if (item.id === 'us10y') {
+        const observations = item.value?.last_five || [];
+        extra = observations.length
+          ? `<p class="growth-meta">${observations.map((row) => `${row.date} ${Number(row.value).toFixed(2)}%`).join('；')}</p>`
           : '';
       } else if (item.id === 'growth_rs' && item.value) {
         extra = `<p class="growth-meta">已连续站上 ${Number(item.value.consecutive_above_days)} 日 · 最近一次上穿 ${E(item.value.last_cross_date || '暂无')}</p>`;

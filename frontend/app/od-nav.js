@@ -605,7 +605,8 @@
         if (i === g) {
           t.a.setAttribute('aria-current', 'location');
           var s = t.a.parentNode, l = t.a.offsetLeft, w = t.a.offsetWidth;
-          if (l < s.scrollLeft || l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l - 24;
+          if (l < s.scrollLeft) s.scrollLeft = Math.max(0, l - 24);
+          else if (l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l + w - s.clientWidth + 24;
         } else t.a.removeAttribute('aria-current');
       });
       var h = '#' + (anchor || subTabs[g].ids[0]);
@@ -659,7 +660,8 @@
           if (!t.a.hasAttribute('aria-current')) {
             t.a.setAttribute('aria-current', 'location');
             var s = t.a.parentNode, l = t.a.offsetLeft, w = t.a.offsetWidth;
-            if (l < s.scrollLeft || l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l - 24;
+            if (l < s.scrollLeft) s.scrollLeft = Math.max(0, l - 24);
+            else if (l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l + w - s.clientWidth + 24;
           }
         } else t.a.removeAttribute('aria-current');
       });

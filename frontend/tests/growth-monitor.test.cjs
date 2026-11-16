@@ -25,6 +25,8 @@ test('growth monitor is a market section linked from the existing nav', () => {
   assert.match(renderer[0], /近两周净申购：/);
   assert.match(renderer[0], /week\.week_start/);
   assert.match(renderer[0], /item\.note === status/);
+  assert.match(renderer[0], /最近 \$\{observations\.length\} 个观测：/);
+  assert.match(renderer[0], /row\.date.*Number\(row\.value\)/);
   assert.doesNotMatch(renderer[0], /可用观测 n=|历史分位/);
   assert.match(renderer[0], /数据日期：/);
   assert.match(renderer[0], /来源：/);
@@ -33,6 +35,9 @@ test('growth monitor is a market section linked from the existing nav', () => {
   assert.doesNotMatch(`${section[0]}\n${renderer[0]}`, /允许试探|加仓|买入|卖出|入场/);
   assert.match(nav, /\{ t: '成长监控', h: '#s-growth', ids: \['s-growth'\] \}/);
   assert.match(nav, /SUB_MAX = 7/);
+  assert.match(nav, /l \+ w - s\.clientWidth \+ 24/);
+  assert.match(market, /#s-growth \.growth-card-head \{ flex-wrap: wrap/);
+  assert.match(market, /#s-growth \.growth-state \{ flex: 0 1 auto/);
 });
 
 test('growth data is loaded only through the LPPL adapter', async () => {
