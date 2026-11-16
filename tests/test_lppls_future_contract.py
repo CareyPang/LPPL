@@ -7,8 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from research.lppls import core
-from research.lppls import future_contract
+from research.lppls import core, future_contract
 from research.lppls.future_contract import (
     CONTRACT_VERSION,
     DEFAULT_FILTER_BOUNDS,

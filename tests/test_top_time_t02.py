@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from research.eval.top_time.claim_boundary import classify_interval
 from research.eval.top_time.contracts import (
     LABEL_VERSION,
     SCORING_CONTRACT_VERSION,
@@ -16,7 +17,6 @@ from research.eval.top_time.contracts import (
     TopEvent,
 )
 from research.eval.top_time.labels import build_labels
-from research.eval.top_time.claim_boundary import classify_interval
 from research.eval.top_time.t02 import (
     AppendOnlyClaimLedger,
     action_session_after_close,

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
 import math
-from typing import Any, Literal, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any, Literal
 
 import numpy as np
 
@@ -278,7 +279,7 @@ def session_indices_for_bars(bar_dates: Sequence[str], calendar: Sequence[str]) 
         result = tuple(positions[day] for day in normalized_bars)
     except KeyError as exc:
         raise ValueError(f"bar date is not present in the session calendar: {exc.args[0]}") from exc
-    if any(right <= left for left, right in zip(result, result[1:])):
+    if any(right <= left for left, right in zip(result, result[1:], strict=False)):
         raise ValueError("bar dates must map to strictly increasing session indices")
     return result
 
@@ -476,7 +477,7 @@ def fit_window(
     if lookback_L != len(values) or len(bar_to_session_index) != len(values):
         raise ValueError("lookback_L and session mapping must match the window length")
     session_map = tuple(int(value) for value in bar_to_session_index)
-    if any(right <= left for left, right in zip(session_map, session_map[1:])):
+    if any(right <= left for left, right in zip(session_map, session_map[1:], strict=False)):
         raise ValueError("bar_to_session_index must be strictly increasing")
     t1, t2 = 0.0, float(lookback_L - 1)
     lo, hi = search_bounds.numeric_bounds(t1, t2)
