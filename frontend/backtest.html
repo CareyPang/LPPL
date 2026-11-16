@@ -149,6 +149,25 @@ a { color: var(--ink-2); text-decoration: none; }
 .sp-t .up{color:#D6303A}.sp-t .dn{color:#11845A}
 .sp-props{width:100%;border-collapse:collapse;font-size:13px}.sp-props th{text-align:left;color:var(--ink-3,#6A6D78);font-weight:500;padding:8px;width:150px;border-bottom:1px solid var(--grid,#EEF1F6)}.sp-props td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6)}
 .sp-empty{color:var(--ink-3,#6A6D78);padding:16px 0}
+.alert-ledger{grid-column:1/-1;min-width:0;width:100%;padding:16px;background:var(--surface);border-top:1px solid var(--line)}
+.al-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.al-title{min-width:0}.al-title h2{margin:0;font-size:18px;line-height:1.35}
+.al-note,.al-caveat{margin:6px 0 0;color:var(--ink-2);font-size:12px}.al-caveat{color:var(--warn)}
+.al-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.al-chip{border:1px solid var(--line);background:transparent;color:var(--ink-2);min-height:32px;padding:0 12px;font-size:12px;cursor:pointer}
+.al-chip:hover{border-color:var(--ink-3);color:var(--ink)}.al-chip[aria-pressed=true]{border-color:var(--warn);color:var(--warn)}
+.al-count{margin:12px 0 6px;color:var(--ink-3);font-size:12px}
+.al-scroll{max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.al-table{width:100%;min-width:960px}
+.al-row{display:grid;grid-template-columns:150px 90px 180px 100px 240px 200px;align-items:center;min-height:36px;color:var(--ink-2)}
+.al-row>span{min-width:0;padding:8px;border-bottom:1px solid var(--grid);font-size:12px}
+.al-row-head{min-height:32px;background:var(--surface-2);color:var(--ink-3);font-weight:600}
+.al-row-head>span{border-bottom-color:var(--line)}
+.al-row[data-alert-id]{cursor:pointer;outline-offset:-2px}
+.al-row[data-alert-id]:hover{background:#F7F9FC;color:var(--ink)}
+.al-row[data-alert-id][aria-selected=true]{background:#FFF5E0;color:var(--ink)}
+.al-empty{margin:12px 0 0;padding:12px 0;color:var(--ink-3);font-size:13px}
+@media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:960px}}
 </style>
 </head>
 <body>
@@ -225,10 +244,39 @@ a { color: var(--ink-2); text-decoration: none; }
       <p>正式成绩（三段验证、覆盖率）以 <a href="index.html" style="color:var(--real)">终端</a> 与 <a href="lab/dashboard.html" style="color:var(--real)">研究仪表盘</a> 为准；本页只展示历史区间，不计算命中率。</p>
     </section>
   </aside>
+  <section class="alert-ledger" id="alert-ledger" aria-labelledby="alert-title">
+    <div class="al-head">
+      <div class="al-title">
+        <h2 id="alert-title">提醒明细（历史回放，不是当时发布）</h2>
+        <p class="al-note">按每周截止日当时可得数据回放；“事后确认顶”是之后才能确认的，只作对照，不是检验结果。</p>
+        <p class="al-caveat" id="alert-caveat" hidden></p>
+      </div>
+      <div class="al-controls" id="alert-scales" role="group" aria-label="提醒区间尺度">
+        <button class="al-chip" type="button" data-alert-scale="6-12m" aria-pressed="true">6–12 月</button>
+        <button class="al-chip" type="button" data-alert-scale="12-24m" aria-pressed="false">12–24 月</button>
+      </div>
+    </div>
+    <p class="al-count" id="alert-count" aria-live="polite">共 0 次</p>
+    <div class="al-scroll">
+      <div class="al-table" role="table" aria-label="提醒明细">
+        <div class="al-row al-row-head" role="row">
+          <span role="columnheader">首次出现（截止日）</span>
+          <span role="columnheader">持续周数</span>
+          <span role="columnheader">首次区间 q20–q80</span>
+          <span role="columnheader">所属段</span>
+          <span role="columnheader">下一个事后确认顶</span>
+          <span role="columnheader">顶相对首次区间</span>
+        </div>
+        <div id="alert-rows" role="rowgroup"></div>
+      </div>
+    </div>
+    <p class="al-empty" id="alert-empty" role="status" hidden></p>
+  </section>
 </main>
 
 <script src="app/lppl-data.js"></script>
 <script src="app/scen-style.js"></script>
+<script src="app/alert-ledger.js"></script>
 <script>
 (function () {
   'use strict';
@@ -244,13 +292,20 @@ a { color: var(--ink-2); text-decoration: none; }
   const T = (d) => Date.parse(d + 'T00:00:00Z');
   const ymd = (t) => new Date(t).toISOString().slice(0, 10);
   const pct = (x) => (x * 100).toFixed(0) + '%';
-  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null };
+  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', alertId: null, alertFrame: null };
   const q = new URLSearchParams(location.search);
   if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
 
   $('syms').innerHTML = LPPL.SYMS.filter((s) => s.history !== false).map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
   $('ranges').innerHTML = RANGES.map((r, i) => `<button class="chip" type="button" data-r="${i}" aria-pressed="false">${E(r[0])}</button>`).join('');
-  $('syms').onclick = (e) => { const b = e.target.closest('[data-s]'); if (b) { st.sym = b.dataset.s; load(); } };
+  $('syms').onclick = (e) => {
+    const b = e.target.closest('[data-s]');
+    if (b) {
+      st.sym = b.dataset.s;
+      st.alertScale = '6-12m'; st.alertId = null; st.alertFrame = null; st.hover = null;
+      setAlertScaleData(st.alertScale); writeAlertParam(null); renderAlertLedger(); load();
+    }
+  };
   $('ranges').onclick = (e) => { const b = e.target.closest('[data-r]'); if (b) { setPreset(+b.dataset.r); } };
 
   /* 预设与当前指数数据范围的重叠不足 90 天时视为不可用 */
@@ -285,35 +340,160 @@ a { color: var(--ink-2); text-decoration: none; }
     else setView(Math.max(st.tmin, T(R[1])), Math.min(st.tmax, T(R[2]) + DAY), true);
     mark();
   }
+  function writeAlertParam(value) {
+    const url = new URL(location.href);
+    if (value) url.searchParams.set('alert', value); else url.searchParams.delete('alert');
+    history.replaceState(null, '', url);
+  }
+  function blockedAlertEvidence(evidence) {
+    const value = String(evidence || '');
+    return !value || value === 'none' || value === 'dev_failed' || value.startsWith('fail');
+  }
+  function setAlertScaleData(scale) {
+    st.alertScale = scale;
+    if (!st.H) return;
+    let mx = st.H.fr[st.H.fr.length - 1].t;
+    st.H.fr.forEach((frame) => {
+      const window = frame.w[scale];
+      const w0 = window && window[0] ? T(window[0]) : NaN;
+      const w1 = window && window[1] ? T(window[1]) : NaN;
+      frame.w0 = Number.isFinite(w0) ? w0 : null;
+      frame.w1 = Number.isFinite(w1) ? w1 : null;
+      if (frame.w1 != null) mx = Math.max(mx, frame.w1);
+    });
+    st.tmax = mx + 30 * DAY;
+    $('sym-c').textContent = '周度截止日 · ' + (scale === '6-12m' ? '6–12 月档' : '12–24 月档');
+  }
+  function renderAlertLedger() {
+    const rows = $('alert-rows'), empty = $('alert-empty'), count = $('alert-count'), caveat = $('alert-caveat');
+    const evidence = st.H && st.H.evidence;
+    const blocked = !st.H || blockedAlertEvidence(evidence);
+    const episodes = blocked ? [] : (st.H.alertEpisodes[st.alertScale] || []).slice().reverse();
+    document.querySelectorAll('[data-alert-scale]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.alertScale === st.alertScale));
+    });
+    caveat.hidden = !st.H || evidence !== 'dev_only';
+    caveat.textContent = evidence === 'dev_only'
+      ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。'
+      : '';
+    count.textContent = '共 ' + episodes.length + ' 次';
+    rows.innerHTML = episodes.map((episode) => {
+      const id = episode.scale + ':' + episode.first_asof;
+      const top = episode.next_top;
+      const topText = !top ? '无' : top.max_dd != null && Number.isFinite(Number(top.max_dd))
+        ? E(top.date) + ' · 回撤 ' + E(pct(Number(top.max_dd)))
+        : E(top.date);
+      const relation = { before: '早于区间', inside: '落在区间内', after: '晚于区间' }[episode.top_vs_window] || '无';
+      return `<div class="al-row" role="row" tabindex="0" aria-selected="${st.alertId === id}" data-alert-id="${E(id)}">` +
+        `<span role="cell">${E(episode.first_asof)}</span><span role="cell">${episode.weeks}</span>` +
+        `<span role="cell">${E(episode.window[0])} – ${E(episode.window[1])}</span>` +
+        `<span role="cell">${E(SPLIT[episode.split] || episode.split || '—')}</span>` +
+        `<span role="cell">${topText}</span><span role="cell">${relation}</span></div>`;
+    }).join('');
+    if (blocked) empty.textContent = st.H ? '证据不足，不列明细' : '数据未加载，无法列出提醒';
+    else empty.textContent = '该尺度没有出现过区间';
+    empty.hidden = episodes.length > 0;
+  }
+  function selectAlert(episode, updateUrl) {
+    if (!st.H || !episode) return false;
+    const frame = st.H.fr.find((item) => item.asof === episode.first_asof);
+    if (!frame) return false;
+    setAlertScaleData(episode.scale);
+    st.alertId = episode.scale + ':' + episode.first_asof;
+    st.alertFrame = frame;
+    st.hover = { f: frame };
+    const q80 = T(episode.window[1]);
+    const top = episode.next_top ? T(episode.next_top.date) : q80;
+    const viewStart = T(episode.first_asof) - 90 * DAY;
+    const viewEnd = Math.max(q80, top) + 90 * DAY;
+    st.tmin = Math.min(st.tmin, viewStart);
+    st.tmax = Math.max(st.tmax, viewEnd);
+    setView(viewStart, viewEnd);
+    if (updateUrl !== false) writeAlertParam(st.alertId);
+    const restoreFocus = document.activeElement && document.activeElement.dataset.alertId === st.alertId;
+    renderAlertLedger();
+    if (restoreFocus) {
+      const row = Array.from($('alert-rows').querySelectorAll('[data-alert-id]')).find((item) => item.dataset.alertId === st.alertId);
+      if (row) row.focus();
+    }
+    return true;
+  }
+  function chooseAlertScale(scale) {
+    if (!['6-12m', '12-24m'].includes(scale) || scale === st.alertScale) return;
+    if (st.alertId) {
+      st.alertId = null; st.alertFrame = null; st.hover = null;
+      writeAlertParam(null);
+    }
+    setAlertScaleData(scale);
+    if (st.preset >= 0) setPreset(st.preset); else setView(st.va, st.vb);
+    renderAlertLedger();
+  }
+  $('alert-scales').onclick = (event) => {
+    const button = event.target.closest('[data-alert-scale]');
+    if (button) chooseAlertScale(button.dataset.alertScale);
+  };
+  $('alert-rows').addEventListener('click', (event) => {
+    const row = event.target.closest('[data-alert-id]');
+    if (!row) return;
+    const [scale, asof] = row.dataset.alertId.split(':');
+    const episode = st.H && (st.H.alertEpisodes[scale] || []).find((item) => item.first_asof === asof);
+    if (episode) selectAlert(episode, true);
+  });
+  $('alert-rows').addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+    const row = event.target.closest('[data-alert-id]');
+    if (!row) return;
+    event.preventDefault();
+    row.click();
+  });
   const zoomAt = (f, k) => { const c = st.va + (st.vb - st.va) * f, span = (st.vb - st.va) * k; setView(c - span * f, c + span * (1 - f)); };
 
   /* ---------- 加载 ---------- */
   async function load() {
-    mark(); $('tip').hidden = true; st.hover = null;
+    mark(); $('tip').hidden = true; st.hover = null; st.alertId = null; st.alertFrame = null;
     const ld = $('ld'); ld.hidden = false; ld.className = 'ld'; ld.textContent = '数据加载中…';
     const S = LPPL.resolve(st.sym);
     $('sym-n').textContent = S ? S.name : st.sym;
     try {
       const H = await LPPL.history(st.sym);
-      const fr = H.frames.filter((f) => f.close != null).map((f) => {
-        const w = f.w && f.w['6-12m'];
-        return { ...f, t: T(f.asof), w0: w ? T(w[0]) : null, w1: w ? T(w[1]) : null };
-      });
+      const fr = (Array.isArray(H.frames) ? H.frames : []).filter((f) => f.close != null).map((f) => ({
+        asof: f.asof, split: f.split, close: f.close, w: f.w || {}, t: T(f.asof), w0: null, w1: null,
+      })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
-      const last = fr[fr.length - 1].t; let mx = last;
-      fr.forEach((f) => { if (f.w1 != null && f.w1 > mx) mx = f.w1; });
-      st.H = { ...H, fr, tops: H.tops.map((t) => ({ ...t, t: T(t.date) })).filter((t) => t.t >= fr[0].t && t.t <= last) };
-      st.tmin = fr[0].t; st.tmax = Math.max(mx, last) + 30 * DAY;
+      const last = fr[fr.length - 1].t;
+      const tops = (Array.isArray(H.tops) ? H.tops : []).map((top) => ({ ...top, t: T(top.date) }))
+        .filter((top) => Number.isFinite(top.t)).sort((a, b) => a.t - b.t);
+      const alertEpisodes = {
+        '6-12m': CPAlertLedger.episodes(H.frames, H.tops, '6-12m'),
+        '12-24m': CPAlertLedger.episodes(H.frames, H.tops, '12-24m'),
+      };
+      st.H = { evidence: H.evidence, rule: H.rule, model_version: H.model_version, fr, tops, alertEpisodes };
+      st.tmin = fr[0].t;
+      setAlertScaleData(st.alertScale);
       const e = H.evidence;
       $('ev').innerHTML = `<span class="evb">${E(e)}</span><p>${e === 'dev_only' ? '这条区间规则只有开发段证据；校准段、测试段的帧是按同一规则回放，不代表通过检验。只显示区间，不显示置信度数字。' : '证据等级以研究仪表盘为准。'}</p><p>${E(H.rule || '')}</p><p class="m" style="font-size:12px;color:var(--ink-3)">数据 ${E(fr[0].asof)} – ${E(fr[fr.length - 1].asof)} · 模型 ${E(H.model_version || '')}</p>`;
       ld.hidden = true;
+      let initialAlert = null;
+      const requestedAlert = new URL(location.href).searchParams.get('alert');
+      if (requestedAlert) {
+        const match = /^(6-12m|12-24m):(\d{4}-\d{2}-\d{2})$/.exec(requestedAlert);
+        initialAlert = match && !blockedAlertEvidence(e)
+          ? (st.H.alertEpisodes[match[1]] || []).find((episode) => episode.first_asof === match[2]) || null
+          : null;
+        if (initialAlert) setAlertScaleData(initialAlert.scale);
+        else writeAlertParam(null);
+      }
+      renderAlertLedger();
       setPreset(st.preset >= 0 ? st.preset : 0);
+      if (initialAlert) selectAlert(initialAlert, false);
     } catch (e) {
       st.H = null; st.G = null;
+      if (new URL(location.href).searchParams.has('alert')) writeAlertParam(null);
       const c = $('cv'); c.getContext('2d').clearRect(0, 0, c.width, c.height);
       $('sum').innerHTML = ''; $('vr').textContent = '—';
       ld.hidden = false; ld.className = 'ld err'; ld.textContent = '数据未加载：' + String(e.message || e).replace(/^数据未加载：/, '');
       $('ev').innerHTML = '<p>数据未加载</p>';
+      renderAlertLedger();
       drawOv();
     }
   }
@@ -398,7 +578,8 @@ a { color: var(--ink-2); text-decoration: none; }
     ctx.restore();
 
     const withW = vis.filter((f) => f.w0 != null).length, nt = H.tops.filter((t) => t.t >= ta && t.t <= tb).length;
-    $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>周度截止日</td><td>${vis.length}</td></tr><tr><td>有 6–12 月档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr><tr><td>显示方式</td><td>${dense ? '密集（细线）' : '标准'}</td></tr>`;
+    const scaleName = st.alertScale === '6-12m' ? '6–12 月' : '12–24 月';
+    $('sum').innerHTML = `<tr><td>窗口</td><td>${ymd(ta).slice(0, 7)} – ${ymd(Math.min(tb, st.tmax)).slice(0, 7)}</td></tr><tr><td>周度截止日</td><td>${vis.length}</td></tr><tr><td>有 ${scaleName} 档区间</td><td>${withW}</td></tr><tr><td>事后确认顶</td><td>${nt}</td></tr><tr><td>显示方式</td><td>${dense ? '密集（细线）' : '标准'}</td></tr>`;
     $('vr').textContent = ymd(ta) + ' – ' + ymd(Math.min(tb, st.tmax));
     $('sr').textContent = `当前窗口 ${ymd(ta)} 至 ${ymd(Math.min(tb, st.tmax))}，${vis.length} 个周度截止日，${nt} 个事后确认顶。`;
   }
@@ -470,7 +651,11 @@ a { color: var(--ink-2); text-decoration: none; }
   /* ---------- 主图交互：悬停、滚轮缩放、拖动平移 ---------- */
   (function interact() {
     const cv = $('cv'), tip = $('tip'); let drag = null;
-    const hideTip = () => { tip.hidden = true; if (st.hover) { st.hover = null; draw(); } };
+    const hideTip = () => {
+      tip.hidden = true;
+      const frame = st.alertFrame;
+      if ((st.hover && st.hover.f) !== frame) { st.hover = frame ? { f: frame } : null; draw(); }
+    };
     function hover(e) {
       const G = st.G; if (!G) return; const r = cv.getBoundingClientRect(), mx = e.clientX - r.left;
       if (mx < G.pl || mx > G.W - G.pr) return hideTip();
@@ -478,9 +663,12 @@ a { color: var(--ink-2); text-decoration: none; }
       if (!best || bd > 24) return hideTip();
       if (!st.hover || st.hover.f !== best) { st.hover = { f: best }; draw(); }
       const top = st.H.tops.find((t) => Math.abs(t.t - best.t) < 10 * DAY), w = best.w || {};
+      const activeWindow = w[st.alertScale], otherScale = st.alertScale === '6-12m' ? '12-24m' : '6-12m';
+      const activeName = st.alertScale === '6-12m' ? '6–12 月' : '12–24 月';
+      const otherName = otherScale === '6-12m' ? '6–12 月' : '12–24 月';
       tip.innerHTML = `<b>截止 ${E(best.asof)}</b>（${E(SPLIT[best.split] || best.split)}）<br>收盘 ${best.close.toFixed(0)}<br>` +
-        (best.w0 != null ? `6–12 月档情景区间<br><b>${E(w['6-12m'][0])} – ${E(w['6-12m'][1])}</b>（未校准，仅供参考）` : '6–12 月档无合格拟合') +
-        (w['12-24m'] ? `<br>12–24 月档 ${E(w['12-24m'][0])} – ${E(w['12-24m'][1])}（未校准，仅供参考）` : '') +
+        (best.w0 != null ? `${activeName}档情景区间<br><b>${E(activeWindow[0])} – ${E(activeWindow[1])}</b>（未校准，仅供参考）` : `${activeName}档无合格拟合`) +
+        (w[otherScale] ? `<br>${otherName}档 ${E(w[otherScale][0])} – ${E(w[otherScale][1])}（未校准，仅供参考）` : '') +
         (top ? `<br><span class="re">▼ 事后确认顶：回撤 ${pct(top.max_dd)}（事后实测）</span>` : '');
       tip.hidden = false;
       const tx = Math.min(mx + 14, r.width - tip.offsetWidth - 8);
