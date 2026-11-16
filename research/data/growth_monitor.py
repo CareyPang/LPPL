@@ -134,6 +134,13 @@ def completed_weekly_flows(
                 if row.get("flows", {}).get(code) is not None
             ]
             by_code[code] = round(sum(values), 2) if values else None
+        missing_codes = {
+            code
+            for row in rows
+            for code in codes
+            if row.get("flows", {}).get(code) is None
+            and code not in row.get("excluded", {})
+        }
         available = [value for value in by_code.values() if value is not None]
         output.append(
             {
@@ -153,7 +160,8 @@ def completed_weekly_flows(
                 "flow_yuan": round(sum(available), 2) if available else None,
                 "etfs": by_code,
                 "missing_codes": sorted(
-                    {
+                    missing_codes
+                    | {
                         code
                         for row in rows
                         for code in row.get("missing_share_codes", [])

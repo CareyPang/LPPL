@@ -126,6 +126,33 @@ def test_weekly_flow_does_not_skip_an_unobserved_complete_week():
     assert result[-2]["flow_yuan"] is None
 
 
+def test_weekly_flow_missing_member_is_partial_but_exclusions_are_not_missing():
+    codes = ("159995", "512480", "512760", "588200")
+    complete = {code: 1.0 for code in codes}
+    incomplete = {**complete, "512760": None, "512480": None}
+    daily = [
+        {"date": "2026-11-02", "flows": complete},
+        {
+            "date": "2026-11-03",
+            "flows": incomplete,
+            "excluded": {"512480": "分红拆分"},
+            "missing_share_codes": [],
+        },
+        {"date": "2026-11-06", "flows": complete},
+        {"date": "2026-11-09", "flows": complete},
+        {"date": "2026-11-13", "flows": complete},
+    ]
+
+    weekly = completed_weekly_flows(daily, "2026-11-13", codes)
+    missing_codes = sorted({code for week in weekly for code in week["missing_codes"]})
+    status, _ = semi_status(weekly, missing_codes, codes)
+
+    assert len(weekly) == 2
+    assert all(week["flow_yuan"] > 0 for week in weekly)
+    assert weekly[0]["missing_codes"] == ["512760"]
+    assert status == "partial"
+
+
 def test_share_jumps_and_fund_actions_are_excluded():
     assert share_exclusion_reason(100, 130, False) is None
     assert "超过 30%" in share_exclusion_reason(100, 131, False)
