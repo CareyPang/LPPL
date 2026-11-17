@@ -2,8 +2,8 @@
  "symbol": "US_NVDA",
  "name": "英伟达",
  "asof": "2026-11-16",
- "data_version": "us_NVDA_20261116_0e9d80f4d7d68ee8",
- "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "data_version": "us_NVDA_20261116_4e8a8a07f2d0716a",
+ "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
   "holidays_through": null,
@@ -63,7 +63,7 @@
     "best_t1": "2026-05-18",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.5,
+     "m_lo": 0.833,
      "m_hi": 0.0,
      "w_lo": 0.833,
      "w_hi": 0.0,
@@ -99,7 +99,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.1,
+     "early": 0.2,
      "end": 0.0,
      "pure": 0.0
     },
@@ -107,13 +107,13 @@
     "best_t1": "2025-04-11",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.0,
+     "m_lo": 0.1,
      "m_hi": 0.3,
-     "w_lo": 0.3,
+     "w_lo": 0.2,
      "w_hi": 0.0,
      "tc_lo": 0.1,
      "tc_hi": 0.3,
-     "any": 0.7,
+     "any": 0.6,
      "tol": 0.01
     },
     "null_fpr": {
@@ -5305,7 +5305,7 @@
    339214786,
    747707620,
    365796391,
-   330731453
+   333822062
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5349,6 +5349,9 @@
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
+ "params": {
+  "optimizer": "de_lbfgsb"
+ },
  "stock_meta": {
   "variant": "stk_lite",
   "status": "eligible",
@@ -5385,7 +5388,7 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
+ "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
  "fit_input_hash": "e04fa2ebaa1646b9f3696b6e5c536119f9c4f0c793c67ae2fdb9be5847fd0921",
  "history_input_hashes": {
   "2023-11-13": "0973a6d16cdbd6ef20c46e4fd06208822067c7ea5839a6f860cf215954a39724",
@@ -6147,5 +6150,5 @@
  "code": "US_NVDA",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T04:52:27.272474+00:00"
+ "generated_at": "2026-11-17T22:38:59.232001+00:00"
 }
