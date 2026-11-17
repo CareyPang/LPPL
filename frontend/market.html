@@ -213,15 +213,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <div class="sec wide stale" id="stale-banner" role="status" hidden></div>
   <section class="sec wide" id="s-summary" aria-labelledby="h-summary">
     <div class="sec-h"><h2 id="h-summary">今日摘要</h2><span class="ev">descriptive</span></div>
-    <div id="today-summary"><p class="note">摘要数据加载中…</p></div>
+    <div id="today-summary" data-ai-context="今日摘要"><p class="note">摘要数据加载中…</p></div>
     <details class="summary-model-details" id="model-range-details">
       <summary>逐个指数看变化</summary>
-      <div id="model-ranges-body"><p class="note">模型区间加载中…</p></div>
+      <div id="model-ranges-body" data-ai-context="逐个指数看变化"><p class="note">模型区间加载中…</p></div>
     </details>
   </section>
   <section class="sec wide" id="s-news" aria-labelledby="h-news">
     <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
-    <div id="news-body"></div>
+    <div id="news-body" data-ai-context="快讯"></div>
   </section>
 
   <section class="sec wide" id="s-events" aria-labelledby="h-events">
@@ -1690,5 +1690,6 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   });
 })();
 </script>
+<script src="app/ai-assistant.js" data-page="market"></script>
 </body>
 </html>

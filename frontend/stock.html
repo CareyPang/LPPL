@@ -348,13 +348,13 @@
         <button id="compute-history" type="button" disabled>生成历史回放</button>
         <button id="resume-jobs" type="button" hidden>继续查看任务</button>
       </div>
-      <section id="stock-events" class="card" hidden aria-labelledby="stock-events-title">
+      <section id="stock-events" class="card" hidden aria-labelledby="stock-events-title" data-ai-context="近期事件">
         <h2 id="stock-events-title">近期事件</h2><div id="stock-events-body"></div>
       </section>
       <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验，不构成预测或投资建议。</p>
     </section>
 
-    <section class="card" id="market-panel" hidden aria-label="独立日线行情">
+    <section class="card" id="market-panel" hidden aria-label="独立日线行情" data-ai-anchor data-ai-context="行情">
       <div class="market-header">
         <div><h2 id="market-name">正在读取行情</h2><p class="note" id="market-date"></p></div>
         <div class="periods" aria-label="图表显示范围">
@@ -399,7 +399,7 @@
 
     <section id="catalog" class="catalog" hidden aria-label="标的目录"></section>
 
-    <section id="results" hidden>
+    <section id="results" hidden data-ai-context="模型结果">
       <div id="sym-head"></div>
       <div class="stock-head">
         <h2 id="stock-name">—</h2>
@@ -1731,5 +1731,6 @@
     })();
   </script>
   <script src="app/stock-page.js"></script>
+  <script src="app/ai-assistant.js" data-page="stock"></script>
 </body>
 </html>

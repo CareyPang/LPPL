@@ -332,7 +332,7 @@ footer p { margin: 0; max-width: 110ch; }
     </div>
   </div>
 
-  <div class="chart" id="chartwrap">
+  <div class="chart" id="chartwrap" data-ai-anchor>
     <canvas id="cv" tabindex="0" role="img" aria-label="K 线主图。方向键移动光标，加减号缩放，0 复位，拖动平移。"></canvas>
     <div class="legend" id="legend" aria-live="off"></div>
     <div class="ld" id="ld" aria-live="polite">
@@ -354,7 +354,7 @@ footer p { margin: 0; max-width: 110ch; }
     <button class="tl-b od-fixed" id="tl-last" type="button">最新</button>
   </div>
 
-  <aside class="side" aria-label="结论与操作计划">
+  <aside class="side" aria-label="结论与操作计划" data-ai-context="结论与顶部聚类">
     <section class="blk">
       <p class="blk-k">收盘</p>
       <div class="od-row" style="--od-gap:12px;align-items:baseline">
@@ -402,7 +402,7 @@ footer p { margin: 0; max-width: 110ch; }
     </section>
   </aside>
 
-  <section class="bottom" aria-label="验证与参数">
+  <section class="bottom" aria-label="验证与参数" data-ai-context="验证与参数">
     <div class="tabs" role="tablist" aria-label="底部面板" id="btabs">
       <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="true" aria-controls="p-replay">回放</button>
       <button type="button" role="tab" id="bt-1" data-p="p-bench" aria-selected="false" aria-controls="p-bench" tabindex="-1">三段验证</button>
@@ -1504,5 +1504,6 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   request(c0, d0);
 })();
 </script>
+<script src="app/ai-assistant.js" data-page="index"></script>
 </body>
 </html>

@@ -1,3 +1,5 @@
+import { AI_SYSTEM_PROMPT, aiBlocked } from './ai-policy.js';
+
 const DEFAULT_ORIGIN = 'https://careypang.github.io';
 const DEFAULT_REPO = 'CareyPang/LPPL';
 const CODE_PATTERN = /^(?:60|68|00|30|43|83|87|92)\d{4}$/;
@@ -13,7 +15,10 @@ const NEWS_TTL_SECONDS = 60;
 const NEWS_TIMEOUT_MS = 8000;
 const QUOTE_TTL_SECONDS = 60;
 const QUOTE_TIMEOUT_MS = 5000;
+const AI_TIMEOUT_MS = 60_000;
+const AI_MAX_BODY_BYTES = 64 * 1024;
 const QUOTE_CODE_PATTERN = /^(?:(?:sh|sz|bj)\d{6}|us[A-Za-z.]{1,10})$/;
+const AI_PAGES = new Set(['stock', 'index', 'backtest', 'market']);
 const CLS_ROLL_URL = 'https://www.cls.cn/v1/roll/get_roll_list';
 const EM_FAST_NEWS_URL = 'https://np-weblist.eastmoney.com/comm/web/getFastNewsList';
 const NEWS_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36';
@@ -489,6 +494,210 @@ async function liveNews(request, env) {
   return response;
 }
 
+function aiInput(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  const question = typeof body.question === 'string' ? body.question.trim() : '';
+  const context = body.context;
+  const history = Object.hasOwn(body, 'history') ? body.history : [];
+  if (!AI_PAGES.has(body.page) || question.length < 1 || question.length > 500
+    || typeof context !== 'string' || context.length > 8000
+    || !Array.isArray(history) || history.length > 6
+    || history.some((item) => !item || typeof item !== 'object' || Array.isArray(item)
+      || !['user', 'assistant'].includes(item.role)
+      || typeof item.content !== 'string' || item.content.length > 1500)) return null;
+  return {
+    question,
+    context,
+    history: history.map((item) => ({ role: item.role, content: item.content })),
+  };
+}
+
+function aiEvent(value) {
+  return new TextEncoder().encode(`data: ${JSON.stringify(value)}\n\n`);
+}
+
+async function aiChat(request, env) {
+  if (!env.DEEPSEEK_API_KEY) {
+    return jsonResponse(request, env,
+      { error_code: 'SERVICE_UNAVAILABLE', error: '研究助手未配置' }, 503);
+  }
+
+  const contentLength = request.headers.get('Content-Length');
+  if (contentLength !== null && Number(contentLength) > AI_MAX_BODY_BYTES) {
+    return jsonResponse(request, env,
+      { error_code: 'PAYLOAD_TOO_LARGE', error: '请求内容过长' }, 413);
+  }
+
+  let raw;
+  try { raw = await request.arrayBuffer(); }
+  catch {
+    return jsonResponse(request, env,
+      { error_code: 'BAD_REQUEST', error: '请求内容不符合要求' }, 400);
+  }
+  if (raw.byteLength > AI_MAX_BODY_BYTES) {
+    return jsonResponse(request, env,
+      { error_code: 'PAYLOAD_TOO_LARGE', error: '请求内容过长' }, 413);
+  }
+  let body;
+  try { body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(raw)); }
+  catch {
+    return jsonResponse(request, env,
+      { error_code: 'BAD_REQUEST', error: '请求内容不符合要求' }, 400);
+  }
+  const input = aiInput(body);
+  if (!input) {
+    return jsonResponse(request, env,
+      { error_code: 'BAD_REQUEST', error: '请求内容不符合要求' }, 400);
+  }
+
+  let reservation;
+  try {
+    reservation = await reserve(env, request.headers.get('CF-Connecting-IP') || 'unknown', 'ai');
+  } catch {
+    return jsonResponse(request, env,
+      { error_code: 'SERVICE_UNAVAILABLE', error: '研究助手暂时不可用' }, 503);
+  }
+  if (!reservation.ok) {
+    let result = {};
+    try { result = await reservation.json(); } catch { /* Keep a stable public error. */ }
+    return jsonResponse(request, env, {
+      error_code: result.error_code || 'SERVICE_UNAVAILABLE',
+      error: result.error || '研究助手暂时不可用',
+    }, reservation.status, reservation.status === 429
+      ? { 'Retry-After': String(result.retry_after || 60) } : {});
+  }
+
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), AI_TIMEOUT_MS);
+  const messages = [
+    { role: 'system', content: AI_SYSTEM_PROMPT },
+    ...input.history,
+    {
+      role: 'user',
+      content: `〈页面数据〉\n${input.context || '（页面没有提供数据）'}\n〈/页面数据〉\n\n问题：${input.question}`,
+    },
+  ];
+  let upstream;
+  try {
+    upstream = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: env.AI_MODEL || 'deepseek-flash',
+        stream: true,
+        thinking: { type: 'disabled' },
+        temperature: 0.3,
+        max_tokens: 1200,
+        messages,
+      }),
+      signal: abortController.signal,
+    });
+  } catch {
+    clearTimeout(timeout);
+    return jsonResponse(request, env, {
+      error_code: 'UPSTREAM_FAILED',
+      error: '研究助手暂时不可用',
+    }, 502);
+  }
+  if (!upstream.ok) {
+    clearTimeout(timeout);
+    return jsonResponse(request, env, {
+      error_code: 'UPSTREAM_FAILED',
+      error: upstream.status === 429 ? '模型服务繁忙，请稍后再试' : '研究助手暂时不可用',
+    }, 502);
+  }
+
+  const headers = corsHeaders(request, env);
+  headers.set('Content-Type', 'text/event-stream; charset=utf-8');
+  headers.set('Cache-Control', 'no-store');
+  if (!upstream.body) {
+    clearTimeout(timeout);
+    return new Response(aiEvent({ done: true }), { headers });
+  }
+
+  const reader = upstream.body.getReader();
+  let accumulated = '';
+  let closed = false;
+  const stream = new ReadableStream({
+    start(controller) {
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        clearTimeout(timeout);
+        try { controller.close(); } catch { /* Client may have cancelled the stream. */ }
+      };
+      const fail = () => {
+        if (closed) return;
+        abortController.abort();
+        void reader.cancel().catch(() => {});
+        try { controller.enqueue(aiEvent({ error: '研究助手连接中断' })); } catch {}
+        close();
+      };
+      const emitLine = (line) => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) return false;
+        const data = trimmed.slice(5).trim();
+        if (!data) return false;
+        if (data === '[DONE]') {
+          controller.enqueue(aiEvent({ done: true }));
+          void reader.cancel().catch(() => {});
+          close();
+          return true;
+        }
+        const event = JSON.parse(data);
+        const piece = event?.choices?.[0]?.delta?.content;
+        if (typeof piece !== 'string') return false;
+        accumulated += piece;
+        if (aiBlocked(accumulated)) {
+          abortController.abort();
+          void reader.cancel().catch(() => {});
+          controller.enqueue(aiEvent({ blocked: true }));
+          close();
+          return true;
+        }
+        controller.enqueue(aiEvent({ delta: piece }));
+        return false;
+      };
+      const pump = async () => {
+        const decoder = new TextDecoder();
+        let pending = '';
+        try {
+          while (!closed) {
+            const { done, value } = await reader.read();
+            pending += decoder.decode(value || new Uint8Array(), { stream: !done });
+            const lines = pending.split('\n');
+            pending = lines.pop() || '';
+            for (const line of lines) {
+              if (emitLine(line.replace(/\r$/, ''))) return;
+            }
+            if (done) {
+              if (pending && emitLine(pending.replace(/\r$/, ''))) return;
+              controller.enqueue(aiEvent({ done: true }));
+              close();
+              return;
+            }
+          }
+        } catch {
+          fail();
+        } finally {
+          try { reader.releaseLock(); } catch { /* The reader may already be released. */ }
+        }
+      };
+      void pump();
+    },
+    cancel() {
+      closed = true;
+      abortController.abort();
+      clearTimeout(timeout);
+      void reader.cancel().catch(() => {});
+    },
+  });
+  return new Response(stream, { headers });
+}
+
 function normalizeQuoteCode(value) {
   if (typeof value !== 'string') return null;
   if (/^(?:sh|sz|bj)\d{6}$/.test(value)) return value;
@@ -655,17 +864,23 @@ export class QueryBudget extends SerializedObject {
     const now = Date.now();
     const state = await this.ctx.storage.get(resource) || { global: [], ips: {} };
     const windowMs = resource === 'market' ? 60_000 : 600_000;
-    const globalWindow = resource === 'market' ? 60_000 : 3_600_000;
+    const globalWindow = resource === 'market' ? 60_000 : resource === 'ai' ? 86_400_000 : 3_600_000;
     state.global = state.global.filter((at) => at > now - globalWindow);
     for (const key of Object.keys(state.ips)) {
       state.ips[key] = state.ips[key].filter((at) => at > now - windowMs);
       if (!state.ips[key].length) delete state.ips[key];
     }
     const perIP = state.ips[ip] || [];
-    const ipLimit = resource === 'market' ? 30 : budgetNumber(this.env, 'QUERIES_PER_IP_10M', 5, 100);
-    const globalLimit = resource === 'market' ? 300 : budgetNumber(this.env, 'QUERIES_PER_HOUR', 60, 1000);
+    const ipLimit = resource === 'market' ? 30 : resource === 'ai'
+      ? budgetNumber(this.env, 'AI_PER_IP_10M', 10, 100)
+      : budgetNumber(this.env, 'QUERIES_PER_IP_10M', 5, 100);
+    const globalLimit = resource === 'market' ? 300 : resource === 'ai'
+      ? budgetNumber(this.env, 'AI_PER_DAY', 200, 5000)
+      : budgetNumber(this.env, 'QUERIES_PER_HOUR', 60, 1000);
     if (perIP.length >= ipLimit || state.global.length >= globalLimit) {
-      return failure('RATE_LIMITED', '查询额度暂时用尽，请稍后再试', 429, { retry_after: 60 });
+      return failure('RATE_LIMITED',
+        resource === 'ai' ? '研究助手提问次数暂时用尽，请稍后再试' : '查询额度暂时用尽，请稍后再试',
+        429, { retry_after: 60 });
     }
     state.global.push(now);
     state.ips[ip] = [...perIP, now];
@@ -1084,9 +1299,10 @@ export default {
         time: new Date().toISOString(),
         bindings: { STOCK_JOBS: !!env.STOCK_JOBS, QUERY_BUDGET: !!env.QUERY_BUDGET },
         gh_token,
+        ai_key: !!env.DEEPSEEK_API_KEY,
         repo: repo(env),
         allowed_origin: env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
-        routes: ['/health', '/market', '/news', '/quote', '/query', '/status', '/result', '/replay', '/replay/result'],
+        routes: ['/health', '/market', '/news', '/ai', '/quote', '/query', '/status', '/result', '/replay', '/replay/result'],
       }, ok ? 200 : 503);
     }
     if (url.pathname === '/news') {
@@ -1094,6 +1310,12 @@ export default {
         return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
       }
       return liveNews(request, env);
+    }
+    if (url.pathname === '/ai') {
+      if (request.method !== 'POST') {
+        return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
+      }
+      return aiChat(request, env);
     }
     if (url.pathname === '/quote') {
       if (request.method !== 'GET') {

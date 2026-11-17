@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { AI_SYSTEM_PROMPT } from '../src/ai-policy.js';
 import worker, {
   replayFailureActive,
   dispatchesForSlot,
@@ -69,7 +70,11 @@ function marketFixture(symbol = 'sh600519') {
 
 test('health reports configured bindings without exposing the token', async () => {
   await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
-    const env = environment({ REPO: 'example/stocks', ALLOWED_ORIGIN: 'https://example.test' });
+    const env = environment({
+      REPO: 'example/stocks',
+      ALLOWED_ORIGIN: 'https://example.test',
+      DEEPSEEK_API_KEY: TOKEN,
+    });
     const response = await worker.fetch(request('/health', { origin: 'https://example.test' }), env);
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('Cache-Control'), 'no-store');
@@ -81,9 +86,10 @@ test('health reports configured bindings without exposing the token', async () =
     assert.ok(Number.isFinite(Date.parse(health.time)));
     assert.deepEqual(health.bindings, { STOCK_JOBS: true, QUERY_BUDGET: true });
     assert.equal(health.gh_token, true);
+    assert.equal(health.ai_key, true);
     assert.equal(health.repo, 'example/stocks');
     assert.equal(health.allowed_origin, 'https://example.test');
-    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/quote', '/query', '/status', '/result', '/replay', '/replay/result']);
+    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/ai', '/quote', '/query', '/status', '/result', '/replay', '/replay/result']);
   });
 });
 
@@ -1410,4 +1416,250 @@ test('scheduled reports a missing GitHub token without dispatching', async () =>
 
   assert.equal(errors.length, 1);
   assert.match(errors[0][0], /worker_cron dispatch skipped/);
+});
+
+function aiBody(overrides = {}) {
+  return { page: 'stock', question: '请解释页面结果', context: '页面摘要', ...overrides };
+}
+
+function sseResponse(events, status = 200) {
+  const encoder = new TextEncoder();
+  return new Response(new ReadableStream({
+    start(controller) {
+      for (const event of events) controller.enqueue(encoder.encode(event));
+      controller.close();
+    },
+  }), { status });
+}
+
+function aiEvents(text) {
+  return text.split(/\r?\n/)
+    .filter((line) => line.startsWith('data: '))
+    .map((line) => JSON.parse(line.slice(6)));
+}
+
+test('POST /ai returns unavailable without a configured DeepSeek key', async () => {
+  let response;
+  await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
+    response = await worker.fetch(
+      request('/ai', { method: 'POST', body: aiBody() }),
+      environment(),
+    );
+  });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error_code: 'SERVICE_UNAVAILABLE',
+    error: '研究助手未配置',
+  });
+});
+
+test('POST /ai validates page, question, context, history, and raw body size', async () => {
+  await withUpstream({ fetch: async () => assert.fail('invalid requests must not reach upstream') }, async () => {
+    const env = environment({ DEEPSEEK_API_KEY: TOKEN });
+    const invalid = [
+      aiBody({ page: 'portfolio' }),
+      aiBody({ question: '   ' }),
+      aiBody({ question: 'q'.repeat(501) }),
+      aiBody({ context: 'x'.repeat(8001) }),
+      aiBody({ history: Array.from({ length: 7 }, () => ({ role: 'user', content: 'x' })) }),
+      aiBody({ history: null }),
+      aiBody({ history: [{ role: 'system', content: 'not allowed' }] }),
+      aiBody({ history: [{ role: 'user', content: 'x'.repeat(1501) }] }),
+    ];
+    for (const body of invalid) {
+      const response = await worker.fetch(request('/ai', { method: 'POST', body }), env);
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), {
+        error_code: 'BAD_REQUEST',
+        error: '请求内容不符合要求',
+      });
+    }
+    const malformed = await worker.fetch(request('/ai', { method: 'POST', body: '{' }), env);
+    assert.equal(malformed.status, 400);
+    const oversized = await worker.fetch(
+      request('/ai', { method: 'POST', body: JSON.stringify(aiBody({ context: 'x'.repeat(70_000) })) }),
+      env,
+    );
+    assert.equal(oversized.status, 413);
+    assert.equal((await oversized.json()).error_code, 'PAYLOAD_TOO_LARGE');
+  });
+});
+
+test('POST /ai rejects oversized Content-Length without reading the body', async () => {
+  const env = environment({ DEEPSEEK_API_KEY: TOKEN });
+  const oversized = request('/ai', { method: 'POST', body: '{}' });
+  oversized.headers.set('Content-Length', '70000');
+  let bodyRead = false;
+  oversized.arrayBuffer = async () => {
+    bodyRead = true;
+    throw new Error('body should not be read');
+  };
+  const response = await worker.fetch(oversized, env);
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).error_code, 'PAYLOAD_TOO_LARGE');
+  assert.equal(bodyRead, false);
+  assert.equal(oversized.bodyUsed, false);
+});
+
+test('POST /ai accepts maximum CJK context and history within 64 KiB', async () => {
+  let upstreamBody;
+  let response;
+  const body = aiBody({
+    context: '中'.repeat(8000),
+    history: Array.from({ length: 6 }, () => ({ role: 'user', content: '中'.repeat(1500) })),
+  });
+  assert.ok(new TextEncoder().encode(JSON.stringify(body)).byteLength <= 64 * 1024);
+  await withUpstream({ fetch: async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return sseResponse(['data: [DONE]\n\n']);
+  } }, async () => {
+    response = await worker.fetch(
+      request('/ai', { method: 'POST', body }),
+      environment({ DEEPSEEK_API_KEY: TOKEN }),
+    );
+  });
+  assert.equal(response.status, 200);
+  await response.text();
+  assert.equal(upstreamBody.messages.at(-1).content.includes('中'.repeat(8000)), true);
+  assert.equal(upstreamBody.messages.length, 8);
+  assert.equal(upstreamBody.messages.slice(1, -1).every((message) => message.content === '中'.repeat(1500)), true);
+});
+
+test('POST /ai enforces Origin and method checks before making requests', async () => {
+  await withUpstream({ fetch: async () => assert.fail('forbidden requests must not reach upstream') }, async () => {
+    const env = environment({ DEEPSEEK_API_KEY: TOKEN });
+    const forbidden = await worker.fetch(
+      request('/ai', { method: 'POST', origin: 'https://evil.test', body: aiBody() }),
+      env,
+    );
+    assert.equal(forbidden.status, 403);
+    assert.equal(forbidden.headers.get('Access-Control-Allow-Origin'), null);
+    const wrongMethod = await worker.fetch(request('/ai'), env);
+    assert.equal(wrongMethod.status, 405);
+  });
+});
+
+test('POST /ai streams only content deltas and sends the fixed DeepSeek request', async () => {
+  let upstreamRequest;
+  let response;
+  const chunks = [
+    `data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: 'hidden reasoning', content: null } }] })}\n\n`,
+    `data: ${JSON.stringify({ choices: [{ delta: { content: '第一段' } }] })}\n\n`,
+    `data: ${JSON.stringify({ choices: [{ delta: { content: '第二段' } }] })}\n\n`,
+    'data: [DONE]\n\n',
+  ];
+  await withUpstream({ fetch: async (url, init) => {
+    assert.equal(String(url), 'https://api.deepseek.com/chat/completions');
+    upstreamRequest = { ...init, body: JSON.parse(init.body) };
+    return sseResponse(chunks);
+  } }, async () => {
+    response = await worker.fetch(request('/ai', {
+      method: 'POST',
+      body: aiBody({
+        context: '6–12 月主簇区间',
+        history: [{ role: 'assistant', content: '上一轮说明' }],
+      }),
+    }), environment({ DEEPSEEK_API_KEY: TOKEN }));
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Content-Type'), 'text/event-stream; charset=utf-8');
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), ORIGIN);
+  const text = await response.text();
+  const events = aiEvents(text);
+  assert.deepEqual(events, [
+    { delta: '第一段' },
+    { delta: '第二段' },
+    { done: true },
+  ]);
+  assert.doesNotMatch(text, /hidden reasoning/);
+  assert.equal(text.includes(TOKEN), false);
+
+  assert.equal(upstreamRequest.method, 'POST');
+  assert.equal(upstreamRequest.headers.Authorization, `Bearer ${TOKEN}`);
+  assert.equal(upstreamRequest.body.model, 'deepseek-flash');
+  assert.equal(upstreamRequest.body.stream, true);
+  assert.deepEqual(upstreamRequest.body.thinking, { type: 'disabled' });
+  assert.equal(upstreamRequest.body.temperature, 0.3);
+  assert.equal(upstreamRequest.body.max_tokens, 1200);
+  assert.equal(upstreamRequest.body.messages[0].content, AI_SYSTEM_PROMPT);
+  assert.deepEqual(upstreamRequest.body.messages[1], { role: 'assistant', content: '上一轮说明' });
+  assert.equal(
+    upstreamRequest.body.messages[2].content,
+    '〈页面数据〉\n6–12 月主簇区间\n〈/页面数据〉\n\n问题：请解释页面结果',
+  );
+});
+
+test('POST /ai aborts the upstream and stops after policy-blocked content', async () => {
+  let signal;
+  let response;
+  const chunks = [
+    `data: ${JSON.stringify({ choices: [{ delta: { content: '目标价为 ' } }] })}\n\n`,
+    `data: ${JSON.stringify({ choices: [{ delta: { content: '12 元' } }] })}\n\n`,
+    'data: [DONE]\n\n',
+  ];
+  await withUpstream({ fetch: async (_url, init) => {
+    signal = init.signal;
+    return sseResponse(chunks);
+  } }, async () => {
+    response = await worker.fetch(request('/ai', {
+      method: 'POST',
+      body: aiBody(),
+    }), environment({ DEEPSEEK_API_KEY: TOKEN }));
+  });
+  const events = aiEvents(await response.text());
+  assert.deepEqual(events, [{ delta: '目标价为 ' }, { blocked: true }]);
+  assert.equal(events.some((event) => event.done), false);
+  assert.equal(signal.aborted, true);
+});
+
+test('POST /ai rate-limits the eleventh request from an IP in ten minutes', async () => {
+  let upstreamCalls = 0;
+  let lastResponse;
+  const env = environment({ DEEPSEEK_API_KEY: TOKEN });
+  await withUpstream({ fetch: async () => {
+    upstreamCalls += 1;
+    return sseResponse(['data: [DONE]\n\n']);
+  } }, async () => {
+    for (let i = 0; i < 11; i += 1) {
+      lastResponse = await worker.fetch(request('/ai', {
+        method: 'POST',
+        body: aiBody({ question: `问题 ${i}` }),
+      }), env);
+      if (i < 10) {
+        assert.equal(lastResponse.status, 200);
+        await lastResponse.text();
+      }
+    }
+  });
+  assert.equal(lastResponse.status, 429);
+  assert.equal(lastResponse.headers.get('Retry-After'), '60');
+  assert.deepEqual(await lastResponse.json(), {
+    error_code: 'RATE_LIMITED',
+    error: '研究助手提问次数暂时用尽，请稍后再试',
+  });
+  assert.equal(upstreamCalls, 10);
+});
+
+test('POST /ai maps upstream failures to sanitized 502 responses', async () => {
+  for (const [status, expected] of [
+    [500, '研究助手暂时不可用'],
+    [429, '模型服务繁忙，请稍后再试'],
+  ]) {
+    let response;
+    await withUpstream({ fetch: async () => new Response(`private ${TOKEN}`, { status }) }, async () => {
+      response = await worker.fetch(request('/ai', {
+        method: 'POST',
+        body: aiBody(),
+      }), environment({ DEEPSEEK_API_KEY: TOKEN }));
+    });
+    assert.equal(response.status, 502);
+    const text = await response.text();
+    assert.deepEqual(JSON.parse(text), {
+      error_code: 'UPSTREAM_FAILED',
+      error: expected,
+    });
+    assert.equal(text.includes(TOKEN), false);
+  }
 });
