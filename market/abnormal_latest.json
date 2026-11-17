@@ -1,11 +1,11 @@
 {
   "asof": "2026-11-17",
-  "generated": "2026-11-17T10:33:17.806974+00:00",
+  "generated": "2026-11-17T12:52:35.050385+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
-    "candidate_count": 164,
-    "available_count": 164,
+    "candidate_count": 161,
+    "available_count": 161,
     "missing": 3,
     "missing_codes": [
       {
@@ -27,9 +27,9 @@
     "rule_source": "交易所异常波动规则摘要"
   },
   "counts": {
-    "candidate_count": 164,
-    "available_count": 164,
-    "near": 47,
+    "candidate_count": 161,
+    "available_count": 161,
+    "near": 46,
     "triggered": 27,
     "stale_bar": 0
   },
@@ -782,8 +782,7 @@
       "stale_bar": false,
       "candidate_sources": [
         "limit_pools_dt",
-        "hot_ths",
-        "hot_eastmoney"
+        "hot_ths"
       ],
       "dev_3d": -25.161559202348972,
       "dev_10d": -13.076809239865606,
@@ -1307,8 +1306,7 @@
       "stale_bar": false,
       "candidate_sources": [
         "limit_pools_zb",
-        "hot_ths",
-        "hot_eastmoney"
+        "hot_ths"
       ],
       "dev_3d": 18.88496853896863,
       "dev_10d": 26.134385284921834,
@@ -1447,43 +1445,6 @@
         "remaining_pp": 1.5890991825805472
       },
       "remaining_pp": 1.5890991825805472,
-      "near": true,
-      "triggered": false
-    },
-    {
-      "code": "000062",
-      "name": "深圳华强",
-      "board": "深主板",
-      "benchmark": "sz399001",
-      "last_bar_date": "2026-11-17",
-      "stale_bar": false,
-      "candidate_sources": [
-        "hot_eastmoney"
-      ],
-      "dev_3d": 18.035146113803734,
-      "dev_10d": 20.82927410770662,
-      "dev_30d": 20.40573630138732,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "up",
-        "threshold_pct": 20.0,
-        "remaining_pp": 1.9648538861962663
-      },
-      "remaining_pp": 1.9648538861962663,
       "near": true,
       "triggered": false
     },
@@ -1944,7 +1905,8 @@
       "last_bar_date": "2026-11-17",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt"
+        "limit_pools_zt",
+        "hot_eastmoney"
       ],
       "dev_3d": 14.54261902955466,
       "dev_10d": 11.21855466340974,
@@ -1972,6 +1934,43 @@
       "remaining_pp": 5.457380970445341,
       "near": false,
       "triggered": false
+    },
+    {
+      "code": "603706",
+      "name": "东方环宇",
+      "board": "沪主板",
+      "benchmark": "sh000001",
+      "last_bar_date": "2026-11-17",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_dt"
+      ],
+      "dev_3d": -14.388981507410149,
+      "dev_10d": 28.743034724576255,
+      "dev_30d": 39.04419680659378,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "down",
+        "threshold_pct": -20.0,
+        "remaining_pp": 5.611018492589851
+      },
+      "remaining_pp": 5.611018492589851,
+      "near": false,
+      "triggered": false
     }
   ],
   "evidence": "descriptive",
@@ -1979,7 +1978,7 @@
   "version": {
     "kind": "abnormal",
     "asof": "2026-11-17",
-    "file": "versions/abnormal/2026-11-17/20261117T103317Z_ca717983.json.gz",
-    "sha256": "ca717983f324c52979ba9aaa74b4e69ae26527ff824d067f540e099be7ebc22f"
+    "file": "versions/abnormal/2026-11-17/20261117T125235Z_af069518.json.gz",
+    "sha256": "af0695181238d04cf988b79a56a8ce1f87769e73a4a3eb3a11f70e1dbac2c6a7"
   }
 }
