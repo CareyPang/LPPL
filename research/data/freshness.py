@@ -104,13 +104,13 @@ def _trading_days_between(
             {
                 pd.Timestamp(value).date()
                 for value in calendar
-                if first_day < pd.Timestamp(value).date() < end_day
+                if first_day < pd.Timestamp(value).date() <= end_day
             }
         )
 
     days = []
     current = first_day + timedelta(days=1)
-    while current < end_day:
+    while current <= end_day:
         if current.weekday() < 5:
             days.append(current)
         current += timedelta(days=1)

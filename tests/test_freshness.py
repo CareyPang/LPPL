@@ -290,6 +290,7 @@ def test_forward_log_ignores_partial_day_and_reports_previous_day_lag(
 
     item = _forward_item(report)
     assert (item["day"], item["lag"], item["status"]) == ("2026-11-13", 1, "late")
+    assert item["missing_days"] == ["2026-11-16"]
     assert item in report["stale"]
 
 
@@ -302,7 +303,7 @@ def test_forward_log_missing_days_use_calendar_and_exclude_holidays(
         stock,
         "_reference_calendar",
         lambda cutoff: pd.DatetimeIndex(
-            ["2026-05-01", "2026-05-06", "2026-05-07"]
+            ["2026-05-01", "2026-05-06"]
         ),
     )
 
@@ -315,7 +316,7 @@ def test_forward_log_missing_days_use_calendar_and_exclude_holidays(
     item = _forward_item(report)
     assert item["missing_days"] == ["2026-05-06"]
     assert item["day"] == "2026-05-01"
-    assert item["lag"] == 2
+    assert item["lag"] == 1
     row = next(line for line in freshness.render_markdown(report).splitlines() if "前瞻日志" in line)
     assert "前瞻日志封存（缺 1 天：2026-05-06）" in row
 
