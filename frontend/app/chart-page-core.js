@@ -9,19 +9,23 @@
   var SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
   var RETURN_PAGES = new Set(['stock.html', 'index.html', 'backtest.html', 'market.html', 'home.html']);
 
-  function fallbackFrom(code) {
-    return 'stock.html?code=' + encodeURIComponent(String(code || ''));
+  function fallbackFrom(assetType, code, stockCode) {
+    if (assetType === 'index') {
+      return 'index.html?code=' + encodeURIComponent(String(code || ''));
+    }
+    var normalizedStockCode = stockCode || String(code || '').replace(/^(?:sh|sz|bj)/i, '');
+    return 'stock.html?code=' + encodeURIComponent(normalizedStockCode);
   }
 
-  function safeFrom(value, code) {
+  function safeFrom(value, assetType, code, stockCode) {
     var candidate = typeof value === 'string' ? value.trim() : '';
     if (!candidate || candidate.length > 2048 || candidate.charAt(0) === '/' ||
         candidate.indexOf('\\') >= 0 || candidate.indexOf('//') >= 0 ||
         candidate.indexOf('#') >= 0 || /^[a-z][a-z\d+.-]*:/i.test(candidate)) {
-      return fallbackFrom(code);
+      return fallbackFrom(assetType, code, stockCode);
     }
     var page = candidate.split('?')[0];
-    return RETURN_PAGES.has(page) ? candidate : fallbackFrom(code);
+    return RETURN_PAGES.has(page) ? candidate : fallbackFrom(assetType, code, stockCode);
   }
 
   function indexFor(value, indexSymbols) {
@@ -57,7 +61,7 @@
       name: index ? index.name : '',
       scale: scale,
       focus: focus,
-      from: safeFrom(params.get('from'), code || inputCode),
+      from: safeFrom(params.get('from'), assetType, code || inputCode, stockCode),
     };
   }
 

@@ -49,12 +49,17 @@ test('from allowlist rejects external, protocol, backslash, and non-asset paths'
     '../stock.html?code=600519',
   ];
   for (const value of unsafe) {
-    assert.equal(Core.safeFrom(value, '600519'), 'stock.html?code=600519', value);
-    const query = '?code=600519&from=' + encodeURIComponent(value);
-    assert.equal(Core.parseContext(query, []).from, 'stock.html?code=600519', value);
+    assert.equal(Core.safeFrom(value, 'stock', 'sh600519', '600519'), 'stock.html?code=600519', value);
+    assert.equal(Core.safeFrom(value, 'index', 'sh000001', ''), 'index.html?code=sh000001', value);
+    const stockQuery = '?code=sh600519&from=' + encodeURIComponent(value);
+    const indexQuery = '?code=sh000001&from=' + encodeURIComponent(value);
+    assert.equal(Core.parseContext(stockQuery, indexSymbols).from, 'stock.html?code=600519', value);
+    assert.equal(Core.parseContext(indexQuery, indexSymbols).from, 'index.html?code=sh000001', value);
   }
-  assert.equal(Core.safeFrom('stock.html?code=600519', '600519'), 'stock.html?code=600519');
-  assert.equal(Core.safeFrom('home.html?tab=market', 'sh000001'), 'home.html?tab=market');
+  assert.equal(Core.safeFrom('stock.html?code=600519', 'stock', 'sh600519', '600519'), 'stock.html?code=600519');
+  assert.equal(Core.safeFrom('home.html?tab=market', 'index', 'sh000001'), 'home.html?tab=market');
+  assert.equal(Core.parseContext('?code=sh600519', indexSymbols).from, 'stock.html?code=600519');
+  assert.equal(Core.parseContext('?code=sh000001', indexSymbols).from, 'index.html?code=sh000001');
 });
 
 test('index assembly uses the adapted published bars and metadata without mixing sources', () => {
