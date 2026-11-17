@@ -19,11 +19,8 @@
     var q = new URLSearchParams(location.search);
     return 'lppl.ai.v1.' + page + ':' + (q.get('code') || q.get('sym') || q.get('s') || '');
   }
-  function loadHistory() {
-    try { var v = JSON.parse(localStorage.getItem(storeKey()) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
-  }
-  function saveHistory(list) {
-    try { localStorage.setItem(storeKey(), JSON.stringify(list.slice(-MAX_KEEP))); } catch (e) { /* optional */ }
+  function loadHistory(key) {
+    try { var v = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
   }
   function shown(el) {
     if (!el.isConnected || el.closest('[hidden]')) return false;
@@ -87,7 +84,25 @@
     '<p class="ai-note">只解释本页已显示的模型结果，不给买卖建议、目标价或止损价。对话只存在本浏览器。</p>';
   var log = panel.querySelector('.ai-log'), presets = panel.querySelector('.ai-presets');
   var form = panel.querySelector('.ai-form'), input = form.querySelector('textarea'), send = form.querySelector('button');
-  var history = loadHistory(), busy = false, controller = null;
+  var historyKey = storeKey(), history = loadHistory(historyKey), busy = false, controller = null;
+
+  function syncHistory() {
+    var key = storeKey();
+    if (key === historyKey) return false;
+    if (controller) controller.abort();
+    historyKey = key;
+    history = loadHistory(key);
+    return true;
+  }
+  function saveHistory(expectedKey) {
+    if (expectedKey && storeKey() !== expectedKey) {
+      if (syncHistory()) render();
+      return false;
+    }
+    syncHistory();
+    try { localStorage.setItem(historyKey, JSON.stringify(history.slice(-MAX_KEEP))); } catch (e) { /* optional */ }
+    return true;
+  }
 
   function bubble(role, text, extra) {
     var d = document.createElement('div');
@@ -99,6 +114,7 @@
   }
   function tidy(text) { return String(text).replace(/\*\*/g, '').replace(/^#{1,6}\s*/gm, ''); }
   function render() {
+    syncHistory();
     log.textContent = '';
     if (!history.length) bubble('assistant', '我可以解释本页显示的顶部聚类区间、占比、证据等级、事件等内容。点下面的常用问题，或者直接输入。');
     history.forEach(function (m) { bubble(m.role, m.role === 'assistant' ? tidy(m.content) : m.content); });
@@ -109,9 +125,11 @@
   }
   async function ask(question) {
     question = String(question || '').trim().slice(0, 500);
+    if (syncHistory()) render();
     if (!question || busy) return;
     if (!root.LPPL || typeof root.LPPL.askAI !== 'function') { bubble('assistant', '研究助手未加载。', 'ai-err'); return; }
     if (!history.length) log.textContent = '';
+    var requestKey = historyKey;
     var prior = history.slice(-MAX_SEND);
     bubble('user', question);
     var out = bubble('assistant', '正在读取本页数据…');
@@ -119,7 +137,18 @@
     controller = new AbortController();
     try {
       var r = await root.LPPL.askAI({ page: page, question: question, context: collectContext(), history: prior },
-        function (t) { out.textContent = tidy(t); log.scrollTop = log.scrollHeight; }, controller.signal);
+        function (t) {
+          if (storeKey() !== requestKey) {
+            if (controller) controller.abort();
+            if (syncHistory()) render();
+            return;
+          }
+          out.textContent = tidy(t); log.scrollTop = log.scrollHeight;
+        }, controller.signal);
+      if (storeKey() !== requestKey) {
+        if (syncHistory()) render();
+        return;
+      }
       if (r.blocked) {
         out.className = 'ai-msg ai-a ai-err';
         out.textContent = '这条回答涉及买卖建议或价格目标，已停止显示。本站只提供模型结果和证据说明，可以换个问法，例如问区间和证据等级的含义。';
@@ -127,8 +156,13 @@
       }
       if (!r.text) { out.className = 'ai-msg ai-a ai-err'; out.textContent = '没有收到回答，请稍后再试。'; return; }
       history.push({ role: 'user', content: question }, { role: 'assistant', content: r.text });
-      saveHistory(history); history = history.slice(-MAX_KEEP);
+      history = history.slice(-MAX_KEEP);
+      saveHistory(requestKey);
     } catch (e) {
+      if (storeKey() !== requestKey) {
+        if (syncHistory()) render();
+        return;
+      }
       out.className = 'ai-msg ai-a ai-err';
       out.textContent = (e && e.name === 'AbortError') ? '已停止。' : ((e && e.message) || '研究助手暂时不可用');
     } finally { setBusy(false); controller = null; }
@@ -144,7 +178,8 @@
   });
   panel.querySelector('.ai-clear').addEventListener('click', function () {
     if (controller) controller.abort();
-    history = []; saveHistory(history); render();
+    syncHistory();
+    history = []; saveHistory(historyKey); render();
   });
 
   var btn = document.createElement('button');
