@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const Core = require('../app/chart-page-core.js');
+const chartPageSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'chart-page.js'), 'utf8');
 
 const fixtures = path.join(__dirname, 'fixtures');
 const indexSymbols = [
@@ -60,6 +61,45 @@ test('from allowlist rejects external, protocol, backslash, and non-asset paths'
   assert.equal(Core.safeFrom('home.html?tab=market', 'index', 'sh000001'), 'home.html?tab=market');
   assert.equal(Core.parseContext('?code=sh600519', indexSymbols).from, 'stock.html?code=600519');
   assert.equal(Core.parseContext('?code=sh000001', indexSymbols).from, 'index.html?code=sh000001');
+});
+
+test('descriptive bands without finite n are hidden from charts and values', () => {
+  const top = {
+    scale_windows: [
+      { scale: '6-12m', n: 4 },
+      { scale: '6-12m', n: NaN },
+    ],
+    scale_clusters: {
+      '6-12m': [{ n: 5 }, { n: undefined }],
+      '3-6m': [{ n: undefined }],
+    },
+    clusters: [
+      { scale: '6-12m', n: 2 },
+      { scale: '6-12m', n: null },
+      { scale: '3-6m', n: null },
+    ],
+  };
+  const filtered = Core.filterDescriptiveBands(top, {
+    '6-12m': 'descriptive',
+    '3-6m': 'test',
+  });
+
+  assert.equal(filtered.scale_windows.length, 1);
+  assert.equal(filtered.scale_clusters['6-12m'].length, 1);
+  assert.equal(filtered.scale_clusters['3-6m'].length, 1);
+  assert.equal(filtered.clusters.length, 2);
+  assert.equal(top.scale_windows.length, 2);
+  assert.deepEqual(Core.bandEvidencePolicy('descriptive', { n: NaN }), {
+    draw: false,
+    showDates: false,
+    showShare: false,
+    message: '描述性样本数未记录，不显示数值',
+  });
+  assert.equal(Core.bandEvidencePolicy('descriptive', { n: 5 }).draw, true);
+  assert.equal(Core.bandEvidencePolicy('test', {}).draw, true);
+  assert.match(chartPageSource, /top = Core\.filterDescriptiveBands\(top, evidenceCodes\)/);
+  assert.match(chartPageSource, /if \(policy\.showDates\)[\s\S]*?dates\.textContent = dateRange\(band\)/);
+  assert.match(chartPageSource, /if \(!policy\.draw\) \{\s*extra\.textContent = policy\.message/);
 });
 
 test('index assembly uses the adapted published bars and metadata without mixing sources', () => {

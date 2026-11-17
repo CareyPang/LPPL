@@ -28,6 +28,40 @@
     return RETURN_PAGES.has(page) ? candidate : fallbackFrom(assetType, code, stockCode);
   }
 
+  function bandEvidencePolicy(evidenceCode, band) {
+    var missingSampleCount = evidenceCode === 'descriptive' && !Number.isFinite(band && band.n);
+    return {
+      draw: !missingSampleCount,
+      showDates: !missingSampleCount,
+      showShare: !missingSampleCount,
+      message: missingSampleCount ? '描述性样本数未记录，不显示数值' : '',
+    };
+  }
+
+  function filterDescriptiveBands(top, evidenceCodes) {
+    var filtered = Object.assign({}, top || {});
+    evidenceCodes = evidenceCodes || {};
+    ['scale_windows', 'scale_clusters', 'clusters'].forEach(function (key) {
+      var entries = filtered[key];
+      if (Array.isArray(entries)) {
+        filtered[key] = entries.filter(function (band) {
+          return bandEvidencePolicy(evidenceCodes[band && band.scale], band).draw;
+        });
+      } else if (entries && typeof entries === 'object') {
+        var byScale = Object.assign({}, entries);
+        Object.keys(byScale).forEach(function (scale) {
+          if (Array.isArray(byScale[scale])) {
+            byScale[scale] = byScale[scale].filter(function (band) {
+              return bandEvidencePolicy(evidenceCodes[scale], band).draw;
+            });
+          }
+        });
+        filtered[key] = byScale;
+      }
+    });
+    return filtered;
+  }
+
   function indexFor(value, indexSymbols) {
     var code = String(value || '').toLowerCase();
     var entries = Array.isArray(indexSymbols) ? indexSymbols : [];
@@ -144,6 +178,8 @@
   return {
     SCALES: SCALES,
     safeFrom: safeFrom,
+    bandEvidencePolicy: bandEvidencePolicy,
+    filterDescriptiveBands: filterDescriptiveBands,
     parseContext: parseContext,
     exchangeFor: exchangeFor,
     assembleIndexData: assembleIndexData,

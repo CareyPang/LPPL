@@ -34,10 +34,13 @@
 
   function chartPayload(data) {
     var top = Object.assign({}, data.top || {});
-    var visible = new Set(scales.filter(function (scale) {
+    var visible = new Set();
+    var evidenceCodes = {};
+    scales.forEach(function (scale) {
       var evidence = evidenceFor(data, scale);
-      return evidence && evidence.show;
-    }));
+      evidenceCodes[scale] = evidence && evidence.code;
+      if (evidence && evidence.show) visible.add(scale);
+    });
     if (Array.isArray(top.scale_windows)) {
       top.scale_windows = top.scale_windows.filter(function (item) {
         return visible.has(item.scale);
@@ -54,6 +57,7 @@
         });
       }
     });
+    top = Core.filterDescriptiveBands(top, evidenceCodes);
     return Object.assign({}, data, { top: top });
   }
 
@@ -88,7 +92,9 @@
       return;
     }
     bands.forEach(function (band, index) {
-      var id = Core.intervalId(selectedScale, band);
+      var policy = Core.bandEvidencePolicy(evidence.code, band);
+      var id = policy.draw
+        ? Core.intervalId(selectedScale, band) : 'unrecorded:' + selectedScale + ':' + index;
       var row = document.createElement('button');
       row.type = 'button';
       row.className = 'interval-row';
@@ -98,17 +104,19 @@
       var title = document.createElement('strong');
       title.textContent = band.source === 'scale_window'
         ? '已发布区间' : Clusters.label(band) || (index ? '次级簇' : '主簇');
-      var dates = document.createElement('span');
-      dates.textContent = dateRange(band);
-      row.append(title, dates);
-      var share = Clusters.shareText(band);
+      row.disabled = !policy.draw;
+      row.appendChild(title);
+      if (policy.showDates) {
+        var dates = document.createElement('span');
+        dates.textContent = dateRange(band);
+        row.appendChild(dates);
+      }
+      var share = policy.showShare ? Clusters.shareText(band) : '';
       var extra = document.createElement('small');
-      if (evidence.code === 'descriptive') {
-        if (Number.isFinite(band.n)) {
-          extra.textContent = (share ? share + '；' : '') + 'n=' + band.n + '；历史分位，不是预测';
-        } else {
-          extra.textContent = '描述性样本数未记录；历史分位，不是预测';
-        }
+      if (!policy.draw) {
+        extra.textContent = policy.message;
+      } else if (evidence.code === 'descriptive') {
+        extra.textContent = (share ? share + '；' : '') + 'n=' + band.n + '；历史分位，不是预测';
       } else if (band.source === 'scale_window') {
         extra.textContent = '发布的时间窗，不代表概率';
       } else {
