@@ -3,7 +3,7 @@
  "name": "博通",
  "asof": "2026-11-16",
  "data_version": "us_AVGO_20261116_f3ee9a27560f579e",
- "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
   "holidays_through": null,
@@ -64,12 +64,12 @@
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.333,
+     "m_hi": 0.167,
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.167,
-     "any": 0.333,
+     "tc_hi": 0.0,
+     "any": 0.167,
      "tol": 0.01
     },
     "null_fpr": {
@@ -99,7 +99,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.4,
+     "early": 0.5,
      "end": 0.0,
      "pure": 0.0
     },
@@ -5349,6 +5349,9 @@
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
+ "params": {
+  "optimizer": "de_lbfgsb"
+ },
  "stock_meta": {
   "variant": "stk_lite",
   "status": "eligible",
@@ -5377,7 +5380,7 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
+ "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
  "fit_input_hash": "111434cfa69e5a73c8edb31594ad4b61de9c9de8c1d8030f69fc6e68d0719f98",
  "history_input_hashes": {
   "2023-11-13": "8ae6309f15736e9d4831b99cc5b764e94bacd8191c795ac2706651262ecd04ca",
@@ -6139,5 +6142,5 @@
  "code": "US_AVGO",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T04:53:42.337186+00:00"
+ "generated_at": "2026-11-17T22:38:58.443215+00:00"
 }
