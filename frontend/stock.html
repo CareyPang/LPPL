@@ -568,17 +568,47 @@
       return `${label} ${cluster.q20_date}–${cluster.q80_date}（${share}）`;
     }
 
-    function clusterScaleText(d, scale, summary = false) {
+    function clusterMetaText(d, history, scale, main) {
+      const api = globalThis.CPTopClusters;
+      const dates = d.price_history?.dates;
+      const bars = Array.isArray(dates) ? dates.map(date => ({ date })) : [];
+      const details = [];
+      if (main && bars.length) {
+        const start = api?.startDistanceText(
+          main.q20_date, d.asof, date => CPTradingDays.idxOf(bars, date),
+        );
+        if (start) details.push(start);
+      }
+      const frames = Array.isArray(history?.frames) ? history.frames : [];
+      const previous = frames
+        .filter(frame => frame.asof && frame.asof < d.asof && api?.forScale(frame, scale) !== null)
+        .sort((a, b) => b.asof.localeCompare(a.asof))[0];
+      const historyEvidence = history?.scale_evidence?.[scale] || history?.evidence;
+      if (previous && !hiddenEv(historyEvidence) && bars.length) {
+        const change = api?.classifyChange(
+          previous, d.top, scale, date => CPTradingDays.idxOf(bars, date),
+        );
+        if (change != null) details.push(`相对 ${previous.asof}：${change}`);
+      }
+      return details.join('；');
+    }
+
+    function clusterScaleText(d, scale, summary = false, history = null) {
       const view = scaleClusterView(d, scale);
       if (view.kind === 'hidden') return '无证据';
-      if (view.kind === 'uncomputed') return '未计算';
-      if (view.kind === 'empty') return summary ? '本次未形成' : '本次无合格拟合（不代表风险较低）';
+      const change = !summary ? clusterMetaText(d, history, scale, null) : '';
+      const suffix = change ? `；${change}` : '';
+      if (view.kind === 'uncomputed') return '未计算' + suffix;
+      if (view.kind === 'empty') return (summary ? '本次未形成' : '本次无合格拟合（不代表风险较低）') + suffix;
       if (view.kind === 'legacy') {
         return `${view.window.q20_date} – ${view.window.q80_date}（区间，本次结果未分簇）`;
       }
-      return summary
-        ? `${view.clusters[0].q20_date} – ${view.clusters[0].q80_date}（${globalThis.CPTopClusters?.shareText(view.clusters[0]) || ''}）`
-        : view.clusters.map(clusterRangeText).join('；');
+      if (summary) {
+        return `${view.clusters[0].q20_date} – ${view.clusters[0].q80_date}（${globalThis.CPTopClusters?.shareText(view.clusters[0]) || ''}）`;
+      }
+      const main = view.clusters[0];
+      const details = clusterMetaText(d, history, scale, main);
+      return view.clusters.map(clusterRangeText).join('；') + (details ? `；${details}` : '');
     }
 
     function clusterSummaryTile(d, scale) {
@@ -595,7 +625,7 @@
       );
     }
 
-    function riskHtml(d) {
+    function riskHtml(d, history) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
       const indicators = top.indicators || {};
@@ -604,7 +634,7 @@
       const clusterRows = scales.map(scale => `
         <tr>
           <td>${scaleName[scale]}</td>
-          <td>${esc(clusterScaleText(d, scale))}</td>
+          <td>${esc(clusterScaleText(d, scale, false, history))}</td>
         </tr>
       `).join('');
       const rows = scales.map((scale) => {
@@ -1204,7 +1234,7 @@
         ? '后复权收盘（美元）；显示的 t_c 情景区间均为未校准，仅供参考。'
         : '后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。';
       $('plot').setAttribute('aria-label', us ? '后复权收盘（美元）与历史情景区间' : '后复权收盘与历史情景区间');
-      $('risk').innerHTML = riskHtml(d);
+      $('risk').innerHTML = riskHtml(d, history);
       drawHistory(d, history);
       renderDip(d.dip, d);
       const code = code6(d.symbol);

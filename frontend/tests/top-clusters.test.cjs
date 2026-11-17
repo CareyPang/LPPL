@@ -71,3 +71,31 @@ test('filters invalid dates and non-finite shares', () => {
     'n', 'n_scale', 'q20_date', 'q80_date', 'rank', 'share',
   ]);
 });
+
+test('classifies main-cluster appearance, disappearance, start and width changes', () => {
+  const idx = Object.fromEntries([
+    '2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08',
+    '2026-01-09', '2026-01-12', '2026-01-13', '2026-01-14',
+  ].map((date, i) => [date, i]));
+  const indexOf = date => idx[date] ?? -1;
+  const frame = (q20, q80) => ({
+    clusters: { '6-12m': q20 ? [cluster(1, q20, q80)] : [] },
+  });
+  const previous = frame('2026-01-06', '2026-01-12');
+
+  assert.equal(TopClusters.classifyChange(frame(null), previous, '6-12m', indexOf), '新出现');
+  assert.equal(TopClusters.classifyChange(previous, frame(null), '6-12m', indexOf), '消失');
+  assert.equal(TopClusters.classifyChange(previous, frame('2026-01-05', '2026-01-12'), '6-12m', indexOf), '起点前移 1 个交易日');
+  assert.equal(TopClusters.classifyChange(previous, frame('2026-01-07', '2026-01-12'), '6-12m', indexOf), '起点后移 1 个交易日');
+  assert.equal(TopClusters.classifyChange(previous, frame('2026-01-06', '2026-01-09'), '6-12m', indexOf), '收窄 3 个交易日');
+  assert.equal(TopClusters.classifyChange(previous, frame('2026-01-06', '2026-01-14'), '6-12m', indexOf), '变宽 2 个交易日');
+  assert.equal(TopClusters.classifyChange(previous, previous, '6-12m', indexOf), '不变');
+  assert.equal(TopClusters.classifyChange({}, previous, '6-12m', indexOf), null);
+});
+
+test('formats trading-day distance to and since the main-cluster start', () => {
+  const idx = { '2026-01-05': 0, '2026-01-06': 1, '2026-01-07': 2, '2026-01-08': 3 };
+  const indexOf = date => idx[date] ?? -1;
+  assert.equal(TopClusters.startDistanceText('2026-01-08', '2026-01-06', indexOf), '距主簇开始 2 个交易日');
+  assert.equal(TopClusters.startDistanceText('2026-01-06', '2026-01-08', indexOf), '主簇已开始 3 个交易日');
+});
