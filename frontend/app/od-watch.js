@@ -129,6 +129,16 @@
       period,
     });
   }
+  function list() {
+    return ready().then(function () {
+      var IW = window.IndexWatchlist, SW = window.StockWatchlist;
+      var idx = IW ? IW.read() : [], stocks = IW ? IW.stocks() : (SW ? SW.read(window.localStorage) : []);
+      return Promise.all([
+        Promise.all(idx.map(idxItem)),
+        Promise.all(stocks.map(stkItem)),
+      ]).then(function (items) { return items[0].concat(items[1]); });
+    });
+  }
   function idxItem(sym) {
     var L = window.LPPL, S = L && L.resolve ? L.resolve(sym) : null;
     var base0 = { key: sym, kind: 'index', code: (S && S.code) || sym, name: (S && S.name) || sym, h: 'index.html?code=' + encodeURIComponent(sym) };
@@ -217,5 +227,5 @@
   window.addEventListener('lppl-watch', function () { if (isOpen()) render(); });
   window.addEventListener('storage', function () { if (isOpen()) render(); });
 
-  window.OdWatch = { open: open, close: close, toggle: function () { isOpen() ? close() : open(); }, isOpen: isOpen, render: render };
+  window.OdWatch = { open: open, close: close, toggle: function () { isOpen() ? close() : open(); }, isOpen: isOpen, render: render, list: list };
 })();

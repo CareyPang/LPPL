@@ -1493,6 +1493,11 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const k = (btabs.findIndex((b) => b.getAttribute('aria-selected') === 'true') + (e.key === 'ArrowRight' ? 1 : 2)) % 3;
     selectBottom(k); btabs[k].focus();
   });
+  function syncBenchHash() {
+    if (location.hash === '#p-bench') selectBottom(1);
+  }
+  window.addEventListener('hashchange', syncBenchHash);
+  syncBenchHash();
   // 回放表格 / 操作记录 → 图上定位
   $('p-replay').addEventListener('click', (e) => { const r = e.target.closest('[data-i]'); if (r) CH.focus(+r.dataset.i); });
   $('p-replay').addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const r = e.target.closest('tr[data-i]'); if (r) { e.preventDefault(); CH.focus(+r.dataset.i); } });

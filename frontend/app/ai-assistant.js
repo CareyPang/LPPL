@@ -1,9 +1,10 @@
 /* 研究助手（DeepSeek）：只把页面上已经显示的内容发给 Worker /ai；不读取、不计算业务数据。
-   用法：<script src="app/ai-assistant.js" data-page="stock|index|backtest|market"></script>
+   用法：<script src="app/ai-assistant.js" data-page="home|stock|index|backtest|market|tools"></script>
    [data-ai-context="标题"] 标记要带上的页面区块（隐藏的不带）；[data-ai-anchor] 是窄屏时对话框插入的位置（其后）。 */
 (function (root) {
   'use strict';
   var PRESETS = {
+    home: ['7 个指数现在的风险状态怎么看？', '今日摘要里的几项分别表示什么？', '占比为什么不是概率？', '顶部聚类区间是什么意思？'],
     stock: ['现在的顶部聚类区间是什么意思？', '主簇和次级簇有什么区别？', '占比为什么不是概率？',
       '各尺度的证据等级说明了什么？', '近期事件里哪些值得留意？', '抄底部分的历史回撤分布怎么看？'],
     index: ['现在的顶部聚类区间是什么意思？', '主簇和次级簇有什么区别？', '占比为什么不是概率？',
@@ -11,8 +12,9 @@
     backtest: ['这张回测图怎么读？', '提醒明细每一行是什么意思？', '“顶相对主簇”的早于、落在、晚于说明什么？',
       '为什么事后确认的顶不算命中率？', '开发段、校准段、测试段有什么区别？'],
     market: ['今日摘要里的几项分别表示什么？', '自选相关快讯如何筛选？', '模型区间变化该如何理解？'],
+    tools: ['这些工具的计算方式是什么？', '房贷等额本息和等额本金有什么区别？'],
   };
-  var MAX_CONTEXT = 8000, MAX_KEEP = 12, MAX_SEND = 6, WIDE = 1100;
+  var MAX_CONTEXT = 8000, MAX_KEEP = 12, MAX_SEND = 6, WIDE = 1200;
   var me = document.currentScript;
   var page = (me && me.dataset.page) || 'stock';
 
@@ -71,14 +73,23 @@
     '.ai-form button{flex:none;border:0;border-radius:8px;background:#2962ff;color:#fff;padding:0 14px;font:600 14px sans-serif;cursor:pointer}' +
     '.ai-form button:disabled{background:#9db3f5;cursor:default}' +
     '.ai-note{margin:0;padding:0 14px 10px;color:#6a6d78;font-size:12px}' +
-    '@media (min-width:' + WIDE + 'px){body.ai-open{padding-right:380px}' +
-    '.ai-panel.ai-dock{position:fixed;top:0;right:0;bottom:0;width:380px;z-index:60;border-width:0 0 0 1px}}' +
+    '.ai-panel.ai-theme-dark{background:#0f0f0f;color:#dbdbdb;border-color:#2a2a2a}' +
+    '.ai-theme-dark .ai-head,.ai-theme-dark .ai-form{border-color:#2a2a2a}' +
+    '.ai-theme-dark .ai-head span,.ai-theme-dark .ai-note{color:#8c8c8c}' +
+    '.ai-theme-dark .ai-u{background:#2a2a2a;color:#dbdbdb}.ai-theme-dark .ai-a{background:#1a1a1a;border-color:#333;color:#dbdbdb}' +
+    '.ai-theme-dark .ai-x,.ai-theme-dark .ai-clear{color:#b2b5be}.ai-theme-dark .ai-x:hover,.ai-theme-dark .ai-clear:hover{background:#2a2a2a}' +
+    '.ai-theme-dark .ai-presets button,.ai-theme-dark .ai-form textarea{background:#1a1a1a;border-color:#444;color:#dbdbdb}' +
+    '.ai-theme-dark .ai-presets button:hover{background:#2a2a2a}' +
+    '@media (min-width:' + WIDE + 'px){.ai-btn{display:none}.ai-panel .ai-x{display:none}' +
+    '.ai-panel.ai-dock{position:fixed;top:0;left:208px;right:auto;bottom:0;width:340px;z-index:65;border-width:0 1px 0 0}}' +
     '@media (max-width:' + (WIDE - 1) + 'px){.ai-panel{margin:12px 0;border-radius:10px;max-height:72vh}.ai-panel .ai-log{min-height:120px}.ai-btn{padding:0 8px}}' +
-    '@media (max-width:520px){.ai-btn{box-sizing:border-box;width:34px;height:34px;padding:0;gap:0}.ai-btn span{display:none}}';
+    '@media (max-width:760px){.ai-btn{display:none!important}.ai-panel:not([hidden]){position:fixed;top:52px;right:0;bottom:0;left:0;width:100vw;height:calc(100vh - 52px);height:calc(100dvh - 52px);max-height:none;margin:0;border:0;border-radius:0;z-index:120}.ai-panel .ai-log{min-height:0}}';
   document.head.appendChild(css);
 
   var panel = document.createElement('section');
   panel.className = 'ai-panel';
+  var navHeader = document.querySelector('.odn');
+  if (!navHeader || !navHeader.classList.contains('odn-light')) panel.classList.add('ai-theme-dark');
   panel.hidden = true;
   panel.setAttribute('aria-label', '研究助手');
   panel.innerHTML =
@@ -200,6 +211,7 @@
   btn.setAttribute('aria-label', '研究助手');
   btn.setAttribute('aria-expanded', 'false');
   function wide() { return root.matchMedia('(min-width:' + WIDE + 'px)').matches; }
+  function mobile() { return root.matchMedia('(max-width:760px)').matches; }
   function placementVisible(el) {
     if (!el || !el.isConnected) return false;
     for (var node = el; node; node = node.parentElement) {
@@ -238,16 +250,18 @@
         } else if (panel.previousElementSibling !== fallback) {
           fallback.insertAdjacentElement('afterend', panel);
         }
-      }
+      } else if (panel.parentNode !== document.body) document.body.appendChild(panel);
     }
   }
   function toggle(open) {
     panel.hidden = !open;
     btn.setAttribute('aria-expanded', String(open));
     document.body.classList.toggle('ai-open', open && wide());
+    document.body.classList.toggle('ai-mobile-open', open && mobile());
+    document.dispatchEvent(new CustomEvent('lppl:assistant-state', { detail: { open: open } }));
     if (open) {
       place(); render();
-      if (!wide()) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (!wide() && !mobile()) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
     root.dispatchEvent(new Event('resize'));
   }
@@ -256,23 +270,35 @@
     open: function (question) {
       toggle(true);
       if (typeof question === 'string' && question.trim()) ask(question);
-    }
+    },
+    close: function () { toggle(false); },
+    isOpen: function () { return !panel.hidden; },
   };
+  document.addEventListener('lppl:assistant-open', function () { root.LPPLAssistant.open(); });
+  document.addEventListener('lppl:assistant-close', function () { root.LPPLAssistant.close(); });
   document.addEventListener('click', function (e) {
     var target = e.target;
     var trigger = target && typeof target.closest === 'function' ? target.closest('[data-ai-ask]') : null;
     if (trigger) root.LPPLAssistant.open(trigger.dataset.aiAsk);
   });
   panel.querySelector('.ai-x').addEventListener('click', function () { toggle(false); });
-  root.matchMedia('(min-width:' + WIDE + 'px)').addEventListener('change', function () {
-    if (!panel.hidden) { place(); document.body.classList.toggle('ai-open', wide()); root.dispatchEvent(new Event('resize')); }
+  var lastWide = wide();
+  root.matchMedia('(min-width:' + WIDE + 'px)').addEventListener('change', function (event) {
+    if (event.matches) toggle(true);
+    else if (lastWide) toggle(false);
+    else if (!panel.hidden) { place(); root.dispatchEvent(new Event('resize')); }
+    lastWide = event.matches;
+  });
+  root.matchMedia('(max-width:760px)').addEventListener('change', function (event) {
+    document.body.classList.toggle('ai-mobile-open', !panel.hidden && event.matches);
+    if (!panel.hidden) { place(); root.dispatchEvent(new Event('resize')); }
   });
   root.addEventListener('resize', function () { if (!panel.hidden) place(); });
   function mount() {
     var host = document.querySelector('.odn-r');
     if (host) host.insertBefore(btn, host.firstChild);
     else { btn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:61'; document.body.appendChild(btn); }
-    if (new URLSearchParams(location.search).get('ai') === '1') toggle(true);
+    if (wide() || new URLSearchParams(location.search).get('ai') === '1') toggle(true);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })(typeof window !== 'undefined' ? window : globalThis);
