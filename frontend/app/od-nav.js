@@ -17,7 +17,7 @@
   var MAIN = [
     { k: 'home', t: '首页', h: 'home.html' },
     { k: 'terminal', t: '图表', h: 'index.html' },
-    { k: 'market', t: '市场', h: 'market.html', also: ['nt'] },
+    { k: 'market', t: '市场', h: 'market.html', also: ['nt', 'tools'] },
     { k: 'backtest', t: '回测', h: 'backtest.html' },
     { k: 'stock', t: '标的', h: 'stock.html' }
   ];
@@ -38,11 +38,13 @@
     { t: '成长监控', h: '#s-growth', ids: ['s-growth'] },
     { t: '信号与统计', h: '#s-bottom', ids: ['s-bottom', 's-abnormal', 's-range'] },
     { t: '数据状态', h: '#s-fresh', ids: ['s-fresh'] },
-    { t: '国家队ETF', h: 'nt.html', page: 'nt' }
+    { t: '国家队ETF', h: 'nt.html', page: 'nt' },
+    { t: '工具', h: 'tools.html', page: 'tools' }
   ];
   var SUB = {
     market: MARKET_SUB,
     nt: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
+    tools: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
     /* 标的页的页签由页面自己的吸顶头部提供（app/stock-header.js），顶栏不再重复一层 */
     stock: null
   };

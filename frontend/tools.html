@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>临界点 · 工具</title>
+<title>临界点 · 市场背景</title>
+<meta name="description" content="汇率、时差、单位、贵金属与房贷换算小工具：本地计算，不上传数据，不调用模型。">
+<meta name="theme-color" content="#1f5fd6">
+<style>
+:root {
+  --ink: #131722; --ink-2: #4C525E; --ink-3: #6A6D78; --line: #E3E9F4;
+  --blue: #1F5FD6; --blue-2: #3D7BF0; --gold: #C8921E; --up: #D6303A; --dn: #11845A; --warn: #9A5B00;
+  --f-m: "JetBrains Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
+  --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { color: var(--ink); font: 400 14px/1.5 var(--f-u); -webkit-font-smoothing: antialiased;
+  background: linear-gradient(180deg, #EAF2FF 0, #F4F8FF 320px, #F7F9FD 100%); min-height: 100vh; }
+button, input, select { font: inherit; color: inherit; }
+.m { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+.hero { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 4px 0 18px; }
+.hero h1 { margin: 0; font: 700 22px/1.2 var(--f-u); letter-spacing: .02em; }
+.hero p { margin: 4px 0 0; color: var(--ink-3); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
+.pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--dn); }
+.hero .pills { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.card { position: relative; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 14px; min-height: 212px;
+  display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(20, 40, 90, .04), 0 8px 24px rgba(31, 95, 214, .05); transition: box-shadow .2s, transform .2s; }
+.card:hover { box-shadow: 0 2px 4px rgba(20, 40, 90, .06), 0 14px 32px rgba(31, 95, 214, .12); transform: translateY(-1px); }
+.card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 96px; background: var(--tint, linear-gradient(135deg, #EEF4FF, #fff 70%)); z-index: 0; }
+.card > * { position: relative; z-index: 1; }
+.card .art { position: absolute; right: 6px; top: 4px; width: 132px; height: 104px; z-index: 0; pointer-events: none; }
+.card h2 { margin: 0; font: 600 16px/1.3 var(--f-u); }
+.card .sub { margin: 3px 0 0; font-size: 12px; color: var(--ink-3); max-width: 62%; }
+.tag { display: inline-block; margin-top: 8px; padding: 1px 8px; border-radius: 999px; font-size: 11px; background: rgba(255,255,255,.85); border: 1px solid var(--line); color: var(--ink-3); width: max-content; }
+.peek { margin-top: auto; padding-top: 14px; }
+.open { margin-top: 12px; align-self: flex-start; border: 0; border-radius: 999px; padding: 6px 14px; background: var(--blue); color: #fff; font-size: 13px; cursor: pointer; }
+.open:hover { background: var(--blue-2); }
+.clocks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+.clocks small { display: block; font-size: 11px; color: var(--ink-3); }
+.clocks b { display: block; font: 600 20px/1.2 var(--f-m); color: var(--blue); }
+.clocks em { font-style: normal; font-size: 10px; color: var(--ink-3); }
+.mini-row { display: flex; align-items: center; gap: 8px; }
+.mini-row .box { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; background: #FBFCFF; }
+.mini-row .box b { font: 600 16px/1.2 var(--f-m); overflow: hidden; text-overflow: ellipsis; }
+.mini-row .box small { color: var(--ink-3); font-size: 11px; white-space: nowrap; }
+.mini-row .sw { color: var(--ink-3); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13px; }
+.kv span { color: var(--ink-3); }
+.kv b { font: 600 13px/1.4 var(--f-m); text-align: right; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.status.open-s i { background: var(--dn); } .status.lunch i, .status.auction i { background: var(--gold); }
+.notes { margin-top: 20px; display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.panel h3 { margin: 0 0 8px; font-size: 14px; }
+.panel ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; }
+.hist { list-style: none; padding: 0 !important; }
+.hist li { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.hist li:first-child { border-top: 0; }
+.hist time { color: var(--ink-3); font: 12px var(--f-m); white-space: nowrap; }
+dialog { width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 32px); border: 0; border-radius: 18px; padding: 0; box-shadow: 0 24px 60px rgba(20, 40, 90, .25); }
+dialog::backdrop { background: rgba(19, 23, 34, .35); }
+.dlg-h { display: flex; align-items: center; gap: 12px; padding: 16px 18px; background: linear-gradient(135deg, #EEF4FF, #fff); border-bottom: 1px solid var(--line); }
+.dlg-h h2 { margin: 0; font-size: 17px; }
+.dlg-h .x { margin-left: auto; border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-3); }
+.dlg-b { padding: 16px 18px 18px; display: grid; gap: 14px; }
+.form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.form label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-3); }
+.form input, .form select { width: 100%; border: 1px solid #D5DDEB; border-radius: 10px; padding: 8px 10px; background: #fff; font-family: var(--f-m); font-size: 14px; color: var(--ink); }
+.form .full { grid-column: 1 / -1; }
+.seg { justify-self: start; display: inline-flex; border: 1px solid #D5DDEB; border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: #fff; padding: 7px 12px; cursor: pointer; font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.result { border-radius: 14px; background: #F4F8FF; border: 1px solid #DCE7FB; padding: 12px 14px; }
+.result .big { font: 700 26px/1.2 var(--f-m); color: var(--blue); word-break: break-all; }
+.result .err { color: var(--up); font-size: 13px; }
+.result .warn { color: var(--warn); font-size: 13px; }
+.meta { font-size: 12px; color: var(--ink-3); display: grid; gap: 3px; }
+.meta b { color: var(--ink-2); font-weight: 600; }
+.sched { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.sched table { width: 100%; border-collapse: collapse; font: 12px var(--f-m); }
+.sched th, .sched td { padding: 4px 8px; text-align: right; border-bottom: 1px solid var(--grid, #EEF1F6); }
+.sched th { position: sticky; top: 0; background: #F7F9FD; font-family: var(--f-u); color: var(--ink-3); font-weight: 500; }
+@media (max-width: 1080px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .notes { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .form { grid-template-columns: 1fr; } .hero .pills { margin-left: 0; } .card .sub { max-width: 58%; } }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+<script src="app/od-nav.js" data-section="tools"></script>
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <h1>金融小工具</h1>
+      <p>换算和计算都在你的浏览器里完成：不上传输入，不调用模型，不触发 LPPLS 拟合。</p>
+    </div>
+    <div class="pills"><span class="pill"><i></i>本地计算</span><span class="pill">手动输入 · 示例值可改</span></div>
+  </header>
+
+  <section class="grid" id="tools" aria-label="工具列表">
+    <article class="card" style="--tint:linear-gradient(135deg,#E8F1FF,#fff 72%)">
+      <svg class="art" viewBox="0 0 132 104" aria-hidden="true">
+        <defs><linearGradient id="gc1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9CC0FF"/><stop offset="1" stop-color="#3D7BF0"/></linearGradient>
+        <linearGradient id="gc2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE3A3"/><stop offset="1" stop-color="#E0A93A"/></linearGradient></defs>
+        <circle cx="88" cy="46" r="30" fill="url(#gc1)" opacity=".9"/><text x="88" y="56" text-anchor="middle" font-size="28" font-weight="700" fill="#fff">$</text>
+        <circle cx="58" cy="66" r="22" fill="url(#gc2)"/><text x="58" y="74" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">¥</text>
+        <path d="M104 82c8-4 14-12 15-22" stroke="#3D7BF0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M114 58l5 2 2-5" stroke="#3D7BF0" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h2>汇率换算</h2>
+      <p class="sub">金额 × 汇率，支持银行“每 100 外币”牌价与交叉汇率</p>
+      <span class="tag">示例汇率 · 可修改</span>
+      <div class="peek mini-row"><div class="box"><b class="m">100</b><small>USD</small></div><span class="sw">⇄</span><div class="box"><b class="m" id="pk-fx">—</b><small>CNY</small></div></div>
+      <button class="open" data-tool="fx">打开工具</button>
+    </article>
+
+    <article class="card" style="--tint:linear-gradient(135deg,#E6F3FF,#fff 72%)">
+      <svg class="art" viewBox="0 0 132 104" aria-hidden="true">
+        <defs><radialGradient id="gg" cx=".35" cy=".3"><stop offset="0" stop-color="#D6E8FF"/><stop offset="1" stop-color="#6FA2F5"/></radialGradient></defs>
+        <circle cx="84" cy="50" r="34" fill="url(#gg)"/><ellipse cx="84" cy="50" rx="14" ry="34" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>
+        <path d="M50 50h68M56 32h56M56 68h56" stroke="#fff" stroke-width="2" opacity=".8"/>
+        <circle cx="52" cy="72" r="20" fill="#fff" stroke="#1F5FD6" stroke-width="3"/><path d="M52 60v12l8 5" stroke="#1F5FD6" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h2>时差与交易时钟</h2>
+      <p class="sub">按真实时区规则换算，夏令时跳过和重复的时刻会提示</p>
+      <span class="status" id="pk-ashare"><i></i>A 股 —</span>
+      <div class="peek clocks" id="pk-clocks"></div>
+      <button class="open" data-tool="tz">打开工具</button>
+    </article>
+
+    <article class="card" style="--tint:linear-gradient(135deg,#EEF1FA,#fff 72%)">
+      <svg class="art" viewBox="0 0 132 104" aria-hidden="true">
+        <defs><linearGradient id="gs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9C6DE"/><stop offset="1" stop-color="#7A8BAA"/></linearGradient></defs>
+        <path d="M86 18v66" stroke="#8D9CB8" stroke-width="5" stroke-linecap="round"/><path d="M58 30h56" stroke="#8D9CB8" stroke-width="4" stroke-linecap="round"/><circle cx="86" cy="18" r="5" fill="#E0A93A"/>
+        <path d="M58 30l-12 26h24zM114 30l-12 26h24z" fill="none" stroke="#7A8BAA" stroke-width="2"/>
+        <path d="M44 56a14 6 0 0 0 28 0zM100 56a14 6 0 0 0 28 0z" fill="#9FB1D1"/><rect x="72" y="84" width="28" height="6" rx="3" fill="#7A8BAA"/>
+        <rect x="52" y="44" width="12" height="9" rx="2" fill="#E0A93A"/>
+      </svg>
+      <h2>单位换算</h2>
+      <p class="sub">克、千克、金衡盎司、香港金衡两、市两，以及温度</p>
+      <span class="tag">固定换算系数</span>
+      <div class="peek mini-row"><div class="box"><b class="m">100</b><small>金衡盎司</small></div><span class="sw">⇄</span><div class="box"><b class="m" id="pk-unit">—</b><small>克</small></div></div>
+      <button class="open" data-tool="unit">打开工具</button>
+    </article>
+
+    <article class="card" style="--tint:linear-gradient(135deg,#FFF5E0,#fff 72%)">
+      <svg class="art" viewBox="0 0 132 104" aria-hidden="true">
+        <defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9B0"/><stop offset=".55" stop-color="#F0C14E"/><stop offset="1" stop-color="#C8921E"/></linearGradient>
+        <linearGradient id="gv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F4F6FA"/><stop offset="1" stop-color="#A9B3C4"/></linearGradient></defs>
+        <path d="M54 70l10-20h44l10 20z" fill="url(#gv)"/><path d="M70 46l10-20h40l-4 20z" fill="url(#gb)" transform="translate(-12 0)"/>
+        <path d="M44 88l10-20h48l10 20z" fill="url(#gb)"/><path d="M58 76h32" stroke="#fff" stroke-width="2" opacity=".7"/>
+        <circle cx="114" cy="22" r="3" fill="#F0C14E"/><circle cx="122" cy="34" r="2" fill="#F0C14E"/>
+      </svg>
+      <h2>金银价格换算</h2>
+      <p class="sub">美元/盎司按汇率换成人民币/克，可算国内价升贴水</p>
+      <span class="tag">示例价格 · 不是行情</span>
+      <div class="peek kv"><span>示例 2,000 美元/盎司 × 7.20</span><b id="pk-metal">—</b></div>
+      <button class="open" data-tool="metal">打开工具</button>
+    </article>
+
+    <article class="card" style="--tint:linear-gradient(135deg,#FFF2E4,#fff 72%)">
+      <svg class="art" viewBox="0 0 132 104" aria-hidden="true">
+        <defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0C14E" stop-opacity=".45"/><stop offset="1" stop-color="#F0C14E" stop-opacity="0"/></linearGradient></defs>
+        <rect x="40" y="18" width="86" height="70" rx="12" fill="#fff" stroke="#F1DDB5"/>
+        <path d="M48 74l14-12 12 6 14-20 12 8 18-22v46H48z" fill="url(#gl)"/>
+        <path d="M48 74l14-12 12 6 14-20 12 8 18-22" fill="none" stroke="#C8921E" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M48 66l14-8 12 3 14-12 12 4 18-14" fill="none" stroke="#3D7BF0" stroke-width="2" stroke-dasharray="4 4"/>
+      </svg>
+      <h2>金价汇率情景</h2>
+      <p class="sub">美元金价不变，比较两个汇率下人民币金价差多少</p>
+      <span class="tag">情景计算 · 不是预测</span>
+      <div class="peek kv"><span>汇率 7.00 → 7.20</span><b id="pk-scen">—</b></div>
+      <button class="open" data-tool="scen">打开工具</button>
+    </article>
+
+    <article class="card" style="--tint:linear-gradient(135deg,#E9F7F0,#fff 72%)">
+      <svg class="art" viewBox="0 0 132 104" aria-hidden="true">
+        <defs><linearGradient id="gh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9DDFC0"/><stop offset="1" stop-color="#2E9E6E"/></linearGradient></defs>
+        <path d="M50 52l34-28 34 28" fill="none" stroke="#2E9E6E" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+        <rect x="58" y="50" width="52" height="38" rx="4" fill="url(#gh)"/><rect x="78" y="66" width="12" height="22" rx="2" fill="#fff" opacity=".9"/>
+        <circle cx="50" cy="80" r="14" fill="#FFE3A3" stroke="#E0A93A" stroke-width="2"/><text x="50" y="85" text-anchor="middle" font-size="14" font-weight="700" fill="#B07A12">%</text>
+      </svg>
+      <h2>房贷计算器</h2>
+      <p class="sub">等额本息、等额本金，固定利率，列出每月明细</p>
+      <span class="tag">固定利率假设</span>
+      <div class="peek kv"><span>100 万 · 30 年 · 3.0%</span><b id="pk-loan">—</b></div>
+      <button class="open" data-tool="loan">打开工具</button>
+    </article>
+  </section>
+
+  <section class="notes">
+    <div class="panel">
+      <h3>使用说明</h3>
+      <ul>
+        <li>所有数字都是你输入的值算出来的，示例值只是为了演示，不是当前行情。</li>
+        <li>每个结果下方写明公式、单位和舍入规则；显示保留的位数不影响内部计算精度。</li>
+        <li>自动填入参考汇率和金价会在下一步接入，届时会写明来源、日期和“参考价，不是成交价”。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>更新历史</h3>
+      <ul class="hist">
+        <li><time>2026-11-17</time><span>首批 6 个工具上线：汇率、时差、单位、金银、情景、房贷</span></li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dlg-h"><h2 id="dlg-title"></h2><button class="x" type="button" aria-label="关闭">×</button></div>
+  <div class="dlg-b" id="dlg-body"></div>
+</dialog>
+
+<script src="app/tools-calc.js"></script>
+<script>
+(function () {
+  'use strict';
+  var T = window.LPPLTools;
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (v, d) { return Number.isFinite(v) ? v.toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—'; };
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  var ZONES = [
+    ['Asia/Shanghai', '北京'], ['America/New_York', '纽约'], ['Europe/London', '伦敦'], ['Asia/Tokyo', '东京'],
+    ['Asia/Hong_Kong', '香港'], ['Europe/Frankfurt', '法兰克福'], ['Asia/Singapore', '新加坡'], ['Australia/Sydney', '悉尼'], ['UTC', 'UTC']
+  ].map(function (z) { return z[0] === 'Europe/Frankfurt' ? ['Europe/Berlin', '法兰克福'] : z; });
+  var UNIT_OPTS = Object.keys(T.MASS).map(function (k) { return '<option value="' + k + '">' + T.MASS_NAME[k] + '</option>'; }).join('');
+
+  function peeks() {
+    $('pk-fx').textContent = fmt(T.fx(100, 7.2).converted, 2);
+    $('pk-unit').textContent = fmt(T.mass(100, 'ozt', 'g').value, 5);
+    $('pk-metal').textContent = fmt(T.metal(2000, 7.2).cnyPerGram, 2) + ' 元/克';
+    var s = T.fxScenario(2000, 7.0, 7.2);
+    $('pk-scen').textContent = '+' + fmt(s.diff, 2) + ' 元/克';
+    $('pk-loan').textContent = '月供 ' + fmt(T.mortgage(1e6, 3.0, 360, 'annuity').first, 2);
+  }
+  function clocks() {
+    var now = Date.now(), base = T.offsetMinutes('Asia/Shanghai', now);
+    var today = T.parts('Asia/Shanghai', now).d;
+    $('pk-clocks').innerHTML = ZONES.slice(0, 4).map(function (z) {
+      var p = T.parts(z[0], now), diff = (T.offsetMinutes(z[0], now) - base) / 60;
+      var day = p.d === today ? '今天' : (diff < 0 ? '昨天' : '明天');
+      return '<div><small>' + z[1] + '</small><b>' + pad(p.h) + ':' + pad(p.mi) + '</b><em>' + day + ' ' + (diff >= 0 ? '+' : '') + diff + 'h</em></div>';
+    }).join('');
+    var st = T.ashareSession(now), el = $('pk-ashare');
+    el.className = 'status ' + (st.code === 'open' ? 'open-s' : st.code);
+    el.innerHTML = '<i></i>A 股 ' + st.text + '<span style="color:var(--ink-3)">（节假日未计入）</span>';
+  }
+
+  var dlg = $('dlg'), body = $('dlg-body');
+  dlg.querySelector('.x').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  function meta(lines) { return '<div class="meta">' + lines.map(function (l) { return '<div><b>' + l[0] + '：</b>' + l[1] + '</div>'; }).join('') + '<div><b>版本：</b>tools-calc v1 · 本地计算，输入不上传</div></div>'; }
+  function out(html) { return '<div class="result" aria-live="polite">' + html + '</div>'; }
+  function err(r) { return '<div class="err">' + r.error + '</div>'; }
+
+  var TOOLS = {
+    fx: { title: '汇率换算', html:
+      '<div class="form"><label>金额（基础货币）<input id="f-amt" type="number" value="100" step="any"></label>' +
+      '<label>汇率（报价货币 / 基础货币）<input id="f-rate" type="number" value="7.2" step="any"></label>' +
+      '<label>报价单位<select id="f-per"><option value="1">每 1 单位</option><option value="100">每 100 单位（银行牌价）</option></select></label>' +
+      '<label>基础 / 报价货币名称<input id="f-names" value="USD/CNY"></label></div><div id="f-out"></div>' +
+      '<details><summary style="cursor:pointer;font-size:13px">交叉汇率（共同基准货币）</summary><div class="form" style="margin-top:10px">' +
+      '<label>基准 → A（如 EUR→USD）<input id="f-ca" type="number" value="1.08" step="any"></label>' +
+      '<label>基准 → B（如 EUR→CNY）<input id="f-cb" type="number" value="7.776" step="any"></label></div><div id="f-x" style="margin-top:10px"></div></details>',
+      run: function () {
+        var names = ($('f-names').value || 'A/B').split('/'), a = names[0] || 'A', b = names[1] || 'B';
+        var r = T.fx($('f-amt').value, $('f-rate').value, $('f-per').value);
+        $('f-out').innerHTML = out(r.status !== 'ready' ? err(r) :
+          '<div class="big">' + fmt(r.converted, 4) + ' ' + b + '</div><div class="kv" style="margin-top:6px"><span>1 ' + a + ' =</span><b>' + fmt(r.unitRate, 6) + ' ' + b + '</b><span>1 ' + b + ' =</span><b>' + fmt(r.inverseRate, 6) + ' ' + a + '</b><span>反向：输入金额按 ' + b + ' 计</span><b>' + fmt(r.back, 4) + ' ' + a + '</b></div>') +
+          meta([['公式', '结果 = 金额 × 汇率 ÷ 报价单位'], ['单位', '汇率为“报价货币 / 基础货币”'], ['舍入', '显示 4–6 位小数，内部不舍入']]);
+        var x = T.crossRate($('f-ca').value, $('f-cb').value);
+        $('f-x').innerHTML = out(x.status !== 'ready' ? err(x) : '<div class="kv"><span>A → B</span><b>' + fmt(x.rate, 6) + '</b></div>') + meta([['公式', 'A→B = (基准→B) ÷ (基准→A)']]);
+      } },
+    tz: { title: '时差与交易时钟', html:
+      '<div class="form"><label>从时区<select id="t-from"></select></label><label>到时区<select id="t-to"></select></label>' +
+      '<label class="full">当地日期时间<input id="t-at" type="datetime-local"></label></div><div id="t-out"></div>',
+      init: function () {
+        var o = ZONES.map(function (z) { return '<option value="' + z[0] + '">' + z[1] + '（' + z[0] + '）</option>'; }).join('');
+        $('t-from').innerHTML = o; $('t-to').innerHTML = o; $('t-to').value = 'America/New_York';
+        var p = T.parts('Asia/Shanghai', Date.now());
+        $('t-at').value = p.y + '-' + pad(p.mo) + '-' + pad(p.d) + 'T' + pad(p.h) + ':' + pad(p.mi);
+      },
+      run: function () {
+        var v = $('t-at').value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+        if (!v) { $('t-out').innerHTML = out('<div class="err">请输入日期时间</div>'); return; }
+        var r = T.convertTime($('t-from').value, $('t-to').value, +v[1], +v[2], +v[3], +v[4], +v[5]);
+        var html = r.status !== 'ready' ? err(r) : r.results.map(function (x, i) {
+          var a = x.at, off = x.toOffset / 60;
+          return (r.ambiguous ? '<div class="warn">' + (i ? '第二次出现（夏令时结束后）' : '第一次出现（夏令时结束前）') + '</div>' : '') +
+            '<div class="big">' + a.y + '-' + pad(a.mo) + '-' + pad(a.d) + ' ' + pad(a.h) + ':' + pad(a.mi) + '</div><div class="kv"><span>目标时区 UTC 偏移</span><b>' + (off >= 0 ? '+' : '') + off + 'h</b><span>A 股状态（北京时间）</span><b>' + T.ashareSession(x.ms).text + '</b></div>';
+        }).join('<hr style="border:0;border-top:1px solid #DCE7FB">');
+        $('t-out').innerHTML = out(html) + meta([['规则', '浏览器内置 IANA 时区库，夏令时按当年规则'], ['A 股时段', '9:15–9:25 集合竞价，9:30–11:30、13:00–15:00 连续竞价；节假日未计入'], ['其他市场', '只显示当地时间，交易日历未覆盖']]);
+      } },
+    unit: { title: '单位换算', html:
+      '<div class="seg" role="group" aria-label="类别"><button type="button" data-k="mass" aria-pressed="true">质量</button><button type="button" data-k="temp" aria-pressed="false">温度</button></div>' +
+      '<div class="form"><label>数值<input id="u-v" type="number" value="100" step="any"></label><span></span><label>从<select id="u-from"></select></label><label>到<select id="u-to"></select></label></div><div id="u-out"></div>',
+      init: function () {
+        var kind = 'mass';
+        function opts() {
+          if (kind === 'mass') { $('u-from').innerHTML = UNIT_OPTS; $('u-to').innerHTML = UNIT_OPTS; $('u-from').value = 'ozt'; $('u-to').value = 'g'; }
+          else { var t = '<option value="C">摄氏度 ℃</option><option value="F">华氏度 ℉</option><option value="K">开尔文 K</option>'; $('u-from').innerHTML = t; $('u-to').innerHTML = t; $('u-to').value = 'F'; }
+        }
+        body.querySelectorAll('.seg button').forEach(function (b) { b.addEventListener('click', function () {
+          kind = b.dataset.k; body.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); opts(); TOOLS.unit.run();
+        }); });
+        TOOLS.unit.kind = function () { return kind; };
+        opts();
+      },
+      run: function () {
+        var kind = TOOLS.unit.kind(), r = kind === 'mass' ? T.mass($('u-v').value, $('u-from').value, $('u-to').value) : T.temperature($('u-v').value, $('u-from').value, $('u-to').value);
+        $('u-out').innerHTML = out(r.status !== 'ready' ? err(r) : '<div class="big">' + fmt(r.value, kind === 'mass' ? 6 : 2) + '</div>') +
+          meta(kind === 'mass' ? [['系数', '1 金衡盎司 = 31.1034768 克；1 常衡盎司 = 28.349523125 克；1 香港金衡两 = 37.429 克；1 市两 = 50 克；1 市斤 = 500 克'], ['舍入', '显示 6 位小数']] : [['公式', '℉ = ℃ × 9/5 + 32；K = ℃ + 273.15'], ['舍入', '显示 2 位小数']]);
+      } },
+    metal: { title: '金银价格换算', html:
+      '<div class="form"><label>国际价（美元 / 金衡盎司）<input id="m-g" type="number" value="2000" step="any"></label><label>汇率（人民币 / 美元）<input id="m-x" type="number" value="7.2" step="any"></label>' +
+      '<label class="full">国内价（人民币 / 克，可选，用来算升贴水）<input id="m-d" type="number" step="any" placeholder="例如 470"></label></div><div id="m-out"></div>',
+      run: function () {
+        var r = T.metal($('m-g').value, $('m-x').value, $('m-d').value);
+        $('m-out').innerHTML = out(r.status !== 'ready' ? err(r) :
+          '<div class="big">' + fmt(r.cnyPerGram, 2) + ' 元/克</div><div class="kv" style="margin-top:6px"><span>人民币 / 千克</span><b>' + fmt(r.cnyPerKg, 0) + '</b><span>美元 / 克</span><b>' + fmt(r.usdPerGram, 4) + '</b>' +
+          (r.premium != null ? '<span>国内升贴水（元/克）</span><b class="' + (r.premium >= 0 ? 'up' : 'dn') + '">' + (r.premium >= 0 ? '+' : '') + fmt(r.premium, 2) + '（' + fmt(r.premiumPct * 100, 2) + '%）</b>' : '') + '</div>') +
+          meta([['公式', '人民币/克 = 美元/盎司 × 汇率 ÷ 31.1034768'], ['口径', '未计税费、运保费和成色差；升贴水 = 国内价 − 换算价'], ['说明', '输入值由你提供，不是行情']]);
+      } },
+    scen: { title: '金价汇率情景', html:
+      '<div class="form"><label class="full">国际价（美元 / 金衡盎司，两种情景相同）<input id="s-g" type="number" value="2000" step="any"></label>' +
+      '<label>汇率 A<input id="s-a" type="number" value="7.0" step="any"></label><label>汇率 B<input id="s-b" type="number" value="7.2" step="any"></label></div><div id="s-out"></div>',
+      run: function () {
+        var r = T.fxScenario($('s-g').value, $('s-a').value, $('s-b').value);
+        $('s-out').innerHTML = out(r.status !== 'ready' ? err(r) :
+          '<div class="kv"><span>情景 A</span><b>' + fmt(r.a, 2) + ' 元/克</b><span>情景 B</span><b>' + fmt(r.b, 2) + ' 元/克</b></div><div class="big" style="margin-top:6px">' + (r.diff >= 0 ? '+' : '') + fmt(r.diff, 2) + ' 元/克（' + fmt(r.diffPct * 100, 2) + '%）</div>') +
+          meta([['公式', '差额 = 美元价 × (B − A) ÷ 31.1034768；变化率 = B ÷ A − 1'], ['说明', '只隔离汇率变化，美元金价假设不变；这是情景计算，不是预测']]);
+      } },
+    loan: { title: '房贷计算器', html:
+      '<div class="seg" role="group" aria-label="还款方式"><button type="button" data-k="annuity" aria-pressed="true">等额本息</button><button type="button" data-k="linear" aria-pressed="false">等额本金</button></div>' +
+      '<div class="form"><label>贷款金额（元）<input id="l-p" type="number" value="1000000" step="any"></label><label>年利率（%）<input id="l-r" type="number" value="3.0" step="any"></label>' +
+      '<label>期限（年）<input id="l-y" type="number" value="30" step="1"></label></div><div id="l-out"></div>',
+      init: function () {
+        var method = 'annuity';
+        body.querySelectorAll('.seg button').forEach(function (b) { b.addEventListener('click', function () {
+          method = b.dataset.k; body.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); TOOLS.loan.run();
+        }); });
+        TOOLS.loan.method = function () { return method; };
+      },
+      run: function () {
+        var r = T.mortgage($('l-p').value, $('l-r').value, Number($('l-y').value) * 12, TOOLS.loan.method());
+        if (r.status !== 'ready') { $('l-out').innerHTML = out(err(r)); return; }
+        var rows = r.rows.map(function (x) { return '<tr><td>' + x.k + '</td><td>' + fmt(x.pay, 2) + '</td><td>' + fmt(x.principal, 2) + '</td><td>' + fmt(x.interest, 2) + '</td><td>' + fmt(x.balance, 2) + '</td></tr>'; }).join('');
+        $('l-out').innerHTML = out('<div class="big">首月 ' + fmt(r.first, 2) + ' 元</div><div class="kv" style="margin-top:6px"><span>末月</span><b>' + fmt(r.last, 2) + '</b><span>总利息</span><b>' + fmt(r.interest, 2) + '</b><span>还款总额</span><b>' + fmt(r.total, 2) + '</b></div>') +
+          '<div class="sched"><table><thead><tr><th>期</th><th>月供</th><th>本金</th><th>利息</th><th>剩余本金</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+          meta([['公式', TOOLS.loan.method() === 'annuity' ? '月供 = P·r·(1+r)^n ÷ ((1+r)^n − 1)，r = 年利率 ÷ 12' : '月供 = P ÷ n + 剩余本金 × r'], ['假设', '固定利率、按月还款、不含提前还款和费用'], ['舍入', '显示到分，内部不舍入']]);
+      } }
+  };
+
+  document.querySelectorAll('.open').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var t = TOOLS[btn.dataset.tool];
+      $('dlg-title').textContent = t.title;
+      body.innerHTML = t.html;
+      if (t.init) t.init();
+      body.addEventListener('input', t.run);
+      body.addEventListener('change', t.run);
+      t.run();
+      dlg.showModal();
+      dlg.addEventListener('close', function once() { body.removeEventListener('input', t.run); body.removeEventListener('change', t.run); dlg.removeEventListener('close', once); });
+    });
+  });
+
+  peeks();
+  clocks();
+  setInterval(clocks, 30000);
+})();
+</script>
+</body>
+</html>
