@@ -54,6 +54,7 @@
       const sourceLabel = document.getElementById('source-label');
       const oldFrame = document.getElementById('old-chart');
       let active = null;
+      let legacyScaleObserver = null;
       chartApi = LPPLChart.mount(host, { readout: document.getElementById('readout'), initialBars: 120 });
       const scaleRoot = document.getElementById('scales');
       scales.forEach((scale, index) => {
@@ -63,7 +64,7 @@
         button.addEventListener('click', () => {
           selectedScale = scale;
           scaleRoot.querySelectorAll('[data-scale]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-          chartApi.setScale(scale); renderNote(active); renderCalendarNotice(active);
+          chartApi.setScale(scale); syncLegacyScale(scale); renderNote(active); renderCalendarNotice(active);
         });
         scaleRoot.append(button);
       });
@@ -86,6 +87,26 @@
         notice.textContent = needed
           ? '日历未覆盖：未来区间超出 CPTradingDays 已发布的交易日历覆盖范围；只绘制无 OHLC 的空白槽位。'
           : '';
+      }
+      function syncLegacyScale(scale) {
+        legacyScaleObserver?.disconnect();
+        legacyScaleObserver = null;
+        const doc = oldFrame.contentDocument;
+        const selector = `#stock-scales [data-scale="${scale}"], #phs button[data-scale="${scale}"]`;
+        const apply = () => {
+          const button = doc?.querySelector(selector);
+          if (!button || button.disabled) return false;
+          if (button.getAttribute('aria-checked') !== 'true') button.click();
+          return true;
+        };
+        if (apply() || !doc?.body) return;
+        legacyScaleObserver = new MutationObserver(() => {
+          if (apply()) {
+            legacyScaleObserver?.disconnect();
+            legacyScaleObserver = null;
+          }
+        });
+        legacyScaleObserver.observe(doc.body, { childList: true, subtree: true });
       }
       async function pageTemplate(name) {
         const response = await fetch(name);
@@ -115,6 +136,7 @@
         window.__LPPLCompareIndexData = data;
         window.__LPPLCompareIndexHistory = history;
         oldFrame.title = '旧版上证指数 Canvas 图表';
+        oldFrame.onload = () => syncLegacyScale(selectedScale);
         oldFrame.srcdoc = await cropPage(await pageTemplate('index.html'), 'index');
       }
       async function showLegacyStock(code, latest, market, history) {
@@ -128,6 +150,7 @@
             input.value = code;
             form.requestSubmit();
           }
+          syncLegacyScale(selectedScale);
         };
         oldFrame.srcdoc = await cropPage(await pageTemplate('stock.html'), 'stock');
       }
