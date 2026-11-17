@@ -23,7 +23,7 @@
   ];
   var SUB_MAX = 7; /* 子页签最多 7 项，其余收进「更多 ▾」 */
   var HELP = [
-    { t: '用户指南', h: 'lab/guide.html' },
+    { t: '用户指南', h: 'guide.html' },
     { t: '研究仪表盘', h: 'lab/dashboard.html' },
     { t: '更新日志', h: 'changelog.html' }
   ];

@@ -1,0 +1,473 @@
+{
+  "schema_version": "1.0",
+  "suite": "visual-suite-20261117",
+  "created_date": "2026-11-17",
+  "scope": "24 image assets and two asset documentation files; page, style and script source files excluded",
+  "self_hash_excluded": true,
+  "hash_algorithms": {
+    "sha256": "SHA-256 of file bytes",
+    "git_blob_sha": "SHA-1 of Git blob header plus file bytes"
+  },
+  "provenance": {
+    "raster_generation": "built-in image_gen; original AI-generated conceptual artwork",
+    "svg_generation": "original repository-native vector code",
+    "third_party_images_copied": false,
+    "financial_evidence": "Decorative and instructional only; no real quote, forecast, probability, first-visible record or implementation completeness claim"
+  },
+  "encoding": {
+    "tool": "sharp",
+    "version": "0.35.5",
+    "format": "webp",
+    "quality": 84,
+    "source_width": 1536,
+    "source_height": 1024,
+    "source_aspect_ratio": "3:2",
+    "resize": "proportional, no content crop; integer pixel rounding",
+    "tool_widths": [
+      480,
+      960
+    ],
+    "hero_widths": [
+      640,
+      1536
+    ]
+  },
+  "qa": {
+    "page_acceptance": "VERIFIED_DESKTOP_1440_AND_EMULATED_390",
+    "owner": "visual integration review",
+    "remote_upload_verification": "NOT_ESTABLISHED_BY_THIS_DOCUMENT",
+    "deployment": "NOT_PERFORMED_BY_THIS_TASK",
+    "acceptance_report": "frontend/docs/visual-suite-acceptance-20261117.md"
+  },
+  "asset_count": 10,
+  "image_file_count": 24,
+  "file_count": 26,
+  "totals_bytes": {
+    "png": 12749774,
+    "webp": 327610,
+    "svg": 17297
+  },
+  "assets": [
+    {
+      "id": "H01",
+      "slug": "hero",
+      "title": "多尺度汇聚主视觉",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/home.html",
+      "selector": ".hero-art .visual-media img",
+      "position": "首页首屏右侧主视觉；移动端接在首屏文案后",
+      "purpose": "用层叠玻璃折面表达多尺度观察，不绘制行情、时间区间或胜率",
+      "semantic_role": "concept_art_with_short_descriptive_alt",
+      "alt": "蓝金色光线沿层叠玻璃片交汇的原创装置",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/hero.png",
+      "variants": [
+        "frontend/assets/visual-suite/hero-640.webp",
+        "frontend/assets/visual-suite/hero-1536.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/hero-640.webp",
+      "prompt_section": "H01"
+    },
+    {
+      "id": "T01",
+      "slug": "fx",
+      "title": "汇率换算",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/tools.html",
+      "selector": "#tools .card:has([data-tool=\"fx\"]) .visual-media img",
+      "position": "工具网格对应卡片顶部，位于标题、参数预览与打开工具按钮之前",
+      "purpose": "金银色金属片与环形连接，辅助识别汇率换算入口",
+      "semantic_role": "decorative_aria_hidden",
+      "alt": "",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/fx.png",
+      "variants": [
+        "frontend/assets/visual-suite/fx-480.webp",
+        "frontend/assets/visual-suite/fx-960.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/fx-480.webp",
+      "prompt_section": "T01"
+    },
+    {
+      "id": "T02",
+      "slug": "clock",
+      "title": "时差与交易时钟",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/tools.html",
+      "selector": "#tools .card:has([data-tool=\"tz\"]) .visual-media img",
+      "position": "工具网格对应卡片顶部，位于标题、参数预览与打开工具按钮之前",
+      "purpose": "双表盘表达时区差异；图内指针只作装饰，不承担实时时钟",
+      "semantic_role": "decorative_aria_hidden",
+      "alt": "",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/clock.png",
+      "variants": [
+        "frontend/assets/visual-suite/clock-480.webp",
+        "frontend/assets/visual-suite/clock-960.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/clock-480.webp",
+      "prompt_section": "T02"
+    },
+    {
+      "id": "T03",
+      "slug": "units",
+      "title": "单位换算",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/tools.html",
+      "selector": "#tools .card:has([data-tool=\"unit\"]) .visual-media img",
+      "position": "工具网格对应卡片顶部，位于标题、参数预览与打开工具按钮之前",
+      "purpose": "等臂秤表达单位与量纲换算；不提供实际测量读数",
+      "semantic_role": "decorative_aria_hidden",
+      "alt": "",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/units.png",
+      "variants": [
+        "frontend/assets/visual-suite/units-480.webp",
+        "frontend/assets/visual-suite/units-960.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/units-480.webp",
+      "prompt_section": "T03"
+    },
+    {
+      "id": "T04",
+      "slug": "metals",
+      "title": "金银价格换算",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/tools.html",
+      "selector": "#tools .card:has([data-tool=\"metal\"]) .visual-media img",
+      "position": "工具网格对应卡片顶部，位于标题、参数预览与打开工具按钮之前",
+      "purpose": "无文字金银锭，辅助识别贵金属换算入口",
+      "semantic_role": "decorative_aria_hidden",
+      "alt": "",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/metals.png",
+      "variants": [
+        "frontend/assets/visual-suite/metals-480.webp",
+        "frontend/assets/visual-suite/metals-960.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/metals-480.webp",
+      "prompt_section": "T04"
+    },
+    {
+      "id": "T05",
+      "slug": "scenario",
+      "title": "金价汇率情景",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/tools.html",
+      "selector": "#tools .card:has([data-tool=\"scen\"]) .visual-media img",
+      "position": "工具网格对应卡片顶部，位于标题、参数预览与打开工具按钮之前",
+      "purpose": "同一金锭经两块棱镜观察，表达情景对照；不表示涨跌预测",
+      "semantic_role": "decorative_aria_hidden",
+      "alt": "",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/scenario.png",
+      "variants": [
+        "frontend/assets/visual-suite/scenario-480.webp",
+        "frontend/assets/visual-suite/scenario-960.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/scenario-480.webp",
+      "prompt_section": "T05"
+    },
+    {
+      "id": "T06",
+      "slug": "mortgage",
+      "title": "房贷计算器",
+      "kind": "generated_concept_still_life",
+      "page": "frontend/tools.html",
+      "selector": "#tools .card:has([data-tool=\"loan\"]) .visual-media img",
+      "position": "工具网格对应卡片顶部，位于标题、参数预览与打开工具按钮之前",
+      "purpose": "建筑模型与钥匙表达贷款计算入口；不表示房价或收益",
+      "semantic_role": "decorative_aria_hidden",
+      "alt": "",
+      "evidence_status": "DECORATIVE_NOT_MARKET_DATA",
+      "master": "frontend/assets/visual-suite/masters/mortgage.png",
+      "variants": [
+        "frontend/assets/visual-suite/mortgage-480.webp",
+        "frontend/assets/visual-suite/mortgage-960.webp"
+      ],
+      "thumbnail": "frontend/assets/visual-suite/mortgage-480.webp",
+      "prompt_section": "T06"
+    },
+    {
+      "id": "G01",
+      "slug": "guide-window",
+      "title": "先看日期，再看区间",
+      "kind": "original_code_authored_diagram",
+      "page": "frontend/guide.html",
+      "selector": "#read-window .guide-figure img",
+      "position": "对应章节标题与引导段落之后、三点阅读说明和回到真实页面按钮之前",
+      "purpose": "历史K线止于分析截止线；未来区域只显示候选时间带，不画未来价格。主候选与次级候选保留分歧。",
+      "semantic_role": "instructional_image_with_full_alt",
+      "alt": "操作示意：历史K线止于分析截止线；右侧未来日期槽只有两个候选时间带，没有未来价格。主候选与次级候选分别呈现。",
+      "evidence_status": "INSTRUCTIONAL_NOT_MARKET_DATA_OR_IMPLEMENTATION_PROOF",
+      "master": "frontend/assets/visual-suite/guide-window.svg",
+      "variants": [],
+      "thumbnail": "frontend/assets/visual-suite/guide-window.svg",
+      "prompt_section": "G01"
+    },
+    {
+      "id": "G02",
+      "slug": "guide-tasks",
+      "title": "行情、分析与回放分别进行",
+      "kind": "original_code_authored_diagram",
+      "page": "frontend/guide.html",
+      "selector": "#independent-tasks .guide-figure img",
+      "position": "对应章节标题与引导段落之后、三点阅读说明和回到真实页面按钮之前",
+      "purpose": "分别解释行情读取、当前分析与按需历史回放，避免将任务示意误认作真实运行状态或固定耗时承诺。",
+      "semantic_role": "instructional_image_with_full_alt",
+      "alt": "任务关系示意：行情读取后即可查看，当前分析独立更新，历史回放由明确操作启动。三项不是一个串行等待队列。",
+      "evidence_status": "INSTRUCTIONAL_NOT_MARKET_DATA_OR_IMPLEMENTATION_PROOF",
+      "master": "frontend/assets/visual-suite/guide-tasks.svg",
+      "variants": [],
+      "thumbnail": "frontend/assets/visual-suite/guide-tasks.svg",
+      "prompt_section": "G02"
+    },
+    {
+      "id": "G03",
+      "slug": "guide-evidence",
+      "title": "找到结果背后的证据",
+      "kind": "original_code_authored_diagram",
+      "page": "frontend/guide.html",
+      "selector": "#evidence-replay .guide-figure img",
+      "position": "对应章节标题与引导段落之后、三点阅读说明和回到真实页面按钮之前",
+      "purpose": "区分历史补算与真实发布证据；计算、封存、指定受众可读、本机呈现与修订不是同一时点。未知不回填。",
+      "semantic_role": "instructional_image_with_full_alt",
+      "alt": "证据概念图：历史补算从过去的数据截止点，到之后的重新计算；发布证据则分别记录计算、封存、指定受众可读、本机呈现和后续修订。封存不等于公开可见，未知时间不能回填。",
+      "evidence_status": "INSTRUCTIONAL_NOT_MARKET_DATA_OR_IMPLEMENTATION_PROOF",
+      "master": "frontend/assets/visual-suite/guide-evidence.svg",
+      "variants": [],
+      "thumbnail": "frontend/assets/visual-suite/guide-evidence.svg",
+      "prompt_section": "G03"
+    }
+  ],
+  "files": [
+    {
+      "path": "frontend/assets/visual-suite/clock-480.webp",
+      "bytes": 10610,
+      "sha256": "85a23a033c0f00115120cfbc48dd8bbfa677706d1371348b84dd8086e7895650",
+      "git_blob_sha": "4adb05fd7da97ffd5c4448a155ca028d95137f5b",
+      "width": 480,
+      "height": 320,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/clock-960.webp",
+      "bytes": 29476,
+      "sha256": "abe46845794719900c1d476ead5d51967e55496b0ce2375a681b95ce2512e045",
+      "git_blob_sha": "f9ff8b7cca962c05ff95cfa57a08c189d74f0090",
+      "width": 960,
+      "height": 640,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/fx-480.webp",
+      "bytes": 10762,
+      "sha256": "48955449f828a010c6a16ffa5428a329e3810feedff4d793e81ee149ee908f8a",
+      "git_blob_sha": "d98e0377811636393a316427645cdee8e5933b25",
+      "width": 480,
+      "height": 320,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/fx-960.webp",
+      "bytes": 33258,
+      "sha256": "4c799997382a22082afe629fbfdab42b8a017449ef3454f2487fd4f867a17ddd",
+      "git_blob_sha": "7d2826e27a10cac494362909b6c41678f44e268d",
+      "width": 960,
+      "height": 640,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/guide-evidence.svg",
+      "bytes": 5398,
+      "sha256": "87f27b69881a8ad757da5f2df24d17bd48b29cf824831a3da192d88ec67a7481",
+      "git_blob_sha": "364af719f3f28602e6ae4b062e0a7040c652908c",
+      "width": 1200,
+      "height": 675,
+      "format": "svg"
+    },
+    {
+      "path": "frontend/assets/visual-suite/guide-tasks.svg",
+      "bytes": 6277,
+      "sha256": "d8dcd9c200d78bc67b5726242a3f0ccbc7f97ebcd6b30039785159ce2399167f",
+      "git_blob_sha": "6d6ca1fa6e784a085f93c24046bd78518a5afca7",
+      "width": 1200,
+      "height": 675,
+      "format": "svg"
+    },
+    {
+      "path": "frontend/assets/visual-suite/guide-window.svg",
+      "bytes": 5622,
+      "sha256": "9fd785f77729a385a7629cffa4cef33d27fdf99f4c19927a897620e05ae6f03e",
+      "git_blob_sha": "499e42a95a80abafddff675f82f2f296a72de3da",
+      "width": 1200,
+      "height": 675,
+      "format": "svg"
+    },
+    {
+      "path": "frontend/assets/visual-suite/hero-1536.webp",
+      "bytes": 90978,
+      "sha256": "0d1f223ae92650258ea2185cc208da988d8cee08940bca7db717a2079758c3ad",
+      "git_blob_sha": "5ac9bd070a9213d361ff0bde825f0879b0721b02",
+      "width": 1536,
+      "height": 1024,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/hero-640.webp",
+      "bytes": 25390,
+      "sha256": "1a07c67f33e40cc7949c57f7068407301ad741cc607dce766fce720875b9a441",
+      "git_blob_sha": "410262df88e96cca91a96f4d8069cc4cb4831bd2",
+      "width": 640,
+      "height": 427,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/clock.png",
+      "bytes": 1771520,
+      "sha256": "9794c0e65e1a028e51487d647ad5cf55acff949b9cd3ddc3e70f2a4b365bfed9",
+      "git_blob_sha": "f6c111987bf71ed3ef9e818954f8ce48cf1fae41",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/fx.png",
+      "bytes": 1874367,
+      "sha256": "75ee676055a83659b3f40388820f92573a6fdb699be75aedcbf90dbd909acd85",
+      "git_blob_sha": "0bc98fc955833659508d29ac418a3ff31cb1471d",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/hero.png",
+      "bytes": 1850625,
+      "sha256": "65ea85527148cfd7b7a40afdbd1c7e82493df8957fab32bee17b0b40078f5863",
+      "git_blob_sha": "06669063408b691e70c572be6d4e6ccec9eedd42",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/metals.png",
+      "bytes": 2072314,
+      "sha256": "331ace6b41337d059e573bda2ee335f19f77e8e6b06733fb8f91d66cbb2eb365",
+      "git_blob_sha": "6baa5def169b37e66a097b2caa01b685a61c6301",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/mortgage.png",
+      "bytes": 1830552,
+      "sha256": "771f221dd12296b09e0619d350da88cb5d9310c6ed289d5691ee3634a96255aa",
+      "git_blob_sha": "0c82d0d7b5e3830e91ab824d9b7bec3c529b647e",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/scenario.png",
+      "bytes": 1677651,
+      "sha256": "ebef39a450484afa43da91a0116d02163b26415a20c435bb45359b152c4b83c6",
+      "git_blob_sha": "1506578d4608af1530f11688b4f306adeb8bbb13",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/masters/units.png",
+      "bytes": 1672745,
+      "sha256": "b6f2c7860a90b2557248b5d15b5c88c231c80df6ffd1f6c6210b2ccef730654e",
+      "git_blob_sha": "a2acba0948aa124fec33b10c0f2a22ed3b0f3690",
+      "width": 1536,
+      "height": 1024,
+      "format": "png"
+    },
+    {
+      "path": "frontend/assets/visual-suite/metals-480.webp",
+      "bytes": 7782,
+      "sha256": "72841e2482cc1d42427e2646c02ed13e87386b5c84b6b9ef66480fed478155bb",
+      "git_blob_sha": "bd31931a32cb2f75fc84e8e78b2a70764afc6319",
+      "width": 480,
+      "height": 320,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/metals-960.webp",
+      "bytes": 27120,
+      "sha256": "d0e942a7576316699793a9a9b34604b9c34a14b720436b26aff59db9c2322c0e",
+      "git_blob_sha": "8e1dde491b886032f66fd0817b4f0c0df78f34e1",
+      "width": 960,
+      "height": 640,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/mortgage-480.webp",
+      "bytes": 9040,
+      "sha256": "1150e199edf3df74dde76508d06103bf2ba267e52db984dcb25a908c7577a319",
+      "git_blob_sha": "eebb8c51e7a3abc28d8300afb17df309f38497c8",
+      "width": 480,
+      "height": 320,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/mortgage-960.webp",
+      "bytes": 26286,
+      "sha256": "19aed165b393ff7c68e9e6b5ea81c5bec8883125396c9a92d1642bf08fb77b8e",
+      "git_blob_sha": "625e38bc4e604a770b7415bdf9e8b5637ebaa0e5",
+      "width": 960,
+      "height": 640,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/scenario-480.webp",
+      "bytes": 7210,
+      "sha256": "a06b2d56b6df359ade2aef99a7b9d49be8c6ae1fad884d7a8a989bc3b73a3841",
+      "git_blob_sha": "68143ebc04703f203a2f26514ac09abb94ce2c6e",
+      "width": 480,
+      "height": 320,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/scenario-960.webp",
+      "bytes": 19274,
+      "sha256": "6191434e3b28381e8a5df467c00818f34e5babb4d1507c80538a5f7acdd2c2e7",
+      "git_blob_sha": "597c7ac5dc038588fbf0f03d463094dc02c8a166",
+      "width": 960,
+      "height": 640,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/units-480.webp",
+      "bytes": 8580,
+      "sha256": "3fe9a7a3bbc7004b13991e849b463bff1a07c11ddc71c090a1a78bd77cfacc51",
+      "git_blob_sha": "eaf53ac9028b1bbcee3d6cbb6c642df801f05833",
+      "width": 480,
+      "height": 320,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/units-960.webp",
+      "bytes": 21844,
+      "sha256": "79039994e35d4ee20f7aba664a4ed28cbee4e186689b1526a48154ea4eea3586",
+      "git_blob_sha": "43944d881336edbbf3a6806cfb49e2495f724359",
+      "width": 960,
+      "height": 640,
+      "format": "webp"
+    },
+    {
+      "path": "frontend/assets/visual-suite/PROMPTS.md",
+      "bytes": 16092,
+      "sha256": "9af6eb00c2eeeaf9d8807d93376d03b1eb25946582e6289f215567d243c06f90",
+      "git_blob_sha": "c543bc44ec6e03f0cd82c0cf57b18299e88ab6d0"
+    },
+    {
+      "path": "frontend/docs/visual-suite-20261117.md",
+      "bytes": 17362,
+      "sha256": "178e5900d1370954b2f5e4375031eb21e4bc2e1c883bc9cb57af6fd640d958ab",
+      "git_blob_sha": "ae5f7850dbb2315f5e7539b970823aee9d0e5429"
+    }
+  ]
+}

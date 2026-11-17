@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">行情、当前分析和历史回放是独立任务</title>
+  <desc id="desc">任务关系示意，非实时运行状态。行情读取后即可查看；已有分析可以先读，当前计算独立更新；历史回放由用户明确请求，兼容结果才可使用。三个任务不是串行等待队列。</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fbfcff"/><stop offset="1" stop-color="#f0f4fa"/></linearGradient><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1l5 3-5 3" fill="none" stroke="#9badc6" stroke-width="1.5"/></marker></defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g font-family="Inter, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif">
+    <text x="56" y="54" fill="#1f5fd6" font-size="13" font-weight="600" letter-spacing="2">02 / KEEP EXPLORING</text>
+    <text x="56" y="105" fill="#17202f" font-size="32" font-weight="600">先读已有内容，不等待所有任务。</text>
+    <rect x="915" y="39" width="229" height="33" rx="16.5" fill="#fff" stroke="#d5dfed"/>
+    <text x="1029" y="61" text-anchor="middle" fill="#59687d" font-size="13">任务关系示意 · 非实时状态</text>
+
+    <rect x="56" y="151" width="1088" height="125" rx="18" fill="#fff" stroke="#dbe3ef"/>
+    <rect x="56" y="297" width="1088" height="125" rx="18" fill="#fff" stroke="#dbe3ef"/>
+    <rect x="56" y="443" width="1088" height="125" rx="18" fill="#fff" stroke="#dbe3ef"/>
+
+    <g fill="none" stroke="#9badc6" stroke-width="2" marker-end="url(#arrow)"><path d="M517 214h58"/><path d="M816 214h58"/><path d="M517 360h58"/><path d="M816 360h58"/><path d="M517 506h58"/><path d="M816 506h58"/></g>
+    <g>
+      <circle cx="101" cy="194" r="17" fill="#edf4fb"/><path d="M94 195l5 5 10-12" fill="none" stroke="#347a66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="134" y="201" fill="#17202f" font-size="22" font-weight="600">行情</text>
+      <text x="84" y="246" fill="#69788d" font-size="14">先看价格与成交量</text>
+      <rect x="292" y="175" width="226" height="78" rx="12" fill="#f3f6fb" stroke="#dce5f0"/>
+      <text x="405" y="207" text-anchor="middle" fill="#3d526f" font-size="18" font-weight="550">读取可用数据</text><text x="405" y="234" text-anchor="middle" fill="#6b7b91" font-size="14">缓存或新取得的行情</text>
+      <rect x="590" y="175" width="226" height="78" rx="12" fill="#eaf3ef" stroke="#c8ded2"/>
+      <text x="703" y="207" text-anchor="middle" fill="#326552" font-size="18" font-weight="550">可读即可显示</text><text x="703" y="234" text-anchor="middle" fill="#557c6b" font-size="14">不用等分析完成</text>
+      <rect x="889" y="175" width="226" height="78" rx="12" fill="#f3f6fb" stroke="#dce5f0"/>
+      <text x="1002" y="207" text-anchor="middle" fill="#3d526f" font-size="18" font-weight="550">独立刷新</text><text x="1002" y="234" text-anchor="middle" fill="#6b7b91" font-size="14">保留来源和截止日</text>
+    </g>
+    <g>
+      <circle cx="101" cy="340" r="17" fill="#edf3fd"/><path d="M93 345v-8M101 348v-15M109 342v-5" fill="none" stroke="#1f5fd6" stroke-width="2.6" stroke-linecap="round"/>
+      <text x="134" y="347" fill="#17202f" font-size="22" font-weight="600">当前分析</text>
+      <text x="84" y="392" fill="#69788d" font-size="14">各自显示结果状态</text>
+      <rect x="292" y="321" width="226" height="78" rx="12" fill="#edf3fd" stroke="#cbdcf6"/>
+      <text x="405" y="353" text-anchor="middle" fill="#28559a" font-size="18" font-weight="550">已有结果先呈现</text><text x="405" y="380" text-anchor="middle" fill="#5d7ba6" font-size="14">旧结果明确标时</text>
+      <rect x="590" y="321" width="226" height="78" rx="12" fill="#edf3fd" stroke="#cbdcf6"/>
+      <text x="703" y="353" text-anchor="middle" fill="#28559a" font-size="18" font-weight="550">独立排队与计算</text><text x="703" y="380" text-anchor="middle" fill="#5d7ba6" font-size="14">保留原图表的可读性</text>
+      <rect x="889" y="321" width="226" height="78" rx="12" fill="#edf3fd" stroke="#cbdcf6"/>
+      <text x="1002" y="353" text-anchor="middle" fill="#28559a" font-size="18" font-weight="550">更新结果</text><text x="1002" y="380" text-anchor="middle" fill="#5d7ba6" font-size="14">没有候选也可能已完成</text>
+    </g>
+    <g>
+      <circle cx="101" cy="486" r="17" fill="#fbf5e8"/><path d="M101 476v10l7 4M92 477l-4 5 6 1" fill="none" stroke="#a08143" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="134" y="493" fill="#17202f" font-size="22" font-weight="600">历史回放</text>
+      <text x="84" y="538" fill="#69788d" font-size="14">需要时再请求</text>
+      <rect x="292" y="467" width="226" height="78" rx="12" fill="#fcf8ef" stroke="#e5d8bb"/>
+      <text x="405" y="499" text-anchor="middle" fill="#8d7037" font-size="18" font-weight="550">用户明确启动</text><text x="405" y="526" text-anchor="middle" fill="#9c8559" font-size="14">已有兼容历史可直接读</text>
+      <rect x="590" y="467" width="226" height="78" rx="12" fill="#fcf8ef" stroke="#e5d8bb"/>
+      <text x="703" y="499" text-anchor="middle" fill="#8d7037" font-size="18" font-weight="550">单独显示进度</text><text x="703" y="526" text-anchor="middle" fill="#9c8559" font-size="14">不锁住行情与已有分析</text>
+      <rect x="889" y="467" width="226" height="78" rx="12" fill="#fcf8ef" stroke="#e5d8bb"/>
+      <text x="1002" y="499" text-anchor="middle" fill="#8d7037" font-size="18" font-weight="550">核对兼容性后回放</text><text x="1002" y="526" text-anchor="middle" fill="#9c8559" font-size="14">资产、数据与版本一致</text>
+    </g>
+    <path d="M83 619h18m-9-9v18" stroke="#1f5fd6" stroke-width="2" stroke-linecap="round"/>
+    <text x="117" y="625" fill="#43546b" font-size="17">这是三条独立的任务线，不是必须依次完成的等待队列。</text>
+    <text x="1120" y="625" text-anchor="end" fill="#7b899b" font-size="13">不承诺固定耗时</text>
+  </g>
+</svg>

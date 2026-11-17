@@ -133,11 +133,12 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 <script src="app/lppl-data.js"></script>
 <script src="app/stock-watchlist.js"></script>
 <script src="app/watchlist.js"></script>
-</head><body>
+<link rel="stylesheet" href="app/visual-suite.css">
+</head><body class="vs-home">
 <script src="app/od-nav.js" data-section="home" data-theme="light"></script>
 <main>
 <div class="wrap hero">
- <div>
+ <div class="hero-copy">
   <span class="eyebrow">A 股非线性动力学研究工作台</span>
   <h1>浪成于微澜之间</h1>
   <p class="poem">启于青萍之末，满于狂澜之巅。</p>
@@ -146,6 +147,12 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
   <div class="acts"><a class="btn pri" href="index.html">进入终端 →</a><a class="btn sec" href="backtest.html">查看回测</a></div>
   <form class="hsrch" id="hsrch" role="search" aria-label="搜索标的"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="hs-i" type="text" autocomplete="off" spellcheck="false" placeholder="搜索 317 个标的：名称 / 拼音首字母 / 代码" aria-label="搜索标的"><kbd aria-hidden="true">Ctrl K</kbd></form>
  </div>
+ <figure class="hero-art">
+  <div class="visual-media"><img src="assets/visual-suite/hero-1536.webp" srcset="assets/visual-suite/hero-640.webp 640w, assets/visual-suite/hero-1536.webp 1536w" sizes="(max-width:760px) calc(100vw - 32px), (max-width:1280px) 50vw, 630px" width="1536" height="1024" alt="蓝金色光线沿层叠玻璃片交汇的原创装置" fetchpriority="high" decoding="async"><span class="art-fallback">多尺度观察</span></div>
+  <figcaption><b>CONVERGENCE / 交汇</b><span>多尺度观察的视觉隐喻 · 非行情图</span></figcaption>
+ </figure>
+</div>
+<div class="wrap hero-live">
  <div class="panel" aria-labelledby="ph-t">
   <div class="ph"><h2 id="ph-t">主要指数</h2><span class="d" id="asof">读取中…</span>
    <div class="pseg" role="group" aria-label="面板内容"><button type="button" data-v="idx" aria-pressed="true">指数</button><button type="button" data-v="mine" aria-pressed="false">我的自选</button></div></div>
@@ -177,6 +184,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 </div></section>
 
 <section class="w" id="evidence"><div class="wrap">
+ <div class="guide-teaser"><div><h2>第一次使用，从这里开始</h2><p>三张图，读懂时间区间、独立任务与证据回放。</p></div><a class="btn sec" href="guide.html">阅读图解指南 →</a></div>
  <div class="hd"><h2>证据现状</h2><p>模型在三段时间上的检验结论，原样公开。</p><a class="more" href="backtest.html">回测详情 →</a></div>
  <div class="evi" id="evi"></div>
  <p class="evnote">未通过的结果同样公开。证据不足的指标在全站只显示状态文字，不显示概率或置信度数字；情景区间只给起止日期，不给目标价。</p>
@@ -195,7 +203,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
  <div class="fg">
   <div><div class="brand">临界点</div><p>A 股非线性动力学研究工作台。只读后端已发布的数据，页面不做任何模型计算。</p></div>
   <div><h4>产品</h4><a href="index.html">终端</a><a href="backtest.html">回测</a><a href="market.html">市场</a><a href="nt.html">国家队ETF</a><a href="stock.html">个股</a></div>
-  <div><h4>帮助</h4><a href="lab/guide.html">用户指南</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a><a href="changelog.html">更新日志</a></div>
+  <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a><a href="changelog.html">更新日志</a></div>
   <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
  </div>
  <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：腾讯、新浪；市场背景来源见市场页</span><span class="risk">风险提示：所有输出都是历史统计描述，不是预测，不构成投资建议。</span></div>
@@ -217,14 +225,14 @@ const quoteSessionDate=q=>{const raw=String(q?.time||''),m=/^(\d{4})(\d{2})(\d{2
 
 /* ---------- 六指数面板 ---------- */
 const rows=$('rows');
-const skel=()=>{rows.innerHTML=LPPL.SYMS.map(s=>`<li class="row"><div><div class="n">${E(s.name)}</div><div class="c">${s.sym}</div></div><span class="sk" style="grid-row:1/3;grid-column:2;height:24px"></span><span class="sk" style="grid-column:3;width:70%;justify-self:end"></span><span class="sk" style="grid-column:3;grid-row:2;width:85%;height:24px;justify-self:end;margin-top:6px"></span></li>`).join('');$('asof').textContent='读取中…'};
+const skel=()=>{rows.innerHTML=LPPL.SYMS.map(s=>`<li class="row"><div><div class="n">${E(s.name)}</div><div class="c">${s.sym}</div></div><span class="sk" style="grid-row:1/3;grid-column:2;height:24px"></span><span class="sk" style="grid-column:1/-1;grid-row:3;width:70%"></span><span class="sk" style="grid-column:1/-1;grid-row:4;width:85%;height:24px;margin-top:6px"></span></li>`).join('');$('asof').textContent='读取中…'};
 function loadIdx(){
  skel();
  HOMEDATA.all().then(L=>{
   const ok=L.filter(r=>!r.error);
   if(!ok.length){rows.innerHTML=`<li class="errbox">数据未加载：${E((L[0]||{}).error||'网络不可用')}<br><button type="button" id="retry">重试</button></li>`;$('asof').textContent='—';$('retry').onclick=loadIdx;IDXROWS=L;if(qTimer)refreshQuotes();else startQuotes();mine();return}
   rows.innerHTML=L.map(r=>{
-   if(r.error)return `<li class="row"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-column:3;grid-row:1/3;text-align:right">数据未加载</span></li>`;
+   if(r.error)return `<li class="row"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-column:1/-1;grid-row:3;text-align:left">数据未加载</span></li>`;
    const s=r.bars.slice(-60).map(b=>b.close),ch=r.last.close/r.prev.close-1,sc=s[s.length-1]>=s[0]?'var(--up)':'var(--dn)';
    const lag=r.bars.reduce((n,b)=>n+(b.date>r.asof?1:0),0),dateText=shortDate(r.asof);
    return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="index.html?code=${r.sym}" aria-label="${E(r.name)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg viewBox="0 0 80 30" aria-hidden="true"><path d="${path(s,2,78,3,27)}" stroke="${sc}"/></svg><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}</a></li>`}).join('');
@@ -347,4 +355,5 @@ function market(){
 mine();loadIdx();market();
 })();
 </script>
+<script src="app/visual-suite.js" defer></script>
 </body></html>
