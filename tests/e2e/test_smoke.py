@@ -483,12 +483,44 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
     expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
         "aria-current", "location"
     )
-    for width, height in ((1440, 900), (390, 844)):
+    for width, height in ((1440, 900), (1024, 768), (390, 844)):
         page.set_viewport_size({"width": width, "height": height})
         dimensions = page.evaluate(
             "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
         )
         assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+        layout = page.evaluate(
+            """() => {
+              const wrapper = document.querySelector('#bench-panel .scroll-x');
+              const table = wrapper.querySelector('table');
+              const tableBox = table.getBoundingClientRect();
+              const wrapperBox = wrapper.getBoundingClientRect();
+              const isContained = (container, group) => {
+                const containerBox = container.getBoundingClientRect();
+                return [...group.children].every(item => {
+                  const itemBox = item.getBoundingClientRect();
+                  return itemBox.left >= containerBox.left - 1
+                    && itemBox.right <= containerBox.right + 1;
+                });
+              };
+              return {
+                tableRight: tableBox.right,
+                wrapperRight: wrapperBox.right,
+                overflowX: getComputedStyle(wrapper).overflowX,
+                scrollWidth: wrapper.scrollWidth,
+                clientWidth: wrapper.clientWidth,
+                symbolsFit: isContained(document.querySelector('.odn-sub'), document.querySelector('#syms')),
+                rangesFit: isContained(document.querySelector('.odn-tools'), document.querySelector('#ranges')),
+              };
+            }"""
+        )
+        fits = layout["tableRight"] <= layout["wrapperRight"] + 1
+        scrollable = (
+            layout["overflowX"] in {"auto", "scroll"}
+            and layout["scrollWidth"] > layout["clientWidth"]
+        )
+        assert fits or scrollable, layout
+        assert layout["symbolsFit"] and layout["rangesFit"], layout
 
 
 @pytest.mark.e2e

@@ -129,10 +129,21 @@ a { color: var(--ink-2); text-decoration: none; }
 .bench-view{width:100%;max-width:1100px;min-width:0;margin:0 auto;padding:16px}
 .bench-view h2{margin:0 0 12px;font-size:20px}
 .bench-view .scroll-x{max-width:100%;min-width:0;overflow-x:auto}
-.bench-view table{width:100%;border-collapse:collapse;font-size:13px}
-.bench-view th,.bench-view td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6);text-align:left;white-space:nowrap}
+.bench-view table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px}
+.bench-view th:nth-child(1){width:18%}.bench-view th:nth-child(2){width:8%}.bench-view th:nth-child(3){width:12%}.bench-view th:nth-child(4){width:14%}.bench-view th:nth-child(5){width:14%}.bench-view th:nth-child(6){width:13%}.bench-view th:nth-child(7){width:21%}
+.bench-view th,.bench-view td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6);text-align:left;white-space:normal;overflow-wrap:anywhere;vertical-align:top}
 .bench-view .honest{margin:0;padding:var(--s3);font-size:13px;color:var(--ink-2,#4C525E);line-height:1.6}
-@media (max-width:640px){.bench-explainer{margin:10px 12px;gap:6px}.bench-explainer>div{padding:7px 6px;font-size:11px}.bench-explainer b{font-size:12px}.bench-view{padding:12px}}
+body.backtest-page .odn-sub{flex-wrap:wrap;overflow:visible}
+body.backtest-page .odn-sub #syms{flex:0 0 100%;width:100%;min-width:0;flex-wrap:wrap!important}
+body.backtest-page .odn-tools{align-items:flex-start;overflow:visible}
+body.backtest-page .odn-tools #ranges{flex:1 1 0%;min-width:0;flex-wrap:wrap}
+body.backtest-page .bench-view .scroll-x{scrollbar-width:thin;scrollbar-color:var(--ink-3,#6A6D78) var(--line,#E3E7EE)}
+body.backtest-page .bench-view .scroll-x::-webkit-scrollbar{display:block!important;height:8px}
+body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-thumb{border-radius:4px;background:var(--ink-3,#6A6D78)}
+body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var(--line,#E3E7EE)}
+@media (min-width:1200px){body.backtest-page .odn-tools{width:55%;max-width:55%}}
+@media (max-width:1199px){body.backtest-page .odn-tools{width:100%;max-width:none}}
+@media (max-width:640px){.bench-explainer{margin:10px 12px;gap:6px}.bench-explainer>div{padding:7px 6px;font-size:11px}.bench-explainer b{font-size:12px}.bench-view{padding:12px}.bench-view table{min-width:860px}}
 .sv-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}.sv-head h2{margin:0;font-size:20px}.sv-sub{color:var(--ink-3,#6A6D78);font-size:13px}
 .sp{border:1px solid var(--line,#E3E7EE);border-radius:14px;background:var(--surface,#fff);padding:16px;min-width:0}
 .sp .m{font-family:var(--f-m,monospace);font-variant-numeric:tabular-nums}
@@ -181,7 +192,7 @@ a { color: var(--ink-2); text-decoration: none; }
 @media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:760px}}
 </style>
 </head>
-<body>
+<body class="backtest-page">
 
 <div data-od-sub>
   <div class="od-row od-fixed" id="syms" role="group" aria-label="指数" style="--od-gap:0"></div>
