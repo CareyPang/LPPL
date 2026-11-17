@@ -39,3 +39,14 @@ test('watchlist matcher recognizes stock names and bounded six-digit codes', () 
   assert.equal(NewsFeed.mentions({ title: '代码 6005190 的记录' }, watchlist), false);
   assert.equal(NewsFeed.mentions({ title: '其他股票' }, []), false);
 });
+
+test('related news count uses the same cross-source deduplication as the feed', () => {
+  const story = { title: '贵州茅台 600519 发布公告', time: '2026-11-17 09:00' };
+  const rows = { cls: [story], eastmoney: [{ ...story }] };
+  const watchlist = [{ code: '600519', name: '贵州茅台' }];
+  const dayOf = value => value.slice(0, 10);
+
+  assert.equal(NewsFeed.mentions(rows.cls[0], watchlist) + NewsFeed.mentions(rows.eastmoney[0], watchlist), 2);
+  assert.equal(NewsFeed.dedupe(rows, 'all', watchlist, true).length, 1);
+  assert.equal(NewsFeed.relatedCount(rows, '2026-11-17', watchlist, dayOf), 1);
+});

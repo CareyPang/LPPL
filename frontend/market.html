@@ -752,11 +752,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const emRows = Array.isArray(N.eastmoney) ? N.eastmoney : [];
     $('src-news').innerHTML = srcLine(['news_cls', 'news_eastmoney']);
     const SRC = { cls: '财联社', em: '东方财富' };
-    const bjDate = (value) => {
-      const t = typeof value === 'string' ? value.trim() : '';
-      const d = new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(t) ? `${t.slice(0, 16).replace(' ', 'T')}:00+08:00` : t);
-      return Number.isFinite(d.getTime()) ? d : null;
-    };
+    const bjDate = LPPLNewsFeed.dateValue;
     const bjParts = (d) => Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d).map((x) => [x.type, x.value]));
     const relTime = (d, now) => {
       if (!d) return '';
@@ -776,24 +772,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     };
     const feed = (rows, filter, watchlist, watchOnly) => {
       const now = Date.now(), tp = bjParts(new Date(now)), todayYmd = `${tp.year}-${tp.month}-${tp.day}`;
-      const items = [
-        ...(filter === 'em' ? [] : rows.cls.map((r) => ({ ...r, k: 'cls' }))),
-        ...(filter === 'cls' ? [] : rows.eastmoney.map((r) => ({ ...r, k: 'em' }))),
-      ].map((r) => ({ ...r, d: bjDate(r.time), ks: [r.k] }))
-        .filter((r) => !watchOnly || LPPLNewsFeed.mentions(r, watchlist))
-        .sort((a, b) => (b.d?.getTime() || 0) - (a.d?.getTime() || 0));
-      const seen = new Map();
-      for (const r of items) {
-        const key = String(r.title || '').replace(/^财联社\d+月\d+日电[，,]?/, '').replace(/[\s，,。！!：:；;“”"'（）()【】\[\]]/g, '').slice(0, 40);
-        const prev = seen.get(key);
-        if (prev && Math.abs((prev.d?.getTime() || 0) - (r.d?.getTime() || 0)) <= 6 * 3600 * 1000) {
-          if (!prev.ks.includes(r.k)) prev.ks.push(r.k);
-          if (!/^https?:\/\//i.test(prev.url) && /^https?:\/\//i.test(r.url)) prev.url = r.url;
-          if (!prev.d && r.d) prev.d = r.d;
-          r.dup = true;
-        } else seen.set(key, r);
-      }
-      const shown = items.filter((r) => !r.dup).slice(0, 80);
+      const shown = LPPLNewsFeed.dedupe(rows, filter, watchlist, watchOnly).slice(0, 80);
       const newItems = state.newCount
         ? `<button type="button" class="news-new-items" data-load-news aria-live="polite">有 ${state.newCount} 条新快讯，点击加载</button>`
         : '';
@@ -1349,9 +1328,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }
   function summaryRelatedCount(today, entries) {
     const news = newsRefreshState?.rows || { cls: [], eastmoney: [] };
-    const rows = [...(news.cls || []), ...(news.eastmoney || [])]
-      .filter((item) => beijingDate(item.time) === today);
-    return rows.filter((item) => LPPLNewsFeed.mentions(item, entries)).length;
+    return LPPLNewsFeed.relatedCount(news, today, entries, beijingDate);
   }
   function renderIndexPerformance() {
     const quotes = summaryQuoteResult?.data?.quotes || {};
