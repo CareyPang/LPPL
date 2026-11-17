@@ -15,6 +15,7 @@ function setupView({ search = '', hash = '' } = {}) {
   const listeners = {};
   const elements = new Map();
   const drawCalls = [];
+  const onCodeChangeCalls = [];
   let currentPath = [];
   const context = {
     fillStyle: '',
@@ -138,13 +139,19 @@ function setupView({ search = '', hash = '' } = {}) {
   vm.runInNewContext(scaleBarSource, { window, URLSearchParams });
   vm.runInNewContext(topClustersSource, { window });
   vm.runInNewContext(source, { window, URLSearchParams, URL });
-  const view = window.StockView.mount({ document: doc, api: {}, renderResult() {} });
+  const view = window.StockView.mount({
+    document: doc,
+    api: {},
+    renderResult() {},
+    onCodeChange(code) { onCodeChangeCalls.push(code); },
+  });
 
   return {
     elements,
     rangeButtons,
     window,
     view,
+    onCodeChangeCalls,
     onChange,
     drawCalls,
     scaleButtons() { return elements.get('stock-scales').children; },
@@ -855,4 +862,24 @@ test('history mode draws event markers only through its cutoff', () => {
     call.type === 'fill' && call.points.length === 3 && ['#1F5FD6', '#9AA1AD'].includes(call.fillStyle));
   assert.equal(markers.length, 1);
   assert.equal(markers[0].fillStyle, '#9AA1AD');
+});
+
+test('changing stock clears old event markers and notifies the new code without a current result', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 120);
+  const eventDate = price.at(-1).date;
+  view.setMarket(price, { code: '601838' });
+  view.view.setEvents([{ id: 'lift:' + eventDate + ':0', date: eventDate }]);
+
+  const before = latestDraw(view).filter(call =>
+    call.type === 'fill' && call.points.length === 3 && ['#1F5FD6', '#9AA1AD'].includes(call.fillStyle));
+  assert.equal(before.length, 1);
+
+  view.setMarket(price, { code: '000001' });
+
+  const after = latestDraw(view).filter(call =>
+    call.type === 'fill' && call.points.length === 3 && ['#1F5FD6', '#9AA1AD'].includes(call.fillStyle));
+  assert.equal(after.length, 0);
+  assert.deepEqual(view.onCodeChangeCalls, ['601838', '000001']);
+  assert.equal(view.elements.get('results').hidden, true);
 });

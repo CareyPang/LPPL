@@ -762,14 +762,16 @@
       state = next;
       const changed = lastCode !== next.code;
       if (changed) {
+        events = [];
+        focusEvent = null;
         if (historyMode) {
           historyMode = false; historyFrame = null; historyCutoffIndex = -1;
           writeQueryParam('asof', null);
-          focusEvent = null;
           renderHistoryBanner();
         }
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
         $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; visibility?.observe(null, null); showMarket(null, next.code, false);
+        options.onCodeChange?.(next.code);
       }
       $('market-panel').hidden = false; $('task-stages').hidden = false;
       $('market-name').textContent = (next.market?.name || next.current?.name || '股票') + ' · ' + next.code;
