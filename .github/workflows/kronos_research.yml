@@ -1,0 +1,70 @@
+name: kronos-research
+on:
+  push:
+    branches: [research/kronos-zeroshot]
+    paths: [research/kronos/**, .github/workflows/kronos_research.yml]
+permissions:
+  contents: read
+concurrency:
+  group: kronos-research
+  cancel-in-progress: true
+jobs:
+  shard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy==2.2.6 pandas==2.2.2 pyarrow==25.0.1 einops==0.8.1 huggingface_hub==0.33.1 safetensors==0.6.2 tqdm==4.67.1
+          git clone -q https://github.com/shiyu-coder/Kronos.git /tmp/Kronos
+          git -C /tmp/Kronos checkout -q 67b630e67f6a18c9e9be918d9b4337c960db1e9a
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-kronos-small-base-tokenizer-v1
+      - name: Run shard
+        env:
+          KRONOS_SRC: /tmp/Kronos
+        run: |
+          cd research/kronos
+          python run.py "$(cat PHASE)" ${{ matrix.shard }} 40 out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kronos-shard-${{ matrix.shard }}
+          path: research/kronos/out/
+          retention-days: 30
+  score:
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy==2.2.6 pandas==2.2.2 pyarrow==25.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: kronos-shard-*
+          path: research/kronos/out
+          merge-multiple: true
+      - name: Score
+        run: |
+          cd research/kronos
+          ls out | wc -l
+          for h in 12 20 60; do python evaluate.py out $h > out/summary_h$h.txt 2>&1 || true; done
+          cat out/summary_h20.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kronos-results
+          path: research/kronos/out/
+          retention-days: 90
