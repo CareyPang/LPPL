@@ -209,6 +209,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 <script src="app/od-nav.js" data-section="market"></script>
 
 <main>
+  <div class="sec wide stale" id="market-error-banner" role="status" hidden></div>
   <div class="sec wide stale" id="stale-banner" role="status" hidden></div>
   <section class="sec wide" id="s-summary" aria-labelledby="h-summary">
     <div class="sec-h"><h2 id="h-summary">今日摘要</h2><span class="ev">descriptive</span></div>
@@ -1483,7 +1484,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     });
     M = marketResult.data || {};
     renderAll();
-    const banner = $('stale-banner');
+    const banner = $('market-error-banner');
     if (marketResult.reason) {
       $('asof').textContent = `市场数据${REASON_TEXT[marketResult.reason] || '状态未知'}`;
       banner.dataset.reason = marketResult.reason;
@@ -1518,7 +1519,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     renderEvents();
     if (typeof renderSummary === 'function') renderSummary();
   }
-  $('stale-banner').addEventListener('click', (event) => {
+  $('market-error-banner').addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-market]')) loadMarket();
   });
   $('events-body').addEventListener('click', (event) => {
