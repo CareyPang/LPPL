@@ -28,6 +28,12 @@ test('assistant exports an idempotent public opener and delegates prompt clicks'
   assert.match(assistant, /root\.LPPLAssistant\.open\(trigger\.dataset\.aiAsk\)/);
 });
 
+test('assistant button stays accessible when its label is hidden on narrow screens', () => {
+  assert.match(assistant, /btn\.setAttribute\('aria-label', '研究助手'\)/);
+  assert.match(assistant, /<span>研究助手<\/span>/);
+  assert.match(assistant, /@media \(max-width:520px\)\{\.ai-btn\{box-sizing:border-box;width:34px;height:34px;padding:0;gap:0\}\.ai-btn span\{display:none\}\}/);
+});
+
 test('desktop top-bar search has the wide white input and blue focus ring', () => {
   assert.match(nav, /@media \(min-width:1200px\)\{\.odn-q\{width:300px\}/);
   assert.match(nav, /background-color:#fff;border-color:#9aa3b2/);
@@ -37,5 +43,6 @@ test('desktop top-bar search has the wide white input and blue focus ring', () =
 
 test('compact navigation keeps help links in the hamburger menu', () => {
   assert.match(nav, /@media \(max-width:520px\)\{\.odn-main\{display:none\}\.odn-menu\{display:block\}\.odn-help\{display:none\}\.odn-r\{gap:3px;padding-left:0\}/);
+  assert.match(nav, /\.odn-q input\{box-sizing:border-box;width:clamp\(138px,calc\(100vw - 222px\),168px\);padding-right:12px\}/);
   assert.match(nav, /var menu = el\('details', 'odn-menu'\);[\s\S]*?odn-menu-sep[\s\S]*?HELP\.map/);
 });

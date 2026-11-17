@@ -73,7 +73,8 @@
     '.ai-note{margin:0;padding:0 14px 10px;color:#6a6d78;font-size:12px}' +
     '@media (min-width:' + WIDE + 'px){body.ai-open{padding-right:380px}' +
     '.ai-panel.ai-dock{position:fixed;top:0;right:0;bottom:0;width:380px;z-index:60;border-width:0 0 0 1px}}' +
-    '@media (max-width:' + (WIDE - 1) + 'px){.ai-panel{margin:12px 0;border-radius:10px;max-height:72vh}.ai-panel .ai-log{min-height:120px}.ai-btn{padding:0 8px}}';
+    '@media (max-width:' + (WIDE - 1) + 'px){.ai-panel{margin:12px 0;border-radius:10px;max-height:72vh}.ai-panel .ai-log{min-height:120px}.ai-btn{padding:0 8px}}' +
+    '@media (max-width:520px){.ai-btn{box-sizing:border-box;width:34px;height:34px;padding:0;gap:0}.ai-btn span{display:none}}';
   document.head.appendChild(css);
 
   var panel = document.createElement('section');
@@ -196,6 +197,7 @@
   var btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'ai-btn';
   btn.innerHTML = '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-3.5 2v-5.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 14h5"/></svg><span>研究助手</span>';
+  btn.setAttribute('aria-label', '研究助手');
   btn.setAttribute('aria-expanded', 'false');
   function wide() { return root.matchMedia('(min-width:' + WIDE + 'px)').matches; }
   function placementVisible(el) {

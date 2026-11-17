@@ -126,7 +126,7 @@
 '@media (max-width:760px){.odn-q input{width:150px}.odn-q input:focus{width:180px}.odn-q kbd{display:none}}' +
 '@media (max-width:420px){.odn-q input{width:110px}}' +
 '@media (max-width:860px){.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-brand{margin-right:8px}}' +
-'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}.odn-help{display:none}.odn-r{gap:3px;padding-left:0}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 120px));max-width:calc(100vw - 24px)}}' +
+'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}.odn-help{display:none}.odn-r{gap:3px;padding-left:0}.odn-q input{box-sizing:border-box;width:clamp(138px,calc(100vw - 222px),168px);padding-right:12px}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 120px));max-width:calc(100vw - 24px)}}' +
 '.odn.odn-light{background:#fff;border-bottom-color:#e6e9ef;color:#131722}' +
 '.odn-light .odn-brand{color:#131722}.odn-light .odn-brand i{background:#1f5fd6}' +
 '.odn-light .odn-main a{color:#4c525e}.odn-light .odn-main a:hover{color:#131722;background:#f0f3fa}.odn-light .odn-main a[aria-current]{color:#131722;background:#e9edf5}' +
