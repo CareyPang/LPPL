@@ -98,6 +98,26 @@
     return mapped;
   }
 
+  function bandSlotRange(bars, band, closures) {
+    if (!TradingDays || !Array.isArray(bars) || !bars.length || !band ||
+        !validDate(band.q20_date) || !validDate(band.q80_date) || band.q80_date < band.q20_date) return null;
+    var calendarBars = bars.map(function (bar) {
+      return { date: bar.date || bar.time };
+    }).filter(function (bar) { return validDate(bar.date); });
+    if (!calendarBars.length) return null;
+    var closed = closures instanceof Set ? closures : closures ? new Set(closures) : undefined;
+    var from = TradingDays.idxOf(calendarBars, band.q20_date, closed);
+    var through = TradingDays.idxOf(calendarBars, band.q80_date, closed);
+    if (from < 0 || through < from) return null;
+    var to = Math.max(from + 1, through + 1);
+    return {
+      from: from,
+      to: to,
+      start: TradingDays.dateAt(calendarBars, from, closed),
+      end: TradingDays.dateAt(calendarBars, to, closed),
+    };
+  }
+
   function mount(host, opts) {
     opts = opts || {};
     var lib = root.LPPLLwc && root.LPPLLwc.LightweightCharts;
@@ -204,27 +224,80 @@
   }
 
   function createBands(chart, candles, bands, closures) {
+    function projected(scope) {
+      var timeScale = chart.timeScale();
+      var ratio = scope.horizontalPixelRatio;
+      return bands.map(function (band, index) {
+        var slots = bandSlotRange(candles, band, closures);
+        if (!slots) return null;
+        var first = timeScale.timeToCoordinate(slots.start);
+        var after = timeScale.timeToCoordinate(slots.end);
+        if (first == null || after == null) return null;
+        var rawLeft = Math.min(first, after) * ratio;
+        var rawRight = Math.max(first, after) * ratio;
+        var width = scope.bitmapSize.width;
+        if (rawRight < 0 || rawLeft > width) return null;
+        var left = Math.max(0, Math.min(width, rawLeft));
+        var right = Math.max(0, Math.min(width, rawRight));
+        var minWidth = Math.max(1, ratio);
+        if (right - left < minWidth) {
+          if (left + minWidth <= width) right = left + minWidth;
+          else { right = width; left = Math.max(0, width - minWidth); }
+        }
+        if (right <= left) return null;
+        return { band: band, index: index, left: left, right: right };
+      }).filter(Boolean);
+    }
+    function dateText(date) {
+      return Number(date.slice(5, 7)) + '/' + Number(date.slice(8, 10));
+    }
     var views = [{
-      zOrder: function () { return 'bottom'; },
+      zOrder: function () { return 'top'; },
       renderer: function () {
         return {
-          draw: function () {},
+          draw: function (target) {
+            target.useBitmapCoordinateSpace(function (scope) {
+              var ctx = scope.context, ratio = scope.horizontalPixelRatio;
+              var labelAreaWidth = Math.max(0, scope.bitmapSize.width - 64 * ratio);
+              projected(scope).forEach(function (rect) {
+                var primary = rect.band.rank !== 'secondary';
+                var color = primary ? 'rgba(36,71,201,.96)' : 'rgba(49,92,245,.72)';
+                var label = dateText(rect.band.q20_date) + '–' + dateText(rect.band.q80_date);
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, 0, labelAreaWidth, scope.bitmapSize.height);
+                ctx.clip();
+                ctx.font = Math.round(11 * scope.verticalPixelRatio) + 'px sans-serif';
+                ctx.textBaseline = 'middle';
+                var padding = 5 * ratio, boxWidth = ctx.measureText(label).width + 2 * padding;
+                var maxLeft = Math.max(2 * ratio, labelAreaWidth - boxWidth - 2 * ratio);
+                var x = Math.max(2 * ratio, Math.min(rect.left + 4 * ratio, maxLeft));
+                var y = (48 + rect.index * 18) * scope.verticalPixelRatio;
+                var boxHeight = 16 * scope.verticalPixelRatio;
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, boxWidth, boxHeight);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(label, x + padding, y + boxHeight / 2);
+                ctx.restore();
+              });
+            });
+          },
           drawBackground: function (target) {
             target.useBitmapCoordinateSpace(function (scope) {
-              var ctx = scope.context, ts = chart.timeScale();
-              bands.forEach(function (band) {
-                var first = ts.timeToCoordinate(mapTime(candles, band.q20_date, closures));
-                var last = ts.timeToCoordinate(mapTime(candles, band.q80_date, closures));
-                if (first == null || last == null) return;
-                var left = Math.max(0, Math.min(first, last) * scope.horizontalPixelRatio);
-                var right = Math.min(scope.bitmapSize.width, Math.max(first, last) * scope.horizontalPixelRatio);
-                if (right <= left) return;
+              var ctx = scope.context;
+              projected(scope).forEach(function (rect) {
+                var primary = rect.band.rank !== 'secondary';
                 ctx.save();
-                ctx.fillStyle = band.rank === 'main' ? 'rgba(49,92,245,.14)' : 'rgba(49,92,245,.045)';
-                ctx.fillRect(left, 0, right - left, scope.bitmapSize.height);
-                ctx.strokeStyle = 'rgba(49,92,245,.7)';
-                ctx.setLineDash(band.rank === 'main' ? [] : [4, 3]);
-                ctx.strokeRect(left, 1, right - left, scope.bitmapSize.height - 2);
+                ctx.fillStyle = primary ? 'rgba(49,92,245,.16)' : 'rgba(49,92,245,.045)';
+                ctx.fillRect(rect.left, 0, rect.right - rect.left, scope.bitmapSize.height);
+                ctx.strokeStyle = primary ? 'rgba(36,71,201,.96)' : 'rgba(49,92,245,.68)';
+                ctx.lineWidth = (primary ? 2 : 1.25) * scope.horizontalPixelRatio;
+                ctx.setLineDash(primary ? [] : [4, 3].map(function (value) {
+                  return value * scope.horizontalPixelRatio;
+                }));
+                ctx.strokeRect(rect.left + ctx.lineWidth / 2, ctx.lineWidth / 2,
+                  Math.max(1, rect.right - rect.left - ctx.lineWidth),
+                  Math.max(1, scope.bitmapSize.height - ctx.lineWidth));
                 ctx.restore();
               });
             });
@@ -239,7 +312,8 @@
 
   return {
     mount: mount, toCandles: toCandles, futureWhitespace: futureWhitespace,
-    bandsFor: bandsFor, needsCalendarCoverage: needsCalendarCoverage,
+    bandsFor: bandsFor, bandSlotRange: bandSlotRange,
+    needsCalendarCoverage: needsCalendarCoverage,
     mapTime: mapTime, dateFromTime: dateFromTime,
   };
 });

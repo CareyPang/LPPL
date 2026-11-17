@@ -107,13 +107,19 @@ test('future whitespace contains no OHLC and is bounded', () => {
   assert.ok(whitespace.every(point => Object.keys(point).length === 1 && point.time));
 });
 
-test('sh601838: published 6-12m window remains the main band', () => {
+test('a single-day cluster occupies one logical bar slot', () => {
+  const range = Chart.bandSlotRange([{ time: '2025-08-11' }], {
+    q20_date: '2025-08-12', q80_date: '2025-08-12',
+  }, new Set());
+  assert.equal(range.start, '2025-08-12');
+  assert.equal(range.end, '2025-08-13');
+  assert.ok(range.to - range.from >= 1);
+});
+
+test('sh601838: published 6-12m scale window is exposed as a band', () => {
   const data = JSON.parse(fs.readFileSync(
     path.join(__dirname, 'fixtures', 'stock_601838.json'), 'utf8',
   ));
-  const { oldInput } = readBars(path.join(__dirname, 'fixtures', 'stock_601838.json'));
-  const candles = Chart.toCandles(oldInput);
-  assert.equal(candles.length, oldInput.length);
   assert.equal(data.asof, '2026-11-13');
   assert.deepEqual(Chart.bandsFor(data, '6-12m'), [{
     rank: 'main', source: 'scale_window', q20_date: '2026-12-30', q80_date: '2027-01-07',
@@ -137,6 +143,7 @@ test('published sh000001 history frame preserves primary and secondary future ba
   const history = JSON.parse(fs.readFileSync(
     path.join(__dirname, 'fixtures', 'sh000001_history.json'), 'utf8',
   ));
+  assert.deepEqual(history.frames.map(item => item.asof), ['2025-08-11']);
   const { oldInput } = readBars(path.join(__dirname, 'fixtures', 'sh000001_latest.json'));
   const frame = history.frames.find(item => item.asof === '2025-08-11');
   const bands = Chart.bandsFor({ top: { scale_clusters: frame.clusters } }, '6-12m');
@@ -148,6 +155,9 @@ test('published sh000001 history frame preserves primary and secondary future ba
     ['secondary', '2025-08-18', '2025-08-18'],
   ]);
   assert.ok(bands.some(band => band.q80_date > candles.at(-1).time));
+  const slots = bands.map(band => Chart.bandSlotRange(candles, band,
+    new Set(history.future_calendar?.closures || [])));
+  assert.ok(slots.every(range => range && range.to - range.from >= 1));
   const whitespace = Chart.futureWhitespace(candles, bands.map(band => band.q80_date),
     new Set(history.future_calendar?.closures || []));
   assert.ok(whitespace.some(point => point.time === '2025-08-18'));
