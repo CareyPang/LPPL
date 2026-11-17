@@ -86,10 +86,16 @@ def record(sym: str, asof: str, market: str = "cn") -> dict:
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
 MODEL_VERSION = "prereg_v1.7_v2.2"  # v2.2：指数 tcgrid_lm+de_lbfgsb 取小 SSE；个股 de_lbfgsb
+# v2.2 rescan inputs: lppls_rescan_g3q3.yml artifacts, n 130–500 (not checked in).
+HISTORY_RECOMPUTE = {
+    "label": "事后重算，不是样本外",
+    "note": "v2.2（指数 tcgrid_lm 与 de_lbfgsb 取小 SSE）于 2026-11 对三段历史重新计算，代码改动发生在看过这些历史之后；测试段结论仍以预登记的一次性结果为准（未通过）。旧版 v2.1 历史存档在 archive/。",
+    "replaces": "prereg_v1.7_v2.1",
+}
 HISTORY_SCANS = {
-    "dev": Path("data/features/lppls_v2"),
-    "cal": Path("data/features/lppls_v2_cal"),
-    "test": Path("data/features/lppls_v2_test"),
+    "dev": Path("data/features/lppls_v2_g3"),
+    "cal": Path("data/features/lppls_v2_g3_cal"),
+    "test": Path("data/features/lppls_v2_g3_test"),
 }
 HISTORY_SCALES = ("6-12m", "12-24m")
 
@@ -655,6 +661,7 @@ def history(sym: str, market: str = "cn") -> dict:
         "symbol": sym,
         "future_calendar": future_calendar_metadata(cal, market),
         "model_version": MODEL_VERSION,
+        "recompute": HISTORY_RECOMPUTE,
         "evidence": "dev_only",
         "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",

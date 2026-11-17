@@ -7,7 +7,7 @@ export LPPLS_BOX=v2
 for s in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
   python -m research.pipeline.daily "$s" "$@"
   missing=()
-  for split_dir in data/features/lppls_v2 data/features/lppls_v2_cal data/features/lppls_v2_test; do
+  for split_dir in data/features/lppls_v2_g3 data/features/lppls_v2_g3_cal data/features/lppls_v2_g3_test; do
     [[ -f "$split_dir/$s.parquet" ]] || missing+=("$split_dir/$s.parquet")
   done
   if ((${#missing[@]} == 0)); then
