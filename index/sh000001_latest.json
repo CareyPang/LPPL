@@ -1,9 +1,34 @@
 {
  "symbol": "sh000001",
  "name": "上证指数",
- "asof": "2026-11-16",
- "data_version": "vintage_20261116_tencent_sina",
- "model_version": "prereg_v1.7_v2.1",
+ "asof": "2026-11-17",
+ "data_version": "vintage_20261117_tencent_sina",
+ "model_version": "prereg_v1.7_v2.2",
+ "future_calendar": {
+  "market": "cn",
+  "holidays_through": "2027-12-31",
+  "closures": [
+   "2027-01-01",
+   "2027-02-05",
+   "2027-02-08",
+   "2027-02-09",
+   "2027-02-10",
+   "2027-02-11",
+   "2027-02-12",
+   "2027-04-05",
+   "2027-05-03",
+   "2027-05-04",
+   "2027-05-05",
+   "2027-06-09",
+   "2027-09-15",
+   "2027-10-01",
+   "2027-10-04",
+   "2027-10-05",
+   "2027-10-06",
+   "2027-10-07"
+  ],
+  "source": "国务院办公厅关于2027年部分节假日安排的通知（国办发明电〔2026〕10号，2026-11-05）https://www.gov.cn/zhengce/zhengceku/202611/content_7085102.htm"
+ },
  "top": {
   "p20": {
    "value": null,
@@ -14,13 +39,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-04-09",
+   "start": "2025-04-10",
    "duration_days": 390,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 0.065,
-   "size_realized": 0.13,
-   "tc": "2027-03-04",
+   "size_model": 0.049,
+   "size_realized": 0.112,
+   "tc": "2027-03-16",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -34,21 +59,21 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.333,
+     "early": 0.0,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-10-22",
+    "best_t1": "2026-11-02",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.333,
+     "m_lo": 0.667,
      "m_hi": 0.0,
      "w_lo": 0.0,
-     "w_hi": 0.0,
+     "w_hi": 0.167,
      "tc_lo": 0.0,
      "tc_hi": 0.167,
-     "any": 0.5,
+     "any": 1.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -83,16 +108,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-08-24",
+    "best_t1": "2026-09-30",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.143,
+     "m_lo": 0.0,
      "m_hi": 0.0,
-     "w_lo": 0.286,
+     "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.143,
-     "any": 0.571,
+     "tc_hi": 0.0,
+     "any": 0.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -127,16 +152,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-06-22",
+    "best_t1": "2026-06-23",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.385,
-     "m_hi": 0.231,
-     "w_lo": 0.0,
+     "m_lo": 0.308,
+     "m_hi": 0.154,
+     "w_lo": 0.077,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.0,
-     "any": 0.615,
+     "any": 0.538,
      "tol": 0.01
     },
     "null_fpr": {
@@ -171,16 +196,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-01-09",
+    "best_t1": "2026-01-05",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.36,
+     "m_lo": 0.6,
      "m_hi": 0.0,
-     "w_lo": 0.12,
+     "w_lo": 0.08,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.28,
-     "any": 0.48,
+     "any": 0.68,
      "tol": 0.01
     },
     "null_fpr": {
@@ -215,16 +240,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-04-09",
+    "best_t1": "2025-04-10",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.42,
-     "w_lo": 0.6,
+     "w_lo": 0.58,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 1.0,
-     "any": 1.0,
+     "tc_hi": 0.98,
+     "any": 0.98,
      "tol": 0.01
     },
     "null_fpr": {
@@ -256,19 +281,19 @@
      "standard": 0.075,
      "early": 0.2,
      "end": 0.0,
-     "pure": 0.062
+     "pure": 0.05
     },
     "n_qualified_standard": 6,
-    "best_t1": "2024-10-18",
+    "best_t1": "2024-10-21",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.188,
+     "m_hi": 0.2,
      "w_lo": 0.263,
      "w_hi": 0.0,
-     "tc_lo": 0.562,
+     "tc_lo": 0.588,
      "tc_hi": 0.05,
-     "any": 0.875,
+     "any": 0.9,
      "tol": 0.01
     },
     "null_fpr": {
@@ -336,8 +361,8 @@
     "bin_days": 5,
     "bins": [
      [
-      "2026-04-13",
-      "2026-04-20",
+      "2026-04-14",
+      "2026-04-21",
       6
      ]
     ]
@@ -377,6 +402,15 @@
   },
   "scenarios": [],
   "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；簇间不平均；簇占比<5% 不列；t_c 分位窗开发段覆盖率 1–4%，不作为峰值日预测",
+  "scale_clusters": {
+   "2-4w": [],
+   "1-3m": [],
+   "3-6m": [],
+   "6-12m": [],
+   "12-24m": [],
+   "2-6y": []
+  },
+  "scale_clusters_note": "每个尺度内单独聚类（窗口长度与 t_c 标准化后 k-means，silhouette≥0.5 才分簇；簇内拟合<3 或占比<5% 不列）；share=簇内拟合数/该尺度合格拟合数，不是概率；簇间不平均；区间为簇内 t_c 20–80% 分位，不是顶部日期",
   "scale_windows": [],
   "invalidation": {
    "rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）",
@@ -386,7 +420,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-16",
+   "table_asof": "2026-11-17",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -868,7 +902,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.13,
+    "size_realized": 0.112,
     "duration_days": 390,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -952,16 +986,16 @@
     },
     "pe_latest": 16.94,
     "pe_date": "2026-09-30",
-    "close_ref": 3602.57,
-    "close_date": "2026-11-16",
+    "close_ref": 3584.58,
+    "close_date": "2026-11-17",
     "band_points": {
-     "q20": 2746.0,
-     "q50": 3220.0,
-     "q80": 4224.0
+     "q20": 2732.0,
+     "q50": 3204.0,
+     "q80": 4202.0
     },
     "floor_band_points": [
-     2746.0,
-     3220.0
+     2732.0,
+     3204.0
     ],
     "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理；上证 PE 为上交所全市场序列，近似上证综指口径",
     "evidence": "descriptive"
@@ -1015,7 +1049,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-09-27",
    "2023-09-28",
    "2023-10-09",
    "2023-10-10",
@@ -1770,10 +1803,10 @@
    "2026-11-11",
    "2026-11-12",
    "2026-11-13",
-   "2026-11-16"
+   "2026-11-16",
+   "2026-11-17"
   ],
   "open": [
-   3104.04,
    3117.75,
    3100.0,
    3104.37,
@@ -2528,10 +2561,10 @@
    3655.66,
    3673.06,
    3658.72,
-   3611.54
+   3611.54,
+   3585.67
   ],
   "high": [
-   3125.45,
    3121.84,
    3103.36,
    3109.98,
@@ -3286,10 +3319,10 @@
    3689.65,
    3699.58,
    3669.44,
-   3623.12
+   3623.12,
+   3604.98
   ],
   "low": [
-   3103.84,
    3105.94,
    3072.64,
    3073.19,
@@ -4044,10 +4077,10 @@
    3650.31,
    3647.44,
    3623.84,
-   3586.57
+   3586.57,
+   3565.59
   ],
   "close": [
-   3107.32,
    3110.48,
    3096.92,
    3075.24,
@@ -4802,10 +4835,10 @@
    3680.64,
    3655.83,
    3634.35,
-   3602.57
+   3602.57,
+   3584.58
   ],
   "volume": [
-   240495830,
    236329981,
    264422205,
    255327379,
@@ -5560,7 +5593,8 @@
    433120083,
    496533033,
    472293657,
-   461643487
+   461643487,
+   444074698
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5589,7 +5623,7 @@
   },
   "cheap": {
    "evidence": "descriptive",
-   "dd_now": -0.1509,
+   "dd_now": -0.1551,
    "peak_date": "2026-05-13",
    "peak_close": 4242.57,
    "dd_rank": {
@@ -5716,5 +5750,8 @@
   "descriptive_bubble": "原版口径描述量",
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
+ },
+ "params": {
+  "optimizer": "g3"
  }
 }
