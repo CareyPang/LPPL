@@ -871,6 +871,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         (!state.isLive && state.note ? `<p class="note">${E(state.note)}</p>` : '');
       if (typeof renderSummary === 'function') renderSummary();
     };
+    state.render = render;
     $('news-body').addEventListener('click', (ev) => {
       if (ev.target.closest('[data-retry-news]')) { refresh(true); return; }
       if (ev.target.closest('[data-retry-stock-directory]')) { loadStockDirectory(); return; }

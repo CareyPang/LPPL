@@ -17,7 +17,17 @@ test('builds four linked summary rows from available market data', () => {
   assert.equal(result.lines[0].text, '上证指数 +1.20%');
   assert.equal(result.lines[1].text, '今日 3 项：金风科技解禁；浦发银行除息');
   assert.equal(result.lines[2].text, '今日 2 条自选相关快讯');
-  assert.equal(result.lines[3].text, '最近发布主簇：1 项变化，1 项不变');
+  assert.equal(result.lines[3].text, '对比日期未提供：1 项变化，1 项不变');
+});
+
+test('model summary names the compared dates', () => {
+  const result = Summary.build({
+    models: [
+      { change: '起点后移 4 个交易日', previousAsOf: '2025-08-18', currentAsOf: '2025-08-25' },
+      { change: '不变', previousAsOf: '2025-08-18', currentAsOf: '2025-08-25' },
+    ],
+  });
+  assert.equal(result.lines[3].text, '2025-08-18→2025-08-25：1 项变化，1 项不变');
 });
 
 test('uses reason codes for missing sources and empty watchlists', () => {

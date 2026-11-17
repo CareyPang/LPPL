@@ -72,7 +72,7 @@
     var q = String((f && f.q) || '').trim().toLowerCase();
     return rows.filter(function (r) {
       if (f.type && f.type !== 'all' && r.type !== f.type) return false;
-      if (f.board && f.board !== 'all' && r.type !== 'index' && r.board !== f.board) return false;
+      if (f.board && f.board !== 'all' && r.board !== f.board) return false;
       if (f.member && f.member !== 'all' && r.memberOf.indexOf(f.member) < 0) return false;
       if (f.published === 'yes' && !r.published) return false;
       if (f.published === 'no' && r.published) return false;

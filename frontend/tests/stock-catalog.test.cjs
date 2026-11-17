@@ -45,7 +45,7 @@ test('filter combines type, board, membership, published and query; counts follo
   assert.equal(StockCatalog.filter(rows, { q: '3000' }).length, 1);
   assert.deepEqual(
     StockCatalog.filter(rows, { board: '沪市主板' }).map((r) => r.code).sort(),
-    ['000001', '600519'],
+    ['600519'],
   );
   assert.deepEqual(StockCatalog.counts(StockCatalog.filter(rows, { type: 'all' })), { index: 1, industry: 1, stock: 3, published: 3 });
 });

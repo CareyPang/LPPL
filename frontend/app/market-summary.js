@@ -43,7 +43,15 @@
     var relatedCount = Number(input.relatedCount) || 0;
     var models = Array.isArray(input.models) ? input.models : [];
     var comparable = models.filter(function (item) { return !item.reason; });
-    var changed = comparable.filter(function (item) { return item.change !== '不变'; }).length;
+    var modelPeriods = new Map();
+    comparable.forEach(function (item) {
+      var period = item.previousAsOf && item.currentAsOf
+        ? item.previousAsOf + '→' + item.currentAsOf : '对比日期未提供';
+      var counts = modelPeriods.get(period) || { changed: 0, unchanged: 0 };
+      if (item.change === '不变') counts.unchanged += 1;
+      else counts.changed += 1;
+      modelPeriods.set(period, counts);
+    });
     var indexText = indices.length
       ? indices.map(function (item) { return item.name + ' ' + item.change; }).join(' · ')
       : REASONS[input.indicesReason] || '暂无指数表现数据';
@@ -54,7 +62,10 @@
       ? '今日 ' + relatedCount + ' 条自选相关快讯'
       : '自选为空 · 先加自选';
     var modelText = comparable.length
-      ? '最近发布主簇：' + changed + ' 项变化，' + (comparable.length - changed) + ' 项不变'
+      ? Array.from(modelPeriods.entries()).map(function (entry) {
+        var counts = entry[1];
+        return entry[0] + '：' + counts.changed + ' 项变化，' + counts.unchanged + ' 项不变';
+      }).join('；')
       : REASONS[input.modelsReason] || '暂无可比较的模型区间';
 
     return {
