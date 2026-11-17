@@ -8,7 +8,7 @@
   var MASS = { g: 1, kg: 1000, ozt: G_PER_OZT, oz: 28.349523125, tael_hk: 37.429, liang: 50, jin: 500 };
   var MASS_NAME = { g: '克', kg: '千克', ozt: '金衡盎司', oz: '常衡盎司', tael_hk: '香港金衡两', liang: '市两', jin: '市斤' };
 
-  function num(v) { var n = Number(v); return Number.isFinite(n) ? n : NaN; }
+  function num(v) { if (v == null || String(v).trim() === '') return NaN; var n = Number(v); return Number.isFinite(n) ? n : NaN; }
   function bad(msg) { return { status: 'invalid_input', error: msg }; }
 
   /* rate 的单位是「报价货币 / 基础货币」；per=100 表示银行牌价按每 100 基础货币报价 */
@@ -117,7 +117,8 @@
   function ashareSession(ms) {
     var p = parts('Asia/Shanghai', ms), m = p.h * 60 + p.mi;
     if (p.wd === 'Sat' || p.wd === 'Sun') return { code: 'weekend', text: '周末休市' };
-    if (m >= 555 && m < 570) return { code: 'auction', text: '集合竞价' };
+    if (m >= 555 && m < 565) return { code: 'auction', text: '集合竞价' };
+    if (m >= 565 && m < 570) return { code: 'auction', text: '竞价结束，待开盘' };
     if (m >= 570 && m < 690) return { code: 'open', text: '上午交易中' };
     if (m >= 690 && m < 780) return { code: 'lunch', text: '午间休市' };
     if (m >= 780 && m < 900) return { code: 'open', text: '下午交易中' };

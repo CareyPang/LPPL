@@ -44,6 +44,9 @@ test('mortgage annuity and linear', () => {
   close(l.interest, 1200000 * r * 121 / 2, 1e-9);
   close(T.mortgage(1200, 0, 12, 'annuity').first, 100);
   assert.equal(T.mortgage(1, 3, 0).status, 'invalid_input');
+  assert.equal(T.mortgage(1000000, '', 360, 'annuity').status, 'invalid_input');
+  assert.equal(T.fx('', 7.2).status, 'invalid_input');
+  assert.equal(T.mass('  ', 'g', 'kg').status, 'invalid_input');
 });
 test('time zones: DST gap, overlap and plain conversion', () => {
   const gap = T.convertTime('America/New_York', 'Asia/Shanghai', 2026, 3, 8, 2, 30);
@@ -60,6 +63,7 @@ test('time zones: DST gap, overlap and plain conversion', () => {
 test('A-share session buckets', () => {
   const at = (h, m, d = 17) => Date.UTC(2026, 10, d, h - 8, m);
   assert.equal(T.ashareSession(at(9, 20)).code, 'auction');
+  assert.equal(T.ashareSession(at(9, 27)).text, '竞价结束，待开盘');
   assert.equal(T.ashareSession(at(10, 0)).code, 'open');
   assert.equal(T.ashareSession(at(12, 0)).code, 'lunch');
   assert.equal(T.ashareSession(at(15, 0)).code, 'closed');
