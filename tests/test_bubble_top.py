@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from research.labels.bubble_top import BubbleTopParams, bubble_tops, known_tops
+from research.labels.run_bubble_top import reliable_segment
 
 
 def _dates(n):
@@ -15,6 +16,27 @@ def _prices(n=40, top_idx=5, top=160, hit_after=10, hit_price=128):
     close[top_idx + hit_after] = hit_price
     close[top_idx + hit_after + 1 :] = hit_price
     return close
+
+
+def test_reliable_segment_keeps_all_rows_when_there_is_no_long_gap():
+    dates = pd.DatetimeIndex(["2020-01-01", "2020-01-10", "2020-01-31"])
+
+    assert reliable_segment(dates) == 0
+
+
+def test_reliable_segment_starts_after_one_long_gap():
+    dates = pd.DatetimeIndex(["2020-01-01", "2020-01-10", "2020-02-15", "2020-02-20"])
+
+    assert reliable_segment(dates) == 2
+
+
+def test_reliable_segment_starts_after_the_last_of_two_long_gaps():
+    dates = pd.DatetimeIndex([
+        "2020-01-01", "2020-01-10", "2020-03-01",
+        "2020-03-10", "2020-06-01", "2020-06-10",
+    ])
+
+    assert reliable_segment(dates) == 4
 
 
 def test_hit_at_ten_days_confirms_only_after_dedup_window():

@@ -48,10 +48,20 @@ def _table_rows(df: pd.DataFrame) -> pd.DataFrame:
     return table.loc[:, list(TABLE_COLUMNS)]
 
 
+def reliable_segment(dates: pd.DatetimeIndex) -> int:
+    dates = pd.DatetimeIndex(dates)
+    gaps = [
+        i for i in range(1, len(dates))
+        if dates[i] - dates[i - 1] > pd.Timedelta(days=30)
+    ]
+    return gaps[-1] if gaps else 0
+
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     records = []
     missing = []
+    data_quality = []
     for symbol in INDEXES:
         path = FROZEN / f"{symbol}_qfq.parquet"
         if not path.is_file():
@@ -61,8 +71,15 @@ def main() -> None:
         data = pd.read_parquet(path)
         if tuple(data.columns) != EXPECTED_COLUMNS:
             raise ValueError(f"unexpected frozen schema for {symbol}: {tuple(data.columns)}")
-        dates = pd.DatetimeIndex(data.date)
-        close = data.close.to_numpy(dtype=float)
+        full_dates = pd.DatetimeIndex(data.date)
+        start = reliable_segment(full_dates)
+        if start:
+            gap = f"{full_dates[start - 1].date()} → {full_dates[start].date()}"
+        else:
+            gap = "无 >30 天断档（未裁剪）"
+        data_quality.append((symbol, full_dates[start], gap))
+        dates = full_dates[start:]
+        close = data.close.to_numpy(dtype=float)[start:]
         for variant, params in VARIANTS.items():
             tops = bubble_tops(dates, close, params)
             tops.insert(0, "variant", variant)
@@ -81,6 +98,17 @@ def main() -> None:
         "# 泡沫顶标签（主标签）与确认日",
         "",
         RULE_TEXT.strip(),
+        "",
+        "## 数据质量",
+        "",
+        "| symbol | trimmed start | 最后一个 >30 天断档 |",
+        "|---|---|---|",
+        *[
+            f"| {symbol} | {start.date()} | {gap} |"
+            for symbol, start, gap in data_quality
+        ],
+        "",
+        "早于 trimmed start 的 1990 年代顶部不标为 pending，待取得经核验的 1990 年代数据源后再标注。",
         "",
         "## 确认顶部",
         "",
