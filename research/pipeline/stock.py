@@ -45,6 +45,7 @@ STOCK_EVIDENCE = "research_candidate"
 STOCK_NOTE = "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
 FIT_CACHE_COLUMNS = [*lppls_scan.COLS, "asof", "data_version", "code_version"]
 FIT_CACHE_KEY = ["asof", "n", "data_version", "code_version"]
+STOCK_FIT_OPT = "de"
 LOGGER = logging.getLogger(__name__)
 
 _FIT_LOGP: pd.Series | None = None
@@ -66,7 +67,7 @@ def _fit_worker(task: tuple[pd.Timestamp, int]) -> pd.DataFrame:
     if _FIT_LOGP is None:
         raise RuntimeError("fit worker has no price series")
     asof, window = task
-    return fit_asof(_FIT_LOGP, pd.Timestamp(asof), (int(window),))
+    return fit_asof(_FIT_LOGP, pd.Timestamp(asof), (int(window),), opt=STOCK_FIT_OPT)
 
 
 def _set_allow_inside() -> bool:
@@ -532,6 +533,7 @@ def _version() -> str:
         "sign": lppls_scan.SIGN,
         "anchor": lppls_scan.ANCHOR,
         "windows_mode": lppls_scan.WINDOWS_MODE,
+        "optimizer": STOCK_FIT_OPT,
         "allow_inside": bool(lppls_scan.BOXES[lppls_scan.BOX]["inside"]),
         "numpy": np.__version__,
         "scipy": scipy.__version__,
@@ -741,6 +743,7 @@ def _record(
         data_version=data_version,
         market=market,
     )
+    record["params"] = {"optimizer": "de_lbfgsb"}
     name, st = _name_and_st(code6)
     eligibility = _stock_status_meta(ohlc, st, meta, reference_asof)
     record["model_version"] = f"{MODEL_VERSION}+{variant}"
@@ -785,7 +788,7 @@ def _record(
         from ..lppls.trust import trust
 
         record["top"]["trust"] = trust(
-            logp, asof, _derived(fits), b=trust_boot, procs=procs or 1
+            logp, asof, _derived(fits), b=trust_boot, procs=procs or 1, opt=STOCK_FIT_OPT
         )
     return record
 
@@ -1009,6 +1012,7 @@ def history(
         "asof": str(logp.index[-1].date()),
         "fit_code_version": _version(),
         "model_version": f"{MODEL_VERSION}+{variant}",
+        "params": {"optimizer": "de_lbfgsb"},
         "evidence": STOCK_EVIDENCE,
         "rule": "每个截止日仅用此前个股拟合生成的情景区间；个股未经过样本外检验",
         "variant": variant,
