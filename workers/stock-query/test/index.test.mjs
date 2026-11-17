@@ -1477,12 +1477,52 @@ test('POST /ai validates page, question, context, history, and raw body size', a
     const malformed = await worker.fetch(request('/ai', { method: 'POST', body: '{' }), env);
     assert.equal(malformed.status, 400);
     const oversized = await worker.fetch(
-      request('/ai', { method: 'POST', body: JSON.stringify(aiBody({ context: 'x'.repeat(33_000) })) }),
+      request('/ai', { method: 'POST', body: JSON.stringify(aiBody({ context: 'x'.repeat(70_000) })) }),
       env,
     );
     assert.equal(oversized.status, 413);
     assert.equal((await oversized.json()).error_code, 'PAYLOAD_TOO_LARGE');
   });
+});
+
+test('POST /ai rejects oversized Content-Length without reading the body', async () => {
+  const env = environment({ DEEPSEEK_API_KEY: TOKEN });
+  const oversized = request('/ai', { method: 'POST', body: '{}' });
+  oversized.headers.set('Content-Length', '70000');
+  let bodyRead = false;
+  oversized.arrayBuffer = async () => {
+    bodyRead = true;
+    throw new Error('body should not be read');
+  };
+  const response = await worker.fetch(oversized, env);
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).error_code, 'PAYLOAD_TOO_LARGE');
+  assert.equal(bodyRead, false);
+  assert.equal(oversized.bodyUsed, false);
+});
+
+test('POST /ai accepts maximum CJK context and history within 64 KiB', async () => {
+  let upstreamBody;
+  let response;
+  const body = aiBody({
+    context: '中'.repeat(8000),
+    history: Array.from({ length: 6 }, () => ({ role: 'user', content: '中'.repeat(1500) })),
+  });
+  assert.ok(new TextEncoder().encode(JSON.stringify(body)).byteLength <= 64 * 1024);
+  await withUpstream({ fetch: async (_url, init) => {
+    upstreamBody = JSON.parse(init.body);
+    return sseResponse(['data: [DONE]\n\n']);
+  } }, async () => {
+    response = await worker.fetch(
+      request('/ai', { method: 'POST', body }),
+      environment({ DEEPSEEK_API_KEY: TOKEN }),
+    );
+  });
+  assert.equal(response.status, 200);
+  await response.text();
+  assert.equal(upstreamBody.messages.at(-1).content.includes('中'.repeat(8000)), true);
+  assert.equal(upstreamBody.messages.length, 8);
+  assert.equal(upstreamBody.messages.slice(1, -1).every((message) => message.content === '中'.repeat(1500)), true);
 });
 
 test('POST /ai enforces Origin and method checks before making requests', async () => {

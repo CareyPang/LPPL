@@ -16,7 +16,7 @@ const NEWS_TIMEOUT_MS = 8000;
 const QUOTE_TTL_SECONDS = 60;
 const QUOTE_TIMEOUT_MS = 5000;
 const AI_TIMEOUT_MS = 60_000;
-const AI_MAX_BODY_BYTES = 32 * 1024;
+const AI_MAX_BODY_BYTES = 64 * 1024;
 const QUOTE_CODE_PATTERN = /^(?:(?:sh|sz|bj)\d{6}|us[A-Za-z.]{1,10})$/;
 const AI_PAGES = new Set(['stock', 'index', 'backtest', 'market']);
 const CLS_ROLL_URL = 'https://www.cls.cn/v1/roll/get_roll_list';
@@ -520,6 +520,12 @@ async function aiChat(request, env) {
   if (!env.DEEPSEEK_API_KEY) {
     return jsonResponse(request, env,
       { error_code: 'SERVICE_UNAVAILABLE', error: '研究助手未配置' }, 503);
+  }
+
+  const contentLength = request.headers.get('Content-Length');
+  if (contentLength !== null && Number(contentLength) > AI_MAX_BODY_BYTES) {
+    return jsonResponse(request, env,
+      { error_code: 'PAYLOAD_TOO_LARGE', error: '请求内容过长' }, 413);
   }
 
   let raw;
