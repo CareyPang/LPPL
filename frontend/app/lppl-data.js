@@ -76,6 +76,28 @@
     return p;
   }
 
+  function emptyPayload(data) {
+    if (data == null) return true;
+    if (Array.isArray(data)) return data.length === 0;
+    return typeof data === 'object' && Object.keys(data).length === 0;
+  }
+
+  function resultOf(promise, options = {}) {
+    if (options.applicable === false) return Promise.resolve({ data: null, reason: 'not_applicable' });
+    return Promise.resolve(promise).then((data) => ({
+      data,
+      reason: (options.empty || emptyPayload)(data) ? 'empty' : null,
+    })).catch((error) => ({
+      data: null,
+      reason: Number(error && error.status) === 404 ? 'unpublished' : 'unavailable',
+    }));
+  }
+
+  function fetchResult(path, options = {}) {
+    if (options.applicable === false) return Promise.resolve({ data: null, reason: 'not_applicable' });
+    return resultOf(getJSON(path), options);
+  }
+
   function bars(ph) {
     const n = ph.dates.length, out = new Array(n);
     for (let i = 0; i < n; i++) {
@@ -292,5 +314,5 @@
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, liveNews, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, liveNews, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog, resultOf, fetchResult };
 })(window);

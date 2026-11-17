@@ -457,6 +457,15 @@
         '"': '&quot;',
         "'": '&#39;',
       })[char]);
+    const dataReasonText = {
+      unpublished: '尚未发布',
+      unavailable: '暂时无法读取',
+      empty: '数据源返回空结果',
+      not_applicable: '不适用',
+    };
+    const dataStatusMarkup = (reason, subject, retryAttr) =>
+      `<p class="${reason === 'unavailable' ? 'fail' : 'muted'}" data-reason="${esc(reason)}">${esc(subject)}：${esc(dataReasonText[reason] || '状态未知')}</p>` +
+      (reason === 'unavailable' && retryAttr ? `<button type="button" class="chip" ${retryAttr}>重试</button>` : '');
 
     const hiddenEv = (evidence) =>
       !evidence
@@ -568,17 +577,49 @@
       return `${label} ${cluster.q20_date}–${cluster.q80_date}（${share}）`;
     }
 
-    function clusterScaleText(d, scale, summary = false) {
+    function clusterMetaText(d, history, scale, main) {
+      const api = globalThis.CPTopClusters;
+      const dates = d.price_history?.dates;
+      const bars = Array.isArray(dates) ? dates.map(date => ({ date })) : [];
+      const closures = new Set(Array.isArray(d.future_calendar?.closures) ? d.future_calendar.closures : []);
+      const indexOfDate = date => CPTradingDays.idxOf(bars, date, closures);
+      const details = [];
+      if (main && bars.length) {
+        const start = api?.startDistanceText(
+          main.q20_date, d.asof, indexOfDate,
+        );
+        if (start) details.push(start);
+      }
+      const frames = Array.isArray(history?.frames) ? history.frames : [];
+      const previous = frames
+        .filter(frame => frame.asof && frame.asof < d.asof && api?.forScale(frame, scale) !== null)
+        .sort((a, b) => b.asof.localeCompare(a.asof))[0];
+      const historyEvidence = history?.scale_evidence?.[scale] || history?.evidence;
+      if (previous && !hiddenEv(historyEvidence) && bars.length) {
+        const change = api?.classifyChange(
+          previous, d.top, scale, indexOfDate,
+        );
+        if (change != null) details.push(`相对 ${previous.asof}：${change}`);
+      }
+      return details.join('；');
+    }
+
+    function clusterScaleText(d, scale, summary = false, history = null) {
       const view = scaleClusterView(d, scale);
       if (view.kind === 'hidden') return '无证据';
-      if (view.kind === 'uncomputed') return '未计算';
-      if (view.kind === 'empty') return summary ? '本次未形成' : '本次无合格拟合（不代表风险较低）';
+      const change = !summary ? clusterMetaText(d, history, scale, null) : '';
+      const suffix = change ? `；${change}` : '';
+      if (view.kind === 'uncomputed') return '未计算' + suffix;
+      if (view.kind === 'empty') return (summary ? '本次未形成' : '本次无合格拟合（不代表风险较低）') + suffix;
       if (view.kind === 'legacy') {
         return `${view.window.q20_date} – ${view.window.q80_date}（区间，本次结果未分簇）`;
       }
-      return summary
-        ? `${view.clusters[0].q20_date} – ${view.clusters[0].q80_date}（${globalThis.CPTopClusters?.shareText(view.clusters[0]) || ''}）`
-        : view.clusters.map(clusterRangeText).join('；');
+      if (summary) {
+        return `${view.clusters[0].q20_date} – ${view.clusters[0].q80_date}（${globalThis.CPTopClusters?.shareText(view.clusters[0]) || ''}）`;
+      }
+      const main = view.clusters[0];
+      const details = clusterMetaText(d, history, scale, main);
+      return view.clusters.map(clusterRangeText).join('；') + (details ? `；${details}` : '');
     }
 
     function clusterSummaryTile(d, scale) {
@@ -595,7 +636,7 @@
       );
     }
 
-    function riskHtml(d) {
+    function riskHtml(d, history) {
       const top = d.top || {};
       const confidence = top.lppls_confidence || {};
       const indicators = top.indicators || {};
@@ -604,7 +645,7 @@
       const clusterRows = scales.map(scale => `
         <tr>
           <td>${scaleName[scale]}</td>
-          <td>${esc(clusterScaleText(d, scale))}</td>
+          <td>${esc(clusterScaleText(d, scale, false, history))}</td>
         </tr>
       `).join('');
       const rows = scales.map((scale) => {
@@ -1204,7 +1245,7 @@
         ? '后复权收盘（美元）；显示的 t_c 情景区间均为未校准，仅供参考。'
         : '后复权收盘；显示的 t_c 情景区间均为未校准，仅供参考。';
       $('plot').setAttribute('aria-label', us ? '后复权收盘（美元）与历史情景区间' : '后复权收盘与历史情景区间');
-      $('risk').innerHTML = riskHtml(d);
+      $('risk').innerHTML = riskHtml(d, history);
       drawHistory(d, history);
       renderDip(d.dip, d);
       const code = code6(d.symbol);
@@ -1223,10 +1264,15 @@
       $('stock-events-body').innerHTML = '';
       stockView?.setEvents([]);
       try {
-        const data = await LPPL.events();
+        const result = await LPPL.fetchResult('events/events_latest.json', {
+          empty: (value) => !value || ['lift', 'dividend', 'forecast']
+            .every((key) => !Array.isArray(value[key]) || value[key].length === 0),
+        });
         if (request !== eventsSerial) return;
+        const data = result.data;
         if (!data) {
-          eventsCode = null;
+          $('stock-events-body').innerHTML = dataStatusMarkup(result.reason, '公告事件', 'data-retry-stock-events');
+          panel.hidden = false;
           return;
         }
         const shareCount = (v) => Number.isFinite(v) ? `${Number(v.toFixed(2))} 万股` : '— 万股';
@@ -1247,6 +1293,9 @@
         ];
         if (!rows.length) {
           stockView?.setEvents([]);
+          const empty = await LPPL.resultOf(Promise.resolve(rows), { empty: value => value.length === 0 });
+          $('stock-events-body').innerHTML = dataStatusMarkup(empty.reason, '该股公告事件');
+          panel.hidden = false;
           return;
         }
         const body = $('stock-events-body');
@@ -1279,10 +1328,20 @@
         });
         panel.hidden = false;
       } catch (_) {
+        if (request !== eventsSerial) return;
         if (request === eventsSerial) eventsCode = null;
         stockView?.setEvents([]);
-        panel.hidden = true;
+        $('stock-events-body').innerHTML = dataStatusMarkup('unavailable', '公告事件', 'data-retry-stock-events');
+        panel.hidden = false;
       }
+    }
+
+    if (typeof document !== 'undefined') {
+      $('stock-events-body').addEventListener('click', (event) => {
+        if (!event.target.closest('[data-retry-stock-events]')) return;
+        const code = code6($('code').value.trim());
+        if (/^\d{6}$/.test(code || '')) renderRecentEvents(code);
+      });
     }
 
     function refreshEventAvailability() {
@@ -1298,6 +1357,16 @@
       const c = code6(code);
       if (/^\d{6}$/.test(c || '')) {
         if (eventsCode !== c) renderRecentEvents(c);
+      } else if (String(code || '').startsWith('US_')) {
+        const request = ++eventsSerial;
+        eventsCode = null;
+        stockView?.setEvents([]);
+        $('recent-events').hidden = true;
+        LPPL.resultOf(null, { applicable: false }).then(({ reason }) => {
+          if (request !== eventsSerial) return;
+          $('stock-events-body').innerHTML = dataStatusMarkup(reason, '该标的公告事件');
+          $('stock-events').hidden = false;
+        });
       } else {
         eventsSerial += 1;
         eventsCode = null;
