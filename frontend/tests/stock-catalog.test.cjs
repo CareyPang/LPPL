@@ -43,7 +43,17 @@ test('filter combines type, board, membership, published and query; counts follo
   assert.deepEqual(StockCatalog.filter(rows, { published: 'yes' }).map((r) => r.code).sort(), ['000001', '300059', '600519']);
   assert.equal(StockCatalog.filter(rows, { q: '茅台' })[0].code, '600519');
   assert.equal(StockCatalog.filter(rows, { q: '3000' }).length, 1);
+  assert.deepEqual(
+    StockCatalog.filter(rows, { board: '沪市主板' }).map((r) => r.code).sort(),
+    ['000001', '600519'],
+  );
   assert.deepEqual(StockCatalog.counts(StockCatalog.filter(rows, { type: 'all' })), { index: 1, industry: 1, stock: 3, published: 3 });
+});
+
+test('mount works without an injected window', () => {
+  const el = { innerHTML: '', addEventListener() {} };
+  StockCatalog.mount({ el, catalog, published });
+  assert.match(el.innerHTML, /标的目录/);
 });
 
 test('sort orders by column with code as tiebreaker and supports descending', () => {

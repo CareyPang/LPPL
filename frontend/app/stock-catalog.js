@@ -2,9 +2,9 @@
    数据来源只有 LPPL.catalog()（317 个标准标的）与 LPPL.stock.index()（已发布个股结果的代码表），
    本文件不读其他 JSON，不计算任何模型值。纯逻辑部分（normalize/filter/sort）可在 node 下测试。 */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.StockCatalog = factory();
-})(typeof window !== 'undefined' ? window : globalThis, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(globalThis);
+  else root.StockCatalog = factory(root);
+})(typeof window !== 'undefined' ? window : globalThis, function (root) {
   'use strict';
   var STATE_KEY = 'lppl.catalog.v1';
   var TYPE_LABEL = { index: '宽基', industry: '行业', stock: '个股' };
@@ -72,7 +72,7 @@
     var q = String((f && f.q) || '').trim().toLowerCase();
     return rows.filter(function (r) {
       if (f.type && f.type !== 'all' && r.type !== f.type) return false;
-      if (f.board && f.board !== 'all' && r.board !== f.board) return false;
+      if (f.board && f.board !== 'all' && r.type !== 'index' && r.board !== f.board) return false;
       if (f.member && f.member !== 'all' && r.memberOf.indexOf(f.member) < 0) return false;
       if (f.published === 'yes' && !r.published) return false;
       if (f.published === 'no' && r.published) return false;

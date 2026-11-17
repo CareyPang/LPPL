@@ -28,9 +28,20 @@
   async function mountCatalog() {
     if (mounted) return; mounted = true;
     cat.innerHTML = '<p class="muted">目录加载中…</p>';
+    const indexPromise = new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value && typeof value === 'object' ? value : {});
+      };
+      const timer = setTimeout(() => finish({}), 2000);
+      Promise.resolve().then(() => LPPL.stock.index()).then(finish, () => finish({}));
+    });
     const [catalogResult, index] = await Promise.all([
       LPPL.fetchResult('catalog.json', { empty: (data) => !Array.isArray(data?.rows) || data.rows.length === 0 }),
-      LPPL.stock.index().catch(() => ({})),
+      indexPromise,
     ]);
     const catalog = catalogResult.data;
     if (!catalog || catalogResult.reason === 'empty') {
