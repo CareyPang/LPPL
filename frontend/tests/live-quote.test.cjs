@@ -92,3 +92,12 @@ test('full-chart link encodes the current page basename and search as safe retur
     'chart.html?code=sh000001&from=index.html%3Fcode%3Dsh000001',
   );
 });
+
+test('full-chart link only supports symbols accepted by the chart context parser', () => {
+  const { header } = setup();
+  assert.equal(header.chartSupportedSymbol('sh600519'), true);
+  assert.equal(header.chartSupportedSymbol('600519'), true);
+  assert.equal(header.chartSupportedSymbol('US_AAPL'), false);
+  assert.equal(header.chartSupportedSymbol('not-a-symbol'), false);
+  assert.match(headerSource, /chart\.hidden = !chartSupportedSymbol\(symbol\)/);
+});
