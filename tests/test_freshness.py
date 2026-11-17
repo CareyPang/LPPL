@@ -5,6 +5,7 @@ import pandas as pd
 
 from research.data import freshness
 from research.pipeline import stock
+from research.pipeline.forward_log import SYMS
 
 
 def test_lag_counts_due_trading_days_after_data_day():
@@ -99,6 +100,7 @@ def test_check_counts_trading_days_and_returns_stale_items(tmp_path, monkeypatch
     assert report["calendar_source"] == "trading"
     assert (market["day"], market["lag"], market["status"]) == ("2026-11-13", 1, "late")
     assert len(report["stale"]) == len(freshness.DATASETS)
+    assert all(item["key"] != "forward_log" for item in report["items"])
 
 
 def test_check_includes_all_index_lppls_datasets(tmp_path, monkeypatch):
@@ -166,3 +168,199 @@ def test_markdown_uses_chinese_status_table():
     assert "| 数据 | 数据日期 | 晚几个交易日 | 状态 |" in text
     assert "| 市场复盘 | 2026-11-16 | 0 | 正常 |" in text
     assert "| 宏观 | — | — | 缺失 |" in text
+
+
+def test_forward_log_markdown_shows_ten_most_recent_missing_days():
+    days = [f"2026-01-{day:02d}" for day in range(1, 13)]
+
+    text = freshness.render_markdown(
+        {
+            "items": [
+                {
+                    "key": "forward_log",
+                    "label": "前瞻日志封存",
+                    "day": "2025-12-31",
+                    "lag": 12,
+                    "status": "late",
+                    "missing_days": days,
+                }
+            ]
+        }
+    )
+
+    row = next(line for line in text.splitlines() if "前瞻日志" in line)
+    assert "前瞻日志封存（缺 12 天：" in row
+    assert "、".join(days[-10:]) in row
+    assert "…" in row
+    assert days[0] not in row
+    assert days[1] not in row
+
+
+def _write_forward_ledger(path, sealed_days):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(
+            json.dumps({"asof": day, "symbol": symbol})
+            for day, symbols in sealed_days
+            for symbol in symbols
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _forward_item(report):
+    return next(item for item in report["items"] if item["key"] == "forward_log")
+
+
+def test_forward_log_complete_day_is_fresh(tmp_path, monkeypatch):
+    ledger = tmp_path / "forward/ledger.jsonl"
+    _write_forward_ledger(ledger, [("2026-11-16", SYMS)])
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(["2026-11-16"]),
+    )
+
+    report = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai"),
+        forward_log=ledger,
+    )
+
+    item = _forward_item(report)
+    assert (item["day"], item["lag"], item["status"]) == ("2026-11-16", 0, "ok")
+    assert item["missing_days"] == []
+    assert item["path"] == str(ledger)
+
+
+def test_forward_log_historic_gap_with_current_seal_is_not_stale(
+    tmp_path, monkeypatch
+):
+    ledger = tmp_path / "forward/ledger.jsonl"
+    _write_forward_ledger(
+        ledger,
+        [
+            ("2026-11-10", SYMS),
+            ("2026-11-16", SYMS),
+        ],
+    )
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(
+            ["2026-11-10", "2026-11-12", "2026-11-16"]
+        ),
+    )
+
+    report = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai"),
+        forward_log=ledger,
+    )
+
+    item = _forward_item(report)
+    assert (item["day"], item["lag"], item["status"]) == ("2026-11-16", 0, "ok")
+    assert item["missing_days"] == ["2026-11-12"]
+    assert item not in report["stale"]
+
+
+def test_forward_log_ignores_partial_day_and_reports_previous_day_lag(
+    tmp_path, monkeypatch
+):
+    ledger = tmp_path / "forward/ledger.jsonl"
+    _write_forward_ledger(
+        ledger,
+        [
+            ("2026-11-13", SYMS),
+            ("2026-11-16", SYMS[:-1]),
+        ],
+    )
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(["2026-11-16"]),
+    )
+
+    report = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai"),
+        forward_log=ledger,
+    )
+
+    item = _forward_item(report)
+    assert (item["day"], item["lag"], item["status"]) == ("2026-11-13", 1, "late")
+    assert item["missing_days"] == ["2026-11-16"]
+    assert item in report["stale"]
+
+
+def test_forward_log_missing_days_use_calendar_and_exclude_holidays(
+    tmp_path, monkeypatch
+):
+    ledger = tmp_path / "forward/ledger.jsonl"
+    _write_forward_ledger(ledger, [("2026-05-01", SYMS)])
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(
+            ["2026-05-01", "2026-05-06"]
+        ),
+    )
+
+    report = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-05-08 07:00", tz="Asia/Shanghai"),
+        forward_log=ledger,
+    )
+
+    item = _forward_item(report)
+    assert item["missing_days"] == ["2026-05-06"]
+    assert item["day"] == "2026-05-01"
+    assert item["lag"] == 1
+    row = next(line for line in freshness.render_markdown(report).splitlines() if "前瞻日志" in line)
+    assert "前瞻日志封存（缺 1 天：2026-05-06）" in row
+
+
+def test_forward_log_missing_days_fall_back_to_weekdays(tmp_path, monkeypatch):
+    ledger = tmp_path / "forward/ledger.jsonl"
+    _write_forward_ledger(ledger, [("2026-11-10", SYMS)])
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: (_ for _ in ()).throw(RuntimeError("calendar unavailable")),
+    )
+
+    report = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-11-16 07:00", tz="Asia/Shanghai"),
+        forward_log=ledger,
+    )
+
+    item = _forward_item(report)
+    assert report["calendar_source"] == "weekday"
+    assert item["missing_days"] == ["2026-11-11", "2026-11-12", "2026-11-13"]
+
+
+def test_forward_log_missing_or_empty_ledger_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: pd.DatetimeIndex(["2026-11-16"]),
+    )
+    missing = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai"),
+        forward_log=tmp_path / "missing.jsonl",
+    )
+    empty_path = tmp_path / "empty.jsonl"
+    empty_path.write_text("", encoding="utf-8")
+    empty = freshness.check(
+        tmp_path,
+        pd.Timestamp("2026-11-17 07:00", tz="Asia/Shanghai"),
+        forward_log=empty_path,
+    )
+
+    for report in (missing, empty):
+        item = _forward_item(report)
+        assert (item["day"], item["lag"], item["status"]) == (None, None, "missing")
+        assert item["missing_days"] == []

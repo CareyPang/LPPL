@@ -63,6 +63,8 @@
 '.odn-main a:hover{color:#fff;background:#1f1f1f}' +
 '.odn-main a[aria-current]{color:#fff;background:#2a2a2a}' +
 '.odn-r{flex:none;margin-left:auto;display:flex;align-items:center;gap:10px;padding-left:12px}' +
+'.odn-chart-link{display:inline-flex;align-items:center;min-height:44px;white-space:nowrap;padding:0 10px;border:1px solid #315cf5;border-radius:8px;color:#315cf5;background:#fff;text-decoration:none;font-size:13px;font-weight:650}' +
+'.odn-chart-link:hover,.odn-chart-link:focus-visible{border-color:#2447c9;outline:3px solid rgba(49,92,245,.16)}' +
 '.odn-asof{display:flex;align-items:center}.odn-asof>*{margin:0!important;font:12px Consolas,"Cascadia Mono",monospace!important;color:#8c8c8c!important;white-space:nowrap}' +
 '.odn details{position:relative}' +
 '.odn summary{list-style:none;cursor:pointer;display:grid;place-items:center;height:34px;min-width:34px;padding:0 10px;border-radius:999px;color:#b2b5be;font-weight:600}' +
@@ -72,6 +74,7 @@
 '.odn-pop{position:absolute;right:0;top:calc(100% + 8px);min-width:180px;padding:6px;background:#1e1e1e;border:1px solid #333;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.55);z-index:70}' +
 '.odn-pop a{display:block;padding:9px 12px;border-radius:8px;color:#dbdbdb;white-space:nowrap}.odn-pop a:hover{background:#2e2e2e;color:#fff}' +
 '.odn-pop a[aria-current]{color:#0f0f0f;background:#f2f2f2}' +
+'.odn-menu-sep{height:1px;margin:4px 6px;background:#333}' +
 '.odn-menu{display:none}' +
 '.odn-l2{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border-top:1px solid #1c1c1c;background:#0f0f0f}' +
 '.odn-subw{position:relative;min-width:0;flex:1 1 auto}' +
@@ -120,11 +123,12 @@
 '.odn-qe{padding:9px 12px;color:#8c8c8c;font-size:13px}' +
 '.odn-light .odn-q input{background-color:#f0f3fa;border-color:#e0e3eb;color:#131722}.odn-light .odn-q input::placeholder{color:#6a6d78}.odn-light .odn-q input:focus{background-color:#fff;border-color:#1f5fd6}' +
 '.odn-light .odn-q kbd{color:#6a6d78;border-color:#d6dae3}.odn-light .odn-ql a span{color:#6a6d78}.odn-light .odn-ql li[aria-selected=true] a{background:#f0f3fa;color:#131722}' +
+'@media (min-width:1200px){.odn-q{width:300px}.odn-q input,.odn-light .odn-q input{box-sizing:border-box;width:100%;background-color:#fff;border-color:#9aa3b2;color:#131722}.odn-q input:focus,.odn-light .odn-q input:focus{width:100%;background-color:#fff}.odn-q input:hover,.odn-q input:focus-visible,.odn-light .odn-q input:hover,.odn-light .odn-q input:focus-visible{border-color:#315CF5;box-shadow:0 0 0 3px rgba(49,92,245,.18)}}' +
 '@media (max-width:1100px){.odn-asof{display:none}}' +
 '@media (max-width:760px){.odn-q input{width:150px}.odn-q input:focus{width:180px}.odn-q kbd{display:none}}' +
 '@media (max-width:420px){.odn-q input{width:110px}}' +
 '@media (max-width:860px){.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-brand{margin-right:8px}}' +
-'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 120px));max-width:calc(100vw - 24px)}}' +
+'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}.odn-help{display:none}.odn-r{gap:3px;padding-left:0}.odn-q input{box-sizing:border-box;width:clamp(138px,calc(100vw - 222px),168px);padding-right:12px}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 120px));max-width:calc(100vw - 24px)}}' +
 '.odn.odn-light{background:#fff;border-bottom-color:#e6e9ef;color:#131722}' +
 '.odn-light .odn-brand{color:#131722}.odn-light .odn-brand i{background:#1f5fd6}' +
 '.odn-light .odn-main a{color:#4c525e}.odn-light .odn-main a:hover{color:#131722;background:#f0f3fa}.odn-light .odn-main a[aria-current]{color:#131722;background:#e9edf5}' +
@@ -141,7 +145,7 @@
 '.odn-light .odn-sub .strip-k,.odn-light .odn-tools .strip-k{color:#6a6d78}' +
 '.odn-light .odn-sub .odn-sep{background:#e0e3eb}.odn-light .odn-sub .odn-lb{color:#6a6d78}' +
 '.odn-light summary{color:#4c525e}.odn-light .odn-help summary{border-color:#d6dae3}.odn-light summary:hover,.odn-light details[open] summary{background:#f0f3fa;color:#131722}' +
-'.odn-light .odn-pop{background:#fff;border-color:#e6e9ef;box-shadow:0 16px 40px rgba(19,23,34,.14)}.odn-light .odn-pop a{color:#131722}.odn-light .odn-pop a:hover{background:#f0f3fa}.odn-light .odn-pop a[aria-current]{background:#131722;color:#fff}' +
+'.odn-light .odn-pop{background:#fff;border-color:#e6e9ef;box-shadow:0 16px 40px rgba(19,23,34,.14)}.odn-light .odn-pop a{color:#131722}.odn-light .odn-pop a:hover{background:#f0f3fa}.odn-light .odn-pop a[aria-current]{background:#131722;color:#fff}.odn-light .odn-menu-sep{background:#e6e9ef}' +
 '.odn-light .odn-asof>*{color:#6a6d78!important}' +
 '.odn-star{height:34px;padding:0 12px;border:1px solid #333;border-radius:999px;background:transparent;color:#b2b5be;font:600 13px/1 inherit;cursor:pointer;white-space:nowrap}' +
 '.odn-star:hover{color:#fff;background:#2a2a2a}.odn-light .odn-star{border-color:#d6dae3;color:#4c525e}.odn-light .odn-star:hover{background:#f0f3fa;color:#131722}' +
@@ -307,6 +311,33 @@
   srch.addEventListener('submit', function (e) { e.preventDefault(); openSearch(''); });
   qi.addEventListener('focus', function () { openSearch(''); });
   qi.addEventListener('click', function () { openSearch(''); });
+  function appendIndexChartLink() {
+    if (section !== 'terminal' || !/(?:^|\/)index\.html$/.test(location.pathname)) return;
+    var chartLink = el('a', 'odn-chart-link', '完整图表 ›');
+    function currentIndexSymbol() {
+      var currentCode = String(new URLSearchParams(location.search).get('code') || '').trim();
+      if (!currentCode) return 'sh000001';
+      var normalized = currentCode.toLowerCase();
+      var indexItem = ((window.LPPL && window.LPPL.SYMS) || []).filter(function (item) {
+        return String(item.sym || '').toLowerCase() === normalized ||
+          String(item.code || '').toLowerCase() === normalized || item.name === currentCode;
+      })[0];
+      return indexItem && indexItem.sym || 'sh000001';
+    }
+    function updateChartHref() {
+      var source = location.pathname.split('/').pop() + location.search;
+      chartLink.href = 'chart.html?code=' + encodeURIComponent(currentIndexSymbol()) +
+        '&from=' + encodeURIComponent(source);
+    }
+    updateChartHref();
+    ['click', 'focus', 'pointerenter'].forEach(function (name) {
+      chartLink.addEventListener(name, updateChartHref);
+    });
+    right.appendChild(chartLink);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', appendIndexChartLink);
+  } else appendIndexChartLink();
 
   /* ---------- 全局「☆ 自选」抽屉（app/od-watch.js 按需加载） ---------- */
   var star = el('button', 'odn-star', '☆<span> 自选</span>');
@@ -454,7 +485,9 @@
   })();
   var menu = el('details', 'odn-menu');
   menu.innerHTML = '<summary aria-label="打开导航菜单">☰</summary><div class="odn-pop">' +
-    MAIN.map(function (m) { return '<a href="' + m.h + '"' + (isMain(m) ? ' aria-current="page"' : '') + '>' + esc(m.t) + '</a>'; }).join('') + '</div>';
+    MAIN.map(function (m) { return '<a href="' + m.h + '"' + (isMain(m) ? ' aria-current="page"' : '') + '>' + esc(m.t) + '</a>'; }).join('') +
+    '<div class="odn-menu-sep" role="separator"></div>' +
+    HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(menu);
   var help = el('details', 'odn-help');
   help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、更新日志">?</summary><div class="odn-pop">' +
