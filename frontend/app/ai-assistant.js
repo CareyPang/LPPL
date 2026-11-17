@@ -132,12 +132,18 @@
     if (!history.length) log.textContent = '';
     var requestKey = historyKey;
     var prior = history.slice(-MAX_SEND);
+    var payload = { page: page, question: question, context: collectContext(), history: prior };
+    var encoder = new TextEncoder();
+    while (prior.length && encoder.encode(JSON.stringify(payload)).length > 60000) {
+      prior.shift();
+      payload.history = prior;
+    }
     bubble('user', question);
     var out = bubble('assistant', '正在读取本页数据…');
     setBusy(true);
     controller = new AbortController();
     try {
-      var r = await root.LPPL.askAI({ page: page, question: question, context: collectContext(), history: prior },
+      var r = await root.LPPL.askAI(payload,
         function (t) {
           if (storeKey() !== requestKey) {
             if (controller) controller.abort();
