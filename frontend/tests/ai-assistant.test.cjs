@@ -42,19 +42,20 @@ test('assistant docks at the sidebar edge on wide screens and fills mobile scree
   assert.match(assistant, /<span>研究助手<\/span>/);
   assert.match(assistant, /WIDE = 1200/);
   assert.match(assistant, /left:208px;right:auto;bottom:0;width:340px/);
+  assert.match(assistant, /\.ai-panel\{[^']*padding:0\}/);
   assert.match(assistant, /@media \(max-width:760px\)\{\.ai-btn\{display:none!important\}\.ai-panel:not\(\[hidden\]\)\{position:fixed;top:52px;right:0;bottom:0;left:0;width:100vw/);
   assert.match(assistant, /document\.dispatchEvent\(new CustomEvent\('lppl:assistant-state', \{ detail: \{ open: open \} \}\)\)/);
 });
 
 test('desktop top-bar search has the wide white input and blue focus ring', () => {
-  assert.match(nav, /@media \(min-width:1200px\)\{body\.odn-sidebar-page\{padding-left:548px\}[\s\S]*?\.odn-q\{width:300px\}/);
+  assert.match(nav, /@media \(min-width:1200px\)\{body\.odn-sidebar-page\{padding-left:572px\}[\s\S]*?\.odn-q\{width:300px\}/);
   assert.match(nav, /background-color:#fff;border-color:#9aa3b2/);
   assert.match(nav, /rgba\(49,92,245,\.18\)/);
   assert.ok(nav.indexOf(".odn-light .odn-q input{background-color:#f0f3fa") < nav.lastIndexOf('@media (min-width:1200px)'));
 });
 
 test('compact navigation keeps help links in the hamburger menu', () => {
-  assert.match(nav, /@media \(min-width:1200px\)\{body\.odn-sidebar-page\{padding-left:548px\}/);
+  assert.match(nav, /@media \(min-width:1200px\)\{body\.odn-sidebar-page\{padding-left:572px\}/);
   assert.match(nav, /@media \(min-width:761px\) and \(max-width:1199px\)\{body\.odn-sidebar-page\{padding-left:208px\}/);
   assert.match(nav, /@media \(max-width:760px\)\{body\.odn-sidebar-page\{padding-left:0\}/);
   assert.match(nav, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);

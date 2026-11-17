@@ -53,7 +53,7 @@
     '.ai-btn svg{width:14px;height:14px;flex:none}' +
     '.ai-ask-inline{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;height:28px;margin-left:8px;padding:0 9px;border:1px solid #315CF5;border-radius:6px;background:#fff;color:#315CF5;font:600 12px/1 sans-serif;white-space:nowrap;cursor:pointer}' +
     '.ai-ask-inline:hover{background:#f2f5ff}' +
-    '.ai-panel{box-sizing:border-box;background:#fff;color:#131722;border:1px solid #e3e7ee;display:flex;flex-direction:column;font:14px/1.6 sans-serif}' +
+    '.ai-panel{box-sizing:border-box;background:#fff;color:#131722;border:1px solid #e3e7ee;display:flex;flex-direction:column;font:14px/1.6 sans-serif;padding:0}' +
     '.ai-panel[hidden]{display:none}' +
     '.ai-btn,.ai-panel,.ai-panel *{font-family:inherit!important}' +
     '.ai-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e3e7ee}' +

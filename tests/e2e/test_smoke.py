@@ -265,7 +265,40 @@ def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
     assert abs(sidebar_box["x"]) <= 1 and abs(sidebar_box["width"] - 208) <= 1
     assert abs(assistant_box["x"] - 208) <= 1 and abs(assistant_box["width"] - 340) <= 1
     assert assistant_box["x"] + assistant_box["width"] <= content_box["x"] + 1
-    assert content_box["x"] >= 548
+    assert content_box["x"] >= 572
+
+
+@pytest.mark.e2e
+def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
+    for path in NAV_PAGES:
+        page.set_viewport_size({"width": 1440, "height": 900})
+        page.goto(f"{BASE_URL}/{path}")
+        panel = page.locator(".ai-panel")
+        expect(panel).to_be_visible()
+        panel_box = panel.bounding_box()
+        head_box = page.locator(".ai-head").bounding_box()
+        content_left = page.evaluate(
+            """() => {
+              const el = document.body.classList.contains('vs-home')
+                ? document.querySelector('.hero-copy')
+                : document.querySelector('main') || document.querySelector('h1');
+              return el && el.getBoundingClientRect().left;
+            }"""
+        )
+        assert panel_box and head_box and content_left is not None, path
+        assert abs(panel_box["y"]) <= 1 and abs(head_box["y"]) <= 1, (path, panel_box, head_box)
+        assert content_left >= panel_box["x"] + panel_box["width"] + 23, (path, content_left)
+
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
+        panel_box = panel.bounding_box()
+        head_box = page.locator(".ai-head").bounding_box()
+        assert panel_box and head_box, path
+        assert abs(panel_box["y"] - 52) <= 1 and abs(head_box["y"] - 52) <= 1, (
+            path,
+            panel_box,
+            head_box,
+        )
 
 
 @pytest.mark.e2e
@@ -350,10 +383,36 @@ def test_tools_assistant_mounts_without_main_container(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_stock_page_uses_general_asset_copy(page: Page) -> None:
+    page.goto(f"{BASE_URL}/stock.html")
+    expect(page.locator(".hero .eyebrow")).to_have_text("标的 · 指数 / 行业 / 个股")
+    expect(page.locator(".hero h1")).to_have_text("查标的")
+    expect(page.locator(".hero .lead")).to_contain_text(
+        "输入指数、股票代码、名称或拼音首字母"
+    )
+    expect(page).to_have_title("临界点 · 标的")
+    description = page.locator('meta[name="description"]').get_attribute("content")
+    assert description and "输入指数、股票代码" in description and "个股日线" not in description
+
+
+@pytest.mark.e2e
 def test_three_segment_validation_link_is_active_on_index(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/index.html#p-bench")
     expect(page.locator('.odn-sidebar a[href="index.html#p-bench"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+
+
+@pytest.mark.e2e
+def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/market.html")
+    assert page.evaluate("window.scrollY") == 0
+    expect(page.locator('.odn-sidebar .odn-side-link[href="market.html#s-news"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    expect(page.locator('.odn-l2 .odn-sub a[href="#s-news"]')).to_have_attribute(
         "aria-current", "location"
     )
 

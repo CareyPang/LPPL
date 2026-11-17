@@ -40,7 +40,7 @@ test('market groups preserve every scroll id and keep freshness outside the grou
   const actual = [...groups[1].matchAll(/ids: \[([^\]]+)\]/g)]
     .map((match) => [...match[1].matchAll(/'([^']+)'/g)].map((id) => id[1]));
   assert.deepEqual(actual, [
-    ['s-news', 's-events'],
+    ['s-summary', 's-news', 's-events'],
     ['s-board', 's-nb', 's-mg'],
     ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot', 's-lhb', 's-bottom', 's-abnormal', 's-range'],
     ['s-val', 's-macro', 's-growth'],
