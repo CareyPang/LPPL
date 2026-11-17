@@ -143,6 +143,40 @@ def test_flow_5_backtest_alert_ledger_has_evidence_and_rows(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_backtest_recompute_notice_uses_history_metadata_in_scenario_and_strategy(page: Page) -> None:
+    note = (
+        "v2.2（指数 tcgrid_lm 与 de_lbfgsb 取小 SSE）于 2026-11 对三段历史重新计算，"
+        "代码改动发生在看过这些历史之后；测试段结论仍以预登记的一次性结果为准（未通过）。"
+        "旧版 v2.1 历史存档在 archive/。"
+    )
+
+    def add_recompute_metadata(route) -> None:
+        response = route.fetch()
+        payload = response.json()
+        assert payload["model_version"] == "prereg_v1.7_v2.2"
+        payload["recompute"] = {
+            "label": "事后重算，不是样本外",
+            "note": note,
+            "replaces": "prereg_v1.7_v2.1",
+        }
+        route.fulfill(status=response.status, json=payload)
+
+    page.route("**/lab/mock/data/sh000001_history.json", add_recompute_metadata)
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=scenario")
+    expect(page.locator("main.app")).to_be_visible()
+    expect(page.locator("#recompute-notice")).to_be_visible()
+    expect(page.locator("#recompute-label")).to_have_text("事后重算，不是样本外")
+    page.locator("#recompute-notice summary").click()
+    expect(page.locator("#recompute-text")).to_have_text(note)
+
+    page.locator('.bt-views a[data-view="strategy"]').click()
+    expect(page.locator("#strategy-view")).to_be_visible()
+    expect(page.locator("#recompute-notice")).to_be_visible()
+    expect(page.locator("#recompute-label")).to_have_text("事后重算，不是样本外")
+
+
+@pytest.mark.e2e
 def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     page.goto(f"{BASE_URL}/market.html")
     page.wait_for_function(

@@ -158,10 +158,10 @@ test('unsorted frames are ordered by asof and confidence is never returned', () 
   assert.equal(JSON.stringify(rows).includes('"conf"'), false);
 });
 
-test('sh000001 history has 171 total weeks with a 6–12 month interval', () => {
+test('sh000001 v2.2 history has 134 total weeks with a 6–12 month interval', () => {
   const fixturePath = path.join(__dirname, '../../web/mock/data/sh000001_history.json');
   const history = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
   const rows = AlertLedger.episodes(history.frames, history.tops, '6-12m');
 
-  assert.equal(rows.reduce((sum, row) => sum + row.weeks, 0), 171);
+  assert.equal(rows.reduce((sum, row) => sum + row.weeks, 0), 134);
 });

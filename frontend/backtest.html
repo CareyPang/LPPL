@@ -120,8 +120,15 @@ a { color: var(--ink-2); text-decoration: none; }
 .bt-views a{position:relative;padding:0 10px;height:44px;line-height:44px;font-weight:600;color:var(--ink-2,#4C525E);text-decoration:none}
 .bt-views a[aria-current]{color:var(--real,#1F5FD6)}.bt-views a[aria-current]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:var(--real,#1F5FD6)}
 .bt-views-note{margin-left:auto;font-size:12px;color:var(--ink-3,#6A6D78)}
+.recompute-notice{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;margin:10px 16px;padding:8px 12px;border:1px solid #f1dfb8;background:#fff5e0;color:var(--warn);font-size:13px;line-height:1.5}
+.recompute-notice[hidden]{display:none}
+.recompute-notice strong{display:inline-block;flex:none;padding:2px 8px;border:1px solid currentColor;font-size:12px}
+.recompute-notice details{flex:1 1 200px;min-width:0}
+.recompute-notice summary{width:max-content;max-width:100%;cursor:pointer;color:var(--warn);font-size:12px;font-weight:600}
+.recompute-notice p{margin:6px 0 0;color:var(--ink-2);overflow-wrap:anywhere}
 .scenario-note{grid-column:1/-1;margin:0;padding:10px 16px;border-bottom:1px solid #f1dfb8;background:#fff5e0;color:var(--warn);font-weight:600}
 @media (max-width:640px){.bt-views-note{display:none}}
+@media (max-width:640px){.recompute-notice{margin:8px 12px;padding:8px}}
 .strategy-view{max-width:1100px;margin:0 auto;padding:16px}
 .bench-explainer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 16px}
 .bench-explainer>div{min-width:0;padding:8px 10px;border:1px solid var(--line,#E3E7EE);background:var(--surface,#fff);font-size:12px;line-height:1.5}
@@ -209,6 +216,13 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <a href="#view=bench" data-view="bench">三段验证</a>
   <span class="bt-views-note">策略回测 = 事前登记规则的历史回放，不是预测</span>
 </nav>
+<div class="recompute-notice" id="recompute-notice" hidden role="note" aria-label="历史重算说明">
+  <strong id="recompute-label"></strong>
+  <details>
+    <summary>查看重算说明</summary>
+    <p id="recompute-text"></p>
+  </details>
+</div>
 <section class="bench-explainer" aria-label="三段验证说明" data-ai-context="三段说明">
   <div><b>开发段：</b>最早的一段历史，用来设计规则、调参数。</div>
   <div><b>校准段：</b>中间一段，规则定下后只用来确定门槛。</div>
@@ -318,6 +332,14 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   'use strict';
   const $ = (id) => document.getElementById(id);
   const E = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function renderRecomputeNotice(recompute) {
+    const notice = $('recompute-notice');
+    const data = recompute && typeof recompute === 'object' ? recompute : null;
+    notice.hidden = !data;
+    if (!data) return;
+    $('recompute-label').textContent = typeof data.label === 'string' ? data.label : '事后重算，不是样本外';
+    $('recompute-text').textContent = typeof data.note === 'string' ? data.note : '';
+  }
   const DAY = 864e5;
   const RANGES = [['全部', null, null], ['2005–2009', '2005-01-01', '2009-12-31'], ['2014–2016', '2014-01-01', '2016-12-31'], ['2019–2021', '2019-01-01', '2021-12-31'], ['2024–2025', '2024-01-01', '2025-12-31']];
   const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段' };
@@ -517,6 +539,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   /* ---------- 加载 ---------- */
   async function load() {
     mark(); $('tip').hidden = true; st.hover = null; st.alertId = null; st.alertFrame = null;
+    renderRecomputeNotice(null);
     const ld = $('ld'); ld.hidden = false; ld.className = 'ld'; ld.textContent = '数据加载中…';
     const S = LPPL.resolve(st.sym);
     $('sym-n').textContent = S ? S.name : st.sym;
@@ -539,10 +562,12 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         scale_evidence: H.scale_evidence,
         rule: H.rule,
         model_version: H.model_version,
+        recompute: H.recompute,
         fr,
         tops,
         alertEpisodes,
       };
+      renderRecomputeNotice(st.H.recompute);
       st.tmin = fr[0].t;
       setAlertScaleData(st.alertScale);
       const e = H.evidence;

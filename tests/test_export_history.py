@@ -53,7 +53,9 @@ def test_history_contract_and_replay_window_consistency():
     assert frame_2015["close"] == round(replay["price_history"]["close"][-1], 2)
 
 
-def test_history_contract_exposes_authoritative_per_scale_evidence(tmp_path, monkeypatch):
+def test_history_contract_exposes_per_scale_evidence_and_recompute_metadata(
+    tmp_path, monkeypatch
+):
     import pandas as pd
 
     dates = pd.date_range("2024-01-01", periods=2, freq="7D")
@@ -100,6 +102,7 @@ def test_history_contract_exposes_authoritative_per_scale_evidence(tmp_path, mon
         scale: export_contract.SCALE_EVIDENCE[scale]
         for scale in export_contract.HISTORY_SCALES
     }
+    assert rec["recompute"] == export_contract.HISTORY_RECOMPUTE
 
 
 def test_to_cal_extrapolates_beyond_calendar_end():
