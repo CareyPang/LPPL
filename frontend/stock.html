@@ -1294,6 +1294,20 @@
       });
     }
 
+    function syncEventsFor(code) {
+      const c = code6(code);
+      if (/^\d{6}$/.test(c || '')) {
+        if (eventsCode !== c) renderRecentEvents(c);
+      } else {
+        eventsSerial += 1;
+        eventsCode = null;
+        stockView?.setEvents([]);
+        $('stock-events').hidden = true;
+        $('recent-events').hidden = true;
+      }
+      refreshEventAvailability();
+    }
+
     async function loadStaticUS(code) {
       await usIndexPromise;
       const entry = usEntry(code);
@@ -1448,19 +1462,10 @@
       normalizeCode,
       isStaticCode: code => code.startsWith('US_'),
       loadStaticCode: loadStaticUS,
+      onCodeChange: code => syncEventsFor(code),
       renderResult: (current, history, market) => {
         render(current, history, market);
-        const c = code6(current && current.symbol);
-        if (/^\d{6}$/.test(c || '')) {
-          if (eventsCode !== c) renderRecentEvents(c);
-        } else {
-          eventsSerial += 1;
-          eventsCode = null;
-          stockView?.setEvents([]);
-          $('stock-events').hidden = true;
-          $('recent-events').hidden = true;
-        }
-        refreshEventAvailability();
+        syncEventsFor(current && current.symbol);
       },
       renderMarket: (current, market) => {
         if (window.StockHeaderView) StockHeaderView.update(current, stockName(current), market);
@@ -1469,16 +1474,7 @@
     });
     setupStockAutocomplete();
     $('search').addEventListener('submit', () => {
-      const c = normalizeCode($('code').value.trim());
-      if (/^\d{6}$/.test(c || '')) {
-        renderRecentEvents(c);
-      } else {
-        eventsSerial += 1;
-        eventsCode = null;
-        stockView?.setEvents([]);
-        $('stock-events').hidden = true;
-        $('recent-events').hidden = true;
-      }
+      syncEventsFor(normalizeCode($('code').value.trim()));
     });
 
     const showHint = () => {
@@ -1637,7 +1633,7 @@
     }).catch(() => {});
 
     const initial = new URLSearchParams(location.search).get('code');
-    if (initial && /^\d{6}$/.test(initial)) renderRecentEvents(initial);
+    if (initial && /^\d{6}$/.test(initial)) syncEventsFor(initial);
 
     (() => {
       const section = document.getElementById('recent-events');
