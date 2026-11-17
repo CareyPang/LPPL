@@ -9,6 +9,7 @@
     unavailable: '暂时无法读取',
     empty: '数据源返回空结果',
     not_applicable: '不适用',
+    hidden_evidence: '证据不足，不显示',
   };
 
   function build(input) {

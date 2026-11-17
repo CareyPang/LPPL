@@ -348,6 +348,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     unavailable: '暂时无法读取',
     empty: '数据源返回空结果',
     not_applicable: '不适用',
+    hidden_evidence: '证据不足，不显示',
   };
   const statusMarkup = (reason, subject, retryAttr) =>
     `<p class="${reason === 'unavailable' ? 'fail' : 'note'}" data-reason="${E(reason)}">${E(subject)}：${E(REASON_TEXT[reason] || '状态未知')}</p>` +
@@ -1390,11 +1391,21 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       watchlist: entries,
       relatedCount: summaryRelatedCount(today, entries),
       models: summaryModels || [],
-      modelsReason: summaryModels?.some((item) => !item.reason) ? null : 'unavailable',
+      modelsReason: summaryModelReason(summaryModels),
     });
     $('today-summary').innerHTML = `<div class="summary-lines">${result.lines.map((line) =>
       `<div class="summary-row"><strong>${E(line.label)}</strong><a href="${E(line.href)}"${line.action === 'watch' ? ' data-summary-watch' : ''}>${E(line.text)}</a>` +
       `${line.reason === 'unavailable' ? `<button type="button" class="chip" data-retry-summary="${E(line.key)}">重试</button>` : '<span></span>'}</div>`).join('')}</div>`;
+  }
+  function summaryModelReason(rows) {
+    if (!rows) return 'unavailable';
+    if (rows.some((item) => !item.reason)) return null;
+    if (rows.some((item) => item.reason === 'hidden_evidence')) return 'hidden_evidence';
+    for (const reason of ['unavailable', 'unpublished', 'empty']) {
+      if (rows.some((item) => item.reason === reason)) return reason;
+    }
+    return rows.length && rows.every((item) => item.reason === 'not_applicable')
+      ? 'not_applicable' : 'empty';
   }
   async function loadSummaryData() {
     const quotePromise = LPPL.resultOf(Promise.resolve().then(() => LPPL.quote(['sh000001', 'sz399001'])), {
@@ -1402,7 +1413,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     });
     summaryModels = await Promise.all(LPPL.SYMS.map(async (spec) => {
       const base = { symbol: spec.sym, name: spec.name };
-      const historyPromise = spec.history
+      const historyPromise = spec.history !== false
         ? LPPL.fetchResult(spec.sym + '_history.json', {
           empty: (data) => !Array.isArray(data?.frames) || data.frames.length === 0,
         })
@@ -1421,7 +1432,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       const scales = ['6-12m', '12-24m'];
       return scales.flatMap((scale) => {
         const evidence = history.data.scale_evidence?.[scale] || history.data.evidence;
-        if (!LPPL.ev(evidence).show) return [];
+        if (!LPPL.ev(evidence).show) {
+          return [{ ...base, scale, reason: 'hidden_evidence', previousAsOf: previous.asof }];
+        }
         if (CPTopClusters.forScale(previous, scale) === null || CPTopClusters.forScale(latest.data.top, scale) === null) {
           return [{ ...base, scale, reason: 'empty', previousAsOf: previous.asof }];
         }

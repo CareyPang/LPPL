@@ -36,3 +36,13 @@ test('uses reason codes for missing sources and empty watchlists', () => {
   assert.equal(result.lines[2].reason, 'not_applicable');
   assert.equal(result.lines[3].text, '不适用');
 });
+
+test('hidden-evidence model rows are reported as evidence-gated, not inapplicable', () => {
+  const result = Summary.build({
+    models: [{ symbol: 'sh000001', scale: '6-12m', reason: 'hidden_evidence' }],
+    modelsReason: 'hidden_evidence',
+  });
+  assert.equal(result.modelDetails[0].reason, 'hidden_evidence');
+  assert.equal(result.lines[3].reason, 'hidden_evidence');
+  assert.equal(result.lines[3].text, '证据不足，不显示');
+});
