@@ -207,6 +207,7 @@ a { color: var(--ink-2); text-decoration: none; }
 .tabs button[aria-selected="true"] { color: var(--ink); background: var(--bg); box-shadow: inset 0 2px 0 var(--warn); }
 .tp { padding: var(--s4); }
 .tp-d { margin: 0 0 var(--s3); font-size: 13px; color: var(--ink-2); max-width: 75ch; }
+.evidence-help { margin-left: 6px; color: var(--real); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s4); }
 .pn { border: 1px solid var(--line); background: var(--surface); min-width: 0; }
 .pn-h { margin: 0; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); font: 500 11px/1.4 var(--f-u); letter-spacing: 0.08em; color: var(--ink-3); }
@@ -402,15 +403,13 @@ footer p { margin: 0; max-width: 110ch; }
     </section>
   </aside>
 
-  <section class="bottom" aria-label="验证与参数" data-ai-context="验证与参数">
+  <section class="bottom" aria-label="回放与参数" data-ai-context="回放与参数">
     <div class="tabs" role="tablist" aria-label="底部面板" id="btabs">
       <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="true" aria-controls="p-replay">回放</button>
-      <button type="button" role="tab" id="bt-1" data-p="p-bench" aria-selected="false" aria-controls="p-bench" tabindex="-1">三段验证</button>
-      <button type="button" role="tab" id="bt-2" data-p="p-expert" aria-selected="false" aria-controls="p-expert" tabindex="-1">六尺度参数</button>
+      <button type="button" role="tab" id="bt-1" data-p="p-expert" aria-selected="false" aria-controls="p-expert" tabindex="-1">六尺度参数</button>
     </div>
     <div class="tp" id="p-replay" role="tabpanel" aria-labelledby="bt-0"></div>
-    <div class="tp" id="p-bench" role="tabpanel" aria-labelledby="bt-1" hidden></div>
-    <div class="tp" id="p-expert" role="tabpanel" aria-labelledby="bt-2" hidden></div>
+    <div class="tp" id="p-expert" role="tabpanel" aria-labelledby="bt-1" hidden></div>
   </section>
 </main>
 
@@ -435,6 +434,14 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   const $ = (id) => document.getElementById(id);
   const U = CPUI, E = U.esc;
   const idxOf = CPTradingDays.idxOf;
+  function appendEvidenceHelp(target) {
+    const link = document.createElement('a');
+    link.className = 'evidence-help';
+    link.href = 'backtest.html#view=bench';
+    link.textContent = '证据等级是什么？';
+    target.appendChild(document.createTextNode(' '));
+    target.appendChild(link);
+  }
 
   /* ================= 图标（同一套线性图标：24 网格，1.6 描边，直角端点） ================= */
   const ICON = {
@@ -1013,7 +1020,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     $('hist-kv').innerHTML = ''; $('hist-summary').textContent = '';
     $('plan').innerHTML = ''; $('note').innerHTML = '';
     $('cur-d').textContent = '—'; $('cur-l').textContent = ''; $('cur-set').hidden = true;
-    $('p-replay').innerHTML = ''; $('p-bench').innerHTML = ''; $('p-expert').innerHTML = '';
+    $('p-replay').innerHTML = ''; $('p-expert').innerHTML = '';
     $('tl').value = $('tl').min; $('tl').max = $('tl').min; $('tl').disabled = true; $('tl-v').textContent = '—'; $('tl-last').disabled = true;
     document.querySelectorAll('.tk').forEach((b) => b.setAttribute('aria-current', 'false'));
     syncWatch();
@@ -1194,8 +1201,10 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
     $('vs').textContent = (w.start ? '6–12 月档情景区间 ' + U.range(w.start, w.end, R.asof, last) + '（未校准，仅供参考；开发段证据，不是峰值日预测）。' : (w.rule || '') + '。') +
       (rb.state ? ' 体制带 ' + rb.month + '：' + (REG[rb.state] || rb.state) + '（描述性）。' : '');
+    appendEvidenceHelp($('vs'));
     renderScaleBar();
     $('ph-tip').textContent = '置信度 = 合格拟合占比，不是概率；只有 6–12 月、12–24 月档有开发段证据，其余档显示“无证据”。';
+    appendEvidenceHelp($('ph-tip'));
 
     // 关键位置
     renderKeyLocations(R);
@@ -1209,7 +1218,6 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       (R.hist ? '历史情景区间：本图内 ' + R.hist.frames.length + ' 个周度截止日的 6–12 月档区间（横线从截止日指向区间；未校准，仅供参考；证据等级 dev_only，只示区间' + (R.hist.last ? '，数据到 ' + E(R.hist.last) : '') + '）；蓝色三角是事后确认的顶（PS 标签，126 日内回撤 ≥15%）。<br>' : '') + '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
 
     renderReplay(R);
-    renderBench(R);
     renderExpert(R);
   }
 
@@ -1233,7 +1241,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       { lead: '底部概率模型三段验证未通过，不显示概率，不预测起涨时间。', rows: [['底部状态', (b.state_p || {}).note || '—'], ['入场规则', (b.entry_rule || {}).note || '—']] },
       { lead: '二波收复比例统计尚未完成，当前无有效预测。', rows: [['二波', ((t.second_wave || {}).evidence || 'none') === 'none' ? '无证据' : '—']] },
     ][planTab];
-    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
+    const benchLink = planTab === 1 ? ` <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>` : '';
+    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)}${benchLink}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
       '</ol><p class="pl-meta"><a href="lab/guide.html">怎么读这些指标 →</a></p>';
   }
 
@@ -1296,13 +1305,6 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const chips = (R.latest ? '' : `<button class="chip" type="button" data-c="${E(R.sym.label)}" data-d="">回到最新</button>`) +
       reps.map((d) => `<button class="chip" type="button" data-c="${E(R.sym.label)}" data-d="${d}">${E(R.sym.label)} ${d}</button>`).join('');
     $('p-replay').innerHTML = `<p class="tp-d">${R.latest ? currentStatus : '回放截止 ' + E(R.asof) + '：只用当时已确认的事件和已公布的 PE。'}后端只开放下列回放日期${reps.length ? '' : '（本标的暂无）'}；逐日动画见 <a href="lab/dashboard.html">研究仪表盘</a>。</p><div>${chips}</div>`;
-  }
-
-  function renderBench(R) {
-    const V = R.J.validation || [];
-    $('p-bench').innerHTML = '<div class="pn"><div class="scroll-x"><table><thead><tr><th>阶段</th><th>事件数</th><th>提前报警比例</th><th>报警后未见顶比例</th><th>ΔBrier</th><th>证据</th><th>说明</th></tr></thead><tbody>' +
-      V.map((v) => `<tr><td>${E(v.split)}</td><td>${E(v.events)}</td><td>${U.pct(v.hit, 0)}</td><td>${U.pct(v.false_alarm, 0)}</td><td>${E(v.brier || '—')}</td><td>${E(EV(v.status).label)}</td><td>${E(v.note || '')}</td></tr>`).join('') +
-      '</tbody></table></div><p class="honest">开发段有信号，校准段与测试段未通过；所以本站只描述，不给概率。</p></div>';
   }
 
   function renderExpert(R) {
@@ -1490,14 +1492,21 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   $('btabs').addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
-    const k = (btabs.findIndex((b) => b.getAttribute('aria-selected') === 'true') + (e.key === 'ArrowRight' ? 1 : 2)) % 3;
+    const current = btabs.findIndex((b) => b.getAttribute('aria-selected') === 'true');
+    const k = (current + (e.key === 'ArrowRight' ? 1 : btabs.length - 1)) % btabs.length;
     selectBottom(k); btabs[k].focus();
   });
-  function syncBenchHash() {
-    if (location.hash === '#p-bench') selectBottom(1);
+  function redirectLegacyBench() {
+    if (location.hash !== '#p-bench') return;
+    const queryCode = new URLSearchParams(location.search).get('code') || '上证指数';
+    const currentCode = cur && cur.sym && cur.sym.code;
+    const symbol = currentCode || ((LPPL.resolve(queryCode) || {}).sym) || 'sh000001';
+    const target = new URL('backtest.html', location.href);
+    target.searchParams.set('sym', symbol);
+    target.hash = 'view=bench';
+    location.replace(target.href);
   }
-  window.addEventListener('hashchange', syncBenchHash);
-  syncBenchHash();
+  window.addEventListener('hashchange', redirectLegacyBench);
   // 回放表格 / 操作记录 → 图上定位
   $('p-replay').addEventListener('click', (e) => { const r = e.target.closest('[data-i]'); if (r) CH.focus(+r.dataset.i); });
   $('p-replay').addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const r = e.target.closest('tr[data-i]'); if (r) { e.preventDefault(); CH.focus(+r.dataset.i); } });
@@ -1506,6 +1515,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   const qs = new URLSearchParams(location.search);
   const c0 = qs.get('code') || '上证指数', d0 = qs.get('asof') || '';
   $('code').value = c0; $('asof').value = d0;
+  if (location.hash === '#p-bench') { redirectLegacyBench(); return; }
   request(c0, d0);
 })();
 </script>

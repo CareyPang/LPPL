@@ -36,6 +36,7 @@
     .evidence-card, .meta-card { padding: 16px; }
     .evidence-card h2, .meta-card h2 { margin: 0 0 12px; font-size: 17px; }
     .evidence-state { margin: 0 0 10px; color: #33425d; font-size: 14px; font-weight: 650; }
+    .evidence-help { display: inline-block; margin: 0 0 10px; color: #315cf5; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
     .interval-list { display: grid; gap: 8px; }
     .interval-row { width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; padding: 8px 10px; border: 1px solid #dce3f0; background: #fff; text-align: left; color: #26334c; cursor: pointer; }
     .interval-row[aria-pressed="true"] { border-color: #315cf5; background: #eff3ff; }
@@ -128,6 +129,7 @@
         <section class="evidence-card" aria-labelledby="evidence-title">
           <h2 id="evidence-title">区间与证据</h2>
           <p id="evidence-state" class="evidence-state">等待数据</p>
+          <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
           <div id="interval-list" class="interval-list"></div>
           <p id="evidence-note" class="evidence-note"></p>
         </section>

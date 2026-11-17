@@ -330,12 +330,25 @@ def test_tablet_sidebar_and_assistant_drawer(page: Page) -> None:
 @pytest.mark.e2e
 def test_backtest_sidebar_links_switch_views(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/backtest.html")
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    bench = page.locator(
+        '.odn-sidebar .odn-side-link[href="backtest.html#view=bench"]'
+    )
     strategy = page.locator(
         '.odn-sidebar .odn-side-link[href="backtest.html#view=strategy"]'
     )
     replay = page.locator(
         '.odn-sidebar .odn-side-link[href="backtest.html#view=scenario"]'
+    )
+    bench.click()
+    expect(page.locator("#bench-view")).to_be_visible()
+    expect(page).to_have_url(re.compile(r"/backtest\.html\?sym=sh000001#view=bench$"))
+    page.wait_for_function(
+        "() => document.querySelectorAll('#bench-panel tbody tr').length > 0"
+    )
+    expect(bench).to_have_attribute("aria-current", "location")
+    expect(page.locator('.bt-views a[data-view="bench"]')).to_have_attribute(
+        "aria-current", "location"
     )
     strategy.click()
     expect(page.locator("#strategy-view")).to_be_visible()
@@ -437,12 +450,45 @@ def test_stock_page_uses_general_asset_copy(page: Page) -> None:
 
 
 @pytest.mark.e2e
-def test_three_segment_validation_link_is_active_on_index(page: Page) -> None:
+def test_legacy_three_segment_hash_redirects_to_bench_view(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/index.html#p-bench")
-    expect(page.locator('.odn-sidebar a[href="index.html#p-bench"]')).to_have_attribute(
+    page.goto(f"{BASE_URL}/index.html?code=sh000001&asof=2007-10-12#p-bench")
+    page.wait_for_url(re.compile(r"/backtest\.html\?sym=sh000001#view=bench$"))
+    expect(page.locator("#bench-view")).to_be_visible()
+    expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
         "aria-current", "location"
     )
+    assert not any(
+        re.search(r"/(?:replay|request)(?:/|$)", urlsplit(url).path, re.I)
+        for _, url, _ in page._e2e_requests
+    )
+
+
+@pytest.mark.e2e
+def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=bench")
+    expect(page.locator("#bench-view")).to_be_visible()
+    page.wait_for_function(
+        "() => document.querySelectorAll('#bench-panel tbody tr').length > 0"
+    )
+    assert any(
+        method == "GET" and "sh000001_latest.json" in url
+        for method, url, _ in page._e2e_requests
+    )
+    assert not any(
+        re.search(r"/(?:replay|request)(?:/|$)", urlsplit(url).path, re.I)
+        for _, url, _ in page._e2e_requests
+    )
+    expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    for width, height in ((1440, 900), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        dimensions = page.evaluate(
+            "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+        )
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
 
 
 @pytest.mark.e2e
