@@ -126,6 +126,18 @@ test('sh601838: published 6-12m scale window is exposed as a band', () => {
   }]);
 });
 
+test('sh601838: published CN calendar covers its 6-12m band', () => {
+  const data = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'stock_601838.json'), 'utf8',
+  ));
+  const market = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'stock_601838_market.json'), 'utf8',
+  ));
+  assert.equal(Chart.needsCalendarCoverage(
+    Chart.bandsFor(data, '6-12m'), market.price.at(-1).date, data.future_calendar,
+  ), false);
+});
+
 test('sh601838: worker market bars preserve the legacy Canvas OHLCV input', () => {
   const market = JSON.parse(fs.readFileSync(
     path.join(__dirname, 'fixtures', 'stock_601838_market.json'), 'utf8',

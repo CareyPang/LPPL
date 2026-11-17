@@ -172,9 +172,20 @@
             ]);
             if (request !== token) return;
             if (!Array.isArray(market?.price)) throw new Error('行情接口未返回 K 线；不以模型价格替代实时行情。');
+            let futureCalendar = latest?.future_calendar || latest?.raw?.future_calendar || null;
+            const lastBarDate = market.price.at(-1)?.date;
+            if (!futureCalendar && scales.some(scale => LPPLChart.needsCalendarCoverage(
+              LPPLChart.bandsFor(latest || {}, scale), lastBarDate, null,
+            ))) {
+              const calendarData = await LPPL.history('sh000001').catch(() => null);
+              if (request !== token) return;
+              futureCalendar = calendarData?.future_calendar || null;
+            }
+            const stockResult = latest && futureCalendar
+              ? { ...latest, future_calendar: futureCalendar } : latest;
             current = { top: latest?.top || {}, bars: market.price, asof: latest?.asof,
-              future_calendar: latest?.raw?.future_calendar };
-            await showLegacyStock(code, latest, market, null);
+              future_calendar: futureCalendar };
+            await showLegacyStock(code, stockResult, market, null);
             sourceLabel.textContent = `行情截至 ${market.asof || '—'} · 未复权 · ${market.source || '日线数据'}；模型截至 ${latest?.asof || '—'}（新图表截止线）。`;
           }
           if (request !== token) return;
