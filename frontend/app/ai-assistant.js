@@ -187,15 +187,45 @@
   btn.type = 'button'; btn.className = 'ai-btn'; btn.textContent = '研究助手';
   btn.setAttribute('aria-expanded', 'false');
   function wide() { return root.matchMedia('(min-width:' + WIDE + 'px)').matches; }
+  function placementVisible(el) {
+    if (!el || !el.isConnected) return false;
+    for (var node = el; node; node = node.parentElement) {
+      if (node.hidden) return false;
+      if (root.getComputedStyle) {
+        var style = root.getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+      }
+    }
+    var rect = el.getBoundingClientRect();
+    return rect.width > 0 || rect.height > 0;
+  }
   function place() {
     if (wide()) {
       panel.classList.add('ai-dock');
       if (panel.parentNode !== document.body) document.body.appendChild(panel);
     } else {
       panel.classList.remove('ai-dock');
-      var anchor = document.querySelector('[data-ai-anchor]') || document.querySelector('main');
-      if (anchor && anchor.tagName === 'MAIN') { if (panel.parentNode !== anchor) anchor.insertBefore(panel, anchor.firstChild); }
-      else if (anchor && panel.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', panel);
+      var anchor = document.querySelector('[data-ai-anchor]');
+      if (placementVisible(anchor)) {
+        if (panel.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', panel);
+        return;
+      }
+      var fallback = document.querySelector('[data-ai-fallback]');
+      if (!placementVisible(fallback)) {
+        var mains = document.querySelectorAll('main');
+        fallback = null;
+        for (var i = 0; i < mains.length; i += 1) {
+          if (placementVisible(mains[i])) { fallback = mains[i]; break; }
+        }
+      }
+      if (!placementVisible(fallback)) fallback = document.querySelector('.bt-views');
+      if (placementVisible(fallback)) {
+        if (fallback.tagName === 'MAIN') {
+          if (panel.parentNode !== fallback || fallback.firstElementChild !== panel) fallback.insertBefore(panel, fallback.firstChild);
+        } else if (panel.previousElementSibling !== fallback) {
+          fallback.insertAdjacentElement('afterend', panel);
+        }
+      }
     }
   }
   function toggle(open) {
@@ -213,6 +243,7 @@
   root.matchMedia('(min-width:' + WIDE + 'px)').addEventListener('change', function () {
     if (!panel.hidden) { place(); document.body.classList.toggle('ai-open', wide()); root.dispatchEvent(new Event('resize')); }
   });
+  root.addEventListener('resize', function () { if (!panel.hidden) place(); });
   function mount() {
     var host = document.querySelector('.odn-r');
     if (host) host.insertBefore(btn, host.firstChild);
