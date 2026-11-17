@@ -1,12 +1,12 @@
 {
-  "asof": "2026-11-16",
+  "asof": "2026-11-17",
   "rule": "以 ak.stock_ebs_lg 的交易日为准，破净股占比按日期去重并向前填充；股债利差和破净股占比分别使用含当日的过去 750 个交易日滚动秩分位（至少 500 日）；两项分位均不低于 90% 时记为信号日，前 20 个交易日无信号才计为独立事件，仅统计 2007-01-01 起的事件；事件后最低取之后 1–250 个交易日沪深300收盘价的最低值，并计算第 120/250 个交易日收益；下跌日基准为沪深300较 20 个交易日前下跌且之后 250 日可用的交易日。",
   "current": {
-    "date": "2026-11-16",
-    "erp": 0.0629,
-    "erp_pct": 0.456,
+    "date": "2026-11-17",
+    "erp": 0.0631,
+    "erp_pct": 0.4693,
     "pbn_ratio": 0.1016,
-    "pbn_pct": 0.844,
+    "pbn_pct": 0.8433,
     "signal": false,
     "last_event_date": "2024-08-05"
   },
@@ -141,8 +141,8 @@
     "median_post_min": -0.0639
   },
   "baseline": {
-    "n_days": 2175,
-    "share_up_250": 0.5159,
+    "n_days": 2176,
+    "share_up_250": 0.5156,
     "median_ret_250": 0.0131,
     "median_post_min": -0.1371
   },
@@ -158,8 +158,8 @@
   },
   "version": {
     "kind": "bottom_signal",
-    "asof": "2026-11-16",
-    "file": "versions/bottom_signal/2026-11-16/20261116T223750Z_8bccce6d.json.gz",
-    "sha256": "8bccce6dc874072c6bc801bb85ebb192dcfc021540c64f4983e93c54290f7e04"
+    "asof": "2026-11-17",
+    "file": "versions/bottom_signal/2026-11-17/20261117T103359Z_0ec66e56.json.gz",
+    "sha256": "0ec66e5646d9ef11008523ebcc6b8dc78a001dd4d7b2e9b82bbf3888efdc03c8"
   }
 }
