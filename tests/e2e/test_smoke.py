@@ -290,6 +290,55 @@ def test_home_sparklines_share_domain_and_persist_selected_period(page: Page) ->
 
 
 @pytest.mark.e2e
+def test_home_spark_range_change_preserves_live_quote(page: Page) -> None:
+    page.add_init_script(
+        """(() => {
+          const originalFetch = window.fetch.bind(window);
+          window.fetch = (input, init) => {
+            const url = typeof input === "string" ? input : input.url;
+            if (url.includes("/quote?codes=")) {
+              return Promise.resolve(new Response(JSON.stringify({
+                source: "e2e",
+                quotes: {
+                  sh000001: {
+                    price: 4321.23,
+                    pct: 1.25,
+                    time: "20261113103000",
+                    tz: "Asia/Shanghai"
+                  }
+                },
+                missing: []
+              }), {
+                status: 200,
+                headers: { "Content-Type": "application/json" }
+              }));
+            }
+            return originalFetch(input, init);
+          };
+        })();"""
+    )
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/home.html")
+    page.wait_for_function(
+        "() => document.querySelector('#rows a.row[data-sym=\"sh000001\"] .p')"
+        "?.textContent.includes('4321.23')"
+    )
+
+    row = page.locator('#rows a.row[data-sym="sh000001"]')
+    expect(page.locator('#spark-range button[data-spark-range="60"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    expect(row.locator(".p")).to_contain_text("4321.23")
+    expect(row.locator(".quote-time")).to_have_text("报价 11-13 10:30")
+
+    page.locator('#spark-range button[data-spark-range="250"]').click()
+
+    expect(row.locator(".p")).to_contain_text("4321.23")
+    expect(row.locator(".quote-time")).to_have_text("报价 11-13 10:30")
+    assert "报价 11-13 10:30" in (row.get_attribute("aria-label") or "")
+
+
+@pytest.mark.e2e
 def test_overflow_2_stock_catalog(page: Page) -> None:
     assert_page_has_no_overflow(page, "stock.html")
 

@@ -325,7 +325,7 @@ document.querySelectorAll('.pseg button').forEach(b=>b.onclick=()=>{
 document.querySelectorAll('#spark-range button').forEach(b=>b.onclick=()=>{
  sparkRange=Number(b.dataset.sparkRange);
  try{localStorage.setItem('lppl.home.sparkRange',String(sparkRange))}catch(e){}
- updateSparkRangeUI();renderIdxRows();
+ updateSparkRangeUI();renderIdxRows();if(qTimer)paintQuotes();
 });
 updateSparkRangeUI();
 /* ---------- 最近更新提示条：数据新鲜度 + 更新日志最新一条 ---------- */
