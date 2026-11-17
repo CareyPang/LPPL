@@ -3,7 +3,7 @@
  "name": "应用材料",
  "asof": "2026-11-16",
  "data_version": "us_AMAT_20261116_1f5bbe457632d3eb",
- "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
   "holidays_through": null,
@@ -55,7 +55,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.5,
+     "early": 0.167,
      "end": 0.0,
      "pure": 0.0
     },
@@ -68,8 +68,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.0,
-     "any": 0.0,
+     "tc_hi": 0.333,
+     "any": 0.333,
      "tol": 0.01
     },
     "null_fpr": {
@@ -98,22 +98,22 @@
     "n_windows": 10,
     "confidence": {
      "box": 0.0,
-     "standard": 0.3,
+     "standard": 0.2,
      "early": 0.3,
      "end": 0.2,
      "pure": 0.1
     },
-    "n_qualified_standard": 3,
+    "n_qualified_standard": 2,
     "best_t1": "2025-04-11",
     "t1_qualified": true,
     "boundary_share": {
      "m_lo": 0.2,
      "m_hi": 0.0,
-     "w_lo": 0.4,
+     "w_lo": 0.3,
      "w_hi": 0.0,
-     "tc_lo": 0.2,
-     "tc_hi": 0.1,
-     "any": 0.8,
+     "tc_lo": 0.1,
+     "tc_hi": 0.2,
+     "any": 0.7,
      "tol": 0.01
     },
     "null_fpr": {
@@ -146,8 +146,8 @@
   },
   "combo": {
    "p0.1": 0.001,
-   "p1": 0.15,
-   "p10": 0.28,
+   "p1": 0.1,
+   "p10": 0.187,
    "set": "standard",
    "scales": [
     "6-12m",
@@ -174,18 +174,13 @@
     "bins": []
    },
    "12-24m": {
-    "n": 3,
+    "n": 2,
     "bin_days": 5,
     "bins": [
      [
       "2026-07-17",
       "2026-07-24",
       2
-     ],
-     [
-      "2026-07-24",
-      "2026-07-31",
-      1
      ]
     ]
    },
@@ -5361,6 +5356,9 @@
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
+ "params": {
+  "optimizer": "de_lbfgsb"
+ },
  "stock_meta": {
   "variant": "stk_lite",
   "status": "eligible",
@@ -5397,7 +5395,7 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
+ "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
  "fit_input_hash": "77b2741ea6fc00d031d8ef920416ba513ebe71efe2a2fbe95da53d68afee539d",
  "history_input_hashes": {
   "2023-11-13": "a07c3c6e986b30ffdf4779fa1d99347e67805c33f22123269a1727987970a36f",
@@ -6159,5 +6157,5 @@
  "code": "US_AMAT",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T05:20:47.653387+00:00"
+ "generated_at": "2026-11-17T22:45:24.993023+00:00"
 }
