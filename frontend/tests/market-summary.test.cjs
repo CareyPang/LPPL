@@ -13,7 +13,7 @@ test('builds four linked summary rows from available market data', () => {
     models: [{ symbol: 'sh000300', change: '新出现' }, { symbol: 'sh000001', change: '不变' }],
   });
   assert.equal(result.lines.length, 4);
-  assert.deepEqual(result.lines.map(row => row.href), ['#s-sentiment', '#s-events', '#s-news', '#s-model-ranges']);
+  assert.deepEqual(result.lines.map(row => row.href), ['#s-sentiment', '#s-events', '#s-news', '#model-range-details']);
   assert.equal(result.lines[0].text, '上证指数 +1.20%');
   assert.equal(result.lines[1].text, '今日 3 项：金风科技解禁；浦发银行除息');
   assert.equal(result.lines[2].text, '今日 2 条自选相关快讯');

@@ -54,7 +54,7 @@
         { key: 'indices', label: '指数表现', text: indexText, href: '#s-sentiment', reason: indices.length ? null : input.indicesReason },
         { key: 'events', label: '今日事件', text: eventText, href: '#s-events', reason: input.eventsReason || (!events.length ? 'empty' : null) },
         { key: 'watchlist', label: '自选相关', text: watchText, href: '#s-news', action: 'watch', reason: watchlist.length ? null : 'not_applicable' },
-        { key: 'models', label: '模型区间', text: modelText, href: '#s-model-ranges', reason: comparable.length ? null : input.modelsReason },
+        { key: 'models', label: '模型区间', text: modelText, href: '#model-range-details', reason: comparable.length ? null : input.modelsReason },
       ],
       modelDetails: models,
     };

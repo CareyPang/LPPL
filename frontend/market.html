@@ -199,6 +199,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 .summary-row a { color: var(--real); text-decoration: none; }
 .summary-row a:hover { text-decoration: underline; }
 .summary-detail { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.summary-model-details { margin-top: 10px; border: 1px solid var(--line); background: var(--surface); padding: 10px 12px; }
+.summary-model-details > summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 600px) { .summary-row { grid-template-columns: 1fr; gap: 4px; } }
 </style>
 </head>
@@ -211,6 +213,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <section class="sec wide" id="s-summary" aria-labelledby="h-summary">
     <div class="sec-h"><h2 id="h-summary">今日摘要</h2><span class="ev">descriptive</span></div>
     <div id="today-summary"><p class="note">摘要数据加载中…</p></div>
+    <details class="summary-model-details" id="model-range-details">
+      <summary>逐个指数看变化</summary>
+      <div id="model-ranges-body"><p class="note">模型区间加载中…</p></div>
+    </details>
   </section>
   <section class="sec wide" id="s-news" aria-labelledby="h-news">
     <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
@@ -221,11 +227,6 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     <div class="sec-h"><h2 id="h-events">事件日历</h2><span class="ev">descriptive</span><span class="src" id="src-events"></span></div>
     <div id="events-body"><p class="note">事件数据加载中…</p></div>
   </section>
-  <section class="sec wide" id="s-model-ranges" aria-labelledby="h-model-ranges">
-    <div class="sec-h"><h2 id="h-model-ranges">指数模型区间变化</h2><span class="ev">published descriptive</span></div>
-    <div id="model-ranges-body"><p class="note">模型区间加载中…</p></div>
-  </section>
-
   <section class="sec wide" id="s-board" aria-labelledby="h-board">
     <div class="sec-h">
       <h2 id="h-board">板块资金流热力图</h2><span class="ev">descriptive</span>
@@ -1298,6 +1299,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const retrySummary = e.target.closest('[data-retry-summary]');
     const summaryWatch = e.target.closest('[data-summary-watch]');
     if (retrySummary) { loadSummaryData(); return; }
+    if (e.target.closest('a[href="#model-range-details"]')) $('model-range-details').open = true;
     if (summaryWatch && newsRefreshState?.watchlist.length) {
       newsRefreshState.watchOnly = true;
       newsRefreshState.render();
