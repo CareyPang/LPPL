@@ -7,6 +7,7 @@ SITE="$ROOT/_site"
 rm -rf "$SITE"
 mkdir -p "$SITE/lab"
 cp -a "$ROOT/frontend/." "$SITE/"
+rm -rf "$SITE/vendor-src/lwc/node_modules"
 cp -a "$ROOT/web/." "$SITE/lab/"
 rm -rf "$SITE/assets/visual-suite/masters" "$SITE/docs/visual-evidence"
 if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lightweight Charts 对照页</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#202938;font:14px/1.5 system-ui,sans-serif}
+    header{padding:16px 22px;background:#fff;border-bottom:1px solid #dfe4ec}h1{margin:0;font-size:20px}
+    main{max-width:1500px;margin:0 auto;padding:16px}.controls,.charts{display:flex;gap:12px;align-items:center}
+    .controls{flex-wrap:wrap;margin-bottom:12px}.controls button{padding:7px 12px;border:1px solid #c9d1df;border-radius:6px;background:#fff;color:#273246}
+    .controls button[aria-pressed=true]{border-color:#315cf5;background:#315cf5;color:white}
+    .notice{margin:8px 0;padding:8px 11px;background:#fff8e6;color:#73530b;border:1px solid #f1d891;border-radius:6px}
+    .charts{align-items:stretch}.panel{min-width:0;flex:1;background:#fff;border:1px solid #dfe4ec;border-radius:8px;overflow:hidden}
+    .panel h2{font-size:15px;margin:0;padding:10px 12px;border-bottom:1px solid #e6eaf0}
+    .chart{height:520px;width:100%}iframe{display:block;width:100%;height:520px;border:0}
+    #readout{min-height:27px;padding:5px 12px;color:#586579;font-variant-numeric:tabular-nums}
+    #cluster-note{padding:0 12px 10px;color:#586579}.small{font-size:12px}
+    @media(max-width:700px){main{padding:10px}.charts{display:block}.panel{margin-bottom:12px}.chart,iframe{height:420px}header{padding:12px}}
+  </style>
+</head>
+<body>
+  <header><h1>旧 Canvas / Lightweight Charts 5.2.1 对照</h1></header>
+  <main>
+    <div class="controls" aria-label="图表设置">
+      <button type="button" data-symbol="sh000001" aria-pressed="true">上证指数 sh000001</button>
+      <button type="button" data-symbol="sh600519" aria-pressed="false">贵州茅台 sh600519</button>
+      <span class="small">成交量保留供应商原始单位；簇内占比不是概率。</span>
+    </div>
+    <div class="controls" id="scales"></div>
+    <p class="notice" id="calendar-notice" role="status"></p>
+    <div class="charts">
+      <section class="panel"><h2>旧版 Canvas</h2><iframe id="old-chart" title="旧版图表"></iframe></section>
+      <section class="panel"><h2 id="new-title">新图表</h2><div id="chart" class="chart"></div><div id="readout" aria-live="polite"></div><div id="cluster-note"></div></section>
+    </div>
+  </main>
+  <script src="app/trading-days.js"></script>
+  <script src="app/top-clusters.js"></script>
+  <script src="app/lppl-data.js"></script>
+  <script src="vendor/lppl-lwc/1/lppl-lwc.js"></script>
+  <script src="app/lppl-chart.js"></script>
+  <script>
+    (async function () {
+      const scales = ['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'];
+      const scaleNames = ['2–4 周','1–3 月','3–6 月','6–12 月','12–24 月','2–6 年'];
+      let selectedScale = '6-12m', chartApi, token = 0;
+      const host = document.getElementById('chart');
+      const notice = document.getElementById('calendar-notice');
+      chartApi = LPPLChart.mount(host, { readout: document.getElementById('readout') });
+      const scaleRoot = document.getElementById('scales');
+      scales.forEach((scale, index) => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.dataset.scale = scale;
+        button.textContent = scaleNames[index]; button.setAttribute('aria-pressed', String(scale === selectedScale));
+        button.addEventListener('click', () => {
+          selectedScale = scale;
+          scaleRoot.querySelectorAll('[data-scale]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+          chartApi.setScale(scale); renderNote();
+        });
+        scaleRoot.append(button);
+      });
+      function renderNote(current) {
+        const rows = current ? LPPLChart.bandsFor(current, selectedScale) : [];
+        document.getElementById('cluster-note').textContent = rows.length
+          ? rows.map(row => `${CPTopClusters.label(row)} ${row.q20_date}–${row.q80_date}（${CPTopClusters.shareText(row)}；不是概率）`).join(' · ')
+          : '当前已发布数据没有该尺度的合格区间；不补造区间。';
+      }
+      async function load(symbol) {
+        const request = ++token;
+        notice.textContent = '';
+        document.getElementById('new-title').textContent = symbol;
+        const oldFrame = document.getElementById('old-chart');
+        oldFrame.onload = () => setTimeout(() => {
+          try {
+            const target = oldFrame.contentDocument.getElementById(
+              symbol === 'sh000001' ? 'chartwrap' : 'market-plot',
+            );
+            target?.scrollIntoView();
+          } catch { /* Same-origin preview only. */ }
+        }, 800);
+        oldFrame.src = symbol === 'sh000001' ? 'index.html' : 'stock.html?code=600519';
+        try {
+          let result, bars, asof;
+          if (symbol === 'sh000001') {
+            result = await LPPL.load(symbol);
+            bars = result.bars; asof = result.asof;
+          } else {
+            const [latest, market] = await Promise.all([
+              LPPL.stock.latest('600519'), LPPL.stock.market('600519'),
+            ]);
+            result = latest || {};
+            bars = market && market.price;
+            asof = market && market.asof;
+            if (!Array.isArray(bars)) throw new Error('行情接口未返回 K 线；不以模型价格替代实时行情。');
+          }
+          if (request !== token) return;
+          const calendar = result.raw && result.raw.future_calendar;
+          const current = { top: result.top || {}, bars, asof, future_calendar: calendar };
+          if (symbol === 'sh600519') {
+            const events = await LPPL.fetchResult('events/events_latest.json');
+            if (events.data) {
+              const code = '600519';
+              current.events = ['lift','dividend','forecast'].flatMap(type =>
+                (events.data[type] || []).filter(row => row.code === code).map(row => ({
+                  date: row.free_date || row.ex_dividend_date || row.notice_date,
+                  label: type === 'lift' ? '解禁' : type === 'dividend' ? '除权' : '预告',
+                })));
+            }
+          }
+          if (request !== token) return;
+          chartApi.setScale(selectedScale);
+          chartApi.setData(current);
+          renderNote(current);
+          const last = bars[bars.length - 1]?.date;
+          const covered = calendar && (calendar.coverage_end || calendar.through);
+          if (!covered || (bars.length && covered < (current.top.scale_windows || []).reduce((max, row) =>
+            row.q80_date > max ? row.q80_date : max, last))) {
+            notice.textContent = '已发布交易日历未覆盖未来区间；未来图表位置按 CPTradingDays 的工作日序列映射，仅绘制空白槽位，不延伸 OHLC。';
+          }
+        } catch (error) {
+          if (request === token) notice.textContent = '数据读取失败：' + error.message;
+        }
+      }
+      document.querySelectorAll('[data-symbol]').forEach(button => button.addEventListener('click', () => {
+        document.querySelectorAll('[data-symbol]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        load(button.dataset.symbol);
+      }));
+      load(new URLSearchParams(location.search).get('symbol') || 'sh000001');
+    })();
+  </script>
+</body>
+</html>
