@@ -457,6 +457,15 @@
         '"': '&quot;',
         "'": '&#39;',
       })[char]);
+    const dataReasonText = {
+      unpublished: '尚未发布',
+      unavailable: '暂时无法读取',
+      empty: '数据源返回空结果',
+      not_applicable: '不适用',
+    };
+    const dataStatusMarkup = (reason, subject, retryAttr) =>
+      `<p class="${reason === 'unavailable' ? 'fail' : 'muted'}" data-reason="${esc(reason)}">${esc(subject)}：${esc(dataReasonText[reason] || '状态未知')}</p>` +
+      (reason === 'unavailable' && retryAttr ? `<button type="button" class="chip" ${retryAttr}>重试</button>` : '');
 
     const hiddenEv = (evidence) =>
       !evidence
@@ -1253,10 +1262,15 @@
       $('stock-events-body').innerHTML = '';
       stockView?.setEvents([]);
       try {
-        const data = await LPPL.events();
+        const result = await LPPL.fetchResult('events/events_latest.json', {
+          empty: (value) => !value || ['lift', 'dividend', 'forecast']
+            .every((key) => !Array.isArray(value[key]) || value[key].length === 0),
+        });
         if (request !== eventsSerial) return;
+        const data = result.data;
         if (!data) {
-          eventsCode = null;
+          $('stock-events-body').innerHTML = dataStatusMarkup(result.reason, '公告事件', 'data-retry-stock-events');
+          panel.hidden = false;
           return;
         }
         const shareCount = (v) => Number.isFinite(v) ? `${Number(v.toFixed(2))} 万股` : '— 万股';
@@ -1277,6 +1291,9 @@
         ];
         if (!rows.length) {
           stockView?.setEvents([]);
+          const empty = await LPPL.resultOf(Promise.resolve(rows), { empty: value => value.length === 0 });
+          $('stock-events-body').innerHTML = dataStatusMarkup(empty.reason, '该股公告事件');
+          panel.hidden = false;
           return;
         }
         const body = $('stock-events-body');
@@ -1309,11 +1326,19 @@
         });
         panel.hidden = false;
       } catch (_) {
+        if (request !== eventsSerial) return;
         if (request === eventsSerial) eventsCode = null;
         stockView?.setEvents([]);
-        panel.hidden = true;
+        $('stock-events-body').innerHTML = dataStatusMarkup('unavailable', '公告事件', 'data-retry-stock-events');
+        panel.hidden = false;
       }
     }
+
+    $('stock-events-body').addEventListener('click', (event) => {
+      if (!event.target.closest('[data-retry-stock-events]')) return;
+      const code = code6($('code').value.trim());
+      if (/^\d{6}$/.test(code || '')) renderRecentEvents(code);
+    });
 
     function refreshEventAvailability() {
       document.querySelectorAll('#stock-events-list button[data-action="replay"]').forEach(button => {
@@ -1328,6 +1353,16 @@
       const c = code6(code);
       if (/^\d{6}$/.test(c || '')) {
         if (eventsCode !== c) renderRecentEvents(c);
+      } else if (String(code || '').startsWith('US_')) {
+        const request = ++eventsSerial;
+        eventsCode = null;
+        stockView?.setEvents([]);
+        $('recent-events').hidden = true;
+        LPPL.resultOf(null, { applicable: false }).then(({ reason }) => {
+          if (request !== eventsSerial) return;
+          $('stock-events-body').innerHTML = dataStatusMarkup(reason, '该标的公告事件');
+          $('stock-events').hidden = false;
+        });
       } else {
         eventsSerial += 1;
         eventsCode = null;

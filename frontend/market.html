@@ -322,6 +322,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const $ = (id) => document.getElementById(id);
   const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
+  const REASON_TEXT = {
+    unpublished: '尚未发布',
+    unavailable: '暂时无法读取',
+    empty: '数据源返回空结果',
+    not_applicable: '不适用',
+  };
+  const statusMarkup = (reason, subject, retryAttr) =>
+    `<p class="${reason === 'unavailable' ? 'fail' : 'note'}" data-reason="${E(reason)}">${E(subject)}：${E(REASON_TEXT[reason] || '状态未知')}</p>` +
+    (reason === 'unavailable' && retryAttr ? `<button type="button" class="chip" ${retryAttr}>重试</button>` : '');
   const yi = (v, d = 1) => num(v) ? (v / 1e8).toFixed(d) : '—';
   const money = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
   const pct = (v, d = 2) => num(v) ? (v > 0 ? '+' : '') + v.toFixed(d) + '%' : '—';
@@ -334,6 +343,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     '10d': { label: '10日', net: 'main_net_10d', pct: 'pct_10d', share: 'main_pct_10d' },
   };
   let M = null, Macro = null, Growth = null, kind = 'industry', period = 'today', newsRefreshState = null;
+  let marketResult = null, eventResult = null;
   let limitTab = '1', limitSort = 'first_seal', limitSortDir = 1;
   let boardBox = null, pinnedTile = null;
   const tip = $('tip');
@@ -775,6 +785,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       sourceErrors: [],
       status: '',
       statusClass: 'note',
+      statusReason: null,
       note: N.note || '',
       initialErrors: failMsg(['news_cls', 'news_eastmoney']),
       isLive: false,
@@ -809,12 +820,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         : '';
       const initialErrors = !state.isLive && state.initialErrors
         ? `<p class="fail">${state.initialErrors}</p>` : '';
-      $('news-body').innerHTML = (state.status ? `<p class="${state.statusClass} news-status">${E(state.status)}</p>` : '') +
+      const reasonAttr = state.statusReason ? ` data-reason="${E(state.statusReason)}"` : '';
+      $('news-body').innerHTML = (state.status ? `<p class="${state.statusClass} news-status"${reasonAttr}>${E(state.status)}</p>` : '') +
+        (state.statusReason === 'unavailable' ? '<button type="button" class="chip news-retry" data-retry-news>重试实时快讯</button>' : '') +
         initialErrors + sourceErrors +
         feed(state.rows, state.filter) +
         (!state.isLive && state.note ? `<p class="note">${E(state.note)}</p>` : '');
     };
     $('news-body').addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-retry-news]')) { refresh(true); return; }
       if (ev.target.closest('[data-load-news]')) {
         const cards = Array.from($('news-body').querySelectorAll('.news-card[data-news-key]'));
         const anchor = cards.map((card) => ({ card, top: card.getBoundingClientRect().top }))
@@ -843,8 +857,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       }
       state.inFlight = true;
       try {
-        const data = await LPPL.liveNews();
-        if (!data || data.ok !== true) throw new Error('live_news_unavailable');
+        const result = await LPPL.resultOf(LPPL.liveNews(), { empty: (value) => value == null });
+        if (result.reason) {
+          const error = new Error('live_news_' + result.reason);
+          error.reason = result.reason;
+          throw error;
+        }
+        const data = result.data;
+        if (!data || data.ok !== true) {
+          const error = new Error('live_news_unavailable');
+          error.reason = 'unavailable';
+          throw error;
+        }
         const incoming = {
           cls: Array.isArray(data.cls) ? data.cls : [],
           eastmoney: Array.isArray(data.eastmoney) ? data.eastmoney : [],
@@ -859,16 +883,19 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         }
         state.lastLiveAt = data.fetched_at || new Date().toISOString();
         state.isLive = true;
+        state.statusReason = null;
         state.statusClass = 'note';
         state.status = `实时 · 更新于 ${beijingTime(state.lastLiveAt, true, false)}`;
         state.sourceErrors = Object.entries(data.sources || {}).filter(([_source, source]) => source?.ok === false)
           .map(([source, details]) => `${source === 'cls' ? '财联社' : '东方财富'} 实时不可用：${details.error || '来源暂不可用'}`);
-      } catch {
+      } catch (error) {
         state.statusClass = 'fail';
+        state.statusReason = error?.reason || 'unavailable';
         const snapshotAt = beijingTime(M.generated_at, false);
+        const reasonLabel = REASON_TEXT[state.statusReason] || '暂时无法读取';
         state.status = state.isLive
-          ? `实时快讯暂不可用，保留最近一次实时更新 ${beijingTime(state.lastLiveAt, true, false)}；日更快照 ${snapshotAt}`
-          : `实时快讯暂不可用，显示 ${snapshotAt} 的日更快照`;
+          ? `实时快讯${reasonLabel}，保留最近一次实时更新 ${beijingTime(state.lastLiveAt, true, false)}；日更快照 ${snapshotAt}`
+          : `实时快讯${reasonLabel}，显示 ${snapshotAt} 的日更快照`;
       } finally {
         state.inFlight = false;
         render();
@@ -956,7 +983,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
   let Events = null, eventFilter = '全部';
   function renderEvents() {
-    if (!Events) return;
+    if (!Events) {
+      $('events-body').innerHTML = statusMarkup(eventResult?.reason || 'unpublished', '事件日历', 'data-retry-events');
+      return;
+    }
     const src = Events.sources || {}, lift = Events.lift || [], dividend = Events.dividend || [], forecast = Events.forecast || [];
     $('src-events').textContent = ['lift', 'dividend', 'forecast'].map((k) => `${k} n=${src[k]?.n ?? 0}${src[k]?.stale ? ' stale' : ''}`).join(' · ');
     const warnings = ['lift', 'dividend', 'forecast'].filter((k) => src[k]?.ok === false)
@@ -981,7 +1011,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       const other = (r.other_indicators || []).map((i) => `<p>${E(i.indicator || '指标')} ${amount(i.amount_lower)}～${amount(i.amount_upper)}</p>`).join('');
       return `<tr><td>${E(r.notice_date)}<br>${E(r.report_date || '—')}</td><td>${E(r.code)} ${E(r.name)}</td><td>${E(r.predict_type || '—')}</td><td>${amount(h.amount_lower)}～${amount(h.amount_upper)}</td><td>${h.change_pct_lower ?? '—'}～${h.change_pct_upper ?? '—'}%</td><td class="events-reason">${other}${E(h.reason || h.content || '')}</td></tr>`;
     }).join('');
-    $('events-body').innerHTML = `${warnings}<p class="note">公告事件，来源东财数据中心，截至 ${E(Events.asof)}。未来窗口 ${E(range[0] || '—')} 至 ${E(range[1] || '—')} · 解禁市值单位亿元；派息元/10股。</p><h3>未来 30 日解禁时间轴</h3>${timeline}
+    const emptyNote = eventResult?.reason === 'empty'
+      ? '<p class="note" data-reason="empty">事件数据源已成功响应，但当前事件列表为空。</p>' : '';
+    $('events-body').innerHTML = `${emptyNote}${warnings}<p class="note">公告事件，来源东财数据中心，截至 ${E(Events.asof)}。未来窗口 ${E(range[0] || '—')} 至 ${E(range[1] || '—')} · 解禁市值单位亿元；派息元/10股。</p><h3>未来 30 日解禁时间轴</h3>${timeline}
       <div class="events-columns"><section><h3>解禁市值前 20</h3><div class="events-table"><table><thead><tr><th>日期</th><th>代码 / 名称</th><th>类型</th><th>解禁股数（万股）</th><th>FREE_RATIO</th><th>市值（亿元）</th></tr></thead><tbody>${liftRows}</tbody></table></div></section>
       <section><h3>除权除息</h3><div class="events-table"><table><thead><tr><th>除权日</th><th>代码 / 名称</th><th>登记日</th><th>派息（元/10股）</th><th>进度</th><th>方案</th></tr></thead><tbody>${divRows}</tbody></table></div></section></div>
       <section><h3>近 30 日业绩预告</h3><div class="chips events-filters">${types.map((t) => `<button class="chip" data-event-filter="${E(t)}" aria-pressed="${t === eventFilter}">${E(t)}</button>`).join('')}</div><div class="events-table"><table><thead><tr><th>公告日 / 报告期</th><th>代码 / 名称</th><th>类型</th><th>归母净利润</th><th>同比</th><th>其他指标 / 说明</th></tr></thead><tbody>${rows}</tbody></table></div></section><p class="note">${E(Events.note || '')}</p>`;
@@ -1229,14 +1261,42 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
-  LPPL.market().then((d) => {
-    if (!d) { $('asof').textContent = '市场数据未加载'; M = {}; renderAll(); return; }
-    M = d; renderAll();
-  }).catch((e) => { $('asof').textContent = '市场数据加载失败'; console.error(e); });
-  LPPL.events().then((d) => {
-    if (!d) { $('events-body').innerHTML = '<p class="fail">事件数据文件未加载。</p>'; return; }
-    Events = d; renderEvents();
-  }).catch((e) => { $('events-body').innerHTML = `<p class="fail">${E(e.message || '事件数据加载失败')}</p>`; });
+  async function loadMarket() {
+    marketResult = await LPPL.fetchResult('market/market_latest.json', {
+      empty: (data) => !data || Object.keys(data).length === 0,
+    });
+    M = marketResult.data || {};
+    renderAll();
+    const banner = $('stale-banner');
+    if (marketResult.reason) {
+      $('asof').textContent = `市场数据${REASON_TEXT[marketResult.reason] || '状态未知'}`;
+      banner.dataset.reason = marketResult.reason;
+      banner.innerHTML = statusMarkup(marketResult.reason, '市场数据', 'data-retry-market');
+      banner.hidden = false;
+    } else if (banner.dataset.reason) {
+      delete banner.dataset.reason;
+      banner.hidden = true;
+      banner.innerHTML = '';
+    }
+    if (typeof renderSummary === 'function') renderSummary();
+  }
+  async function loadEvents() {
+    eventResult = await LPPL.fetchResult('events/events_latest.json', {
+      empty: (data) => !data || ['lift', 'dividend', 'forecast']
+        .every((key) => !Array.isArray(data[key]) || data[key].length === 0),
+    });
+    Events = eventResult.data;
+    renderEvents();
+    if (typeof renderSummary === 'function') renderSummary();
+  }
+  $('stale-banner').addEventListener('click', (event) => {
+    if (event.target.closest('[data-retry-market]')) loadMarket();
+  });
+  $('events-body').addEventListener('click', (event) => {
+    if (event.target.closest('[data-retry-events]')) loadEvents();
+  });
+  loadMarket();
+  loadEvents();
   LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
     .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });
   LPPL.growthMonitor().then((d) => { Growth = d; renderGrowth(Growth); })
