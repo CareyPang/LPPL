@@ -11,6 +11,7 @@ on:
       - index_daily
       - stock_nightly
       - us_nightly
+      - forward_log_seal
     types:
       - completed
   schedule:
@@ -85,7 +86,8 @@ jobs:
           python -m research.data.freshness \
             --root published \
             --json out/freshness.json \
-            --markdown out/freshness.md
+            --markdown out/freshness.md \
+            --forward-log forward_log/ledger.jsonl
       - name: Update stale data issue
         env:
           GH_TOKEN: ${{ github.token }}

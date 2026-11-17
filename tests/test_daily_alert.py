@@ -1,9 +1,22 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from research.data import daily_alert
+
+
+def test_daily_alert_watches_forward_log_seal_and_checks_ledger():
+    workflow = Path(__file__).resolve().parents[1] / ".github/workflows/daily_alert.yml"
+    text = workflow.read_text(encoding="utf-8")
+    triggers = text.split("    types:", maxsplit=1)[0]
+    freshness_step = text.split(
+        "- name: Check published data freshness", maxsplit=1
+    )[1].split("- name: Update stale data issue", maxsplit=1)[0]
+
+    assert "- forward_log_seal" in triggers
+    assert "--forward-log forward_log/ledger.jsonl" in freshness_step
 
 
 @pytest.mark.parametrize(
