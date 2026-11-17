@@ -31,10 +31,11 @@ h1{margin:0;font:700 clamp(40px,5.2vw,64px)/1.18 var(--sans);letter-spacing:.02e
 .hsrch{margin-top:22px;display:flex;align-items:center;gap:8px;border:1.5px solid var(--line2);border-radius:12px;background:#fff;padding:10px 14px;max-width:520px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .hsrch:focus-within{border-color:var(--pri)}.hsrch svg{flex:none;color:var(--muted)}.hsrch input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:15px;background:transparent}.hsrch kbd{font:11px/1 ui-monospace,monospace;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:3px 5px}
 .pseg{display:flex;gap:2px;background:var(--bg2,#eef2f7);border-radius:8px;padding:2px;margin-left:auto}.pseg button{border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer}.pseg button[aria-pressed=true]{background:#fff;color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.spark-range{display:flex;gap:2px;background:var(--bg2,#eef2f7);border-radius:8px;padding:2px}.spark-range button{border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:var(--muted);padding:4px 8px;border-radius:6px;cursor:pointer}.spark-range button[aria-pressed=true]{background:#fff;color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .panel .pwl{padding:6px 12px}.panel .pwl .wl{display:block}.panel .pwl .wi{padding:8px 6px}
 .recent{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 0;padding:9px 14px;border:1px solid var(--line2);border-radius:10px;background:#fff;font-size:13px;color:var(--muted)}.recent b{color:var(--ink,#111);font-weight:600}.recent .tg{font-size:11px;font-weight:700;color:var(--pri);border:1px solid currentColor;border-radius:4px;padding:1px 6px}.recent a{margin-left:auto;color:var(--pri);font-weight:600}
 .ph .d{margin-left:0}.ph{flex-wrap:wrap}#ph-t,.pseg button{white-space:nowrap}
-@media(max-width:520px){.pseg{flex-basis:100%;margin-left:0}.pseg button{flex:1}}
+@media(max-width:520px){.spark-range{order:3;margin-left:auto}.pseg{order:4;flex-basis:100%;margin-left:0}.pseg button{flex:1}}
 .btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:999px;font-weight:600;font-size:15px;transition:background .15s,border-color .15s,transform .15s ease-out}
 .btn.pri{background:var(--pri);color:#fff}.btn.pri:hover{background:#174bb0;transform:translateY(-1px)}
 .btn.sec{border:1px solid #cfd6e2;background:#fff}.btn.sec:hover{border-color:var(--pri);color:var(--pri)}
@@ -50,8 +51,11 @@ h1{margin:0;font:700 clamp(40px,5.2vw,64px)/1.18 var(--sans);letter-spacing:.02e
 .row:first-child{border-top:0}
 a.row:hover{background:#f7f9fd}
 .row .n{font-weight:600;font-size:15px}.row .c{font:12px var(--mono);color:var(--mute)}
-.row svg{grid-row:1/3;grid-column:2;width:80px;height:30px}
+.row svg{grid-row:1;grid-column:2;width:80px;height:30px}
 .row svg path{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.row svg .spark-zero{stroke:var(--line);stroke-width:1;stroke-dasharray:2 2}
+.row .spark-meta{grid-column:2;grid-row:2;text-align:center;font-size:10px;line-height:1.2;white-space:nowrap}
+.row .spark-meta small{display:block;color:var(--warn);font-size:9px;line-height:1.1;white-space:normal}
 .row .p{grid-column:3;grid-row:1;text-align:right;font:600 15px var(--mono)}
 .row .times{grid-column:3;grid-row:2;display:grid;gap:2px;text-align:right;font-size:11px;line-height:1.4;color:var(--mute);white-space:nowrap}
 .row .lag{margin-left:4px;font-size:10px;color:var(--warn)}
@@ -127,11 +131,12 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 .fmeta{margin-top:40px;padding-top:20px;border-top:1px solid #243150;display:flex;flex-wrap:wrap;gap:8px 24px;color:#98a2b5;font-size:12px}
 .fmeta .risk{flex-basis:100%;color:#c3cad8}
 @media(max-width:1080px){.hero{grid-template-columns:1fr;gap:40px;padding:48px 0 56px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.ent{grid-template-columns:1fr 1fr}.fg{grid-template-columns:1fr 1fr}}
-@media(max-width:720px){.wrap{padding:0 16px}.kpis{grid-template-columns:1fr 1fr}.ent,.evi,.cases{grid-template-columns:1fr}section{padding:56px 0}.hd h2{font-size:24px}.row{grid-template-columns:minmax(0,1fr) 64px minmax(0,.9fr);padding:12px 16px}.row svg{width:64px}.row .times{white-space:normal}.row .lag{display:block;margin-left:0}.fg{grid-template-columns:1fr}}
+@media(max-width:720px){.wrap{padding:0 16px}.kpis{grid-template-columns:1fr 1fr}.ent,.evi,.cases{grid-template-columns:1fr}section{padding:56px 0}.hd h2{font-size:24px}.row{grid-template-columns:minmax(0,1fr) 64px minmax(0,.9fr);padding:12px 16px}.row svg{width:64px}.row .spark-meta{font-size:9px}.row .times{white-space:normal}.row .lag{display:block;margin-left:0}.fg{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
 </style>
 <script src="app/home-data.js"></script>
 <script src="app/lppl-data.js"></script>
+<script src="app/home-sparkline.js"></script>
 <script src="app/stock-watchlist.js"></script>
 <script src="app/watchlist.js"></script>
 <link rel="stylesheet" href="app/visual-suite.css">
@@ -156,6 +161,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 <div class="wrap hero-live">
  <div class="panel" id="index-overview" aria-labelledby="ph-t" data-ai-context="指数风险概览">
   <div class="ph"><h2 id="ph-t">主要指数</h2><span class="d" id="asof">读取中…</span>
+   <div class="spark-range" id="spark-range" role="group" aria-label="迷你走势区间"><button type="button" data-spark-range="20" aria-pressed="false">1月</button><button type="button" data-spark-range="60" aria-pressed="true">3月</button><button type="button" data-spark-range="250" aria-pressed="false">1年</button></div>
    <div class="pseg" role="group" aria-label="面板内容"><button type="button" data-v="idx" aria-pressed="true">指数</button><button type="button" data-v="mine" aria-pressed="false">我的自选</button></div></div>
   <ul class="rows" id="rows" aria-live="polite"></ul>
   <div class="pwl" id="pwl" hidden></div>
@@ -217,6 +223,10 @@ const $=id=>document.getElementById(id),E=s=>String(s??'').replace(/[&<>"]/g,c=>
 const NS='http://www.w3.org/2000/svg',el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
 const path=(w,x0,x1,y0,y1)=>{const mn=Math.min(...w),mx=Math.max(...w);return w.map((v,i)=>(i?'L':'M')+(x0+i/(w.length-1||1)*(x1-x0)).toFixed(1)+' '+(y1-(v-mn)/((mx-mn)||1)*(y1-y0)).toFixed(1)).join('')};
 const pct=(x,d=2)=>(x>=0?'+':'')+(x*100).toFixed(d)+'%';
+const SPARK_RANGES=[20,60,250],SPARK_LABELS={20:'1月',60:'3月',250:'1年'};
+function readSparkRange(){try{const n=Number(localStorage.getItem('lppl.home.sparkRange'));return SPARK_RANGES.includes(n)?n:60}catch(e){return 60}}
+let sparkRange=readSparkRange();
+const sparkPath=(values,domain,x0=2,x1=78,y0=3,y1=27)=>{const span=domain.max-domain.min;if(!values.length||!Number.isFinite(span)||span<=0)return '';return values.map((v,i)=>(i?'L':'M')+(x0+i/(values.length-1||1)*(x1-x0)).toFixed(1)+' '+(y1-(v-domain.min)/span*(y1-y0)).toFixed(1)).join('')};
 const yuan=v=>v>=1e12?(v/1e12).toFixed(2)+' 万亿':(v/1e8).toFixed(0)+' 亿';
 /* 交易日差（只算工作日，不含节假日） */
 const bizGap=d=>{let n=0,t=new Date(d+'T00:00:00'),e=new Date();e.setHours(0,0,0,0);while(t<e){t.setDate(t.getDate()+1);const w=t.getDay();if(w&&w<6)n++}return n};
@@ -226,20 +236,41 @@ const quoteSessionDate=q=>{const raw=String(q?.time||''),m=/^(\d{4})(\d{2})(\d{2
 
 /* ---------- 六指数面板 ---------- */
 const rows=$('rows');
+let IDXROWS=null;
 const skel=()=>{rows.innerHTML=LPPL.SYMS.map(s=>`<li class="row"><div><div class="n">${E(s.name)}</div><div class="c">${s.sym}</div></div><span class="sk" style="grid-row:1/3;grid-column:2;height:24px"></span><span class="sk" style="grid-column:1/-1;grid-row:3;width:70%"></span><span class="sk" style="grid-column:1/-1;grid-row:4;width:85%;height:24px;margin-top:6px"></span></li>`).join('');$('asof').textContent='读取中…'};
+function updateSparkRangeUI(){
+ document.querySelectorAll('#spark-range button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.sparkRange)===sparkRange)));
+ $('pfn').textContent='实时报价仅供参考，不参与模型；取不到时显示未复权收盘价。迷你走势：同一纵轴、起点归零的涨跌幅，最近 '+sparkRange+' 个交易日收盘';
+}
+function renderIdxRows(){
+ if(!IDXROWS)return false;
+ const L=IDXROWS||[],ok=L.filter(r=>!r.error);
+ if(!ok.length){
+  rows.innerHTML=`<li class="errbox">数据未加载：${E((L[0]||{}).error||'网络不可用')}<br><button type="button" id="retry">重试</button></li>`;
+  $('asof').textContent='—';$('retry').onclick=loadIdx;return false;
+ }
+ const charts=L.map(r=>{
+  if(r.error)return {bars:[],values:[]};
+  const bars=r.bars.slice(-sparkRange);
+  return {bars,values:HomeSparkline.toPct(bars.map(b=>b.close))};
+ });
+ const domain=HomeSparkline.sharedDomain(charts.map(s=>s.values)),zeroY=(27-(0-domain.min)/(domain.max-domain.min)*24).toFixed(1);
+ rows.innerHTML=L.map((r,i)=>{
+  if(r.error)return `<li class="row"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-column:1/-1;grid-row:3;text-align:left">数据未加载</span></li>`;
+  const chart=charts[i],period=chart.values.length?chart.values[chart.values.length-1]:0,ch=r.prev?r.last.close/r.prev.close-1:0;
+  const lag=r.bars.reduce((n,b)=>n+(b.date>r.asof?1:0),0),dateText=shortDate(r.asof),lineColor=period>=0?'var(--up)':'var(--dn)';
+  const insufficient=chart.bars.length<sparkRange;
+  return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="index.html?code=${r.sym}" aria-label="${E(r.name)}，近${SPARK_LABELS[sparkRange]} ${pct(period,1)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg class="sparkline" data-range="${sparkRange}" data-y-domain="${domain.min.toFixed(8)},${domain.max.toFixed(8)}" viewBox="0 0 80 30" aria-hidden="true"><line class="spark-zero" x1="2" x2="78" y1="${zeroY}" y2="${zeroY}"/><path class="spark-line" d="${sparkPath(chart.values,domain)}" stroke="${lineColor}"/></svg><div class="spark-meta ${period>=0?'up':'dn'}"><span>近${SPARK_LABELS[sparkRange]} ${pct(period,1)}</span>${insufficient?`<small>数据不足 ${sparkRange} 日</small>`:''}</div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}</a></li>`}).join('');
+ return true;
+}
 function loadIdx(){
  skel();
  HOMEDATA.all().then(L=>{
-  const ok=L.filter(r=>!r.error);
-  if(!ok.length){rows.innerHTML=`<li class="errbox">数据未加载：${E((L[0]||{}).error||'网络不可用')}<br><button type="button" id="retry">重试</button></li>`;$('asof').textContent='—';$('retry').onclick=loadIdx;IDXROWS=L;if(qTimer)refreshQuotes();else startQuotes();mine();return}
-  rows.innerHTML=L.map(r=>{
-   if(r.error)return `<li class="row"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-column:1/-1;grid-row:3;text-align:left">数据未加载</span></li>`;
-   const s=r.bars.slice(-60).map(b=>b.close),ch=r.last.close/r.prev.close-1,sc=s[s.length-1]>=s[0]?'var(--up)':'var(--dn)';
-   const lag=r.bars.reduce((n,b)=>n+(b.date>r.asof?1:0),0),dateText=shortDate(r.asof);
-   return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="index.html?code=${r.sym}" aria-label="${E(r.name)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg viewBox="0 0 80 30" aria-hidden="true"><path d="${path(s,2,78,3,27)}" stroke="${sc}"/></svg><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}</a></li>`}).join('');
-  const S=ok.find(r=>r.sym==='sh000001')||ok[0];
+  IDXROWS=L;
+  if(!renderIdxRows()){if(qTimer)refreshQuotes();else startQuotes();mine();return}
+  const ok=L.filter(r=>!r.error),S=ok.find(r=>r.sym==='sh000001')||ok[0];
   $('asof').textContent='报价与模型时间见各行';
-  IDXROWS=L;if(qTimer)paintQuotes();else startQuotes();mine();recent(S.asof);
+  if(qTimer)paintQuotes();else startQuotes();mine();recent(S.asof);
   thumbs(S);evidence(S.sym);
  });
 }
@@ -250,13 +281,13 @@ const qHtml=q=>{const v=Number.isFinite(q.pct)?q.pct:null;return `${q.price.toFi
 function updateModelLag(row,date){const model=row.querySelector('.model-date'),asof=row.dataset.modelAsof;if(!model||!asof)return;const lag=weekdayGap(asof,date||row.dataset.closeDate);model.textContent='模型截至 '+shortDate(asof);if(lag>1){const badge=document.createElement('small');badge.className='lag';badge.textContent='落后 '+lag+' 个交易日';model.appendChild(badge)}}
 function paintQuotes(){
  rows.querySelectorAll('a.row[data-sym]').forEach(a=>{
-  const q=QT[a.dataset.sym],p=a.querySelector('.p'),time=a.querySelector('.quote-time'),model=a.querySelector('.model-date');if(!p)return;
+  const q=QT[a.dataset.sym],p=a.querySelector('.p'),time=a.querySelector('.quote-time'),model=a.querySelector('.model-date'),period=a.querySelector('.spark-meta span')?.textContent||'';if(!p)return;
   if(p.dataset.c==null)p.dataset.c=p.innerHTML;
   if(q){p.innerHTML=qHtml(q);p.title='腾讯实时行情，仅供参考，不参与模型';const timing=LPPL.quoteTimeLabel?LPPL.quoteTimeLabel(q.time,q.tz):null;time.textContent=timing&&timing.time!=='—'?'报价 '+timing.time:'报价时间未提供';updateModelLag(a,quoteSessionDate(q))}
   else{p.innerHTML=p.dataset.c;p.title='日更收盘';time.textContent='收盘 '+shortDate(a.dataset.closeDate);updateModelLag(a,a.dataset.closeDate)}
-  a.setAttribute('aria-label',`${a.dataset.name}，${time.textContent}，${model.textContent}，${a.dataset.status}`)
+  a.setAttribute('aria-label',`${a.dataset.name}，${period?period+'，':''}${time.textContent}，${model.textContent}，${a.dataset.status}`)
  });
- $('pfn').textContent='实时报价仅供参考，不参与模型；取不到时显示未复权收盘价。迷你走势为最近 60 个交易日收盘';
+ updateSparkRangeUI();
 }
 function refreshQuotes(){
  if(!LPPL.quote||document.visibilityState==='hidden')return;
@@ -269,7 +300,6 @@ function startQuotes(){clearInterval(qTimer);refreshQuotes();qTimer=setInterval(
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&qTimer)refreshQuotes()});
 addEventListener('lppl-watch',()=>{if(qTimer)refreshQuotes()});
 /* ---------- 我的自选：指数用已读取的数据，个股只列代码；有实时价时优先显示 ---------- */
-let IDXROWS=null;
 function mine(){mine0();const p=$('pwl');if(p)p.innerHTML=$('wl').innerHTML}
 function mine0(){
  const W=window.IndexWatchlist,box=$('wl');
@@ -292,6 +322,12 @@ document.querySelectorAll('.pseg button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.pseg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
  rows.hidden=m;$('pwl').hidden=!m;if(m)mine();
 });
+document.querySelectorAll('#spark-range button').forEach(b=>b.onclick=()=>{
+ sparkRange=Number(b.dataset.sparkRange);
+ try{localStorage.setItem('lppl.home.sparkRange',String(sparkRange))}catch(e){}
+ updateSparkRangeUI();renderIdxRows();if(qTimer)paintQuotes();
+});
+updateSparkRangeUI();
 /* ---------- 最近更新提示条：数据新鲜度 + 更新日志最新一条 ---------- */
 function recent(asof){
  const box=$('recent');if(!box)return;

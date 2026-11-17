@@ -200,6 +200,148 @@ def test_overflow_1_home_page(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_home_sparklines_share_domain_and_persist_selected_period(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/home.html")
+    page.wait_for_function(
+        "() => document.querySelectorAll('#rows a.row svg.sparkline[data-y-domain]').length === 7"
+    )
+    range_button = page.locator('#spark-range button[data-spark-range="60"]')
+    expect(range_button).to_have_attribute("aria-pressed", "true")
+    expect(page.locator("#pfn")).to_contain_text(
+        "迷你走势：同一纵轴、起点归零的涨跌幅，最近 60 个交易日收盘"
+    )
+
+    def assert_shared_domain() -> None:
+        domains = page.locator("#rows svg.sparkline").evaluate_all(
+            "(items) => items.map(item => item.dataset.yDomain)"
+        )
+        assert len(domains) == 7 and len(set(domains)) == 1, domains
+        minimum, maximum = (float(value) for value in domains[0].split(","))
+        assert minimum < 0 < maximum
+
+    assert_shared_domain()
+    page.evaluate("localStorage.setItem('lppl.home.sparkRange', 'invalid')")
+    page.reload()
+    page.wait_for_function(
+        "() => document.querySelectorAll('#rows a.row svg.sparkline').length === 7"
+    )
+    expect(page.locator('#spark-range button[data-spark-range="60"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    assert_shared_domain()
+
+    old_paths = page.locator("#rows svg.sparkline path.spark-line").evaluate_all(
+        "(items) => items.map(item => item.getAttribute('d'))"
+    )
+    index_symbols = (
+        "sh000001",
+        "sh000016",
+        "sh000300",
+        "sh000905",
+        "sh000688",
+        "sz399001",
+        "sz399006",
+    )
+
+    def index_loads() -> int:
+        return sum(
+            1
+            for _, url, source in page._e2e_requests
+            if source == "/home.html"
+            and any(f"/{symbol}_latest.json" in url for symbol in index_symbols)
+        )
+
+    loads_before = index_loads()
+    page.locator('#spark-range button[data-spark-range="250"]').click()
+    expect(page.locator('#spark-range button[data-spark-range="250"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    expect(page.locator("#pfn")).to_contain_text(
+        "迷你走势：同一纵轴、起点归零的涨跌幅，最近 250 个交易日收盘"
+    )
+    new_paths = page.locator("#rows svg.sparkline path.spark-line").evaluate_all(
+        "(items) => items.map(item => item.getAttribute('d'))"
+    )
+    assert len(old_paths) == len(new_paths) == 7
+    assert all(
+        old != new for old, new in zip(old_paths, new_paths, strict=True)
+    ), (old_paths, new_paths)
+    assert index_loads() == loads_before, "Changing the period should reuse loaded bars"
+    assert_shared_domain()
+    assert page.evaluate("localStorage.getItem('lppl.home.sparkRange')") == "250"
+
+    page.reload()
+    page.wait_for_function(
+        "() => document.querySelectorAll('#rows a.row svg.sparkline').length === 7"
+    )
+    expect(page.locator('#spark-range button[data-spark-range="250"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    expect(page.locator("#pfn")).to_contain_text("最近 250 个交易日收盘")
+    assert_shared_domain()
+
+    for width, height in ((1440, 900), (1024, 768), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        dimensions = page.evaluate(
+            "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+        )
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, (width, dimensions)
+
+
+@pytest.mark.e2e
+def test_home_spark_range_change_preserves_live_quote(page: Page) -> None:
+    page.add_init_script(
+        """(() => {
+          const originalFetch = window.fetch.bind(window);
+          window.fetch = (input, init) => {
+            const url = typeof input === "string" ? input : input.url;
+            if (url.includes("/quote?codes=")) {
+              return Promise.resolve(new Response(JSON.stringify({
+                source: "e2e",
+                quotes: {
+                  sh000001: {
+                    price: 4321.23,
+                    pct: 1.25,
+                    time: "20261113103000",
+                    tz: "Asia/Shanghai"
+                  }
+                },
+                missing: []
+              }), {
+                status: 200,
+                headers: { "Content-Type": "application/json" }
+              }));
+            }
+            return originalFetch(input, init);
+          };
+        })();"""
+    )
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/home.html")
+    page.wait_for_function(
+        "() => document.querySelector('#rows a.row[data-sym=\"sh000001\"] .p')"
+        "?.textContent.includes('4321.23')"
+    )
+
+    row = page.locator('#rows a.row[data-sym="sh000001"]')
+    expect(page.locator('#spark-range button[data-spark-range="60"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    expect(row.locator(".p")).to_contain_text("4321.23")
+    expect(row.locator(".quote-time")).to_have_text("报价 11-13 10:30")
+    assert "近3月" in (row.get_attribute("aria-label") or "")
+
+    page.locator('#spark-range button[data-spark-range="250"]').click()
+
+    expect(row.locator(".p")).to_contain_text("4321.23")
+    expect(row.locator(".quote-time")).to_have_text("报价 11-13 10:30")
+    label = row.get_attribute("aria-label") or ""
+    assert "近1年" in label
+    assert "报价 11-13 10:30" in label
+
+
+@pytest.mark.e2e
 def test_overflow_2_stock_catalog(page: Page) -> None:
     assert_page_has_no_overflow(page, "stock.html")
 
