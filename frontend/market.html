@@ -1315,7 +1315,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
 
-  let summaryQuoteResult = null, summaryModels = null;
+  let summaryQuoteResult = null, summaryModels = null, publishedIndexRows = [], publishedIndexReason = null;
+  let summaryIndexSelection = { rows: [], source: 'none', reason: 'unavailable' };
   function beijingDate(value) {
     const raw = String(value || '').trim();
     const parsed = new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)
@@ -1346,21 +1347,30 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }
   function renderIndexPerformance() {
     const quotes = summaryQuoteResult?.data?.quotes || {};
-    const rows = [
-      ['sh000001', '上证指数'],
-      ['sz399001', '深证成指'],
+    const liveRows = [
+      ['sh000001', '上证指数'], ['sz399001', '深证成指'], ['sz399006', '创业板指'],
     ].flatMap(([symbol, name]) => {
       const quote = quotes[symbol];
       if (!quote) return [];
-      const pctValue = Number.isFinite(Number(quote.pct))
-        ? Number(quote.pct) : (Number(quote.price) / Number(quote.prev_close) - 1) * 100;
+      const pctValue = quote.pct != null && Number.isFinite(Number(quote.pct))
+        ? Number(quote.pct)
+        : Number(quote.price) > 0 && Number(quote.prev_close) > 0
+          ? (Number(quote.price) / Number(quote.prev_close) - 1) * 100 : NaN;
       if (!Number.isFinite(pctValue)) return [];
-      return [`<span class="${pctValue >= 0 ? 'up' : 'dn'}">${E(name)} ${pctValue >= 0 ? '+' : ''}${pctValue.toFixed(2)}%</span>`];
+      const timing = typeof LPPL.quoteTimeLabel === 'function'
+        ? LPPL.quoteTimeLabel(quote.time, quote.tz) : null;
+      const timeLabel = timing?.short && timing.short !== '—'
+        ? `（${timing.label === '盘中' ? '盘中' : '最新成交'} ${timing.short}）` : '';
+      return [{ symbol, name, change: `${pctValue >= 0 ? '+' : ''}${pctValue.toFixed(2)}%${timeLabel}` }];
     });
-    const reason = summaryQuoteResult?.reason;
-    $('index-performance-body').innerHTML = rows.length
-      ? `<p class="note">${rows.join(' · ')} · 行情仅作描述。</p>`
-      : statusMarkup(reason || 'unavailable', '指数表现', 'data-retry-summary="index"');
+    summaryIndexSelection = LPPLMarketSummary.selectIndexRows(
+      liveRows, publishedIndexRows,
+      [publishedIndexReason, summaryQuoteResult?.reason].find((reason) => reason === 'unavailable') ||
+        [summaryQuoteResult?.reason, publishedIndexReason].find(Boolean) || 'unavailable',
+    );
+    $('index-performance-body').innerHTML = summaryIndexSelection.rows.length
+      ? `<p class="note">${summaryIndexSelection.rows.map((row) => `<span class="${row.change.startsWith('-') ? 'dn' : 'up'}">${E(row.name)} ${E(row.change)}</span>`).join(' · ')} · ${summaryIndexSelection.source === 'published' ? '已发布日线收盘' : '行情仅作描述'}。</p>`
+      : statusMarkup(summaryIndexSelection.reason, '指数表现', 'data-retry-summary="index"');
   }
   function renderModelRanges() {
     const box = $('model-ranges-body');
@@ -1374,18 +1384,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   function renderSummary() {
     const today = beijingDate(new Date().toISOString());
     const entries = newsRefreshState?.watchlist || watchlistEntries();
-    const quoteRows = [];
-    const quoteMap = summaryQuoteResult?.data?.quotes || {};
-    for (const [symbol, name] of [['sh000001', '上证指数'], ['sz399001', '深证成指']]) {
-      const quote = quoteMap[symbol];
-      if (!quote) continue;
-      const pctValue = Number.isFinite(Number(quote.pct))
-        ? Number(quote.pct) : (Number(quote.price) / Number(quote.prev_close) - 1) * 100;
-      if (Number.isFinite(pctValue)) quoteRows.push({ name, change: `${pctValue >= 0 ? '+' : ''}${pctValue.toFixed(2)}%` });
-    }
     const result = LPPLMarketSummary.build({
-      indices: quoteRows,
-      indicesReason: summaryQuoteResult?.reason || (summaryQuoteResult ? 'empty' : 'unavailable'),
+      indices: summaryIndexSelection.rows,
+      indicesReason: summaryIndexSelection.reason,
       events: summaryEventItems(today),
       eventsReason: eventResult?.reason || (eventResult ? null : 'unavailable'),
       watchlist: entries,
@@ -1408,9 +1409,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       ? 'not_applicable' : 'empty';
   }
   async function loadSummaryData() {
-    const quotePromise = LPPL.resultOf(Promise.resolve().then(() => LPPL.quote(['sh000001', 'sz399001'])), {
+    const quotePromise = LPPL.resultOf(Promise.resolve().then(() => LPPL.quote(['sh000001', 'sz399001', 'sz399006'])), {
       empty: (data) => !data?.quotes || Object.keys(data.quotes).length === 0,
     });
+    publishedIndexRows = [];
+    const publishedIndexReasons = [];
     summaryModels = await Promise.all(LPPL.SYMS.map(async (spec) => {
       const base = { symbol: spec.sym, name: spec.name };
       const historyPromise = spec.history !== false
@@ -1422,6 +1425,20 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         LPPL.resultOf(LPPL.load(spec.sym), { empty: (data) => !data?.top || !data.bars?.length }),
         historyPromise,
       ]);
+      if (['sh000001', 'sz399001', 'sz399006'].includes(spec.sym)) {
+        if (latest.reason) publishedIndexReasons.push(latest.reason);
+        else {
+          const bars = latest.data.bars, last = bars[bars.length - 1], previous = bars[bars.length - 2];
+          const closePct = previous && Number(previous.close) > 0
+            ? (Number(last.close) / Number(previous.close) - 1) * 100 : NaN;
+          if (Number.isFinite(closePct)) {
+            publishedIndexRows.push({
+              symbol: spec.sym, name: spec.name,
+              change: `${closePct >= 0 ? '+' : ''}${closePct.toFixed(2)}%（收盘 ${last.date}）`,
+            });
+          } else publishedIndexReasons.push('empty');
+        }
+      }
       if (latest.reason) return [{ ...base, reason: latest.reason }];
       if (history.reason) return [{ ...base, reason: history.reason }];
       const frames = (history.data.frames || []).filter((frame) => frame.asof < latest.data.asof)
@@ -1447,6 +1464,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       });
     })).then((rows) => rows.flat());
     summaryQuoteResult = await quotePromise;
+    publishedIndexReason = ['unavailable', 'unpublished', 'empty']
+      .find((reason) => publishedIndexReasons.includes(reason)) || null;
     renderIndexPerformance();
     renderModelRanges();
     renderSummary();

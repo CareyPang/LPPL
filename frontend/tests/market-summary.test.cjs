@@ -46,3 +46,24 @@ test('hidden-evidence model rows are reported as evidence-gated, not inapplicabl
   assert.equal(result.lines[3].reason, 'hidden_evidence');
   assert.equal(result.lines[3].text, '证据不足，不显示');
 });
+
+test('index selection falls back to published closes and fills missing live rows', () => {
+  const closes = [
+    { symbol: 'sh000001', name: '上证指数', change: '-1.44%（收盘 2026-10-30）' },
+    { symbol: 'sz399001', name: '深证成指', change: '+0.20%（收盘 2026-10-30）' },
+  ];
+  const fallback = Summary.selectIndexRows([], closes, 'unavailable');
+  assert.equal(fallback.source, 'published');
+  assert.equal(fallback.rows[0].change, '-1.44%（收盘 2026-10-30）');
+  assert.equal(fallback.reason, null);
+
+  const mixed = Summary.selectIndexRows([
+    { symbol: 'sh000001', name: '上证指数', change: '+1.00%（盘中 10:32）' },
+  ], closes, 'empty');
+  assert.equal(mixed.source, 'mixed');
+  assert.deepEqual(mixed.rows.map(row => row.change), [
+    '+1.00%（盘中 10:32）',
+    '+0.20%（收盘 2026-10-30）',
+  ]);
+  assert.equal(Summary.selectIndexRows([], [], 'empty').reason, 'empty');
+});

@@ -12,6 +12,22 @@
     hidden_evidence: '证据不足，不显示',
   };
 
+  function selectIndexRows(liveRows, publishedRows, reason) {
+    var live = Array.isArray(liveRows) ? liveRows : [];
+    var published = Array.isArray(publishedRows) ? publishedRows : [];
+    var liveBySymbol = new Map(live.map(function (row) { return [row.symbol || row.name, row]; }));
+    var publishedBySymbol = new Map(published.map(function (row) { return [row.symbol || row.name, row]; }));
+    var order = Array.from(new Set(published.concat(live).map(function (row) { return row.symbol || row.name; })));
+    var rows = order.map(function (symbol) { return liveBySymbol.get(symbol) || publishedBySymbol.get(symbol); });
+    var hasLive = rows.some(function (row) { return liveBySymbol.get(row.symbol || row.name) === row; });
+    var hasPublished = rows.some(function (row) { return publishedBySymbol.get(row.symbol || row.name) === row; });
+    return {
+      rows: rows,
+      source: hasLive && hasPublished ? 'mixed' : hasLive ? 'live' : hasPublished ? 'published' : 'none',
+      reason: rows.length ? null : (reason || 'empty'),
+    };
+  }
+
   function build(input) {
     var indices = Array.isArray(input.indices) ? input.indices : [];
     var events = Array.isArray(input.events) ? input.events : [];
@@ -44,5 +60,5 @@
     };
   }
 
-  return { REASONS: REASONS, build: build };
+  return { REASONS: REASONS, build: build, selectIndexRows: selectIndexRows };
 });
