@@ -113,7 +113,7 @@
     }
     try { saved = storage && storage.getItem(STATE_KEY); } catch (e) { saved = null; }
     var restored = parseState(saved, o.query);
-    var state = restored.state, ready = false, scrollTimer = null;
+    var state = restored.state, ready = false, scrollTimer = null, navigating = false;
     var COLS = [['code', '代码'], ['name', '名称'], ['type', '类型'], ['board', '板块'], ['member', '所属指数'], ['published', '结果']];
     function persist() {
       try { if (storage) storage.setItem(STATE_KEY, serializeState(state, win.scrollY)); } catch (e) { /* storage may be unavailable */ }
@@ -163,7 +163,14 @@
       var dn = e.target.closest('.cat-dense');
       if (dn) { state.dense = !state.dense; draw(); return; }
       var a = e.target.closest('a[data-i]');
-      if (a) persist();
+      if (a) {
+        var linkRow = el.__rows[Number(a.dataset.i)];
+        persist();
+        if (linkRow && linkRow.type === 'index' && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+          navigating = true;
+          if (scrollTimer) { clearTimeout(scrollTimer); scrollTimer = null; }
+        }
+      }
       if (a && o.onOpen) { var row = el.__rows[Number(a.dataset.i)]; if (row && row.type === 'stock') { e.preventDefault(); o.onOpen(row); } }
     });
     function applyQuery(t) {
@@ -185,6 +192,7 @@
     });
     if (win && win.addEventListener) {
       win.addEventListener('scroll', function () {
+        if (navigating) return;
         if (scrollTimer) return;
         scrollTimer = setTimeout(function () { scrollTimer = null; persist(); }, 120);
       }, { passive: true });

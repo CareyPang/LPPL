@@ -56,6 +56,34 @@ test('mount works without an injected window', () => {
   assert.match(el.innerHTML, /标的目录/);
 });
 
+test('index navigation preserves its saved scroll position', async () => {
+  let click, onScroll, value = null, scrollY = 800;
+  const el = {
+    innerHTML: '',
+    addEventListener(type, listener) { if (type === 'click') click = listener; },
+  };
+  const win = {
+    get scrollY() { return scrollY; },
+    addEventListener(type, listener) { if (type === 'scroll') onScroll = listener; },
+  };
+  const storage = {
+    getItem() { return null; },
+    setItem(_key, raw) { value = raw; },
+  };
+  StockCatalog.mount({ el, catalog, published, window: win, storage });
+  onScroll();
+  const index = el.__rows.findIndex(row => row.type === 'index');
+  const anchor = { dataset: { i: String(index) } };
+  click({
+    target: { closest: selector => selector === 'a[data-i]' ? anchor : null },
+    button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false,
+  });
+  scrollY = 0;
+  onScroll();
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(JSON.parse(value).scrollY, 800);
+});
+
 test('sort orders by column with code as tiebreaker and supports descending', () => {
   const rows = StockCatalog.normalize(catalog, published);
   assert.deepEqual(StockCatalog.sort(rows, 'type').map((r) => r.type), ['index', 'industry', 'stock', 'stock', 'stock']);
