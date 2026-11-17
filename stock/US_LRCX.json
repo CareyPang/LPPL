@@ -1,8 +1,8 @@
 {
  "symbol": "US_LRCX",
  "name": "泛林集团",
- "asof": "2026-11-13",
- "data_version": "us_LRCX_20261113_ffedf8540ff25e44",
+ "asof": "2026-11-16",
+ "data_version": "us_LRCX_20261116_3f4abb0f422e0782",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-05-15",
+   "start": "2026-05-18",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": -0.695,
-   "size_realized": -0.205,
-   "tc": "2026-11-05",
+   "size_model": -0.53,
+   "size_realized": -0.24,
+   "tc": "2026-11-06",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -55,20 +55,20 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.167,
+     "early": 0.0,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-05-15",
+    "best_t1": "2026-05-18",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.0,
+     "m_hi": 0.167,
      "w_lo": 0.667,
      "w_hi": 0.0,
-     "tc_lo": 0.167,
-     "tc_hi": 0.5,
+     "tc_lo": 0.0,
+     "tc_hi": 0.667,
      "any": 0.833,
      "tol": 0.01
     },
@@ -104,14 +104,14 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-04-10",
+    "best_t1": "2025-04-11",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
-     "w_lo": 0.7,
+     "w_lo": 0.9,
      "w_hi": 0.0,
-     "tc_lo": 0.3,
+     "tc_lo": 0.1,
      "tc_hi": 0.4,
      "any": 1.0,
      "tol": 0.01
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-13",
+   "table_asof": "2026-11-16",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +716,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.205,
+    "size_realized": -0.24,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -760,7 +760,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-09",
    "2023-11-10",
    "2023-11-13",
    "2023-11-14",
@@ -1515,10 +1514,10 @@
    "2026-11-10",
    "2026-11-11",
    "2026-11-12",
-   "2026-11-13"
+   "2026-11-13",
+   "2026-11-16"
   ],
   "open": [
-   63.4,
    64.481,
    66.326,
    67.399,
@@ -2273,10 +2272,10 @@
    217.74,
    236.25,
    229.56,
-   230.0
+   230.0,
+   214.32
   ],
   "high": [
-   65.204,
    67.094,
    66.327,
    67.903,
@@ -3031,10 +3030,10 @@
    228.71,
    241.6,
    239.67,
-   233.75
+   233.75,
+   216.83
   ],
   "low": [
-   63.255,
    64.019,
    65.404,
    66.708,
@@ -3789,10 +3788,10 @@
    217.05,
    229.67,
    227.63,
-   218.9
+   218.9,
+   209.89
   ],
   "close": [
-   63.425,
    66.856,
    65.685,
    67.781,
@@ -4547,10 +4546,10 @@
    222.39,
    235.88,
    233.78,
-   225.92
+   225.92,
+   210.83
   ],
   "volume": [
-   1218871,
    1373706,
    815532,
    954785,
@@ -5305,7 +5304,8 @@
    11604972,
    11141556,
    8252396,
-   11032465
+   11032465,
+   12303990
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5356,7 +5356,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4312,
+  "n_bars": 4313,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5386,9 +5386,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
- "fit_input_hash": "07256142ae5a62bfcd3019a229d32e8022af5f562e955c03435e306e8a62e8ae",
+ "fit_input_hash": "edd872773410f252e8fdc6357e115e71f63c0f8a9b3aa5386bdb7f4afc5d14ed",
  "history_input_hashes": {
-  "2023-11-10": "9d0ffbafec76afa195a3158c3931694524f3424e73ce455f51d95de85bc00b90",
   "2023-11-13": "937b5a0a803c6eb771924d9eb45fa5d87d9c354cb133ee97c326a95e856b40fe",
   "2023-11-14": "d9887a4f9439ae2c7fcfca3bb70d7919ce699c1d52059012b2b81fe001976a6c",
   "2023-11-15": "6def4529415d06e03523f24005d6573aa452f83eba857de04fabd800a5081141",
@@ -6142,10 +6141,11 @@
   "2026-11-10": "df74833393a6d2b8600debf9dc3dc84b5c4a7184cd9d0d47713a42dc520704d6",
   "2026-11-11": "3aaeaf343b9b8a6ecf027fe958869cf116a6f19853ae3cd587265a45d2d2758b",
   "2026-11-12": "dc5cc2b87341f36b9a077e8b6f318d5e436cf2c5a1bc7e63a9ca8f8393c9cca3",
-  "2026-11-13": "07256142ae5a62bfcd3019a229d32e8022af5f562e955c03435e306e8a62e8ae"
+  "2026-11-13": "07256142ae5a62bfcd3019a229d32e8022af5f562e955c03435e306e8a62e8ae",
+  "2026-11-16": "edd872773410f252e8fdc6357e115e71f63c0f8a9b3aa5386bdb7f4afc5d14ed"
  },
  "code": "US_LRCX",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-16T22:47:34.959251+00:00"
+ "generated_at": "2026-11-17T05:06:42.768604+00:00"
 }
