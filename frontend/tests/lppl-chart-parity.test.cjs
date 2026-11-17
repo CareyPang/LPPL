@@ -106,3 +106,66 @@ test('future whitespace contains no OHLC and is bounded', () => {
   assert.ok(whitespace.length > 0 && whitespace.length <= 260);
   assert.ok(whitespace.every(point => Object.keys(point).length === 1 && point.time));
 });
+
+test('sh601838: published 6-12m window remains the main band', () => {
+  const data = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'stock_601838.json'), 'utf8',
+  ));
+  const { oldInput } = readBars(path.join(__dirname, 'fixtures', 'stock_601838.json'));
+  const candles = Chart.toCandles(oldInput);
+  assert.equal(candles.length, oldInput.length);
+  assert.equal(data.asof, '2026-11-13');
+  assert.deepEqual(Chart.bandsFor(data, '6-12m'), [{
+    rank: 'main', source: 'scale_window', q20_date: '2026-12-30', q80_date: '2027-01-07',
+  }]);
+});
+
+test('sh601838: worker market bars preserve the legacy Canvas OHLCV input', () => {
+  const market = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'stock_601838_market.json'), 'utf8',
+  ));
+  const candles = Chart.toCandles(market.price);
+  assert.equal(market.asof, '2026-11-17');
+  assert.equal(market.adjustment, 'none');
+  assert.equal(candles.length, market.price.length);
+  assert.deepEqual(candles.map(({ time, open, high, low, close, volume }) =>
+    [time, open, high, low, close, volume]), market.price.map(({ date, open, high, low, close, volume }) =>
+    [date, open, high, low, close, volume]));
+});
+
+test('published sh000001 history frame preserves primary and secondary future bands', () => {
+  const history = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'sh000001_history.json'), 'utf8',
+  ));
+  const { oldInput } = readBars(path.join(__dirname, 'fixtures', 'sh000001_latest.json'));
+  const frame = history.frames.find(item => item.asof === '2025-08-11');
+  const bands = Chart.bandsFor({ top: { scale_clusters: frame.clusters } }, '6-12m');
+  const candles = Chart.toCandles(oldInput.filter(bar => bar.date <= frame.asof));
+  assert.equal(candles.at(-1).time, frame.asof);
+  assert.deepEqual(bands.map(({ rank, q20_date, q80_date }) =>
+    [rank, q20_date, q80_date]), [
+    ['main', '2025-08-12', '2025-08-12'],
+    ['secondary', '2025-08-18', '2025-08-18'],
+  ]);
+  assert.ok(bands.some(band => band.q80_date > candles.at(-1).time));
+  const whitespace = Chart.futureWhitespace(candles, bands.map(band => band.q80_date),
+    new Set(history.future_calendar?.closures || []));
+  assert.ok(whitespace.some(point => point.time === '2025-08-18'));
+  assert.ok(whitespace.every(point => Object.keys(point).length === 1 && point.time));
+});
+
+test('calendar coverage notice is limited to bands that extend past coverage', () => {
+  const band = { q20_date: '2027-01-04', q80_date: '2027-01-08' };
+  assert.equal(Chart.needsCalendarCoverage([], '2026-12-31', null), false);
+  assert.equal(Chart.needsCalendarCoverage([band], '2027-01-09', null), false);
+  assert.equal(Chart.needsCalendarCoverage([band], '2026-12-31', {
+    coverage_end: '2027-01-08',
+  }), false);
+  assert.equal(Chart.needsCalendarCoverage([band], '2026-12-31', {
+    holidays_through: '2027-01-08',
+  }), false);
+  assert.equal(Chart.needsCalendarCoverage([band], '2026-12-31', {
+    coverage_end: '2027-01-07',
+  }), true);
+  assert.equal(Chart.needsCalendarCoverage([band], '2026-12-31', null), true);
+});

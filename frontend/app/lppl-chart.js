@@ -75,8 +75,19 @@
     if (clusters !== null) return clusters;
     var window = (top.scale_windows || []).find(function (item) { return item.scale === scale; });
     return window && validDate(window.q20_date) && validDate(window.q80_date)
-      ? [{ rank: 'main', q20_date: window.q20_date, q80_date: window.q80_date }]
+      ? [{ rank: 'main', source: 'scale_window', q20_date: window.q20_date, q80_date: window.q80_date }]
       : [];
+  }
+
+  function needsCalendarCoverage(bands, lastBarDate, calendar) {
+    var future = (bands || []).filter(function (band) {
+      return validDate(lastBarDate) && validDate(band.q80_date) && band.q80_date > lastBarDate;
+    });
+    if (!future.length) return false;
+    var coveredThrough = calendar &&
+      (calendar.coverage_end || calendar.through || calendar.holidays_through);
+    if (!validDate(coveredThrough)) return true;
+    return future.some(function (band) { return band.q80_date > coveredThrough; });
   }
 
   function mapTime(bars, date, closures) {
@@ -141,7 +152,14 @@
         }));
       }
       if (current.asof) setAsof(current.asof);
-      chart.timeScale().fitContent();
+      if (Number.isFinite(opts.initialBars) && opts.initialBars > 0 && candles.length) {
+        chart.timeScale().setVisibleLogicalRange({
+          from: Math.max(0, candles.length - opts.initialBars),
+          to: candles.length + ws.length - 1,
+        });
+      } else {
+        chart.timeScale().fitContent();
+      }
     }
     function setScale(next) { scale = next; if (current) setData(current); emit('scale', next); }
     function setAsof(date) {
@@ -221,6 +239,7 @@
 
   return {
     mount: mount, toCandles: toCandles, futureWhitespace: futureWhitespace,
-    bandsFor: bandsFor, mapTime: mapTime, dateFromTime: dateFromTime,
+    bandsFor: bandsFor, needsCalendarCoverage: needsCalendarCoverage,
+    mapTime: mapTime, dateFromTime: dateFromTime,
   };
 });
