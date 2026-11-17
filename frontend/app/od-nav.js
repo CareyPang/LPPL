@@ -311,19 +311,26 @@
   qi.addEventListener('click', function () { openSearch(''); });
   function appendIndexChartLink() {
     if (section !== 'terminal' || !/(?:^|\/)index\.html$/.test(location.pathname)) return;
-    var currentCode = new URLSearchParams(location.search).get('code') || '';
-    var indexItem = ((window.LPPL && window.LPPL.SYMS) || []).filter(function (item) {
-      return item.sym === currentCode || item.code === currentCode || item.name === currentCode;
-    })[0];
-    if (!indexItem) return;
     var chartLink = el('a', 'odn-chart-link', '完整图表 ›');
+    function currentIndexSymbol() {
+      var currentCode = String(new URLSearchParams(location.search).get('code') || '').trim();
+      if (!currentCode) return 'sh000001';
+      var normalized = currentCode.toLowerCase();
+      var indexItem = ((window.LPPL && window.LPPL.SYMS) || []).filter(function (item) {
+        return String(item.sym || '').toLowerCase() === normalized ||
+          String(item.code || '').toLowerCase() === normalized || item.name === currentCode;
+      })[0];
+      return indexItem && indexItem.sym || 'sh000001';
+    }
     function updateChartHref() {
       var source = location.pathname.split('/').pop() + location.search;
-      chartLink.href = 'chart.html?code=' + encodeURIComponent(indexItem.sym) +
+      chartLink.href = 'chart.html?code=' + encodeURIComponent(currentIndexSymbol()) +
         '&from=' + encodeURIComponent(source);
     }
     updateChartHref();
-    chartLink.addEventListener('click', updateChartHref);
+    ['click', 'focus', 'pointerenter'].forEach(function (name) {
+      chartLink.addEventListener(name, updateChartHref);
+    });
     right.appendChild(chartLink);
   }
   if (document.readyState === 'loading') {
