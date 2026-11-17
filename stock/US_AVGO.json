@@ -1,8 +1,8 @@
 {
  "symbol": "US_AVGO",
  "name": "博通",
- "asof": "2026-11-13",
- "data_version": "us_AVGO_20261113_08381536ed150fb7",
+ "asof": "2026-11-16",
+ "data_version": "us_AVGO_20261116_f3ee9a27560f579e",
  "model_version": "prereg_v1.7_v2.1+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-04-10",
+   "start": "2025-04-11",
    "duration_days": 402,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 1.317,
-   "size_realized": 1.037,
-   "tc": "2026-07-23",
+   "size_model": 1.192,
+   "size_realized": 0.854,
+   "tc": "2026-07-24",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,16 +60,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-04-10",
+    "best_t1": "2026-04-13",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.167,
+     "m_hi": 0.333,
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.0,
-     "any": 0.167,
+     "tc_hi": 0.167,
+     "any": 0.333,
      "tol": 0.01
     },
     "null_fpr": {
@@ -104,7 +104,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-04-10",
+    "best_t1": "2025-04-11",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-13",
+   "table_asof": "2026-11-16",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +716,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 1.037,
+    "size_realized": 0.854,
     "duration_days": 402,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -760,7 +760,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-09",
    "2023-11-10",
    "2023-11-13",
    "2023-11-14",
@@ -1515,10 +1514,10 @@
    "2026-11-10",
    "2026-11-11",
    "2026-11-12",
-   "2026-11-13"
+   "2026-11-13",
+   "2026-11-16"
   ],
   "open": [
-   88.336,
    89.23,
    91.971,
    93.16,
@@ -2273,10 +2272,10 @@
    316.71,
    350.0,
    356.8,
-   356.54
+   356.54,
+   332.49
   ],
   "high": [
-   90.01,
    92.832,
    92.198,
    94.557,
@@ -3031,10 +3030,10 @@
    334.67,
    356.85,
    369.82,
-   358.47
+   358.47,
+   337.74
   ],
   "low": [
-   87.954,
    88.888,
    91.044,
    92.474,
@@ -3789,10 +3788,10 @@
    316.69,
    344.31,
    354.72,
-   337.67
+   337.67,
+   327.8
   ],
   "close": [
-   88.227,
    92.694,
    91.669,
    94.189,
@@ -4547,10 +4546,10 @@
    331.98,
    345.22,
    364.36,
-   347.01
+   347.01,
+   333.4
   ],
   "volume": [
-   2448621,
    3628792,
    1688818,
    2388270,
@@ -5305,7 +5304,8 @@
    28441837,
    33642493,
    43767956,
-   31653968
+   31653968,
+   27022895
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5356,7 +5356,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 2714,
+  "n_bars": 2715,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5378,9 +5378,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
- "fit_input_hash": "e615098e6a535802a0ab6f525b7737dd6e2821f36574164ab21ce0d51fc25bc3",
+ "fit_input_hash": "111434cfa69e5a73c8edb31594ad4b61de9c9de8c1d8030f69fc6e68d0719f98",
  "history_input_hashes": {
-  "2023-11-10": "7135b611a5487cf376e5b1b697af28189c7bef5522f371468e3106de9ed7069c",
   "2023-11-13": "8ae6309f15736e9d4831b99cc5b764e94bacd8191c795ac2706651262ecd04ca",
   "2023-11-14": "4b70cbce404a5a8570442159dadbd4af130cafcceb5040eb01d4419dda478f91",
   "2023-11-15": "d8c37ffc6d88f631331688900db99cb9c3b46a9289f52e0b647f7c5465eb615a",
@@ -6134,10 +6133,11 @@
   "2026-11-10": "c127d0ccb2d089f08a851f88992955052860e67562d4420012ee4f706035dfaf",
   "2026-11-11": "01b5f141309699e6243a79cfa04a0383bccabb53e6feae59cd58eedc0e9b635b",
   "2026-11-12": "2af3e6b887b600fbfde136631c1826b6a472b6e1ada11c2760e3649b1e40edd9",
-  "2026-11-13": "e615098e6a535802a0ab6f525b7737dd6e2821f36574164ab21ce0d51fc25bc3"
+  "2026-11-13": "e615098e6a535802a0ab6f525b7737dd6e2821f36574164ab21ce0d51fc25bc3",
+  "2026-11-16": "111434cfa69e5a73c8edb31594ad4b61de9c9de8c1d8030f69fc6e68d0719f98"
  },
  "code": "US_AVGO",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-16T22:47:57.104013+00:00"
+ "generated_at": "2026-11-17T04:53:42.337186+00:00"
 }
