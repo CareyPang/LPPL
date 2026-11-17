@@ -316,6 +316,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
 <script src="app/lppl-data.js"></script>
 <script src="app/news-feed.js"></script>
+<script src="app/stock-watchlist.js"></script>
+<script src="app/watchlist.js"></script>
 <script>
 (function () {
   'use strict';
@@ -331,6 +333,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const statusMarkup = (reason, subject, retryAttr) =>
     `<p class="${reason === 'unavailable' ? 'fail' : 'note'}" data-reason="${E(reason)}">${E(subject)}：${E(REASON_TEXT[reason] || '状态未知')}</p>` +
     (reason === 'unavailable' && retryAttr ? `<button type="button" class="chip" ${retryAttr}>重试</button>` : '');
+  let stockListResult = null, stockNames = new Map();
+  const watchlistEntries = () => (window.IndexWatchlist?.stocks() || []).map((code) => ({
+    code,
+    name: stockNames.get(code) || '',
+  }));
+  function syncNewsWatchlist() {
+    if (!newsRefreshState) return;
+    newsRefreshState.watchlist = watchlistEntries();
+    newsRefreshState.watchlistReason = stockListResult?.reason || null;
+    if (!newsRefreshState.watchlist.length) newsRefreshState.watchOnly = false;
+    newsRefreshState.render();
+  }
   const yi = (v, d = 1) => num(v) ? (v / 1e8).toFixed(d) : '—';
   const money = (v) => num(v) ? (Math.abs(v) >= 1e8 ? (v / 1e8).toFixed(2) + '亿' : (v / 1e4).toFixed(1) + '万') : '—';
   const pct = (v, d = 2) => num(v) ? (v > 0 ? '+' : '') + v.toFixed(d) + '%' : '—';
@@ -738,12 +752,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       if (ymd === bjParts(yd).year + '-' + bjParts(yd).month + '-' + bjParts(yd).day) return `昨天 · ${md}`;
       return `${y}年${md}`;
     };
-    const feed = (rows, filter) => {
+    const feed = (rows, filter, watchlist, watchOnly) => {
       const now = Date.now(), tp = bjParts(new Date(now)), todayYmd = `${tp.year}-${tp.month}-${tp.day}`;
       const items = [
         ...(filter === 'em' ? [] : rows.cls.map((r) => ({ ...r, k: 'cls' }))),
         ...(filter === 'cls' ? [] : rows.eastmoney.map((r) => ({ ...r, k: 'em' }))),
-      ].map((r) => ({ ...r, d: bjDate(r.time), ks: [r.k] })).sort((a, b) => (b.d?.getTime() || 0) - (a.d?.getTime() || 0));
+      ].map((r) => ({ ...r, d: bjDate(r.time), ks: [r.k] }))
+        .filter((r) => !watchOnly || LPPLNewsFeed.mentions(r, watchlist))
+        .sort((a, b) => (b.d?.getTime() || 0) - (a.d?.getTime() || 0));
       const seen = new Map();
       for (const r of items) {
         const key = String(r.title || '').replace(/^财联社\d+月\d+日电[，,]?/, '').replace(/[\s，,。！!：:；;“”"'（）()【】\[\]]/g, '').slice(0, 40);
@@ -760,8 +776,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         ? `<button type="button" class="news-new-items" data-load-news aria-live="polite">有 ${state.newCount} 条新快讯，点击加载</button>`
         : '';
       const chips = `<div class="news-filter" role="group" aria-label="快讯来源">${[['all', '全部'], ['cls', '财联社'], ['em', '东方财富']].map(([k, t]) =>
-        `<button type="button" data-news-filter="${k}" aria-pressed="${filter === k}">${t}</button>`).join('')}</div>`;
-      if (!shown.length) return newItems + chips + '<p class="note">暂无快讯。</p>';
+        `<button type="button" data-news-filter="${k}" aria-pressed="${filter === k}">${t}</button>`).join('')}` +
+        `<button type="button" data-watch-filter aria-pressed="${watchOnly}"${watchlist.length ? '' : ' disabled title="先加自选"'}>自选相关</button></div>`;
+      const directoryStatus = state.watchlistReason && state.watchlistReason !== 'empty'
+        ? statusMarkup(state.watchlistReason, '自选股票名称目录', 'data-retry-stock-directory') : '';
+      if (!shown.length) return directoryStatus + newItems + chips + `<p class="note">${watchOnly ? '暂无自选相关快讯。' : '暂无快讯。'}</p>`;
       let lastDay = '', html = '';
       for (const r of shown) {
         const pp = r.d ? bjParts(r.d) : null, ymd = pp ? `${pp.year}-${pp.month}-${pp.day}` : '';
@@ -770,7 +789,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         const title = /^https?:\/\//i.test(r.url) ? `<a href="${E(r.url)}" target="_blank" rel="noreferrer">${E(r.title)}</a>` : `<b>${E(r.title)}</b>`;
         html += `<article class="news-card" data-news-key="${E(LPPLNewsFeed.key(r, r.k))}"><div class="news-meta">${r.ks.map((k) => `<span class="news-src ${k}">${SRC[k]}</span>`).join('')}<span class="m">${hm}</span><span class="news-rel">${E(relTime(r.d, now))}</span></div>${title}</article>`;
       }
-      return newItems + chips + `<div class="news-feed">${html}</div>`;
+      return directoryStatus + newItems + chips + `<div class="news-feed">${html}</div>`;
     };
     if (newsRefreshState) {
       newsRefreshState.render();
@@ -781,6 +800,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       rows: { cls: clsRows, eastmoney: emRows },
       pendingRows: null,
       newCount: 0,
+      watchlist: watchlistEntries(),
+      watchlistReason: stockListResult?.reason || null,
+      watchOnly: false,
       filter: 'all',
       sourceErrors: [],
       status: '',
@@ -824,11 +846,12 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       $('news-body').innerHTML = (state.status ? `<p class="${state.statusClass} news-status"${reasonAttr}>${E(state.status)}</p>` : '') +
         (state.statusReason === 'unavailable' ? '<button type="button" class="chip news-retry" data-retry-news>重试实时快讯</button>' : '') +
         initialErrors + sourceErrors +
-        feed(state.rows, state.filter) +
+        feed(state.rows, state.filter, state.watchlist, state.watchOnly) +
         (!state.isLive && state.note ? `<p class="note">${E(state.note)}</p>` : '');
     };
     $('news-body').addEventListener('click', (ev) => {
       if (ev.target.closest('[data-retry-news]')) { refresh(true); return; }
+      if (ev.target.closest('[data-retry-stock-directory]')) { loadStockDirectory(); return; }
       if (ev.target.closest('[data-load-news]')) {
         const cards = Array.from($('news-body').querySelectorAll('.news-card[data-news-key]'));
         const anchor = cards.map((card) => ({ card, top: card.getBoundingClientRect().top }))
@@ -845,10 +868,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         return;
       }
       const btn = ev.target.closest('[data-news-filter]');
-      if (!btn) return;
-      state.filter = btn.dataset.newsFilter;
+      if (btn) state.filter = btn.dataset.newsFilter;
+      else if (ev.target.closest('[data-watch-filter]')) state.watchOnly = !state.watchOnly;
+      else return;
       render();
     });
+    addEventListener('lppl-watch', syncNewsWatchlist);
+    addEventListener('storage', syncNewsWatchlist);
     const refresh = async (force = false) => {
       if (document.visibilityState !== 'visible') return;
       if (state.inFlight) {
@@ -1280,6 +1306,19 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     if (typeof renderSummary === 'function') renderSummary();
   }
+  async function loadStockDirectory() {
+    stockListResult = await LPPL.fetchResult('market/stock_list.json', {
+      empty: (data) => !Array.isArray(data?.rows) || data.rows.length === 0,
+    });
+    stockNames = new Map();
+    for (const row of stockListResult.data?.rows || []) {
+      const code = Array.isArray(row) ? row[0] : row.code;
+      const name = Array.isArray(row) ? row[1] : row.name;
+      if (/^\d{6}$/.test(String(code || '')) && typeof name === 'string' && name) stockNames.set(code, name);
+    }
+    syncNewsWatchlist();
+    if (typeof renderSummary === 'function') renderSummary();
+  }
   async function loadEvents() {
     eventResult = await LPPL.fetchResult('events/events_latest.json', {
       empty: (data) => !data || ['lift', 'dividend', 'forecast']
@@ -1296,6 +1335,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (event.target.closest('[data-retry-events]')) loadEvents();
   });
   loadMarket();
+  loadStockDirectory();
   loadEvents();
   LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
     .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });

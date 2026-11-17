@@ -30,3 +30,12 @@ test('news merge retains existing rows and replaces matching rows by identity', 
     eastmoney: [],
   });
 });
+
+test('watchlist matcher recognizes stock names and bounded six-digit codes', () => {
+  const watchlist = [{ code: '600519', name: '贵州茅台' }];
+  assert.equal(NewsFeed.mentions({ title: '贵州茅台发布公告' }, watchlist), true);
+  assert.equal(NewsFeed.mentions({ title: '买入 600519 后关注' }, watchlist), true);
+  assert.equal(NewsFeed.mentions({ title: '代码 1600519 的记录' }, watchlist), false);
+  assert.equal(NewsFeed.mentions({ title: '代码 6005190 的记录' }, watchlist), false);
+  assert.equal(NewsFeed.mentions({ title: '其他股票' }, []), false);
+});

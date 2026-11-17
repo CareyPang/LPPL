@@ -44,5 +44,18 @@
     return result;
   }
 
-  return { key: key, diff: diff, merge: merge };
+  function mentions(row, watchlist) {
+    var entries = Array.isArray(watchlist) ? watchlist : [];
+    var text = [row && row.title, row && row.content, row && row.summary, row && row.description]
+      .filter(Boolean).join(' ');
+    return entries.some(function (entry) {
+      var code = typeof entry === 'string' ? entry : entry && entry.code;
+      var name = typeof entry === 'object' && entry ? entry.name : '';
+      if (typeof name === 'string' && name.trim() && text.includes(name.trim())) return true;
+      if (typeof code !== 'string' || !/^\d{6}$/.test(code)) return false;
+      return new RegExp('(^|\\D)' + code + '(?=\\D|$)').test(text);
+    });
+  }
+
+  return { key: key, diff: diff, merge: merge, mentions: mentions };
 });
