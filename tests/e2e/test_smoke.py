@@ -328,6 +328,32 @@ def test_tablet_sidebar_and_assistant_drawer(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_backtest_sidebar_links_switch_views(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html")
+    strategy = page.locator(
+        '.odn-sidebar .odn-side-link[href="backtest.html#view=strategy"]'
+    )
+    replay = page.locator(
+        '.odn-sidebar .odn-side-link[href="backtest.html#view=scenario"]'
+    )
+    strategy.click()
+    expect(page.locator("#strategy-view")).to_be_visible()
+    expect(page.locator("main.app")).to_be_hidden()
+    expect(strategy).to_have_attribute("aria-current", "location")
+    expect(page.locator('.bt-views a[data-view="strategy"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    replay.click()
+    expect(page.locator("#strategy-view")).to_be_hidden()
+    expect(page.locator("main.app")).to_be_visible()
+    expect(replay).to_have_attribute("aria-current", "location")
+    expect(page.locator('.bt-views a[data-view="scenario"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+
+
+@pytest.mark.e2e
 def test_mobile_navigation_fits_and_drives_fullscreen_assistant(page: Page) -> None:
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{BASE_URL}/home.html")
