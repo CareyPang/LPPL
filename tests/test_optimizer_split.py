@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from research.features import lppls_scan
 import research.lppls.trust as trust_module
+from research.features import lppls_scan
 from research.optim.optimizers import de_lbfgsb
-from research.pipeline import daily, stock
+from research.pipeline import stock
 
 
 def _synthetic_window(n=160):
