@@ -3,7 +3,7 @@
  "name": "半导体 ETF",
  "asof": "2026-11-16",
  "data_version": "us_SOXX_20261116_1b474fdaa01d02d4",
- "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
   "holidays_through": null,
@@ -55,7 +55,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.333,
+     "early": 0.5,
      "end": 0.0,
      "pure": 0.0
     },
@@ -67,9 +67,9 @@
      "m_hi": 0.0,
      "w_lo": 0.167,
      "w_hi": 0.0,
-     "tc_lo": 0.5,
+     "tc_lo": 0.333,
      "tc_hi": 0.0,
-     "any": 0.667,
+     "any": 0.5,
      "tol": 0.01
     },
     "null_fpr": {
@@ -109,11 +109,11 @@
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
-     "w_lo": 0.5,
+     "w_lo": 0.4,
      "w_hi": 0.0,
      "tc_lo": 0.2,
      "tc_hi": 0.0,
-     "any": 0.6,
+     "any": 0.5,
      "tol": 0.01
     },
     "null_fpr": {
@@ -5349,6 +5349,9 @@
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
+ "params": {
+  "optimizer": "de_lbfgsb"
+ },
  "stock_meta": {
   "variant": "stk_lite",
   "status": "eligible",
@@ -5385,7 +5388,7 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
+ "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
  "fit_input_hash": "6644a5b23e265edbc9337d1175cde0b51546be1799544a9ebf927822f810d887",
  "history_input_hashes": {
   "2023-11-13": "83ed2e3cf62091fb8902a5f9ef8e52e506fbd4937c418561a99f3f77dc70b269",
@@ -6147,5 +6150,5 @@
  "code": "US_SOXX",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T05:37:58.774881+00:00"
+ "generated_at": "2026-11-17T23:02:41.475078+00:00"
 }
