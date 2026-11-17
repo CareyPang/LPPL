@@ -88,6 +88,25 @@ HTTP 202 返回 `queued, deduped, code, mode, history_weeks, job_id, requested_a
 
 新鲜度以最近收盘时间为界，不含节假日日历。**拟合代码变化本身不会使收盘后发布的查询结果失效**；带 `job_id` 的收盘后查询结果可在节假日沿用较早 `asof`，直到下一次查询或夜间刷新发布。无 `job_id` 的夜间结果若 `asof` 早于最近收盘日则不会复用。
 
+### `POST /ai`
+
+将当前页面已提供的数据和问题转发给 DeepSeek 研究助手。请求示例：
+
+```json
+{
+  "page": "stock",
+  "question": "请解释页面上的主簇区间",
+  "context": "页面当前显示的模型与行情信息",
+  "history": [{"role":"assistant","content":"上一轮回答"}]
+}
+```
+
+`page` 必须为 `stock`、`index`、`backtest` 或 `market`；`question` 去除首尾空白后为1至500字符；`context` 必须为字符串且不超过8000字符；可选 `history` 最多6条，每条角色为 `user` 或 `assistant`、内容不超过1500字符。原始JSON请求体上限32 KiB。请求先检查额度，再调用模型；默认每IP每10分钟10次、全局每天200次，可分别用 `AI_PER_IP_10M`（上限100）和 `AI_PER_DAY`（上限5000）调整。
+
+成功时以 `text/event-stream` 返回 `data: {"delta":"..."}` 消息，最后发送 `{"done":true}`；触发回答拦截时发送 `{"blocked":true}` 并终止。上游中断会发送 `{"error":"研究助手连接中断"}`。缺少密钥返回503，额度耗尽返回429；上游错误统一映射为502，不回显上游正文或密钥。
+
+默认模型为 `deepseek-flash`，可用 `AI_MODEL` 调整；请求显式设置 `thinking: {"type":"disabled"}`。服务端密钥不得写入 `wrangler.toml` 或提交到仓库，配置方式为在 Worker 目录运行 `wrangler secret put DEEPSEEK_API_KEY`。本地测试只使用模拟 `fetch`，不调用真实模型。
+
 ### `GET /status?code=600519&job_id=UUID`
 
 返回 `status/conclusion/phase`、`current_ready/history_ready/error_ready` 及任务身份。只有该任务产物的 `code/job_id/source_sha/mode` 一致，才标记可读。
