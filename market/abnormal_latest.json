@@ -1,11 +1,11 @@
 {
   "asof": "2026-11-17",
-  "generated": "2026-11-17T19:16:53.942687+00:00",
+  "generated": "2026-11-17T21:30:38.534821+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
-    "candidate_count": 161,
-    "available_count": 161,
+    "candidate_count": 163,
+    "available_count": 163,
     "missing": 3,
     "missing_codes": [
       {
@@ -27,9 +27,9 @@
     "rule_source": "交易所异常波动规则摘要"
   },
   "counts": {
-    "candidate_count": 161,
-    "available_count": 161,
-    "near": 46,
+    "candidate_count": 163,
+    "available_count": 163,
+    "near": 47,
     "triggered": 27,
     "stale_bar": 0
   },
@@ -1448,6 +1448,43 @@
       "triggered": false
     },
     {
+      "code": "000062",
+      "name": "深圳华强",
+      "board": "深主板",
+      "benchmark": "sz399001",
+      "last_bar_date": "2026-11-17",
+      "stale_bar": false,
+      "candidate_sources": [
+        "hot_eastmoney"
+      ],
+      "dev_3d": 18.035146113803734,
+      "dev_10d": 20.82927410770662,
+      "dev_30d": 20.40573630138732,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "up",
+        "threshold_pct": 20.0,
+        "remaining_pp": 1.9648538861962663
+      },
+      "remaining_pp": 1.9648538861962663,
+      "near": true,
+      "triggered": false
+    },
+    {
       "code": "600838",
       "name": "上海九百",
       "board": "沪主板",
@@ -1933,43 +1970,6 @@
       "remaining_pp": 5.457380970445341,
       "near": false,
       "triggered": false
-    },
-    {
-      "code": "603706",
-      "name": "东方环宇",
-      "board": "沪主板",
-      "benchmark": "sh000001",
-      "last_bar_date": "2026-11-17",
-      "stale_bar": false,
-      "candidate_sources": [
-        "limit_pools_dt"
-      ],
-      "dev_3d": -14.388981507410149,
-      "dev_10d": 28.743034724576255,
-      "dev_30d": 39.04419680659378,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "down",
-        "threshold_pct": -20.0,
-        "remaining_pp": 5.611018492589851
-      },
-      "remaining_pp": 5.611018492589851,
-      "near": false,
-      "triggered": false
     }
   ],
   "evidence": "descriptive",
@@ -1977,7 +1977,7 @@
   "version": {
     "kind": "abnormal",
     "asof": "2026-11-17",
-    "file": "versions/abnormal/2026-11-17/20261117T191653Z_ae446c9c.json.gz",
-    "sha256": "ae446c9c63317bf164d07ed549d29c0ad6cdc1a2ac4455cc0fa375850d51b4f6"
+    "file": "versions/abnormal/2026-11-17/20261117T213038Z_52af9c05.json.gz",
+    "sha256": "52af9c05d912cb2f8f44b57d08dd298344b4a8c5ca17bf154b2b4ee905dbfcc5"
   }
 }
