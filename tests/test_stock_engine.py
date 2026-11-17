@@ -31,7 +31,7 @@ def _ohlc(n: int, start: str = "2020-01-01") -> pd.DataFrame:
     )
 
 
-def _fake_fit_asof(logp, asof, windows):
+def _fake_fit_asof(logp, asof, windows, opt=None):
     pos = logp.index.get_loc(pd.Timestamp(asof))
     rows = []
     for n in windows:
@@ -619,7 +619,7 @@ def test_history_cache_reuses_asofs_after_appending_one_bar(monkeypatch, tmp_pat
     monkeypatch.setattr(stock, "_name_and_st", lambda code: ("sample", False))
     calls = []
 
-    def counted_fit(logp, asof, windows):
+    def counted_fit(logp, asof, windows, opt=None):
         calls.append((pd.Timestamp(asof), tuple(windows)))
         return _fake_fit_asof(logp, asof, windows)
 
@@ -645,7 +645,7 @@ def test_history_cache_invalidates_restatement(monkeypatch, tmp_path):
     monkeypatch.setattr(stock, "_name_and_st", lambda code: ("sample", False))
     calls = []
 
-    def counted_fit(logp, asof, windows):
+    def counted_fit(logp, asof, windows, opt=None):
         calls.append((pd.Timestamp(asof), tuple(windows)))
         return _fake_fit_asof(logp, asof, windows)
 
@@ -1173,12 +1173,13 @@ def test_current_and_history_reuse_identical_fit_cache(monkeypatch, tmp_path):
     monkeypatch.setattr(stock, "_name_and_st", lambda _code: ("sample", False))
     calls = []
 
-    def fit(logp, date, windows):
+    def fit(logp, date, windows, opt=None):
         calls.append((date, windows))
         return _fake_fit_asof(logp, date, windows)
 
     monkeypatch.setattr(stock, "fit_asof", fit)
     current = stock.predict("600519", procs=1, cache_dir=tmp_path)
+    assert current["params"]["optimizer"] == "de_lbfgsb"
     assert len(calls) == 2
     calls.clear()
     historical = stock.history("600519", weeks=1, procs=1, cache_dir=tmp_path)
@@ -1197,7 +1198,7 @@ def test_history_reuses_sealed_price_snapshot_and_fit_cache(monkeypatch, tmp_pat
     monkeypatch.setattr(stock, "_name_and_st", lambda _code: ("sample", False))
     calls = []
 
-    def counted_fit(logp, asof, windows):
+    def counted_fit(logp, asof, windows, opt=None):
         calls.append((pd.Timestamp(asof), tuple(windows)))
         return _fake_fit_asof(logp, asof, windows)
 
@@ -1264,6 +1265,10 @@ def test_cache_key_covers_exact_input_dates_configuration_and_optimizer(monkeypa
     monkeypatch.setattr(stock.lppls_scan, "SIGN", "neg")
     assert stock._version() != version
     monkeypatch.setattr(stock.lppls_scan, "SIGN", "pos")
+    optimizer = stock.STOCK_FIT_OPT
+    monkeypatch.setattr(stock, "STOCK_FIT_OPT", "tcgrid")
+    assert stock._version() != version
+    monkeypatch.setattr(stock, "STOCK_FIT_OPT", optimizer)
     original_read = Path.read_bytes
     monkeypatch.setattr(Path, "read_bytes", lambda path: original_read(path) + (
         b"\n# optimizer changed" if path.as_posix().endswith("optim/optimizers.py") else b""
