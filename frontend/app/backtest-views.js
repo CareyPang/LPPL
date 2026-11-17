@@ -36,9 +36,13 @@
     if (push && history.replaceState) { var u = new URL(location.href); u.hash = 'view=' + view; history.replaceState(null, '', u); }
     setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0);
   }
+  function showLocationView() {
+    var v = (location.hash.match(/view=(\w+)/) || [])[1];
+    show(v === 'strategy' ? 'strategy' : 'scenario', false);
+  }
   views.addEventListener('click', function (e) { var a = e.target.closest('a[data-view]'); if (!a) return; e.preventDefault(); show(a.dataset.view, true); });
+  window.addEventListener('hashchange', showLocationView);
   var symN = document.getElementById('sym-n');
   if (symN && window.MutationObserver) new MutationObserver(function () { if (!sv.hidden) { loadedFor = ''; loadStrategy(); } }).observe(symN, { childList: true, characterData: true, subtree: true });
-  var v = (location.hash.match(/view=(\w+)/) || [])[1];
-  show(v === 'strategy' ? 'strategy' : 'scenario', false);
+  showLocationView();
 })();

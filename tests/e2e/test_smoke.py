@@ -17,6 +17,15 @@ def expect(locator: object):
     return playwright_expect(locator)
 
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
+NAV_PAGES = (
+    "home.html",
+    "index.html?code=sh000001",
+    "stock.html",
+    "market.html",
+    "backtest.html",
+    "tools.html",
+    "chart.html?code=sh601838&scale=6-12m",
+)
 
 
 def assert_page_has_no_overflow(page: Page, path: str) -> None:
@@ -201,10 +210,6 @@ def test_overflow_3_stock_detail(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="index.html still overflows at 390px (document scrollWidth 474px)",
-    strict=True,
-)
 def test_overflow_4_index_page(page: Page) -> None:
     assert_page_has_no_overflow(page, "index.html?code=sh000001")
 
@@ -242,3 +247,226 @@ def test_flow_8_chart_band_and_same_origin_back_link(page: Page) -> None:
         "(href) => new URL(href, location.href).origin", href
     )
     assert return_origin == urlsplit(page.url).scheme + "://" + urlsplit(page.url).netloc
+
+
+@pytest.mark.e2e
+def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/home.html")
+    sidebar = page.locator(".odn-sidebar")
+    expect(sidebar).to_be_visible()
+    expect(page.locator(".odn-side-main")).to_have_count(5)
+    assistant = page.locator(".ai-panel.ai-dock")
+    expect(assistant).to_be_visible()
+    sidebar_box = sidebar.bounding_box()
+    assistant_box = assistant.bounding_box()
+    content_box = page.locator("header.odn").bounding_box()
+    assert sidebar_box and assistant_box and content_box
+    assert abs(sidebar_box["x"]) <= 1 and abs(sidebar_box["width"] - 208) <= 1
+    assert abs(assistant_box["x"] - 208) <= 1 and abs(assistant_box["width"] - 340) <= 1
+    assert assistant_box["x"] + assistant_box["width"] <= content_box["x"] + 1
+    assert content_box["x"] >= 572
+
+
+@pytest.mark.e2e
+def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
+    for path in NAV_PAGES:
+        page.set_viewport_size({"width": 1440, "height": 900})
+        page.goto(f"{BASE_URL}/{path}")
+        panel = page.locator(".ai-panel")
+        expect(panel).to_be_visible()
+        panel_box = panel.bounding_box()
+        head_box = page.locator(".ai-head").bounding_box()
+        content_left = page.evaluate(
+            """() => {
+              const el = document.body.classList.contains('vs-home')
+                ? document.querySelector('.hero-copy')
+                : document.querySelector('main') || document.querySelector('h1');
+              return el && el.getBoundingClientRect().left;
+            }"""
+        )
+        assert panel_box and head_box and content_left is not None, path
+        assert abs(panel_box["y"]) <= 1 and abs(head_box["y"]) <= 1, (path, panel_box, head_box)
+        assert content_left >= panel_box["x"] + panel_box["width"] + 23, (path, content_left)
+
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
+        panel_box = panel.bounding_box()
+        head_box = page.locator(".ai-head").bounding_box()
+        assert panel_box and head_box, path
+        assert abs(panel_box["y"] - 52) <= 1 and abs(head_box["y"] - 52) <= 1, (
+            path,
+            panel_box,
+            head_box,
+        )
+
+
+@pytest.mark.e2e
+def test_desktop_navigation_pages_have_no_horizontal_overflow(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    for path in NAV_PAGES:
+        page.goto(f"{BASE_URL}/{path}")
+        page.wait_for_timeout(100)
+        dimensions = page.evaluate(
+            "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+        )
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, (path, dimensions)
+
+
+@pytest.mark.e2e
+def test_tablet_sidebar_and_assistant_drawer(page: Page) -> None:
+    page.set_viewport_size({"width": 1024, "height": 768})
+    page.goto(f"{BASE_URL}/home.html")
+    expect(page.locator(".odn-sidebar")).to_be_visible()
+    expect(page.locator(".odn-side-main")).to_have_count(5)
+    expect(page.locator(".ai-panel")).to_be_hidden()
+    assistant_button = page.locator(".odn-r .ai-btn")
+    expect(assistant_button).to_be_visible()
+    assistant_button.click()
+    expect(page.locator(".ai-panel")).to_be_visible()
+    expect(page.locator(".ai-panel.ai-dock")).to_have_count(0)
+
+
+@pytest.mark.e2e
+def test_backtest_sidebar_links_switch_views(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html")
+    strategy = page.locator(
+        '.odn-sidebar .odn-side-link[href="backtest.html#view=strategy"]'
+    )
+    replay = page.locator(
+        '.odn-sidebar .odn-side-link[href="backtest.html#view=scenario"]'
+    )
+    strategy.click()
+    expect(page.locator("#strategy-view")).to_be_visible()
+    expect(page.locator("main.app")).to_be_hidden()
+    expect(strategy).to_have_attribute("aria-current", "location")
+    expect(page.locator('.bt-views a[data-view="strategy"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    replay.click()
+    expect(page.locator("#strategy-view")).to_be_hidden()
+    expect(page.locator("main.app")).to_be_visible()
+    expect(replay).to_have_attribute("aria-current", "location")
+    expect(page.locator('.bt-views a[data-view="scenario"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+
+
+@pytest.mark.e2e
+def test_guide_navigation_loads_and_escape_closes_help(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{BASE_URL}/guide.html")
+    expect(page.locator("header.odn")).to_be_visible()
+    assert not errors, errors
+    help_menu = page.locator(".odn-help")
+    help_menu.locator("summary").click()
+    expect(help_menu).to_have_attribute("open", "")
+    page.keyboard.press("Escape")
+    expect(help_menu).not_to_have_attribute("open", "")
+
+
+@pytest.mark.e2e
+def test_mobile_navigation_fits_and_drives_fullscreen_assistant(page: Page) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{BASE_URL}/home.html")
+    entries = page.locator(".odn-main a")
+    expect(entries).to_have_count(5)
+    bounds = entries.evaluate_all(
+        "(items) => items.map((item) => { const r = item.getBoundingClientRect(); return [r.left, r.right]; })"
+    )
+    assert all(left >= -1 and right <= 391 for left, right in bounds), bounds
+    dimensions = page.evaluate(
+        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    expect(page.locator(".ai-btn")).to_be_hidden()
+
+    page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
+    panel = page.locator(".ai-panel")
+    expect(panel).to_be_visible()
+    expect(page.locator('.odn-mobile-toggle button[data-mode="assistant"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    panel_box = panel.bounding_box()
+    assert panel_box and abs(panel_box["x"]) <= 1 and abs(panel_box["width"] - 390) <= 1
+    assert abs(panel_box["y"] - 52) <= 1 and abs(panel_box["height"] - 792) <= 1
+    page.locator('.odn-mobile-toggle button[data-mode="data"]').click()
+    expect(panel).to_be_hidden()
+    dimensions = page.evaluate(
+        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    page.set_viewport_size({"width": 360, "height": 844})
+    bounds = entries.evaluate_all(
+        "(items) => items.map((item) => { const r = item.getBoundingClientRect(); return [r.left, r.right]; })"
+    )
+    assert all(left >= -1 and right <= 361 for left, right in bounds), bounds
+    dimensions = page.evaluate(
+        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+
+
+@pytest.mark.e2e
+def test_tools_assistant_mounts_without_main_container(page: Page) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{BASE_URL}/tools.html")
+    page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
+    panel = page.locator(".ai-panel")
+    expect(panel).to_be_visible()
+    box = panel.bounding_box()
+    assert box and abs(box["y"] - 52) <= 1 and abs(box["height"] - 792) <= 1
+    page.locator('.odn-mobile-toggle button[data-mode="data"]').click()
+    expect(panel).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_stock_page_uses_general_asset_copy(page: Page) -> None:
+    page.goto(f"{BASE_URL}/stock.html")
+    expect(page.locator(".hero .eyebrow")).to_have_text("标的 · 指数 / 行业 / 个股")
+    expect(page.locator(".hero h1")).to_have_text("查标的")
+    expect(page.locator(".hero .lead")).to_contain_text(
+        "输入指数、股票代码、名称或拼音首字母"
+    )
+    expect(page).to_have_title("临界点 · 标的")
+    description = page.locator('meta[name="description"]').get_attribute("content")
+    assert description and "输入指数、股票代码" in description and "个股日线" not in description
+
+
+@pytest.mark.e2e
+def test_three_segment_validation_link_is_active_on_index(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/index.html#p-bench")
+    expect(page.locator('.odn-sidebar a[href="index.html#p-bench"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+
+
+@pytest.mark.e2e
+def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/market.html")
+    assert page.evaluate("window.scrollY") == 0
+    expect(page.locator('.odn-sidebar .odn-side-link[href="market.html#s-news"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    expect(page.locator('.odn-l2 .odn-sub a[href="#s-news"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+
+
+@pytest.mark.e2e
+def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
+    page.goto(f"{BASE_URL}/market.html")
+    tabs = page.locator(".odn-sub a.odn-t")
+    expect(tabs).to_have_count(4)
+    emotion_tab = tabs.filter(has_text="情绪")
+    emotion_tab.click()
+    expect(page.locator("#s-limit")).to_be_visible()
+    expect(emotion_tab).to_have_attribute("aria-current", "location")
+    expect(
+        page.locator(".odn-sidebar .odn-side-link").filter(has_text="情绪")
+    ).to_have_attribute("aria-current", "location")

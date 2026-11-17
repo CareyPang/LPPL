@@ -104,7 +104,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
   </header>
 
   <section class="grid" id="tools" aria-label="工具列表">
-    <article class="card" style="--tint:linear-gradient(135deg,#E8F1FF,#fff 72%)">
+    <article class="card" data-ai-context="汇率换算" style="--tint:linear-gradient(135deg,#E8F1FF,#fff 72%)">
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/fx-960.webp" srcset="assets/visual-suite/fx-480.webp 480w, assets/visual-suite/fx-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="eager" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>汇率换算</h2>
       <p class="sub">金额 × 汇率，支持银行“每 100 外币”牌价与交叉汇率</p>
@@ -113,7 +113,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <button class="open" data-tool="fx">打开工具</button>
     </article>
 
-    <article class="card" style="--tint:linear-gradient(135deg,#E6F3FF,#fff 72%)">
+    <article class="card" data-ai-context="时差与交易时钟" style="--tint:linear-gradient(135deg,#E6F3FF,#fff 72%)">
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/clock-960.webp" srcset="assets/visual-suite/clock-480.webp 480w, assets/visual-suite/clock-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="eager" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>时差与交易时钟</h2>
       <p class="sub">按真实时区规则换算，夏令时跳过和重复的时刻会提示</p>
@@ -122,7 +122,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <button class="open" data-tool="tz">打开工具</button>
     </article>
 
-    <article class="card" style="--tint:linear-gradient(135deg,#EEF1FA,#fff 72%)">
+    <article class="card" data-ai-context="单位换算" style="--tint:linear-gradient(135deg,#EEF1FA,#fff 72%)">
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/units-960.webp" srcset="assets/visual-suite/units-480.webp 480w, assets/visual-suite/units-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="eager" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>单位换算</h2>
       <p class="sub">克、千克、金衡盎司、香港金衡两、市两，以及温度</p>
@@ -131,7 +131,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <button class="open" data-tool="unit">打开工具</button>
     </article>
 
-    <article class="card" style="--tint:linear-gradient(135deg,#FFF5E0,#fff 72%)">
+    <article class="card" data-ai-context="金银价格换算" style="--tint:linear-gradient(135deg,#FFF5E0,#fff 72%)">
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/metals-960.webp" srcset="assets/visual-suite/metals-480.webp 480w, assets/visual-suite/metals-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="lazy" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>金银价格换算</h2>
       <p class="sub">美元/盎司按汇率换成人民币/克，可算国内价升贴水</p>
@@ -140,7 +140,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <button class="open" data-tool="metal">打开工具</button>
     </article>
 
-    <article class="card" style="--tint:linear-gradient(135deg,#FFF2E4,#fff 72%)">
+    <article class="card" data-ai-context="金价汇率情景" style="--tint:linear-gradient(135deg,#FFF2E4,#fff 72%)">
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/scenario-960.webp" srcset="assets/visual-suite/scenario-480.webp 480w, assets/visual-suite/scenario-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="lazy" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>金价汇率情景</h2>
       <p class="sub">美元金价不变，比较两个汇率下人民币金价差多少</p>
@@ -149,7 +149,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <button class="open" data-tool="scen">打开工具</button>
     </article>
 
-    <article class="card" style="--tint:linear-gradient(135deg,#E9F7F0,#fff 72%)">
+    <article class="card" data-ai-context="房贷计算器" style="--tint:linear-gradient(135deg,#E9F7F0,#fff 72%)">
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/mortgage-960.webp" srcset="assets/visual-suite/mortgage-480.webp 480w, assets/visual-suite/mortgage-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="lazy" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>房贷计算器</h2>
       <p class="sub">等额本息、等额本金，固定利率，列出每月明细</p>
@@ -343,5 +343,6 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
 })();
 </script>
 <script src="app/visual-suite.js" defer></script>
+<script src="app/ai-assistant.js" data-page="tools"></script>
 </body>
 </html>

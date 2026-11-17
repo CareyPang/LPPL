@@ -1,8 +1,7 @@
-/* 临界点 · 全站两层顶栏（Open Design 维护）
-   第一层：主页签（首页 / 终端 / 回测 / 市场 / 个股）+ 帮助 + 页面日期
-   第二层：当前栏目的子页签 + 页面自己的工具
+/* 临界点 · 全站侧栏与页面导航（Open Design 维护）
+   桌面侧栏提供五个任务入口，窄屏保留页面级导航条
    用法：在页面 <main> 之前放
-     <script src="app/od-nav.js" data-section="terminal|backtest|market|nt|stock|home"></script>
+     <script src="app/od-nav.js" data-section="home|stock|terminal|chart|market|nt|backtest|tools"></script>
    页面可用以下标记把已有元素交给顶栏（元素本身与其脚本逻辑不变）：
      [data-od-sub]   其子元素移入第二层左侧（作为子页签）
      [data-od-tools] 其子元素移入第二层右侧（页面工具）
@@ -14,37 +13,40 @@
   var section = (me && me.dataset.section) || 'home';
   var theme = (me && me.dataset.theme) || 'light';
 
+  var MARKET_SUB = [
+    { t: '今日', h: '#s-news', ids: ['s-summary', 's-news', 's-events'] },
+    { t: '资金', h: '#s-board', ids: ['s-board', 's-nb', 's-mg'] },
+    { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot', 's-lhb', 's-bottom', 's-abnormal', 's-range'] },
+    { t: '宏观', h: '#s-val', ids: ['s-val', 's-macro', 's-growth'] }
+  ];
   var MAIN = [
-    { k: 'home', t: '首页', h: 'home.html' },
-    { k: 'terminal', t: '图表', h: 'index.html' },
-    { k: 'market', t: '市场', h: 'market.html', also: ['nt', 'tools'] },
-    { k: 'backtest', t: '回测', h: 'backtest.html' },
-    { k: 'stock', t: '标的', h: 'stock.html' }
+    { k: 'home', t: '首页', h: 'home.html', sections: ['home'], sub: [
+      { t: '指数风险概览', h: 'home.html#index-overview', ids: ['index-overview'] },
+      { t: '今日摘要', h: 'home.html#today', ids: ['today'] },
+      { t: '我的自选', h: 'home.html#mine', ids: ['mine'] }
+    ] },
+  { k: 'stock', t: '标的', h: 'stock.html', sections: ['stock', 'terminal', 'chart'], sub: [
+    { t: '标的目录', h: 'stock.html', page: 'stock' },
+    { t: '指数', h: 'index.html?code=sh000001', page: 'terminal' }
+    ] },
+    { k: 'market', t: '市场', h: 'market.html', sections: ['market', 'nt'], sub: MARKET_SUB },
+    { k: 'backtest', t: '历史检验', h: 'backtest.html', sections: ['backtest'], sub: [
+      { t: '历史回放', h: 'backtest.html#view=scenario', key: 'scenario' },
+      { t: '策略回测', h: 'backtest.html#view=strategy', key: 'strategy' },
+      { t: '三段验证', h: 'index.html#p-bench', key: 'bench' }
+    ] },
+    { k: 'tools', t: '工具', h: 'tools.html', sections: ['tools'], sub: [] }
   ];
   var SUB_MAX = 7; /* 子页签最多 7 项，其余收进「更多 ▾」 */
   var HELP = [
     { t: '用户指南', h: 'guide.html' },
     { t: '研究仪表盘', h: 'lab/dashboard.html' },
-    { t: '更新日志', h: 'changelog.html' }
-  ];
-  /* 子页签：t 文字；h 链接；ids 属于该组的页面锚点（用于滚动高亮） */
-  var MARKET_SUB = [
-    { t: '快讯', h: '#s-news', ids: ['s-news'] },
-    { t: '事件日历', h: '#s-events', ids: ['s-events'] },
-    { t: '资金流', h: '#s-board', ids: ['s-board'] },
-    { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot', 's-lhb'] },
-    { t: '北向与两融', h: '#s-nb', ids: ['s-nb', 's-mg'] },
-    { t: '估值与宏观', h: '#s-val', ids: ['s-val', 's-macro'] },
-    { t: '成长监控', h: '#s-growth', ids: ['s-growth'] },
-    { t: '信号与统计', h: '#s-bottom', ids: ['s-bottom', 's-abnormal', 's-range'] },
-    { t: '数据状态', h: '#s-fresh', ids: ['s-fresh'] },
-    { t: '国家队ETF', h: 'nt.html', page: 'nt' },
-    { t: '工具', h: 'tools.html', page: 'tools' }
+    { t: '更新日志', h: 'changelog.html' },
+    { t: '数据状态', h: 'market.html#s-fresh' }
   ];
   var SUB = {
     market: MARKET_SUB,
-    nt: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
-    tools: MARKET_SUB.map(function (x) { return x.page ? x : { t: x.t, h: 'market.html' + x.h }; }),
+    nt: MARKET_SUB.map(function (x) { return { t: x.t, h: 'market.html' + x.h }; }),
     /* 标的页的页签由页面自己的吸顶头部提供（app/stock-header.js），顶栏不再重复一层 */
     stock: null
   };
@@ -123,12 +125,42 @@
 '.odn-qe{padding:9px 12px;color:#8c8c8c;font-size:13px}' +
 '.odn-light .odn-q input{background-color:#f0f3fa;border-color:#e0e3eb;color:#131722}.odn-light .odn-q input::placeholder{color:#6a6d78}.odn-light .odn-q input:focus{background-color:#fff;border-color:#1f5fd6}' +
 '.odn-light .odn-q kbd{color:#6a6d78;border-color:#d6dae3}.odn-light .odn-ql a span{color:#6a6d78}.odn-light .odn-ql li[aria-selected=true] a{background:#f0f3fa;color:#131722}' +
-'@media (min-width:1200px){.odn-q{width:300px}.odn-q input,.odn-light .odn-q input{box-sizing:border-box;width:100%;background-color:#fff;border-color:#9aa3b2;color:#131722}.odn-q input:focus,.odn-light .odn-q input:focus{width:100%;background-color:#fff}.odn-q input:hover,.odn-q input:focus-visible,.odn-light .odn-q input:hover,.odn-light .odn-q input:focus-visible{border-color:#315CF5;box-shadow:0 0 0 3px rgba(49,92,245,.18)}}' +
-'@media (max-width:1100px){.odn-asof{display:none}}' +
-'@media (max-width:760px){.odn-q input{width:150px}.odn-q input:focus{width:180px}.odn-q kbd{display:none}}' +
-'@media (max-width:420px){.odn-q input{width:110px}}' +
-'@media (max-width:860px){.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-brand{margin-right:8px}}' +
-'@media (max-width:520px){.odn-main{display:none}.odn-menu{display:block}.odn-help{display:none}.odn-r{gap:3px;padding-left:0}.odn-q input{box-sizing:border-box;width:clamp(138px,calc(100vw - 222px),168px);padding-right:12px}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 120px));max-width:calc(100vw - 24px)}}' +
+  '.odn-main-row{display:none}' +
+  '.odn-mobile-toggle{display:none;align-items:center;border:1px solid #333;border-radius:10px;overflow:hidden}' +
+  '.odn-mobile-toggle button{height:34px;padding:0 10px;border:0;background:transparent;color:#b2b5be;font:600 13px/1 inherit;white-space:nowrap}' +
+  '.odn-mobile-toggle button[aria-pressed=true]{background:#2a2a2a;color:#fff}' +
+  '.odn-light .odn-mobile-toggle{border-color:#d6dae3}.odn-light .odn-mobile-toggle button{color:#4c525e}.odn-light .odn-mobile-toggle button[aria-pressed=true]{background:#eaf1fd;color:#1f5fd6}' +
+  '.odn-sidebar{display:none;box-sizing:border-box;position:fixed;inset:0 auto 0 0;width:208px;z-index:70;overflow-y:auto;flex-direction:column;padding:14px 10px;background:#0f0f0f;color:#dbdbdb;border-right:1px solid #2a2a2a;font:14px/1.45 "Microsoft YaHei UI","PingFang SC","Noto Sans SC",system-ui,sans-serif}' +
+  '.odn-side-brand{display:flex;align-items:center;gap:8px;padding:4px 8px 14px;color:inherit;text-decoration:none;font-weight:700;font-size:17px;white-space:nowrap}' +
+  '.odn-side-brand i{width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:#2962ff;color:#fff;font:700 13px Consolas,monospace;font-style:normal}' +
+  '.odn-side-nav{display:block;min-height:0}' +
+  '.odn-side-group{margin:4px 0 2px}' +
+  '.odn-side-main{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;color:inherit;text-decoration:none;font-weight:650;white-space:nowrap}' +
+  '.odn-side-main i{width:14px;height:14px;flex:none;border:1.5px solid currentColor;border-radius:4px;font-style:normal}' +
+  '.odn-side-main:hover,.odn-side-main[aria-current=page]{background:#2a2a2a;color:#fff}' +
+  '.odn-side-sub{display:grid;gap:1px;padding:1px 0 5px 26px}' +
+  '.odn-side-link{display:block;min-width:0;padding:3px 7px;border-radius:6px;color:#b2b5be;text-decoration:none;font-size:12px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+  '.odn-side-link:hover,.odn-side-link[aria-current=location]{color:#fff;font-weight:600}' +
+  '.odn-side-link[aria-current=location]{background:#1f1f1f}' +
+  '.odn-side-link.odn-side-nested{padding-left:16px}' +
+  '.odn-side-footer{margin-top:auto;padding-top:10px;border-top:1px solid #2a2a2a}' +
+  '.odn-side-watch-title{padding:0 8px 4px;color:#8c8c8c;font-size:12px}' +
+  '.odn-side-watch-list{display:grid;gap:1px}' +
+  '.odn-side-watch-empty{padding:4px 8px;color:#8c8c8c;font-size:12px}' +
+  '.odn-side-watch-item{display:block;min-width:0;padding:4px 8px;border-radius:6px;color:inherit;text-decoration:none;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+  '.odn-side-watch-item:hover{background:#1f1f1f}' +
+  '.odn-side-help{display:grid;grid-template-columns:1fr 1fr;gap:2px 4px;margin-top:10px;padding-top:8px;border-top:1px solid #2a2a2a}' +
+  '.odn-side-help a{padding:4px 6px;border-radius:6px;color:#8c8c8c;text-decoration:none;font-size:11px;white-space:nowrap}' +
+  '.odn-side-help a:hover{background:#1f1f1f;color:#fff}' +
+  '.odn-sidebar-light{background:#fff;color:#131722;border-right-color:#e3e7ef}' +
+  '.odn-sidebar-light .odn-side-brand i{background:#1f5fd6}' +
+  '.odn-sidebar-light .odn-side-main:hover,.odn-sidebar-light .odn-side-main[aria-current=page]{background:#eaf1fd;color:#1f5fd6}' +
+  '.odn-sidebar-light .odn-side-link{color:#5a6478}' +
+  '.odn-sidebar-light .odn-side-link:hover,.odn-sidebar-light .odn-side-link[aria-current=location]{color:#1f5fd6}' +
+  '.odn-sidebar-light .odn-side-link[aria-current=location]{background:#eef3fd}' +
+  '.odn-sidebar-light .odn-side-footer,.odn-sidebar-light .odn-side-help{border-color:#eef1f6}' +
+  '.odn-sidebar-light .odn-side-watch-title,.odn-sidebar-light .odn-side-watch-empty,.odn-sidebar-light .odn-side-help a{color:#8a93a6}' +
+  '.odn-sidebar-light .odn-side-watch-item:hover,.odn-sidebar-light .odn-side-help a:hover{background:#f0f3fa;color:#131722}' +
 '.odn.odn-light{background:#fff;border-bottom-color:#e6e9ef;color:#131722}' +
 '.odn-light .odn-brand{color:#131722}.odn-light .odn-brand i{background:#1f5fd6}' +
 '.odn-light .odn-main a{color:#4c525e}.odn-light .odn-main a:hover{color:#131722;background:#f0f3fa}.odn-light .odn-main a[aria-current]{color:#131722;background:#e9edf5}' +
@@ -151,6 +183,9 @@
 '.odn-star:hover{color:#fff;background:#2a2a2a}.odn-light .odn-star{border-color:#d6dae3;color:#4c525e}.odn-light .odn-star:hover{background:#f0f3fa;color:#131722}' +
 '.odn-star b{font-weight:600;margin-left:4px;color:#2962ff}.odn-light .odn-star b{color:#1f5fd6}' +
 '@media (max-width:520px){.odn-star span{display:none}.odn-star{padding:0 10px}}' +
+'@media (min-width:1200px){body.odn-sidebar-page{padding-left:572px}.odn-sidebar{display:flex}.odn-l1{padding:0 16px}.odn-brand,.odn-main-row{display:none}.odn-r{width:100%;gap:10px}.odn-q{width:300px}.odn-q input,.odn-light .odn-q input{box-sizing:border-box;width:100%;background-color:#fff;border-color:#9aa3b2;color:#131722}.odn-q input:focus,.odn-light .odn-q input:focus{width:100%;background-color:#fff}.odn-q input:hover,.odn-q input:focus-visible,.odn-light .odn-q input:hover,.odn-light .odn-q input:focus-visible{border-color:#315CF5;box-shadow:0 0 0 3px rgba(49,92,245,.18)}}' +
+'@media (min-width:761px) and (max-width:1199px){body.odn-sidebar-page{padding-left:208px}.odn-sidebar{display:flex}.odn-brand,.odn-main-row{display:none}.odn-r{gap:8px}.odn-q{width:220px}.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-asof{display:none}}' +
+'@media (max-width:760px){body.odn-sidebar-page{padding-left:0}.odn-sidebar{display:none}.odn-l1{height:52px;padding:0 12px;gap:8px}.odn-brand{display:flex;margin-right:0}.odn-mobile-toggle{display:flex;margin-left:auto}.odn-r{margin-left:0;gap:4px;padding-left:0}.odn-q,.odn-asof,.odn-star,.ai-btn{display:none!important}.odn-menu{display:block}.odn-help{display:none}.odn-main-row{display:block}.odn-main{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;width:100%;overflow:visible;background:inherit}.odn-main a{box-sizing:border-box;justify-content:center;min-width:0;height:40px;padding:0 2px;border-radius:0;font-size:13px;overflow:hidden;text-overflow:ellipsis}.odn-main a[aria-current]{background:transparent;color:#2962ff;border-bottom:2px solid #2962ff}.odn-light .odn-main a[aria-current]{background:transparent;color:#1f5fd6;border-bottom-color:#1f5fd6}.odn-main-row{border-top:1px solid #1c1c1c}.odn-light .odn-main-row{border-color:#e6e9ef}.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 24px));max-width:calc(100vw - 24px)}body.ai-mobile-open .odn{z-index:130}body.ai-mobile-open .odn-main-row,body.ai-mobile-open .odn-l2{display:none}}' +
 '.odm-bg{position:fixed;inset:0;z-index:90;background:rgba(19,23,34,.42);display:none;align-items:flex-start;justify-content:center;padding:8vh 12px 12px}' +
 '.odm-bg.on{display:flex}' +
 '.odm{width:min(640px,100%);max-height:84vh;display:flex;flex-direction:column;background:#fff;color:#131722;border-radius:14px;box-shadow:0 24px 64px rgba(19,23,34,.28);overflow:hidden;font:14px/1.45 "Microsoft YaHei UI","PingFang SC","Noto Sans SC",system-ui,sans-serif}' +
@@ -185,24 +220,107 @@
     return e;
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function isMain(m) { return m.k === section || (m.also && m.also.indexOf(section) >= 0); }
+  function isMain(m) { return m.sections.indexOf(section) >= 0; }
 
   var hdr = el('header', 'odn' + (theme === 'light' ? ' odn-light' : ''));
   var file = (location.pathname.split('/').pop() || 'index.html');
   hdr.setAttribute('role', 'banner');
+  document.body.classList.add('odn-sidebar-page');
+
+  var sidebarLinks = [];
+  var sidebar = el('aside', 'odn-sidebar' + (theme === 'light' ? ' odn-sidebar-light' : ''));
+  sidebar.setAttribute('aria-label', '全站导航');
+  var sideBrand = el('a', 'odn-side-brand', '<i>C</i>临界点');
+  sideBrand.href = 'home.html';
+  sidebar.appendChild(sideBrand);
+  var sideNav = el('nav', 'odn-side-nav');
+  sideNav.setAttribute('aria-label', '主导航');
+  function addSideLink(parent, def, mainKey, nested) {
+    var a = el('a', 'odn-side-link' + (nested ? ' odn-side-nested' : ''), esc(def.t));
+    a.href = def.h;
+    if (def.page === section || (def.key === 'bench' && section === 'terminal' && location.hash === '#p-bench')) {
+      a.setAttribute('aria-current', 'location');
+    }
+    parent.appendChild(a);
+    sidebarLinks.push({ a: a, mainKey: mainKey, ids: def.ids || [], key: def.key || '', page: def.page || '' });
+    return a;
+  }
+  MAIN.forEach(function (m) {
+    var group = el('div', 'odn-side-group');
+    var mainLink = el('a', 'odn-side-main', '<i aria-hidden="true"></i>' + esc(m.t));
+    mainLink.href = m.h;
+    mainLink.dataset.navMain = m.k;
+    if (isMain(m)) mainLink.setAttribute('aria-current', 'page');
+    group.appendChild(mainLink);
+    if (m.sub.length) {
+      var sub = el('div', 'odn-side-sub');
+      m.sub.forEach(function (item) {
+        var def = Object.assign({}, item);
+        if (m.k === 'market') def.h = 'market.html' + item.h;
+        addSideLink(sub, def, m.k, false);
+        if (m.k === 'market' && item.t === '资金') {
+          addSideLink(sub, { t: '国家队ETF', h: 'nt.html', page: 'nt' }, m.k, true);
+        }
+      });
+      group.appendChild(sub);
+    }
+    sideNav.appendChild(group);
+  });
+  sidebar.appendChild(sideNav);
+  var sideFooter = el('div', 'odn-side-footer');
+  var watchTitle = el('div', 'odn-side-watch-title', '自选');
+  var watchList = el('div', 'odn-side-watch-list');
+  watchList.id = 'odn-side-watch-list';
+  watchList.innerHTML = '<div class="odn-side-watch-empty">还没有自选</div>';
+  sideFooter.appendChild(watchTitle);
+  sideFooter.appendChild(watchList);
+  var sideHelp = el('nav', 'odn-side-help');
+  sideHelp.setAttribute('aria-label', '帮助与状态');
+  HELP.forEach(function (item) {
+    var a = el('a', '', esc(item.t));
+    a.href = item.h;
+    sideHelp.appendChild(a);
+  });
+  sideFooter.appendChild(sideHelp);
+  sidebar.appendChild(sideFooter);
 
   /* ---------- 第一层 ---------- */
   var l1 = el('div', 'odn-l1');
-  l1.appendChild(el('a', 'odn-brand', '<i>C</i>临界点')).href = 'home.html';
+  var brand = el('a', 'odn-brand', '<i>C</i>临界点');
+  brand.href = 'home.html';
+  l1.appendChild(brand);
+  var mobileToggle = el('div', 'odn-mobile-toggle');
+  mobileToggle.setAttribute('role', 'group');
+  mobileToggle.setAttribute('aria-label', '页面视图');
+  mobileToggle.innerHTML = '<button type="button" data-mode="data" aria-pressed="true">数据</button>' +
+    '<button type="button" data-mode="assistant" aria-pressed="false">研究助手</button>';
+  mobileToggle.addEventListener('click', function (e) {
+    var button = e.target.closest('button[data-mode]');
+    if (!button) return;
+    if (button.dataset.mode === 'assistant') {
+      if (window.LPPLAssistant && window.LPPLAssistant.open) window.LPPLAssistant.open();
+      else document.dispatchEvent(new Event('lppl:assistant-open'));
+    } else if (window.LPPLAssistant && window.LPPLAssistant.close) window.LPPLAssistant.close();
+    else document.dispatchEvent(new Event('lppl:assistant-close'));
+  });
+  document.addEventListener('lppl:assistant-state', function (e) {
+    var open = !!(e.detail && e.detail.open);
+    mobileToggle.querySelectorAll('button[data-mode]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.mode === (open ? 'assistant' : 'data')));
+    });
+  });
+  l1.appendChild(mobileToggle);
   var nav = el('nav', 'odn-main');
-  nav.setAttribute('aria-label', '主页签');
+  nav.setAttribute('aria-label', '主导航');
   MAIN.forEach(function (m) {
     var a = el('a', '', esc(m.t));
     a.href = m.h;
+    a.dataset.navMain = m.k;
     if (isMain(m)) a.setAttribute('aria-current', 'page');
     nav.appendChild(a);
   });
-  l1.appendChild(nav);
+  var mainRow = el('div', 'odn-main-row');
+  mainRow.appendChild(nav);
   var right = el('div', 'odn-r');
   var asofSlot = el('div', 'odn-asof');
   right.appendChild(asofSlot);
@@ -262,6 +380,37 @@
       script.onload = function () { resolve(true); };
       script.onerror = function () { resolve(false); };
       document.head.appendChild(script);
+    });
+  }
+  var watchModulePromise = null;
+  function loadOdWatch() {
+    if (window.OdWatch && window.OdWatch.list) return Promise.resolve(window.OdWatch);
+    if (!watchModulePromise) {
+      watchModulePromise = (window.OdWatch ? Promise.resolve(true) : loadScript('od-watch.js'))
+        .then(function () { return window.OdWatch || null; });
+    }
+    return watchModulePromise;
+  }
+  function renderSidebarWatchlist() {
+    loadOdWatch().then(function (watch) {
+      if (!watch || typeof watch.list !== 'function') {
+        watchList.innerHTML = '<div class="odn-side-watch-empty">还没有自选</div>';
+        return;
+      }
+      return watch.list().then(function (items) {
+        watchList.textContent = '';
+        if (!items.length) {
+          watchList.innerHTML = '<div class="odn-side-watch-empty">还没有自选</div>';
+          return;
+        }
+        items.forEach(function (item) {
+          var a = el('a', 'odn-side-watch-item');
+          a.href = item.h;
+          a.textContent = item.name + (item.code ? ' · ' + item.code : '');
+          a.title = item.name + (item.code ? ' · ' + item.code : '');
+          watchList.appendChild(a);
+        });
+      });
     });
   }
   var searchDepsPromise = null;
@@ -345,8 +494,8 @@
   star.title = '自选：任意页面查看，按行情或模型状态';
   star.setAttribute('aria-label', '打开自选');
   star.addEventListener('click', function () {
-    (window.OdWatch ? Promise.resolve(true) : loadScript('od-watch.js')).then(function () {
-      if (window.OdWatch) window.OdWatch.toggle();
+    loadOdWatch().then(function (watch) {
+      if (watch) watch.toggle();
     });
   });
   right.appendChild(star);
@@ -485,16 +634,15 @@
   })();
   var menu = el('details', 'odn-menu');
   menu.innerHTML = '<summary aria-label="打开导航菜单">☰</summary><div class="odn-pop">' +
-    MAIN.map(function (m) { return '<a href="' + m.h + '"' + (isMain(m) ? ' aria-current="page"' : '') + '>' + esc(m.t) + '</a>'; }).join('') +
-    '<div class="odn-menu-sep" role="separator"></div>' +
     HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(menu);
   var help = el('details', 'odn-help');
-  help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、更新日志">?</summary><div class="odn-pop">' +
+  help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、更新日志、数据状态">?</summary><div class="odn-pop">' +
     HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(help);
   l1.appendChild(right);
   hdr.appendChild(l1);
+  hdr.appendChild(mainRow);
 
   /* ---------- 第二层 ---------- */
   var subDefs = SUB[section] || null;
@@ -590,7 +738,63 @@
   Array.prototype.forEach.call(document.querySelectorAll('header.bar'), function (h) {
     if (!h.textContent.trim() && !h.querySelector('input,button,canvas')) h.remove();
   });
+  document.body.insertBefore(sidebar, document.body.firstChild);
   document.body.insertBefore(hdr, document.body.firstChild);
+  renderSidebarWatchlist();
+  window.addEventListener('lppl-watch', renderSidebarWatchlist);
+  window.addEventListener('storage', renderSidebarWatchlist);
+
+  function syncSidebarActive() {
+    sidebarLinks.forEach(function (item) { item.a.removeAttribute('aria-current'); });
+    var selected = null;
+    if (section === 'market') {
+      var hashId = '';
+      try { hashId = decodeURIComponent(location.hash.slice(1)); } catch (err) { hashId = ''; }
+      var marketLinks = sidebarLinks.filter(function (item) { return item.mainKey === 'market'; });
+      selected = marketLinks.filter(function (item) {
+        return item.mainKey === 'market' && item.ids.indexOf(hashId) >= 0;
+      })[0];
+      if (!selected) {
+        var threshold = hdr.getBoundingClientRect().height + 16;
+        marketLinks.forEach(function (item) {
+          item.ids.forEach(function (id) {
+            var target = document.getElementById(id);
+            if (target && target.getClientRects().length && target.getBoundingClientRect().top <= threshold) selected = item;
+          });
+        });
+        if (!selected) selected = marketLinks[0] || null;
+      }
+    } else if (section === 'nt') {
+      selected = sidebarLinks.filter(function (item) { return item.page === 'nt'; })[0];
+    } else if (section === 'terminal' && location.hash === '#p-bench') {
+      selected = sidebarLinks.filter(function (item) { return item.key === 'bench'; })[0];
+    } else if (section === 'stock' || section === 'terminal') {
+      selected = sidebarLinks.filter(function (item) { return item.page === section; })[0];
+    } else if (section === 'backtest') {
+      var view = new URLSearchParams(location.hash.slice(1)).get('view') || 'scenario';
+      selected = sidebarLinks.filter(function (item) { return item.key === view; })[0];
+    } else {
+      var activeMain = MAIN.filter(isMain)[0];
+      if (activeMain) {
+        var candidates = sidebarLinks.filter(function (item) {
+          return item.mainKey === activeMain.k && item.ids.length;
+        });
+        var threshold = hdr.getBoundingClientRect().height + 16;
+        candidates.forEach(function (item) {
+          item.ids.forEach(function (id) {
+            var target = document.getElementById(id);
+            if (target && target.getClientRects().length && target.getBoundingClientRect().top <= threshold) selected = item;
+          });
+        });
+        if (!selected) selected = candidates[0] || null;
+      }
+    }
+    if (selected) selected.a.setAttribute('aria-current', 'location');
+  }
+  window.addEventListener('hashchange', syncSidebarActive);
+  window.addEventListener('popstate', syncSidebarActive);
+  window.addEventListener('scroll', syncSidebarActive, { passive: true });
+  syncSidebarActive();
 
   /* 点页面空白处关闭下拉 */
   var dds = function () { return [menu, help].concat(Array.prototype.slice.call(hdr.querySelectorAll('details.odn-more'))); };
@@ -617,7 +821,7 @@
   /* ---------- 市场页：子页签＝分组，只显示当前组；地址 hash 记住所在组 ---------- */
   var GROUPED = section === 'market' && subTabs.length;
   if (GROUPED) {
-    var DEF = 2; /* 默认：资金流 */
+    var DEF = 0; /* 默认：今日 */
     var groupOf = function (id) {
       for (var i = 0; i < subTabs.length; i++) if (subTabs[i].ids.indexOf(id) >= 0) return i;
       return -1;
@@ -654,10 +858,14 @@
     var fromHash = function () {
       gStyle.textContent = '.odn-gh{display:none!important}';
       var id = decodeURIComponent(location.hash.slice(1));
-      showGroup(groupOf(id), groupOf(id) >= 0 ? id : '', false);
+      showGroup(groupOf(id), groupOf(id) >= 0 || id === 's-fresh' ? id : '', false);
     };
     subTabs.forEach(function (t, i) {
-      t.a.addEventListener('click', function (e) { e.preventDefault(); showGroup(i, '', true); });
+      t.a.addEventListener('click', function (e) {
+        e.preventDefault();
+        showGroup(i, '', true);
+        syncSidebarActive();
+      });
     });
     addEventListener('hashchange', fromHash);
     addEventListener('popstate', fromHash);

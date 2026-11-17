@@ -33,7 +33,7 @@ test('growth monitor is a market section linked from the existing nav', () => {
   assert.match(renderer[0], /规则：/);
   assert.match(renderer[0], /缺失原因：/);
   assert.doesNotMatch(`${section[0]}\n${renderer[0]}`, /允许试探|加仓|买入|卖出|入场/);
-  assert.match(nav, /\{ t: '成长监控', h: '#s-growth', ids: \['s-growth'\] \}/);
+  assert.match(nav, /\{ t: '宏观', h: '#s-val', ids: \['s-val', 's-macro', 's-growth'\] \}/);
   assert.match(nav, /SUB_MAX = 7/);
   assert.match(nav, /l \+ w - s\.clientWidth \+ 24/);
   assert.match(market, /#s-growth \.growth-card-head \{ flex-wrap: wrap/);
