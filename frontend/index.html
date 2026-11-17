@@ -513,12 +513,18 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (!w || f.asof < first || f.asof > R.asof) continue;
       frames.push({ i: idxOf(b, f.asof), lo: idxOf(b, w[0]), hi: idxOf(b, w[1]), asof: f.asof, split: f.split, w });
     }
+    const clusterFrames = H.frames.filter((f) => f.asof && f.asof <= R.asof)
+      .map((f) => ({ asof: f.asof, clusters: f.clusters }));
     for (const t of H.tops) {
       if (t.date < first) continue;
       const i = idxOf(b, t.date);
       if (i + 126 <= R.T) tops.push({ i, date: t.date, dd: t.max_dd });
     }
-    return { frames, tops, rule: H.rule, evidence: H.evidence, last: H.frames.length ? H.frames[H.frames.length - 1].asof : '' };
+    return {
+      frames, tops, clusterFrames, rule: H.rule, evidence: H.evidence,
+      scale_evidence: H.scale_evidence || {},
+      last: H.frames.length ? H.frames[H.frames.length - 1].asof : '',
+    };
   }
   const EV = (c) => LPPL.ev(c, cur && cur.J.evidence_levels);
   const evb = (c) => '<small class="evb" style="color:var(--ink-3)">［' + E(EV(c).label) + '］</small>';
@@ -558,6 +564,21 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       }
     });
     return bands;
+  }
+
+  function previousClusterFrame(R) {
+    const frames = R.hist?.clusterFrames || [];
+    return frames.filter((frame) => frame.asof < R.asof)
+      .sort((a, b) => b.asof.localeCompare(a.asof))[0] || null;
+  }
+
+  function clusterChangeText(R, scale) {
+    const previous = previousClusterFrame(R);
+    if (!previous || !EV(R.hist.scale_evidence?.[scale] || R.hist.evidence).show) return '';
+    const change = CPTopClusters.classifyChange(
+      previous, R.top, scale, (date) => CPTradingDays.idxOf(R.bars, date),
+    );
+    return change == null ? '' : `相对 ${previous.asof}：${change}`;
   }
 
   /* ================= 图表（Canvas：主图 + 成交量 + 顶部一致度，共用时间轴与光标） ================= */
@@ -1081,6 +1102,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         || t.evidence
         || R.evidence;
       let value;
+      const change = clusterChangeText(R, scale);
       if (!EV(evidence).show) value = '无证据';
       else {
         const clusters = CPTopClusters.forScale(t, scale);
@@ -1091,10 +1113,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
             : indicators[scale]?.signal_status === 'not_computed' ? '未计算' : '本次无合格拟合（不代表风险较低）';
         } else if (!clusters.length) {
           value = '本次无合格拟合（不代表风险较低）';
+          if (change) value += `；${change}`;
         } else {
           value = clusters.map((cluster) =>
             `${CPTopClusters.label(cluster)} ${cluster.q20_date}–${cluster.q80_date}（${CPTopClusters.shareText(cluster)}）`
           ).join('；');
+          const main = clusters[0];
+          const start = CPTopClusters.startDistanceText(
+            main.q20_date, R.asof, (date) => CPTradingDays.idxOf(R.bars, date),
+          );
+          value += [start, change].filter(Boolean).map((text) => `；${text}`).join('');
         }
       }
       kv.push([SCN[scale], value, '']);

@@ -22,6 +22,8 @@ from ..features.lppls_scan import (
     BOX,
     BOXES,
     COLS,
+    OPT,
+    OPTIMIZER_NAMES,
     STK_WINDOWS,
     fit_one,
     full_windows,
@@ -42,7 +44,9 @@ def load_ohlc(sym: str, frozen: bool) -> tuple[pd.DataFrame, str]:
     return df, f"vintage_{v.vintage}_{v.source}"
 
 
-def fit_asof(logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]) -> pd.DataFrame:
+def fit_asof(
+    logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...], opt: str | None = None
+) -> pd.DataFrame:
     i = int(logp.index.get_indexer([asof])[0])
     if i < 0:
         raise ValueError(f"as-of {asof.date()} 不是交易日")
@@ -50,7 +54,7 @@ def fit_asof(logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]) -> p
     for n in windows:
         if i + 1 < n:
             continue
-        rows.append((asof, *fit_one(logp.iloc[i + 1 - n : i + 1].to_numpy())))
+        rows.append((asof, *fit_one(logp.iloc[i + 1 - n : i + 1].to_numpy(), opt=opt)))
     d = pd.DataFrame(rows, columns=COLS)
     lp = logp.to_numpy()
     d["y_std"] = [lp[i + 1 - n : i + 1].std() for n in d.n]
@@ -58,7 +62,7 @@ def fit_asof(logp: pd.Series, asof: pd.Timestamp, windows: tuple[int, ...]) -> p
 
 
 def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[int, ...] | None = None,
-        out: Path = OUT, trust_boot: int = 100) -> Path:
+        out: Path = OUT, trust_boot: int = 100, opt: str | None = None) -> Path:
     _core.ALLOW_INSIDE = bool(BOXES[BOX]["inside"])  # 与 lppls_scan.run 一致：v2 允许 t_c 落在窗内
     ohlc, version = load_ohlc(sym, frozen)
     ohlc = ohlc.sort_values("date").reset_index(drop=True)
@@ -67,7 +71,8 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
     ohlc_pit = ohlc[ohlc.date <= date]
     logp = logp[logp.index <= date]
     ws = full_windows(len(logp)) if windows is None else unique_windows(windows)
-    d = _derived(fit_asof(logp, date, ws))
+    effective_opt = opt or OPT
+    d = _derived(fit_asof(logp, date, ws, opt=effective_opt))
     rec = build_record(
         sym,
         str(date.date()),
@@ -79,9 +84,12 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
         data_version=version,
         market="cn",
     )
+    rec["params"] = {"optimizer": OPTIMIZER_NAMES[effective_opt]}
     if trust_boot:
         from ..lppls.trust import trust
-        rec["top"]["trust"] = trust(logp, date, d[d.n.isin(STK_WINDOWS)], b=trust_boot)
+        rec["top"]["trust"] = trust(
+            logp, date, d[d.n.isin(STK_WINDOWS)], b=trust_boot, opt=effective_opt
+        )
     out.mkdir(parents=True, exist_ok=True)
     (out / "fits").mkdir(exist_ok=True)
     d.to_parquet(out / "fits" / f"{sym}_{'latest' if asof is None else asof}.parquet")  # 缓存拟合表，便于只改契约时重导
@@ -99,7 +107,7 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
     ws = tuple(int(x) for x in a.windows.split(",")) if a.windows else None
-    p = run(a.sym, a.frozen, a.asof, ws, out=a.out)
+    p = run(a.sym, a.frozen, a.asof, ws, out=a.out, opt="g3")
     rec = json.loads(p.read_text())
     print(p, json.dumps(rec["top"]["lppls_confidence"], ensure_ascii=False))
 

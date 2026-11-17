@@ -1,5 +1,5 @@
 /* 研究助手（DeepSeek）：只把页面上已经显示的内容发给 Worker /ai；不读取、不计算业务数据。
-   用法：<script src="app/ai-assistant.js" data-page="stock|index|backtest"></script>
+   用法：<script src="app/ai-assistant.js" data-page="stock|index|backtest|market"></script>
    [data-ai-context="标题"] 标记要带上的页面区块（隐藏的不带）；[data-ai-anchor] 是窄屏时对话框插入的位置（其后）。 */
 (function (root) {
   'use strict';
@@ -10,6 +10,7 @@
       '各尺度的证据等级说明了什么？', '拟合明细里的窗口数和合格拟合数是什么？', '历史背景这一块怎么看？'],
     backtest: ['这张回测图怎么读？', '提醒明细每一行是什么意思？', '“顶相对主簇”的早于、落在、晚于说明什么？',
       '为什么事后确认的顶不算命中率？', '开发段、校准段、测试段有什么区别？'],
+    market: ['今日摘要里的几项分别表示什么？', '自选相关快讯如何筛选？', '模型区间变化该如何理解？'],
   };
   var MAX_CONTEXT = 8000, MAX_KEEP = 12, MAX_SEND = 6, WIDE = 1100;
   var me = document.currentScript;

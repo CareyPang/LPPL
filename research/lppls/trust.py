@@ -32,7 +32,8 @@ def _fitted(row: pd.Series) -> np.ndarray:
     return X @ np.array([row.A, row.B, row.C1, row.C2], float)
 
 
-def window_trust(y: np.ndarray, row: pd.Series, b: int = B_BOOT, seed: int = 0) -> float:
+def window_trust(y: np.ndarray, row: pd.Series, b: int = B_BOOT, seed: int = 0,
+                 opt: str | None = None) -> float:
     """单窗口：残差 iid bootstrap 加回拟合价，重拟合 b 次，返回满足条件 2 的比例。"""
     rng = np.random.default_rng(seed)
     yhat = _fitted(row)
@@ -40,22 +41,23 @@ def window_trust(y: np.ndarray, row: pd.Series, b: int = B_BOOT, seed: int = 0) 
     rows = []
     for _ in range(b):
         ys = yhat + rng.choice(res, size=len(res), replace=True)
-        rows.append((pd.NaT, *fit_one(ys)))
+        rows.append((pd.NaT, *fit_one(ys, opt=opt)))
     d = pd.DataFrame(rows, columns=COLS)
     d["y_std"] = [float(np.std(y))] * len(d)
     return float(condition2(_derived(d)).mean())
 
 
 def _task(args):
-    y, row, b, seed = args
-    return window_trust(y, row, b, seed)
+    y, row, b, seed, opt = args
+    return window_trust(y, row, b, seed, opt)
 
 
-def trust(logp: pd.Series, asof: pd.Timestamp, fits: pd.DataFrame, b: int = B_BOOT, procs: int = 8) -> dict:
+def trust(logp: pd.Series, asof: pd.Timestamp, fits: pd.DataFrame, b: int = B_BOOT,
+          procs: int = 8, opt: str | None = None) -> dict:
     """as-of 日的 Trust：fits 为该日各窗口的拟合表（COLS 列，n 为窗口长度）。返回中位数与各窗口分数。"""
     i = int(logp.index.get_indexer([asof])[0])
     lp = logp.to_numpy(float)
-    tasks = [(lp[i + 1 - int(r.n): i + 1], r, b, k) for k, (_, r) in enumerate(fits.iterrows())]
+    tasks = [(lp[i + 1 - int(r.n): i + 1], r, b, k, opt) for k, (_, r) in enumerate(fits.iterrows())]
     if procs > 1 and len(tasks) > 1:
         from multiprocessing import Pool
         with Pool(procs) as pool:
