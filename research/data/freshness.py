@@ -204,9 +204,9 @@ def render_markdown(report: dict) -> str:
             missing_days = item.get("missing_days", [])
             label += f"（缺 {len(missing_days)} 天"
             if missing_days:
-                label += "：" + "、".join(missing_days[:10])
+                label += "：" + "、".join(missing_days[-10:])
                 if len(missing_days) > 10:
-                    label += "…，最多列 10 个"
+                    label += "…，最多列最近 10 个"
             label += "）"
         rows.append(f"| {label} | {day} | {lag} | {status} |")
     return "\n".join(rows)
@@ -264,7 +264,6 @@ def check(
         item
         for item in items
         if item["status"] != "ok"
-        or (item.get("key") == "forward_log" and item.get("missing_days"))
     ]
     return {
         "checked_at": current.isoformat(),

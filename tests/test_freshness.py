@@ -170,7 +170,7 @@ def test_markdown_uses_chinese_status_table():
     assert "| 宏观 | — | — | 缺失 |" in text
 
 
-def test_forward_log_markdown_caps_missing_day_list_at_ten():
+def test_forward_log_markdown_shows_ten_most_recent_missing_days():
     days = [f"2026-01-{day:02d}" for day in range(1, 13)]
 
     text = freshness.render_markdown(
@@ -190,9 +190,10 @@ def test_forward_log_markdown_caps_missing_day_list_at_ten():
 
     row = next(line for line in text.splitlines() if "前瞻日志" in line)
     assert "前瞻日志封存（缺 12 天：" in row
-    assert "、".join(days[:10]) in row
-    assert "最多列 10 个" in row
-    assert days[10] not in row
+    assert "、".join(days[-10:]) in row
+    assert "…" in row
+    assert days[0] not in row
+    assert days[1] not in row
 
 
 def _write_forward_ledger(path, sealed_days):
@@ -233,7 +234,7 @@ def test_forward_log_complete_day_is_fresh(tmp_path, monkeypatch):
     assert item["path"] == str(ledger)
 
 
-def test_forward_log_gap_remains_alertable_after_a_new_complete_seal(
+def test_forward_log_historic_gap_with_current_seal_is_not_stale(
     tmp_path, monkeypatch
 ):
     ledger = tmp_path / "forward/ledger.jsonl"
@@ -261,7 +262,7 @@ def test_forward_log_gap_remains_alertable_after_a_new_complete_seal(
     item = _forward_item(report)
     assert (item["day"], item["lag"], item["status"]) == ("2026-11-16", 0, "ok")
     assert item["missing_days"] == ["2026-11-12"]
-    assert item in report["stale"]
+    assert item not in report["stale"]
 
 
 def test_forward_log_ignores_partial_day_and_reports_previous_day_lag(
@@ -289,6 +290,7 @@ def test_forward_log_ignores_partial_day_and_reports_previous_day_lag(
 
     item = _forward_item(report)
     assert (item["day"], item["lag"], item["status"]) == ("2026-11-13", 1, "late")
+    assert item in report["stale"]
 
 
 def test_forward_log_missing_days_use_calendar_and_exclude_holidays(
