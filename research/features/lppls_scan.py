@@ -57,6 +57,10 @@ COLS = ["date", "n", "tc", "m", "w", "A", "B", "C1", "C2", "sse", "r2", "pow_tc"
 # §20 偏离 _g3：LPPLS_G3=1 → tcgrid_lm 与 de_lbfgsb 取最小 SSE（g3_src=哪一个赢）；§22 Q3：LPPLS_Q3=K>0 → 对过 box 的窗口做 K 个
 # 循环平移对照重拟，记 q3_p=(1+#{e*≤e})/(K+1)（e=√(SSE/n)/σ_y），未过 box 的窗口 q3_p=NaN。两者默认关闭，关闭时输出与现行逐位相同。
 G3 = os.environ.get("LPPLS_G3", "") == "1"
+OPTIMIZER_NAMES = {"tcgrid": "tcgrid_lm", "g3": "g3", "de": "de_lbfgsb"}
+OPT = os.environ.get("LPPLS_OPT", "g3" if G3 else "tcgrid")
+if OPT not in OPTIMIZER_NAMES:
+    raise ValueError(f"LPPLS_OPT must be one of {sorted(OPTIMIZER_NAMES)}, got {OPT!r}")
 Q3_K = int(os.environ.get("LPPLS_Q3", "0"))
 EXTRA_COLS = (["g3_src"] if G3 else []) + (["q3_p"] if Q3_K else [])
 COLS = COLS + EXTRA_COLS
@@ -118,7 +122,15 @@ def calendar() -> pd.DatetimeIndex:
     return price_series("sh000001").index
 
 
-def fit_one(y: np.ndarray) -> tuple:
+def _effective_opt(opt: str | None) -> str:
+    effective = opt or OPT
+    if effective not in OPTIMIZER_NAMES:
+        raise ValueError(f"optimizer must be one of {sorted(OPTIMIZER_NAMES)}, got {effective!r}")
+    return effective
+
+
+def fit_one(y: np.ndarray, opt: str | None = None) -> tuple:
+    effective_opt = _effective_opt(opt)
     n = len(y)
     t = np.arange(n, dtype=float)
     dt = n - 1
@@ -134,12 +146,16 @@ def fit_one(y: np.ndarray) -> tuple:
     if SIGN == "neg":
         y = -y
     n_random = 3 if WINDOWS_MODE == "lite" else bx["n_random"]
-    r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)
-    src = "tcgrid_lm"
-    if G3:
+    if effective_opt == "de":
         r2 = de_lbfgsb(t, y, lo, hi, seed=0)
-        if r2.sse < r.sse:
-            r, src = r2, "de_lbfgsb"
+        r, src = r2, "de_lbfgsb"
+    else:
+        r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)
+        src = "tcgrid_lm"
+        if effective_opt == "g3":
+            r2 = de_lbfgsb(t, y, lo, hi, seed=0)
+            if r2.sse < r.sse:
+                r, src = r2, "de_lbfgsb"
     s, beta = lin_fit(t, y, *r.theta)
     sst = float(((y - y.mean()) ** 2).sum())
     rp = tcgrid_lm(t, y, lo[:2], hi[:2], seed=0, k=K_POWER, n_random=n_random)
@@ -150,7 +166,7 @@ def fit_one(y: np.ndarray) -> tuple:
     if G3:
         row = (*row, src)
     if Q3_K:
-        row = (*row, _q3_p(y, row, lo, hi, n_random))
+        row = (*row, _q3_p(y, row, lo, hi, n_random, effective_opt))
     return row
 
 
@@ -172,7 +188,7 @@ def q3_shifts(n: int, k: int) -> list[int]:
     return [lo + int(round((hi - lo) * j / (k - 1))) for j in range(k)]
 
 
-def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int) -> float:
+def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int, opt: str | None = None) -> float:
     """§22.1（偏移集按 §22.1.1 更正）：对过 box 的窗口，K 个互不相同的循环平移对照（q3_shifts）各重拟一次（同一优化器组合），
     p=(1+#{e*≤e})/(K+1)。未过 box 返回 NaN（不算，省算力）。"""
     if not _box_pass(y, row):
@@ -183,13 +199,18 @@ def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int) -> float:
     r = np.diff(y)
     cnt = 0
     ks = q3_shifts(n, Q3_K)
+    effective_opt = _effective_opt(opt)
     for k in ks:
         ys = y[0] + np.concatenate([[0.0], np.cumsum(np.roll(r, k))])
-        f = tcgrid_lm(t, ys, lo, hi, seed=0, n_random=n_random)
-        if G3:
+        if effective_opt == "de":
             f2 = de_lbfgsb(t, ys, lo, hi, seed=0)
-            if f2.sse < f.sse:
-                f = f2
+            f = f2
+        else:
+            f = tcgrid_lm(t, ys, lo, hi, seed=0, n_random=n_random)
+            if effective_opt == "g3":
+                f2 = de_lbfgsb(t, ys, lo, hi, seed=0)
+                if f2.sse < f.sse:
+                    f = f2
         if np.sqrt(f.sse / n) / np.std(ys) <= e:
             cnt += 1
     return (1 + cnt) / (len(ks) + 1)

@@ -4,7 +4,7 @@
   window.StockHeaderView = StockHeader.mount({ document });
   const results = $('results'), cat = $('catalog');
   const hasCode = !!new URLSearchParams(location.search).get('code');
-  let mounted = false;
+  let mounted = false, catalogView = null;
   const watch = {
     has: (row) => {
       try {
@@ -26,13 +26,41 @@
     },
   };
   async function mountCatalog() {
-    if (mounted) return; mounted = true;
+    if (mounted) { catalogView?.restoreScroll(); return; }
+    mounted = true;
     cat.innerHTML = '<p class="muted">目录加载中…</p>';
-    const [catalog, index] = await Promise.all([LPPL.catalog().catch(() => null), LPPL.stock.index().catch(() => ({}))]);
-    if (!catalog) { cat.innerHTML = '<p class="muted">标的目录未发布。</p>'; return; }
-    StockCatalog.mount({ el: cat, catalog, published: index && typeof index === 'object' ? Object.keys(index) : [], watch,
+    const indexPromise = new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value && typeof value === 'object' ? value : {});
+      };
+      const timer = setTimeout(() => finish({}), 2000);
+      Promise.resolve().then(() => LPPL.stock.index()).then(finish, () => finish({}));
+    });
+    const [catalogResult, index] = await Promise.all([
+      LPPL.fetchResult('catalog.json', { empty: (data) => !Array.isArray(data?.rows) || data.rows.length === 0 }),
+      indexPromise,
+    ]);
+    const catalog = catalogResult.data;
+    if (!catalog || catalogResult.reason === 'empty') {
+      const reason = catalogResult.reason || 'unpublished';
+      const labels = { unpublished: '尚未发布', unavailable: '暂时无法读取', empty: '目录数据为空', not_applicable: '不适用' };
+      cat.innerHTML = `<p class="${reason === 'unavailable' ? 'fail' : 'muted'}" data-reason="${reason}">标的目录：${labels[reason] || '状态未知'}</p>` +
+        (reason === 'unavailable' ? '<button type="button" class="chip" data-retry-catalog>重试</button>' : '');
+      mounted = false;
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    catalogView = StockCatalog.mount({ el: cat, catalog, published: index && typeof index === 'object' ? Object.keys(index) : [], watch,
+      query: params.has('q') ? params.get('q') : undefined,
       onOpen: (row) => { $('code').value = row.code; $('search').requestSubmit(); } });
   }
+  cat.addEventListener('click', (event) => {
+    if (event.target.closest('[data-retry-catalog]')) mountCatalog();
+  });
   const sync = () => {
     const showing = !results.hidden;
     cat.hidden = showing;

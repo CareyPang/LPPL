@@ -85,7 +85,7 @@ def record(sym: str, asof: str, market: str = "cn") -> dict:
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
-MODEL_VERSION = "prereg_v1.7_v2.1"  # v2.1：grid_profile 覆盖窗内 t_c（§20）
+MODEL_VERSION = "prereg_v1.7_v2.2"  # v2.2：指数 tcgrid_lm+de_lbfgsb 取小 SSE；个股 de_lbfgsb
 HISTORY_SCANS = {
     "dev": Path("data/features/lppls_v2"),
     "cal": Path("data/features/lppls_v2_cal"),

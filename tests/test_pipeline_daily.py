@@ -55,8 +55,8 @@ def test_daily_frozen_smoke(tmp_path, monkeypatch):
 def test_daily_cli_accepts_custom_output_directory(tmp_path, monkeypatch):
     captured = {}
 
-    def fake_run(sym, frozen=False, asof=None, windows=None, out=daily.OUT, **kwargs):
-        captured.update(sym=sym, asof=asof, out=out)
+    def fake_run(sym, frozen=False, asof=None, windows=None, out=daily.OUT, opt=None, **kwargs):
+        captured.update(sym=sym, asof=asof, out=out, opt=opt)
         out.mkdir(parents=True, exist_ok=True)
         path = out / f"{sym}_{asof}.json"
         path.write_text(
@@ -74,7 +74,7 @@ def test_daily_cli_accepts_custom_output_directory(tmp_path, monkeypatch):
 
     daily.main()
 
-    assert captured == {"sym": "sh000001", "asof": "2026-11-13", "out": tmp_path}
+    assert captured == {"sym": "sh000001", "asof": "2026-11-13", "out": tmp_path, "opt": "g3"}
 
 
 def test_daily_and_stock_full_share_unique_windows_and_trust_targets(
@@ -87,13 +87,15 @@ def test_daily_and_stock_full_share_unique_windows_and_trust_targets(
     captured = {}
     monkeypatch.setattr(daily, "load_ohlc", lambda *_args: (ohlc, "fixture-v1"))
 
-    def fit_asof(_logp, asof, windows):
+    def fit_asof(_logp, asof, windows, opt=None):
         captured["windows"] = tuple(windows)
+        captured["opt"] = opt
         return pd.DataFrame({"date": asof, "n": windows})
 
-    def trust(_logp, _date, rows, b):
+    def trust(_logp, _date, rows, b, opt=None):
         captured["trust_windows"] = rows.n.tolist()
         captured["trust_boot"] = b
+        captured["trust_opt"] = opt
         return {"fixture": True}
 
     monkeypatch.setattr(daily, "fit_asof", fit_asof)
@@ -112,6 +114,10 @@ def test_daily_and_stock_full_share_unique_windows_and_trust_targets(
     assert len(captured["windows"]) == 181
     assert len(set(captured["windows"])) == 181
     assert captured["windows"] == stock._variant_windows("stk_full", len(ohlc))
+    assert captured["opt"] == daily.OPT
+    assert captured["trust_opt"] == daily.OPT
+    record = json.loads((tmp_path / f"sh000001_{dates[-1].date()}.json").read_text())
+    assert record["params"]["optimizer"] == daily.OPTIMIZER_NAMES[daily.OPT]
     assert stock._variant_windows("stk_lite", len(ohlc)) == tuple(universe.WINDOWS)
     for n_bars in (100, 600, 1600):
         old_full = tuple(
