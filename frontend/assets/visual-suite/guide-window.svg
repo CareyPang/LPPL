@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">先看日期，再看候选区间</title>
+  <desc id="desc">操作示意，非真实行情或预测。日K只画到分析截止线，未来日期槽只有主候选与次级候选时间带，不画未来价格。行情截止、分析截止与候选来源分别核对。</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fbfcff"/><stop offset="1" stop-color="#f0f4fa"/></linearGradient>
+    <linearGradient id="band" x2="1"><stop stop-color="#d7e5fc"/><stop offset="1" stop-color="#edf3fd"/></linearGradient>
+    <pattern id="grid" width="72" height="68" patternUnits="userSpaceOnUse"><path d="M72 0H0V68" fill="none" stroke="#e6ecf4" stroke-width="1"/></pattern>
+    <clipPath id="plot"><rect x="74" y="164" width="1052" height="345" rx="12"/></clipPath>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g font-family="Inter, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif">
+    <text x="56" y="54" fill="#1f5fd6" font-size="13" font-weight="600" letter-spacing="2">01 / READ THE WINDOW</text>
+    <text x="56" y="105" fill="#17202f" font-size="32" font-weight="600">分清已经发生的，与尚待观察的。</text>
+    <rect x="915" y="39" width="229" height="33" rx="16.5" fill="#fff" stroke="#d5dfed"/>
+    <text x="1029" y="61" text-anchor="middle" fill="#59687d" font-size="13">操作示意 · 非真实行情或预测</text>
+    <rect x="56" y="145" width="1088" height="411" rx="20" fill="#fff" stroke="#dbe3ef"/>
+    <g clip-path="url(#plot)">
+      <rect x="74" y="164" width="1052" height="345" fill="url(#grid)"/>
+      <rect x="710" y="164" width="416" height="345" fill="#f5f8fe"/>
+      <path d="M710 164V509" stroke="#7795bd" stroke-width="2" stroke-dasharray="6 7"/>
+      <g stroke="#487b6b" stroke-width="2.2" fill="#6e998c">
+        <path d="M112 391v70M164 374v71M190 363v68M268 335v74M346 306v69M398 278v72M476 245v73M528 215v76M606 239v70M658 225v75"/>
+        <rect x="104" y="408" width="16" height="32" rx="2"/><rect x="156" y="389" width="16" height="33" rx="2"/><rect x="182" y="379" width="16" height="31" rx="2"/><rect x="260" y="351" width="16" height="38" rx="2"/><rect x="338" y="323" width="16" height="31" rx="2"/><rect x="390" y="295" width="16" height="36" rx="2"/><rect x="468" y="262" width="16" height="36" rx="2"/><rect x="520" y="233" width="16" height="39" rx="2"/><rect x="598" y="256" width="16" height="34" rx="2"/><rect x="650" y="241" width="16" height="39" rx="2"/>
+      </g>
+      <g stroke="#b66a70" stroke-width="2.2" fill="#c68288">
+        <path d="M138 382v63M216 374v74M242 357v61M294 347v67M320 330v65M372 317v63M424 292v68M450 270v73M502 230v68M554 233v72M580 249v64M632 250v70M684 241v70"/>
+        <rect x="130" y="398" width="16" height="29" rx="2"/><rect x="208" y="389" width="16" height="35" rx="2"/><rect x="234" y="374" width="16" height="26" rx="2"/><rect x="286" y="363" width="16" height="34" rx="2"/><rect x="312" y="346" width="16" height="30" rx="2"/><rect x="364" y="333" width="16" height="29" rx="2"/><rect x="416" y="307" width="16" height="34" rx="2"/><rect x="442" y="289" width="16" height="35" rx="2"/><rect x="494" y="247" width="16" height="31" rx="2"/><rect x="546" y="251" width="16" height="35" rx="2"/><rect x="572" y="266" width="16" height="29" rx="2"/><rect x="624" y="266" width="16" height="35" rx="2"/><rect x="676" y="258" width="16" height="32" rx="2"/>
+      </g>
+      <rect x="778" y="234" width="222" height="76" rx="10" fill="url(#band)" stroke="#aac4ee"/>
+      <path d="M793 249v46M985 249v46" stroke="#1f5fd6" stroke-width="2"/>
+      <text x="889" y="265" text-anchor="middle" fill="#174ba8" font-size="20" font-weight="600">主候选区间</text>
+      <text x="889" y="291" text-anchor="middle" fill="#496a9b" font-size="14">来自一组拟合窗口</text>
+      <rect x="864" y="348" width="220" height="66" rx="10" fill="#fbf6ea" stroke="#decaa2"/>
+      <path d="M879 362v37M1069 362v37" stroke="#a98745" stroke-width="2"/>
+      <text x="974" y="389" text-anchor="middle" fill="#886a30" font-size="19" font-weight="550">次级候选区间</text>
+      <text x="896" y="472" text-anchor="middle" fill="#6c7e98" font-size="15">这里只画时间带，不画未来价格。</text>
+      <rect x="98" y="180" width="122" height="30" rx="15" fill="#f0f4fa"/>
+      <text x="159" y="201" text-anchor="middle" fill="#59687d" font-size="14">已获得的日线</text>
+    </g>
+    <path d="M98 509H1102" stroke="#aebed1" stroke-width="1.5"/>
+    <text x="98" y="536" fill="#65748a" font-size="14">过去</text>
+    <rect x="638" y="518" width="144" height="27" rx="13.5" fill="#eaf0f9"/>
+    <text x="710" y="537" text-anchor="middle" fill="#34577e" font-size="14" font-weight="600">分析截止线</text>
+    <text x="1102" y="536" text-anchor="end" fill="#65748a" font-size="14">未来日期槽</text>
+    <g fill="#fff" stroke="#dce4ef"><rect x="56" y="586" width="344" height="49" rx="10"/><rect x="428" y="586" width="344" height="49" rx="10"/><rect x="800" y="586" width="344" height="49" rx="10"/></g>
+    <g font-size="15"><text x="77" y="616" fill="#8b713e">1</text><text x="104" y="616" fill="#43546b">核对行情截止与分析截止</text><text x="449" y="616" fill="#8b713e">2</text><text x="476" y="616" fill="#43546b">分别查看主候选与次级候选</text><text x="821" y="616" fill="#8b713e">3</text><text x="848" y="616" fill="#43546b">支持占比不等于见顶概率</text></g>
+  </g>
+</svg>

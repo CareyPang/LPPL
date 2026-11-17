@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>使用指南 · 从行情到证据</title>
+  <meta name="description" content="用三张图理解行情日期、顶部候选区间、独立任务状态与真实发布证据。所有图解均为操作示意，不是真实预测。">
+  <meta name="theme-color" content="#f7f9fc">
+  <link rel="stylesheet" href="app/guide-visual.css">
+</head>
+<body>
+  <a class="skip" href="#guide-content">跳到指南内容</a>
+  <script src="app/od-nav.js" data-section="guide"></script>
+  <main id="guide-content" class="guide-wrap">
+    <header class="guide-hero">
+      <div>
+        <p class="eyebrow">THE RESEARCH COMPANION <span>使用指南</span></p>
+        <h1>从行情，<br>读到证据。</h1>
+        <p class="hero-intro">先弄清时间和状态，再理解模型给出的候选区间。三个步骤，建立自己的阅读顺序。</p>
+      </div>
+      <aside class="guide-intro" aria-label="这份指南的使用方式">
+        <span class="intro-mark" aria-hidden="true">↗</span>
+        <p>看图解，<br><strong>再回到真实页面。</strong></p>
+        <span>图中的价格形态、区间和任务状态均为概念示意，不是真实行情或预测结果。</span>
+      </aside>
+    </header>
+
+    <nav class="guide-jump" aria-label="指南章节">
+      <a href="#read-window"><span>01</span> 看日期与区间 <b aria-hidden="true">↓</b></a>
+      <a href="#independent-tasks"><span>02</span> 看各自的状态 <b aria-hidden="true">↓</b></a>
+      <a href="#evidence-replay"><span>03</span> 核对证据来源 <b aria-hidden="true">↓</b></a>
+    </nav>
+
+    <article class="guide-step" id="read-window" aria-labelledby="window-title">
+      <header class="step-head">
+        <span class="step-no" aria-hidden="true">01</span>
+        <div><p class="section-kicker">READ THE WINDOW</p><h2 id="window-title">先看日期，再看区间</h2></div>
+      </header>
+      <p class="step-intro">行情截至哪天、分析使用哪天以前的数据，是两个问题。确认截止日后，再看哪些尺度给出候选区间，哪些尺度存在分歧。</p>
+      <figure class="guide-figure">
+        <img src="assets/visual-suite/guide-window.svg" width="1200" height="675" alt="操作示意：历史K线止于分析截止线；右侧未来日期槽只有两个候选时间带，没有未来价格。主候选与次级候选分别呈现。" fetchpriority="high" decoding="async">
+        <figcaption><span>操作示意 · 非真实行情或预测</span><a href="assets/visual-suite/guide-window.svg" target="_blank" rel="noopener">打开完整图解 <span aria-hidden="true">↗</span></a></figcaption>
+      </figure>
+      <ol class="guide-points">
+        <li><h3>分别读两个截止日</h3><p>最新报价可以晚于分析截止日。不要把今天的报价日期，理解成模型已经使用了今天的数据。</p></li>
+        <li><h3>保留不同候选</h3><p>多个簇可能给出不同时间范围。先看各自的尺度与支持记录，不把分歧平均成一个精确日期。</p></li>
+        <li><h3>把区间当作研究线索</h3><p>模型临界时间不等于已确定的实际峰值日；支持占比也不等于真实见顶概率。</p></li>
+      </ol>
+      <div class="step-actions"><a class="guide-button" href="index.html">到指数图表查看 <span aria-hidden="true">↗</span></a><p>当前没有候选，不等于市场安全。</p></div>
+    </article>
+
+    <article class="guide-step" id="independent-tasks" aria-labelledby="tasks-title">
+      <header class="step-head">
+        <span class="step-no" aria-hidden="true">02</span>
+        <div><p class="section-kicker">KEEP EXPLORING</p><h2 id="tasks-title">行情、分析与回放分别进行</h2></div>
+      </header>
+      <p class="step-intro">输入资产后，先看已取得的行情和已有结果。当前分析与历史回放分别显示状态；等待其中一项时，可以继续阅读其他已可用的内容。</p>
+      <figure class="guide-figure">
+        <img src="assets/visual-suite/guide-tasks.svg" width="1200" height="675" alt="任务关系示意：行情读取后即可查看，当前分析独立更新，历史回放由明确操作启动。三项不是一个串行等待队列。" loading="lazy" decoding="async">
+        <figcaption><span>任务关系示意 · 非实时运行状态</span><a href="assets/visual-suite/guide-tasks.svg" target="_blank" rel="noopener">打开完整图解 <span aria-hidden="true">↗</span></a></figcaption>
+      </figure>
+      <ol class="guide-points">
+        <li><h3>先读已经可用的内容</h3><p>行情、已有分析和新闻各有自己的状态。一块内容暂时失败，不应被理解成整个资产没有数据。</p></li>
+        <li><h3>区分空结果与失败</h3><p>“分析完成但没有候选”是结果；“未加载、计算失败、数据过期”则需要查看对应原因与日期。</p></li>
+        <li><h3>历史回放按需启动</h3><p>需要研究过去时再请求历史计算。已有历史是否能用，还取决于资产、模型版本和数据是否兼容。</p></li>
+      </ol>
+      <div class="step-actions"><a class="guide-button" href="stock.html">选择一只资产 <span aria-hidden="true">↗</span></a><p>这里不承诺固定完成时间，也不会启动任何计算。</p></div>
+    </article>
+
+    <article class="guide-step" id="evidence-replay" aria-labelledby="evidence-title">
+      <header class="step-head">
+        <span class="step-no" aria-hidden="true">03</span>
+        <div><p class="section-kicker">FOLLOW THE EVIDENCE</p><h2 id="evidence-title">找到结果背后的证据</h2></div>
+      </header>
+      <p class="step-intro">历史补算回答“只用截止日前的数据，会得到什么”；真实发布记录回答“当时用户实际能看到什么”。两者都能用于研究，但不能互相替代。</p>
+      <figure class="guide-figure">
+        <img src="assets/visual-suite/guide-evidence.svg" width="1200" height="675" alt="证据概念图：历史补算从过去的数据截止点，到之后的重新计算；发布证据则分别记录计算、封存、指定受众可读、本机呈现和后续修订。封存不等于公开可见，未知时间不能回填。" loading="lazy" decoding="async">
+        <figcaption><span>证据结构示意 · 不代表每个结果已具备全部记录</span><a href="assets/visual-suite/guide-evidence.svg" target="_blank" rel="noopener">打开完整图解 <span aria-hidden="true">↗</span></a></figcaption>
+      </figure>
+      <ol class="guide-points">
+        <li><h3>先确认结果模式</h3><p>区分当前分析、历史补算和有发布证据的回放。事后生成的旧日期结果，不能算作当时已经发布的预测。</p></li>
+        <li><h3>检查时点与来源</h3><p>计算完成、封存、对指定受众可读、本机实际呈现，是不同记录。缺少首次可见证据时，保留未知。</p></li>
+        <li><h3>让修订留下痕迹</h3><p>新版本不应覆盖旧区间。需要原始结果、规则和修订记录才能比较变化；缺记录时，不据最新结果反造旧版本。</p></li>
+      </ol>
+      <div class="step-actions"><a class="guide-button" href="backtest.html">查看历史评估 <span aria-hidden="true">↗</span></a><p>图解表达核查顺序，不表示所有证据联动功能均已完成。</p></div>
+    </article>
+
+    <aside class="guide-further" aria-label="进一步阅读">
+      <div><p class="section-kicker">KEEP THE CONTEXT</p><h2>方法可以更深，入口保持清楚。</h2><p>需要了解LPPLS和历史研究背景时，再进入原研究说明；其中历史操作描述，以当前页面与实际版本口径为准。</p></div>
+      <a class="guide-button secondary" href="lab/guide.html">深入方法／历史研究说明 <span aria-hidden="true">↗</span></a>
+    </aside>
+    <footer class="guide-footer"><a href="home.html">← 返回首页</a><span>图解是阅读辅助，不生成模型结果。</span></footer>
+  </main>
+</body>
+</html>
