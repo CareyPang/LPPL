@@ -1380,7 +1380,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     box.innerHTML = summaryModels.map((item) => `<div class="summary-detail">
       <a href="index.html?code=${encodeURIComponent(item.symbol)}">${E(item.name)} ${E(item.symbol)}</a>
       ${item.scale ? ` · ${E(item.scale)}` : ''}
-      ${item.reason ? ` · <span data-reason="${E(item.reason)}">${E(REASON_TEXT[item.reason] || '状态未知')}</span>${item.reason === 'unavailable' ? ' <button type="button" class="chip" data-retry-summary="models">重试</button>' : ''}` : ` · ${E(item.change)}${item.previousAsOf ? `（对比 ${E(item.previousAsOf)}）` : ''}`}
+      ${item.reason ? ` · <span data-reason="${E(item.reason)}">${E(REASON_TEXT[item.reason] || '状态未知')}</span>${item.reason === 'unavailable' ? ' <button type="button" class="chip" data-retry-summary="models">重试</button>' : ''}` : ` · ${E(item.change)}`}
+      ${item.currentAsOf ? `（${E(item.currentAsOf)}${item.previousAsOf ? ` 对比 ${E(item.previousAsOf)}` : ''}）` : ''}
     </div>`).join('') || '<p class="note">暂无可比较的模型区间。</p>';
   }
   function renderSummary() {
@@ -1443,26 +1444,24 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       }
       if (latest.reason) return [{ ...base, reason: latest.reason }];
       if (history.reason) return [{ ...base, reason: history.reason }];
-      const frames = (history.data.frames || []).filter((frame) => frame.asof < latest.data.asof)
-        .sort((a, b) => b.asof.localeCompare(a.asof));
-      const previous = frames[0];
-      if (!previous) return [{ ...base, reason: 'empty' }];
+      const { current, previous } = LPPLMarketSummary.historyPair(history.data.frames, latest.data.asof);
+      if (!current) return [{ ...base, reason: 'empty' }];
       CPTradingDays.setClosures(history.data.future_calendar?.closures || latest.data.raw?.future_calendar?.closures || []);
       const scales = ['6-12m', '12-24m'];
       return scales.flatMap((scale) => {
         const evidence = history.data.scale_evidence?.[scale] || history.data.evidence;
         if (!LPPL.ev(evidence).show) {
-          return [{ ...base, scale, reason: 'hidden_evidence', previousAsOf: previous.asof }];
+          return [{ ...base, scale, reason: 'hidden_evidence', currentAsOf: current.asof, previousAsOf: previous?.asof }];
         }
-        if (CPTopClusters.forScale(previous, scale) === null || CPTopClusters.forScale(latest.data.top, scale) === null) {
-          return [{ ...base, scale, reason: 'empty', previousAsOf: previous.asof }];
+        if (!previous || CPTopClusters.forScale(previous, scale) === null || CPTopClusters.forScale(current, scale) === null) {
+          return [{ ...base, scale, reason: 'empty', currentAsOf: current.asof, previousAsOf: previous?.asof }];
         }
         const change = CPTopClusters.classifyChange(
-          previous, latest.data.top, scale,
+          previous, current, scale,
           (date) => CPTradingDays.idxOf(latest.data.bars, date),
         );
-        return change ? [{ ...base, scale, change, previousAsOf: previous.asof }] :
-          [{ ...base, scale, reason: 'empty', previousAsOf: previous.asof }];
+        return change ? [{ ...base, scale, change, currentAsOf: current.asof, previousAsOf: previous.asof }] :
+          [{ ...base, scale, reason: 'empty', currentAsOf: current.asof, previousAsOf: previous.asof }];
       });
     })).then((rows) => rows.flat());
     summaryQuoteResult = await quotePromise;

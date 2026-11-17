@@ -28,6 +28,14 @@
     };
   }
 
+  function historyPair(frames, asof) {
+    var eligible = (Array.isArray(frames) ? frames : [])
+      .filter(function (frame) { return frame && typeof frame.asof === 'string' && frame.asof <= asof; })
+      .slice()
+      .sort(function (a, b) { return b.asof.localeCompare(a.asof); });
+    return { current: eligible[0] || null, previous: eligible[1] || null };
+  }
+
   function build(input) {
     var indices = Array.isArray(input.indices) ? input.indices : [];
     var events = Array.isArray(input.events) ? input.events : [];
@@ -60,5 +68,5 @@
     };
   }
 
-  return { REASONS: REASONS, build: build, selectIndexRows: selectIndexRows };
+  return { REASONS: REASONS, build: build, historyPair: historyPair, selectIndexRows: selectIndexRows };
 });

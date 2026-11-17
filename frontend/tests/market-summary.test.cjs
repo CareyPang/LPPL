@@ -67,3 +67,14 @@ test('index selection falls back to published closes and fills missing live rows
   ]);
   assert.equal(Summary.selectIndexRows([], [], 'empty').reason, 'empty');
 });
+
+test('model comparison uses the two newest published frames not after the latest result', () => {
+  const frames = [
+    { asof: '2025-08-18' },
+    { asof: '2026-11-02' },
+    { asof: '2025-08-25' },
+  ];
+  const pair = Summary.historyPair(frames, '2026-10-30');
+  assert.equal(pair.current.asof, '2025-08-25');
+  assert.equal(pair.previous.asof, '2025-08-18');
+});
