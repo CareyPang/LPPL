@@ -75,7 +75,7 @@ def lag_trading_days(
     day: str, now: pd.Timestamp, calendar: Sequence[date] | None
 ) -> int:
     data_date = date.fromisoformat(day)
-    end = (_beijing_time(pd.Timestamp(now)) - pd.Timedelta(hours=30)).date()
+    end = _reference_end(now)
     if data_date >= end:
         return 0
 
@@ -92,6 +92,103 @@ def lag_trading_days(
     return lag
 
 
+def _reference_end(now: pd.Timestamp) -> date:
+    return (_beijing_time(pd.Timestamp(now)) - pd.Timedelta(hours=30)).date()
+
+
+def _trading_days_between(
+    first_day: date, end_day: date, calendar: Sequence[date] | None
+) -> list[date]:
+    if calendar is not None:
+        return sorted(
+            {
+                pd.Timestamp(value).date()
+                for value in calendar
+                if first_day < pd.Timestamp(value).date() <= end_day
+            }
+        )
+
+    days = []
+    current = first_day + timedelta(days=1)
+    while current <= end_day:
+        if current.weekday() < 5:
+            days.append(current)
+        current += timedelta(days=1)
+    return days
+
+
+def _forward_log_item(
+    path: str | Path,
+    now: pd.Timestamp,
+    calendar: Sequence[date] | None,
+) -> dict:
+    from research.pipeline.forward_log import SYMS
+
+    item = {
+        "key": "forward_log",
+        "label": "前瞻日志封存",
+        "path": str(path),
+        "day": None,
+        "lag": None,
+        "status": "missing",
+        "missing_days": [],
+    }
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return item
+
+    expected_symbols = set(SYMS)
+    symbols_by_day: dict[str, set[str]] = {}
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(record, dict):
+            continue
+        symbol = record.get("symbol")
+        asof = record.get("asof")
+        if not isinstance(symbol, str) or symbol not in expected_symbols:
+            continue
+        if not isinstance(asof, str):
+            continue
+        try:
+            sealed_day = date.fromisoformat(asof).isoformat()
+        except ValueError:
+            continue
+        symbols_by_day.setdefault(sealed_day, set()).add(symbol)
+
+    if not symbols_by_day:
+        return item
+
+    complete_days = sorted(
+        day for day, symbols in symbols_by_day.items() if expected_symbols <= symbols
+    )
+    latest_day = complete_days[-1] if complete_days else None
+    end_day = _reference_end(now)
+    first_day = date.fromisoformat(min(symbols_by_day))
+    complete_day_set = set(complete_days)
+    item["missing_days"] = [
+        day.isoformat()
+        for day in _trading_days_between(first_day, end_day, calendar)
+        if day.isoformat() not in complete_day_set
+    ]
+
+    if latest_day is not None:
+        lag = lag_trading_days(latest_day, now, calendar)
+        item.update(
+            {
+                "day": latest_day,
+                "lag": lag,
+                "status": "ok" if lag == 0 else "late",
+            }
+        )
+    return item
+
+
 def render_markdown(report: dict) -> str:
     status_labels = {"ok": "正常", "late": "过期", "missing": "缺失"}
     rows = [
@@ -102,11 +199,24 @@ def render_markdown(report: dict) -> str:
         day = item["day"] or "—"
         lag = str(item["lag"]) if item["lag"] is not None else "—"
         status = status_labels.get(item["status"], item["status"])
-        rows.append(f"| {item['label']} | {day} | {lag} | {status} |")
+        label = item["label"]
+        if item.get("key") == "forward_log":
+            missing_days = item.get("missing_days", [])
+            label += f"（缺 {len(missing_days)} 天"
+            if missing_days:
+                label += "：" + "、".join(missing_days[-10:])
+                if len(missing_days) > 10:
+                    label += "…，最多列最近 10 个"
+            label += "）"
+        rows.append(f"| {label} | {day} | {lag} | {status} |")
     return "\n".join(rows)
 
 
-def check(root: Path, now: pd.Timestamp | None = None) -> dict:
+def check(
+    root: Path,
+    now: pd.Timestamp | None = None,
+    forward_log: str | Path | None = None,
+) -> dict:
     from research.pipeline import stock
 
     current = _beijing_time(stock._now() if now is None else pd.Timestamp(now))
@@ -147,7 +257,14 @@ def check(root: Path, now: pd.Timestamp | None = None) -> dict:
             }
         )
 
-    stale = [item for item in items if item["status"] != "ok"]
+    if forward_log is not None:
+        items.append(_forward_log_item(forward_log, current, calendar))
+
+    stale = [
+        item
+        for item in items
+        if item["status"] != "ok"
+    ]
     return {
         "checked_at": current.isoformat(),
         "calendar_source": calendar_source,
@@ -167,9 +284,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", required=True, help="Path to the stock-results snapshot")
     parser.add_argument("--json", dest="json_path")
     parser.add_argument("--markdown", dest="markdown_path")
+    parser.add_argument("--forward-log", help="Path to the forward-log ledger")
     args = parser.parse_args(argv)
 
-    report = check(Path(args.root))
+    report = check(Path(args.root), forward_log=args.forward_log)
     json_text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.json_path:
         _write_text(args.json_path, json_text)
