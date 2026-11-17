@@ -101,7 +101,7 @@ HTTP 202 返回 `queued, deduped, code, mode, history_weeks, job_id, requested_a
 }
 ```
 
-`page` 必须为 `stock`、`index`、`backtest` 或 `market`；`question` 去除首尾空白后为1至500字符；`context` 必须为字符串且不超过8000字符；可选 `history` 最多6条，每条角色为 `user` 或 `assistant`、内容不超过1500字符。原始JSON请求体上限32 KiB。请求先检查额度，再调用模型；默认每IP每10分钟10次、全局每天200次，可分别用 `AI_PER_IP_10M`（上限100）和 `AI_PER_DAY`（上限5000）调整。
+`page` 必须为 `stock`、`index`、`backtest` 或 `market`；`question` 去除首尾空白后为1至500字符；`context` 必须为字符串且不超过8000字符；可选 `history` 最多6条，每条角色为 `user` 或 `assistant`、内容不超过1500字符。原始JSON请求体上限64 KiB。请求先检查额度，再调用模型；默认每IP每10分钟10次、全局每天200次，可分别用 `AI_PER_IP_10M`（上限100）和 `AI_PER_DAY`（上限5000）调整。
 
 成功时以 `text/event-stream` 返回 `data: {"delta":"..."}` 消息，最后发送 `{"done":true}`；触发回答拦截时发送 `{"blocked":true}` 并终止。上游中断会发送 `{"error":"研究助手连接中断"}`。缺少密钥返回503，额度耗尽返回429；上游错误统一映射为502，不回显上游正文或密钥。
 
