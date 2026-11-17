@@ -3,7 +3,7 @@
  "name": "中国重工",
  "asof": "2025-08-12",
  "data_version": "vintage_20250812_tencent_sina_hfq_f78a4e4b",
- "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "cn",
   "holidays_through": "2027-12-31",
@@ -99,7 +99,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.167,
+     "early": 0.0,
      "end": 0.0,
      "pure": 0.0
     },
@@ -109,11 +109,11 @@
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.5,
-     "w_lo": 0.167,
+     "w_lo": 0.333,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.833,
-     "any": 0.833,
+     "tc_hi": 1.0,
+     "any": 1.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -152,11 +152,11 @@
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.5,
+     "m_hi": 0.4,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.1,
-     "tc_hi": 0.5,
+     "tc_lo": 0.0,
+     "tc_hi": 0.6,
      "any": 1.0,
      "tol": 0.01
     },
@@ -5393,6 +5393,9 @@
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
+ "params": {
+  "optimizer": "de_lbfgsb"
+ },
  "stock_meta": {
   "variant": "stk_lite",
   "status": "delisted_or_long_suspended",
@@ -5402,7 +5405,7 @@
   "ipo_in_range": true,
   "n_bars": 3442,
   "degenerate_share": 0.0,
-  "trading_days_stale": 304,
+  "trading_days_stale": 305,
   "dropped_unclosed_bar": false,
   "eligibility_note": "已退市或长期停牌，结果截至 2025-08-12",
   "source": "tencent_fqkline",
@@ -5484,7 +5487,7 @@
    "note": "波动体制，不是涨跌信号"
   }
  },
- "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
+ "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
  "fit_input_hash": "1ccae456ce819e5789d1e0a2c4902e9a5abf7200b4d0b0a1448b731a61f2a762",
  "history_input_hashes": {
   "2022-08-09": "be2159e77df9393f61f66c1a93cadb26ff21f976d7427e67a6f0a317ed0cdc24",
@@ -6211,9 +6214,9 @@
  "code": "601989",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-16T20:06:57.711906+00:00",
- "job_id": "2dde2af9-d23b-4aeb-a9d7-ca0ed3b79d48",
- "requested_at": "2026-11-16T19:52:15.641056+00:00",
- "source_sha": "60818b428396336fc99aae3076d4a918089a81d3",
- "batch_id": "e2ce4d5f-9a11-4142-9eb7-2b92ef26a314"
+ "generated_at": "2026-11-17T19:02:30.141520+00:00",
+ "job_id": "347566dc-0d72-49e0-ae10-7ee167fe6a34",
+ "requested_at": "2026-11-17T18:45:34.716684+00:00",
+ "source_sha": "b04bd119b7ae62c8024e4c4802f9c303ee0b76f6",
+ "batch_id": "97b8e9c5-52ed-449a-875c-1c3c5f237479"
 }
