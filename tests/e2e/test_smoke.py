@@ -201,10 +201,6 @@ def test_overflow_3_stock_detail(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="index.html still overflows at 390px (document scrollWidth 474px)",
-    strict=True,
-)
 def test_overflow_4_index_page(page: Page) -> None:
     assert_page_has_no_overflow(page, "index.html?code=sh000001")
 
