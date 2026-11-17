@@ -87,7 +87,7 @@ test('classifies main-cluster appearance, disappearance, start and width changes
   assert.equal(TopClusters.classifyChange(previous, frame(null), '6-12m', indexOf), '消失');
   assert.equal(TopClusters.classifyChange(previous, frame('2026-01-05', '2026-01-12'), '6-12m', indexOf), '起点前移 1 个交易日');
   assert.equal(TopClusters.classifyChange(previous, frame('2026-01-07', '2026-01-12'), '6-12m', indexOf), '起点后移 1 个交易日');
-  assert.equal(TopClusters.classifyChange(previous, frame('2026-01-06', '2026-01-09'), '6-12m', indexOf), '收窄 3 个交易日');
+  assert.equal(TopClusters.classifyChange(previous, frame('2026-01-06', '2026-01-07'), '6-12m', indexOf), '收窄 3 个交易日');
   assert.equal(TopClusters.classifyChange(previous, frame('2026-01-06', '2026-01-14'), '6-12m', indexOf), '变宽 2 个交易日');
   assert.equal(TopClusters.classifyChange(previous, previous, '6-12m', indexOf), '不变');
   assert.equal(TopClusters.classifyChange({}, previous, '6-12m', indexOf), null);

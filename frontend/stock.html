@@ -1334,11 +1334,13 @@
       }
     }
 
-    $('stock-events-body').addEventListener('click', (event) => {
-      if (!event.target.closest('[data-retry-stock-events]')) return;
-      const code = code6($('code').value.trim());
-      if (/^\d{6}$/.test(code || '')) renderRecentEvents(code);
-    });
+    if (typeof document !== 'undefined') {
+      $('stock-events-body').addEventListener('click', (event) => {
+        if (!event.target.closest('[data-retry-stock-events]')) return;
+        const code = code6($('code').value.trim());
+        if (/^\d{6}$/.test(code || '')) renderRecentEvents(code);
+      });
+    }
 
     function refreshEventAvailability() {
       document.querySelectorAll('#stock-events-list button[data-action="replay"]').forEach(button => {
