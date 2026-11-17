@@ -330,12 +330,25 @@ def test_tablet_sidebar_and_assistant_drawer(page: Page) -> None:
 @pytest.mark.e2e
 def test_backtest_sidebar_links_switch_views(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/backtest.html")
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    bench = page.locator(
+        '.odn-sidebar .odn-side-link[href="backtest.html#view=bench"]'
+    )
     strategy = page.locator(
         '.odn-sidebar .odn-side-link[href="backtest.html#view=strategy"]'
     )
     replay = page.locator(
         '.odn-sidebar .odn-side-link[href="backtest.html#view=scenario"]'
+    )
+    bench.click()
+    expect(page.locator("#bench-view")).to_be_visible()
+    expect(page).to_have_url(re.compile(r"/backtest\.html\?sym=sh000001#view=bench$"))
+    page.wait_for_function(
+        "() => document.querySelectorAll('#bench-panel tbody tr').length > 0"
+    )
+    expect(bench).to_have_attribute("aria-current", "location")
+    expect(page.locator('.bt-views a[data-view="bench"]')).to_have_attribute(
+        "aria-current", "location"
     )
     strategy.click()
     expect(page.locator("#strategy-view")).to_be_visible()
@@ -437,12 +450,110 @@ def test_stock_page_uses_general_asset_copy(page: Page) -> None:
 
 
 @pytest.mark.e2e
-def test_three_segment_validation_link_is_active_on_index(page: Page) -> None:
+def test_legacy_three_segment_hash_redirects_to_bench_view(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/index.html#p-bench")
-    expect(page.locator('.odn-sidebar a[href="index.html#p-bench"]')).to_have_attribute(
+    page.goto(f"{BASE_URL}/index.html?code=sh000001&asof=2007-10-12#p-bench")
+    page.wait_for_url(re.compile(r"/backtest\.html\?sym=sh000001#view=bench$"))
+    expect(page.locator("#bench-view")).to_be_visible()
+    expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
         "aria-current", "location"
     )
+    assert not any(
+        re.search(r"/(?:replay|request)(?:/|$)", urlsplit(url).path, re.I)
+        for _, url, _ in page._e2e_requests
+    )
+
+
+@pytest.mark.e2e
+def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=bench")
+    expect(page.locator("#bench-view")).to_be_visible()
+    page.wait_for_function(
+        "() => document.querySelectorAll('#bench-panel tbody tr').length > 0"
+    )
+    assert any(
+        method == "GET" and "sh000001_latest.json" in url
+        for method, url, _ in page._e2e_requests
+    )
+    assert not any(
+        re.search(r"/(?:replay|request)(?:/|$)", urlsplit(url).path, re.I)
+        for _, url, _ in page._e2e_requests
+    )
+    expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    for width, height in ((1440, 900), (1024, 768), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        dimensions = page.evaluate(
+            "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+        )
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+        layout = page.evaluate(
+            """() => {
+              const wrapper = document.querySelector('#bench-panel .scroll-x');
+              const table = wrapper.querySelector('table');
+              const tableBox = table.getBoundingClientRect();
+              const wrapperBox = wrapper.getBoundingClientRect();
+              const isContained = (container, group) => {
+                const containerBox = container.getBoundingClientRect();
+                return [...group.children].every(item => {
+                  const itemBox = item.getBoundingClientRect();
+                  return itemBox.left >= containerBox.left - 1
+                    && itemBox.right <= containerBox.right + 1;
+                });
+              };
+              return {
+                tableRight: tableBox.right,
+                wrapperRight: wrapperBox.right,
+                overflowX: getComputedStyle(wrapper).overflowX,
+                scrollWidth: wrapper.scrollWidth,
+                clientWidth: wrapper.clientWidth,
+                symbolsFit: isContained(document.querySelector('.odn-sub'), document.querySelector('#syms')),
+                rangesFit: isContained(document.querySelector('.odn-tools'), document.querySelector('#ranges')),
+              };
+            }"""
+        )
+        fits = layout["tableRight"] <= layout["wrapperRight"] + 1
+        scrollable = (
+            layout["overflowX"] in {"auto", "scroll"}
+            and layout["scrollWidth"] > layout["clientWidth"]
+        )
+        assert fits or scrollable, layout
+        assert layout["symbolsFit"] and layout["rangesFit"], layout
+
+
+@pytest.mark.e2e
+def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    expect(page.locator(".app")).to_be_visible()
+
+    def ask_context() -> str:
+        with page.expect_request(
+            lambda request: request.method == "POST"
+            and urlsplit(request.url).path == "/ai"
+        ) as request_info:
+            page.locator(".ai-form textarea").fill("请解释三段验证")
+            page.locator('.ai-form button[type="submit"]').click()
+        context = request_info.value.post_data_json["context"]
+        expect(page.locator('.ai-form button[type="submit"]')).to_be_enabled()
+        return context
+
+    scenario_context = ask_context()
+    assert "开发段：" in scenario_context
+    assert "开发段 2000" not in scenario_context
+    assert len(scenario_context) <= 8000
+
+    page.locator('.bt-views a[data-view="bench"]').click()
+    expect(page.locator("#bench-view")).to_be_visible()
+    page.wait_for_function(
+        "() => document.querySelectorAll('#bench-panel tbody tr').length > 0"
+    )
+    bench_context = ask_context()
+    assert "开发段 2000" in bench_context
+    assert len(bench_context) <= 8000
 
 
 @pytest.mark.e2e

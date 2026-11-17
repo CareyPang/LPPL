@@ -123,6 +123,27 @@ a { color: var(--ink-2); text-decoration: none; }
 .scenario-note{grid-column:1/-1;margin:0;padding:10px 16px;border-bottom:1px solid #f1dfb8;background:#fff5e0;color:var(--warn);font-weight:600}
 @media (max-width:640px){.bt-views-note{display:none}}
 .strategy-view{max-width:1100px;margin:0 auto;padding:16px}
+.bench-explainer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 16px}
+.bench-explainer>div{min-width:0;padding:8px 10px;border:1px solid var(--line,#E3E7EE);background:var(--surface,#fff);font-size:12px;line-height:1.5}
+.bench-explainer b{display:block;margin-bottom:2px;color:var(--ink,#131722);font-size:13px}
+.bench-view{width:100%;max-width:1100px;min-width:0;margin:0 auto;padding:16px}
+.bench-view h2{margin:0 0 12px;font-size:20px}
+.bench-view .scroll-x{max-width:100%;min-width:0;overflow-x:auto}
+.bench-view table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px}
+.bench-view th:nth-child(1){width:18%}.bench-view th:nth-child(2){width:8%}.bench-view th:nth-child(3){width:12%}.bench-view th:nth-child(4){width:14%}.bench-view th:nth-child(5){width:14%}.bench-view th:nth-child(6){width:13%}.bench-view th:nth-child(7){width:21%}
+.bench-view th,.bench-view td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6);text-align:left;white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+.bench-view .honest{margin:0;padding:var(--s3);font-size:13px;color:var(--ink-2,#4C525E);line-height:1.6}
+body.backtest-page .odn-sub{flex-wrap:wrap;overflow:visible}
+body.backtest-page .odn-sub #syms{flex:0 0 100%;width:100%;min-width:0;flex-wrap:wrap!important}
+body.backtest-page .odn-tools{align-items:flex-start;overflow:visible}
+body.backtest-page .odn-tools #ranges{flex:1 1 0%;min-width:0;flex-wrap:wrap}
+body.backtest-page .bench-view .scroll-x{scrollbar-width:thin;scrollbar-color:var(--ink-3,#6A6D78) var(--line,#E3E7EE)}
+body.backtest-page .bench-view .scroll-x::-webkit-scrollbar{display:block!important;height:8px}
+body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-thumb{border-radius:4px;background:var(--ink-3,#6A6D78)}
+body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var(--line,#E3E7EE)}
+@media (min-width:1200px){body.backtest-page .odn-tools{width:55%;max-width:55%}}
+@media (max-width:1199px){body.backtest-page .odn-tools{width:100%;max-width:none}}
+@media (max-width:640px){.bench-explainer{margin:10px 12px;gap:6px}.bench-explainer>div{padding:7px 6px;font-size:11px}.bench-explainer b{font-size:12px}.bench-view{padding:12px}.bench-view table{min-width:860px}}
 .sv-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}.sv-head h2{margin:0;font-size:20px}.sv-sub{color:var(--ink-3,#6A6D78);font-size:13px}
 .sp{border:1px solid var(--line,#E3E7EE);border-radius:14px;background:var(--surface,#fff);padding:16px;min-width:0}
 .sp .m{font-family:var(--f-m,monospace);font-variant-numeric:tabular-nums}
@@ -171,7 +192,7 @@ a { color: var(--ink-2); text-decoration: none; }
 @media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:760px}}
 </style>
 </head>
-<body>
+<body class="backtest-page">
 
 <div data-od-sub>
   <div class="od-row od-fixed" id="syms" role="group" aria-label="指数" style="--od-gap:0"></div>
@@ -185,11 +206,21 @@ a { color: var(--ink-2); text-decoration: none; }
 <nav class="bt-views" aria-label="回测视图" data-ai-fallback>
   <a href="#view=scenario" data-view="scenario" aria-current="location">情景区间</a>
   <a href="#view=strategy" data-view="strategy">策略回测</a>
+  <a href="#view=bench" data-view="bench">三段验证</a>
   <span class="bt-views-note">策略回测 = 事前登记规则的历史回放，不是预测</span>
 </nav>
+<section class="bench-explainer" aria-label="三段验证说明" data-ai-context="三段说明">
+  <div><b>开发段：</b>最早的一段历史，用来设计规则、调参数。</div>
+  <div><b>校准段：</b>中间一段，规则定下后只用来确定门槛。</div>
+  <div><b>测试段：</b>最近一段，前两段定完才看，相当于考试；只有这段的成绩才算“没看过答案”。</div>
+</section>
 <section class="strategy-view" id="strategy-view" hidden aria-label="策略回测">
   <div class="sv-head"><h2 id="sv-title">策略回放</h2><span class="sv-sub" id="sv-sub">—</span></div>
   <div id="strategy-panel" class="sp"></div>
+</section>
+<section class="bench-view" id="bench-view" hidden aria-labelledby="bench-title" data-ai-context="三段验证">
+  <h2 id="bench-title">三段验证</h2>
+  <div id="bench-panel"></div>
 </section>
 
 <main class="app">
@@ -300,7 +331,8 @@ a { color: var(--ink-2); text-decoration: none; }
   const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', alertId: null, alertFrame: null };
   $('cluster-footnote').textContent = CPTopClusters.NOTE;
   const q = new URLSearchParams(location.search);
-  if (q.get('code')) { const S = LPPL.resolve(q.get('code')); if (S) st.sym = S.sym; }
+  const requestedSym = q.get('sym') || q.get('code');
+  if (requestedSym) { const S = LPPL.resolve(requestedSym); if (S) st.sym = S.sym; }
 
   $('syms').innerHTML = LPPL.SYMS.filter((s) => s.history !== false).map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
   $('ranges').innerHTML = RANGES.map((r, i) => `<button class="chip" type="button" data-r="${i}" aria-pressed="false">${E(r[0])}</button>`).join('');
@@ -782,6 +814,7 @@ a { color: var(--ink-2); text-decoration: none; }
 })();
 </script>
 <script src="app/strategy-panel.js"></script>
+<script src="app/bench-view.js"></script>
 <script src="app/backtest-views.js"></script>
 <script src="app/ai-assistant.js" data-page="backtest"></script>
 </body>

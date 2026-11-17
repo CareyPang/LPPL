@@ -12,4 +12,8 @@ test('backtest view follows hash changes and preserves initial hash selection', 
   assert.match(source, /window\.addEventListener\('hashchange', showLocationView\)/);
   assert.match(source, /showLocationView\(\);/);
   assert.match(source, /new URL\(location\.href\)/);
+  assert.match(source, /view === 'bench'/);
+  assert.match(source, /benchView\.hidden = !bench/);
+  assert.match(source, /LPPL\.load\(S\.sym\)/);
+  assert.match(source, /document\.querySelector\('\.odn-sidebar'\)/);
 });

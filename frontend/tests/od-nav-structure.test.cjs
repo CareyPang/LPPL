@@ -10,6 +10,10 @@ const nav = fs.readFileSync(path.join(root, 'app/od-nav.js'), 'utf8');
 const market = fs.readFileSync(path.join(root, 'market.html'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'home.html'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const backtest = fs.readFileSync(path.join(root, 'backtest.html'), 'utf8');
+const backtestViews = fs.readFileSync(path.join(root, 'app/backtest-views.js'), 'utf8');
+const stock = fs.readFileSync(path.join(root, 'stock.html'), 'utf8');
+const chart = fs.readFileSync(path.join(root, 'chart.html'), 'utf8');
 const watch = fs.readFileSync(path.join(root, 'app/od-watch.js'), 'utf8');
 
 test('main navigation has the five user-task entries and their intended sections', () => {
@@ -30,7 +34,7 @@ test('main navigation has the five user-task entries and their intended sections
   assert.match(main[1], /index\.html\?code=sh000001/);
   assert.match(main[1], /backtest\.html#view=scenario/);
   assert.match(main[1], /backtest\.html#view=strategy/);
-  assert.match(main[1], /index\.html#p-bench/);
+  assert.match(main[1], /backtest\.html#view=bench/);
   assert.doesNotMatch(main[1], /chart\.html/);
 });
 
@@ -59,7 +63,20 @@ test('home navigation anchors and assistant context remain on the published page
   assert.match(home, /<section id="mine"/);
   assert.match(home, /class="btn pri" href="stock\.html">查看标的/);
   assert.match(home, /class="btn sec" href="backtest\.html">历史检验/);
-  assert.match(index, /function syncBenchHash\(\) \{\s*if \(location\.hash === '#p-bench'\) selectBottom\(1\);/);
+  assert.doesNotMatch(index, /id="p-bench"|data-p="p-bench"|function renderBench/);
+  assert.match(index, /location\.hash !== '#p-bench'/);
+  assert.match(index, /target\.searchParams\.set\('sym', symbol\)/);
+  assert.match(index, /location\.replace\(target\.href\)/);
+  assert.match(index, /看三段验证/);
+  assert.match(index, /link\.href = 'backtest\.html#view=bench'/);
+  assert.match(index, /appendEvidenceHelp\(\$\('vs'\)\)/);
+  assert.match(index, /appendEvidenceHelp\(\$\('ph-tip'\)\)/);
+  assert.match(backtest, /开发段：.*最早的一段历史，用来设计规则、调参数。/);
+  assert.match(backtest, /校准段：.*中间一段，规则定下后只用来确定门槛。/);
+  assert.match(backtest, /测试段：.*只有这段的成绩才算“没看过答案”/);
+  assert.match(backtestViews, /LPPL\.load\(S\.sym\)/);
+  assert.match(stock, /class="evidence-help" href="backtest\.html#view=bench">证据等级是什么？/);
+  assert.match(chart, /class="evidence-help" href="backtest\.html#view=bench">证据等级是什么？/);
 });
 
 test('sidebar watchlist reads through the existing watch module', () => {

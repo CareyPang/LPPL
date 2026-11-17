@@ -33,7 +33,7 @@
     { k: 'backtest', t: '历史检验', h: 'backtest.html', sections: ['backtest'], sub: [
       { t: '历史回放', h: 'backtest.html#view=scenario', key: 'scenario' },
       { t: '策略回测', h: 'backtest.html#view=strategy', key: 'strategy' },
-      { t: '三段验证', h: 'index.html#p-bench', key: 'bench' }
+      { t: '三段验证', h: 'backtest.html#view=bench', key: 'bench' }
     ] },
     { k: 'tools', t: '工具', h: 'tools.html', sections: ['tools'], sub: [] }
   ];
@@ -238,7 +238,7 @@
   function addSideLink(parent, def, mainKey, nested) {
     var a = el('a', 'odn-side-link' + (nested ? ' odn-side-nested' : ''), esc(def.t));
     a.href = def.h;
-    if (def.page === section || (def.key === 'bench' && section === 'terminal' && location.hash === '#p-bench')) {
+    if (def.page === section) {
       a.setAttribute('aria-current', 'location');
     }
     parent.appendChild(a);
@@ -766,8 +766,6 @@
       }
     } else if (section === 'nt') {
       selected = sidebarLinks.filter(function (item) { return item.page === 'nt'; })[0];
-    } else if (section === 'terminal' && location.hash === '#p-bench') {
-      selected = sidebarLinks.filter(function (item) { return item.key === 'bench'; })[0];
     } else if (section === 'stock' || section === 'terminal') {
       selected = sidebarLinks.filter(function (item) { return item.page === section; })[0];
     } else if (section === 'backtest') {

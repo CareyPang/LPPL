@@ -119,6 +119,7 @@
     .stock-head .code { font: 500 18px var(--f-m); color: var(--ink-2); letter-spacing: .08em; }
     .stock-meta { width: 100%; font-size: 13px; color: var(--ink-3); }
     .ev-pill { margin-left: auto; font-size: 12px; color: var(--warn); border: 1px solid rgba(154, 91, 0, .45); border-radius: 999px; padding: 3px 12px; }
+    .evidence-help { margin-left: 8px; color: var(--cyan); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 
     .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); margin-top: var(--s5); }
     .sum-card { border: 1px solid var(--line); border-radius: var(--r); background: var(--glass); padding: var(--s5); min-width: 0; position: relative; overflow: hidden; }
@@ -405,6 +406,7 @@
         <h2 id="stock-name">—</h2>
         <span class="code" id="stock-code"></span>
         <span class="ev-pill" id="stock-evidence">证据状态未知</span>
+        <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
         <div class="stock-meta" id="stock-meta"></div>
         <p class="visibility-note" id="first-visible-note"></p>
       </div>
