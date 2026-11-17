@@ -7,6 +7,18 @@ name: lppls_rescan_g3q3
 on:
   workflow_dispatch:
     inputs:
+      segment:
+        description: Dataset segment
+        type: choice
+        options:
+          - dev
+          - cal
+          - test
+        default: dev
+      q3:
+        description: Q3 surrogate count (0 or 20)
+        type: string
+        default: "20"
       symbols:
         description: Comma-separated index symbols (dev segment only)
         type: string
@@ -24,7 +36,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: lppls-rescan-${{ inputs.out_tag }}
+  group: lppls-rescan-${{ inputs.segment }}-${{ inputs.out_tag }}
   cancel-in-progress: false
 
 jobs:
@@ -36,11 +48,19 @@ jobs:
     env:
       INPUT_SYMBOLS: ${{ inputs.symbols }}
       INPUT_SHARDS: ${{ inputs.shards }}
+      INPUT_SEGMENT: ${{ inputs.segment }}
+      INPUT_Q3: ${{ inputs.q3 }}
     steps:
       - id: plan
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$INPUT_SEGMENT" != "dev" && "$INPUT_SEGMENT" != "cal" && "$INPUT_SEGMENT" != "test" ]]; then
+            echo "segment must be dev, cal, or test" >&2; exit 1
+          fi
+          if [[ "$INPUT_Q3" != "0" && "$INPUT_Q3" != "20" ]]; then
+            echo "q3 must be 0 or 20" >&2; exit 1
+          fi
           if [[ ! "$INPUT_SHARDS" =~ ^[0-9]{1,2}$ ]] || (( 10#$INPUT_SHARDS < 1 || 10#$INPUT_SHARDS > 20 )); then
             echo "shards must be 1–20" >&2; exit 1
           fi
@@ -48,7 +68,7 @@ jobs:
             echo "symbols must look like sh000001,sz399001" >&2; exit 1
           fi
           shards=$((10#$INPUT_SHARDS))
-          matrix=$(SYMS="$INPUT_SYMBOLS" N="$shards" python3 -c 'import json,os; syms=os.environ["SYMS"].split(","); n=int(os.environ["N"]); print(json.dumps({"include": [{"symbol": s, "shard": i} for s in syms for i in range(n)]}))')
+          matrix=$(SYMS="$INPUT_SYMBOLS" N="$shards" SEGMENT="$INPUT_SEGMENT" python3 -c 'import json,os; syms=os.environ["SYMS"].split(","); n=int(os.environ["N"]); syms=[s for s in syms if not (os.environ["SEGMENT"] == "dev" and s == "sh000688")]; print(json.dumps({"include": [{"symbol": s, "shard": i} for s in syms for i in range(n)]}))')
           printf 'shards=%s\nmatrix=%s\n' "$shards" "$matrix" >> "$GITHUB_OUTPUT"
 
   scan:
@@ -67,7 +87,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -e .
-      - name: Scan shard (dev segment, v2 box, _g3 + Q3)
+      - name: Scan shard (v2 box, _g3 + Q3)
         shell: bash
         env:
           LPPLS_BOX: v2
@@ -76,11 +96,12 @@ jobs:
           LPPLS_SHARD: ${{ matrix.shard }}/${{ needs.plan.outputs.shards }}
           LPPLS_PROCS: "4"
           LPPLS_G3: "1"
-          LPPLS_Q3: "20"
+          LPPLS_Q3: ${{ inputs.q3 }}
+          INPUT_SEGMENT: ${{ inputs.segment }}
         run: |
           set -euo pipefail
-          python -c "from research.features import lppls_scan as L; assert L.G3 and L.Q3_K == 20 and L.COLS[-2:] == ['g3_src', 'q3_p'], L.COLS"
-          python -m research.features.lppls_scan index dev
+          python -c "import os; from research.features import lppls_scan as L; assert L.G3 and L.OPT == 'g3' and L.Q3_K == int(os.environ['LPPLS_Q3']); assert L.COLS[-1] == ('q3_p' if L.Q3_K else 'g3_src')"
+          python -m research.features.lppls_scan index "$INPUT_SEGMENT"
           ls -la "data/features/lppls_v2${LPPLS_OUT_TAG}"
       - uses: actions/upload-artifact@v4
         with:
