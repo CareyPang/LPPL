@@ -774,17 +774,20 @@
       var view = new URLSearchParams(location.hash.slice(1)).get('view') || 'scenario';
       selected = sidebarLinks.filter(function (item) { return item.key === view; })[0];
     } else {
-      var candidates = sidebarLinks.filter(function (item) {
-        return item.mainKey === MAIN.filter(isMain)[0].k && item.ids.length;
-      });
-      var threshold = hdr.getBoundingClientRect().height + 16;
-      candidates.forEach(function (item) {
-        item.ids.forEach(function (id) {
-          var target = document.getElementById(id);
-          if (target && target.getClientRects().length && target.getBoundingClientRect().top <= threshold) selected = item;
+      var activeMain = MAIN.filter(isMain)[0];
+      if (activeMain) {
+        var candidates = sidebarLinks.filter(function (item) {
+          return item.mainKey === activeMain.k && item.ids.length;
         });
-      });
-      if (!selected) selected = candidates[0] || null;
+        var threshold = hdr.getBoundingClientRect().height + 16;
+        candidates.forEach(function (item) {
+          item.ids.forEach(function (id) {
+            var target = document.getElementById(id);
+            if (target && target.getClientRects().length && target.getBoundingClientRect().top <= threshold) selected = item;
+          });
+        });
+        if (!selected) selected = candidates[0] || null;
+      }
     }
     if (selected) selected.a.setAttribute('aria-current', 'location');
   }

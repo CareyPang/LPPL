@@ -354,6 +354,21 @@ def test_backtest_sidebar_links_switch_views(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_guide_navigation_loads_and_escape_closes_help(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{BASE_URL}/guide.html")
+    expect(page.locator("header.odn")).to_be_visible()
+    assert not errors, errors
+    help_menu = page.locator(".odn-help")
+    help_menu.locator("summary").click()
+    expect(help_menu).to_have_attribute("open", "")
+    page.keyboard.press("Escape")
+    expect(help_menu).not_to_have_attribute("open", "")
+
+
+@pytest.mark.e2e
 def test_mobile_navigation_fits_and_drives_fullscreen_assistant(page: Page) -> None:
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{BASE_URL}/home.html")
