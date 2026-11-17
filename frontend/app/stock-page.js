@@ -56,7 +56,7 @@
     const params = new URLSearchParams(location.search);
     catalogView = StockCatalog.mount({ el: cat, catalog, published: index && typeof index === 'object' ? Object.keys(index) : [], watch,
       query: params.has('q') ? params.get('q') : undefined,
-      onOpen: (row) => { $('code').value = row.code; $('search').requestSubmit(); } });
+      onOpen: (row) => { location.href = 'stock.html?code=' + encodeURIComponent(row.code); } });
   }
   cat.addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-catalog]')) mountCatalog();

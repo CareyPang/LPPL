@@ -74,3 +74,30 @@ test('quote time labels require same-day trading-session timestamps in the excha
   assert.equal(label('2026-11-13 10:00:00', 'America/New_York', new Date('2026-11-13T15:01:00Z')).label, '盘中');
   assert.equal(label('2026-11-13 10:00:00', 'America/New_York', new Date('2026-11-13T21:01:00Z')).label, '最新成交');
 });
+
+test('full-chart link encodes the current page basename and search as safe return context', () => {
+  const { header } = setup();
+  assert.equal(
+    header.chartUrl('sh600519', {
+      pathname: '/LPPL/stock.html',
+      search: '?code=600519&tab=top',
+    }),
+    'chart.html?code=sh600519&from=stock.html%3Fcode%3D600519%26tab%3Dtop',
+  );
+  assert.equal(
+    header.chartUrl('sh000001', {
+      pathname: '/LPPL/index.html',
+      search: '?code=sh000001',
+    }),
+    'chart.html?code=sh000001&from=index.html%3Fcode%3Dsh000001',
+  );
+});
+
+test('full-chart link only supports symbols accepted by the chart context parser', () => {
+  const { header } = setup();
+  assert.equal(header.chartSupportedSymbol('sh600519'), true);
+  assert.equal(header.chartSupportedSymbol('600519'), true);
+  assert.equal(header.chartSupportedSymbol('US_AAPL'), false);
+  assert.equal(header.chartSupportedSymbol('not-a-symbol'), false);
+  assert.match(headerSource, /chart\.hidden = !chartSupportedSymbol\(symbol\)/);
+});

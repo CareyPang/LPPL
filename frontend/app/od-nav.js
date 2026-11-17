@@ -63,6 +63,8 @@
 '.odn-main a:hover{color:#fff;background:#1f1f1f}' +
 '.odn-main a[aria-current]{color:#fff;background:#2a2a2a}' +
 '.odn-r{flex:none;margin-left:auto;display:flex;align-items:center;gap:10px;padding-left:12px}' +
+'.odn-chart-link{display:inline-flex;align-items:center;min-height:44px;white-space:nowrap;padding:0 10px;border:1px solid #315cf5;border-radius:8px;color:#315cf5;background:#fff;text-decoration:none;font-size:13px;font-weight:650}' +
+'.odn-chart-link:hover,.odn-chart-link:focus-visible{border-color:#2447c9;outline:3px solid rgba(49,92,245,.16)}' +
 '.odn-asof{display:flex;align-items:center}.odn-asof>*{margin:0!important;font:12px Consolas,"Cascadia Mono",monospace!important;color:#8c8c8c!important;white-space:nowrap}' +
 '.odn details{position:relative}' +
 '.odn summary{list-style:none;cursor:pointer;display:grid;place-items:center;height:34px;min-width:34px;padding:0 10px;border-radius:999px;color:#b2b5be;font-weight:600}' +
@@ -309,6 +311,33 @@
   srch.addEventListener('submit', function (e) { e.preventDefault(); openSearch(''); });
   qi.addEventListener('focus', function () { openSearch(''); });
   qi.addEventListener('click', function () { openSearch(''); });
+  function appendIndexChartLink() {
+    if (section !== 'terminal' || !/(?:^|\/)index\.html$/.test(location.pathname)) return;
+    var chartLink = el('a', 'odn-chart-link', '完整图表 ›');
+    function currentIndexSymbol() {
+      var currentCode = String(new URLSearchParams(location.search).get('code') || '').trim();
+      if (!currentCode) return 'sh000001';
+      var normalized = currentCode.toLowerCase();
+      var indexItem = ((window.LPPL && window.LPPL.SYMS) || []).filter(function (item) {
+        return String(item.sym || '').toLowerCase() === normalized ||
+          String(item.code || '').toLowerCase() === normalized || item.name === currentCode;
+      })[0];
+      return indexItem && indexItem.sym || 'sh000001';
+    }
+    function updateChartHref() {
+      var source = location.pathname.split('/').pop() + location.search;
+      chartLink.href = 'chart.html?code=' + encodeURIComponent(currentIndexSymbol()) +
+        '&from=' + encodeURIComponent(source);
+    }
+    updateChartHref();
+    ['click', 'focus', 'pointerenter'].forEach(function (name) {
+      chartLink.addEventListener(name, updateChartHref);
+    });
+    right.appendChild(chartLink);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', appendIndexChartLink);
+  } else appendIndexChartLink();
 
   /* ---------- 全局「☆ 自选」抽屉（app/od-watch.js 按需加载） ---------- */
   var star = el('button', 'odn-star', '☆<span> 自选</span>');
