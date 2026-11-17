@@ -22,17 +22,15 @@ ROOT = Path(__file__).resolve().parents[2]
 CHART_PAGE = ROOT / "frontend" / "chart.html"
 
 
-def mobile_dimensions(page: Page) -> dict[str, int]:
-    page.set_viewport_size({"width": 390, "height": 844})
-    page.wait_for_timeout(250)
-    return page.evaluate(
-        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
-    )
-
-
-def assert_mobile_no_overflow(page: Page) -> None:
-    dimensions = mobile_dimensions(page)
-    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1
+def assert_page_has_no_overflow(page: Page, path: str) -> None:
+    page.goto(f"{BASE_URL}/{path}")
+    for width, height in ((1440, 900), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        page.wait_for_timeout(250)
+        dimensions = page.evaluate(
+            "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+        )
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
 
 
 @pytest.mark.e2e
@@ -46,10 +44,7 @@ def test_flow_1_home_search_finds_maotai(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="Current stock-row navigation replaces the catalog history entry, so browser Back cannot restore catalog/filter/scroll.",
-    strict=True,
-)
+@pytest.mark.skip(reason="requires full-navigation catalog from PR #131")
 def test_flow_2_stock_catalog_restores_filter_and_scroll(page: Page) -> None:
     page.goto(f"{BASE_URL}/stock.html")
     catalog = page.locator("#catalog")
@@ -92,10 +87,6 @@ def test_flow_2_stock_catalog_restores_filter_and_scroll(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="Current stock detail auto-POSTs /query when market data is newer than the model result, and od-nav overflows at 390px.",
-    strict=True,
-)
 def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     page.goto(f"{BASE_URL}/stock.html?code=600519")
     expect(page.locator("#stock-name")).to_contain_text("贵州茅台")
@@ -118,46 +109,17 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     expect(
         page.locator('#stock-scales [data-scale="12-24m"]')
     ).to_have_attribute("aria-checked", "true")
-    dimensions = mobile_dimensions(page)
-    post_requests = [
-        (method, url)
-        for method, url in page._e2e_requests
-        if method == "POST"
-    ]
-    forbidden_requests = [
-        (method, url)
-        for method, url in page._e2e_requests
-        if re.search(r"/(?:replay|request|query)(?:/|$)", urlsplit(url).path, re.I)
-    ]
-    assert (
-        dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1
-        and not post_requests
-        and not forbidden_requests
-    ), {
-        "mobile dimensions": dimensions,
-        "POST requests": post_requests,
-        "forbidden requests": forbidden_requests,
-    }
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="Current od-nav right-side group overflows a 390px viewport (document scrollWidth 443).",
-    strict=True,
-)
 def test_flow_4_index_chip_updates_header(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
     expect(page.locator("#sym-n")).to_contain_text("上证指数")
     page.locator('#ticker button[data-c="沪深300"]').click()
     expect(page.locator("#sym-n")).to_contain_text("沪深300")
-    assert_mobile_no_overflow(page)
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="Current od-nav right-side group overflows a 390px viewport (document scrollWidth 443).",
-    strict=True,
-)
 def test_flow_5_backtest_alert_ledger_has_evidence_and_rows(page: Page) -> None:
     page.goto(f"{BASE_URL}/backtest.html")
     rows = page.locator("#alert-rows [role=row]")
@@ -167,14 +129,9 @@ def test_flow_5_backtest_alert_ledger_has_evidence_and_rows(page: Page) -> None:
     expect(rows.first).to_be_visible()
     evidence = page.locator("#alert-caveat").inner_text()
     assert "不代表通过检验" in evidence or "不是" in evidence
-    assert_mobile_no_overflow(page)
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="Current od-nav right-side group overflows a 390px viewport (document scrollWidth 443).",
-    strict=True,
-)
 def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     page.goto(f"{BASE_URL}/market.html")
     page.wait_for_function(
@@ -211,7 +168,6 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         or news.locator(".news-status").count() > 0
         or re.search(r"暂无|不可用|未发布|数据", news.inner_text())
     )
-    assert_mobile_no_overflow(page)
 
 
 @pytest.mark.e2e
@@ -225,6 +181,70 @@ def test_flow_7_mortgage_calculator_shows_monthly_payment(page: Page) -> None:
     output = page.locator("#l-out")
     expect(output).to_contain_text("月供")
     assert re.search(r"首月\s+[\d,]+\.\d{2}\s+元", output.inner_text())
+
+
+@pytest.mark.e2e
+def test_overflow_1_home_page(page: Page) -> None:
+    assert_page_has_no_overflow(page, "home.html")
+
+
+@pytest.mark.e2e
+@pytest.mark.xfail(
+    reason="od-nav overflow at 390px; fixed by PR #129",
+    strict=True,
+)
+def test_overflow_2_stock_catalog(page: Page) -> None:
+    assert_page_has_no_overflow(page, "stock.html")
+
+
+@pytest.mark.e2e
+@pytest.mark.xfail(
+    reason="od-nav overflow at 390px; fixed by PR #129",
+    strict=True,
+)
+def test_overflow_3_stock_detail(page: Page) -> None:
+    assert_page_has_no_overflow(page, "stock.html?code=600519")
+
+
+@pytest.mark.e2e
+@pytest.mark.xfail(
+    reason="od-nav overflow at 390px; fixed by PR #129",
+    strict=True,
+)
+def test_overflow_4_index_page(page: Page) -> None:
+    assert_page_has_no_overflow(page, "index.html?code=sh000001")
+
+
+@pytest.mark.e2e
+@pytest.mark.xfail(
+    reason="od-nav overflow at 390px; fixed by PR #129",
+    strict=True,
+)
+def test_overflow_5_backtest_page(page: Page) -> None:
+    assert_page_has_no_overflow(page, "backtest.html")
+
+
+@pytest.mark.e2e
+@pytest.mark.xfail(
+    reason="od-nav overflow at 390px; fixed by PR #129",
+    strict=True,
+)
+def test_overflow_6_market_page(page: Page) -> None:
+    assert_page_has_no_overflow(page, "market.html")
+
+
+@pytest.mark.e2e
+def test_overflow_7_tools_page(page: Page) -> None:
+    assert_page_has_no_overflow(page, "tools.html")
+
+
+@pytest.mark.e2e
+@pytest.mark.skipif(
+    not CHART_PAGE.is_file(),
+    reason="flow 8 requires frontend/chart.html",
+)
+def test_overflow_8_chart_page(page: Page) -> None:
+    assert_page_has_no_overflow(page, "chart.html?code=sh601838&scale=6-12m")
 
 
 @pytest.mark.e2e

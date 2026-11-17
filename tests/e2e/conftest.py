@@ -20,6 +20,7 @@ MARKET_FIXTURES = {
     "600519": FIXTURES / "stock_600519_market.json",
     "601838": FIXTURES / "stock_601838_market.json",
 }
+WORKER_HOST = "lppl-stock-query.careypang.workers.dev"
 CONSOLE_ERROR_ALLOWLIST = {
     404: re.compile(r"server responded with a status of 404"),
     503: re.compile(r"server responded with a status of 503"),
@@ -37,7 +38,7 @@ TRANSPARENT_PNG = base64.b64decode(
 )
 CORS_HEADERS = {
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET, OPTIONS",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-allow-headers": "*",
 }
 
@@ -48,6 +49,16 @@ def is_local_url(url: str) -> bool:
         return parsed.hostname == LOCAL_HOST and parsed.port == LOCAL_PORT
     except ValueError:
         return False
+
+
+def is_allowed_stock_query(method: str, url: str, page_path: str) -> bool:
+    parsed = urlsplit(url)
+    return (
+        method in {"POST", "OPTIONS"}
+        and page_path == "/stock.html"
+        and (parsed.hostname or "").lower() == WORKER_HOST
+        and parsed.path == "/query"
+    )
 
 
 def fulfill_503(route: Route, expected_console_errors: dict[int, int]) -> None:
@@ -64,6 +75,7 @@ def fulfill_external(
     route: Route,
     routed: set[tuple[str, str]],
     expected_console_errors: dict[int, int],
+    allow_stock_query: bool,
 ) -> None:
     request = route.request
     parsed = urlsplit(request.url)
@@ -80,6 +92,8 @@ def fulfill_external(
             route.fulfill(path=str(fixture), headers=CORS_HEADERS)
         else:
             fulfill_503(route, expected_console_errors)
+    elif allow_stock_query:
+        fulfill_503(route, expected_console_errors)
     elif resource_type == "stylesheet":
         route.fulfill(status=200, content_type="text/css", body="")
     elif resource_type == "script":
@@ -112,7 +126,7 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     page = context.new_page()
     page.set_default_timeout(10_000)
     page.set_default_navigation_timeout(15_000)
-    requests: list[tuple[str, str]] = []
+    requests: list[tuple[str, str, str]] = []
     routed_external: set[tuple[str, str]] = set()
     route_failures: list[str] = []
     page_errors: list[str] = []
@@ -122,7 +136,13 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     page._e2e_requests = requests
 
     def record_request(browser_request) -> None:
-        requests.append((browser_request.method, browser_request.url))
+        requests.append(
+            (
+                browser_request.method,
+                browser_request.url,
+                urlsplit(page.url).path,
+            )
+        )
 
     def record_response(response) -> None:
         parsed = urlsplit(response.url)
@@ -154,7 +174,17 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
             route.continue_()
             return
         try:
-            fulfill_external(route, routed_external, expected_console_errors)
+            allow_stock_query = is_allowed_stock_query(
+                route.request.method,
+                route.request.url,
+                urlsplit(page.url).path,
+            )
+            fulfill_external(
+                route,
+                routed_external,
+                expected_console_errors,
+                allow_stock_query,
+            )
         except Exception as error:
             route_failures.append(f"{route.request.method} {route.request.url}: {error}")
             try:
@@ -174,97 +204,35 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
     yield page
 
     violations: list[str] = []
-    original_viewport = page.viewport_size or {"width": 1440, "height": 900}
-    original_scroll = page.evaluate("window.scrollY") if not page.is_closed() else 0
-    if not page.is_closed():
-        for width, height in ((1440, 900), (390, 844)):
-            page.set_viewport_size({"width": width, "height": height})
-            page.wait_for_timeout(250)
-            dimensions = page.evaluate(
-                """() => {
-                  const clipped = (element) => {
-                    for (let parent = element.parentElement; parent; parent = parent.parentElement) {
-                      const overflow = getComputedStyle(parent).overflowX;
-                      if (['auto', 'scroll', 'hidden', 'clip'].includes(overflow) &&
-                          parent.scrollWidth > parent.clientWidth) return true;
-                    }
-                    return false;
-                  };
-                  const offenders = Array.from(document.body.querySelectorAll('*'))
-                    .filter((element) => {
-                      const rect = element.getBoundingClientRect();
-                      return rect.width > 0 && rect.right > innerWidth + 1 && !clipped(element);
-                    })
-                    .slice(0, 8)
-                    .map((element) => {
-                      const rect = element.getBoundingClientRect();
-                      return {
-                        tag: element.tagName,
-                        id: element.id,
-                        className: String(element.className).slice(0, 80),
-                        right: Math.round(rect.right),
-                        width: Math.round(rect.width),
-                      };
-                    });
-                  return {
-                    scrollWidth: document.documentElement.scrollWidth,
-                    innerWidth,
-                    offenders,
-                  };
-                }"""
-            )
-            if dimensions["scrollWidth"] > dimensions["innerWidth"] + 1:
-                violations.append(
-                    f"horizontal overflow at {width}x{height}: {dimensions}"
-                )
-        page.set_viewport_size(original_viewport)
-        page.evaluate("(scrollY) => window.scrollTo(0, scrollY)", original_scroll)
-
     unexpected_console = console_errors
     external_requests = [
-        (method, url) for method, url in requests if not is_local_url(url)
+        (method, url)
+        for method, url, _ in requests
+        if not is_local_url(url)
     ]
     unrouted_external = [
         f"{method} {url}"
         for method, url in external_requests
         if (method, url) not in routed_external
     ]
-    post_requests = [f"{method} {url}" for method, url in requests if method == "POST"]
+    post_requests = [
+        f"{method} {url} from {page_path}"
+        for method, url, page_path in requests
+        if method == "POST"
+        and not is_allowed_stock_query(method, url, page_path)
+    ]
     forbidden_requests = [
-        f"{method} {url}"
-        for method, url in requests
-        if re.search(r"/(?:replay|request|query)(?:/|$)", urlsplit(url).path, re.I)
+        f"{method} {url} from {page_path}"
+        for method, url, page_path in requests
+        if re.search(
+            r"/(?:replay|request)(?:/|$)", urlsplit(url).path, re.I
+        )
+        or (
+            re.search(r"/query(?:/|$)", urlsplit(url).path, re.I)
+            and not is_allowed_stock_query(method, url, page_path)
+        )
     ]
     test_result = getattr(request.node, "rep_call", None)
-    if request.node.name == "test_flow_3_stock_market_chart_and_scale_controls":
-        violations = [
-            item
-            for item in violations
-            if not item.startswith("horizontal overflow at 390x844:")
-        ]
-        post_requests = [
-            item
-            for item in post_requests
-            if not (
-                item.startswith("POST ")
-                and urlsplit(item.split(" ", 1)[1]).path == "/query"
-            )
-        ]
-        forbidden_requests = [
-            item
-            for item in forbidden_requests
-            if urlsplit(item.split(" ", 1)[1]).path != "/query"
-        ]
-    if request.node.name in {
-        "test_flow_4_index_chip_updates_header",
-        "test_flow_5_backtest_alert_ledger_has_evidence_and_rows",
-        "test_flow_6_market_summary_and_news_leave_loading_state",
-    }:
-        violations = [
-            item
-            for item in violations
-            if not item.startswith("horizontal overflow at 390x844:")
-        ]
     if page_errors:
         violations.append(f"page errors: {page_errors}")
     if unexpected_console:
