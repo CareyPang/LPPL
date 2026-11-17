@@ -30,6 +30,12 @@ test('model summary names the compared dates', () => {
   assert.equal(result.lines[3].text, '2025-08-18→2025-08-25：1 项变化，1 项不变');
 });
 
+test('event retries target the event loader instead of summary data', () => {
+  assert.equal(Summary.retryTarget('events'), 'events');
+  assert.equal(Summary.retryTarget('index'), 'summary');
+  assert.equal(Summary.retryTarget('models'), 'summary');
+});
+
 test('uses reason codes for missing sources and empty watchlists', () => {
   const result = Summary.build({
     indices: [],

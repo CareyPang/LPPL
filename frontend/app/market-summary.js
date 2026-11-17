@@ -36,6 +36,10 @@
     return { current: eligible[0] || null, previous: eligible[1] || null };
   }
 
+  function retryTarget(key) {
+    return key === 'events' ? 'events' : 'summary';
+  }
+
   function build(input) {
     var indices = Array.isArray(input.indices) ? input.indices : [];
     var events = Array.isArray(input.events) ? input.events : [];
@@ -79,5 +83,11 @@
     };
   }
 
-  return { REASONS: REASONS, build: build, historyPair: historyPair, selectIndexRows: selectIndexRows };
+  return {
+    REASONS: REASONS,
+    build: build,
+    historyPair: historyPair,
+    retryTarget: retryTarget,
+    selectIndexRows: selectIndexRows,
+  };
 });
