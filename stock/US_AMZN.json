@@ -3,7 +3,7 @@
  "name": "亚马逊",
  "asof": "2026-11-16",
  "data_version": "us_AMZN_20261116_2f9a663e0da84207",
- "model_version": "prereg_v1.7_v2.1+stk_lite",
+ "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
   "holidays_through": null,
@@ -97,7 +97,7 @@
     "direction": "positive",
     "n_windows": 10,
     "confidence": {
-     "box": 0.1,
+     "box": 0.0,
      "standard": 0.0,
      "early": 0.9,
      "end": 0.0,
@@ -198,7 +198,7 @@
    "1-3m": null,
    "3-6m": null,
    "6-12m": 0.0,
-   "12-24m": 0.1,
+   "12-24m": 0.0,
    "2-6y": null,
    "evidence": "dev_only",
    "scale_evidence": {
@@ -5349,6 +5349,9 @@
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
+ "params": {
+  "optimizer": "de_lbfgsb"
+ },
  "stock_meta": {
   "variant": "stk_lite",
   "status": "eligible",
@@ -5385,7 +5388,7 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "2f893f83584880e59a14d941c8f9f16cd0f9c9b1661178335a43eda9678dc97c",
+ "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
  "fit_input_hash": "c3f4246fa5e8e178119ad62894c23789237e0fe3d71ab6a72c966f791c83718b",
  "history_input_hashes": {
   "2023-11-13": "6191c698caab803b7c5569a1dfef9e0bf3a496e0603f625d199eee24b23ef1f6",
@@ -6147,5 +6150,5 @@
  "code": "US_AMZN",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T05:04:26.482191+00:00"
+ "generated_at": "2026-11-17T23:02:30.940388+00:00"
 }
