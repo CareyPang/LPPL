@@ -28,6 +28,22 @@ test('home and tools load the assistant with page context and designated presets
   assert.match(assistant, /tools: \['这些工具的计算方式是什么？', '房贷等额本息和等额本金有什么区别？'\]/);
 });
 
+test('each tools card contributes named context without changing context limits', () => {
+  const tools = page('tools.html');
+  const contexts = [...tools.matchAll(/<article class="card" data-ai-context="([^"]+)"/g)]
+    .map((match) => match[1]);
+  assert.deepEqual(contexts, [
+    '汇率换算',
+    '时差与交易时钟',
+    '单位换算',
+    '金银价格换算',
+    '金价汇率情景',
+    '房贷计算器',
+  ]);
+  assert.match(assistant, /var MAX_CONTEXT = 8000/);
+  assert.match(assistant, /if \(!shown\(el\)\) return;/);
+});
+
 test('assistant exports an idempotent public opener and delegates prompt clicks', () => {
   assert.match(assistant, /root\.LPPLAssistant\s*=\s*\{\s*open:\s*function \(question\) \{\s*toggle\(true\);/);
   assert.match(assistant, /if \(typeof question === 'string' && question\.trim\(\)\) ask\(question\);/);
