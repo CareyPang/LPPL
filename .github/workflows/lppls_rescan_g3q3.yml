@@ -19,6 +19,14 @@ on:
         description: Q3 surrogate count (0 or 20)
         type: string
         default: "20"
+      n_min:
+        description: Minimum window length (empty disables the lower bound)
+        type: string
+        default: ""
+      n_max:
+        description: Maximum window length (empty disables the upper bound)
+        type: string
+        default: ""
       symbols:
         description: Comma-separated index symbols (dev segment only)
         type: string
@@ -50,6 +58,8 @@ jobs:
       INPUT_SHARDS: ${{ inputs.shards }}
       INPUT_SEGMENT: ${{ inputs.segment }}
       INPUT_Q3: ${{ inputs.q3 }}
+      INPUT_N_MIN: ${{ inputs.n_min }}
+      INPUT_N_MAX: ${{ inputs.n_max }}
     steps:
       - id: plan
         shell: bash
@@ -60,6 +70,12 @@ jobs:
           fi
           if [[ "$INPUT_Q3" != "0" && "$INPUT_Q3" != "20" ]]; then
             echo "q3 must be 0 or 20" >&2; exit 1
+          fi
+          if [[ -n "$INPUT_N_MIN" && ! "$INPUT_N_MIN" =~ ^[0-9]{1,4}$ ]]; then
+            echo "n_min must be empty or 1–4 digits" >&2; exit 1
+          fi
+          if [[ -n "$INPUT_N_MAX" && ! "$INPUT_N_MAX" =~ ^[0-9]{1,4}$ ]]; then
+            echo "n_max must be empty or 1–4 digits" >&2; exit 1
           fi
           if [[ ! "$INPUT_SHARDS" =~ ^[0-9]{1,2}$ ]] || (( 10#$INPUT_SHARDS < 1 || 10#$INPUT_SHARDS > 20 )); then
             echo "shards must be 1–20" >&2; exit 1
@@ -97,10 +113,12 @@ jobs:
           LPPLS_PROCS: "4"
           LPPLS_G3: "1"
           LPPLS_Q3: ${{ inputs.q3 }}
+          LPPLS_NMIN: ${{ inputs.n_min }}
+          LPPLS_NMAX: ${{ inputs.n_max }}
           INPUT_SEGMENT: ${{ inputs.segment }}
         run: |
           set -euo pipefail
-          python -c "import os; from research.features import lppls_scan as L; assert L.G3 and L.OPT == 'g3' and L.Q3_K == int(os.environ['LPPLS_Q3']); assert L.COLS[-1] == ('q3_p' if L.Q3_K else 'g3_src')"
+          python -c "import os; from research.features import lppls_scan as L; assert L.G3 and L.OPT == 'g3' and L.Q3_K == int(os.environ['LPPLS_Q3']); assert L.COLS[-1] == ('q3_p' if L.Q3_K else 'g3_src'); assert (L.NMIN, L.NMAX) == tuple(int(os.environ[name]) if os.environ[name] else None for name in ('LPPLS_NMIN', 'LPPLS_NMAX'))"
           python -m research.features.lppls_scan index "$INPUT_SEGMENT"
           ls -la "data/features/lppls_v2${LPPLS_OUT_TAG}"
       - uses: actions/upload-artifact@v4

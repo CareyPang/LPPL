@@ -62,12 +62,45 @@ OPT = os.environ.get("LPPLS_OPT", "g3" if G3 else "tcgrid")
 if OPT not in OPTIMIZER_NAMES:
     raise ValueError(f"LPPLS_OPT must be one of {sorted(OPTIMIZER_NAMES)}, got {OPT!r}")
 Q3_K = int(os.environ.get("LPPLS_Q3", "0"))
+
+
+def _window_bound(name: str) -> int | None:
+    value = os.environ.get(name, "")
+    if value == "":
+        return None
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer or empty, got {value!r}") from exc
+
+
+NMIN = _window_bound("LPPLS_NMIN")
+NMAX = _window_bound("LPPLS_NMAX")
 EXTRA_COLS = (["g3_src"] if G3 else []) + (["q3_p"] if Q3_K else [])
 COLS = COLS + EXTRA_COLS
 SHORT_WINDOWS = tuple(range(30, 121, 5))
 # 仅日更/产品显示用的补充窗口（FCO 六档中的 2–4 周与 2–6 年）；不进入开发/校准/测试段扫描与评价
 XS_WINDOWS = tuple(range(10, 21, 2))
 XL_WINDOWS = tuple(range(525, 1501, 25))
+
+
+def scan_windows(group: str) -> tuple[int, ...]:
+    windows = IDX_WINDOWS if group == "index" else STK_WINDOWS
+    if BOXES[BOX]["short"]:
+        windows = SHORT_WINDOWS + windows
+    if WINDOWS_MODE == "xs":
+        windows = XS_WINDOWS
+    elif WINDOWS_MODE == "lite":
+        windows = tuple(w for w in windows if w % 10 == 0)
+    if NMIN is not None or NMAX is not None:
+        windows = tuple(
+            w
+            for w in windows
+            if (NMIN is None or NMIN <= w) and (NMAX is None or w <= NMAX)
+        )
+        if not windows:
+            raise ValueError("LPPLS_NMIN/LPPLS_NMAX filter leaves no windows")
+    return windows
 
 
 def unique_windows(windows: tuple[int, ...], n_bars: int | None = None) -> tuple[int, ...]:
@@ -292,13 +325,7 @@ def run(group: str, procs: int = 8, chunk: int = 10, splits: tuple[str, ...] = (
             k = round(STOCK_SAMPLE * len(xs) / len(syms))
             picked += list(rng.choice(xs, size=min(k, len(xs)), replace=False))
         syms = sorted(picked)
-    windows = IDX_WINDOWS if group == "index" else STK_WINDOWS
-    if BOXES[BOX]["short"]:
-        windows = SHORT_WINDOWS + windows
-    if WINDOWS_MODE == "xs":
-        windows = XS_WINDOWS
-    elif WINDOWS_MODE == "lite":
-        windows = tuple(w for w in windows if w % 10 == 0)
+    windows = scan_windows(group)
     tasks, parts = [], {}
     for sym in syms:
         ds, suffix = _shard_dates(asof_dates(sym, group, cal, splits))

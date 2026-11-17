@@ -22,8 +22,30 @@ def _run(**env):
     e = {**os.environ, "LPPLS_BOX": "v2", "LPPLS_WINDOWS": "lite", **env}
     e.pop("LPPLS_G3", None) if "LPPLS_G3" not in env else None
     e.pop("LPPLS_Q3", None) if "LPPLS_Q3" not in env else None
+    e.pop("LPPLS_NMIN", None) if "LPPLS_NMIN" not in env else None
+    e.pop("LPPLS_NMAX", None) if "LPPLS_NMAX" not in env else None
     p = subprocess.run([sys.executable, "-c", CODE], env=e, capture_output=True, text=True, check=True)
     return json.loads(p.stdout.strip().splitlines()[-1])
+
+
+WINDOWS_CODE = r"""
+import json
+from research.features import lppls_scan as L
+print(json.dumps(L.scan_windows("index")))
+"""
+
+
+def _run_windows(**env):
+    e = {**os.environ, "LPPLS_BOX": "v2", "LPPLS_WINDOWS": "full"}
+    e.pop("LPPLS_NMIN", None)
+    e.pop("LPPLS_NMAX", None)
+    e.update(env)
+    return subprocess.run(
+        [sys.executable, "-c", WINDOWS_CODE],
+        env=e,
+        capture_output=True,
+        text=True,
+    )
 
 
 def test_flags_off_identical_and_flags_on_append_only():
@@ -43,6 +65,29 @@ def test_flags_off_identical_and_flags_on_append_only():
     q_bub, q_gbm = float(on["bub"][18]), float(on["gbm"][18])
     assert 1 / 6 <= q_bub <= 1.0
     assert q_gbm != q_gbm or 1 / 6 <= q_gbm <= 1.0  # 未过 box → NaN
+
+
+def test_optional_window_bounds_preserve_defaults_and_filter_index_windows():
+    unfiltered = _run_windows()
+    assert unfiltered.returncode == 0, unfiltered.stderr
+    expected = tuple(range(30, 121, 5)) + tuple(range(125, 751, 5))
+    assert tuple(json.loads(unfiltered.stdout.strip().splitlines()[-1])) == expected
+
+    empty = _run_windows(LPPLS_NMIN="", LPPLS_NMAX="")
+    assert empty.returncode == 0, empty.stderr
+    assert tuple(json.loads(empty.stdout.strip().splitlines()[-1])) == expected
+
+    filtered = _run_windows(LPPLS_NMIN="127", LPPLS_NMAX="504")
+    assert filtered.returncode == 0, filtered.stderr
+    windows = tuple(json.loads(filtered.stdout.strip().splitlines()[-1]))
+    assert windows == tuple(range(130, 501, 5))
+    assert len(windows) == 75
+
+
+def test_window_bounds_must_leave_at_least_one_window():
+    result = _run_windows(LPPLS_NMIN="9999", LPPLS_NMAX="10000")
+    assert result.returncode != 0
+    assert "filter leaves no windows" in result.stderr
 
 
 def test_q3_shifts_distinct_and_bounded():
