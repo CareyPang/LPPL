@@ -14,4 +14,38 @@ jobs:
       - run: ruff check research tests
       - name: Verify stock browser and Worker contracts
         run: node --test frontend/tests/*.test.cjs workers/stock-query/test/*.test.mjs
-      - run: pytest -m "not network"
+      - run: pytest -m "not network and not e2e"
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python -m pip install pytest playwright
+      - run: python -m playwright install --with-deps chromium-headless-shell
+      - name: Fetch published stock data
+        run: git fetch --depth=1 origin refs/heads/stock-results:refs/heads/stock-results
+      - name: Build site
+        run: bash scripts/build_site.sh
+      - name: Serve site
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 -d _site > "$RUNNER_TEMP/e2e-http.log" 2>&1 &
+          for attempt in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:8765/home.html >/dev/null; then
+              exit 0
+            fi
+            sleep 0.2
+          done
+          cat "$RUNNER_TEMP/e2e-http.log"
+          exit 1
+      - name: Run browser smoke tests
+        run: pytest -m e2e tests/e2e
+        env:
+          E2E_SCREENSHOT_DIR: test-results/e2e
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: test-results/e2e/
+          if-no-files-found: ignore
