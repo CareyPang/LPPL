@@ -6,9 +6,48 @@
   else root.StockCatalog = factory();
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
+  var STATE_KEY = 'lppl.catalog.v1';
   var TYPE_LABEL = { index: '宽基', industry: '行业', stock: '个股' };
   var BOARD_SHORT = { '沪市主板': '沪主', '深市主板': '深主', '创业板': '创业', '科创板': '科创' };
   var MEMBER_LABEL = { sh000300: '沪深300', sh000016: '上证50', sh000905: '中证500' };
+  var DEFAULT_STATE = { q: '', type: 'all', board: 'all', member: 'all', published: 'all', sort: 'code', dir: 'asc', dense: false };
+  var TYPES = new Set(['all', 'index', 'industry', 'stock']);
+  var BOARDS = new Set(['all', '沪市主板', '深市主板', '创业板', '科创板']);
+  var MEMBERS = new Set(['all', 'sh000300', 'sh000016', 'sh000905']);
+  var PUBLISHED = new Set(['all', 'yes', 'no']);
+  var SORTS = new Set(['code', 'name', 'type', 'board', 'member', 'published']);
+
+  function cleanState(value) {
+    var source = value && typeof value === 'object' ? value : {};
+    return {
+      q: typeof source.q === 'string' ? source.q : '',
+      type: TYPES.has(source.type) ? source.type : DEFAULT_STATE.type,
+      board: BOARDS.has(source.board) ? source.board : DEFAULT_STATE.board,
+      member: MEMBERS.has(source.member) ? source.member : DEFAULT_STATE.member,
+      published: PUBLISHED.has(source.published) ? source.published : DEFAULT_STATE.published,
+      sort: SORTS.has(source.sort) ? source.sort : DEFAULT_STATE.sort,
+      dir: source.dir === 'desc' ? 'desc' : DEFAULT_STATE.dir,
+      dense: typeof source.dense === 'boolean' ? source.dense : DEFAULT_STATE.dense,
+    };
+  }
+
+  function serializeState(value, scrollY) {
+    var y = Number(scrollY);
+    return JSON.stringify(Object.assign(cleanState(value), {
+      scrollY: Number.isFinite(y) && y > 0 ? Math.floor(y) : 0,
+    }));
+  }
+
+  function parseState(value, query) {
+    var source = value;
+    if (typeof source === 'string') {
+      try { source = JSON.parse(source); } catch (e) { source = {}; }
+    }
+    var state = cleanState(source);
+    if (query !== undefined && query !== null) state.q = String(query);
+    var y = Number(source && source.scrollY);
+    return { state: state, scrollY: Number.isFinite(y) && y > 0 ? Math.floor(y) : 0 };
+  }
 
   function normalize(catalog, published) {
     var rows = catalog && Array.isArray(catalog.rows) ? catalog.rows : Array.isArray(catalog) ? catalog : [];
@@ -68,8 +107,17 @@
   /* mount({ el, catalog, published, watch: { has(row), toggle(row) }, onOpen(row) }) */
   function mount(o) {
     var el = o.el, all = normalize(o.catalog, o.published), total = all.length;
-    var state = { q: '', type: 'all', board: 'all', member: 'all', published: 'all', sort: 'code', dir: 'asc', dense: false };
+    var win = o.window || root, storage = o.storage, saved;
+    if (storage === undefined) {
+      try { storage = win.sessionStorage; } catch (e) { storage = null; }
+    }
+    try { saved = storage && storage.getItem(STATE_KEY); } catch (e) { saved = null; }
+    var restored = parseState(saved, o.query);
+    var state = restored.state, ready = false, scrollTimer = null;
     var COLS = [['code', '代码'], ['name', '名称'], ['type', '类型'], ['board', '板块'], ['member', '所属指数'], ['published', '结果']];
+    function persist() {
+      try { if (storage) storage.setItem(STATE_KEY, serializeState(state, win.scrollY)); } catch (e) { /* storage may be unavailable */ }
+    }
     function chips(name, items) {
       return '<div class="cat-f" role="group" aria-label="' + esc(name) + '">' + items.map(function (it) {
         return '<button type="button" data-f="' + esc(it[0]) + '" data-v="' + esc(it[1]) + '" aria-pressed="' + (state[it[0]] === it[1]) + '">' + esc(it[2]) + '</button>';
@@ -103,6 +151,7 @@
         '</tbody></table></div>' +
         '<p class="cat-note">目录 = 7 个宽基指数 + 10 个中证行业指数 + 300 个沪深300 成分股；“已发布”指后端已有计算结果。目录外的 A 股可在上方输入 6 位代码发起查询。</p>';
       el.__rows = rows;
+      if (ready) persist();
     }
     el.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-f]');
@@ -114,12 +163,18 @@
       var dn = e.target.closest('.cat-dense');
       if (dn) { state.dense = !state.dense; draw(); return; }
       var a = e.target.closest('a[data-i]');
+      if (a) persist();
       if (a && o.onOpen) { var row = el.__rows[Number(a.dataset.i)]; if (row && row.type === 'stock') { e.preventDefault(); o.onOpen(row); } }
     });
     function applyQuery(t) {
-      var pos = t.selectionStart;
-      state.q = t.value; draw();
-      var q = el.querySelector('.cat-q'); if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (err) { /* ignore */ } }
+      var input = typeof t === 'string' ? null : t;
+      var pos = input && input.selectionStart;
+      state.q = String(input ? input.value : t || '');
+      draw();
+      if (input) {
+        var q = el.querySelector('.cat-q');
+        if (q) { q.focus(); try { q.setSelectionRange(pos, pos); } catch (err) { /* ignore */ } }
+      }
     }
     el.addEventListener('input', function (e) {
       if (!e.target.classList.contains('cat-q') || e.isComposing) return; /* 中文输入法合成中不重绘，否则候选被打断 */
@@ -128,9 +183,29 @@
     el.addEventListener('compositionend', function (e) {
       if (e.target.classList.contains('cat-q')) applyQuery(e.target);
     });
-    draw();
+    if (win && win.addEventListener) {
+      win.addEventListener('scroll', function () {
+        if (scrollTimer) return;
+        scrollTimer = setTimeout(function () { scrollTimer = null; persist(); }, 120);
+      }, { passive: true });
+    }
+    if (o.query !== undefined && o.query !== null) applyQuery(String(o.query));
+    else draw();
+    ready = true;
+    var restoreScroll = function () {
+      if (restored.scrollY && win && typeof win.scrollTo === 'function') win.scrollTo(0, restored.scrollY);
+      persist();
+    };
+    if (restored.scrollY) {
+      if (win && typeof win.requestAnimationFrame === 'function') win.requestAnimationFrame(restoreScroll);
+      else setTimeout(restoreScroll, 0);
+    } else persist();
     return { redraw: draw, state: state, rows: all };
   }
 
-  return { TYPE_LABEL: TYPE_LABEL, BOARD_SHORT: BOARD_SHORT, normalize: normalize, filter: filter, sort: sort, counts: counts, mount: mount };
+  return {
+    STATE_KEY: STATE_KEY, TYPE_LABEL: TYPE_LABEL, BOARD_SHORT: BOARD_SHORT,
+    serializeState: serializeState, parseState: parseState,
+    normalize: normalize, filter: filter, sort: sort, counts: counts, mount: mount,
+  };
 });

@@ -30,7 +30,9 @@
     cat.innerHTML = '<p class="muted">目录加载中…</p>';
     const [catalog, index] = await Promise.all([LPPL.catalog().catch(() => null), LPPL.stock.index().catch(() => ({}))]);
     if (!catalog) { cat.innerHTML = '<p class="muted">标的目录未发布。</p>'; return; }
+    const params = new URLSearchParams(location.search);
     StockCatalog.mount({ el: cat, catalog, published: index && typeof index === 'object' ? Object.keys(index) : [], watch,
+      query: params.has('q') ? params.get('q') : undefined,
       onOpen: (row) => { $('code').value = row.code; $('search').requestSubmit(); } });
   }
   const sync = () => {

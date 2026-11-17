@@ -53,3 +53,36 @@ test('sort orders by column with code as tiebreaker and supports descending', ()
   assert.equal(StockCatalog.sort(rows, 'published')[0].published, true);
   assert.equal(StockCatalog.sort(rows, 'board').slice(-2).every((r) => !r.board), true);
 });
+
+test('catalog state serialization validates fields and drops unknown keys', () => {
+  const raw = StockCatalog.serializeState({
+    q: '茅台', type: 'stock', board: '创业板', member: 'sh000300',
+    published: 'yes', sort: 'name', dir: 'desc', dense: true, injected: 'ignored',
+  }, 812.9);
+  assert.deepEqual(JSON.parse(raw), {
+    q: '茅台', type: 'stock', board: '创业板', member: 'sh000300',
+    published: 'yes', sort: 'name', dir: 'desc', dense: true, scrollY: 812,
+  });
+  assert.deepEqual(StockCatalog.parseState(raw), {
+    state: {
+      q: '茅台', type: 'stock', board: '创业板', member: 'sh000300',
+      published: 'yes', sort: 'name', dir: 'desc', dense: true,
+    },
+    scrollY: 812,
+  });
+});
+
+test('catalog state parsing validates corrupt values and URL query overrides stored q', () => {
+  assert.deepEqual(StockCatalog.parseState(JSON.stringify({
+    q: 'stored', type: 'unknown', board: 'unknown', member: 'unknown',
+    published: 'unknown', sort: 'unknown', dir: 'sideways', dense: 'yes',
+    scrollY: -1, extra: true,
+  }), 'from-url'), {
+    state: {
+      q: 'from-url', type: 'all', board: 'all', member: 'all',
+      published: 'all', sort: 'code', dir: 'asc', dense: false,
+    },
+    scrollY: 0,
+  });
+  assert.equal(StockCatalog.parseState('{bad json').scrollY, 0);
+});
