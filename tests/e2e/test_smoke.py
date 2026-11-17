@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import re
-from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
@@ -18,8 +17,6 @@ def expect(locator: object):
     return playwright_expect(locator)
 
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
-ROOT = Path(__file__).resolve().parents[2]
-CHART_PAGE = ROOT / "frontend" / "chart.html"
 
 
 def assert_page_has_no_overflow(page: Page, path: str) -> None:
@@ -44,7 +41,6 @@ def test_flow_1_home_search_finds_maotai(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.skip(reason="requires full-navigation catalog from PR #131")
 def test_flow_2_stock_catalog_restores_filter_and_scroll(page: Page) -> None:
     page.goto(f"{BASE_URL}/stock.html")
     catalog = page.locator("#catalog")
@@ -71,8 +67,14 @@ def test_flow_2_stock_catalog_restores_filter_and_scroll(page: Page) -> None:
     assert abs(saved_state.get("scrollY", 0) - 300) <= 2
 
     page.locator("#catalog a[data-i]").first.click()
+    page.wait_for_url(
+        re.compile(r"/stock\.html\?code=\d{6}(?:&|$)"),
+        wait_until="domcontentloaded",
+        timeout=20_000,
+    )
     page.wait_for_function(
-        "() => !document.querySelector('#results').hidden",
+        "() => { const results = document.querySelector('#results'); "
+        "return results !== null && !results.hidden; }",
         timeout=20_000,
     )
     page.go_back(wait_until="domcontentloaded")
@@ -189,26 +191,18 @@ def test_overflow_1_home_page(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="od-nav overflow at 390px; fixed by PR #129",
-    strict=True,
-)
 def test_overflow_2_stock_catalog(page: Page) -> None:
     assert_page_has_no_overflow(page, "stock.html")
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="od-nav overflow at 390px; fixed by PR #129",
-    strict=True,
-)
 def test_overflow_3_stock_detail(page: Page) -> None:
     assert_page_has_no_overflow(page, "stock.html?code=600519")
 
 
 @pytest.mark.e2e
 @pytest.mark.xfail(
-    reason="od-nav overflow at 390px; fixed by PR #129",
+    reason="index.html still overflows at 390px (document scrollWidth 474px)",
     strict=True,
 )
 def test_overflow_4_index_page(page: Page) -> None:
@@ -216,19 +210,11 @@ def test_overflow_4_index_page(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="od-nav overflow at 390px; fixed by PR #129",
-    strict=True,
-)
 def test_overflow_5_backtest_page(page: Page) -> None:
     assert_page_has_no_overflow(page, "backtest.html")
 
 
 @pytest.mark.e2e
-@pytest.mark.xfail(
-    reason="od-nav overflow at 390px; fixed by PR #129",
-    strict=True,
-)
 def test_overflow_6_market_page(page: Page) -> None:
     assert_page_has_no_overflow(page, "market.html")
 
@@ -239,19 +225,11 @@ def test_overflow_7_tools_page(page: Page) -> None:
 
 
 @pytest.mark.e2e
-@pytest.mark.skipif(
-    not CHART_PAGE.is_file(),
-    reason="flow 8 requires frontend/chart.html",
-)
 def test_overflow_8_chart_page(page: Page) -> None:
     assert_page_has_no_overflow(page, "chart.html?code=sh601838&scale=6-12m")
 
 
 @pytest.mark.e2e
-@pytest.mark.skipif(
-    not CHART_PAGE.is_file(),
-    reason="flow 8 requires frontend/chart.html",
-)
 def test_flow_8_chart_band_and_same_origin_back_link(page: Page) -> None:
     page.goto(f"{BASE_URL}/chart.html?code=sh601838&scale=6-12m")
     row = page.locator("#interval-list .interval-row").first
