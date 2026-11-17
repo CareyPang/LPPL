@@ -1453,6 +1453,20 @@ test('POST /ai returns unavailable without a configured DeepSeek key', async () 
   });
 });
 
+test('POST /ai accepts home and tools pages', async () => {
+  for (const page of ['home', 'tools']) {
+    const response = await worker.fetch(
+      request('/ai', { method: 'POST', body: aiBody({ page }) }),
+      environment(),
+    );
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), {
+      error_code: 'SERVICE_UNAVAILABLE',
+      error: '研究助手未配置',
+    });
+  }
+});
+
 test('POST /ai validates page, question, context, history, and raw body size', async () => {
   await withUpstream({ fetch: async () => assert.fail('invalid requests must not reach upstream') }, async () => {
     const env = environment({ DEEPSEEK_API_KEY: TOKEN });
