@@ -209,7 +209,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <a href="#view=bench" data-view="bench">三段验证</a>
   <span class="bt-views-note">策略回测 = 事前登记规则的历史回放，不是预测</span>
 </nav>
-<section class="bench-explainer" aria-label="三段验证说明">
+<section class="bench-explainer" aria-label="三段验证说明" data-ai-context="三段说明">
   <div><b>开发段：</b>最早的一段历史，用来设计规则、调参数。</div>
   <div><b>校准段：</b>中间一段，规则定下后只用来确定门槛。</div>
   <div><b>测试段：</b>最近一段，前两段定完才看，相当于考试；只有这段的成绩才算“没看过答案”。</div>
@@ -218,7 +218,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <div class="sv-head"><h2 id="sv-title">策略回放</h2><span class="sv-sub" id="sv-sub">—</span></div>
   <div id="strategy-panel" class="sp"></div>
 </section>
-<section class="bench-view" id="bench-view" hidden aria-labelledby="bench-title">
+<section class="bench-view" id="bench-view" hidden aria-labelledby="bench-title" data-ai-context="三段验证">
   <h2 id="bench-title">三段验证</h2>
   <div id="bench-panel"></div>
 </section>

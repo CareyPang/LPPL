@@ -62,6 +62,16 @@ def is_allowed_stock_query(method: str, url: str, page_path: str) -> bool:
     )
 
 
+def is_allowed_ai_request(method: str, url: str, page_path: str) -> bool:
+    parsed = urlsplit(url)
+    return (
+        method == "POST"
+        and page_path == "/backtest.html"
+        and (parsed.hostname or "").lower() == WORKER_HOST
+        and parsed.path == "/ai"
+    )
+
+
 def fulfill_503(route: Route, expected_console_errors: dict[int, int]) -> None:
     route.fulfill(
         status=503,
@@ -220,7 +230,10 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
         f"{method} {url} from {page_path}"
         for method, url, page_path in requests
         if method == "POST"
-        and not is_allowed_stock_query(method, url, page_path)
+        and not (
+            is_allowed_stock_query(method, url, page_path)
+            or is_allowed_ai_request(method, url, page_path)
+        )
     ]
     forbidden_requests = [
         f"{method} {url} from {page_path}"

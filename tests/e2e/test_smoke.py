@@ -524,6 +524,39 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
 
 
 @pytest.mark.e2e
+def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    expect(page.locator(".app")).to_be_visible()
+
+    def ask_context() -> str:
+        with page.expect_request(
+            lambda request: request.method == "POST"
+            and urlsplit(request.url).path == "/ai"
+        ) as request_info:
+            page.locator(".ai-form textarea").fill("请解释三段验证")
+            page.locator('.ai-form button[type="submit"]').click()
+        context = request_info.value.post_data_json["context"]
+        expect(page.locator('.ai-form button[type="submit"]')).to_be_enabled()
+        return context
+
+    scenario_context = ask_context()
+    assert "开发段：" in scenario_context
+    assert "开发段 2000" not in scenario_context
+    assert len(scenario_context) <= 8000
+
+    page.locator('.bt-views a[data-view="bench"]').click()
+    expect(page.locator("#bench-view")).to_be_visible()
+    page.wait_for_function(
+        "() => document.querySelectorAll('#bench-panel tbody tr').length > 0"
+    )
+    bench_context = ask_context()
+    assert "开发段 2000" in bench_context
+    assert len(bench_context) <= 8000
+
+
+@pytest.mark.e2e
 def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
