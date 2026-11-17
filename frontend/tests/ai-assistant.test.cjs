@@ -45,12 +45,24 @@ test('each tools card contributes named context without changing context limits'
 });
 
 test('assistant exports an idempotent public opener and delegates prompt clicks', () => {
-  assert.match(assistant, /root\.LPPLAssistant\s*=\s*\{\s*open:\s*function \(question\) \{\s*toggle\(true\);/);
+  assert.match(assistant, /root\.LPPLAssistant\s*=\s*\{\s*open:\s*function \(question\) \{\s*toggle\(true, true\);/);
   assert.match(assistant, /if \(typeof question === 'string' && question\.trim\(\)\) ask\(question\);/);
-  assert.match(assistant, /close:\s*function \(\) \{ toggle\(false\); \}/);
+  assert.match(assistant, /close:\s*function \(\) \{ toggle\(false, true\); \}/);
   assert.match(assistant, /isOpen:\s*function \(\) \{ return !panel\.hidden; \}/);
   assert.match(assistant, /document\.addEventListener\('click'/);
   assert.match(assistant, /root\.LPPLAssistant\.open\(trigger\.dataset\.aiAsk\)/);
+});
+
+test('home switch defaults closed, reflects state, and safely persists home-only changes', () => {
+  assert.match(assistant, /var HOME_STORAGE_KEY = 'lppl\.assistant\.home'/);
+  assert.match(assistant, /function readHomePreference\(\) \{\s*try \{ return root\.localStorage\.getItem\(HOME_STORAGE_KEY\) === '1'; \} catch \(e\) \{ return false; \}\s*\}/);
+  assert.match(assistant, /function writeHomePreference\(open\) \{\s*try \{ root\.localStorage\.setItem\(HOME_STORAGE_KEY, open \? '1' : '0'\); \} catch \(e\) \{ \/\* optional \*\/ \}\s*\}/);
+  assert.match(assistant, /homeSwitch\.setAttribute\('role', 'switch'\)/);
+  assert.match(assistant, /homeSwitch\.setAttribute\('aria-checked', 'false'\)/);
+  assert.match(assistant, /homeSwitch\.setAttribute\('aria-checked', String\(open\)\)/);
+  assert.match(assistant, /if \(page === 'home' && persist\) writeHomePreference\(open\)/);
+  assert.match(assistant, /\.ai-home-switch\[aria-checked="true"\] i\{background:#315cf5\}/);
+  assert.match(nav, /body\.odn-sidebar-page\.vs-home:not\(\.ai-open\)\{padding-left:208px\}/);
 });
 
 test('assistant docks at the sidebar edge on wide screens and fills mobile screens', () => {
