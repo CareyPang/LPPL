@@ -87,6 +87,40 @@ test('main and secondary bands exactly follow normalized CPTopClusters output', 
   }
 });
 
+test('all scale bands use selected emphasis and suppress labels on unselected scales', () => {
+  const top = { scale_clusters: {
+    '6-12m': [{ share: 0.4, q20_date: '2026-12-01', q80_date: '2026-12-12' }],
+    '12-24m': [{ share: 0.3, q20_date: '2027-01-04', q80_date: '2027-01-15' },
+      { share: 0.2, q20_date: '2027-01-05', q80_date: '2027-01-16' }],
+  } };
+  const bands = Chart.bandsForAllScales({ top });
+  assert.deepEqual(bands.map(({ scale, rank }) => [scale, rank]), [
+    ['6-12m', 'main'], ['12-24m', 'main'], ['12-24m', 'secondary'],
+  ]);
+  assert.deepEqual(Chart.bandStyle(bands[0], false), {
+    fillAlpha: 0.045,
+    strokeColor: 'rgba(36,71,201,.42)',
+    lineWidth: 0.75,
+    dashed: false,
+    showLabel: false,
+  });
+  assert.deepEqual(Chart.bandStyle(bands[1], true), {
+    fillAlpha: 0.16,
+    strokeColor: 'rgba(36,71,201,.96)',
+    lineWidth: 2,
+    dashed: false,
+    showLabel: true,
+  });
+  assert.deepEqual(Chart.bandStyle(bands[2], true), {
+    fillAlpha: 0.06,
+    strokeColor: 'rgba(49,92,245,.68)',
+    lineWidth: 1.25,
+    dashed: true,
+    showLabel: true,
+  });
+  assert.equal(Chart.bandStyle(bands[0], true).showLabel, true);
+});
+
 test('future bands map through cross-year, Spring Festival, and National Day calendars', () => {
   const yearEnd = [{ time: '2026-12-31' }];
   assert.equal(Chart.mapTime(yearEnd, '2027-01-04', new Set(['2027-01-01'])), '2027-01-04');
@@ -105,6 +139,40 @@ test('future whitespace contains no OHLC and is bounded', () => {
   const whitespace = Chart.futureWhitespace(bars, ['2027-01-04'], new Set(['2027-01-01']));
   assert.ok(whitespace.length > 0 && whitespace.length <= 260);
   assert.ok(whitespace.every(point => Object.keys(point).length === 1 && point.time));
+});
+
+test('default and focused ranges preserve cutoff context through the furthest band', () => {
+  const latest = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'stock_601838.json'), 'utf8',
+  ));
+  const market = JSON.parse(fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'stock_601838_market.json'), 'utf8',
+  ));
+  const bars = Chart.toCandles(market.price);
+  const closures = new Set(latest.future_calendar.closures || []);
+  const bands = Chart.bandsForAllScales(latest).concat([{
+    rank: 'main', scale: '2-6y', q20_date: '2027-02-01', q80_date: '2027-02-15',
+  }]);
+  const whitespace = Chart.futureWhitespace(bars, bands.map(band => band.q80_date), closures);
+  const availableTo = bars.length + whitespace.length - 1;
+  const cutoffDate = Chart.mapTime(bars, latest.asof, closures);
+  const cutoff = bars.findIndex(bar => bar.time === cutoffDate);
+  const furthest = bands.map(band => Chart.bandSlotRange(bars, band, closures))
+    .reduce((result, range) => range.to > result.to ? range : result);
+  const expected = {
+    from: Math.max(0, cutoff - 120),
+    to: Math.min(availableTo, furthest.to + 5),
+  };
+
+  assert.deepEqual(Chart.defaultVisibleRange(
+    bars, bands, latest.asof, closures, availableTo,
+  ), expected);
+  assert.deepEqual(Chart.focusVisibleRange(
+    bars, latest.asof, closures, furthest.from, furthest.to, availableTo,
+  ), expected);
+  assert.deepEqual(Chart.defaultVisibleRange(
+    bars, [], latest.asof, closures, bars.length - 1,
+  ), { from: Math.max(0, cutoff - 120), to: bars.length - 1 });
 });
 
 test('a single-day cluster occupies one logical bar slot', () => {

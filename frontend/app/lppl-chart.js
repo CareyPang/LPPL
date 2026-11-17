@@ -7,6 +7,7 @@
   'use strict';
   var TradingDays = root.CPTradingDays;
   var TopClusters = root.CPTopClusters;
+  var SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
   if (typeof module === 'object' && module.exports) {
     TradingDays = TradingDays || require('./trading-days.js');
     TopClusters = TopClusters || require('./top-clusters.js');
@@ -60,7 +61,7 @@
     var closed = closures instanceof Set ? closures : new Set(closures || []);
     var last = calendarBars.length - 1, furthest = last;
     (q80Dates || []).forEach(function (date) {
-      if (validDate(date)) furthest = Math.max(furthest, TradingDays.idxOf(calendarBars, date, closed) + 3);
+      if (validDate(date)) furthest = Math.max(furthest, TradingDays.idxOf(calendarBars, date, closed) + 6);
     });
     var out = [];
     for (var i = last + 1; i <= Math.min(furthest, last + 260); i++) {
@@ -77,6 +78,32 @@
     return window && validDate(window.q20_date) && validDate(window.q80_date)
       ? [{ rank: 'main', source: 'scale_window', q20_date: window.q20_date, q80_date: window.q80_date }]
       : [];
+  }
+
+  function bandsForAllScales(current) {
+    return SCALES.flatMap(function (scale) {
+      return bandsFor(current, scale).map(function (band) {
+        return Object.assign({}, band, { scale: scale });
+      });
+    });
+  }
+
+  function intervalId(scale, band) {
+    return 'interval:' + [scale, band && band.rank || 'main',
+      band && band.q20_date || '', band && band.q80_date || ''].join(':');
+  }
+
+  function bandStyle(band, selected) {
+    var primary = !band || band.rank !== 'secondary';
+    return {
+      fillAlpha: selected ? (primary ? 0.16 : 0.06) : (primary ? 0.045 : 0.018),
+      strokeColor: selected
+        ? (primary ? 'rgba(36,71,201,.96)' : 'rgba(49,92,245,.68)')
+        : (primary ? 'rgba(36,71,201,.42)' : 'rgba(49,92,245,.28)'),
+      lineWidth: selected ? (primary ? 2 : 1.25) : 0.75,
+      dashed: !primary,
+      showLabel: !!selected,
+    };
   }
 
   function needsCalendarCoverage(bands, lastBarDate, calendar) {
@@ -118,6 +145,39 @@
     };
   }
 
+  function cutoffIndex(bars, asof, closures) {
+    if (!bars.length) return -1;
+    if (!validDate(asof)) return bars.length - 1;
+    var date = mapTime(bars, asof, closures);
+    var index = bars.findIndex(function (bar) { return (bar.time || bar.date) === date; });
+    if (index >= 0) return index;
+    var calendarBars = bars.map(function (bar) { return { date: bar.date || bar.time }; });
+    return Math.max(0, Math.min(bars.length - 1, TradingDays.idxOf(calendarBars, asof, closures)));
+  }
+
+  function focusVisibleRange(bars, asof, closures, targetFrom, targetTo, availableTo) {
+    if (!bars.length) return null;
+    var cutoff = cutoffIndex(bars, asof, closures);
+    var from = Math.max(0, cutoff - 120);
+    if (Number.isFinite(targetFrom)) from = Math.min(from, Math.max(0, targetFrom - 5));
+    var to = Math.max(cutoff, Number.isFinite(targetTo) ? targetTo : cutoff) + 5;
+    if (Number.isFinite(availableTo)) {
+      from = Math.min(from, availableTo);
+      to = Math.min(to, availableTo);
+    }
+    return { from: from, to: Math.max(from + 1, to) };
+  }
+
+  function defaultVisibleRange(bars, bands, asof, closures, availableTo) {
+    if (!bars.length) return null;
+    var furthest = bars.length - 1;
+    (bands || []).forEach(function (band) {
+      var slots = bandSlotRange(bars, band, closures);
+      if (slots) furthest = Math.max(furthest, slots.to);
+    });
+    return focusVisibleRange(bars, asof, closures, null, furthest, availableTo);
+  }
+
   function mount(host, opts) {
     opts = opts || {};
     var lib = root.LPPLLwc && root.LPPLLwc.LightweightCharts;
@@ -137,6 +197,7 @@
     var pane = chart.panes()[1];
     if (pane) { chart.panes()[0].setHeight(host.clientHeight * 0.78); pane.setHeight(host.clientHeight * 0.22); }
     var emitters = new Map(), candles = [], current = null, scale = '6-12m', closures = new Set();
+    var currentBands = [], currentWhitespace = [], focusedBandId = '';
     var bandPrimitive = null, cutoffPrimitive = null, markerPlugin = null, a11y = null;
     var readout = opts.readout || null;
     function emit(name, value) { (emitters.get(name) || []).forEach(function (fn) { fn(value); }); }
@@ -150,19 +211,24 @@
       current = payload || {};
       candles = toCandles(current.bars || []);
       closures = new Set(current.future_calendar && current.future_calendar.closures || []);
-      var clusters = bandsFor(current, scale);
-      var ws = futureWhitespace(candles, clusters.map(function (item) { return item.q80_date; }), closures);
+      currentBands = bandsForAllScales(current);
+      var futureDates = currentBands.map(function (item) { return item.q80_date; });
+      if (Array.isArray(current.events)) {
+        futureDates = futureDates.concat(current.events.map(function (event) { return event.date; }));
+      }
+      if (Array.isArray(current.eventRows)) {
+        futureDates = futureDates.concat(current.eventRows.map(function (event) { return event.date; }));
+      }
+      currentWhitespace = futureWhitespace(candles,
+        futureDates, closures);
       price.setData(candles.map(function (bar) {
         return { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close };
-      }).concat(ws));
+      }).concat(currentWhitespace));
       volume.setData(candles.filter(function (bar) { return bar.volume != null; }).map(function (bar) {
         return { time: bar.time, value: bar.volume, color: bar.close >= bar.open ? '#d6303a' : '#11845a' };
       }));
       detachOverlays();
-      if (clusters.length) {
-        bandPrimitive = createBands(chart, candles, clusters, closures);
-        price.attachPrimitive(bandPrimitive);
-      }
+      attachBands();
       if (Array.isArray(current.events) && lib.createSeriesMarkers) {
         markerPlugin = lib.createSeriesMarkers(price, current.events.filter(function (event) {
           return validDate(event.date) && candles.length && event.date >= candles[0].time;
@@ -175,13 +241,48 @@
       if (Number.isFinite(opts.initialBars) && opts.initialBars > 0 && candles.length) {
         chart.timeScale().setVisibleLogicalRange({
           from: Math.max(0, candles.length - opts.initialBars),
-          to: candles.length + ws.length - 1,
+          to: candles.length + currentWhitespace.length - 1,
         });
       } else {
-        chart.timeScale().fitContent();
+        var visibleRange = defaultVisibleRange(
+          candles, currentBands, current.asof, closures, candles.length + currentWhitespace.length - 1,
+        );
+        if (visibleRange) chart.timeScale().setVisibleLogicalRange(visibleRange);
+        else chart.timeScale().fitContent();
       }
     }
     function setScale(next) { scale = next; if (current) setData(current); emit('scale', next); }
+    function attachBands() {
+      if (!currentBands.length) return;
+      bandPrimitive = createBands(chart, candles, currentBands, closures, scale, focusedBandId);
+      price.attachPrimitive(bandPrimitive);
+    }
+    function focusBand(band) {
+      if (!band || !candles.length) return false;
+      var slots = bandSlotRange(candles, band, closures);
+      if (!slots) return false;
+      scale = band.scale || scale;
+      focusedBandId = band.id || intervalId(scale, band);
+      if (bandPrimitive) price.detachPrimitive(bandPrimitive);
+      bandPrimitive = null;
+      attachBands();
+      var maxTo = candles.length + currentWhitespace.length - 1;
+      chart.timeScale().setVisibleLogicalRange(focusVisibleRange(
+        candles, current && current.asof, closures, slots.from, slots.to, maxTo,
+      ));
+      return true;
+    }
+    function focusDate(date) {
+      if (!validDate(date) || !candles.length) return false;
+      var calendarBars = candles.map(function (bar) { return { date: bar.time }; });
+      var index = TradingDays.idxOf(calendarBars, date, closures);
+      if (index < 0) return false;
+      var maxTo = candles.length + currentWhitespace.length - 1;
+      chart.timeScale().setVisibleLogicalRange(focusVisibleRange(
+        candles, current && current.asof, closures, index, index + 1, maxTo,
+      ));
+      return true;
+    }
     function setAsof(date) {
       if (!candles.length || !validDate(date)) return;
       if (cutoffPrimitive) price.detachPrimitive(cutoffPrimitive);
@@ -213,7 +314,8 @@
     chart.subscribeCrosshairMove(crosshair);
     a11y = root.LPPLLwc.Accessibility.addAccessibilityPlugin(chart, { chartTitle: 'LPPL 日线与成交量' });
     return {
-      setData: setData, setScale: setScale, setAsof: setAsof, on: on,
+      setData: setData, setScale: setScale, setAsof: setAsof,
+      focusBand: focusBand, focusDate: focusDate, on: on,
       destroy: function () {
         chart.unsubscribeCrosshairMove(crosshair);
         detachOverlays();
@@ -223,11 +325,12 @@
     };
   }
 
-  function createBands(chart, candles, bands, closures) {
+  function createBands(chart, candles, bands, closures, selectedScale, focusedBandId) {
     function projected(scope) {
       var timeScale = chart.timeScale();
       var ratio = scope.horizontalPixelRatio;
-      return bands.map(function (band, index) {
+      var selectedIndex = 0;
+      return bands.map(function (band) {
         var slots = bandSlotRange(candles, band, closures);
         if (!slots) return null;
         var first = timeScale.timeToCoordinate(slots.start);
@@ -245,8 +348,18 @@
           else { right = width; left = Math.max(0, width - minWidth); }
         }
         if (right <= left) return null;
-        return { band: band, index: index, left: left, right: right };
-      }).filter(Boolean);
+        var selected = band.scale === selectedScale;
+        return {
+          band: band,
+          index: selected ? selectedIndex++ : -1,
+          selected: selected,
+          focused: (band.id || intervalId(band.scale, band)) === focusedBandId,
+          left: left,
+          right: right,
+        };
+      }).filter(Boolean).sort(function (a, b) {
+        return Number(a.selected) - Number(b.selected);
+      });
     }
     function dateText(date) {
       return Number(date.slice(5, 7)) + '/' + Number(date.slice(8, 10));
@@ -260,8 +373,10 @@
               var ctx = scope.context, ratio = scope.horizontalPixelRatio;
               var labelAreaWidth = Math.max(0, scope.bitmapSize.width - 64 * ratio);
               projected(scope).forEach(function (rect) {
-                var primary = rect.band.rank !== 'secondary';
-                var color = primary ? 'rgba(36,71,201,.96)' : 'rgba(49,92,245,.72)';
+                var style = bandStyle(rect.band, rect.selected);
+                if (!style.showLabel) return;
+                var color = rect.band.rank !== 'secondary'
+                  ? 'rgba(36,71,201,.96)' : 'rgba(49,92,245,.72)';
                 var label = dateText(rect.band.q20_date) + '–' + dateText(rect.band.q80_date);
                 ctx.save();
                 ctx.beginPath();
@@ -286,18 +401,26 @@
             target.useBitmapCoordinateSpace(function (scope) {
               var ctx = scope.context;
               projected(scope).forEach(function (rect) {
-                var primary = rect.band.rank !== 'secondary';
+                var style = bandStyle(rect.band, rect.selected);
                 ctx.save();
-                ctx.fillStyle = primary ? 'rgba(49,92,245,.16)' : 'rgba(49,92,245,.045)';
+                ctx.fillStyle = 'rgba(49,92,245,' + style.fillAlpha + ')';
                 ctx.fillRect(rect.left, 0, rect.right - rect.left, scope.bitmapSize.height);
-                ctx.strokeStyle = primary ? 'rgba(36,71,201,.96)' : 'rgba(49,92,245,.68)';
-                ctx.lineWidth = (primary ? 2 : 1.25) * scope.horizontalPixelRatio;
-                ctx.setLineDash(primary ? [] : [4, 3].map(function (value) {
+                ctx.strokeStyle = style.strokeColor;
+                ctx.lineWidth = style.lineWidth * scope.horizontalPixelRatio;
+                ctx.setLineDash(style.dashed ? [4, 3].map(function (value) {
                   return value * scope.horizontalPixelRatio;
-                }));
+                }) : []);
                 ctx.strokeRect(rect.left + ctx.lineWidth / 2, ctx.lineWidth / 2,
                   Math.max(1, rect.right - rect.left - ctx.lineWidth),
                   Math.max(1, scope.bitmapSize.height - ctx.lineWidth));
+                if (rect.focused) {
+                  ctx.setLineDash([]);
+                  ctx.strokeStyle = 'rgba(245,158,11,.92)';
+                  ctx.lineWidth = 2 * scope.horizontalPixelRatio;
+                  ctx.strokeRect(rect.left + ctx.lineWidth / 2, ctx.lineWidth / 2,
+                    Math.max(1, rect.right - rect.left - ctx.lineWidth),
+                    Math.max(1, scope.bitmapSize.height - ctx.lineWidth));
+                }
                 ctx.restore();
               });
             });
@@ -312,8 +435,10 @@
 
   return {
     mount: mount, toCandles: toCandles, futureWhitespace: futureWhitespace,
-    bandsFor: bandsFor, bandSlotRange: bandSlotRange,
+    bandsFor: bandsFor, bandsForAllScales: bandsForAllScales,
+    bandStyle: bandStyle, intervalId: intervalId, bandSlotRange: bandSlotRange,
     needsCalendarCoverage: needsCalendarCoverage,
+    focusVisibleRange: focusVisibleRange, defaultVisibleRange: defaultVisibleRange,
     mapTime: mapTime, dateFromTime: dateFromTime,
   };
 });

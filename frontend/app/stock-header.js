@@ -35,6 +35,13 @@
       ? LPPL.quoteTimeLabel(time, tz, now)
       : { label: '最新成交', time: '—', short: '—' };
   }
+  function chartUrl(symbol, location) {
+    var current = location || root.location || {};
+    var page = String(current.pathname || 'stock.html').split('/').pop() || 'stock.html';
+    var from = page + String(current.search || '');
+    return 'chart.html?code=' + encodeURIComponent(String(symbol || '')) +
+      '&from=' + encodeURIComponent(from);
+  }
   function mount(opts) {
     var doc = (opts && opts.document) || root.document;
     var host = doc.getElementById('sym-head');
@@ -194,9 +201,9 @@
       var tags = [us ? '美股' : '个股']; var b = board(code); if (b && !us) tags.push(b);
       if (d.stock_meta && d.stock_meta.st) tags.push('ST');
       $('sh-tags').innerHTML = tags.map(function (t) { return '<i>' + esc(t) + '</i>'; }).join('');
-      var chart = $('sh-chart'), SYMS = (root.LPPL && root.LPPL.SYMS) || [];
-      var S = SYMS.filter(function (x) { return x.sym === d.symbol; })[0]; /* 按完整 symbol 比对：sz000001 平安银行 ≠ sh000001 上证指数 */
-      if (S) { chart.hidden = false; chart.href = 'index.html?code=' + encodeURIComponent(S.sym); } else chart.hidden = true;
+      var chart = $('sh-chart');
+      chart.hidden = !symbol;
+      if (symbol) chart.href = chartUrl(symbol);
       $('sh-mem').innerHTML = '';
       loadCatalog().then(function (rows) {
         if (!rows) return;
@@ -211,5 +218,5 @@
     }
     return { update: update, setActive: setActive, quoteTimeLabel: quoteTimeLabel };
   }
-  root.StockHeader = { mount: mount, TABS: TABS, quoteTimeLabel: quoteTimeLabel };
+  root.StockHeader = { mount: mount, TABS: TABS, quoteTimeLabel: quoteTimeLabel, chartUrl: chartUrl };
 })(typeof window !== 'undefined' ? window : globalThis);
