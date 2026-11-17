@@ -38,7 +38,8 @@
       if (t) parts.push('【' + el.getAttribute('data-ai-context') + '】\n' + t);
     });
     var out = parts.join('\n\n');
-    return out.length > MAX_CONTEXT ? out.slice(0, MAX_CONTEXT) + '\n（页面内容较长，已截断）' : out;
+    var marker = '\n（页面内容较长，已截断）';
+    return out.length > MAX_CONTEXT ? out.slice(0, MAX_CONTEXT - marker.length) + marker : out;
   }
 
   var css = document.createElement('style');
