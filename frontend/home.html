@@ -281,11 +281,11 @@ const qHtml=q=>{const v=Number.isFinite(q.pct)?q.pct:null;return `${q.price.toFi
 function updateModelLag(row,date){const model=row.querySelector('.model-date'),asof=row.dataset.modelAsof;if(!model||!asof)return;const lag=weekdayGap(asof,date||row.dataset.closeDate);model.textContent='模型截至 '+shortDate(asof);if(lag>1){const badge=document.createElement('small');badge.className='lag';badge.textContent='落后 '+lag+' 个交易日';model.appendChild(badge)}}
 function paintQuotes(){
  rows.querySelectorAll('a.row[data-sym]').forEach(a=>{
-  const q=QT[a.dataset.sym],p=a.querySelector('.p'),time=a.querySelector('.quote-time'),model=a.querySelector('.model-date');if(!p)return;
+  const q=QT[a.dataset.sym],p=a.querySelector('.p'),time=a.querySelector('.quote-time'),model=a.querySelector('.model-date'),period=a.querySelector('.spark-meta span')?.textContent||'';if(!p)return;
   if(p.dataset.c==null)p.dataset.c=p.innerHTML;
   if(q){p.innerHTML=qHtml(q);p.title='腾讯实时行情，仅供参考，不参与模型';const timing=LPPL.quoteTimeLabel?LPPL.quoteTimeLabel(q.time,q.tz):null;time.textContent=timing&&timing.time!=='—'?'报价 '+timing.time:'报价时间未提供';updateModelLag(a,quoteSessionDate(q))}
   else{p.innerHTML=p.dataset.c;p.title='日更收盘';time.textContent='收盘 '+shortDate(a.dataset.closeDate);updateModelLag(a,a.dataset.closeDate)}
-  a.setAttribute('aria-label',`${a.dataset.name}，${time.textContent}，${model.textContent}，${a.dataset.status}`)
+  a.setAttribute('aria-label',`${a.dataset.name}，${period?period+'，':''}${time.textContent}，${model.textContent}，${a.dataset.status}`)
  });
  updateSparkRangeUI();
 }

@@ -330,12 +330,15 @@ def test_home_spark_range_change_preserves_live_quote(page: Page) -> None:
     )
     expect(row.locator(".p")).to_contain_text("4321.23")
     expect(row.locator(".quote-time")).to_have_text("报价 11-13 10:30")
+    assert "近3月" in (row.get_attribute("aria-label") or "")
 
     page.locator('#spark-range button[data-spark-range="250"]').click()
 
     expect(row.locator(".p")).to_contain_text("4321.23")
     expect(row.locator(".quote-time")).to_have_text("报价 11-13 10:30")
-    assert "报价 11-13 10:30" in (row.get_attribute("aria-label") or "")
+    label = row.get_attribute("aria-label") or ""
+    assert "近1年" in label
+    assert "报价 11-13 10:30" in label
 
 
 @pytest.mark.e2e
