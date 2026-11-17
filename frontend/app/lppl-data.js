@@ -223,6 +223,38 @@
   /** 市场背景（descriptive）；缺文件返回 null */
   const market = () => opt('market/market_latest.json');
   const liveNews = () => queryJSON('/news');
+  /** 研究助手：POST /ai，SSE 流式返回；onText(累计文本)。只发送页面上已显示的内容 */
+  const askAI = async (payload, onText, signal) => {
+    const res = await fetch(queryApi() + '/ai', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal,
+    });
+    if (!res.ok || !res.body) {
+      let msg = '研究助手暂时不可用';
+      try { const j = await res.json(); if (j && j.error) msg = j.error; } catch { /* keep default */ }
+      const e = new Error(msg); e.status = res.status; throw e;
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', text = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let cut;
+      while ((cut = buf.indexOf('\n\n')) >= 0) {
+        const block = buf.slice(0, cut); buf = buf.slice(cut + 2);
+        for (const line of block.split('\n')) {
+          if (!line.startsWith('data:')) continue;
+          let ev; try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
+          if (typeof ev.delta === 'string') { text += ev.delta; onText?.(text); }
+          else if (ev.blocked) return { text, blocked: true };
+          else if (ev.error) { const e = new Error(ev.error); e.partial = text; throw e; }
+          else if (ev.done) return { text, done: true };
+        }
+      }
+    }
+    return { text, done: false };
+  };
   const quoteWorkerCode = (symbol) => {
     const value = String(symbol ?? '');
     if (/^(?:sh|sz|bj)\d{6}$/i.test(value)) return value.toLowerCase();
@@ -292,5 +324,5 @@
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, liveNews, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog };
 })(window);

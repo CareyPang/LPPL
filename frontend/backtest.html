@@ -195,7 +195,7 @@ a { color: var(--ink-2); text-decoration: none; }
 <main class="app">
   <p class="scenario-note">旧评价口径：顶后 126 个交易日回撤 ≥15% 的事后标签；新的局部顶/阶段顶双层评分尚未用于线上成绩。</p>
   <div class="left">
-    <div class="chead od-row">
+    <div class="chead od-row" data-ai-context="当前标的">
       <div class="od-fixed">
         <div class="sym-n" id="sym-n">—</div>
         <div class="sym-c" id="sym-c">周度截止日 · 6–12 月档</div>
@@ -207,7 +207,7 @@ a { color: var(--ink-2); text-decoration: none; }
       </div>
     </div>
 
-    <div class="chart" id="chart">
+    <div class="chart" id="chart" data-ai-anchor>
       <canvas id="cv" tabindex="0" role="img" aria-label="历史情景区间图。滚轮缩放，拖动平移，方向键移动，加减号缩放，双击回到全部。"></canvas>
       <div class="tip" id="tip" hidden></div>
       <div class="ld" id="ld">数据加载中…</div>
@@ -226,7 +226,7 @@ a { color: var(--ink-2); text-decoration: none; }
     <p class="sr" id="sr" aria-live="polite"></p>
   </div>
 
-  <aside class="side" aria-label="说明">
+  <aside class="side" aria-label="说明" data-ai-context="说明">
     <section class="blk">
       <p class="blk-k">怎么看</p>
       <p>每条横线从一个周度截止日的收盘价出发，向右延伸到主簇或次级簇区间；只用截止日当天及以前的数据。事后确认顶仅作对照，不是检验结果。</p>
@@ -246,7 +246,7 @@ a { color: var(--ink-2); text-decoration: none; }
       <p>正式成绩（三段验证、覆盖率）以 <a href="index.html" style="color:var(--real)">终端</a> 与 <a href="lab/dashboard.html" style="color:var(--real)">研究仪表盘</a> 为准；本页只展示历史区间，不计算命中率。</p>
     </section>
   </aside>
-  <section class="alert-ledger" id="alert-ledger" aria-labelledby="alert-title">
+  <section class="alert-ledger" id="alert-ledger" aria-labelledby="alert-title" data-ai-context="提醒明细">
     <div class="al-head">
       <div class="al-title">
         <h2 id="alert-title">提醒明细（历史回放，不是当时发布）</h2>
@@ -783,5 +783,6 @@ a { color: var(--ink-2); text-decoration: none; }
 </script>
 <script src="app/strategy-panel.js"></script>
 <script src="app/backtest-views.js"></script>
+<script src="app/ai-assistant.js" data-page="backtest"></script>
 </body>
 </html>
