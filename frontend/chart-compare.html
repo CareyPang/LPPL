@@ -133,7 +133,21 @@
       }
       function historyView(data, frame, history) {
         const bars = data.bars.filter(bar => bar.date <= frame.asof);
-        const top = { ...data.top, scale_clusters: frame.clusters };
+        const scaleWindows = Object.entries(frame.w || {}).flatMap(([scale, range]) =>
+          Array.isArray(range) && range.length >= 2
+            ? [{ scale, q20_date: range[0], q80_date: range[1] }]
+            : []);
+        const confidence = {
+          ...(data.top.lppls_confidence || {}),
+          ...(frame.conf || {}),
+          scale_evidence: history.scale_evidence || data.top.lppls_confidence?.scale_evidence || {},
+        };
+        const top = {
+          ...data.top,
+          lppls_confidence: confidence,
+          scale_windows: scaleWindows,
+          scale_clusters: frame.clusters || {},
+        };
         const raw = { ...data.raw, asof: frame.asof, top,
           future_calendar: history.future_calendar || data.raw?.future_calendar };
         return { ...data, asof: frame.asof, latest: false, bars, T: bars.length - 1, top, raw };
