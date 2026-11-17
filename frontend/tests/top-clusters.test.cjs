@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const TopClusters = require('../app/top-clusters.js');
+const TradingDays = require('../app/trading-days.js');
 
 const cluster = (share, q20_date = '2026-12-01', q80_date = '2026-12-10', extra = {}) => ({
   rank: 'secondary',
@@ -98,4 +99,13 @@ test('formats trading-day distance to and since the main-cluster start', () => {
   const indexOf = date => idx[date] ?? -1;
   assert.equal(TopClusters.startDistanceText('2026-01-08', '2026-01-06', indexOf), '距主簇开始 2 个交易日');
   assert.equal(TopClusters.startDistanceText('2026-01-06', '2026-01-08', indexOf), '主簇已开始 3 个交易日');
+});
+
+test('cluster distances count only open days from the future calendar', () => {
+  const bars = [{ date: '2026-09-30' }];
+  const closures = new Set(['2026-10-01', '2026-10-02', '2026-10-05', '2026-10-06', '2026-10-07']);
+  const indexOf = date => TradingDays.idxOf(bars, date, closures);
+  assert.equal(TradingDays.idxOf(bars, '2026-10-08'), 6);
+  assert.equal(indexOf('2026-10-08'), 1);
+  assert.equal(TopClusters.startDistanceText('2026-10-08', '2026-09-30', indexOf), '距主簇开始 1 个交易日');
 });

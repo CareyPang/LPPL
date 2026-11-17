@@ -581,10 +581,12 @@
       const api = globalThis.CPTopClusters;
       const dates = d.price_history?.dates;
       const bars = Array.isArray(dates) ? dates.map(date => ({ date })) : [];
+      const closures = new Set(Array.isArray(d.future_calendar?.closures) ? d.future_calendar.closures : []);
+      const indexOfDate = date => CPTradingDays.idxOf(bars, date, closures);
       const details = [];
       if (main && bars.length) {
         const start = api?.startDistanceText(
-          main.q20_date, d.asof, date => CPTradingDays.idxOf(bars, date),
+          main.q20_date, d.asof, indexOfDate,
         );
         if (start) details.push(start);
       }
@@ -595,7 +597,7 @@
       const historyEvidence = history?.scale_evidence?.[scale] || history?.evidence;
       if (previous && !hiddenEv(historyEvidence) && bars.length) {
         const change = api?.classifyChange(
-          previous, d.top, scale, date => CPTradingDays.idxOf(bars, date),
+          previous, d.top, scale, indexOfDate,
         );
         if (change != null) details.push(`相对 ${previous.asof}：${change}`);
       }
