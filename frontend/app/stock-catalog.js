@@ -104,6 +104,8 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
+  function shouldPersistScroll(el) { return !!el && !el.hidden; }
+
   /* mount({ el, catalog, published, watch: { has(row), toggle(row) }, onOpen(row) }) */
   function mount(o) {
     var el = o.el, all = normalize(o.catalog, o.published), total = all.length;
@@ -116,6 +118,7 @@
     var state = restored.state, ready = false, scrollTimer = null, navigating = false;
     var COLS = [['code', '代码'], ['name', '名称'], ['type', '类型'], ['board', '板块'], ['member', '所属指数'], ['published', '结果']];
     function persist() {
+      if (!shouldPersistScroll(el)) return;
       try { if (storage) storage.setItem(STATE_KEY, serializeState(state, win.scrollY)); } catch (e) { /* storage may be unavailable */ }
     }
     function chips(name, items) {
@@ -192,7 +195,7 @@
     });
     if (win && win.addEventListener) {
       win.addEventListener('scroll', function () {
-        if (navigating) return;
+        if (navigating || !shouldPersistScroll(el)) return;
         if (scrollTimer) return;
         scrollTimer = setTimeout(function () { scrollTimer = null; persist(); }, 120);
       }, { passive: true });
@@ -201,19 +204,25 @@
     else draw();
     ready = true;
     var restoreScroll = function () {
-      if (restored.scrollY && win && typeof win.scrollTo === 'function') win.scrollTo(0, restored.scrollY);
+      if (!shouldPersistScroll(el)) return 0;
+      var current;
+      try { current = storage && storage.getItem(STATE_KEY); } catch (e) { current = null; }
+      var scrollY = parseState(current, o.query).scrollY;
+      if (scrollY && win && typeof win.scrollTo === 'function') win.scrollTo(0, scrollY);
       persist();
+      return scrollY;
     };
     if (restored.scrollY) {
       if (win && typeof win.requestAnimationFrame === 'function') win.requestAnimationFrame(restoreScroll);
       else setTimeout(restoreScroll, 0);
     } else persist();
-    return { redraw: draw, state: state, rows: all };
+    return { redraw: draw, restoreScroll: restoreScroll, state: state, rows: all };
   }
 
   return {
     STATE_KEY: STATE_KEY, TYPE_LABEL: TYPE_LABEL, BOARD_SHORT: BOARD_SHORT,
     serializeState: serializeState, parseState: parseState,
-    normalize: normalize, filter: filter, sort: sort, counts: counts, mount: mount,
+    normalize: normalize, filter: filter, sort: sort, counts: counts,
+    shouldPersistScroll: shouldPersistScroll, mount: mount,
   };
 });

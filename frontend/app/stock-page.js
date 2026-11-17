@@ -4,7 +4,7 @@
   window.StockHeaderView = StockHeader.mount({ document });
   const results = $('results'), cat = $('catalog');
   const hasCode = !!new URLSearchParams(location.search).get('code');
-  let mounted = false;
+  let mounted = false, catalogView = null;
   const watch = {
     has: (row) => {
       try {
@@ -26,7 +26,8 @@
     },
   };
   async function mountCatalog() {
-    if (mounted) return; mounted = true;
+    if (mounted) { catalogView?.restoreScroll(); return; }
+    mounted = true;
     cat.innerHTML = '<p class="muted">目录加载中…</p>';
     const indexPromise = new Promise((resolve) => {
       let settled = false;
@@ -53,7 +54,7 @@
       return;
     }
     const params = new URLSearchParams(location.search);
-    StockCatalog.mount({ el: cat, catalog, published: index && typeof index === 'object' ? Object.keys(index) : [], watch,
+    catalogView = StockCatalog.mount({ el: cat, catalog, published: index && typeof index === 'object' ? Object.keys(index) : [], watch,
       query: params.has('q') ? params.get('q') : undefined,
       onOpen: (row) => { $('code').value = row.code; $('search').requestSubmit(); } });
   }

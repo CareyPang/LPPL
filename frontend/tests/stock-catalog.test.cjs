@@ -56,6 +56,48 @@ test('mount works without an injected window', () => {
   assert.match(el.innerHTML, /标的目录/);
 });
 
+test('scroll persistence follows catalog visibility and restores its saved position', async () => {
+  let onScroll, value = StockCatalog.serializeState({}, 640), scrollY = 0;
+  const el = {
+    hidden: false,
+    innerHTML: '',
+    addEventListener() {},
+  };
+  const win = {
+    get scrollY() { return scrollY; },
+    addEventListener(type, listener) { if (type === 'scroll') onScroll = listener; },
+    requestAnimationFrame(callback) { callback(); },
+    scrollTo(_x, y) { scrollY = y; },
+  };
+  const storage = {
+    getItem() { return value; },
+    setItem(_key, raw) { value = raw; },
+  };
+  const view = StockCatalog.mount({ el, catalog, published, window: win, storage });
+  assert.equal(scrollY, 640);
+
+  scrollY = 800;
+  onScroll();
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(JSON.parse(value).scrollY, 800);
+
+  el.hidden = true;
+  scrollY = 120;
+  onScroll();
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(JSON.parse(value).scrollY, 800);
+
+  el.hidden = false;
+  view.restoreScroll();
+  assert.equal(scrollY, 800);
+});
+
+test('scroll persistence requires a visible catalog element', () => {
+  assert.equal(StockCatalog.shouldPersistScroll({ hidden: false }), true);
+  assert.equal(StockCatalog.shouldPersistScroll({ hidden: true }), false);
+  assert.equal(StockCatalog.shouldPersistScroll(null), false);
+});
+
 test('index navigation preserves its saved scroll position', async () => {
   let click, onScroll, value = null, scrollY = 800;
   const el = {
