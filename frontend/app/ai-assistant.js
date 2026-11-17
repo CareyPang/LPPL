@@ -45,9 +45,12 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '.ai-btn{flex:none;height:32px;padding:0 12px;border-radius:8px;border:1px solid #d6dae3;background:#fff;color:#131722;font:600 13px sans-serif;cursor:pointer;white-space:nowrap}' +
-    '.ai-btn[aria-expanded="true"]{background:#e9edf5}' +
-    '.odn:not(.odn-light) .ai-btn{background:#1f1f1f;border-color:#333;color:#fff}' +
+    '.ai-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:32px;padding:0 12px;border-radius:8px;border:1px solid transparent;background:#315CF5;color:#fff;font:600 13px sans-serif;cursor:pointer;white-space:nowrap}' +
+    '.ai-btn:hover,.odn:not(.odn-light) .ai-btn:hover{background:#2447c9}' +
+    '.ai-btn[aria-expanded="true"],.odn:not(.odn-light) .ai-btn[aria-expanded="true"]{background:#1d3aa8}' +
+    '.ai-btn svg{width:14px;height:14px;flex:none}' +
+    '.ai-ask-inline{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;height:28px;margin-left:8px;padding:0 9px;border:1px solid #315CF5;border-radius:6px;background:#fff;color:#315CF5;font:600 12px/1 sans-serif;white-space:nowrap;cursor:pointer}' +
+    '.ai-ask-inline:hover{background:#f2f5ff}' +
     '.ai-panel{box-sizing:border-box;background:#fff;color:#131722;border:1px solid #e3e7ee;display:flex;flex-direction:column;font:14px/1.6 sans-serif}' +
     '.ai-panel[hidden]{display:none}' +
     '.ai-btn,.ai-panel,.ai-panel *{font-family:inherit!important}' +
@@ -191,7 +194,8 @@
   });
 
   var btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'ai-btn'; btn.textContent = '研究助手';
+  btn.type = 'button'; btn.className = 'ai-btn';
+  btn.innerHTML = '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-3.5 2v-5.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 14h5"/></svg><span>研究助手</span>';
   btn.setAttribute('aria-expanded', 'false');
   function wide() { return root.matchMedia('(min-width:' + WIDE + 'px)').matches; }
   function placementVisible(el) {
@@ -246,6 +250,17 @@
     root.dispatchEvent(new Event('resize'));
   }
   btn.addEventListener('click', function () { toggle(panel.hidden); });
+  root.LPPLAssistant = {
+    open: function (question) {
+      toggle(true);
+      if (typeof question === 'string' && question.trim()) ask(question);
+    }
+  };
+  document.addEventListener('click', function (e) {
+    var target = e.target;
+    var trigger = target && typeof target.closest === 'function' ? target.closest('[data-ai-ask]') : null;
+    if (trigger) root.LPPLAssistant.open(trigger.dataset.aiAsk);
+  });
   panel.querySelector('.ai-x').addEventListener('click', function () { toggle(false); });
   root.matchMedia('(min-width:' + WIDE + 'px)').addEventListener('change', function () {
     if (!panel.hidden) { place(); document.body.classList.toggle('ai-open', wide()); root.dispatchEvent(new Event('resize')); }
