@@ -252,7 +252,7 @@ def test_flow_8_chart_band_and_same_origin_back_link(page: Page) -> None:
 @pytest.mark.e2e
 def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/home.html")
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
     sidebar = page.locator(".odn-sidebar")
     expect(sidebar).to_be_visible()
     expect(page.locator(".odn-side-main")).to_have_count(5)
@@ -269,14 +269,64 @@ def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_home_assistant_switch_persists_without_changing_other_page_defaults(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/home.html")
+    page.evaluate("localStorage.removeItem('lppl.assistant.home')")
+    page.reload()
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.get_by_role("switch", name="研究助手")
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    main_left = page.locator("main").evaluate("(el) => el.getBoundingClientRect().left")
+    assert main_left < 300, main_left
+
+    page.evaluate("localStorage.setItem('lppl.assistant.home', 'invalid')")
+    page.reload()
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+
+    switch.click()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    panel_box = panel.bounding_box()
+    assert panel_box and abs(panel_box["x"] - 208) <= 1 and abs(panel_box["width"] - 340) <= 1
+    main_left = page.locator("main").evaluate("(el) => el.getBoundingClientRect().left")
+    assert main_left >= 572, main_left
+
+    page.reload()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    switch.click()
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate("localStorage.getItem('lppl.assistant.home')") == "0"
+
+    for width, height in ((390, 844), (1024, 768), (1440, 900)):
+        page.set_viewport_size({"width": width, "height": height})
+        page.goto(f"{BASE_URL}/home.html")
+        if width < 1200:
+            expect(page.locator(".ai-panel")).to_be_hidden()
+            expect(switch).to_be_hidden()
+        dimensions = page.evaluate(
+            "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+        )
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, (width, dimensions)
+
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    page.evaluate("localStorage.setItem('lppl.assistant.home', '1')")
+    page.reload()
+    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+
+
+@pytest.mark.e2e
 def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
     for path in NAV_PAGES:
         page.set_viewport_size({"width": 1440, "height": 900})
         page.goto(f"{BASE_URL}/{path}")
         panel = page.locator(".ai-panel")
-        expect(panel).to_be_visible()
-        panel_box = panel.bounding_box()
-        head_box = page.locator(".ai-head").bounding_box()
         content_left = page.evaluate(
             """() => {
               const el = document.body.classList.contains('vs-home')
@@ -285,9 +335,17 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
               return el && el.getBoundingClientRect().left;
             }"""
         )
-        assert panel_box and head_box and content_left is not None, path
-        assert abs(panel_box["y"]) <= 1 and abs(head_box["y"]) <= 1, (path, panel_box, head_box)
-        assert content_left >= panel_box["x"] + panel_box["width"] + 23, (path, content_left)
+        assert content_left is not None, path
+        if path == "home.html":
+            expect(panel).to_be_hidden()
+            assert content_left < 300, (path, content_left)
+        else:
+            expect(panel).to_be_visible()
+            panel_box = panel.bounding_box()
+            head_box = page.locator(".ai-head").bounding_box()
+            assert panel_box and head_box, path
+            assert abs(panel_box["y"]) <= 1 and abs(head_box["y"]) <= 1, (path, panel_box, head_box)
+            assert content_left >= panel_box["x"] + panel_box["width"] + 23, (path, content_left)
 
         page.set_viewport_size({"width": 390, "height": 844})
         page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
