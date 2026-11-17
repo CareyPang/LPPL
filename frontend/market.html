@@ -193,6 +193,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .tm { height: 520px; } }
 @media (max-width: 599px) { .flow-rank-grid { grid-template-columns: minmax(0, 1fr); } }
+.summary-lines { display: grid; gap: 8px; }
+.summary-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); }
+.summary-row strong { font-size: 13px; }
+.summary-row a { color: var(--real); text-decoration: none; }
+.summary-row a:hover { text-decoration: underline; }
+.summary-detail { padding: 8px 0; border-bottom: 1px solid var(--line); }
+@media (max-width: 600px) { .summary-row { grid-template-columns: 1fr; gap: 4px; } }
 </style>
 </head>
 <body>
@@ -201,6 +208,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
 <main>
   <div class="sec wide stale" id="stale-banner" role="status" hidden></div>
+  <section class="sec wide" id="s-summary" aria-labelledby="h-summary">
+    <div class="sec-h"><h2 id="h-summary">今日摘要</h2><span class="ev">descriptive</span></div>
+    <div id="today-summary"><p class="note">摘要数据加载中…</p></div>
+  </section>
   <section class="sec wide" id="s-news" aria-labelledby="h-news">
     <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
     <div id="news-body"></div>
@@ -209,6 +220,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <section class="sec wide" id="s-events" aria-labelledby="h-events">
     <div class="sec-h"><h2 id="h-events">事件日历</h2><span class="ev">descriptive</span><span class="src" id="src-events"></span></div>
     <div id="events-body"><p class="note">事件数据加载中…</p></div>
+  </section>
+  <section class="sec wide" id="s-model-ranges" aria-labelledby="h-model-ranges">
+    <div class="sec-h"><h2 id="h-model-ranges">指数模型区间变化</h2><span class="ev">published descriptive</span></div>
+    <div id="model-ranges-body"><p class="note">模型区间加载中…</p></div>
   </section>
 
   <section class="sec wide" id="s-board" aria-labelledby="h-board">
@@ -228,6 +243,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 
   <section class="sec wide" id="s-sentiment" aria-labelledby="h-sentiment">
     <div class="sec-h"><h2 id="h-sentiment">市场情绪</h2><span class="ev">descriptive</span><span class="src" id="src-sentiment"></span></div>
+    <div id="index-performance-body"></div>
     <div id="sentiment-body"></div>
   </section>
 
@@ -318,6 +334,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 <script src="app/news-feed.js"></script>
 <script src="app/stock-watchlist.js"></script>
 <script src="app/watchlist.js"></script>
+<script src="app/trading-days.js"></script>
+<script src="app/top-clusters.js"></script>
+<script src="app/market-summary.js"></script>
 <script>
 (function () {
   'use strict';
@@ -848,6 +867,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         initialErrors + sourceErrors +
         feed(state.rows, state.filter, state.watchlist, state.watchOnly) +
         (!state.isLive && state.note ? `<p class="note">${E(state.note)}</p>` : '');
+      if (typeof renderSummary === 'function') renderSummary();
     };
     $('news-body').addEventListener('click', (ev) => {
       if (ev.target.closest('[data-retry-news]')) { refresh(true); return; }
@@ -1274,6 +1294,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const ef = e.target.closest('[data-event-filter]');
     const poolTab = e.target.closest('[data-limit-tab]');
     const poolSort = e.target.closest('[data-limit-sort]');
+    const retrySummary = e.target.closest('[data-retry-summary]');
+    const summaryWatch = e.target.closest('[data-summary-watch]');
+    if (retrySummary) { loadSummaryData(); return; }
+    if (summaryWatch && newsRefreshState?.watchlist.length) {
+      newsRefreshState.watchOnly = true;
+      newsRefreshState.render();
+    }
     if (k) { kind = k.dataset.k; const prov = ((M.board_flow || {}).provider || {})[kind]; if (prov === 'sina') period = 'today'; renderBoard(); }
     if (p && !p.disabled) { period = p.dataset.p; renderBoard(); }
     if (ef) { eventFilter = ef.dataset.eventFilter; renderEvents(); }
@@ -1286,6 +1313,131 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
   });
   let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => M && renderBoard(), 150); });
+
+  let summaryQuoteResult = null, summaryModels = null;
+  function beijingDate(value) {
+    const raw = String(value || '').trim();
+    const parsed = new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)
+      ? `${raw.slice(0, 16).replace(' ', 'T')}:00+08:00` : raw);
+    if (!Number.isFinite(parsed.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(parsed);
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+  function summaryEventItems(today) {
+    const rows = [];
+    for (const [key, label, dateKey] of [
+      ['lift', '解禁', 'free_date'], ['dividend', '除息', 'ex_dividend_date'], ['forecast', '业绩预告', 'notice_date'],
+    ]) {
+      for (const item of eventResult?.data?.[key] || []) {
+        if (item[dateKey] === today) rows.push(`${item.name || item.code || '事件'}${label}`);
+      }
+    }
+    return rows;
+  }
+  function summaryRelatedCount(today, entries) {
+    const news = newsRefreshState?.rows || { cls: [], eastmoney: [] };
+    const rows = [...(news.cls || []), ...(news.eastmoney || [])]
+      .filter((item) => beijingDate(item.time) === today);
+    return rows.filter((item) => LPPLNewsFeed.mentions(item, entries)).length;
+  }
+  function renderIndexPerformance() {
+    const quotes = summaryQuoteResult?.data?.quotes || {};
+    const rows = [
+      ['sh000001', '上证指数'],
+      ['sz399001', '深证成指'],
+    ].flatMap(([symbol, name]) => {
+      const quote = quotes[symbol];
+      if (!quote) return [];
+      const pctValue = Number.isFinite(Number(quote.pct))
+        ? Number(quote.pct) : (Number(quote.price) / Number(quote.prev_close) - 1) * 100;
+      if (!Number.isFinite(pctValue)) return [];
+      return [`<span class="${pctValue >= 0 ? 'up' : 'dn'}">${E(name)} ${pctValue >= 0 ? '+' : ''}${pctValue.toFixed(2)}%</span>`];
+    });
+    const reason = summaryQuoteResult?.reason;
+    $('index-performance-body').innerHTML = rows.length
+      ? `<p class="note">${rows.join(' · ')} · 行情仅作描述。</p>`
+      : statusMarkup(reason || 'unavailable', '指数表现', 'data-retry-summary="index"');
+  }
+  function renderModelRanges() {
+    const box = $('model-ranges-body');
+    if (!summaryModels) return;
+    box.innerHTML = summaryModels.map((item) => `<div class="summary-detail">
+      <a href="index.html?code=${encodeURIComponent(item.symbol)}">${E(item.name)} ${E(item.symbol)}</a>
+      ${item.scale ? ` · ${E(item.scale)}` : ''}
+      ${item.reason ? ` · <span data-reason="${E(item.reason)}">${E(REASON_TEXT[item.reason] || '状态未知')}</span>${item.reason === 'unavailable' ? ' <button type="button" class="chip" data-retry-summary="models">重试</button>' : ''}` : ` · ${E(item.change)}${item.previousAsOf ? `（对比 ${E(item.previousAsOf)}）` : ''}`}
+    </div>`).join('') || '<p class="note">暂无可比较的模型区间。</p>';
+  }
+  function renderSummary() {
+    const today = beijingDate(new Date().toISOString());
+    const entries = newsRefreshState?.watchlist || watchlistEntries();
+    const quoteRows = [];
+    const quoteMap = summaryQuoteResult?.data?.quotes || {};
+    for (const [symbol, name] of [['sh000001', '上证指数'], ['sz399001', '深证成指']]) {
+      const quote = quoteMap[symbol];
+      if (!quote) continue;
+      const pctValue = Number.isFinite(Number(quote.pct))
+        ? Number(quote.pct) : (Number(quote.price) / Number(quote.prev_close) - 1) * 100;
+      if (Number.isFinite(pctValue)) quoteRows.push({ name, change: `${pctValue >= 0 ? '+' : ''}${pctValue.toFixed(2)}%` });
+    }
+    const result = LPPLMarketSummary.build({
+      indices: quoteRows,
+      indicesReason: summaryQuoteResult?.reason || (summaryQuoteResult ? 'empty' : 'unavailable'),
+      events: summaryEventItems(today),
+      eventsReason: eventResult?.reason || (eventResult ? null : 'unavailable'),
+      watchlist: entries,
+      relatedCount: summaryRelatedCount(today, entries),
+      models: summaryModels || [],
+      modelsReason: summaryModels?.some((item) => !item.reason) ? null : 'unavailable',
+    });
+    $('today-summary').innerHTML = `<div class="summary-lines">${result.lines.map((line) =>
+      `<div class="summary-row"><strong>${E(line.label)}</strong><a href="${E(line.href)}"${line.action === 'watch' ? ' data-summary-watch' : ''}>${E(line.text)}</a>` +
+      `${line.reason === 'unavailable' ? `<button type="button" class="chip" data-retry-summary="${E(line.key)}">重试</button>` : '<span></span>'}</div>`).join('')}</div>`;
+  }
+  async function loadSummaryData() {
+    const quotePromise = LPPL.resultOf(Promise.resolve().then(() => LPPL.quote(['sh000001', 'sz399001'])), {
+      empty: (data) => !data?.quotes || Object.keys(data.quotes).length === 0,
+    });
+    summaryModels = await Promise.all(LPPL.SYMS.map(async (spec) => {
+      const base = { symbol: spec.sym, name: spec.name };
+      const historyPromise = spec.history
+        ? LPPL.fetchResult(spec.sym + '_history.json', {
+          empty: (data) => !Array.isArray(data?.frames) || data.frames.length === 0,
+        })
+        : LPPL.resultOf(null, { applicable: false });
+      const [latest, history] = await Promise.all([
+        LPPL.resultOf(LPPL.load(spec.sym), { empty: (data) => !data?.top || !data.bars?.length }),
+        historyPromise,
+      ]);
+      if (latest.reason) return [{ ...base, reason: latest.reason }];
+      if (history.reason) return [{ ...base, reason: history.reason }];
+      const frames = (history.data.frames || []).filter((frame) => frame.asof < latest.data.asof)
+        .sort((a, b) => b.asof.localeCompare(a.asof));
+      const previous = frames[0];
+      if (!previous) return [{ ...base, reason: 'empty' }];
+      CPTradingDays.setClosures(history.data.future_calendar?.closures || latest.data.raw?.future_calendar?.closures || []);
+      const scales = ['6-12m', '12-24m'];
+      return scales.flatMap((scale) => {
+        const evidence = history.data.scale_evidence?.[scale] || history.data.evidence;
+        if (!LPPL.ev(evidence).show) return [];
+        if (CPTopClusters.forScale(previous, scale) === null || CPTopClusters.forScale(latest.data.top, scale) === null) {
+          return [{ ...base, scale, reason: 'empty', previousAsOf: previous.asof }];
+        }
+        const change = CPTopClusters.classifyChange(
+          previous, latest.data.top, scale,
+          (date) => CPTradingDays.idxOf(latest.data.bars, date),
+        );
+        return change ? [{ ...base, scale, change, previousAsOf: previous.asof }] :
+          [{ ...base, scale, reason: 'empty', previousAsOf: previous.asof }];
+      });
+    })).then((rows) => rows.flat());
+    summaryQuoteResult = await quotePromise;
+    renderIndexPerformance();
+    renderModelRanges();
+    renderSummary();
+  }
 
   async function loadMarket() {
     marketResult = await LPPL.fetchResult('market/market_latest.json', {
@@ -1337,6 +1489,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   loadMarket();
   loadStockDirectory();
   loadEvents();
+  loadSummaryData();
   LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
     .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });
   LPPL.growthMonitor().then((d) => { Growth = d; renderGrowth(Growth); })
