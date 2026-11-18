@@ -1213,6 +1213,23 @@ def test_workspace_chart_replay_round_trip_preserves_research_context(page: Page
     expect(maotai).to_be_visible()
     maotai.locator("[data-select]").click()
     expect(page.locator("#detail-heading")).to_have_text("贵州茅台")
+
+    current_href = page.locator("#open-full-chart").get_attribute("href")
+    assert current_href and "code=600519" in current_href
+    assert "asof=" not in urlsplit(current_href).query
+
+    page.goto(
+        f"{BASE_URL}/research-workspace.html"
+        "?kind=stock&code=600519&asof=2025-05-23"
+    )
+    page.wait_for_function(
+        """() => {
+          const link = document.querySelector('#open-full-chart');
+          return document.querySelector('#detail-heading')?.textContent === '贵州茅台' &&
+            document.querySelector('#detail-summary')?.innerText.includes('2025-05-23') &&
+            link?.href.includes('asof=2025-05-23');
+        }"""
+    )
     detail_before = page.locator("#detail-summary").inner_text()
     list_before = page.locator("#watch-list").inner_text()
     page.evaluate("window.scrollTo(0, 280)")
@@ -1221,7 +1238,7 @@ def test_workspace_chart_replay_round_trip_preserves_research_context(page: Page
     href = full_chart.get_attribute("href")
     assert href and "code=600519" in href and "from=research-workspace.html" in href
     asof_match = re.search(r"(?:\?|&)asof=(\d{4}-\d{2}-\d{2})", href)
-    assert asof_match, href
+    assert asof_match and asof_match.group(1) == "2025-05-23", href
     assert asof_match.group(1) in detail_before
     expect(full_chart).to_contain_text(asof_match.group(1))
     full_chart.scroll_into_view_if_needed()
@@ -1231,19 +1248,7 @@ def test_workspace_chart_replay_round_trip_preserves_research_context(page: Page
         "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' || "
         "document.querySelector('#error-panel')?.hidden === false"
     )
-    if page.locator("#chart-page").get_attribute("data-loaded") != "true":
-        message = page.locator("#error-message").inner_text()
-        assert f"没有 {asof_match.group(1)} 的封存模型" in message, message
-        page.go_back()
-        expect(page.locator("#detail-heading")).to_have_text("贵州茅台")
-        assert page.locator("#detail-summary").inner_text() == detail_before
-        assert page.locator("#watch-list").inner_text() == list_before
-        assert page.evaluate("window.scrollY") == list_position
-        expect(page.locator("#open-full-chart")).to_have_attribute("href", href)
-        pytest.skip(
-            f"Workspace full-chart link points to {asof_match.group(1)}, but that archive is unavailable; "
-            "workspace has no date selector for the requested 2025-05-23 replay"
-        )
+    expect(page.locator("#chart-page")).to_have_attribute("data-loaded", "true")
     assert page.locator("#chart-page").get_attribute("data-code") == "sh600519"
     archive_date = page.locator("#asof-tag").inner_text()
     evidence = page.locator("#evidence-state").inner_text()
