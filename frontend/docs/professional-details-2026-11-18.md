@@ -102,13 +102,7 @@ node frontend/tests/chart-professional.browser.cjs
 
 ## 5. 主线协作及待接后端
 
-本地截图（工作台使用公开归档结果；图表使用明确的测试夹具，均非正式站上线截图）：
-
-![桌面工作台](visual-evidence/professional-details-20261118/workspace-desktop.png)
-
-![390px完整图表](visual-evidence/professional-details-20261118/chart-mobile.png)
-
-另附 [390px工作台](visual-evidence/professional-details-20261118/workspace-390.png)、[桌面完整图表](visual-evidence/professional-details-20261118/chart-desktop.png)、[手机滚动身份条](visual-evidence/professional-details-20261118/chart-mobile-sticky.png)。截图目录被既有站点构建排除，不作为业务数据或首屏下载资源。
+本地截图（工作台使用公开归档结果；图表使用明确的测试夹具，均非正式站上线截图）不随仓库提交。
 
 #142 的frontend实现以 `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a` 为复用依据；本轮在此基础上补齐只读历史、独立事件、缩放保持及导出。#143原本堆叠于#142，开发期间两者已进入main，因此本轮同步最新main后重新验证，不要求重复合并它们。
 

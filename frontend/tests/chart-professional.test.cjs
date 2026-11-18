@@ -53,6 +53,19 @@ test('exact history fallback uses only the stored frame and flags revised market
   assert.equal(result.historyFallback, true); assert.equal(result.top.forbidden, undefined);
   assert.equal(result.bars.length, 1); assert.equal(result.raw.first_visible_at, null);
 });
+test('packed stock history retains stock evidence required to show archived windows', async () => {
+  const stockContext = Core.parseContext('?code=600519&kind=stock&asof=2026-06-26', indices);
+  const history = { symbol: 'sh600519', stock_meta: { evidence: 'research_candidate' },
+    frames: [{ asof: '2026-06-26', w: { '6-12m': ['2026-07-01', '2026-07-10'] },
+      scale_evidence: { '6-12m': 'research_candidate' }, evidence: 'research_candidate' }] };
+  const adapter = { stock: {
+    history: async () => history,
+    market: async () => ({ name: '贵州茅台', price: [{ date: '2026-06-26', close: 10 }] }),
+  } };
+  const result = await Reader.historical(adapter, stockContext);
+  const data = Core.assembleStockData('600519', result.raw, result.market);
+  assert.equal(Core.evidenceFor(data, '6-12m'), 'research_candidate');
+});
 test('historical events require a known publication date and retain future scheduled events known then', () => {
   const payload = { lift: [
     { code: '600519', free_date: '2026-07-15', published_at: '2026-06-25' },

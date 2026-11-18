@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const Core = require('../app/research-workspace-core.js');
+const RuleLabels = require('../app/rule-labels.js');
 const at = '2026-11-18T04:00:00Z';
 const index = Core.asset('index', 'sh000001', '上证指数');
 const stock = Core.asset('stock', '600519', '贵州茅台');
@@ -110,6 +111,40 @@ test('not computed differs from zero qualified and no cluster', () => {
   assert.equal(Core.summarize(index, raw, at).status, 'no_qualified_fit');
   raw.top.indicators['6-12m'].signal_status = 'signal';
   assert.equal(Core.summarize(index, raw, at).status, 'no_cluster');
+});
+test('unevaluated scales with a numeric confidence do not mask qualified-fit status', () => {
+  const raw = payload(); raw.top.scale_clusters = {};
+  raw.top.lppls_confidence['6-12m'] = 0;
+  raw.top.indicators['6-12m'] = { n_windows: 6, signal_status: 'no_qualified_fit' };
+  raw.top.lppls_confidence['2-6y'] = 0.1;
+  raw.top.lppls_confidence.scale_evidence['2-6y'] = 'none';
+  assert.equal(Core.summarize(index, raw, at).status, 'no_qualified_fit');
+});
+test('empty-state text matches shared rule labels', () => {
+  const raw = payload(); raw.top.scale_clusters = {};
+  raw.top.lppls_confidence['6-12m'] = null;
+  raw.top.indicators['6-12m'] = { signal_status: 'not_computed' };
+  assert.equal(Core.summarize(index, raw, at).statusText, RuleLabels.EMPTY_REASONS.not_computed);
+
+  raw.top.lppls_confidence['6-12m'] = 0;
+  raw.top.indicators['6-12m'] = { n_windows: 6, signal_status: 'no_qualified_fit' };
+  assert.equal(Core.summarize(index, raw, at).statusText, RuleLabels.EMPTY_REASONS.no_fit);
+
+  raw.top.lppls_confidence['6-12m'] = 0.4;
+  raw.top.indicators['6-12m'] = { n_windows: 6, signal_status: 'signal' };
+  assert.equal(Core.summarize(index, raw, at).statusText, RuleLabels.EMPTY_REASONS.no_cluster);
+  assert.equal(Core.summarize(index, payload(), at).statusText, '有研究观察区间');
+  assert.equal(Core.summarize(index, null, at).statusText, '尚未取得可用分析');
+
+  assert.equal(Core.summarize(index, payload(), at).status, 'has_window');
+  const expired = payload();
+  expired.top.scale_clusters['6-12m'][0] = { q20_date: '2026-11-01', q80_date: '2026-11-05' };
+  assert.equal(Core.summarize(index, expired, at).statusText, '已公布区间早于分析截止日');
+
+  assert.equal(Core.summarize(index, payload(), at).status, 'has_window');
+  const hidden = payload();
+  hidden.top.lppls_confidence.scale_evidence['6-12m'] = 'none';
+  assert.equal(Core.summarize(index, hidden, at).statusText, RuleLabels.EMPTY_REASONS.not_formal);
 });
 test('expired interval remains historical, never represented as future', () => {
   const raw = payload(); raw.top.scale_clusters['6-12m'][0] = { q20_date: '2026-11-01', q80_date: '2026-11-05' };
@@ -270,4 +305,22 @@ test('roundtrip keeps snapshots, notes and visit context', () => {
   assert.equal(restored.observations[index.id][0].windows[0].start, '2026-11-20');
   assert.equal(restored.notes[0].asof, '2026-11-17');
   assert.equal(restored.recent[0].assetId, index.id);
+});
+test('observations, groups and notes survive for assets beyond the 100th entry', () => {
+  const state = Core.initial(), summary = Core.summarize(index, payload(), at);
+  for (let i = 1; i <= 120; i++) {
+    const code = String(600000 + i);
+    const asset = Core.asset('stock', code, '标的 ' + i);
+    state.meta[asset.id] = { group: '观察' };
+    state.observations[asset.id] = [{ ...summary, asset, observedAt: at, id: 'observation-' + i }];
+    state.notes.push({ id: 'note-' + i, assetId: asset.id, asof: summary.asof,
+      predictionId: summary.predictionId, modelVersion: summary.modelVersion,
+      text: '笔记 ' + i, createdAt: at, version: 1 });
+  }
+  const storage = memory();
+  assert.equal(Core.save(storage, state), true);
+  const restored = Core.load(storage), id = 'stock:600101';
+  assert.equal(restored.observations[id].length, 1);
+  assert.equal(restored.meta[id].group, '观察');
+  assert.equal(restored.notes.find(note => note.assetId === id).text, '笔记 101');
 });

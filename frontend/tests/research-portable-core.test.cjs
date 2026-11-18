@@ -114,6 +114,29 @@ test('empty local storage does not create an unusable backup', () => {
   assert.throws(() => Portable.create(store(), at, Personal), /空|记录|没有/);
 });
 
+test('workspace import merges recent visits and snapshots by identity, time and cap', () => {
+  const base = Date.parse(at), local = workspace(), incoming = workspace();
+  const addVisit = (state, predictionId, minute, source) => Workspace.recordVisit(state,
+    row({ asof: '2026-11-17', predictionId, source }),
+    new Date(base + minute * 60_000).toISOString());
+  for (let i = 0; i < 6; i++) addVisit(local, 'local-' + i, i, 'local snapshot');
+  addVisit(incoming, 'local-0', 20, 'newer imported snapshot');
+  for (let i = 0; i < 5; i++) addVisit(incoming, 'remote-' + i, 21 + i, 'imported snapshot');
+  const merged = Portable.mergeWorkspace(local, incoming);
+  const keys = merged.recent.map(recent => [recent.assetId, recent.asof, recent.predictionId, recent.modelVersion].join('|'));
+  assert.equal(merged.recent.length, 10);
+  assert.equal(new Set(keys).size, 10);
+  assert.deepEqual(merged.recent.map(recent => recent.visitedAt),
+    merged.recent.map(recent => recent.visitedAt).slice().sort().reverse());
+  assert.ok(merged.recent.some(recent => recent.predictionId === 'remote-4' &&
+    recent.snapshot.source === 'imported snapshot'));
+  assert.equal(merged.recent.find(recent => recent.predictionId === 'local-0').visitedAt,
+    new Date(base + 20 * 60_000).toISOString());
+  assert.equal(merged.recent.find(recent => recent.predictionId === 'local-0').snapshot.source,
+    'newer imported snapshot');
+  assert.equal(merged.recent.some(recent => recent.predictionId === 'local-1'), false);
+});
+
 test('merging keeps both conflicting note bodies and their dates without changing local controls', () => {
   const local = workspace([note('shared', '本机旧笔记')], { revision: 3, selectedId: 'stock:600519', query: '贵州', groups: ['观察'] });
   const incoming = workspace([note('shared', '另一台设备的笔记')], { groups: ['持有'], selectedId: 'index:sh000001' });
