@@ -62,6 +62,13 @@
   }
   async function historical(adapter, context) {
     if (!context.asof || !context.valid) throw new Error('历史截止日无效。');
+    // The adapter's explicit REPLAYS allowlist takes its static-JSON branch.
+    // Never pass an arbitrary date to load(): its other branch can POST a job.
+    var staticDates = adapter.REPLAYS && adapter.REPLAYS[context.code];
+    if (context.assetType === 'index' && Array.isArray(staticDates) && staticDates.indexOf(context.asof) >= 0) {
+      var saved = await timed(function () { return adapter.load(context.code, context.asof); }, '静态历史封存');
+      return exactResult(saved, context);
+    }
     var replayError = null;
     if (context.assetType === 'index' && adapter.replay && adapter.replay.result) {
       try {

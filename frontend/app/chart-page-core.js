@@ -8,7 +8,36 @@
 
   var SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
   var RETURN_PAGES = new Set(['stock.html', 'index.html', 'backtest.html', 'market.html', 'home.html', 'research-workspace.html']);
-  var NUMERIC_EVIDENCE = new Set(['dev', 'cal', 'test', 'cal_fragile', 'descriptive', 'descriptive_bubble']);
+  var NUMERIC_EVIDENCE = new Set(['dev', 'cal', 'test', 'cal_fragile', 'research_candidate', 'descriptive']);
+  function restrictEvidence(scope, own) {
+    scope = typeof scope === 'string' && scope ? scope : 'none';
+    if (!NUMERIC_EVIDENCE.has(scope)) return scope;
+    var evidence = own == null || own === '' ? scope : own;
+    if (!NUMERIC_EVIDENCE.has(evidence)) return evidence;
+    if (scope === 'descriptive' || evidence === 'descriptive') return 'descriptive';
+    if (scope === 'research_candidate' || evidence === 'research_candidate') return 'research_candidate';
+    return evidence;
+  }
+  function evidenceFor(data, scale, own) {
+    var raw = data.raw || data, top = data.top || raw.top || {};
+    var confidence = top.lppls_confidence || {}, indicator = top.indicators && top.indicators[scale] || {};
+    if (data.modelStatus && data.modelStatus !== 'ok' || indicator.signal_status === 'not_computed') return 'none';
+    // Scale evidence is the gate. A top-level or band-level label cannot revive
+    // an absent/failed scale; stock identity is an additional restriction.
+    var scoped = confidence.scale_evidence && confidence.scale_evidence[scale] || confidence.evidence || 'none';
+    var evidence = indicator.evidence == null || indicator.evidence === '' ? scoped : restrictGate(scoped, indicator.evidence);
+    evidence = restrictEvidence(evidence, own);
+    if (data.assetType === 'stock') evidence = restrictGate(evidence, raw.stock_meta && raw.stock_meta.evidence || 'none');
+    return evidence;
+  }
+  function restrictGate(scope, gate) {
+    if (!NUMERIC_EVIDENCE.has(scope)) return scope;
+    if (!NUMERIC_EVIDENCE.has(gate)) return gate;
+    if (scope === 'descriptive' || gate === 'descriptive') return 'descriptive';
+    if (scope === 'research_candidate' || gate === 'research_candidate') return 'research_candidate';
+    return scope;
+  }
+  function bandEvidenceCode(evidenceCode, band) { return restrictEvidence(evidenceCode, band && band.evidence); }
 
   function fallbackFrom(assetType, code, stockCode) {
     if (assetType === 'index') {
@@ -31,8 +60,9 @@
   }
 
   function bandEvidencePolicy(evidenceCode, band) {
+    evidenceCode = bandEvidenceCode(evidenceCode, band);
     var hidden = !NUMERIC_EVIDENCE.has(evidenceCode);
-    var missingSampleCount = /^descriptive/.test(evidenceCode) && !(Number.isFinite(band && band.n) && band.n > 0);
+    var missingSampleCount = evidenceCode === 'descriptive' && !(Number.isInteger(band && band.n) && band.n > 0);
     return {
       draw: !hidden && !missingSampleCount,
       showDates: !hidden && !missingSampleCount,
@@ -238,6 +268,8 @@
   return {
     SCALES: SCALES,
     NUMERIC_EVIDENCE: NUMERIC_EVIDENCE,
+    evidenceFor: evidenceFor,
+    bandEvidenceCode: bandEvidenceCode,
     safeFrom: safeFrom,
     bandEvidencePolicy: bandEvidencePolicy,
     filterDescriptiveBands: filterDescriptiveBands,

@@ -29,18 +29,13 @@
   };
 
   function evidenceCode(data, scale) {
-    var top = data.top || {};
-    var confidence = top.lppls_confidence || {};
-    var indicators = top.indicators || {};
-    var indicator = indicators[scale] || {};
-    return confidence.scale_evidence && confidence.scale_evidence[scale] ||
-      indicator.evidence || confidence.evidence || top.evidence ||
-      data.raw && data.raw.evidence || data.evidence;
+    return Core.evidenceFor(data, scale);
   }
 
   function evidenceFor(data, scale) {
     if (data.modelStatus && data.modelStatus !== 'ok') return { code: 'none', label: '模型未就绪', show: false };
     var result = LPPL.ev(evidenceCode(data, scale), data.evidence_levels || {});
+    if (result.code === 'research_candidate') result.label = '研究候选（非正式提醒）';
     return Object.assign({}, result, { show: !!result && Core.NUMERIC_EVIDENCE.has(result.code) });
   }
 
@@ -139,6 +134,7 @@
     }
     bands.forEach(function (band, index) {
       var policy = Core.bandEvidencePolicy(evidence.code, band);
+      var bandEvidence = Core.bandEvidenceCode(evidence.code, band);
       var id = policy.draw
         ? Core.intervalId(selectedScale, band) : 'unrecorded:' + selectedScale + ':' + index;
       var row = document.createElement('button');
@@ -161,8 +157,10 @@
       var extra = document.createElement('small');
       if (!policy.draw) {
         extra.textContent = policy.message;
-      } else if (/^descriptive/.test(evidence.code)) {
+      } else if (bandEvidence === 'descriptive') {
         extra.textContent = (share ? share + '；' : '') + 'n=' + band.n + '；历史分位，不是预测';
+      } else if (bandEvidence === 'research_candidate') {
+        extra.textContent = (share ? share + '；' : '') + '研究候选区间，非正式提醒；占比不是概率';
       } else if (band.source === 'scale_window') {
         extra.textContent = '发布的时间窗，不代表概率';
       } else {
@@ -518,7 +516,7 @@
   });
 
   function researchCard() {
-    return Share.record(current, context, evidenceFor(current, context.scale), intervalRows(current, context.scale), Core.bandEvidencePolicy);
+    return Share.record(current, context, evidenceFor(current, context.scale), intervalRows(current, context.scale), Core.bandEvidencePolicy, Core.bandEvidenceCode);
   }
   function download(blob, suffix) {
     var url = URL.createObjectURL(blob), link = document.createElement('a');

@@ -5,6 +5,9 @@ const Core = require('../app/chart-page-core.js');
 const Reader = require('../app/chart-readonly-data.js');
 const Share = require('../app/chart-research-card.js');
 const Chart = require('../app/lppl-chart.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const Workspace = require('../app/research-workspace-core.js');
 const indices = [{ sym: 'sh000001', code: '000001', name: '上证指数' }];
 const context = Core.parseContext('?code=sh000001&asof=2026-06-26', indices);
 const raw = { symbol: 'sh000001', asof: '2026-06-26', name: '上证指数',
@@ -118,4 +121,57 @@ test('independent module timeout rejects without cancelling other completed work
   const model = Reader.timed(() => new Promise(() => {}), '模型', 10);
   assert.equal(await market, 'market-ready');
   await assert.rejects(model, /模型读取超时/);
+});
+test('real stock candidate agrees with workspace evidence and remains a research candidate', () => {
+  const published = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'stock_600519.json'), 'utf8'));
+  const data = { assetType: 'stock', raw: published, top: published.top, modelStatus: 'ok' };
+  assert.equal(Core.evidenceFor(data, '6-12m'), 'research_candidate');
+  const summary = Workspace.summarize(Workspace.asset('stock', '600519'), published);
+  assert.equal(summary.coverage.find(row => row.scale === '6-12m').evidence, Core.evidenceFor(data, '6-12m'));
+  assert.equal(Core.bandEvidencePolicy(Core.evidenceFor(data, '6-12m'), { n: 3 }).draw, true);
+});
+function evidenceData(scoped, stock, own, status) {
+  const raw = { stock_meta: { evidence: stock }, top: { evidence: 'test',
+    lppls_confidence: { evidence: 'dev', scale_evidence: { '6-12m': scoped } },
+    indicators: { '6-12m': { evidence: own, signal_status: status || 'signal' } } } };
+  return { assetType: 'stock', raw, top: raw.top, modelStatus: 'ok' };
+}
+test('stock failure/unknown, failed scale, restrictive indicator and not_computed cannot be revived', () => {
+  for (const gate of ['none', 'fail_i', 'dev_only', 'unknown']) {
+    assert.equal(Core.NUMERIC_EVIDENCE.has(Core.evidenceFor(evidenceData('dev', gate), '6-12m')), false);
+    assert.equal(Core.NUMERIC_EVIDENCE.has(Core.evidenceFor(evidenceData(gate, 'research_candidate'), '6-12m', 'test')), false);
+    assert.equal(Core.NUMERIC_EVIDENCE.has(Core.evidenceFor(evidenceData('dev', 'research_candidate', gate), '6-12m')), false);
+  }
+  const missingStock = evidenceData('dev', null); delete missingStock.raw.stock_meta;
+  assert.equal(Core.evidenceFor(missingStock, '6-12m'), 'none');
+  assert.equal(Core.evidenceFor(evidenceData('dev', 'research_candidate', 'dev', 'not_computed'), '6-12m'), 'none');
+  const missingScale = evidenceData('dev', 'research_candidate'); delete missingScale.top.lppls_confidence;
+  assert.equal(Core.evidenceFor(missingScale, '6-12m', 'test'), 'none');
+  assert.equal(Core.evidenceFor(evidenceData('dev', 'test', 'test'), '6-12m'), 'dev');
+  assert.equal(Core.evidenceFor(evidenceData('test', 'dev', 'dev'), '6-12m'), 'test');
+});
+test('band failure restricts allowed scale across list/object chart payloads and anonymous exports', () => {
+  const band = { scale: '6-12m', q20_date: '2026-07-01', q80_date: '2026-07-10', evidence: 'fail_i', n: 4 };
+  assert.equal(Core.bandEvidencePolicy('dev', band).draw, false);
+  const filtered = Core.filterDescriptiveBands({ scale_windows: [band], scale_clusters: { '6-12m': [band] }, clusters: [band] }, { '6-12m': 'dev' });
+  assert.deepEqual(filtered, { scale_windows: [], scale_clusters: { '6-12m': [] }, clusters: [] });
+  const card = Share.record({}, { scale: '6-12m' }, { code: 'dev', show: true }, [band], Core.bandEvidencePolicy, Core.bandEvidenceCode);
+  assert.deepEqual(card.intervals, []);
+});
+test('descriptive at scale, stock or band keeps n gate and is never upgraded by candidate', () => {
+  for (const [scale, stock, own] of [
+    ['descriptive', 'research_candidate', 'dev'], ['dev', 'descriptive', 'research_candidate'],
+    ['dev', 'research_candidate', 'descriptive'], ['research_candidate', 'dev', 'descriptive']
+  ]) {
+    const evidence = Core.evidenceFor(evidenceData(scale, stock), '6-12m', own);
+    assert.equal(evidence, 'descriptive');
+    for (const n of [undefined, null, 0, -1, 1.5]) assert.equal(Core.bandEvidencePolicy(evidence, { n }).draw, false);
+    assert.equal(Core.bandEvidencePolicy(evidence, { n: 4 }).draw, true);
+  }
+  const band = { q20_date: '2026-07-01', q80_date: '2026-07-10', evidence: 'descriptive', n: 4 };
+  const card = Share.record({}, { scale: '6-12m' }, { code: 'research_candidate', show: true }, [band], Core.bandEvidencePolicy, Core.bandEvidenceCode);
+  assert.equal(card.intervals[0].evidence, 'descriptive');
+  assert.match(card.intervals[0].note, /历史分位，不是预测/);
+  assert.match(card.note, /历史分位，不是预测/);
+  assert.equal(Core.bandEvidenceCode('research_candidate', { evidence: 'test' }), 'research_candidate');
 });

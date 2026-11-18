@@ -25,7 +25,7 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 | 历史截止日 | VERIFIED | 只 GET 精确日期的封存结果；缺失再查精确 history frame，无相邻日期替代。非法日期拒绝，不静默转最新，不自动计算。 |
 | 历史行情修订 | NOT_ESTABLISHED | 若精确 history frame 不含行情，使用现有适配器行情截到截止日，并明确其修订时点未记录。不能据此证明价格版本与当时完全相同。 |
 | 首次可见时间 | 后端限制 | 仅展示已提供的 `first_visible_at`；缺失明确未记录。本次浏览时间不写成历史提前发布时刻。 |
-| 区间证据 | VERIFIED | 未知/失败/规则证据不显示区间数值。描述性结果须有正样本数及“历史分位，不是预测”。保持区间占比非概率。 |
+| 区间证据 | VERIFIED | 尺度、indicator、区间自身、个股 stock_meta 逐层限制；未知/失败/规则证据或 not_computed 均不能被 dev/test 覆盖。合法 research_candidate 显示“研究候选，非正式提醒”。描述性结果在任一层出现都须有正整数样本数及“历史分位，不是预测”，不被候选标签升格。图表、证据列表和导出采用相同门禁。 |
 | 空状态 | VERIFIED | 区分模型未读到、读取失败、明确未计算、明确无合格拟合及无可展示聚类；字段不足时使用“未提供可核对区间”，不猜缺失原因。 |
 | 390px 抽屉 | VERIFIED | 默认收起证据；可开关、Esc 关闭、Tab 在抽屉内循环、关闭焦点回到触发按钮。桌面也可收起。 |
 | 全屏 | VERIFIED | 原生 Fullscreen API，失败时用本页全屏容器；提供显式退出按钮与 Esc。 |
@@ -36,9 +36,9 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 
 ## 验收
 
-相关 Node 单测（chart core、只读历史、证据卡、AI/nav、LWC parity、stock chart）92 passed，0 failed。覆盖未来数据裁切、日期/资产拒绝、禁止历史任务 POST、精确帧匹配、未知证据 fail-closed、描述性 n、私人字段排除、SVG 转义与独立超时。
+相关 Node 单测（chart core、只读历史、证据卡、AI/nav、LWC parity、stock chart）96 passed，0 failed。覆盖未来数据裁切、日期/资产拒绝、禁止历史任务 POST、精确帧匹配、未知证据 fail-closed、描述性 n、私人字段排除、SVG 转义与独立超时。
 
-`frontend/tests/chart-professional.browser.cjs` 在本机 Chrome headless 使用生产数据适配器、真实 LWC 组件和已存样本，11 组验收通过：
+`frontend/tests/chart-professional.browser.cjs` 在本机 Chrome headless 使用生产数据适配器、真实 LWC 组件和已存样本，13 组验收通过：
 
 1. 延迟模型到达前已显示行情，随后保留 K 线和用户缩放。
 2. 下载匿名 SVG 卡及真实图表 PNG，附证据元数据。
@@ -51,7 +51,10 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 9. 缺失或非法历史日期不显示最新结果，所有观察到的请求均为 GET。
 10. 桌面身份区离开视口后才出现常驻条，返回顶部隐藏。
 11. 390px 常驻条包含交易所/单位/状态，底部保留空间且末尾操作在其上方。
+12. 真实个股元数据的分层证据与工作台一致；浏览器派生输入覆盖合法候选、失败 stock_meta/区间、描述性 n=0/n=4、not_computed。派生输入仅为展示门禁测试，不属于新拟合或新预测。
 
 运行样本不是新的模型预测或拟合实验；浏览器测试零 pageerror、零外部写请求。桌面、390px、抽屉、历史视图和导出图片已本地查看。截图与下载证据保存在 `D:\CodexData\work\002ed763b852\lppl-chart-professional-1118`，不作为产品业务数据。
 
 真实手机、Safari、生产发布、实时供应商、后端跨设备同步与首次可见时间的服务端完整性：NOT_INSPECTED / NOT_ESTABLISHED。下一个后端任务是提供独立指数行情和版本可追溯的历史行情/事件快照，而非前端补造这些字段。
+
+补充最终回归：明确命中适配器 REPLAYS 静态日期白名单时读取原有静态封存（2015-06-12），不进入任意日期提交计算的分支；非白名单日期仍只读。新增2项静态路由单测及1组真实旧静态封存浏览器用例，图表合计13组通过。全量453项Node测试通过。

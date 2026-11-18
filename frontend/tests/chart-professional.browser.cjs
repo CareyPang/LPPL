@@ -11,7 +11,7 @@ const root = path.resolve(__dirname, '../..'), front = path.join(root, 'frontend
 const read = f => fs.readFileSync(path.join(fixtures, f), 'utf8');
 const indexRaw = JSON.parse(read('sh000001_latest.json'));
 const requests = [], errors = [], checks = [];
-let modelDelay = 1500, modelMissing = false, replayReady = true, closeOnlyReplay = false;
+let modelDelay = 1500, modelMissing = false, replayReady = true, closeOnlyReplay = false, modelOverride = null;
 const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.svg':'image/svg+xml' };
 const files = { '/lab/mock/data/sh000001_latest.json':'sh000001_latest.json', '/lab/mock/data/sh000001_history.json':'sh000001_history.json', '/lab/mock/data/stock/600519.json':'stock_600519.json' };
 const server = http.createServer((req, res) => {
@@ -20,12 +20,14 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/lab/mock/data/events/events_latest.json') { res.writeHead(503); return res.end('{}'); }
   if (modelMissing && url.pathname === '/lab/mock/data/stock/600519.json') { res.writeHead(404); return res.end('{}'); }
   let file = files[url.pathname] ? path.join(fixtures, files[url.pathname]) : path.resolve(front, '.' + url.pathname);
+  if (url.pathname === '/lab/mock/data/sh000001_2015-06-12.json') file = path.join(root, 'web/mock/data/sh000001_2015-06-12.json');
   if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); return res.end('{}'); }
   const send = () => {
     res.writeHead(200, { 'content-type':mime[path.extname(file)] || 'application/octet-stream', 'cache-control':'no-store' });
+    if (modelOverride && url.pathname === '/lab/mock/data/stock/600519.json') return res.end(JSON.stringify(modelOverride));
     if (url.pathname === '/app/lppl-chart.js') {
       // Expose only in this local QA response, not in shipped app code.
-      return res.end(fs.readFileSync(file, 'utf8') + '\n;const originalMount=LPPLChart.mount;LPPLChart.mount=function(...args){window.__qaChart=originalMount(...args);return window.__qaChart;};');
+      return res.end(fs.readFileSync(file, 'utf8') + '\n;const originalMount=LPPLChart.mount;LPPLChart.mount=function(...args){window.__qaChart=originalMount(...args);const originalSetData=window.__qaChart.setData;window.__qaChart.setData=function(data){window.__qaChartData=data;return originalSetData(data);};return window.__qaChart;};');
     }
     fs.createReadStream(file).pipe(res);
   };
@@ -94,6 +96,40 @@ const server = http.createServer((req, res) => {
     await page.locator('#identity-strip').waitFor({ state:'hidden' });
     pass('desktop compact identity appears only after original identity leaves the viewport');
 
+    // These mutated fields test evidence presentation only; they are not a new
+    // fit or a claim that the source published these hypothetical date bands.
+    modelDelay = 0;
+    modelOverride = JSON.parse(read('stock_600519.json'));
+    modelOverride.top.lppls_confidence.scale_evidence['6-12m'] = 'dev';
+    modelOverride.top.lppls_confidence['6-12m'] = 0.25;
+    modelOverride.top.indicators['6-12m'] = { signal_status:'signal', n_windows:20 };
+    modelOverride.stock_meta.evidence = 'research_candidate';
+    modelOverride.top.scale_windows = [{ scale:'6-12m', q20_date:'2026-11-18', q80_date:'2026-11-30', n:4 }];
+    async function gateReload() {
+      await page.goto(origin + '/chart.html?code=600519&kind=stock&scale=6-12m');
+      await page.waitForFunction(() => document.querySelector('#chart-page').dataset.modelStatus === 'ok');
+    }
+    await gateReload();
+    assert.match(await page.locator('#evidence-state').innerText(), /研究候选/);
+    assert.match(await page.locator('#interval-list').innerText(), /2026-11-18[\s\S]*非正式提醒/);
+    assert.equal(await page.evaluate(() => LPPLChart.bandsForAllScales(window.__qaChartData).length), 1);
+    modelOverride.stock_meta.evidence = 'fail_i'; await gateReload();
+    assert.equal(await page.locator('#interval-list span').count(), 0);
+    assert.equal(await page.evaluate(() => LPPLChart.bandsForAllScales(window.__qaChartData).length), 0);
+    modelOverride.stock_meta.evidence = 'research_candidate';
+    modelOverride.top.scale_windows[0].evidence = 'fail_i'; await gateReload();
+    assert.equal(await page.locator('#interval-list span').count(), 0);
+    assert.equal(await page.evaluate(() => LPPLChart.bandsForAllScales(window.__qaChartData).length), 0);
+    modelOverride.top.scale_windows[0].evidence = 'descriptive'; modelOverride.top.scale_windows[0].n = 0; await gateReload();
+    assert.equal(await page.locator('#interval-list span').count(), 0);
+    modelOverride.top.scale_windows[0].n = 4; await gateReload();
+    assert.match(await page.locator('#interval-list').innerText(), /n=4；历史分位，不是预测/);
+    modelOverride.top.indicators['6-12m'].signal_status = 'not_computed'; await gateReload();
+    assert.equal(await page.locator('#interval-list span').count(), 0);
+    assert.equal(await page.evaluate(() => LPPLChart.bandsForAllScales(window.__qaChartData).length), 0);
+    modelOverride = null;
+    pass('candidate bands remain visible, restrictive stock/band evidence and not_computed hide numbers; descriptive keeps n gate');
+
     modelMissing = true; modelDelay = 0;
     await page.reload(); await page.waitForFunction(() => document.querySelector('#chart-page').dataset.modelStatus === 'missing');
     assert.equal(await page.locator('#chart-page').getAttribute('data-last-close'), marketClose);
@@ -130,6 +166,12 @@ const server = http.createServer((req, res) => {
     pass('390px has no overflow; evidence drawer Escape and chart fullscreen exit restore usable page');
     pass('390px scroll identity retains exchange/unit/status and reserved space avoids covering final controls');
 
+    await page.goto(origin + '/chart.html?code=sh000001&asof=2015-06-12');
+    await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');
+    assert.equal(await page.locator('#chart-page').getAttribute('data-model-as-of'), '2015-06-12');
+    assert.match(await page.locator('#asof-tag').innerText(), /2015-06-12.*封存回放/);
+    assert.ok((await page.locator('#chart-page').getAttribute('data-last-bar-date')) <= '2015-06-12');
+    pass('legacy static allowlisted archive remains available without a computation request');
     await page.goto(origin + '/chart.html?code=sh000001&asof=' + indexRaw.asof + '&scale=6-12m&from=research-workspace.html');
     await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');
     assert.equal(await page.locator('#chart-page').getAttribute('data-model-as-of'), indexRaw.asof);

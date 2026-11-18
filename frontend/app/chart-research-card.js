@@ -16,10 +16,15 @@
       });
     });
   }
-  function record(data, context, evidence, bands, policy) {
+  function record(data, context, evidence, bands, policy, bandEvidenceCode) {
     // Explicit allowlist: never export notes, positions, account identifiers or return URLs.
     var intervals = evidence.show ? bands.filter(function (band) { return policy(evidence.code, band).draw; })
-      .map(function (band) { return { start: band.q20_date, end: band.q80_date, n: band.n == null ? null : band.n }; }) : [];
+      .map(function (band) {
+        var code = bandEvidenceCode ? bandEvidenceCode(evidence.code, band) :
+          evidence.code === 'descriptive' || band.evidence === 'descriptive' ? 'descriptive' : band.evidence || evidence.code;
+        return { start: band.q20_date, end: band.q80_date, n: band.n == null ? null : band.n, evidence: code,
+          note: code === 'descriptive' ? '历史分位，不是预测' : code === 'research_candidate' ? '研究候选，非正式提醒' : '研究区间，不是概率' };
+      }) : [];
     return { schema: 'lppl.anonymous-research-card.v1', symbol: str(data.symbol), name: str(data.name),
       assetType: str(data.assetType), exchange: str(data.exchange), unit: str(data.quoteUnit),
       marketAsOf: str(data.marketAsOf || data.asof), modelAsOf: str(data.modelAsOf), scale: context.scale,
@@ -27,7 +32,8 @@
       modelVersion: str(data.modelVersion), predictionId: str(data.predictionId), firstVisibleAt: str(data.firstVisibleAt),
       evidence: str(evidence.code), evidenceLabel: str(evidence.label), intervals: intervals,
       mode: context.asof ? '历史重放；不等同于提前发布预测' : '已发布研究结果',
-      note: /^descriptive/.test(evidence.code) ? '历史分位，不是预测' : '区间不是概率；无价格目标',
+      note: evidence.code === 'descriptive' || intervals.some(function (item) { return item.evidence === 'descriptive'; })
+        ? '历史分位，不是预测' : evidence.code === 'research_candidate' ? '研究候选，非正式提醒；区间不是概率；无价格目标' : '区间不是概率；无价格目标',
       stale: data.stale === true, staleReason: str(data.staleReason), exportedAt: new Date().toISOString() };
   }
   function lines(item) {
@@ -39,7 +45,7 @@
       '首次可见时间 ' + item.firstVisibleAt + ' ｜ 导出 ' + item.exportedAt]
       .concat(item.intervals.length ? item.intervals.map(function (interval, i) {
         return '区间 ' + (i + 1) + '：' + interval.start + ' — ' + interval.end +
-          (interval.n != null ? ' ｜ n=' + interval.n : '');
+          (interval.n != null ? ' ｜ n=' + interval.n : '') + ' ｜ ' + interval.note;
       }) : ['当前尺度没有可展示区间；请查看证据状态'])
       .concat(item.stale ? ['缓存已过期：' + item.staleReason] : [], [item.note]);
     // 66 full-width glyphs at 17px fit the 1184px content width. Both exports
