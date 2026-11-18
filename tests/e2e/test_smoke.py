@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import json
 import os
 import re
 from pathlib import Path
@@ -45,6 +47,37 @@ def assert_page_has_no_overflow(page: Page, path: str) -> None:
             "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
         )
         assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+
+
+def drawing_pixel_diff(
+    page: Page, first: bytes, second: bytes, *, chart_only: bool = False
+) -> dict[str, int]:
+    images = [base64.b64encode(first).decode("ascii"), base64.b64encode(second).decode("ascii")]
+    return page.evaluate(
+        """async ([leftPng, rightPng, chartOnly]) => {
+          async function pixels(value) {
+            const image = await createImageBitmap(await fetch('data:image/png;base64,' + value).then(r => r.blob()));
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width; canvas.height = image.height;
+            const context = canvas.getContext('2d');
+            context.drawImage(image, 0, 0);
+            return { width:image.width, height:image.height, data:context.getImageData(0, 0, image.width, image.height).data };
+          }
+          const left = await pixels(leftPng), right = await pixels(rightPng);
+          if (left.width !== right.width || left.height !== right.height) return { changed:-1, width:left.width, height:left.height };
+          let changed = 0;
+          const x0 = Math.floor(left.width * 0.04), x1 = Math.floor(left.width * 0.96);
+          const y0 = Math.floor(left.height * (chartOnly ? 0.44 : 0.12)), y1 = Math.floor(left.height * 0.94);
+          for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+            const i = (y * left.width + x) * 4;
+            if (Math.abs(left.data[i] - right.data[i]) +
+                Math.abs(left.data[i + 1] - right.data[i + 1]) +
+                Math.abs(left.data[i + 2] - right.data[i + 2]) > 45) changed++;
+          }
+          return { changed, width:left.width, height:left.height };
+        }""",
+        images + [chart_only],
+    )
 
 
 @pytest.mark.e2e
@@ -622,6 +655,612 @@ def test_chart_replay_asof_is_visible_and_links_keep_the_cutoff(page: Page) -> N
     page.goto(f"{BASE_URL}/index.html?code=sh000001&asof=2015-06-12")
     chart_href = page.locator(".odn-chart-link").get_attribute("href")
     assert chart_href and "asof=2015-06-12" in chart_href
+
+
+@pytest.mark.e2e
+def test_chart_drawings_persist_history_exports_and_mobile_toolbar(
+    page: Page, tmp_path: Path
+) -> None:
+    screenshot_dir = (
+        Path(os.environ["LPPL_DRAWING_SHOT_DIR"])
+        if os.environ.get("LPPL_DRAWING_SHOT_DIR")
+        else tmp_path
+    )
+    screenshot_dir.mkdir(parents=True, exist_ok=True)
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    expect(page.locator("#drawing-toolbar")).to_contain_text(
+        "画线仅保存在此浏览器，是你自己的标注，不是模型结果"
+    )
+    expect(page.locator("[data-drawing-tool]")).to_have_count(5)
+    host = page.locator("#chart-host")
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    host.click(position={"x": 330, "y": 180})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+    saved = page.evaluate(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001'))"
+    )
+    assert saved["v"] == 1
+    assert saved["items"][0]["drawing"]["kind"] == "horizontal-line"
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", saved["items"][0]["createdAt"])
+
+    page.reload()
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+    )
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("全部隐藏")
+    expect(page.locator("[data-drawing-history]")).to_be_hidden()
+    expect(page.locator("[data-drawing-history]")).not_to_contain_text("晚于当前截止日")
+    page.locator('[data-drawing-tool="rectangle"]').click()
+    host.click(position={"x": 450, "y": 160})
+    host.click(position={"x": 610, "y": 260})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+    )
+    page.locator('[data-drawing-tool="text"]').click()
+    host.click(position={"x": 400, "y": 320})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    editor.fill("TEST-PRIVATE-NOTE")
+    editor.evaluate(
+        """input => {
+          input.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "Enter", bubbles: true, cancelable: true, isComposing: true
+          }));
+          const escape = new KeyboardEvent("keydown", {
+            key: "Escape", bubbles: true, cancelable: true
+          });
+          Object.defineProperty(escape, "keyCode", { get: () => 229 });
+          input.dispatchEvent(escape);
+        }"""
+    )
+    expect(editor).to_be_visible()
+    editor.press("Enter")
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 3 && "
+        "JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.some(x => x.drawing.text === 'TEST-PRIVATE-NOTE')"
+    )
+    assert "TEST-PRIVATE-NOTE" not in page.locator("#chart-page").inner_text()
+    page.screenshot(path=str(screenshot_dir / "chart_1440.png"))
+
+    without_path = screenshot_dir / "export_without_notes.png"
+    with_path = screenshot_dir / "export_with_notes.png"
+    include = page.locator("#include-drawings")
+    expect(include).not_to_be_checked()
+    with page.expect_download() as download:
+        page.locator("#share-screenshot").click()
+    download.value.save_as(str(without_path))
+    assert without_path.stat().st_size > 10_000
+    expect(page.locator("#action-feedback")).to_have_text(
+        "当前图表与证据截图已下载；不含私人研究资料。"
+    )
+    include.check()
+    with page.expect_download() as download:
+        page.locator("#share-screenshot").click()
+    download.value.save_as(str(with_path))
+    assert with_path.stat().st_size > 10_000
+    expect(page.locator("#action-feedback")).to_have_text(
+        "当前图表与证据截图已下载，包含你选择的个人标注。"
+    )
+    export_diff = drawing_pixel_diff(
+        page, without_path.read_bytes(), with_path.read_bytes(), chart_only=True
+    )
+    assert export_diff["changed"] > 100, export_diff
+
+    replay_url = f"{BASE_URL}/chart.html?code=sh000001&asof=2015-06-12"
+    page.goto(replay_url)
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    visibility = page.locator("[data-drawing-visibility]")
+    expect(visibility).to_have_text("显示我的画线")
+    page.screenshot(path=str(screenshot_dir / "chart_asof_hidden_1440.png"))
+    visibility.click()
+    expect(page.locator("[data-drawing-history]")).to_be_visible()
+    assert f"这些画线创建于 {saved['items'][0]['createdAt']}" in page.locator(
+        "[data-drawing-history]"
+    ).inner_text()
+    assert f"创建于 {saved['items'][0]['createdAt']}" in page.locator(
+        "[data-drawing-dates]"
+    ).inner_text()
+    expect(page.locator("[data-drawing-history]")).to_contain_text(
+        "晚于当前截止日 2015-06-12"
+    )
+    page.screenshot(path=str(screenshot_dir / "chart_asof_shown_1440.png"))
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    host = page.locator("#chart-host")
+    host.click(position={"x": 540, "y": 240})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 4"
+    )
+    visible_image = host.screenshot()
+    visibility.click()
+    expect(visibility).to_have_text("显示我的画线")
+    hidden_image = host.screenshot()
+    view_diff = drawing_pixel_diff(page, hidden_image, visible_image)
+    assert view_diff["changed"] > 50, view_diff
+    page.screenshot(path=str(screenshot_dir / "chart_asof_hidden_1440.png"))
+    visibility.click()
+    expect(page.locator("[data-drawing-history]")).to_be_visible()
+    page.screenshot(path=str(screenshot_dir / "chart_asof_shown_1440.png"))
+
+    page.set_viewport_size({"width": 390, "height": 844})
+    dimensions = page.evaluate(
+        "() => ({scrollWidth:document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    tool = page.locator('[data-drawing-tool="trend-line"]')
+    tool.click()
+    expect(tool).to_have_attribute("aria-pressed", "true")
+    tool.click()
+    expect(tool).to_have_attribute("aria-pressed", "false")
+    page.screenshot(path=str(screenshot_dir / "chart_390.png"))
+
+
+@pytest.mark.e2e
+def test_chart_drawings_merge_between_tabs(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 330, "y": 180})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    second = page.context.new_page()
+    try:
+        second.set_viewport_size({"width": 1440, "height": 900})
+        second.goto(f"{BASE_URL}/chart.html?code=sh000001")
+        second.wait_for_function(
+            "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+            "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+        )
+        second.locator('[data-drawing-tool="horizontal-line"]').click()
+        second.locator("#chart-host").click(position={"x": 420, "y": 230})
+        second.wait_for_function(
+            "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+        )
+        page.wait_for_function(
+            "() => document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '2'"
+        )
+
+        page.locator('[data-drawing-tool="horizontal-line"]').click()
+        page.locator("#chart-host").click(position={"x": 520, "y": 280})
+        page.wait_for_function(
+            "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 3"
+        )
+        second.wait_for_function(
+            "() => document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '3'"
+        )
+    finally:
+        second.close()
+
+
+@pytest.mark.e2e
+def test_chart_clear_all_cancels_draft_and_removes_other_tab_records(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    page.locator('[data-drawing-tool="text"]').click()
+    page.locator("#chart-host").click(position={"x": 375, "y": 300})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    editor.fill("UNSAVED")
+
+    second = page.context.new_page()
+    try:
+        second.set_viewport_size({"width": 1440, "height": 900})
+        second.goto(f"{BASE_URL}/chart.html?code=sh000001")
+        second.wait_for_function(
+            "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+        )
+        second.locator('[data-drawing-tool="horizontal-line"]').click()
+        second.locator("#chart-host").click(position={"x": 420, "y": 230})
+        second.wait_for_function(storage_count + " === 1")
+        expect(editor).to_be_visible()
+
+        page.on("dialog", lambda dialog: dialog.accept())
+        page.locator("[data-drawing-clear]").click()
+        expect(editor).to_be_hidden()
+        page.wait_for_function(storage_count + " === 0")
+    finally:
+        second.close()
+
+    page.reload()
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.wait_for_function(storage_count + " === 0")
+
+
+@pytest.mark.e2e
+def test_chart_drawings_survive_back_navigation(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 350, "y": 190})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    page.goto(f"{BASE_URL}/index.html")
+    page.go_back(wait_until="domcontentloaded")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+    )
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("全部隐藏")
+    expect(page.locator("#drawing-toolbar")).to_be_visible()
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 500, "y": 280})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+    )
+
+
+@pytest.mark.e2e
+def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    text_tool = page.locator('[data-drawing-tool="text"]')
+    host = page.locator("#chart-host")
+    editor = page.locator(".chart-drawing-text-editor")
+    undo = page.locator("[data-drawing-undo]")
+
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    host.click(position={"x": 350, "y": 190})
+    page.wait_for_function(storage_count + " === 1")
+    text_tool.click()
+    host.click(position={"x": 375, "y": 300})
+    expect(editor).to_be_visible()
+    editor.press_sequentially("ab")
+    expect(editor).to_have_value("ab")
+    editor.press("Control+z")
+    expect(editor).to_be_visible()
+    assert editor.input_value() != "ab"
+    page.wait_for_function(storage_count + " === 1")
+    expect(undo).to_be_enabled()
+    undo.click()
+    page.wait_for_function(storage_count + " === 0")
+    expect(editor).to_be_hidden()
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+    text_tool.click()
+    host.click(position={"x": 400, "y": 320})
+    expect(editor).to_be_visible()
+    editor.fill("")
+    editor.press("Enter")
+    page.wait_for_function(storage_count + " === 0")
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+    text_tool.click()
+    host.click(position={"x": 450, "y": 340})
+    expect(editor).to_be_visible()
+    editor.fill("CANCEL-ME")
+    editor.press("Escape")
+    page.wait_for_function(storage_count + " === 0")
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+    text_tool.click()
+    host.click(position={"x": 500, "y": 360})
+    expect(editor).to_be_visible()
+    editor.fill("SAVE-ME")
+    editor.press("Enter")
+    page.wait_for_function(
+        storage_count + " === 1 && "
+        "JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items[0].drawing.text === 'SAVE-ME'"
+    )
+    expect(undo).to_be_enabled()
+    undo.click()
+    page.wait_for_function(storage_count + " === 0")
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+
+@pytest.mark.e2e
+def test_chart_undo_with_empty_history_preserves_open_note_draft(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    page.wait_for_function(storage_count + " === 0")
+    undo = page.locator("[data-drawing-undo]")
+    page.locator('[data-drawing-tool="text"]').click()
+    host = page.locator("#chart-host")
+    host.click(position={"x": 375, "y": 300})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    editor.fill("DRAFT")
+    expect(undo).to_be_disabled()
+
+    host.focus()
+    page.keyboard.press("Control+z")
+    expect(editor).to_be_visible()
+    expect(editor).to_have_value("DRAFT")
+    page.wait_for_function(storage_count + " === 0")
+
+
+@pytest.mark.e2e
+def test_chart_note_escape_does_not_exit_fullscreen(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    fullscreen = page.locator("#chart-fullscreen")
+    fullscreen.click()
+    expect(fullscreen).to_have_attribute("aria-pressed", "true")
+    page.evaluate(
+        """() => {
+          const textarea = document.createElement("textarea");
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "Escape", bubbles: true, cancelable: true
+          }));
+          textarea.remove();
+        }"""
+    )
+    expect(fullscreen).to_have_attribute("aria-pressed", "true")
+
+    page.locator('[data-drawing-tool="text"]').click()
+    page.locator("#chart-host").click(position={"x": 400, "y": 320})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    page.evaluate(
+        """() => {
+          window.__noteEscapeBubbled = false;
+          document.addEventListener("keydown", event => {
+            if (event.target.matches(".chart-drawing-text-editor") && event.key === "Escape") {
+              window.__noteEscapeBubbled = true;
+            }
+          });
+        }"""
+    )
+    editor.evaluate(
+        """input => input.dispatchEvent(new KeyboardEvent("keydown", {
+          key: "Escape", bubbles: true, cancelable: true, isComposing: true
+        }))"""
+    )
+    expect(editor).to_be_visible()
+    assert page.evaluate("() => window.__noteEscapeBubbled") is False
+
+    editor.evaluate(
+        """input => input.dispatchEvent(new KeyboardEvent("keydown", {
+          key: "Escape", bubbles: true, cancelable: true
+        }))"""
+    )
+    expect(editor).to_be_hidden()
+    expect(fullscreen).to_have_attribute("aria-pressed", "true")
+    assert page.evaluate("() => window.__noteEscapeBubbled") is False
+    fullscreen.evaluate("(button) => button.click()")
+    expect(fullscreen).to_have_attribute("aria-pressed", "false")
+
+
+@pytest.mark.e2e
+def test_chart_undo_keeps_history_drawings_hidden(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 350, "y": 190})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001&asof=2015-06-12")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+    )
+    visibility = page.locator("[data-drawing-visibility]")
+    expect(visibility).to_have_text("显示我的画线")
+    host = page.locator("#chart-host")
+    page.mouse.move(1, 1)
+    hidden_before = host.screenshot()
+
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    host.click(position={"x": 500, "y": 280})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+    )
+    expect(visibility).to_have_text("显示我的画线")
+    page.locator("[data-drawing-undo]").click()
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 1"
+    )
+    expect(visibility).to_have_text("显示我的画线")
+    page.mouse.move(1, 1)
+    hidden_after = host.screenshot()
+    assert drawing_pixel_diff(page, hidden_before, hidden_after)["changed"] < 50
+
+
+@pytest.mark.e2e
+def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    expect(page.locator("#asof-tag")).to_have_text("历史截止日 2025-05-23 · 封存回放")
+    assert (page.locator("#chart-page").get_attribute("data-last-bar-date") or "") <= "2025-05-23"
+    assert page.locator("#evidence-state").inner_text().strip()
+    visibility = page.locator("[data-drawing-visibility]")
+    expect(visibility).to_have_text("显示我的画线")
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 460, "y": 240})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh600519') || '{\"items\":[]}').items.length === 1"
+    )
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("显示我的画线")
+    expect(page.locator("[data-drawing-history]")).to_be_hidden()
+    visibility.click()
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("全部隐藏")
+    expect(page.locator("[data-drawing-history]")).to_contain_text(
+        "晚于当前截止日 2025-05-23"
+    )
+
+
+@pytest.mark.e2e
+def test_chart_drawing_rebinds_after_close_only_series_switch(page: Page) -> None:
+    close_only = False
+
+    def serve_price_data(route) -> None:
+        response = route.fetch()
+        payload = response.json()
+        if close_only:
+            for field in ("open", "high", "low"):
+                payload["price_history"].pop(field, None)
+        route.fulfill(response=response, body=json.dumps(payload))
+
+    def instrument_chart(route) -> None:
+        response = route.fetch()
+        body = response.text() + (
+            '\n;const originalMount=LPPLChart.mount;LPPLChart.mount=function(...args){'
+            'window.__qaChart=originalMount(...args);'
+            'window.__qaInitialPriceSeries=window.__qaChart.drawingTarget().series;'
+            'window.__qaPriceSeriesEvents=[];'
+            'window.__qaChart.on("priceSeries",series=>window.__qaPriceSeriesEvents.push(series));'
+            'return window.__qaChart;};'
+        )
+        route.fulfill(response=response, body=body)
+
+    page.route("**/lab/mock/data/sh000001_latest.json", serve_price_data)
+    page.route("**/app/lppl-chart.js", instrument_chart)
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 400, "y": 200})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    close_only = True
+    page.reload()
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+        "document.querySelector('#chart-page')?.dataset.priceMode === 'close'"
+    )
+    expect(page.locator("#price-mode-note")).to_contain_text(
+        "真实收盘线，不补造 K 线"
+    )
+    assert page.evaluate(
+        """() => ({
+          switched: window.__qaInitialPriceSeries !== window.__qaChart.drawingTarget().series,
+          emitted: window.__qaPriceSeriesEvents.length > 0,
+          eventUsesVisibleSeries: window.__qaPriceSeriesEvents.at(-1) === window.__qaChart.drawingTarget().series,
+          importedDrawing: document.querySelector('#drawing-toolbar').dataset.drawingCount === '1',
+        })"""
+    ) == {
+        "switched": True,
+        "emitted": True,
+        "eventUsesVisibleSeries": True,
+        "importedDrawing": True,
+    }
+
+
+@pytest.mark.e2e
+def test_workspace_chart_replay_round_trip_preserves_research_context(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/research-workspace.html")
+    page.wait_for_function(
+        "() => !document.querySelector('#empty-watch')?.hidden || "
+        "document.querySelector('#watch-list')?.children.length > 0"
+    )
+    watch_rows = page.locator("#watch-list [data-row]")
+    maotai = watch_rows.filter(has_text="贵州茅台")
+    if maotai.count() == 0:
+        page.locator('[data-add-sample="stock:600519"]').click()
+        maotai = page.locator('#watch-list [data-row="stock:600519"]')
+    expect(maotai).to_be_visible()
+    maotai.locator("[data-select]").click()
+    expect(page.locator("#detail-heading")).to_have_text("贵州茅台")
+    detail_before = page.locator("#detail-summary").inner_text()
+    list_before = page.locator("#watch-list").inner_text()
+    page.evaluate("window.scrollTo(0, 280)")
+    list_position = page.evaluate("window.scrollY")
+    full_chart = page.locator("#open-full-chart")
+    href = full_chart.get_attribute("href")
+    assert href and "code=600519" in href and "from=research-workspace.html" in href
+    asof_match = re.search(r"(?:\?|&)asof=(\d{4}-\d{2}-\d{2})", href)
+    assert asof_match, href
+    assert asof_match.group(1) in detail_before
+    expect(full_chart).to_contain_text(asof_match.group(1))
+    full_chart.scroll_into_view_if_needed()
+    list_position = page.evaluate("window.scrollY")
+    full_chart.click()
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' || "
+        "document.querySelector('#error-panel')?.hidden === false"
+    )
+    if page.locator("#chart-page").get_attribute("data-loaded") != "true":
+        message = page.locator("#error-message").inner_text()
+        assert f"没有 {asof_match.group(1)} 的封存模型" in message, message
+        page.go_back()
+        expect(page.locator("#detail-heading")).to_have_text("贵州茅台")
+        assert page.locator("#detail-summary").inner_text() == detail_before
+        assert page.locator("#watch-list").inner_text() == list_before
+        assert page.evaluate("window.scrollY") == list_position
+        expect(page.locator("#open-full-chart")).to_have_attribute("href", href)
+        pytest.skip(
+            f"Workspace full-chart link points to {asof_match.group(1)}, but that archive is unavailable; "
+            "workspace has no date selector for the requested 2025-05-23 replay"
+        )
+    assert page.locator("#chart-page").get_attribute("data-code") == "sh600519"
+    archive_date = page.locator("#asof-tag").inner_text()
+    evidence = page.locator("#evidence-state").inner_text()
+    assert archive_date == f"历史截止日 {asof_match.group(1)} · 封存回放"
+    assert (page.locator("#chart-page").get_attribute("data-last-bar-date") or "") <= asof_match.group(1)
+    assert evidence
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 460, "y": 220})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh600519') || '{\"items\":[]}').items.length === 1"
+    )
+    page.go_back()
+    expect(page.locator("#detail-heading")).to_have_text("贵州茅台")
+    assert page.locator("#detail-summary").inner_text() == detail_before
+    assert page.locator("#watch-list").inner_text() == list_before
+    assert page.evaluate("window.scrollY") == list_position
+    expect(page.locator("#open-full-chart")).to_have_attribute("href", href)
 
 
 @pytest.mark.e2e
