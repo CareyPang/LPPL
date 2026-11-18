@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import os
+import re
 import shutil
 import tempfile
 from collections import defaultdict
@@ -19,7 +20,6 @@ REPORTS = {
     "buy": "RPT_BILLBOARD_DAILYDETAILSBUY",
     "sell": "RPT_BILLBOARD_DAILYDETAILSSELL",
 }
-MULTI_DAY_LABELS = ("连续三个交易日", "连续30个交易日")
 NOTE = (
     "金额单位为人民币元。席位标签依据公开报道，不等于实际账户身份；"
     "仅描述当日盘后榜单，不构成建议。"
@@ -76,7 +76,11 @@ def _summary_amount(row: dict, side: str) -> float:
 
 
 def _list_type(explanation: str) -> str:
-    return "multi" if any(label in explanation for label in MULTI_DAY_LABELS) else "single"
+    return (
+        "multi"
+        if re.search(r"连续\s*([0-9]+|[一二三四五六七八九十]+)\s*个交易日", explanation)
+        else "single"
+    )
 
 
 def _seat_kind(name: str, code: str) -> str:

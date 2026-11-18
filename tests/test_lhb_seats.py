@@ -29,6 +29,11 @@ def _detail_row(trade_id, code, name, dept_code, seat, buy, sell, explanation):
     }
 
 
+@pytest.mark.parametrize("explanation", ["连续3个交易日", "连续三个交易日"])
+def test_list_type_recognizes_arabic_and_chinese_multi_day_labels(explanation):
+    assert lhb_seats._list_type(explanation) == "multi"
+
+
 def test_aggregate_merges_side_tables_deduplicates_and_classifies_seats():
     multi = "连续三个交易日内，涨幅偏离值累计达到20%"
     single = "日涨幅偏离值达到7%"
@@ -200,6 +205,35 @@ def test_aggregate_counts_unique_stock_across_single_and_multi_lists():
     assert result["totals"]["n_stocks"] == 1
     assert result["totals"]["n_stocks_single"] == 1
     assert result["totals"]["n_stocks_multi"] == 1
+
+
+def test_aggregate_keeps_single_and_multi_disclosures_for_920157():
+    single = "日涨幅偏离值达到7%"
+    multi = "连续3个交易日内，涨幅偏离值累计达到20%"
+    summary = [
+        _summary_row("920157", "新锦动力", "single-1", single, 100, 20),
+        _summary_row("920157", "新锦动力", "multi-1", multi, 200, 30),
+    ]
+    single_row = _detail_row("single-1", "920157", "新锦动力", "dept-a", "单日榜席位", 100, 20, single)
+    multi_row = _detail_row("multi-1", "920157", "新锦动力", "dept-b", "多日榜席位", 200, 30, multi)
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-13",
+        summary,
+        [single_row, multi_row],
+        [single_row.copy(), multi_row.copy()],
+    )
+
+    trades = {
+        (trade["list"], trade["amount"])
+        for seat in result["seats"]
+        for trade in seat["trades"]
+    }
+    assert result["totals"]["n_stocks"] == 1
+    assert result["totals"]["n_stocks_single"] == 1
+    assert result["totals"]["n_stocks_multi"] == 1
+    assert ("single", 100) in trades
+    assert ("multi", 200) in trades
 
 
 def test_empty_summary_is_a_confirmed_no_board_result():
