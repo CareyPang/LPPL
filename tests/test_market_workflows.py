@@ -35,9 +35,9 @@ def test_market_daily_uses_off_hour_schedules():
     triggers = workflow.get("on", workflow.get(True, {}))
 
     assert triggers["schedule"] == [
-        {"cron": "17 10 * * 1-5"},
-        {"cron": "47 12 * * 1-5"},
-        {"cron": "23 15 * * 1-5"},
+        {"cron": "45 7 * * 1-5"},
+        {"cron": "30 8 * * 1-5"},
+        {"cron": "0 11 * * 1-5"},
     ]
 
 
@@ -252,8 +252,8 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     )
 
     assert triggers["schedule"] == [
-        {"cron": "17 10 * * 1-5"},
-        {"cron": "47 13 * * 1-5"},
+        {"cron": "45 7 * * 1-5"},
+        {"cron": "0 11 * * 1-5"},
     ]
     assert triggers["workflow_dispatch"] is None
     assert 'asof="$(python -c \'from research.data.trading_date import latest_closed_trading_day; print(latest_closed_trading_day())\')"' in plan_step["run"]

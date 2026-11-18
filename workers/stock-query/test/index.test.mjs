@@ -1272,10 +1272,12 @@ function beijingTime(date, time) {
 
 test('dispatchesForSlot maps every configured Beijing slot', () => {
   const cases = [
-    ['2026-11-16', '18:15', ['market_daily', 'index_daily']],
-    ['2026-11-17', '18:30', ['dip_env', 'forward_log_seal']],
-    ['2026-11-18', '20:45', ['market_daily']],
-    ['2026-11-19', '21:45', ['index_daily']],
+    ['2026-11-16', '15:45', ['market_daily', 'index_daily']],
+    ['2026-11-17', '17:00', ['dip_env', 'forward_log_seal']],
+    ['2026-11-18', '16:30', ['market_daily']],
+    ['2026-11-19', '16:45', ['market_daily']],
+    ['2026-11-20', '17:30', ['market_daily']],
+    ['2026-11-23', '19:00', ['market_daily', 'index_daily']],
     ['2026-11-20', '23:15', ['nt_etf_daily']],
     ['2026-11-18', '06:30', ['macro_daily', 'growth_daily', 'us_nightly']],
     ['2026-11-21', '09:15', ['nt_etf_daily']],
@@ -1286,12 +1288,12 @@ test('dispatchesForSlot maps every configured Beijing slot', () => {
 });
 
 test('dispatchesForSlot floors to a quarter hour and respects Beijing weekday boundaries', () => {
-  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-16', '18:16')), [
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-16', '15:46')), [
     'market_daily',
     'index_daily',
   ]);
   assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-20', '23:15')), ['nt_etf_daily']);
-  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-21', '18:15')), []);
+  assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-21', '15:45')), []);
   assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-21', '06:30')), [
     'macro_daily',
     'growth_daily',
@@ -1299,6 +1301,9 @@ test('dispatchesForSlot floors to a quarter hour and respects Beijing weekday bo
   ]);
   assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-23', '06:30')), []);
   assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-16', '18:00')), []);
+  for (const time of ['16:00', '18:15', '18:30', '20:45', '21:45']) {
+    assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-18', time)), []);
+  }
   assert.deepEqual(dispatchesForSlot(NaN), []);
 });
 
@@ -1310,7 +1315,7 @@ test('scheduled dispatches mapped workflows with the Beijing slot payload', asyn
     return new Response(null, { status: 204 });
   } }, async () => {
     await worker.scheduled(
-      { scheduledTime: beijingTime('2026-11-16', '18:15') },
+      { scheduledTime: beijingTime('2026-11-16', '15:45') },
       { GH_TOKEN: TOKEN, REPO: 'example/daily' },
       { waitUntil: promise => waitUntilCalls.push(promise) },
     );
@@ -1325,11 +1330,11 @@ test('scheduled dispatches mapped workflows with the Beijing slot payload', asyn
   assert.deepEqual(requests.map(({ body }) => body), [
     {
       event_type: 'market_daily',
-      client_payload: { source: 'worker_cron', slot: '2026-11-16 18:15 Asia/Shanghai' },
+      client_payload: { source: 'worker_cron', slot: '2026-11-16 15:45 Asia/Shanghai' },
     },
     {
       event_type: 'index_daily',
-      client_payload: { source: 'worker_cron', slot: '2026-11-16 18:15 Asia/Shanghai' },
+      client_payload: { source: 'worker_cron', slot: '2026-11-16 15:45 Asia/Shanghai' },
     },
   ]);
   for (const { init } of requests) {
@@ -1351,7 +1356,7 @@ test('scheduled logs non-204 statuses without throwing or retrying', async () =>
     } }, async () => {
       const waitUntilCalls = [];
       await worker.scheduled(
-        { scheduledTime: beijingTime('2026-11-16', '18:15') },
+        { scheduledTime: beijingTime('2026-11-16', '15:45') },
         { GH_TOKEN: TOKEN },
         { waitUntil: promise => waitUntilCalls.push(promise) },
       );
@@ -1379,7 +1384,7 @@ test('scheduled logs and absorbs thrown dispatch errors', async () => {
     } }, async () => {
       const waitUntilCalls = [];
       await worker.scheduled(
-        { scheduledTime: beijingTime('2026-11-16', '18:15') },
+        { scheduledTime: beijingTime('2026-11-16', '15:45') },
         { GH_TOKEN: TOKEN },
         { waitUntil: promise => waitUntilCalls.push(promise) },
       );
@@ -1404,7 +1409,7 @@ test('scheduled reports a missing GitHub token without dispatching', async () =>
     await withUpstream({ fetch: async () => assert.fail('no upstream expected') }, async () => {
       let waitUntilCalled = false;
       await worker.scheduled(
-        { scheduledTime: beijingTime('2026-11-16', '18:15') },
+        { scheduledTime: beijingTime('2026-11-16', '15:45') },
         {},
         { waitUntil: () => { waitUntilCalled = true; } },
       );

@@ -52,6 +52,22 @@ def test_monday_1600_uses_mondays_closed_bar(monkeypatch):
     assert cutoffs == [pd.Timestamp("2026-11-16")]
 
 
+def test_monday_1545_uses_mondays_closed_bar(monkeypatch):
+    cutoffs = []
+    monkeypatch.setattr(
+        stock,
+        "_reference_calendar",
+        lambda cutoff: cutoffs.append(cutoff) or pd.DatetimeIndex(["2026-11-16"]),
+    )
+
+    result = trading_date.latest_closed_trading_day(
+        pd.Timestamp("2026-11-16 15:45", tz="Asia/Shanghai")
+    )
+
+    assert result == "2026-11-16"
+    assert cutoffs == [pd.Timestamp("2026-11-16")]
+
+
 def test_holiday_gap_uses_calendar_instead_of_inventing_cutoff_date(monkeypatch):
     cutoffs = []
     monkeypatch.setattr(
