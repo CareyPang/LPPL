@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const ScaleBar = require('../app/scale-bar.js');
+const RuleLabels = require('../app/rule-labels.js');
 
 test('classifies scales as fit, no-window, or no-evidence', () => {
   const states = ScaleBar.classify(
@@ -19,6 +20,26 @@ test('classifies scales as fit, no-window, or no-evidence', () => {
   assert.deepEqual(states.find(state => state.scale === '2-4w'), {
     scale: '2-4w', selectable: false, hasWindow: false, confidence: null, status: '无证据',
   });
+});
+
+test('uses shared empty reasons for computed scale statuses', () => {
+  const top = {
+    indicators: {
+      '6-12m': { signal_status: 'signal' },
+      '12-24m': { signal_status: 'no_qualified_fit' },
+    },
+    lppls_confidence: { '6-12m': 0.25, '12-24m': 0 },
+  };
+  const states = ScaleBar.classify(
+    { '6-12m': 'dev', '12-24m': 'dev' },
+    top.lppls_confidence,
+    [],
+    top,
+    () => [],
+    RuleLabels,
+  );
+  assert.equal(states.find(state => state.scale === '6-12m').status, '有合格拟合，但没有形成聚类区间');
+  assert.equal(states.find(state => state.scale === '12-24m').status, '已计算，没有合格拟合（不代表风险较低）');
 });
 
 test('parses valid scale hashes and falls back on invalid or disabled scales', () => {

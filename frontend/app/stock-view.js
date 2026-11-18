@@ -200,10 +200,12 @@
       const container = $('stock-scales');
       if (!container) return;
       const scaleNote = $('stock-scale-note');
+      const ruleCaption = $('stock-rule-caption');
       const calendarNote = $('stock-calendar-note');
       if (historyMode) {
         container.hidden = true;
         if (scaleNote) scaleNote.hidden = true;
+        if (ruleCaption) ruleCaption.hidden = true;
         if (calendarNote) calendarNote.hidden = true;
         return;
       }
@@ -211,6 +213,7 @@
         container.hidden = true;
         container.replaceChildren();
         if (scaleNote) scaleNote.hidden = true;
+        if (ruleCaption) ruleCaption.hidden = true;
         if (calendarNote) calendarNote.hidden = true;
         return;
       }
@@ -220,10 +223,16 @@
         ? selectedScale : enabled[0]?.scale;
       const buttons = scenario.states.map(state => {
         const window = scenario.windows.find(item => item.scale === state.scale);
-        const status = !state.selectable ? '无证据'
-          : state.hasWindow && window?.q20_date && window?.q80_date
-            ? shortDate(window.q20_date) + '–' + shortDate(window.q80_date)
-            : '无合格拟合';
+        const band = scenario.bands.find(item => item.scale === state.scale);
+        const interval = window?.q20_date && window?.q80_date ? window : band;
+        const reason = root.RuleLabels?.emptyReason(
+          scenario.current.top || {}, state.scale, state.hasWindow, state.selectable,
+        );
+        const status = !state.selectable
+          ? root.RuleLabels?.reasonText(reason) || '无证据'
+          : interval
+            ? shortDate(interval.q20_date) + '–' + shortDate(interval.q80_date)
+            : root.RuleLabels?.reasonText(reason) || state.status;
         const button = doc.createElement('button');
         button.type = 'button';
         button.className = 'stock-scale-button';
@@ -269,9 +278,17 @@
       }
       if (scaleNote) {
         scaleNote.hidden = false;
-        scaleNote.textContent = scenario.states.find(state => state.scale === selectedScale)?.hasWindow
+        const selected = scenario.states.find(state => state.scale === selectedScale);
+        const reason = root.RuleLabels?.emptyReason(
+          scenario.current.top || {}, selectedScale, selected?.hasWindow, selected?.selectable,
+        );
+        scaleNote.textContent = selected?.hasWindow && selected.selectable
           ? '选中尺度显示主簇和次级簇时间区间；占比不是概率，区间未校准，不是顶部日期。'
-          : '该尺度本次无合格拟合；这不代表风险较低。';
+          : root.RuleLabels?.reasonText(reason) || '无证据';
+      }
+      if (ruleCaption) {
+        ruleCaption.hidden = false;
+        ruleCaption.textContent = root.RuleLabels?.renderCaption(['box', 'standard']) || '';
       }
       if (calendarNote) {
         calendarNote.hidden = !scenario.missingCalendar;
@@ -383,7 +400,10 @@
       const top = current.top || {};
       const confidence = top.lppls_confidence || {};
       const windows = Array.isArray(top.scale_windows) ? top.scale_windows : [];
-      const states = root.ScaleBar.classify(confidence.scale_evidence, confidence, windows);
+      const states = root.ScaleBar.classify(
+        confidence.scale_evidence, confidence, windows, top,
+        (source, scale) => root.CPTopClusters?.forScale(source, scale), root.RuleLabels,
+      );
       if (!scaleInitialized) {
         const requested = new URLSearchParams(root.location.search).get('scale');
         selectedScale = root.ScaleBar.parseHash(
@@ -418,9 +438,13 @@
         return;
       }
       const band = scenario?.bands.find(item => item.scale === selectedScale);
+      const selected = scenario?.states.find(state => state.scale === selectedScale);
+      const reason = scenario && root.RuleLabels?.emptyReason(
+        scenario.current.top || {}, selectedScale, selected?.hasWindow, selected?.selectable,
+      );
       const summary = band
         ? '情景区间：' + SCALE_NAMES[band.scale] + ' ' + band.q20_date + ' 至 ' + band.q80_date + '（未校准）'
-        : '本次无合格情景区间';
+        : root.RuleLabels?.reasonText(reason) || '这个尺度尚未计算';
       canvas.setAttribute('aria-label',
         '未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量；' + summary);
     }
