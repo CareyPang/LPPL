@@ -506,8 +506,8 @@
     });
 
     function undo() {
-      if (editing) cancelTextEditor();
       if (!manager || !undoStack.length) return;
+      if (editing) cancelTextEditor();
       var previous = undoStack.pop();
       var restored;
       try { restored = unwrapStorage({ v: 1, items: JSON.parse(previous) }); } catch (_) { return; }

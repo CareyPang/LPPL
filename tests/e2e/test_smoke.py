@@ -949,6 +949,34 @@ def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_undo_with_empty_history_preserves_open_note_draft(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    page.wait_for_function(storage_count + " === 0")
+    undo = page.locator("[data-drawing-undo]")
+    page.locator('[data-drawing-tool="text"]').click()
+    host = page.locator("#chart-host")
+    host.click(position={"x": 375, "y": 300})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    editor.fill("DRAFT")
+    expect(undo).to_be_disabled()
+
+    host.focus()
+    page.keyboard.press("Control+z")
+    expect(editor).to_be_visible()
+    expect(editor).to_have_value("DRAFT")
+    page.wait_for_function(storage_count + " === 0")
+
+
+@pytest.mark.e2e
 def test_chart_note_escape_does_not_exit_fullscreen(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh000001")
