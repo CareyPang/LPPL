@@ -1,8 +1,8 @@
 {
  "symbol": "US_NFLX",
  "name": "奈飞",
- "asof": "2026-11-16",
- "data_version": "us_NFLX_20261116_4bf7f499a3e70f36",
+ "asof": "2026-11-17",
+ "data_version": "us_NFLX_20261117_dde61059f0759f6e",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-05-19",
-   "duration_days": 377,
+   "start": "2025-04-14",
+   "duration_days": 402,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.611,
-   "size_realized": -0.49,
-   "tc": "2027-03-01",
+   "size_model": -0.4,
+   "size_realized": -0.359,
+   "tc": "2026-12-02",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,7 +60,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-03-06",
+    "best_t1": "2026-03-09",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -68,8 +68,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.167,
-     "any": 0.167,
+     "tc_hi": 0.0,
+     "any": 0.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -104,7 +104,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-05-19",
+    "best_t1": "2025-04-14",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -112,8 +112,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.5,
-     "any": 0.5,
+     "tc_hi": 0.4,
+     "any": 0.4,
      "tol": 0.01
     },
     "null_fpr": {
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-16",
+   "table_asof": "2026-11-17",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,8 +716,8 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.49,
-    "duration_days": 377,
+    "size_realized": -0.359,
+    "duration_days": 402,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
    },
@@ -760,7 +760,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-10",
    "2023-11-13",
    "2023-11-14",
    "2023-11-15",
@@ -1515,10 +1514,10 @@
    "2026-11-11",
    "2026-11-12",
    "2026-11-13",
-   "2026-11-16"
+   "2026-11-16",
+   "2026-11-17"
   ],
   "open": [
-   43.748,
    44.725,
    44.878,
    45.281,
@@ -2273,10 +2272,10 @@
    62.84,
    64.27,
    62.88,
-   62.88
+   62.88,
+   60.56
   ],
   "high": [
-   44.748,
    44.843,
    45.407,
    46.275,
@@ -3031,10 +3030,10 @@
    64.56,
    64.3,
    63.95,
-   62.98
+   62.98,
+   61.01
   ],
   "low": [
-   43.551,
    44.26,
    44.564,
    45.245,
@@ -3789,10 +3788,10 @@
    62.75,
    62.55,
    62.12,
-   60.48
+   60.48,
+   59.41
   ],
   "close": [
-   44.724,
    44.462,
    44.865,
    46.194,
@@ -4547,10 +4546,10 @@
    64.54,
    62.69,
    62.15,
-   60.75
+   60.75,
+   59.68
   ],
   "volume": [
-   4442865,
    2895747,
    4060521,
    5035129,
@@ -5305,7 +5304,8 @@
    29563362,
    31557807,
    36667880,
-   36078335
+   36078335,
+   35092626
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5359,7 +5359,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4313,
+  "n_bars": 4314,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5389,9 +5389,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "73c70ba2bc33f486ccc4dc7861258df012ae80754c85aac7045a45dd393a9962",
+ "fit_input_hash": "ce89620e5531098bc1edac182b9e0bf34a29e312a3d091b710e9db84a91121e7",
  "history_input_hashes": {
-  "2023-11-13": "c53675872f00e38f2c72823f7aa2b5c0efe000e258fa13f978c489d4e8f02463",
   "2023-11-14": "2d1f069acc41927236aa7191d48bfaf79632365ad3f7a5601fa968ef56af7ed1",
   "2023-11-15": "954f3c5a6adfe729ff9f6f1bddf589e5ab521e97db81a8a016e43885bb3bd37d",
   "2023-11-16": "7fbc0958ed4ee022a3106882a2202cad3a48bc0a3369d6e9b22ee14d99b75e7c",
@@ -6145,10 +6144,11 @@
   "2026-11-11": "b524dbf05ced966f25fbb64ad6ae0c524e84e8b831ae2621852108c24d0f8ef9",
   "2026-11-12": "e2c4476e8bb7cba4468419fe28d3a434cf83b2cb0b7f5c04beb8a7f3fe1184bc",
   "2026-11-13": "17706f35bc3cc5f36d8f8c414441bf3ce750ef36ca0b8ff931e2a1f47b51f36e",
-  "2026-11-16": "73c70ba2bc33f486ccc4dc7861258df012ae80754c85aac7045a45dd393a9962"
+  "2026-11-16": "73c70ba2bc33f486ccc4dc7861258df012ae80754c85aac7045a45dd393a9962",
+  "2026-11-17": "ce89620e5531098bc1edac182b9e0bf34a29e312a3d091b710e9db84a91121e7"
  },
  "code": "US_NFLX",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T22:53:26.233987+00:00"
+ "generated_at": "2026-11-18T04:21:17.540051+00:00"
 }
