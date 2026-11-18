@@ -1014,6 +1014,38 @@ def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_deleting_text_drawing_closes_editor_without_saving_it(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    editor = page.locator(".chart-drawing-text-editor")
+    page.locator('[data-drawing-tool="text"]').click()
+    page.locator("#chart-host").click(position={"x": 450, "y": 340})
+    expect(editor).to_be_visible()
+    editor.fill("DELETE-ME")
+    delete = page.locator("[data-drawing-delete]")
+    expect(delete).to_be_enabled()
+    delete.click()
+    expect(editor).to_be_hidden()
+    page.wait_for_function(storage_count + " === 0")
+    page.locator(".chart-drawing-text-editor").evaluate(
+        """input => input.dispatchEvent(new KeyboardEvent("keydown", {
+          key: "Enter", bubbles: true, cancelable: true
+        }))"""
+    )
+    page.wait_for_function(
+        storage_count + " === 0 && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '0'"
+    )
+
+
+@pytest.mark.e2e
 def test_chart_undo_with_empty_history_preserves_open_note_draft(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh000001")

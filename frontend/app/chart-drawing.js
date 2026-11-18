@@ -89,18 +89,51 @@
     return next.length > cap ? next.slice(next.length - cap) : next;
   }
 
-  function mergeRecords(current, stored, deletedIds) {
+  function mergeRecords(current, stored, deletedIds, changedIds) {
     var merged = new Map();
     var deleted = deletedIds instanceof Set ? deletedIds : new Set(deletedIds || []);
-    (Array.isArray(current) ? current : []).forEach(function (item) {
+    var changed = changedIds instanceof Set ? changedIds : new Set(changedIds || []);
+    var local = new Map();
+    (Array.isArray(stored) ? stored : []).forEach(function (item) {
       var id = item && item.drawing && item.drawing.id;
       if (id) merged.set(id, item);
     });
-    (Array.isArray(stored) ? stored : []).forEach(function (item) {
+    (Array.isArray(current) ? current : []).forEach(function (item) {
       var id = item && item.drawing && item.drawing.id;
-      if (id && !merged.has(id) && !deleted.has(id)) merged.set(id, item);
+      if (id) local.set(id, item);
     });
+    changed.forEach(function (id) {
+      var item = local.get(id);
+      if (item && !deleted.has(id)) merged.set(id, item);
+    });
+    deleted.forEach(function (id) { merged.delete(id); });
     return Array.from(merged.values());
+  }
+
+  function closeEditorIfDeleted(editing, selectedIds, pendingIds, close) {
+    var id = editing && editing.drawing && editing.drawing.id;
+    var selected = selectedIds instanceof Set ? selectedIds : new Set(selectedIds || []);
+    if (!id || !selected.has(id)) return false;
+    if (pendingIds) pendingIds.delete(id);
+    if (typeof close === 'function') close();
+    return true;
+  }
+
+  function sameRecords(left, right) {
+    var leftById = new Map();
+    var rightById = new Map();
+    (Array.isArray(left) ? left : []).forEach(function (item) {
+      var id = item && item.drawing && item.drawing.id;
+      if (id) leftById.set(id, item);
+    });
+    (Array.isArray(right) ? right : []).forEach(function (item) {
+      var id = item && item.drawing && item.drawing.id;
+      if (id) rightById.set(id, item);
+    });
+    if (leftById.size !== rightById.size) return false;
+    return Array.from(leftById.entries()).every(function (entry) {
+      return JSON.stringify(entry[1]) === JSON.stringify(rightById.get(entry[0]));
+    });
   }
 
   function isImeCompositionKey(event) {
@@ -186,6 +219,7 @@
     var offSeries = null;
     var editing = null;
     var pendingTextIds = new Set();
+    var changedDrawingIds = new Set();
     var deletedDrawingIds = new Set();
     var storageSyncPending = false;
     var pointerActive = false;
@@ -258,9 +292,13 @@
     function writeRecords(items) {
       try {
         if (!root.localStorage || !key) throw new Error('storage unavailable');
-        var merged = wrapStorage(mergeRecords(items, readRecords(key), deletedDrawingIds)).items;
+        var current = wrapStorage(items).items;
+        var merged = wrapStorage(mergeRecords(
+          items, readRecords(key), deletedDrawingIds, changedDrawingIds,
+        )).items;
         root.localStorage.setItem(key, JSON.stringify(wrapStorage(merged)));
-        if (merged.length > items.length) storageSyncPending = true;
+        if (!sameRecords(merged, current)) storageSyncPending = true;
+        changedDrawingIds.clear();
         deletedDrawingIds.clear();
         setStatus(merged.length ? '已保存 ' + merged.length + ' 条画线' : '画线已清空并保存');
         return true;
@@ -296,13 +334,31 @@
 
     function snapshot() { return JSON.stringify(records); }
 
+    function trackRecordChanges(previous, next) {
+      var previousById = new Map();
+      var nextById = new Map();
+      previous.forEach(function (item) { previousById.set(item.drawing.id, item); });
+      next.forEach(function (item) { nextById.set(item.drawing.id, item); });
+      previousById.forEach(function (item, id) {
+        if (!nextById.has(id)) {
+          deletedDrawingIds.add(id);
+          changedDrawingIds.delete(id);
+        }
+      });
+      nextById.forEach(function (item, id) {
+        var prior = previousById.get(id);
+        if (!prior || JSON.stringify(prior) !== JSON.stringify(item)) {
+          changedDrawingIds.add(id);
+          deletedDrawingIds.delete(id);
+        }
+      });
+    }
+
     function commitMutation() {
       var previousRecords = records;
-      records = managerDrawings();
-      var currentIds = new Set(records.map(function (item) { return item.drawing.id; }));
-      previousRecords.forEach(function (item) {
-        if (!currentIds.has(item.drawing.id)) deletedDrawingIds.add(item.drawing.id);
-      });
+      var nextRecords = managerDrawings();
+      trackRecordChanges(previousRecords, nextRecords);
+      records = nextRecords;
       var next = snapshot();
       if (next !== committedSnapshot) {
         undoStack = pushUndo(undoStack, committedSnapshot, 50);
@@ -314,6 +370,8 @@
 
     function importRecords(items) {
       records = wrapStorage(items).items;
+      changedDrawingIds.clear();
+      deletedDrawingIds.clear();
       if (manager) {
         manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
         manager.setDrawingsVisible(visible);
@@ -402,7 +460,12 @@
 
     function saveTextEditor() {
       if (!editing || !manager) return;
-      var drawing = manager.get(editing.drawing.id) || editing.drawing;
+      var drawing = manager.get(editing.drawing.id);
+      if (!drawing) {
+        pendingTextIds.delete(editing.drawing.id);
+        closeTextEditor();
+        return;
+      }
       var text = textInput.value;
       var pending = pendingTextIds.has(drawing.id);
       if (!hasTextContent(text)) {
@@ -425,7 +488,12 @@
 
     function cancelTextEditor() {
       if (!editing || !manager) return;
-      var drawing = manager.get(editing.drawing.id) || editing.drawing;
+      var drawing = manager.get(editing.drawing.id);
+      if (!drawing) {
+        pendingTextIds.delete(editing.drawing.id);
+        closeTextEditor();
+        return;
+      }
       if (pendingTextIds.delete(drawing.id) || !editing.original) manager.remove(drawing.id);
       else manager.update(Object.assign({}, drawing, { text: editing.original }));
       closeTextEditor();
@@ -511,10 +579,7 @@
       var previous = undoStack.pop();
       var restored;
       try { restored = unwrapStorage({ v: 1, items: JSON.parse(previous) }); } catch (_) { return; }
-      var restoredIds = new Set(restored.map(function (item) { return item.drawing.id; }));
-      records.forEach(function (item) {
-        if (!restoredIds.has(item.drawing.id)) deletedDrawingIds.add(item.drawing.id);
-      });
+      trackRecordChanges(records, restored);
       records = restored;
       manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
       manager.setDrawingsVisible(visible);
@@ -526,7 +591,9 @@
 
     function removeSelected() {
       if (!manager) return;
-      manager.selection().slice().forEach(function (id) { manager.remove(id); });
+      var selected = manager.selection().slice();
+      closeEditorIfDeleted(editing, selected, pendingTextIds, closeTextEditor);
+      selected.forEach(function (id) { manager.remove(id); });
       render();
       flushStorageSync();
     }
@@ -579,6 +646,7 @@
         key = nextKey;
         records = readRecords(key);
         undoStack = [];
+        changedDrawingIds.clear();
         deletedDrawingIds.clear();
         storageSyncPending = false;
         temporarilyHidden.clear();
@@ -669,6 +737,7 @@
     lateDrawingDates: lateDrawingDates,
     pushUndo: pushUndo,
     mergeRecords: mergeRecords,
+    closeEditorIfDeleted: closeEditorIfDeleted,
     isImeCompositionKey: isImeCompositionKey,
     hasTextContent: hasTextContent,
     storageKey: function (symbol) {

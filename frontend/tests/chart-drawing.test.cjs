@@ -62,17 +62,129 @@ test('undo snapshots retain only the newest fifty entries', () => {
   assert.equal(Drawing.pushUndo(capped, JSON.stringify(60)).length, 50);
 });
 
-test('stale writes merge unseen storage ids without restoring local deletions', () => {
+test('stale writes apply only locally changed ids over the latest stored records', () => {
   const item = (id, text = id) => ({
     createdAt: '2025-05-22',
     drawing: { id, kind: 'horizontal-line', text },
   });
   const merged = Drawing.mergeRecords(
-    [item('local', 'edited locally')],
+    [item('local', 'stale local copy')],
     [item('local', 'newer in storage'), item('remote'), item('deleted')],
     new Set(['deleted']),
+    new Set(['local']),
   );
-  assert.deepEqual(merged, [item('local', 'edited locally'), item('remote')]);
+  assert.deepEqual(merged, [item('local', 'stale local copy'), item('remote')]);
+  assert.deepEqual(
+    Drawing.mergeRecords(
+      [item('local', 'stale local copy')],
+      [item('local', 'newer in storage'), item('remote')],
+      new Set(),
+      new Set(['remote']),
+    ),
+    [item('local', 'newer in storage'), item('remote')],
+  );
+});
+
+test('another tab deletion is not resurrected by a stale tab adding a drawing', () => {
+  const item = (id) => ({
+    createdAt: '2025-05-22',
+    drawing: { id, kind: 'horizontal-line' },
+  });
+  let storage = JSON.stringify(Drawing.wrapStorage([item('deleted'), item('kept')]));
+  const openTab = () => ({
+    items: Drawing.unwrapStorage(storage),
+    changedIds: new Set(),
+    deletedIds: new Set(),
+  });
+  const saveTab = (tab) => {
+    const latest = Drawing.unwrapStorage(storage);
+    const merged = Drawing.mergeRecords(tab.items, latest, tab.deletedIds, tab.changedIds);
+    storage = JSON.stringify(Drawing.wrapStorage(merged));
+    tab.changedIds.clear();
+    tab.deletedIds.clear();
+  };
+  const tabA = openTab();
+  const tabB = openTab();
+
+  tabB.items = tabB.items.filter((record) => record.drawing.id !== 'deleted');
+  tabB.deletedIds.add('deleted');
+  saveTab(tabB);
+
+  tabA.items.push(item('new-from-a'));
+  tabA.changedIds.add('new-from-a');
+  saveTab(tabA);
+
+  assert.deepEqual(
+    Drawing.unwrapStorage(storage).map((record) => record.drawing.id),
+    ['kept', 'new-from-a'],
+  );
+});
+
+test('another tab modification survives a stale tab saving a new drawing', () => {
+  const item = (id, text = id) => ({
+    createdAt: '2025-05-22',
+    drawing: { id, kind: 'horizontal-line', text },
+  });
+  let storage = JSON.stringify(Drawing.wrapStorage([item('shared', 'original')]));
+  const openTab = () => ({
+    items: Drawing.unwrapStorage(storage),
+    changedIds: new Set(),
+    deletedIds: new Set(),
+  });
+  const saveTab = (tab) => {
+    const latest = Drawing.unwrapStorage(storage);
+    const merged = Drawing.mergeRecords(tab.items, latest, tab.deletedIds, tab.changedIds);
+    storage = JSON.stringify(Drawing.wrapStorage(merged));
+    tab.changedIds.clear();
+    tab.deletedIds.clear();
+  };
+  const tabA = openTab();
+  const tabB = openTab();
+
+  tabB.items = tabB.items.map((record) => item(record.drawing.id, 'updated by b'));
+  tabB.changedIds.add('shared');
+  saveTab(tabB);
+
+  tabA.items.push(item('new-from-a'));
+  tabA.changedIds.add('new-from-a');
+  saveTab(tabA);
+
+  const saved = Drawing.unwrapStorage(storage);
+  assert.equal(saved.find((record) => record.drawing.id === 'shared').drawing.text, 'updated by b');
+  assert.ok(saved.some((record) => record.drawing.id === 'new-from-a'));
+});
+
+test('undoing a local deletion can restore the drawing after saving', () => {
+  const item = { createdAt: '2025-05-22', drawing: { id: 'restored', kind: 'rectangle' } };
+  let storage = JSON.stringify(Drawing.wrapStorage([item]));
+  let latest = Drawing.unwrapStorage(storage);
+
+  let afterDelete = Drawing.mergeRecords([], latest, new Set(['restored']), new Set());
+  storage = JSON.stringify(Drawing.wrapStorage(afterDelete));
+  assert.deepEqual(Drawing.unwrapStorage(storage), []);
+
+  latest = Drawing.unwrapStorage(storage);
+  const afterUndo = Drawing.mergeRecords([item], latest, new Set(), new Set(['restored']));
+  storage = JSON.stringify(Drawing.wrapStorage(afterUndo));
+  assert.deepEqual(Drawing.unwrapStorage(storage), [item]);
+});
+
+test('deleting an actively edited text drawing closes its editor and keeps it deleted', () => {
+  const item = { createdAt: '2025-05-22', drawing: { id: 'text-1', kind: 'text', text: 'note' } };
+  const pendingIds = new Set(['text-1']);
+  let editorOpen = true;
+  const closed = Drawing.closeEditorIfDeleted(
+    { drawing: item.drawing },
+    new Set(['text-1']),
+    pendingIds,
+    () => { editorOpen = false; },
+  );
+  assert.equal(closed, true);
+  assert.equal(editorOpen, false);
+  assert.equal(pendingIds.has('text-1'), false);
+
+  const storageAfterDelete = Drawing.mergeRecords([], [item], new Set(['text-1']), new Set());
+  assert.deepEqual(storageAfterDelete, []);
 });
 
 test('clear-all suppresses every id read from storage', () => {
