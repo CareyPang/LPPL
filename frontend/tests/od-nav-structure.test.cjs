@@ -15,6 +15,7 @@ const backtestViews = fs.readFileSync(path.join(root, 'app/backtest-views.js'), 
 const stock = fs.readFileSync(path.join(root, 'stock.html'), 'utf8');
 const chart = fs.readFileSync(path.join(root, 'chart.html'), 'utf8');
 const watch = fs.readFileSync(path.join(root, 'app/od-watch.js'), 'utf8');
+const workspace = fs.readFileSync(path.join(root, 'research-workspace.html'), 'utf8');
 
 test('main navigation has the five user-task entries and their intended sections', () => {
   const main = nav.match(/var MAIN = \[([\s\S]*?)\n  \];/);
@@ -83,6 +84,18 @@ test('sidebar watchlist reads through the existing watch module', () => {
   assert.match(nav, /watch\.list\(\)\.then\(function \(items\)/);
   assert.match(watch, /function list\(\) \{/);
   assert.match(watch, /window\.OdWatch = \{[\s\S]*?list: list \}/);
+});
+
+test('research workspace uses the shared home navigation and its route is current', () => {
+  assert.match(nav, /\{ t: '我的研究', h: 'research-workspace\.html', page: 'research-workspace\.html' \}/);
+  assert.match(nav, /if \(def\.page === section \|\| def\.page === file\)/);
+  assert.match(nav, /item\.page === section \|\| item\.page === file/);
+  assert.match(nav, /selected = sidebarLinks\.filter\(function \(item\) \{ return item\.page === file; \}\)\[0\];\s*var activeMain = selected \? null : MAIN\.filter\(isMain\)\[0\];/);
+  assert.match(workspace, /<body class="research-workspace-page">/);
+  assert.match(workspace, /<script src="app\/od-nav\.js" data-section="home" data-theme="light"><\/script>/);
+  assert.match(workspace, /<script src="app\/rule-labels\.js"><\/script>\s*<script src="app\/research-workspace-core\.js"><\/script>/);
+  assert.match(workspace, /<title>我的研究 · 临界点<\/title>/);
+  assert.doesNotMatch(workspace, /class="site-header"/);
 });
 
 test('index chart links retain only valid as-of dates and chart layout follows its container', () => {

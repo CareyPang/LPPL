@@ -5,16 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="在个人研究工作台整理自选、比较已发布分析、保存研究笔记，并查看本机记录的结果变化。">
   <meta name="color-scheme" content="light">
-  <title>我的研究 · LPPL</title>
+  <title>我的研究 · 临界点</title>
   <link rel="stylesheet" href="app/research-workspace.css">
 </head>
-<body>
+<body class="research-workspace-page">
+  <script src="app/od-nav.js" data-section="home" data-theme="light"></script>
   <a class="skip-link" href="#workspace">跳至研究清单</a>
-  <header class="site-header">
-    <a class="workspace-brand" href="home.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>研究工作台<small>LPPL RESEARCH</small></span></a>
-    <nav aria-label="主导航"><a href="home.html">首页</a><a href="stock.html" aria-current="page">标的</a><a href="market.html">市场</a><a href="backtest.html">历史检验</a><a href="tools.html">工具</a></nav>
-    <a class="help-link" href="guide.html">使用指南 <span aria-hidden="true">↗</span></a>
-  </header>
   <main id="workspace">
     <div class="page-topline"><span class="eyebrow">PERSONAL WORKSPACE</span><span class="local-label"><span aria-hidden="true">◌</span> 仅保存在此浏览器</span></div>
     <section class="page-heading" aria-labelledby="page-title">
@@ -72,6 +68,7 @@
   <script src="app/lppl-data.js"></script>
   <script src="app/stock-watchlist.js"></script>
   <script src="app/watchlist.js"></script>
+  <script src="app/rule-labels.js"></script>
   <script src="app/research-workspace-core.js"></script>
   <script src="app/research-workspace.js"></script>
 </body>

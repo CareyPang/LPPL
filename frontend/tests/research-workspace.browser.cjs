@@ -77,6 +77,11 @@ const server = http.createServer((req, res) => {
 
     await page.locator('[data-add-sample="index:sh000001"]').click();
     await page.locator('#watch-list .asset-select').first().waitFor();
+    const ruleDisclosure = page.locator('.detail-panel details.record-details').filter({ hasText: '结果口径说明' }).first();
+    await ruleDisclosure.waitFor();
+    await ruleDisclosure.locator('summary').click();
+    assert.match(await ruleDisclosure.locator('.record-caption').innerText(), /占比不是概率/);
+    check('proportion definition is not presented as a probability');
     await page.locator('#open-add').click();
     await page.locator('#add-code').fill('600519');
     await page.locator('#add-form button[type="submit"]').click();

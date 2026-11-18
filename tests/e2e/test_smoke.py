@@ -976,3 +976,37 @@ def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     expect(
         page.locator(".odn-sidebar .odn-side-link").filter(has_text="情绪")
     ).to_have_attribute("aria-current", "location")
+
+
+@pytest.mark.e2e
+def test_research_workspace_shared_navigation_and_mobile_layout(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/research-workspace.html")
+    expect(page.locator("header.odn")).to_be_visible()
+    research_link = page.locator(
+        '.odn-sidebar .odn-side-link[href="research-workspace.html"]'
+    )
+    expect(research_link).to_have_attribute("aria-current", "location")
+    desktop_layout = page.evaluate(
+        """() => ({
+          paddingLeft: parseFloat(getComputedStyle(document.body).paddingLeft),
+          mainLeft: document.querySelector("main").getBoundingClientRect().left,
+          sidebarRight: document.querySelector(".odn-sidebar").getBoundingClientRect().right
+        })"""
+    )
+    assert abs(desktop_layout["paddingLeft"] - desktop_layout["sidebarRight"]) <= 1
+    assert abs(desktop_layout["mainLeft"] - desktop_layout["sidebarRight"]) <= 1
+
+    page.set_viewport_size({"width": 390, "height": 844})
+    entries = page.locator(".odn-main a")
+    expect(entries).to_have_count(5)
+    for entry in entries.all():
+        expect(entry).to_be_visible()
+    bounds = entries.evaluate_all(
+        "(items) => items.map((item) => { const r = item.getBoundingClientRect(); return [r.left, r.right]; })"
+    )
+    assert all(left >= -1 and right <= 391 for left, right in bounds), bounds
+    dimensions = page.evaluate(
+        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions

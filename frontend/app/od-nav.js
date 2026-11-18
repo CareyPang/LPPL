@@ -23,7 +23,8 @@
     { k: 'home', t: '首页', h: 'home.html', sections: ['home'], sub: [
       { t: '指数风险概览', h: 'home.html#index-overview', ids: ['index-overview'] },
       { t: '今日摘要', h: 'home.html#today', ids: ['today'] },
-      { t: '我的自选', h: 'home.html#mine', ids: ['mine'] }
+      { t: '我的自选', h: 'home.html#mine', ids: ['mine'] },
+      { t: '我的研究', h: 'research-workspace.html', page: 'research-workspace.html' }
     ] },
   { k: 'stock', t: '标的', h: 'stock.html', sections: ['stock', 'terminal', 'chart'], sub: [
     { t: '标的目录', h: 'stock.html', page: 'stock' },
@@ -240,7 +241,7 @@
   function addSideLink(parent, def, mainKey, nested) {
     var a = el('a', 'odn-side-link' + (nested ? ' odn-side-nested' : ''), esc(def.t));
     a.href = def.h;
-    if (def.page === section) {
+    if (def.page === section || def.page === file) {
       a.setAttribute('aria-current', 'location');
     }
     parent.appendChild(a);
@@ -776,12 +777,13 @@
     } else if (section === 'nt') {
       selected = sidebarLinks.filter(function (item) { return item.page === 'nt'; })[0];
     } else if (section === 'stock' || section === 'terminal') {
-      selected = sidebarLinks.filter(function (item) { return item.page === section; })[0];
+      selected = sidebarLinks.filter(function (item) { return item.page === section || item.page === file; })[0];
     } else if (section === 'backtest') {
       var view = new URLSearchParams(location.hash.slice(1)).get('view') || 'scenario';
       selected = sidebarLinks.filter(function (item) { return item.key === view; })[0];
     } else {
-      var activeMain = MAIN.filter(isMain)[0];
+      selected = sidebarLinks.filter(function (item) { return item.page === file; })[0];
+      var activeMain = selected ? null : MAIN.filter(isMain)[0];
       if (activeMain) {
         var candidates = sidebarLinks.filter(function (item) {
           return item.mainKey === activeMain.k && item.ids.length;

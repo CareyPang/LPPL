@@ -1,19 +1,23 @@
 /* Local research state and published-result presentation. No requests or model calculations. */
 (function (root, factory) {
   'use strict';
-  const api = factory();
+  const RuleLabels = typeof module === 'object' && module.exports
+    ? require('./rule-labels.js')
+    : root && root.RuleLabels;
+  const api = factory(RuleLabels);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.ResearchWorkspaceCore = api;
-})(typeof window === 'undefined' ? globalThis : window, function () {
+})(typeof window === 'undefined' ? globalThis : window, function (RuleLabels) {
   'use strict';
   const KEY = 'lppl.research-workspace.v1';
   const SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
   const INDEX_CODES = ['sh000001', 'sh000016', 'sh000300', 'sh000905', 'sh000688', 'sz399001', 'sz399006'];
   const WINDOW_EVIDENCE = new Set(['dev', 'cal', 'test', 'cal_fragile', 'research_candidate', 'descriptive']);
   const STATUS = {
-    unavailable: '尚未取得可用分析', not_computed: '尚无已计算尺度',
-    no_qualified_fit: '已计算尺度未形成合格拟合', no_cluster: '尚未形成可显示区间',
-    evidence_hidden: '区间证据尚不支持展示', has_window: '有研究观察区间', expired: '已公布区间早于分析截止日',
+    unavailable: '尚未取得可用分析', not_computed: RuleLabels.EMPTY_REASONS.not_computed,
+    no_qualified_fit: RuleLabels.EMPTY_REASONS.no_fit, no_cluster: RuleLabels.EMPTY_REASONS.no_cluster,
+    evidence_hidden: RuleLabels.EMPTY_REASONS.not_formal, has_window: '有研究观察区间',
+    expired: '已公布区间早于分析截止日',
   };
   const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
   const text = (value, max = 200) => typeof value === 'string' ? value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').slice(0, max) : '';

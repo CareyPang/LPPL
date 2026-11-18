@@ -24,7 +24,11 @@
     return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
   };
   const dateLabel = value => value || '未提供';
-  const windowEvidence = w => w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位，不是预测' : '';
+  const windowEvidence = w => (w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位，不是预测' : '') +
+    ' · ' + window.RuleLabels.RULES.box.source;
+  const displayRuleNote = note => /占比|比例|lppls_confidence/i.test(note || '') && !String(note).includes('占比不是概率')
+    ? note + '；占比不是概率'
+    : note;
   const windowLabel = summary => summary?.windows?.length ? summary.windows.map(w => w.start + ' — ' + w.end + windowEvidence(w)).join('；') : '暂无可展示区间';
   const noteKey = summary => [summary?.asset?.id || '', summary?.asof || '', summary?.predictionId || '', summary?.modelVersion || ''].join('|');
   const recordList = id => Array.isArray(state.observations[id]) ? state.observations[id] : [];
@@ -149,7 +153,7 @@
     if (s.price && asset.kind === 'stock') html += '<div><dt>股票行情</dt><dd><a href="' + esc(Core.route(asset)) + '">前往分析页查看</a></dd></div>';
     html += '<div><dt>预测记录 ID</dt><dd>' + esc(s.predictionId || '未提供') + '</dd></div></dl>';
     html += '<p class="source-note">来源：' + esc(s.source || '未提供') + (s.price && asset.kind === 'stock' ? '<br>现有价格为拟合序列，复权口径未单独提供；此处不将其作为股票现价展示。' : s.price?.note ? '<br>' + esc(s.price.note) : '') + '</p>';
-    if (s.ruleNote) html += '<details class="record-details"><summary>结果口径说明</summary><p class="record-caption">' + esc(s.ruleNote) + '</p></details>';
+    if (s.ruleNote) html += '<details class="record-details"><summary>结果口径说明</summary><p class="record-caption">' + esc(displayRuleNote(s.ruleNote)) + '</p></details>';
     if (s.coverage.length) html += '<div class="coverage-list" aria-label="计算覆盖">' + s.coverage.map(c => '<span class="' + (c.computed ? 'completed' : '') + '">' + esc(c.scale) + ' · ' + (c.computed ? '已计算' : c.status === 'not_computed' ? '未计算' : '状态待核对') + '</span>').join('') + '</div><p class="source-note">' + (incomplete ? '仍有尺度未计算或状态待核对；不等于这些尺度没有信号。' : '尺度表示拟合数据跨度，不是必然见顶的等待时间。') + '</p>';
     $('detail-summary').innerHTML = html;
     $('asset-group').innerHTML = groupsHTML(groupOf(asset.id), false);
