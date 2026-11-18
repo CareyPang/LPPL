@@ -208,11 +208,29 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "**/lab/mock/data/market/lhb_seats_latest.json",
         lambda route: route.fulfill(path=str(lhb_fixture)),
     )
+    page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
     expect(page.locator("#s-lhb-seats")).to_be_visible()
     expect(page.locator("#lhb-seats-body .lhb-card.buy strong")).to_contain_text("12.30亿")
-    expect(page.locator("#lhb-seats-body .lhb-table tbody tr").first).to_contain_text("游资甲")
+    seat_rows = page.locator("#lhb-seats-body .lhb-table tbody tr")
+    expect(seat_rows).to_have_count(4)
+    expect(seat_rows.first).to_contain_text("游资甲")
+    expect(seat_rows.first.locator("td").first).to_have_text("1")
     expect(page.locator("#lhb-seats-body .lhb-more")).to_contain_text("+1笔")
+    assistant_button = page.locator(".ai-btn")
+    if assistant_button.get_attribute("aria-expanded") != "true":
+        assistant_button.click()
+    expect(assistant_button).to_have_attribute("aria-expanded", "true")
+    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    assert page.locator("#s-lhb-seats").evaluate(
+        "(section) => section.scrollWidth <= section.clientWidth + 1"
+    )
+    assert seat_rows.first.locator("td").last.evaluate(
+        """(cell) => {
+          const viewport = cell.closest('.table-scroll').getBoundingClientRect();
+          return cell.getBoundingClientRect().right <= viewport.right + 1;
+        }"""
+    )
     page.wait_for_function(
         """() => {
           const summary = document.querySelector('#today-summary');
