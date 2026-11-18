@@ -81,6 +81,11 @@ const server = http.createServer((req, res) => {
 
     await page.locator('[data-add-sample="index:sh000001"]').click();
     await page.locator('#watch-list .asset-select').first().waitFor();
+    const ruleDisclosure = page.locator('.detail-panel details.record-details').filter({ hasText: '结果口径说明' }).first();
+    await ruleDisclosure.waitFor();
+    await ruleDisclosure.locator('summary').click();
+    assert.match(await ruleDisclosure.locator('.record-caption').innerText(), /占比不是概率/);
+    check('proportion definition is not presented as a probability');
     await page.locator('#open-add').click();
     await page.locator('#add-code').fill('600519');
     await page.locator('#add-form button[type="submit"]').click();
@@ -113,6 +118,15 @@ const server = http.createServer((req, res) => {
     await page.locator('#research-note').fill('第二版：保留第一版依据。');
     await page.locator('#save-note').click();
     assert.ok(Number(await page.locator('#note-version-count').innerText()) >= 2);
+    const unchangedTab = await ctx.newPage();
+    await unchangedTab.goto(origin + '/research-workspace.html');
+    await unchangedTab.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    assert.equal(await page.evaluate(() => document.getElementById('storage-warning').hidden), true);
+    await page.locator('#research-note').fill('第二标签打开后仍可保存。');
+    await page.locator('#save-note').click();
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).notes.some(n => n.text === '第二标签打开后仍可保存。')), true);
+    await unchangedTab.close();
+    check('opening a second workspace tab with unchanged data does not block note saves');
     await page.locator('#list-search').fill('茅台');
     await page.waitForFunction(() => document.querySelectorAll('#watch-list .asset-select').length === 1);
     await page.reload();
@@ -150,16 +164,29 @@ const server = http.createServer((req, res) => {
     await page.locator('#undo-remove').click();
     assert.equal(await page.locator('#watch-count').innerText(), '2');
     await page.waitForFunction(() => !document.getElementById('refresh-results').disabled);
-    assert.equal(await page.locator('#research-note').inputValue(), '第二版：保留第一版依据。');
+    assert.equal(await page.locator('#research-note').inputValue(), '第二标签打开后仍可保存。');
     check('remove and undo preserve notes and groups');
 
     const other = await ctx.newPage();
     await other.goto(origin + '/app/research-workspace.css');
+    const previouslySaved = await page.locator('#research-note').inputValue();
+    await other.evaluate(() => {
+      const key = 'lppl.research-workspace.v1', s = JSON.parse(localStorage.getItem(key));
+      s.revision += 1;
+      s.notes.at(-1).text = '另一标签页的新保存内容';
+      s.notes.at(-1).version += 1;
+      localStorage.setItem(key, JSON.stringify(s));
+    });
+    await page.locator('#restore-saved').waitFor({ state: 'visible' });
+    await page.locator('#restore-saved').click();
+    assert.notEqual(previouslySaved, '另一标签页的新保存内容');
+    assert.equal(await page.locator('#research-note').inputValue(), '另一标签页的新保存内容');
+    check('restoring newer saved notes discards unchanged editor text while preserving real drafts');
     await page.locator('#research-note').fill('此标签页未保存草稿');
     await other.evaluate(() => {
       const key = 'lppl.research-workspace.v1', s = JSON.parse(localStorage.getItem(key));
       s.revision += 1;
-      s.notes.push({ ...s.notes.at(-1), id: 'other-tab-note', text: '其他标签页保存内容', version: 3 });
+      s.notes.push({ ...s.notes.at(-1), id: 'other-tab-note', text: '其他标签页保存内容', version: s.notes.at(-1).version + 1 });
       localStorage.setItem(key, JSON.stringify(s));
     });
     await page.locator('#restore-saved').waitFor({ state: 'visible' });
@@ -201,6 +228,15 @@ const server = http.createServer((req, res) => {
     const href = await page.locator('#open-analysis').getAttribute('href');
     assert.match(href, /from=research-workspace/);
     assert.doesNotMatch(href, /asof=/);
+    const currentFullChart = new URL(await page.locator('#open-full-chart').getAttribute('href'), origin);
+    const currentResultAsOf = await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('lppl.research-workspace.v1'));
+      return state.observations['stock:600519'].at(-1).asof;
+    });
+    assert.ok(currentResultAsOf);
+    assert.equal(currentFullChart.searchParams.has('asof'), false);
+    assert.equal(new URL(currentFullChart.searchParams.get('from'), origin).searchParams.has('asof'), false);
+    check('current published result opens the full chart without a historical cutoff');
     assert.equal(requests.some(r => r.method === 'POST'), false);
     await page.locator('#open-analysis').click();
     await page.locator('a[href="research-workspace.html"]').filter({ hasText: '返回我的研究' }).waitFor();
@@ -269,6 +305,120 @@ const server = http.createServer((req, res) => {
     await restoredPage.locator('#resume-items button').nth(0).click();
     assert.match(await restoredPage.locator('#detail-summary').innerText(), /fixture-C/);
     check('resume restores the exact model and prediction identity without inventing another alert');
+
+    const skipContext = await context({ viewport: { width: 1024, height: 768 } });
+    const skipPage = await skipContext.newPage();
+    await skipPage.goto(origin + '/research-workspace.html');
+    await skipPage.keyboard.press('Tab');
+    assert.equal(await skipPage.evaluate(() => document.activeElement.classList.contains('skip-link')), true);
+    check('first keyboard Tab reaches the visible workspace skip link');
+    await skipContext.close();
+
+    const tabletContext = await context({ viewport: { width: 820, height: 1000 } });
+    await tabletContext.addInitScript(() => localStorage.setItem('lppl.watchlist.v1', '["600519"]'));
+    const tabletPage = await tabletContext.newPage();
+    await tabletPage.goto(origin + '/research-workspace.html');
+    await tabletPage.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    const overlap = await tabletPage.evaluate(() => {
+      const checkbox = document.querySelector('.compare-check input').getBoundingClientRect();
+      const detail = document.querySelector('.detail-panel').getBoundingClientRect();
+      return checkbox.left < detail.right && checkbox.right > detail.left &&
+        checkbox.top < detail.bottom && checkbox.bottom > detail.top;
+    });
+    assert.equal(overlap, false);
+    check('tablet comparison checkbox remains clear of the detail pane');
+    await tabletContext.close();
+
+    const drawerContext = await context({ viewport: { width: 1024, height: 768 } });
+    await drawerContext.addInitScript(() => localStorage.setItem('lppl.watchlist.v1', '["600519"]'));
+    const drawerPage = await drawerContext.newPage();
+    await drawerPage.goto(origin + '/research-workspace.html');
+    await drawerPage.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    await drawerPage.locator('button[aria-label="打开自选"]').click();
+    await drawerPage.locator('#odw-b button[data-rm="600519"]').click();
+    await drawerPage.waitForFunction(() => document.getElementById('watch-count').textContent.trim() === '0');
+    assert.equal(await drawerPage.locator('#watch-list [data-row="stock:600519"]').count(), 0);
+    check('removing a stock in the shared sidebar immediately removes its workspace row');
+    await drawerContext.close();
+
+    const replayRaw = JSON.parse(fs.readFileSync(path.join(FIX, 'stock_600519_2025-05-23.json'), 'utf8'));
+    const replayAsset = Core.asset('stock', '600519', '贵州茅台');
+    const replayState = Core.initial();
+    replayState.selectedId = replayAsset.id;
+    const replaySummary = Core.summarize(replayAsset, replayRaw, '2025-05-24T00:00:00.000Z');
+    Core.observe(replayState, replaySummary, '2025-05-24T00:00:00.000Z');
+    Core.saveNote(replayState, replaySummary, '回放日的研究依据', '2025-05-24T00:00:00.000Z');
+    const alternateSummary = Core.summarize(replayAsset, { ...replayRaw, asof: '2025-06-01',
+      prediction_id: 'replay-fixture-20250601' }, '2025-06-02T00:00:00.000Z');
+    Core.observe(replayState, alternateSummary, '2025-06-02T00:00:00.000Z');
+    const replayStore = { value: null, getItem(key) { return key === Core.KEY ? this.value : null; },
+      setItem(key, value) { if (key === Core.KEY) this.value = value; } };
+    Core.save(replayStore, replayState);
+    const replayContext = await context({ viewport: { width: 1280, height: 900 } });
+    await replayContext.addInitScript(({ key, data }) => {
+      localStorage.setItem('lppl.watchlist.v1', '["600519"]');
+      localStorage.setItem(key, data);
+    }, { key: Core.KEY, data: replayStore.value });
+    const replayPage = await replayContext.newPage();
+    await replayPage.goto(origin + '/research-workspace.html?kind=stock&code=600519&asof=2025-05-23');
+    await replayPage.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    assert.match(await replayPage.locator('#detail-summary').innerText(), /2025-05-23|2025-06-02/);
+    await replayPage.locator('#note-history').evaluate(el => { el.closest('details').open = true; });
+    assert.match(await replayPage.locator('#note-history').innerText(), /回放日的研究依据/);
+    assert.equal(await replayPage.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).observations['stock:600519'].find(r => r.asof === '2025-05-23').windows[0].evidence), 'research_candidate');
+    await replayPage.evaluate(() => window.scrollTo(0, Math.floor(document.documentElement.scrollHeight / 3)));
+    const savedScroll = await replayPage.evaluate(() => window.scrollY);
+    await replayPage.locator('#open-full-chart').click();
+    await replayPage.waitForURL(/chart\.html/);
+    assert.match(replayPage.url(), /asof=2025-05-23/);
+    assert.match(decodeURIComponent(new URL(replayPage.url()).searchParams.get('from')), /kind=stock.*code=600519.*asof=2025-05-23/);
+    await replayPage.locator('#return-link').waitFor();
+    assert.match(await replayPage.locator('body').innerText(), /该日封存未就绪；未触发计算/);
+    await replayPage.locator('#return-link').click();
+    await replayPage.waitForURL(/research-workspace\.html.*asof=2025-05-23/);
+    await replayPage.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    assert.match(await replayPage.locator('#detail-summary').innerText(), /2025-06-02/);
+    await replayPage.locator('#note-history').evaluate(el => { el.closest('details').open = true; });
+    assert.match(await replayPage.locator('#note-history').innerText(), /回放日的研究依据/);
+    assert.equal(await replayPage.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).observations['stock:600519'].find(r => r.asof === '2025-05-23').windows[0].evidence), 'research_candidate');
+    assert.ok(Math.abs(await replayPage.evaluate(() => window.scrollY) - savedScroll) <= 2);
+    await replayPage.locator('#observation-history').evaluate(el => { el.closest('details').open = true; });
+    await replayPage.locator('#observation-history button[data-inspect="1"]').click();
+    assert.equal(new URL(replayPage.url()).searchParams.get('asof'), '2025-06-01');
+    assert.match(await replayPage.locator('#detail-summary').innerText(), /2025-06-02/);
+    assert.doesNotMatch(await replayPage.locator('#detail-summary').innerText(), /本机未保存截至/);
+    await replayPage.locator('#observation-history #show-current').click();
+    assert.equal(new URL(replayPage.url()).searchParams.has('asof'), false);
+    assert.match(await replayPage.locator('#detail-summary').innerText(), new RegExp(raw.asof));
+    assert.doesNotMatch(await replayPage.locator('#detail-summary').innerText(), /本机未保存截至/);
+    check('selecting another saved date updates the URL; returning to current clears the replay cutoff');
+    check('full-chart return preserves the archived workspace date, evidence, note and list position without latest fallback');
+    await replayContext.close();
+
+    const missingReplayState = Core.initial();
+    const latestSummary = Core.summarize(replayAsset, raw, '2026-11-18T00:00:00.000Z');
+    Core.observe(missingReplayState, latestSummary, '2026-11-18T00:00:00.000Z');
+    Core.saveNote(missingReplayState, latestSummary, '最新结果笔记', '2026-11-18T00:00:00.000Z');
+    const missingReplayStore = { value: null, getItem(key) { return key === Core.KEY ? this.value : null; },
+      setItem(key, value) { if (key === Core.KEY) this.value = value; } };
+    Core.save(missingReplayStore, missingReplayState);
+    const missingReplayContext = await context();
+    await missingReplayContext.addInitScript(({ key, data }) => {
+      localStorage.setItem('lppl.watchlist.v1', '["600519"]');
+      localStorage.setItem(key, data);
+    }, { key: Core.KEY, data: missingReplayStore.value });
+    const missingReplayPage = await missingReplayContext.newPage();
+    await missingReplayPage.goto(origin + '/research-workspace.html?kind=stock&code=600519&asof=2025-05-23');
+    await missingReplayPage.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    assert.equal(await missingReplayPage.locator('#save-note').isEnabled(), false);
+    await missingReplayPage.locator('#research-note').fill('缺少摘要时误绑定');
+    await missingReplayPage.locator('#save-note').click({ force: true });
+    const misbound = await missingReplayPage.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).notes);
+    assert.equal(misbound.some(note => note.text === '缺少摘要时误绑定'), false);
+    assert.ok(misbound.some(note => note.text === '最新结果笔记' && note.asof === latestSummary.asof));
+    check('replay without an exact local summary cannot save a note against another date');
+    await missingReplayContext.close();
+
     assert.deepEqual(failures, []);
     check('no uncaught browser exceptions');
     console.log(JSON.stringify({ checks: checks.length, names: checks, fixture_mode: !process.env.LPPL_PUBLISHED_SAMPLE_DIR, archived_published_samples: !!process.env.LPPL_PUBLISHED_SAMPLE_DIR, external_requests_fulfilled_offline: true }, null, 2));

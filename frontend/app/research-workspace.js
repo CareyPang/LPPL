@@ -24,7 +24,11 @@
     return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
   };
   const dateLabel = value => value || '未提供';
-  const windowEvidence = w => w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位，不是预测' : '';
+  const windowEvidence = w => (w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位，不是预测' : '') +
+    ' · ' + window.RuleLabels.RULES.box.source;
+  const displayRuleNote = note => /占比|比例|lppls_confidence/i.test(note || '') && !String(note).includes('占比不是概率')
+    ? note + '；占比不是概率'
+    : note;
   const windowLabel = summary => summary?.windows?.length ? summary.windows.map(w => w.start + ' — ' + w.end + windowEvidence(w)).join('；') : '暂无可展示区间';
   const noteKey = summary => [summary?.asset?.id || '', summary?.asof || '', summary?.predictionId || '', summary?.modelVersion || ''].join('|');
   const recordList = id => Array.isArray(state.observations[id]) ? state.observations[id] : [];
@@ -34,6 +38,36 @@
   const selectedAsset = () => assets.find(a => a.id === state.selectedId) || null;
   const summaryOf = asset => summaries.get(asset.id) || Core.summarize(asset, null, new Date().toISOString());
   const lastNote = summary => Core.notesFor(state, summary.asset.id).find(n => n.asof === summary.asof && n.predictionId === summary.predictionId && n.modelVersion === summary.modelVersion);
+  const REPLAY_SCROLL_KEY = 'lppl.research-workspace.replay-scroll.v1';
+  const replayParams = new URLSearchParams(window.location.search);
+  const replayAsOf = Core.date(replayParams.get('asof'));
+  const replayAsset = Core.asset(replayParams.get('kind'), replayParams.get('code'));
+  let replayRequest = replayAsset && replayAsOf ? { asset: replayAsset, asof: replayAsOf } : null;
+  let replayScroll = null;
+  if (replayRequest) {
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(REPLAY_SCROLL_KEY) || 'null');
+      if (saved && saved.assetId === replayAsset.id && saved.asof === replayAsOf && Number.isFinite(saved.scrollY)) replayScroll = saved;
+    } catch { /* Session restoration is optional. */ }
+  }
+  function restoreReplayScroll() {
+    if (!replayScroll) return;
+    window.scrollTo(0, replayScroll.scrollY);
+    if (window.scrollY >= replayScroll.scrollY - 1) {
+      try { window.sessionStorage.removeItem(REPLAY_SCROLL_KEY); } catch { /* Session restoration is optional. */ }
+      replayScroll = null;
+    }
+  }
+  function updateReplayRequest(asset, asof) {
+    const url = new URL(window.location.href);
+    if (asof) {
+      url.searchParams.set('kind', asset.kind);
+      url.searchParams.set('code', asset.code);
+      url.searchParams.set('asof', asof);
+    } else url.searchParams.delete('asof');
+    window.history.replaceState(null, '', url);
+    replayRequest = asof ? { asset, asof } : null;
+  }
 
   function focusToken() {
     const element = document.activeElement;
@@ -65,7 +99,12 @@
     return ok;
   }
   function saveDraft() {
-    if (activeNoteKey) drafts.set(activeNoteKey, $('research-note').value);
+    if (!activeNoteKey) return;
+    const saved = state.notes.slice().reverse().find(note =>
+      [note.assetId, note.asof || '', note.predictionId || '', note.modelVersion || ''].join('|') === activeNoteKey);
+    const text = $('research-note').value;
+    if (text.trim() !== (saved?.text || '').trim()) drafts.set(activeNoteKey, text);
+    else drafts.delete(activeNoteKey);
   }
   function hasUnsaved() {
     saveDraft();
@@ -149,12 +188,16 @@
     $('detail-empty').hidden = !!asset;
     $('detail-content').hidden = !asset;
     if (!asset) { activeNoteKey = null; return; }
-    const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
+    const replaying = replayRequest?.asset.id === asset.id;
+    const savedReplay = replaying && inspectRecord?.asset?.id === asset.id && inspectRecord.asof === replayRequest.asof;
+    const s = savedReplay ? inspectRecord : replaying ? Core.summarize(asset, null, replayRequest.asof + 'T00:00:00.000Z')
+      : inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     $('detail-kind').textContent = inspectRecord ? 'SAVED OBSERVATION · 本机历史记录' : 'RESEARCH DESK · 当前结果';
     $('detail-heading').textContent = asset.name;
     $('detail-code').textContent = identity(asset);
     const incomplete = s.coverage.filter(c => !c.computed).length;
     let html = '<div class="summary-banner' + (!s.windows.length ? ' neutral' : '') + '"><h3>' + (s.status === 'expired' ? '已过去的观察区间' : s.windows.length ? '顶部观察区间' : '当前研究状态') + '</h3><p>' + esc(s.windows.length ? s.windows[0].start + ' — ' + s.windows[0].end : s.statusText) + '</p><small>' + (s.windows.length ? esc(s.windows[0].scale || '综合区间') + ' · 研究观察，不是确定见顶日' + esc(windowEvidence(s.windows[0])) : '未展示区间不等于没有风险。') + '</small></div>';
+    if (replaying && !savedReplay) html += '<p class="notice notice-warning">本机未保存截至 ' + esc(replayRequest.asof) + ' 的研究摘要；未替换为最新结果。</p>';
     if (s.status === 'expired') html += '<p class="notice notice-warning">该区间已早于分析截止日，仅供回看，不是新的未来提醒。</p>';
     if (s.windows.length > 1) html += '<details class="record-details"><summary>全部可展示区间 <span>' + s.windows.length + '</span></summary>' + s.windows.map(w => '<div class="record-item"><strong>' + esc(w.scale || '综合区间') + '</strong><p>' + esc(w.start + ' — ' + w.end) + '</p><small>证据：' + esc(w.evidence + windowEvidence(w)) + '</small></div>').join('') + '</details>';
     if (errors.has(asset.id) && !inspectRecord) html += '<p class="notice notice-warning">本次未取得新的已发布结果。已有本机记录与笔记仍保留。</p>';
@@ -174,16 +217,19 @@
     if (s.price && asset.kind === 'stock') html += '<div><dt>股票行情</dt><dd><a href="' + esc(Core.route(asset)) + '">前往分析页查看</a></dd></div>';
     html += '<div><dt>预测记录 ID</dt><dd>' + esc(s.predictionId || '未提供') + '</dd></div></dl>';
     html += '<p class="source-note">来源：' + esc(s.source || '未提供') + (s.price && asset.kind === 'stock' ? '<br>现有价格为拟合序列，复权口径未单独提供；此处不将其作为股票现价展示。' : s.price?.note ? '<br>' + esc(s.price.note) : '') + '</p>';
-    if (s.ruleNote) html += '<details class="record-details"><summary>结果口径说明</summary><p class="record-caption">' + esc(s.ruleNote) + '</p></details>';
+    if (s.ruleNote) html += '<details class="record-details"><summary>结果口径说明</summary><p class="record-caption">' + esc(displayRuleNote(s.ruleNote)) + '</p></details>';
     if (s.coverage.length) html += '<div class="coverage-list" aria-label="计算覆盖">' + s.coverage.map(c => '<span class="' + (c.computed ? 'completed' : '') + '">' + esc(c.scale) + ' · ' + (c.computed ? '已计算' : c.status === 'not_computed' ? '未计算' : '状态待核对') + '</span>').join('') + '</div><p class="source-note">' + (incomplete ? '仍有尺度未计算或状态待核对；不等于这些尺度没有信号。' : '尺度表示拟合数据跨度，不是必然见顶的等待时间。') + '</p>';
     $('detail-summary').innerHTML = html;
     $('asset-group').innerHTML = groupsHTML(groupOf(asset.id), false);
     $('open-analysis').href = Core.route(asset);
-    const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html' });
-    if (s.asof) fullChart.set('asof', s.asof);
+    const returnAsOf = inspectRecord?.asset?.id === asset.id ? inspectRecord.asof : replaying ? replayRequest.asof : '';
+    const workspaceReturn = new URLSearchParams({ kind: asset.kind, code: asset.code });
+    if (returnAsOf) workspaceReturn.set('asof', returnAsOf);
+    const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html?' + workspaceReturn.toString() });
+    if (returnAsOf) fullChart.set('asof', returnAsOf);
     $('open-full-chart').href = 'chart.html?' + fullChart.toString();
-    $('open-full-chart').textContent = s.asof ? '查看截至 ' + s.asof + ' 的完整图表 ↗' : '打开完整图表 ↗';
-    $('context-note').textContent = inspectRecord ? '正在查看本机保存的历史摘要。上方链接会打开站点最新分析，不会恢复该历史日期。' : '打开站点最新分析；返回后保留本页分组、筛选与研究记录。';
+    $('open-full-chart').textContent = returnAsOf ? '查看截至 ' + returnAsOf + ' 的完整图表 ↗' : '打开完整图表 ↗';
+    $('context-note').textContent = replaying ? '正在按截止日回放本机保存的研究摘要；完整图表只读取同日封存结果。' : inspectRecord ? '正在查看本机保存的历史摘要。上方链接会恢复该历史日期。' : '打开站点最新分析；返回后保留本页分组、筛选与研究记录。';
     const key = noteKey(s), note = lastNote(s);
     if (key !== activeNoteKey) {
       saveDraft(); activeNoteKey = key;
@@ -191,7 +237,7 @@
     }
     $('note-state').textContent = drafts.has(key) && drafts.get(key) !== (note?.text || '') ? '未保存草稿' : note ? '已保存 · v' + note.version : '尚未保存';
     $('note-context').textContent = s.asof ? '绑定分析截至 ' + s.asof : '未关联分析的关注理由；以后不会自动改绑';
-    $('save-note').disabled = false;
+    $('save-note').disabled = replaying && !savedReplay;
     const notes = Core.notesFor(state, asset.id);
     $('note-version-count').textContent = notes.length;
     $('note-history').innerHTML = notes.length ? notes.map(n => '<article class="record-item"><strong>版本 ' + n.version + (n.imported ? ' · 导入记录' : '') + ' · ' + (n.asof ? '分析截至 ' + esc(n.asof) : '未关联分析') + '</strong><time>' + esc(prettyTime(n.createdAt)) + ' 北京时间</time><p>' + esc(n.text) + '</p><small>模型 ' + esc(n.modelVersion || '未提供') + ' · 记录 ID ' + esc(n.predictionId || '未提供') + '</small></article>').join('') : '<p class="record-caption">还没有保存笔记。</p>';
@@ -252,7 +298,7 @@
           } else {
             summaries.set(asset.id, summary); errors.delete(asset.id);
             const at = assets.findIndex(a => a.id === asset.id); if (at >= 0) assets[at] = freshAsset;
-            persist();
+            if (observation.type !== 'unchanged') persist();
           }
         } catch {
           if (thisGeneration !== generation) continue;
@@ -267,6 +313,7 @@
     busy = false; $('refresh-results').disabled = false;
     $('refresh-state').textContent = assets.length ? '本机读取于 ' + prettyTime(new Date().toISOString()) + (errors.size ? ' · 部分结果待检查' : '') : '尚未添加关注标的';
     render();
+    restoreReplayScroll();
     if (queuedRefresh) return refresh();
   }
   function addAsset(kind, code) {
@@ -360,6 +407,8 @@
   $('research-note').addEventListener('input', () => { saveDraft(); $('note-state').textContent = '未保存草稿'; });
   $('save-note').addEventListener('click', () => {
     const asset = selectedAsset(); if (!asset) return;
+    if (replayRequest?.asset.id === asset.id &&
+      !(inspectRecord?.asset?.id === asset.id && inspectRecord.asof === replayRequest.asof)) return;
     const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     const priorNotes = state.notes.slice();
     const note = Core.saveNote(state, s, $('research-note').value, new Date().toISOString());
@@ -372,8 +421,16 @@
   });
   $('observation-history').addEventListener('click', event => {
     const button = event.target.closest('[data-inspect]');
-    if (button) { saveDraft(); inspectRecord = recordList(state.selectedId)[Number(button.dataset.inspect)] || null; renderDetail(); $('detail-heading').scrollIntoView({ block: 'nearest' }); }
-    if (event.target.closest('#show-current')) { saveDraft(); inspectRecord = null; renderDetail(); }
+    if (button) {
+      saveDraft(); inspectRecord = recordList(state.selectedId)[Number(button.dataset.inspect)] || null;
+      if (inspectRecord) updateReplayRequest(selectedAsset(), inspectRecord.asof);
+      renderDetail(); $('detail-heading').scrollIntoView({ block: 'nearest' });
+    }
+    if (event.target.closest('#show-current')) {
+      saveDraft(); inspectRecord = null;
+      if (selectedAsset()) updateReplayRequest(selectedAsset(), '');
+      renderDetail();
+    }
   });
   $('open-analysis').addEventListener('click', () => {
     saveDraft(); const asset = selectedAsset();
@@ -450,6 +507,15 @@
     $('watch-heading').focus({ preventScroll: true });
   });
   $('refresh-results').addEventListener('click', () => { notify(''); refresh(); });
+  $('open-full-chart').addEventListener('click', () => {
+    const asset = selectedAsset(), link = new URL($('open-full-chart').href, window.location.href);
+    if (!asset) return;
+    try {
+      window.sessionStorage.setItem(REPLAY_SCROLL_KEY, JSON.stringify({
+        assetId: asset.id, asof: link.searchParams.get('asof') || '', scrollY: window.scrollY
+      }));
+    } catch { /* Session restoration is optional. */ }
+  });
   window.addEventListener('storage', event => {
     if (event.key === Core.KEY) { externalConflict = true; storageWarning(); return; }
     if (![window.IndexWatchlist.KEY, window.StockWatchlist.KEY].includes(event.key)) return;
@@ -457,8 +523,19 @@
     notify('其他页面更新了自选清单，正在读取新增标的的结果。');
     refresh();
   });
+  window.addEventListener('lppl-watch', event => {
+    if (event.detail?.origin === 'research-workspace') return;
+    syncAssets(); render();
+    notify('侧栏自选已更新，正在同步研究清单。');
+    refresh();
+  });
   window.addEventListener('beforeunload', event => { if (hasUnsaved()) { event.preventDefault(); event.returnValue = ''; } });
-  window.addEventListener('pagehide', () => { state.scrollY = window.scrollY; persist(); });
+  window.addEventListener('pagehide', () => {
+    const scrollY = window.scrollY;
+    if (state.scrollY === scrollY) return;
+    state.scrollY = scrollY; persist();
+  });
+  window.addEventListener('pageshow', restoreReplayScroll);
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
     syncAssets(); render(); restoringScroll = true;
@@ -466,6 +543,10 @@
   });
   if (!storage || state.storageIssue) storageWarning();
   syncAssets();
+  if (replayRequest && assets.some(a => a.id === replayRequest.asset.id)) {
+    state.selectedId = replayRequest.asset.id;
+    inspectRecord = recordList(replayRequest.asset.id).findLast(record => record.asof === replayRequest.asof) || null;
+  }
   for (const a of assets) { const latest = recordList(a.id).at(-1); if (latest) summaries.set(a.id, latest); }
   render();
   if (state.scrollY) requestAnimationFrame(() => window.scrollTo(0, state.scrollY));

@@ -49,7 +49,7 @@ for (const name of Object.keys(packageJson.dependencies)) {
 
 const licenseSections = [];
 const noticeSections = [
-  'This distribution includes Lightweight Charts 5.2.1, copyright TradingView, Inc., and official TradingView Lightweight Charts plugins. The chart attribution logo is enabled.',
+  'This distribution includes Lightweight Charts 5.2.1, copyright TradingView, Inc., official TradingView Lightweight Charts plugins, and lightweight-charts-drawing 0.10.1. The chart attribution logo is enabled.',
 ];
 for (const packagePath of [...runtimePackages].sort()) {
   const packageDir = join(packageRoot, packagePath);

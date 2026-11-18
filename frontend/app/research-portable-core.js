@@ -69,6 +69,13 @@
   function mergeWorkspace(local, incoming) {
     const current = Workspace.normalize(local), imported = Workspace.normalize(incoming);
     const out = { ...imported, ...current };
+    const recentByKey = new Map();
+    for (const recent of current.recent.concat(imported.recent)) {
+      const key = JSON.stringify([recent.assetId, recent.asof, recent.predictionId, recent.modelVersion]);
+      const previous = recentByKey.get(key);
+      if (!previous || recent.visitedAt > previous.visitedAt) recentByKey.set(key, recent);
+    }
+    out.recent = [...recentByKey.values()].sort((a, b) => b.visitedAt.localeCompare(a.visitedAt)).slice(0, 10);
     out.groups = [...new Set(current.groups.concat(imported.groups))];
     if (out.groups.length > 12) throw new Error('合并后分组超过 12 个，请先整理；未丢弃分组');
     out.meta = { ...imported.meta, ...current.meta };

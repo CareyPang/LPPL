@@ -57,15 +57,7 @@ VERIFIED：茅台该份模型 `price_history` 最后数值为 12948.039，源没
 
 以下为上述归档样本在本地页面的渲染截图；不是已部署站点截图。
 
-桌面：
-
-![桌面研究工作台](visual-evidence/research-workspace-20261118/desktop.png)
-
-390px：
-
-![390px研究工作台](visual-evidence/research-workspace-20261118/mobile-390.png)
-
-截图位于 `frontend/docs/visual-evidence/`，既有构建脚本会排除该目录，不增加正式站页面下载负担。
+截图见 PR #144 描述
 
 ## 未建立及未检查范围
 

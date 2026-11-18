@@ -13,6 +13,7 @@
   var el = function (id) { return document.getElementById(id); };
   var context = Core.parseContext(root.location.search, LPPL.SYMS || []);
   var chart = null;
+  var drawing = null;
   var current = null;
   var sequence = 0;
   var activeMarket = null;
@@ -284,6 +285,7 @@
       ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
       : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
     drawHeader(data);
+    if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: context.asof || '' });
     chart.setData(chartPayload(data));
     if (data.asof) chart.setAsof(data.asof);
     renderEvidence(data, context.scale);
@@ -510,7 +512,9 @@
   el('fullscreen-exit').addEventListener('click', function () { void exitFullscreen(); });
   document.addEventListener('fullscreenchange', function () { fullscreenState(!!document.fullscreenElement); });
   document.addEventListener('keydown', function (event) {
-    if (event.key !== 'Escape') return;
+    var targetTag = event.target && event.target.tagName;
+    if (event.key !== 'Escape' || event.isComposing || event.keyCode === 229 ||
+        targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
     if (fullscreenCard.classList.contains('chart-expanded')) { void exitFullscreen(); return; }
     if (!drawer.hidden && mobile.matches) evidenceOpen(false);
   });
@@ -531,20 +535,39 @@
   });
   el('share-screenshot').addEventListener('click', async function () {
     if (!current || !chart) return;
+    var includeDrawings = el('include-drawings').checked;
+    var restoreDrawings = drawing && drawing.drawingsVisible();
     try {
-      var shot = chart.takeScreenshot();
+      if (drawing) drawing.setVisibleForScreenshot(includeDrawings);
+      if (drawing) await new Promise(function (resolve) {
+        requestAnimationFrame(function () { requestAnimationFrame(resolve); });
+      });
+      var shot = chart.takeScreenshot(includeDrawings);
+      if (includeDrawings && drawing) drawing.composeScreenshot(shot);
       var lines = Share.lines(researchCard());
       var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
       var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
       var ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#172033'; ctx.font = '24px Microsoft YaHei, sans-serif'; ctx.fillText('LPPL · 匿名研究截图', 32, 45);
+      ctx.fillStyle = '#172033'; ctx.font = '24px Microsoft YaHei, sans-serif';
+      ctx.fillText(includeDrawings ? 'LPPL · 研究截图（含个人标注）' : 'LPPL · 匿名研究截图', 32, 45);
       ctx.font = '17px Microsoft YaHei, sans-serif';
       lines.forEach(function (line, i) { ctx.fillText(line, 32, 90 + 38 * i, width - 64); });
       ctx.drawImage(shot, 0, header);
       var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
       if (!blob) throw new Error('图片编码失败');
-      download(blob, '-chart.png'); el('action-feedback').textContent = '当前图表与证据截图已下载；不含私人研究资料。';
+      download(blob, '-chart.png');
+      el('action-feedback').textContent = includeDrawings
+        ? '当前图表与证据截图已下载，包含你选择的个人标注。'
+        : '当前图表与证据截图已下载；不含私人研究资料。';
     } catch (error) { el('action-feedback').textContent = '截图未完成：' + error.message + '。可使用匿名研究卡。'; }
+    finally {
+      if (drawing) {
+        drawing.setVisibleForScreenshot(restoreDrawings);
+        await new Promise(function (resolve) {
+          requestAnimationFrame(function () { requestAnimationFrame(resolve); });
+        });
+      }
+    }
   });
 
   function latestResultsHref() {
@@ -566,6 +589,7 @@
 
   async function load() {
     var request = ++sequence;
+    if (drawing) drawing.setContext({ symbol: current && current.symbol || context.code, asof: context.asof || '' });
     el('error-panel').hidden = true;
     el('loading').hidden = !!current;
     if (!context.valid) { showError(new Error(context.invalidReason || '缺少有效的指数或 A 股代码。')); return; }
@@ -601,6 +625,7 @@
   try {
     chart = LPPLChart.mount(el('chart-host'), { height: 520 });
     chart.setScale(context.scale);
+    drawing = root.ChartDrawing.attach(chart, { symbol: context.code, asof: context.asof });
     chart.on('scale', function (scale) {
       if (scale !== context.scale) context.scale = scale;
     });
@@ -611,4 +636,7 @@
     el('error-panel').hidden = false;
     el('retry-button').hidden = false;
   }
+  root.addEventListener('pagehide', function (event) {
+    if (!event.persisted && drawing) { drawing.detach(); drawing = null; }
+  });
 })(window);

@@ -53,10 +53,15 @@
     var top = frame.top || { scale_windows: windows, scale_clusters: frame.clusters || {},
       lppls_confidence: { scale_evidence: frame.scale_evidence || history.scale_evidence || {},
         evidence: frame.evidence || history.evidence || 'none' } };
+    var stockMeta = frame.stock_meta || history.stock_meta;
+    if (!stockMeta && (frame.stock_evidence || history.stock_evidence)) {
+      stockMeta = { evidence: frame.stock_evidence || history.stock_evidence };
+    }
     var raw = { symbol: history.symbol || context.code, name: name || context.name, asof: frame.asof, top: top,
       model_version: frame.model_version || history.model_version || null,
       prediction_id: frame.prediction_id || null, first_visible_at: frame.first_visible_at || null,
       evidence_levels: history.evidence_levels || {}, future_calendar: history.future_calendar || null };
+    if (stockMeta) raw.stock_meta = stockMeta;
     return { raw: raw, top: top, asof: frame.asof, bars: cutoffBars(bars, context.asof),
       sym: { sym: context.code }, name: raw.name, historical: true, historyFallback: true };
   }

@@ -27,7 +27,7 @@ const server = http.createServer((req, res) => {
     if (modelOverride && url.pathname === '/lab/mock/data/stock/600519.json') return res.end(JSON.stringify(modelOverride));
     if (url.pathname === '/app/lppl-chart.js') {
       // Expose only in this local QA response, not in shipped app code.
-      return res.end(fs.readFileSync(file, 'utf8') + '\n;const originalMount=LPPLChart.mount;LPPLChart.mount=function(...args){window.__qaChart=originalMount(...args);const originalSetData=window.__qaChart.setData;window.__qaChart.setData=function(data){window.__qaChartData=data;return originalSetData(data);};return window.__qaChart;};');
+      return res.end(fs.readFileSync(file, 'utf8') + '\n;const originalMount=LPPLChart.mount;LPPLChart.mount=function(...args){window.__qaChart=originalMount(...args);window.__qaInitialPriceSeries=window.__qaChart.drawingTarget().series;window.__qaPriceSeriesEvents=[];window.__qaChart.on("priceSeries",series=>window.__qaPriceSeriesEvents.push(series));const originalSetData=window.__qaChart.setData;window.__qaChart.setData=function(data){window.__qaChartData=data;return originalSetData(data);};return window.__qaChart;};');
     }
     fs.createReadStream(file).pipe(res);
   };
@@ -180,12 +180,24 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator('#asof-notice').innerText(), /真实提前发布分开/);
     if (output) await page.screenshot({ path:path.join(output, 'chart-index-archive.png'), fullPage:true });
     pass('exact historical archive keeps cutoff and source context across scale changes');
+    await page.locator('[data-drawing-tool="horizontal-line"]').click();
+    await page.locator('#chart-host').click({ position:{ x:420, y:180 } });
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{"items":[]}').items.length === 1);
     closeOnlyReplay = true;
     await page.reload(); await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');
     assert.equal(await page.locator('#chart-page').getAttribute('data-price-mode'), 'close');
     assert.match(await page.locator('#price-mode-note').innerText(), /真实收盘线，不补造 K 线/);
+    const seriesState = await page.evaluate(() => ({
+      changed: window.__qaInitialPriceSeries !== window.__qaChart.drawingTarget().series,
+      eventFired: window.__qaPriceSeriesEvents.length > 0,
+      eventMatchesVisible: window.__qaPriceSeriesEvents.at(-1) === window.__qaChart.drawingTarget().series,
+      drawingCount: JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length,
+    }));
+    assert.deepEqual(seriesState, {
+      changed:true, eventFired:true, eventMatchesVisible:true, drawingCount:1,
+    });
     if (output) await page.screenshot({ path:path.join(output, 'chart-close-only.png'), fullPage:true });
-    pass('close-only historical source renders a labelled line without synthetic candle OHLC');
+    pass('close-only source reattaches persisted drawings to the visible close series');
     replayReady = false;
     await page.goto(origin + '/chart.html?code=sh000001&asof=2025-08-11');
     await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');
