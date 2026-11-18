@@ -29,10 +29,12 @@ const SUCCESS_STATUSES = new Set([
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 const QUARTER_HOUR_MS = 15 * 60 * 1000;
 const WORKER_CRON_SLOTS = [
-  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 18 * 60 + 15, eventTypes: ['market_daily', 'index_daily'] },
-  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 18 * 60 + 30, eventTypes: ['dip_env', 'forward_log_seal'] },
-  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 20 * 60 + 45, eventTypes: ['market_daily'] },
-  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 21 * 60 + 45, eventTypes: ['index_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 15 * 60 + 45, eventTypes: ['market_daily', 'index_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 16 * 60, eventTypes: ['dip_env', 'forward_log_seal'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 16 * 60 + 30, eventTypes: ['market_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 16 * 60 + 45, eventTypes: ['market_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 17 * 60 + 30, eventTypes: ['market_daily'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 19 * 60, eventTypes: ['market_daily', 'index_daily'] },
   { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 23 * 60 + 15, eventTypes: ['nt_etf_daily'] },
   { weekdays: [2, 3, 4, 5, 6], minuteOfDay: 6 * 60 + 30, eventTypes: ['macro_daily', 'growth_daily', 'us_nightly'] },
   { weekdays: [2, 3, 4, 5, 6], minuteOfDay: 9 * 60 + 15, eventTypes: ['nt_etf_daily'] },

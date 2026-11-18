@@ -2,9 +2,9 @@ name: market_daily
 
 on:
   schedule:
-    - cron: "17 10 * * 1-5" # 18:17 Asia/Shanghai, weekdays
-    - cron: "47 12 * * 1-5" # 20:47 Asia/Shanghai, weekdays
-    - cron: "23 15 * * 1-5" # 23:23 Asia/Shanghai, weekdays
+    - cron: "45 7 * * 1-5" # UTC 07:45 / 15:45 Asia/Shanghai; GitHub cron may run much later
+    - cron: "30 8 * * 1-5" # UTC 08:30 / 16:30 Asia/Shanghai; GitHub cron may run much later
+    - cron: "0 11 * * 1-5" # UTC 11:00 / 19:00 Asia/Shanghai; GitHub cron may run much later
   repository_dispatch:
     types: [market_daily]
   workflow_dispatch:
