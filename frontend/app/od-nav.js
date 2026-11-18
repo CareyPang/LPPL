@@ -758,8 +758,10 @@
   Array.prototype.forEach.call(document.querySelectorAll('header.bar'), function (h) {
     if (!h.textContent.trim() && !h.querySelector('input,button,canvas')) h.remove();
   });
-  document.body.insertBefore(sidebar, document.body.firstChild);
-  document.body.insertBefore(hdr, document.body.firstChild);
+  var skipLink = document.querySelector('body > .skip-link');
+  var navAnchor = skipLink ? skipLink.nextSibling : document.body.firstChild;
+  document.body.insertBefore(sidebar, navAnchor);
+  document.body.insertBefore(hdr, navAnchor);
   renderSidebarWatchlist();
   window.addEventListener('lppl-watch', renderSidebarWatchlist);
   window.addEventListener('storage', renderSidebarWatchlist);

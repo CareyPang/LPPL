@@ -38,6 +38,26 @@
   const selectedAsset = () => assets.find(a => a.id === state.selectedId) || null;
   const summaryOf = asset => summaries.get(asset.id) || Core.summarize(asset, null, new Date().toISOString());
   const lastNote = summary => Core.notesFor(state, summary.asset.id).find(n => n.asof === summary.asof && n.predictionId === summary.predictionId && n.modelVersion === summary.modelVersion);
+  const REPLAY_SCROLL_KEY = 'lppl.research-workspace.replay-scroll.v1';
+  const replayParams = new URLSearchParams(window.location.search);
+  const replayAsOf = Core.date(replayParams.get('asof'));
+  const replayAsset = Core.asset(replayParams.get('kind'), replayParams.get('code'));
+  const replayRequest = replayAsset && replayAsOf ? { asset: replayAsset, asof: replayAsOf } : null;
+  let replayScroll = null;
+  if (replayRequest) {
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(REPLAY_SCROLL_KEY) || 'null');
+      if (saved && saved.assetId === replayAsset.id && saved.asof === replayAsOf && Number.isFinite(saved.scrollY)) replayScroll = saved;
+    } catch { /* Session restoration is optional. */ }
+  }
+  function restoreReplayScroll() {
+    if (!replayScroll) return;
+    window.scrollTo(0, replayScroll.scrollY);
+    if (window.scrollY >= replayScroll.scrollY - 1) {
+      try { window.sessionStorage.removeItem(REPLAY_SCROLL_KEY); } catch { /* Session restoration is optional. */ }
+      replayScroll = null;
+    }
+  }
 
   function focusToken() {
     const element = document.activeElement;
@@ -153,12 +173,16 @@
     $('detail-empty').hidden = !!asset;
     $('detail-content').hidden = !asset;
     if (!asset) { activeNoteKey = null; return; }
-    const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
+    const replaying = replayRequest?.asset.id === asset.id;
+    const savedReplay = replaying && inspectRecord?.asset?.id === asset.id && inspectRecord.asof === replayRequest.asof;
+    const s = savedReplay ? inspectRecord : replaying ? Core.summarize(asset, null, new Date().toISOString())
+      : inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     $('detail-kind').textContent = inspectRecord ? 'SAVED OBSERVATION · 本机历史记录' : 'RESEARCH DESK · 当前结果';
     $('detail-heading').textContent = asset.name;
     $('detail-code').textContent = identity(asset);
     const incomplete = s.coverage.filter(c => !c.computed).length;
     let html = '<div class="summary-banner' + (!s.windows.length ? ' neutral' : '') + '"><h3>' + (s.status === 'expired' ? '已过去的观察区间' : s.windows.length ? '顶部观察区间' : '当前研究状态') + '</h3><p>' + esc(s.windows.length ? s.windows[0].start + ' — ' + s.windows[0].end : s.statusText) + '</p><small>' + (s.windows.length ? esc(s.windows[0].scale || '综合区间') + ' · 研究观察，不是确定见顶日' + esc(windowEvidence(s.windows[0])) : '未展示区间不等于没有风险。') + '</small></div>';
+    if (replaying && !savedReplay) html += '<p class="notice notice-warning">本机未保存截至 ' + esc(replayRequest.asof) + ' 的研究摘要；未替换为最新结果。</p>';
     if (s.status === 'expired') html += '<p class="notice notice-warning">该区间已早于分析截止日，仅供回看，不是新的未来提醒。</p>';
     if (s.windows.length > 1) html += '<details class="record-details"><summary>全部可展示区间 <span>' + s.windows.length + '</span></summary>' + s.windows.map(w => '<div class="record-item"><strong>' + esc(w.scale || '综合区间') + '</strong><p>' + esc(w.start + ' — ' + w.end) + '</p><small>证据：' + esc(w.evidence + windowEvidence(w)) + '</small></div>').join('') + '</details>';
     if (errors.has(asset.id) && !inspectRecord) html += '<p class="notice notice-warning">本次未取得新的已发布结果。已有本机记录与笔记仍保留。</p>';
@@ -183,11 +207,14 @@
     $('detail-summary').innerHTML = html;
     $('asset-group').innerHTML = groupsHTML(groupOf(asset.id), false);
     $('open-analysis').href = Core.route(asset);
-    const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html' });
-    if (s.asof) fullChart.set('asof', s.asof);
+    const returnAsOf = s.asof || (replaying ? replayRequest.asof : '');
+    const workspaceReturn = new URLSearchParams({ kind: asset.kind, code: asset.code });
+    if (returnAsOf) workspaceReturn.set('asof', returnAsOf);
+    const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html?' + workspaceReturn.toString() });
+    if (returnAsOf) fullChart.set('asof', returnAsOf);
     $('open-full-chart').href = 'chart.html?' + fullChart.toString();
-    $('open-full-chart').textContent = s.asof ? '查看截至 ' + s.asof + ' 的完整图表 ↗' : '打开完整图表 ↗';
-    $('context-note').textContent = inspectRecord ? '正在查看本机保存的历史摘要。上方链接会打开站点最新分析，不会恢复该历史日期。' : '打开站点最新分析；返回后保留本页分组、筛选与研究记录。';
+    $('open-full-chart').textContent = returnAsOf ? '查看截至 ' + returnAsOf + ' 的完整图表 ↗' : '打开完整图表 ↗';
+    $('context-note').textContent = replaying ? '正在按截止日回放本机保存的研究摘要；完整图表只读取同日封存结果。' : inspectRecord ? '正在查看本机保存的历史摘要。上方链接会恢复该历史日期。' : '打开站点最新分析；返回后保留本页分组、筛选与研究记录。';
     const key = noteKey(s), note = lastNote(s);
     if (key !== activeNoteKey) {
       saveDraft(); activeNoteKey = key;
@@ -256,7 +283,7 @@
           } else {
             summaries.set(asset.id, summary); errors.delete(asset.id);
             const at = assets.findIndex(a => a.id === asset.id); if (at >= 0) assets[at] = freshAsset;
-            persist();
+            if (observation.type !== 'unchanged') persist();
           }
         } catch {
           if (thisGeneration !== generation) continue;
@@ -271,6 +298,7 @@
     busy = false; $('refresh-results').disabled = false;
     $('refresh-state').textContent = assets.length ? '本机读取于 ' + prettyTime(new Date().toISOString()) + (errors.size ? ' · 部分结果待检查' : '') : '尚未添加关注标的';
     render();
+    restoreReplayScroll();
     if (queuedRefresh) return refresh();
   }
   function addAsset(kind, code) {
@@ -454,6 +482,15 @@
     $('watch-heading').focus({ preventScroll: true });
   });
   $('refresh-results').addEventListener('click', () => { notify(''); refresh(); });
+  $('open-full-chart').addEventListener('click', () => {
+    const asset = selectedAsset(), link = new URL($('open-full-chart').href, window.location.href);
+    if (!asset) return;
+    try {
+      window.sessionStorage.setItem(REPLAY_SCROLL_KEY, JSON.stringify({
+        assetId: asset.id, asof: link.searchParams.get('asof') || '', scrollY: window.scrollY
+      }));
+    } catch { /* Session restoration is optional. */ }
+  });
   window.addEventListener('storage', event => {
     if (event.key === Core.KEY) { externalConflict = true; storageWarning(); return; }
     if (![window.IndexWatchlist.KEY, window.StockWatchlist.KEY].includes(event.key)) return;
@@ -461,8 +498,19 @@
     notify('其他页面更新了自选清单，正在读取新增标的的结果。');
     refresh();
   });
+  window.addEventListener('lppl-watch', event => {
+    if (event.detail?.origin === 'research-workspace') return;
+    syncAssets(); render();
+    notify('侧栏自选已更新，正在同步研究清单。');
+    refresh();
+  });
   window.addEventListener('beforeunload', event => { if (hasUnsaved()) { event.preventDefault(); event.returnValue = ''; } });
-  window.addEventListener('pagehide', () => { state.scrollY = window.scrollY; persist(); });
+  window.addEventListener('pagehide', () => {
+    const scrollY = window.scrollY;
+    if (state.scrollY === scrollY) return;
+    state.scrollY = scrollY; persist();
+  });
+  window.addEventListener('pageshow', restoreReplayScroll);
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
     syncAssets(); render(); restoringScroll = true;
@@ -470,6 +518,10 @@
   });
   if (!storage || state.storageIssue) storageWarning();
   syncAssets();
+  if (replayRequest && assets.some(a => a.id === replayRequest.asset.id)) {
+    state.selectedId = replayRequest.asset.id;
+    inspectRecord = recordList(replayRequest.asset.id).findLast(record => record.asof === replayRequest.asof) || null;
+  }
   for (const a of assets) { const latest = recordList(a.id).at(-1); if (latest) summaries.set(a.id, latest); }
   render();
   if (state.scrollY) requestAnimationFrame(() => window.scrollTo(0, state.scrollY));

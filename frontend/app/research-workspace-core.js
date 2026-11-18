@@ -152,10 +152,12 @@
       }
     }
     const calculated = result.coverage.filter(c => c.computed);
+    const eligible = calculated.filter(c => WINDOW_EVIDENCE.has(c.evidence));
     if (result.windows.length) result.status = result.windows.every(w => w.end < result.asof) ? 'expired' : 'has_window';
     else if (rejectedDates) result.status = 'evidence_hidden';
     else if (!calculated.length) result.status = 'not_computed';
-    else if (calculated.every(c => c.status === 'no_qualified_fit')) result.status = 'no_qualified_fit';
+    else if (!eligible.length) result.status = 'evidence_hidden';
+    else if (eligible.every(c => c.status === 'no_qualified_fit')) result.status = 'no_qualified_fit';
     else result.status = 'no_cluster';
     result.statusText = STATUS[result.status];
     return result;
@@ -212,7 +214,7 @@
     out.revision = Number.isSafeInteger(value.revision) && value.revision >= 0 ? value.revision : 0;
     out.observationSeq = Number.isSafeInteger(value.observationSeq) && value.observationSeq >= 0 ? value.observationSeq : 0;
     out.groups = [...new Set((Array.isArray(value.groups) ? value.groups : []).filter(v => typeof v === 'string' && v.trim() && v.length <= 24).map(v => v.trim()))].slice(0, 12);
-    for (const [key, m] of Object.entries(plain(value.meta) ? value.meta : {}).slice(0, 100)) {
+    for (const [key, m] of Object.entries(plain(value.meta) ? value.meta : {})) {
       if (idAsset(key) && plain(m)) out.meta[key] = { group: out.groups.includes(m.group) ? m.group : '' };
     }
     out.selectedId = idAsset(value.selectedId) ? value.selectedId : null;
@@ -222,7 +224,7 @@
     out.sort = ['name', 'asof', 'changed'].includes(value.sort) ? value.sort : 'name';
     out.compareIds = [...new Set((Array.isArray(value.compareIds) ? value.compareIds : []).filter(v => idAsset(v)))].slice(0, 3);
     out.scrollY = Number.isFinite(value.scrollY) ? Math.max(0, Math.min(1000000, value.scrollY)) : 0;
-    for (const [key, values] of Object.entries(plain(value.observations) ? value.observations : {}).slice(0, 100)) {
+    for (const [key, values] of Object.entries(plain(value.observations) ? value.observations : {})) {
       if (!idAsset(key) || !Array.isArray(values)) continue;
       const observations = [];
       for (const value of values.slice(-40)) {
