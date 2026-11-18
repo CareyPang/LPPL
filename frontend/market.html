@@ -17,6 +17,7 @@
   --bg: #F6F8FB; --surface: #FFFFFF; --surface-2: #F0F3FA; --line: #E3E7EE; --grid: #EEF1F6;
   --ink: #131722; --ink-2: #4C525E; --ink-3: #6A6D78;
   --up: #D6303A; --dn: #11845A; --warn: #9A5B00; --real: #1F5FD6;
+  --lv1: #e5484d; --lv2: #e8a33b; --lv3: #f06a2b; --lv4: #a8202a;
   --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
   --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
@@ -74,6 +75,10 @@ td.r, th.r { text-align: right; }
 .bars div em { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font: 10px var(--f-m); color: var(--ink-2); font-style: normal; }
 .bars-x { display: flex; gap: var(--s2); font: 10px var(--f-m); color: var(--ink-3); }
 .bars-x span { flex: 1; text-align: center; }
+.bars .bar-lv1 { background: var(--lv1); }
+.bars .bar-lv2 { background: var(--lv2); }
+.bars .bar-lv3 { background: var(--lv3); }
+.bars .bar-lv4 { background: var(--lv4); }
 .scroll { max-height: 300px; overflow: auto; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 .flow-rank-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s3); }
@@ -110,6 +115,45 @@ td.r, th.r { text-align: right; }
 .ladder-card b { display: block; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ladder-card small { display: block; margin-top: 3px; color: var(--ink-3); font: 10px var(--f-m); overflow-wrap: anywhere; }
 .ladder-note { margin-top: var(--s2); color: var(--ink-3); font-size: 11px; }
+.ladder-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); margin-bottom: var(--s2); }
+.ladder-summary > div { min-width: 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); background: var(--surface); }
+.ladder-summary small { display: block; color: var(--ink-3); font-size: 11px; }
+.ladder-summary strong { display: block; color: var(--ink-2); font: 600 19px/1.35 var(--f-m); font-variant-numeric: tabular-nums; }
+.ladder-summary .total strong { color: var(--up); }
+.ladder-summary .repeat strong, .ladder-summary .cm20 strong { color: var(--warn); }
+.ladder-themes { display: flex; flex-wrap: wrap; gap: var(--s1); margin: var(--s2) 0 var(--s3); }
+.ladder-theme { max-width: 100%; border: 1px solid var(--line); background: var(--surface-2); padding: 3px var(--s2); color: var(--ink-2); font-size: 11px; overflow-wrap: anywhere; }
+.ladder { display: grid; gap: var(--s2); border: 0; background: transparent; }
+.ladder-row { gap: var(--s2); min-height: 64px; background: transparent; }
+.ladder-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--s2); color: #fff; border: 0; text-align: center; text-shadow: 0 1px 2px rgb(0 0 0 / 45%); }
+.ladder-label strong { font: 700 14px/1.2 var(--f-m); }
+.ladder-label small { margin-top: 4px; color: #fff; font: 600 10px/1.2 var(--f-u); }
+.ladder-row.lv1 .ladder-label { background: var(--lv1); }
+.ladder-row.lv2 .ladder-label { background: var(--lv2); }
+.ladder-row.lv3 .ladder-label { background: var(--lv3); }
+.ladder-row.lv4 .ladder-label { background: var(--lv4); }
+.ladder-cells { min-width: 0; padding: 0; }
+.ladder-card { min-width: 104px; flex: 1 1 160px; border: 1px solid var(--line); border-left: 3px solid var(--ladder-color); background: color-mix(in srgb, var(--ladder-color) 10%, var(--surface)); }
+.ladder-card.lv1 { --ladder-color: var(--lv1); }
+.ladder-card.lv2 { --ladder-color: var(--lv2); }
+.ladder-card.lv3 { --ladder-color: var(--lv3); }
+.ladder-card.lv4 { --ladder-color: var(--lv4); }
+.ladder-card .ladder-time { margin: 0 0 4px; color: var(--ink-3); font: 10px var(--f-m); }
+.ladder-card .ladder-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.ladder-card b { display: inline; max-width: 100%; font-weight: 700; }
+.ladder-badge { flex: none; padding: 1px 4px; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); background: color-mix(in srgb, var(--warn) 12%, var(--surface)); color: var(--warn); font: 600 9px/1.3 var(--f-m); }
+.ladder-badge.st { border-color: var(--line); background: var(--surface-2); color: var(--ink-3); }
+#s-limit .limit-metrics > div { --metric-color: var(--ink-2); border-color: color-mix(in srgb, var(--metric-color) 25%, var(--line)); background: color-mix(in srgb, var(--metric-color) 10%, var(--surface)); }
+#s-limit .limit-metrics .limit-zt { --metric-color: var(--up); }
+#s-limit .limit-metrics .limit-zb { --metric-color: var(--warn); }
+#s-limit .limit-metrics .limit-dt { --metric-color: var(--dn); }
+#s-limit .limit-metrics .limit-zt strong, #s-limit .limit-metrics .limit-zb strong, #s-limit .limit-metrics .limit-dt strong { color: var(--metric-color); }
+#s-limit .limit-metrics strong { font-size: 22px; }
+#s-sentiment .sentiment-metrics > .sentiment-up { border-color: color-mix(in srgb, var(--up) 25%, var(--line)); background: color-mix(in srgb, var(--up) 10%, var(--surface)); }
+#s-sentiment .sentiment-metrics > .sentiment-down { border-color: color-mix(in srgb, var(--dn) 25%, var(--line)); background: color-mix(in srgb, var(--dn) 10%, var(--surface)); }
+#s-sentiment .sentiment-metrics .sentiment-up strong { color: var(--up); }
+#s-sentiment .sentiment-metrics .sentiment-down strong { color: var(--dn); }
+#s-sentiment .promotion-positive { color: var(--up); font-weight: 600; }
 .tag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s2); }
 .tag-card, .news-item { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
 .tag-card b, .news-item b { display: block; }
@@ -193,6 +237,12 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .tm { height: 520px; } }
 @media (max-width: 599px) { .flow-rank-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 540px) {
+  .ladder-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ladder-summary > div { padding: var(--s2); }
+  .ladder-row { grid-template-columns: 54px minmax(0, 1fr); }
+  .ladder-card { min-width: 104px; flex-basis: 120px; }
+}
 .summary-lines { display: grid; gap: 8px; }
 .summary-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); }
 .summary-row strong { font-size: 13px; }
@@ -202,6 +252,19 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 .summary-model-details { margin-top: 10px; border: 1px solid var(--line); background: var(--surface); padding: 10px 12px; }
 .summary-model-details > summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 600px) { .summary-row { grid-template-columns: 1fr; gap: 4px; } }
+#s-breadth .breadth-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: var(--s2); }
+#s-breadth .breadth-grid > div { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
+#s-breadth .breadth-grid small { display: block; color: var(--ink-3); font-size: 11px; }
+#s-breadth .breadth-grid strong { display: block; font: 600 18px/1.35 var(--f-m); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#s-breadth .breadth-tables { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--s3); margin-top: var(--s4); }
+#s-breadth .breadth-tables > div { min-width: 0; }
+#s-breadth .breadth-tables h3 { margin: 0 0 var(--s2); font-size: 13px; }
+#s-breadth .breadth-basis-table { min-width: 680px; }
+#s-breadth .breadth-history-table { min-width: 840px; }
+#s-breadth .breadth-method { margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface); padding: var(--s3); }
+#s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
+#s-breadth .breadth-method p { line-height: 1.6; }
+@media (max-width: 760px) { #s-breadth .breadth-tables { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -218,6 +281,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <summary>逐个指数看变化</summary>
       <div id="model-ranges-body" data-ai-context="逐个指数看变化"><p class="note">模型区间加载中…</p></div>
     </details>
+  </section>
+  <section class="sec wide" id="s-breadth" aria-labelledby="h-breadth" data-ai-context="宽度与资金">
+    <div class="sec-h"><h2 id="h-breadth">宽度与资金</h2><span class="ev">descriptive</span><span class="src" id="src-breadth"></span></div>
+    <div id="breadth-body"><p class="note">宽度与资金数据加载中…</p></div>
   </section>
   <section class="sec wide" id="s-news" aria-labelledby="h-news">
     <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
@@ -606,10 +673,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         </tbody></table></div>`;
     }
     $('limit-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
-      `<div class="big"><div><small>涨停</small><strong class="up">${L.zt ?? '—'}</strong></div><div><small>炸板</small><strong class="wn">${L.zb ?? '—'}</strong></div>
-       <div><small>跌停</small><strong class="dn">${L.dt ?? '—'}</strong></div><div><small>炸板率</small><strong>${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+      `<div class="big limit-metrics"><div class="limit-zt"><small>涨停</small><strong>${L.zt ?? '—'}</strong></div><div class="limit-zb"><small>炸板</small><strong>${L.zb ?? '—'}</strong></div>
+       <div class="limit-dt"><small>跌停</small><strong>${L.dt ?? '—'}</strong></div><div><small>炸板率</small><strong>${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
        <div><small>最高连板</small><strong>${L.max_streak ?? '—'}</strong></div></div>
-       <div class="bars" aria-label="连板分布">${dist.map((d) => `<div style="height:${(d[1] / mx * 100).toFixed(0)}%"><em>${d[1]}</em></div>`).join('')}</div>
+       <div class="bars" aria-label="连板分布">${dist.map((d) => {
+         const level = Number(d[0]);
+         const color = level <= 1 ? 'bar-lv1' : level === 2 ? 'bar-lv2' : level === 3 ? 'bar-lv3' : 'bar-lv4';
+         return `<div class="${color}" style="height:${(d[1] / mx * 100).toFixed(0)}%"><em>${d[1]}</em></div>`;
+       }).join('')}</div>
        <div class="bars-x">${dist.map((d) => `<span>${d[0]}板</span>`).join('')}</div>
        <p class="note">交易日 ${E(L.date || '—')}</p>
        <div class="limit-tabs" role="tablist" aria-label="涨跌停明细">${groups.map((group) => `<button class="chip" role="tab" aria-selected="${group.id === limitTab}" aria-pressed="${group.id === limitTab}" data-limit-tab="${group.id}">${group.label}<small>${group.count}</small></button>`).join('')}</div>
@@ -622,7 +693,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-sentiment').innerHTML = srcLine(['breadth', 'limit_pools']);
     const errors = failMsg(['breadth', 'limit_pools']);
     const levels = (P.levels || []).map((r) =>
-      `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r">${E(r.n_up)}</td></tr>`).join('');
+      `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r${Number(r.n_up) > 0 ? ' promotion-positive' : ''}">${E(r.n_up)}</td></tr>`).join('');
     const buckets = [
       ['zt', '涨停', 'up'], ['gt10', '>10%', 'up'], ['7_10', '7~10%', 'up'],
       ['3_7', '3~7%', 'up'], ['0_3', '0~3%', 'up'], ['flat', '平', 'flat'],
@@ -646,9 +717,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       ? `，较 ${E(B.amount_prev_date || '—')} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%（${changeAmount >= 0 ? '+' : ''}${(changeAmount / 1e8).toFixed(1)} 亿）`
       : '';
     $('sentiment-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
-      `<div class="big">
-        <div><small>上涨家数</small><strong class="up">${E(B.up ?? '—')}</strong></div>
-        <div><small>下跌家数</small><strong class="dn">${E(B.down ?? '—')}</strong></div>
+      `<div class="big sentiment-metrics">
+        <div class="sentiment-up"><small>上涨家数</small><strong>${E(B.up ?? '—')}</strong></div>
+        <div class="sentiment-down"><small>下跌家数</small><strong>${E(B.down ?? '—')}</strong></div>
         <div><small>平盘家数</small><strong>${E(B.flat ?? '—')}</strong></div>
         <div><small>成交额（亿元）</small><strong>${yi(B.amount_yuan)}</strong></div>
         <div><small>涨停 / 跌停 / 炸板率</small><strong>${E(L.zt ?? '—')} / ${E(L.dt ?? '—')} / ${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
@@ -674,22 +745,52 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     const promotions = new Map((L.promotion && L.promotion.levels || []).map((row) => [String(row.k), row]));
     const grouped = new Map();
+    const codeOf = (row) => String(row.code || '').replace(/\D/g, '');
+    const is20cm = (row) => /^(30|68)/.test(codeOf(row));
+    const isBeijing = (row) => String(row.market || '').toLowerCase() === 'bj' ||
+      (/^[489]/.test(codeOf(row)) && !codeOf(row).startsWith('90'));
+    const firstTopic = (row) => String(row.reason || '').split('+')[0].trim();
+    const topics = new Map();
     for (const item of items) {
       const streak = Number(item.streak);
       if (!Number.isFinite(streak)) continue;
       if (!grouped.has(streak)) grouped.set(streak, []);
       grouped.get(streak).push(item);
+      const topic = firstTopic(item);
+      if (topic) topics.set(topic, (topics.get(topic) || 0) + 1);
     }
+    const total = Number.isFinite(Number(L.zt)) && L.zt !== null && L.zt !== ''
+      ? Number(L.zt)
+      : items.length;
+    const firstBoards = items.filter((item) => Number(item.streak) === 1).length;
+    const repeatBoards = items.filter((item) => Number(item.streak) >= 2).length;
+    const twentyCent = items.filter(is20cm).length;
+    const topicChips = [...topics.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'))
+      .slice(0, 12)
+      .map(([topic, count]) => `<span class="ladder-theme">${E(topic)} ${count}</span>`)
+      .join('');
     const rows = [...grouped.keys()].sort((a, b) => b - a).map((streak) => {
       const prev = streak - 1, key = prev >= 5 ? '5+' : String(prev);
       const p = promotions.get(key), members = grouped.get(streak);
-      return `<div class="ladder-row"><div class="ladder-label">${streak}板</div><div class="ladder-cells">${members.map((r) =>
-        `<div class="ladder-card"><b>${E(r.name)}</b>
-          <small>${E(r.code)} · 首封 ${E(r.first_seal || '—')} · 炸板 ${E(r.break_times ?? '—')}</small>
+      const levelClass = streak <= 1 ? 'lv1' : streak === 2 ? 'lv2' : streak === 3 ? 'lv3' : 'lv4';
+      return `<div class="ladder-row ${levelClass}"><div class="ladder-label"><strong>${streak}板</strong><small>${members.length}只</small></div><div class="ladder-cells">${members.map((r) => {
+        const badges = `${is20cm(r) ? '<span class="ladder-badge">20cm</span>' : ''}${isBeijing(r) ? '<span class="ladder-badge">30cm</span>' : ''}${/ST/i.test(String(r.name || '')) ? '<span class="ladder-badge st">ST</span>' : ''}`;
+        return `<div class="ladder-card ${levelClass}"><small class="ladder-time">${E(String(r.first_seal || '—').slice(0, 5))}</small>
+          <div class="ladder-name"><b>${E(r.name || '—')}</b>${badges}</div>
+          <small>${E(r.code || '—')} · 炸板 ${E(r.break_times ?? '—')}</small>
           <small>昨日${E(prev >= 5 ? '5+' : prev)}板 ${E(p ? p.n_prev : 0)} 只，晋级 ${E(p ? p.n_up : 0)} 只</small>
-          <small>题材 ${E(String(r.reason || '—').slice(0, 64))}</small></div>`).join('')}</div></div>`;
+          <small>题材 ${E(String(r.reason || '—').slice(0, 64))}</small></div>`;
+      }).join('')}</div></div>`;
     });
     $('ladder-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="ladder-summary">
+        <div class="total"><small>涨停（含ST）</small><strong>${E(total)}</strong></div>
+        <div><small>首板</small><strong>${E(firstBoards)}</strong></div>
+        <div class="repeat"><small>连板（2板+）</small><strong>${E(repeatBoards)}</strong></div>
+        <div class="cm20"><small>20cm</small><strong>${E(twentyCent)}</strong></div>
+      </div>
+      ${topicChips ? `<div class="ladder-themes" aria-label="涨停题材前12名">${topicChips}</div>` : ''}` +
       `<div class="ladder" role="table" aria-label="${E(L.date || M.asof || '—')} 连板天梯">${rows.join('')}</div>
       <p class="ladder-note">交易日 ${E(M.asof || '—')} · 当前全部涨停明细；仅描述当日市场结构，不是强弱或收益预测。</p>`;
   }
@@ -1474,6 +1575,116 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     if (typeof renderSummary === 'function') renderSummary();
   }
+  function renderBreadth(data, reason) {
+    const body = $('breadth-body');
+    const latest = data?.schema === 'breadth.v1' ? data.latest : null;
+    if (!latest) {
+      $('src-breadth').textContent = '数据未加载';
+      body.innerHTML = statusMarkup(
+        reason || (data ? 'empty' : 'unpublished'),
+        '宽度与资金数据',
+        'data-retry-breadth',
+      );
+      return;
+    }
+    const fixed = (value, digits = 2) =>
+      num(value) ? value.toLocaleString('zh-CN', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }) : '—';
+    const percent = (value, digits = 1) =>
+      num(value) ? `${(value * 100).toFixed(digits)}%` : '—';
+    const percentPoints = (value, digits = 2) =>
+      num(value) ? `${value > 0 ? '+' : ''}${value.toFixed(digits)}%` : '—';
+    const trend = num(latest.mcl_trend_days)
+      ? latest.mcl_trend_days > 0
+        ? `连续上升 ${latest.mcl_trend_days} 日`
+        : latest.mcl_trend_days < 0
+          ? `连续下降 ${Math.abs(latest.mcl_trend_days)} 日`
+          : '暂无连续升降'
+      : '暂无连续升降';
+    const card = (label, value, detail = '') => `<div>
+      <small>${E(label)}</small><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}
+    </div>`;
+    const basis = latest.basis || {};
+    const products = {
+      IF: '沪深300',
+      IH: '上证50',
+      IC: '中证500',
+      IM: '中证1000',
+    };
+    const basisRows = Object.entries(products).map(([product, name]) => {
+      const row = basis[product] || {};
+      return `<tr><td>${product} · ${name}</td><td>${E(row.symbol || '—')}</td>
+        <td class="r">${fixed(row.close)}</td><td class="r">${fixed(row.spot)}</td>
+        <td class="r">${fixed(row.spread)}</td><td class="r">${percentPoints(row.pct)}</td>
+        <td class="r">${percentPoints(row.ann)}</td><td class="r">${num(row.days) ? `${row.days} 日` : '—'}</td></tr>`;
+    }).join('');
+    const history = (Array.isArray(data.history) ? data.history : []).slice(-20).reverse();
+    const historyRows = history.map((row) => `<tr>
+      <td>${E(row.date || '—')}</td><td class="r">${fixed(row.sh)}</td>
+      <td class="r">${percent(row.red)}</td><td class="r">${percent(row.P20)}</td>
+      <td class="r">${percent(row.P60)}</td><td class="r">${percent(row.P250)}</td>
+      <td class="r">${fixed(row.MCL, 0)}</td><td class="r">${fixed(row.trin_amt)}</td>
+      <td class="r">${num(row.amount_ratio20) ? `${fixed(row.amount_ratio20)}×` : '—'}</td>
+      <td class="r">${percentPoints(row.basis_ann_mean)}</td></tr>`).join('');
+    const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+    const warningMarkup = warnings.length
+      ? `<div class="warnl">数据提示：${warnings.map((item) => E(
+        typeof item === 'string' ? item : JSON.stringify(item),
+      )).join('；')}</div>`
+      : '<p class="note">预警规则回测中，暂不显示</p>';
+    const sampleN = num(latest.n) ? latest.n : '—';
+    $('src-breadth').textContent =
+      `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位，不是预测`;
+    body.innerHTML = `<div class="breadth-grid">
+        ${card('红盘率', percent(latest.red))}
+        ${card('上涨成交额占比', percent(latest.amt_up))}
+        ${card('P20', percent(latest.P20))}
+        ${card('P60', percent(latest.P60))}
+        ${card('P250', percent(latest.P250))}
+        ${card('MCL', fixed(latest.MCL, 0), E(trend))}
+        ${card('TRIN（成交额）', fixed(latest.trin_amt), `成交量口径 ${fixed(latest.trin_vol)}`)}
+        ${card('成交额 / 量比', `${fixed(latest.amount_yi, 1)} 亿`, `量比 ${num(latest.amount_ratio20) ? `${fixed(latest.amount_ratio20)}×` : '—'}`)}
+        ${card('涨停 / 跌停', `${num(latest.lu) ? latest.lu : '—'} / ${num(latest.ld) ? latest.ld : '—'}`, '按价格推断，含 ST 误差')}
+      </div>
+      <p class="note">MCL EMA 可用历史 ${num(data.mcl_warmup_days) ? data.mcl_warmup_days : '—'} 个交易日递推。</p>
+      <div class="breadth-tables">
+        <div><h3>股指期货升贴水</h3>
+          <div class="table-scroll"><table class="breadth-basis-table"><thead><tr>
+            <th>品种</th><th>主力合约</th><th class="r">期货</th><th class="r">现货</th>
+            <th class="r">基差</th><th class="r">基差率</th><th class="r">年化</th><th class="r">剩余天数</th>
+          </tr></thead><tbody>${basisRows}</tbody></table></div>
+        </div>
+        <div><h3>最近 20 日</h3>
+          ${historyRows ? `<div class="table-scroll"><table class="breadth-history-table"><thead><tr>
+            <th>日期</th><th class="r">上证</th><th class="r">红盘率</th><th class="r">P20</th>
+            <th class="r">P60</th><th class="r">P250</th><th class="r">MCL</th><th class="r">TRIN</th>
+            <th class="r">量比</th><th class="r">年化基差均值</th>
+          </tr></thead><tbody>${historyRows}</tbody></table></div>` : '<p class="note">最近 20 日暂无可用数据。</p>'}
+        </div>
+      </div>
+      <section class="breadth-warnings" aria-label="预警区"><h3>预警区</h3>${warningMarkup}</section>
+      <details class="breadth-method"><summary>口径说明</summary>
+        <p class="note">红盘率 = 上涨家数 ÷ 全A有效样本数；上涨成交额占比 = 上涨股票成交额合计 ÷ 全样本成交额合计。</p>
+        <p class="note">P20、P60、P250 = 收盘价高于最近 N 个交易日（含当日）不复权收盘简单均线的股票数 ÷ 有 N 日连续有效价格历史的股票数；样本分母只计有完整 N 日历史的股票。</p>
+        <p class="note">MCL = EMA(adv − dec, α=0.10, adjust=false) − EMA(adv − dec, α=0.05, adjust=false)；连续升降按每日 MCL 变化方向计数。</p>
+        <p class="note">成交额 TRIN = (上涨家数 ÷ 下跌家数) ÷ (上涨股票成交额 ÷ 下跌股票成交额)；成交量 TRIN 将成交额替换为成交量。TRIN 小于 1 表示资金比家数更偏向上涨股，大于 1 相反。</p>
+        <p class="note">成交额（亿） = 全A有效样本成交额 ÷ 1 亿；量比 = 当日成交额 ÷ 前 20 个交易日成交额均值。</p>
+        <p class="note">涨停、跌停按前收盘价乘以涨跌幅并四舍五入到分后，与收盘价比较；普通股票按 10%、代码 30/68 按 20%、北交所按 30%。普通10%档另将跌幅超过4.5%、收盘价不高于前收盘价95%且收在当日最低价附近的记录计为疑似ST跌停，价格推断可能有误差。</p>
+        <p class="note">IF/IH/IC/IM 分别对应沪深300/上证50/中证500/中证1000现货指数；主力为未到期合约中成交量最大者，到期日按合约月第三个周五，节假日顺延暂不处理。基差率 = (期货 ÷ 现货 − 1) × 100%；年化基差 = 基差率 × 365 ÷ max(剩余自然日, 5)；年化均值为可用品种的算术平均。</p>
+      </details>`;
+  }
+  async function loadBreadth() {
+    $('breadth-body').innerHTML = '<p class="note">宽度与资金数据加载中…</p>';
+    const [data, result] = await Promise.all([
+      LPPL.breadth(),
+      LPPL.fetchResult('market/breadth_latest.json', {
+        empty: (value) => !value || value.schema !== 'breadth.v1',
+      }),
+    ]);
+    renderBreadth(data, result.reason);
+  }
   async function loadStockDirectory() {
     stockListResult = await LPPL.fetchResult('market/stock_list.json', {
       empty: (data) => !Array.isArray(data?.rows) || data.rows.length === 0,
@@ -1502,7 +1713,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   $('events-body').addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-events]')) loadEvents();
   });
+  $('breadth-body').addEventListener('click', (event) => {
+    if (event.target.closest('[data-retry-breadth]')) loadBreadth();
+  });
   loadMarket();
+  loadBreadth();
   loadStockDirectory();
   loadEvents();
   loadSummaryData();

@@ -170,6 +170,38 @@ def test_versioned_workflows_use_the_publisher_and_keep_stock_list_unversioned()
         assert "git add --" in publish["run"]
 
 
+def test_market_breadth_uses_cache_fallback_and_publishes_latest_json():
+    workflow = _workflow("market_daily.yml")
+    steps = workflow["jobs"]["collect"]["steps"]
+    breadth_cache = next(step for step in steps if step.get("id") == "breadth_cache")
+    breadth = next(step for step in steps if step.get("id") == "breadth")
+    cache_save = next(
+        step for step in steps if step.get("name") == "Save market breadth cache"
+    )
+    publish = next(
+        step for step in steps if step.get("name") == "Publish to stock-results"
+    )
+
+    assert breadth_cache["uses"] == "actions/cache/restore@v4"
+    assert breadth_cache["with"]["path"] == "data/cache/breadth"
+    assert breadth["continue-on-error"] is True
+    assert "research.data.breadth" in breadth["run"]
+    assert '--date "${{ steps.fetch.outputs.asof }}"' in breadth["run"]
+    assert "--backfill 300" in breadth["run"]
+    assert "--previous out/previous-market/breadth_latest.json" in breadth["run"]
+    assert cache_save["uses"] == "actions/cache/save@v4"
+    assert cache_save["with"]["path"] == "data/cache/breadth"
+    assert "steps.breadth.outcome == 'success'" in publish["if"]
+    assert (
+        "cp out/market/breadth_latest.json market/breadth_latest.json"
+        in publish["run"]
+    )
+    assert "git add market/breadth_latest.json" in publish["run"]
+
+    build = (ROOT / "scripts/build_site.sh").read_text(encoding="utf-8")
+    assert 'git -C "$ROOT" archive stock-results market' in build
+
+
 def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
     workflow = _workflow("dip_env.yml")
     publish = next(

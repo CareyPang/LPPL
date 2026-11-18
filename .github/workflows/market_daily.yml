@@ -15,13 +15,17 @@ on:
       - research/data/range_stats.py
       - research/data/market_base.py
       - research/data/events.py
+      - research/data/breadth.py
       - research/data/trading_date.py
       - research/dip/env.py
       - tests/test_trading_date.py
       - tests/test_market_workflows.py
+      - tests/test_breadth.py
+      - tests/e2e/test_smoke.py
       - frontend/market.html
       - frontend/stock.html
       - frontend/app/lppl-data.js
+      - frontend/tests/fixtures/breadth_latest.json
       - .github/workflows/market_daily.yml
       - scripts/build_stock_list.py
       - tests/test_build_stock_list.py
@@ -106,6 +110,35 @@ jobs:
           if [[ "$limit_ok" != "true" ]]; then
             echo "limit_pools failed; keeping the previous published snapshot"
           fi
+      - name: Restore market breadth cache
+        id: breadth_cache
+        if: steps.fetch.outcome == 'success' && steps.install.outcome == 'success'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache/breadth
+          key: market-breadth-v1-${{ hashFiles('research/data/breadth.py', 'research/data/trading_date.py', 'research/pipeline/stock.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            market-breadth-v1-${{ hashFiles('research/data/breadth.py', 'research/data/trading_date.py', 'research/pipeline/stock.py') }}-
+      - name: Collect market breadth
+        id: breadth
+        if: steps.fetch.outcome == 'success' && steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/market
+          python -m research.data.breadth \
+            --date "${{ steps.fetch.outputs.asof }}" \
+            --backfill 300 \
+            --cache-dir data/cache/breadth \
+            --previous out/previous-market/breadth_latest.json \
+            --out out/market/breadth_latest.json
+      - name: Save market breadth cache
+        if: always() && steps.breadth.outcome == 'success' && steps.breadth_cache.outputs.cache-primary-key != ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/cache/breadth
+          key: ${{ steps.breadth_cache.outputs.cache-primary-key }}
       - name: Fetch and publish event calendar
         if: ${{ always() && steps.install.outcome == 'success' }}
         continue-on-error: true
@@ -137,7 +170,7 @@ jobs:
             gh workflow run pages.yml --ref main
           fi
       - name: Publish to stock-results
-        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.range_stats.outcome == 'success' || steps.stock_list.outputs.stock_list_ok == 'true')
+        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.breadth.outcome == 'success' || steps.range_stats.outcome == 'success' || steps.stock_list.outputs.stock_list_ok == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -161,6 +194,10 @@ jobs:
           fi
           if [[ "${{ steps.fetch.outputs.limit_ok }}" == "true" ]]; then
             publish_versioned market "$GITHUB_WORKSPACE/out/market/market_latest.json"
+          fi
+          if [[ -f out/market/breadth_latest.json ]]; then
+            cp out/market/breadth_latest.json market/breadth_latest.json
+            git add market/breadth_latest.json
           fi
           if [[ -f out/abnormal/abnormal_latest.json ]]; then
             publish_versioned abnormal "$GITHUB_WORKSPACE/out/abnormal/abnormal_latest.json"

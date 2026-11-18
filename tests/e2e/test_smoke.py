@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
@@ -17,6 +18,13 @@ def expect(locator: object):
     return playwright_expect(locator)
 
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
+BREADTH_FIXTURE = (
+    Path(__file__).resolve().parents[2]
+    / "frontend"
+    / "tests"
+    / "fixtures"
+    / "breadth_latest.json"
+)
 NAV_PAGES = (
     "home.html",
     "index.html?code=sh000001",
@@ -202,6 +210,10 @@ def test_backtest_recompute_notice_uses_history_metadata_in_scenario_and_strateg
 
 @pytest.mark.e2e
 def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
+    page.route(
+        "**/lab/mock/data/market/breadth_latest.json",
+        lambda route: route.fulfill(path=str(BREADTH_FIXTURE)),
+    )
     page.goto(f"{BASE_URL}/market.html")
     page.wait_for_function(
         """() => {
@@ -237,6 +249,26 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         or news.locator(".news-status").count() > 0
         or re.search(r"暂无|不可用|未发布|数据", news.inner_text())
     )
+    breadth = page.locator("#s-breadth")
+    page.wait_for_function(
+        "() => document.querySelector('#breadth-body')?.innerText.includes('0.34')"
+    )
+    expect(breadth).to_have_attribute("data-ai-context", "宽度与资金")
+    expect(breadth.locator("#breadth-body")).to_contain_text("52.5%")
+    expect(breadth.locator("#breadth-body")).to_contain_text("14.7%")
+    expect(breadth.locator("#breadth-body")).to_contain_text("8.1%")
+    expect(breadth.locator("#breadth-body")).to_contain_text("预警规则回测中，暂不显示")
+    expect(breadth.locator(".breadth-basis-table tbody tr")).to_have_count(4)
+    expect(
+        breadth.locator(".breadth-basis-table tbody tr").first.locator("td").nth(4)
+    ).to_have_text("20.00")
+    expect(breadth.locator(".breadth-history-table tbody tr")).to_have_count(1)
+    page.set_viewport_size({"width": 390, "height": 844})
+    dimensions = page.evaluate(
+        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    assert page.locator("#s-breadth .table-scroll").count() == 2
 
 
 @pytest.mark.e2e
