@@ -75,6 +75,39 @@ def test_daily_red_and_amount_trin_use_filtered_all_a_rows():
     assert spots["hs300"] == pytest.approx(4000)
 
 
+def test_limit_prices_round_half_up_for_up_and_down_limits():
+    rows = [
+        {
+            "market": "sh",
+            "code": f"60000{index}",
+            "name": "样本",
+            "prev_close": 4.75,
+            "close": close,
+            "low": min(4.75, close),
+            "volume": 100,
+            "amount": 1000,
+        }
+        for index, close in enumerate((5.23, 5.22, 4.28, 4.52), start=1)
+    ]
+
+    metrics, _ = breadth.compute_daily_metrics("2026-11-18", rows)
+    up_price = breadth._rounded_limit_prices(
+        np.array([4.75]), np.array([0.1]), up=True
+    )[0]
+    down_price = breadth._rounded_limit_prices(
+        np.array([4.75]), np.array([0.1]), up=False
+    )[0]
+
+    assert up_price == pytest.approx(5.23)
+    assert 5.23 >= up_price - 0.001
+    assert not 5.22 >= up_price - 0.001
+    assert down_price == pytest.approx(4.28)
+    assert 4.28 <= down_price + 0.001
+    assert not 4.29 <= down_price + 0.001
+    assert metrics["lu"] == 1
+    assert metrics["ld"] == 1
+
+
 def test_p20_with_short_window_counts_only_stocks_with_full_history():
     dates = pd.date_range("2026-11-16", periods=3, freq="D")
     closes = pd.DataFrame(

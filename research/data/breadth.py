@@ -14,6 +14,7 @@ import tempfile
 import time
 import zipfile
 import zlib
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
@@ -67,6 +68,31 @@ ROW_FIELDS = (
     "basis_json",
     "basis_ann_mean",
 )
+
+
+def _rounded_limit_prices(
+    prev_close: np.ndarray, limits: np.ndarray, *, up: bool
+) -> np.ndarray:
+    one = Decimal("1")
+    cent = Decimal("0.01")
+
+    def rounded(previous, limit):
+        rate = Decimal(str(limit))
+        multiplier = one + rate if up else one - rate
+        return float(
+            (Decimal(str(previous)) * multiplier).quantize(
+                cent, rounding=ROUND_HALF_UP
+            )
+        )
+
+    return np.fromiter(
+        (
+            rounded(previous, limit)
+            for previous, limit in zip(prev_close, limits, strict=True)
+        ),
+        dtype=float,
+        count=len(prev_close),
+    )
 
 
 def _date_text(value: str | dt.date | dt.datetime) -> str:
@@ -418,16 +444,21 @@ def compute_daily_metrics(
     prev_close = stocks["prev_close"].to_numpy(dtype=float)
     close = stocks["close"].to_numpy(dtype=float)
     low = stocks["low"].to_numpy(dtype=float)
+    up_price_limit = _rounded_limit_prices(prev_close, limits, up=True)
+    down_price_limit = _rounded_limit_prices(prev_close, limits, up=False)
+    st_down_price_limit = _rounded_limit_prices(
+        prev_close, np.full_like(limits, 0.05), up=False
+    )
     down_limit = (
-        (close <= np.round(prev_close * (1 - limits), 2) + 0.001)
+        (close <= down_price_limit + 0.001)
         | (
-            (close <= np.round(prev_close * 0.95, 2) + 0.001)
+            (close <= st_down_price_limit + 0.001)
             & (close <= low + 0.001)
             & (limits == 0.1)
             & ((close / prev_close - 1) < -0.045)
         )
     )
-    up_limit = close >= np.round(prev_close * (1 + limits), 2) - 0.001
+    up_limit = close >= up_price_limit - 0.001
     spots = {}
     index_codes = ("000001", *(code for _, code in BASIS_SPOT_CODES.values()))
     for code in index_codes:
