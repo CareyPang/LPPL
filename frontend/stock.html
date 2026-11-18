@@ -640,7 +640,13 @@
     function clusterSummaryTile(d, scale) {
       const view = scaleClusterView(d, scale);
       const label = `${scaleName[scale]}主簇`;
-      if (view.kind !== 'clusters') return tile(label, clusterScaleText(d, scale, true));
+      if (view.kind !== 'clusters') {
+        const shortReason = RuleLabels.shortText(view.reason);
+        if (shortReason) {
+          return tile(label, shortReason, '', RuleLabels.reasonText(view.reason));
+        }
+        return tile(label, clusterScaleText(d, scale, true));
+      }
       const main = view.clusters[0];
       return tile(
         label,

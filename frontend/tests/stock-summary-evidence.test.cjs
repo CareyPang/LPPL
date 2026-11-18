@@ -24,7 +24,7 @@ for (const evidence of [undefined, 'none', 'dev_only', 'dev_failed', 'fail_i_iii
     assert.match(result, /尚无可显示结果/);
     assert.match(result, /不能解释为没有风险/);
     assert.doesNotMatch(result, /不在风险窗口|0 \/ 6|2026-12-01|2026-12-10|研究候选/);
-    assert.match(result, /6–12 月主簇<\/small><b class="">这个尺度尚未计算/);
+    assert.match(result, /6–12 月主簇<\/small><b class="">未计算<\/b><span class="sub">这个尺度尚未计算/);
     assert.doesNotMatch(result, /合格拟合的尺度/);
   });
 }

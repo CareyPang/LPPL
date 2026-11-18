@@ -122,6 +122,24 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
         "当前只算了 6–12 月、12–24 月两个尺度"
     )
     expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
+    empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
+    expect(empty_tiles).to_have_count(3)
+    for tile_index in (0, 1):
+        tile = empty_tiles.nth(tile_index)
+        expect(tile.locator("b")).to_have_text("无合格拟合")
+        expect(tile.locator(".sub")).to_have_text(
+            "已计算，没有合格拟合（不代表风险较低）"
+        )
+    for width, height in ((1440, 900), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        line_counts = empty_tiles.locator("b").evaluate_all(
+            """nodes => nodes.map(element => {
+              const range = document.createRange();
+              range.selectNodeContents(element);
+              return range.getClientRects().length;
+            })"""
+        )
+        assert len(line_counts) == 3 and max(line_counts) <= 2, line_counts
     page.locator('#stock-scales [data-scale="12-24m"]').click()
     expect(
         page.locator('#stock-scales [data-scale="12-24m"]')

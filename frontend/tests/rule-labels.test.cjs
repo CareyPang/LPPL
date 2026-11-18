@@ -50,3 +50,17 @@ test('classifies non-formal intervals without exposing values and accepts displa
   assert.equal(RuleLabels.emptyReason(topFor(0.25), '6-12m', [{ q20_date: '2026-01-01' }], true), null);
   assert.equal(RuleLabels.reasonText('unknown'), '');
 });
+
+test('returns compact labels for summary values while preserving full explanations', () => {
+  assert.deepEqual(RuleLabels.EMPTY_SHORT, {
+    not_computed: '未计算',
+    no_fit: '无合格拟合',
+    no_cluster: '未形成区间',
+    not_formal: '证据不足',
+  });
+  for (const reason of Object.keys(RuleLabels.EMPTY_SHORT)) {
+    assert.equal(RuleLabels.shortText(reason), RuleLabels.EMPTY_SHORT[reason]);
+    assert.notEqual(RuleLabels.reasonText(reason), '');
+  }
+  assert.equal(RuleLabels.shortText('unknown'), '');
+});

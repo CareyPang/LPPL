@@ -25,6 +25,12 @@
     no_cluster: '有合格拟合，但没有形成聚类区间',
     not_formal: '已形成候选区间，证据不足，不作正式提醒',
   });
+  var EMPTY_SHORT = Object.freeze({
+    not_computed: '未计算',
+    no_fit: '无合格拟合',
+    no_cluster: '未形成区间',
+    not_formal: '证据不足',
+  });
 
   function renderCaption(ruleIds) {
     var ids = Array.isArray(ruleIds) ? ruleIds.filter(function (id) { return RULES[id]; }) : [];
@@ -49,12 +55,18 @@
     return EMPTY_REASONS[reason] || '';
   }
 
+  function shortText(reason) {
+    return EMPTY_SHORT[reason] || '';
+  }
+
   return {
     RULES: RULES,
     FOOTNOTE: FOOTNOTE,
     EMPTY_REASONS: EMPTY_REASONS,
+    EMPTY_SHORT: EMPTY_SHORT,
     renderCaption: renderCaption,
     emptyReason: emptyReason,
     reasonText: reasonText,
+    shortText: shortText,
   };
 });
