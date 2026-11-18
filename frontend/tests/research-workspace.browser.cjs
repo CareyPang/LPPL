@@ -25,6 +25,10 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push({ method: req.method, path: url.pathname });
   if (req.method !== 'GET') { res.writeHead(405); res.end(); return; }
+  if (url.pathname === '/lab/mock/data/stock/index.json') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ '600519': { name: '贵州茅台', asof: '2026-11-17' }, '000001': { name: '平安银行', asof: '2026-11-17' } })); return;
+  }
   if (failStock && url.pathname === '/lab/mock/data/stock/600519.json') { res.writeHead(503); res.end('{}'); return; }
   let file;
   if (fixturePaths[url.pathname]) file = path.join(process.env.LPPL_PUBLISHED_SAMPLE_DIR || FIX, fixturePaths[url.pathname]);
@@ -129,6 +133,70 @@ const server = http.createServer((req, res) => {
     await page.keyboard.press('Enter');
     assert.equal(await page.evaluate(() => document.activeElement.dataset.select), 'stock:600519');
     check('keyboard selection retains focus after list redraw');
+
+    assert.match(await page.locator('#detail-code').innerText(), /上交所 SSE.*CNY.*交易状态未提供/);
+    const publicDownload = page.waitForEvent('download');
+    await page.locator('#share-summary').click();
+    const publicFile = await publicDownload, publicCard = JSON.parse(fs.readFileSync(await publicFile.path(), 'utf8'));
+    assert.equal(publicCard.asset.code, '600519');
+    for (const key of ['asof', 'source', 'modelVersion', 'evidence', 'firstPublicAt']) assert.ok(Object.hasOwn(publicCard, key));
+    assert.equal(publicCard.firstPublicAt, null);
+    assert.equal(['notes', 'holdings', 'groups', 'account'].some(key => Object.hasOwn(publicCard, key)), false);
+    assert.equal(JSON.stringify(publicCard).includes('第二版'), false);
+    check('anonymous card includes provenance and excludes private notes and positions');
+
+    await page.locator('#remove-asset').click();
+    assert.equal(await page.locator('#watch-count').innerText(), '1');
+    await page.locator('#undo-remove').click();
+    assert.equal(await page.locator('#watch-count').innerText(), '2');
+    await page.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    assert.equal(await page.locator('#research-note').inputValue(), '第二版：保留第一版依据。');
+    check('remove and undo preserve notes and groups');
+
+    const other = await ctx.newPage();
+    await other.goto(origin + '/app/research-workspace.css');
+    await page.locator('#research-note').fill('此标签页未保存草稿');
+    await other.evaluate(() => {
+      const key = 'lppl.research-workspace.v1', s = JSON.parse(localStorage.getItem(key));
+      s.revision += 1;
+      s.notes.push({ ...s.notes.at(-1), id: 'other-tab-note', text: '其他标签页保存内容', version: 3 });
+      localStorage.setItem(key, JSON.stringify(s));
+    });
+    await page.locator('#restore-saved').waitFor({ state: 'visible' });
+    await page.locator('#save-note').click();
+    assert.match(await page.locator('#note-state').innerText(), /失败/);
+    await page.locator('#restore-saved').click();
+    assert.equal(await page.locator('#research-note').inputValue(), '此标签页未保存草稿');
+    await page.locator('#save-note').click();
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).notes.some(n => n.text === '其他标签页保存内容')), true);
+    await other.close();
+    check('real cross-tab conflict refuses overwrite and restores saved state without losing draft');
+
+    await page.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    const privateDownload = page.waitForEvent('download');
+    await page.locator('#export-private').click();
+    const privateFile = await privateDownload, privatePath = await privateFile.path();
+    const privateBundle = JSON.parse(fs.readFileSync(privatePath, 'utf8'));
+    assert.equal(privateBundle.privacy, 'PRIVATE_BACKUP');
+    assert.ok(privateBundle.sections[Core.KEY].notes.some(n => n.text === '其他标签页保存内容'));
+    await page.locator('#import-private').setInputFiles(privatePath);
+    await page.locator('#portable-preview').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#portable-sections input:checked').count(), 0);
+    await page.locator('#portable-sections input').filter({ visible: true }).first().check();
+    const beforeImport = page.waitForEvent('download');
+    await page.locator('#apply-private').click();
+    await beforeImport;
+    await page.waitForFunction(() => document.getElementById('portable-status').textContent.includes('已导入 1'));
+    check('private backup preview defaults to keep local and exports pre-import recovery file');
+
+    await page.locator('#open-discovery').click();
+    await page.locator('#discovery-query').fill('平安');
+    await page.locator('#discovery-results [data-discover="000001"]').waitFor();
+    assert.match(await page.locator('#discovery-results').innerText(), /000001.*SZ/);
+    await page.keyboard.press('Escape');
+    await page.locator('#discovery-dialog').waitFor({ state: 'hidden' });
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'open-discovery');
+    check('published catalog discovery distinguishes stock codes and returns keyboard focus');
 
     const href = await page.locator('#open-analysis').getAttribute('href');
     assert.match(href, /from=research-workspace/);

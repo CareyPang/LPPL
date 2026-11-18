@@ -53,16 +53,26 @@ test('assistant exports an idempotent public opener and delegates prompt clicks'
   assert.match(assistant, /root\.LPPLAssistant\.open\(trigger\.dataset\.aiAsk\)/);
 });
 
-test('home switch defaults closed, reflects state, and safely persists home-only changes', () => {
+test('wide assistant switch uses safe page-specific defaults and persistence', () => {
+  const chart = page('chart.html');
   assert.match(assistant, /var HOME_STORAGE_KEY = 'lppl\.assistant\.home'/);
-  assert.match(assistant, /function readHomePreference\(\) \{\s*try \{ return root\.localStorage\.getItem\(HOME_STORAGE_KEY\) === '1'; \} catch \(e\) \{ return false; \}\s*\}/);
-  assert.match(assistant, /function writeHomePreference\(open\) \{\s*try \{ root\.localStorage\.setItem\(HOME_STORAGE_KEY, open \? '1' : '0'\); \} catch \(e\) \{ \/\* optional \*\/ \}\s*\}/);
-  assert.match(assistant, /homeSwitch\.setAttribute\('role', 'switch'\)/);
-  assert.match(assistant, /homeSwitch\.setAttribute\('aria-checked', 'false'\)/);
-  assert.match(assistant, /homeSwitch\.setAttribute\('aria-checked', String\(open\)\)/);
-  assert.match(assistant, /if \(page === 'home' && persist\) writeHomePreference\(open\)/);
-  assert.match(assistant, /\.ai-home-switch\[aria-checked="true"\] i\{background:#315cf5\}/);
+  assert.match(assistant, /var defaultOpen = page !== 'home' && !\(me && me\.dataset\.default === 'closed'\)/);
+  assert.match(assistant, /return 'lppl\.assistant\.wide:' \+ filename/);
+  assert.match(assistant, /if \(value === '1'\) return true;[\s\S]*?if \(value === '0'\) return false;[\s\S]*?return defaultOpen;/);
+  assert.match(assistant, /root\.localStorage\.setItem\(preferenceKey\(\), open \? '1' : '0'\)/);
+  assert.match(assistant, /switchButton\.setAttribute\('role', 'switch'\)/);
+  assert.match(assistant, /switchButton\.setAttribute\('aria-checked', 'false'\)/);
+  assert.match(assistant, /switchButton\.setAttribute\('aria-checked', String\(open\)\)/);
+  assert.match(assistant, /if \(persist\) writePreference\(open\)/);
+  assert.match(assistant, /\.ai-switch\[aria-checked="true"\] i\{background:#315cf5\}/);
+  assert.doesNotMatch(assistant, /ai-home-switch/);
+  assert.match(assistant, /document\.body\.classList\.toggle\('ai-closed', !open && wide\(\)\)/);
+  assert.match(assistant, /if \(event\.matches\) toggle\(readPreference\(\), false\)/);
+  assert.doesNotMatch(assistant, /\.ai-panel \.ai-x\{display:none\}/);
+  assert.match(chart, /app\/ai-assistant\.js" data-page="stock" data-default="closed"/);
+  assert.match(assistant, /if \(wide\(\)\) toggle\(readPreference\(\), false\)/);
   assert.match(nav, /body\.odn-sidebar-page\.vs-home:not\(\.ai-open\)\{padding-left:208px\}/);
+  assert.match(nav, /@media \(min-width:1200px\)\{body\.odn-sidebar-page\.ai-closed\{padding-left:208px\}\}/);
 });
 
 test('assistant docks at the sidebar edge on wide screens and fills mobile screens', () => {

@@ -9,13 +9,16 @@
     :root { color-scheme: light; font-family: Inter, "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6fa; }
     * { box-sizing: border-box; }
     body { margin: 0; min-width: 320px; }
-    .chart-page { width: min(1440px, 100%); margin: 0 auto; padding: 24px clamp(14px, 3vw, 36px) 52px; }
+    .chart-page { width: min(1440px, 100%); margin: 0 auto; container-type: inline-size; }
+    .chart-content { padding: 24px clamp(14px, 3vw, 36px) 52px; }
     .page-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin: 4px 0 18px; }
     h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); line-height: 1.2; }
     .eyebrow { margin: 0 0 6px; color: #60708b; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
     .asset-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-top: 9px; color: #536078; font-size: 14px; }
     .asset-code { font-variant-numeric: tabular-nums; color: #31415e; }
     .date-line { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 8px; color: #63718a; font-size: 13px; }
+    .asof-tag { display: inline-flex; border-radius: 999px; padding: 5px 9px; color: #8a4b0b; background: #fff2cc; font-size: 12px; font-weight: 650; }
+    .asof-tag[hidden] { display: none; }
     .header-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
     .header-links a, .scale-button, .retry-button, .interval-row {
       min-height: 44px; border-radius: 9px; font: inherit;
@@ -32,7 +35,7 @@
     .chart-host { height: 520px; min-width: 0; position: relative; }
     .loading { color: #73809a; font-size: 14px; padding: 12px 2px 0; }
     .calendar-notice { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; color: #92400e; background: #fff7e7; font-size: 13px; }
-    .calendar-notice[hidden], .error-panel[hidden], .loading[hidden], #index-replay[hidden] { display: none; }
+    .calendar-notice[hidden], .error-panel[hidden], .loading[hidden], #index-replay[hidden], #latest-results-link[hidden] { display: none; }
     .evidence-card, .meta-card { padding: 16px; }
     .evidence-card h2, .meta-card h2 { margin: 0 0 12px; font-size: 17px; }
     .evidence-state { margin: 0 0 10px; color: #33425d; font-size: 14px; font-weight: 650; }
@@ -52,14 +55,16 @@
     .error-panel p { margin: 0 0 10px; }
     .retry-button { padding: 0 16px; border: 0; color: #fff; background: #315cf5; font-weight: 650; cursor: pointer; }
     .retry-button:hover { background: #2447c9; }
+    .evidence-retry-button { margin: 0 10px 8px 0; vertical-align: middle; }
+    .latest-results-link { display: inline-block; margin-left: 12px; color: #315cf5; font-size: 14px; }
     .context-foot { margin: 14px 2px 0; color: #7a879d; font-size: 12px; }
-    @media (max-width: 900px) {
+    @container (max-width: 900px) {
       .layout { grid-template-columns: minmax(0, 1fr); }
       .evidence-side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
       .meta-card { margin-top: 0; }
     }
-    @media (max-width: 600px) {
-      .chart-page { padding: 16px 12px 38px; }
+    @container (max-width: 600px) {
+      .chart-content { padding: 16px 12px 38px; }
       .page-heading { display: block; }
       .header-links { justify-content: flex-start; margin-top: 14px; }
       .header-links a { padding-inline: 10px; }
@@ -83,69 +88,97 @@
       #tv-attr-logo { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
     }
   </style>
+  <link rel="stylesheet" href="app/chart-professional.css">
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
   <script src="app/chart-page-core.js"></script>
+  <script src="app/chart-readonly-data.js"></script>
+  <script src="app/chart-research-card.js"></script>
   <script src="vendor/lppl-lwc/1/lppl-lwc.js"></script>
   <script src="app/lppl-chart.js"></script>
 </head>
 <body>
   <script src="app/od-nav.js" data-section="terminal"></script>
   <main id="chart-page" class="chart-page" data-ai-context="完整图表">
-    <header class="page-heading">
+    <div class="chart-content">
+      <header class="page-heading">
       <div>
         <p class="eyebrow">研究图表 · 完整视图</p>
         <h1 id="asset-name">加载中…</h1>
         <div class="asset-line">
           <span id="asset-code" class="asset-code"></span>
-          <span id="asset-exchange"></span>
+          <span id="asset-exchange"></span><span id="asset-type"></span><span id="trading-status"></span>
         </div>
         <div class="date-line">
           <span id="market-date"></span>
           <span id="model-date">模型日期 —</span>
+          <span id="asof-tag" class="asof-tag" hidden></span>
         </div>
       </div>
       <nav class="header-links" aria-label="图表链接">
         <a id="return-link" href="stock.html">返回标的</a>
         <a id="index-replay" href="index.html">在图表页打开（含历史回放）</a>
       </nav>
-    </header>
+      </header>
 
-    <section id="error-panel" class="error-panel" role="alert" hidden>
-      <p id="error-message"></p>
-      <button id="retry-button" class="retry-button" type="button" hidden>重试加载</button>
-    </section>
+      <p id="asof-notice" class="calendar-notice" role="status" hidden></p>
 
-    <div class="layout">
-      <section class="chart-card" aria-label="价格图表">
-        <div id="scale-selector" class="scale-selector" role="group" aria-label="时间尺度"></div>
-        <div id="chart-host" class="chart-host"></div>
-        <div id="loading" class="loading" role="status">正在加载标的与图表数据…</div>
-        <p id="calendar-notice" class="calendar-notice" role="status" hidden>日历未覆盖：未来区间超出已发布交易日历范围。</p>
+      <section id="error-panel" class="error-panel" role="alert" hidden>
+        <p id="error-message"></p>
+        <button id="retry-button" class="retry-button" type="button" hidden>重试加载</button>
+        <a id="latest-results-link" class="latest-results-link" href="" hidden>改看最新结果</a>
       </section>
 
-      <aside class="evidence-side">
-        <section class="evidence-card" aria-labelledby="evidence-title">
-          <h2 id="evidence-title">区间与证据</h2>
-          <p id="evidence-state" class="evidence-state">等待数据</p>
-          <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
-          <div id="interval-list" class="interval-list"></div>
-          <p id="evidence-note" class="evidence-note"></p>
-        </section>
-        <section class="meta-card" aria-labelledby="meta-title">
-          <h2 id="meta-title">数据说明</h2>
-          <dl>
-            <dt>数据来源</dt><dd id="data-source">未记录</dd>
-            <dt>模型版本</dt><dd id="model-version">未记录</dd>
-            <dt>Prediction ID</dt><dd id="prediction-id">未记录</dd>
-          </dl>
-        </section>
-      </aside>
+      <div class="module-status" aria-label="各模块读取状态" role="status"><span id="market-status">行情等待中</span><span id="model-status">模型等待中</span><span id="events-status">事件等待中</span></div>
+    <div class="chart-actions" aria-label="图表操作">
+      <button id="evidence-toggle" type="button" aria-expanded="true" aria-controls="evidence-panel">收起证据</button>
+      <button id="chart-fullscreen" type="button" aria-pressed="false">全屏图表</button>
+      <button id="share-card" type="button" disabled>下载匿名研究卡</button>
+      <button id="share-screenshot" type="button" disabled>下载带证据截图</button>
     </div>
+    <p id="action-feedback" class="action-feedback" role="status" aria-live="polite"></p>
+    <div class="layout">
+        <section id="chart-card" class="chart-card" aria-label="价格图表">
+        <button id="fullscreen-exit" type="button" hidden>退出全屏 · Esc</button>
+          <div id="scale-selector" class="scale-selector" role="group" aria-label="时间尺度"></div>
+          <div id="chart-host" class="chart-host"></div>
+        <p id="price-mode-note" class="evidence-note"></p>
+          <div id="loading" class="loading" role="status">正在加载标的与图表数据…</div>
+          <p id="calendar-notice" class="calendar-notice" role="status" hidden>日历未覆盖：未来区间超出已发布交易日历范围。</p>
+        </section>
+
+        <aside id="evidence-panel" class="evidence-side" aria-label="区间与证据">
+        <button id="evidence-close" type="button">关闭证据</button>
+          <section class="evidence-card" aria-labelledby="evidence-title">
+            <h2 id="evidence-title">区间与证据</h2>
+            <p id="evidence-state" class="evidence-state">等待数据</p>
+            <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
+            <div id="interval-list" class="interval-list"></div>
+            <p id="evidence-note" class="evidence-note"></p>
+          </section>
+          <section class="meta-card" aria-labelledby="meta-title">
+            <h2 id="meta-title">数据说明</h2>
+            <dl>
+              <dt>数据来源</dt><dd id="data-source">未记录</dd>
+              <dt>模型版本</dt><dd id="model-version">未记录</dd>
+              <dt>Prediction ID</dt><dd id="prediction-id">未记录</dd>
+            <dt>成交量单位</dt><dd id="volume-unit">未记录</dd>
+            <dt>模型输入复权</dt><dd id="model-adjustment">未记录</dd>
+            <dt>首次可见</dt><dd id="first-visible">未记录</dd>
+            <dt>新鲜度</dt><dd id="stale-state">未记录</dd>
+            </dl>
+          </section>
+        </aside>
+      </div>
+      <section class="events-card" aria-labelledby="events-title">
+      <div class="events-heading"><h2 id="events-title">标的事件</h2><button id="events-retry" type="button">重新读取事件</button></div>
+      <div id="event-list"></div><p id="events-note">事件独立读取，不阻塞行情。</p>
+    </section>
     <p class="context-foot">时间区间为研究结果，不构成概率或投资建议；行情日期与模型日期分开标示。</p>
+    </div>
   </main>
-  <script src="app/ai-assistant.js" data-page="stock"></script>
+  <script src="app/ai-assistant.js" data-page="stock" data-default="closed"></script>
   <script src="app/chart-page.js"></script>
 </body>
 </html>
