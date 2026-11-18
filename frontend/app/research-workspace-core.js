@@ -235,7 +235,7 @@
       typeof n.text === 'string' && n.text.length <= 4000 && timestamp(n.createdAt) && Number.isInteger(n.version) && n.version > 0)
       .slice(0, 200).map(n => ({ id: text(n.id, 100), assetId: n.assetId, asof: date(n.asof),
         predictionId: text(n.predictionId, 200) || null, modelVersion: text(n.modelVersion, 120) || null,
-        text: text(n.text, 4000), createdAt: timestamp(n.createdAt), version: n.version }));
+        text: text(n.text, 4000), createdAt: timestamp(n.createdAt), version: n.version, ...(n.imported === true ? { imported: true } : {}) }));
     out.recent = (Array.isArray(value.recent) ? value.recent : []).map(cleanContext).filter(Boolean).slice(0, 10);
     return out;
   }
@@ -321,7 +321,7 @@
     if (state.notes.length >= 200) return null; // Never silently discard a user's old note.
     const note = { id: 'note-' + c.visitedAt + '-' + state.notes.length, assetId: c.assetId, asof: c.asof,
       predictionId: c.predictionId, modelVersion: c.modelVersion, text: clean,
-      createdAt: c.visitedAt, version: previous ? previous.version + 1 : 1 };
+      createdAt: c.visitedAt, version: versions.length ? Math.max(...versions.map(n => n.version)) + 1 : 1 };
     state.notes.push(note); return note;
   }
   function notesFor(state, id) {
@@ -334,5 +334,5 @@
     return (a.kind === 'index' ? 'index.html' : 'stock.html') + '?code=' + encodeURIComponent(a.code) + '&from=research-workspace';
   }
   return { KEY, SCALES, STATUS, asset, summarize, initial, load, save, addGroup, setGroup,
-    observe, recordVisit, saveNote, notesFor, route, date, signature };
+    observe, recordVisit, saveNote, notesFor, route, date, signature, normalize };
 });

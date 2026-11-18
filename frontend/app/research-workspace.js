@@ -12,10 +12,10 @@
   }
   let storage = null;
   try { storage = window.localStorage; } catch { /* Inform the user below. */ }
-  const state = Core.load(storage);
+  let state = Core.load(storage);
   const summaries = new Map(), errors = new Map(), drafts = new Map();
   let assets = [], generation = 0, busy = false, queuedRefresh = false, inspectRecord = null, activeNoteKey = null;
-  let focusedBeforeDialog = null, restoringScroll = false;
+  let focusedBeforeDialog = null, restoringScroll = false, removedAsset = null, externalConflict = false;
 
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const prettyTime = value => {
@@ -57,17 +57,32 @@
   function notify(text) { $('global-message').textContent = text; $('global-message').hidden = !text; }
   function storageWarning() {
     $('storage-warning').hidden = false;
-    $('storage-warning').textContent = state.storageIssue
+    $('storage-warning').textContent = externalConflict ? '另一个标签页更新了研究记录，本页尚未覆盖它。草稿仍保留在编辑器中；载入已保存记录后可以继续保存草稿。' : state.storageIssue
       ? '本机研究记录无法读取，暂未覆盖。仍可浏览已发布结果；重要笔记请自行复制保存。'
-      : '本次修改未保存：存储不可用、空间不足，或其他标签页已更新。请先复制重要笔记，再重新载入。';
+      : '本次修改未保存：存储不可用、空间不足，或其他标签页已更新。请先复制重要笔记，再载入已保存记录。';
+    $('restore-saved').hidden = false;
   }
   function persist() {
     const ok = Core.save(storage, state);
     if (!ok) storageWarning();
+    else window.dispatchEvent(new Event('workspace-change'));
     return ok;
   }
   function saveDraft() {
     if (activeNoteKey) drafts.set(activeNoteKey, $('research-note').value);
+  }
+  function hasUnsaved() {
+    saveDraft();
+    return !!window.ResearchPersonalActions?.hasUnsaved() || [...drafts].some(([key, text]) => {
+      const saved = state.notes.slice().reverse().find(n => [n.assetId, n.asof || '', n.predictionId || '', n.modelVersion || ''].join('|') === key);
+      return text.trim() !== (saved?.text || '').trim();
+    });
+  }
+  window.ResearchWorkspaceActions = { hasUnsaved };
+  function identity(asset) {
+    const code = asset.code;
+    const exchange = /^(sh|60|68)/.test(code) ? '上交所 SSE' : /^(sz|00|30)/.test(code) ? '深交所 SZSE' : /^(43|83|87|92)/.test(code) ? '北交所 BSE' : '交易所未提供';
+    return code + ' · ' + exchange + ' · ' + (asset.kind === 'index' ? '指数 / 点' : 'A 股 / CNY') + ' · 交易状态未提供';
   }
   function announceWatch() {
     window.dispatchEvent(new CustomEvent('lppl-watch', { detail: { origin: 'research-workspace' } }));
@@ -141,13 +156,23 @@
     const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     $('detail-kind').textContent = inspectRecord ? 'SAVED OBSERVATION · 本机历史记录' : 'RESEARCH DESK · 当前结果';
     $('detail-heading').textContent = asset.name;
-    $('detail-code').textContent = asset.code + ' · ' + (asset.kind === 'index' ? '指数' : 'A 股股票');
+    $('detail-code').textContent = identity(asset);
     const incomplete = s.coverage.filter(c => !c.computed).length;
     let html = '<div class="summary-banner' + (!s.windows.length ? ' neutral' : '') + '"><h3>' + (s.status === 'expired' ? '已过去的观察区间' : s.windows.length ? '顶部观察区间' : '当前研究状态') + '</h3><p>' + esc(s.windows.length ? s.windows[0].start + ' — ' + s.windows[0].end : s.statusText) + '</p><small>' + (s.windows.length ? esc(s.windows[0].scale || '综合区间') + ' · 研究观察，不是确定见顶日' + esc(windowEvidence(s.windows[0])) : '未展示区间不等于没有风险。') + '</small></div>';
     if (s.status === 'expired') html += '<p class="notice notice-warning">该区间已早于分析截止日，仅供回看，不是新的未来提醒。</p>';
     if (s.windows.length > 1) html += '<details class="record-details"><summary>全部可展示区间 <span>' + s.windows.length + '</span></summary>' + s.windows.map(w => '<div class="record-item"><strong>' + esc(w.scale || '综合区间') + '</strong><p>' + esc(w.start + ' — ' + w.end) + '</p><small>证据：' + esc(w.evidence + windowEvidence(w)) + '</small></div>').join('') + '</details>';
     if (errors.has(asset.id) && !inspectRecord) html += '<p class="notice notice-warning">本次未取得新的已发布结果。已有本机记录与笔记仍保留。</p>';
     if (s.stale) html += '<p class="notice notice-warning">数据待更新：' + esc(s.staleReason || '来源标记为 stale') + '</p>';
+    if (!s.windows.length) {
+      const next = {
+        unavailable: '先打开行情查看价格；也可以重试读取已发布分析。',
+        not_computed: '已有结果尚未覆盖计算尺度。打开分析页查看当前计算入口。',
+        no_qualified_fit: '本次已计算尺度没有合格拟合。打开完整图表核对行情，展开计算覆盖查看哪些尺度已计算。',
+        no_cluster: '当前没有可展示的聚类区间。先查看各尺度覆盖与证据，不把单次拟合当作聚类。',
+        evidence_hidden: '结果的证据状态尚不支持显示区间。可以展开结果口径说明，或查看完整图表的证据面板。'
+      };
+      html += '<p class="record-caption">' + esc(next[s.status] || '可打开完整图表查看行情与证据。') + '</p>';
+    }
     html += '<dl class="summary-facts"><div><dt>分析截止日</dt><dd>' + esc(dateLabel(s.asof)) + '</dd></div><div><dt>模型版本</dt><dd>' + esc(s.modelVersion || '未提供') + '</dd></div><div><dt>生成时间</dt><dd>' + esc(s.generatedAt ? prettyTime(s.generatedAt) + ' 北京时间' : '未提供') + '</dd></div>';
     if (s.price && asset.kind === 'index') html += '<div><dt>分析序列收盘</dt><dd>' + esc(s.price.close.toLocaleString('zh-CN', { maximumFractionDigits: 3 })) + ' 点 <small>(' + esc(s.price.date) + ')</small></dd></div>';
     if (s.price && asset.kind === 'stock') html += '<div><dt>股票行情</dt><dd><a href="' + esc(Core.route(asset)) + '">前往分析页查看</a></dd></div>';
@@ -158,6 +183,10 @@
     $('detail-summary').innerHTML = html;
     $('asset-group').innerHTML = groupsHTML(groupOf(asset.id), false);
     $('open-analysis').href = Core.route(asset);
+    const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html' });
+    if (s.asof) fullChart.set('asof', s.asof);
+    $('open-full-chart').href = 'chart.html?' + fullChart.toString();
+    $('open-full-chart').textContent = s.asof ? '查看截至 ' + s.asof + ' 的完整图表 ↗' : '打开完整图表 ↗';
     $('context-note').textContent = inspectRecord ? '正在查看本机保存的历史摘要。上方链接会打开站点最新分析，不会恢复该历史日期。' : '打开站点最新分析；返回后保留本页分组、筛选与研究记录。';
     const key = noteKey(s), note = lastNote(s);
     if (key !== activeNoteKey) {
@@ -169,7 +198,7 @@
     $('save-note').disabled = false;
     const notes = Core.notesFor(state, asset.id);
     $('note-version-count').textContent = notes.length;
-    $('note-history').innerHTML = notes.length ? notes.map(n => '<article class="record-item"><strong>版本 ' + n.version + ' · ' + (n.asof ? '分析截至 ' + esc(n.asof) : '未关联分析') + '</strong><time>' + esc(prettyTime(n.createdAt)) + ' 北京时间</time><p>' + esc(n.text) + '</p><small>模型 ' + esc(n.modelVersion || '未提供') + ' · 记录 ID ' + esc(n.predictionId || '未提供') + '</small></article>').join('') : '<p class="record-caption">还没有保存笔记。</p>';
+    $('note-history').innerHTML = notes.length ? notes.map(n => '<article class="record-item"><strong>版本 ' + n.version + (n.imported ? ' · 导入记录' : '') + ' · ' + (n.asof ? '分析截至 ' + esc(n.asof) : '未关联分析') + '</strong><time>' + esc(prettyTime(n.createdAt)) + ' 北京时间</time><p>' + esc(n.text) + '</p><small>模型 ' + esc(n.modelVersion || '未提供') + ' · 记录 ID ' + esc(n.predictionId || '未提供') + '</small></article>').join('') : '<p class="record-caption">还没有保存笔记。</p>';
     const records = recordList(asset.id);
     $('observation-count').textContent = records.length;
     $('observation-history').innerHTML = records.length ? records.slice().reverse().map((r, reverseIndex) => {
@@ -293,8 +322,10 @@
     event.preventDefault();
     const name = $('group-name').value.trim();
     if (['全部', '未分组'].includes(name)) { $('group-error').textContent = '这个名称已用于系统分组，请换一个名称。'; return; }
+    const priorGroups = state.groups.slice();
     if (!Core.addGroup(state, name)) { $('group-error').textContent = '请填写不重复的分组名称（最多 24 字）；分组数量达到上限时请使用已有分组。'; return; }
-    persist(); render(); $('group-dialog').close(); $('group-name').value = '';
+    if (!persist()) { state.groups = priorGroups; $('group-error').textContent = '分组未保存，请处理存储问题后重试。'; return; }
+    render(); $('group-dialog').close(); $('group-name').value = ''; notify('分组已保存在本机。');
   });
   $('group-tabs').addEventListener('click', event => {
     const button = event.target.closest('[data-group]'); if (!button) return;
@@ -322,7 +353,14 @@
     persist(); renderCompare();
   });
   $('clear-compare').addEventListener('click', () => { state.compareIds = []; persist(); renderList(); renderCompare(); });
-  $('asset-group').addEventListener('change', () => { if (state.selectedId && Core.setGroup(state, state.selectedId, $('asset-group').value)) { persist(); renderList(); } });
+  $('asset-group').addEventListener('change', () => {
+    const prior = state.meta[state.selectedId];
+    if (state.selectedId && Core.setGroup(state, state.selectedId, $('asset-group').value)) {
+      if (!persist()) { if (prior) state.meta[state.selectedId] = prior; else delete state.meta[state.selectedId]; $('asset-group').value = prior?.group || ''; }
+      else notify('标的分组已保存。');
+      renderList();
+    }
+  });
   $('research-note').addEventListener('input', () => { saveDraft(); $('note-state').textContent = '未保存草稿'; });
   $('save-note').addEventListener('click', () => {
     const asset = selectedAsset(); if (!asset) return;
@@ -362,8 +400,53 @@
     const next = current.filter(code => code !== asset.code);
     const saved = asset.kind === 'index' ? window.IndexWatchlist.write(next, storage) : window.StockWatchlist.write(storage, next);
     if (saved === null) { storageWarning(); return; }
+    removedAsset = asset; $('undo-remove').hidden = false; $('undo-remove').textContent = '撤销移除 ' + asset.name;
     saveDraft(); inspectRecord = null; syncAssets(); persist(); announceWatch(); render();
     notify('已从自选移除 ' + asset.name + '。本机笔记和观测记录保留，重新添加后可查看。');
+  });
+  $('undo-remove').addEventListener('click', () => {
+    if (!removedAsset) return;
+    const previous = removedAsset;
+    const error = addAsset(previous.kind, previous.code);
+    if (error) { notify(error); return; }
+    removedAsset = null; $('undo-remove').hidden = true; notify('已恢复 ' + previous.name + '，原分组、笔记和摘要仍保留。');
+  });
+  $('share-summary').addEventListener('click', () => {
+    const asset = selectedAsset(); if (!asset) return;
+    const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
+    const card = { format: 'lppl-public-research-card', version: 1, exportedAt: new Date().toISOString(),
+      asset: s.asset, asof: s.asof, source: s.source || '未提供', modelVersion: s.modelVersion || '未提供',
+      predictionId: s.predictionId || null, evidence: s.evidence, status: s.status, statusText: s.statusText,
+      stale: s.stale, staleReason: s.staleReason, coverage: s.coverage, windows: s.windows,
+      generatedAt: s.generatedAt, firstPublicAt: null,
+      notice: '仅导出当前可展示研究摘要；本机读取与导出时间不是首次公开预测时间。观察区间不是确定见顶日。' };
+    try {
+      const url = URL.createObjectURL(new Blob([JSON.stringify(card, null, 2)], { type: 'application/json;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'lppl-research-' + asset.code + '-' + (s.asof || 'undated') + '.json'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      notify('已发起匿名研究摘要下载：含截止日、来源、版本和证据；不含笔记、持仓、自选分组或账户信息。');
+    } catch { notify('导出未成功，请稍后重试。'); }
+  });
+  function restoreSaved() {
+    saveDraft(); const next = Core.load(storage);
+    if (next.storageIssue) { notify('保存记录仍无法读取；草稿保留，请复制备份。'); return; }
+    state = next; externalConflict = false;
+    $('storage-warning').hidden = true; $('restore-saved').hidden = true;
+    $('list-search').value = state.query; $('status-filter').value = state.statusFilter; $('sort-order').value = state.sort;
+    summaries.clear(); syncAssets();
+    for (const a of assets) { const latest = recordList(a.id).at(-1); if (latest) summaries.set(a.id, latest); }
+    activeNoteKey = null; inspectRecord = null; render(); refresh();
+    window.dispatchEvent(new Event('workspace-change'));
+  }
+  $('restore-saved').addEventListener('click', () => { restoreSaved(); notify('已载入保存记录，编辑草稿仍保留。请核对绑定日期后保存笔记。'); });
+  window.addEventListener('workspace-imported', () => { restoreSaved(); window.dispatchEvent(new Event('research-personal-restored')); });
+  window.addEventListener('workspace-select', event => {
+    const id = event.detail?.assetId;
+    if (assets.some(a => a.id === id)) selectAsset(id, true);
+    else {
+      const [kind, code] = String(id || '').split(':');
+      if (['index', 'stock'].includes(kind)) { const error = addAsset(kind, code); if (error) notify(error); }
+    }
   });
   $('close-detail').addEventListener('click', () => {
     saveDraft(); state.selectedId = null; inspectRecord = null; persist(); renderDetail(); renderList();
@@ -372,11 +455,13 @@
   });
   $('refresh-results').addEventListener('click', () => { notify(''); refresh(); });
   window.addEventListener('storage', event => {
+    if (event.key === Core.KEY) { externalConflict = true; storageWarning(); return; }
     if (![window.IndexWatchlist.KEY, window.StockWatchlist.KEY].includes(event.key)) return;
     syncAssets(); render();
     notify('其他页面更新了自选清单，正在读取新增标的的结果。');
     refresh();
   });
+  window.addEventListener('beforeunload', event => { if (hasUnsaved()) { event.preventDefault(); event.returnValue = ''; } });
   window.addEventListener('pagehide', () => { state.scrollY = window.scrollY; persist(); });
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
