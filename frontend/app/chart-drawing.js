@@ -89,6 +89,20 @@
     return next.length > cap ? next.slice(next.length - cap) : next;
   }
 
+  function mergeRecords(current, stored, deletedIds) {
+    var merged = new Map();
+    var deleted = deletedIds instanceof Set ? deletedIds : new Set(deletedIds || []);
+    (Array.isArray(current) ? current : []).forEach(function (item) {
+      var id = item && item.drawing && item.drawing.id;
+      if (id) merged.set(id, item);
+    });
+    (Array.isArray(stored) ? stored : []).forEach(function (item) {
+      var id = item && item.drawing && item.drawing.id;
+      if (id && !merged.has(id) && !deleted.has(id)) merged.set(id, item);
+    });
+    return Array.from(merged.values());
+  }
+
   function attach(chartApi, initialContext) {
     var target = chartApi.drawingTarget();
     var chart = target.chart;
@@ -163,6 +177,9 @@
     var temporarilyHidden = new Set();
     var offSeries = null;
     var editing = null;
+    var deletedDrawingIds = new Set();
+    var storageSyncPending = false;
+    var pointerActive = false;
     var textInput = document.createElement('input');
     var detached = false;
 
@@ -230,8 +247,11 @@
     function writeRecords(items) {
       try {
         if (!root.localStorage || !key) throw new Error('storage unavailable');
-        root.localStorage.setItem(key, JSON.stringify(wrapStorage(items)));
-        setStatus(items.length ? '已保存 ' + items.length + ' 条画线' : '画线已清空并保存');
+        var merged = wrapStorage(mergeRecords(items, readRecords(key), deletedDrawingIds)).items;
+        root.localStorage.setItem(key, JSON.stringify(wrapStorage(merged)));
+        if (merged.length > items.length) storageSyncPending = true;
+        deletedDrawingIds.clear();
+        setStatus(merged.length ? '已保存 ' + merged.length + ' 条画线' : '画线已清空并保存');
         return true;
       } catch (_) {
         setStatus(SAVE_ERROR);
@@ -267,7 +287,12 @@
     function snapshot() { return JSON.stringify(records); }
 
     function commitMutation() {
+      var previousRecords = records;
       records = managerDrawings();
+      var currentIds = new Set(records.map(function (item) { return item.drawing.id; }));
+      previousRecords.forEach(function (item) {
+        if (!currentIds.has(item.drawing.id)) deletedDrawingIds.add(item.drawing.id);
+      });
       var next = snapshot();
       if (next !== committedSnapshot) {
         undoStack = pushUndo(undoStack, committedSnapshot, 50);
@@ -281,6 +306,19 @@
       records = wrapStorage(items).items;
       if (manager) manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
       committedSnapshot = snapshot();
+      render();
+    }
+
+    function flushStorageSync() {
+      if (!storageSyncPending || editing || pointerActive || (manager && manager.tool())) return;
+      storageSyncPending = false;
+      var stored = readRecords(key);
+      var storedIds = new Set(stored.map(function (item) { return item.drawing.id; }));
+      deletedDrawingIds.forEach(function (id) {
+        if (!storedIds.has(id)) deletedDrawingIds.delete(id);
+      });
+      importRecords(mergeRecords([], stored, deletedDrawingIds));
+      undoStack = [];
       render();
     }
 
@@ -309,9 +347,15 @@
         commitMutation();
       }));
       managerOff.push(manager.on('remove', commitMutation));
-      managerOff.push(manager.on('gestureEnd', commitMutation));
+      managerOff.push(manager.on('gestureEnd', function () {
+        commitMutation();
+        flushStorageSync();
+      }));
       managerOff.push(manager.on('selection', render));
-      managerOff.push(manager.on('tool', render));
+      managerOff.push(manager.on('tool', function () {
+        render();
+        flushStorageSync();
+      }));
       managerOff.push(manager.on('visibility', render));
       managerOff.push(manager.on('textEdit', openTextEditor));
       render();
@@ -344,6 +388,7 @@
       manager.update(Object.assign({}, drawing, { text: textInput.value }));
       commitMutation();
       closeTextEditor();
+      flushStorageSync();
     }
 
     function cancelTextEditor() {
@@ -353,6 +398,7 @@
       else manager.remove(drawing.id);
       commitMutation();
       closeTextEditor();
+      flushStorageSync();
     }
 
     function activateTool(kind) {
@@ -374,6 +420,28 @@
       domOff.push(function () { element.removeEventListener(name, handler); });
     }
 
+    function onStorage(event) {
+      if (event.key !== key && event.key !== null) return;
+      storageSyncPending = true;
+      flushStorageSync();
+    }
+    function onPointerDown(event) {
+      if (card.contains(event.target)) pointerActive = true;
+    }
+    function onPointerEnd() {
+      if (!pointerActive) return;
+      pointerActive = false;
+      flushStorageSync();
+    }
+    root.addEventListener('storage', onStorage);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    root.addEventListener('pointerup', onPointerEnd);
+    root.addEventListener('pointercancel', onPointerEnd);
+    domOff.push(function () { root.removeEventListener('storage', onStorage); });
+    domOff.push(function () { document.removeEventListener('pointerdown', onPointerDown, true); });
+    domOff.push(function () { root.removeEventListener('pointerup', onPointerEnd); });
+    domOff.push(function () { root.removeEventListener('pointercancel', onPointerEnd); });
+
     buttons.forEach(function (button) {
       listen(button, 'click', function () { activateTool(button.dataset.drawingTool); });
     });
@@ -383,6 +451,7 @@
       if (!manager || !manager.drawings().length || !root.confirm('确定清空此标的的全部画线吗？')) return;
       manager.clear();
       commitMutation();
+      flushStorageSync();
     });
     listen(visibilityButton, 'click', function () {
       if (!manager) return;
@@ -408,12 +477,14 @@
       committedSnapshot = snapshot();
       writeRecords(records);
       render();
+      flushStorageSync();
     }
 
     function removeSelected() {
       if (!manager) return;
       manager.selection().slice().forEach(function (id) { manager.remove(id); });
       render();
+      flushStorageSync();
     }
 
     function onCardKeydown(event) {
@@ -461,6 +532,8 @@
         key = nextKey;
         records = readRecords(key);
         undoStack = [];
+        deletedDrawingIds.clear();
+        storageSyncPending = false;
         temporarilyHidden.clear();
         if (manager) {
           manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
@@ -546,6 +619,7 @@
     historyVisibility: historyVisibility,
     lateDrawingDates: lateDrawingDates,
     pushUndo: pushUndo,
+    mergeRecords: mergeRecords,
     storageKey: function (symbol) {
       var normalized = String(symbol || '').trim().toLowerCase();
       return normalized ? 'lppl.drawings.v1:' + normalized : '';

@@ -61,3 +61,16 @@ test('undo snapshots retain only the newest fifty entries', () => {
   assert.equal(capped[49], JSON.stringify(60));
   assert.equal(Drawing.pushUndo(capped, JSON.stringify(60)).length, 50);
 });
+
+test('stale writes merge unseen storage ids without restoring local deletions', () => {
+  const item = (id, text = id) => ({
+    createdAt: '2025-05-22',
+    drawing: { id, kind: 'horizontal-line', text },
+  });
+  const merged = Drawing.mergeRecords(
+    [item('local', 'edited locally')],
+    [item('local', 'newer in storage'), item('remote'), item('deleted')],
+    new Set(['deleted']),
+  );
+  assert.deepEqual(merged, [item('local', 'edited locally'), item('remote')]);
+});

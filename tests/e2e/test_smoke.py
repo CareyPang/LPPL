@@ -754,6 +754,48 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
 
 
 @pytest.mark.e2e
+def test_chart_drawings_merge_between_tabs(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 330, "y": 180})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    second = page.context.new_page()
+    try:
+        second.set_viewport_size({"width": 1440, "height": 900})
+        second.goto(f"{BASE_URL}/chart.html?code=sh000001")
+        second.wait_for_function(
+            "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+            "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+        )
+        second.locator('[data-drawing-tool="horizontal-line"]').click()
+        second.locator("#chart-host").click(position={"x": 420, "y": 230})
+        second.wait_for_function(
+            "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+        )
+        page.wait_for_function(
+            "() => document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '2'"
+        )
+
+        page.locator('[data-drawing-tool="horizontal-line"]').click()
+        page.locator("#chart-host").click(position={"x": 520, "y": 280})
+        page.wait_for_function(
+            "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 3"
+        )
+        second.wait_for_function(
+            "() => document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '3'"
+        )
+    finally:
+        second.close()
+
+
+@pytest.mark.e2e
 def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")
