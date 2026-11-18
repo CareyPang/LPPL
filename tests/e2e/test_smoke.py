@@ -20,7 +20,6 @@ def expect(locator: object):
     return playwright_expect(locator)
 
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
-DRAWING_SCREENSHOTS = Path("/home/ubuntu/screenshots/drawing")
 NAV_PAGES = (
     "home.html",
     "index.html?code=sh000001",
@@ -628,8 +627,15 @@ def test_chart_replay_asof_is_visible_and_links_keep_the_cutoff(page: Page) -> N
 
 
 @pytest.mark.e2e
-def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -> None:
-    DRAWING_SCREENSHOTS.mkdir(parents=True, exist_ok=True)
+def test_chart_drawings_persist_history_exports_and_mobile_toolbar(
+    page: Page, tmp_path: Path
+) -> None:
+    screenshot_dir = (
+        Path(os.environ["LPPL_DRAWING_SHOT_DIR"])
+        if os.environ.get("LPPL_DRAWING_SHOT_DIR")
+        else tmp_path
+    )
+    screenshot_dir.mkdir(parents=True, exist_ok=True)
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh000001")
     page.wait_for_function(
@@ -690,10 +696,10 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
         "JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.some(x => x.drawing.text === 'TEST-PRIVATE-NOTE')"
     )
     assert "TEST-PRIVATE-NOTE" not in page.locator("#chart-page").inner_text()
-    page.screenshot(path=str(DRAWING_SCREENSHOTS / "chart_1440.png"))
+    page.screenshot(path=str(screenshot_dir / "chart_1440.png"))
 
-    without_path = DRAWING_SCREENSHOTS / "export_without_notes.png"
-    with_path = DRAWING_SCREENSHOTS / "export_with_notes.png"
+    without_path = screenshot_dir / "export_without_notes.png"
+    with_path = screenshot_dir / "export_with_notes.png"
     include = page.locator("#include-drawings")
     expect(include).not_to_be_checked()
     with page.expect_download() as download:
@@ -723,7 +729,7 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
     )
     visibility = page.locator("[data-drawing-visibility]")
     expect(visibility).to_have_text("显示我的画线")
-    page.screenshot(path=str(DRAWING_SCREENSHOTS / "chart_asof_hidden_1440.png"))
+    page.screenshot(path=str(screenshot_dir / "chart_asof_hidden_1440.png"))
     visibility.click()
     expect(page.locator("[data-drawing-history]")).to_be_visible()
     assert f"这些画线创建于 {saved['items'][0]['createdAt']}" in page.locator(
@@ -735,7 +741,7 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
     expect(page.locator("[data-drawing-history]")).to_contain_text(
         "晚于当前截止日 2015-06-12"
     )
-    page.screenshot(path=str(DRAWING_SCREENSHOTS / "chart_asof_shown_1440.png"))
+    page.screenshot(path=str(screenshot_dir / "chart_asof_shown_1440.png"))
     page.locator('[data-drawing-tool="horizontal-line"]').click()
     host = page.locator("#chart-host")
     host.click(position={"x": 540, "y": 240})
@@ -748,10 +754,10 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
     hidden_image = host.screenshot()
     view_diff = drawing_pixel_diff(page, hidden_image, visible_image)
     assert view_diff["changed"] > 50, view_diff
-    page.screenshot(path=str(DRAWING_SCREENSHOTS / "chart_asof_hidden_1440.png"))
+    page.screenshot(path=str(screenshot_dir / "chart_asof_hidden_1440.png"))
     visibility.click()
     expect(page.locator("[data-drawing-history]")).to_be_visible()
-    page.screenshot(path=str(DRAWING_SCREENSHOTS / "chart_asof_shown_1440.png"))
+    page.screenshot(path=str(screenshot_dir / "chart_asof_shown_1440.png"))
 
     page.set_viewport_size({"width": 390, "height": 844})
     dimensions = page.evaluate(
@@ -763,7 +769,7 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
     expect(tool).to_have_attribute("aria-pressed", "true")
     tool.click()
     expect(tool).to_have_attribute("aria-pressed", "false")
-    page.screenshot(path=str(DRAWING_SCREENSHOTS / "chart_390.png"))
+    page.screenshot(path=str(screenshot_dir / "chart_390.png"))
 
 
 @pytest.mark.e2e
