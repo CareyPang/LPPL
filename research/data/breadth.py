@@ -14,7 +14,7 @@ import tempfile
 import time
 import zipfile
 import zlib
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
