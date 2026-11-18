@@ -586,10 +586,13 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
     assert int(chart_page.get_attribute("data-bar-count") or "0") > 0
     expect(chart_page).to_have_attribute("data-model-status", "missing")
     expect(page.locator("#evidence-state")).to_have_text(
-        "还没有已发布的模型结果，先看行情"
+        "没有读到已发布的模型结果（可能尚未发布，或读取失败）"
     )
     expect(page.locator("#interval-list .interval-row")).to_have_count(0)
     expect(page.locator("#model-date")).to_have_text("模型日期 未发布")
+    retry = page.locator("#evidence-note .evidence-retry-button")
+    expect(retry).to_have_text("重试读取")
+    expect(retry).to_be_visible()
     expect(page.locator("#evidence-note a")).to_have_text("回标的页发起计算")
     expect(page.locator("#evidence-note a")).to_have_attribute(
         "href", "stock.html?code=600519"
@@ -597,6 +600,9 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
     expect(page.locator("#asof-notice")).to_contain_text(
         "个股暂不支持按历史截止日查看，以下是最新结果（截止 "
     )
+    with page.expect_response("**/lab/mock/data/stock/600519.json") as retry_response:
+        retry.click()
+    assert retry_response.value.status == 404
 
 
 @pytest.mark.e2e

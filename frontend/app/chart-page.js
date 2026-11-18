@@ -86,7 +86,13 @@
     if (data.assetType === 'stock' && data.modelStatus !== 'ok') {
       state.textContent = data.modelStatus === 'error'
         ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
-        : '还没有已发布的模型结果，先看行情';
+        : '没有读到已发布的模型结果（可能尚未发布，或读取失败）';
+      var retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'retry-button evidence-retry-button';
+      retry.textContent = '重试读取';
+      retry.addEventListener('click', function () { void load(); });
+      note.appendChild(retry);
       var action = document.createElement('a');
       action.href = 'stock.html?code=' + encodeURIComponent(context.stockCode);
       action.textContent = '回标的页发起计算';
