@@ -53,6 +53,17 @@
     });
   }
 
+  function toCloses(bars) {
+    var byDate = new Map();
+    (Array.isArray(bars) ? bars : []).forEach(function (bar) {
+      if (!bar || !validDate(bar.date) || !Number.isFinite(bar.close) || bar.close <= 0) return;
+      byDate.set(bar.date, { time: bar.date, close: bar.close,
+        volume: Number.isFinite(bar.volume) && bar.volume >= 0 ? bar.volume : null });
+    });
+    return Array.from(byDate.values()).sort(function (a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+  }
+  function priceMode(bars) { return toCloses(bars).length > toCandles(bars).length ? 'close' : 'candles'; }
+
   function futureWhitespace(bars, q80Dates, closures) {
     if (!TradingDays || !Array.isArray(bars) || !bars.length) return [];
     var calendarBars = bars.map(function (bar) { return { date: bar.date || bar.time }; })
@@ -191,6 +202,8 @@
       upColor: '#d6303a', downColor: '#11845a', wickUpColor: '#d6303a',
       wickDownColor: '#11845a', borderVisible: false,
     });
+    var candlePrice = price;
+    var closePrice = chart.addSeries(lib.LineSeries, { color: '#536b93', lineWidth: 2, visible: false });
     var volume = chart.addSeries(lib.HistogramSeries, {
       priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false,
     }, 1);
@@ -199,7 +212,7 @@
     var emitters = new Map(), candles = [], current = null, scale = '6-12m', closures = new Set();
     var currentBands = [], currentWhitespace = [], focusedBandId = '';
     var bandPrimitive = null, cutoffPrimitive = null, markerPlugin = null, a11y = null;
-    var readout = opts.readout || null;
+    var readout = opts.readout || null, closeOnly = false;
     function emit(name, value) { (emitters.get(name) || []).forEach(function (fn) { fn(value); }); }
     function detachOverlays() {
       if (bandPrimitive) price.detachPrimitive(bandPrimitive);
@@ -208,8 +221,13 @@
       bandPrimitive = cutoffPrimitive = markerPlugin = null;
     }
     function setData(payload) {
+      detachOverlays();
       current = payload || {};
-      candles = toCandles(current.bars || []);
+      closeOnly = priceMode(current.bars || []) === 'close';
+      candles = closeOnly ? toCloses(current.bars || []) : toCandles(current.bars || []);
+      price = closeOnly ? closePrice : candlePrice;
+      candlePrice.applyOptions({ visible: !closeOnly }); closePrice.applyOptions({ visible: closeOnly });
+      (closeOnly ? candlePrice : closePrice).setData([]);
       closures = new Set(current.future_calendar && current.future_calendar.closures || []);
       currentBands = bandsForAllScales(current);
       var futureDates = currentBands.map(function (item) { return item.q80_date; });
@@ -222,12 +240,11 @@
       currentWhitespace = futureWhitespace(candles,
         futureDates, closures);
       price.setData(candles.map(function (bar) {
-        return { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close };
+        return closeOnly ? { time: bar.time, value: bar.close } : { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close };
       }).concat(currentWhitespace));
       volume.setData(candles.filter(function (bar) { return bar.volume != null; }).map(function (bar) {
-        return { time: bar.time, value: bar.volume, color: bar.close >= bar.open ? '#d6303a' : '#11845a' };
+        return { time: bar.time, value: bar.volume, color: closeOnly ? '#7485a9' : bar.close >= bar.open ? '#d6303a' : '#11845a' };
       }));
-      detachOverlays();
       attachBands();
       if (Array.isArray(current.events) && lib.createSeriesMarkers) {
         markerPlugin = lib.createSeriesMarkers(price, current.events.filter(function (event) {
@@ -290,7 +307,8 @@
         mapTime(candles, date, closures),
         {
           color: '#596579', width: 1, showLabel: true, labelText: '截止日 ' + date,
-          draggable: false, snap: 'nearest', badge: { text: '截止日 ' + date },
+          labelBackgroundColor: '#596579', labelTextColor: '#ffffff',
+          draggable: false, snap: 'nearest', badge: { text: '截止日 ' + date, backgroundColor: '#596579', color: '#ffffff' },
         },
       );
       price.attachPrimitive(cutoffPrimitive);
@@ -307,6 +325,7 @@
         : date ? { date: date, future: true } : null;
       if (readout) readout.textContent = !value ? '' : value.future
         ? date + ' 未来交易日 · 无行情'
+        : closeOnly ? date + ' 收 ' + bar.close + '（OHLC 未完整提供，仅收盘线）'
         : date + ' 开 ' + bar.open + ' 高 ' + bar.high + ' 低 ' + bar.low + ' 收 ' + bar.close +
           ' 量 ' + (bar.volume == null ? '—' : bar.volume) + '（供应商原始单位）';
       emit('crosshair', value);
@@ -316,6 +335,10 @@
     return {
       setData: setData, setScale: setScale, setAsof: setAsof,
       focusBand: focusBand, focusDate: focusDate, on: on,
+      // Keep the user's reading position when independent modules arrive.
+      getVisibleRange: function () { return chart.timeScale().getVisibleLogicalRange(); },
+      setVisibleRange: function (range) { if (range) chart.timeScale().setVisibleLogicalRange(range); },
+      takeScreenshot: function () { return chart.takeScreenshot(); },
       destroy: function () {
         chart.unsubscribeCrosshairMove(crosshair);
         detachOverlays();
@@ -434,7 +457,7 @@
   }
 
   return {
-    mount: mount, toCandles: toCandles, futureWhitespace: futureWhitespace,
+    mount: mount, toCandles: toCandles, toCloses: toCloses, priceMode: priceMode, futureWhitespace: futureWhitespace,
     bandsFor: bandsFor, bandsForAllScales: bandsForAllScales,
     bandStyle: bandStyle, intervalId: intervalId, bandSlotRange: bandSlotRange,
     needsCalendarCoverage: needsCalendarCoverage,

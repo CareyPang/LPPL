@@ -88,17 +88,24 @@
       #tv-attr-logo { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
     }
   </style>
+  <link rel="stylesheet" href="app/chart-professional.css">
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
   <script src="app/rule-labels.js"></script>
   <script src="app/chart-page-core.js"></script>
+  <script src="app/chart-readonly-data.js"></script>
+  <script src="app/chart-research-card.js"></script>
   <script src="vendor/lppl-lwc/1/lppl-lwc.js"></script>
   <script src="app/lppl-chart.js"></script>
 </head>
 <body>
   <script src="app/od-nav.js" data-section="terminal"></script>
   <main id="chart-page" class="chart-page" data-ai-context="完整图表">
+    <section id="identity-strip" class="chart-identity-strip" aria-label="当前资产身份" hidden>
+      <div><strong id="identity-strip-name"></strong><span id="identity-strip-code"></span></div>
+      <p id="identity-strip-meta"></p>
+    </section>
     <div class="chart-content">
       <header class="page-heading">
       <div>
@@ -106,7 +113,7 @@
         <h1 id="asset-name">加载中…</h1>
         <div class="asset-line">
           <span id="asset-code" class="asset-code"></span>
-          <span id="asset-exchange"></span>
+          <span id="asset-exchange"></span><span id="asset-type"></span><span id="trading-status"></span>
         </div>
         <div class="date-line">
           <span id="market-date"></span>
@@ -128,19 +135,30 @@
         <a id="latest-results-link" class="latest-results-link" href="" hidden>改看最新结果</a>
       </section>
 
-      <div class="layout">
-        <section class="chart-card" aria-label="价格图表">
+      <div class="module-status" aria-label="各模块读取状态" role="status"><span id="market-status">行情等待中</span><span id="model-status">模型等待中</span><span id="events-status">事件等待中</span></div>
+    <div class="chart-actions" aria-label="图表操作">
+      <button id="evidence-toggle" type="button" aria-expanded="true" aria-controls="evidence-panel">收起证据</button>
+      <button id="chart-fullscreen" type="button" aria-pressed="false">全屏图表</button>
+      <button id="share-card" type="button" disabled>下载匿名研究卡</button>
+      <button id="share-screenshot" type="button" disabled>下载带证据截图</button>
+    </div>
+    <p id="action-feedback" class="action-feedback" role="status" aria-live="polite"></p>
+    <div class="layout">
+        <section id="chart-card" class="chart-card" aria-label="价格图表">
+        <button id="fullscreen-exit" type="button" hidden>退出全屏 · Esc</button>
           <div id="scale-selector" class="scale-selector" role="group" aria-label="时间尺度"></div>
           <div id="chart-host" class="chart-host"></div>
+        <p id="price-mode-note" class="evidence-note"></p>
           <div id="loading" class="loading" role="status">正在加载标的与图表数据…</div>
           <p id="calendar-notice" class="calendar-notice" role="status" hidden>日历未覆盖：未来区间超出已发布交易日历范围。</p>
         </section>
 
-        <aside class="evidence-side">
+        <aside id="evidence-panel" class="evidence-side" aria-label="区间与证据">
+        <button id="evidence-close" type="button">关闭证据</button>
           <section class="evidence-card" aria-labelledby="evidence-title">
             <h2 id="evidence-title">区间与证据</h2>
             <p id="evidence-state" class="evidence-state">等待数据</p>
-            <p id="evidence-rule-source" class="evidence-note" hidden></p>
+          <p id="evidence-rule-source" class="evidence-note" hidden></p>
             <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
             <div id="interval-list" class="interval-list"></div>
             <p id="evidence-note" class="evidence-note"></p>
@@ -151,11 +169,19 @@
               <dt>数据来源</dt><dd id="data-source">未记录</dd>
               <dt>模型版本</dt><dd id="model-version">未记录</dd>
               <dt>Prediction ID</dt><dd id="prediction-id">未记录</dd>
+            <dt>成交量单位</dt><dd id="volume-unit">未记录</dd>
+            <dt>模型输入复权</dt><dd id="model-adjustment">未记录</dd>
+            <dt>首次可见</dt><dd id="first-visible">未记录</dd>
+            <dt>新鲜度</dt><dd id="stale-state">未记录</dd>
             </dl>
           </section>
         </aside>
       </div>
-      <p class="context-foot">时间区间为研究结果，不构成概率或投资建议；行情日期与模型日期分开标示。</p>
+      <section class="events-card" aria-labelledby="events-title">
+      <div class="events-heading"><h2 id="events-title">标的事件</h2><button id="events-retry" type="button">重新读取事件</button></div>
+      <div id="event-list"></div><p id="events-note">事件独立读取，不阻塞行情。</p>
+    </section>
+    <p class="context-foot">时间区间为研究结果，不构成概率或投资建议；行情日期与模型日期分开标示。</p>
     </div>
   </main>
   <script src="app/ai-assistant.js" data-page="stock" data-default="closed"></script>
