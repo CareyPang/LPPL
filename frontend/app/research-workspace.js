@@ -175,7 +175,7 @@
     if (!asset) { activeNoteKey = null; return; }
     const replaying = replayRequest?.asset.id === asset.id;
     const savedReplay = replaying && inspectRecord?.asset?.id === asset.id && inspectRecord.asof === replayRequest.asof;
-    const s = savedReplay ? inspectRecord : replaying ? Core.summarize(asset, null, new Date().toISOString())
+    const s = savedReplay ? inspectRecord : replaying ? Core.summarize(asset, null, replayRequest.asof + 'T00:00:00.000Z')
       : inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     $('detail-kind').textContent = inspectRecord ? 'SAVED OBSERVATION · 本机历史记录' : 'RESEARCH DESK · 当前结果';
     $('detail-heading').textContent = asset.name;
@@ -222,7 +222,7 @@
     }
     $('note-state').textContent = drafts.has(key) && drafts.get(key) !== (note?.text || '') ? '未保存草稿' : note ? '已保存 · v' + note.version : '尚未保存';
     $('note-context').textContent = s.asof ? '绑定分析截至 ' + s.asof : '未关联分析的关注理由；以后不会自动改绑';
-    $('save-note').disabled = false;
+    $('save-note').disabled = replaying && !savedReplay;
     const notes = Core.notesFor(state, asset.id);
     $('note-version-count').textContent = notes.length;
     $('note-history').innerHTML = notes.length ? notes.map(n => '<article class="record-item"><strong>版本 ' + n.version + (n.imported ? ' · 导入记录' : '') + ' · ' + (n.asof ? '分析截至 ' + esc(n.asof) : '未关联分析') + '</strong><time>' + esc(prettyTime(n.createdAt)) + ' 北京时间</time><p>' + esc(n.text) + '</p><small>模型 ' + esc(n.modelVersion || '未提供') + ' · 记录 ID ' + esc(n.predictionId || '未提供') + '</small></article>').join('') : '<p class="record-caption">还没有保存笔记。</p>';
@@ -392,6 +392,8 @@
   $('research-note').addEventListener('input', () => { saveDraft(); $('note-state').textContent = '未保存草稿'; });
   $('save-note').addEventListener('click', () => {
     const asset = selectedAsset(); if (!asset) return;
+    if (replayRequest?.asset.id === asset.id &&
+      !(inspectRecord?.asset?.id === asset.id && inspectRecord.asof === replayRequest.asof)) return;
     const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     const priorNotes = state.notes.slice();
     const note = Core.saveNote(state, s, $('research-note').value, new Date().toISOString());

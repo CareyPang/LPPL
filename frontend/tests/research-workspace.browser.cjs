@@ -360,6 +360,30 @@ const server = http.createServer((req, res) => {
     check('full-chart return preserves the archived workspace date, evidence, note and list position without latest fallback');
     await replayContext.close();
 
+    const missingReplayState = Core.initial();
+    const latestSummary = Core.summarize(replayAsset, raw, '2026-11-18T00:00:00.000Z');
+    Core.observe(missingReplayState, latestSummary, '2026-11-18T00:00:00.000Z');
+    Core.saveNote(missingReplayState, latestSummary, '最新结果笔记', '2026-11-18T00:00:00.000Z');
+    const missingReplayStore = { value: null, getItem(key) { return key === Core.KEY ? this.value : null; },
+      setItem(key, value) { if (key === Core.KEY) this.value = value; } };
+    Core.save(missingReplayStore, missingReplayState);
+    const missingReplayContext = await context();
+    await missingReplayContext.addInitScript(({ key, data }) => {
+      localStorage.setItem('lppl.watchlist.v1', '["600519"]');
+      localStorage.setItem(key, data);
+    }, { key: Core.KEY, data: missingReplayStore.value });
+    const missingReplayPage = await missingReplayContext.newPage();
+    await missingReplayPage.goto(origin + '/research-workspace.html?kind=stock&code=600519&asof=2025-05-23');
+    await missingReplayPage.waitForFunction(() => !document.getElementById('refresh-results').disabled);
+    assert.equal(await missingReplayPage.locator('#save-note').isEnabled(), false);
+    await missingReplayPage.locator('#research-note').fill('缺少摘要时误绑定');
+    await missingReplayPage.locator('#save-note').click({ force: true });
+    const misbound = await missingReplayPage.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).notes);
+    assert.equal(misbound.some(note => note.text === '缺少摘要时误绑定'), false);
+    assert.ok(misbound.some(note => note.text === '最新结果笔记' && note.asof === latestSummary.asof));
+    check('replay without an exact local summary cannot save a note against another date');
+    await missingReplayContext.close();
+
     assert.deepEqual(failures, []);
     check('no uncaught browser exceptions');
     console.log(JSON.stringify({ checks: checks.length, names: checks, fixture_mode: !process.env.LPPL_PUBLISHED_SAMPLE_DIR, archived_published_samples: !!process.env.LPPL_PUBLISHED_SAMPLE_DIR, external_requests_fulfilled_offline: true }, null, 2));
