@@ -479,15 +479,15 @@
     listen(undoButton, 'click', function () { undo(); });
     listen(deleteButton, 'click', function () { removeSelected(); });
     listen(clearButton, 'click', function () {
+      if (editing) cancelTextEditor();
       if (!manager) return;
       var stored = readRecords(key);
       if (!manager.drawings().length && !stored.length) return;
       if (!root.confirm('确定清空此标的的全部画线吗？')) return;
       stored.forEach(function (item) { deletedDrawingIds.add(item.drawing.id); });
-      var hadLocalDrawings = manager.drawings().length > 0;
       manager.clear();
       commitMutation();
-      if (!hadLocalDrawings && stored.length) writeRecords(records);
+      if (stored.length) writeRecords(records);
       flushStorageSync();
     });
     listen(visibilityButton, 'click', function () {

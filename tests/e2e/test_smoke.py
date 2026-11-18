@@ -809,6 +809,49 @@ def test_chart_drawings_merge_between_tabs(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_clear_all_cancels_draft_and_removes_other_tab_records(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    page.locator('[data-drawing-tool="text"]').click()
+    page.locator("#chart-host").click(position={"x": 375, "y": 300})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    editor.fill("UNSAVED")
+
+    second = page.context.new_page()
+    try:
+        second.set_viewport_size({"width": 1440, "height": 900})
+        second.goto(f"{BASE_URL}/chart.html?code=sh000001")
+        second.wait_for_function(
+            "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+        )
+        second.locator('[data-drawing-tool="horizontal-line"]').click()
+        second.locator("#chart-host").click(position={"x": 420, "y": 230})
+        second.wait_for_function(storage_count + " === 1")
+        expect(editor).to_be_visible()
+
+        page.on("dialog", lambda dialog: dialog.accept())
+        page.locator("[data-drawing-clear]").click()
+        expect(editor).to_be_hidden()
+        page.wait_for_function(storage_count + " === 0")
+    finally:
+        second.close()
+
+    page.reload()
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.wait_for_function(storage_count + " === 0")
+
+
+@pytest.mark.e2e
 def test_chart_drawings_survive_back_navigation(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh000001")
