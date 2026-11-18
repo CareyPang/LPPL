@@ -5,71 +5,42 @@ import pytest
 from research.data import lhb_seats
 
 
+def _summary_row(code, name, trade_id, explanation, buy, sell):
+    return {
+        "TRADE_ID": trade_id,
+        "SECURITY_CODE": code,
+        "SECURITY_NAME_ABBR": name,
+        "EXPLANATION": explanation,
+        "BILLBOARD_BUY_AMT": buy,
+        "BILLBOARD_SELL_AMT": sell,
+    }
+
+
+def _detail_row(trade_id, code, name, dept_code, seat, buy, sell, explanation):
+    return {
+        "TRADE_ID": trade_id,
+        "SECURITY_CODE": code,
+        "SECURITY_NAME_ABBR": name,
+        "OPERATEDEPT_CODE": dept_code,
+        "OPERATEDEPT_NAME": seat,
+        "BUY": buy,
+        "SELL": sell,
+        "EXPLANATION": explanation,
+    }
+
+
 def test_aggregate_merges_side_tables_deduplicates_and_classifies_seats():
+    multi = "连续三个交易日内，涨幅偏离值累计达到20%"
+    single = "日涨幅偏离值达到7%"
     summary = [
-        {
-            "SECURITY_CODE": "600001",
-            "SECURITY_NAME_ABBR": "甲股份",
-            "EXPLANATION": "连续三个交易日内，涨幅偏离值累计达到20%",
-        },
-        {
-            "SECURITY_CODE": "000002",
-            "SECURITY_NAME_ABBR": "乙科技",
-            "EXPLANATION": "日涨幅偏离值达到7%",
-        },
+        _summary_row("600001", "甲股份", "multi-1", multi, 100_000, 30_000),
+        _summary_row("000002", "乙科技", "single-1", single, 80_000, 15_000),
     ]
-    buy = [
-        {
-            "SECURITY_CODE": "600001",
-            "SECURITY_NAME_ABBR": "甲股份",
-            "OPERATEDEPT_CODE": "dept-a",
-            "OPERATEDEPT_NAME": "某营业部",
-            "BUY": 100_000,
-            "EXPLANATION": summary[0]["EXPLANATION"],
-        },
-        {
-            "SECURITY_CODE": "600001",
-            "SECURITY_NAME_ABBR": "甲股份",
-            "OPERATEDEPT_CODE": "dept-a",
-            "OPERATEDEPT_NAME": "某营业部",
-            "BUY": 100_000,
-            "EXPLANATION": summary[0]["EXPLANATION"],
-        },
-        {
-            "SECURITY_CODE": "000002",
-            "SECURITY_NAME_ABBR": "乙科技",
-            "OPERATEDEPT_CODE": "0",
-            "OPERATEDEPT_NAME": "机构专用",
-            "BUY": 80_000,
-            "EXPLANATION": summary[1]["EXPLANATION"],
-        },
-    ]
-    sell = [
-        {
-            "SECURITY_CODE": "600001",
-            "SECURITY_NAME_ABBR": "甲股份",
-            "OPERATEDEPT_CODE": "dept-a",
-            "OPERATEDEPT_NAME": "某营业部",
-            "SELL": 30_000,
-            "EXPLANATION": summary[0]["EXPLANATION"],
-        },
-        {
-            "SECURITY_CODE": "000002",
-            "SECURITY_NAME_ABBR": "乙科技",
-            "OPERATEDEPT_CODE": "0",
-            "OPERATEDEPT_NAME": "机构专用",
-            "SELL": 10_000,
-            "EXPLANATION": summary[1]["EXPLANATION"],
-        },
-        {
-            "SECURITY_CODE": "000002",
-            "SECURITY_NAME_ABBR": "乙科技",
-            "OPERATEDEPT_CODE": "sct",
-            "OPERATEDEPT_NAME": "深股通专用",
-            "SELL": 5_000,
-            "EXPLANATION": summary[1]["EXPLANATION"],
-        },
-    ]
+    dept = _detail_row("multi-1", "600001", "甲股份", "dept-a", "某营业部", 100_000, 30_000, multi)
+    institution = _detail_row("single-1", "000002", "乙科技", "0", "机构专用", 80_000, 10_000, single)
+    northbound = _detail_row("single-1", "000002", "乙科技", "sct", "深股通专用", 0, 5_000, single)
+    buy = [dept, dept.copy(), institution, northbound]
+    sell = [dept.copy(), institution.copy(), northbound.copy()]
 
     result = lhb_seats.aggregate_lhb_seats(
         "2026-11-18",
@@ -83,6 +54,7 @@ def test_aggregate_merges_side_tables_deduplicates_and_classifies_seats():
         "buy": 180_000,
         "sell": 45_000,
         "institution_net": 70_000,
+        "n_stocks": 2,
         "n_stocks_single": 1,
         "n_stocks_multi": 1,
     }
@@ -108,6 +80,162 @@ def test_aggregate_merges_side_tables_deduplicates_and_classifies_seats():
     ]
     assert result["seats"][1]["kind"] == "institution"
     assert result["seats"][2]["kind"] == "northbound"
+
+
+def test_aggregate_keeps_institution_rows_and_deduplicates_duplicate_causes():
+    explanation = "日涨幅偏离值达到7%"
+    amounts = (73_179_025.20, 71_717_621.34, 52_400_372)
+    summary = [
+        _summary_row("000530", "冰山冷热", "cause-a", explanation, sum(amounts), 0),
+        _summary_row("000530", "冰山冷热", "cause-b", explanation, sum(amounts), 0),
+    ]
+    rows = [
+        _detail_row(trade_id, "000530", "冰山冷热", "0", "机构专用", amount, "", explanation)
+        for trade_id in ("cause-a", "cause-b")
+        for amount in amounts
+    ]
+    sell_rows = [
+        _detail_row("cause-a", "000530", "冰山冷热", "0", "机构专用", amount, float("nan"), explanation)
+        for amount in amounts
+    ]
+
+    result = lhb_seats.aggregate_lhb_seats("2026-11-18", summary, rows, sell_rows)
+
+    institution = next(seat for seat in result["seats"] if seat["kind"] == "institution")
+    assert result["totals"]["buy"] == 197_297_018.54
+    assert result["totals"]["sell"] == 0
+    assert result["totals"]["institution_net"] == 197_297_018.54
+    assert institution["buy"] == 197_297_018.54
+    assert institution["sell"] == 0
+    assert len(institution["trades"]) == 3
+    assert result["totals"]["n_stocks"] == 1
+
+
+def test_aggregate_uses_largest_same_type_disclosure():
+    explanation = "日涨幅偏离值达到7%"
+    summary = [
+        _summary_row("600003", "丙科技", "smaller", explanation, 100, 0),
+        _summary_row("600003", "丙科技", "larger", explanation, 200, 0),
+    ]
+    smaller = _detail_row("smaller", "600003", "丙科技", "dept-a", "某营业部", 100, 0, explanation)
+    larger = _detail_row("larger", "600003", "丙科技", "dept-b", "另一营业部", 200, 0, explanation)
+
+    result = lhb_seats.aggregate_lhb_seats("2026-11-18", summary, [smaller, larger], [larger.copy()])
+
+    assert result["totals"]["buy"] == 200
+    assert [seat["seat"] for seat in result["seats"]] == ["另一营业部"]
+
+
+def test_aggregate_keeps_both_amounts_for_buy_only_and_sell_only_ranked_rows():
+    explanation = "日涨幅偏离值达到7%"
+    summary = [
+        _summary_row("300857", "协创数据", "buy-only", explanation, 116_077_036, 6_138_254),
+        _summary_row("600004", "丁股份", "rankings", explanation, 9_500, 13_000),
+    ]
+    buy_only = _detail_row(
+        "buy-only",
+        "300857",
+        "协创数据",
+        "ht",
+        "华泰证券股份有限公司上海武定路证券营业部",
+        116_077_036,
+        6_138_254,
+        explanation,
+    )
+    buy_ranked = _detail_row("rankings", "600004", "丁股份", "dept-a", "买入榜席位", 7_000, 4_000, explanation)
+    sell_ranked = _detail_row("rankings", "600004", "丁股份", "dept-b", "卖出榜席位", 2_500, 9_000, explanation)
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18", summary, [buy_only, buy_ranked], [sell_ranked]
+    )
+
+    huatai = next(seat for seat in result["seats"] if seat["seat"] == buy_only["OPERATEDEPT_NAME"])
+    assert huatai["buy"] == 116_077_036
+    assert huatai["sell"] == 6_138_254
+    assert huatai["net"] == 109_938_782
+    assert result["totals"]["sell"] == 6_151_254
+
+
+@pytest.mark.parametrize("missing_report", ["buy", "sell"])
+def test_aggregate_rejects_empty_detail_report_for_nonempty_summary(missing_report):
+    explanation = "日涨幅偏离值达到7%"
+    summary = [_summary_row("000530", "冰山冷热", "trade-1", explanation, 100, 50)]
+    row = _detail_row("trade-1", "000530", "冰山冷热", "0", "机构专用", 100, 50, explanation)
+    buy_rows = [] if missing_report == "buy" else [row]
+    sell_rows = [] if missing_report == "sell" else [row]
+
+    with pytest.raises(RuntimeError, match="买入或卖出席位明细为空"):
+        lhb_seats.aggregate_lhb_seats("2026-11-18", summary, buy_rows, sell_rows)
+
+
+def test_aggregate_rejects_summary_stock_without_detail_rows():
+    explanation = "日涨幅偏离值达到7%"
+    summary = [
+        _summary_row("000530", "冰山冷热", "trade-a", explanation, 100, 50),
+        _summary_row("600001", "甲股份", "trade-b", explanation, 100, 50),
+    ]
+    row = _detail_row("trade-a", "000530", "冰山冷热", "0", "机构专用", 100, 50, explanation)
+
+    with pytest.raises(RuntimeError, match="汇总股票缺少买卖席位明细"):
+        lhb_seats.aggregate_lhb_seats("2026-11-18", summary, [row], [row.copy()])
+
+
+def test_aggregate_counts_unique_stock_across_single_and_multi_lists():
+    single = "日涨幅偏离值达到7%"
+    multi = "连续三个交易日内，涨幅偏离值累计达到20%"
+    summary = [
+        _summary_row("600001", "甲股份", "single-1", single, 100, 20),
+        _summary_row("600001", "甲股份", "multi-1", multi, 200, 30),
+    ]
+    single_row = _detail_row("single-1", "600001", "甲股份", "dept-a", "某营业部", 100, 20, single)
+    multi_row = _detail_row("multi-1", "600001", "甲股份", "dept-b", "另一营业部", 200, 30, multi)
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18",
+        summary,
+        [single_row, multi_row],
+        [single_row.copy(), multi_row.copy()],
+    )
+
+    assert result["totals"]["n_stocks"] == 1
+    assert result["totals"]["n_stocks_single"] == 1
+    assert result["totals"]["n_stocks_multi"] == 1
+
+
+def test_empty_summary_is_a_confirmed_no_board_result():
+    result = lhb_seats.aggregate_lhb_seats("2026-11-18", [], [], [])
+
+    assert result["totals"] == {
+        "buy": 0,
+        "sell": 0,
+        "institution_net": 0,
+        "n_stocks": 0,
+        "n_stocks_single": 0,
+        "n_stocks_multi": 0,
+    }
+    assert result["seats"] == []
+
+
+def test_fetch_rejects_9201_buy_report_when_summary_has_stocks(tmp_path):
+    explanation = "日涨幅偏离值达到7%"
+    summary = _summary_row("000530", "冰山冷热", "trade-1", explanation, 100, 50)
+    sell = _detail_row("trade-1", "000530", "冰山冷热", "0", "机构专用", 100, 50, explanation)
+    aliases = tmp_path / "aliases.json"
+    aliases.write_text("{}", encoding="utf-8")
+
+    class Client:
+        def get_json(self, _url, params):
+            report = params["reportName"]
+            if report == lhb_seats.REPORTS["summary"]:
+                rows = [summary]
+            elif report == lhb_seats.REPORTS["buy"]:
+                return {"code": 9201}
+            else:
+                rows = [sell]
+            return {"code": 0, "result": {"pages": 1, "count": 1, "data": rows}}
+
+    with pytest.raises(RuntimeError, match="买入或卖出席位明细为空"):
+        lhb_seats.fetch_lhb_seats("2026-11-18", Client(), aliases)
 
 
 def test_fetch_report_paginates_and_checks_count():

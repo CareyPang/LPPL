@@ -216,6 +216,7 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(seat_rows).to_have_count(4)
     expect(seat_rows.first).to_contain_text("游资甲")
     expect(seat_rows.first.locator("td").first).to_have_text("1")
+    expect(page.locator("#lhb-seats-body .lhb-meta")).to_contain_text("样本 34 只（单日榜 28 / 多日榜 6）")
     expect(page.locator("#lhb-seats-body .lhb-more")).to_contain_text("+1笔")
     assistant_button = page.locator(".ai-btn")
     if assistant_button.get_attribute("aria-expanded") != "true":

@@ -1341,7 +1341,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <strong>${E(seat.alias || seat.seat)}</strong>${seat.alias ? `<small>${E(seat.seat)}</small>` : ''}
       <div>买入 <span class="m up">${money(seat.buy)}</span> · 卖出 <span class="m dn">${money(seat.sell)}</span></div>
     </article>`).join('');
-    const sampleCount = (Number(totals.n_stocks_single) || 0) + (Number(totals.n_stocks_multi) || 0);
+    const sampleCount = totals.n_stocks == null
+      ? (Number(totals.n_stocks_single) || 0) + (Number(totals.n_stocks_multi) || 0)
+      : (Number(totals.n_stocks) || 0);
     box.innerHTML = `<div class="lhb-cards">
       <div class="lhb-card buy">席位买入合计<strong>${money(totals.buy)}</strong></div>
       <div class="lhb-card sell">席位卖出合计<strong>${money(totals.sell)}</strong></div>

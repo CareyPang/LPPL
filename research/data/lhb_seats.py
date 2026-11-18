@@ -33,6 +33,8 @@ def _number(value, field: str) -> float:
         number = float(str(value).replace(",", ""))
     except (TypeError, ValueError) as exc:
         raise RuntimeError(f"龙虎榜字段 {field} 不是数值: {value!r}") from exc
+    if math.isnan(number):
+        return 0.0
     if not math.isfinite(number):
         raise RuntimeError(f"龙虎榜字段 {field} 不是有限数值: {value!r}")
     return number
@@ -43,6 +45,34 @@ def _code(value) -> str:
     if not code:
         raise RuntimeError("龙虎榜行缺少 SECURITY_CODE")
     return code.zfill(6)
+
+
+def _trade_id(row: dict) -> str:
+    value = row.get("TRADE_ID")
+    if value is None or not str(value).strip():
+        raise RuntimeError("龙虎榜行缺少 TRADE_ID")
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return str(value).strip()
+
+
+def _department_code(row: dict) -> str:
+    value = row.get("OPERATEDEPT_CODE")
+    return "" if value is None else str(value).strip()
+
+
+def _summary_amount(row: dict, side: str) -> float:
+    fields = (f"BILLBOARD_{side}_AMT", f"{side}_AMT", side)
+    value = next(
+        (
+            row[field]
+            for field in fields
+            if row.get(field) is not None
+            and str(row[field]).strip() not in ("", "-", "--")
+        ),
+        None,
+    )
+    return _number(value, fields[0])
 
 
 def _list_type(explanation: str) -> str:
@@ -137,43 +167,84 @@ def aggregate_lhb_seats(
     sell_rows: list[dict],
     aliases: dict | None = None,
 ) -> dict:
+    if not summary_rows:
+        return {
+            "schema": "lhb_seats.v1",
+            "asof": asof,
+            "totals": {
+                "buy": 0.0,
+                "sell": 0.0,
+                "institution_net": 0.0,
+                "n_stocks": 0,
+                "n_stocks_single": 0,
+                "n_stocks_multi": 0,
+            },
+            "seats": [],
+            "note": NOTE,
+        }
+    if not buy_rows or not sell_rows:
+        raise RuntimeError("龙虎榜汇总非空，但买入或卖出席位明细为空")
+
     names = {}
     stock_types: dict[str, set[str]] = defaultdict(set)
+    selected_trade_ids = {}
+    disclosure_types = {}
+    selected_totals = {}
     for row in summary_rows:
         code = _code(row.get("SECURITY_CODE"))
         names[code] = str(row.get("SECURITY_NAME_ABBR") or "")
-        stock_types[code].add(_list_type(str(row.get("EXPLANATION") or "")))
+        list_type = _list_type(str(row.get("EXPLANATION") or ""))
+        stock_types[code].add(list_type)
+        trade_id = _trade_id(row)
+        disclosure_key = (code, trade_id)
+        existing_type = disclosure_types.setdefault(disclosure_key, list_type)
+        if existing_type != list_type:
+            raise RuntimeError(f"龙虎榜 TRADE_ID {trade_id} 对应多个榜单类型: {code}")
+        key = (code, list_type)
+        total = _summary_amount(row, "BUY") + _summary_amount(row, "SELL")
+        # Keep the largest summary BUY+SELL TRADE_ID per stock/list; ties keep the first.
+        if key not in selected_totals or total > selected_totals[key]:
+            selected_totals[key] = total
+            selected_trade_ids[key] = trade_id
 
     records = {}
-    seen = {"in": set(), "out": set()}
-    for rows, side, field in ((buy_rows, "in", "BUY"), (sell_rows, "out", "SELL")):
-        for row in rows:
-            code = _code(row.get("SECURITY_CODE"))
-            seat = str(row.get("OPERATEDEPT_NAME") or "").strip()
-            if not seat:
-                raise RuntimeError("龙虎榜席位行缺少 OPERATEDEPT_NAME")
-            explanation = str(row.get("EXPLANATION") or "")
-            list_type = _list_type(explanation) if explanation else (
-                "multi" if "multi" in stock_types.get(code, set()) else "single"
-            )
-            key = (code, seat, list_type)
-            if key in seen[side]:
-                continue
-            seen[side].add(key)
-            entry = records.setdefault(
-                key,
-                {
-                    "code": code,
-                    "name": names.get(code) or str(row.get("SECURITY_NAME_ABBR") or ""),
-                    "seat": seat,
-                    "seat_code": str(row.get("OPERATEDEPT_CODE") or ""),
-                    "list": list_type,
-                    "buy": 0.0,
-                    "sell": 0.0,
-                },
-            )
-            entry["name"] = entry["name"] or names.get(code, "")
-            entry["buy" if side == "in" else "sell"] = _number(row.get(field), field)
+    detail_codes = set()
+    for row in (*buy_rows, *sell_rows):
+        code = _code(row.get("SECURITY_CODE"))
+        trade_id = _trade_id(row)
+        list_type = disclosure_types.get((code, trade_id))
+        if list_type is None:
+            raise RuntimeError(f"龙虎榜席位明细 TRADE_ID 不在汇总中: {code} {trade_id}")
+        if selected_trade_ids[(code, list_type)] != trade_id:
+            continue
+        seat = str(row.get("OPERATEDEPT_NAME") or "").strip()
+        if not seat:
+            raise RuntimeError("龙虎榜席位行缺少 OPERATEDEPT_NAME")
+        seat_code = _department_code(row)
+        buy = _number(row.get("BUY"), "BUY")
+        sell = _number(row.get("SELL"), "SELL")
+        identity = (trade_id, seat_code, buy, sell)
+        entry = records.get(identity)
+        if entry is not None:
+            if entry["code"] != code:
+                raise RuntimeError(f"龙虎榜席位行身份冲突: {identity!r}")
+            continue
+        records[identity] = {
+            "code": code,
+            "name": names.get(code) or str(row.get("SECURITY_NAME_ABBR") or ""),
+            "seat": seat,
+            "seat_code": seat_code,
+            "list": list_type,
+            "buy": buy,
+            "sell": sell,
+        }
+        detail_codes.add(code)
+
+    missing_codes = set(names) - detail_codes
+    if missing_codes:
+        raise RuntimeError(
+            "龙虎榜汇总股票缺少买卖席位明细: " + ", ".join(sorted(missing_codes))
+        )
 
     alias_map = aliases if aliases is not None else _load_aliases()
     seats = {}
@@ -229,6 +300,7 @@ def aggregate_lhb_seats(
             "buy": round(buy_total, 2),
             "sell": round(sell_total, 2),
             "institution_net": round(institution_net, 2),
+            "n_stocks": len(names),
             "n_stocks_single": len(
                 {code for code, kinds in stock_types.items() if "single" in kinds}
             ),
@@ -244,9 +316,12 @@ def aggregate_lhb_seats(
 def fetch_lhb_seats(asof: str, client=None, alias_path: Path = ALIAS_PATH) -> dict:
     client = client or EMClient()
     summary = _fetch_report(client, REPORTS["summary"], asof, "BILLBOARD_NET_AMT")
+    aliases = _load_aliases(alias_path)
+    if not summary:
+        return aggregate_lhb_seats(asof, summary, [], [], aliases)
     buys = _fetch_report(client, REPORTS["buy"], asof, "BUY")
     sells = _fetch_report(client, REPORTS["sell"], asof, "SELL")
-    return aggregate_lhb_seats(asof, summary, buys, sells, _load_aliases(alias_path))
+    return aggregate_lhb_seats(asof, summary, buys, sells, aliases)
 
 
 def _write_json(path: Path, payload: dict) -> None:
