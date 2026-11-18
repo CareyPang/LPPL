@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101827">
-  <title>完整图表 · Open Design</title>
+  <title>完整图表 · 临界点</title>
   <style>
     :root { color-scheme: light; font-family: Inter, "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6fa; }
     * { box-sizing: border-box; }
@@ -91,6 +91,7 @@
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
+  <script src="app/rule-labels.js"></script>
   <script src="app/chart-page-core.js"></script>
   <script src="vendor/lppl-lwc/1/lppl-lwc.js"></script>
   <script src="app/lppl-chart.js"></script>
@@ -139,6 +140,7 @@
           <section class="evidence-card" aria-labelledby="evidence-title">
             <h2 id="evidence-title">区间与证据</h2>
             <p id="evidence-state" class="evidence-state">等待数据</p>
+            <p id="evidence-rule-source" class="evidence-note" hidden></p>
             <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
             <div id="interval-list" class="interval-list"></div>
             <p id="evidence-note" class="evidence-note"></p>
