@@ -116,6 +116,30 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     )
     scales = page.locator("#stock-scales [role=radio]")
     expect(scales).to_have_count(6)
+    expect(page.locator("#stock-rule-caption")).to_be_visible()
+    expect(page.locator("#stock-rule-caption")).to_contain_text("FCO 标准过滤")
+    expect(page.locator("#summary")).to_contain_text(
+        "当前只算了 6–12 月、12–24 月两个尺度"
+    )
+    expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
+    empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
+    expect(empty_tiles).to_have_count(3)
+    for tile_index in (0, 1):
+        tile = empty_tiles.nth(tile_index)
+        expect(tile.locator("b")).to_have_text("无合格拟合")
+        expect(tile.locator(".sub")).to_have_text(
+            "已计算，没有合格拟合（不代表风险较低）"
+        )
+    for width, height in ((1440, 900), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        line_counts = empty_tiles.locator("b").evaluate_all(
+            """nodes => nodes.map(element => {
+              const range = document.createRange();
+              range.selectNodeContents(element);
+              return range.getClientRects().length;
+            })"""
+        )
+        assert len(line_counts) == 3 and max(line_counts) <= 2, line_counts
     page.locator('#stock-scales [data-scale="12-24m"]').click()
     expect(
         page.locator('#stock-scales [data-scale="12-24m"]')
@@ -789,6 +813,35 @@ def test_stock_page_uses_general_asset_copy(page: Page) -> None:
     expect(page).to_have_title("临界点 · 标的")
     description = page.locator('meta[name="description"]').get_attribute("content")
     assert description and "输入指数、股票代码" in description and "个股日线" not in description
+
+
+@pytest.mark.e2e
+def test_rule_labels_index_and_chart_evidence(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    expect(page.locator("#ph-tip")).to_contain_text("形态框")
+    expect(page.locator("#ph-tip")).to_contain_text("FCO 标准过滤")
+    expect(page.locator("#ph-tip")).to_contain_text(
+        "两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。"
+    )
+    page.locator("#bt-1").click()
+    expert = page.locator("#p-expert")
+    expect(expert).to_be_visible()
+    fit_count = expert.locator("th[title]")
+    expect(fit_count).to_have_attribute("title", re.compile("FCO 标准过滤"))
+    expect(fit_count).to_have_attribute("aria-label", re.compile("合格拟合数"))
+    expect(expert).to_contain_text(
+        "两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。"
+    )
+
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    source = page.locator("#evidence-rule-source")
+    expect(source).to_be_visible()
+    expect(source).to_have_text("区间来源：形态框规则（不含振荡/阻尼条件）")
+    expect(page).to_have_title("完整图表 · 临界点")
 
 
 @pytest.mark.e2e

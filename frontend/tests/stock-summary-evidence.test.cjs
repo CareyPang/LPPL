@@ -5,11 +5,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const TopClusters = require('../app/top-clusters.js');
+const RuleLabels = require('../app/rule-labels.js');
 
 // Exercise the actual page renderer, without mounting network/session code.
 const html = fs.readFileSync(path.join(__dirname, '..', 'stock.html'), 'utf8');
 const inline = html.slice(html.lastIndexOf('  <script>') + '  <script>'.length);
-const context = vm.createContext({ CPTopClusters: TopClusters });
+const context = vm.createContext({ CPTopClusters: TopClusters, RuleLabels });
 const mountCall = inline.search(/\bStockView\.mount\s*\(/);
 vm.runInContext(inline.slice(0, mountCall) + '\nglobalThis.renderSummary = summaryHtml; globalThis.summaryStates = summaryStates;', context);
 const render = data => context.renderSummary(data);
@@ -23,7 +24,7 @@ for (const evidence of [undefined, 'none', 'dev_only', 'dev_failed', 'fail_i_iii
     assert.match(result, /尚无可显示结果/);
     assert.match(result, /不能解释为没有风险/);
     assert.doesNotMatch(result, /不在风险窗口|0 \/ 6|2026-12-01|2026-12-10|研究候选/);
-    assert.match(result, /6–12 月主簇<\/small><b class="">无证据/);
+    assert.match(result, /6–12 月主簇<\/small><b class="">未计算<\/b><span class="sub">这个尺度尚未计算/);
     assert.doesNotMatch(result, /合格拟合的尺度/);
   });
 }
@@ -45,6 +46,29 @@ test('a completed no-qualified-fit result lists computed scales without implying
   assert.doesNotMatch(result, /合格拟合的尺度|0 \/ 2/);
   assert.match(result, /这表示当前方法未给出有效区间，不能解释为风险较低。/);
   assert.doesNotMatch(result, /尚无可显示结果|不在风险窗口|不代表不会下跌/);
+});
+
+test('the computed-scale note derives its list from published indicators and confidence values', () => {
+  const result = render({ top: {
+    signal_status: 'no_qualified_fit',
+    lppls_confidence: {
+      evidence: 'dev',
+      '6-12m': 0,
+      '12-24m': 0,
+      scale_evidence: Object.fromEntries(
+        ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'].map(scale => [scale, 'dev']),
+      ),
+    },
+    indicators: {
+      '2-4w': { signal_status: 'not_computed' },
+      '1-3m': { signal_status: 'not_computed' },
+      '3-6m': { signal_status: 'not_computed' },
+      '6-12m': { signal_status: 'no_qualified_fit', n_qualified_standard: 0 },
+      '12-24m': { signal_status: 'no_qualified_fit', n_qualified_standard: 0 },
+      '2-6y': { signal_status: 'not_computed' },
+    },
+  } });
+  assert.match(result, /当前只算了 6–12 月、12–24 月两个尺度/);
 });
 
 test('a permitted research interval keeps its dates, evidence and uncalibrated wording', () => {
@@ -85,7 +109,7 @@ test('visible per-scale clusters drive the escape pill, summary, tiles, and watc
   assert.equal(labels.topState[0], 'hot');
   assert.equal(labels.topState[1], '有顶部聚类区间');
   assert.match(result, /6–12 月主簇 2026-12-28 – 2027-01-11（占该尺度合格拟合 100%）/);
-  assert.match(result, /12–24 月 本次未形成/);
+  assert.match(result, /12–24 月 这个尺度尚未计算/);
   assert.match(result, /区间不是顶部日期，未校准，仅供参考/);
   assert.match(result, /<b class="range-value">2026-12-28 – 2027-01-11<\/b><span class="sub">占 100%<\/span>/);
   assert.match(html, /\.tile\.range-tile b[^}]*white-space:\s*nowrap/);

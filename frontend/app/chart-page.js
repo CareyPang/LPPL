@@ -79,10 +79,13 @@
 
   function renderEvidence(data, selectedScale) {
     var state = el('evidence-state');
+    var ruleSource = el('evidence-rule-source');
     var list = el('interval-list');
     var note = el('evidence-note');
     list.replaceChildren();
     note.replaceChildren();
+    ruleSource.hidden = true;
+    ruleSource.textContent = '';
     if (data.assetType === 'stock' && data.modelStatus !== 'ok') {
       state.textContent = data.modelStatus === 'error'
         ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
@@ -99,15 +102,20 @@
       note.appendChild(action);
       return;
     }
+    ruleSource.hidden = false;
+    ruleSource.textContent = RuleLabels.RULES.box.source;
     var evidence = evidenceFor(data, selectedScale);
     var bands = intervalRows(data, selectedScale);
     state.textContent = '证据：' + (evidence && evidence.label || '证据状态未记录');
     if (!evidence || !evidence.show) {
+      var hiddenReason = RuleLabels.emptyReason(data.top, selectedScale, bands.length > 0, false);
+      state.textContent = RuleLabels.reasonText(hiddenReason) || state.textContent;
       note.textContent = '当前证据不允许显示区间数值。';
       return;
     }
     if (!bands.length) {
-      state.textContent = '计算完成，当前尺度没有合格区间';
+      var emptyReason = RuleLabels.emptyReason(data.top, selectedScale, false, true);
+      state.textContent = RuleLabels.reasonText(emptyReason) || '这个尺度尚未计算';
       return;
     }
     bands.forEach(function (band, index) {

@@ -304,6 +304,7 @@
   <script src="app/stock-session.js"></script>
   <script src="app/stock-visibility.js"></script>
   <script src="app/trading-days.js"></script>
+  <script src="app/rule-labels.js"></script>
   <script src="app/scale-bar.js"></script>
   <script src="app/top-clusters.js"></script>
   <script src="app/stock-view.js"></script>
@@ -379,6 +380,7 @@
         <button type="button" class="stock-scale-button" role="radio" data-scale="2-6y" aria-checked="false" tabindex="-1" disabled>2–6 年<br>无证据</button>
       </div>
       <p class="note" id="stock-scale-note" hidden></p>
+      <p class="note" id="stock-rule-caption" hidden></p>
       <p class="note" id="stock-calendar-note" hidden></p>
       <p id="quote-selected-date" class="quote-selected-date" hidden></p>
       <div class="market-stats" id="market-stats" hidden>
@@ -560,16 +562,26 @@
         || confidence.evidence
         || top.evidence
         || d.evidence;
-      if (hiddenEv(evidence)) return { kind: 'hidden' };
       const api = globalThis.CPTopClusters;
       const clusters = api?.forScale(top, scale);
-      if (clusters !== null && clusters !== undefined) {
-        return clusters.length ? { kind: 'clusters', clusters } : { kind: 'empty' };
-      }
       const window = (top.scale_windows || []).find(item => item.scale === scale);
+      const hasInterval = clusters !== null && clusters !== undefined
+        ? clusters.length > 0
+        : !!(window?.q20_date && window?.q80_date);
+      if (hiddenEv(evidence)) {
+        return {
+          kind: 'hidden',
+          reason: RuleLabels.emptyReason(top, scale, hasInterval, false),
+        };
+      }
+      if (clusters !== null && clusters !== undefined) {
+        return clusters.length
+          ? { kind: 'clusters', clusters }
+          : { kind: 'empty', reason: RuleLabels.emptyReason(top, scale, false, true) };
+      }
       if (window?.q20_date && window?.q80_date) return { kind: 'legacy', window };
-      if (indicator.signal_status === 'no_qualified_fit') return { kind: 'empty' };
-      return { kind: 'uncomputed' };
+      const reason = RuleLabels.emptyReason(top, scale, false, true);
+      return { kind: reason === 'not_computed' ? 'uncomputed' : 'empty', reason };
     }
 
     function clusterRangeText(cluster) {
@@ -608,11 +620,12 @@
 
     function clusterScaleText(d, scale, summary = false, history = null) {
       const view = scaleClusterView(d, scale);
-      if (view.kind === 'hidden') return '无证据';
+      if (view.kind === 'hidden') return RuleLabels.reasonText(view.reason) || '无证据';
       const change = !summary ? clusterMetaText(d, history, scale, null) : '';
       const suffix = change ? `；${change}` : '';
-      if (view.kind === 'uncomputed') return '未计算' + suffix;
-      if (view.kind === 'empty') return (summary ? '本次未形成' : '本次无合格拟合（不代表风险较低）') + suffix;
+      if (view.kind === 'uncomputed' || view.kind === 'empty') {
+        return (RuleLabels.reasonText(view.reason) || '已计算，没有合格拟合（不代表风险较低）') + suffix;
+      }
       if (view.kind === 'legacy') {
         return `${view.window.q20_date} – ${view.window.q80_date}（区间，本次结果未分簇）`;
       }
@@ -627,7 +640,13 @@
     function clusterSummaryTile(d, scale) {
       const view = scaleClusterView(d, scale);
       const label = `${scaleName[scale]}主簇`;
-      if (view.kind !== 'clusters') return tile(label, clusterScaleText(d, scale, true));
+      if (view.kind !== 'clusters') {
+        const shortReason = RuleLabels.shortText(view.reason);
+        if (shortReason) {
+          return tile(label, shortReason, '', RuleLabels.reasonText(view.reason));
+        }
+        return tile(label, clusterScaleText(d, scale, true));
+      }
       const main = view.clusters[0];
       return tile(
         label,
@@ -689,7 +708,7 @@
                 <tr>
                   <th>尺度</th>
                   <th>窗口数</th>
-                  <th>合格拟合数</th>
+                  <th title="${esc(RuleLabels.RULES.standard.short)}" aria-label="合格拟合数。${esc(RuleLabels.RULES.standard.short)}">合格拟合数</th>
                   <th>状态</th>
                   <th>证据</th>
                 </tr>
@@ -698,6 +717,7 @@
             </table>
           </div>
         </details>
+        <p class="disclaimer">${esc(RuleLabels.renderCaption(['box', 'standard']))}</p>
         <p class="disclaimer">无证据、失败或仅开发段结果不显示数值；风险时间只按区间展示。</p>
         <h3>历史回撤分布</h3>
         ${drawdownHtml(drawdown)}
@@ -1159,9 +1179,9 @@
             `${globalThis.CPTopClusters?.label(cluster) || '聚类'} ${esc(cluster.q20_date)} – ${esc(cluster.q80_date)}（占该尺度合格拟合 ${Math.round(Number(cluster.share) * 100)}%）`
           ).join('；')}`;
         }
-        if (view.kind === 'empty') return `${scaleName[scale]} 本次未形成`;
+        if (view.kind === 'empty') return `${scaleName[scale]} ${RuleLabels.reasonText(view.reason)}`;
         if (view.kind === 'legacy') return `${scaleName[scale]} ${esc(view.window.q20_date)} – ${esc(view.window.q80_date)}（本次结果未分簇）`;
-        return `${scaleName[scale]} 未计算`;
+        return `${scaleName[scale]} ${RuleLabels.reasonText(view.reason) || '这个尺度尚未计算'}`;
       }).filter(Boolean).join('；');
       const topText = clusterScales.length
         ? `${clusterLines}。区间不是顶部日期，未校准，仅供参考。`
@@ -1172,7 +1192,18 @@
             : !canShowStatus ? '尚无可显示的顶部分析结果；未计算、缺少证据或证据不足，均不能解释为没有风险。'
               : top.signal_status === 'no_qualified_fit'
                 ? `已计算尺度：${shownScales.length ? shownScales.map((scale) => scaleName[scale]).join('、') : '无'}；未计算尺度：${uncomputedScales.length ? uncomputedScales.map((scale) => scaleName[scale]).join('、') : '无'}。这表示当前方法未给出有效区间，不能解释为风险较低。`
-                : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。`;
+              : `${signalStatus[top.signal_status]}，目前没有可显示的逃顶风险窗口。`;
+      const computedScales = scales.filter((scale) => {
+        const indicator = indicators[scale];
+        const confidenceValue = confidence[scale];
+        return indicator && indicator.signal_status !== 'not_computed'
+          && confidenceValue != null && Number.isFinite(confidenceValue);
+      });
+      const countWord = ['', '一个', '两个', '三个', '四个', '五个', '六个'][computedScales.length]
+        || `${computedScales.length} 个`;
+      const computedScaleNote = computedScales.length && computedScales.length < scales.length
+        ? `当前只算了 ${computedScales.map(scale => scaleName[scale]).join('、')}${countWord}尺度。`
+        : '';
       const dip = d.dip || {};
       const state = dip.state || {};
       const full = dip.similar?.full || {};
@@ -1203,7 +1234,7 @@
       return `
         <section class="sum-card top">
           <h3>逃顶 <span class="state-pill ${topState[0]}">${esc(topState[1])}</span></h3>
-          <p>${esc(topText)}</p>
+          <p>${esc([topText, computedScaleNote].filter(Boolean).join(' '))}</p>
           <div class="tiles">${topTiles}</div>
         </section>
         <section class="sum-card dip">
