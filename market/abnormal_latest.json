@@ -1,11 +1,11 @@
 {
   "asof": "2026-11-18",
-  "generated": "2026-11-18T10:21:29.626190+00:00",
+  "generated": "2026-11-18T12:52:08.468905+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
-    "candidate_count": 139,
-    "available_count": 139,
+    "candidate_count": 137,
+    "available_count": 137,
     "missing": 3,
     "missing_codes": [
       {
@@ -27,9 +27,9 @@
     "rule_source": "交易所异常波动规则摘要"
   },
   "counts": {
-    "candidate_count": 139,
-    "available_count": 139,
-    "near": 42,
+    "candidate_count": 137,
+    "available_count": 137,
+    "near": 41,
     "triggered": 26,
     "stale_bar": 0
   },
@@ -243,7 +243,8 @@
       "last_bar_date": "2026-11-18",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt"
+        "limit_pools_zt",
+        "hot_eastmoney"
       ],
       "dev_3d": 24.80122444730132,
       "dev_10d": 25.351278696455115,
@@ -957,8 +958,7 @@
       "stale_bar": false,
       "candidate_sources": [
         "limit_pools_dt",
-        "hot_ths",
-        "hot_eastmoney"
+        "hot_ths"
       ],
       "dev_3d": -25.842293353397682,
       "dev_10d": 30.89565777906147,
@@ -1486,7 +1486,8 @@
       "last_bar_date": "2026-11-18",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt"
+        "limit_pools_zt",
+        "hot_eastmoney"
       ],
       "dev_3d": 16.529128080165055,
       "dev_10d": 16.65486791572497,
@@ -1512,43 +1513,6 @@
         "remaining_pp": 3.470871919834945
       },
       "remaining_pp": 3.470871919834945,
-      "near": true,
-      "triggered": false
-    },
-    {
-      "code": "600619",
-      "name": "海立股份",
-      "board": "沪主板",
-      "benchmark": "sh000001",
-      "last_bar_date": "2026-11-18",
-      "stale_bar": false,
-      "candidate_sources": [
-        "hot_eastmoney"
-      ],
-      "dev_3d": 16.406059225043755,
-      "dev_10d": 16.54977144005667,
-      "dev_30d": 12.575325838465734,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "up",
-        "threshold_pct": 20.0,
-        "remaining_pp": 3.593940774956245
-      },
-      "remaining_pp": 3.593940774956245,
       "near": true,
       "triggered": false
     },
@@ -1713,8 +1677,7 @@
       "last_bar_date": "2026-11-18",
       "stale_bar": false,
       "candidate_sources": [
-        "hot_ths",
-        "hot_eastmoney"
+        "hot_ths"
       ],
       "dev_3d": -14.814575481928259,
       "dev_10d": -6.647936406293387,
@@ -1972,6 +1935,43 @@
       "remaining_pp": 6.663342878624217,
       "near": false,
       "triggered": false
+    },
+    {
+      "code": "600829",
+      "name": "人民同泰",
+      "board": "沪主板",
+      "benchmark": "sh000001",
+      "last_bar_date": "2026-11-18",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_dt"
+      ],
+      "dev_3d": -13.061837953473997,
+      "dev_10d": -0.11925832666365155,
+      "dev_30d": -0.9089794877913828,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "down",
+        "threshold_pct": -20.0,
+        "remaining_pp": 6.938162046526003
+      },
+      "remaining_pp": 6.938162046526003,
+      "near": false,
+      "triggered": false
     }
   ],
   "evidence": "descriptive",
@@ -1979,7 +1979,7 @@
   "version": {
     "kind": "abnormal",
     "asof": "2026-11-18",
-    "file": "versions/abnormal/2026-11-18/20261118T102129Z_86351798.json.gz",
-    "sha256": "86351798e80d275c8d34fbd3a925003373d0882706711f78d2b6812ea244c300"
+    "file": "versions/abnormal/2026-11-18/20261118T125208Z_02fb8fff.json.gz",
+    "sha256": "02fb8fff369f9aa90353c6c2bdb48279aedd06c17337a0a1154d3ff57f91b0c3"
   }
 }
