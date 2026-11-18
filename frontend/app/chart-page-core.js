@@ -115,6 +115,14 @@
         : prefix === 'bj' ? '北京证券交易所' : '未记录';
   }
 
+  function inferStockSymbol(symbol) {
+    var match = String(symbol || '').trim().toLowerCase().match(/^(?:sh|sz|bj)?(\d{6})$/);
+    if (!match) return '';
+    var code = match[1];
+    var first = code.charAt(0);
+    return (first === '6' ? 'sh' : first === '0' || first === '3' ? 'sz' : 'bj') + code;
+  }
+
   function modelRecord(raw, fallback) {
     raw = raw || {};
     return {
@@ -155,7 +163,9 @@
     }
     var hasLatest = !!latest && typeof latest === 'object';
     var raw = hasLatest ? latest.raw || latest : {};
-    var resolvedSymbol = String(hasLatest && latest.symbol || symbol || '').toLowerCase();
+    var resolvedSymbol = String(
+      hasLatest && latest.symbol || market.symbol || inferStockSymbol(symbol) || symbol || '',
+    ).toLowerCase();
     var model = modelRecord(raw, hasLatest ? latest : null);
     var lastBar = market.price[market.price.length - 1];
     return {

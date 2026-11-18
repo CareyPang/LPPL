@@ -191,6 +191,19 @@ test('stock assembly keeps market bars when the latest model is missing and requ
   );
 });
 
+test('stock assembly preserves or infers exchange prefixes for numeric codes', () => {
+  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const publishedSymbol = Core.assembleStockData('600519', null, market, null);
+  assert.equal(publishedSymbol.symbol, 'sh600519');
+  assert.equal(publishedSymbol.exchange, '上海证券交易所');
+
+  const marketWithoutSymbol = Object.assign({}, market);
+  delete marketWithoutSymbol.symbol;
+  const inferredSymbol = Core.assembleStockData('600519', null, marketWithoutSymbol, null);
+  assert.equal(inferredSymbol.symbol, 'sh600519');
+  assert.equal(inferredSymbol.exchange, '上海证券交易所');
+});
+
 test('stock assembly reports a rejected latest model without dropping market bars', () => {
   const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
   const data = Core.assembleStockData('sh600519', null, market, null, new Error('读取失败'));
