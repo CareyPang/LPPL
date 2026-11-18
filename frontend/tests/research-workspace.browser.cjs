@@ -169,11 +169,24 @@ const server = http.createServer((req, res) => {
 
     const other = await ctx.newPage();
     await other.goto(origin + '/app/research-workspace.css');
+    const previouslySaved = await page.locator('#research-note').inputValue();
+    await other.evaluate(() => {
+      const key = 'lppl.research-workspace.v1', s = JSON.parse(localStorage.getItem(key));
+      s.revision += 1;
+      s.notes.at(-1).text = '另一标签页的新保存内容';
+      s.notes.at(-1).version += 1;
+      localStorage.setItem(key, JSON.stringify(s));
+    });
+    await page.locator('#restore-saved').waitFor({ state: 'visible' });
+    await page.locator('#restore-saved').click();
+    assert.notEqual(previouslySaved, '另一标签页的新保存内容');
+    assert.equal(await page.locator('#research-note').inputValue(), '另一标签页的新保存内容');
+    check('restoring newer saved notes discards unchanged editor text while preserving real drafts');
     await page.locator('#research-note').fill('此标签页未保存草稿');
     await other.evaluate(() => {
       const key = 'lppl.research-workspace.v1', s = JSON.parse(localStorage.getItem(key));
       s.revision += 1;
-      s.notes.push({ ...s.notes.at(-1), id: 'other-tab-note', text: '其他标签页保存内容', version: 3 });
+      s.notes.push({ ...s.notes.at(-1), id: 'other-tab-note', text: '其他标签页保存内容', version: s.notes.at(-1).version + 1 });
       localStorage.setItem(key, JSON.stringify(s));
     });
     await page.locator('#restore-saved').waitFor({ state: 'visible' });

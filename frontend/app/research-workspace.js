@@ -99,7 +99,12 @@
     return ok;
   }
   function saveDraft() {
-    if (activeNoteKey) drafts.set(activeNoteKey, $('research-note').value);
+    if (!activeNoteKey) return;
+    const saved = state.notes.slice().reverse().find(note =>
+      [note.assetId, note.asof || '', note.predictionId || '', note.modelVersion || ''].join('|') === activeNoteKey);
+    const text = $('research-note').value;
+    if (text.trim() !== (saved?.text || '').trim()) drafts.set(activeNoteKey, text);
+    else drafts.delete(activeNoteKey);
   }
   function hasUnsaved() {
     saveDraft();
