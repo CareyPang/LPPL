@@ -14,14 +14,19 @@ on:
       - research/data/bottom_signal.py
       - research/data/range_stats.py
       - research/data/market_base.py
+      - research/data/lhb_seats.py
       - research/data/events.py
       - research/data/breadth.py
       - research/data/trading_date.py
+      - data/lhb_seat_alias.json
       - research/dip/env.py
       - tests/test_trading_date.py
       - tests/test_market_workflows.py
+      - tests/test_lhb_seats.py
       - tests/test_breadth.py
       - tests/e2e/test_smoke.py
+      - tests/e2e/conftest.py
+      - frontend/tests/fixtures/lhb_seats_latest.json
       - frontend/market.html
       - frontend/stock.html
       - frontend/app/lppl-data.js
@@ -110,6 +115,21 @@ jobs:
           if [[ "$limit_ok" != "true" ]]; then
             echo "limit_pools failed; keeping the previous published snapshot"
           fi
+      - name: Fetch LHB seat review
+        id: lhb_seats
+        if: always() && steps.install.outcome == 'success' && steps.fetch.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          previous="out/previous-market/lhb_seats_latest.json"
+          if [[ -f "$previous" ]]; then
+            python -m research.data.lhb_seats --date "${{ steps.fetch.outputs.asof }}" \
+              --out out/market/lhb_seats_latest.json --previous "$previous"
+          else
+            python -m research.data.lhb_seats --date "${{ steps.fetch.outputs.asof }}" \
+              --out out/market/lhb_seats_latest.json
+          fi
       - name: Restore market breadth cache
         id: breadth_cache
         if: steps.fetch.outcome == 'success' && steps.install.outcome == 'success'
@@ -170,7 +190,7 @@ jobs:
             gh workflow run pages.yml --ref main
           fi
       - name: Publish to stock-results
-        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.breadth.outcome == 'success' || steps.range_stats.outcome == 'success' || steps.stock_list.outputs.stock_list_ok == 'true')
+        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.breadth.outcome == 'success' || steps.range_stats.outcome == 'success' || steps.stock_list.outputs.stock_list_ok == 'true' || steps.lhb_seats.outcome == 'success')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -191,6 +211,10 @@ jobs:
           if [[ -f out/market/stock_list.json ]]; then
             cp out/market/stock_list.json market/stock_list.json
             git add market/stock_list.json
+          fi
+          if [[ -f out/market/lhb_seats_latest.json ]]; then
+            cp out/market/lhb_seats_latest.json market/lhb_seats_latest.json
+            git add market/lhb_seats_latest.json
           fi
           if [[ "${{ steps.fetch.outputs.limit_ok }}" == "true" ]]; then
             publish_versioned market "$GITHUB_WORKSPACE/out/market/market_latest.json"

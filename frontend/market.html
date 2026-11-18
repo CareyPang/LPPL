@@ -229,6 +229,41 @@ td.r, th.r { text-align: right; }
 .abnormal-table { min-width: 860px; }
 .range-table { min-width: 520px; }
 #s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
+.lhb-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.lhb-card { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.lhb-card strong { display: block; margin-top: 3px; font: 600 18px var(--f-m); }
+.lhb-card.buy strong { color: var(--up); }
+.lhb-card.sell strong { color: var(--dn); }
+.lhb-card.institution strong { color: var(--warn); }
+.lhb-meta, .lhb-note { color: var(--ink-3); font-size: 12px; }
+.lhb-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.lhb-table th:nth-child(1), .lhb-table td:nth-child(1) { width: 6%; }
+.lhb-table th:nth-child(2), .lhb-table td:nth-child(2) { width: 20%; }
+.lhb-table th:nth-child(3), .lhb-table td:nth-child(3) { width: 34%; }
+.lhb-table th:nth-child(4), .lhb-table td:nth-child(4),
+.lhb-table th:nth-child(5), .lhb-table td:nth-child(5) { width: 20%; }
+.lhb-table th, .lhb-table td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.lhb-table th { color: var(--ink-3); font-size: 12px; font-weight: 500; }
+.lhb-table td:nth-child(4), .lhb-table td:nth-child(5) { overflow-wrap: anywhere; }
+.lhb-seat-name { font-weight: 600; }
+.lhb-seat-business { display: block; max-width: 250px; color: var(--ink-3); font-size: 11px; overflow-wrap: anywhere; }
+.lhb-trades { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.lhb-trade-chip { display: inline-block; max-width: 100%; padding: 2px 6px; color: #fff; border-radius: 2px; font-size: 11px; white-space: normal; overflow-wrap: anywhere; }
+.lhb-trade-chip.in { background: var(--up); }
+.lhb-trade-chip.out { background: var(--dn); }
+.lhb-more { flex-basis: 100%; font-size: 11px; }
+.lhb-more summary { color: var(--real); cursor: pointer; }
+.lhb-more-list { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 4px; }
+.lhb-major { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-top: 12px; }
+.lhb-major-card { min-width: 0; padding: 10px; border: 1px solid var(--line); }
+.lhb-major-card strong { display: block; overflow-wrap: anywhere; }
+.lhb-major-card small { color: var(--ink-3); }
+#s-lhb-seats .table-scroll { max-width: 100%; overflow-x: auto; }
+@media (max-width: 540px) {
+  .lhb-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lhb-card { padding: 8px; }
+  .lhb-card strong { font-size: 16px; }
+}
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
 @media (max-width: 1000px) { .events-columns { grid-template-columns: 1fr; } }
@@ -339,6 +374,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <section class="sec wide" id="s-lhb" aria-labelledby="h-lhb">
     <div class="sec-h"><h2 id="h-lhb">盘后龙虎榜</h2><span class="ev">descriptive</span><span class="src" id="src-lhb"></span></div>
     <div id="lhb-body"></div>
+  </section>
+
+  <section class="sec wide" id="s-lhb-seats" aria-labelledby="h-lhb-seats">
+    <div class="sec-h"><h2 id="h-lhb-seats">龙虎榜复盘</h2><span class="ev">descriptive</span></div>
+    <div id="lhb-seats-body" data-ai-context="龙虎榜复盘"><p class="note">龙虎榜席位数据加载中…</p></div>
   </section>
 
   <section class="sec" id="s-nb" aria-labelledby="h-nb">
@@ -1373,6 +1413,58 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     renderMacro();
   }
 
+  function renderLhbSeats(data, reason) {
+    const box = $('lhb-seats-body');
+    if (!data || data.schema !== 'lhb_seats.v1') {
+      box.innerHTML = statusMarkup(reason || 'unpublished', '龙虎榜席位数据', 'data-retry-lhb-seats');
+      return;
+    }
+    const totals = data.totals || {};
+    const allSeats = Array.isArray(data.seats) ? data.seats : [];
+    const aliases = allSeats.filter((seat) => seat.kind === 'dept' && seat.alias);
+    const departments = allSeats.filter((seat) => seat.kind === 'dept' && !seat.alias).slice(0, 20);
+    const mainSeats = [...aliases, ...departments];
+    const majorSeats = allSeats.filter((seat) => ['northbound', 'institution'].includes(seat.kind));
+    const tradeChip = (trade) => `<span class="lhb-trade-chip ${trade.side === 'in' ? 'in' : 'out'}" title="${E(trade.name)} · ${trade.side === 'in' ? '买入' : '卖出'} · ${trade.list === 'multi' ? '多日榜' : '单日榜'}">${E(trade.name || trade.code)} ${money(trade.amount)}</span>`;
+    const tradeMarkup = (trades) => {
+      const items = Array.isArray(trades) ? trades : [];
+      return `<div class="lhb-trades">${items.slice(0, 3).map(tradeChip).join('')}${items.length > 3
+        ? `<details class="lhb-more"><summary>+${items.length - 3}笔</summary><div class="lhb-more-list">${items.slice(3).map(tradeChip).join('')}</div></details>` : ''}</div>`;
+    };
+    const seatRow = (seat, rank) => `<tr>
+      <td class="m">${rank}</td>
+      <td><span class="lhb-seat-name">${E(seat.alias || seat.seat)}</span>${seat.alias ? `<small class="lhb-seat-business">${E(seat.seat)}</small>` : ''}</td>
+      <td>${tradeMarkup(seat.trades)}</td>
+      <td class="m up">${money(seat.buy)}</td>
+      <td class="m dn">${money(seat.sell)}</td>
+    </tr>`;
+    const majors = majorSeats.map((seat) => `<article class="lhb-major-card">
+      <strong>${E(seat.alias || seat.seat)}</strong>${seat.alias ? `<small>${E(seat.seat)}</small>` : ''}
+      <div>买入 <span class="m up">${money(seat.buy)}</span> · 卖出 <span class="m dn">${money(seat.sell)}</span></div>
+    </article>`).join('');
+    const sampleCount = totals.n_stocks == null
+      ? (Number(totals.n_stocks_single) || 0) + (Number(totals.n_stocks_multi) || 0)
+      : (Number(totals.n_stocks) || 0);
+    box.innerHTML = `<div class="lhb-cards">
+      <div class="lhb-card buy">席位买入合计<strong>${money(totals.buy)}</strong></div>
+      <div class="lhb-card sell">席位卖出合计<strong>${money(totals.sell)}</strong></div>
+      <div class="lhb-card institution">机构净买入<strong>${money(totals.institution_net)}</strong></div>
+    </div>
+    <p class="lhb-meta">数据日期：${E(data.asof || '—')} · 样本 ${sampleCount} 只（单日榜 ${Number(totals.n_stocks_single) || 0} / 多日榜 ${Number(totals.n_stocks_multi) || 0}）· 历史分位，不是预测</p>
+    <div class="table-scroll"><table class="lhb-table"><thead><tr><th>排名</th><th>席位 / 别名</th><th>买卖明细</th><th>买入合计</th><th>卖出合计</th></tr></thead>
+      <tbody>${mainSeats.length ? mainSeats.map((seat, index) => seatRow(seat, index + 1)).join('') : '<tr><td colspan="5">暂无可展示营业部席位</td></tr>'}</tbody></table></div>
+    <div class="lhb-major-heading"><strong>其他主要席位（北向与机构）</strong></div>
+    <div class="lhb-major">${majors || '<p class="lhb-meta">暂无北向或机构席位</p>'}</div>
+    <p class="lhb-note">${E(data.note || '席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。')}</p>`;
+  }
+
+  async function loadLhbSeats() {
+    const result = await LPPL.fetchResult('market/lhb_seats_latest.json', {
+      empty: (data) => !data || data.schema !== 'lhb_seats.v1',
+    });
+    renderLhbSeats(result.data, result.reason);
+  }
+
   document.addEventListener('click', (e) => {
     const k = e.target.closest('[data-k]'), p = e.target.closest('[data-p]');
     const ef = e.target.closest('[data-event-filter]');
@@ -1713,6 +1805,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   $('events-body').addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-events]')) loadEvents();
   });
+  $('lhb-seats-body').addEventListener('click', (event) => {
+    if (event.target.closest('[data-retry-lhb-seats]')) loadLhbSeats();
+  });
   $('breadth-body').addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-breadth]')) loadBreadth();
   });
@@ -1720,6 +1815,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   loadBreadth();
   loadStockDirectory();
   loadEvents();
+  loadLhbSeats();
   loadSummaryData();
   LPPL.macro().then((d) => { Macro = d; if (M) renderMacro(); })
     .catch((e) => { Macro = {}; if (M) renderMacro(); console.error(e); });

@@ -1,0 +1,87 @@
+{
+  "schema": "lhb_seats.v1",
+  "asof": "2026-11-18",
+  "totals": {
+    "buy": 1230000000,
+    "sell": 987000000,
+    "institution_net": 123000000,
+    "n_stocks": 34,
+    "n_stocks_single": 28,
+    "n_stocks_multi": 6
+  },
+  "seats": [
+    {
+      "seat": "某证券股份有限公司上海分公司",
+      "alias": "游资甲",
+      "kind": "dept",
+      "buy": 880000000,
+      "sell": 312000000,
+      "net": 568000000,
+      "trades": [
+        {"code": "600001", "name": "甲股份", "side": "in", "amount": 420000000, "list": "single"},
+        {"code": "000002", "name": "乙科技", "side": "out", "amount": 210000000, "list": "multi"},
+        {"code": "300003", "name": "丙新材", "side": "in", "amount": 180000000, "list": "single"},
+        {"code": "600004", "name": "丁股份", "side": "out", "amount": 102000000, "list": "single"}
+      ]
+    },
+    {
+      "seat": "某证券股份有限公司杭州庆春路证券营业部",
+      "alias": "游资乙",
+      "kind": "dept",
+      "buy": 175000000,
+      "sell": 96000000,
+      "net": 79000000,
+      "trades": [
+        {"code": "300005", "name": "戊科技", "side": "in", "amount": 110000000, "list": "single"},
+        {"code": "600006", "name": "己股份", "side": "out", "amount": 96000000, "list": "single"}
+      ]
+    },
+    {
+      "seat": "某证券股份有限公司深圳深南大道证券营业部",
+      "alias": "游资丙",
+      "kind": "dept",
+      "buy": 120000000,
+      "sell": 133000000,
+      "net": -13000000,
+      "trades": [
+        {"code": "000007", "name": "庚材料", "side": "in", "amount": 72000000, "list": "single"},
+        {"code": "300008", "name": "辛电子", "side": "out", "amount": 133000000, "list": "multi"}
+      ]
+    },
+    {
+      "seat": "某证券股份有限公司上海浦东南路证券营业部",
+      "alias": "游资丁",
+      "kind": "dept",
+      "buy": 98000000,
+      "sell": 65000000,
+      "net": 33000000,
+      "trades": [
+        {"code": "600009", "name": "壬电气", "side": "in", "amount": 98000000, "list": "single"},
+        {"code": "000010", "name": "癸设备", "side": "out", "amount": 65000000, "list": "single"}
+      ]
+    },
+    {
+      "seat": "机构专用",
+      "alias": null,
+      "kind": "institution",
+      "buy": 210000000,
+      "sell": 87000000,
+      "net": 123000000,
+      "trades": [
+        {"code": "600001", "name": "甲股份", "side": "in", "amount": 210000000, "list": "single"}
+      ]
+    },
+    {
+      "seat": "沪股通专用",
+      "alias": null,
+      "kind": "northbound",
+      "buy": 140000000,
+      "sell": 95000000,
+      "net": 45000000,
+      "trades": [
+        {"code": "600001", "name": "甲股份", "side": "in", "amount": 140000000, "list": "single"}
+      ]
+    }
+  ],
+  "note": "席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。金额单位为人民币元。"
+}
