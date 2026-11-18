@@ -18,10 +18,27 @@
   var HOME_STORAGE_KEY = 'lppl.assistant.home';
   var me = document.currentScript;
   var page = (me && me.dataset.page) || 'stock';
+  var defaultOpen = page !== 'home' && !(me && me.dataset.default === 'closed');
 
   function storeKey() {
     var q = new URLSearchParams(location.search);
     return 'lppl.ai.v1.' + page + ':' + (q.get('code') || q.get('sym') || q.get('s') || '');
+  }
+  function preferenceKey() {
+    if (page === 'home') return HOME_STORAGE_KEY;
+    var filename = root.location.pathname.split('/').pop() || 'index.html';
+    return 'lppl.assistant.wide:' + filename;
+  }
+  function readPreference() {
+    try {
+      var value = root.localStorage.getItem(preferenceKey());
+      if (value === '1') return true;
+      if (value === '0') return false;
+    } catch (e) { /* optional */ }
+    return defaultOpen;
+  }
+  function writePreference(open) {
+    try { root.localStorage.setItem(preferenceKey(), open ? '1' : '0'); } catch (e) { /* optional */ }
   }
   function loadHistory(key) {
     try { var v = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
@@ -52,13 +69,13 @@
     '.ai-btn:hover,.odn:not(.odn-light) .ai-btn:hover{background:#2447c9}' +
     '.ai-btn[aria-expanded="true"],.odn:not(.odn-light) .ai-btn[aria-expanded="true"]{background:#1d3aa8}' +
     '.ai-btn svg{width:14px;height:14px;flex:none}' +
-    '.ai-home-switch{display:none;align-items:center;gap:7px;height:34px;padding:0 8px;border:1px solid #d6dae3;border-radius:999px;background:#fff;color:#4c525e;font:600 12px/1 sans-serif;cursor:pointer;white-space:nowrap}' +
-    '.ai-home-switch:focus-visible{outline:3px solid rgba(49,92,245,.18);outline-offset:2px}' +
-    '.ai-home-switch i{position:relative;display:block;width:30px;height:18px;border-radius:999px;background:#aeb6c4;transition:background .15s;flex:none}' +
-    '.ai-home-switch i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(19,23,34,.25);transition:transform .15s}' +
-    '.ai-home-switch[aria-checked="true"]{border-color:#b9caff;background:#f5f8ff;color:#1f5fd6}' +
-    '.ai-home-switch[aria-checked="true"] i{background:#315cf5}' +
-    '.ai-home-switch[aria-checked="true"] i::after{transform:translateX(12px)}' +
+    '.ai-switch{display:none;align-items:center;gap:7px;height:34px;padding:0 8px;border:1px solid #d6dae3;border-radius:999px;background:#fff;color:#4c525e;font:600 12px/1 sans-serif;cursor:pointer;white-space:nowrap}' +
+    '.ai-switch:focus-visible{outline:3px solid rgba(49,92,245,.18);outline-offset:2px}' +
+    '.ai-switch i{position:relative;display:block;width:30px;height:18px;border-radius:999px;background:#aeb6c4;transition:background .15s;flex:none}' +
+    '.ai-switch i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(19,23,34,.25);transition:transform .15s}' +
+    '.ai-switch[aria-checked="true"]{border-color:#b9caff;background:#f5f8ff;color:#1f5fd6}' +
+    '.ai-switch[aria-checked="true"] i{background:#315cf5}' +
+    '.ai-switch[aria-checked="true"] i::after{transform:translateX(12px)}' +
     '.ai-ask-inline{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;height:28px;margin-left:8px;padding:0 9px;border:1px solid #315CF5;border-radius:6px;background:#fff;color:#315CF5;font:600 12px/1 sans-serif;white-space:nowrap;cursor:pointer}' +
     '.ai-ask-inline:hover{background:#f2f5ff}' +
     '.ai-panel{box-sizing:border-box;background:#fff;color:#131722;border:1px solid #e3e7ee;display:flex;flex-direction:column;font:14px/1.6 sans-serif;padding:0}' +
@@ -88,9 +105,9 @@
     '.ai-theme-dark .ai-x,.ai-theme-dark .ai-clear{color:#b2b5be}.ai-theme-dark .ai-x:hover,.ai-theme-dark .ai-clear:hover{background:#2a2a2a}' +
     '.ai-theme-dark .ai-presets button,.ai-theme-dark .ai-form textarea{background:#1a1a1a;border-color:#444;color:#dbdbdb}' +
     '.ai-theme-dark .ai-presets button:hover{background:#2a2a2a}' +
-    '@media (min-width:' + WIDE + 'px){.ai-home-switch{display:inline-flex}.ai-btn{display:none}.ai-panel .ai-x{display:none}' +
+    '@media (min-width:' + WIDE + 'px){.ai-switch{display:inline-flex}.ai-btn{display:none}' +
     '.ai-panel.ai-dock{position:fixed;top:0;left:208px;right:auto;bottom:0;width:340px;z-index:65;border-width:0 1px 0 0}}' +
-    '@media (max-width:' + (WIDE - 1) + 'px){.ai-home-switch{display:none!important}.ai-panel{margin:12px 0;border-radius:10px;max-height:72vh}.ai-panel .ai-log{min-height:120px}.ai-btn{padding:0 8px}}' +
+    '@media (max-width:' + (WIDE - 1) + 'px){.ai-switch{display:none!important}.ai-panel{margin:12px 0;border-radius:10px;max-height:72vh}.ai-panel .ai-log{min-height:120px}.ai-btn{padding:0 8px}}' +
     '@media (max-width:760px){.ai-btn{display:none!important}.ai-panel:not([hidden]){position:fixed;top:52px;right:0;bottom:0;left:0;width:100vw;height:calc(100vh - 52px);height:calc(100dvh - 52px);max-height:none;margin:0;border:0;border-radius:0;z-index:120}.ai-panel .ai-log{min-height:0}}';
   document.head.appendChild(css);
 
@@ -220,15 +237,9 @@
   btn.setAttribute('aria-expanded', 'false');
   function wide() { return root.matchMedia('(min-width:' + WIDE + 'px)').matches; }
   function mobile() { return root.matchMedia('(max-width:760px)').matches; }
-  var homeSwitch = null;
-  function readHomePreference() {
-    try { return root.localStorage.getItem(HOME_STORAGE_KEY) === '1'; } catch (e) { return false; }
-  }
-  function writeHomePreference(open) {
-    try { root.localStorage.setItem(HOME_STORAGE_KEY, open ? '1' : '0'); } catch (e) { /* optional */ }
-  }
-  function syncHomeSwitch(open) {
-    if (homeSwitch) homeSwitch.setAttribute('aria-checked', String(open));
+  var switchButton = null;
+  function syncSwitch(open) {
+    if (switchButton) switchButton.setAttribute('aria-checked', String(open));
   }
   function placementVisible(el) {
     if (!el || !el.isConnected) return false;
@@ -274,9 +285,10 @@
   function toggle(open, persist) {
     panel.hidden = !open;
     btn.setAttribute('aria-expanded', String(open));
-    syncHomeSwitch(open);
-    if (page === 'home' && persist) writeHomePreference(open);
+    syncSwitch(open);
+    if (persist) writePreference(open);
     document.body.classList.toggle('ai-open', open && wide());
+    document.body.classList.toggle('ai-closed', !open && wide());
     document.body.classList.toggle('ai-mobile-open', open && mobile());
     document.dispatchEvent(new CustomEvent('lppl:assistant-state', { detail: { open: open } }));
     if (open) {
@@ -304,7 +316,7 @@
   panel.querySelector('.ai-x').addEventListener('click', function () { toggle(false, true); });
   var lastWide = wide();
   root.matchMedia('(min-width:' + WIDE + 'px)').addEventListener('change', function (event) {
-    if (event.matches) toggle(page === 'home' ? readHomePreference() : true, false);
+    if (event.matches) toggle(readPreference(), false);
     else if (lastWide) toggle(false, false);
     else if (!panel.hidden) { place(); root.dispatchEvent(new Event('resize')); }
     lastWide = event.matches;
@@ -318,24 +330,20 @@
     var host = document.querySelector('.odn-r');
     if (host) {
       host.insertBefore(btn, host.firstChild);
-      if (page === 'home') {
-        homeSwitch = document.createElement('button');
-        homeSwitch.type = 'button';
-        homeSwitch.className = 'ai-home-switch';
-        homeSwitch.setAttribute('role', 'switch');
-        homeSwitch.setAttribute('aria-checked', 'false');
-        homeSwitch.innerHTML = '<span>研究助手</span><i aria-hidden="true"></i>';
-        homeSwitch.addEventListener('click', function () { toggle(panel.hidden, true); });
-        var help = host.querySelector('.odn-help');
-        host.insertBefore(homeSwitch, help || null);
-      }
+      switchButton = document.createElement('button');
+      switchButton.type = 'button';
+      switchButton.className = 'ai-switch';
+      switchButton.setAttribute('role', 'switch');
+      switchButton.setAttribute('aria-checked', 'false');
+      switchButton.innerHTML = '<span>研究助手</span><i aria-hidden="true"></i>';
+      switchButton.addEventListener('click', function () { toggle(panel.hidden, true); });
+      var help = host.querySelector('.odn-help');
+      host.insertBefore(switchButton, help || null);
     }
     else { btn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:61'; document.body.appendChild(btn); }
     var requested = new URLSearchParams(location.search).get('ai') === '1';
-    if (page === 'home') {
-      if (wide()) toggle(readHomePreference(), false);
-      else if (requested) toggle(true, false);
-    } else if (wide() || requested) toggle(true, false);
+    if (wide()) toggle(readPreference(), false);
+    else if (requested) toggle(true, false);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -40,6 +40,25 @@ test('context parsing rejects unsupported symbols and normalizes invalid scales'
   assert.equal(invalid.scale, '6-12m');
 });
 
+test('context parsing accepts only real YYYY-MM-DD as-of dates', () => {
+  const valid = Core.parseContext('?code=sh000001&asof=2015-06-12', indexSymbols);
+  assert.equal(valid.asof, '2015-06-12');
+
+  for (const value of ['2015-6-12', '2015-02-29', '2015-13-01', '2015-06-12x']) {
+    assert.equal(Core.parseContext(`?code=sh000001&asof=${value}`, indexSymbols).asof, '', value);
+  }
+});
+
+test('index replay uses as-of data and exposes an explicit latest-results link when pending', () => {
+  assert.match(chartPageSource, /LPPL\.load\(context\.code, context\.asof \|\| undefined\)/);
+  assert.match(chartPageSource, /error && error\.pending\s*\?\s*error\.message/);
+  assert.match(chartPageSource, /params\.delete\('asof'\)/);
+  assert.match(
+    chartPageSource,
+    /latestLink\.hidden = !\(error && error\.pending && context\.assetType === 'index' && context\.asof\)/,
+  );
+});
+
 test('from allowlist rejects external, protocol, backslash, and non-asset paths', () => {
   const unsafe = [
     'https://evil.example/',
@@ -140,6 +159,34 @@ test('stock assembly keeps unadjusted market bars separate from the model cutoff
   assert.deepEqual(data.bars, market.price);
   assert.equal(data.modelVersion, latest.model_version);
   assert.equal(data.predictionId, null);
+  assert.equal(data.modelStatus, 'ok');
+});
+
+test('stock assembly keeps market bars when the latest model is missing and requires market data', () => {
+  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const data = Core.assembleStockData('sh600519', null, market, null);
+
+  assert.equal(data.modelStatus, 'missing');
+  assert.equal(data.modelAsOf, '');
+  assert.deepEqual(data.top, {});
+  assert.deepEqual(data.evidence_levels, {});
+  assert.equal(data.modelVersion, null);
+  assert.equal(data.predictionId, null);
+  assert.equal(data.name, market.name || market.stock_name || 'sh600519');
+  assert.deepEqual(data.bars, market.price);
+  assert.throws(
+    () => Core.assembleStockData('sh600519', null, null, null),
+    /行情接口未返回 K 线；未用模型价格替代行情。/,
+  );
+});
+
+test('stock assembly reports a rejected latest model without dropping market bars', () => {
+  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const data = Core.assembleStockData('sh600519', null, market, null, new Error('读取失败'));
+
+  assert.equal(data.modelStatus, 'error');
+  assert.equal(data.modelMessage, '读取失败');
+  assert.deepEqual(data.bars, market.price);
 });
 
 test('stock calendar prefers the published result and accepts the shared-calendar fallback', () => {
