@@ -13,6 +13,7 @@
   var el = function (id) { return document.getElementById(id); };
   var context = Core.parseContext(root.location.search, LPPL.SYMS || []);
   var chart = null;
+  var drawing = null;
   var current = null;
   var sequence = 0;
   var activeMarket = null;
@@ -284,6 +285,7 @@
       ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
       : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
     drawHeader(data);
+    if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: data.asof || context.asof });
     chart.setData(chartPayload(data));
     if (data.asof) chart.setAsof(data.asof);
     renderEvidence(data, context.scale);
@@ -531,8 +533,15 @@
   });
   el('share-screenshot').addEventListener('click', async function () {
     if (!current || !chart) return;
+    var includeDrawings = el('include-drawings').checked;
+    var restoreDrawings = drawing && drawing.drawingsVisible();
     try {
-      var shot = chart.takeScreenshot();
+      if (drawing) drawing.setVisibleForScreenshot(includeDrawings);
+      if (drawing) await new Promise(function (resolve) {
+        requestAnimationFrame(function () { requestAnimationFrame(resolve); });
+      });
+      var shot = chart.takeScreenshot(includeDrawings);
+      if (includeDrawings && drawing) drawing.composeScreenshot(shot);
       var lines = Share.lines(researchCard());
       var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
       var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
@@ -545,6 +554,14 @@
       if (!blob) throw new Error('图片编码失败');
       download(blob, '-chart.png'); el('action-feedback').textContent = '当前图表与证据截图已下载；不含私人研究资料。';
     } catch (error) { el('action-feedback').textContent = '截图未完成：' + error.message + '。可使用匿名研究卡。'; }
+    finally {
+      if (drawing) {
+        drawing.setVisibleForScreenshot(restoreDrawings);
+        await new Promise(function (resolve) {
+          requestAnimationFrame(function () { requestAnimationFrame(resolve); });
+        });
+      }
+    }
   });
 
   function latestResultsHref() {
@@ -566,6 +583,7 @@
 
   async function load() {
     var request = ++sequence;
+    if (drawing) drawing.setContext({ symbol: current && current.symbol || context.code, asof: context.asof });
     el('error-panel').hidden = true;
     el('loading').hidden = !!current;
     if (!context.valid) { showError(new Error(context.invalidReason || '缺少有效的指数或 A 股代码。')); return; }
@@ -601,6 +619,7 @@
   try {
     chart = LPPLChart.mount(el('chart-host'), { height: 520 });
     chart.setScale(context.scale);
+    drawing = root.ChartDrawing.attach(chart, { symbol: context.code, asof: context.asof });
     chart.on('scale', function (scale) {
       if (scale !== context.scale) context.scale = scale;
     });
@@ -611,4 +630,7 @@
     el('error-panel').hidden = false;
     el('retry-button').hidden = false;
   }
+  root.addEventListener('pagehide', function () {
+    if (drawing) { drawing.detach(); drawing = null; }
+  });
 })(window);

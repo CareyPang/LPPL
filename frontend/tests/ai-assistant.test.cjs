@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const assistant = fs.readFileSync(path.join(root, 'app/ai-assistant.js'), 'utf8');
+const drawing = fs.readFileSync(path.join(root, 'app/chart-drawing.js'), 'utf8');
 const nav = fs.readFileSync(path.join(root, 'app/od-nav.js'), 'utf8');
 const page = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
@@ -42,6 +43,12 @@ test('each tools card contributes named context without changing context limits'
   ]);
   assert.match(assistant, /var MAX_CONTEXT = 8000/);
   assert.match(assistant, /if \(!shown\(el\)\) return;/);
+});
+
+test('assistant context excludes the private chart drawing toolbar', () => {
+  assert.match(assistant, /querySelectorAll\('\[data-ai-exclude\]'\)/);
+  assert.match(assistant, /clean\(excluded\.innerText\)/);
+  assert.match(drawing, /toolbar\.dataset\.aiExclude = 'true'/);
 });
 
 test('assistant exports an idempotent public opener and delegates prompt clicks', () => {

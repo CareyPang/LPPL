@@ -56,6 +56,10 @@
     document.querySelectorAll('[data-ai-context]').forEach(function (el) {
       if (!shown(el)) return;
       var t = clean(el.innerText);
+      el.querySelectorAll('[data-ai-exclude]').forEach(function (excluded) {
+        var privateText = clean(excluded.innerText);
+        if (privateText) t = t.replace(privateText, '').trim();
+      });
       if (t) parts.push('【' + el.getAttribute('data-ai-context') + '】\n' + t);
     });
     var out = parts.join('\n\n');

@@ -89,6 +89,7 @@
     }
   </style>
   <link rel="stylesheet" href="app/chart-professional.css">
+  <link rel="stylesheet" href="app/chart-drawing.css">
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
@@ -98,6 +99,7 @@
   <script src="app/chart-research-card.js"></script>
   <script src="vendor/lppl-lwc/1/lppl-lwc.js"></script>
   <script src="app/lppl-chart.js"></script>
+  <script src="app/chart-drawing.js"></script>
 </head>
 <body>
   <script src="app/od-nav.js" data-section="terminal"></script>
@@ -141,13 +143,15 @@
       <button id="chart-fullscreen" type="button" aria-pressed="false">全屏图表</button>
       <button id="share-card" type="button" disabled>下载匿名研究卡</button>
       <button id="share-screenshot" type="button" disabled>下载带证据截图</button>
+      <label><input id="include-drawings" type="checkbox"> 包含我的标注</label>
     </div>
     <p id="action-feedback" class="action-feedback" role="status" aria-live="polite"></p>
     <div class="layout">
         <section id="chart-card" class="chart-card" aria-label="价格图表">
         <button id="fullscreen-exit" type="button" hidden>退出全屏 · Esc</button>
           <div id="scale-selector" class="scale-selector" role="group" aria-label="时间尺度"></div>
-          <div id="chart-host" class="chart-host"></div>
+          <div id="drawing-toolbar" aria-label="本机画线工具"></div>
+          <div id="chart-host" class="chart-host" tabindex="0"></div>
         <p id="price-mode-note" class="evidence-note"></p>
           <div id="loading" class="loading" role="status">正在加载标的与图表数据…</div>
           <p id="calendar-notice" class="calendar-notice" role="status" hidden>日历未覆盖：未来区间超出已发布交易日历范围。</p>

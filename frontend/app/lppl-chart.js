@@ -225,6 +225,7 @@
       current = payload || {};
       closeOnly = priceMode(current.bars || []) === 'close';
       candles = closeOnly ? toCloses(current.bars || []) : toCandles(current.bars || []);
+      var previousPrice = price;
       price = closeOnly ? closePrice : candlePrice;
       candlePrice.applyOptions({ visible: !closeOnly }); closePrice.applyOptions({ visible: closeOnly });
       (closeOnly ? candlePrice : closePrice).setData([]);
@@ -242,6 +243,7 @@
       price.setData(candles.map(function (bar) {
         return closeOnly ? { time: bar.time, value: bar.close } : { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close };
       }).concat(currentWhitespace));
+      if (price !== previousPrice) emit('priceSeries', price);
       volume.setData(candles.filter(function (bar) { return bar.volume != null; }).map(function (bar) {
         return { time: bar.time, value: bar.volume, color: closeOnly ? '#7485a9' : bar.close >= bar.open ? '#d6303a' : '#11845a' };
       }));
@@ -335,6 +337,7 @@
     return {
       setData: setData, setScale: setScale, setAsof: setAsof,
       focusBand: focusBand, focusDate: focusDate, on: on,
+      drawingTarget: function () { return { chart: chart, series: price }; },
       // Keep the user's reading position when independent modules arrive.
       getVisibleRange: function () { return chart.timeScale().getVisibleLogicalRange(); },
       setVisibleRange: function (range) { if (range) chart.timeScale().setVisibleLogicalRange(range); },
