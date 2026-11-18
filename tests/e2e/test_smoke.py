@@ -259,6 +259,9 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(breadth.locator("#breadth-body")).to_contain_text("8.1%")
     expect(breadth.locator("#breadth-body")).to_contain_text("预警规则回测中，暂不显示")
     expect(breadth.locator(".breadth-basis-table tbody tr")).to_have_count(4)
+    expect(
+        breadth.locator(".breadth-basis-table tbody tr").first.locator("td").nth(4)
+    ).to_have_text("20.00")
     expect(breadth.locator(".breadth-history-table tbody tr")).to_have_count(1)
     page.set_viewport_size({"width": 390, "height": 844})
     dimensions = page.evaluate(

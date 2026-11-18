@@ -155,6 +155,7 @@ def test_basis_selects_highest_volume_unexpired_contract_and_annualizes():
 
     assert result["IF"]["symbol"] == "IF2611"
     assert result["IF"]["days"] == 2
+    assert result["IF"]["spread"] == pytest.approx(200)
     assert result["IF"]["pct"] == pytest.approx(5)
     assert result["IF"]["ann"] == pytest.approx(5 * 365 / 5)
     assert mean == pytest.approx(result["IF"]["ann"])

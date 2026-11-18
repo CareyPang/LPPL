@@ -1615,10 +1615,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     };
     const basisRows = Object.entries(products).map(([product, name]) => {
       const row = basis[product] || {};
-      const spread = num(row.close) && num(row.spot) ? row.close - row.spot : null;
       return `<tr><td>${product} · ${name}</td><td>${E(row.symbol || '—')}</td>
         <td class="r">${fixed(row.close)}</td><td class="r">${fixed(row.spot)}</td>
-        <td class="r">${fixed(spread)}</td><td class="r">${percentPoints(row.pct)}</td>
+        <td class="r">${fixed(row.spread)}</td><td class="r">${percentPoints(row.pct)}</td>
         <td class="r">${percentPoints(row.ann)}</td><td class="r">${num(row.days) ? `${row.days} 日` : '—'}</td></tr>`;
     }).join('');
     const history = (Array.isArray(data.history) ? data.history : []).slice(-20).reverse();
