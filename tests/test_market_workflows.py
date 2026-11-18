@@ -84,6 +84,20 @@ def test_market_build_loads_previous_stock_results_snapshots():
     assert "--prev-dir out/previous-market" in fetch["run"]
 
 
+def test_lhb_seat_workflow_keeps_previous_json_and_publishes_latest():
+    workflow = _workflow("market_daily.yml")
+    steps = workflow["jobs"]["collect"]["steps"]
+    lhb = next(step for step in steps if step.get("id") == "lhb_seats")
+    publish = next(step for step in steps if step.get("name") == "Publish to stock-results")
+
+    assert lhb["continue-on-error"] is True
+    assert 'steps.fetch.outputs.asof' in lhb["run"]
+    assert "--previous \"$previous\"" in lhb["run"]
+    assert "out/previous-market/lhb_seats_latest.json" in lhb["run"]
+    assert "steps.lhb_seats.outcome == 'success'" in publish["if"]
+    assert "cp out/market/lhb_seats_latest.json market/lhb_seats_latest.json" in publish["run"]
+
+
 def test_nt_etf_workflow_bootstraps_and_uses_trading_date():
     workflow = _workflow("nt_etf_daily.yml")
     assert workflow["concurrency"] == {

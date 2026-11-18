@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
@@ -202,7 +203,16 @@ def test_backtest_recompute_notice_uses_history_metadata_in_scenario_and_strateg
 
 @pytest.mark.e2e
 def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
+    lhb_fixture = Path(__file__).resolve().parents[2] / "frontend" / "tests" / "fixtures" / "lhb_seats_latest.json"
+    page.route(
+        "**/lab/mock/data/market/lhb_seats_latest.json",
+        lambda route: route.fulfill(path=str(lhb_fixture)),
+    )
     page.goto(f"{BASE_URL}/market.html")
+    expect(page.locator("#s-lhb-seats")).to_be_visible()
+    expect(page.locator("#lhb-seats-body .lhb-card.buy strong")).to_contain_text("12.30亿")
+    expect(page.locator("#lhb-seats-body .lhb-table tbody tr").first).to_contain_text("游资甲")
+    expect(page.locator("#lhb-seats-body .lhb-more")).to_contain_text("+1笔")
     page.wait_for_function(
         """() => {
           const summary = document.querySelector('#today-summary');
@@ -237,6 +247,11 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         or news.locator(".news-status").count() > 0
         or re.search(r"暂无|不可用|未发布|数据", news.inner_text())
     )
+    page.set_viewport_size({"width": 390, "height": 844})
+    dimensions = page.evaluate(
+        "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
+    )
+    assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
 
 
 @pytest.mark.e2e
