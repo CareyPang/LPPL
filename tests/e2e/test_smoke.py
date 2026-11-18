@@ -671,6 +671,19 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
     editor = page.locator(".chart-drawing-text-editor")
     expect(editor).to_be_visible()
     editor.fill("TEST-PRIVATE-NOTE")
+    editor.evaluate(
+        """input => {
+          input.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "Enter", bubbles: true, cancelable: true, isComposing: true
+          }));
+          const escape = new KeyboardEvent("keydown", {
+            key: "Escape", bubbles: true, cancelable: true
+          });
+          Object.defineProperty(escape, "keyCode", { get: () => 229 });
+          input.dispatchEvent(escape);
+        }"""
+    )
+    expect(editor).to_be_visible()
     editor.press("Enter")
     page.wait_for_function(
         "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 3 && "

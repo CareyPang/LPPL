@@ -103,6 +103,10 @@
     return Array.from(merged.values());
   }
 
+  function isImeCompositionKey(event) {
+    return !!(event && (event.isComposing || event.keyCode === 229));
+  }
+
   function attach(chartApi, initialContext) {
     var target = chartApi.drawingTarget();
     var chart = target.chart;
@@ -505,6 +509,7 @@
     }
 
     function onTextKeydown(event) {
+      if ((event.key === 'Enter' || event.key === 'Escape') && isImeCompositionKey(event)) return;
       if (event.key === 'Enter') {
         event.preventDefault();
         event.stopPropagation();
@@ -620,6 +625,7 @@
     lateDrawingDates: lateDrawingDates,
     pushUndo: pushUndo,
     mergeRecords: mergeRecords,
+    isImeCompositionKey: isImeCompositionKey,
     storageKey: function (symbol) {
       var normalized = String(symbol || '').trim().toLowerCase();
       return normalized ? 'lppl.drawings.v1:' + normalized : '';
