@@ -338,6 +338,7 @@
     return { ...result, quotes, missing };
   };
   const stockList = () => opt('market/stock_list.json');
+  const breadth = () => opt('market/breadth_latest.json');
   const ntEtf = () => opt('nt_etf/nt_etf_latest.json');
   const events = () => opt('events/events_latest.json');
   const abnormal = () => opt('market/abnormal_latest.json');
@@ -346,5 +347,5 @@
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
   const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog, resultOf, fetchResult };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog, resultOf, fetchResult };
 })(window);

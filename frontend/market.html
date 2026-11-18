@@ -202,6 +202,19 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 .summary-model-details { margin-top: 10px; border: 1px solid var(--line); background: var(--surface); padding: 10px 12px; }
 .summary-model-details > summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 600px) { .summary-row { grid-template-columns: 1fr; gap: 4px; } }
+#s-breadth .breadth-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: var(--s2); }
+#s-breadth .breadth-grid > div { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
+#s-breadth .breadth-grid small { display: block; color: var(--ink-3); font-size: 11px; }
+#s-breadth .breadth-grid strong { display: block; font: 600 18px/1.35 var(--f-m); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#s-breadth .breadth-tables { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--s3); margin-top: var(--s4); }
+#s-breadth .breadth-tables > div { min-width: 0; }
+#s-breadth .breadth-tables h3 { margin: 0 0 var(--s2); font-size: 13px; }
+#s-breadth .breadth-basis-table { min-width: 680px; }
+#s-breadth .breadth-history-table { min-width: 840px; }
+#s-breadth .breadth-method { margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface); padding: var(--s3); }
+#s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
+#s-breadth .breadth-method p { line-height: 1.6; }
+@media (max-width: 760px) { #s-breadth .breadth-tables { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -218,6 +231,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <summary>逐个指数看变化</summary>
       <div id="model-ranges-body" data-ai-context="逐个指数看变化"><p class="note">模型区间加载中…</p></div>
     </details>
+  </section>
+  <section class="sec wide" id="s-breadth" aria-labelledby="h-breadth" data-ai-context="宽度与资金">
+    <div class="sec-h"><h2 id="h-breadth">宽度与资金</h2><span class="ev">descriptive</span><span class="src" id="src-breadth"></span></div>
+    <div id="breadth-body"><p class="note">宽度与资金数据加载中…</p></div>
   </section>
   <section class="sec wide" id="s-news" aria-labelledby="h-news">
     <div class="sec-h"><h2 id="h-news">快讯</h2><span class="ev">descriptive</span><span class="src" id="src-news"></span></div>
@@ -1474,6 +1491,117 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     if (typeof renderSummary === 'function') renderSummary();
   }
+  function renderBreadth(data, reason) {
+    const body = $('breadth-body');
+    const latest = data?.schema === 'breadth.v1' ? data.latest : null;
+    if (!latest) {
+      $('src-breadth').textContent = '数据未加载';
+      body.innerHTML = statusMarkup(
+        reason || (data ? 'empty' : 'unpublished'),
+        '宽度与资金数据',
+        'data-retry-breadth',
+      );
+      return;
+    }
+    const fixed = (value, digits = 2) =>
+      num(value) ? value.toLocaleString('zh-CN', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }) : '—';
+    const percent = (value, digits = 1) =>
+      num(value) ? `${(value * 100).toFixed(digits)}%` : '—';
+    const percentPoints = (value, digits = 2) =>
+      num(value) ? `${value > 0 ? '+' : ''}${value.toFixed(digits)}%` : '—';
+    const trend = num(latest.mcl_trend_days)
+      ? latest.mcl_trend_days > 0
+        ? `连续上升 ${latest.mcl_trend_days} 日`
+        : latest.mcl_trend_days < 0
+          ? `连续下降 ${Math.abs(latest.mcl_trend_days)} 日`
+          : '暂无连续升降'
+      : '暂无连续升降';
+    const card = (label, value, detail = '') => `<div>
+      <small>${E(label)}</small><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}
+    </div>`;
+    const basis = latest.basis || {};
+    const products = {
+      IF: '沪深300',
+      IH: '上证50',
+      IC: '中证500',
+      IM: '中证1000',
+    };
+    const basisRows = Object.entries(products).map(([product, name]) => {
+      const row = basis[product] || {};
+      const spread = num(row.close) && num(row.spot) ? row.close - row.spot : null;
+      return `<tr><td>${product} · ${name}</td><td>${E(row.symbol || '—')}</td>
+        <td class="r">${fixed(row.close)}</td><td class="r">${fixed(row.spot)}</td>
+        <td class="r">${fixed(spread)}</td><td class="r">${percentPoints(row.pct)}</td>
+        <td class="r">${percentPoints(row.ann)}</td><td class="r">${num(row.days) ? `${row.days} 日` : '—'}</td></tr>`;
+    }).join('');
+    const history = (Array.isArray(data.history) ? data.history : []).slice(-20).reverse();
+    const historyRows = history.map((row) => `<tr>
+      <td>${E(row.date || '—')}</td><td class="r">${fixed(row.sh)}</td>
+      <td class="r">${percent(row.red)}</td><td class="r">${percent(row.P20)}</td>
+      <td class="r">${percent(row.P60)}</td><td class="r">${percent(row.P250)}</td>
+      <td class="r">${fixed(row.MCL, 0)}</td><td class="r">${fixed(row.trin_amt)}</td>
+      <td class="r">${num(row.amount_ratio20) ? `${fixed(row.amount_ratio20)}×` : '—'}</td>
+      <td class="r">${percentPoints(row.basis_ann_mean)}</td></tr>`).join('');
+    const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+    const warningMarkup = warnings.length
+      ? `<div class="warnl">数据提示：${warnings.map((item) => E(
+        typeof item === 'string' ? item : JSON.stringify(item),
+      )).join('；')}</div>`
+      : '<p class="note">预警规则回测中，暂不显示</p>';
+    const sampleN = num(latest.n) ? latest.n : '—';
+    $('src-breadth').textContent =
+      `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位，不是预测`;
+    body.innerHTML = `<div class="breadth-grid">
+        ${card('红盘率', percent(latest.red))}
+        ${card('上涨成交额占比', percent(latest.amt_up))}
+        ${card('P20', percent(latest.P20))}
+        ${card('P60', percent(latest.P60))}
+        ${card('P250', percent(latest.P250))}
+        ${card('MCL', fixed(latest.MCL, 0), E(trend))}
+        ${card('TRIN（成交额）', fixed(latest.trin_amt), `成交量口径 ${fixed(latest.trin_vol)}`)}
+        ${card('成交额 / 量比', `${fixed(latest.amount_yi, 1)} 亿`, `量比 ${num(latest.amount_ratio20) ? `${fixed(latest.amount_ratio20)}×` : '—'}`)}
+        ${card('涨停 / 跌停', `${num(latest.lu) ? latest.lu : '—'} / ${num(latest.ld) ? latest.ld : '—'}`, '按价格推断，含 ST 误差')}
+      </div>
+      <p class="note">MCL EMA 可用历史 ${num(data.mcl_warmup_days) ? data.mcl_warmup_days : '—'} 个交易日递推。</p>
+      <div class="breadth-tables">
+        <div><h3>股指期货升贴水</h3>
+          <div class="table-scroll"><table class="breadth-basis-table"><thead><tr>
+            <th>品种</th><th>主力合约</th><th class="r">期货</th><th class="r">现货</th>
+            <th class="r">基差</th><th class="r">基差率</th><th class="r">年化</th><th class="r">剩余天数</th>
+          </tr></thead><tbody>${basisRows}</tbody></table></div>
+        </div>
+        <div><h3>最近 20 日</h3>
+          ${historyRows ? `<div class="table-scroll"><table class="breadth-history-table"><thead><tr>
+            <th>日期</th><th class="r">上证</th><th class="r">红盘率</th><th class="r">P20</th>
+            <th class="r">P60</th><th class="r">P250</th><th class="r">MCL</th><th class="r">TRIN</th>
+            <th class="r">量比</th><th class="r">年化基差均值</th>
+          </tr></thead><tbody>${historyRows}</tbody></table></div>` : '<p class="note">最近 20 日暂无可用数据。</p>'}
+        </div>
+      </div>
+      <section class="breadth-warnings" aria-label="预警区"><h3>预警区</h3>${warningMarkup}</section>
+      <details class="breadth-method"><summary>口径说明</summary>
+        <p class="note">红盘率 = 上涨家数 ÷ 全A有效样本数；上涨成交额占比 = 上涨股票成交额合计 ÷ 全样本成交额合计。</p>
+        <p class="note">P20、P60、P250 = 收盘价高于最近 N 个交易日（含当日）不复权收盘简单均线的股票数 ÷ 有 N 日连续有效价格历史的股票数；样本分母只计有完整 N 日历史的股票。</p>
+        <p class="note">MCL = EMA(adv − dec, α=0.10, adjust=false) − EMA(adv − dec, α=0.05, adjust=false)；连续升降按每日 MCL 变化方向计数。</p>
+        <p class="note">成交额 TRIN = (上涨家数 ÷ 下跌家数) ÷ (上涨股票成交额 ÷ 下跌股票成交额)；成交量 TRIN 将成交额替换为成交量。TRIN 小于 1 表示资金比家数更偏向上涨股，大于 1 相反。</p>
+        <p class="note">成交额（亿） = 全A有效样本成交额 ÷ 1 亿；量比 = 当日成交额 ÷ 前 20 个交易日成交额均值。</p>
+        <p class="note">涨停、跌停按前收盘价乘以涨跌幅并四舍五入到分后，与收盘价比较；普通股票按 10%、代码 30/68 按 20%、北交所按 30%。普通10%档另将跌幅超过4.5%、收盘价不高于前收盘价95%且收在当日最低价附近的记录计为疑似ST跌停，价格推断可能有误差。</p>
+        <p class="note">IF/IH/IC/IM 分别对应沪深300/上证50/中证500/中证1000现货指数；主力为未到期合约中成交量最大者，到期日按合约月第三个周五，节假日顺延暂不处理。基差率 = (期货 ÷ 现货 − 1) × 100%；年化基差 = 基差率 × 365 ÷ max(剩余自然日, 5)；年化均值为可用品种的算术平均。</p>
+      </details>`;
+  }
+  async function loadBreadth() {
+    $('breadth-body').innerHTML = '<p class="note">宽度与资金数据加载中…</p>';
+    const [data, result] = await Promise.all([
+      LPPL.breadth(),
+      LPPL.fetchResult('market/breadth_latest.json', {
+        empty: (value) => !value || value.schema !== 'breadth.v1',
+      }),
+    ]);
+    renderBreadth(data, result.reason);
+  }
   async function loadStockDirectory() {
     stockListResult = await LPPL.fetchResult('market/stock_list.json', {
       empty: (data) => !Array.isArray(data?.rows) || data.rows.length === 0,
@@ -1502,7 +1630,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   $('events-body').addEventListener('click', (event) => {
     if (event.target.closest('[data-retry-events]')) loadEvents();
   });
+  $('breadth-body').addEventListener('click', (event) => {
+    if (event.target.closest('[data-retry-breadth]')) loadBreadth();
+  });
   loadMarket();
+  loadBreadth();
   loadStockDirectory();
   loadEvents();
   loadSummaryData();
