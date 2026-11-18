@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import json
 import os
+from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
 if TYPE_CHECKING:
-    from playwright.sync_api import Page
+    from playwright.sync_api import Browser, Page, Route
 
 BASE = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
 CASES = (
@@ -136,3 +140,160 @@ def test_sealed_index_preserves_original_reading(page: Page, width: int) -> None
     assert evidence.inner_text() == original
     assert_fits_viewport(page)
     capture(page, f"{width}-original-seal")
+
+
+def moutai_replay_state(page: Page) -> tuple:
+    """Read exactly what is on the chart before and after revealing subsequent prices."""
+    from playwright.sync_api import expect
+
+    page.locator("#asof").select_option("2025-05-23")
+    page.locator("#open-evidence").click()
+    expect(page.locator("#evidence-body")).to_contain_text("历史重算")
+    evidence = page.locator("#evidence-body").inner_text()
+    sources = page.locator("#evidence-body a").evaluate_all("(links) => links.map(a => a.href)")
+    windows = page.locator("#intervals").inner_text()
+    assert "2025-06-20" in windows and "2025-07-08" in windows
+    candles = page.locator(".gs-plot [data-session]")
+    original = candles.evaluate_all("(nodes) => nodes.map(n => n.outerHTML)")
+    expect(page.locator(".gs-plot [data-later]")).to_have_count(0)
+    page.locator("#later").click()
+    later = page.locator(".gs-plot [data-later]")
+    expect(later.first).to_be_visible()
+    revealed = later.evaluate_all("(nodes) => nodes.map(n => n.outerHTML)")
+    return evidence, sources, windows, original, revealed
+
+
+@pytest.mark.parametrize(("width", "height"), [(1440, 900), (390, 844)])
+def test_moutai_manual_refresh_preserves_original_chart_and_survives_outage(
+    browser: Browser, width: int, height: int,
+) -> None:
+    """Controlled transport regression. Every OHLCV number comes from the archived Worker GET."""
+    from playwright.sync_api import expect
+
+    root = Path(__file__).resolve().parents[2]
+    archive_path = "/market/archives/sh600519_2026-11-17.json"
+    source = root / ("web/mock/data" + archive_path)
+    older = json.loads(source.read_text(encoding="utf-8"))
+    # Crop the local starting archive to the previous close. Omit one actual
+    # historical session to make a chart that leaks refreshed bars visibly different.
+    older["price"] = [bar for bar in older["price"][:-1] if bar["date"] != "2025-05-22"]
+    older["latest"] = older["price"][-1]
+    older["asof"] = older["cutoff"] = older["latest"]["date"]
+    market_requests = []
+
+    def serve(route: Route) -> None:
+        url = urlsplit(route.request.url)
+        if url.path.endswith("/market"):
+            market_requests.append((route.request.method, parse_qs(url.query)))
+            if len(market_requests) == 1:
+                route.fulfill(path=source, content_type="application/json")
+            else:
+                route.fulfill(status=503, json={"error": "offline acceptance"})
+        elif url.netloc != urlsplit(BASE).netloc or route.request.method != "GET":
+            route.abort()
+            pytest.fail(f"unexpected request: {route.request.method} {url.netloc}{url.path}")
+        elif url.path.endswith(archive_path):
+            route.fulfill(json=older)
+        elif url.path.endswith("/stock/600519.json"):
+            route.fulfill(path=root / "frontend/tests/fixtures/stock_600519.json")
+        else:
+            route.continue_()
+
+    with browser.new_context(viewport={"width": width, "height": height}, service_workers="block") as ctx:
+        # Point the existing client at the test origin. No external quote request leaves Chromium.
+        ctx.add_init_script("window.LPPL_QUERY_API = location.origin + '/controlled-quote-source'")
+        ctx.route("**/*", serve)
+        page = ctx.new_page()
+        page.clock.set_fixed_time(datetime(2026, 11, 18, 8, tzinfo=UTC))
+        page.goto(f"{BASE}/guanshi.html")
+        row = page.locator('#rows a[data-asset="sh600519"]')
+        row.click()
+        original = moutai_replay_state(page)
+        page.locator("#asof").select_option(older["asof"])
+        assert not market_requests
+        refresh = page.locator("#refresh-quote")
+        refresh.click()
+        cutoff = page.locator("#cutoffs")
+        expect(cutoff).to_contain_text("行情截至 2026-11-17")
+        expect(cutoff).to_contain_text("模型截至 2026-11-13")
+        last = page.locator(".gs-plot [data-session='2026-11-17']")
+        expect(last).to_have_count(1)
+        readout = page.get_by_role("slider").get_attribute("aria-valuetext")
+        assert "1,457.7" in readout
+        refresh.click()
+        expect(page.locator("#quote-feedback")).to_contain_text("暂不可用")
+        expect(last).to_have_count(1)
+        expect(refresh).to_be_enabled()
+        assert page.get_by_role("slider").get_attribute("aria-valuetext") == readout
+        assert moutai_replay_state(page) == original
+        page.locator("#back").click()
+        row.click()
+        expect(cutoff).to_contain_text("行情截至 2026-11-17")
+        assert market_requests == [("GET", {"code": ["600519"]})] * 2
+        assert_fits_viewport(page)
+
+
+@pytest.mark.skipif(os.getenv("GUANSHI_LIVE_QUOTE") != "1", reason="requires a local Worker with real upstream access")
+@pytest.mark.parametrize(("width", "height"), [(1440, 900), (390, 844)])
+def test_real_worker_update_then_offline(browser: Browser, width: int, height: int) -> None:
+    """Opt-in proof of a genuinely newer bar. No response is routed, replaced or replayed."""
+    from playwright.sync_api import expect
+
+    assert urlsplit(BASE).hostname == "127.0.0.1"
+    with browser.new_context(viewport={"width": width, "height": height}, service_workers="block") as ctx:
+        page = ctx.new_page()
+        page.goto(f"{BASE}/guanshi.html?asset=sh600519")
+        refresh = page.locator("#refresh-quote")
+        expect(refresh).to_be_visible()
+        select = page.locator("#asof")
+        archived_asof = select.input_value()
+        original = moutai_replay_state(page)
+        select.select_option(archived_asof)
+        model_cutoff = page.locator("#cutoffs span").nth(1).inner_text()
+        with page.expect_response("http://127.0.0.1:8798/market?code=600519") as received:
+            refresh.click()
+        response = received.value
+        assert response.ok and response.request.method == "GET"
+        payload = response.json()
+        assert payload["source"] == "tencent_fqkline" and payload["stale"] is False
+        assert payload["asof"] > archived_asof, "the real upstream did not supply a newer session"
+        expect(page.locator("#quote-feedback")).to_contain_text("已读取截至 " + payload["asof"])
+        latest = payload["price"][-1]
+        assert latest == payload["latest"] and latest["date"] == payload["asof"]
+        slider = page.get_by_role("slider")
+        reading = slider.get_attribute("aria-valuetext")
+        assert reading.startswith(payload["asof"])
+        for label, key in (("开", "open"), ("高", "high"), ("低", "low"), ("收", "close")):
+            assert label + " " + f"{latest[key]:,.2f}".rstrip("0").rstrip(".") in reading
+        active = page.locator(".gs-plot [data-session]")
+        candles = active.evaluate_all("(nodes) => nodes.map(n => n.outerHTML)")
+        expect(page.locator("#cutoffs span").nth(1)).to_have_text(model_cutoff)
+        capture(page, f"{width}-real-update")
+
+        ctx.set_offline(True)
+        refresh.click()
+        expect(page.locator("#quote-feedback")).to_contain_text("暂不可用")
+        expect(page.locator("#quote-feedback")).to_contain_text(payload["asof"])
+        expect(refresh).to_be_enabled()
+        assert active.evaluate_all("(nodes) => nodes.map(n => n.outerHTML)") == candles
+        assert slider.get_attribute("aria-valuetext") == reading
+        capture(page, f"{width}-offline-retained")
+        # This date switch and its later-price reveal must even work offline.
+        assert moutai_replay_state(page) == original
+        assert_fits_viewport(page)
+        capture(page, f"{width}-original-replay")
+        if output := os.getenv("GUANSHI_CAPTURE_DIR"):
+            receipt = {
+                "viewport": [width, height], "read_at_utc": datetime.now(UTC).isoformat(),
+                "request": response.url, "status": response.status, "source": payload["source"],
+                "generated_at": payload["generated_at"], "cache": payload["cache"],
+                "archive_asof": archived_asof, "model_cutoff": model_cutoff,
+                "source_bars": len(payload["price"]), "latest": latest, "readout": reading,
+                "response_sha256": sha256(response.body()).hexdigest(),
+                "history_before_and_after_sha256": sha256(json.dumps(original, ensure_ascii=False).encode()).hexdigest(),
+                "original_quote_and_model_sources": original[1],
+                "saved_after_network_failure": True,
+            }
+            (Path(output) / f"{width}-real-update.json").write_text(
+                json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )

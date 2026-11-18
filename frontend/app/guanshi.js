@@ -272,7 +272,7 @@
       }
       byId('quote-feedback').textContent = result.message;
     } catch {
-      if (token === quoteJob) byId('quote-feedback').textContent = '行情来源暂时无法读取，仍显示原有档案。';
+      if (token === quoteJob) byId('quote-feedback').textContent = '行情来源暂时无法读取，可继续查看已有行情。';
     } finally {
       if (token === quoteJob) {
         button.disabled = false;

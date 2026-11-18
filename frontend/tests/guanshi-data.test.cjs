@@ -148,6 +148,46 @@ test('a slow history read leaves genuine current prices available', async () => 
   assert.equal((await reading).exampleDate, '2025-05-23');
 });
 
+test('a market response generated during the GET is valid on arrival, a future timestamp is not', async t => {
+  const file = 'market/archives/sh600519_2026-11-17.json';
+  const { data: response } = await readArchive(file);
+  // Use the actual Worker payload for the later close. Trim one real session
+  // from the local input to reproduce an update without synthesizing prices.
+  const previous = structuredClone(response);
+  previous.price.pop();
+  previous.latest = previous.price.at(-1);
+  previous.asof = previous.cutoff = previous.latest.date;
+  const d = await load('sh600519', async name => {
+    if (name === file) return { data: previous, reason: null };
+    const result = await readArchive(name);
+    // The nightly model can already be dated today when the saved quote still ends yesterday.
+    if (name === 'stock/600519.json') result.data.asof = response.asof;
+    return result;
+  });
+  assert.equal(desk.view(d, response.asof).quoteAsOf, previous.asof);
+  const generated = Date.parse(response.generated_at);
+  let clock = generated - 1000;
+  t.mock.method(Date, 'now', () => clock);
+  let deliver;
+  global.LPPL.stock = {
+    api: () => 'https://example.test',
+    market: () => new Promise(resolve => { deliver = resolve; }),
+  };
+  const reading = desk.refreshQuote(d);
+  clock = generated + 1000;
+  deliver(response);
+  const updated = await reading;
+  assert.equal(updated.status, 'updated');
+  assert.deepEqual(desk.view(updated.dataset).bars.at(-1), response.latest);
+  assert.deepEqual(desk.view(updated.dataset, response.asof).bars.at(-1), response.latest);
+
+  const subsequent = desk.refreshQuote(updated.dataset);
+  deliver({ ...response, generated_at: new Date(clock + 3_600_000).toISOString() });
+  const rejected = await subsequent;
+  assert.equal(rejected.status, 'unavailable');
+  assert.deepEqual(desk.view(rejected.dataset).bars, desk.view(updated.dataset).bars);
+});
+
 test('a sealed day shows original vintage bars even when the later archive revises its candle', async () => {
   const dir = path.join(archiveRoot, '../../../forward_log');
   const ledger = (await fs.readFile(path.join(dir, 'ledger.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);

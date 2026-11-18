@@ -163,13 +163,18 @@
     return datasetOf(asset, latest, history, quote, seals, base);
   }
 
-  async function refreshQuote(dataset, now = Date.now()) {
+  async function refreshQuote(dataset, receivedAt) {
     const keep = (status, message) => ({ dataset, status, message });
     if (!dataset.separateQuote) return keep('unavailable', '该标的没有按需日线接口。');
     try {
       const api = root.LPPL.stock;
       const q = await api.market(dataset.asset.code);
-      if (q?.stale || q?.stale_reason) return keep('unchanged', '行情服务返回了过期缓存，已保留现有日线。');
+      // On a cache miss the Worker timestamps the data after the user clicks.
+      const now = receivedAt ?? Date.now();
+      if (q?.stale || q?.stale_reason) {
+        const cutoff = iso(q?.asof) ? '（截至 ' + q.asof + '）' : '';
+        return keep('unchanged', '行情服务返回了过期缓存' + cutoff + '，已保留现有日线。');
+      }
       const stamp = Date.parse(q?.generated_at);
       // Use the same China close + 30-minute settlement policy as the quote endpoint.
       const lastClosedDate = clock => new Date(clock - 7.5 * 3600000).toISOString().slice(0, 10);
@@ -192,7 +197,9 @@
       return { dataset: { ...dataset, currentQuote }, status: 'updated',
         message: '已读取截至 ' + q.asof + ' 的不复权收盘日线。' };
     } catch {
-      return keep('unavailable', '行情服务暂不可用，可继续查看原有档案。');
+      const retained = dataset.currentQuote?.asof || dataset.allBars.at(-1)?.date;
+      return keep('unavailable', '行情服务暂不可用。' +
+        (retained ? '仍显示截至 ' + retained + ' 的日线。' : '暂无可显示的日线。'));
     }
   }
 
@@ -202,7 +209,9 @@
     const asof = iso(requested) ? requested : dates[0] || null;
     // A manual refresh is a session-local current view. Historical charts, including
     // their later-price reveal, keep the original files and revisions.
-    const live = dataset.currentQuote && (!requested || asof === dataset.currentQuote.asof && !dataset.dates.includes(asof))
+    const currentDayOnly = asof === dataset.currentQuote?.asof && !dataset.barsByDate.has(asof)
+      && !dataset.frames.has(asof) && !dataset.seals.has(asof);
+    const live = dataset.currentQuote && (!requested || currentDayOnly)
       ? dataset.currentQuote : null;
     const allBars = live?.bars || dataset.allBars;
     const seal = dataset.seals.get(asof);
