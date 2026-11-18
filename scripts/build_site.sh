@@ -69,3 +69,4 @@ PY
 fi
 mkdir -p "$SITE/lab/mock/data"
 python3 "$ROOT/scripts/build_changelog.py" --root "$ROOT" --out "$SITE/lab/mock/data/changelog.json"
+python3 "$ROOT/scripts/build_guanshi_seals.py" --root "$ROOT" --out "$SITE/lab/mock/data/guanshi/sh000001_seals.json"

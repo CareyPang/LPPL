@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
 FIXTURES = ROOT / "frontend" / "tests" / "fixtures"
 MARKET_FIXTURES = {
-    "600519": FIXTURES / "stock_600519_market.json",
+    "600519": ROOT / "web/mock/data/market/archives/sh600519_2026-11-17.json",
     "601838": FIXTURES / "stock_601838_market.json",
 }
 WORKER_HOST = "lppl-stock-query.careypang.workers.dev"
@@ -29,6 +29,8 @@ EXPECTED_OPTIONAL_404_PATHS = {
     "/lab/mock/data/stock/us_index.json",
     "/lab/mock/data/stock/600519.json",
     "/lab/mock/data/stock/000001_history.json",
+    "/lab/mock/data/stock/600320.json",
+    "/lab/mock/data/stock/600320_history.json",
     "/lab/mock/data/strategy/sh000001.json",
     "/lab/mock/data/growth/growth_latest.json",
 }
@@ -124,7 +126,9 @@ def browser() -> Browser:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        instance = playwright.chromium.launch(headless=True)
+        instance = playwright.chromium.launch(
+            headless=True, channel=os.environ.get("E2E_CHROMIUM_CHANNEL") or None,
+        )
         yield instance
         instance.close()
 

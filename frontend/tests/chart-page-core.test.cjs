@@ -8,6 +8,7 @@ const Core = require('../app/chart-page-core.js');
 const chartPageSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'chart-page.js'), 'utf8');
 
 const fixtures = path.join(__dirname, 'fixtures');
+const moutaiMarket = path.resolve(__dirname, '../../web/mock/data/market/archives/sh600519_2026-11-17.json');
 const indexSymbols = [
   { sym: 'sh000001', code: '000001', name: '上证指数' },
   { sym: 'sz399001', code: '399001', name: '深证成指' },
@@ -157,7 +158,7 @@ test('index assembly uses the adapted published bars and metadata without mixing
 
 test('stock assembly keeps unadjusted market bars separate from the model cutoff', () => {
   const latest = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519.json'), 'utf8'));
-  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const market = JSON.parse(fs.readFileSync(moutaiMarket, 'utf8'));
   const data = Core.assembleStockData('sh600519', latest, market, null);
 
   assert.equal(data.assetType, 'stock');
@@ -174,7 +175,7 @@ test('stock assembly keeps unadjusted market bars separate from the model cutoff
 });
 
 test('stock assembly keeps market bars when the latest model is missing and requires market data', () => {
-  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const market = JSON.parse(fs.readFileSync(moutaiMarket, 'utf8'));
   const data = Core.assembleStockData('sh600519', null, market, null);
 
   assert.equal(data.modelStatus, 'missing');
@@ -192,7 +193,7 @@ test('stock assembly keeps market bars when the latest model is missing and requ
 });
 
 test('stock assembly preserves or infers exchange prefixes for numeric codes', () => {
-  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const market = JSON.parse(fs.readFileSync(moutaiMarket, 'utf8'));
   const publishedSymbol = Core.assembleStockData('600519', null, market, null);
   assert.equal(publishedSymbol.symbol, 'sh600519');
   assert.equal(publishedSymbol.exchange, '上海证券交易所');
@@ -205,7 +206,7 @@ test('stock assembly preserves or infers exchange prefixes for numeric codes', (
 });
 
 test('stock assembly reports a rejected latest model without dropping market bars', () => {
-  const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
+  const market = JSON.parse(fs.readFileSync(moutaiMarket, 'utf8'));
   const data = Core.assembleStockData('sh600519', null, market, null, new Error('读取失败'));
 
   assert.equal(data.modelStatus, 'error');

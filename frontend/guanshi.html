@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f8f7f3">
+  <meta name="description" content="从自选进入上证指数、贵州茅台的日线行情与顶部时间窗档案，按研究日期回看证据和后来的走势。">
+  <title>我的研究 · 观时</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23165162'/%3E%3Cpath d='M8 9v15h15M14 8v13M19 5v12M24 10v7' fill='none' stroke='%23f7f6ed' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="app/guanshi.css">
+  <link rel="stylesheet" href="app/guanshi-chart.css">
+  <script defer src="app/lppl-data.js"></script>
+  <script defer src="app/stock-watchlist.js"></script>
+  <script defer src="app/watchlist.js"></script>
+  <script defer src="app/guanshi-data.js"></script>
+  <script defer src="app/guanshi-chart.js"></script>
+  <script defer src="app/guanshi.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳至研究内容</a>
+  <header class="mast"><div class="mast-inner">
+    <a class="brand" href="guanshi.html" aria-label="观时研究清单"><i aria-hidden="true"><b></b><b></b><b></b></i>观时</a>
+    <nav aria-label="主要导航"><a href="home.html">首页</a><a href="market.html">市场</a><a href="guanshi.html" aria-current="page" data-list-link>我的研究</a></nav>
+  </div></header>
+  <main id="main" tabindex="-1">
+    <section id="list-view" aria-labelledby="list-title">
+      <header class="list-heading"><div class="section-tag"><span class="rule"></span>A 股研究</div><h1 id="list-title">我的研究</h1><p>打开一只标的，查看顶部时间窗，回到当时的判断。</p></header>
+      <div class="list-layout">
+        <section class="library" aria-label="研究清单">
+          <div class="library-tools"><div class="switch" role="group" aria-label="清单来源"><button type="button" id="my-tab">我的自选 <span id="watch-count"></span></button><button type="button" id="catalog-tab">研究标的</button></div><label class="filter"><span aria-hidden="true">⌕</span><input id="filter" type="search" aria-label="在当前清单搜索名称或代码" placeholder="筛选名称或代码"></label></div>
+          <p class="note" id="list-note"></p><div id="rows"></div>
+        </section>
+        <aside class="recent" aria-labelledby="recent-title"><div class="recent-head"><span class="rule"></span><h2 id="recent-title">继续上次研究</h2></div><div id="recent-list"></div></aside>
+      </div>
+    </section>
+    <article id="asset-view" hidden aria-labelledby="asset-name">
+      <button type="button" class="back" id="back">← 返回原列表</button>
+      <header class="asset-head"><div><div class="identity" id="identity"></div><h1 id="asset-name" tabindex="-1"></h1></div><button type="button" id="asset-save" class="save"></button></header>
+      <section class="thesis" aria-labelledby="headline"><div id="window-label" class="thesis-label">顶部时间窗</div><h2 id="headline" tabindex="-1"></h2><div id="intervals" class="intervals"></div><div class="meta" id="cutoffs"></div><button type="button" id="open-evidence" class="text-button">查看证据 ↓</button></section>
+      <div class="desk-layout"><section class="chart-panel" aria-labelledby="chart-heading"><div class="chart-header"><h2 id="chart-heading">行情回看</h2><label class="date-control" id="date-label">研究日期 <select id="asof" aria-label="研究日期"></select></label></div><button type="button" class="text-button" id="example-date" hidden>回看有区间的历史记录 →</button><div id="guanshi-chart"></div><div class="chart-foot"><span id="quote-note"></span><button type="button" id="refresh-quote" class="outline" hidden>检查更新行情</button><button type="button" id="later" class="outline" aria-pressed="false">查看后来走势</button></div><p id="quote-feedback" role="status" aria-live="polite"></p><div id="issues" class="trouble"></div></section>
+      <details id="evidence" class="evidence"><summary id="evidence-toggle"><span>研究证据</span><span class="disclosure" aria-hidden="true">＋</span></summary><div id="evidence-body"></div></details></div>
+    </article>
+    <noscript>请启用 JavaScript 读取已归档的行情和证据，或前往<a href="stock.html">标的研究页</a>。</noscript>
+  </main>
+  <div id="feedback" role="status" aria-live="polite"></div>
+</body>
+</html>
