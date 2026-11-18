@@ -657,6 +657,9 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
         "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
         "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
     )
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("全部隐藏")
+    expect(page.locator("[data-drawing-history]")).to_be_hidden()
+    expect(page.locator("[data-drawing-history]")).not_to_contain_text("晚于当前截止日")
     page.locator('[data-drawing-tool="rectangle"]').click()
     host.click(position={"x": 450, "y": 160})
     host.click(position={"x": 610, "y": 260})

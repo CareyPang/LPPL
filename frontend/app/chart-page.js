@@ -285,7 +285,7 @@
       ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
       : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
     drawHeader(data);
-    if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: data.asof || context.asof });
+    if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: context.asof || '' });
     chart.setData(chartPayload(data));
     if (data.asof) chart.setAsof(data.asof);
     renderEvidence(data, context.scale);
@@ -587,7 +587,7 @@
 
   async function load() {
     var request = ++sequence;
-    if (drawing) drawing.setContext({ symbol: current && current.symbol || context.code, asof: context.asof });
+    if (drawing) drawing.setContext({ symbol: current && current.symbol || context.code, asof: context.asof || '' });
     el('error-panel').hidden = true;
     el('loading').hidden = !!current;
     if (!context.valid) { showError(new Error(context.invalidReason || '缺少有效的指数或 A 股代码。')); return; }
