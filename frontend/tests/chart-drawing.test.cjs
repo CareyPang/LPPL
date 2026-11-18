@@ -75,6 +75,15 @@ test('stale writes merge unseen storage ids without restoring local deletions', 
   assert.deepEqual(merged, [item('local', 'edited locally'), item('remote')]);
 });
 
+test('clear-all suppresses every id read from storage', () => {
+  const stored = [
+    { createdAt: '2025-05-22', drawing: { id: 'local', kind: 'horizontal-line' } },
+    { createdAt: '2025-05-22', drawing: { id: 'remote', kind: 'rectangle' } },
+  ];
+  const deletedIds = new Set(stored.map((item) => item.drawing.id));
+  assert.deepEqual(Drawing.mergeRecords([], stored, deletedIds), []);
+});
+
 test('text editor recognizes IME composition key events', () => {
   assert.equal(Drawing.isImeCompositionKey({ isComposing: true, keyCode: 13 }), true);
   assert.equal(Drawing.isImeCompositionKey({ isComposing: false, keyCode: 229 }), true);
