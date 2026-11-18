@@ -17,6 +17,7 @@
   --bg: #F6F8FB; --surface: #FFFFFF; --surface-2: #F0F3FA; --line: #E3E7EE; --grid: #EEF1F6;
   --ink: #131722; --ink-2: #4C525E; --ink-3: #6A6D78;
   --up: #D6303A; --dn: #11845A; --warn: #9A5B00; --real: #1F5FD6;
+  --lv1: #e5484d; --lv2: #e8a33b; --lv3: #f06a2b; --lv4: #a8202a;
   --f-m: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
   --f-u: "Inter", "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px;
@@ -74,6 +75,10 @@ td.r, th.r { text-align: right; }
 .bars div em { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font: 10px var(--f-m); color: var(--ink-2); font-style: normal; }
 .bars-x { display: flex; gap: var(--s2); font: 10px var(--f-m); color: var(--ink-3); }
 .bars-x span { flex: 1; text-align: center; }
+.bars .bar-lv1 { background: var(--lv1); }
+.bars .bar-lv2 { background: var(--lv2); }
+.bars .bar-lv3 { background: var(--lv3); }
+.bars .bar-lv4 { background: var(--lv4); }
 .scroll { max-height: 300px; overflow: auto; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 .flow-rank-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s3); }
@@ -110,6 +115,45 @@ td.r, th.r { text-align: right; }
 .ladder-card b { display: block; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ladder-card small { display: block; margin-top: 3px; color: var(--ink-3); font: 10px var(--f-m); overflow-wrap: anywhere; }
 .ladder-note { margin-top: var(--s2); color: var(--ink-3); font-size: 11px; }
+.ladder-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); margin-bottom: var(--s2); }
+.ladder-summary > div { min-width: 0; padding: var(--s2) var(--s3); border: 1px solid var(--line); background: var(--surface); }
+.ladder-summary small { display: block; color: var(--ink-3); font-size: 11px; }
+.ladder-summary strong { display: block; color: var(--ink-2); font: 600 19px/1.35 var(--f-m); font-variant-numeric: tabular-nums; }
+.ladder-summary .total strong { color: var(--up); }
+.ladder-summary .repeat strong, .ladder-summary .cm20 strong { color: var(--warn); }
+.ladder-themes { display: flex; flex-wrap: wrap; gap: var(--s1); margin: var(--s2) 0 var(--s3); }
+.ladder-theme { max-width: 100%; border: 1px solid var(--line); background: var(--surface-2); padding: 3px var(--s2); color: var(--ink-2); font-size: 11px; overflow-wrap: anywhere; }
+.ladder { display: grid; gap: var(--s2); border: 0; background: transparent; }
+.ladder-row { gap: var(--s2); min-height: 64px; background: transparent; }
+.ladder-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--s2); color: #fff; border: 0; text-align: center; text-shadow: 0 1px 2px rgb(0 0 0 / 45%); }
+.ladder-label strong { font: 700 14px/1.2 var(--f-m); }
+.ladder-label small { margin-top: 4px; color: #fff; font: 600 10px/1.2 var(--f-u); }
+.ladder-row.lv1 .ladder-label { background: var(--lv1); }
+.ladder-row.lv2 .ladder-label { background: var(--lv2); }
+.ladder-row.lv3 .ladder-label { background: var(--lv3); }
+.ladder-row.lv4 .ladder-label { background: var(--lv4); }
+.ladder-cells { min-width: 0; padding: 0; }
+.ladder-card { min-width: 104px; flex: 1 1 160px; border: 1px solid var(--line); border-left: 3px solid var(--ladder-color); background: color-mix(in srgb, var(--ladder-color) 10%, var(--surface)); }
+.ladder-card.lv1 { --ladder-color: var(--lv1); }
+.ladder-card.lv2 { --ladder-color: var(--lv2); }
+.ladder-card.lv3 { --ladder-color: var(--lv3); }
+.ladder-card.lv4 { --ladder-color: var(--lv4); }
+.ladder-card .ladder-time { margin: 0 0 4px; color: var(--ink-3); font: 10px var(--f-m); }
+.ladder-card .ladder-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.ladder-card b { display: inline; max-width: 100%; font-weight: 700; }
+.ladder-badge { flex: none; padding: 1px 4px; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); background: color-mix(in srgb, var(--warn) 12%, var(--surface)); color: var(--warn); font: 600 9px/1.3 var(--f-m); }
+.ladder-badge.st { border-color: var(--line); background: var(--surface-2); color: var(--ink-3); }
+#s-limit .limit-metrics > div { --metric-color: var(--ink-2); border-color: color-mix(in srgb, var(--metric-color) 25%, var(--line)); background: color-mix(in srgb, var(--metric-color) 10%, var(--surface)); }
+#s-limit .limit-metrics .limit-zt { --metric-color: var(--up); }
+#s-limit .limit-metrics .limit-zb { --metric-color: var(--warn); }
+#s-limit .limit-metrics .limit-dt { --metric-color: var(--dn); }
+#s-limit .limit-metrics .limit-zt strong, #s-limit .limit-metrics .limit-zb strong, #s-limit .limit-metrics .limit-dt strong { color: var(--metric-color); }
+#s-limit .limit-metrics strong { font-size: 22px; }
+#s-sentiment .sentiment-metrics > .sentiment-up { border-color: color-mix(in srgb, var(--up) 25%, var(--line)); background: color-mix(in srgb, var(--up) 10%, var(--surface)); }
+#s-sentiment .sentiment-metrics > .sentiment-down { border-color: color-mix(in srgb, var(--dn) 25%, var(--line)); background: color-mix(in srgb, var(--dn) 10%, var(--surface)); }
+#s-sentiment .sentiment-metrics .sentiment-up strong { color: var(--up); }
+#s-sentiment .sentiment-metrics .sentiment-down strong { color: var(--dn); }
+#s-sentiment .promotion-positive { color: var(--up); font-weight: 600; }
 .tag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--s2); }
 .tag-card, .news-item { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
 .tag-card b, .news-item b { display: block; }
@@ -193,6 +237,12 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 @media (max-width: 540px) { .ladder-row { grid-template-columns: 54px minmax(0, 1fr); } .ladder-card { min-width: 104px; } .news-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .tm { height: 520px; } }
 @media (max-width: 599px) { .flow-rank-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 540px) {
+  .ladder-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ladder-summary > div { padding: var(--s2); }
+  .ladder-row { grid-template-columns: 54px minmax(0, 1fr); }
+  .ladder-card { min-width: 104px; flex-basis: 120px; }
+}
 .summary-lines { display: grid; gap: 8px; }
 .summary-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); }
 .summary-row strong { font-size: 13px; }
@@ -623,10 +673,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         </tbody></table></div>`;
     }
     $('limit-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
-      `<div class="big"><div><small>涨停</small><strong class="up">${L.zt ?? '—'}</strong></div><div><small>炸板</small><strong class="wn">${L.zb ?? '—'}</strong></div>
-       <div><small>跌停</small><strong class="dn">${L.dt ?? '—'}</strong></div><div><small>炸板率</small><strong>${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
+      `<div class="big limit-metrics"><div class="limit-zt"><small>涨停</small><strong>${L.zt ?? '—'}</strong></div><div class="limit-zb"><small>炸板</small><strong>${L.zb ?? '—'}</strong></div>
+       <div class="limit-dt"><small>跌停</small><strong>${L.dt ?? '—'}</strong></div><div><small>炸板率</small><strong>${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
        <div><small>最高连板</small><strong>${L.max_streak ?? '—'}</strong></div></div>
-       <div class="bars" aria-label="连板分布">${dist.map((d) => `<div style="height:${(d[1] / mx * 100).toFixed(0)}%"><em>${d[1]}</em></div>`).join('')}</div>
+       <div class="bars" aria-label="连板分布">${dist.map((d) => {
+         const level = Number(d[0]);
+         const color = level <= 1 ? 'bar-lv1' : level === 2 ? 'bar-lv2' : level === 3 ? 'bar-lv3' : 'bar-lv4';
+         return `<div class="${color}" style="height:${(d[1] / mx * 100).toFixed(0)}%"><em>${d[1]}</em></div>`;
+       }).join('')}</div>
        <div class="bars-x">${dist.map((d) => `<span>${d[0]}板</span>`).join('')}</div>
        <p class="note">交易日 ${E(L.date || '—')}</p>
        <div class="limit-tabs" role="tablist" aria-label="涨跌停明细">${groups.map((group) => `<button class="chip" role="tab" aria-selected="${group.id === limitTab}" aria-pressed="${group.id === limitTab}" data-limit-tab="${group.id}">${group.label}<small>${group.count}</small></button>`).join('')}</div>
@@ -639,7 +693,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-sentiment').innerHTML = srcLine(['breadth', 'limit_pools']);
     const errors = failMsg(['breadth', 'limit_pools']);
     const levels = (P.levels || []).map((r) =>
-      `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r">${E(r.n_up)}</td></tr>`).join('');
+      `<tr><td>${E(r.k)}板</td><td class="r">${E(r.n_prev)}</td><td class="r${Number(r.n_up) > 0 ? ' promotion-positive' : ''}">${E(r.n_up)}</td></tr>`).join('');
     const buckets = [
       ['zt', '涨停', 'up'], ['gt10', '>10%', 'up'], ['7_10', '7~10%', 'up'],
       ['3_7', '3~7%', 'up'], ['0_3', '0~3%', 'up'], ['flat', '平', 'flat'],
@@ -663,9 +717,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       ? `，较 ${E(B.amount_prev_date || '—')} ${changePct >= 0 ? '+' : ''}${changePct.toFixed(1)}%（${changeAmount >= 0 ? '+' : ''}${(changeAmount / 1e8).toFixed(1)} 亿）`
       : '';
     $('sentiment-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
-      `<div class="big">
-        <div><small>上涨家数</small><strong class="up">${E(B.up ?? '—')}</strong></div>
-        <div><small>下跌家数</small><strong class="dn">${E(B.down ?? '—')}</strong></div>
+      `<div class="big sentiment-metrics">
+        <div class="sentiment-up"><small>上涨家数</small><strong>${E(B.up ?? '—')}</strong></div>
+        <div class="sentiment-down"><small>下跌家数</small><strong>${E(B.down ?? '—')}</strong></div>
         <div><small>平盘家数</small><strong>${E(B.flat ?? '—')}</strong></div>
         <div><small>成交额（亿元）</small><strong>${yi(B.amount_yuan)}</strong></div>
         <div><small>涨停 / 跌停 / 炸板率</small><strong>${E(L.zt ?? '—')} / ${E(L.dt ?? '—')} / ${num(L.break_rate) ? (L.break_rate * 100).toFixed(1) + '%' : '—'}</strong></div>
@@ -691,22 +745,52 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     const promotions = new Map((L.promotion && L.promotion.levels || []).map((row) => [String(row.k), row]));
     const grouped = new Map();
+    const codeOf = (row) => String(row.code || '').replace(/\D/g, '');
+    const is20cm = (row) => /^(30|68)/.test(codeOf(row));
+    const isBeijing = (row) => String(row.market || '').toLowerCase() === 'bj' ||
+      (/^[489]/.test(codeOf(row)) && !codeOf(row).startsWith('90'));
+    const firstTopic = (row) => String(row.reason || '').split('+')[0].trim();
+    const topics = new Map();
     for (const item of items) {
       const streak = Number(item.streak);
       if (!Number.isFinite(streak)) continue;
       if (!grouped.has(streak)) grouped.set(streak, []);
       grouped.get(streak).push(item);
+      const topic = firstTopic(item);
+      if (topic) topics.set(topic, (topics.get(topic) || 0) + 1);
     }
+    const total = Number.isFinite(Number(L.zt)) && L.zt !== null && L.zt !== ''
+      ? Number(L.zt)
+      : items.length;
+    const firstBoards = items.filter((item) => Number(item.streak) === 1).length;
+    const repeatBoards = items.filter((item) => Number(item.streak) >= 2).length;
+    const twentyCent = items.filter(is20cm).length;
+    const topicChips = [...topics.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'))
+      .slice(0, 12)
+      .map(([topic, count]) => `<span class="ladder-theme">${E(topic)} ${count}</span>`)
+      .join('');
     const rows = [...grouped.keys()].sort((a, b) => b - a).map((streak) => {
       const prev = streak - 1, key = prev >= 5 ? '5+' : String(prev);
       const p = promotions.get(key), members = grouped.get(streak);
-      return `<div class="ladder-row"><div class="ladder-label">${streak}板</div><div class="ladder-cells">${members.map((r) =>
-        `<div class="ladder-card"><b>${E(r.name)}</b>
-          <small>${E(r.code)} · 首封 ${E(r.first_seal || '—')} · 炸板 ${E(r.break_times ?? '—')}</small>
+      const levelClass = streak <= 1 ? 'lv1' : streak === 2 ? 'lv2' : streak === 3 ? 'lv3' : 'lv4';
+      return `<div class="ladder-row ${levelClass}"><div class="ladder-label"><strong>${streak}板</strong><small>${members.length}只</small></div><div class="ladder-cells">${members.map((r) => {
+        const badges = `${is20cm(r) ? '<span class="ladder-badge">20cm</span>' : ''}${isBeijing(r) ? '<span class="ladder-badge">30cm</span>' : ''}${/ST/i.test(String(r.name || '')) ? '<span class="ladder-badge st">ST</span>' : ''}`;
+        return `<div class="ladder-card ${levelClass}"><small class="ladder-time">${E(String(r.first_seal || '—').slice(0, 5))}</small>
+          <div class="ladder-name"><b>${E(r.name || '—')}</b>${badges}</div>
+          <small>${E(r.code || '—')} · 炸板 ${E(r.break_times ?? '—')}</small>
           <small>昨日${E(prev >= 5 ? '5+' : prev)}板 ${E(p ? p.n_prev : 0)} 只，晋级 ${E(p ? p.n_up : 0)} 只</small>
-          <small>题材 ${E(String(r.reason || '—').slice(0, 64))}</small></div>`).join('')}</div></div>`;
+          <small>题材 ${E(String(r.reason || '—').slice(0, 64))}</small></div>`;
+      }).join('')}</div></div>`;
     });
     $('ladder-body').innerHTML = (errors ? `<p class="fail">${errors}</p>` : '') +
+      `<div class="ladder-summary">
+        <div class="total"><small>涨停（含ST）</small><strong>${E(total)}</strong></div>
+        <div><small>首板</small><strong>${E(firstBoards)}</strong></div>
+        <div class="repeat"><small>连板（2板+）</small><strong>${E(repeatBoards)}</strong></div>
+        <div class="cm20"><small>20cm</small><strong>${E(twentyCent)}</strong></div>
+      </div>
+      ${topicChips ? `<div class="ladder-themes" aria-label="涨停题材前12名">${topicChips}</div>` : ''}` +
       `<div class="ladder" role="table" aria-label="${E(L.date || M.asof || '—')} 连板天梯">${rows.join('')}</div>
       <p class="ladder-note">交易日 ${E(M.asof || '—')} · 当前全部涨停明细；仅描述当日市场结构，不是强弱或收益预测。</p>`;
   }
