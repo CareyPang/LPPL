@@ -117,6 +117,8 @@
   $('calendar-asset').addEventListener('change', renderEvents);
   $('calendar-clear').addEventListener('click', () => { $('calendar-month').value = ''; $('calendar-day').value = ''; $('calendar-asset').value = 'all'; renderEvents(); });
   $('holding-unit').addEventListener('change', renderHoldings);
+  window.ResearchPersonalActions = { hasUnsaved: () => ['holding-code', 'holding-name', 'holding-shares', 'holding-cost'].some(id => $(id).value.trim() !== '') };
+  $('holding-form').addEventListener('input', () => { $('holding-error').textContent = '持仓草稿尚未保存。'; });
   $('holding-form').addEventListener('submit', event => {
     event.preventDefault();
     const row = Core.holding({ code: $('holding-code').value.trim(), name: $('holding-name').value, shares: $('holding-shares').value, cost: $('holding-cost').value, currency: 'CNY', updatedAt: new Date().toISOString() });
@@ -134,7 +136,15 @@
   window.addEventListener('workspace-change', onWorkspaceChange);
   window.addEventListener('lppl-watch', onWorkspaceChange);
   window.addEventListener('research-personal-restored', () => { state = Core.load(storage); renderChanges(); renderHoldings(); });
-  window.addEventListener('storage', event => { if (event.key === Core.KEY || event.key === null) { state = Core.load(storage); undoHolding = null; $('holding-undo').hidden = true; renderHoldings(); } onWorkspaceChange(); });
+  window.addEventListener('storage', event => {
+    if (event.key === Core.KEY || event.key === null) {
+      // Keep the editing revision so a stale draft cannot silently overwrite a
+      // second tab's holding. The explicit reload action preserves form inputs.
+      undoHolding = null; $('holding-undo').hidden = true;
+      message('另一页修改了个人记录。未覆盖本页草稿；请重新读取本机记录并核对后再保存。', true);
+    }
+    onWorkspaceChange();
+  });
   if (state.storageIssue) message('本机记录读取失败，暂不能确认保存状态。', true);
   renderChanges(); renderAssetFilter(); renderHoldings(); renderEvents();
 })();

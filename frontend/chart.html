@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101827">
-  <title>完整图表 · Open Design</title>
+  <title>完整图表 · 临界点</title>
   <style>
     :root { color-scheme: light; font-family: Inter, "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6fa; }
     * { box-sizing: border-box; }
@@ -92,6 +92,7 @@
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
+  <script src="app/rule-labels.js"></script>
   <script src="app/chart-page-core.js"></script>
   <script src="app/chart-readonly-data.js"></script>
   <script src="app/chart-research-card.js"></script>
@@ -101,6 +102,10 @@
 <body>
   <script src="app/od-nav.js" data-section="terminal"></script>
   <main id="chart-page" class="chart-page" data-ai-context="完整图表">
+    <section id="identity-strip" class="chart-identity-strip" aria-label="当前资产身份" hidden>
+      <div><strong id="identity-strip-name"></strong><span id="identity-strip-code"></span></div>
+      <p id="identity-strip-meta"></p>
+    </section>
     <div class="chart-content">
       <header class="page-heading">
       <div>
@@ -153,6 +158,7 @@
           <section class="evidence-card" aria-labelledby="evidence-title">
             <h2 id="evidence-title">区间与证据</h2>
             <p id="evidence-state" class="evidence-state">等待数据</p>
+          <p id="evidence-rule-source" class="evidence-note" hidden></p>
             <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
             <div id="interval-list" class="interval-list"></div>
             <p id="evidence-note" class="evidence-note"></p>

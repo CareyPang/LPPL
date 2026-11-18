@@ -10,7 +10,7 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 - `app/chart-page-core.js`、`app/chart-page.js`、`chart.html`：行情独立于缺失模型的基本组装、容器响应式布局。
 - `tests/ai-assistant.test.cjs`、`tests/chart-page-core.test.cjs`、`tests/od-nav-structure.test.cjs`。
 
-没有合并或 cherry-pick PR #142。其 `LPPL.load(code, asof)` 会经现有适配器触发历史任务 POST，因此改为只读 `LPPL.replay.result`。PR #143 的规则文案仅作对照；其中硬编码的“约 0.8 周期”没有纳入此次界面，以免与完整周期 1.5 研究基线混淆。此次未更改后端拟合口径，也不声称已统一后端口径。
+最初未合并或 cherry-pick PR #142，只复用文件。随后同步已由他人合并 #142/#143 的 main `958594c`，保留主线的区间规则来源与四类空状态标签，并保留本次更严格的历史读取、并行加载和证据门禁。其 `LPPL.load(code, asof)` 会经现有适配器触发历史任务 POST，因此改为只读 `LPPL.replay.result`。PR #143 的区间规则来源与四类空状态标签现已保留。其共享标准过滤说明中的“约 0.8 周期”属于该主线现有口径；本图表采用主线的形态框来源说明，没有据此宣称完整周期 1.5 研究基线已落实到后端。此次未更改后端拟合口径，也不声称已统一后端口径。
 
 ## 实装与证据边界
 
@@ -19,7 +19,7 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 | 个股行情先显示 | VERIFIED | 行情、模型、事件各自计时和完成；延迟模型不阻塞行情。模型/事件失败不清除 K 线。 |
 | 指数行情与模型 | 部分 VERIFIED | 现有 `LPPL.load(code)` 将两者装在同一静态文件中；本次没有声称指数接口层已解耦。需后端后续提供独立指数行情。 |
 | 阅读位置 | VERIFIED | 模型与事件更新保留 LWC logical range；主动切换尺度或聚焦区间才改变视图。 |
-| 资产身份 | VERIFIED | 顶部身份区域标注代码、交易所、指数点位或 A 股/CNY/元（当前未做随滚动常驻的紧凑身份条）；`kind=stock` 可区分深圳 000001 与上证指数。来源错配时拒绝行情，错配模型时仅保留行情。 |
+| 资产身份 | VERIFIED | 顶部身份区域标注代码、交易所、指数点位或 A 股/CNY/元；其离开视口后显示紧凑常驻条（名称、代码、交易所、单位、交易状态），返回顶部即隐藏。390px 放在底部并预留空间，不遮末尾操作；`kind=stock` 可区分深圳 000001 与上证指数。来源错配时拒绝行情，错配模型时仅保留行情。 |
 | 交易状态 | 后端限制 | 无 `trading_status` 时显示“未知（源未提供）”；不从本地钟点推算开市/停牌。 |
 | 复权与成交量 | VERIFIED | 分别列出行情复权和模型输入复权；缺失显示未记录。`vendor_native` 明确股/手换算未核验，不猜单位。未加入会暗改模型输入的复权开关。 |
 | 历史截止日 | VERIFIED | 只 GET 精确日期的封存结果；缺失再查精确 history frame，无相邻日期替代。非法日期拒绝，不静默转最新，不自动计算。 |
@@ -36,9 +36,9 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 
 ## 验收
 
-相关 Node 单测（chart core、只读历史、证据卡、AI/nav、LWC parity、stock chart）87 passed，0 failed。覆盖未来数据裁切、日期/资产拒绝、禁止历史任务 POST、精确帧匹配、未知证据 fail-closed、描述性 n、私人字段排除、SVG 转义与独立超时。
+相关 Node 单测（chart core、只读历史、证据卡、AI/nav、LWC parity、stock chart）92 passed，0 failed。覆盖未来数据裁切、日期/资产拒绝、禁止历史任务 POST、精确帧匹配、未知证据 fail-closed、描述性 n、私人字段排除、SVG 转义与独立超时。
 
-`frontend/tests/chart-professional.browser.cjs` 在本机 Chrome headless 使用生产数据适配器、真实 LWC 组件和已存样本，9 组验收通过：
+`frontend/tests/chart-professional.browser.cjs` 在本机 Chrome headless 使用生产数据适配器、真实 LWC 组件和已存样本，11 组验收通过：
 
 1. 延迟模型到达前已显示行情，随后保留 K 线和用户缩放。
 2. 下载匿名 SVG 卡及真实图表 PNG，附证据元数据。
@@ -49,6 +49,8 @@ VERIFIED：读取 PR #142 head `ff4fd5befece0be7e2d4d33b0ff16f0b17f49f8a`，base
 7. 仅收盘的历史源显示明确标注的收盘线，不用 close 补造 OHLC；成交量缺失保留空值。
 8. 精确历史帧回退裁切后续行情，并提示修订边界。
 9. 缺失或非法历史日期不显示最新结果，所有观察到的请求均为 GET。
+10. 桌面身份区离开视口后才出现常驻条，返回顶部隐藏。
+11. 390px 常驻条包含交易所/单位/状态，底部保留空间且末尾操作在其上方。
 
 运行样本不是新的模型预测或拟合实验；浏览器测试零 pageerror、零外部写请求。桌面、390px、抽屉、历史视图和导出图片已本地查看。截图与下载证据保存在 `D:\CodexData\work\002ed763b852\lppl-chart-professional-1118`，不作为产品业务数据。
 

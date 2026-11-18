@@ -69,7 +69,7 @@
   }
   function hasUnsaved() {
     saveDraft();
-    return [...drafts].some(([key, text]) => {
+    return !!window.ResearchPersonalActions?.hasUnsaved() || [...drafts].some(([key, text]) => {
       const saved = state.notes.slice().reverse().find(n => [n.assetId, n.asof || '', n.predictionId || '', n.modelVersion || ''].join('|') === key);
       return text.trim() !== (saved?.text || '').trim();
     });

@@ -1,5 +1,11 @@
 /* Full chart controls: price keeps red/green, research uses blue and line styles. */
 .chart-page { font-variant-numeric: tabular-nums; }
+.chart-identity-strip { position:fixed; z-index:35; max-width:780px; padding:9px 14px; border:1px solid #cfd8e7; border-radius:12px; background:#fffffffa; box-shadow:0 6px 24px #1720331a; color:#243754; pointer-events:none; }
+.chart-identity-strip[hidden] { display:none; }
+.chart-identity-strip>div { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; font-size:13px; }
+.chart-identity-strip strong { font-size:16px; }
+.chart-identity-strip p { margin:5px 0 0; font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
+.chart-modal-lock .chart-identity-strip, .chart-page:has(.chart-expanded) .chart-identity-strip { display:none; }
 .chart-actions, .module-status { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
 .module-status { gap:8px 20px; color:#536078; font-size:13px; }
 .module-status span::before { content:""; display:inline-block; width:6px; height:6px; border-radius:50%; background:#7485a9; margin-right:7px; }
@@ -24,6 +30,8 @@
 #fullscreen-exit[hidden] { display:none; }
 body.chart-modal-lock { overflow:hidden; }
 @media (max-width:600px) {
+  .chart-identity-strip { top:auto!important; bottom:12px; left:12px!important; width:calc(100% - 24px)!important; max-width:none; padding:9px 12px; }
+  .chart-content { padding-bottom:132px!important; }
   .chart-actions { display:grid; grid-template-columns:1fr 1fr; }
   .chart-actions button { min-width:0; }
   .chart-page .evidence-side:not([hidden]) { position:fixed; inset:12vh 8px 8px; z-index:10010; display:block; overflow:auto; padding:12px; border:1px solid #d0d9e8; border-radius:18px; background:#f4f6fa; box-shadow:0 0 0 100vmax #17203366; }

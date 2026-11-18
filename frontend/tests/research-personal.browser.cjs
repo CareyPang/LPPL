@@ -74,6 +74,23 @@ const server = http.createServer((req, res) => {
       await page.locator('#changes-mark-all').click();
       assert.equal(await page.locator('#personal-unread').textContent(), '0 条未读');
       assert.equal(await page.evaluate(() => ResearchPersonalCore.load(localStorage).readChanges.length), 1);
+      await page.getByRole('button', { name: '编辑', exact: true }).click();
+      await page.locator('#holding-cost').fill('1600');
+      const other = await ctx.newPage();
+      await other.goto(origin + '/app/research-personal.css');
+      await other.evaluate(() => {
+        const key = 'lppl.research-personal.v1', value = JSON.parse(localStorage.getItem(key));
+        value.revision += 1; value.holdings[0].cost = 1550; localStorage.setItem(key, JSON.stringify(value));
+      });
+      await page.waitForFunction(() => document.getElementById('personal-message').textContent.includes('另一页'));
+      await page.locator('#holding-form [type=submit]').click();
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-personal.v1')).holdings[0].cost), 1550);
+      assert.equal(await page.locator('#holding-cost').inputValue(), '1600');
+      await page.locator('#personal-reload').click();
+      assert.equal(await page.locator('#holding-cost').inputValue(), '1600');
+      await page.locator('#holding-form [type=submit]').click();
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-personal.v1')).holdings[0].cost), 1600);
+      await other.close();
       // Failed writes must leave both storage and UI data intact.
       await page.evaluate(() => { const original = Storage.prototype.setItem; Storage.prototype.setItem = function (key, value) { if (key === ResearchPersonalCore.KEY) throw new Error('simulated quota'); return original.call(this, key, value); }; });
       await page.getByRole('button', { name: '删除记录', exact: true }).click();

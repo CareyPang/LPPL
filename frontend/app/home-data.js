@@ -20,6 +20,7 @@
         name: D.name, sym: D.sym.sym, code: D.sym.code, asof: D.asof, bars: b,
         last: b[b.length - 1], prev: b[b.length - 2],
         status: SIG[t.signal_status] || (t.signal_status ? '状态：' + t.signal_status : '无状态'),
+        statusTitle: t.signal_status === 'signal' ? '按 FCO 标准过滤' : '',
         windowText: win
       };
     }).catch(function (e) { return { sym: s.sym, name: s.name, code: s.code, error: e && e.message || '数据未加载' }; });

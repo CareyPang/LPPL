@@ -48,7 +48,7 @@
       try {
         const selected = [...$('portable-sections').querySelectorAll('input:checked')].map(input => input.dataset.key);
         if (!selected.length) throw new Error('尚未选择分区');
-        if (window.ResearchWorkspaceActions?.hasUnsaved()) throw new Error('还有未保存笔记，请先保存或复制草稿后再导入');
+        if (window.ResearchWorkspaceActions?.hasUnsaved()) throw new Error('还有未保存的笔记或持仓草稿，请先保存或复制草稿后再导入');
         // Validate every mutation against a staging storage before downloading or writing.
         const map = new Map(Object.entries(Core.snapshot(storage)));
         const stage = { getItem: key => map.get(key) ?? null, setItem: (key, v) => map.set(key, v), removeItem: key => map.delete(key) };

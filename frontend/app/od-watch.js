@@ -69,7 +69,7 @@
   function row(h) {
     var right = view === 'quote'
       ? '<span class="px ' + (h.cls || '') + '">' + esc(h.px || '—') + '<small>' + esc(h.chg || (h.asof ? '收盘 ' + h.asof : '')) + (h.period ? '<br>' + esc(h.period) : '') + '</small></span>'
-      : '<span class="st" title="' + esc(h.status || '') + '">' + esc(h.status || '—') + '</span>';
+      : '<span class="st" title="' + esc(h.statusTitle || h.status || '') + '">' + esc(h.status || '—') + '</span>';
     return '<div class="odw-i"><a class="nm" href="' + esc(h.h) + '" style="color:inherit;text-decoration:none;min-width:0">' + esc(h.name) + '<br><span class="cd">' + esc(h.code) + (h.asof && view === 'model' ? ' · ' + esc(h.asof) : '') + '</span></a>' +
       right + '<button type="button" class="rm" data-rm="' + esc(h.key) + '" data-kind="' + h.kind + '" aria-label="移除 ' + esc(h.name) + '">×</button></div>';
   }
@@ -148,7 +148,7 @@
       var lb = D.bars[D.bars.length - 1], pb = D.bars[D.bars.length - 2], t = D.top || {};
       var last = lb ? { c: lb.close } : null, prev = pb ? { c: pb.close } : null;
       var chg = pct(last, prev);
-      return Object.assign(base0, { name: D.name, asof: D.asof, px: last ? String(Math.round(last.c * 100) / 100) : '—', chg: chg ? chg + ' · 收盘 ' + D.asof : '', cls: chg.charAt(0) === '+' ? 'up' : chg ? 'dn' : '', status: SIG[t.signal_status] || t.signal_status || '无状态' });
+      return Object.assign(base0, { name: D.name, asof: D.asof, px: last ? String(Math.round(last.c * 100) / 100) : '—', chg: chg ? chg + ' · 收盘 ' + D.asof : '', cls: chg.charAt(0) === '+' ? 'up' : chg ? 'dn' : '', status: SIG[t.signal_status] || t.signal_status || '无状态', statusTitle: t.signal_status === 'signal' ? '按 FCO 标准过滤' : '' });
     }).catch(function () { return Object.assign(base0, { status: '数据未加载' }); });
     return cache[sym];
   }
@@ -161,7 +161,7 @@
       if (!J) return Object.assign(base0, { status: '未发布结果', chg: '未发布结果' });
       var ph = J.price_history || {}, c = ph.close || [], n = c.length, t = J.top || {};
       var last = n ? { c: c[n - 1] } : null, prev = n > 1 ? { c: c[n - 2] } : null, chg = pct(last, prev);
-      return Object.assign(base0, { name: J.name || code, asof: J.asof, px: last ? String(Math.round(last.c * 100) / 100) : '—', chg: chg ? chg + ' · 收盘 ' + J.asof : '', cls: chg.charAt(0) === '+' ? 'up' : chg ? 'dn' : '', status: SIG[t.signal_status] || t.signal_status || '无状态' });
+      return Object.assign(base0, { name: J.name || code, asof: J.asof, px: last ? String(Math.round(last.c * 100) / 100) : '—', chg: chg ? chg + ' · 收盘 ' + J.asof : '', cls: chg.charAt(0) === '+' ? 'up' : chg ? 'dn' : '', status: SIG[t.signal_status] || t.signal_status || '无状态', statusTitle: t.signal_status === 'signal' ? '按 FCO 标准过滤' : '' });
     }).catch(function () { return Object.assign(base0, { status: '数据未加载' }); });
     return cache[code];
   }

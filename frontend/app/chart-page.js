@@ -4,6 +4,7 @@
   var LPPL = root.LPPL;
   var Core = root.LPPLChartPageCore;
   var Clusters = root.CPTopClusters;
+  var RuleLabels = root.RuleLabels;
   var Reader = root.LPPLChartReadOnly;
   var Share = root.LPPLChartResearchCard;
   var page = document.getElementById('chart-page');
@@ -90,10 +91,13 @@
 
   function renderEvidence(data, selectedScale) {
     var state = el('evidence-state');
+    var ruleSource = el('evidence-rule-source');
     var list = el('interval-list');
     var note = el('evidence-note');
     list.replaceChildren();
     note.replaceChildren();
+    ruleSource.hidden = true;
+    ruleSource.textContent = '';
     if (data.modelStatus && data.modelStatus !== 'ok') {
       state.textContent = data.modelStatus === 'loading' ? '行情可先浏览，模型结果独立读取中…' : data.modelStatus === 'error'
         ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
@@ -110,18 +114,26 @@
       note.appendChild(action);
       return;
     }
+    ruleSource.hidden = false;
+    ruleSource.textContent = RuleLabels.RULES.box.source;
     var evidence = evidenceFor(data, selectedScale);
     var bands = intervalRows(data, selectedScale);
     state.textContent = '证据：' + (evidence && evidence.label || '证据状态未记录');
     if (!evidence || !evidence.show) {
+      // Keep main's four explicit reason labels, but missing fields alone do not
+      // prove that an archived scale was never computed.
+      var hiddenIndicator = data.top && data.top.indicators && data.top.indicators[selectedScale];
+      var hiddenReason = bands.length ? 'not_formal' : hiddenIndicator && RuleLabels.emptyReason(data.top, selectedScale, false, false);
+      state.textContent = RuleLabels.reasonText(hiddenReason) || state.textContent;
       note.textContent = '当前证据不允许显示区间数值。';
       return;
     }
     if (!bands.length) {
       var indicator = data.top && data.top.indicators && data.top.indicators[selectedScale];
       var signal = indicator && (indicator.empty_reason || indicator.signal_status) || data.top && data.top.signal_status;
-      state.textContent = signal === 'no_qualified_fit' ? '已计算，但未形成合格拟合' :
-        signal === 'not_computed' || !indicator ? '当前尺度未提供可核对区间' : '已有拟合，尚未形成可显示聚类';
+      var emptyReason = signal === 'no_qualified_fit' ? 'no_fit' :
+        signal === 'not_computed' ? 'not_computed' : indicator && RuleLabels.emptyReason(data.top, selectedScale, false, true);
+      state.textContent = RuleLabels.reasonText(emptyReason) || '当前尺度未提供可核对区间';
       note.textContent = '没有区间不等于没有风险；可切换尺度，或在标的页检查拟合及过滤明细。';
       return;
     }
@@ -201,6 +213,11 @@
     setText('asset-exchange', data.exchange);
     setText('asset-type', data.assetType === 'index' ? '指数 · 指数点位' : 'A 股 · CNY · 元');
     setText('trading-status', '交易状态：' + (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    setText('identity-strip-name', data.name);
+    setText('identity-strip-code', data.symbol);
+    setText('identity-strip-meta', data.exchange + ' · ' + data.quoteUnit + ' · 交易状态：' +
+      (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    updateIdentityStrip();
     setText('model-date', '模型日期 ' +
       (data.modelStatus === 'loading' ? '读取中' : data.modelStatus !== 'ok' ? '未读到' : data.modelAsOf || '未记录'));
     var asofTag = el('asof-tag');
@@ -425,6 +442,26 @@
   el('events-retry').addEventListener('click', function () { void loadEvents(sequence); });
 
   var drawer = el('evidence-panel');
+  var identityStrip = el('identity-strip');
+  var identityFrame = 0;
+  function updateIdentityStrip() {
+    if (!identityStrip) return;
+    var anchor = page.querySelector('.asset-line');
+    var nav = document.querySelector('.odn');
+    var navBottom = nav ? Math.max(0, Math.min(160, nav.getBoundingClientRect().bottom)) : 0;
+    var bounds = page.getBoundingClientRect();
+    identityStrip.hidden = !current || !anchor || anchor.getBoundingClientRect().bottom > navBottom;
+    identityStrip.style.top = (navBottom + 8) + 'px';
+    identityStrip.style.left = Math.max(12, bounds.left + 20) + 'px';
+    identityStrip.style.width = Math.max(280, Math.min(780, bounds.width - 40)) + 'px';
+  }
+  function scheduleIdentityStrip() {
+    if (identityFrame) return;
+    identityFrame = root.requestAnimationFrame(function () { identityFrame = 0; updateIdentityStrip(); });
+  }
+  root.addEventListener('scroll', scheduleIdentityStrip, { passive: true });
+  root.addEventListener('resize', scheduleIdentityStrip, { passive: true });
+  if (root.ResizeObserver) new root.ResizeObserver(scheduleIdentityStrip).observe(page);
   var evidenceToggle = el('evidence-toggle');
   var mobile = root.matchMedia('(max-width:600px)');
   function evidenceOpen(open) {

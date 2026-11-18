@@ -84,6 +84,15 @@ const server = http.createServer((req, res) => {
     await page.locator('#evidence-close').click(); assert.equal(await page.locator('#evidence-panel').isVisible(), false);
     assert.equal(await page.evaluate(() => document.activeElement.id), 'evidence-toggle');
     await page.locator('#evidence-toggle').click(); pass('desktop auxiliary evidence can close and restores focus');
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await page.locator('#identity-strip').waitFor({ state:'visible' });
+    assert.match(await page.locator('#identity-strip').innerText(), /贵州茅台[\s\S]*sh600519[\s\S]*上海证券交易所[\s\S]*CNY[\s\S]*交易状态/);
+    const identityBox = await page.locator('#identity-strip').boundingBox();
+    assert.ok(identityBox.x >= 0 && identityBox.x + identityBox.width <= 1440);
+    if (output) await page.screenshot({ path:path.join(output, 'chart-desktop-sticky-identity.png'), fullPage:false });
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.locator('#identity-strip').waitFor({ state:'hidden' });
+    pass('desktop compact identity appears only after original identity leaves the viewport');
 
     modelMissing = true; modelDelay = 0;
     await page.reload(); await page.waitForFunction(() => document.querySelector('#chart-page').dataset.modelStatus === 'missing');
@@ -107,8 +116,19 @@ const server = http.createServer((req, res) => {
     await mobile.locator('#fullscreen-exit').click();
     assert.equal(await mobile.locator('#chart-fullscreen').getAttribute('aria-pressed'), 'false');
     await overflow(mobile);
+    await mobile.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await mobile.locator('#identity-strip').waitFor({ state:'visible' });
+    const mobileIdentity = await mobile.locator('#identity-strip').boundingBox();
+    const lastAction = await mobile.locator('#events-retry').boundingBox();
+    assert.ok(mobileIdentity.height <= 110 && mobileIdentity.width <= 390);
+    assert.ok(lastAction.y + lastAction.height < mobileIdentity.y, 'reserved bottom space keeps the final action above the identity strip');
+    assert.match(await mobile.locator('#identity-strip').innerText(), /交易状态：未知/);
+    if (output) await mobile.screenshot({ path:path.join(output, 'chart-mobile-sticky-identity.png'), fullPage:false });
+    await mobile.evaluate(() => scrollTo(0, 0));
+    await mobile.locator('#identity-strip').waitFor({ state:'hidden' });
     if (output) await mobile.screenshot({ path:path.join(output, 'chart-mobile.png'), fullPage:true });
     pass('390px has no overflow; evidence drawer Escape and chart fullscreen exit restore usable page');
+    pass('390px scroll identity retains exchange/unit/status and reserved space avoids covering final controls');
 
     await page.goto(origin + '/chart.html?code=sh000001&asof=' + indexRaw.asof + '&scale=6-12m&from=research-workspace.html');
     await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');

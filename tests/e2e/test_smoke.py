@@ -116,6 +116,30 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     )
     scales = page.locator("#stock-scales [role=radio]")
     expect(scales).to_have_count(6)
+    expect(page.locator("#stock-rule-caption")).to_be_visible()
+    expect(page.locator("#stock-rule-caption")).to_contain_text("FCO 标准过滤")
+    expect(page.locator("#summary")).to_contain_text(
+        "当前只算了 6–12 月、12–24 月两个尺度"
+    )
+    expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
+    empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
+    expect(empty_tiles).to_have_count(3)
+    for tile_index in (0, 1):
+        tile = empty_tiles.nth(tile_index)
+        expect(tile.locator("b")).to_have_text("无合格拟合")
+        expect(tile.locator(".sub")).to_have_text(
+            "已计算，没有合格拟合（不代表风险较低）"
+        )
+    for width, height in ((1440, 900), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        line_counts = empty_tiles.locator("b").evaluate_all(
+            """nodes => nodes.map(element => {
+              const range = document.createRange();
+              range.selectNodeContents(element);
+              return range.getClientRects().length;
+            })"""
+        )
+        assert len(line_counts) == 3 and max(line_counts) <= 2, line_counts
     page.locator('#stock-scales [data-scale="12-24m"]').click()
     expect(
         page.locator('#stock-scales [data-scale="12-24m"]')
@@ -451,7 +475,8 @@ def test_home_assistant_switch_persists_without_changing_other_page_defaults(pag
     page.evaluate("localStorage.removeItem('lppl.assistant.home')")
     page.reload()
     panel = page.locator(".ai-panel.ai-dock")
-    switch = page.get_by_role("switch", name="研究助手")
+    switch = page.locator(".ai-switch")
+    expect(switch).to_have_attribute("role", "switch")
     expect(panel).to_be_hidden()
     expect(switch).to_have_attribute("aria-checked", "false")
     main_left = page.locator("main").evaluate("(el) => el.getBoundingClientRect().left")
@@ -498,6 +523,113 @@ def test_home_assistant_switch_persists_without_changing_other_page_defaults(pag
 
 
 @pytest.mark.e2e
+def test_chart_assistant_switch_defaults_closed_and_persists(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.locator(".ai-switch")
+    expect(panel).to_be_hidden()
+    expect(switch).to_be_visible()
+    expect(switch).to_have_attribute("role", "switch")
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "208px"
+    assert page.locator("main").evaluate("(el) => el.getBoundingClientRect().left") < 300
+
+    switch.click()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "572px"
+    assert page.locator("main").evaluate("(el) => el.getBoundingClientRect().left") >= 572
+    assert page.evaluate(
+        "localStorage.getItem('lppl.assistant.wide:chart.html')"
+    ) == "1"
+
+    page.reload()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+
+
+@pytest.mark.e2e
+def test_index_assistant_close_button_persists_wide_preference(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.locator(".ai-switch")
+    close = page.get_by_role("button", name="关闭研究助手")
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    expect(close).to_be_visible()
+
+    close.click()
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate(
+        "localStorage.getItem('lppl.assistant.wide:index.html')"
+    ) == "0"
+
+    page.reload()
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+
+
+@pytest.mark.e2e
+def test_chart_replay_asof_is_visible_and_links_keep_the_cutoff(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001&asof=2015-06-12")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    expect(page.locator("#asof-tag")).to_have_text(
+        "历史截止日 2015-06-12（只显示当时可见的结果）"
+    )
+    expect(page.locator("#model-date")).to_have_text("模型日期 2015-06-12")
+    assert page.locator("#index-replay").get_attribute("href") == (
+        "index.html?code=sh000001&asof=2015-06-12"
+    )
+
+    page.goto(f"{BASE_URL}/index.html?code=sh000001&asof=2015-06-12")
+    chart_href = page.locator(".odn-chart-link").get_attribute("href")
+    assert chart_href and "asof=2015-06-12" in chart_href
+
+
+@pytest.mark.e2e
+def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.route(
+        "**/lab/mock/data/stock/600519.json",
+        lambda route: route.fulfill(status=404, content_type="application/json", body="{}"),
+    )
+    page.goto(
+        f"{BASE_URL}/chart.html?code=sh600519&asof=2015-06-12"
+    )
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+
+    chart_page = page.locator("#chart-page")
+    assert int(chart_page.get_attribute("data-bar-count") or "0") > 0
+    expect(chart_page).to_have_attribute("data-model-status", "missing")
+    expect(page.locator("#evidence-state")).to_have_text(
+        "没有读到已发布的模型结果（可能尚未发布，或读取失败）"
+    )
+    expect(page.locator("#interval-list .interval-row")).to_have_count(0)
+    expect(page.locator("#model-date")).to_have_text("模型日期 未发布")
+    retry = page.locator("#evidence-note .evidence-retry-button")
+    expect(retry).to_have_text("重试读取")
+    expect(retry).to_be_visible()
+    expect(page.locator("#evidence-note a")).to_have_text("回标的页发起计算")
+    expect(page.locator("#evidence-note a")).to_have_attribute(
+        "href", "stock.html?code=600519"
+    )
+    expect(page.locator("#asof-notice")).to_contain_text(
+        "个股暂不支持按历史截止日查看，以下是最新结果（截止 "
+    )
+    with page.expect_response("**/lab/mock/data/stock/600519.json") as retry_response:
+        retry.click()
+    assert retry_response.value.status == 404
+
+
+@pytest.mark.e2e
 def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
     for path in NAV_PAGES:
         page.set_viewport_size({"width": 1440, "height": 900})
@@ -512,7 +644,7 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
             }"""
         )
         assert content_left is not None, path
-        if path == "home.html":
+        if path == "home.html" or path.startswith("chart.html"):
             expect(panel).to_be_hidden()
             assert content_left < 300, (path, content_left)
         else:
@@ -681,6 +813,35 @@ def test_stock_page_uses_general_asset_copy(page: Page) -> None:
     expect(page).to_have_title("临界点 · 标的")
     description = page.locator('meta[name="description"]').get_attribute("content")
     assert description and "输入指数、股票代码" in description and "个股日线" not in description
+
+
+@pytest.mark.e2e
+def test_rule_labels_index_and_chart_evidence(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    expect(page.locator("#ph-tip")).to_contain_text("形态框")
+    expect(page.locator("#ph-tip")).to_contain_text("FCO 标准过滤")
+    expect(page.locator("#ph-tip")).to_contain_text(
+        "两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。"
+    )
+    page.locator("#bt-1").click()
+    expert = page.locator("#p-expert")
+    expect(expert).to_be_visible()
+    fit_count = expert.locator("th[title]")
+    expect(fit_count).to_have_attribute("title", re.compile("FCO 标准过滤"))
+    expect(fit_count).to_have_attribute("aria-label", re.compile("合格拟合数"))
+    expect(expert).to_contain_text(
+        "两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。"
+    )
+
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    source = page.locator("#evidence-rule-source")
+    expect(source).to_be_visible()
+    expect(source).to_have_text("区间来源：形态框规则（不含振荡/阻尼条件）")
+    expect(page).to_have_title("完整图表 · 临界点")
 
 
 @pytest.mark.e2e
