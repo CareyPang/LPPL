@@ -1,0 +1,211 @@
+/* Run manually with Playwright available; no production endpoint is contacted.
+ * LPPL_PLAYWRIGHT_MODULE may point to an existing playwright or playwright-core installation.
+ * LPPL_BROWSER_EXECUTABLE is optional when the package's Chromium is installed.
+ * LPPL_SCREENSHOT_DIR must point outside the repository for disposable QA captures.
+ */
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const http = require('node:http');
+const { chromium } = require(process.env.LPPL_PLAYWRIGHT_MODULE || 'playwright');
+const Core = require('../app/research-workspace-core.js');
+const ROOT = path.resolve(__dirname, '../..');
+const FRONT = path.join(ROOT, 'frontend');
+const FIX = path.join(__dirname, 'fixtures');
+const requests = [], failures = [];
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.woff2': 'font/woff2' };
+const fixturePaths = {
+  '/lab/mock/data/sh000001_latest.json': 'sh000001_latest.json',
+  '/lab/mock/data/stock/600519.json': 'stock_600519.json'
+};
+let failStock = false;
+let delayFirstIndex = true;
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  requests.push({ method: req.method, path: url.pathname });
+  if (req.method !== 'GET') { res.writeHead(405); res.end(); return; }
+  if (failStock && url.pathname === '/lab/mock/data/stock/600519.json') { res.writeHead(503); res.end('{}'); return; }
+  let file;
+  if (fixturePaths[url.pathname]) file = path.join(process.env.LPPL_PUBLISHED_SAMPLE_DIR || FIX, fixturePaths[url.pathname]);
+  else if (url.pathname.startsWith('/lab/')) file = path.resolve(ROOT, 'web', '.' + url.pathname.slice(4));
+  else file = path.resolve(FRONT, '.' + url.pathname);
+  if ((!fixturePaths[url.pathname] && !file.startsWith(ROOT + path.sep)) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+    res.writeHead(404); res.end(); return;
+  }
+  const send = () => {
+    res.writeHead(200, { 'content-type': mime[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+    fs.createReadStream(file).pipe(res);
+  };
+  if (url.pathname === '/lab/mock/data/sh000001_latest.json' && delayFirstIndex) {
+    delayFirstIndex = false;
+    setTimeout(send, 1200); // Adding the second asset must survive an in-flight refresh.
+  } else send();
+});
+
+(async () => {
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  const browser = await chromium.launch({ headless: true, ...(process.env.LPPL_BROWSER_EXECUTABLE ? { executablePath: process.env.LPPL_BROWSER_EXECUTABLE } : {}) });
+  const checks = [];
+  const check = (name) => { checks.push(name); console.log('PASS ' + name); };
+  async function context(options = {}) {
+    const ctx = await browser.newContext(options);
+    await ctx.route('**/*', route => {
+      if (route.request().url().startsWith(origin + '/')) return route.continue();
+      return route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"error":"offline browser test"}' });
+    });
+    return ctx;
+  }
+  async function noOverflow(page) {
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true, 'page must not overflow horizontally');
+  }
+  async function screenshot(page, name) {
+    if (!process.env.LPPL_SCREENSHOT_DIR) return;
+    fs.mkdirSync(process.env.LPPL_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(process.env.LPPL_SCREENSHOT_DIR, name + '.png'), fullPage: true });
+  }
+  try {
+    const ctx = await context({ viewport: { width: 1440, height: 1000 } });
+    const page = await ctx.newPage();
+    page.on('pageerror', e => failures.push(e.message));
+    await page.goto(origin + '/research-workspace.html');
+    await page.locator('#empty-watch').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#watch-count').innerText(), '0');
+    await noOverflow(page);
+    check('first visit has no invented watchlist or model results');
+
+    await page.locator('[data-add-sample="index:sh000001"]').click();
+    await page.locator('#watch-list .asset-select').first().waitFor();
+    await page.locator('#open-add').click();
+    await page.locator('#add-code').fill('600519');
+    await page.locator('#add-form button[type="submit"]').click();
+    await page.waitForFunction(() => document.querySelector('#watch-count').textContent.trim() === '2');
+    await page.waitForFunction(() => document.querySelector('#watch-list').textContent.includes('贵州茅台')).catch(async error => {
+      console.error(JSON.stringify({ list: await page.locator('#watch-list').innerText(), refresh: await page.locator('#refresh-state').innerText(), detail: await page.locator('#detail-summary').innerText(), requests }, null, 2));
+      await screenshot(page, 'workspace-load-failure');
+      throw error;
+    });
+    assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('lppl.watchlist.v1'))), ['600519']);
+    assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('lppl.watchlist.idx.v1'))), ['sh000001']);
+    check('adding a second asset during an in-flight refresh loads both shared watchlist items');
+
+    await page.locator('#watch-list .asset-select').filter({ hasText: '贵州茅台' }).click();
+    await page.locator('#open-group').click();
+    await page.locator('#group-name').fill('消费观察');
+    await page.locator('#group-form button[type="submit"]').click();
+    await page.locator('#asset-group').selectOption({ label: '消费观察' });
+    const text = '关注理由：观察区间与证据。<img src=x onerror=alert(1)>';
+    await page.locator('#research-note').fill(text);
+    await page.locator('#save-note').click();
+    await page.reload();
+    await page.waitForFunction(() => document.querySelector('#watch-count').textContent.trim() === '2');
+    await page.locator('#watch-list .asset-select').filter({ hasText: '贵州茅台' }).click();
+    assert.equal(await page.locator('#research-note').inputValue(), text);
+    assert.equal(await page.locator('#asset-group option:checked').innerText(), '消费观察');
+    assert.equal(await page.locator('#note-history img').count(), 0);
+    check('groups and plain-text notes survive reload without HTML execution');
+
+    await page.locator('#research-note').fill('第二版：保留第一版依据。');
+    await page.locator('#save-note').click();
+    assert.ok(Number(await page.locator('#note-version-count').innerText()) >= 2);
+    await page.locator('#list-search').fill('茅台');
+    await page.waitForFunction(() => document.querySelectorAll('#watch-list .asset-select').length === 1);
+    await page.reload();
+    assert.equal(await page.locator('#list-search').inputValue(), '茅台');
+    await page.locator('#list-search').fill('');
+    await page.waitForFunction(() => document.querySelectorAll('#watch-list .asset-select').length === 2);
+    check('note versions and list filters are retained');
+
+    await page.locator('#watch-list input[type="checkbox"]').nth(0).check();
+    await page.locator('#watch-list input[type="checkbox"]').nth(1).check();
+    await page.locator('.compare-table').waitFor();
+    assert.match(await page.locator('#compare-content').innerText(), /日期|截止/);
+    await noOverflow(page);
+    await screenshot(page, 'workspace-desktop');
+    check('structured comparison renders distinct dated results');
+    const keyboardRow = page.locator('#watch-list .asset-select').filter({ hasText: '贵州茅台' });
+    await keyboardRow.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.select), 'stock:600519');
+    check('keyboard selection retains focus after list redraw');
+
+    const href = await page.locator('#open-analysis').getAttribute('href');
+    assert.match(href, /from=research-workspace/);
+    assert.doesNotMatch(href, /asof=/);
+    assert.equal(requests.some(r => r.method === 'POST'), false);
+    await page.locator('#open-analysis').click();
+    await page.locator('a[href="research-workspace.html"]').filter({ hasText: '返回我的研究' }).waitFor();
+    await page.locator('a[href="research-workspace.html"]').filter({ hasText: '返回我的研究' }).click();
+    await page.locator('#watch-list .asset-select').filter({ hasText: '贵州茅台' }).waitFor();
+    check('analysis has an explicit same-origin return path');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#watch-list .asset-select').filter({ hasText: '贵州茅台' }).click();
+    await noOverflow(page);
+    await screenshot(page, 'workspace-mobile');
+    await page.locator('#open-add').click();
+    await page.locator('#add-dialog').waitFor({ state: 'visible' });
+    await noOverflow(page);
+    await page.keyboard.press('Escape');
+    await page.locator('#add-dialog').waitFor({ state: 'hidden' });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await noOverflow(page);
+    check('390px and reduced motion keep list, details, and dialog usable');
+
+    const blocked = await context({ viewport: { width: 390, height: 844 } });
+    await blocked.addInitScript(() => { Storage.prototype.setItem = function () { throw new DOMException('Quota exceeded', 'QuotaExceededError'); }; });
+    const blockedPage = await blocked.newPage();
+    await blockedPage.goto(origin + '/research-workspace.html');
+    await blockedPage.locator('[data-add-sample="stock:600519"]').click();
+    await blockedPage.locator('#storage-warning').waitFor({ state: 'visible' });
+    check('storage write failure is visible');
+
+    failStock = true;
+    const missing = await context();
+    await missing.addInitScript(() => localStorage.setItem('lppl.watchlist.v1', '["600519"]'));
+    const missingPage = await missing.newPage();
+    await missingPage.goto(origin + '/research-workspace.html');
+    await missingPage.locator('#watch-list .asset-select').first().click();
+    await missingPage.waitForFunction(() => /未取得|失败|不可用|未加载/.test(document.querySelector('#detail-summary').textContent));
+    assert.equal(await missingPage.locator('#save-note').isEnabled(), true);
+    await missingPage.locator('#research-note').fill('尚无分析，先记录关注理由。');
+    await missingPage.locator('#save-note').click();
+    await missingPage.reload();
+    await missingPage.locator('#watch-list .asset-select').first().click();
+    assert.equal(await missingPage.locator('#research-note').inputValue(), '尚无分析，先记录关注理由。');
+    check('missing result retains usable watchlist and notes');
+    failStock = false;
+
+    const seeded = Core.initial();
+    const a = Core.asset('stock', '600519', '贵州茅台');
+    const raw = JSON.parse(fs.readFileSync(path.join(FIX, 'stock_600519.json'), 'utf8'));
+    const first = { ...Core.summarize(a, raw), modelVersion: 'fixture-v1', predictionId: 'fixture-A' };
+    const second = { ...first, modelVersion: 'fixture-v2', predictionId: 'fixture-B' };
+    const identityOnly = { ...second, predictionId: 'fixture-C' };
+    for (const [i, summary] of [first, second, identityOnly].entries()) {
+      const stamp = '2026-11-18T01:0' + i + ':00.000Z';
+      Core.observe(seeded, summary, stamp);
+      Core.recordVisit(seeded, summary, stamp);
+    }
+    assert.equal(seeded.observations[a.id].length, 2);
+    const restored = await context();
+    await restored.addInitScript(({ key, data }) => {
+      localStorage.setItem('lppl.watchlist.v1', '["600519"]');
+      localStorage.setItem(key, JSON.stringify(data));
+    }, { key: Core.KEY, data: seeded });
+    const restoredPage = await restored.newPage();
+    await restoredPage.goto(origin + '/research-workspace.html');
+    await restoredPage.locator('#resume-items button').nth(2).click();
+    assert.match(await restoredPage.locator('#detail-summary').innerText(), /fixture-v1/);
+    await restoredPage.locator('#resume-items button').nth(0).click();
+    assert.match(await restoredPage.locator('#detail-summary').innerText(), /fixture-C/);
+    check('resume restores the exact model and prediction identity without inventing another alert');
+    assert.deepEqual(failures, []);
+    check('no uncaught browser exceptions');
+    console.log(JSON.stringify({ checks: checks.length, names: checks, fixture_mode: !process.env.LPPL_PUBLISHED_SAMPLE_DIR, archived_published_samples: !!process.env.LPPL_PUBLISHED_SAMPLE_DIR, external_requests_fulfilled_offline: true }, null, 2));
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+})().catch(error => { console.error(error); server.close(); process.exitCode = 1; });
