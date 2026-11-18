@@ -215,6 +215,15 @@ const server = http.createServer((req, res) => {
     const href = await page.locator('#open-analysis').getAttribute('href');
     assert.match(href, /from=research-workspace/);
     assert.doesNotMatch(href, /asof=/);
+    const currentFullChart = new URL(await page.locator('#open-full-chart').getAttribute('href'), origin);
+    const currentResultAsOf = await page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem('lppl.research-workspace.v1'));
+      return state.observations['stock:600519'].at(-1).asof;
+    });
+    assert.ok(currentResultAsOf);
+    assert.equal(currentFullChart.searchParams.has('asof'), false);
+    assert.equal(new URL(currentFullChart.searchParams.get('from'), origin).searchParams.has('asof'), false);
+    check('current published result opens the full chart without a historical cutoff');
     assert.equal(requests.some(r => r.method === 'POST'), false);
     await page.locator('#open-analysis').click();
     await page.locator('a[href="research-workspace.html"]').filter({ hasText: '返回我的研究' }).waitFor();

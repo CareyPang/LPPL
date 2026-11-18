@@ -217,7 +217,7 @@
     $('detail-summary').innerHTML = html;
     $('asset-group').innerHTML = groupsHTML(groupOf(asset.id), false);
     $('open-analysis').href = Core.route(asset);
-    const returnAsOf = s.asof || (replaying ? replayRequest.asof : '');
+    const returnAsOf = inspectRecord?.asset?.id === asset.id ? inspectRecord.asof : replaying ? replayRequest.asof : '';
     const workspaceReturn = new URLSearchParams({ kind: asset.kind, code: asset.code });
     if (returnAsOf) workspaceReturn.set('asof', returnAsOf);
     const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html?' + workspaceReturn.toString() });
