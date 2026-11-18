@@ -165,12 +165,13 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
     empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
     expect(empty_tiles).to_have_count(3)
-    for tile_index in (0, 1):
+    for tile_index, label, reason in (
+        (0, "未形成区间", "有合格拟合，但没有形成聚类区间"),
+        (1, "无合格拟合", "已计算，没有合格拟合（不代表风险较低）"),
+    ):
         tile = empty_tiles.nth(tile_index)
-        expect(tile.locator("b")).to_have_text("无合格拟合")
-        expect(tile.locator(".sub")).to_have_text(
-            "已计算，没有合格拟合（不代表风险较低）"
-        )
+        expect(tile.locator("b")).to_have_text(label)
+        expect(tile.locator(".sub")).to_have_text(reason)
     for width, height in ((1440, 900), (390, 844)):
         page.set_viewport_size({"width": width, "height": height})
         line_counts = empty_tiles.locator("b").evaluate_all(
@@ -1011,6 +1012,38 @@ def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
     page.wait_for_function(storage_count + " === 0")
     expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
     expect(undo).to_be_disabled()
+
+
+@pytest.mark.e2e
+def test_deleting_text_drawing_closes_editor_without_saving_it(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    editor = page.locator(".chart-drawing-text-editor")
+    page.locator('[data-drawing-tool="text"]').click()
+    page.locator("#chart-host").click(position={"x": 450, "y": 340})
+    expect(editor).to_be_visible()
+    editor.fill("DELETE-ME")
+    delete = page.locator("[data-drawing-delete]")
+    expect(delete).to_be_enabled()
+    delete.click()
+    expect(editor).to_be_hidden()
+    page.wait_for_function(storage_count + " === 0")
+    page.locator(".chart-drawing-text-editor").evaluate(
+        """input => input.dispatchEvent(new KeyboardEvent("keydown", {
+          key: "Enter", bubbles: true, cancelable: true
+        }))"""
+    )
+    page.wait_for_function(
+        storage_count + " === 0 && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '0'"
+    )
 
 
 @pytest.mark.e2e
