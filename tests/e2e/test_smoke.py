@@ -887,6 +887,46 @@ def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_undo_keeps_history_drawings_hidden(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 350, "y": 190})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001&asof=2015-06-12")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+    )
+    visibility = page.locator("[data-drawing-visibility]")
+    expect(visibility).to_have_text("显示我的画线")
+    host = page.locator("#chart-host")
+    page.mouse.move(1, 1)
+    hidden_before = host.screenshot()
+
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    host.click(position={"x": 500, "y": 280})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+    )
+    expect(visibility).to_have_text("显示我的画线")
+    page.locator("[data-drawing-undo]").click()
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 1"
+    )
+    expect(visibility).to_have_text("显示我的画线")
+    page.mouse.move(1, 1)
+    hidden_after = host.screenshot()
+    assert drawing_pixel_diff(page, hidden_before, hidden_after)["changed"] < 50
+
+
+@pytest.mark.e2e
 def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")

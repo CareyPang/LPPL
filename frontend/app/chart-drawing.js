@@ -279,7 +279,6 @@
       buttons.forEach(function (button) {
         button.setAttribute('aria-pressed', String(button.dataset.drawingTool === currentTool));
       });
-      visible = !manager || manager.drawingsVisible();
       visibilityButton.textContent = visible ? '全部隐藏' : '显示我的画线';
       visibilityButton.setAttribute('aria-pressed', String(visible));
       var dates = lateDrawingDates(records, context.asof);
@@ -315,7 +314,10 @@
 
     function importRecords(items) {
       records = wrapStorage(items).items;
-      if (manager) manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
+      if (manager) {
+        manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
+        manager.setDrawingsVisible(visible);
+      }
       committedSnapshot = snapshot();
       render();
     }
@@ -334,7 +336,7 @@
     }
 
     function bindManager(series, preserveVisibility) {
-      var priorVisibility = preserveVisibility ? manager.drawingsVisible() : historyVisibility(context.asof);
+      var priorVisibility = preserveVisibility ? visible : historyVisibility(context.asof);
       if (manager) manager.destroy();
       managerOff.forEach(function (off) { off(); });
       managerOff = [];
@@ -351,6 +353,7 @@
       temporarilyHidden.forEach(function (id) {
         if (manager.get(id)) manager.setHidden(id, true);
       });
+      visible = priorVisibility;
       manager.setDrawingsVisible(priorVisibility);
       managerOff.push(manager.on('add', function (drawing) {
         var next = themed(drawing);
@@ -483,7 +486,7 @@
     });
     listen(visibilityButton, 'click', function () {
       if (!manager) return;
-      var show = !manager.drawingsVisible();
+      var show = !visible;
       if (show) {
         temporarilyHidden.forEach(function (id) {
           var item = records.find(function (record) { return record.drawing.id === id; });
@@ -491,6 +494,7 @@
         });
         temporarilyHidden.clear();
       }
+      visible = show;
       manager.setDrawingsVisible(show);
       render();
     });
@@ -505,9 +509,8 @@
         if (!restoredIds.has(item.drawing.id)) deletedDrawingIds.add(item.drawing.id);
       });
       records = restored;
-      var keepVisible = manager.drawingsVisible();
       manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
-      manager.setDrawingsVisible(keepVisible);
+      manager.setDrawingsVisible(visible);
       committedSnapshot = snapshot();
       writeRecords(records);
       render();
@@ -570,12 +573,14 @@
         deletedDrawingIds.clear();
         storageSyncPending = false;
         temporarilyHidden.clear();
+        visible = historyVisibility(context.asof);
         if (manager) {
           manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
-          manager.setDrawingsVisible(historyVisibility(context.asof));
+          manager.setDrawingsVisible(visible);
         }
         committedSnapshot = snapshot();
       } else if (asofChanged && manager) {
+        visible = historyVisibility(context.asof);
         if (!context.asof) {
           temporarilyHidden.forEach(function (id) {
             var item = records.find(function (record) { return record.drawing.id === id; });
@@ -583,7 +588,7 @@
           });
           temporarilyHidden.clear();
         }
-        manager.setDrawingsVisible(historyVisibility(context.asof));
+        manager.setDrawingsVisible(visible);
       }
       render();
     }
