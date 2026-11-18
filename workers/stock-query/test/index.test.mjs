@@ -1273,7 +1273,7 @@ function beijingTime(date, time) {
 test('dispatchesForSlot maps every configured Beijing slot', () => {
   const cases = [
     ['2026-11-16', '15:45', ['market_daily', 'index_daily']],
-    ['2026-11-17', '16:00', ['dip_env', 'forward_log_seal']],
+    ['2026-11-17', '17:00', ['dip_env', 'forward_log_seal']],
     ['2026-11-18', '16:30', ['market_daily']],
     ['2026-11-19', '16:45', ['market_daily']],
     ['2026-11-20', '17:30', ['market_daily']],
@@ -1301,7 +1301,7 @@ test('dispatchesForSlot floors to a quarter hour and respects Beijing weekday bo
   ]);
   assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-23', '06:30')), []);
   assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-16', '18:00')), []);
-  for (const time of ['18:15', '18:30', '20:45', '21:45']) {
+  for (const time of ['16:00', '18:15', '18:30', '20:45', '21:45']) {
     assert.deepEqual(dispatchesForSlot(beijingTime('2026-11-18', time)), []);
   }
   assert.deepEqual(dispatchesForSlot(NaN), []);

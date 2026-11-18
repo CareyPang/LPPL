@@ -30,7 +30,7 @@ const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 const QUARTER_HOUR_MS = 15 * 60 * 1000;
 const WORKER_CRON_SLOTS = [
   { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 15 * 60 + 45, eventTypes: ['market_daily', 'index_daily'] },
-  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 16 * 60, eventTypes: ['dip_env', 'forward_log_seal'] },
+  { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 17 * 60, eventTypes: ['dip_env', 'forward_log_seal'] },
   { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 16 * 60 + 30, eventTypes: ['market_daily'] },
   { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 16 * 60 + 45, eventTypes: ['market_daily'] },
   { weekdays: [1, 2, 3, 4, 5], minuteOfDay: 17 * 60 + 30, eventTypes: ['market_daily'] },
