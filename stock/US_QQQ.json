@@ -1,8 +1,8 @@
 {
  "symbol": "US_QQQ",
  "name": "纳指100 ETF",
- "asof": "2026-11-16",
- "data_version": "us_QQQ_20261116_080e6607330f7fbc",
+ "asof": "2026-11-17",
+ "data_version": "us_QQQ_20261117_f678eeba19c9403f",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,12 +20,12 @@
    ]
   },
   "bubble": {
-   "start": "2025-04-11",
+   "start": "2025-04-14",
    "duration_days": 402,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 0.635,
-   "size_realized": 0.467,
+   "size_model": 0.624,
+   "size_realized": 0.446,
    "tc": "2026-08-14",
    "progress": null,
    "longest_qualified_scale": "12-24m",
@@ -60,16 +60,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-05-18",
+    "best_t1": "2026-05-19",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.167,
      "w_lo": 0.167,
      "w_hi": 0.0,
-     "tc_lo": 0.333,
+     "tc_lo": 0.5,
      "tc_hi": 0.0,
-     "any": 0.5,
+     "any": 0.667,
      "tol": 0.01
     },
     "null_fpr": {
@@ -97,23 +97,23 @@
     "direction": "positive",
     "n_windows": 10,
     "confidence": {
-     "box": 0.2,
-     "standard": 0.2,
-     "early": 0.5,
+     "box": 0.1,
+     "standard": 0.1,
+     "early": 0.4,
      "end": 0.0,
      "pure": 0.1
     },
-    "n_qualified_standard": 2,
-    "best_t1": "2025-04-11",
+    "n_qualified_standard": 1,
+    "best_t1": "2025-04-14",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.0,
+     "tc_lo": 0.1,
      "tc_hi": 0.0,
-     "any": 0.0,
+     "any": 0.1,
      "tol": 0.01
     },
     "null_fpr": {
@@ -145,9 +145,9 @@
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
   "combo": {
-   "p0.1": 0.001,
-   "p1": 0.1,
-   "p10": 0.187,
+   "p0.1": 0.0,
+   "p1": 0.05,
+   "p10": 0.093,
    "set": "standard",
    "scales": [
     "6-12m",
@@ -174,13 +174,13 @@
     "bins": []
    },
    "12-24m": {
-    "n": 2,
+    "n": 1,
     "bin_days": 5,
     "bins": [
      [
-      "2026-09-14",
-      "2026-09-21",
-      2
+      "2026-09-08",
+      "2026-09-15",
+      1
      ]
     ]
    },
@@ -205,7 +205,7 @@
    "1-3m": null,
    "3-6m": null,
    "6-12m": 0.0,
-   "12-24m": 0.2,
+   "12-24m": 0.1,
    "2-6y": null,
    "evidence": "dev_only",
    "scale_evidence": {
@@ -241,7 +241,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-16",
+   "table_asof": "2026-11-17",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -723,7 +723,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.467,
+    "size_realized": 0.446,
     "duration_days": 402,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -767,7 +767,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-10",
    "2023-11-13",
    "2023-11-14",
    "2023-11-15",
@@ -1522,10 +1521,10 @@
    "2026-11-11",
    "2026-11-12",
    "2026-11-13",
-   "2026-11-16"
+   "2026-11-16",
+   "2026-11-17"
   ],
   "open": [
-   365.587,
    370.474,
    377.278,
    380.759,
@@ -2280,10 +2279,10 @@
    687.28,
    680.32,
    688.54,
-   671.04
+   671.04,
+   663.05
   ],
   "high": [
-   372.195,
    371.939,
    379.785,
    381.25,
@@ -3038,10 +3037,10 @@
    695.57,
    694.56,
    688.75,
-   672.15
+   672.15,
+   663.36
   ],
   "low": [
-   365.056,
    368.95,
    376.757,
    377.799,
@@ -3796,10 +3795,10 @@
    683.56,
    679.83,
    671.68,
-   660.48
+   660.48,
+   646.64
   ],
   "close": [
-   372.047,
    370.887,
    378.871,
    379.156,
@@ -4554,10 +4553,10 @@
    690.38,
    688.17,
    679.89,
-   661.75
+   661.75,
+   656.95
   ],
   "volume": [
-   58368406,
    40733482,
    67792634,
    54141385,
@@ -5312,7 +5311,8 @@
    44871768,
    37219462,
    42098603,
-   43576942
+   43576942,
+   55693846
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5366,7 +5366,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 3912,
+  "n_bars": 3913,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5396,9 +5396,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "da4fbab1a8bd2395f06b9758919c35892f81907eaba1f78abb1035f75d98c39b",
+ "fit_input_hash": "9a187af706b5e5566b73fcbde6075dbcab0d5797c85ee9728e0f254041ec3ad1",
  "history_input_hashes": {
-  "2023-11-13": "f4b93e8c9215e5ebb4797c8a4ab2da0cb738c02ecfb09dbb6bb81c531b6a8dc1",
   "2023-11-14": "2fb450955b45ceb5e532283c13fd09154270ec19b8106cf42a7bc3130529f971",
   "2023-11-15": "4bdc61ca5d66c993902c6e79ad15058f319fc2894212e8d691af8a20afd921e5",
   "2023-11-16": "14a2eee046399b576090515b471d1e06dbdfa809c245f9376acbf26034b378d5",
@@ -6152,10 +6151,11 @@
   "2026-11-11": "0263c0dee3761bbca99843aa6aa7605a147473807ff5b53847c988d8bc80a17c",
   "2026-11-12": "5d79ad113b0686b2267a6151d8b18ce6f9f5306d760b300d1adbb0112bff5a0b",
   "2026-11-13": "1d4cbc59d634939b969217582b71c31b6880d1ae24bcf875001743f7f81047f8",
-  "2026-11-16": "da4fbab1a8bd2395f06b9758919c35892f81907eaba1f78abb1035f75d98c39b"
+  "2026-11-16": "da4fbab1a8bd2395f06b9758919c35892f81907eaba1f78abb1035f75d98c39b",
+  "2026-11-17": "9a187af706b5e5566b73fcbde6075dbcab0d5797c85ee9728e0f254041ec3ad1"
  },
  "code": "US_QQQ",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-17T22:59:02.566852+00:00"
+ "generated_at": "2026-11-18T04:21:00.810283+00:00"
 }
