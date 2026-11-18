@@ -4,6 +4,9 @@
   var LPPL = root.LPPL;
   var Core = root.LPPLChartPageCore;
   var Clusters = root.CPTopClusters;
+  var RuleLabels = root.RuleLabels;
+  var Reader = root.LPPLChartReadOnly;
+  var Share = root.LPPLChartResearchCard;
   var page = document.getElementById('chart-page');
   if (!LPPL || !Core || !page) return;
 
@@ -12,6 +15,13 @@
   var chart = null;
   var current = null;
   var sequence = 0;
+  var activeMarket = null;
+  var activeModel = null;
+  var activeEvents = [];
+  var modelStatus = 'loading';
+  var modelError = null;
+  var modelRequest = 0;
+  var eventRequest = 0;
   var scales = Core.SCALES;
   var scaleLabels = {
     '2-4w': '2–4 周', '1-3m': '1–3 个月', '3-6m': '3–6 个月',
@@ -19,17 +29,14 @@
   };
 
   function evidenceCode(data, scale) {
-    var top = data.top || {};
-    var confidence = top.lppls_confidence || {};
-    var indicators = top.indicators || {};
-    var indicator = indicators[scale] || {};
-    return confidence.scale_evidence && confidence.scale_evidence[scale] ||
-      indicator.evidence || confidence.evidence || top.evidence ||
-      data.raw && data.raw.evidence || data.evidence;
+    return Core.evidenceFor(data, scale);
   }
 
   function evidenceFor(data, scale) {
-    return LPPL.ev(evidenceCode(data, scale), data.evidence_levels || {});
+    if (data.modelStatus && data.modelStatus !== 'ok') return { code: 'none', label: '模型未就绪', show: false };
+    var result = LPPL.ev(evidenceCode(data, scale), data.evidence_levels || {});
+    if (result.code === 'research_candidate') result.label = '研究候选（非正式提醒）';
+    return Object.assign({}, result, { show: !!result && Core.NUMERIC_EVIDENCE.has(result.code) });
   }
 
   function chartPayload(data) {
@@ -86,18 +93,18 @@
     note.replaceChildren();
     ruleSource.hidden = true;
     ruleSource.textContent = '';
-    if (data.assetType === 'stock' && data.modelStatus !== 'ok') {
-      state.textContent = data.modelStatus === 'error'
+    if (data.modelStatus && data.modelStatus !== 'ok') {
+      state.textContent = data.modelStatus === 'loading' ? '行情可先浏览，模型结果独立读取中…' : data.modelStatus === 'error'
         ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
         : '没有读到已发布的模型结果（可能尚未发布，或读取失败）';
       var retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'retry-button evidence-retry-button';
       retry.textContent = '重试读取';
-      retry.addEventListener('click', function () { void load(); });
+      retry.addEventListener('click', function () { void loadModel(sequence); });
       note.appendChild(retry);
       var action = document.createElement('a');
-      action.href = 'stock.html?code=' + encodeURIComponent(context.stockCode);
+      action.href = context.assetType === 'stock' ? 'stock.html?code=' + encodeURIComponent(context.stockCode) : context.from;
       action.textContent = '回标的页发起计算';
       note.appendChild(action);
       return;
@@ -108,18 +115,26 @@
     var bands = intervalRows(data, selectedScale);
     state.textContent = '证据：' + (evidence && evidence.label || '证据状态未记录');
     if (!evidence || !evidence.show) {
-      var hiddenReason = RuleLabels.emptyReason(data.top, selectedScale, bands.length > 0, false);
+      // Keep main's four explicit reason labels, but missing fields alone do not
+      // prove that an archived scale was never computed.
+      var hiddenIndicator = data.top && data.top.indicators && data.top.indicators[selectedScale];
+      var hiddenReason = bands.length ? 'not_formal' : hiddenIndicator && RuleLabels.emptyReason(data.top, selectedScale, false, false);
       state.textContent = RuleLabels.reasonText(hiddenReason) || state.textContent;
       note.textContent = '当前证据不允许显示区间数值。';
       return;
     }
     if (!bands.length) {
-      var emptyReason = RuleLabels.emptyReason(data.top, selectedScale, false, true);
-      state.textContent = RuleLabels.reasonText(emptyReason) || '这个尺度尚未计算';
+      var indicator = data.top && data.top.indicators && data.top.indicators[selectedScale];
+      var signal = indicator && (indicator.empty_reason || indicator.signal_status) || data.top && data.top.signal_status;
+      var emptyReason = signal === 'no_qualified_fit' ? 'no_fit' :
+        signal === 'not_computed' ? 'not_computed' : indicator && RuleLabels.emptyReason(data.top, selectedScale, false, true);
+      state.textContent = RuleLabels.reasonText(emptyReason) || '当前尺度未提供可核对区间';
+      note.textContent = '没有区间不等于没有风险；可切换尺度，或在标的页检查拟合及过滤明细。';
       return;
     }
     bands.forEach(function (band, index) {
       var policy = Core.bandEvidencePolicy(evidence.code, band);
+      var bandEvidence = Core.bandEvidenceCode(evidence.code, band);
       var id = policy.draw
         ? Core.intervalId(selectedScale, band) : 'unrecorded:' + selectedScale + ':' + index;
       var row = document.createElement('button');
@@ -142,8 +157,10 @@
       var extra = document.createElement('small');
       if (!policy.draw) {
         extra.textContent = policy.message;
-      } else if (evidence.code === 'descriptive') {
+      } else if (bandEvidence === 'descriptive') {
         extra.textContent = (share ? share + '；' : '') + 'n=' + band.n + '；历史分位，不是预测';
+      } else if (bandEvidence === 'research_candidate') {
+        extra.textContent = (share ? share + '；' : '') + '研究候选区间，非正式提醒；占比不是概率';
       } else if (band.source === 'scale_window') {
         extra.textContent = '发布的时间窗，不代表概率';
       } else {
@@ -185,29 +202,41 @@
   }
 
   function setText(id, value) {
-    el(id).textContent = String(value || '未记录');
+    el(id).textContent = String(value == null || value === '' ? '未记录' : value);
   }
 
   function drawHeader(data) {
     setText('asset-name', data.name);
     setText('asset-code', data.symbol);
     setText('asset-exchange', data.exchange);
+    setText('asset-type', data.assetType === 'index' ? '指数 · 指数点位' : 'A 股 · CNY · 元');
+    setText('trading-status', '交易状态：' + (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    setText('identity-strip-name', data.name);
+    setText('identity-strip-code', data.symbol);
+    setText('identity-strip-meta', data.exchange + ' · ' + data.quoteUnit + ' · 交易状态：' +
+      (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    updateIdentityStrip();
     setText('model-date', '模型日期 ' +
-      (data.assetType === 'stock' && data.modelStatus !== 'ok' ? '未发布' : data.modelAsOf || '未记录'));
+      (data.modelStatus === 'loading' ? '读取中' : data.modelStatus !== 'ok' ? '未读到' : data.modelAsOf || '未记录'));
     var asofTag = el('asof-tag');
-    asofTag.hidden = data.assetType !== 'index' || !context.asof;
+    asofTag.hidden = !context.asof;
     asofTag.textContent = context.asof
-      ? '历史截止日 ' + context.asof + '（只显示当时可见的结果）' : '';
+      ? '历史截止日 ' + context.asof + ' · 封存回放' : '';
     if (data.assetType === 'stock') {
       setText('market-date', '行情日期 ' + (data.marketAsOf || '未记录'));
       setText('data-source', data.dataSource + ' · ' +
         (data.adjustment === 'none' ? '未复权' : data.adjustment));
     } else {
-      el('market-date').textContent = '';
+      setText('market-date', '行情日期 ' + (data.marketAsOf || '未记录'));
       setText('data-source', data.dataSource + ' · ' + data.adjustment);
     }
     setText('model-version', data.modelVersion || '未记录');
     setText('prediction-id', data.predictionId || '未记录');
+    setText('volume-unit', data.volumeUnit === 'vendor_native' ? '供应商原始单位，股/手换算未核验' : data.volumeUnit);
+    setText('model-adjustment', data.modelAdjustment + '；显示设置不改变模型输入');
+    setText('first-visible', data.firstVisibleAt || '未记录；本次读取不作为提前发布证明');
+    setText('stale-state', data.stale ? '已过期：' + (data.staleReason || '来源未说明原因') :
+      data.freshness === 'not_established' ? '行情新鲜度未核验' : '按已发布截止日查看；不代表实时行情');
     el('index-replay').hidden = data.assetType !== 'index';
     el('index-replay').href = 'index.html?code=' + encodeURIComponent(data.symbol) +
       (data.assetType === 'index' && context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
@@ -215,11 +244,11 @@
 
   function renderAsofNotice(data) {
     var notice = el('asof-notice');
-    var visible = data.assetType === 'stock' && !!context.asof;
+    var visible = !!context.asof;
     notice.hidden = !visible;
     notice.textContent = visible
-      ? '个股暂不支持按历史截止日查看，以下是最新结果（截止 ' +
-        (data.modelAsOf || data.marketAsOf || '未记录') + '）'
+      ? (data.historyFallback ? '使用精确日期的历史封存帧；价格截自当前已发布历史行情，其修订时点未记录。' : '只读查看此日期的封存结果。') +
+        '历史重放与真实提前发布分开；未记录首次可见时间时，不声称当时已发布。'
       : '';
   }
 
@@ -236,57 +265,128 @@
     return events.find(function (event) { return event.id === focus; }) || null;
   }
 
-  async function eventRowsFor(code) {
-    var payload = await LPPL.events();
-    if (!payload) return [];
-    var definitions = [
-      ['lift', 'free_date'], ['dividend', 'ex_dividend_date'], ['forecast', 'notice_date'],
-    ];
-    return definitions.flatMap(function (definition) {
-      var type = definition[0], dateField = definition[1];
-      return (payload[type] || []).filter(function (row) {
-        return row.code === code;
-      }).map(function (row, index) {
-        return { id: type + ':' + row[dateField] + ':' + index, date: row[dateField] };
-      });
-    });
+  function moduleState(id, text) { el(id).textContent = text; }
+
+  function present(data, preserveView) {
+    var view = preserveView && chart.getVisibleRange ? chart.getVisibleRange() : null;
+    current = data;
+    var lastBar = data.bars[data.bars.length - 1] || {};
+    page.dataset.code = data.symbol;
+    page.dataset.barCount = String(data.bars.length);
+    page.dataset.lastBarDate = String(lastBar.date || lastBar.time || '');
+    page.dataset.lastClose = String(lastBar.close == null ? '' : lastBar.close);
+    page.dataset.modelAsOf = String(data.modelAsOf || '');
+    page.dataset.marketAsOf = String(data.marketAsOf || '');
+    page.dataset.modelStatus = String(data.modelStatus || '');
+    var displayMode = LPPLChart.priceMode(data.bars);
+    page.dataset.priceMode = displayMode;
+    el('price-mode-note').textContent = displayMode === 'close'
+      ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
+      : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+    drawHeader(data);
+    chart.setData(chartPayload(data));
+    if (data.asof) chart.setAsof(data.asof);
+    renderEvidence(data, context.scale);
+    renderCalendarNotice(data);
+    renderAsofNotice(data);
+    if (view && chart.setVisibleRange) chart.setVisibleRange(view);
+    else applyInitialFocus(data);
+    el('loading').hidden = true;
+    el('share-card').disabled = false;
+    el('share-screenshot').disabled = false;
+    page.dataset.loaded = 'true';
   }
 
-  async function loadData() {
-    if (context.assetType === 'index') {
-      var result = await LPPL.load(context.code, context.asof || undefined);
-      return Core.assembleIndexData(context.code, result);
+  function presentStock() {
+    if (!activeMarket) return;
+    var data = Core.assembleStockData(context.code, activeModel, activeMarket, null, modelError);
+    if (data.modelStatus !== 'error') data.modelStatus = modelStatus;
+    else moduleState('model-status', '模型读取失败；行情仍可用');
+    data.eventRows = activeEvents;
+    data.events = activeEvents;
+    present(data, !!current);
+  }
+
+  async function loadMarket(request) {
+    moduleState('market-status', '行情读取中');
+    try {
+      var market = await Reader.timed(function () { return LPPL.stock.market(context.stockCode); }, '行情');
+      if (request !== sequence) return;
+      Core.assembleStockData(context.code, null, market, null);
+      activeMarket = market;
+      moduleState('market-status', market.stale ? '行情：过期缓存可浏览' : '行情已就绪');
+      el('error-panel').hidden = true;
+      presentStock();
+    } catch (error) {
+      if (request !== sequence) return;
+      moduleState('market-status', '行情读取失败');
+      showError(error);
     }
-    var results = await Promise.allSettled([
-      LPPL.stock.latest(context.stockCode),
-      LPPL.stock.market(context.stockCode),
-    ]);
-    var latestResult = results[0], marketResult = results[1];
-    if (marketResult.status !== 'fulfilled') {
-      return Core.assembleStockData(context.code, null, null, null);
+  }
+
+  async function loadModel(request) {
+    if (context.asof || context.assetType === 'index') return load();
+    var run = ++modelRequest;
+    modelStatus = 'loading'; modelError = null;
+    moduleState('model-status', '模型独立读取中');
+    if (current) renderEvidence(Object.assign({}, current, { modelStatus: 'loading' }), context.scale);
+    try {
+      var model = await Reader.timed(function () { return LPPL.stock.latest(context.stockCode); }, '模型');
+      if (request !== sequence || run !== modelRequest) return;
+      activeModel = model;
+      modelStatus = model ? 'ok' : 'missing';
+      moduleState('model-status', model ? '模型已读取' : '模型尚未读到');
+    } catch (error) {
+      if (request !== sequence || run !== modelRequest) return;
+      modelStatus = 'error'; modelError = error;
+      moduleState('model-status', '模型读取失败；行情仍可用');
     }
-    var latest = latestResult.status === 'fulfilled' ? latestResult.value : null;
-    var market = marketResult.value, calendar = null;
-    if (!market || !Array.isArray(market.price) || !market.price.length) {
-      return Core.assembleStockData(context.code, null, market, null);
+    presentStock();
+  }
+
+  function renderEvents(result) {
+    var list = el('event-list'); list.replaceChildren();
+    result.rows.slice(0, 20).forEach(function (event) {
+      var button = document.createElement('button');
+      button.type = 'button'; button.className = 'event-row';
+      button.textContent = event.date + ' · ' + event.label + ' · 来源 ' + event.source +
+        ' · 发布时间 ' + (event.knownAt || '未记录');
+      button.addEventListener('click', function () {
+        if (chart) chart.focusDate(event.date, event.id);
+        context.focus = event.id; updateAddress(context.scale, event.id);
+      });
+      list.appendChild(button);
+    });
+    el('events-note').textContent = result.excluded ? '历史视图排除了 ' + result.excluded + ' 条未证明在截止日已知的事件。' :
+      result.rows.length ? '事件来源与时间分别保留；未知发布时间不作为当时已知的证据。' : '没有读到可展示事件，不等于该标的没有事件。';
+  }
+
+  async function loadEvents(request) {
+    var run = ++eventRequest;
+    if (context.assetType !== 'stock') {
+      el('events-note').textContent = '当前数据入口未提供指数事件；没有将个股事件套用到指数。';
+      el('events-retry').disabled = true;
+      moduleState('events-status', '指数事件接口未提供'); return;
     }
-    if (!(latest && latest.future_calendar)) {
-      // Individual A-share results use the published shared CN trading calendar.
-      calendar = await LPPL.history('sh000001').then(function (history) {
-        return history && history.future_calendar || null;
-      }).catch(function () { return null; });
+    moduleState('events-status', '事件独立读取中');
+    try {
+      var payload = await Reader.timed(function () { return LPPL.events(); }, '事件');
+      if (request !== sequence || run !== eventRequest) return;
+      var result = Reader.eventsFor(payload, context.stockCode, context.asof);
+      activeEvents = result.rows;
+      moduleState('events-status', payload ? '事件已读取' : '事件快照未读到');
+      renderEvents(result);
+      if (current) {
+        current.eventRows = activeEvents; current.events = activeEvents;
+        present(current, true);
+        var focused = findEvent(current, context.focus);
+        if (focused) chart.focusDate(focused.date, focused.id);
+      }
+    } catch (error) {
+      if (request !== sequence || run !== eventRequest) return;
+      moduleState('events-status', '事件读取失败；行情仍可用');
+      el('events-note').textContent = error.message;
     }
-    var data = Core.assembleStockData(
-      context.code,
-      latest,
-      market,
-      calendar,
-      latestResult.status === 'rejected' ? latestResult.reason : null,
-    );
-    if (/^(lift|dividend|forecast):/.test(context.focus)) {
-      data.eventRows = await eventRowsFor(data.symbol.slice(2)).catch(function () { return []; });
-    }
-    return data;
   }
 
   function applyInitialFocus(data) {
@@ -337,6 +437,115 @@
   });
 
   el('retry-button').addEventListener('click', function () { void load(); });
+  el('events-retry').addEventListener('click', function () { void loadEvents(sequence); });
+
+  var drawer = el('evidence-panel');
+  var identityStrip = el('identity-strip');
+  var identityFrame = 0;
+  function updateIdentityStrip() {
+    if (!identityStrip) return;
+    var anchor = page.querySelector('.asset-line');
+    var nav = document.querySelector('.odn');
+    var navBottom = nav ? Math.max(0, Math.min(160, nav.getBoundingClientRect().bottom)) : 0;
+    var bounds = page.getBoundingClientRect();
+    identityStrip.hidden = !current || !anchor || anchor.getBoundingClientRect().bottom > navBottom;
+    identityStrip.style.top = (navBottom + 8) + 'px';
+    identityStrip.style.left = Math.max(12, bounds.left + 20) + 'px';
+    identityStrip.style.width = Math.max(280, Math.min(780, bounds.width - 40)) + 'px';
+  }
+  function scheduleIdentityStrip() {
+    if (identityFrame) return;
+    identityFrame = root.requestAnimationFrame(function () { identityFrame = 0; updateIdentityStrip(); });
+  }
+  root.addEventListener('scroll', scheduleIdentityStrip, { passive: true });
+  root.addEventListener('resize', scheduleIdentityStrip, { passive: true });
+  if (root.ResizeObserver) new root.ResizeObserver(scheduleIdentityStrip).observe(page);
+  var evidenceToggle = el('evidence-toggle');
+  var mobile = root.matchMedia('(max-width:600px)');
+  function evidenceOpen(open) {
+    drawer.hidden = !open;
+    evidenceToggle.setAttribute('aria-expanded', String(open));
+    evidenceToggle.textContent = open ? '收起证据' : '查看区间与证据';
+    drawer.setAttribute('role', open && mobile.matches ? 'dialog' : 'complementary');
+    if (open && mobile.matches) drawer.setAttribute('aria-modal', 'true');
+    else drawer.removeAttribute('aria-modal');
+    document.body.classList.toggle('chart-modal-lock', open && mobile.matches);
+    if (open && mobile.matches) el('evidence-close').focus();
+    if (!open) evidenceToggle.focus({ preventScroll: true });
+  }
+  drawer.hidden = mobile.matches;
+  evidenceToggle.setAttribute('aria-expanded', String(!drawer.hidden));
+  evidenceToggle.textContent = drawer.hidden ? '查看区间与证据' : '收起证据';
+  evidenceToggle.addEventListener('click', function () { evidenceOpen(drawer.hidden); });
+  el('evidence-close').addEventListener('click', function () { evidenceOpen(false); });
+  drawer.addEventListener('keydown', function (event) {
+    if (!mobile.matches || drawer.hidden || event.key !== 'Tab') return;
+    var targets = Array.from(drawer.querySelectorAll('button:not(:disabled),a[href]')).filter(function (node) { return !node.hidden; });
+    var first = targets[0], last = targets[targets.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+  mobile.addEventListener('change', function () { evidenceOpen(!mobile.matches); });
+
+  var fullscreenCard = el('chart-card');
+  function fullscreenState(active) {
+    el('fullscreen-exit').hidden = !active;
+    el('chart-fullscreen').setAttribute('aria-pressed', String(active));
+    el('chart-fullscreen').textContent = active ? '退出全屏' : '全屏图表';
+    if (active) el('fullscreen-exit').focus();
+    else el('chart-fullscreen').focus({ preventScroll: true });
+  }
+  async function exitFullscreen() {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    fullscreenCard.classList.remove('chart-expanded'); fullscreenState(false);
+  }
+  el('chart-fullscreen').addEventListener('click', async function () {
+    if (document.fullscreenElement || fullscreenCard.classList.contains('chart-expanded')) return exitFullscreen();
+    try {
+      if (!fullscreenCard.requestFullscreen) throw new Error('fullscreen unavailable');
+      await fullscreenCard.requestFullscreen();
+    } catch (_) { fullscreenCard.classList.add('chart-expanded'); }
+    fullscreenState(true);
+  });
+  el('fullscreen-exit').addEventListener('click', function () { void exitFullscreen(); });
+  document.addEventListener('fullscreenchange', function () { fullscreenState(!!document.fullscreenElement); });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (fullscreenCard.classList.contains('chart-expanded')) { void exitFullscreen(); return; }
+    if (!drawer.hidden && mobile.matches) evidenceOpen(false);
+  });
+
+  function researchCard() {
+    return Share.record(current, context, evidenceFor(current, context.scale), intervalRows(current, context.scale), Core.bandEvidencePolicy, Core.bandEvidenceCode);
+  }
+  function download(blob, suffix) {
+    var url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = 'LPPL-' + current.symbol + '-' + (current.modelAsOf || current.marketAsOf || 'undated') + suffix;
+    document.body.appendChild(link); link.click(); link.remove();
+    root.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  el('share-card').addEventListener('click', function () {
+    if (!current) return;
+    download(new Blob([Share.svg(researchCard())], { type: 'image/svg+xml;charset=utf-8' }), '-research.svg');
+    el('action-feedback').textContent = '匿名研究卡已下载，含来源、截止日、模型版本和证据；不含自选、笔记或持仓。';
+  });
+  el('share-screenshot').addEventListener('click', async function () {
+    if (!current || !chart) return;
+    try {
+      var shot = chart.takeScreenshot();
+      var lines = Share.lines(researchCard());
+      var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
+      var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
+      var ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#172033'; ctx.font = '24px Microsoft YaHei, sans-serif'; ctx.fillText('LPPL · 匿名研究截图', 32, 45);
+      ctx.font = '17px Microsoft YaHei, sans-serif';
+      lines.forEach(function (line, i) { ctx.fillText(line, 32, 90 + 38 * i, width - 64); });
+      ctx.drawImage(shot, 0, header);
+      var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+      if (!blob) throw new Error('图片编码失败');
+      download(blob, '-chart.png'); el('action-feedback').textContent = '当前图表与证据截图已下载；不含私人研究资料。';
+    } catch (error) { el('action-feedback').textContent = '截图未完成：' + error.message + '。可使用匿名研究卡。'; }
+  });
 
   function latestResultsHref() {
     var params = new URLSearchParams(root.location.search);
@@ -345,63 +554,53 @@
     return root.location.pathname + (query ? '?' + query : '') + root.location.hash;
   }
 
+  function showError(error) {
+    el('loading').hidden = true;
+    el('error-message').textContent = error && error.pending ? error.message : '读取失败：' + (error && error.message || '未知错误');
+    el('error-panel').hidden = false;
+    el('retry-button').hidden = false;
+    var latestLink = el('latest-results-link');
+    latestLink.hidden = !context.asof;
+    latestLink.href = latestResultsHref();
+  }
+
   async function load() {
     var request = ++sequence;
     el('error-panel').hidden = true;
-    el('loading').hidden = false;
-    el('retry-button').hidden = true;
-    el('latest-results-link').hidden = true;
+    el('loading').hidden = !!current;
+    if (!context.valid) { showError(new Error(context.invalidReason || '缺少有效的指数或 A 股代码。')); return; }
+    if (!context.asof && context.assetType === 'stock') {
+      void loadMarket(request); void loadModel(request); void loadEvents(request);
+      return;
+    }
+    moduleState('market-status', context.asof ? '读取封存行情' : '指数行情读取中');
+    moduleState('model-status', context.asof ? '只读核对历史截止日' : '指数模型读取中');
+    void loadEvents(request);
     try {
-      if (!context.valid) throw new Error('缺少有效的指数或 A 股代码。');
-      var timeoutId;
-      var timeout = new Promise(function (_, reject) {
-        timeoutId = root.setTimeout(function () {
-          reject(new Error('读取超时（12 秒），请重试。'));
-        }, 11000);
-      });
-      var data;
-      try {
-        data = await Promise.race([loadData(), timeout]);
-      } finally {
-        root.clearTimeout(timeoutId);
-      }
+      var result = context.asof ? await Reader.historical(LPPL, context) :
+        await Reader.timed(function () { return LPPL.load(context.code); }, '指数数据');
       if (request !== sequence) return;
-      current = data;
-      var visibleData = chartPayload(data);
-      var lastBar = data.bars[data.bars.length - 1] || {};
-      page.dataset.code = data.symbol;
-      page.dataset.barCount = String(data.bars.length);
-      page.dataset.lastBarDate = String(lastBar.date || lastBar.time || '');
-      page.dataset.lastClose = String(lastBar.close == null ? '' : lastBar.close);
-      page.dataset.modelAsOf = String(data.modelAsOf || '');
-      page.dataset.marketAsOf = String(data.marketAsOf || '');
-      page.dataset.modelStatus = String(data.modelStatus || '');
-      drawHeader(data);
-      chart.setScale(context.scale);
-      chart.setData(visibleData);
-      chart.setAsof(data.asof);
-      renderEvidence(data, context.scale);
-      renderCalendarNotice(data);
-      renderAsofNotice(data);
-      applyInitialFocus(data);
-      el('loading').hidden = true;
-      page.dataset.loaded = 'true';
+      var data;
+      if (context.assetType === 'stock') {
+        var market = Object.assign({}, result.market, { price: result.bars, asof: context.asof, cutoff: context.asof });
+        data = Core.assembleStockData(context.code, result.raw, market, null);
+      } else data = Core.assembleIndexData(context.code, result);
+      data.historyFallback = !!result.historyFallback;
+      data.eventRows = activeEvents; data.events = activeEvents;
+      data.marketAsOf = data.bars.length ? data.bars[data.bars.length - 1].date : '';
+      moduleState('market-status', '行情已就绪');
+      moduleState('model-status', context.asof ? '精确截止日封存已读取' : '模型已读取');
+      present(data, !!current);
     } catch (error) {
       if (request !== sequence) return;
-      el('loading').hidden = true;
-      el('error-message').textContent = error && error.pending
-        ? error.message
-        : '图表加载失败：' + (error && error.message || '未知错误');
-      el('error-panel').hidden = false;
-      el('retry-button').hidden = false;
-      var latestLink = el('latest-results-link');
-      latestLink.hidden = !(error && error.pending && context.assetType === 'index' && context.asof);
-      if (!latestLink.hidden) latestLink.href = latestResultsHref();
+      moduleState('model-status', context.asof ? '该日封存未就绪；未触发计算' : '指数数据读取失败');
+      showError(error);
     }
   }
 
   try {
     chart = LPPLChart.mount(el('chart-host'), { height: 520 });
+    chart.setScale(context.scale);
     chart.on('scale', function (scale) {
       if (scale !== context.scale) context.scale = scale;
     });

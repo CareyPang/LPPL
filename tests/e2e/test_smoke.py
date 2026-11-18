@@ -18,6 +18,13 @@ def expect(locator: object):
     return playwright_expect(locator)
 
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
+BREADTH_FIXTURE = (
+    Path(__file__).resolve().parents[2]
+    / "frontend"
+    / "tests"
+    / "fixtures"
+    / "breadth_latest.json"
+)
 NAV_PAGES = (
     "home.html",
     "index.html?code=sh000001",
@@ -208,6 +215,10 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "**/lab/mock/data/market/lhb_seats_latest.json",
         lambda route: route.fulfill(path=str(lhb_fixture)),
     )
+    page.route(
+        "**/lab/mock/data/market/breadth_latest.json",
+        lambda route: route.fulfill(path=str(BREADTH_FIXTURE)),
+    )
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
     expect(page.locator("#s-lhb-seats")).to_be_visible()
@@ -266,11 +277,26 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         or news.locator(".news-status").count() > 0
         or re.search(r"暂无|不可用|未发布|数据", news.inner_text())
     )
+    breadth = page.locator("#s-breadth")
+    page.wait_for_function(
+        "() => document.querySelector('#breadth-body')?.innerText.includes('0.34')"
+    )
+    expect(breadth).to_have_attribute("data-ai-context", "宽度与资金")
+    expect(breadth.locator("#breadth-body")).to_contain_text("52.5%")
+    expect(breadth.locator("#breadth-body")).to_contain_text("14.7%")
+    expect(breadth.locator("#breadth-body")).to_contain_text("8.1%")
+    expect(breadth.locator("#breadth-body")).to_contain_text("预警规则回测中，暂不显示")
+    expect(breadth.locator(".breadth-basis-table tbody tr")).to_have_count(4)
+    expect(
+        breadth.locator(".breadth-basis-table tbody tr").first.locator("td").nth(4)
+    ).to_have_text("20.00")
+    expect(breadth.locator(".breadth-history-table tbody tr")).to_have_count(1)
     page.set_viewport_size({"width": 390, "height": 844})
     dimensions = page.evaluate(
         "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
     )
     assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    assert page.locator("#s-breadth .table-scroll").count() == 2
 
 
 @pytest.mark.e2e
@@ -614,7 +640,7 @@ def test_chart_replay_asof_is_visible_and_links_keep_the_cutoff(page: Page) -> N
         "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
     )
     expect(page.locator("#asof-tag")).to_have_text(
-        "历史截止日 2015-06-12（只显示当时可见的结果）"
+        "历史截止日 2015-06-12 · 封存回放"
     )
     expect(page.locator("#model-date")).to_have_text("模型日期 2015-06-12")
     assert page.locator("#index-replay").get_attribute("href") == (
@@ -634,7 +660,7 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
         lambda route: route.fulfill(status=404, content_type="application/json", body="{}"),
     )
     page.goto(
-        f"{BASE_URL}/chart.html?code=sh600519&asof=2015-06-12"
+        f"{BASE_URL}/chart.html?code=sh600519"
     )
     page.wait_for_function(
         "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
@@ -647,7 +673,7 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
         "没有读到已发布的模型结果（可能尚未发布，或读取失败）"
     )
     expect(page.locator("#interval-list .interval-row")).to_have_count(0)
-    expect(page.locator("#model-date")).to_have_text("模型日期 未发布")
+    expect(page.locator("#model-date")).to_have_text("模型日期 未读到")
     retry = page.locator("#evidence-note .evidence-retry-button")
     expect(retry).to_have_text("重试读取")
     expect(retry).to_be_visible()
@@ -655,12 +681,26 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
     expect(page.locator("#evidence-note a")).to_have_attribute(
         "href", "stock.html?code=600519"
     )
-    expect(page.locator("#asof-notice")).to_contain_text(
-        "个股暂不支持按历史截止日查看，以下是最新结果（截止 "
-    )
+    expect(page.locator("#asof-notice")).to_be_hidden()
     with page.expect_response("**/lab/mock/data/stock/600519.json") as retry_response:
         retry.click()
     assert retry_response.value.status == 404
+
+
+@pytest.mark.e2e
+def test_stock_historical_cutoff_never_falls_back_to_latest(page: Page) -> None:
+    page.route(
+        "**/lab/mock/data/stock/600519_history.json",
+        lambda route: route.fulfill(
+            status=200, content_type="application/json",
+            body='{"symbol":"sh600519","frames":[]}',
+        ),
+    )
+    page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2015-06-12")
+    expect(page.locator("#error-panel")).to_be_visible()
+    expect(page.locator("#chart-page")).not_to_have_attribute("data-loaded", "true")
+    expect(page.locator("#interval-list .interval-row")).to_have_count(0)
+    assert not any(method == "POST" for method, _, _ in page._e2e_requests)
 
 
 @pytest.mark.e2e

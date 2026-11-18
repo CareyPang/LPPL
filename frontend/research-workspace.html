@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在个人研究工作台整理自选、比较已发布分析、保存研究笔记，并查看本机记录的结果变化。">
+  <meta name="color-scheme" content="light">
+  <title>我的研究 · LPPL</title>
+  <link rel="stylesheet" href="app/research-workspace.css">
+  <link rel="stylesheet" href="app/research-personal.css">
+</head>
+<body>
+  <a class="skip-link" href="#workspace">跳至研究清单</a>
+  <header class="site-header">
+    <a class="workspace-brand" href="home.html"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>研究工作台<small>LPPL RESEARCH</small></span></a>
+    <nav aria-label="主导航"><a href="home.html">首页</a><a href="stock.html" aria-current="page">标的</a><a href="market.html">市场</a><a href="backtest.html">历史检验</a><a href="tools.html">工具</a></nav>
+    <a class="help-link" href="guide.html">使用指南 <span aria-hidden="true">↗</span></a>
+  </header>
+  <main id="workspace">
+    <div class="page-topline"><span class="eyebrow">PERSONAL WORKSPACE</span><span class="local-label"><span aria-hidden="true">◌</span> 仅保存在此浏览器</span></div>
+    <section class="page-heading" aria-labelledby="page-title">
+      <div><h1 id="page-title">研究，从上次继续。</h1><p>整理关注的标的，把每一次观察留在时间里。</p></div>
+      <div class="heading-actions"><button id="refresh-results" class="button button-quiet" type="button"><span aria-hidden="true">↻</span> 刷新结果</button><button id="open-add" class="button button-primary" type="button"><span aria-hidden="true">＋</span> 添加标的</button></div>
+    </section>
+    <div id="storage-warning" class="notice notice-warning" role="alert" hidden>浏览器存储不可用，本次修改无法保存。请复制重要笔记后再离开。</div>
+    <button id="restore-saved" class="button button-quiet" type="button" hidden>载入已保存记录，保留编辑草稿</button>
+    <div id="global-message" class="notice" role="status" hidden></div>
+    <button id="undo-remove" class="button button-quiet" type="button" hidden>撤销移除</button>
+    <section class="workspace-stats" aria-label="清单概览">
+      <div><span class="stat-label">我的关注</span><strong id="watch-count">0</strong><span>个标的</span></div>
+      <div><span class="stat-label">本机记录有变化</span><strong id="change-count">0</strong><span>个标的</span></div>
+      <div><span class="stat-label">需要检查数据</span><strong id="review-count">0</strong><span>个标的</span></div>
+      <p id="refresh-state" role="status">读取本机清单…</p>
+    </section>
+    <section id="resume-section" class="resume-section" aria-labelledby="resume-heading" hidden><div><span class="section-kicker">CONTINUE</span><h2 id="resume-heading">继续研究</h2></div><div id="resume-items" class="resume-items"></div></section>
+    <div class="workspace-grid">
+      <div class="workspace-left">
+      <section class="watch-panel panel" aria-labelledby="watch-heading">
+        <div class="section-head"><div><span class="section-kicker">WATCHLIST</span><h2 id="watch-heading" tabindex="-1">我的研究清单</h2></div><button type="button" id="open-group" class="text-button">＋ 新建分组</button></div>
+        <div class="group-strip" id="group-tabs" role="group" aria-label="自选分组"></div>
+        <div class="list-tools">
+          <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">搜索当前清单</span><input id="list-search" type="search" placeholder="搜索清单中的名称或代码" autocomplete="off" maxlength="80"></label>
+          <label class="filter-control"><span class="sr-only">状态筛选</span><select id="status-filter"><option value="all">全部状态</option><option value="has_window">有观察区间</option><option value="needs_check">需要检查数据</option><option value="changed">本机记录有变化</option></select></label>
+          <label class="filter-control"><span class="sr-only">排序方式</span><select id="sort-order"><option value="name">按名称</option><option value="asof">分析日期优先</option><option value="changed">变化优先</option></select></label>
+        </div>
+        <p class="list-scope" id="list-scope">仅筛选当前自选，不代表全市场。</p>
+        <div class="list-columns" aria-hidden="true"><span>标的</span><span>分析截止</span><span>区间与状态</span><span>比较</span></div>
+        <div id="watch-list" class="watch-list"></div>
+        <div id="empty-watch" class="empty-watch" hidden><span class="empty-glyph" aria-hidden="true">＋</span><h3>从一个关注的标的开始</h3><p>添加后查看已发布分析，记录自己的关注理由。不会自动启动回测。</p><div><button class="button button-quiet" type="button" data-add-sample="index:sh000001">＋ 上证指数</button><button class="button button-quiet" type="button" data-add-sample="stock:600519">＋ 贵州茅台</button></div></div>
+        <div id="empty-filter" class="empty-filter" hidden><p>没有符合当前条件的标的。</p><button type="button" id="reset-filter" class="button button-quiet">清除筛选</button></div>
+        <div class="list-footer"><span id="shown-count">0 个标的</span><span>选择最多 3 个标的进行比较</span></div>
+      </section>
+        <section class="compare-panel panel" aria-labelledby="compare-heading"><div class="section-head"><div><span class="section-kicker">SIDE BY SIDE</span><h2 id="compare-heading">放在一起，看清差别。</h2></div><button id="clear-compare" class="text-button" type="button" hidden>清空比较</button></div><p class="section-description">比较已发布的日期、模型版本、计算覆盖与观察区间。不同口径分别呈现。</p><div id="compare-content" class="compare-content"><p class="compare-empty">在清单右侧勾选 2–3 个标的，开始结构化比较。</p></div></section>
+      </div>
+      <aside id="research-detail" class="detail-panel panel" aria-labelledby="detail-heading">
+        <div class="detail-empty" id="detail-empty"><span class="section-kicker">RESEARCH DESK</span><h2>为观察留下依据。</h2><p>选择清单中的标的，查看区间、数据日期与研究记录。</p><div class="desk-lines" aria-hidden="true"><span></span><span></span><span></span></div><small>笔记与变化只保存在此浏览器，不会公开或上传。</small></div>
+        <div id="detail-content" hidden>
+          <div class="detail-top"><span class="section-kicker" id="detail-kind">RESEARCH DESK</span><button id="close-detail" type="button" class="text-button">收起 ↑</button></div>
+          <div class="detail-identity"><h2 id="detail-heading"></h2><p class="asset-id" id="detail-code"></p></div>
+          <div id="detail-summary"></div>
+          <label class="detail-group">归入分组<select id="asset-group" aria-label="标的分组"></select></label>
+          <a class="button button-primary button-wide" id="open-analysis" href="stock.html">打开最新分析 <span aria-hidden="true">↗</span></a>
+          <p class="context-note" id="context-note">保留当前清单；返回后继续研究。</p>
+          <a class="button button-quiet button-wide" id="open-full-chart" href="chart.html">打开完整图表 ↗</a>
+          <button type="button" class="text-button" id="share-summary">导出匿名研究摘要 · JSON</button>
+          <section class="note-editor" aria-labelledby="note-heading"><div class="mini-head"><h3 id="note-heading">我的关注理由</h3><span id="note-state">尚未保存</span></div><label class="sr-only" for="research-note">研究笔记</label><textarea id="research-note" maxlength="4000" rows="5" placeholder="为什么关注？哪些变化会支持或否定你的判断？"></textarea><div class="note-actions"><span id="note-context"></span><button type="button" id="save-note" class="button button-small">保存笔记</button></div></section>
+          <details class="record-details"><summary>笔记版本 <span id="note-version-count">0</span></summary><div id="note-history"></div></details>
+          <details class="record-details"><summary>本机观测记录 <span id="observation-count">0</span></summary><p class="record-caption">只记录这台浏览器实际取得的结果，不是服务器完整修订历史，也不代表首次公开时间。</p><div id="observation-history"></div></details>
+          <button id="remove-asset" type="button" class="text-button remove-button">从自选中移除</button>
+        </div>
+      </aside>
+    </div>
+    <section id="research-personal" aria-labelledby="personal-title">
+      <div class="personal-intro"><h2 id="personal-title">把研究，留在日常。</h2><p>变化记录、公司日程与手动持仓，按需展开。</p></div>
+      <div class="personal-statusbar"><p id="personal-message" role="status"></p><button id="personal-reload" type="button" class="personal-button">重新读取本机记录</button></div>
+      <details class="personal-disclosure" id="personal-inbox"><summary>变化收件箱 <span id="personal-unread">0 条未读</span></summary><div class="personal-body">
+        <p class="personal-caption">比较此浏览器先后取得的结果。首次读取和仅截止日、来源、版本等元数据变化不会当成新预测；这里不是服务器告警或完整修订账本。</p>
+        <div class="personal-toolbar"><label>查看范围<select id="changes-filter"><option value="unread">未读变化</option><option value="all">全部变化</option></select></label><button id="changes-mark-all" type="button" class="personal-button">全部标为已读</button></div><div id="personal-changes"></div>
+      </div></details>
+      <details class="personal-disclosure" id="personal-calendar"><summary>自选事件日历 <span id="calendar-count">按需读取</span></summary><div class="personal-body">
+        <p class="personal-caption">限售解禁、除权除息与业绩预告来自当前事件快照。日期筛选用于查看日程，不是历史快照回放；当前资料不能补造过去已知的信息，也不会参与 LPPL 拟合。</p>
+        <div class="personal-toolbar"><label>月份<input id="calendar-month" type="month" aria-label="事件月份"></label><label>具体日期<input id="calendar-day" type="date" aria-label="事件日期"></label><label>自选股票<select id="calendar-asset"><option value="all">全部自选股票</option></select></label><button id="calendar-clear" class="personal-button" type="button">清除筛选</button><button id="events-retry" class="personal-button" type="button">读取事件</button></div>
+        <p id="events-asof" class="personal-meta" role="status">尚未读取事件快照。</p><div id="personal-events" aria-live="polite"></div><details class="personal-sources"><summary>来源状态与日期覆盖</summary><div id="events-sources"></div></details>
+      </div></details>
+      <details class="personal-disclosure" id="personal-portfolio"><summary>我的手动持仓 <span id="holding-count">0 项记录</span></summary><div class="personal-body">
+        <p class="personal-caption">仅保存在此浏览器，是你的手动记录，不连接券商账户。成本投入＝股数 × 每股成本；没有实时市值或盈亏，不代表成交记录。</p>
+        <div class="personal-holdings-head"><div><p>手动记录的成本投入 · CNY</p><strong id="holdings-total">—</strong></div><label>显示单位<select id="holding-unit"><option value="yuan">元</option><option value="wan">万元</option><option value="yi">亿元</option></select></label></div>
+        <div id="personal-holdings"></div><button id="holding-undo" class="personal-button" type="button" hidden>撤销最近删除</button>
+        <details class="personal-sources" id="holding-form-details"><summary>添加或更新持仓记录</summary><form id="holding-form"><div class="holding-form-grid">
+          <label>股票代码<input id="holding-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="例如 600519"><small>同一代码保存时更新原记录。</small></label>
+          <label>显示名称（可选）<input id="holding-name" maxlength="80" placeholder="例如 贵州茅台"></label>
+          <label>持有数量（股）<input id="holding-shares" type="number" min="0.000001" max="1000000000000" step="any" required inputmode="decimal"></label>
+          <label>每股成本（人民币元）<input id="holding-cost" type="number" min="0" max="1000000000" step="any" required inputmode="decimal"><small>0 表示你填写的零成本，空白不会按零处理。</small></label>
+        </div><p id="holding-error" class="personal-form-error" role="alert"></p><div class="personal-form-actions"><button class="personal-button personal-primary" type="submit">保存到此浏览器</button><button class="personal-button" type="reset">清空表单</button></div></form></details>
+      </div></details>
+    </section>
+    <footer class="workspace-footer"><p>数据经站点既有数据入口读取。观察区间是研究结果，不是确定的见顶日期。</p><a href="market.html#s-fresh">查看数据状态 <span aria-hidden="true">↗</span></a></footer>
+  </main>
+  <dialog id="add-dialog" aria-labelledby="add-title"><form id="add-form"><div class="dialog-head"><h2 id="add-title">添加关注标的</h2><button type="button" data-close-dialog class="icon-button" aria-label="关闭添加窗口">×</button></div><p>明确区分指数和股票，避免相同代码混淆。</p><label>资产类型<select id="add-kind"><option value="stock">A 股股票</option><option value="index">站点指数</option></select></label><label id="stock-code-label">六位股票代码<input id="add-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="例如 600519" autocomplete="off"></label><label id="index-code-label" hidden>选择指数<select id="add-index"></select></label><p id="add-error" role="alert" class="form-error"></p><button class="button button-primary button-wide" type="submit">添加到我的清单</button><small>只读取已发布结果。尚未覆盖的股票会显示数据状态。</small></form></dialog>
+  <dialog id="group-dialog" aria-labelledby="group-title"><form id="group-form"><div class="dialog-head"><h2 id="group-title">新建研究分组</h2><button type="button" data-close-dialog class="icon-button" aria-label="关闭分组窗口">×</button></div><label>分组名称<input id="group-name" maxlength="24" required placeholder="例如：消费观察" autocomplete="off"></label><p id="group-error" role="alert" class="form-error"></p><button type="submit" class="button button-primary button-wide">创建分组</button></form></dialog>
+  <script src="app/lppl-data.js"></script>
+  <script src="app/stock-watchlist.js"></script>
+  <script src="app/watchlist.js"></script>
+  <script src="app/research-workspace-core.js"></script>
+  <script src="app/research-workspace.js"></script>
+  <script src="app/research-personal-core.js"></script>
+  <script src="app/research-personal.js"></script>
+  <script src="app/research-portable-core.js"></script>
+  <script src="app/research-portable.js"></script>
+  <script src="app/research-discovery.js"></script>
+</body>
+</html>

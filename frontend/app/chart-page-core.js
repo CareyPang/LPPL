@@ -7,7 +7,37 @@
   'use strict';
 
   var SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
-  var RETURN_PAGES = new Set(['stock.html', 'index.html', 'backtest.html', 'market.html', 'home.html']);
+  var RETURN_PAGES = new Set(['stock.html', 'index.html', 'backtest.html', 'market.html', 'home.html', 'research-workspace.html']);
+  var NUMERIC_EVIDENCE = new Set(['dev', 'cal', 'test', 'cal_fragile', 'research_candidate', 'descriptive']);
+  function restrictEvidence(scope, own) {
+    scope = typeof scope === 'string' && scope ? scope : 'none';
+    if (!NUMERIC_EVIDENCE.has(scope)) return scope;
+    var evidence = own == null || own === '' ? scope : own;
+    if (!NUMERIC_EVIDENCE.has(evidence)) return evidence;
+    if (scope === 'descriptive' || evidence === 'descriptive') return 'descriptive';
+    if (scope === 'research_candidate' || evidence === 'research_candidate') return 'research_candidate';
+    return evidence;
+  }
+  function evidenceFor(data, scale, own) {
+    var raw = data.raw || data, top = data.top || raw.top || {};
+    var confidence = top.lppls_confidence || {}, indicator = top.indicators && top.indicators[scale] || {};
+    if (data.modelStatus && data.modelStatus !== 'ok' || indicator.signal_status === 'not_computed') return 'none';
+    // Scale evidence is the gate. A top-level or band-level label cannot revive
+    // an absent/failed scale; stock identity is an additional restriction.
+    var scoped = confidence.scale_evidence && confidence.scale_evidence[scale] || confidence.evidence || 'none';
+    var evidence = indicator.evidence == null || indicator.evidence === '' ? scoped : restrictGate(scoped, indicator.evidence);
+    evidence = restrictEvidence(evidence, own);
+    if (data.assetType === 'stock') evidence = restrictGate(evidence, raw.stock_meta && raw.stock_meta.evidence || 'none');
+    return evidence;
+  }
+  function restrictGate(scope, gate) {
+    if (!NUMERIC_EVIDENCE.has(scope)) return scope;
+    if (!NUMERIC_EVIDENCE.has(gate)) return gate;
+    if (scope === 'descriptive' || gate === 'descriptive') return 'descriptive';
+    if (scope === 'research_candidate' || gate === 'research_candidate') return 'research_candidate';
+    return scope;
+  }
+  function bandEvidenceCode(evidenceCode, band) { return restrictEvidence(evidenceCode, band && band.evidence); }
 
   function fallbackFrom(assetType, code, stockCode) {
     if (assetType === 'index') {
@@ -19,6 +49,7 @@
 
   function safeFrom(value, assetType, code, stockCode) {
     var candidate = typeof value === 'string' ? value.trim() : '';
+    if (candidate === 'research-workspace') candidate = 'research-workspace.html';
     if (!candidate || candidate.length > 2048 || candidate.charAt(0) === '/' ||
         candidate.indexOf('\\') >= 0 || candidate.indexOf('//') >= 0 ||
         candidate.indexOf('#') >= 0 || /^[a-z][a-z\d+.-]*:/i.test(candidate)) {
@@ -29,12 +60,14 @@
   }
 
   function bandEvidencePolicy(evidenceCode, band) {
-    var missingSampleCount = evidenceCode === 'descriptive' && !Number.isFinite(band && band.n);
+    evidenceCode = bandEvidenceCode(evidenceCode, band);
+    var hidden = !NUMERIC_EVIDENCE.has(evidenceCode);
+    var missingSampleCount = evidenceCode === 'descriptive' && !(Number.isInteger(band && band.n) && band.n > 0);
     return {
-      draw: !missingSampleCount,
-      showDates: !missingSampleCount,
-      showShare: !missingSampleCount,
-      message: missingSampleCount ? '描述性样本数未记录，不显示数值' : '',
+      draw: !hidden && !missingSampleCount,
+      showDates: !hidden && !missingSampleCount,
+      showShare: !hidden && !missingSampleCount,
+      message: hidden ? '证据未建立，不显示数值' : missingSampleCount ? '描述性样本数未记录，不显示数值' : '',
     };
   }
 
@@ -79,7 +112,8 @@
   function parseContext(search, indexSymbols) {
     var params = new URLSearchParams(String(search || '').replace(/^\?/, ''));
     var inputCode = String(params.get('code') || '').trim();
-    var index = indexFor(inputCode, indexSymbols);
+    var requestedKind = params.get('kind') || params.get('type') || '';
+    var index = requestedKind === 'stock' ? null : indexFor(inputCode, indexSymbols);
     var stockSymbol = /^(?:sh|sz|bj)\d{6}$/i.test(inputCode) ? inputCode.toLowerCase() : '';
     var stockCode = stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '';
     var code = index ? index.sym : stockSymbol || (stockCode ? stockCode : '');
@@ -96,7 +130,9 @@
     }
     var focus = String(params.get('focus') || '').trim().slice(0, 200);
     return {
-      valid: !!assetType,
+      valid: !!assetType && !(requestedAsof && !asof) && (!requestedKind || requestedKind === assetType),
+      invalidReason: requestedAsof && !asof ? '历史截止日无效，请使用真实的 YYYY-MM-DD 日期；未改看最新。' :
+        requestedKind && requestedKind !== assetType ? '资产类别与代码不匹配，请明确选择指数或股票。' : '',
       code: code,
       stockCode: stockCode,
       assetType: assetType,
@@ -116,6 +152,7 @@
   }
 
   function inferStockSymbol(symbol) {
+    if (/^(?:sh|sz|bj)\d{6}$/i.test(String(symbol || ''))) return String(symbol).toLowerCase();
     var match = String(symbol || '').trim().toLowerCase().match(/^(?:sh|sz|bj)?(\d{6})$/);
     if (!match) return '';
     var code = match[1];
@@ -134,6 +171,14 @@
   function assembleIndexData(code, result) {
     if (!result || !Array.isArray(result.bars)) throw new Error('指数适配器未返回日线');
     var raw = result.raw || result;
+    // The legacy adapter fills absent OHLC with close. Restore missingness using
+    // the raw published fields so this chart can explicitly show a close line.
+    var ph = raw.price_history;
+    var bars = ph && Array.isArray(ph.dates) && Array.isArray(ph.close) ? ph.dates.map(function (date, i) {
+      return { date: date, close: ph.close[i], open: ph.open && ph.open[i] != null ? ph.open[i] : null,
+        high: ph.high && ph.high[i] != null ? ph.high[i] : null, low: ph.low && ph.low[i] != null ? ph.low[i] : null,
+        volume: ph.volume && ph.volume[i] != null ? ph.volume[i] : null };
+    }).filter(function (bar) { return !result.asof || bar.date <= result.asof; }) : result.bars;
     var symbol = String(result.sym && result.sym.sym || raw.symbol || code || '').toLowerCase();
     var model = modelRecord(raw, result);
     return {
@@ -142,17 +187,24 @@
       code: symbol,
       name: result.name || raw.name || result.sym && result.sym.name || symbol,
       exchange: exchangeFor(symbol),
-      bars: result.bars,
+      bars: bars,
       asof: result.asof || raw.asof || '',
       modelAsOf: result.asof || raw.asof || '',
-      marketAsOf: '',
+      marketAsOf: bars.length ? bars[bars.length - 1].date || bars[bars.length - 1].time || '' : '',
       top: result.top || raw.top || {},
       future_calendar: raw.future_calendar || result.future_calendar || null,
       evidence_levels: raw.evidence_levels || result.evidence_levels || {},
       modelVersion: model.modelVersion,
       predictionId: model.predictionId,
-      dataSource: 'LPPL 已发布指数数据',
-      adjustment: raw.price_history && raw.price_history.note || '已发布指数日线',
+      dataSource: raw.source || raw.price_history && raw.price_history.source || 'LPPL 已发布指数数据（底层源未记录）',
+      adjustment: raw.price_history && raw.price_history.adjustment || '未记录',
+      volumeUnit: raw.price_history && raw.price_history.volume_unit || '未记录',
+      tradingStatus: raw.trading_status || '未记录',
+      quoteUnit: '指数点位',
+      modelStatus: 'ok',
+      priceNote: raw.price_history && raw.price_history.note || '',
+      firstVisibleAt: raw.first_visible_at || null,
+      modelAdjustment: raw.price_history && raw.price_history.adjustment || '未记录',
       raw: raw,
     };
   }
@@ -163,8 +215,16 @@
     }
     var hasLatest = !!latest && typeof latest === 'object';
     var raw = hasLatest ? latest.raw || latest : {};
+    var expectedSymbol = inferStockSymbol(symbol);
+    if (market.symbol && expectedSymbol && String(market.symbol).toLowerCase() !== expectedSymbol) {
+      throw new Error('行情资产身份与请求不匹配，已停止显示。');
+    }
+    if (hasLatest && raw.symbol && expectedSymbol && inferStockSymbol(raw.symbol) !== expectedSymbol) {
+      modelError = new Error('模型资产身份与行情不匹配；仅保留行情。');
+      hasLatest = false; raw = {};
+    }
     var resolvedSymbol = String(
-      hasLatest && latest.symbol || market.symbol || inferStockSymbol(symbol) || symbol || '',
+      hasLatest && inferStockSymbol(latest.symbol) || market.symbol || expectedSymbol || symbol || '',
     ).toLowerCase();
     var model = modelRecord(raw, hasLatest ? latest : null);
     var lastBar = market.price[market.price.length - 1];
@@ -188,6 +248,14 @@
       modelMessage: modelError ? String(modelError.message || modelError) : '',
       dataSource: market.source || '未记录',
       adjustment: market.adjustment || '未记录',
+      volumeUnit: market.volume_unit || '未记录',
+      tradingStatus: market.trading_status || '未记录',
+      quoteUnit: 'CNY · 元',
+      stale: market.stale === true,
+      staleReason: market.stale_reason || '',
+      freshness: market.asof_freshness || 'not_established',
+      firstVisibleAt: raw.first_visible_at || null,
+      modelAdjustment: raw.price_history && raw.price_history.adjustment || '未记录',
       raw: raw,
     };
   }
@@ -199,6 +267,9 @@
 
   return {
     SCALES: SCALES,
+    NUMERIC_EVIDENCE: NUMERIC_EVIDENCE,
+    evidenceFor: evidenceFor,
+    bandEvidenceCode: bandEvidenceCode,
     safeFrom: safeFrom,
     bandEvidencePolicy: bandEvidencePolicy,
     filterDescriptiveBands: filterDescriptiveBands,

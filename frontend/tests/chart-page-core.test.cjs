@@ -49,14 +49,11 @@ test('context parsing accepts only real YYYY-MM-DD as-of dates', () => {
   }
 });
 
-test('index replay uses as-of data and exposes an explicit latest-results link when pending', () => {
-  assert.match(chartPageSource, /LPPL\.load\(context\.code, context\.asof \|\| undefined\)/);
-  assert.match(chartPageSource, /error && error\.pending\s*\?\s*error\.message/);
+test('historical chart routes through the read-only reader and keeps explicit latest navigation', () => {
+  assert.match(chartPageSource, /Reader\.historical\(LPPL, context\)/);
+  assert.doesNotMatch(chartPageSource, /LPPL\.load\(context\.code, /);
   assert.match(chartPageSource, /params\.delete\('asof'\)/);
-  assert.match(
-    chartPageSource,
-    /latestLink\.hidden = !\(error && error\.pending && context\.assetType === 'index' && context\.asof\)/,
-  );
+  assert.match(chartPageSource, /latestLink\.hidden = !context\.asof/);
 });
 
 test('missing published model copy is uncertain and offers retry plus stock-page action', () => {
@@ -66,7 +63,7 @@ test('missing published model copy is uncertain and offers retry plus stock-page
   );
   assert.match(chartPageSource, /模型结果读取失败：/);
   assert.match(chartPageSource, /retry\.textContent = '重试读取'/);
-  assert.match(chartPageSource, /retry\.addEventListener\('click', function \(\) \{ void load\(\); \}\)/);
+  assert.match(chartPageSource, /retry\.addEventListener\('click', function \(\) \{ void loadModel\(sequence\); \}\)/);
   assert.match(chartPageSource, /action\.textContent = '回标的页发起计算'/);
 });
 
