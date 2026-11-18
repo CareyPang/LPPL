@@ -998,6 +998,7 @@ def test_research_workspace_shared_navigation_and_mobile_layout(page: Page) -> N
     assert abs(desktop_layout["mainLeft"] - desktop_layout["sidebarRight"]) <= 1
 
     page.set_viewport_size({"width": 390, "height": 844})
+    expect(page.locator(".odn-mobile-toggle")).to_be_hidden()
     entries = page.locator(".odn-main a")
     expect(entries).to_have_count(5)
     for entry in entries.all():

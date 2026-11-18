@@ -91,6 +91,10 @@ test('research workspace uses the shared home navigation and its route is curren
   assert.match(nav, /if \(def\.page === section \|\| def\.page === file\)/);
   assert.match(nav, /item\.page === section \|\| item\.page === file/);
   assert.match(nav, /selected = sidebarLinks\.filter\(function \(item\) \{ return item\.page === file; \}\)\[0\];\s*var activeMain = selected \? null : MAIN\.filter\(isMain\)\[0\];/);
+  assert.match(nav, /mobileToggle\.hidden = true;/);
+  assert.match(nav, /document\.querySelector\('script\[src\*="ai-assistant\.js"\]'\)/);
+  assert.match(nav, /document\.readyState === 'loading'[\s\S]*?DOMContentLoaded', syncMobileToggle, \{ once: true \}/);
+  assert.match(nav, /else mobileToggle\.remove\(\);/);
   assert.match(workspace, /<body class="research-workspace-page">/);
   assert.match(workspace, /<script src="app\/od-nav\.js" data-section="home" data-theme="light"><\/script>/);
   assert.match(workspace, /<script src="app\/rule-labels\.js"><\/script>\s*<script src="app\/research-workspace-core\.js"><\/script>/);

@@ -293,6 +293,7 @@
   brand.href = 'home.html';
   l1.appendChild(brand);
   var mobileToggle = el('div', 'odn-mobile-toggle');
+  mobileToggle.hidden = true;
   mobileToggle.setAttribute('role', 'group');
   mobileToggle.setAttribute('aria-label', '页面视图');
   mobileToggle.innerHTML = '<button type="button" data-mode="data" aria-pressed="true">数据</button>' +
@@ -313,6 +314,15 @@
     });
   });
   l1.appendChild(mobileToggle);
+  function syncMobileToggle() {
+    if (document.querySelector('script[src*="ai-assistant.js"]')) mobileToggle.hidden = false;
+    else mobileToggle.remove();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncMobileToggle, { once: true });
+  } else {
+    syncMobileToggle();
+  }
   var nav = el('nav', 'odn-main');
   nav.setAttribute('aria-label', '主导航');
   MAIN.forEach(function (m) {
