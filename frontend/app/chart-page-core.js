@@ -86,6 +86,14 @@
     var assetType = index ? 'index' : stockCode ? 'stock' : '';
     var requestedScale = params.get('scale') || '';
     var scale = SCALES.indexOf(requestedScale) >= 0 ? requestedScale : '6-12m';
+    var requestedAsof = String(params.get('asof') || '');
+    var asof = '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(requestedAsof)) {
+      var asofDate = new Date(requestedAsof + 'T00:00:00Z');
+      if (!Number.isNaN(asofDate.getTime()) && asofDate.toISOString().slice(0, 10) === requestedAsof) {
+        asof = requestedAsof;
+      }
+    }
     var focus = String(params.get('focus') || '').trim().slice(0, 200);
     return {
       valid: !!assetType,
@@ -95,6 +103,7 @@
       name: index ? index.name : '',
       scale: scale,
       focus: focus,
+      asof: asof,
       from: safeFrom(params.get('from'), assetType, code || inputCode, stockCode),
     };
   }
@@ -104,6 +113,14 @@
     return prefix === 'sh' ? '上海证券交易所'
       : prefix === 'sz' ? '深圳证券交易所'
         : prefix === 'bj' ? '北京证券交易所' : '未记录';
+  }
+
+  function inferStockSymbol(symbol) {
+    var match = String(symbol || '').trim().toLowerCase().match(/^(?:sh|sz|bj)?(\d{6})$/);
+    if (!match) return '';
+    var code = match[1];
+    var first = code.charAt(0);
+    return (first === '6' ? 'sh' : first === '0' || first === '3' ? 'sz' : 'bj') + code;
   }
 
   function modelRecord(raw, fallback) {
@@ -140,30 +157,35 @@
     };
   }
 
-  function assembleStockData(symbol, latest, market, fallbackCalendar) {
-    if (!latest || typeof latest !== 'object') throw new Error('该标的没有已发布模型结果');
+  function assembleStockData(symbol, latest, market, fallbackCalendar, modelError) {
     if (!market || !Array.isArray(market.price) || !market.price.length) {
       throw new Error('行情接口未返回 K 线；未用模型价格替代行情。');
     }
-    var raw = latest.raw || latest;
-    var resolvedSymbol = String(latest.symbol || symbol || '').toLowerCase();
-    var model = modelRecord(raw, latest);
+    var hasLatest = !!latest && typeof latest === 'object';
+    var raw = hasLatest ? latest.raw || latest : {};
+    var resolvedSymbol = String(
+      hasLatest && latest.symbol || market.symbol || inferStockSymbol(symbol) || symbol || '',
+    ).toLowerCase();
+    var model = modelRecord(raw, hasLatest ? latest : null);
     var lastBar = market.price[market.price.length - 1];
     return {
       assetType: 'stock',
       symbol: resolvedSymbol,
       code: resolvedSymbol,
-      name: latest.name || raw.name || resolvedSymbol,
+      name: hasLatest && (latest.name || raw.name) || market.name || market.stock_name || resolvedSymbol,
       exchange: exchangeFor(resolvedSymbol),
       bars: market.price,
-      asof: latest.asof || raw.asof || '',
-      modelAsOf: latest.asof || raw.asof || '',
+      asof: hasLatest ? latest.asof || raw.asof || '' : '',
+      modelAsOf: hasLatest ? latest.asof || raw.asof || '' : '',
       marketAsOf: market.asof || market.cutoff || lastBar && lastBar.date || '',
-      top: latest.top || raw.top || {},
-      future_calendar: latest.future_calendar || raw.future_calendar || fallbackCalendar || null,
-      evidence_levels: latest.evidence_levels || raw.evidence_levels || {},
+      top: hasLatest ? latest.top || raw.top || {} : {},
+      future_calendar: hasLatest && (latest.future_calendar || raw.future_calendar) ||
+        fallbackCalendar || market.future_calendar || null,
+      evidence_levels: hasLatest ? latest.evidence_levels || raw.evidence_levels || {} : {},
       modelVersion: model.modelVersion,
       predictionId: model.predictionId,
+      modelStatus: modelError ? 'error' : hasLatest ? 'ok' : 'missing',
+      modelMessage: modelError ? String(modelError.message || modelError) : '',
       dataSource: market.source || '未记录',
       adjustment: market.adjustment || '未记录',
       raw: raw,

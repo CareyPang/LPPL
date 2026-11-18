@@ -451,7 +451,8 @@ def test_home_assistant_switch_persists_without_changing_other_page_defaults(pag
     page.evaluate("localStorage.removeItem('lppl.assistant.home')")
     page.reload()
     panel = page.locator(".ai-panel.ai-dock")
-    switch = page.get_by_role("switch", name="研究助手")
+    switch = page.locator(".ai-switch")
+    expect(switch).to_have_attribute("role", "switch")
     expect(panel).to_be_hidden()
     expect(switch).to_have_attribute("aria-checked", "false")
     main_left = page.locator("main").evaluate("(el) => el.getBoundingClientRect().left")
@@ -498,6 +499,113 @@ def test_home_assistant_switch_persists_without_changing_other_page_defaults(pag
 
 
 @pytest.mark.e2e
+def test_chart_assistant_switch_defaults_closed_and_persists(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.locator(".ai-switch")
+    expect(panel).to_be_hidden()
+    expect(switch).to_be_visible()
+    expect(switch).to_have_attribute("role", "switch")
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "208px"
+    assert page.locator("main").evaluate("(el) => el.getBoundingClientRect().left") < 300
+
+    switch.click()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "572px"
+    assert page.locator("main").evaluate("(el) => el.getBoundingClientRect().left") >= 572
+    assert page.evaluate(
+        "localStorage.getItem('lppl.assistant.wide:chart.html')"
+    ) == "1"
+
+    page.reload()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+
+
+@pytest.mark.e2e
+def test_index_assistant_close_button_persists_wide_preference(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.locator(".ai-switch")
+    close = page.get_by_role("button", name="关闭研究助手")
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    expect(close).to_be_visible()
+
+    close.click()
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate(
+        "localStorage.getItem('lppl.assistant.wide:index.html')"
+    ) == "0"
+
+    page.reload()
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+
+
+@pytest.mark.e2e
+def test_chart_replay_asof_is_visible_and_links_keep_the_cutoff(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001&asof=2015-06-12")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    expect(page.locator("#asof-tag")).to_have_text(
+        "历史截止日 2015-06-12（只显示当时可见的结果）"
+    )
+    expect(page.locator("#model-date")).to_have_text("模型日期 2015-06-12")
+    assert page.locator("#index-replay").get_attribute("href") == (
+        "index.html?code=sh000001&asof=2015-06-12"
+    )
+
+    page.goto(f"{BASE_URL}/index.html?code=sh000001&asof=2015-06-12")
+    chart_href = page.locator(".odn-chart-link").get_attribute("href")
+    assert chart_href and "asof=2015-06-12" in chart_href
+
+
+@pytest.mark.e2e
+def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.route(
+        "**/lab/mock/data/stock/600519.json",
+        lambda route: route.fulfill(status=404, content_type="application/json", body="{}"),
+    )
+    page.goto(
+        f"{BASE_URL}/chart.html?code=sh600519&asof=2015-06-12"
+    )
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+
+    chart_page = page.locator("#chart-page")
+    assert int(chart_page.get_attribute("data-bar-count") or "0") > 0
+    expect(chart_page).to_have_attribute("data-model-status", "missing")
+    expect(page.locator("#evidence-state")).to_have_text(
+        "没有读到已发布的模型结果（可能尚未发布，或读取失败）"
+    )
+    expect(page.locator("#interval-list .interval-row")).to_have_count(0)
+    expect(page.locator("#model-date")).to_have_text("模型日期 未发布")
+    retry = page.locator("#evidence-note .evidence-retry-button")
+    expect(retry).to_have_text("重试读取")
+    expect(retry).to_be_visible()
+    expect(page.locator("#evidence-note a")).to_have_text("回标的页发起计算")
+    expect(page.locator("#evidence-note a")).to_have_attribute(
+        "href", "stock.html?code=600519"
+    )
+    expect(page.locator("#asof-notice")).to_contain_text(
+        "个股暂不支持按历史截止日查看，以下是最新结果（截止 "
+    )
+    with page.expect_response("**/lab/mock/data/stock/600519.json") as retry_response:
+        retry.click()
+    assert retry_response.value.status == 404
+
+
+@pytest.mark.e2e
 def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
     for path in NAV_PAGES:
         page.set_viewport_size({"width": 1440, "height": 900})
@@ -512,7 +620,7 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
             }"""
         )
         assert content_left is not None, path
-        if path == "home.html":
+        if path == "home.html" or path.startswith("chart.html"):
             expect(panel).to_be_hidden()
             assert content_left < 300, (path, content_left)
         else:

@@ -185,6 +185,7 @@
 '@media (max-width:520px){.odn-star span{display:none}.odn-star{padding:0 10px}}' +
 '@media (min-width:1200px){body.odn-sidebar-page{padding-left:572px}.odn-sidebar{display:flex}.odn-l1{padding:0 16px}.odn-brand,.odn-main-row{display:none}.odn-r{width:100%;gap:10px}.odn-q{width:300px}.odn-q input,.odn-light .odn-q input{box-sizing:border-box;width:100%;background-color:#fff;border-color:#9aa3b2;color:#131722}.odn-q input:focus,.odn-light .odn-q input:focus{width:100%;background-color:#fff}.odn-q input:hover,.odn-q input:focus-visible,.odn-light .odn-q input:hover,.odn-light .odn-q input:focus-visible{border-color:#315CF5;box-shadow:0 0 0 3px rgba(49,92,245,.18)}}' +
 '@media (min-width:1200px){body.odn-sidebar-page.vs-home:not(.ai-open){padding-left:208px}}' +
+'@media (min-width:1200px){body.odn-sidebar-page.ai-closed{padding-left:208px}}' +
 '@media (min-width:761px) and (max-width:1199px){body.odn-sidebar-page{padding-left:208px}.odn-sidebar{display:flex}.odn-brand,.odn-main-row{display:none}.odn-r{gap:8px}.odn-q{width:220px}.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-asof{display:none}}' +
 '@media (max-width:760px){body.odn-sidebar-page{padding-left:0}.odn-sidebar{display:none}.odn-l1{height:52px;padding:0 12px;gap:8px}.odn-brand{display:flex;margin-right:0}.odn-mobile-toggle{display:flex;margin-left:auto}.odn-r{margin-left:0;gap:4px;padding-left:0}.odn-q,.odn-asof,.odn-star,.ai-btn{display:none!important}.odn-menu{display:block}.odn-help{display:none}.odn-main-row{display:block}.odn-main{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;width:100%;overflow:visible;background:inherit}.odn-main a{box-sizing:border-box;justify-content:center;min-width:0;height:40px;padding:0 2px;border-radius:0;font-size:13px;overflow:hidden;text-overflow:ellipsis}.odn-main a[aria-current]{background:transparent;color:#2962ff;border-bottom:2px solid #2962ff}.odn-light .odn-main a[aria-current]{background:transparent;color:#1f5fd6;border-bottom-color:#1f5fd6}.odn-main-row{border-top:1px solid #1c1c1c}.odn-light .odn-main-row{border-color:#e6e9ef}.odn-l2{flex-wrap:wrap;padding:0 12px}.odn-tools{max-width:none;width:100%;padding-bottom:10px}.odn-tools .cmd{min-width:0;width:100%}.odn-ql{left:auto;right:0;width:min(300px,calc(100vw - 24px));max-width:calc(100vw - 24px)}body.ai-mobile-open .odn{z-index:130}body.ai-mobile-open .odn-main-row,body.ai-mobile-open .odn-l2{display:none}}' +
 '.odm-bg{position:fixed;inset:0;z-index:90;background:rgba(19,23,34,.42);display:none;align-items:flex-start;justify-content:center;padding:8vh 12px 12px}' +
@@ -464,6 +465,12 @@
   function appendIndexChartLink() {
     if (section !== 'terminal' || !/(?:^|\/)index\.html$/.test(location.pathname)) return;
     var chartLink = el('a', 'odn-chart-link', '完整图表 ›');
+    function validAsof(value) {
+      value = String(value || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+      var date = new Date(value + 'T00:00:00Z');
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : '';
+    }
     function currentIndexSymbol() {
       var currentCode = String(new URLSearchParams(location.search).get('code') || '').trim();
       if (!currentCode) return 'sh000001';
@@ -476,8 +483,9 @@
     }
     function updateChartHref() {
       var source = location.pathname.split('/').pop() + location.search;
+      var asof = validAsof(new URLSearchParams(location.search).get('asof'));
       chartLink.href = 'chart.html?code=' + encodeURIComponent(currentIndexSymbol()) +
-        '&from=' + encodeURIComponent(source);
+        '&from=' + encodeURIComponent(source) + (asof ? '&asof=' + encodeURIComponent(asof) : '');
     }
     updateChartHref();
     ['click', 'focus', 'pointerenter'].forEach(function (name) {

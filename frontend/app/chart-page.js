@@ -33,6 +33,9 @@
   }
 
   function chartPayload(data) {
+    if (data.assetType === 'stock' && data.modelStatus !== 'ok') {
+      return Object.assign({}, data, { top: {} });
+    }
     var top = Object.assign({}, data.top || {});
     var visible = new Set();
     var evidenceCodes = {};
@@ -78,11 +81,27 @@
     var state = el('evidence-state');
     var list = el('interval-list');
     var note = el('evidence-note');
+    list.replaceChildren();
+    note.replaceChildren();
+    if (data.assetType === 'stock' && data.modelStatus !== 'ok') {
+      state.textContent = data.modelStatus === 'error'
+        ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
+        : '没有读到已发布的模型结果（可能尚未发布，或读取失败）';
+      var retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'retry-button evidence-retry-button';
+      retry.textContent = '重试读取';
+      retry.addEventListener('click', function () { void load(); });
+      note.appendChild(retry);
+      var action = document.createElement('a');
+      action.href = 'stock.html?code=' + encodeURIComponent(context.stockCode);
+      action.textContent = '回标的页发起计算';
+      note.appendChild(action);
+      return;
+    }
     var evidence = evidenceFor(data, selectedScale);
     var bands = intervalRows(data, selectedScale);
-    list.replaceChildren();
     state.textContent = '证据：' + (evidence && evidence.label || '证据状态未记录');
-    note.textContent = '';
     if (!evidence || !evidence.show) {
       note.textContent = '当前证据不允许显示区间数值。';
       return;
@@ -165,7 +184,12 @@
     setText('asset-name', data.name);
     setText('asset-code', data.symbol);
     setText('asset-exchange', data.exchange);
-    setText('model-date', '模型日期 ' + (data.modelAsOf || '未记录'));
+    setText('model-date', '模型日期 ' +
+      (data.assetType === 'stock' && data.modelStatus !== 'ok' ? '未发布' : data.modelAsOf || '未记录'));
+    var asofTag = el('asof-tag');
+    asofTag.hidden = data.assetType !== 'index' || !context.asof;
+    asofTag.textContent = context.asof
+      ? '历史截止日 ' + context.asof + '（只显示当时可见的结果）' : '';
     if (data.assetType === 'stock') {
       setText('market-date', '行情日期 ' + (data.marketAsOf || '未记录'));
       setText('data-source', data.dataSource + ' · ' +
@@ -177,7 +201,18 @@
     setText('model-version', data.modelVersion || '未记录');
     setText('prediction-id', data.predictionId || '未记录');
     el('index-replay').hidden = data.assetType !== 'index';
-    el('index-replay').href = 'index.html?code=' + encodeURIComponent(data.symbol);
+    el('index-replay').href = 'index.html?code=' + encodeURIComponent(data.symbol) +
+      (data.assetType === 'index' && context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
+  }
+
+  function renderAsofNotice(data) {
+    var notice = el('asof-notice');
+    var visible = data.assetType === 'stock' && !!context.asof;
+    notice.hidden = !visible;
+    notice.textContent = visible
+      ? '个股暂不支持按历史截止日查看，以下是最新结果（截止 ' +
+        (data.modelAsOf || data.marketAsOf || '未记录') + '）'
+      : '';
   }
 
   function renderCalendarNotice(data) {
@@ -211,21 +246,35 @@
 
   async function loadData() {
     if (context.assetType === 'index') {
-      var result = await LPPL.load(context.code);
+      var result = await LPPL.load(context.code, context.asof || undefined);
       return Core.assembleIndexData(context.code, result);
     }
-    var results = await Promise.all([
+    var results = await Promise.allSettled([
       LPPL.stock.latest(context.stockCode),
       LPPL.stock.market(context.stockCode),
     ]);
-    var latest = results[0], market = results[1], calendar = null;
+    var latestResult = results[0], marketResult = results[1];
+    if (marketResult.status !== 'fulfilled') {
+      return Core.assembleStockData(context.code, null, null, null);
+    }
+    var latest = latestResult.status === 'fulfilled' ? latestResult.value : null;
+    var market = marketResult.value, calendar = null;
+    if (!market || !Array.isArray(market.price) || !market.price.length) {
+      return Core.assembleStockData(context.code, null, market, null);
+    }
     if (!(latest && latest.future_calendar)) {
       // Individual A-share results use the published shared CN trading calendar.
       calendar = await LPPL.history('sh000001').then(function (history) {
         return history && history.future_calendar || null;
       }).catch(function () { return null; });
     }
-    var data = Core.assembleStockData(context.code, latest, market, calendar);
+    var data = Core.assembleStockData(
+      context.code,
+      latest,
+      market,
+      calendar,
+      latestResult.status === 'rejected' ? latestResult.reason : null,
+    );
     if (/^(lift|dividend|forecast):/.test(context.focus)) {
       data.eventRows = await eventRowsFor(data.symbol.slice(2)).catch(function () { return []; });
     }
@@ -281,11 +330,19 @@
 
   el('retry-button').addEventListener('click', function () { void load(); });
 
+  function latestResultsHref() {
+    var params = new URLSearchParams(root.location.search);
+    params.delete('asof');
+    var query = params.toString();
+    return root.location.pathname + (query ? '?' + query : '') + root.location.hash;
+  }
+
   async function load() {
     var request = ++sequence;
     el('error-panel').hidden = true;
     el('loading').hidden = false;
     el('retry-button').hidden = true;
+    el('latest-results-link').hidden = true;
     try {
       if (!context.valid) throw new Error('缺少有效的指数或 A 股代码。');
       var timeoutId;
@@ -310,21 +367,28 @@
       page.dataset.lastClose = String(lastBar.close == null ? '' : lastBar.close);
       page.dataset.modelAsOf = String(data.modelAsOf || '');
       page.dataset.marketAsOf = String(data.marketAsOf || '');
+      page.dataset.modelStatus = String(data.modelStatus || '');
       drawHeader(data);
       chart.setScale(context.scale);
       chart.setData(visibleData);
       chart.setAsof(data.asof);
       renderEvidence(data, context.scale);
       renderCalendarNotice(data);
+      renderAsofNotice(data);
       applyInitialFocus(data);
       el('loading').hidden = true;
       page.dataset.loaded = 'true';
     } catch (error) {
       if (request !== sequence) return;
       el('loading').hidden = true;
-      el('error-message').textContent = '图表加载失败：' + (error && error.message || '未知错误');
+      el('error-message').textContent = error && error.pending
+        ? error.message
+        : '图表加载失败：' + (error && error.message || '未知错误');
       el('error-panel').hidden = false;
       el('retry-button').hidden = false;
+      var latestLink = el('latest-results-link');
+      latestLink.hidden = !(error && error.pending && context.assetType === 'index' && context.asof);
+      if (!latestLink.hidden) latestLink.href = latestResultsHref();
     }
   }
 

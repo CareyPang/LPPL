@@ -84,3 +84,13 @@ test('sidebar watchlist reads through the existing watch module', () => {
   assert.match(watch, /function list\(\) \{/);
   assert.match(watch, /window\.OdWatch = \{[\s\S]*?list: list \}/);
 });
+
+test('index chart links retain only valid as-of dates and chart layout follows its container', () => {
+  assert.match(nav, /function validAsof\(value\) \{[\s\S]*?toISOString\(\)\.slice\(0, 10\) === value/);
+  assert.match(nav, /validAsof\(new URLSearchParams\(location\.search\)\.get\('asof'\)\)/);
+  assert.match(nav, /asof \? '&asof=' \+ encodeURIComponent\(asof\) : ''/);
+  assert.match(chart, /\.chart-page \{[^}]*container-type: inline-size/);
+  assert.match(chart, /@container \(max-width: 900px\)/);
+  assert.match(chart, /@container \(max-width: 600px\)/);
+  assert.match(chart, /@media \(max-width: 520px\)/);
+});
