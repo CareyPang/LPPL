@@ -532,6 +532,12 @@
 
     function onCardKeydown(event) {
       if (!card.contains(event.target) || !card.contains(document.activeElement)) return;
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.target === textInput && editing) cancelTextEditor();
+        undo();
+        return;
+      }
       if (event.target === textInput) return;
       if ((event.key === 'Delete' || event.key === 'Backspace') && manager && manager.selection().length) {
         event.preventDefault();
@@ -541,9 +547,6 @@
         manager.setTool(null);
         manager.select([]);
         render();
-      } else if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
-        event.preventDefault();
-        undo();
       }
     }
 
