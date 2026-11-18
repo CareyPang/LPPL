@@ -42,7 +42,7 @@
   const replayParams = new URLSearchParams(window.location.search);
   const replayAsOf = Core.date(replayParams.get('asof'));
   const replayAsset = Core.asset(replayParams.get('kind'), replayParams.get('code'));
-  const replayRequest = replayAsset && replayAsOf ? { asset: replayAsset, asof: replayAsOf } : null;
+  let replayRequest = replayAsset && replayAsOf ? { asset: replayAsset, asof: replayAsOf } : null;
   let replayScroll = null;
   if (replayRequest) {
     try {
@@ -57,6 +57,16 @@
       try { window.sessionStorage.removeItem(REPLAY_SCROLL_KEY); } catch { /* Session restoration is optional. */ }
       replayScroll = null;
     }
+  }
+  function updateReplayRequest(asset, asof) {
+    const url = new URL(window.location.href);
+    if (asof) {
+      url.searchParams.set('kind', asset.kind);
+      url.searchParams.set('code', asset.code);
+      url.searchParams.set('asof', asof);
+    } else url.searchParams.delete('asof');
+    window.history.replaceState(null, '', url);
+    replayRequest = asof ? { asset, asof } : null;
   }
 
   function focusToken() {
@@ -406,8 +416,16 @@
   });
   $('observation-history').addEventListener('click', event => {
     const button = event.target.closest('[data-inspect]');
-    if (button) { saveDraft(); inspectRecord = recordList(state.selectedId)[Number(button.dataset.inspect)] || null; renderDetail(); $('detail-heading').scrollIntoView({ block: 'nearest' }); }
-    if (event.target.closest('#show-current')) { saveDraft(); inspectRecord = null; renderDetail(); }
+    if (button) {
+      saveDraft(); inspectRecord = recordList(state.selectedId)[Number(button.dataset.inspect)] || null;
+      if (inspectRecord) updateReplayRequest(selectedAsset(), inspectRecord.asof);
+      renderDetail(); $('detail-heading').scrollIntoView({ block: 'nearest' });
+    }
+    if (event.target.closest('#show-current')) {
+      saveDraft(); inspectRecord = null;
+      if (selectedAsset()) updateReplayRequest(selectedAsset(), '');
+      renderDetail();
+    }
   });
   $('open-analysis').addEventListener('click', () => {
     saveDraft(); const asset = selectedAsset();

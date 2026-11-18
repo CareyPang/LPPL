@@ -326,6 +326,9 @@ const server = http.createServer((req, res) => {
     const replaySummary = Core.summarize(replayAsset, replayRaw, '2025-05-24T00:00:00.000Z');
     Core.observe(replayState, replaySummary, '2025-05-24T00:00:00.000Z');
     Core.saveNote(replayState, replaySummary, '回放日的研究依据', '2025-05-24T00:00:00.000Z');
+    const alternateSummary = Core.summarize(replayAsset, { ...replayRaw, asof: '2025-06-01',
+      prediction_id: 'replay-fixture-20250601' }, '2025-06-02T00:00:00.000Z');
+    Core.observe(replayState, alternateSummary, '2025-06-02T00:00:00.000Z');
     const replayStore = { value: null, getItem(key) { return key === Core.KEY ? this.value : null; },
       setItem(key, value) { if (key === Core.KEY) this.value = value; } };
     Core.save(replayStore, replayState);
@@ -357,6 +360,16 @@ const server = http.createServer((req, res) => {
     assert.match(await replayPage.locator('#note-history').innerText(), /回放日的研究依据/);
     assert.equal(await replayPage.evaluate(() => JSON.parse(localStorage.getItem('lppl.research-workspace.v1')).observations['stock:600519'].find(r => r.asof === '2025-05-23').windows[0].evidence), 'research_candidate');
     assert.ok(Math.abs(await replayPage.evaluate(() => window.scrollY) - savedScroll) <= 2);
+    await replayPage.locator('#observation-history').evaluate(el => { el.closest('details').open = true; });
+    await replayPage.locator('#observation-history button[data-inspect="1"]').click();
+    assert.equal(new URL(replayPage.url()).searchParams.get('asof'), '2025-06-01');
+    assert.match(await replayPage.locator('#detail-summary').innerText(), /2025-06-02/);
+    assert.doesNotMatch(await replayPage.locator('#detail-summary').innerText(), /本机未保存截至/);
+    await replayPage.locator('#observation-history #show-current').click();
+    assert.equal(new URL(replayPage.url()).searchParams.has('asof'), false);
+    assert.match(await replayPage.locator('#detail-summary').innerText(), new RegExp(raw.asof));
+    assert.doesNotMatch(await replayPage.locator('#detail-summary').innerText(), /本机未保存截至/);
+    check('selecting another saved date updates the URL; returning to current clears the replay cutoff');
     check('full-chart return preserves the archived workspace date, evidence, note and list position without latest fallback');
     await replayContext.close();
 
