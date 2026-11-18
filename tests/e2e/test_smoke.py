@@ -796,6 +796,34 @@ def test_chart_drawings_merge_between_tabs(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_drawings_survive_back_navigation(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 350, "y": 190})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || '{\"items\":[]}').items.length === 1"
+    )
+
+    page.goto(f"{BASE_URL}/index.html")
+    page.go_back(wait_until="domcontentloaded")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true' && "
+        "document.querySelector('#drawing-toolbar')?.dataset.drawingCount === '1'"
+    )
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("全部隐藏")
+    expect(page.locator("#drawing-toolbar")).to_be_visible()
+    page.locator('[data-drawing-tool="horizontal-line"]').click()
+    page.locator("#chart-host").click(position={"x": 500, "y": 280})
+    page.wait_for_function(
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items.length === 2"
+    )
+
+
+@pytest.mark.e2e
 def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")

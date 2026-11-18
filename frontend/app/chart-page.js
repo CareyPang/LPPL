@@ -634,7 +634,7 @@
     el('error-panel').hidden = false;
     el('retry-button').hidden = false;
   }
-  root.addEventListener('pagehide', function () {
-    if (drawing) { drawing.detach(); drawing = null; }
+  root.addEventListener('pagehide', function (event) {
+    if (!event.persisted && drawing) { drawing.detach(); drawing = null; }
   });
 })(window);
