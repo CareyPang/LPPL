@@ -900,6 +900,63 @@ def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_note_escape_does_not_exit_fullscreen(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    fullscreen = page.locator("#chart-fullscreen")
+    fullscreen.click()
+    expect(fullscreen).to_have_attribute("aria-pressed", "true")
+    page.evaluate(
+        """() => {
+          const textarea = document.createElement("textarea");
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "Escape", bubbles: true, cancelable: true
+          }));
+          textarea.remove();
+        }"""
+    )
+    expect(fullscreen).to_have_attribute("aria-pressed", "true")
+
+    page.locator('[data-drawing-tool="text"]').click()
+    page.locator("#chart-host").click(position={"x": 400, "y": 320})
+    editor = page.locator(".chart-drawing-text-editor")
+    expect(editor).to_be_visible()
+    page.evaluate(
+        """() => {
+          window.__noteEscapeBubbled = false;
+          document.addEventListener("keydown", event => {
+            if (event.target.matches(".chart-drawing-text-editor") && event.key === "Escape") {
+              window.__noteEscapeBubbled = true;
+            }
+          });
+        }"""
+    )
+    editor.evaluate(
+        """input => input.dispatchEvent(new KeyboardEvent("keydown", {
+          key: "Escape", bubbles: true, cancelable: true, isComposing: true
+        }))"""
+    )
+    expect(editor).to_be_visible()
+    assert page.evaluate("() => window.__noteEscapeBubbled") is False
+
+    editor.evaluate(
+        """input => input.dispatchEvent(new KeyboardEvent("keydown", {
+          key: "Escape", bubbles: true, cancelable: true
+        }))"""
+    )
+    expect(editor).to_be_hidden()
+    expect(fullscreen).to_have_attribute("aria-pressed", "true")
+    assert page.evaluate("() => window.__noteEscapeBubbled") is False
+    fullscreen.evaluate("(button) => button.click()")
+    expect(fullscreen).to_have_attribute("aria-pressed", "false")
+
+
+@pytest.mark.e2e
 def test_chart_undo_keeps_history_drawings_hidden(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh000001")
@@ -956,6 +1013,9 @@ def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> N
     page.wait_for_function(
         "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh600519') || '{\"items\":[]}').items.length === 1"
     )
+    expect(page.locator("[data-drawing-visibility]")).to_have_text("显示我的画线")
+    expect(page.locator("[data-drawing-history]")).to_be_hidden()
+    visibility.click()
     expect(page.locator("[data-drawing-visibility]")).to_have_text("全部隐藏")
     expect(page.locator("[data-drawing-history]")).to_contain_text(
         "晚于当前截止日 2025-05-23"

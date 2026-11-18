@@ -512,7 +512,9 @@
   el('fullscreen-exit').addEventListener('click', function () { void exitFullscreen(); });
   document.addEventListener('fullscreenchange', function () { fullscreenState(!!document.fullscreenElement); });
   document.addEventListener('keydown', function (event) {
-    if (event.key !== 'Escape') return;
+    var targetTag = event.target && event.target.tagName;
+    if (event.key !== 'Escape' || event.isComposing || event.keyCode === 229 ||
+        targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
     if (fullscreenCard.classList.contains('chart-expanded')) { void exitFullscreen(); return; }
     if (!drawer.hidden && mobile.matches) evidenceOpen(false);
   });

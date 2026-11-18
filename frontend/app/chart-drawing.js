@@ -551,14 +551,14 @@
     }
 
     function onTextKeydown(event) {
-      if ((event.key === 'Enter' || event.key === 'Escape') && isImeCompositionKey(event)) return;
+      if (event.key !== 'Enter' && event.key !== 'Escape') return;
+      event.stopPropagation();
+      if (isImeCompositionKey(event)) return;
       if (event.key === 'Enter') {
         event.preventDefault();
-        event.stopPropagation();
         saveTextEditor();
-      } else if (event.key === 'Escape') {
+      } else {
         event.preventDefault();
-        event.stopPropagation();
         cancelTextEditor();
       }
     }
