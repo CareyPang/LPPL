@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "asof": "2026-11-17",
-  "generated_at": "2026-11-18T03:52:36.253246+00:00",
+  "asof": "2026-11-18",
+  "generated_at": "2026-11-18T22:34:32.062669+00:00",
   "summary": {
     "core_met": 0,
     "core_total": 3,
@@ -232,10 +232,6 @@
       "value": {
         "last_five": [
           {
-            "date": "2026-11-10",
-            "value": 4.98
-          },
-          {
             "date": "2026-11-12",
             "value": 5.1
           },
@@ -250,21 +246,21 @@
           {
             "date": "2026-11-17",
             "value": 5.1
+          },
+          {
+            "date": "2026-11-18",
+            "value": 5.07
           }
         ],
         "all_below_4_50": false
       },
       "unit": "%",
-      "asof": "2026-11-17",
+      "asof": "2026-11-18",
       "source": "美国财政部 daily treasury yield curve（10 Yr）",
       "rule": "最近 5 个有观测的美国交易日收盘收益率全部 < 4.50%。",
       "note": "",
       "missing_reason": null,
       "recent": [
-        {
-          "date": "2026-08-21",
-          "value": 4.74
-        },
         {
           "date": "2026-08-24",
           "value": 4.7
@@ -500,6 +496,10 @@
         {
           "date": "2026-11-17",
           "value": 5.1
+        },
+        {
+          "date": "2026-11-18",
+          "value": 5.07
         }
       ]
     },
@@ -509,16 +509,16 @@
       "role": "confirm",
       "status": "not_met",
       "value": {
-        "latest_rs": 3.0376766772455905,
-        "ma20": 3.0742037904835553,
-        "consecutive_above_days": 0,
-        "last_cross_date": "2026-11-11"
+        "latest_rs": 3.0969189737359333,
+        "ma20": 3.0668760688987278,
+        "consecutive_above_days": 1,
+        "last_cross_date": "2026-11-18"
       },
       "unit": "RS",
-      "asof": "2026-11-17",
+      "asof": "2026-11-18",
       "source": "国证指数官网（980017 国证芯片）；腾讯日线（sh000300 沪深300）",
       "rule": "RS_t = close(sz980017 国证芯片) / close(sh000300)；MA20 为 RS 的 20 日简单均线；最近 10 个交易日 RS 全部 > MA20（重新站上 20 日均线并维持两周）。",
-      "note": "已连续站上 0 日；最近一次上穿 2026-11-11。",
+      "note": "已连续站上 1 日；最近一次上穿 2026-11-18。",
       "missing_reason": null,
       "recent": [
         {
@@ -930,14 +930,19 @@
           "date": "2026-11-17",
           "rs": 3.0376766772455905,
           "ma20": 3.0742037904835553
+        },
+        {
+          "date": "2026-11-18",
+          "rs": 3.0969189737359333,
+          "ma20": 3.0668760688987278
         }
       ]
     }
   ],
   "version": {
     "kind": "growth",
-    "asof": "2026-11-17",
-    "file": "versions/growth/2026-11-17/20261118T035236Z_22c4681d.json.gz",
-    "sha256": "22c4681d6bc046820dc9f1bc7bcb98fffe9ed6fa9c47de5e67d86e7b675eb887"
+    "asof": "2026-11-18",
+    "file": "versions/growth/2026-11-18/20261118T223432Z_56c61de9.json.gz",
+    "sha256": "56c61de9610c2e0946ba8add9d7bd210d1da217ade7ae94eb5a705a2977568c4"
   }
 }
