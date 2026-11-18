@@ -506,6 +506,7 @@
     });
 
     function undo() {
+      if (editing) cancelTextEditor();
       if (!manager || !undoStack.length) return;
       var previous = undoStack.pop();
       var restored;
@@ -532,13 +533,12 @@
 
     function onCardKeydown(event) {
       if (!card.contains(event.target) || !card.contains(document.activeElement)) return;
+      if (event.target === textInput) return;
       if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
         event.preventDefault();
-        if (event.target === textInput && editing) cancelTextEditor();
         undo();
         return;
       }
-      if (event.target === textInput) return;
       if ((event.key === 'Delete' || event.key === 'Backspace') && manager && manager.selection().length) {
         event.preventDefault();
         removeSelected();
