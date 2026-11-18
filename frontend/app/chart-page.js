@@ -546,13 +546,17 @@
       var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
       var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
       var ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#172033'; ctx.font = '24px Microsoft YaHei, sans-serif'; ctx.fillText('LPPL · 匿名研究截图', 32, 45);
+      ctx.fillStyle = '#172033'; ctx.font = '24px Microsoft YaHei, sans-serif';
+      ctx.fillText(includeDrawings ? 'LPPL · 研究截图（含个人标注）' : 'LPPL · 匿名研究截图', 32, 45);
       ctx.font = '17px Microsoft YaHei, sans-serif';
       lines.forEach(function (line, i) { ctx.fillText(line, 32, 90 + 38 * i, width - 64); });
       ctx.drawImage(shot, 0, header);
       var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
       if (!blob) throw new Error('图片编码失败');
-      download(blob, '-chart.png'); el('action-feedback').textContent = '当前图表与证据截图已下载；不含私人研究资料。';
+      download(blob, '-chart.png');
+      el('action-feedback').textContent = includeDrawings
+        ? '当前图表与证据截图已下载，包含你选择的个人标注。'
+        : '当前图表与证据截图已下载；不含私人研究资料。';
     } catch (error) { el('action-feedback').textContent = '截图未完成：' + error.message + '。可使用匿名研究卡。'; }
     finally {
       if (drawing) {

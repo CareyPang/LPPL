@@ -684,11 +684,17 @@ def test_chart_drawings_persist_history_exports_and_mobile_toolbar(page: Page) -
         page.locator("#share-screenshot").click()
     download.value.save_as(str(without_path))
     assert without_path.stat().st_size > 10_000
+    expect(page.locator("#action-feedback")).to_have_text(
+        "当前图表与证据截图已下载；不含私人研究资料。"
+    )
     include.check()
     with page.expect_download() as download:
         page.locator("#share-screenshot").click()
     download.value.save_as(str(with_path))
     assert with_path.stat().st_size > 10_000
+    expect(page.locator("#action-feedback")).to_have_text(
+        "当前图表与证据截图已下载，包含你选择的个人标注。"
+    )
     export_diff = drawing_pixel_diff(
         page, without_path.read_bytes(), with_path.read_bytes(), chart_only=True
     )
