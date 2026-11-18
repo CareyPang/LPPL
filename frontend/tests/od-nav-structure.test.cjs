@@ -55,7 +55,7 @@ test('market groups preserve every scroll id and keep freshness outside the grou
   assert.deepEqual(required.filter((id) => !pageIds.has(id)), []);
   assert.doesNotMatch(groups[1], /s-fresh|tools\.html|nt\.html/);
   assert.match(nav, /\{ t: '数据状态', h: 'market\.html#s-fresh' \}/);
-  assert.match(nav, /addSideLink\(sub, \{ t: '国家队ETF', h: 'nt\.html', page: 'nt' \}/);
+  assert.match(nav, /addSideLink\(sub, \{ t: '宽基ETF', h: 'nt\.html', page: 'nt' \}/);
 });
 
 test('home navigation anchors and assistant context remain on the published page', () => {
