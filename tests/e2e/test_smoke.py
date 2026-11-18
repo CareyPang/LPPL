@@ -165,12 +165,13 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
     empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
     expect(empty_tiles).to_have_count(3)
-    for tile_index in (0, 1):
+    for tile_index, label, reason in (
+        (0, "未形成区间", "有合格拟合，但没有形成聚类区间"),
+        (1, "无合格拟合", "已计算，没有合格拟合（不代表风险较低）"),
+    ):
         tile = empty_tiles.nth(tile_index)
-        expect(tile.locator("b")).to_have_text("无合格拟合")
-        expect(tile.locator(".sub")).to_have_text(
-            "已计算，没有合格拟合（不代表风险较低）"
-        )
+        expect(tile.locator("b")).to_have_text(label)
+        expect(tile.locator(".sub")).to_have_text(reason)
     for width, height in ((1440, 900), (390, 844)):
         page.set_viewport_size({"width": width, "height": height})
         line_counts = empty_tiles.locator("b").evaluate_all(
