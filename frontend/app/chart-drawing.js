@@ -107,6 +107,10 @@
     return !!(event && (event.isComposing || event.keyCode === 229));
   }
 
+  function hasTextContent(text) {
+    return typeof text === 'string' && text.trim().length > 0;
+  }
+
   function attach(chartApi, initialContext) {
     var target = chartApi.drawingTarget();
     var chart = target.chart;
@@ -181,6 +185,7 @@
     var temporarilyHidden = new Set();
     var offSeries = null;
     var editing = null;
+    var pendingTextIds = new Set();
     var deletedDrawingIds = new Set();
     var storageSyncPending = false;
     var pointerActive = false;
@@ -236,7 +241,9 @@
       var drawings;
       try { drawings = JSON.parse(manager.exportJSON()); } catch (_) { drawings = []; }
       var prior = new Map(records.map(function (item) { return [item.drawing.id, item]; }));
-      return filterDrawings(drawings).map(function (drawing) {
+      return filterDrawings(drawings).filter(function (drawing) {
+        return !pendingTextIds.has(drawing.id);
+      }).map(function (drawing) {
         var old = prior.get(drawing.id);
         if (old && temporarilyHidden.has(drawing.id)) {
           drawing = Object.assign({}, drawing, { hidden: old.drawing.hidden });
@@ -348,6 +355,10 @@
       managerOff.push(manager.on('add', function (drawing) {
         var next = themed(drawing);
         if (JSON.stringify(next) !== JSON.stringify(drawing)) manager.update(next);
+        if (drawing.kind === 'text') {
+          pendingTextIds.add(drawing.id);
+          return;
+        }
         commitMutation();
       }));
       managerOff.push(manager.on('remove', commitMutation));
@@ -389,7 +400,21 @@
     function saveTextEditor() {
       if (!editing || !manager) return;
       var drawing = manager.get(editing.drawing.id) || editing.drawing;
-      manager.update(Object.assign({}, drawing, { text: textInput.value }));
+      var text = textInput.value;
+      var pending = pendingTextIds.has(drawing.id);
+      if (!hasTextContent(text)) {
+        if (pending || !editing.original) {
+          pendingTextIds.delete(drawing.id);
+          manager.remove(drawing.id);
+        } else {
+          manager.update(Object.assign({}, drawing, { text: editing.original }));
+        }
+        closeTextEditor();
+        flushStorageSync();
+        return;
+      }
+      pendingTextIds.delete(drawing.id);
+      manager.update(Object.assign({}, drawing, { text: text }));
       commitMutation();
       closeTextEditor();
       flushStorageSync();
@@ -398,9 +423,8 @@
     function cancelTextEditor() {
       if (!editing || !manager) return;
       var drawing = manager.get(editing.drawing.id) || editing.drawing;
-      if (editing.original) manager.update(Object.assign({}, drawing, { text: editing.original }));
-      else manager.remove(drawing.id);
-      commitMutation();
+      if (pendingTextIds.delete(drawing.id) || !editing.original) manager.remove(drawing.id);
+      else manager.update(Object.assign({}, drawing, { text: editing.original }));
       closeTextEditor();
       flushStorageSync();
     }
@@ -474,7 +498,13 @@
     function undo() {
       if (!manager || !undoStack.length) return;
       var previous = undoStack.pop();
-      try { records = unwrapStorage({ v: 1, items: JSON.parse(previous) }); } catch (_) { return; }
+      var restored;
+      try { restored = unwrapStorage({ v: 1, items: JSON.parse(previous) }); } catch (_) { return; }
+      var restoredIds = new Set(restored.map(function (item) { return item.drawing.id; }));
+      records.forEach(function (item) {
+        if (!restoredIds.has(item.drawing.id)) deletedDrawingIds.add(item.drawing.id);
+      });
+      records = restored;
       var keepVisible = manager.drawingsVisible();
       manager.importJSON(JSON.stringify(records.map(function (item) { return item.drawing; })));
       manager.setDrawingsVisible(keepVisible);
@@ -626,6 +656,7 @@
     pushUndo: pushUndo,
     mergeRecords: mergeRecords,
     isImeCompositionKey: isImeCompositionKey,
+    hasTextContent: hasTextContent,
     storageKey: function (symbol) {
       var normalized = String(symbol || '').trim().toLowerCase();
       return normalized ? 'lppl.drawings.v1:' + normalized : '';

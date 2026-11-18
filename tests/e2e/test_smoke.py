@@ -837,6 +837,56 @@ def test_chart_drawings_survive_back_navigation(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_text_drawings_persist_only_after_submission(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/chart.html?code=sh000001")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    storage_count = (
+        "() => JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001') || "
+        "'{\"items\":[]}').items.length"
+    )
+    text_tool = page.locator('[data-drawing-tool="text"]')
+    host = page.locator("#chart-host")
+    editor = page.locator(".chart-drawing-text-editor")
+    undo = page.locator("[data-drawing-undo]")
+
+    text_tool.click()
+    host.click(position={"x": 400, "y": 320})
+    expect(editor).to_be_visible()
+    editor.fill("")
+    editor.press("Enter")
+    page.wait_for_function(storage_count + " === 0")
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+    text_tool.click()
+    host.click(position={"x": 450, "y": 340})
+    expect(editor).to_be_visible()
+    editor.fill("CANCEL-ME")
+    editor.press("Escape")
+    page.wait_for_function(storage_count + " === 0")
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+    text_tool.click()
+    host.click(position={"x": 500, "y": 360})
+    expect(editor).to_be_visible()
+    editor.fill("SAVE-ME")
+    editor.press("Enter")
+    page.wait_for_function(
+        storage_count + " === 1 && "
+        "JSON.parse(localStorage.getItem('lppl.drawings.v1:sh000001')).items[0].drawing.text === 'SAVE-ME'"
+    )
+    expect(undo).to_be_enabled()
+    undo.click()
+    page.wait_for_function(storage_count + " === 0")
+    expect(page.locator("#drawing-toolbar")).to_have_attribute("data-drawing-count", "0")
+    expect(undo).to_be_disabled()
+
+
+@pytest.mark.e2e
 def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")

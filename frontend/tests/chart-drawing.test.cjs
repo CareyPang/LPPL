@@ -80,3 +80,8 @@ test('text editor recognizes IME composition key events', () => {
   assert.equal(Drawing.isImeCompositionKey({ isComposing: false, keyCode: 229 }), true);
   assert.equal(Drawing.isImeCompositionKey({ isComposing: false, keyCode: 13 }), false);
 });
+
+test('text drawings require non-whitespace content before submission', () => {
+  assert.equal(Drawing.hasTextContent(' note '), true);
+  assert.equal(Drawing.hasTextContent(' \n\t'), false);
+});
