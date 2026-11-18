@@ -261,7 +261,7 @@
         if (m.k === 'market') def.h = 'market.html' + item.h;
         addSideLink(sub, def, m.k, false);
         if (m.k === 'market' && item.t === '资金') {
-          addSideLink(sub, { t: '国家队ETF', h: 'nt.html', page: 'nt' }, m.k, true);
+          addSideLink(sub, { t: '宽基ETF', h: 'nt.html', page: 'nt' }, m.k, true);
         }
       });
       group.appendChild(sub);
