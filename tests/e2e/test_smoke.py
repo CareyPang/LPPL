@@ -298,7 +298,13 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
 def test_flow_4_index_chip_updates_header(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
     expect(page.locator("#sym-n")).to_contain_text("上证指数")
-    page.locator('#ticker button[data-c="沪深300"]').click()
+    # Switching the identity updates the header before the optional live quote finishes.
+    # Await its intercepted response so teardown can audit the complete request.
+    with page.expect_response(lambda response: (
+        urlsplit(response.url).path == "/quote"
+        and parse_qs(urlsplit(response.url).query).get("codes") == ["sh000300"]
+    )):
+        page.locator('#ticker button[data-c="沪深300"]').click()
     expect(page.locator("#sym-n")).to_contain_text("沪深300")
 
 
@@ -375,6 +381,7 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text("全部 5 只")
     expect(page.locator("#lhb-seats-body .lhb-meta")).to_have_text(
         "样本 34 只（其中单日榜 28、多日榜 6） · 历史分位，不是预测"
+        " · 旧快照未区分重叠榜期，合计可能包含重复披露。"
     )
     seat_rows = page.locator("#lhb-seats-body .lhb-youzi-row")
     expect(seat_rows).to_have_count(2)

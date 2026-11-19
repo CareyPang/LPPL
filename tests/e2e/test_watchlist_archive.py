@@ -9,7 +9,6 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-
 BASE = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
 ASSET = "index:sh000001"
 TAPE = "watchlist-archive/index-sh000001.json"
@@ -92,16 +91,23 @@ def test_exact_chart_and_return_keep_archive_close_filter(page):
     # Use a checked-in real seal so the hash covers the exact response bytes.
     day = "2026-11-17"
     key = f"forward_log/{day}/sh000001.json"
-    raw = subprocess.check_output(["git", "cat-file", "blob", "HEAD:" + key], cwd=Path(__file__).resolve().parents[2])
+    root = Path(__file__).resolve().parents[2]
+    blob_id = subprocess.check_output(["git", "rev-parse", "HEAD:" + key], cwd=root, text=True).strip()
+    raw = subprocess.check_output(["git", "cat-file", "blob", blob_id], cwd=root)
     payload = json.loads(raw)
     digest = hashlib.sha256(raw).hexdigest()
     chart_path = f"watchlist-archive/originals/{digest}.json"
+    hashes = json.loads(subprocess.check_output(
+        ["node", str(root / "scripts/archive_chart_digests.cjs"), str(root)],
+        input=json.dumps([blob_id]).encode(),
+    ))
+    assert hashes[blob_id] == "bba4ba7797a6c4a12fbda832202949d23b418e6db5aee06555a610b15f0803ba"
     row = {
         "asof": day, "sealed_at": f"{day}T21:26:36+08:00", "provenance": "index_seal",
         "model_version": payload["model_version"], "data_version": payload["data_version"],
         "source_url": f"https://github.com/CareyPang/LPPL/blob/34e4efc668c497e420a768cc997ca1df90659297/{key}",
         "sha256": digest, "chart_path": chart_path, "has_bars": True,
-        "chart_content_sha256": "bba4ba7797a6c4a12fbda832202949d23b418e6db5aee06555a610b15f0803ba",
+        "chart_content_sha256": hashes[blob_id],
         "status": "no_qualified_fit", "evidence": "dev_only", "windows": [],
     }
     page.add_init_script("""localStorage.setItem('lppl.watchlist.idx.v1','["sh000001"]')""")
