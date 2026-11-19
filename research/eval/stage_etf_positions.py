@@ -369,7 +369,9 @@ def run(bars_path, corporate_path, frozen, output):
             **ends,
             "difference_cny": round(ends["release_next"] - ends["hold"], 2),
         }
-    (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (output / "summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
 
 
 def main():
