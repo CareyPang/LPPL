@@ -71,8 +71,31 @@ def test_daily_red_and_amount_trin_use_filtered_all_a_rows():
     assert metrics["amt_up"] == pytest.approx(500 / 700)
     assert metrics["trin_amt"] == pytest.approx(0.6)
     assert metrics["trin_vol"] == pytest.approx(2.25)
+    assert metrics["top50_share"] == pytest.approx(1)
+    assert metrics["top100_share"] == pytest.approx(1)
     assert metrics["sh"] == pytest.approx(3210)
     assert spots["hs300"] == pytest.approx(4000)
+
+
+def test_concentration_shares_use_top_50_and_top_100_amounts():
+    rows = [
+        {
+            "market": "sz",
+            "code": f"{index + 1:06d}",
+            "prev_close": 10,
+            "close": 10,
+            "low": 10,
+            "volume": 1,
+            "amount": index + 1,
+        }
+        for index in range(105)
+    ]
+
+    metrics, _ = breadth.compute_daily_metrics("2026-11-18", rows)
+
+    total = sum(range(1, 106))
+    assert metrics["top50_share"] == pytest.approx(sum(range(56, 106)) / total)
+    assert metrics["top100_share"] == pytest.approx(sum(range(6, 106)) / total)
 
 
 def test_limit_prices_round_half_up_for_up_and_down_limits():

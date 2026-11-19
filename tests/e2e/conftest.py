@@ -27,6 +27,7 @@ CONSOLE_ERROR_ALLOWLIST = {
 }
 EXPECTED_OPTIONAL_404_PATHS = {
     "/lab/mock/data/market/breadth_latest.json",
+    "/lab/mock/data/market/top_risk_latest.json",
     "/lab/mock/data/stock/us_index.json",
     "/lab/mock/data/stock/600519.json",
     "/lab/mock/data/stock/000001_history.json",
