@@ -62,3 +62,31 @@ test('segment fallback: missing requested segment falls back to test, then all',
   const onlyAll = { rule_id: 'x', metrics: { all: { evidence: 'descriptive', n_trades: 1 } } };
   assert.equal(SP.model(onlyAll, 'test').segment, 'all');
 });
+
+test('registered rule chips select backend metrics and show descriptive signal quality', () => {
+  const data = {
+    ...published,
+    rules: [
+      {
+        rule_id: 'R-TR1',
+        metrics: {
+          test: { evidence: 'descriptive', n_trades: 3, precision: 0.5, recall: 0.75, baseline: 0.25, n_signals: 4 },
+        },
+      },
+      {
+        rule_id: 'R-LC1',
+        metrics: {
+          test: { evidence: 'descriptive', n_trades: 2, precision: 1, recall: 0.5, baseline: 0.25, n_signals: 2 },
+        },
+      },
+    ],
+  };
+  const model = SP.model(data, 'test', 'R-LC1');
+  assert.equal(model.selectedRule, 'R-LC1');
+  assert.equal(model.n, 2);
+  const html = SP.render(model, 'metrics');
+  assert.match(html, /LPPLS 区间/);
+  assert.match(html, /随机基准占比（不是概率）/);
+  assert.match(html, /历史回放，不是预测/);
+  assert.match(html, /100\.00%/);
+});
