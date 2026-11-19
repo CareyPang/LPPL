@@ -340,7 +340,7 @@ def build_trend_ledger(rows: Iterable[dict], *, evidence: str = "research_replay
         if phase["id"] != "unavailable" and available and row["sh"] > 0:
             _evaluate_day(snapshot, row, prior, active, index, evidence)
         elif phase["id"] != "unavailable":
-            snapshot["reason"] = "最近两日的行情或上涨家数资料不齐，今天的转折提醒暂时无法判断。"
+            snapshot["reason"] = "这两个交易日的行情或上涨家数资料不齐，本次收盘暂时无法判断转折。"
         ledger.append(snapshot)
         prior.append(row)
     return ledger
@@ -366,7 +366,11 @@ def _evaluate_day(
         and not momentum_down
     )
     change = row["sh"] / prev["sh"] - 1
-    index_move = f"比上一交易日{'涨' if change > 0 else '跌'}{abs(change):.2%}" if change else "与上一交易日持平"
+    index_move = (
+        f"比上一交易日{'涨' if change > 0 else '跌'}{abs(change):.2%}"
+        if change
+        else "与上一交易日持平"
+    )
     reasons = [
         f"上证收盘{index_move}，上涨股票占比由{prev['red']:.1%}变为{row['red']:.1%}。",
         f"收盘高于过去20日、60日平均价的股票分别占{row['P20']:.1%}和{row['P60']:.1%}。",
@@ -394,7 +398,7 @@ def _evaluate_day(
                     "invalidated",
                     row,
                     f"上一轮{scope}观察已结束",
-                    f"市场出现反方向变化，今天起改为关注“{title}”。",
+                    f"市场出现反方向变化，本次收盘起改为关注“{title}”。",
                     reasons,
                     "可按起始日期对照这两次观察。",
                 )
@@ -451,4 +455,4 @@ def _evaluate_day(
     ]
     snapshot["alerts"].extend({**alert, "is_new": False} for alert in closed)
     snapshot["state"] = "watch" if snapshot["alerts"] else "quiet"
-    snapshot["reason"] = "" if snapshot["alerts"] else "今天的收盘数据没有形成新的转折提醒。"
+    snapshot["reason"] = "" if snapshot["alerts"] else "本次收盘没有形成新的转折提醒。"

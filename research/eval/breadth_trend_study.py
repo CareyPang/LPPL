@@ -353,7 +353,8 @@ def score(rows, task, chosen, opportunities, peaks, outcomes, info):
             missed=len(possible) - len(hits),
             false_alerts=len(picked) - len(hits),
             immature_alerts=len(chosen) - len(picked),
-            lead_ge5=sum(n >= 5 for n in leads),
+            max_scorable_lead=width - 1,
+            lead_ge5=sum(n >= 5 for n in leads) if width > 5 else None,
             median_lead=median(leads) if leads else None,
         )
         for i in chosen:
@@ -482,8 +483,14 @@ def study(rows, start=None):
     # Unrestricted truth counts keep right-censoring and gaps visible, even if a method
     # had no complete blocks. Per-phase opportunity denominators must never be summed.
     first = next((entry[0] for entry in daily), None)
-    source_first = next((i for i, r in enumerate(rows)
-                         if r.get("red") is not None and (not start or r["date"] >= start)), None)
+    source_first = next(
+        (
+            i
+            for i, r in enumerate(rows)
+            if r.get("red") is not None and (not start or r["date"] >= start)
+        ),
+        None,
+    )
     dates = range(source_first, len(rows)) if source_first is not None else []
     targets = {}
     for task, width in TOP_WINDOW.items():
@@ -524,20 +531,20 @@ def study(rows, start=None):
             evidence="exploratory_retrospective_replay",
             scoring_first_date=rows[source_first]["date"] if source_first is not None else None,
             outcome_definitions={
-                "rebound_end":"20-session start search; at least 3 sessions up from a low after weakness; "
-                              "peak beats its prior 5 closes and is unbeaten over the next 5",
-                "stage_top":"peak beats its prior 20 closes and is unbeaten over the next 20; "
-                            "the most recent 126-session low is at least 20 sessions earlier; "
-                            "close above 20 sessions ago; no subsequent drawdown target",
-                "rebound":"1/5/10-session forward close returns; best and worst forward closes over 10",
-                "reversal":"20-session hold above prior 20-session low, higher retest low after an upswing, "
-                           "ending above signal close and P60 above signal-day level on >=3 of last 5 days",
+                "rebound_end": "20-session start search; at least 3 sessions up from a low after weakness; "
+                "peak beats its prior 5 closes and is unbeaten over the next 5",
+                "stage_top": "peak beats its prior 20 closes and is unbeaten over the next 20; "
+                "the most recent 126-session low is at least 20 sessions earlier; "
+                "close above 20 sessions ago; no subsequent drawdown target",
+                "rebound": "1/5/10-session forward close returns; best and worst forward closes over 10",
+                "reversal": "20-session hold above prior 20-session low, higher retest low after an upswing, "
+                "ending above signal close and P60 above signal-day level on >=3 of last 5 days",
             },
             budget_rule="First qualifying day in four same-phase, same-maturity common observations "
-                        "or a forced fourth ticket; score completed blocks only after every candidate "
-                        "has a mature outcome. Retrospective coverage, not a probability.",
+            "or a forced fourth ticket; score completed blocks only after every candidate "
+            "has a mature outcome. Retrospective coverage, not a probability.",
             trigger_rule="Natural alerts require false -> true on adjacent observed trading sessions; "
-                         "amount and shares vary TRIN only and use the same total currency turnover control.",
+            "amount and shares vary TRIN only and use the same total currency turnover control.",
             first_feature_date=rows[first]["date"] if first is not None else None,
             last_date=rows[-1]["date"],
             sessions_with_phase_and_breadth=len(daily),

@@ -44,12 +44,12 @@
       result.notice = '趋势评估的日期或版本与行情无法核对，请查看下方原始行情。';
       return result;
     }
-    result.asof = asof;
     const today = new Date(now + 8 * 3600000).toISOString().slice(0, 10);
     if (asof > today) {
       result.notice = '这份评估的日期晚于当前交易日期，请核对数据时间。';
       return result;
     }
+    result.asof = asof;
     result.historical = evidence === 'research_replay' || snapshot.stale === true ||
       (date(marketDate) && marketDate > asof) || asof < lastDueDate(now, calendar);
     result.context = evidence === 'research_replay' ? '历史回放' :
