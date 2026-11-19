@@ -32,6 +32,16 @@
     return '';
   }
 
+  function chartTimeFormatter(value) {
+    if (Number.isFinite(value)) {
+      return new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+      }).format(new Date(value * 1000));
+    }
+    return dateFromTime(value);
+  }
+
   function toCandles(bars) {
     var byDate = new Map();
     (Array.isArray(bars) ? bars : []).forEach(function (bar) {
@@ -51,6 +61,26 @@
     return Array.from(byDate.values()).sort(function (a, b) {
       return a.time < b.time ? -1 : a.time > b.time ? 1 : 0;
     });
+  }
+
+  function toIntradayCandles(bars) {
+    var byTime = new Map();
+    (Array.isArray(bars) ? bars : []).forEach(function (bar) {
+      if (!bar || typeof bar.t !== 'string' ||
+          !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(bar.t)) return;
+      var timestamp = Date.parse(bar.t.replace(' ', 'T') + '+08:00');
+      if (!Number.isFinite(timestamp)) return;
+      var values = [bar.o, bar.h, bar.l, bar.c];
+      if (!values.every(Number.isFinite) || Math.min.apply(null, values) <= 0 ||
+          bar.h < Math.max(bar.o, bar.c, bar.l) || bar.l > Math.min(bar.o, bar.c) ||
+          !Number.isFinite(bar.v) || bar.v < 0 || !Number.isFinite(bar.obv)) return;
+      byTime.set(Math.floor(timestamp / 1000), {
+        time: Math.floor(timestamp / 1000), label: bar.t,
+        open: bar.o, high: bar.h, low: bar.l, close: bar.c,
+        volume: bar.v, obv: bar.obv,
+      });
+    });
+    return Array.from(byTime.values()).sort(function (a, b) { return a.time - b.time; });
   }
 
   function toCloses(bars) {
@@ -196,7 +226,13 @@
     var chart = lib.createChart(host, {
       autoSize: true, layout: { attributionLogo: true },
       grid: { vertLines: { color: '#eef1f5' }, horzLines: { color: '#eef1f5' } },
-      timeScale: { rightOffset: 4 }, crosshair: { mode: lib.CrosshairMode.Normal },
+      timeScale: {
+        rightOffset: 4,
+        tickMarkFormatter: function (value) {
+          return Number.isFinite(value) ? chartTimeFormatter(value) : null;
+        },
+      },
+      crosshair: { mode: lib.CrosshairMode.Normal },
     });
     var price = chart.addSeries(lib.CandlestickSeries, {
       upColor: '#d6303a', downColor: '#11845a', wickUpColor: '#d6303a',
@@ -207,38 +243,87 @@
     var volume = chart.addSeries(lib.HistogramSeries, {
       priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false,
     }, 1);
+    var obvLine = chart.addSeries(lib.LineSeries, {
+      color: '#7c3aed', lineWidth: 2, lastValueVisible: false, priceLineVisible: false,
+    }, 2);
+    obvLine.applyOptions({ visible: false });
     var pane = chart.panes()[1];
     if (pane) { chart.panes()[0].setHeight(host.clientHeight * 0.78); pane.setHeight(host.clientHeight * 0.22); }
     var emitters = new Map(), candles = [], current = null, scale = '6-12m', closures = new Set();
     var currentBands = [], currentWhitespace = [], focusedBandId = '';
     var bandPrimitive = null, cutoffPrimitive = null, markerPlugin = null, a11y = null;
+    var divergenceLines = [];
     var readout = opts.readout || null, closeOnly = false;
     function emit(name, value) { (emitters.get(name) || []).forEach(function (fn) { fn(value); }); }
+    function clearDivergenceLines() {
+      divergenceLines.forEach(function (series) { chart.removeSeries(series); });
+      divergenceLines = [];
+    }
+    function setPaneHeights(intraday) {
+      var panes = chart.panes(), height = host.clientHeight || 520;
+      if (panes[0]) panes[0].setHeight(height * (intraday ? 0.64 : 0.78));
+      if (panes[1]) panes[1].setHeight(height * (intraday ? 0.17 : 0.22));
+      if (panes[2]) panes[2].setHeight(intraday ? height * 0.19 : 1);
+    }
     function detachOverlays() {
       if (bandPrimitive) price.detachPrimitive(bandPrimitive);
       if (cutoffPrimitive) price.detachPrimitive(cutoffPrimitive);
       if (markerPlugin) markerPlugin.detach();
+      clearDivergenceLines();
       bandPrimitive = cutoffPrimitive = markerPlugin = null;
+    }
+    function addDivergenceSegment(first, second, firstValue, secondValue, color, paneIndex) {
+      var line = chart.addSeries(lib.LineSeries, {
+        color: color, lineWidth: 2,
+        lineStyle: lib.LineStyle ? lib.LineStyle.Dashed : 2,
+        lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false,
+      }, paneIndex);
+      line.setData([
+        { time: first.time, value: firstValue },
+        { time: second.time, value: secondValue },
+      ]);
+      divergenceLines.push(line);
+    }
+    function attachDivergences(divergences) {
+      var byLabel = new Map(candles.map(function (bar) { return [bar.label, bar]; }));
+      var markers = [];
+      (Array.isArray(divergences) ? divergences : []).forEach(function (item) {
+        var first = byLabel.get(item.p1), second = byLabel.get(item.p2);
+        if (!first || !second || first.time >= second.time) return;
+        var top = item.type === 'top';
+        var color = top ? '#11845a' : '#d6303a';
+        markers.push({
+          time: second.time, position: top ? 'aboveBar' : 'belowBar',
+          shape: top ? 'arrowDown' : 'arrowUp', color: color,
+          text: top ? 'OBV 顶背离' : 'OBV 底背离',
+        });
+        addDivergenceSegment(first, second,
+          top ? first.high : first.low, top ? second.high : second.low, color, 0);
+        addDivergenceSegment(first, second, first.obv, second.obv, color, 2);
+      });
+      if (markers.length && lib.createSeriesMarkers) markerPlugin = lib.createSeriesMarkers(price, markers);
     }
     function setData(payload) {
       detachOverlays();
       current = payload || {};
-      closeOnly = priceMode(current.bars || []) === 'close';
-      candles = closeOnly ? toCloses(current.bars || []) : toCandles(current.bars || []);
+      var intraday = current.schema === 'kline_obv.v1';
+      closeOnly = !intraday && priceMode(current.bars || []) === 'close';
+      candles = intraday ? toIntradayCandles(current.bars || [])
+        : closeOnly ? toCloses(current.bars || []) : toCandles(current.bars || []);
       var previousPrice = price;
       price = closeOnly ? closePrice : candlePrice;
       candlePrice.applyOptions({ visible: !closeOnly }); closePrice.applyOptions({ visible: closeOnly });
       (closeOnly ? candlePrice : closePrice).setData([]);
-      closures = new Set(current.future_calendar && current.future_calendar.closures || []);
-      currentBands = bandsForAllScales(current);
+      closures = new Set(intraday ? [] : current.future_calendar && current.future_calendar.closures || []);
+      currentBands = intraday ? [] : bandsForAllScales(current);
       var futureDates = currentBands.map(function (item) { return item.q80_date; });
-      if (Array.isArray(current.events)) {
+      if (!intraday && Array.isArray(current.events)) {
         futureDates = futureDates.concat(current.events.map(function (event) { return event.date; }));
       }
-      if (Array.isArray(current.eventRows)) {
+      if (!intraday && Array.isArray(current.eventRows)) {
         futureDates = futureDates.concat(current.eventRows.map(function (event) { return event.date; }));
       }
-      currentWhitespace = futureWhitespace(candles,
+      currentWhitespace = intraday ? [] : futureWhitespace(candles,
         futureDates, closures);
       price.setData(candles.map(function (bar) {
         return closeOnly ? { time: bar.time, value: bar.close } : { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close };
@@ -247,8 +332,14 @@
       volume.setData(candles.filter(function (bar) { return bar.volume != null; }).map(function (bar) {
         return { time: bar.time, value: bar.volume, color: closeOnly ? '#7485a9' : bar.close >= bar.open ? '#d6303a' : '#11845a' };
       }));
-      attachBands();
-      if (Array.isArray(current.events) && lib.createSeriesMarkers) {
+      obvLine.applyOptions({ visible: intraday });
+      obvLine.setData(intraday ? candles.map(function (bar) {
+        return { time: bar.time, value: bar.obv };
+      }) : []);
+      setPaneHeights(intraday);
+      if (intraday) attachDivergences(current.divergences);
+      else attachBands();
+      if (!intraday && Array.isArray(current.events) && lib.createSeriesMarkers) {
         markerPlugin = lib.createSeriesMarkers(price, current.events.filter(function (event) {
           return validDate(event.date) && candles.length && event.date >= candles[0].time;
         }).map(function (event) {
@@ -256,12 +347,15 @@
             shape: 'circle', color: '#315cf5', text: event.label || '事件' };
         }));
       }
-      if (current.asof) setAsof(current.asof);
-      if (Number.isFinite(opts.initialBars) && opts.initialBars > 0 && candles.length) {
+      chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: false } });
+      if (!intraday && current.asof) setAsof(current.asof);
+      if (!intraday && Number.isFinite(opts.initialBars) && opts.initialBars > 0 && candles.length) {
         chart.timeScale().setVisibleLogicalRange({
           from: Math.max(0, candles.length - opts.initialBars),
           to: candles.length + currentWhitespace.length - 1,
         });
+      } else if (intraday) {
+        chart.timeScale().fitContent();
       } else {
         var visibleRange = defaultVisibleRange(
           candles, currentBands, current.asof, closures, candles.length + currentWhitespace.length - 1,
@@ -322,20 +416,25 @@
     }
     function crosshair(param) {
       var date = dateFromTime(param && param.time);
-      var bar = candles.find(function (item) { return item.time === date; });
-      var value = bar ? { date: date, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume }
+      var bar = candles.find(function (item) {
+        return item.time === (param && param.time) || item.time === date;
+      });
+      var label = bar && bar.label || date;
+      var value = bar ? { date: label, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
+        volume: bar.volume, obv: bar.obv }
         : date ? { date: date, future: true } : null;
       if (readout) readout.textContent = !value ? '' : value.future
-        ? date + ' 未来交易日 · 无行情'
-        : closeOnly ? date + ' 收 ' + bar.close + '（OHLC 未完整提供，仅收盘线）'
-        : date + ' 开 ' + bar.open + ' 高 ' + bar.high + ' 低 ' + bar.low + ' 收 ' + bar.close +
-          ' 量 ' + (bar.volume == null ? '—' : bar.volume) + '（供应商原始单位）';
+        ? label + ' 未来交易日 · 无行情'
+        : closeOnly ? label + ' 收 ' + bar.close + '（OHLC 未完整提供，仅收盘线）'
+        : label + ' 开 ' + bar.open + ' 高 ' + bar.high + ' 低 ' + bar.low + ' 收 ' + bar.close +
+          ' 量 ' + (bar.volume == null ? '—' : bar.volume) +
+          (bar.obv == null ? '（供应商原始单位）' : ' OBV ' + bar.obv);
       emit('crosshair', value);
     }
     chart.subscribeCrosshairMove(crosshair);
-    a11y = root.LPPLLwc.Accessibility.addAccessibilityPlugin(chart, { chartTitle: 'LPPL 日线与成交量' });
+    a11y = root.LPPLLwc.Accessibility.addAccessibilityPlugin(chart, { chartTitle: '价格、成交量与 OBV' });
     return {
-      setData: setData, setScale: setScale, setAsof: setAsof,
+      setData: setData, setIntraday: setData, setScale: setScale, setAsof: setAsof,
       focusBand: focusBand, focusDate: focusDate, on: on,
       drawingTarget: function () { return { chart: chart, series: price }; },
       // Keep the user's reading position when independent modules arrive.
@@ -460,7 +559,8 @@
   }
 
   return {
-    mount: mount, toCandles: toCandles, toCloses: toCloses, priceMode: priceMode, futureWhitespace: futureWhitespace,
+    mount: mount, toCandles: toCandles, toIntradayCandles: toIntradayCandles,
+    toCloses: toCloses, priceMode: priceMode, futureWhitespace: futureWhitespace,
     bandsFor: bandsFor, bandsForAllScales: bandsForAllScales,
     bandStyle: bandStyle, intervalId: intervalId, bandSlotRange: bandSlotRange,
     needsCalendarCoverage: needsCalendarCoverage,

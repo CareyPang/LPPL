@@ -23,6 +23,8 @@
   var modelError = null;
   var modelRequest = 0;
   var eventRequest = 0;
+  var intradayRequest = 0;
+  var selectedPeriod = 'd';
   var scales = Core.SCALES;
   var scaleLabels = {
     '2-4w': '2–4 周', '1-3m': '1–3 个月', '3-6m': '3–6 个月',
@@ -194,12 +196,63 @@
       var button = document.querySelector('[data-scale="' + value + '"]');
       button.setAttribute('aria-pressed', String(value === scale));
     });
-    if (chart) chart.setScale(scale);
+    if (chart && selectedPeriod === 'd') chart.setScale(scale);
     if (!preserveFocus) {
       context.focus = '';
       updateAddress(scale, '');
     }
     if (current) renderEvidence(current, scale);
+  }
+
+  async function selectPeriod(period) {
+    if (!['d', '30', '60'].includes(period) || context.assetType !== 'stock' || context.asof) return;
+    selectedPeriod = period;
+    page.dataset.period = period;
+    Array.from(el('period-selector').querySelectorAll('[data-period]')).forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.period === period));
+    });
+    el('scale-selector').hidden = period !== 'd';
+    el('obv-caption').hidden = true;
+    if (period === 'd') {
+      intradayRequest += 1;
+      el('intraday-notice').hidden = true;
+      if (current && chart) {
+        chart.setData(chartPayload(current));
+        if (current.asof) chart.setAsof(current.asof);
+        renderCalendarNotice(current);
+      } else {
+        if (chart) chart.setData({ bars: [] });
+        void load();
+      }
+      el('price-mode-note').textContent = current && LPPLChart.priceMode(current.bars) === 'close'
+        ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
+        : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+      return;
+    }
+
+    var run = ++intradayRequest;
+    el('calendar-notice').hidden = true;
+    el('intraday-notice').hidden = false;
+    el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间；分钟行情读取中…';
+    if (chart) chart.setIntraday({ schema: 'kline_obv.v1', bars: [], divergences: [] });
+    el('price-mode-note').textContent = period + ' 分钟 K 线、成交量与 OBV。';
+    try {
+      var data = await LPPL.stock.kline(context.stockCode, period);
+      if (run !== intradayRequest || selectedPeriod !== period) return;
+      if (!data || data.schema !== 'kline_obv.v1') throw new Error('Worker 返回的分钟线格式无效');
+      chart.setIntraday(data);
+      var limits = data.limits || {};
+      el('obv-caption').textContent = 'OBV 背离为' +
+        (data.note || '历史形态描述，不是买卖信号') +
+        '；分钟线仅含最近约 ' + (limits.n_bars || (Array.isArray(data.bars) ? data.bars.length : 0)) +
+        ' 根（' + (limits.first || '—') + '–' + (limits.last || '—') + '）';
+      el('obv-caption').hidden = false;
+      el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间。';
+    } catch (error) {
+      if (run !== intradayRequest || selectedPeriod !== period) return;
+      el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间；分钟行情读取失败：' +
+        (error && error.message || '未知错误');
+    }
   }
 
   function setText(id, value) {
@@ -254,6 +307,10 @@
   }
 
   function renderCalendarNotice(data) {
+    if (selectedPeriod !== 'd') {
+      el('calendar-notice').hidden = true;
+      return;
+    }
     var bands = LPPLChart.bandsForAllScales(chartPayload(data));
     var last = data.bars[data.bars.length - 1];
     var lastDate = last && (last.date || last.time);
@@ -281,18 +338,24 @@
     page.dataset.modelStatus = String(data.modelStatus || '');
     var displayMode = LPPLChart.priceMode(data.bars);
     page.dataset.priceMode = displayMode;
-    el('price-mode-note').textContent = displayMode === 'close'
+    el('price-mode-note').textContent = selectedPeriod !== 'd'
+      ? '分钟 K 线与成交量；OBV 背离为历史形态描述，不是买卖信号。'
+      : displayMode === 'close'
       ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
       : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
     drawHeader(data);
     if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: context.asof || '' });
-    chart.setData(chartPayload(data));
-    if (data.asof) chart.setAsof(data.asof);
+    if (selectedPeriod === 'd') {
+      chart.setData(chartPayload(data));
+      if (data.asof) chart.setAsof(data.asof);
+    }
     renderEvidence(data, context.scale);
     renderCalendarNotice(data);
     renderAsofNotice(data);
-    if (view && chart.setVisibleRange) chart.setVisibleRange(view);
-    else applyInitialFocus(data);
+    if (selectedPeriod === 'd') {
+      if (view && chart.setVisibleRange) chart.setVisibleRange(view);
+      else applyInitialFocus(data);
+    } else if (view && chart.setVisibleRange) chart.setVisibleRange(view);
     el('loading').hidden = true;
     el('share-card').disabled = false;
     el('share-screenshot').disabled = false;
@@ -436,6 +499,11 @@
     button.textContent = scaleLabels[scale];
     button.addEventListener('click', function () { selectScale(scale, false); });
     el('scale-selector').appendChild(button);
+  });
+  el('period-selector').hidden = context.assetType !== 'stock' || !!context.asof;
+  page.dataset.period = selectedPeriod;
+  el('period-selector').querySelectorAll('[data-period]').forEach(function (button) {
+    button.addEventListener('click', function () { void selectPeriod(button.dataset.period); });
   });
 
   el('retry-button').addEventListener('click', function () { void load(); });

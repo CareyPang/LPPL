@@ -20,6 +20,9 @@ MARKET_FIXTURES = {
     "600519": FIXTURES / "stock_600519_market.json",
     "601838": FIXTURES / "stock_601838_market.json",
 }
+KLINE_FIXTURES = {
+    ("600519", "30"): FIXTURES / "stock_600519_kline_30.json",
+}
 WORKER_HOST = "lppl-stock-query.careypang.workers.dev"
 CONSOLE_ERROR_ALLOWLIST = {
     404: re.compile(r"server responded with a status of 404"),
@@ -103,6 +106,17 @@ def fulfill_external(
     elif host.endswith(".workers.dev") and parsed.path == "/market":
         code = parse_qs(parsed.query).get("code", [""])[0]
         fixture = MARKET_FIXTURES.get(code)
+        if fixture and fixture.is_file():
+            route.fulfill(path=str(fixture), headers=CORS_HEADERS)
+        else:
+            fulfill_503(route, expected_console_errors)
+    elif host.endswith(".workers.dev") and parsed.path == "/kline":
+        params = parse_qs(parsed.query)
+        fixture_key = (
+            params.get("code", [""])[0],
+            params.get("period", [""])[0],
+        )
+        fixture = KLINE_FIXTURES.get(fixture_key)
         if fixture and fixture.is_file():
             route.fulfill(path=str(fixture), headers=CORS_HEADERS)
         else:

@@ -34,6 +34,18 @@ test('history reads an exact archived result, trims later bars and never starts 
   assert.equal(Chart.priceMode(result.bars), 'close');
   assert.deepEqual(Chart.toCandles(result.bars), []);
 });
+test('intraday candles retain OHLC, volume and Worker OBV on Shanghai timestamps', () => {
+  const bars = Chart.toIntradayCandles([
+    { t: '2026-11-18 10:00:00', o: 100, h: 102, l: 99, c: 101, v: 20, obv: 30 },
+    { t: '2026-11-18 09:30:00', o: 99, h: 101, l: 98, c: 100, v: 10, obv: 10 },
+    { t: '2026-11-18 10:30:00', o: 101, h: 100, l: 99, c: 100, v: 5, obv: 25 },
+    { t: 'invalid', o: 100, h: 102, l: 99, c: 101, v: 20, obv: 30 },
+  ]);
+  assert.equal(bars.length, 2);
+  assert.deepEqual(bars.map(bar => bar.label), ['2026-11-18 09:30:00', '2026-11-18 10:00:00']);
+  assert.equal(new Date(bars[0].time * 1000).toISOString(), '2026-11-18T01:30:00.000Z');
+  assert.equal(bars[0].obv, 10);
+});
 test('wrong cutoff or symbol cannot pass as an archived match', () => {
   assert.throws(() => Reader.exactResult({ ...raw, asof: '2026-06-25' }, context), /精确封存/);
   assert.throws(() => Reader.exactResult({ ...raw, symbol: 'sh000300' }, context), /身份不匹配/);

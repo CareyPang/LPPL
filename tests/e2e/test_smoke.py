@@ -6,7 +6,7 @@ import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -193,6 +193,48 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     expect(
         page.locator('#stock-scales [data-scale="12-24m"]')
     ).to_have_attribute("aria-checked", "true")
+
+
+@pytest.mark.e2e
+def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
+    page.goto(f"{BASE_URL}/chart.html?code=600519&kind=stock")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    expect(page.locator("#period-selector")).to_be_visible()
+    expect(page.locator("#period-selector [data-period]")).to_have_count(3)
+    expect(page.locator('#period-selector [data-period="d"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    page.locator('#period-selector [data-period="30"]').click()
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.period === '30'"
+    )
+    expect(page.locator("#intraday-notice")).to_contain_text(
+        "分钟线不显示 LPPLS 区间"
+    )
+    expect(page.locator("#obv-caption")).to_be_visible()
+    expect(page.locator("#obv-caption")).to_contain_text(
+        "OBV 背离为历史形态描述，不是买卖信号"
+    )
+    expect(page.locator("#obv-caption")).to_contain_text(
+        "分钟线仅含最近约 20 根"
+    )
+    expect(page.locator("#scale-selector")).to_be_hidden()
+    expect(page.locator("#chart-host canvas").first).to_be_visible()
+    for width, height in ((1280, 900), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        assert page.evaluate(
+            "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+        ), f"chart page overflows at {width}px"
+    assert any(
+        method == "GET"
+        and (urlsplit(url).hostname or "").endswith(".workers.dev")
+        and urlsplit(url).path == "/kline"
+        and parse_qs(urlsplit(url).query).get("code") == ["600519"]
+        and parse_qs(urlsplit(url).query).get("period") == ["30"]
+        for method, url, _ in page._e2e_requests
+    ), page._e2e_requests
 
 
 @pytest.mark.e2e
