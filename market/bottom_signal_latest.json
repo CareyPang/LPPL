@@ -156,10 +156,196 @@
     "erp_and_close": "ak.stock_ebs_lg",
     "pbn_ratio": "ak.stock_a_below_net_asset_statistics(symbol=\"全部A股\")"
   },
+  "a500": {
+    "asof": "2026-11-18",
+    "rule": "以中证A500成分股合成滚动市盈率（1/PE_TTM − 10年国债收益率）可用日期为准，破净股占比按日期去重并向前填充；股债利差和破净股占比分别使用含当日的过去 750 个交易日滚动秩分位（至少 500 日）；两项分位均不低于 90% 时记为信号日，前 20 个交易日无信号才计为独立事件，仅统计 2007-01-01 起的事件；事件后最低取之后 1–250 个交易日中证A500收盘价的最低值，并计算第 120/250 个交易日收益；下跌日基准为中证A500较 20 个交易日前下跌且之后 250 日可用的交易日。",
+    "current": {
+      "date": "2026-11-18",
+      "erp": 0.0485,
+      "erp_pct": 0.48,
+      "pbn_ratio": 0.1039,
+      "pbn_pct": 0.8547,
+      "signal": false,
+      "last_event_date": "2024-06-25"
+    },
+    "events": [
+      {
+        "date": "2008-10-28",
+        "erp": 0.041,
+        "erp_pct": 0.9987,
+        "pbn_ratio": 0.1161,
+        "pbn_pct": 0.9347,
+        "post_min": -0.0455,
+        "post_min_date": "2008-11-04",
+        "post_min_complete": true,
+        "ret_120": 0.5279,
+        "ret_250": 1.0382
+      },
+      {
+        "date": "2011-12-01",
+        "erp": 0.054,
+        "erp_pct": 0.9987,
+        "pbn_ratio": 0.0113,
+        "pbn_pct": 0.9227,
+        "post_min": -0.197,
+        "post_min_date": "2012-12-03",
+        "post_min_complete": true,
+        "ret_120": -0.0278,
+        "ret_250": -0.1418
+      },
+      {
+        "date": "2013-05-02",
+        "erp": 0.0625,
+        "erp_pct": 0.9187,
+        "pbn_ratio": 0.0348,
+        "pbn_pct": 0.9687,
+        "post_min": -0.0948,
+        "post_min_date": "2013-06-27",
+        "post_min_complete": true,
+        "ret_120": 0.01,
+        "ret_250": -0.0491
+      },
+      {
+        "date": "2013-06-13",
+        "erp": 0.0636,
+        "erp_pct": 0.94,
+        "pbn_ratio": 0.0336,
+        "pbn_pct": 0.9567,
+        "post_min": -0.0896,
+        "post_min_date": "2013-06-27",
+        "post_min_complete": true,
+        "ret_120": 0.0548,
+        "ret_250": -0.0504
+      },
+      {
+        "date": "2013-10-31",
+        "erp": 0.0652,
+        "erp_pct": 0.9413,
+        "pbn_ratio": 0.0466,
+        "pbn_pct": 0.9293,
+        "post_min": -0.0835,
+        "post_min_date": "2014-05-19",
+        "post_min_complete": true,
+        "ret_120": -0.0773,
+        "ret_250": 0.1048
+      },
+      {
+        "date": "2013-12-26",
+        "erp": 0.0645,
+        "erp_pct": 0.908,
+        "pbn_ratio": 0.047,
+        "pbn_pct": 0.9213,
+        "post_min": -0.0539,
+        "post_min_date": "2014-05-19",
+        "post_min_complete": true,
+        "ret_120": -0.0271,
+        "ret_250": 0.5374
+      },
+      {
+        "date": "2018-09-12",
+        "erp": 0.0461,
+        "erp_pct": 0.9027,
+        "pbn_ratio": 0.0748,
+        "pbn_pct": 1.0,
+        "post_min": -0.0916,
+        "post_min_date": "2019-01-03",
+        "post_min_complete": true,
+        "ret_120": 0.1886,
+        "ret_250": 0.2031
+      },
+      {
+        "date": "2020-02-03",
+        "erp": 0.0479,
+        "erp_pct": 0.904,
+        "pbn_ratio": 0.1234,
+        "pbn_pct": 0.9933,
+        "post_min": -0.0315,
+        "post_min_date": "2020-03-23",
+        "post_min_complete": true,
+        "ret_120": 0.2618,
+        "ret_250": 0.5035
+      },
+      {
+        "date": "2020-03-17",
+        "erp": 0.0486,
+        "erp_pct": 0.9133,
+        "pbn_ratio": 0.1002,
+        "pbn_pct": 0.9173,
+        "post_min": -0.0474,
+        "post_min_date": "2020-03-23",
+        "post_min_complete": true,
+        "ret_120": 0.2375,
+        "ret_250": 0.3628
+      },
+      {
+        "date": "2022-04-26",
+        "erp": 0.0505,
+        "erp_pct": 0.984,
+        "pbn_ratio": 0.1081,
+        "pbn_pct": 0.9687,
+        "post_min": -0.0412,
+        "post_min_date": "2022-10-31",
+        "post_min_complete": true,
+        "ret_120": -0.0115,
+        "ret_250": 0.0764
+      },
+      {
+        "date": "2024-01-19",
+        "erp": 0.0578,
+        "erp_pct": 0.9973,
+        "pbn_ratio": 0.0851,
+        "pbn_pct": 0.914,
+        "post_min": -0.0476,
+        "post_min_date": "2024-02-05",
+        "post_min_complete": true,
+        "ret_120": 0.0336,
+        "ret_250": 0.2029
+      },
+      {
+        "date": "2024-06-25",
+        "erp": 0.0527,
+        "erp_pct": 0.908,
+        "pbn_ratio": 0.1427,
+        "pbn_pct": 0.9947,
+        "post_min": -0.0857,
+        "post_min_date": "2024-09-13",
+        "post_min_complete": true,
+        "ret_120": 0.1589,
+        "ret_250": 0.1556
+      }
+    ],
+    "summary": {
+      "n_events": 12,
+      "n_with_250d": 12,
+      "n_up_250": 9,
+      "share_up_250": 0.75,
+      "median_ret_250": 0.1792,
+      "median_post_min": -0.0687
+    },
+    "baseline": {
+      "n_days": 2117,
+      "share_up_250": 0.5456,
+      "median_ret_250": 0.0358,
+      "median_post_min": -0.1304
+    },
+    "notes": [
+      "历史回测，不是预测",
+      "样本只有 12 次",
+      "2011–2013 熊市中提前约一年触发，之后再跌 12–18%",
+      "不是买入指令",
+      "成分股按当前名单回溯，2005 年只有 179 只有数据"
+    ],
+    "sources": {
+      "erp": "中证A500 成分股合成滚动市盈率（东财 RPT_VALUEANALYSIS_DET 日更；2026-11-13 前为研究重建）与 10 年国债收益率 ak.bond_zh_us_yield_em",
+      "close": "ak.index_zh_daily_sina(sh000510)",
+      "pbn_ratio": "ak.stock_a_below_net_asset_statistics(symbol=\"全部A股\")"
+    },
+    "fetch_failed": 0
+  },
   "version": {
     "kind": "bottom_signal",
     "asof": "2026-11-18",
-    "file": "versions/bottom_signal/2026-11-18/20261119T002507Z_997c315f.json.gz",
-    "sha256": "997c315fcbbcf695c395d5d5e0b43e148c506e3c6ea737b62e4266ea793c0ca0"
+    "file": "versions/bottom_signal/2026-11-18/20261119T055921Z_2bbeeb0e.json.gz",
+    "sha256": "2bbeeb0ee4e457d57b34016491ee8e861543594a48ab2b5ab07791614db64576"
   }
 }
