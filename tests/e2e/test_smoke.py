@@ -262,7 +262,10 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text(
         "游资已披露买入：前6只"
     )
-    expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text("全部 7 只")
+    expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text("全部 5 只")
+    expect(page.locator("#lhb-seats-body .lhb-meta")).to_have_text(
+        "样本 34 只（其中单日榜 28、多日榜 6） · 历史分位，不是预测"
+    )
     seat_rows = page.locator("#lhb-seats-body .lhb-youzi-row")
     expect(seat_rows).to_have_count(2)
     expect(seat_rows.first.locator(".lhb-youzi-name")).to_have_text("游资甲")

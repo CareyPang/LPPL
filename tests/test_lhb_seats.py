@@ -256,6 +256,132 @@ def test_aggregate_keeps_institution_rows_and_deduplicates_duplicate_causes():
     assert result["totals"]["n_stocks"] == 1
 
 
+def test_aggregate_deduplicates_identical_single_multi_rows_before_totals_and_alias_groups():
+    single = "日涨幅偏离值达到7%"
+    multi = "连续三个交易日内，涨幅偏离值累计达到20%"
+    summary = [
+        _summary_row("600001", "甲股份", "same-trade", single, 140, 60),
+        _summary_row("600001", "甲股份", "same-trade", multi, 140, 60),
+    ]
+    single_alias = _detail_row(
+        "same-trade", "600001", "甲股份", "dept-a", "某营业部", 100, 50, single
+    )
+    single_institution = _detail_row(
+        "same-trade", "600001", "甲股份", "0", "机构专用", 40, 10, single
+    )
+    multi_alias = {
+        **single_alias,
+        "EXPLANATION": multi,
+    }
+    multi_institution = {
+        **single_institution,
+        "EXPLANATION": multi,
+    }
+    details = [
+        single_alias,
+        single_institution,
+        multi_alias,
+        multi_institution,
+    ]
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18",
+        summary,
+        details,
+        [row.copy() for row in details],
+        {"某营业部": {"alias": "游资甲", "source": "公开报道"}},
+    )
+
+    assert result["totals"]["buy"] == 140
+    assert result["totals"]["sell"] == 60
+    assert result["totals"]["institution_net"] == 30
+    assert result["totals"]["n_stocks_single"] == 1
+    assert result["totals"]["n_stocks_multi"] == 1
+    group = result["youzi"][0]
+    assert (group["buy"], group["sell"], group["net"], group["n_stocks"]) == (
+        100,
+        50,
+        50,
+        1,
+    )
+    assert group["trades"] == [
+        {"code": "600001", "name": "甲股份", "buy": 100, "sell": 50}
+    ]
+    assert result["youzi_summary"]["top_buy"] == [
+        {"code": "600001", "name": "甲股份", "buy": 100}
+    ]
+
+
+def test_aggregate_deduplicates_same_seat_amounts_across_lists_with_distinct_trade_ids():
+    single = "日涨幅偏离值达到7%"
+    multi = "连续三个交易日内，涨幅偏离值累计达到20%"
+    summary = [
+        _summary_row("600001", "甲股份", "single-trade", single, 140, 60),
+        _summary_row("600001", "甲股份", "multi-trade", multi, 140, 60),
+    ]
+    multi_alias = _detail_row(
+        "multi-trade", "600001", "甲股份", "dept-a", "某营业部", 100, 50, multi
+    )
+    multi_institution = _detail_row(
+        "multi-trade", "600001", "甲股份", "0", "机构专用", 40, 10, multi
+    )
+    single_alias = _detail_row(
+        "single-trade", "600001", "甲股份", "dept-a", "某营业部", 100, 50, single
+    )
+    single_institution = _detail_row(
+        "single-trade", "600001", "甲股份", "0", "机构专用", 40, 10, single
+    )
+    details = [multi_alias, multi_institution, single_alias, single_institution]
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18",
+        summary,
+        details,
+        [row.copy() for row in details],
+        {"某营业部": {"alias": "游资甲"}},
+    )
+
+    assert result["totals"]["buy"] == 140
+    assert result["totals"]["sell"] == 60
+    assert result["totals"]["institution_net"] == 30
+    assert result["totals"]["n_stocks_single"] == 1
+    assert result["totals"]["n_stocks_multi"] == 1
+    group = result["youzi"][0]
+    assert (group["buy"], group["sell"], group["net"]) == (100, 50, 50)
+    seat = next(seat for seat in result["seats"] if seat["seat"] == "某营业部")
+    assert {trade["list"] for trade in seat["trades"]} == {"single"}
+
+
+def test_youzi_buying_summary_excludes_sell_only_stocks():
+    explanation = "日涨幅偏离值达到7%"
+    summary = [
+        _summary_row("600001", "甲股份", "buy-trade", explanation, 100, 0),
+        _summary_row("000002", "乙科技", "sell-trade", explanation, 0, 50),
+    ]
+    buy_row = _detail_row(
+        "buy-trade", "600001", "甲股份", "dept-a", "买入营业部", 100, 0, explanation
+    )
+    sell_only_row = _detail_row(
+        "sell-trade", "000002", "乙科技", "dept-b", "卖出营业部", 0, 50, explanation
+    )
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18",
+        summary,
+        [buy_row, sell_only_row],
+        [buy_row.copy(), sell_only_row.copy()],
+        {
+            "买入营业部": {"alias": "游资甲"},
+            "卖出营业部": {"alias": "游资乙"},
+        },
+    )
+
+    assert result["youzi_summary"]["n_stocks"] == 1
+    assert result["youzi_summary"]["top_buy"] == [
+        {"code": "600001", "name": "甲股份", "buy": 100}
+    ]
+
+
 def test_aggregate_uses_largest_same_type_disclosure():
     explanation = "日涨幅偏离值达到7%"
     summary = [
@@ -345,6 +471,9 @@ def test_aggregate_counts_unique_stock_across_single_and_multi_lists():
     assert result["totals"]["n_stocks"] == 1
     assert result["totals"]["n_stocks_single"] == 1
     assert result["totals"]["n_stocks_multi"] == 1
+    assert result["sample_note"] == (
+        "样本 1 只（其中单日榜 1、多日榜 1） · 历史分位，不是预测"
+    )
 
 
 def test_aggregate_keeps_single_and_multi_disclosures_for_920157():

@@ -266,6 +266,7 @@ td.r, th.r { text-align: right; }
 .lhb-other-name { min-width: 0; overflow-wrap: anywhere; }
 .lhb-other-kind { display: block; color: var(--ink-3); font-size: 10px; }
 .lhb-other-amounts { flex: none; text-align: right; font: 10px/1.5 var(--f-m); white-space: nowrap; }
+.lhb-meta { margin: 0 0 12px; color: var(--ink-3); font-size: 12px; }
 .lhb-note { margin-top: 12px; color: var(--ink-3); font-size: 11px; }
 @media (max-width: 640px) {
   .lhb-header { align-items: flex-start; gap: 6px; }
@@ -1486,6 +1487,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <div class="lhb-card sell">龙虎榜卖出<strong>${money(totals.sell)}</strong></div>
       <div class="lhb-card institution">机构净买入（已披露部分）<strong>${money(totals.institution_net)}</strong></div>
     </div>
+    <p class="lhb-meta">${E(data.sample_note || '')}</p>
     <div class="lhb-top-buy"><strong>游资已披露买入：前6只</strong><span>${topBuy || '暂无可用样本'} · 全部 ${E(summary.n_stocks ?? 0)} 只</span></div>
     <div class="lhb-rows">${youziRows || '<p class="note">暂无已识别游资席位</p>'}</div>
     <h3 class="lhb-other-heading">其他主要席位 · 已披露样本</h3>
