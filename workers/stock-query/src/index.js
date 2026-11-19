@@ -1070,7 +1070,11 @@ function klineSymbol(code) {
 function validKlineTime(value, period) {
   const text = String(value || '').trim().replace('T', ' ');
   if (period === 'd') return /^\d{4}-\d{2}-\d{2}$/.test(text) && validDate(text) ? text : null;
-  const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?$/.exec(text);
+  const compact = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(text);
+  const normalized = compact
+    ? `${compact[1]}-${compact[2]}-${compact[3]} ${compact[4]}:${compact[5]}`
+    : text;
+  const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?$/.exec(normalized);
   if (!match || !validDate(match[1])) return null;
   const hour = Number(match[2].slice(0, 2)), minute = Number(match[2].slice(3, 5));
   const second = Number(match[3] || 0);

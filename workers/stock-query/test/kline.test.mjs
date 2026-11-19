@@ -125,7 +125,7 @@ test('GET /kline reads one Sina symbol, computes OBV, and reports source and lim
 test('GET /kline falls back to Tencent when Sina fails', async () => {
   const calls = [];
   const rows = sinaBars().map((bar) =>
-    `${bar.day},${bar.open},${bar.close},${bar.high},${bar.low},${bar.volume},0`);
+    `${bar.day.replace(/[- :]/g, '').slice(0, 12)},${bar.open},${bar.close},${bar.high},${bar.low},${bar.volume},0`);
   await withFetch(async (url) => {
     const parsed = new URL(String(url));
     calls.push(parsed);
