@@ -260,6 +260,30 @@
     };
   }
 
+  function marketMetadata(data, period, intraday) {
+    data = data || {};
+    if (period === '30' || period === '60') {
+      if (intraday && intraday.period === period && intraday.status === 'ready') {
+        var limits = intraday.limits || {};
+        return {
+          marketDate: '行情时间 ' + (limits.last || '未记录'),
+          dataSource: String(intraday.source || '未记录') + ' · ' + period + ' 分钟 · 不复权',
+        };
+      }
+      if (intraday && intraday.period === period && intraday.status === 'error') {
+        return { marketDate: '行情时间 未记录', dataSource: '未记录' };
+      }
+      return { marketDate: '行情时间 读取中…', dataSource: '读取中' };
+    }
+    var source = data.dataSource || '未记录';
+    var adjustment = data.adjustment || '未记录';
+    return {
+      marketDate: '行情日期 ' + (data.marketAsOf || '未记录'),
+      dataSource: source + ' · ' +
+        (data.assetType === 'stock' && adjustment === 'none' ? '未复权' : adjustment),
+    };
+  }
+
   function intervalId(scale, band) {
     return 'interval:' + [scale, band && band.rank || 'main',
       band && band.q20_date || '', band && band.q80_date || ''].join(':');
@@ -277,6 +301,7 @@
     exchangeFor: exchangeFor,
     assembleIndexData: assembleIndexData,
     assembleStockData: assembleStockData,
+    marketMetadata: marketMetadata,
     intervalId: intervalId,
   };
 });

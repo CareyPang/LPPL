@@ -222,6 +222,26 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
     )
     expect(page.locator("#scale-selector")).to_be_hidden()
     expect(page.locator("#chart-host canvas").first).to_be_visible()
+    expect(page.locator("#data-source")).to_have_text(
+        "fixture · 30 分钟 · 不复权"
+    )
+    expect(page.locator("#market-date")).to_have_text(
+        "行情时间 2026-11-18 15:00:00"
+    )
+    notice = page.locator("#intraday-notice").bounding_box()
+    chart = page.locator("#chart-host").bounding_box()
+    assert notice and chart and chart["y"] >= notice["y"] + notice["height"] + 12
+    page.locator('#period-selector [data-period="d"]').click()
+    expect(page.locator("#data-source")).to_have_text(
+        "tencent_fqkline · 未复权"
+    )
+    expect(page.locator("#market-date")).to_have_text(
+        "行情日期 2026-11-17"
+    )
+    page.locator('#period-selector [data-period="30"]').click()
+    expect(page.locator("#data-source")).to_have_text(
+        "fixture · 30 分钟 · 不复权"
+    )
     for width, height in ((1280, 900), (390, 844)):
         page.set_viewport_size({"width": width, "height": height})
         assert page.evaluate(

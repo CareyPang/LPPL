@@ -24,6 +24,7 @@
   var modelRequest = 0;
   var eventRequest = 0;
   var intradayRequest = 0;
+  var activeIntradayMetadata = null;
   var selectedPeriod = 'd';
   var scales = Core.SCALES;
   var scaleLabels = {
@@ -215,7 +216,9 @@
     el('obv-caption').hidden = true;
     if (period === 'd') {
       intradayRequest += 1;
+      activeIntradayMetadata = null;
       el('intraday-notice').hidden = true;
+      renderMarketMetadata(current || {});
       if (current && chart) {
         chart.setData(chartPayload(current));
         if (current.asof) chart.setAsof(current.asof);
@@ -231,6 +234,8 @@
     }
 
     var run = ++intradayRequest;
+    activeIntradayMetadata = { period: period, status: 'loading' };
+    renderMarketMetadata(current || {});
     el('calendar-notice').hidden = true;
     el('intraday-notice').hidden = false;
     el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间；分钟行情读取中…';
@@ -240,6 +245,10 @@
       var data = await LPPL.stock.kline(context.stockCode, period);
       if (run !== intradayRequest || selectedPeriod !== period) return;
       if (!data || data.schema !== 'kline_obv.v1') throw new Error('Worker 返回的分钟线格式无效');
+      activeIntradayMetadata = {
+        period: period, status: 'ready', source: data.source, limits: data.limits || {},
+      };
+      renderMarketMetadata(current || {});
       chart.setIntraday(data);
       var limits = data.limits || {};
       el('obv-caption').textContent = 'OBV 背离为' +
@@ -250,6 +259,8 @@
       el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间。';
     } catch (error) {
       if (run !== intradayRequest || selectedPeriod !== period) return;
+      activeIntradayMetadata = { period: period, status: 'error' };
+      renderMarketMetadata(current || {});
       el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间；分钟行情读取失败：' +
         (error && error.message || '未知错误');
     }
@@ -257,6 +268,12 @@
 
   function setText(id, value) {
     el(id).textContent = String(value == null || value === '' ? '未记录' : value);
+  }
+
+  function renderMarketMetadata(data) {
+    var metadata = Core.marketMetadata(data, selectedPeriod, activeIntradayMetadata);
+    setText('market-date', metadata.marketDate);
+    setText('data-source', metadata.dataSource);
   }
 
   function drawHeader(data) {
@@ -276,14 +293,7 @@
     asofTag.hidden = !context.asof;
     asofTag.textContent = context.asof
       ? '历史截止日 ' + context.asof + ' · 封存回放' : '';
-    if (data.assetType === 'stock') {
-      setText('market-date', '行情日期 ' + (data.marketAsOf || '未记录'));
-      setText('data-source', data.dataSource + ' · ' +
-        (data.adjustment === 'none' ? '未复权' : data.adjustment));
-    } else {
-      setText('market-date', '行情日期 ' + (data.marketAsOf || '未记录'));
-      setText('data-source', data.dataSource + ' · ' + data.adjustment);
-    }
+    renderMarketMetadata(data);
     setText('model-version', data.modelVersion || '未记录');
     setText('prediction-id', data.predictionId || '未记录');
     setText('volume-unit', data.volumeUnit === 'vendor_native' ? '供应商原始单位，股/手换算未核验' : data.volumeUnit);
