@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from . import a500_pe
+
 LOOKBACK_DAYS = 750
 MIN_PERIODS = 500
 PERCENTILE_THRESHOLD = 0.90
@@ -250,13 +252,114 @@ def compute_bottom_signal(ebs: pd.DataFrame, pbn: pd.DataFrame) -> dict:
     return _json_safe(payload)
 
 
-def fetch_live() -> dict:
+def _source_series(
+    frame: pd.DataFrame, date_columns: tuple[str, ...], value_column: str
+) -> pd.Series:
+    date_column = next((column for column in date_columns if column in frame), None)
+    if date_column is None or value_column not in frame:
+        raise ValueError(f"数据缺少日期列或 {value_column}")
+    values = pd.DataFrame(
+        {
+            "date": pd.to_datetime(frame[date_column], errors="coerce"),
+            "value": _numeric(frame[value_column]),
+        }
+    ).dropna(subset=["date"])
+    values["date"] = values["date"].dt.normalize()
+    return (
+        values.sort_values("date", kind="stable")
+        .drop_duplicates("date", keep="last")
+        .set_index("date")["value"]
+        .sort_index()
+    )
+
+
+def _a500_payload(ak, pbn: pd.DataFrame, history: pd.DataFrame) -> dict:
+    pe = pd.to_numeric(history["pe_ttm"], errors="coerce").replace(0, float("nan"))
+    pe = pe.dropna()
+    yield_source = "bond_zh_us_rate"
+    yield_fetcher = getattr(ak, yield_source, None)
+    if yield_fetcher is None:
+        yield_source = "bond_zh_us_yield_em"
+        yield_fetcher = getattr(ak, yield_source, None)
+    if yield_fetcher is None:
+        raise AttributeError("AkShare 缺少中国国债收益率数据接口")
+    rates = yield_fetcher(start_date="20050101")
+    y10 = _source_series(rates, ("日期", "date"), "中国国债收益率10年")
+    y10 = (
+        y10.reindex(y10.index.union(pe.index))
+        .sort_index()
+        .ffill()
+        .reindex(pe.index)
+    )
+    index_source = "stock_zh_index_daily"
+    index_fetcher = getattr(ak, index_source, None)
+    if index_fetcher is None:
+        index_source = "index_zh_daily_sina"
+        index_fetcher = getattr(ak, index_source, None)
+    if index_fetcher is None:
+        raise AttributeError("AkShare 缺少中证A500指数日线数据接口")
+    index = index_fetcher(symbol="sh000510")
+    close = _source_series(index, ("date", "日期"), "close").reindex(pe.index)
+    erp = 1.0 / pe - y10 / 100.0
+    frame = pd.DataFrame(
+        {
+            "日期": pe.index,
+            "股债利差": erp.to_numpy(),
+            "沪深300指数": close.to_numpy(),
+        }
+    ).replace([float("inf"), float("-inf")], float("nan"))
+    frame = frame.dropna(subset=["股债利差", "沪深300指数"])
+    result = compute_bottom_signal(frame, pbn)
+    result["rule"] = result["rule"].replace(
+        "以 ak.stock_ebs_lg 的交易日为准",
+        "以中证A500成分股合成滚动市盈率（1/PE_TTM − 10年国债收益率）可用日期为准",
+    ).replace("沪深300", "中证A500")
+    result["notes"].append("成分股按当前名单回溯，2005 年只有 179 只有数据")
+    result["sources"] = {
+        "erp": (
+            "中证A500 成分股合成滚动市盈率（东财 RPT_VALUEANALYSIS_DET 日更；"
+            f"2026-11-13 前为研究重建）与 10 年国债收益率 ak.{yield_source}"
+        ),
+        "close": f"ak.{index_source}(sh000510)",
+        "pbn_ratio": PBN_SOURCE,
+    }
+    return result
+
+
+def _add_a500(
+    payload: dict, ak, pbn: pd.DataFrame, history_path: Path | None, output_path: Path | None
+) -> dict:
+    try:
+        history = a500_pe.load_history(history_path)
+        codes = a500_pe.constituents()
+        if not codes:
+            raise ValueError("未能读取中证A500成分股")
+        rows, fetch_failed = a500_pe.fetch_recent_many(codes)
+        updated = a500_pe.update(history, len(codes), rows)
+        if output_path is not None:
+            a500_pe.write_history(updated, output_path)
+        result = _a500_payload(ak, pbn, updated)
+        result["fetch_failed"] = int(fetch_failed)
+        payload["a500"] = result
+    except Exception as exc:
+        payload["a500"] = None
+        payload["a500_error"] = f"{type(exc).__name__}: {exc}"[:200]
+    return payload
+
+
+def fetch_live(
+    a500_hist: Path | None = None,
+    a500_out: Path | None = None,
+    no_a500: bool = False,
+) -> dict:
     import akshare as ak
 
-    return compute_bottom_signal(
-        ak.stock_ebs_lg(),
-        ak.stock_a_below_net_asset_statistics(symbol="全部A股"),
-    )
+    ebs = ak.stock_ebs_lg()
+    pbn = ak.stock_a_below_net_asset_statistics(symbol="全部A股")
+    payload = compute_bottom_signal(ebs, pbn)
+    if not no_a500:
+        _add_a500(payload, ak, pbn, a500_hist, a500_out)
+    return payload
 
 
 def write_snapshot(payload: dict, out: Path) -> Path:
@@ -272,9 +375,16 @@ def write_snapshot(payload: dict, out: Path) -> Path:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--a500-hist", type=Path)
+    parser.add_argument("--no-a500", action="store_true")
     args = parser.parse_args(argv)
-    result = fetch_live()
+    result = fetch_live(
+        a500_hist=args.a500_hist,
+        a500_out=args.out / "a500_pe_hist.csv",
+        no_a500=args.no_a500,
+    )
     latest = write_snapshot(result, args.out)
+    a500 = result.get("a500")
     print(
         json.dumps(
             {
@@ -282,6 +392,18 @@ def main(argv: list[str] | None = None) -> int:
                 "asof": result["asof"],
                 "event_dates": [event["date"] for event in result["events"]],
                 "summary": result["summary"],
+                "a500": (
+                    {
+                        "asof": a500["asof"],
+                        "event_dates": [event["date"] for event in a500["events"]],
+                        "summary": a500["summary"],
+                        "current": a500["current"],
+                        "baseline": a500["baseline"],
+                    }
+                    if a500
+                    else None
+                ),
+                "a500_error": result.get("a500_error"),
             },
             ensure_ascii=False,
             allow_nan=False,
