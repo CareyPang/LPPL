@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 ROOT = Path(__file__).resolve().parents[2]
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://127.0.0.1:8765")
 FIXTURES = ROOT / "frontend" / "tests" / "fixtures"
+STOCK_600519_LATEST_FIXTURE = FIXTURES / "stock_600519_latest.json"
 MARKET_FIXTURES = {
     "600519": FIXTURES / "stock_600519_market.json",
     "601838": FIXTURES / "stock_601838_market.json",
@@ -182,6 +183,12 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
 
     def route_request(route: Route) -> None:
         if is_local_url(route.request.url):
+            if urlsplit(route.request.url).path == "/lab/mock/data/stock/600519.json":
+                route.fulfill(
+                    path=str(STOCK_600519_LATEST_FIXTURE),
+                    content_type="application/json",
+                )
+                return
             route.continue_()
             return
         parsed = urlsplit(route.request.url)
