@@ -89,7 +89,7 @@ test('health reports configured bindings without exposing the token', async () =
     assert.equal(health.ai_key, true);
     assert.equal(health.repo, 'example/stocks');
     assert.equal(health.allowed_origin, 'https://example.test');
-    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/ai', '/quote', '/query', '/status', '/result', '/replay', '/replay/result']);
+    assert.deepEqual(health.routes, ['/health', '/market', '/news', '/ai', '/quote', '/kline', '/query', '/status', '/result', '/replay', '/replay/result']);
   });
 });
 

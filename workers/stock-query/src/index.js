@@ -15,6 +15,8 @@ const NEWS_TTL_SECONDS = 60;
 const NEWS_TIMEOUT_MS = 8000;
 const QUOTE_TTL_SECONDS = 60;
 const QUOTE_TIMEOUT_MS = 5000;
+const KLINE_TIMEOUT_MS = 8000;
+const KLINE_PERIODS = new Set(['30', '60', 'd']);
 const AI_TIMEOUT_MS = 60_000;
 const AI_MAX_BODY_BYTES = 64 * 1024;
 const QUOTE_CODE_PATTERN = /^(?:(?:sh|sz|bj)\d{6}|us[A-Za-z.]{1,10})$/;
@@ -813,6 +815,129 @@ async function liveQuote(request, env, url) {
   }
 }
 
+async function fetchKlinePayload(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), KLINE_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json, text/plain, */*' },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`http_${response.status}`);
+    const text = await response.text();
+    if (text.length > 2_000_000) throw new Error('upstream_body_too_large');
+    try { return JSON.parse(text); }
+    catch { throw new Error(controller.signal.aborted ? 'timeout' : 'invalid_json'); }
+  } catch (error) {
+    if (controller.signal.aborted || error?.name === 'AbortError') throw new Error('timeout');
+    throw new Error(/^(http_\d+|upstream_body_too_large|invalid_json)$/.test(error?.message || '')
+      ? error.message : 'request_failed');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchIntradayKline(code, period) {
+  const symbol = klineSymbol(code);
+  const sina = new URL('https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData');
+  sina.searchParams.set('symbol', symbol);
+  sina.searchParams.set('scale', period);
+  sina.searchParams.set('ma', 'no');
+  sina.searchParams.set('datalen', '1023');
+  try {
+    const payload = await fetchKlinePayload(sina.toString());
+    return { bars: normalizeKlineBars(payload, period), source: 'sina' };
+  } catch (sinaError) {
+    const tencent = new URL('https://ifzq.gtimg.cn/appstock/app/kline/mkline');
+    tencent.searchParams.set('param', `${symbol},m${period},,640`);
+    try {
+      const payload = await fetchKlinePayload(tencent.toString());
+      const rows = payload?.data?.[symbol]?.[`m${period}`];
+      return { bars: normalizeKlineBars(rows, period), source: 'tencent' };
+    } catch (tencentError) {
+      throw new Error(`Sina: ${sinaError.message}; Tencent: ${tencentError.message}`);
+    }
+  }
+}
+
+async function fetchDailyKline(code) {
+  const symbol = klineSymbol(code);
+  const url = new URL('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get');
+  url.searchParams.set('param', `${symbol},day,,,500,qfq`);
+  const payload = await fetchKlinePayload(url.toString());
+  const rows = payload?.data?.[symbol]?.qfqday;
+  return { bars: normalizeKlineBars(rows, 'd'), source: 'tencent_fqkline_qfq' };
+}
+
+async function liveKline(request, env, url) {
+  if (request.method !== 'GET') {
+    return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);
+  }
+  const codes = url.searchParams.getAll('code');
+  const periods = url.searchParams.getAll('period');
+  const code = codes.length === 1 ? codes[0] : '';
+  const period = periods.length === 1 ? periods[0] : '';
+  if (!CODE_PATTERN.test(code)) {
+    return jsonResponse(request, env, { error_code: 'INVALID_CODE', error: '请输入有效的六位A股代码' }, 400);
+  }
+  if (!KLINE_PERIODS.has(period)) {
+    return jsonResponse(request, env, { error_code: 'INVALID_PERIOD', error: '周期应为 30、60 或 d' }, 400);
+  }
+
+  const origin = request.headers.get('Origin') || 'none';
+  const cacheKey = new Request(`https://lppl-stock-query.invalid/kline?code=${code}&period=${period}&origin=${encodeURIComponent(origin)}`);
+  let cache = null;
+  try {
+    if (typeof caches !== 'undefined' && caches.default) cache = caches.default;
+  } catch { cache = null; }
+  if (cache) {
+    try {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const response = new Response(cached.body, {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers: cached.headers,
+        });
+        response.headers.set('X-Kline-Cache', 'HIT');
+        return response;
+      }
+    } catch { cache = null; }
+  }
+
+  try {
+    const result = period === 'd' ? await fetchDailyKline(code) : await fetchIntradayKline(code, period);
+    const computed = obvDivergence(result.bars);
+    const first = computed.bars[0]?.t || null;
+    const last = computed.bars.at(-1)?.t || null;
+    const ttl = klineCacheTtl();
+    const response = jsonResponse(request, env, {
+      schema: 'kline_obv.v1',
+      code,
+      period,
+      source: result.source,
+      asof: last,
+      bars: computed.bars,
+      divergences: computed.divergences,
+      note: '历史形态描述，不是买卖信号',
+      limits: { n_bars: computed.bars.length, first, last },
+    }, 200, {
+      'Cache-Control': `public, max-age=${ttl}`,
+      'X-Kline-Cache': cache ? 'MISS' : 'BYPASS',
+    });
+    if (cache) {
+      try { await cache.put(cacheKey, response.clone()); }
+      catch { /* A cache failure must not hide available kline data. */ }
+    }
+    return response;
+  } catch (error) {
+    return jsonResponse(request, env, {
+      error_code: 'KLINE_UNAVAILABLE',
+      error: error?.message || '上游数据暂时不可用',
+    }, 502, { 'X-Kline-Cache': cache ? 'MISS' : 'BYPASS' });
+  }
+}
+
 async function mainSHA(env, timeoutMs = 8000) {
   const response = await fetchJSON(`https://api.github.com/repos/${repo(env)}/commits/main`,
     { headers: githubHeaders(env) }, timeoutMs);
@@ -935,6 +1060,118 @@ export function normalizeMarket(payload, code, now = new Date()) {
     cutoff_policy: 'Asia/Shanghai 15:30; excludes weekends and future bars; no holiday calendar inference',
     asof: price.at(-1).date, generated_at: now.toISOString(), price, latest: price.at(-1),
     volume_unit: 'vendor_native', evidence: 'observed', model_computed: false };
+}
+
+function klineSymbol(code) {
+  const exchange = code.startsWith('6') ? 'sh' : /^(43|83|87|92)/.test(code) ? 'bj' : 'sz';
+  return `${exchange}${code}`;
+}
+
+function validKlineTime(value, period) {
+  const text = String(value || '').trim().replace('T', ' ');
+  if (period === 'd') return /^\d{4}-\d{2}-\d{2}$/.test(text) && validDate(text) ? text : null;
+  const compact = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(text);
+  const normalized = compact
+    ? `${compact[1]}-${compact[2]}-${compact[3]} ${compact[4]}:${compact[5]}`
+    : text;
+  const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?$/.exec(normalized);
+  if (!match || !validDate(match[1])) return null;
+  const hour = Number(match[2].slice(0, 2)), minute = Number(match[2].slice(3, 5));
+  const second = Number(match[3] || 0);
+  if (hour > 23 || minute > 59 || second > 59) return null;
+  return `${match[1]} ${match[2]}:${String(second).padStart(2, '0')}`;
+}
+
+function normalizeKlineBars(rows, period) {
+  if (!Array.isArray(rows)) throw new Error('invalid_response');
+  const unique = new Map();
+  for (const row of rows) {
+    const values = Array.isArray(row) ? row
+      : typeof row === 'string' ? row.split(',')
+        : null;
+    const time = validKlineTime(values ? values[0] : row?.day, period);
+    const open = Number(values ? values[1] : row?.open);
+    const close = Number(values ? values[2] : row?.close);
+    const high = Number(values ? values[3] : row?.high);
+    const low = Number(values ? values[4] : row?.low);
+    const volume = Number(values ? values[5] : row?.volume);
+    if (!time || ![open, high, low, close, volume].every(Number.isFinite)
+      || Math.min(open, high, low, close) <= 0 || volume < 0
+      || high < Math.max(open, close, low) || low > Math.min(open, close, high)) continue;
+    unique.set(time, { t: time, o: open, h: high, l: low, c: close, v: volume });
+  }
+  const bars = [...unique.values()].sort((a, b) => a.t.localeCompare(b.t));
+  if (!bars.length) throw new Error('empty_data');
+  return bars;
+}
+
+export function obvDivergence(bars, { pivot = 5, lookback = 60 } = {}) {
+  const values = Array.isArray(bars) ? bars : [];
+  const withObv = [];
+  let obv = 0;
+  for (let i = 0; i < values.length; i += 1) {
+    const bar = values[i];
+    if (i > 0) {
+      const previous = Number(values[i - 1]?.c);
+      const close = Number(bar?.c);
+      const volume = Number(bar?.v);
+      if (Number.isFinite(previous) && Number.isFinite(close) && Number.isFinite(volume)) {
+        obv += Math.sign(close - previous) * volume;
+      }
+    }
+    withObv.push({ ...bar, obv });
+  }
+
+  const highs = [], lows = [];
+  for (let i = pivot; i < withObv.length - pivot; i += 1) {
+    const high = Number(withObv[i]?.h), low = Number(withObv[i]?.l);
+    if (!Number.isFinite(high) || !Number.isFinite(low)) continue;
+    let isHigh = true, isLow = true;
+    for (let j = i - pivot; j <= i + pivot; j += 1) {
+      if (j === i) continue;
+      if (Number(withObv[j]?.h) > high) isHigh = false;
+      if (Number(withObv[j]?.l) < low) isLow = false;
+    }
+    if (isHigh) highs.push(i);
+    if (isLow) lows.push(i);
+  }
+
+  const divergences = [];
+  function appendPairs(indices, type, priceChange, oppositeObv) {
+    for (let i = 1; i < indices.length; i += 1) {
+      const first = indices[i - 1], second = indices[i];
+      if (second - first > lookback ||
+          !priceChange(withObv[first], withObv[second]) ||
+          !oppositeObv(withObv[first].obv, withObv[second].obv)) continue;
+      divergences.push({
+        type,
+        p1: withObv[first].t,
+        p2: withObv[second].t,
+        confirmed_at: withObv[second + pivot].t,
+      });
+    }
+  }
+  appendPairs(highs, 'top',
+    (first, second) => Number(second.h) > Number(first.h),
+    (first, second) => second < first,
+  );
+  appendPairs(lows, 'bottom',
+    (first, second) => Number(second.l) < Number(first.l),
+    (first, second) => second > first,
+  );
+  divergences.sort((a, b) => a.confirmed_at.localeCompare(b.confirmed_at));
+  return { bars: withObv, divergences };
+}
+
+export function klineCacheTtl(now = new Date()) {
+  const instant = now instanceof Date ? now : new Date(now);
+  const shanghai = new Date(instant.getTime() + 8 * 60 * 60 * 1000);
+  const weekday = shanghai.getUTCDay();
+  const minute = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
+  const trading = weekday >= 1 && weekday <= 5
+    && ((minute >= 9 * 60 + 30 && minute < 11 * 60 + 30)
+      || (minute >= 13 * 60 && minute < 15 * 60));
+  return trading ? 60 : 600;
 }
 
 async function readResult(env, code, kind, jobId = null) {
@@ -1304,9 +1541,10 @@ export default {
         ai_key: !!env.DEEPSEEK_API_KEY,
         repo: repo(env),
         allowed_origin: env.ALLOWED_ORIGIN || DEFAULT_ORIGIN,
-        routes: ['/health', '/market', '/news', '/ai', '/quote', '/query', '/status', '/result', '/replay', '/replay/result'],
+        routes: ['/health', '/market', '/news', '/ai', '/quote', '/kline', '/query', '/status', '/result', '/replay', '/replay/result'],
       }, ok ? 200 : 503);
     }
+    if (url.pathname === '/kline') return liveKline(request, env, url);
     if (url.pathname === '/news') {
       if (request.method !== 'GET') {
         return jsonResponse(request, env, { error_code: 'METHOD_NOT_ALLOWED', error: '请求方法不支持' }, 405);

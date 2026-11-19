@@ -51,3 +51,15 @@ test('resultOf supports endpoint-specific empty rules without changing fetched d
   assert.equal(result.reason, 'empty');
   assert.equal(result.data.rows.length, 0);
 });
+
+test('stock.kline requests one validated symbol and supported period from the Worker', async () => {
+  const calls = [];
+  const LPPL = loadAdapter(async (url) => {
+    calls.push(String(url));
+    return response(200, { schema: 'kline_obv.v1', code: '600519', period: '30' });
+  });
+  const result = await LPPL.stock.kline('600519', '30');
+  assert.equal(result.code, '600519');
+  assert.match(calls[0], /\/kline\?code=600519&period=30$/);
+  assert.throws(() => LPPL.stock.kline('600519', '5'), /周期无效/);
+});

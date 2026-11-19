@@ -209,6 +209,12 @@
     error: (c) => opt('stock/' + okCode(c) + '_error.json'),
     api: () => queryApi(),
     market: (c) => queryJSON('/market?code=' + encodeURIComponent(workerCode(c))),
+    kline: (c, period = '30') => {
+      const selected = String(period);
+      if (!['30', '60', 'd'].includes(selected)) throw new Error('分钟线周期无效');
+      return queryJSON('/kline?code=' + encodeURIComponent(workerCode(c)) +
+        '&period=' + encodeURIComponent(selected));
+    },
     request: (c, options = {}) => {
       const code = workerCode(c);
       return queryJSON('/query', {

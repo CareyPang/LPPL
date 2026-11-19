@@ -170,6 +170,38 @@ test('stock assembly keeps unadjusted market bars separate from the model cutoff
   assert.equal(data.modelStatus, 'ok');
 });
 
+test('market metadata follows the selected intraday source and restores daily metadata', () => {
+  const daily = {
+    assetType: 'stock',
+    marketAsOf: '2026-11-17',
+    dataSource: 'tencent_fqkline',
+    adjustment: 'none',
+  };
+  const intraday = {
+    period: '30',
+    status: 'ready',
+    source: 'sina',
+    limits: { last: '2026-11-18 15:00:00' },
+  };
+  assert.deepEqual(Core.marketMetadata(daily, '30', intraday), {
+    marketDate: '行情时间 2026-11-18 15:00:00',
+    dataSource: 'sina · 30 分钟 · 不复权',
+  });
+  assert.deepEqual(Core.marketMetadata(daily, '60', {
+    period: '60',
+    status: 'ready',
+    source: 'tencent',
+    limits: { last: '2026-11-18 14:30:00' },
+  }), {
+    marketDate: '行情时间 2026-11-18 14:30:00',
+    dataSource: 'tencent · 60 分钟 · 不复权',
+  });
+  assert.deepEqual(Core.marketMetadata(daily, 'd', intraday), {
+    marketDate: '行情日期 2026-11-17',
+    dataSource: 'tencent_fqkline · 未复权',
+  });
+});
+
 test('stock assembly keeps market bars when the latest model is missing and requires market data', () => {
   const market = JSON.parse(fs.readFileSync(path.join(fixtures, 'stock_600519_market.json'), 'utf8'));
   const data = Core.assembleStockData('sh600519', null, market, null);

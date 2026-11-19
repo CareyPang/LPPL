@@ -28,14 +28,21 @@
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; align-items: start; gap: 16px; }
     .chart-card, .evidence-card, .meta-card, .error-panel { min-width: 0; background: #fff; border: 1px solid #e0e5ed; border-radius: 14px; box-shadow: 0 5px 18px rgba(23,32,51,.045); }
     .chart-card { padding: 16px; }
+    .period-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 10px; }
+    .period-selector[hidden] { display: none; }
+    .period-button { min-height: 44px; flex: 0 0 auto; padding: 0 13px; border: 1px solid #d9dfeb; border-radius: 9px; color: #52617a; background: #fff; font: inherit; font-size: 14px; cursor: pointer; }
+    .period-button[aria-pressed="true"] { color: #fff; border-color: #315cf5; background: #315cf5; }
+    .period-button:focus-visible { outline: 3px solid rgba(49,92,245,.22); outline-offset: 2px; }
     .scale-selector { display: flex; gap: 8px; overflow-x: auto; padding: 0 0 12px; }
+    .scale-selector[hidden] { display: none; }
     .scale-button { flex: 0 0 auto; padding: 0 13px; border: 1px solid #d9dfeb; color: #52617a; background: #fff; font-size: 14px; cursor: pointer; }
     .scale-button[aria-pressed="true"] { color: #fff; border-color: #315cf5; background: #315cf5; }
     .scale-button:focus-visible, .interval-row:focus-visible, .retry-button:focus-visible { outline: 3px solid rgba(49,92,245,.22); outline-offset: 2px; }
     .chart-host { height: 520px; min-width: 0; position: relative; }
     .loading { color: #73809a; font-size: 14px; padding: 12px 2px 0; }
     .calendar-notice { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; color: #92400e; background: #fff7e7; font-size: 13px; }
-    .calendar-notice[hidden], .error-panel[hidden], .loading[hidden], #index-replay[hidden], #latest-results-link[hidden] { display: none; }
+    #chart-page[data-period="30"] #intraday-notice, #chart-page[data-period="60"] #intraday-notice { margin-bottom: 16px; }
+    .calendar-notice[hidden], .error-panel[hidden], .loading[hidden], #index-replay[hidden], #latest-results-link[hidden], #obv-caption[hidden] { display: none; }
     .evidence-card, .meta-card { padding: 16px; }
     .evidence-card h2, .meta-card h2 { margin: 0 0 12px; font-size: 17px; }
     .evidence-state { margin: 0 0 10px; color: #33425d; font-size: 14px; font-weight: 650; }
@@ -70,6 +77,8 @@
       .header-links a { padding-inline: 10px; }
       .chart-card { padding: 10px; border-radius: 11px; }
       .chart-host { height: 380px; }
+      .period-selector { gap: 6px; }
+      .period-button { padding: 0 10px; }
       .scale-selector { gap: 6px; }
       .scale-button { padding: 0 10px; }
       .evidence-side { grid-template-columns: minmax(0, 1fr); }
@@ -149,10 +158,17 @@
     <div class="layout">
         <section id="chart-card" class="chart-card" aria-label="价格图表">
         <button id="fullscreen-exit" type="button" hidden>退出全屏 · Esc</button>
+          <div id="period-selector" class="period-selector" role="group" aria-label="行情周期" hidden>
+            <button class="period-button" type="button" data-period="d" aria-pressed="true">日线</button>
+            <button class="period-button" type="button" data-period="60" aria-pressed="false">60分钟</button>
+            <button class="period-button" type="button" data-period="30" aria-pressed="false">30分钟</button>
+          </div>
           <div id="scale-selector" class="scale-selector" role="group" aria-label="时间尺度"></div>
           <div id="drawing-toolbar" aria-label="本机画线工具"></div>
+          <p id="intraday-notice" class="calendar-notice" role="status" hidden></p>
           <div id="chart-host" class="chart-host" tabindex="0"></div>
-        <p id="price-mode-note" class="evidence-note"></p>
+          <p id="obv-caption" class="evidence-note" hidden></p>
+          <p id="price-mode-note" class="evidence-note"></p>
           <div id="loading" class="loading" role="status">正在加载标的与图表数据…</div>
           <p id="calendar-notice" class="calendar-notice" role="status" hidden>日历未覆盖：未来区间超出已发布交易日历范围。</p>
         </section>
