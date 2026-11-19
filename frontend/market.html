@@ -229,41 +229,62 @@ td.r, th.r { text-align: right; }
 .abnormal-table { min-width: 860px; }
 .range-table { min-width: 520px; }
 #s-abnormal .table-scroll, #s-range .table-scroll { max-height: 360px; overflow: auto; }
-.lhb-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px; }
-.lhb-card { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.lhb-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.lhb-header-copy { min-width: 0; }
+.lhb-header-copy h2 { margin: 0; font: 600 16px/1.3 var(--f-u); }
+.lhb-subtitle { margin: 4px 0 0; color: var(--ink-3); font-size: 12px; }
+.lhb-date-badge { flex: none; max-width: 190px; padding: 7px 10px; color: #fff; background: #7441c8; font: 600 12px/1.4 var(--f-m); text-align: center; }
+.lhb-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.lhb-card { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-3); font-size: 12px; }
 .lhb-card strong { display: block; margin-top: 3px; font: 600 18px var(--f-m); }
 .lhb-card.buy strong { color: var(--up); }
 .lhb-card.sell strong { color: var(--dn); }
 .lhb-card.institution strong { color: var(--warn); }
-.lhb-meta, .lhb-note { color: var(--ink-3); font-size: 12px; }
-.lhb-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-.lhb-table th:nth-child(1), .lhb-table td:nth-child(1) { width: 6%; }
-.lhb-table th:nth-child(2), .lhb-table td:nth-child(2) { width: 20%; }
-.lhb-table th:nth-child(3), .lhb-table td:nth-child(3) { width: 34%; }
-.lhb-table th:nth-child(4), .lhb-table td:nth-child(4),
-.lhb-table th:nth-child(5), .lhb-table td:nth-child(5) { width: 20%; }
-.lhb-table th, .lhb-table td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-.lhb-table th { color: var(--ink-3); font-size: 12px; font-weight: 500; }
-.lhb-table td:nth-child(4), .lhb-table td:nth-child(5) { overflow-wrap: anywhere; }
-.lhb-seat-name { font-weight: 600; }
-.lhb-seat-business { display: block; max-width: 250px; color: var(--ink-3); font-size: 11px; overflow-wrap: anywhere; }
-.lhb-seat-source { margin-left: 4px; color: var(--accent); text-decoration: underline; }
-.lhb-trades { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
-.lhb-trade-chip { display: inline-block; max-width: 100%; padding: 2px 6px; color: #fff; border-radius: 2px; font-size: 11px; white-space: normal; overflow-wrap: anywhere; }
+.lhb-top-buy { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; padding: 10px 12px; background: #f4effc; color: var(--ink-2); }
+.lhb-top-buy strong { flex: none; color: var(--ink); font-size: 12px; }
+.lhb-top-buy span { min-width: 0; font-size: 12px; overflow-wrap: anywhere; }
+.lhb-rows { display: grid; gap: 6px; }
+.lhb-youzi-row { display: grid; grid-template-columns: 34px minmax(150px, .9fr) minmax(0, 2fr) minmax(104px, .55fr); align-items: center; gap: 10px; min-width: 0; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.lhb-rank { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink-2); font: 600 12px var(--f-m); }
+.lhb-rank.gold { border-color: #d5a829; background: #fff5ce; color: #8b6200; }
+.lhb-rank.silver { border-color: #aab2bd; background: #f0f2f5; color: #58616d; }
+.lhb-rank.bronze { border-color: #c47d4b; background: #f8e5d8; color: #8b4b27; }
+.lhb-youzi-info, .lhb-trades, .lhb-youzi-total { min-width: 0; }
+.lhb-youzi-name { display: block; font-size: 14px; font-weight: 700; }
+.lhb-youzi-subline { display: block; margin-top: 3px; color: var(--ink-3); font-size: 11px; overflow-wrap: anywhere; }
+.lhb-youzi-subline a { color: var(--real); text-decoration: underline; }
+.lhb-trades { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.lhb-trade-chip { display: inline-block; max-width: 100%; padding: 3px 7px; color: #fff; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
 .lhb-trade-chip.in { background: var(--up); }
 .lhb-trade-chip.out { background: var(--dn); }
-.lhb-more { flex-basis: 100%; font-size: 11px; }
-.lhb-more summary { color: var(--real); cursor: pointer; }
-.lhb-more-list { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 4px; }
-.lhb-major { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-top: 12px; }
-.lhb-major-card { min-width: 0; padding: 10px; border: 1px solid var(--line); }
-.lhb-major-card strong { display: block; overflow-wrap: anywhere; }
-.lhb-major-card small { color: var(--ink-3); }
-#s-lhb-seats .table-scroll { max-width: 100%; overflow-x: auto; }
-@media (max-width: 540px) {
-  .lhb-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lhb-card { padding: 8px; }
-  .lhb-card strong { font-size: 16px; }
+.lhb-more { color: var(--real); font-size: 11px; white-space: nowrap; }
+.lhb-youzi-total { display: grid; justify-items: end; gap: 3px; font: 600 12px/1.35 var(--f-m); white-space: nowrap; }
+.lhb-youzi-total span { display: block; }
+.lhb-other-heading { margin: 16px 0 7px; font-size: 12px; }
+.lhb-other { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+.lhb-other-row { display: flex; justify-content: space-between; gap: 8px; min-width: 0; padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 11px; }
+.lhb-other-name { min-width: 0; overflow-wrap: anywhere; }
+.lhb-other-kind { display: block; color: var(--ink-3); font-size: 10px; }
+.lhb-other-amounts { flex: none; text-align: right; font: 10px/1.5 var(--f-m); white-space: nowrap; }
+.lhb-note { margin-top: 12px; color: var(--ink-3); font-size: 11px; }
+@media (max-width: 640px) {
+  .lhb-header { align-items: flex-start; gap: 6px; }
+  .lhb-header-copy h2 { font-size: 15px; }
+  .lhb-date-badge { max-width: 132px; padding: 6px 7px; font-size: 10px; }
+  .lhb-cards { gap: 5px; }
+  .lhb-card { padding: 7px; font-size: 10px; }
+  .lhb-card strong { font-size: 14px; overflow-wrap: anywhere; }
+  .lhb-top-buy { display: block; padding: 8px; }
+  .lhb-top-buy strong { display: block; margin-bottom: 4px; }
+  .lhb-youzi-row { grid-template-columns: 28px minmax(0, 1fr) 82px; gap: 5px 7px; padding: 9px 0; }
+  .lhb-rank { width: 24px; height: 24px; font-size: 10px; grid-row: 1 / span 2; }
+  .lhb-youzi-info { grid-column: 2; grid-row: 1; }
+  .lhb-trades { grid-column: 2; grid-row: 2; }
+  .lhb-youzi-total { grid-column: 3; grid-row: 1 / span 2; font-size: 10px; }
+  .lhb-trade-chip { padding: 2px 5px; font-size: 10px; }
+  .lhb-other { gap: 4px 8px; }
+  .lhb-other-row { display: block; font-size: 10px; }
+  .lhb-other-amounts { display: block; text-align: left; white-space: normal; }
 }
 footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s6); font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--line); }
 @media (max-width: 1000px) { main { grid-template-columns: 1fr; } .tm { height: 380px; } }
@@ -378,7 +399,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   </section>
 
   <section class="sec wide" id="s-lhb-seats" aria-labelledby="h-lhb-seats">
-    <div class="sec-h"><h2 id="h-lhb-seats">龙虎榜复盘</h2><span class="ev">descriptive</span></div>
+    <div class="lhb-header">
+      <div class="lhb-header-copy">
+        <h2 id="h-lhb-seats">龙虎榜复盘</h2>
+        <p class="lhb-subtitle" id="lhb-subtitle">游资与量化席位买卖动向 · 已识别游资 0 家</p>
+      </div>
+      <div class="lhb-date-badge" id="lhb-date-badge">盘后榜单</div>
+    </div>
     <div id="lhb-seats-body" data-ai-context="龙虎榜复盘"><p class="note">龙虎榜席位数据加载中…</p></div>
   </section>
 
@@ -1421,47 +1448,49 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       return;
     }
     const totals = data.totals || {};
-    const allSeats = Array.isArray(data.seats) ? data.seats : [];
-    const aliases = allSeats.filter((seat) => seat.kind === 'dept' && seat.alias);
-    const departments = allSeats.filter((seat) => seat.kind === 'dept' && !seat.alias).slice(0, 20);
-    const mainSeats = [...aliases, ...departments];
-    const majorSeats = allSeats.filter((seat) => ['northbound', 'institution'].includes(seat.kind));
+    const summary = data.youzi_summary || {};
+    const youzi = Array.isArray(data.youzi) ? data.youzi : [];
+    const otherSeats = Array.isArray(data.other_seats) ? data.other_seats : [];
+    $('lhb-subtitle').textContent = `游资与量化席位买卖动向 · 已识别游资 ${Number(summary.n_aliases) || 0} 家`;
+    $('lhb-date-badge').textContent = data.date_badge || '盘后榜单';
     const note = String(data.note || '席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。');
-    const aliasNote = '游资别名按公开报道整理，可能有误或过时，仅供参考。';
-    const sourceLink = (seat) => seat.alias_source_url
-      ? `<a class="lhb-seat-source" href="${E(seat.alias_source_url)}" target="_blank" rel="noopener noreferrer" title="${E(seat.alias_source || '别名来源')}">来源</a>`
-      : '';
-    const tradeChip = (trade) => `<span class="lhb-trade-chip ${trade.side === 'in' ? 'in' : 'out'}" title="${E(trade.name)} · ${trade.side === 'in' ? '买入' : '卖出'} · ${trade.list === 'multi' ? '多日榜' : '单日榜'}">${E(trade.name || trade.code)} ${money(trade.amount)}</span>`;
-    const tradeMarkup = (trades) => {
-      const items = Array.isArray(trades) ? trades : [];
-      return `<div class="lhb-trades">${items.slice(0, 3).map(tradeChip).join('')}${items.length > 3
-        ? `<details class="lhb-more"><summary>+${items.length - 3}笔</summary><div class="lhb-more-list">${items.slice(3).map(tradeChip).join('')}</div></details>` : ''}</div>`;
+    const sourceLinks = (sources) => (Array.isArray(sources) ? sources : []).map((source, index) =>
+      `<a href="${E(source.source_url)}" target="_blank" rel="noopener noreferrer" title="${E(source.source)}">${index ? `来源${index + 1}` : '来源'}</a>`
+    ).join(' · ');
+    const tradeMarkup = (group) => {
+      const chips = Array.isArray(group.chips) ? group.chips : [];
+      return `<div class="lhb-trades">${chips.map((trade) =>
+        `<span class="lhb-trade-chip ${trade.side === 'in' ? 'in' : 'out'}">${trade.side === 'in' ? '入' : '出'} ${E(trade.name || trade.code)} ${money(trade.amount)}</span>`
+      ).join('')}${group.more_trades ? `<span class="lhb-more">+${E(group.more_trades)}笔</span>` : ''}</div>`;
     };
-    const seatRow = (seat, rank) => `<tr>
-      <td class="m">${rank}</td>
-      <td><span class="lhb-seat-name">${E(seat.alias || seat.seat)}</span>${seat.alias ? `<small class="lhb-seat-business">${E(seat.seat)}${sourceLink(seat) ? ` · ${sourceLink(seat)}` : ''}</small>` : ''}</td>
-      <td>${tradeMarkup(seat.trades)}</td>
-      <td class="m up">${money(seat.buy)}</td>
-      <td class="m dn">${money(seat.sell)}</td>
-    </tr>`;
-    const majors = majorSeats.map((seat) => `<article class="lhb-major-card">
-      <strong>${E(seat.alias || seat.seat)}</strong>${seat.alias ? `<small>${E(seat.seat)}</small>` : ''}
-      <div>买入 <span class="m up">${money(seat.buy)}</span> · 卖出 <span class="m dn">${money(seat.sell)}</span></div>
+    const rankClasses = ['gold', 'silver', 'bronze'];
+    const youziRows = youzi.map((group, index) => `<article class="lhb-youzi-row">
+      <span class="lhb-rank ${rankClasses[index] || ''}">${index + 1}</span>
+      <div class="lhb-youzi-info">
+        <strong class="lhb-youzi-name">${E(group.alias)}</strong>
+        <small class="lhb-youzi-subline" title="${E((group.depts || []).join('；'))}">游资常用 · ${E(group.n_stocks)}只${sourceLinks(group.sources) ? ` · ${sourceLinks(group.sources)}` : ''}</small>
+      </div>
+      ${tradeMarkup(group)}
+      <div class="lhb-youzi-total"><span class="up">买 ${money(group.buy)}</span><span class="dn">卖 ${money(group.sell)}</span></div>
     </article>`).join('');
-    const sampleCount = totals.n_stocks == null
-      ? (Number(totals.n_stocks_single) || 0) + (Number(totals.n_stocks_multi) || 0)
-      : (Number(totals.n_stocks) || 0);
+    const topBuy = (Array.isArray(summary.top_buy) ? summary.top_buy : []).map((stock) =>
+      `${E(stock.name || stock.code)} ${money(stock.buy)}`
+    ).join(' · ');
+    const otherKinds = { northbound: '北向', institution: '机构', dept: '未识别营业部' };
+    const otherRows = otherSeats.map((seat) => `<div class="lhb-other-row">
+      <span class="lhb-other-name">${E(seat.seat)}<small class="lhb-other-kind">${otherKinds[seat.kind] || '其他席位'}</small></span>
+      <span class="lhb-other-amounts"><span class="up">买 ${money(seat.buy)}</span><br><span class="dn">卖 ${money(seat.sell)}</span></span>
+    </div>`).join('');
     box.innerHTML = `<div class="lhb-cards">
-      <div class="lhb-card buy">席位买入合计<strong>${money(totals.buy)}</strong></div>
-      <div class="lhb-card sell">席位卖出合计<strong>${money(totals.sell)}</strong></div>
-      <div class="lhb-card institution">机构净买入<strong>${money(totals.institution_net)}</strong></div>
+      <div class="lhb-card buy">龙虎榜买入<strong>${money(totals.buy)}</strong></div>
+      <div class="lhb-card sell">龙虎榜卖出<strong>${money(totals.sell)}</strong></div>
+      <div class="lhb-card institution">机构净买入（已披露部分）<strong>${money(totals.institution_net)}</strong></div>
     </div>
-    <p class="lhb-meta">数据日期：${E(data.asof || '—')} · 样本 ${sampleCount} 只（单日榜 ${Number(totals.n_stocks_single) || 0} / 多日榜 ${Number(totals.n_stocks_multi) || 0}）· 历史分位，不是预测</p>
-    <div class="table-scroll"><table class="lhb-table"><thead><tr><th>排名</th><th>席位 / 别名</th><th>买卖明细</th><th>买入合计</th><th>卖出合计</th></tr></thead>
-      <tbody>${mainSeats.length ? mainSeats.map((seat, index) => seatRow(seat, index + 1)).join('') : '<tr><td colspan="5">暂无可展示营业部席位</td></tr>'}</tbody></table></div>
-    <div class="lhb-major-heading"><strong>其他主要席位（北向与机构）</strong></div>
-    <div class="lhb-major">${majors || '<p class="lhb-meta">暂无北向或机构席位</p>'}</div>
-    <p class="lhb-note">${E(note)}${note.includes(aliasNote) ? '' : ` ${E(aliasNote)}`}</p>`;
+    <div class="lhb-top-buy"><strong>游资已披露买入：前6只</strong><span>${topBuy || '暂无可用样本'} · 全部 ${E(summary.n_stocks ?? 0)} 只</span></div>
+    <div class="lhb-rows">${youziRows || '<p class="note">暂无已识别游资席位</p>'}</div>
+    <h3 class="lhb-other-heading">其他主要席位 · 已披露样本</h3>
+    <div class="lhb-other">${otherRows || '<p class="note">暂无其他主要席位</p>'}</div>
+    <p class="lhb-note">${E(note)}</p>`;
   }
 
   async function loadLhbSeats() {

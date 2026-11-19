@@ -257,22 +257,35 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     page.goto(f"{BASE_URL}/market.html")
     expect(page.locator("#s-lhb-seats")).to_be_visible()
     expect(page.locator("#lhb-seats-body .lhb-card.buy strong")).to_contain_text("12.30亿")
-    seat_rows = page.locator("#lhb-seats-body .lhb-table tbody tr")
-    expect(seat_rows).to_have_count(4)
-    expect(seat_rows.first).to_contain_text("游资甲")
-    expect(seat_rows.first.locator(".lhb-seat-name")).to_have_text("游资甲")
-    expect(seat_rows.first.locator(".lhb-seat-business")).to_contain_text(
-        "某证券股份有限公司上海分公司"
+    expect(page.locator("#lhb-subtitle")).to_contain_text("已识别游资 2 家")
+    expect(page.locator("#lhb-date-badge")).to_have_text("2026.11.18 / 周三 · 盘后榜单")
+    expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text(
+        "游资已披露买入：前6只"
+    )
+    expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text("全部 7 只")
+    seat_rows = page.locator("#lhb-seats-body .lhb-youzi-row")
+    expect(seat_rows).to_have_count(2)
+    expect(seat_rows.first.locator(".lhb-youzi-name")).to_have_text("游资甲")
+    expect(seat_rows.first.locator(".lhb-youzi-subline")).to_contain_text("游资常用 · 4只")
+    expect(seat_rows.first.locator(".lhb-youzi-subline")).to_have_attribute(
+        "title",
+        "某证券股份有限公司上海分公司；某证券股份有限公司北京分公司",
     )
     source_link = seat_rows.first.get_by_role("link", name="来源")
     expect(source_link).to_have_attribute("href", "https://example.test/lhb-alias")
     expect(source_link).to_have_attribute("title", "公开报道来源")
-    expect(seat_rows.first.locator("td").first).to_have_text("1")
-    expect(page.locator("#lhb-seats-body .lhb-meta")).to_contain_text("样本 34 只（单日榜 28 / 多日榜 6）")
-    expect(page.locator("#lhb-seats-body .lhb-note")).to_contain_text(
-        "游资别名按公开报道整理，可能有误或过时，仅供参考。"
+    expect(seat_rows.first).to_contain_text("入 甲股份 4.20亿")
+    expect(seat_rows.first).to_contain_text("出 乙科技 2.10亿")
+    expect(seat_rows.first.locator(".lhb-more")).to_have_text("+2笔")
+    expect(page.locator("#lhb-seats-body .lhb-other-heading")).to_have_text(
+        "其他主要席位 · 已披露样本"
     )
-    expect(page.locator("#lhb-seats-body .lhb-more")).to_contain_text("+1笔")
+    expect(page.locator("#lhb-seats-body .lhb-other")).to_contain_text("机构专用")
+    expect(page.locator("#lhb-seats-body .lhb-other")).to_contain_text("沪股通专用")
+    expect(page.locator("#lhb-seats-body .lhb-other")).to_contain_text("未识别营业部")
+    expect(page.locator("#lhb-seats-body .lhb-note")).to_contain_text(
+        "游资别名按公开报道整理，可能有误或过时。"
+    )
     assistant_button = page.locator(".ai-btn")
     if assistant_button.get_attribute("aria-expanded") != "true":
         assistant_button.click()
@@ -280,12 +293,6 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
     assert page.locator("#s-lhb-seats").evaluate(
         "(section) => section.scrollWidth <= section.clientWidth + 1"
-    )
-    assert seat_rows.first.locator("td").last.evaluate(
-        """(cell) => {
-          const viewport = cell.closest('.table-scroll').getBoundingClientRect();
-          return cell.getBoundingClientRect().right <= viewport.right + 1;
-        }"""
     )
     page.wait_for_function(
         """() => {
@@ -340,6 +347,20 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
     )
     assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    assert page.locator("#s-lhb-seats").evaluate(
+        "(section) => section.scrollWidth <= section.clientWidth + 1"
+    )
+    mobile_row = page.locator("#lhb-seats-body .lhb-youzi-row").first
+    assert mobile_row.locator(".lhb-youzi-total").evaluate(
+        """(amounts) => {
+          const row = amounts.closest('.lhb-youzi-row').getBoundingClientRect();
+          return amounts.getBoundingClientRect().right <= row.right + 1;
+        }"""
+    )
+    chip_tops = mobile_row.locator(".lhb-trade-chip").evaluate_all(
+        "(chips) => [...new Set(chips.map(chip => Math.round(chip.getBoundingClientRect().top)))]"
+    )
+    assert len(chip_tops) > 1, chip_tops
     assert page.locator("#s-breadth .table-scroll").count() == 2
 
 

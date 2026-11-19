@@ -1,6 +1,7 @@
 {
   "schema": "lhb_seats.v1",
   "asof": "2026-11-18",
+  "date_badge": "2026.11.18 / 周三 · 盘后榜单",
   "totals": {
     "buy": 1230000000,
     "sell": 987000000,
@@ -9,6 +10,91 @@
     "n_stocks_single": 28,
     "n_stocks_multi": 6
   },
+  "youzi_summary": {
+    "n_aliases": 2,
+    "n_stocks": 7,
+    "top_buy": [
+      {"code": "600001", "name": "甲股份", "buy": 420000000},
+      {"code": "600004", "name": "丁股份", "buy": 280000000},
+      {"code": "300003", "name": "丙新材", "buy": 180000000},
+      {"code": "300005", "name": "戊科技", "buy": 110000000},
+      {"code": "000007", "name": "庚材料", "buy": 65000000},
+      {"code": "000002", "name": "乙科技", "buy": 0}
+    ]
+  },
+  "youzi": [
+    {
+      "alias": "游资甲",
+      "depts": [
+        "某证券股份有限公司上海分公司",
+        "某证券股份有限公司北京分公司"
+      ],
+      "buy": 880000000,
+      "sell": 312000000,
+      "net": 568000000,
+      "n_stocks": 4,
+      "trades": [
+        {"code": "600001", "name": "甲股份", "buy": 420000000, "sell": 0},
+        {"code": "600004", "name": "丁股份", "buy": 280000000, "sell": 102000000},
+        {"code": "300003", "name": "丙新材", "buy": 180000000, "sell": 0},
+        {"code": "000002", "name": "乙科技", "buy": 0, "sell": 210000000}
+      ],
+      "chips": [
+        {"code": "600001", "name": "甲股份", "side": "in", "amount": 420000000},
+        {"code": "600004", "name": "丁股份", "side": "in", "amount": 280000000},
+        {"code": "000002", "name": "乙科技", "side": "out", "amount": 210000000}
+      ],
+      "more_trades": 2,
+      "sources": [
+        {"source": "公开报道来源", "source_url": "https://example.test/lhb-alias"}
+      ]
+    },
+    {
+      "alias": "游资乙",
+      "depts": ["某证券股份有限公司杭州庆春路证券营业部"],
+      "buy": 175000000,
+      "sell": 96000000,
+      "net": 79000000,
+      "n_stocks": 3,
+      "trades": [
+        {"code": "300005", "name": "戊科技", "buy": 110000000, "sell": 0},
+        {"code": "000007", "name": "庚材料", "buy": 65000000, "sell": 0},
+        {"code": "600006", "name": "己股份", "buy": 0, "sell": 96000000}
+      ],
+      "chips": [
+        {"code": "300005", "name": "戊科技", "side": "in", "amount": 110000000},
+        {"code": "600006", "name": "己股份", "side": "out", "amount": 96000000},
+        {"code": "000007", "name": "庚材料", "side": "in", "amount": 65000000}
+      ],
+      "more_trades": 0,
+      "sources": [
+        {"source": "公开报道来源", "source_url": "https://example.test/lhb-alias"}
+      ]
+    }
+  ],
+  "other_seats": [
+    {
+      "seat": "机构专用",
+      "kind": "institution",
+      "buy": 210000000,
+      "sell": 87000000,
+      "net": 123000000
+    },
+    {
+      "seat": "沪股通专用",
+      "kind": "northbound",
+      "buy": 140000000,
+      "sell": 95000000,
+      "net": 45000000
+    },
+    {
+      "seat": "某证券股份有限公司未识别营业部",
+      "kind": "dept",
+      "buy": 72000000,
+      "sell": 18000000,
+      "net": 54000000
+    }
+  ],
   "seats": [
     {
       "seat": "某证券股份有限公司上海分公司",
@@ -85,5 +171,5 @@
       ]
     }
   ],
-  "note": "席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。金额单位为人民币元。"
+  "note": "本内容为每日复盘，仅供研究参考，不构成任何投资建议；游资别名按公开报道整理，可能有误或过时。"
 }

@@ -83,6 +83,97 @@ def test_aggregate_keeps_legacy_full_name_alias_keys():
     assert matched["alias_source_url"] == "https://example.test/legacy"
 
 
+def test_aggregate_groups_depts_by_alias_and_merges_trades_by_stock():
+    explanation = "日涨幅偏离值达到7%"
+    summary = [
+        _summary_row("600001", "甲股份", "trade-a", explanation, 250, 40),
+        _summary_row("000002", "乙科技", "trade-b", explanation, 60, 10),
+        _summary_row("300003", "丙新材", "trade-c", explanation, 20, 10),
+        _summary_row("000004", "丁设备", "trade-d", explanation, 10, 0),
+    ]
+    details = [
+        _detail_row("trade-a", "600001", "甲股份", "dept-a", "营业部甲", 100, 20, explanation),
+        _detail_row("trade-a", "600001", "甲股份", "dept-b", "营业部乙", 50, 10, explanation),
+        _detail_row("trade-b", "000002", "乙科技", "dept-a", "营业部甲", 40, 0, explanation),
+        _detail_row("trade-c", "300003", "丙新材", "dept-b", "营业部乙", 10, 5, explanation),
+        _detail_row("trade-d", "000004", "丁设备", "dept-b", "营业部乙", 6, 0, explanation),
+    ]
+    aliases = {
+        "营业部甲": {
+            "alias": "游资甲",
+            "source": "来源甲",
+            "source_url": "https://example.test/a",
+        },
+        "营业部乙": {
+            "alias": "游资甲",
+            "source": "来源乙",
+            "source_url": "https://example.test/b",
+        },
+    }
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18", summary, details, [row.copy() for row in details], aliases
+    )
+
+    assert result["date_badge"] == "2026.11.18 / 周三 · 盘后榜单"
+    assert result["youzi_summary"] == {
+        "n_aliases": 1,
+        "n_stocks": 4,
+        "top_buy": [
+            {"code": "600001", "name": "甲股份", "buy": 150},
+            {"code": "000002", "name": "乙科技", "buy": 40},
+            {"code": "300003", "name": "丙新材", "buy": 10},
+            {"code": "000004", "name": "丁设备", "buy": 6},
+        ],
+    }
+    assert result["youzi"][0] == {
+        "alias": "游资甲",
+        "depts": ["营业部乙", "营业部甲"],
+        "buy": 206,
+        "sell": 35,
+        "net": 171,
+        "n_stocks": 4,
+        "trades": [
+            {"code": "600001", "name": "甲股份", "buy": 150, "sell": 30},
+            {"code": "000002", "name": "乙科技", "buy": 40, "sell": 0},
+            {"code": "300003", "name": "丙新材", "buy": 10, "sell": 5},
+            {"code": "000004", "name": "丁设备", "buy": 6, "sell": 0},
+        ],
+        "chips": [
+            {"code": "600001", "name": "甲股份", "side": "in", "amount": 150},
+            {"code": "000002", "name": "乙科技", "side": "in", "amount": 40},
+            {"code": "600001", "name": "甲股份", "side": "out", "amount": 30},
+        ],
+        "more_trades": 3,
+        "sources": [
+            {"source": "来源乙", "source_url": "https://example.test/b"},
+            {"source": "来源甲", "source_url": "https://example.test/a"},
+        ],
+    }
+
+
+def test_aggregate_classifies_bare_institution_seat_as_institution():
+    explanation = "日涨幅偏离值达到7%"
+    summary = [_summary_row("688613", "奥精医疗", "trade-1", explanation, 100, 40)]
+    institution = _detail_row(
+        "trade-1", "688613", "奥精医疗", "dept-1", "机构", 100, 40, explanation
+    )
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18", summary, [institution], [institution.copy()]
+    )
+
+    assert result["seats"][0]["kind"] == "institution"
+    assert result["totals"]["institution_net"] == 60
+    assert result["other_seats"][0] == {
+        "seat": "机构",
+        "kind": "institution",
+        "buy": 100,
+        "sell": 40,
+        "net": 60,
+    }
+
+
 def test_aggregate_merges_side_tables_deduplicates_and_classifies_seats():
     multi = "连续三个交易日内，涨幅偏离值累计达到20%"
     single = "日涨幅偏离值达到7%"
