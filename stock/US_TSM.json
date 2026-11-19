@@ -1,8 +1,8 @@
 {
  "symbol": "US_TSM",
  "name": "台积电",
- "asof": "2026-11-17",
- "data_version": "us_TSM_20261117_76695acd9d69a0b7",
+ "asof": "2026-11-18",
+ "data_version": "us_TSM_20261118_bff5a04ad71f75d1",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-03-10",
+   "start": "2025-03-11",
    "duration_days": 427,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 1.59,
-   "size_realized": 1.152,
-   "tc": "2026-09-02",
+   "size_model": 1.584,
+   "size_realized": 1.166,
+   "tc": "2026-09-01",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,16 +60,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-03-09",
+    "best_t1": "2026-03-10",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.167,
      "m_hi": 0.0,
      "w_lo": 0.167,
      "w_hi": 0.0,
-     "tc_lo": 0.167,
+     "tc_lo": 0.333,
      "tc_hi": 0.0,
-     "any": 0.333,
+     "any": 0.5,
      "tol": 0.01
     },
     "null_fpr": {
@@ -104,16 +104,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-03-10",
+    "best_t1": "2025-03-11",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.0,
+     "tc_lo": 0.1,
      "tc_hi": 0.0,
-     "any": 0.0,
+     "any": 0.1,
      "tol": 0.01
     },
     "null_fpr": {
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-17",
+   "table_asof": "2026-11-18",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +716,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 1.152,
+    "size_realized": 1.166,
     "duration_days": 427,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -760,7 +760,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-13",
    "2023-11-14",
    "2023-11-15",
    "2023-11-16",
@@ -1515,10 +1514,10 @@
    "2026-11-12",
    "2026-11-13",
    "2026-11-16",
-   "2026-11-17"
+   "2026-11-17",
+   "2026-11-18"
   ],
   "open": [
-   93.243,
    94.194,
    96.069,
    94.425,
@@ -2273,10 +2272,10 @@
    394.62,
    407.6,
    379.59,
-   372.18
+   372.18,
+   368.05
   ],
   "high": [
-   93.406,
    95.819,
    96.79,
    95.252,
@@ -3031,10 +3030,10 @@
    411.77,
    408.08,
    385.47,
-   373.1
+   373.1,
+   368.85
   ],
   "low": [
-   92.003,
    94.146,
    94.598,
    94.108,
@@ -3789,10 +3788,10 @@
    393.91,
    391.5,
    372.46,
-   353.5
+   353.5,
+   356.77
   ],
   "close": [
-   92.676,
    95.069,
    94.963,
    94.713,
@@ -4547,10 +4546,10 @@
    405.49,
    398.73,
    373.45,
-   359.69
+   359.69,
+   362.62
   ],
   "volume": [
-   9525849,
    13873244,
    10422882,
    8458972,
@@ -5305,7 +5304,8 @@
    11389739,
    10745421,
    19649689,
-   25241316
+   25241316,
+   12128474
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5359,7 +5359,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4949,
+  "n_bars": 4950,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5389,9 +5389,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "ea09aa3b3e1255d65d632a2b84f2b63309c370e181f2ba66fdb40efef3ad0436",
+ "fit_input_hash": "abf3a0e8a4bc967e97fd434134b0659cebb4204ebce42b2712ea520907a7fc78",
  "history_input_hashes": {
-  "2023-11-14": "613085d04805e6f96d5841b00c2b60b5c9e2285fd57298c38d04f6b98f55baa3",
   "2023-11-15": "0dc07fb8a2a607dd3ed947ae7d97af096db522a40b37e8bc8251564109a9fb52",
   "2023-11-16": "a28f810cbcb4289df1ade15bf579cf0570df80d21cdd5d677ba1fbb2a836e495",
   "2023-11-17": "d82abcab95876b0c66d3e80b34dabb7bfac986b1ea4d9ca0d99ac4447268867c",
@@ -6145,10 +6144,11 @@
   "2026-11-12": "5485e5c6c6601d379f5bf96ac1c41822b7d748eeab5908709ad70dc31ed50b77",
   "2026-11-13": "f80eddae303f5bf3486bb05c8d4ee3731c3eff4f52ba4581323f11f72f5815ae",
   "2026-11-16": "59c43fba6c77eb03aad585a3bc79a552ca06c2bfec4015339527cf6e976cc8e9",
-  "2026-11-17": "ea09aa3b3e1255d65d632a2b84f2b63309c370e181f2ba66fdb40efef3ad0436"
+  "2026-11-17": "ea09aa3b3e1255d65d632a2b84f2b63309c370e181f2ba66fdb40efef3ad0436",
+  "2026-11-18": "abf3a0e8a4bc967e97fd434134b0659cebb4204ebce42b2712ea520907a7fc78"
  },
  "code": "US_TSM",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-18T22:41:09.694124+00:00"
+ "generated_at": "2026-11-19T03:51:17.389059+00:00"
 }
