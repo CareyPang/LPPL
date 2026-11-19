@@ -1,8 +1,8 @@
 {
  "symbol": "US_KLAC",
  "name": "科磊",
- "asof": "2026-11-17",
- "data_version": "us_KLAC_20261117_f71ebe95e1aba127",
+ "asof": "2026-11-18",
+ "data_version": "us_KLAC_20261118_e1dd3d27aebf1a2c",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-04-14",
+   "start": "2026-04-15",
    "duration_days": 152,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": -0.213,
-   "size_realized": -0.192,
-   "tc": "2026-11-13",
+   "size_model": -0.19,
+   "size_realized": -0.168,
+   "tc": "2026-11-16",
    "progress": null,
    "longest_qualified_scale": "12-24m",
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,7 +60,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-04-14",
+    "best_t1": "2026-04-15",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -104,15 +104,15 @@
      "pure": 0.0
     },
     "n_qualified_standard": 5,
-    "best_t1": "2025-10-13",
+    "best_t1": "2025-10-14",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.2,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.4,
-     "tc_hi": 0.1,
+     "tc_lo": 0.5,
+     "tc_hi": 0.0,
      "any": 0.7,
      "tol": 0.01
     },
@@ -178,23 +178,23 @@
     "bin_days": 5,
     "bins": [
      [
-      "2026-06-26",
-      "2026-07-06",
+      "2026-06-29",
+      "2026-07-07",
       1
      ],
      [
-      "2026-07-06",
-      "2026-07-13",
+      "2026-07-07",
+      "2026-07-14",
       2
      ],
      [
-      "2026-07-13",
-      "2026-07-20",
+      "2026-07-14",
+      "2026-07-21",
       1
      ],
      [
-      "2026-07-20",
-      "2026-07-27",
+      "2026-07-21",
+      "2026-07-28",
       1
      ]
     ]
@@ -256,7 +256,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-17",
+   "table_asof": "2026-11-18",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -738,7 +738,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.192,
+    "size_realized": -0.168,
     "duration_days": 152,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -782,7 +782,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-13",
    "2023-11-14",
    "2023-11-15",
    "2023-11-16",
@@ -1537,10 +1536,10 @@
    "2026-11-12",
    "2026-11-13",
    "2026-11-16",
-   "2026-11-17"
+   "2026-11-17",
+   "2026-11-18"
   ],
   "open": [
-   51.675,
    52.872,
    53.664,
    53.264,
@@ -2295,10 +2294,10 @@
    155.645,
    154.756,
    144.41,
-   146.15
+   146.15,
+   147.53
   ],
   "high": [
-   51.869,
    53.406,
    53.838,
    53.801,
@@ -3053,10 +3052,10 @@
    161.496,
    156.224,
    147.78,
-   146.51
+   146.51,
+   147.72
   ],
   "low": [
-   51.092,
    52.234,
    52.949,
    53.166,
@@ -3811,10 +3810,10 @@
    155.125,
    146.568,
    142.21,
-   138.75
+   138.75,
+   141.84
   ],
   "close": [
-   51.504,
    53.326,
    53.322,
    53.321,
@@ -4569,10 +4568,10 @@
    157.062,
    152.09,
    143.96,
-   144.56
+   144.56,
+   144.88
   ],
   "volume": [
-   1045097,
    1112604,
    881381,
    1193711,
@@ -5327,7 +5326,8 @@
    9734581,
    12507042,
    10952094,
-   16036316
+   16036316,
+   9282519
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5381,7 +5381,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4314,
+  "n_bars": 4315,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5411,9 +5411,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "eadfd7ca5904a4a13b8fb0d133bf79adcccbc12ee2ca0eb9c3a72456fdcef91c",
+ "fit_input_hash": "684714a46e93f6480d7d140db87f45d2b637f3befe39cef38fddd4587e652fca",
  "history_input_hashes": {
-  "2023-11-14": "3418efd909851d60f0747dbec9b5fe3939cbec2ad5f1f2e49c91045f44187052",
   "2023-11-15": "8616972325d775f6c31c2cbc89ab5f9eaa29aa8e61f7550606326719c3b79ff7",
   "2023-11-16": "e10547aabe523435452cc237db66a17e7c58bb57713314aae491cf91a97818da",
   "2023-11-17": "b5190a58ebf8cab8e443bf3c296358fa61971e6b775932f22e0938235f4565b7",
@@ -6167,10 +6166,11 @@
   "2026-11-12": "e94710db2bbd34437a7d05ae2598216089728fd13275dad337d15eec3c7e4391",
   "2026-11-13": "4d1bbd8665bf173b399a18d69b52f84f56de841bea85227827566fb9978fae39",
   "2026-11-16": "4f4161503ae662cad01c6df5ab75b0e075cb76b1f0da5911ab9fcbe8ebf9e94b",
-  "2026-11-17": "eadfd7ca5904a4a13b8fb0d133bf79adcccbc12ee2ca0eb9c3a72456fdcef91c"
+  "2026-11-17": "eadfd7ca5904a4a13b8fb0d133bf79adcccbc12ee2ca0eb9c3a72456fdcef91c",
+  "2026-11-18": "684714a46e93f6480d7d140db87f45d2b637f3befe39cef38fddd4587e652fca"
  },
  "code": "US_KLAC",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-18T22:57:59.940614+00:00"
+ "generated_at": "2026-11-19T04:11:53.413032+00:00"
 }
