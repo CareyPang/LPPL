@@ -150,7 +150,7 @@ class EMClient:
         self.last_call = None
         self.last_url = ""
 
-    def _request_once(self, url, params=None, headers=None):
+    def _request_once(self, url, params=None, headers=None, timeout=15):
         if self.last_call is not None:
             elapsed = time.monotonic() - self.last_call
             delay = max(0.0, 0.6 - elapsed) + self.jitter(0.0, 0.4)
@@ -160,7 +160,7 @@ class EMClient:
                 url,
                 params=params,
                 headers=headers,
-                timeout=15,
+                timeout=timeout,
                 allow_redirects=True,
             )
         finally:
