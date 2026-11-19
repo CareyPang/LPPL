@@ -152,6 +152,29 @@ def test_growth_monitor_workflow_uses_macro_schedule_and_previous_snapshot():
     assert "growth_daily" in alert_triggers["workflow_run"]["workflows"]
 
 
+def test_strategy_replay_publishes_and_builds_from_stock_results_strategy():
+    workflow = _workflow("market_daily.yml")
+    steps = {
+        step.get("name"): step
+        for step in workflow["jobs"]["collect"]["steps"]
+        if step.get("name")
+    }
+    strategy = steps["Build strategy replay JSON"]["run"]
+    assert "origin/stock-results:strategy/n_on_history.json" in strategy
+    assert "origin/stock-results:lab/mock/data/strategy/n_on_history.json" not in strategy
+
+    publish = steps["Publish to stock-results"]["run"]
+    assert "mkdir -p strategy" in publish
+    assert "cp out/strategy/*.json strategy/" in publish
+    assert "git add strategy/*.json" in publish
+    assert "lab/mock/data/strategy/" not in publish
+
+    build = (ROOT / "scripts/build_site.sh").read_text(encoding="utf-8")
+    assert "cat-file -e stock-results:strategy" in build
+    assert 'git -C "$ROOT" archive stock-results strategy' in build
+    assert 'tar -x -C "$SITE/lab/mock/data/"' in build
+
+
 def test_versioned_workflows_use_the_publisher_and_keep_stock_list_unversioned():
     market = _workflow("market_daily.yml")
     steps = {

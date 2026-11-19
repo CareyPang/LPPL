@@ -203,7 +203,7 @@ jobs:
           set -euo pipefail
           mkdir -p out/previous-strategy
           previous="out/previous-strategy/n_on_history.json"
-          if git show origin/stock-results:lab/mock/data/strategy/n_on_history.json > "$previous" 2>/dev/null; then
+          if git show origin/stock-results:strategy/n_on_history.json > "$previous" 2>/dev/null; then
             python -m research.backtest.publish \
               --date "${{ steps.fetch.outputs.asof }}" \
               --breadth out/market/breadth_latest.json \
@@ -284,9 +284,9 @@ jobs:
             git add market/top_risk_latest.json
           fi
           if compgen -G "out/strategy/*.json" > /dev/null; then
-            mkdir -p lab/mock/data/strategy
-            cp out/strategy/*.json lab/mock/data/strategy/
-            git add lab/mock/data/strategy/*.json
+            mkdir -p strategy
+            cp out/strategy/*.json strategy/
+            git add strategy/*.json
           fi
           if [[ -f out/abnormal/abnormal_latest.json ]]; then
             publish_versioned abnormal "$GITHUB_WORKSPACE/out/abnormal/abnormal_latest.json"
