@@ -34,6 +34,55 @@ def test_list_type_recognizes_arabic_and_chinese_multi_day_labels(explanation):
     assert lhb_seats._list_type(explanation) == "multi"
 
 
+def test_aggregate_matches_full_seat_name_to_normalized_alias_and_source():
+    seat = "国泰海通证券股份有限公司上海长宁区江苏路证券营业部"
+    aliases = lhb_seats._load_aliases()
+    normalized_seat = lhb_seats._normalize_seat_name(seat)
+    explanation = "日涨幅偏离值达到7%"
+    summary = [_summary_row("600001", "甲股份", "trade-1", explanation, 100, 20)]
+    detail = _detail_row(
+        "trade-1", "600001", "甲股份", "dept-a", seat, 100, 20, explanation
+    )
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18", summary, [detail], [detail.copy()], aliases
+    )
+
+    matched = next(row for row in result["seats"] if row["seat"] == seat)
+    assert normalized_seat == "国泰海通证券上海长宁区江苏路证券营业部"
+    assert matched["alias"] == "章盟主"
+    assert matched["alias_source"] == aliases[normalized_seat]["source"]
+    assert matched["alias_source_url"] == aliases[normalized_seat]["source_url"]
+
+
+def test_aggregate_keeps_legacy_full_name_alias_keys():
+    seat = "某证券股份有限公司上海分公司"
+    explanation = "日涨幅偏离值达到7%"
+    summary = [_summary_row("600001", "甲股份", "trade-1", explanation, 100, 20)]
+    detail = _detail_row(
+        "trade-1", "600001", "甲股份", "dept-a", seat, 100, 20, explanation
+    )
+
+    result = lhb_seats.aggregate_lhb_seats(
+        "2026-11-18",
+        summary,
+        [detail],
+        [detail.copy()],
+        {
+            seat: {
+                "alias": "兼容别名",
+                "source": "legacy source",
+                "source_url": "https://example.test/legacy",
+            }
+        },
+    )
+
+    matched = next(row for row in result["seats"] if row["seat"] == seat)
+    assert matched["alias"] == "兼容别名"
+    assert matched["alias_source"] == "legacy source"
+    assert matched["alias_source_url"] == "https://example.test/legacy"
+
+
 def test_aggregate_merges_side_tables_deduplicates_and_classifies_seats():
     multi = "连续三个交易日内，涨幅偏离值累计达到20%"
     single = "日涨幅偏离值达到7%"

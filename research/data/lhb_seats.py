@@ -22,7 +22,7 @@ REPORTS = {
 }
 NOTE = (
     "金额单位为人民币元。席位标签依据公开报道，不等于实际账户身份；"
-    "仅描述当日盘后榜单，不构成建议。"
+    "仅描述当日盘后榜单，不构成建议。游资别名按公开报道整理，可能有误或过时，仅供参考。"
 )
 
 
@@ -93,6 +93,10 @@ def _seat_kind(name: str, code: str) -> str:
     return "dept"
 
 
+def _normalize_seat_name(name: str) -> str:
+    return re.sub(r"股份有限公司|有限责任公司|有限公司", "", name)
+
+
 def _load_aliases(path: Path = ALIAS_PATH) -> dict:
     aliases = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(aliases, dict):
@@ -102,6 +106,14 @@ def _load_aliases(path: Path = ALIAS_PATH) -> dict:
             raise ValueError("seat aliases must map names to objects")
         if entry.get("alias") is not None and not isinstance(entry["alias"], str):
             raise ValueError(f"alias for {seat!r} must be a string")
+        match = entry.get("match")
+        if match is not None and (
+            not isinstance(match, str) or match not in {"exact", "renamed"}
+        ):
+            raise ValueError(f"match for {seat!r} must be exact or renamed")
+        for field in ("source", "source_url", "source_name"):
+            if entry.get(field) is not None and not isinstance(entry[field], str):
+                raise ValueError(f"{field} for {seat!r} must be a string")
     return aliases
 
 
@@ -255,12 +267,21 @@ def aggregate_lhb_seats(
     for trade in records.values():
         seat = trade["seat"]
         kind = _seat_kind(seat, trade["seat_code"])
-        alias = alias_map.get(seat, {}).get("alias") if kind == "dept" else None
+        alias_entry = {}
+        if kind == "dept":
+            normalized_seat = _normalize_seat_name(seat)
+            alias_entry = alias_map.get(normalized_seat)
+            if alias_entry is None:
+                alias_entry = alias_map.get(seat)
+            alias_entry = alias_entry or {}
+        alias = alias_entry.get("alias")
         aggregate = seats.setdefault(
             seat,
             {
                 "seat": seat,
                 "alias": alias or None,
+                "alias_source": alias_entry.get("source") if alias else None,
+                "alias_source_url": alias_entry.get("source_url") if alias else None,
                 "kind": kind,
                 "buy": 0.0,
                 "sell": 0.0,

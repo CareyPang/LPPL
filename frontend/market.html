@@ -247,6 +247,7 @@ td.r, th.r { text-align: right; }
 .lhb-table td:nth-child(4), .lhb-table td:nth-child(5) { overflow-wrap: anywhere; }
 .lhb-seat-name { font-weight: 600; }
 .lhb-seat-business { display: block; max-width: 250px; color: var(--ink-3); font-size: 11px; overflow-wrap: anywhere; }
+.lhb-seat-source { margin-left: 4px; color: var(--accent); text-decoration: underline; }
 .lhb-trades { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
 .lhb-trade-chip { display: inline-block; max-width: 100%; padding: 2px 6px; color: #fff; border-radius: 2px; font-size: 11px; white-space: normal; overflow-wrap: anywhere; }
 .lhb-trade-chip.in { background: var(--up); }
@@ -1425,6 +1426,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const departments = allSeats.filter((seat) => seat.kind === 'dept' && !seat.alias).slice(0, 20);
     const mainSeats = [...aliases, ...departments];
     const majorSeats = allSeats.filter((seat) => ['northbound', 'institution'].includes(seat.kind));
+    const note = String(data.note || '席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。');
+    const aliasNote = '游资别名按公开报道整理，可能有误或过时，仅供参考。';
+    const sourceLink = (seat) => seat.alias_source_url
+      ? `<a class="lhb-seat-source" href="${E(seat.alias_source_url)}" target="_blank" rel="noopener noreferrer" title="${E(seat.alias_source || '别名来源')}">来源</a>`
+      : '';
     const tradeChip = (trade) => `<span class="lhb-trade-chip ${trade.side === 'in' ? 'in' : 'out'}" title="${E(trade.name)} · ${trade.side === 'in' ? '买入' : '卖出'} · ${trade.list === 'multi' ? '多日榜' : '单日榜'}">${E(trade.name || trade.code)} ${money(trade.amount)}</span>`;
     const tradeMarkup = (trades) => {
       const items = Array.isArray(trades) ? trades : [];
@@ -1433,7 +1439,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     };
     const seatRow = (seat, rank) => `<tr>
       <td class="m">${rank}</td>
-      <td><span class="lhb-seat-name">${E(seat.alias || seat.seat)}</span>${seat.alias ? `<small class="lhb-seat-business">${E(seat.seat)}</small>` : ''}</td>
+      <td><span class="lhb-seat-name">${E(seat.alias || seat.seat)}</span>${seat.alias ? `<small class="lhb-seat-business">${E(seat.seat)}${sourceLink(seat) ? ` · ${sourceLink(seat)}` : ''}</small>` : ''}</td>
       <td>${tradeMarkup(seat.trades)}</td>
       <td class="m up">${money(seat.buy)}</td>
       <td class="m dn">${money(seat.sell)}</td>
@@ -1455,7 +1461,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <tbody>${mainSeats.length ? mainSeats.map((seat, index) => seatRow(seat, index + 1)).join('') : '<tr><td colspan="5">暂无可展示营业部席位</td></tr>'}</tbody></table></div>
     <div class="lhb-major-heading"><strong>其他主要席位（北向与机构）</strong></div>
     <div class="lhb-major">${majors || '<p class="lhb-meta">暂无北向或机构席位</p>'}</div>
-    <p class="lhb-note">${E(data.note || '席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。')}</p>`;
+    <p class="lhb-note">${E(note)}${note.includes(aliasNote) ? '' : ` ${E(aliasNote)}`}</p>`;
   }
 
   async function loadLhbSeats() {

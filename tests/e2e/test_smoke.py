@@ -260,8 +260,18 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     seat_rows = page.locator("#lhb-seats-body .lhb-table tbody tr")
     expect(seat_rows).to_have_count(4)
     expect(seat_rows.first).to_contain_text("游资甲")
+    expect(seat_rows.first.locator(".lhb-seat-name")).to_have_text("游资甲")
+    expect(seat_rows.first.locator(".lhb-seat-business")).to_contain_text(
+        "某证券股份有限公司上海分公司"
+    )
+    source_link = seat_rows.first.get_by_role("link", name="来源")
+    expect(source_link).to_have_attribute("href", "https://example.test/lhb-alias")
+    expect(source_link).to_have_attribute("title", "公开报道来源")
     expect(seat_rows.first.locator("td").first).to_have_text("1")
     expect(page.locator("#lhb-seats-body .lhb-meta")).to_contain_text("样本 34 只（单日榜 28 / 多日榜 6）")
+    expect(page.locator("#lhb-seats-body .lhb-note")).to_contain_text(
+        "游资别名按公开报道整理，可能有误或过时，仅供参考。"
+    )
     expect(page.locator("#lhb-seats-body .lhb-more")).to_contain_text("+1笔")
     assistant_button = page.locator(".ai-btn")
     if assistant_button.get_attribute("aria-expanded") != "true":
