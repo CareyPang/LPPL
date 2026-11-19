@@ -1,8 +1,8 @@
 {
  "symbol": "sz399006",
  "name": "创业板指",
- "asof": "2026-11-18",
- "data_version": "vintage_20261118_tencent_sina",
+ "asof": "2026-11-19",
+ "data_version": "vintage_20261119_tencent_sina",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -39,13 +39,13 @@
    ]
   },
   "bubble": {
-   "start": "2024-11-05",
-   "duration_days": 495,
+   "start": "2025-09-12",
+   "duration_days": 285,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 0.852,
-   "size_realized": 0.01,
-   "tc": "2026-06-24",
+   "size_model": -0.336,
+   "size_realized": -0.241,
+   "tc": "2027-02-17",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -64,16 +64,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-11-03",
+    "best_t1": "2026-10-23",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.667,
+     "m_lo": 0.333,
      "m_hi": 0.167,
-     "w_lo": 0.167,
+     "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.167,
-     "any": 1.0,
+     "tc_hi": 0.0,
+     "any": 0.5,
      "tol": 0.01
     },
     "null_fpr": {
@@ -108,7 +108,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-09-23",
+    "best_t1": "2026-09-24",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -152,7 +152,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-06-24",
+    "best_t1": "2026-06-17",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.077,
@@ -160,8 +160,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.154,
-     "any": 0.231,
+     "tc_hi": 0.077,
+     "any": 0.154,
      "tol": 0.01
     },
     "null_fpr": {
@@ -196,12 +196,12 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-05-12",
+    "best_t1": "2026-05-13",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.44,
-     "w_lo": 0.28,
+     "w_lo": 0.32,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.84,
@@ -235,20 +235,20 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.02,
+     "early": 0.0,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-11-05",
+    "best_t1": "2024-10-30",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.06,
      "m_hi": 0.0,
-     "w_lo": 0.74,
+     "w_lo": 0.76,
      "w_hi": 0.0,
-     "tc_lo": 0.02,
-     "tc_hi": 0.48,
+     "tc_lo": 0.0,
+     "tc_hi": 0.52,
      "any": 1.0,
      "tol": 0.01
     },
@@ -278,22 +278,22 @@
     "n_windows": 80,
     "confidence": {
      "box": 0.0,
-     "standard": 0.2,
-     "early": 0.6,
+     "standard": 0.15,
+     "early": 0.525,
      "end": 0.0,
-     "pure": 0.175
+     "pure": 0.125
     },
-    "n_qualified_standard": 16,
-    "best_t1": "2024-10-15",
+    "n_qualified_standard": 12,
+    "best_t1": "2024-10-09",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.237,
+     "m_lo": 0.263,
      "m_hi": 0.0,
-     "w_lo": 0.2,
+     "w_lo": 0.25,
      "w_hi": 0.0,
-     "tc_lo": 0.2,
+     "tc_lo": 0.212,
      "tc_hi": 0.025,
-     "any": 0.637,
+     "any": 0.725,
      "tol": 0.01
     },
     "null_fpr": {
@@ -321,8 +321,8 @@
   },
   "combo": {
    "p0.1": 0.0,
-   "p1": 0.033,
-   "p10": 0.167,
+   "p1": 0.025,
+   "p10": 0.125,
    "set": "standard",
    "scales": [
     "2-4w",
@@ -357,28 +357,28 @@
     "bins": []
    },
    "2-6y": {
-    "n": 16,
+    "n": 12,
     "bin_days": 5,
     "bins": [
      [
-      "2026-05-25",
-      "2026-06-01",
-      11
-     ],
-     [
-      "2026-06-01",
-      "2026-06-08",
-      2
-     ],
-     [
-      "2026-06-08",
-      "2026-06-15",
+      "2026-05-19",
+      "2026-05-26",
       1
      ],
      [
-      "2026-06-15",
-      "2026-06-23",
+      "2026-05-26",
+      "2026-06-02",
+      8
+     ],
+     [
+      "2026-06-09",
+      "2026-06-16",
       2
+     ],
+     [
+      "2026-06-16",
+      "2026-06-24",
+      1
      ]
     ]
    }
@@ -435,7 +435,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-18",
+   "table_asof": "2026-11-19",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -917,8 +917,8 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.01,
-    "duration_days": 495,
+    "size_realized": -0.241,
+    "duration_days": 285,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
    },
@@ -1000,7 +1000,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-10-09",
    "2023-10-10",
    "2023-10-11",
    "2023-10-12",
@@ -1755,10 +1754,10 @@
    "2026-11-13",
    "2026-11-16",
    "2026-11-17",
-   "2026-11-18"
+   "2026-11-18",
+   "2026-11-19"
   ],
   "open": [
-   2000.13,
    2004.95,
    2000.52,
    2015.55,
@@ -2513,10 +2512,10 @@
    2525.39,
    2395.52,
    2299.97,
-   2306.12
+   2306.12,
+   2290.21
   ],
   "high": [
-   2006.43,
    2014.3,
    2021.11,
    2022.36,
@@ -3271,10 +3270,10 @@
    2528.99,
    2398.19,
    2343.15,
-   2329.91
+   2329.91,
+   2315.78
   ],
   "low": [
-   1977.77,
    1987.35,
    1996.82,
    2001.91,
@@ -4029,10 +4028,10 @@
    2417.22,
    2308.9,
    2263.74,
-   2265.76
+   2265.76,
+   2271.99
   ],
   "close": [
-   1998.61,
    1987.94,
    2003.9,
    2019.1,
@@ -4787,10 +4786,10 @@
    2426.08,
    2320.02,
    2292.2,
-   2311.62
+   2311.62,
+   2293.34
   ],
   "volume": [
-   134153185,
    139745449,
    148371123,
    136247051,
@@ -5545,7 +5544,8 @@
    170437467,
    152931711,
    157894414,
-   148449739
+   148449739,
+   139991626
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5574,7 +5574,7 @@
   },
   "cheap": {
    "evidence": "descriptive",
-   "dd_now": -0.4713,
+   "dd_now": -0.4754,
    "peak_date": "2026-06-25",
    "peak_close": 4371.99,
    "dd_rank": {
@@ -5607,7 +5607,7 @@
    "confirmed": false,
    "peak_date": "2026-08-17",
    "peak_close": 3740.16,
-   "rebound_from_low": 0.0085
+   "rebound_from_low": 0.0005
   },
   "rebound": {
    "evidence": "descriptive",
