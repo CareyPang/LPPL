@@ -390,6 +390,8 @@ def score(rows, task, chosen, opportunities, peaks, outcomes, info):
             opportunity_peaks=len(possible),
             mature_alerts=len(picked),
             hits=len(hits),
+            same_day_hits=sum(n == 0 for n in leads),
+            advance_hits=sum(n > 0 for n in leads),
             missed=len(possible) - len(hits),
             false_alerts=len(picked) - len(hits),
             immature_alerts=len(chosen) - len(picked),

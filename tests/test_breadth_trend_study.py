@@ -98,6 +98,16 @@ def test_top_uses_window_not_drawdown_and_counts_one_alert_per_event():
     assert study.match_peaks([123, 125, 130], {130}, 10) == {123: 130}
 
 
+def test_stage_peak_lead_counts_separate_close_day_recognition_from_advance_warning():
+    rows = [{"date": str(i)} for i in range(205)]
+    issued = [130, 143, 160]
+    peaks = {"stage_top": {130, 145, 166}}
+    result = study.score(rows, "stage_top", issued, issued, peaks, [], {})
+    assert result["same_day_hits"] == 1 and result["advance_hits"] == 2
+    assert result["same_day_hits"] + result["advance_hits"] == result["hits"] == 3
+    assert result["lead_ge5"] == 1 and result["median_lead"] == 2
+
+
 def test_forward_excursion_separates_high_from_ordered_close_recovery():
     prices = [100, 120, 80, 84, 88, 86, 85, 84, 84, 83, 82]
     rows = [dict(label_close=p, label_high=p + 2) for p in prices]

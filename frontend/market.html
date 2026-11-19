@@ -1788,7 +1788,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }
   function renderTrendAlerts() {
     const summary = $('trend-summary');
-    const model = LPPLMarketTrends.view(breadthSnapshot, M?.asof, Date.now(), breadthCalendar);
+    const selectedDate = new URLSearchParams(window.location.search).get('asof');
+    const model = LPPLMarketTrends.view(breadthSnapshot, M?.asof, Date.now(), breadthCalendar, selectedDate);
     $('breadth-trend').innerHTML = LPPLMarketTrends.markup(model, E);
     const text = model.headline ? model.asof + ' 收盘提醒 · ' + model.headline : '';
     if (summary.firstElementChild.textContent !== text) summary.firstElementChild.textContent = text;

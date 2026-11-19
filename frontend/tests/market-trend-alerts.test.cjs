@@ -26,6 +26,25 @@ test('surfaces a possible reversal at first observation and a fresh strengthenin
   assert.match(view(snapshot({ alerts: [enhanced] }), day, now).headline, /迹象增强/);
 });
 
+test('an early turnover difference is readable without creating a turn warning', () => {
+  const message = '这轮反弹刚开始，留意上涨家数。';
+  const result = view(snapshot({ state: 'quiet', alerts: [], context_note: message }), day, now);
+  assert.equal(result.contextNote, message);
+  assert.equal(result.headline, '');
+  assert.deepEqual(result.alerts, []);
+});
+
+test('a selected historical cutoff hides later cards as well as the headline', () => {
+  const future = view(snapshot(), day, now, null, '2026-11-17');
+  assert.equal(future.alerts.length, 0);
+  assert.equal(future.headline, '');
+  assert.match(future.notice, /所选日期/);
+  const sameDay = view(snapshot(), day, now, null, day);
+  assert.equal(sameDay.alerts.length, 1);
+  assert.equal(sameDay.context, '历史回放');
+  assert.equal(sameDay.headline, '');
+});
+
 test('continued or invalidated observations stay accessible without a new headline', () => {
   const held = { ...alert, trigger_date: '2026-11-16', update_date: '2026-11-16' };
   const withdrawn = { ...alert, level: 'invalidated', active: false };

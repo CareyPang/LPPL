@@ -99,13 +99,14 @@ def test_reversal_strengthens_only_after_a_higher_retest_and_sustained_breadth()
 
 def test_opposite_short_term_observation_succeeds_previous_episode_with_both_ids():
     rows = panel(-1)
-    for i in range(1, 7):
+    for i in range(1, 9):
         next_day(rows, sh=940 + i, P20=0.38 + 0.01 * i, P60=0.44 + 0.002 * i)
-    next_day(rows, sh=946, red=0.76, trin_amt=1.8)
-    next_day(rows, sh=920, red=0.19, MCL=-2, P20=0.32, P60=0.40, trin_amt=0.95)
+    first = next_day(rows, sh=948, red=0.76, trin_amt=1.8)
+    for i in range(5):
+        next_day(rows, sh=930 - i, red=0.35, MCL=-2 - i, P20=0.32, P60=0.40, trin_amt=0.95)
     next_day(rows, sh=918, red=0.10, MCL=-3, P20=0.30, P60=0.38, trin_amt=0.33)
     ledger = build_trend_ledger(rows)
-    old = by_kind(ledger[-3], "rebound_end")
+    old = by_kind(next(s for s in ledger if s["asof"] == first["date"]), "rebound_end")
     assert old["active"]
     new, archived = by_kind(ledger[-1], "rebound"), by_kind(ledger[-1], "rebound_end")
     assert new["active"] and new["is_new"]
@@ -114,6 +115,34 @@ def test_opposite_short_term_observation_succeeds_previous_episode_with_both_ids
     assert archived["update_date"] == new["trigger_date"]
     assert archived["closure_reason"] == "new_opposite_observation"
     assert archived["replaced_by"] == new["id"]
+
+
+def test_early_rally_trin_remains_context_until_breadth_independently_deteriorates():
+    rows = panel(-1)
+    for i in range(1, 7):
+        next_day(rows, sh=940 + i, P20=0.38 + 0.01 * i, P60=0.44 + 0.002 * i)
+    first = next_day(rows, sh=947, red=0.82, trin_amt=1.9)
+    next_day(rows, sh=947.5, red=0.43, MCL=-2, trin_amt=0.84)
+    before, after = build_trend_ledger(rows)[-2:]
+    assert before["rule_version"] == "stage-breadth-2"
+    assert before["phase"]["maturity"] == "early"
+    assert "1.90倍" in before["context_note"] and "留意" in before["context_note"]
+    assert all(item["kind"] != "rebound_end" for item in before["alerts"])
+    assert by_kind(after, "rebound_end")["trigger_date"] > first["date"]
+
+
+def test_early_selling_extreme_is_context_and_broad_recovery_can_warn_in_early_decline():
+    rows = panel(1)
+    for i in range(2):
+        next_day(rows, sh=1045 - i, red=0.45, P20=0.50, P60=0.52, MCL=-1)
+    next_day(rows, sh=1040, red=0.13, trin_amt=0.3, MCL=-2)
+    next_day(rows, sh=1044, red=0.75, P20=0.55, P60=0.56, MCL=-0.4)
+    before, after = build_trend_ledger(rows)[-2:]
+    assert before["phase"]["maturity"] == "early"
+    assert "上涨股票只占" in before["context_note"]
+    assert not any(item["kind"] == "rebound" for item in before["alerts"])
+    assert after["phase"]["id"] == "early_decline"
+    assert by_kind(after, "reversal")["is_new"]
 
 
 def test_roll_missing_and_insufficient_history_do_not_fabricate_evidence():

@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping
 from statistics import fmean
 from typing import Any
 
-RULE_VERSION = "stage-breadth-1"
+RULE_VERSION = "stage-breadth-2"
 PHASE_LABELS = {
     "unavailable": "阶段资料不足",
     "short_rebound": "下跌后的短线回升",
@@ -328,6 +328,7 @@ def build_trend_ledger(rows: Iterable[dict], *, evidence: str = "research_replay
             "phase": phase,
             "state": "unavailable",
             "alerts": [],
+            "context_note": "",
             "evidence": evidence,
             "reason": WARMUP,
         }
@@ -406,14 +407,38 @@ def _evaluate_day(
             active[kind] = entry
 
     amount = _number(row.get("trin_amt"))
-    if phase["id"] in ("short_rebound", "medium_up"):
-        concentrated = (
-            row["red"] > 0.5
-            and amount is not None
-            and amount > 1
-            and _recent_extreme(row, prior, "trin_amt", high=True)
-        )
-        if concentrated or narrowing:
+    mature = phase["maturity"] == "middle_late"
+    concentrated = (
+        row["red"] > 0.5
+        and amount is not None
+        and amount > 1
+        and _recent_extreme(row, prior, "trin_amt", high=True)
+    )
+    capitulation = (
+        row["red"] <= 0.25
+        and amount is not None
+        and amount < 1
+        and _recent_extreme(row, prior, "trin_amt", high=False)
+    )
+    if not mature and (concentrated or capitulation):
+        if concentrated:
+            snapshot["context_note"] = (
+                f"过半股票上涨，但平均每只下跌股成交额是上涨股的{amount:.2f}倍。"
+                f"{phase['maturity_label']}，留意接下来上涨的股票是否减少。"
+            )
+        else:
+            snapshot["context_note"] = (
+                f"上涨股票只占{row['red']:.1%}，平均每只上涨股的成交额却更高。"
+                f"{phase['maturity_label']}，留意接下来上涨能否扩散。"
+            )
+    # Even an unclassified phase retains its price-and-breadth observations;
+    # orient those using the already-known five-session move.
+    mixed = phase["id"] == "mixed"
+    prior_return = phase["features"]["ret5"]
+    upward = phase["id"] in ("short_rebound", "medium_up") or (mixed and prior_return > 0)
+    downward = phase["id"] in ("early_decline", "sustained_decline") or (mixed and prior_return < 0)
+    if upward:
+        if (mature and concentrated) or narrowing:
             kind = "stage_top" if phase["id"] == "medium_up" else "rebound_end"
             title = "中期上涨可能接近转折" if kind == "stage_top" else "这波反弹可能接近尾声"
             detail = (
@@ -427,13 +452,8 @@ def _evaluate_day(
                 else "过半股票未收涨，涨跌家数的近期走势转弱。"
             )
             start(kind, title, message, detail, "看接下来上涨家数能否恢复，以及指数是否开始回落。")
-    if phase["id"] == "sustained_decline":
-        if (
-            row["red"] <= 0.25
-            and amount is not None
-            and amount < 1
-            and _recent_extreme(row, prior, "trin_amt", high=False)
-        ):
+    if downward:
+        if mature and phase["id"] == "sustained_decline" and capitulation:
             start(
                 "rebound",
                 "短线可能反弹",

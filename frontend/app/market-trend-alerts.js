@@ -30,7 +30,7 @@
   }
 
   // All financial decisions and their original observation dates come from the snapshot.
-  function view(snapshot, marketDate, now, calendar) {
+  function view(snapshot, marketDate, now, calendar, selectedDate) {
     const assessment = snapshot?.trend_alerts;
     const result = { alerts: [], notice: '', asof: '', phase: '', historical: false, headline: '' };
     if (!assessment) {
@@ -45,14 +45,18 @@
       return result;
     }
     const today = new Date(now + 8 * 3600000).toISOString().slice(0, 10);
+    if (selectedDate && (!date(selectedDate) || asof > selectedDate)) {
+      result.notice = '所选日期尚无这份趋势记录。更晚出现的提醒已隐藏。';
+      return result;
+    }
     if (asof > today) {
       result.notice = '这份评估的日期晚于当前交易日期，请核对数据时间。';
       return result;
     }
     result.asof = asof;
-    result.historical = evidence === 'research_replay' || snapshot.stale === true ||
+    result.historical = Boolean(selectedDate) || evidence === 'research_replay' || snapshot.stale === true ||
       (date(marketDate) && marketDate > asof) || asof < lastDueDate(now, calendar);
-    result.context = evidence === 'research_replay' ? '历史回放' :
+    result.context = evidence === 'research_replay' || selectedDate ? '历史回放' :
       result.historical ? '上次收盘记录' : '试行观察';
     if (text(phase?.label) && date(phase.asof) && phase.asof < asof) {
       result.phase = '截至 ' + phase.asof + '：' + [phase.label, phase.maturity_label].filter(text).join(' · ');
@@ -60,6 +64,9 @@
     if (state === 'unavailable') {
       result.notice = text(assessment.reason) ? assessment.reason : '这一天缺少判断趋势所需的数据。';
       return result;
+    }
+    if ((state === 'quiet' || state === 'watch') && text(assessment.context_note)) {
+      result.contextNote = assessment.context_note;
     }
     if (state === 'quiet' && Array.isArray(alerts) && alerts.length === 0) {
       result.notice = text(assessment.reason) ? assessment.reason : '这次收盘没有触发转折提醒。';
@@ -96,6 +103,7 @@
     </article>`).join('');
     return `<div class="trend-heading"><h3>上证走势提醒</h3>${stamp}</div>
       ${model.phase ? '<p class="trend-phase">' + escape(model.phase) + '</p>' : ''}
+      ${model.contextNote ? '<p class="trend-context"><strong>成交观察</strong> ' + escape(model.contextNote) + '</p>' : ''}
       ${cards ? '<div class="trend-cards">' + cards + '</div>' : ''}
       ${model.notice ? '<p class="note">' + escape(model.notice) + '</p>' : ''}`;
   }
