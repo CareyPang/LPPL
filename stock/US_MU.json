@@ -1,8 +1,8 @@
 {
  "symbol": "US_MU",
  "name": "美光科技",
- "asof": "2026-11-17",
- "data_version": "us_MU_20261117_e2aa895a01be7fbf",
+ "asof": "2026-11-18",
+ "data_version": "us_MU_20261118_6ad096a5a080bf7b",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-01-30",
+   "start": "2026-02-02",
    "duration_days": 202,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": 1.445,
-   "size_realized": 0.718,
-   "tc": "2026-09-22",
+   "size_model": 1.31,
+   "size_realized": 0.612,
+   "tc": "2026-09-23",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,16 +60,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-01-30",
+    "best_t1": "2026-02-02",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.167,
+     "m_lo": 0.0,
      "m_hi": 0.167,
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.833,
      "tc_hi": 0.0,
-     "any": 1.0,
+     "any": 0.833,
      "tol": 0.01
     },
     "null_fpr": {
@@ -104,7 +104,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-08-01",
+    "best_t1": "2025-08-04",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-17",
+   "table_asof": "2026-11-18",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +716,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.718,
+    "size_realized": 0.612,
     "duration_days": 202,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -760,7 +760,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-13",
    "2023-11-14",
    "2023-11-15",
    "2023-11-16",
@@ -1515,10 +1514,10 @@
    "2026-11-12",
    "2026-11-13",
    "2026-11-16",
-   "2026-11-17"
+   "2026-11-17",
+   "2026-11-18"
   ],
   "open": [
-   73.441,
    75.274,
    76.759,
    76.155,
@@ -2273,10 +2272,10 @@
    769.31,
    782.68,
    734.16,
-   726.2
+   726.2,
+   718.5
   ],
   "high": [
-   74.481,
    76.71,
    76.759,
    76.739,
@@ -3031,10 +3030,10 @@
    799.7,
    796.18,
    739.12,
-   726.99
+   726.99,
+   722.96
   ],
   "low": [
-   72.689,
    75.184,
    75.581,
    75.749,
@@ -3789,10 +3788,10 @@
    764.57,
    750.25,
    716.38,
-   666.88
+   666.88,
+   687.33
   ],
   "close": [
-   74.065,
    76.432,
    76.403,
    75.937,
@@ -4547,10 +4546,10 @@
    798.44,
    778.31,
    719.02,
-   712.42
+   712.42,
+   705.27
   ],
   "volume": [
-   9115873,
    12972549,
    9953995,
    12988965,
@@ -5305,7 +5304,8 @@
    27638419,
    27921003,
    27126659,
-   33502555
+   33502555,
+   27515544
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5359,7 +5359,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 3934,
+  "n_bars": 3935,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5389,9 +5389,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "d952240216e43b27b511992ef57e8f42afe06a74b898cffc951e40bd586fe2e3",
+ "fit_input_hash": "86b7e9546111f359710cc18c331c727b316ca00cce4ab315768d065a7125a8bd",
  "history_input_hashes": {
-  "2023-11-14": "fe97086c5f219a49b391dcf13a558c4b3304d74c99d3d2902bda371397e84e83",
   "2023-11-15": "8e274bdf6cef76930de3bb9415fe05672da8da732f0007a569e35d26a5cf14d7",
   "2023-11-16": "4b97c909ae0404609217bc95b593acb89d95dc6e13e6971e7ccb095781873eb3",
   "2023-11-17": "0d48420e82639006010038d65a44b75d0c557ede6660bed5ef1884a4e74ef3ac",
@@ -6145,10 +6144,11 @@
   "2026-11-12": "590dd1fff32282d8f562e8c9403d3b7dc4e8b82f268cb7f734fe4b40de8cd65a",
   "2026-11-13": "eb6c86b330f6f876bf1bf1be2532517c26732f4d234b5852c99ab07f0ffbc757",
   "2026-11-16": "d70615ccc598ac674c7cc6fe7e009779e16869342116b5bf24e3a0266e383cb0",
-  "2026-11-17": "d952240216e43b27b511992ef57e8f42afe06a74b898cffc951e40bd586fe2e3"
+  "2026-11-17": "d952240216e43b27b511992ef57e8f42afe06a74b898cffc951e40bd586fe2e3",
+  "2026-11-18": "86b7e9546111f359710cc18c331c727b316ca00cce4ab315768d065a7125a8bd"
  },
  "code": "US_MU",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-18T22:47:10.766435+00:00"
+ "generated_at": "2026-11-19T04:02:25.577689+00:00"
 }
