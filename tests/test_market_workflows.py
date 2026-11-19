@@ -146,6 +146,18 @@ def test_growth_monitor_workflow_uses_macro_schedule_and_previous_snapshot():
     assert "gh workflow run pages.yml --ref main" in publish["run"]
     build = (ROOT / "scripts/build_site.sh").read_text(encoding="utf-8")
     assert 'git -C "$ROOT" archive stock-results growth' in build
+    cache = next(step for step in steps if step.get("id") == "fund_growth_cache")
+    save_cache = next(
+        step for step in steps if step.get("name") == "Save quarterly fund growth cache"
+    )
+    assert cache["uses"] == "actions/cache/restore@v4"
+    assert cache["with"]["path"] == "data/cache/fund_growth"
+    assert "fund-growth-v1-" in cache["with"]["key"]
+    assert "--fund-growth-cache-dir data/cache/fund_growth" in collect["run"]
+    assert "--skip-fund-growth-position" in collect["run"]
+    assert save_cache["uses"] == "actions/cache/save@v4"
+    assert save_cache["with"]["path"] == "data/cache/fund_growth"
+    assert steps.index(cache) < steps.index(collect) < steps.index(save_cache)
 
     alerts = _workflow("daily_alert.yml")
     alert_triggers = alerts.get("on", alerts.get(True, {}))

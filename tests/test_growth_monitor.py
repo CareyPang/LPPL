@@ -55,6 +55,33 @@ def test_parse_cnindex_descending_daily_rows_by_named_close_column():
     ]
 
 
+def test_fund_growth_status_uses_official_value_not_weekly_proxy(monkeypatch, tmp_path):
+    result = {
+        "status": "met",
+        "value": 59.5,
+        "asof": "2026-09-30",
+        "source": "fixture",
+        "rule": "official < 60%",
+        "missing_reason": None,
+        "official": {"quarter": "2026Q3", "value": 59.5, "n_funds": 12},
+        "proxy": {"asof": "2026-11-13", "value": 80.0, "r2": 0.7},
+    }
+    monkeypatch.setattr(growth_monitor, "collect_fund_growth", lambda *args, **kwargs: result)
+
+    indicator = growth_monitor._fund_growth_position("2026-11-19", None, tmp_path)
+    assert indicator["status"] == "met"
+    assert indicator["value"] == 59.5
+    assert indicator["proxy"]["value"] == 80.0
+
+    result["status"] = "not_met"
+    result["value"] = 60.0
+    result["official"]["value"] = 60.0
+    result["proxy"]["value"] = 20.0
+    indicator = growth_monitor._fund_growth_position("2026-11-19", None, tmp_path)
+    assert indicator["status"] == "not_met"
+    assert indicator["value"] == 60.0
+
+
 def test_growth_rs_requires_last_ten_sessions_above_ma20():
     start = date(2026, 1, 5)
     dates = []

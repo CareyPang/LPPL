@@ -1403,7 +1403,11 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     };
     const valueText = (item) => {
       const value = item.value;
-      if (item.id === 'fund_growth_position') return '—（待统一口径）';
+      if (item.id === 'fund_growth_position') {
+        return value == null || !Number.isFinite(Number(value))
+          ? '—'
+          : `${Number(value).toFixed(2)}%`;
+      }
       if (item.id === 'semi_etf_flow') {
         const weeks = value?.last_two_complete_weeks || [];
         return `近两周净申购：${weeks.map((week) => amount(week.flow_yuan)).join(' / ') || '—'}`;
@@ -1443,7 +1447,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         ], '成长相对强弱与 MA20');
       }
       let extra = '';
-      if (item.id === 'semi_etf_flow') {
+      if (item.id === 'fund_growth_position') {
+        const official = item.official || {};
+        const proxy = item.proxy || {};
+        const percent = (value) => value == null || !Number.isFinite(Number(value))
+          ? '—'
+          : `${Number(value).toFixed(2)}%`;
+        extra = `<p class="growth-meta growth-official">正式季度值 · ${E(official.quarter || '暂无季度')} · 数据截至 ${E(official.data_asof || '暂无')} · n=${E(official.n_funds ?? '—')} · 覆盖率 ${E(percent(official.coverage))} · 来源：${E(official.source || '—')}</p>
+          <p class="growth-meta growth-proxy">周度代理（回归估算，不是正式值）：${E(percent(proxy.value))} · 截至 ${E(proxy.asof || '暂无')} · n=${E(proxy.n_weeks ?? '—')} 周 · 覆盖率 ${E(percent(proxy.coverage))} · R² ${E(proxy.r2 == null ? '—' : Number(proxy.r2).toFixed(4))} · 来源：${E(proxy.source || '—')}</p>`;
+      } else if (item.id === 'semi_etf_flow') {
         const weeks = item.value?.last_two_complete_weeks || [];
         extra = weeks.length
           ? `<p class="growth-meta">${weeks.map((week) => `${week.week_start}–${week.week_end}`).join(' / ')}</p>`
@@ -1459,11 +1471,15 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       const note = item.id === 'fund_growth_position' && item.note === status
         ? ''
         : item.note;
+      const valueLabel = item.id === 'fund_growth_position' ? '正式季度值' : '最新值';
+      const sourceLine = item.id === 'fund_growth_position'
+        ? ''
+        : `<p class="growth-meta">来源：${E(item.source || '—')}</p>`;
       return `<article class="growth-card">
         <div class="growth-card-head"><h3>${E(item.name)}</h3><span class="growth-state ${E(item.status)}">${E(status)}</span></div>
-        <p class="growth-value">最新值：${E(valueText(item))}</p>${extra}${chart}
+        <p class="growth-value">${valueLabel}：${E(valueText(item))}</p>${extra}${chart}
         <p class="growth-meta">数据日期：${E(item.asof || '暂无可用日期')}</p>
-        <p class="growth-meta">来源：${E(item.source || '—')}</p>
+        ${sourceLine}
         <p class="growth-meta">规则：${E(item.rule || '—')}</p>
         <p class="growth-meta">缺失原因：${E(item.missing_reason || '无')}</p>
         ${note ? `<p class="growth-meta">${E(note)}</p>` : ''}

@@ -9,12 +9,14 @@ on:
   pull_request:
     paths:
       - research/data/growth_monitor.py
+      - research/data/fund_growth.py
       - research/data/nt_etf.py
       - research/data/global_macro.py
       - research/data/tencent_sina.py
       - research/data/trading_date.py
       - research/data/freshness.py
       - tests/test_growth_monitor.py
+      - tests/test_fund_growth.py
       - tests/test_freshness.py
       - tests/test_market_workflows.py
       - frontend/market.html
@@ -59,16 +61,26 @@ jobs:
             rm -f out/growth/previous.json
             echo "path=" >> "$GITHUB_OUTPUT"
           fi
+      - name: Restore quarterly fund growth cache
+        id: fund_growth_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache/fund_growth
+          key: fund-growth-v1-${{ hashFiles('research/data/fund_growth.py') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            fund-growth-v1-${{ hashFiles('research/data/fund_growth.py') }}-
       - name: Collect growth monitor snapshot
         id: fetch
         env:
           PREVIOUS_PATH: ${{ steps.previous.outputs.path }}
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
           snapshot_date="$(python -m research.data.trading_date)"
-          args=(--asof "$snapshot_date" --out out/growth)
+          args=(--asof "$snapshot_date" --out out/growth --fund-growth-cache-dir data/cache/fund_growth)
           if [[ -n "$PREVIOUS_PATH" ]]; then args+=(--previous "$PREVIOUS_PATH"); fi
+          if [[ "$IS_PULL_REQUEST" == "true" ]]; then args+=(--skip-fund-growth-position); fi
           python -m research.data.growth_monitor "${args[@]}"
           python - <<'PY'
           import json
@@ -82,6 +94,12 @@ jobs:
           publishable="$(python -c 'import json,pathlib; d=json.load(open("out/growth/growth_latest.json")); print(str(any(i.get("asof") for i in d["indicators"]) or pathlib.Path("out/growth/previous.json").exists()).lower())')"
           echo "asof=$snapshot_date" >> "$GITHUB_OUTPUT"
           echo "publishable=$publishable" >> "$GITHUB_OUTPUT"
+      - name: Save quarterly fund growth cache
+        if: always() && github.event_name != 'pull_request' && steps.fetch.outcome == 'success' && steps.fund_growth_cache.outputs['cache-primary-key'] != ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/cache/fund_growth
+          key: ${{ steps.fund_growth_cache.outputs.cache-primary-key }}
       - name: Upload growth monitor artifact
         if: always()
         uses: actions/upload-artifact@v4

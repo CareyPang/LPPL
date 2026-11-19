@@ -10,6 +10,9 @@ from pathlib import Path
 
 import requests
 
+from .fund_growth import DEFAULT_CACHE_DIR as DEFAULT_FUND_GROWTH_CACHE_DIR
+from .fund_growth import RULE as FUND_GROWTH_RULE
+from .fund_growth import collect_fund_growth
 from .global_macro import fetch_treasury
 from .nt_etf import _fetch_shares, _szse_history, flow_yuan
 from .tencent_sina import tencent_raw
@@ -34,8 +37,7 @@ ETFS = (
 )
 RULES = {
     "fund_growth_position": (
-        "先固定基金样本、成长行业分类、规模加权份额；不得用主动权益持仓代替；"
-        "周度代理、季度正式；统一口径后低于 60%。"
+        FUND_GROWTH_RULE
     ),
     "semi_etf_flow": (
         "固定篮子 159995（国证芯片）、512480（中证全指半导体）、"
@@ -329,20 +331,60 @@ def _indicator(
     }
 
 
-def _pending_position() -> dict:
-    return _indicator(
+def _fund_growth_position(
+    asof: str,
+    previous: dict | None,
+    cache_dir: Path,
+    *,
+    skip_collection: bool = False,
+) -> dict:
+    source = "天天基金季度持仓；申万行业分类；中证/申万周线回归"
+    if skip_collection:
+        fallback = _fallback(
+            previous, "fund_growth_position", "公募成长仓位", "core", source
+        )
+        if fallback["status"] == "missing":
+            fallback["missing_reason"] = "Pull request 检查跳过基金季报和指数取数。"
+            fallback["official"] = None
+            fallback["proxy"] = None
+        return fallback
+
+    try:
+        result = collect_fund_growth(asof, cache_dir=cache_dir)
+    except Exception as exc:  # noqa: BLE001 — preserve other growth monitor indicators
+        fallback = _fallback(
+            previous, "fund_growth_position", "公募成长仓位", "core", source
+        )
+        fallback["missing_reason"] = f"{type(exc).__name__}: {exc}"
+        if fallback["status"] == "missing":
+            fallback["official"] = None
+            fallback["proxy"] = None
+        return fallback
+
+    indicator = _indicator(
         "fund_growth_position",
         "公募成长仓位",
         "core",
-        "pending_definition",
-        None,
+        result["status"],
+        result["value"],
         "%",
-        None,
-        "本版未取数",
+        result["asof"],
+        result["source"],
         RULES["fund_growth_position"],
-        note="待统一口径",
-        missing_reason="本版不取数，待统一基金样本、成长行业分类与规模加权份额口径。",
+        missing_reason=result["missing_reason"],
     )
+    indicator["official"] = result["official"]
+    indicator["proxy"] = result["proxy"]
+    if result["status"] == "missing":
+        fallback = _fallback(
+            previous, "fund_growth_position", "公募成长仓位", "core", source
+        )
+        if fallback["status"] == "partial":
+            fallback["missing_reason"] = result["missing_reason"]
+            if result["proxy"].get("value") is not None:
+                fallback["proxy"] = result["proxy"]
+            return fallback
+    return indicator
 
 
 def _fallback(
@@ -676,12 +718,26 @@ def _realize_indicator(previous: dict | None, indicator_id: str, name: str, role
     return result
 
 
-def fetch(asof: str, previous: dict | None = None, session=None) -> dict:
+def fetch(
+    asof: str,
+    previous: dict | None = None,
+    session=None,
+    *,
+    fund_growth_cache_dir: Path = DEFAULT_FUND_GROWTH_CACHE_DIR,
+    skip_fund_growth_position: bool = False,
+) -> dict:
     date.fromisoformat(asof)
     session = session or requests.Session()
     etf_start = (date.fromisoformat(asof) - timedelta(days=112)).isoformat()
     rs_start = (date.fromisoformat(asof) - timedelta(days=150)).isoformat()
-    indicators = [_pending_position()]
+    indicators = [
+        _fund_growth_position(
+            asof,
+            previous,
+            Path(fund_growth_cache_dir),
+            skip_collection=skip_fund_growth_position,
+        )
+    ]
 
     def semi():
         return _semi_etf_flow(asof, etf_start, session)
@@ -791,11 +847,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--asof", required=True)
     parser.add_argument("--out", type=Path, default=DATA_DIR)
     parser.add_argument("--previous", type=Path)
+    parser.add_argument(
+        "--fund-growth-cache-dir",
+        type=Path,
+        default=DEFAULT_FUND_GROWTH_CACHE_DIR,
+    )
+    parser.add_argument("--skip-fund-growth-position", action="store_true")
     args = parser.parse_args(argv)
     previous = None
     if args.previous and args.previous.is_file():
         previous = json.loads(args.previous.read_text(encoding="utf-8"))
-    snapshot = fetch(args.asof, previous)
+    snapshot = fetch(
+        args.asof,
+        previous,
+        fund_growth_cache_dir=args.fund_growth_cache_dir,
+        skip_fund_growth_position=args.skip_fund_growth_position,
+    )
     latest, dated = write_snapshot(snapshot, args.out)
     print(
         json.dumps(

@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "asof": "2026-11-19",
+  "summary": {
+    "core_met": 1,
+    "core_total": 3,
+    "core_pending": 1,
+    "confirm_status": "met"
+  },
+  "indicators": [
+    {
+      "id": "fund_growth_position",
+      "name": "公募成长仓位",
+      "role": "core",
+      "status": "met",
+      "value": 57.4,
+      "unit": "%",
+      "asof": "2026-09-30",
+      "source": "fixture source",
+      "rule": "正式季度值低于 60%。",
+      "note": "",
+      "missing_reason": null,
+      "official": {
+        "quarter": "2026Q3",
+        "data_asof": "2026-09-30",
+        "value": 57.4,
+        "n_funds": 50,
+        "universe_funds": 50,
+        "coverage": 80,
+        "source": "天天基金季报持仓；申万一级行业分类"
+      },
+      "proxy": {
+        "asof": "2026-11-13",
+        "value": 61.2,
+        "r2": 0.6543,
+        "n_weeks": 52,
+        "coverage": 100,
+        "window": {
+          "start": "2025-11-21",
+          "end": "2026-11-13"
+        },
+        "source": "中证偏股型基金指数 930950；申万一级行业周线；非负最小二乘回归"
+      }
+    },
+    {
+      "id": "semi_etf_flow",
+      "name": "半导体 ETF 资金",
+      "role": "core",
+      "status": "missing",
+      "value": null,
+      "unit": "亿元",
+      "asof": null,
+      "source": "fixture",
+      "rule": "",
+      "note": "",
+      "missing_reason": "fixture",
+      "recent": []
+    },
+    {
+      "id": "us10y",
+      "name": "美债 10 年",
+      "role": "core",
+      "status": "missing",
+      "value": null,
+      "unit": "%",
+      "asof": null,
+      "source": "fixture",
+      "rule": "",
+      "note": "",
+      "missing_reason": "fixture",
+      "recent": []
+    }
+  ]
+}

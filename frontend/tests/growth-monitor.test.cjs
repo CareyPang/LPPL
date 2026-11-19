@@ -25,6 +25,14 @@ test('growth monitor is a market section linked from the existing nav', () => {
   assert.match(renderer[0], /近两周净申购：/);
   assert.match(renderer[0], /week\.week_start/);
   assert.match(renderer[0], /item\.note === status/);
+  assert.match(renderer[0], /item\.official/);
+  assert.match(renderer[0], /item\.proxy/);
+  assert.match(renderer[0], /正式季度值/);
+  assert.match(renderer[0], /周度代理（回归估算，不是正式值）/);
+  assert.match(renderer[0], /official\.n_funds/);
+  assert.match(renderer[0], /proxy\.r2/);
+  assert.match(renderer[0], /official\.source/);
+  assert.match(renderer[0], /proxy\.source/);
   assert.match(renderer[0], /最近 \$\{observations\.length\} 个观测：/);
   assert.match(renderer[0], /row\.date.*Number\(row\.value\)/);
   assert.doesNotMatch(renderer[0], /可用观测 n=|历史分位/);
