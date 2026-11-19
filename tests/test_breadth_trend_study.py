@@ -46,6 +46,37 @@ def test_budget_cannot_move_earlier_alert_and_records_forced_or_pending():
     assert full["b"] == [(9, True, True), (11, False, False)]
 
 
+@pytest.mark.parametrize("task", ["rebound_end", "stage_top", "rebound"])
+def test_unneeded_long_breadth_does_not_discard_otherwise_observed_days(task):
+    prev = dict(red=0.8, MCL=200.0, P20=0.52, P60=0.51)
+    cur = dict(red=0.4, MCL=100.0, P20=0.45, P60=0.47, trin_amt=0.8, amount_ratio20=0.9)
+    if task == "rebound":
+        prev = {}  # This width condition uses today's values only.
+    incomplete = study.signals(task, "mixed", prev, cur)
+    complete = study.signals(task, "mixed", dict(prev, P250=0.2), dict(cur, P250=0.25))
+    assert incomplete == complete
+    assert incomplete["breadth"] is True and incomplete["amount"] is not None
+    assert incomplete["shares"] is None and incomplete["amount_basis"] is None
+
+
+def test_reversal_with_missing_long_average_keeps_three_valued_logic():
+    prev = dict(P20=0.2, P60=0.2)
+    cur = dict(red=0.7, P20=0.3, P60=0.25, trin_amt=0.8, amount_ratio20=1.1)
+    assert study.signals("reversal", "mixed", prev, cur)["breadth"] is True
+    unresolved = study.signals("reversal", "mixed", prev, dict(cur, P60=0.19))
+    assert unresolved["breadth"] is None and unresolved["amount"] is None
+    assert (
+        study.signals("reversal", "mixed", prev, dict(cur, P60=0.19, red=0.4))["breadth"] is False
+    )
+    # A known rising P250 suffices when P60 is missing.
+    assert (
+        study.signals("reversal", "mixed", dict(prev, P250=0.1), dict(cur, P250=0.2, P60=None))[
+            "breadth"
+        ]
+        is True
+    )
+
+
 def test_stale_roll_or_incomplete_individual_contracts_are_unscorable():
     a = {"basis": {p: {"symbol": p + "2612", "pct": -2} for p in study.PRODUCTS}}
     b = {"basis": {p: {"symbol": p + "2612", "pct": -1} for p in study.PRODUCTS}}
@@ -65,6 +96,17 @@ def test_top_uses_window_not_drawdown_and_counts_one_alert_per_event():
     # At this cutoff even signal 126 is censored: its 10-day window needs 20 right days.
     assert possible == set() and mature == []
     assert study.match_peaks([123, 125, 130], {130}, 10) == {123: 130}
+
+
+def test_forward_excursion_separates_high_from_ordered_close_recovery():
+    prices = [100, 120, 80, 84, 88, 86, 85, 84, 84, 83, 82]
+    rows = [dict(label_close=p, label_high=p + 2) for p in prices]
+    r = study.followup(rows, 0, "rebound")
+    assert r["best_intraday_high_ret10"] == pytest.approx(0.22)
+    assert r["max_close_rebound10"] == pytest.approx(0.10)  # 80 -> 88; 120 predates 80.
+    rows[5]["label_high"] = None
+    assert study.followup(rows, 0, "rebound")["best_intraday_high_ret10"] is None
+    assert study.followup(rows[:-1], 0, "rebound")["max_close_rebound10"] is None
 
 
 def test_rebound_and_reversal_have_different_outcomes_and_missingness():

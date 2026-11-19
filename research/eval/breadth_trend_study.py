@@ -113,6 +113,9 @@ def read_panel(source, index_file, contracts=None, asof=None):
     raw = json.loads(index_file.read_text(encoding="utf-8-sig"))["price_history"]
     dates = list(map(dated, raw["dates"]))
     closes = raw["close"]
+    highs = raw.get("high", [None] * len(dates))
+    if len(highs) != len(dates):
+        raise ValueError("index highs must align to their sessions")
     if dates != sorted(set(dates)) or len(closes) != len(dates):
         raise ValueError("index sessions must be unique, ordered and aligned")
     end = min(dates[-1], max(points), dated(asof) if asof else dates[-1])
@@ -120,7 +123,7 @@ def read_panel(source, index_file, contracts=None, asof=None):
     if any(d <= end and d >= dates[0] and d not in sessions for d in points):
         raise ValueError("breadth observation without index session")
     rows = []
-    for d, px in zip(dates, closes, strict=True):
+    for d, px, daily_high in zip(dates, closes, highs, strict=True):
         if d > end:
             break
         if number(px) is None or float(px) <= 0:
@@ -128,7 +131,13 @@ def read_panel(source, index_file, contracts=None, asof=None):
         r = dict(points.get(d, {}))
         # Both archives may carry different rounding. Use the historical breadth index quote
         # for phase/alerts, the fixed close series for prices used in independent labels.
-        r.update(date=d, sh=r.get("sh") or float(px), label_close=float(px))
+        high = number(daily_high)
+        r.update(
+            date=d,
+            sh=r.get("sh") or float(px),
+            label_close=float(px),
+            label_high=high if high is not None and high >= float(px) else None,
+        )
         rows.append(r)
     if not rows:
         raise ValueError("no index sessions before cutoff")
@@ -150,6 +159,18 @@ def basis_move(prev, cur):
     return mean(changes) if all(v is not None for v in changes) else None
 
 
+def greater(left, right):
+    return None if left is None or right is None else left > right
+
+
+def at_least(required, *votes):
+    """With unknown votes, return a decision only if their resolution cannot change it."""
+    yes = sum(v is True for v in votes)
+    if yes >= required:
+        return True
+    return False if yes + votes.count(None) < required else None
+
+
 def signals(task, phase, prev, cur):
     """Hypotheses specified for the study, independent of public UI alert lifecycle.
 
@@ -160,32 +181,39 @@ def signals(task, phase, prev, cur):
     favored = phase in PREFERRED[task]
     result = dict.fromkeys(LAYERS)
     result["stage"] = favored
-    fields = ("red", "P20", "P60", "P250", "MCL")
-    if any(prev.get(k) is None or cur.get(k) is None for k in fields):
-        return result
     top = task in TOP_WINDOW
     if top:
-        breadth = (
-            cur["red"] < prev["red"]
-            and cur["MCL"] < prev["MCL"]
-            and (cur["P20"] < prev["P20"] or cur["P60"] < prev["P60"])
+        breadth = at_least(
+            3,
+            greater(prev.get("red"), cur.get("red")),
+            greater(prev.get("MCL"), cur.get("MCL")),
+            at_least(
+                1,
+                greater(prev.get("P20"), cur.get("P20")),
+                greater(prev.get("P60"), cur.get("P60")),
+            ),
         )
     elif task == "rebound":
-        breadth = cur["red"] < 0.5 and cur["P20"] < 0.5 and cur["P60"] < 0.5
+        breadth = at_least(3, *(greater(0.5, cur.get(k)) for k in ("red", "P20", "P60")))
     else:
-        breadth = (
-            cur["red"] > 0.5
-            and cur["P20"] > prev["P20"]
-            and (cur["P60"] > prev["P60"] or cur["P250"] > prev["P250"])
+        breadth = at_least(
+            3,
+            greater(cur.get("red"), 0.5),
+            greater(cur.get("P20"), prev.get("P20")),
+            at_least(
+                1,
+                greater(cur.get("P60"), prev.get("P60")),
+                greater(cur.get("P250"), prev.get("P250")),
+            ),
         )
     # The second version uses phase OR breadth; a research watch can originate in any phase.
-    result["breadth"] = favored or breadth
+    result["breadth"] = at_least(1, favored, breadth)
     total = cur.get("amount_ratio20")
     moves = {prod.lower(): contract_change(prev, cur, prod) for prod in PRODUCTS}
     moves["basis"] = basis_move(prev, cur)
     for layer, key in (("amount", "trin_amt"), ("shares", "trin_vol")):
         ratio = cur.get(key)
-        if ratio is None or total is None:
+        if ratio is None or total is None or cur.get("red") is None:
             continue
         if top:
             flow = cur["red"] > 0.5 and ratio > 1 and total >= 1
@@ -193,12 +221,11 @@ def signals(task, phase, prev, cur):
             flow = cur["red"] < 0.5 and ratio < 1 and total <= 1
         else:
             flow = cur["red"] > 0.5 and ratio <= 1 and total >= 1
-        votes = int(favored) + int(breadth) + int(flow)
-        result[layer] = votes >= 2
+        result[layer] = at_least(2, favored, breadth, flow)
         for product, move in moves.items():
             if move is not None:
                 confirms = move < 0 if top else move > 0
-                result[f"{layer}_{product}"] = votes + int(confirms) >= 2
+                result[f"{layer}_{product}"] = at_least(2, favored, breadth, flow, confirms)
     return result
 
 
@@ -274,6 +301,19 @@ def followup(rows, i, task):
         future = p[i + 1 : i + 11]
         item["best_close_ret10"] = max(future) / p[i] - 1 if len(future) == 10 else None
         item["worst_close_ret10"] = min(future) / p[i] - 1 if len(future) == 10 else None
+        highs = [r.get("label_high") for r in rows[i + 1 : i + 11]]
+        item["best_intraday_high_ret10"] = (
+            max(highs) / p[i] - 1
+            if len(highs) == 10 and all(v is not None for v in highs)
+            else None
+        )
+        item["max_close_rebound10"] = None
+        if len(future) == 10:
+            low, recovery = future[0], 0.0
+            for close in future[1:]:
+                recovery = max(recovery, close / low - 1)
+                low = min(low, close)
+            item["max_close_rebound10"] = recovery
         return item
     if i < 19 or i + 20 >= len(rows):
         return {"status": "immature"}
@@ -380,7 +420,15 @@ def score(rows, task, chosen, opportunities, peaks, outcomes, info):
         for i, label in zip(chosen, labels, strict=True):
             outcomes.append(dict(info, date=rows[i]["date"], **label))
         if task == "rebound":
-            for k in ("ret1", "ret5", "ret10", "best_close_ret10", "worst_close_ret10"):
+            for k in (
+                "ret1",
+                "ret5",
+                "ret10",
+                "best_close_ret10",
+                "worst_close_ret10",
+                "best_intraday_high_ret10",
+                "max_close_rebound10",
+            ):
                 values = [v[k] for v in labels if v[k] is not None]
                 stats[k + "_n"] = len(values)
                 stats[k + "_mean"] = mean(values) if values else None
@@ -536,7 +584,9 @@ def study(rows, start=None):
                 "stage_top": "peak beats its prior 20 closes and is unbeaten over the next 20; "
                 "the most recent 126-session low is at least 20 sessions earlier; "
                 "close above 20 sessions ago; no subsequent drawdown target",
-                "rebound": "1/5/10-session forward close returns; best and worst forward closes over 10",
+                "rebound": "1/5/10-session forward close returns; best/worst forward closes and "
+                "highest intraday high relative to signal close over the next 10; maximum "
+                "ordered trough-to-later-peak close recovery within those 10 sessions",
                 "reversal": "20-session hold above prior 20-session low, higher retest low after an upswing, "
                 "ending above signal close and P60 above signal-day level on >=3 of last 5 days",
             },
