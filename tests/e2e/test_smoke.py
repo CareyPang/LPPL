@@ -27,6 +27,13 @@ BREADTH_FIXTURE = (
     / "fixtures"
     / "breadth_latest.json"
 )
+TOP_RISK_FIXTURE = (
+    Path(__file__).resolve().parents[2]
+    / "frontend"
+    / "tests"
+    / "fixtures"
+    / "top_risk_latest.json"
+)
 NAV_PAGES = (
     "home.html",
     "index.html?code=sh000001",
@@ -252,6 +259,10 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "**/lab/mock/data/market/breadth_latest.json",
         lambda route: route.fulfill(path=str(BREADTH_FIXTURE)),
     )
+    page.route(
+        "**/lab/mock/data/market/top_risk_latest.json",
+        lambda route: route.fulfill(path=str(TOP_RISK_FIXTURE)),
+    )
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
     expect(page.locator("#s-lhb-seats")).to_be_visible()
@@ -325,6 +336,20 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     ).to_have_text("20.00")
     expect(breadth.locator(".breadth-history-table tbody tr")).to_have_count(1)
     page.set_viewport_size({"width": 390, "height": 844})
+    top_risk = page.locator("#s-top-risk")
+    expect(top_risk).to_have_attribute("data-ai-context", "顶部风险区")
+    expect(top_risk.locator(".top-risk-card")).to_have_count(4)
+    expect(top_risk.locator(".top-risk-stat")).to_have_count(4)
+    expect(top_risk.locator(".top-risk-stats")).to_contain_text(
+        "上证指数 · n=7 段 · 42.9% · 基准 12.9%"
+    )
+    expect(top_risk.locator(".top-risk-card").first).to_contain_text(
+        "离250日低点 22.0%"
+    )
+    expect(top_risk.locator(".top-risk-table tbody tr").first).to_contain_text(
+        "待定（未满120日）"
+    )
+    assert top_risk.evaluate("(section) => section.scrollWidth <= section.clientWidth + 1")
     dimensions = page.evaluate(
         "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
     )
