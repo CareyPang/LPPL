@@ -375,6 +375,7 @@ def _fund_growth_position(
     )
     indicator["official"] = result["official"]
     indicator["proxy"] = result["proxy"]
+    indicator["note"] = result.get("note")
     if result["status"] == "missing":
         fallback = _fallback(
             previous, "fund_growth_position", "公募成长仓位", "core", source

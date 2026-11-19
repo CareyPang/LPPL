@@ -35,5 +35,6 @@ def test_growth_position_card_displays_quarterly_and_weekly_values(page: Page) -
     expect(card).to_contain_text("截至 2026-11-13")
     expect(card).to_contain_text("n=52 周")
     expect(card).to_contain_text("R² 0.6543")
-    expect(card).to_contain_text("申万一级行业分类")
+    expect(card).to_contain_text("当前成分近似")
+    expect(card).to_contain_text("ak.index_analysis_weekly_sw")
     expect(card).to_contain_text("非负最小二乘回归")

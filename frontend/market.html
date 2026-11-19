@@ -1453,8 +1453,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         const percent = (value) => value == null || !Number.isFinite(Number(value))
           ? '—'
           : `${Number(value).toFixed(2)}%`;
-        extra = `<p class="growth-meta growth-official">正式季度值 · ${E(official.quarter || '暂无季度')} · 数据截至 ${E(official.data_asof || '暂无')} · n=${E(official.n_funds ?? '—')} · 覆盖率 ${E(percent(official.coverage))} · 来源：${E(official.source || '—')}</p>
-          <p class="growth-meta growth-proxy">周度代理（回归估算，不是正式值）：${E(percent(proxy.value))} · 截至 ${E(proxy.asof || '暂无')} · n=${E(proxy.n_weeks ?? '—')} 周 · 覆盖率 ${E(percent(proxy.coverage))} · R² ${E(proxy.r2 == null ? '—' : Number(proxy.r2).toFixed(4))} · 来源：${E(proxy.source || '—')}</p>`;
+        extra = `<p class="growth-meta growth-official">正式季度值 · ${E(official.quarter || '暂无季度')} · 数据截至 ${E(official.data_asof || '暂无')} · n=${E(official.n_funds ?? '—')} · 覆盖率 ${E(percent(official.coverage))} · 来源：${E(official.source || '—')}${official.note ? ` · ${E(official.note)}` : ''}</p>
+          <p class="growth-meta growth-proxy">周度代理（回归估算，不是正式值）：${E(percent(proxy.value))} · 截至 ${E(proxy.asof || '暂无')} · n=${E(proxy.n_weeks ?? '—')} 周 · 覆盖率 ${E(percent(proxy.coverage))} · R² ${E(proxy.r2 == null ? '—' : Number(proxy.r2).toFixed(4))} · 来源：${E(proxy.source || '—')}${proxy.missing_reason ? ` · ${E(proxy.missing_reason)}` : ''}</p>`;
       } else if (item.id === 'semi_etf_flow') {
         const weeks = item.value?.last_two_complete_weeks || [];
         extra = weeks.length
