@@ -120,3 +120,12 @@
 - 顶层：`rule_id`（事前登记规则 id，必填）、`prereg_doc`、`asof`、`segments{dev,cal,test:[start,end]}`、`metrics{dev|cal|test|all}`、`equity[{date,nav,bh_nav?}]`、`trades[{entry,exit|null,side,bars,ret,segment}]`、`properties{t_plus_1,limit_lock,fee_bps,stamp_bps,slippage_bps}`、`note`。
 - `metrics.<seg>.evidence` 走 §3 的门控：`show=false` 的等级只显示状态文字；所有汇总显示 `n_trades` 与“历史回放，不是预测”。比例用小数。
 - 口径：事前登记规则的历史回放，不是预测，不是收益承诺；不开放自由调参。字段示例见 `frontend/docs/strategy-request.md`。
+
+### 市场页的趋势提醒
+
+`LPPL.breadth()` 返回的 `trend_alerts` 是上证市场环境的独立研究提醒。后端以昨日及更早的行情定阶段，用本日收盘信息登记变化。用户先看到可能发生什么、哪天触发、哪些现象支持这个判断，以及接下来观察什么。涨跌家数、均线宽度、成交分布和期货升贴水的详细读数供展开核对。
+
+- 反弹结束与中期上涨转弱分开显示。跌后可能反弹与下跌趋势可能反转也分开显示。四类观察都可以在结果未知时发出，后续能增强或失效。
+- `trigger_date` 是首次满足规则的交易日，`update_date` 是本条观察最近变动日。已封存数据的历史重放单独标识；真实提醒的对外首发时间须由发布环节留证。
+- 仅新出现或增强、与当前市场日期一致的有效提醒可进入页首。延续与撤销保留在详情。休市、数据落后、旧版缺少字段和有效评估后未触发分别说明。用户仍可查看其他行情。
+- 该版本提供站内盘后提醒。研究结果按任务、样本期和提醒次数统计，收益目标价、胜率估算和个股 LPPLS 区间各有独立证据要求。

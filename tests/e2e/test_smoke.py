@@ -456,7 +456,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(breadth.locator("#breadth-body")).to_contain_text("52.5%")
     expect(breadth.locator("#breadth-body")).to_contain_text("14.7%")
     expect(breadth.locator("#breadth-body")).to_contain_text("8.1%")
-    expect(breadth.locator("#breadth-body")).to_contain_text("预警规则回测中，暂不显示")
+    expect(breadth.locator("#breadth-trend")).to_contain_text("这份行情没有附带趋势评估")
+    expect(page.locator("#trend-summary")).to_be_hidden()
     expect(breadth.locator(".breadth-basis-table tbody tr")).to_have_count(4)
     expect(
         breadth.locator(".breadth-basis-table tbody tr").first.locator("td").nth(4)
@@ -1916,6 +1917,43 @@ def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) 
     bench_context = ask_context()
     assert "开发段 2000" in bench_context
     assert len(bench_context) <= 8000
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize("width", [390, 1280])
+def test_market_reversal_notice_links_to_its_dated_evidence(page: Page, width: int) -> None:
+    page.clock.set_fixed_time("2026-11-18T18:00:00+08:00")
+    page.set_viewport_size({"width": width, "height": 844})
+    day = "2026-11-18"
+    breadth = json.loads(BREADTH_FIXTURE.read_text(encoding="utf-8"))
+    breadth["trend_alerts"] = {
+        "schema": "breadth-alerts.v1", "evidence": "experimental",
+        "asof": day, "state": "watch",
+        "phase": {"label": "持续下跌", "asof": "2026-11-17"},
+        "alerts": [{
+            "kind": "reversal", "level": "strengthening", "active": True,
+            "evidence": "experimental", "title": "下跌趋势可能扭转",
+            "message": "回落后又有更多股票上涨。",
+            "trigger_date": "2026-11-16", "update_date": day,
+            "reasons": ["上涨的股票继续增加。"], "next_check": "回踩时能否守住前低。",
+        }],
+    }
+    market_source = BREADTH_FIXTURE.parents[3] / "web/mock/data/market/market_latest.json"
+    market = json.loads(market_source.read_text(encoding="utf-8"))
+    market["asof"] = day
+    page.route("**/lab/mock/data/market/breadth_latest.json", lambda route: route.fulfill(json=breadth))
+    page.route("**/lab/mock/data/market/market_latest.json", lambda route: route.fulfill(json=market))
+    page.goto(f"{BASE_URL}/market.html")
+    summary = page.locator("#trend-summary")
+    expect(summary).to_be_visible()
+    expect(summary).to_contain_text("下跌趋势可能扭转（迹象增强）")
+    summary.focus()
+    summary.press("Enter")
+    detail = page.locator("#breadth-trend")
+    expect(detail).to_be_focused()
+    expect(detail).to_contain_text("首次符合条件 2026-11-16 · 判断更新 2026-11-18")
+    expect(detail).to_contain_text("回踩时能否守住前低")
+    assert detail.evaluate("el => el.scrollWidth <= el.clientWidth")
 
 
 @pytest.mark.e2e
