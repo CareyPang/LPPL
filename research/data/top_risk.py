@@ -262,6 +262,8 @@ def breadth_drop_metrics(history: list[dict[str, Any]]) -> dict[str, Any]:
         "mcl": current,
         "mcl_max10": max10,
         "std250": std250,
+        "threshold": threshold,
+        "mcl_pct250": percentile_rank(mcl[-GAIN_LOOKBACK:]),
     }
 
 

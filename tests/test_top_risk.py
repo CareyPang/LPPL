@@ -105,6 +105,11 @@ def test_build_snapshot_uses_required_thresholds_and_passes_research_results_unc
     assert snapshot["margin"]["pct252"] == 1
     assert snapshot["margin"]["on"] is True
     assert snapshot["breadth_drop"]["on"] is True
+    assert snapshot["breadth_drop"]["threshold"] == pytest.approx(
+        snapshot["breadth_drop"]["mcl_max10"]
+        - 0.5 * snapshot["breadth_drop"]["std250"]
+    )
+    assert 0 <= snapshot["breadth_drop"]["mcl_pct250"] <= 1
     assert len(snapshot["indices"]) == 4
     assert snapshot["indices"][0]["pos_pct252"] == 1
     assert snapshot["indices"][0]["gain_from_250_low"] >= 0.15

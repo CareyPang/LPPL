@@ -300,6 +300,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 #s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
 #s-breadth .breadth-method p { line-height: 1.6; }
 @media (max-width: 760px) { #s-breadth .breadth-tables { grid-template-columns: minmax(0, 1fr); } }
+#s-top-risk .top-risk-common { margin-bottom: var(--s4); }
+#s-top-risk .top-risk-common > h3 { margin: 0 0 var(--s2); font-size: 13px; }
+#s-top-risk .top-risk-common-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+#s-top-risk .top-risk-common-item { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); }
 #s-top-risk .top-risk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3); }
 #s-top-risk .top-risk-card { min-width: 0; border: 1px solid var(--grid); padding: var(--s3); }
 #s-top-risk .top-risk-card h3 { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); margin: 0 0 var(--s3); font-size: 14px; }
@@ -317,12 +321,21 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 #s-top-risk .top-risk-row small { display: block; margin-top: 2px; color: var(--ink-3); font-size: 11px; overflow-wrap: anywhere; }
 #s-top-risk .top-risk-bar { height: 5px; margin-top: var(--s1); background: var(--grid); overflow: hidden; }
 #s-top-risk .top-risk-bar span { display: block; height: 100%; background: var(--warn); }
+#s-top-risk .top-risk-satisfied { margin-top: var(--s3); color: var(--ink-2); font-size: 12px; }
 #s-top-risk .top-risk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s2); margin-top: var(--s4); }
 #s-top-risk .top-risk-stat { min-width: 0; border: 1px solid var(--grid); padding: var(--s2) var(--s3); font-size: 12px; overflow-wrap: anywhere; }
-#s-top-risk .top-risk-table { min-width: 760px; }
+#s-top-risk .top-risk-stat.is-highlighted { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+#s-top-risk .top-risk-filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
+#s-top-risk .top-risk-filters { display: flex; flex-wrap: wrap; gap: var(--s1); }
+#s-top-risk .top-risk-filter { border: 1px solid var(--grid); border-radius: 999px; background: var(--surface); color: var(--ink-2); padding: 5px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+#s-top-risk .top-risk-filter[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+#s-top-risk .top-risk-table { width: max-content; min-width: 760px; }
+#s-top-risk .top-risk-episode-date { min-width: 160px; white-space: nowrap; }
+#s-top-risk .top-risk-verdict { min-width: 150px; white-space: nowrap; }
 #s-top-risk .top-risk-method { margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface); padding: var(--s3); }
 #s-top-risk .top-risk-method > summary { cursor: pointer; font-weight: 600; }
 #s-top-risk .top-risk-method p { line-height: 1.6; }
+@media (max-width: 760px) { #s-top-risk .top-risk-common-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -1819,15 +1832,26 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const fixed = (value, digits = 2) => num(value) ? value.toFixed(digits) : '—';
     const levelClass = (level) => level === '顶部风险高'
       ? 'high' : level === '偏高' ? 'elevated' : 'neutral';
-    const checkRow = (label, value, detail, active, percentile = null) => `
+    const checkRow = (
+      label,
+      value,
+      detail,
+      active,
+      percentile = null,
+    ) => {
+      const bar = num(percentile)
+        ? `<div class="top-risk-bar" aria-hidden="true"><span style="width:${Math.max(0, Math.min(1, percentile)) * 100}%"></span></div>`
+        : '';
+      return `
       <div class="top-risk-row">
         <span class="top-risk-mark ${active ? 'on' : 'off'}" aria-label="${active ? '满足' : '未满足'}">${active ? '✓' : '—'}</span>
         <div class="top-risk-row-copy">
           <div class="top-risk-row-head"><span>${E(label)}</span><strong>${E(value)}</strong></div>
           ${detail ? `<small>${E(detail)}</small>` : ''}
-          ${num(percentile) ? `<div class="top-risk-bar" aria-hidden="true"><span style="width:${Math.max(0, Math.min(1, percentile)) * 100}%"></span></div>` : ''}
+          ${bar}
         </div>
       </div>`;
+    };
     const conc = data.conc || {};
     const margin = data.margin || {};
     const breadthDrop = data.breadth_drop || {};
@@ -1835,44 +1859,79 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       const positionDetail = `阈值 ${pct01(index.pos_threshold)}；离250日低点 ${pct01(index.gain_from_250_low)}（阈值 ${pct01(index.gain_threshold)}）`;
       return `<article class="top-risk-card">
         <h3>${E(index.name || index.code || '指数')}<span class="top-risk-level ${levelClass(index.level)}">${E(index.level || '未触发')}</span></h3>
-        <div class="top-risk-row">
-          <span class="top-risk-mark ${conc.on ? 'on' : 'off'}" aria-label="${conc.on ? '满足' : '未满足'}">${conc.on ? '✓' : '—'}</span>
-          <div class="top-risk-row-copy">
-            <div class="top-risk-row-head"><span>集中度前100占比（5日）</span><strong>${pct01(conc.top100_5d)}</strong></div>
-            <small>阈值 ${pct01(conc.threshold)}；当日前50 ${pct01(conc.top50)} / 前100 ${pct01(conc.top100)}</small>
-          </div>
-        </div>
-        <div class="top-risk-row">
-          <span class="top-risk-mark ${margin.on ? 'on' : 'off'}" aria-label="${margin.on ? '满足' : '未满足'}">${margin.on ? '✓' : '—'}</span>
-          <div class="top-risk-row-copy">
-            <div class="top-risk-row-head"><span>融资余额 252日分位</span><strong>${pct01(margin.pct252)}</strong></div>
-            <small>${E(margin.date || '—')} · ${fixed(margin.rzye_yi)} 亿元 · 阈值 ${pct01(margin.threshold)}</small>
-            <div class="top-risk-bar" aria-hidden="true"><span style="width:${num(margin.pct252) ? Math.max(0, Math.min(1, margin.pct252)) * 100 : 0}%"></span></div>
-          </div>
-        </div>
         ${checkRow('指数位置 252日分位', pct01(index.pos_pct252), positionDetail, index.on, index.pos_pct252)}
-        ${checkRow('宽度回落（辅助）', fixed(breadthDrop.mcl, 0), `近10日最高 ${fixed(breadthDrop.mcl_max10, 0)}；250日标准差 ${fixed(breadthDrop.std250, 2)}`, breadthDrop.on)}
+        <div class="top-risk-satisfied">满足 ${E(index.n_on ?? '—')}/3 项</div>
       </article>`;
     }).join('');
+    const commonConditions = `<section class="top-risk-common" aria-labelledby="top-risk-common-title">
+      <h3 id="top-risk-common-title">全市场条件</h3>
+      <div class="top-risk-common-grid">
+        <div class="top-risk-common-item">
+          ${checkRow(
+            '集中度前100占比（5日）',
+            pct01(conc.top100_5d),
+            `阈值 ${pct01(conc.threshold)}；当日前50 ${pct01(conc.top50)} / 前100 ${pct01(conc.top100)}`,
+            conc.on,
+            conc.top100_5d,
+          )}
+        </div>
+        <div class="top-risk-common-item">
+          ${checkRow(
+            '融资余额 252日分位',
+            pct01(margin.pct252),
+            `${E(margin.date || '—')} · ${fixed(margin.rzye_yi)} 亿元 · 阈值 ${pct01(margin.threshold)}`,
+            margin.on,
+            margin.pct252,
+          )}
+        </div>
+        <div class="top-risk-common-item">
+          ${checkRow(
+            '宽度回落（辅助）',
+            `MCL ${fixed(breadthDrop.mcl, 2)} · 250日分位 ${pct01(breadthDrop.mcl_pct250)}`,
+            `阈值 ${fixed(breadthDrop.threshold, 2)}；近10日最高 ${fixed(breadthDrop.mcl_max10, 2)}；250日标准差 ${fixed(breadthDrop.std250, 2)}`,
+            breadthDrop.on,
+            breadthDrop.mcl_pct250,
+          )}
+        </div>
+      </div>
+    </section>`;
     const stats = (Array.isArray(data.stats) ? data.stats : []).map((row) => `
-      <div class="top-risk-stat">${E(row.index || '—')} · n=${E(row.n ?? '—')} 段 · ${pct01(row.hit)} · 基准 ${pct01(row.base)}</div>
+      <div class="top-risk-stat" data-index="${E(row.index || '—')}">${E(row.index || '—')} · n=${E(row.n ?? '—')} 段 · ${pct01(row.hit)} · 基准 ${pct01(row.base)}</div>
     `).join('');
-    const episodes = (Array.isArray(data.episodes) ? data.episodes : []).map((row) => {
+    const episodeRows = Array.isArray(data.episodes) ? data.episodes : [];
+    const episodes = episodeRows.map((row) => {
       const period = row.start === row.end ? row.start : `${row.start}–${row.end}`;
       const verdict = row.verdict == null ? '待定（未满120日）' : row.verdict;
-      return `<tr><td>${E(period)}</td><td>${E(row.index || '—')}</td>
+      return `<tr data-index="${E(row.index || '—')}"><td class="top-risk-episode-date">${E(period)}</td><td>${E(row.index || '—')}</td>
         <td class="r">${num(row.peak) ? row.peak.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) : '—'}</td>
         <td class="r">${pct01(row.after120_max_pct)}</td><td class="r">${pct01(row.after120_min_pct)}</td>
-        <td>${E(verdict)}</td></tr>`;
+        <td class="top-risk-verdict">${E(verdict)}</td></tr>`;
     }).join('');
+    const filters = [
+      ['all', '全部'],
+      ['上证指数', '上证指数'],
+      ['沪深300', '沪深300'],
+      ['中证1000', '中证1000'],
+      ['科创50', '科创50'],
+    ].map(([value, label], index) => `
+      <button type="button" class="top-risk-filter" data-top-risk-filter="${E(value)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${E(label)}</button>
+    `).join('');
+    const episodesMarkup = episodeRows.length
+      ? `<div class="top-risk-filter-row">
+          <span>指数筛选</span>
+          <div class="top-risk-filters" role="group" aria-label="按指数筛选历史时段">${filters}</div>
+        </div>
+        <div class="table-scroll"><table class="top-risk-table"><thead><tr>
+          <th class="top-risk-episode-date">时段</th><th>指数</th><th class="r">期间最高</th><th class="r">之后120日最高</th>
+          <th class="r">之后120日最低</th><th class="top-risk-verdict">判断</th></tr></thead><tbody>${episodes}</tbody></table></div>
+        <p class="note top-risk-filter-empty" hidden>当前指数没有历史时段。</p>`
+      : '<p class="note">暂无历史样本。</p>';
     $('src-top-risk').textContent = `截至 ${data.asof || '—'} · ${data.source || '—'}`;
-    body.innerHTML = `<div class="top-risk-grid">${cards || '<p class="note">指数读数缺失。</p>'}</div>
+    body.innerHTML = `${commonConditions}
+      <div class="top-risk-grid">${cards || '<p class="note">指数读数缺失。</p>'}</div>
       <p class="note">样本少，不显著，不是买卖信号；历史分位不是预测，分位不是概率。</p>
       <div class="top-risk-stats">${stats || '<p class="note">历史统计未加载。</p>'}</div>
-      ${episodes ? `<div class="table-scroll"><table class="top-risk-table"><thead><tr>
-        <th>时段</th><th>指数</th><th class="r">期间最高</th><th class="r">之后120日最高</th>
-        <th class="r">之后120日最低</th><th>判断</th></tr></thead><tbody>${episodes}</tbody></table></div>`
-        : '<p class="note">暂无历史样本。</p>'}
+      ${episodesMarkup}
       <details class="top-risk-method"><summary>定义与判断口径</summary>
         <p class="note">${E(data.definition || '—')}</p><p class="note">${E(data.judge || '—')}</p>
         <p class="note">${E(data.note || '')}</p>
@@ -1919,6 +1978,28 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (event.target.closest('[data-retry-breadth]')) loadBreadth();
   });
   $('top-risk-body').addEventListener('click', (event) => {
+    const filterButton = event.target.closest('[data-top-risk-filter]');
+    if (filterButton) {
+      const selected = filterButton.dataset.topRiskFilter;
+      const body = $('top-risk-body');
+      body.querySelectorAll('[data-top-risk-filter]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button === filterButton));
+      });
+      let visibleRows = 0;
+      body.querySelectorAll('.top-risk-table tbody tr').forEach((row) => {
+        row.hidden = selected !== 'all' && row.dataset.index !== selected;
+        if (!row.hidden) visibleRows += 1;
+      });
+      body.querySelectorAll('.top-risk-stat').forEach((stat) => {
+        stat.classList.toggle(
+          'is-highlighted',
+          selected !== 'all' && stat.dataset.index === selected,
+        );
+      });
+      const empty = body.querySelector('.top-risk-filter-empty');
+      if (empty) empty.hidden = visibleRows > 0;
+      return;
+    }
     if (event.target.closest('[data-retry-top-risk]')) loadTopRisk();
   });
   loadMarket();
