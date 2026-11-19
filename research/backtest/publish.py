@@ -9,10 +9,7 @@ import pandas as pd
 
 from research.data import top_risk
 from research.data.sources import fetch_ak_csindex_index
-from research.data.top_risk_episodes import (
-    INDEXES,
-    build_episode_report,
-)
+from research.data.top_risk_episodes import INDEXES
 
 from .report import build_strategy_report
 
@@ -66,17 +63,10 @@ def build_outputs(
         }
         merged.update({row["date"]: row for row in rows})
         states[code] = [merged[day] for day in sorted(merged)]
-    episode_report = build_episode_report(states, index_histories)
-    episode_by_name = {
-        name: [
-            row for row in episode_report["episodes"] if row["index"] == name
-        ]
-        for _, name in INDEXES
-    }
     history_dir = history_dir or ROOT / "web" / "mock" / "data"
     out_dir.mkdir(parents=True, exist_ok=True)
     outputs = {}
-    for code, name in INDEXES:
+    for code, _ in INDEXES:
         frame = _strategy_prices(price_frames[code], asof)
         state_frame = pd.DataFrame(states[code])
         if state_frame.empty:
@@ -95,7 +85,6 @@ def build_outputs(
             frame,
             n_on,
             frames,
-            episode_by_name[name],
             asof=str(frame["date"].iloc[-1]),
             missing_open_days=int(frame["open"].isna().sum()),
         )

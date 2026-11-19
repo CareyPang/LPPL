@@ -2,13 +2,17 @@ import json
 
 import pandas as pd
 
-from research.backtest.report import build_strategy_report
+from research.backtest.report import (
+    _price_top_outcomes,
+    _signal_quality,
+    build_strategy_report,
+)
 
 
 def test_report_keeps_primary_contract_and_explains_missing_lppls_history():
     prices = pd.DataFrame(
         {
-            "date": ["2014-01-02", "2014-01-03", "2023-01-03", "2023-01-04"],
+            "date": ["2014-10-17", "2014-10-20", "2023-01-03", "2023-01-04"],
             "open": [100.0, 101.0, 102.0, 101.0],
             "high": [101.0, 102.0, 103.0, 102.0],
             "low": [99.0, 100.0, 101.0, 100.0],
@@ -24,27 +28,62 @@ def test_report_keeps_primary_contract_and_explains_missing_lppls_history():
         prices,
         n_on,
         [],
-        [
-            {
-                "start": "2023-01-03",
-                "end": "2023-01-03",
-                "verdict": "顶部区间",
-            }
-        ],
         asof="2023-01-04",
     )
 
     assert report["rule_id"] == "R-TR1"
     assert report["selected_variant"]["K"] in (2, 3)
     assert len(report["variants"]) == 4
+    assert report["segments"]["dev"][0] == "2014-10-17"
     assert all(
         {"precision", "recall", "baseline", "n_signals"} <= variant.keys()
         and variant["evidence"] == "dev_only"
         for variant in report["variants"].values()
     )
     assert report["metrics"]["test"]["evidence"] == "descriptive"
-    assert report["metrics"]["test"]["baseline"] == 0.5
+    assert report["metrics"]["test"]["baseline"] is None
     assert report["rules"][1]["rule_id"] == "R-LC1"
     assert report["rules"][1]["skipped"] is True
     assert "缺少 LPPLS history 文件" in report["rules"][1]["note"]
     json.dumps(report, allow_nan=False)
+
+
+def test_price_top_days_cutoff_and_twenty_day_clustering():
+    dates = pd.bdate_range("2014-01-02", periods=173).strftime("%Y-%m-%d").tolist()
+    closes = [100.0] * 11 + [80.0] * 19 + [100.0] * 2 + [80.0] * 20
+    closes += [100.0] + [80.0] * 120
+    prices = pd.DataFrame({"date": dates, "close": closes})
+
+    top_days, sample_days, zones = _price_top_outcomes(prices)
+    expected_top_days = {
+        *dates[:11],
+        dates[30],
+        dates[31],
+        dates[52],
+    }
+
+    assert top_days == expected_top_days
+    assert len(sample_days) == 53
+    assert dates[52] in sample_days
+    assert dates[53] not in sample_days
+    assert zones == [(dates[0], dates[31]), (dates[52], dates[52])]
+
+    target = pd.Series([0] * len(dates))
+    for exit_position in (1, 11, 53):
+        target.iloc[exit_position - 1] = 1
+        target.iloc[exit_position] = 0
+
+    quality = _signal_quality(
+        dates,
+        target,
+        top_days,
+        sample_days,
+        zones,
+        dates[0],
+        dates[-1],
+    )
+
+    assert quality["precision"] == 0.5
+    assert quality["baseline"] == 14 / 53
+    assert quality["recall"] == 0.5
+    assert quality["n_signals"] == 2
