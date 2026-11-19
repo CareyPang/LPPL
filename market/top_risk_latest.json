@@ -1,0 +1,398 @@
+{
+  "schema": "top_risk.v1",
+  "asof": "2026-11-18",
+  "source": "通达信全市场盘后包、东方财富两融历史、腾讯指数日线",
+  "note": "历史状态描述；历史分位不是概率，也不是预测或买卖信号。",
+  "conc": {
+    "top50": 0.19319989920460465,
+    "top100": 0.27772400949816606,
+    "top100_5d": 0.2778361564450876,
+    "threshold": 0.3,
+    "on": false
+  },
+  "margin": {
+    "date": "2026-11-17",
+    "rzye_yi": 22170.95518841,
+    "pct252": 0.003968253968253968,
+    "threshold": 0.8,
+    "on": false
+  },
+  "breadth_drop": {
+    "on": true,
+    "mcl": -367.2406263887867,
+    "mcl_max10": 348.93716522275645,
+    "std250": 224.78781830561775,
+    "threshold": 236.54325606994757,
+    "mcl_pct250": 0.052
+  },
+  "indices": [
+    {
+      "code": "sh000001",
+      "name": "上证指数",
+      "close": 3587.83,
+      "pos_pct252": 0.007936507936507936,
+      "pos_threshold": 0.8,
+      "gain_from_250_low": 0.0009066613103905219,
+      "gain_threshold": 0.15,
+      "on": false,
+      "level": "未触发",
+      "n_on": 0
+    },
+    {
+      "code": "sh000300",
+      "name": "沪深300",
+      "close": 3983.77,
+      "pos_pct252": 0.011904761904761904,
+      "pos_threshold": 0.8,
+      "gain_from_250_low": 0.0018383185043984174,
+      "gain_threshold": 0.15,
+      "on": false,
+      "level": "未触发",
+      "n_on": 0
+    },
+    {
+      "code": "sh000852",
+      "name": "中证1000",
+      "close": 6052.82,
+      "pos_pct252": 0.003968253968253968,
+      "pos_threshold": 0.8,
+      "gain_from_250_low": 0.0,
+      "gain_threshold": 0.15,
+      "on": false,
+      "level": "未触发",
+      "n_on": 0
+    },
+    {
+      "code": "sh000688",
+      "name": "科创50",
+      "close": 1247.99,
+      "pos_pct252": 0.027777777777777776,
+      "pos_threshold": 0.8,
+      "gain_from_250_low": 0.08400215412410539,
+      "gain_threshold": 0.15,
+      "on": false,
+      "level": "未触发",
+      "n_on": 0
+    }
+  ],
+  "definition": "集中度前100名成交额占比5日均值≥30%，融资余额252日分位≥80%，指数收盘价252日分位≥80%且离250日低点涨幅≥15%，三项同时满足；相隔≤20个交易日的合并为一段",
+  "judge": "之后120个交易日不再高出该段最高价5%以上，且最大回撤≥10%，记为“顶部区间”，否则“偏早”",
+  "episodes": [
+    {
+      "index": "上证指数",
+      "start": "2014-11-10",
+      "end": "2015-05-15",
+      "days": 126,
+      "peak": 4527.4,
+      "after120_max_pct": 0.1411,
+      "after120_min_pct": -0.3534,
+      "verdict": "偏早"
+    },
+    {
+      "index": "上证指数",
+      "start": "2015-06-26",
+      "end": "2015-06-30",
+      "days": 2,
+      "peak": 4277.22,
+      "after120_max_pct": -0.0358,
+      "after120_min_pct": -0.3156,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "上证指数",
+      "start": "2016-12-05",
+      "end": "2016-12-06",
+      "days": 2,
+      "peak": 3204.71,
+      "after120_max_pct": 0.0263,
+      "after120_min_pct": -0.0474,
+      "verdict": "偏早"
+    },
+    {
+      "index": "上证指数",
+      "start": "2018-01-23",
+      "end": "2018-01-29",
+      "days": 5,
+      "peak": 3559.47,
+      "after120_max_pct": -0.0201,
+      "after120_min_pct": -0.2319,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "上证指数",
+      "start": "2019-10-14",
+      "end": "2019-10-14",
+      "days": 1,
+      "peak": 3007.88,
+      "after120_max_pct": 0.0358,
+      "after120_min_pct": -0.1156,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "上证指数",
+      "start": "2020-11-11",
+      "end": "2021-07-07",
+      "days": 103,
+      "peak": 3696.17,
+      "after120_max_pct": 0.0052,
+      "after120_min_pct": -0.0905,
+      "verdict": "偏早"
+    },
+    {
+      "index": "上证指数",
+      "start": "2025-09-29",
+      "end": "2025-10-13",
+      "days": 5,
+      "peak": 3933.97,
+      "after120_max_pct": 0.0632,
+      "after120_min_pct": -0.0307,
+      "verdict": "偏早"
+    },
+    {
+      "index": "上证指数",
+      "start": "2026-05-28",
+      "end": "2026-07-01",
+      "days": 7,
+      "peak": 4163.1,
+      "after120_max_pct": -0.0287,
+      "after120_min_pct": -0.139,
+      "verdict": null
+    },
+    {
+      "index": "沪深300",
+      "start": "2014-11-10",
+      "end": "2015-05-15",
+      "days": 126,
+      "peak": 4807.59,
+      "after120_max_pct": 0.1136,
+      "after120_min_pct": -0.3706,
+      "verdict": "偏早"
+    },
+    {
+      "index": "沪深300",
+      "start": "2015-06-30",
+      "end": "2015-06-30",
+      "days": 1,
+      "peak": 4473.0,
+      "after120_max_pct": -0.0492,
+      "after120_min_pct": -0.3236,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "沪深300",
+      "start": "2016-12-05",
+      "end": "2016-12-06",
+      "days": 2,
+      "peak": 3469.41,
+      "after120_max_pct": 0.0186,
+      "after120_min_pct": -0.0495,
+      "verdict": "偏早"
+    },
+    {
+      "index": "沪深300",
+      "start": "2017-08-29",
+      "end": "2017-09-01",
+      "days": 4,
+      "peak": 3834.54,
+      "after120_max_pct": 0.1448,
+      "after120_min_pct": -0.0044,
+      "verdict": "偏早"
+    },
+    {
+      "index": "沪深300",
+      "start": "2017-10-31",
+      "end": "2018-02-07",
+      "days": 71,
+      "peak": 4389.89,
+      "after120_max_pct": -0.0597,
+      "after120_min_pct": -0.2544,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "沪深300",
+      "start": "2019-10-10",
+      "end": "2019-12-16",
+      "days": 19,
+      "peak": 4002.81,
+      "after120_max_pct": 0.0509,
+      "after120_min_pct": -0.118,
+      "verdict": "偏早"
+    },
+    {
+      "index": "沪深300",
+      "start": "2020-11-11",
+      "end": "2021-06-02",
+      "days": 84,
+      "peak": 5807.72,
+      "after120_max_pct": -0.0905,
+      "after120_min_pct": -0.1819,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "沪深300",
+      "start": "2025-09-29",
+      "end": "2025-10-13",
+      "days": 5,
+      "peak": 4709.48,
+      "after120_max_pct": 0.0172,
+      "after120_min_pct": -0.0619,
+      "verdict": "偏早"
+    },
+    {
+      "index": "沪深300",
+      "start": "2026-05-27",
+      "end": "2026-07-15",
+      "days": 31,
+      "peak": 5059.66,
+      "after120_max_pct": -0.063,
+      "after120_min_pct": -0.2141,
+      "verdict": null
+    },
+    {
+      "index": "中证1000",
+      "start": "2014-07-29",
+      "end": "2014-07-31",
+      "days": 3,
+      "peak": 5115.58,
+      "after120_max_pct": 0.3085,
+      "after120_min_pct": -0.0116,
+      "verdict": "偏早"
+    },
+    {
+      "index": "中证1000",
+      "start": "2014-11-10",
+      "end": "2015-05-15",
+      "days": 119,
+      "peak": 11217.93,
+      "after120_max_pct": 0.3377,
+      "after120_min_pct": -0.3729,
+      "verdict": "偏早"
+    },
+    {
+      "index": "中证1000",
+      "start": "2015-06-26",
+      "end": "2015-07-02",
+      "days": 5,
+      "peak": 11730.75,
+      "after120_max_pct": -0.0786,
+      "after120_min_pct": -0.4003,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "中证1000",
+      "start": "2021-06-21",
+      "end": "2021-09-03",
+      "days": 46,
+      "peak": 7769.63,
+      "after120_max_pct": 0.0368,
+      "after120_min_pct": -0.1253,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "中证1000",
+      "start": "2021-10-29",
+      "end": "2021-11-01",
+      "days": 2,
+      "peak": 7455.61,
+      "after120_max_pct": 0.0805,
+      "after120_min_pct": -0.2936,
+      "verdict": "偏早"
+    },
+    {
+      "index": "中证1000",
+      "start": "2025-09-29",
+      "end": "2025-10-13",
+      "days": 5,
+      "peak": 7648.05,
+      "after120_max_pct": 0.1193,
+      "after120_min_pct": -0.0759,
+      "verdict": "偏早"
+    },
+    {
+      "index": "中证1000",
+      "start": "2026-05-27",
+      "end": "2026-07-06",
+      "days": 24,
+      "peak": 8876.63,
+      "after120_max_pct": -0.0648,
+      "after120_min_pct": -0.3181,
+      "verdict": null
+    },
+    {
+      "index": "科创50",
+      "start": "2020-11-16",
+      "end": "2020-11-16",
+      "days": 1,
+      "peak": 1446.95,
+      "after120_max_pct": 0.0357,
+      "after120_min_pct": -0.157,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "科创50",
+      "start": "2021-01-14",
+      "end": "2021-01-27",
+      "days": 10,
+      "peak": 1498.6,
+      "after120_max_pct": 0.0748,
+      "after120_min_pct": -0.1861,
+      "verdict": "偏早"
+    },
+    {
+      "index": "科创50",
+      "start": "2021-06-01",
+      "end": "2021-08-25",
+      "days": 49,
+      "peak": 1610.77,
+      "after120_max_pct": -0.0704,
+      "after120_min_pct": -0.274,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "科创50",
+      "start": "2025-09-29",
+      "end": "2025-10-13",
+      "days": 5,
+      "peak": 1539.08,
+      "after120_max_pct": 0.011,
+      "after120_min_pct": -0.1838,
+      "verdict": "顶部区间"
+    },
+    {
+      "index": "科创50",
+      "start": "2026-05-27",
+      "end": "2026-07-20",
+      "days": 38,
+      "peak": 2207.86,
+      "after120_max_pct": -0.138,
+      "after120_min_pct": -0.4786,
+      "verdict": null
+    }
+  ],
+  "stats": [
+    {
+      "index": "上证指数",
+      "n": 7,
+      "hit": 0.429,
+      "base": 0.129
+    },
+    {
+      "index": "沪深300",
+      "n": 8,
+      "hit": 0.375,
+      "base": 0.344
+    },
+    {
+      "index": "中证1000",
+      "n": 6,
+      "hit": 0.333,
+      "base": 0.303
+    },
+    {
+      "index": "科创50",
+      "n": 4,
+      "hit": 0.75,
+      "base": 0.338
+    }
+  ]
+}
