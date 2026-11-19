@@ -8,6 +8,7 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 
 from .market_base import EM_DATACENTER_URL, EMClient
@@ -20,10 +21,7 @@ REPORTS = {
     "buy": "RPT_BILLBOARD_DAILYDETAILSBUY",
     "sell": "RPT_BILLBOARD_DAILYDETAILSSELL",
 }
-NOTE = (
-    "金额单位为人民币元。席位标签依据公开报道，不等于实际账户身份；"
-    "仅描述当日盘后榜单，不构成建议。"
-)
+NOTE = "本内容为每日复盘，仅供研究参考，不构成任何投资建议；游资别名按公开报道整理，可能有误或过时。"
 
 
 def _number(value, field: str) -> float:
@@ -84,13 +82,17 @@ def _list_type(explanation: str) -> str:
 
 
 def _seat_kind(name: str, code: str) -> str:
-    if code == "0" or "机构专用" in name:
+    if code == "0" or "机构专用" in name or name.strip() == "机构":
         return "institution"
     if "深股通专用" in name or "沪股通专用" in name:
         return "northbound"
     if any(label in name for label in ("自然人", "中小投资者", "其他自然人")):
         return "special"
     return "dept"
+
+
+def _normalize_seat_name(name: str) -> str:
+    return re.sub(r"股份有限公司|有限责任公司|有限公司", "", name)
 
 
 def _load_aliases(path: Path = ALIAS_PATH) -> dict:
@@ -102,7 +104,145 @@ def _load_aliases(path: Path = ALIAS_PATH) -> dict:
             raise ValueError("seat aliases must map names to objects")
         if entry.get("alias") is not None and not isinstance(entry["alias"], str):
             raise ValueError(f"alias for {seat!r} must be a string")
+        match = entry.get("match")
+        if match is not None and (
+            not isinstance(match, str) or match not in {"exact", "renamed"}
+        ):
+            raise ValueError(f"match for {seat!r} must be exact or renamed")
+        for field in ("source", "source_url", "source_name"):
+            if entry.get(field) is not None and not isinstance(entry[field], str):
+                raise ValueError(f"{field} for {seat!r} must be a string")
     return aliases
+
+
+def _date_badge(asof: str) -> str:
+    trading_date = date.fromisoformat(asof)
+    weekday = "一二三四五六日"[trading_date.weekday()]
+    return f"{trading_date:%Y.%m.%d} / 周{weekday} · 盘后榜单"
+
+
+def _sample_note(totals: dict) -> str:
+    return (
+        f"样本 {totals['n_stocks']} 只（其中单日榜 {totals['n_stocks_single']}、"
+        f"多日榜 {totals['n_stocks_multi']}） · 历史分位，不是预测"
+    )
+
+
+def _presentation_groups(seats: list[dict]) -> tuple[list[dict], dict, list[dict]]:
+    groups = {}
+    stock_buys = {}
+    for seat in seats:
+        if seat["kind"] != "dept" or not seat.get("alias"):
+            continue
+        alias = seat["alias"]
+        group = groups.setdefault(
+            alias,
+            {
+                "alias": alias,
+                "depts": set(),
+                "buy": 0.0,
+                "sell": 0.0,
+                "trades": {},
+                "sources": {},
+            },
+        )
+        group["depts"].add(seat["seat"])
+        group["buy"] += seat["buy"]
+        group["sell"] += seat["sell"]
+        source_url = seat.get("alias_source_url")
+        if source_url:
+            source = seat.get("alias_source") or "别名来源"
+            group["sources"][(source, source_url)] = {
+                "source": source,
+                "source_url": source_url,
+            }
+        for trade in seat["trades"]:
+            code = trade["code"]
+            stock = group["trades"].setdefault(
+                code,
+                {"code": code, "name": trade["name"], "buy": 0.0, "sell": 0.0},
+            )
+            side = "buy" if trade["side"] == "in" else "sell"
+            stock[side] += trade["amount"]
+            if side == "buy" and trade["amount"] > 0:
+                stock_total = stock_buys.setdefault(
+                    code, {"code": code, "name": trade["name"], "buy": 0.0}
+                )
+                stock_total["buy"] += trade["amount"]
+
+    alias_groups = []
+    for group in groups.values():
+        trades = [
+            {
+                **trade,
+                "buy": round(trade["buy"], 2),
+                "sell": round(trade["sell"], 2),
+            }
+            for trade in group["trades"].values()
+        ]
+        trades.sort(key=lambda trade: (-(trade["buy"] + trade["sell"]), trade["code"]))
+        chips = []
+        for trade in trades:
+            if trade["buy"]:
+                chips.append(
+                    {
+                        "code": trade["code"],
+                        "name": trade["name"],
+                        "side": "in",
+                        "amount": trade["buy"],
+                    }
+                )
+            if trade["sell"]:
+                chips.append(
+                    {
+                        "code": trade["code"],
+                        "name": trade["name"],
+                        "side": "out",
+                        "amount": trade["sell"],
+                    }
+                )
+        chips.sort(key=lambda item: (-item["amount"], item["code"], item["side"]))
+        alias_groups.append(
+            {
+                "alias": group["alias"],
+                "depts": sorted(group["depts"]),
+                "buy": round(group["buy"], 2),
+                "sell": round(group["sell"], 2),
+                "net": round(group["buy"] - group["sell"], 2),
+                "n_stocks": len(trades),
+                "trades": trades,
+                "chips": chips[:3],
+                "more_trades": max(0, len(chips) - 3),
+                "sources": sorted(
+                    group["sources"].values(),
+                    key=lambda source: (source["source"], source["source_url"]),
+                ),
+            }
+        )
+    alias_groups.sort(key=lambda group: (-(group["buy"] + group["sell"]), group["alias"]))
+    top_buy = sorted(
+        stock_buys.values(), key=lambda stock: (-stock["buy"], stock["code"])
+    )[:6]
+    summary = {
+        "n_aliases": len(alias_groups),
+        "n_stocks": len(stock_buys),
+        "top_buy": [
+            {**stock, "buy": round(stock["buy"], 2)}
+            for stock in top_buy
+        ],
+    }
+    other_seats = [
+        {
+            "seat": seat["seat"],
+            "kind": seat["kind"],
+            "buy": seat["buy"],
+            "sell": seat["sell"],
+            "net": seat["net"],
+        }
+        for seat in seats
+        if seat["kind"] in {"dept", "institution", "northbound"} and not seat.get("alias")
+    ][:10]
+    return alias_groups, summary, other_seats
 
 
 def _fetch_report(client: EMClient, report_name: str, asof: str, sort_column: str = "") -> list[dict]:
@@ -172,17 +312,24 @@ def aggregate_lhb_seats(
     aliases: dict | None = None,
 ) -> dict:
     if not summary_rows:
+        totals = {
+            "buy": 0.0,
+            "sell": 0.0,
+            "institution_net": 0.0,
+            "n_stocks": 0,
+            "n_stocks_single": 0,
+            "n_stocks_multi": 0,
+        }
+        youzi, youzi_summary, other_seats = _presentation_groups([])
         return {
             "schema": "lhb_seats.v1",
             "asof": asof,
-            "totals": {
-                "buy": 0.0,
-                "sell": 0.0,
-                "institution_net": 0.0,
-                "n_stocks": 0,
-                "n_stocks_single": 0,
-                "n_stocks_multi": 0,
-            },
+            "date_badge": _date_badge(asof),
+            "totals": totals,
+            "sample_note": _sample_note(totals),
+            "youzi": youzi,
+            "youzi_summary": youzi_summary,
+            "other_seats": other_seats,
             "seats": [],
             "note": NOTE,
         }
@@ -192,7 +339,7 @@ def aggregate_lhb_seats(
     names = {}
     stock_types: dict[str, set[str]] = defaultdict(set)
     selected_trade_ids = {}
-    disclosure_types = {}
+    disclosure_types: dict[tuple[str, str], set[str]] = defaultdict(set)
     selected_totals = {}
     for row in summary_rows:
         code = _code(row.get("SECURITY_CODE"))
@@ -201,9 +348,7 @@ def aggregate_lhb_seats(
         stock_types[code].add(list_type)
         trade_id = _trade_id(row)
         disclosure_key = (code, trade_id)
-        existing_type = disclosure_types.setdefault(disclosure_key, list_type)
-        if existing_type != list_type:
-            raise RuntimeError(f"龙虎榜 TRADE_ID {trade_id} 对应多个榜单类型: {code}")
+        disclosure_types[disclosure_key].add(list_type)
         key = (code, list_type)
         total = _summary_amount(row, "BUY") + _summary_amount(row, "SELL")
         # Keep the largest summary BUY+SELL TRADE_ID per stock/list; ties keep the first.
@@ -216,9 +361,16 @@ def aggregate_lhb_seats(
     for row in (*buy_rows, *sell_rows):
         code = _code(row.get("SECURITY_CODE"))
         trade_id = _trade_id(row)
-        list_type = disclosure_types.get((code, trade_id))
-        if list_type is None:
+        list_types = disclosure_types.get((code, trade_id))
+        if not list_types:
             raise RuntimeError(f"龙虎榜席位明细 TRADE_ID 不在汇总中: {code} {trade_id}")
+        row_list_type = _list_type(str(row.get("EXPLANATION") or ""))
+        if row_list_type in list_types:
+            list_type = row_list_type
+        elif len(list_types) == 1:
+            list_type = next(iter(list_types))
+        else:
+            raise RuntimeError(f"龙虎榜席位明细 TRADE_ID 榜单类型不明确: {code} {trade_id}")
         if selected_trade_ids[(code, list_type)] != trade_id:
             continue
         seat = str(row.get("OPERATEDEPT_NAME") or "").strip()
@@ -244,6 +396,29 @@ def aggregate_lhb_seats(
         }
         detail_codes.add(code)
 
+    cross_list_records = {}
+    unique_records = {}
+    for identity, record in records.items():
+        overlap_key = (
+            record["code"],
+            record["seat_code"],
+            record["buy"],
+            record["sell"],
+        )
+        previous_identity = cross_list_records.get(overlap_key)
+        if previous_identity is None:
+            cross_list_records[overlap_key] = identity
+            unique_records[identity] = record
+            continue
+        previous = unique_records[previous_identity]
+        if previous["list"] == record["list"]:
+            unique_records[identity] = record
+        elif previous["list"] == "multi" and record["list"] == "single":
+            del unique_records[previous_identity]
+            cross_list_records[overlap_key] = identity
+            unique_records[identity] = record
+    records = unique_records
+
     missing_codes = set(names) - detail_codes
     if missing_codes:
         raise RuntimeError(
@@ -255,12 +430,21 @@ def aggregate_lhb_seats(
     for trade in records.values():
         seat = trade["seat"]
         kind = _seat_kind(seat, trade["seat_code"])
-        alias = alias_map.get(seat, {}).get("alias") if kind == "dept" else None
+        alias_entry = {}
+        if kind == "dept":
+            normalized_seat = _normalize_seat_name(seat)
+            alias_entry = alias_map.get(normalized_seat)
+            if alias_entry is None:
+                alias_entry = alias_map.get(seat)
+            alias_entry = alias_entry or {}
+        alias = alias_entry.get("alias")
         aggregate = seats.setdefault(
             seat,
             {
                 "seat": seat,
                 "alias": alias or None,
+                "alias_source": alias_entry.get("source") if alias else None,
+                "alias_source_url": alias_entry.get("source_url") if alias else None,
                 "kind": kind,
                 "buy": 0.0,
                 "sell": 0.0,
@@ -297,21 +481,28 @@ def aggregate_lhb_seats(
     ordered_seats = sorted(
         seats.values(), key=lambda seat: (-(seat["buy"] + seat["sell"]), seat["seat"])
     )
+    youzi, youzi_summary, other_seats = _presentation_groups(ordered_seats)
+    totals = {
+        "buy": round(buy_total, 2),
+        "sell": round(sell_total, 2),
+        "institution_net": round(institution_net, 2),
+        "n_stocks": len(names),
+        "n_stocks_single": len(
+            {code for code, kinds in stock_types.items() if "single" in kinds}
+        ),
+        "n_stocks_multi": len(
+            {code for code, kinds in stock_types.items() if "multi" in kinds}
+        ),
+    }
     return {
         "schema": "lhb_seats.v1",
         "asof": asof,
-        "totals": {
-            "buy": round(buy_total, 2),
-            "sell": round(sell_total, 2),
-            "institution_net": round(institution_net, 2),
-            "n_stocks": len(names),
-            "n_stocks_single": len(
-                {code for code, kinds in stock_types.items() if "single" in kinds}
-            ),
-            "n_stocks_multi": len(
-                {code for code, kinds in stock_types.items() if "multi" in kinds}
-            ),
-        },
+        "date_badge": _date_badge(asof),
+        "totals": totals,
+        "sample_note": _sample_note(totals),
+        "youzi": youzi,
+        "youzi_summary": youzi_summary,
+        "other_seats": other_seats,
         "seats": ordered_seats,
         "note": NOTE,
     }
