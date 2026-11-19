@@ -5,7 +5,7 @@
   'use strict';
 
   const levels = { watch: '开始留意', strengthening: '迹象增强', invalidated: '此前判断已失效' };
-  const kinds = new Set(['rebound_end', 'stage_top', 'rebound', 'reversal']);
+  const kinds = { rebound_end: '反弹尾声', stage_top: '阶段高点', rebound: '短线反弹', reversal: '中期反转' };
   const text = value => typeof value === 'string' && value.trim().length > 0;
   function levelName(item) {
     if (item.level === 'invalidated' && item.closure_reason === 'expired') return '观察期结束';
@@ -76,7 +76,7 @@
       result.notice = '这份记录的提醒状态不完整，暂时无法判断。';
       return result;
     }
-    result.alerts = alerts.filter(item => item && kinds.has(item.kind) && Object.hasOwn(levels, item.level) &&
+    result.alerts = alerts.filter(item => item && Object.hasOwn(kinds, item.kind) && Object.hasOwn(levels, item.level) &&
       item.evidence === evidence && text(item.title) && text(item.message) &&
       Array.isArray(item.reasons) && item.reasons.some(text) && text(item.next_check) &&
       date(item.trigger_date) && date(item.update_date) &&
@@ -95,7 +95,7 @@
   function markup(model, escape) {
     const stamp = model.asof ? `<p class="trend-meta">${escape(model.context)} · ${escape(model.asof)} 收盘</p>` : '';
     const cards = model.alerts.map(item => `<article class="trend-card" data-level="${item.level}">
-      <header><h4>${escape(item.title)}</h4><span>${levelName(item)}</span></header>
+      <header><h4>${escape(item.title)}</h4><span>${kinds[item.kind]} · ${levelName(item)}</span></header>
       <p>${escape(item.message)}</p>
       <ul aria-label="提醒依据">${item.reasons.filter(text).map(reason => '<li>' + escape(reason) + '</li>').join('')}</ul>
       <p class="trend-next"><strong>接下来看</strong> ${escape(item.next_check)}</p>
