@@ -216,6 +216,24 @@ def test_market_breadth_uses_cache_fallback_and_publishes_latest_json():
     assert 'git -C "$ROOT" archive stock-results market' in build
 
 
+def test_market_daily_restores_and_saves_csindex_valuation_cache_around_fetch():
+    workflow = _workflow("market_daily.yml")
+    steps = workflow["jobs"]["collect"]["steps"]
+    restore = next(step for step in steps if step.get("id") == "index_valuation_cache")
+    fetch = next(step for step in steps if step.get("id") == "fetch")
+    save = next(
+        step
+        for step in steps
+        if step.get("name") == "Save CSIndex valuation cache"
+    )
+
+    assert restore["uses"] == "actions/cache/restore@v4"
+    assert restore["with"]["path"] == "data/cache/valuation"
+    assert steps.index(restore) < steps.index(fetch) < steps.index(save)
+    assert save["uses"] == "actions/cache/save@v4"
+    assert save["with"]["path"] == "data/cache/valuation"
+
+
 def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
     workflow = _workflow("dip_env.yml")
     publish = next(

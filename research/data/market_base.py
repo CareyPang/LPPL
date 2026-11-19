@@ -21,6 +21,7 @@ import requests
 
 from .margin import CACHE as MARGIN_CACHE
 from .margin import SZSE_RENAME, fetch_sse, fetch_szse, load_margin
+from .valuation import CACHE as VALUATION_CACHE
 
 EM_BOARD_URL = "https://push2delay.eastmoney.com/api/qt/clist/get"
 EM_BOARD_FALLBACK_URL = "https://push2.eastmoney.com/api/qt/clist/get"
@@ -98,6 +99,14 @@ INDEX_FIELDS = {
     "股息率1（总股本）D/P1": "dy1",
     "股息率2（计算用股本）D/P2": "dy2",
 }
+LEGUGU_INDEX_NAMES = {
+    "000300": "沪深300",
+    "000905": "中证500",
+    "000016": "上证50",
+    "000852": "中证1000",
+}
+INDEX_VALUATION_CACHE = VALUATION_CACHE / "csindex"
+PE_PCT_SOURCE = "legulegu 月度历史"
 LIMIT_POOLS = (
     ("zt", "getTopicZTPool", "fbt:asc"),
     ("zb", "getTopicZBPool", "fbt:asc"),
@@ -1729,7 +1738,7 @@ def hkex_northbound(date_value: str, session=None) -> dict | None:
     return _parse_northbound(response.text)
 
 
-def _parse_index_valuation(frame: pd.DataFrame, code: str) -> dict:
+def _parse_index_valuation_rows(frame: pd.DataFrame, code: str) -> pd.DataFrame:
     frame = frame.copy()
     frame.columns = [re.sub(r"\s+", "", str(col)) for col in frame.columns]
     required = {"日期Date", "指数代码IndexCode", *INDEX_FIELDS}
@@ -1763,27 +1772,111 @@ def _parse_index_valuation(frame: pd.DataFrame, code: str) -> dict:
     values = pd.DataFrame(rows).sort_values("date")
     if values["date"].duplicated().any():
         raise RuntimeError("CSIndex valuation file has duplicate dates")
+    return values
+
+
+def _latest_index_valuation(values: pd.DataFrame) -> dict:
     latest = values.iloc[-1]
-    pe_pct_10y = None
-    if latest["pe1"] is not None and pd.notna(latest["pe1"]):
-        cutoff = pd.Timestamp(latest["date"]) - pd.DateOffset(years=10)
-        history = values.loc[
-            (pd.to_datetime(values["date"]) >= cutoff) & values["pe1"].notna(), "pe1"
-        ].astype(float)
-        if len(history) > 1 and pd.to_datetime(values["date"]).min() <= cutoff:
-            pe_pct_10y = float((history <= float(latest["pe1"])).mean())
     return {
         "date": latest["date"],
         "pe1": latest["pe1"],
         "pe2": latest["pe2"],
         "dy1": latest["dy1"],
         "dy2": latest["dy2"],
-        "pe1_pct_10y": pe_pct_10y,
-        "history_rows": len(values),
     }
 
 
-def csindex_valuation(code: str, session=None) -> dict:
+def _parse_index_valuation(frame: pd.DataFrame, code: str) -> dict:
+    return _latest_index_valuation(_parse_index_valuation_rows(frame, code))
+
+
+def _fetch_legu_index_pe(code: str) -> pd.DataFrame:
+    import akshare as ak
+
+    return ak.stock_index_pe_lg(symbol=LEGUGU_INDEX_NAMES[code])
+
+
+def _legu_pe_percentile(frame: pd.DataFrame, current_pe1: float, asof: str) -> dict:
+    frame = frame.copy()
+    frame.columns = [re.sub(r"\s+", "", str(col)) for col in frame.columns]
+    required = {"日期", "静态市盈率"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise RuntimeError("Legu PE history columns missing: " + ", ".join(sorted(missing)))
+
+    history = pd.DataFrame(
+        {
+            "date": pd.to_datetime(frame["日期"], errors="coerce"),
+            "pe": pd.to_numeric(frame["静态市盈率"], errors="coerce"),
+        }
+    )
+    history = history.dropna(subset=["date", "pe"])
+    history = history.loc[history["pe"].map(math.isfinite)]
+    history = history.loc[history["date"] <= pd.Timestamp(asof).normalize()]
+    history = history.sort_values("date").drop_duplicates("date", keep="last")
+    if history.empty:
+        raise RuntimeError(f"Legu PE history has no valid samples as of {asof}")
+
+    cutoff = pd.Timestamp(asof).normalize() - pd.DateOffset(years=10)
+    samples = history.loc[history["date"] >= cutoff]
+    if history["date"].min() > cutoff:
+        samples = history
+    start = samples["date"].min()
+    return {
+        "pe_pct10y": float((samples["pe"] <= float(current_pe1)).mean()),
+        "pe_pct_source": PE_PCT_SOURCE,
+        "pe_pct_n": len(samples),
+        "pe_pct_start": start.date().isoformat(),
+        "pe_pct_error": None,
+    }
+
+
+def _update_csindex_valuation_cache(
+    code: str, values: pd.DataFrame, cache_dir: Path = INDEX_VALUATION_CACHE
+) -> str | None:
+    cache_dir = Path(cache_dir)
+    path = cache_dir / f"{code}.parquet"
+    columns = ("date", "pe1", "pe2", "dy1", "dy2")
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+            cached = pd.read_parquet(path)
+            missing = set(columns) - set(cached.columns)
+            if missing:
+                raise RuntimeError(
+                    "cached CSIndex valuation columns missing: " + ", ".join(sorted(missing))
+                )
+            cached = cached.loc[:, columns]
+        else:
+            cached = pd.DataFrame(columns=columns)
+        fresh = values.loc[:, columns].copy()
+        merged = (
+            pd.concat([cached, fresh], ignore_index=True)
+            if not cached.empty
+            else fresh
+        )
+        merged["date"] = pd.to_datetime(merged["date"], errors="coerce")
+        merged = merged.dropna(subset=["date"])
+        merged["date"] = merged["date"].dt.strftime("%Y-%m-%d")
+        merged = (
+            merged.sort_values("date")
+            .drop_duplicates("date", keep="last")
+            .reset_index(drop=True)
+        )
+        temporary = path.with_name(path.name + ".tmp")
+        try:
+            merged.to_parquet(temporary, index=False)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    except Exception as exc:
+        return _error(exc)
+    return None
+
+
+def csindex_valuation(
+    code: str, session=None, cache_dir: Path = INDEX_VALUATION_CACHE
+) -> dict:
     if code not in INDEX_CODES:
         raise ValueError(f"unsupported CSIndex code: {code}")
     url = CSINDEX_URL.format(code=code)
@@ -1795,7 +1888,30 @@ def csindex_valuation(code: str, session=None) -> dict:
         frame = pd.read_excel(BytesIO(response.content), dtype=str)
     except (ImportError, ValueError, OSError) as exc:
         raise RuntimeError("CSIndex did not return a parseable valuation workbook") from exc
-    return _parse_index_valuation(frame, code)
+    values = _parse_index_valuation_rows(frame, code)
+    result = _latest_index_valuation(values)
+    cache_error = _update_csindex_valuation_cache(code, values, cache_dir)
+    try:
+        if result["pe1"] is None:
+            raise RuntimeError("CSIndex PE1 is missing; cannot calculate percentile")
+        result.update(
+            _legu_pe_percentile(
+                _fetch_legu_index_pe(code), result["pe1"], result["date"]
+            )
+        )
+    except Exception as exc:
+        result.update(
+            {
+                "pe_pct10y": None,
+                "pe_pct_source": PE_PCT_SOURCE,
+                "pe_pct_n": 0,
+                "pe_pct_start": None,
+                "pe_pct_error": _error(exc),
+            }
+        )
+    if cache_error:
+        result["csindex_cache_error"] = f"CSIndex daily cache update failed: {cache_error}"
+    return result
 
 
 def _cached_margin_frame(cache: Path) -> pd.DataFrame:
@@ -2237,7 +2353,7 @@ def fetch_market(
 
     valuation = {
         "evidence": "descriptive",
-        "note": "中证官方文件中的 PE1/PE2 与股息率；PE1 分位只用文件自带历史计算。"
+        "note": "PE1/PE2 与股息率取中证官方；PE 10 年分位使用乐咕月度静态 PE1 历史计算。"
         + DESCRIPTIVE_NOTE,
         "indices": {},
     }

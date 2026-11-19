@@ -697,43 +697,81 @@ def test_csindex_parser_normalizes_spaced_headers():
 
     assert value["date"] == "2026-10-30"
     assert value["pe1"] == 13.76
-    assert value["pe1_pct_10y"] is None
 
 
-def test_csindex_valuation_parser_uses_only_ten_year_history():
-    frame = pd.DataFrame(
+def test_legu_pe_percentile_uses_ten_year_static_history():
+    frame = pd.DataFrame(fixture("legu_index_pe_rows.json"))
+    value = market._legu_pe_percentile(frame, 13.2, "2026-10-30")
+
+    assert value == {
+        "pe_pct10y": pytest.approx(2 / 3),
+        "pe_pct_source": "legulegu 月度历史",
+        "pe_pct_n": 3,
+        "pe_pct_start": "2016-10-30",
+        "pe_pct_error": None,
+    }
+
+
+def test_legu_pe_percentile_uses_all_available_short_history():
+    frame = pd.DataFrame(fixture("legu_index_pe_rows.json"))
+    value = market._legu_pe_percentile(frame, 14, "2020-10-30")
+
+    assert value["pe_pct10y"] == pytest.approx(0.5)
+    assert value["pe_pct_n"] == 2
+    assert value["pe_pct_start"] == "2014-12-31"
+
+
+def test_csindex_valuation_keeps_official_values_when_legu_fails(monkeypatch, tmp_path):
+    class Response:
+        content = b"fixture workbook"
+
+        def raise_for_status(self):
+            pass
+
+    class Session:
+        def get(self, *_args, **_kwargs):
+            return Response()
+
+    monkeypatch.setattr(
+        market.pd,
+        "read_excel",
+        lambda *_args, **_kwargs: pd.DataFrame(fixture("valuation_rows.json")),
+    )
+
+    def fail_legu(_code):
+        raise ConnectionError("Legu service unavailable")
+
+    monkeypatch.setattr(market, "_fetch_legu_index_pe", fail_legu)
+    value = market.csindex_valuation("000300", Session(), cache_dir=tmp_path)
+
+    assert value["pe1"] == 13.76
+    assert value["pe_pct10y"] is None
+    assert value["pe_pct_n"] == 0
+    assert "ConnectionError: Legu service unavailable" == value["pe_pct_error"]
+    cached = pd.read_parquet(tmp_path / "000300.parquet")
+    assert len(cached) == 4
+
+
+def test_csindex_cache_accumulates_daily_rows_and_replaces_revisions(tmp_path):
+    first = pd.DataFrame(
         [
-            {
-                "日期Date": "2016-10-30",
-                "指数代码IndexCode": "000300",
-                "市盈率1（总股本）P/E1": "10",
-                "市盈率2（计算用股本）P/E2": "11",
-                "股息率1（总股本）D/P1": "3",
-                "股息率2（计算用股本）D/P2": "2.8",
-            },
-            {
-                "日期Date": "2021-10-30",
-                "指数代码IndexCode": "000300",
-                "市盈率1（总股本）P/E1": "15",
-                "市盈率2（计算用股本）P/E2": "16",
-                "股息率1（总股本）D/P1": "2",
-                "股息率2（计算用股本）D/P2": "1.8",
-            },
-            {
-                "日期Date": "2026-10-30",
-                "指数代码IndexCode": "000300",
-                "市盈率1（总股本）P/E1": "13.2",
-                "市盈率2（计算用股本）P/E2": "14",
-                "股息率1（总股本）D/P1": "2.5",
-                "股息率2（计算用股本）D/P2": "2.3",
-            },
+            {"date": "2026-10-29", "pe1": 13.9, "pe2": 15.1, "dy1": 3.0, "dy2": 2.7},
+            {"date": "2026-10-30", "pe1": 13.8, "pe2": 15.0, "dy1": 3.1, "dy2": 2.8},
         ]
     )
-    value = market._parse_index_valuation(frame, "000300")
+    second = pd.DataFrame(
+        [
+            {"date": "2026-10-30", "pe1": 13.7, "pe2": 14.9, "dy1": 3.2, "dy2": 2.9},
+            {"date": "2026-11-02", "pe1": 13.6, "pe2": 14.8, "dy1": 3.3, "dy2": 3.0},
+        ]
+    )
 
-    assert value["date"] == "2026-10-30"
-    assert value["pe1"] == 13.2
-    assert value["pe1_pct_10y"] == pytest.approx(2 / 3)
+    assert market._update_csindex_valuation_cache("000300", first, tmp_path) is None
+    assert market._update_csindex_valuation_cache("000300", second, tmp_path) is None
+    cached = pd.read_parquet(tmp_path / "000300.parquet")
+
+    assert cached["date"].tolist() == ["2026-10-29", "2026-10-30", "2026-11-02"]
+    assert cached.loc[cached["date"] == "2026-10-30", "pe1"].item() == 13.7
 
 
 def test_eastmoney_403_is_not_retried():
