@@ -174,3 +174,18 @@ def test_index_metrics_counts_only_two_primary_conditions_when_c3_fails():
     assert result["on"] is False
     assert result["n_on"] == 2
     assert result["level"] == "偏高"
+
+
+def test_build_n_on_history_uses_daily_metrics_and_excludes_asof_margin_row():
+    history = top_risk.build_n_on_history(
+        _breadth()["risk_history"],
+        _margin_rows(),
+        _index_histories(),
+    )
+
+    latest = history["sh000001"][-1]
+    assert latest["date"] == ASOF
+    assert latest["concentration_on"] is True
+    assert latest["margin_on"] is True
+    assert latest["index_on"] is True
+    assert latest["n_on"] == 3

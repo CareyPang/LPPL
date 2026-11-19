@@ -327,6 +327,30 @@ def fetch_ak_sina_index(
     )
 
 
+def fetch_ak_csindex_index(
+    market: str,
+    six: str,
+    is_index: bool,
+    adjust: str = "",
+    timeout: float = 15,
+    start: str = "20050101",
+    end: str | None = None,
+) -> pd.DataFrame:
+    """中证指数公司指数日线（含开高低收）。"""
+    if not is_index:
+        raise ValueError("中证指数日线只接受指数代码")
+    import akshare as ak
+
+    return _ak_source(
+        ak.stock_zh_index_hist_csindex,
+        "ak_csindex_index",
+        timeout,
+        symbol=six,
+        start_date=start.replace("-", ""),
+        end_date=(end or pd.Timestamp.today().strftime("%Y%m%d")).replace("-", ""),
+    )
+
+
 def fetch_ak_em_stock(
     market: str, six: str, is_index: bool, adjust: str = "qfq", timeout: float = 15
 ) -> pd.DataFrame:
@@ -398,6 +422,7 @@ SOURCES: dict[str, Callable[..., pd.DataFrame]] = {
     "ak_em_index": fetch_ak_em_index,
     "ak_tx_index": fetch_ak_tx_index,
     "ak_sina_index": fetch_ak_sina_index,
+    "ak_csindex_index": fetch_ak_csindex_index,
     "ak_em_stock": fetch_ak_em_stock,
     "ak_sina_stock": fetch_ak_sina_stock,
     "ak_tx_stock": fetch_ak_tx_stock,

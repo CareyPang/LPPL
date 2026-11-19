@@ -18,7 +18,11 @@ on:
       - research/data/events.py
       - research/data/breadth.py
       - research/data/top_risk.py
+      - research/data/top_risk_episodes.py
+      - research/data/sources.py
+      - research/backtest/**
       - data/top_risk_episodes.json
+      - data/top_risk_n_on_history.json
       - research/data/trading_date.py
       - data/lhb_seat_alias.json
       - research/dip/env.py
@@ -27,14 +31,21 @@ on:
       - tests/test_lhb_seats.py
       - tests/test_breadth.py
       - tests/test_top_risk.py
+      - tests/test_top_risk_episodes.py
+      - tests/test_backtest_engine.py
+      - tests/test_backtest_report.py
+      - tests/test_sources.py
       - tests/e2e/test_smoke.py
       - tests/e2e/conftest.py
       - frontend/tests/fixtures/lhb_seats_latest.json
       - frontend/market.html
+      - frontend/backtest.html
+      - frontend/app/strategy-panel.js
       - frontend/stock.html
       - frontend/app/lppl-data.js
       - frontend/tests/fixtures/breadth_latest.json
       - frontend/tests/fixtures/top_risk_latest.json
+      - frontend/tests/strategy-panel.test.cjs
       - .github/workflows/market_daily.yml
       - scripts/build_stock_list.py
       - tests/test_build_stock_list.py
@@ -183,6 +194,27 @@ jobs:
               --breadth out/market/breadth_latest.json \
               --out out/market/top_risk_latest.json
           fi
+      - name: Build strategy replay JSON
+        id: strategy
+        if: steps.top_risk.outcome == 'success' && steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/previous-strategy
+          previous="out/previous-strategy/n_on_history.json"
+          if git show origin/stock-results:lab/mock/data/strategy/n_on_history.json > "$previous" 2>/dev/null; then
+            python -m research.backtest.publish \
+              --date "${{ steps.fetch.outputs.asof }}" \
+              --breadth out/market/breadth_latest.json \
+              --previous-history "$previous" \
+              --out out/strategy
+          else
+            python -m research.backtest.publish \
+              --date "${{ steps.fetch.outputs.asof }}" \
+              --breadth out/market/breadth_latest.json \
+              --out out/strategy
+          fi
       - name: Fetch and publish event calendar
         if: ${{ always() && steps.install.outcome == 'success' }}
         continue-on-error: true
@@ -214,7 +246,7 @@ jobs:
             gh workflow run pages.yml --ref main
           fi
       - name: Publish to stock-results
-        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.breadth.outcome == 'success' || steps.top_risk.outcome == 'success' || steps.range_stats.outcome == 'success' || steps.stock_list.outputs.stock_list_ok == 'true' || steps.lhb_seats.outcome == 'success')
+        if: always() && steps.install.outcome == 'success' && (steps.fetch.outputs.limit_ok == 'true' || steps.fetch.outputs.abnormal_ok == 'true' || steps.fetch.outputs.bottom_ok == 'true' || steps.breadth.outcome == 'success' || steps.top_risk.outcome == 'success' || steps.strategy.outcome == 'success' || steps.range_stats.outcome == 'success' || steps.stock_list.outputs.stock_list_ok == 'true' || steps.lhb_seats.outcome == 'success')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -250,6 +282,11 @@ jobs:
           if [[ -f out/market/top_risk_latest.json ]]; then
             cp out/market/top_risk_latest.json market/top_risk_latest.json
             git add market/top_risk_latest.json
+          fi
+          if compgen -G "out/strategy/*.json" > /dev/null; then
+            mkdir -p lab/mock/data/strategy
+            cp out/strategy/*.json lab/mock/data/strategy/
+            git add lab/mock/data/strategy/*.json
           fi
           if [[ -f out/abnormal/abnormal_latest.json ]]; then
             publish_versioned abnormal "$GITHUB_WORKSPACE/out/abnormal/abnormal_latest.json"

@@ -15,6 +15,7 @@
     ['n_trades', '交易次数', 'int'], ['win_rate', '胜率', 'pct'], ['total_return', '区间总收益', 'pct'], ['bh_return', '买入持有收益', 'pct'],
     ['cagr', '年化（CAGR）', 'pct'], ['max_drawdown', '最大回撤', 'pct'], ['bh_max_drawdown', '买入持有最大回撤', 'pct'], ['profit_factor', '盈亏比', 'num'],
     ['avg_trade_return', '平均每笔收益', 'pct'], ['avg_bars', '平均持有交易日', 'num'], ['exposure', '持仓时间占比', 'pct'], ['turnover', '年换手（次）', 'num'],
+    ['precision', '历史顶部命中占比', 'pct'], ['recall', '顶部区间覆盖占比', 'pct'], ['baseline', '随机基准占比（不是概率）', 'pct'], ['n_signals', '退出信号数', 'int'],
   ];
   function fmt(v, kind) {
     if (v == null || !Number.isFinite(Number(v))) return '—';
@@ -27,25 +28,33 @@
   function statusText(level) { return STATUS_TEXT[level || 'none'] || String(level); }
 
   /* model(data, seg) → { published, segment, metrics:[{key,label,value,text,shown}], evidence, n, trades, equity, props, note } */
-  function model(data, seg) {
+  function model(data, seg, ruleId) {
     if (!data || typeof data !== 'object' || !data.rule_id) return { published: false, segment: seg || 'test' };
-    var segment = seg && (seg === 'all' || (data.metrics && data.metrics[seg])) ? seg : (data.metrics && data.metrics.test ? 'test' : 'all');
-    var m = (data.metrics && data.metrics[segment]) || {};
-    var level = m.evidence || data.evidence || 'none', ok = show(level);
+    var rules = Array.isArray(data.rules) ? data.rules : [];
+    var selected = rules.find(function (r) { return r.rule_id === ruleId; }) || rules[0] || data;
+    var segment = seg && (seg === 'all' || (selected.metrics && selected.metrics[seg])) ? seg : (selected.metrics && selected.metrics.test ? 'test' : 'all');
+    var m = (selected.metrics && selected.metrics[segment]) || {};
+    var level = m.evidence || selected.evidence || 'none', ok = show(level);
     var metrics = METRIC_DEFS.filter(function (d) { return d[0] in m; }).map(function (d) {
       return { key: d[0], label: d[1], value: m[d[0]], text: ok ? fmt(m[d[0]], d[2]) : statusText(level), shown: ok };
     });
-    var trades = Array.isArray(data.trades) ? data.trades.filter(function (t) { return segment === 'all' || !t.segment || t.segment === segment; }) : [];
-    var equity = Array.isArray(data.equity) ? data.equity : [];
+    var trades = Array.isArray(selected.trades) ? selected.trades.filter(function (t) { return segment === 'all' || !t.segment || t.segment === segment; }) : [];
+    var equity = Array.isArray(selected.equity) ? selected.equity : [];
     return {
       published: true, segment: segment, level: level, shown: ok, status: statusText(level),
       n: Number.isFinite(Number(m.n_trades)) ? Number(m.n_trades) : trades.length,
-      metrics: metrics, trades: trades, equity: equity, segments: data.segments || {}, hasMetrics: data.metrics || {}, props: data.properties || {},
-      rule: data.rule_id, prereg: data.prereg_doc || '', asof: data.asof || '', note: data.note || '',
+      metrics: metrics, trades: trades, equity: equity, segments: selected.segments || data.segments || {}, hasMetrics: selected.metrics || {}, props: selected.properties || {},
+      rules: rules, selectedRule: selected.rule_id || data.rule_id,
+      rule: selected.rule_id || data.rule_id, prereg: selected.prereg_doc || data.prereg_doc || '', asof: selected.asof || data.asof || '', note: selected.note || data.note || '',
     };
   }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function ruleLabel(rule) {
+    if (rule.rule_id === 'R-TR1') return '顶部风险区';
+    if (rule.rule_id === 'R-LC1') return 'LPPLS 区间';
+    return rule.name || rule.rule_id;
+  }
 
   function equitySvg(eq, segments, w, h) {
     if (!eq.length) return '<p class="sp-empty">净值曲线未发布。</p>';
@@ -72,7 +81,10 @@
         '<p>后端还没有产出这只标的的策略回放 JSON。这里将来显示的是<b>事前登记规则的历史回放</b>：净值曲线与买入持有对比、开发 / 校准 / 测试三段分别的汇总、逐笔交易和假设（A 股 T+1、涨跌停不可成交、佣金印花税与滑点）。</p>' +
         '<p class="sp-dim">规则与字段见 <a href="lab/guide.html">用户指南</a>；只开放事前登记的规则，不提供自由调参。历史回放不是预测，也不是收益承诺。</p></div>';
     }
-    var head = '<div class="sp-head"><div class="sp-segs" role="group" aria-label="区间">' + SEGMENTS.map(function (s) {
+    var ruleNav = M.rules.length ? '<div class="sp-rules" role="group" aria-label="策略规则">' + M.rules.map(function (r) {
+      return '<button type="button" data-rule="' + esc(r.rule_id) + '" aria-pressed="' + (M.selectedRule === r.rule_id) + '">' + esc(ruleLabel(r)) + '</button>';
+    }).join('') + '</div>' : '';
+    var head = ruleNav + '<div class="sp-head"><div class="sp-segs" role="group" aria-label="区间">' + SEGMENTS.map(function (s) {
       return '<button type="button" data-seg="' + s[0] + '" aria-pressed="' + (M.segment === s[0]) + '"' + (!M.hasMetrics[s[0]] ? ' disabled' : '') + '>' + s[1] + '</button>';
     }).join('') + '</div><span class="sp-ev ' + (M.shown ? 'ok' : 'off') + '">' + esc(M.status) + '</span><span class="sp-n m">n = ' + M.n + '</span><span class="sp-dim">历史回放，不是预测</span></div>' +
       '<nav class="sp-tabs" aria-label="报告页签">' + TABS.map(function (t) { return '<a href="#" data-tab="' + t[0] + '"' + (tab === t[0] ? ' aria-current="location"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
@@ -96,8 +108,9 @@
 
   function mount(o) {
     var el = o.el, state = { seg: o.segment || 'test', tab: o.tab || 'metrics', data: null };
-    function draw() { el.innerHTML = render(model(state.data, state.seg), state.tab); }
+    function draw() { el.innerHTML = render(model(state.data, state.seg, state.rule), state.tab); }
     el.addEventListener('click', function (e) {
+      var r = e.target.closest('button[data-rule]'); if (r) { state.rule = r.dataset.rule; draw(); return; }
       var s = e.target.closest('button[data-seg]'); if (s) { state.seg = s.dataset.seg; draw(); return; }
       var t = e.target.closest('a[data-tab]'); if (t) { e.preventDefault(); state.tab = t.dataset.tab; draw(); }
     });

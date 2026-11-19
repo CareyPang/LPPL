@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import datetime as dt
 import json
 import math
@@ -317,6 +318,87 @@ def index_metrics(
         "level": risk_level(n_on),
         "n_on": n_on,
     }
+
+
+def build_n_on_history(
+    breadth_history: list[dict[str, Any]],
+    margin_rows: list[dict[str, Any]],
+    index_histories: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Build daily risk states by applying the snapshot metrics to each date."""
+    breadth = sorted(
+        (
+            {**row, "date": _date_text(row["date"])}
+            for row in breadth_history
+            if isinstance(row, dict) and row.get("date") is not None
+        ),
+        key=lambda row: row["date"],
+    )
+    histories = {
+        code: sorted(
+            (
+                {**row, "date": _date_text(row["date"])}
+                for row in rows
+                if isinstance(row, dict) and row.get("date") is not None
+            ),
+            key=lambda row: row["date"],
+        )
+        for code, rows in index_histories.items()
+    }
+    history_dates = {
+        code: [item["date"] for item in rows] for code, rows in histories.items()
+    }
+    margin_ordered = sorted(
+        margin_rows,
+        key=lambda row: _date_text(row.get("DIM_DATE", row.get("date"))),
+    )
+    margin_dates = [
+        _date_text(row.get("DIM_DATE", row.get("date"))) for row in margin_ordered
+    ]
+    output = {code: [] for code in histories}
+    for index, row in enumerate(breadth):
+        day = row["date"]
+        eligible_breadth = breadth[max(0, index - 4) : index + 1]
+        if len(eligible_breadth) < 5:
+            continue
+        try:
+            concentration = concentration_metrics(eligible_breadth)
+            margin_end = bisect.bisect_left(margin_dates, day)
+            margin = margin_metrics(
+                margin_ordered[max(0, margin_end - LOOKBACK) : margin_end], day
+            )
+        except ValueError as exc:
+            if "observations" in str(exc) or "concentration requires" in str(exc):
+                continue
+            raise
+        for code, rows in histories.items():
+            price_end = bisect.bisect_right(history_dates[code], day)
+            eligible_prices = rows[max(0, price_end - LOOKBACK) : price_end]
+            if not eligible_prices or eligible_prices[-1]["date"] != day:
+                continue
+            try:
+                metric = index_metrics(
+                    code,
+                    code,
+                    eligible_prices,
+                    concentration["on"],
+                    margin["on"],
+                    day,
+                )
+            except ValueError as exc:
+                if "requires" in str(exc):
+                    continue
+                raise
+            output[code].append(
+                {
+                    "date": day,
+                    "n_on": metric["n_on"],
+                    "concentration_on": concentration["on"],
+                    "margin_on": margin["on"],
+                    "index_on": metric["on"],
+                }
+            )
+    return output
 
 
 def _load_research_results(path: Path) -> dict[str, Any]:
