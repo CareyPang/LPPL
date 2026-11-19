@@ -1,0 +1,148 @@
+{
+  "rule_version": "stage-breadth-1",
+  "mode": "research_replay",
+  "first_publication_at": null,
+  "first_evaluable": "2025-11-28",
+  "cutoff": "2026-11-18",
+  "evaluable_sessions": 235,
+  "phase_days": {
+    "sustained_decline": 87,
+    "mixed": 21,
+    "medium_up": 44,
+    "early_decline": 34,
+    "short_rebound": 49
+  },
+  "maturity_days": {
+    "middle_late": 90,
+    "unclear": 29,
+    "early": 116
+  },
+  "top_window_sessions": {
+    "rebound_end": 5,
+    "stage_top": 10
+  },
+  "top_right_confirmation_sessions": {
+    "rebound_end": 5,
+    "stage_top": 20
+  },
+  "tasks": {
+    "rebound_end": {
+      "first_watches": 15,
+      "opportunity_peaks": 10,
+      "mature_alerts": 15,
+      "hits": 4,
+      "missed": 6,
+      "false_alerts": 11,
+      "immature_alerts": 0,
+      "max_scorable_lead": 4,
+      "lead_ge5": null,
+      "median_lead": 1.0
+    },
+    "stage_top": {
+      "first_watches": 13,
+      "opportunity_peaks": 5,
+      "mature_alerts": 13,
+      "hits": 3,
+      "missed": 2,
+      "false_alerts": 10,
+      "immature_alerts": 0,
+      "max_scorable_lead": 9,
+      "lead_ge5": 1,
+      "median_lead": 3
+    },
+    "rebound": {
+      "first_watches": 9,
+      "ret1_n": 9,
+      "ret1_mean": -0.0011209102086773776,
+      "ret1_positive": 4,
+      "ret5_n": 8,
+      "ret5_mean": -0.00852114918622697,
+      "ret5_positive": 2,
+      "ret10_n": 8,
+      "ret10_mean": 0.0008009727924611493,
+      "ret10_positive": 5,
+      "best_close_ret10_n": 8,
+      "best_close_ret10_mean": 0.009023331420340425,
+      "worst_close_ret10_n": 8,
+      "worst_close_ret10_mean": -0.021048742183782693,
+      "best_intraday_high_ret10_n": 8,
+      "best_intraday_high_ret10_mean": 0.013716818212379675,
+      "max_close_rebound10_n": 8,
+      "max_close_rebound10_mean": 0.026818412962086674
+    },
+    "reversal": {
+      "first_watches": 20,
+      "mature_alerts": 17,
+      "immature_alerts": 3,
+      "missing_followup": 0,
+      "held": 5,
+      "had_retest": 12,
+      "higher_low": 6,
+      "breadth_improved": 4,
+      "reversal": 3
+    }
+  },
+  "latest": {
+    "schema": "breadth-alerts.v1",
+    "rule_version": "stage-breadth-1",
+    "asof": "2026-11-18",
+    "phase": {
+      "id": "sustained_decline",
+      "label": "下跌已持续一段时间",
+      "asof": "2026-11-17",
+      "features": {
+        "ret5": -0.021602094153666318,
+        "ret20": -0.040368419688714074,
+        "ret60": -0.09995197925202381,
+        "from_high20": -0.034593951453688376,
+        "from_low20": 0.0,
+        "from_high60": -0.10167754900460335,
+        "from_low60": 0.0,
+        "days_since_high20": 19,
+        "days_since_low20": 0,
+        "p20_change5": -0.29203491726245445,
+        "p60_change5": -0.1004679592208873
+      },
+      "maturity": "middle_late",
+      "maturity_label": "这段下跌已持续多日",
+      "leg_sessions": 5
+    },
+    "state": "watch",
+    "alerts": [
+      {
+        "id": "stage-breadth-1:rebound:2026-11-13",
+        "kind": "rebound",
+        "trigger_date": "2026-11-13",
+        "phase_at_trigger": "sustained_decline",
+        "evidence": "research_replay",
+        "level": "watch",
+        "title": "短线可能反弹",
+        "message": "下跌已持续一段时间，少数上涨股的平均成交更活跃。",
+        "reasons": [
+          "平均每只下跌股成交额是上涨股的0.54倍，处在近期较低位置。",
+          "上证收盘比上一交易日跌0.59%，上涨股票占比由15.7%变为13.7%。",
+          "收盘高于过去20日、60日平均价的股票分别占27.2%和18.3%。",
+          "全市场成交额是此前20日平均值的0.99倍。",
+          "收盘高于过去250日平均价的股票占11.0%。",
+          "可同合约对比的4种股指期货中，相对现货走强0种、走弱4种。"
+        ],
+        "next_check": "看接下来指数能否回升、上涨家数能否扩大。",
+        "update_date": "2026-11-13",
+        "active": true,
+        "is_new": false
+      }
+    ],
+    "evidence": "research_replay",
+    "reason": ""
+  },
+  "inputs": [
+    {
+      "name": "rows.csv",
+      "sha256": "21bbb3c98ba88b6c52c88c93fef640c3b2cd60cfc6e0ca3b4cbf5a3c5a110acc"
+    },
+    {
+      "name": "index.json",
+      "sha256": "55f3547596f790c1a9fa1e36e0270e7b27c6bde1344673e178cf3ac6b5448430"
+    }
+  ]
+}
