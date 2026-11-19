@@ -64,6 +64,15 @@ jobs:
       - name: Install project
         id: install
         run: python -m pip install -e .
+      - name: Restore CSIndex valuation cache
+        id: index_valuation_cache
+        if: steps.install.outcome == 'success'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache/valuation
+          key: market-index-valuation-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            market-index-valuation-v1-
       - name: Build stock autocomplete list
         id: stock_list
         if: steps.install.outcome == 'success'
@@ -119,6 +128,12 @@ jobs:
           if [[ "$limit_ok" != "true" ]]; then
             echo "limit_pools failed; keeping the previous published snapshot"
           fi
+      - name: Save CSIndex valuation cache
+        if: always() && steps.fetch.outcome == 'success' && steps.index_valuation_cache.outputs.cache-primary-key != ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/cache/valuation
+          key: ${{ steps.index_valuation_cache.outputs.cache-primary-key }}
       - name: Fetch LHB seat review
         id: lhb_seats
         if: always() && steps.install.outcome == 'success' && steps.fetch.outcome == 'success'

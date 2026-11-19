@@ -27,6 +27,13 @@ BREADTH_FIXTURE = (
     / "fixtures"
     / "breadth_latest.json"
 )
+VALUATION_FIXTURE = (
+    Path(__file__).resolve().parents[2]
+    / "tests"
+    / "fixtures"
+    / "market"
+    / "valuation_percentiles.json"
+)
 TOP_RISK_FIXTURE = (
     Path(__file__).resolve().parents[2]
     / "frontend"
@@ -1834,6 +1841,40 @@ def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     expect(
         page.locator(".odn-sidebar .odn-side-link").filter(has_text="情绪")
     ).to_have_attribute("aria-current", "location")
+
+
+@pytest.mark.e2e
+def test_market_valuation_macro_tab_shows_legu_monthly_pe_percentiles(page: Page) -> None:
+    percentiles = json.loads(VALUATION_FIXTURE.read_text(encoding="utf-8"))
+
+    def add_percentile_fixture(route) -> None:
+        response = route.fetch()
+        payload = response.json()
+        for code, values in percentiles.items():
+            payload["valuation"]["indices"][code].update(values)
+        payload["valuation"]["note"] = (
+            "PE1/PE2 与股息率取中证官方；PE 10 年分位使用乐咕月度静态 PE1 历史计算。"
+        )
+        route.fulfill(status=response.status, json=payload)
+
+    page.route(
+        "**/lab/mock/data/market/market_latest.json",
+        add_percentile_fixture,
+    )
+    page.goto(f"{BASE_URL}/market.html")
+    macro_tab = page.locator(".odn-sub a.odn-t").filter(has_text="宏观")
+    macro_tab.click()
+    expect(page.locator("#s-val")).to_be_visible()
+    expect(macro_tab).to_have_attribute("aria-current", "location")
+
+    rows = page.locator("#val-body tbody tr")
+    expect(rows).to_have_count(4)
+    expect(rows.nth(0).locator("td").last).to_contain_text("42%")
+    expect(rows.nth(0).locator("td").last).to_contain_text(
+        "乐咕月度，自 2016 年起，n=120"
+    )
+    expect(page.locator("#val-body")).not_to_contain_text("源文件只有近")
+    expect(page.locator("#val-body .note")).to_contain_text("乐咕月度静态 PE1 历史")
 
 
 @pytest.mark.e2e

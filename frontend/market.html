@@ -1214,9 +1214,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (!keys.length) { $('val-body').innerHTML = `<p class="fail">${f || '该源本次未取到：无数据'}</p>`; return; }
     $('val-body').innerHTML = (f ? `<p class="fail">${f}</p>` : '') +
       `<div style="overflow-x:auto"><table style="min-width:640px"><thead><tr><th>指数</th><th>数据日</th><th class="r">PE（静态）</th><th class="r">PE（滚动）</th><th class="r">股息率（静态）</th><th class="r">股息率（滚动）</th><th class="r">PE 10 年分位</th></tr></thead><tbody>
-       ${keys.map((k) => { const r = I[k]; return `<tr><td>${names[k]} ${k}</td><td>${E(r.date || '—')}</td><td class="r">${num(r.pe1) ? r.pe1.toFixed(2) : '—'}</td><td class="r">${num(r.pe2) ? r.pe2.toFixed(2) : '—'}</td>
+       ${keys.map((k) => {
+         const r = I[k], hasPercentile = num(r.pe_pct10y);
+         const percentile = hasPercentile ? (r.pe_pct10y * 100).toFixed(0) + '%' : '—';
+         const percentileNote = r.pe_pct_error
+           ? `乐咕月度取数失败：${E(r.pe_pct_error)}`
+           : hasPercentile
+             ? `乐咕月度，自 ${E(String(r.pe_pct_start || '').slice(0, 4))} 年起，n=${E(r.pe_pct_n ?? 0)}（历史分位，不是预测）`
+             : '乐咕月度历史分位暂不可用';
+         return `<tr><td>${names[k]} ${k}</td><td>${E(r.date || '—')}</td><td class="r">${num(r.pe1) ? r.pe1.toFixed(2) : '—'}</td><td class="r">${num(r.pe2) ? r.pe2.toFixed(2) : '—'}</td>
          <td class="r">${num(r.dy1) ? r.dy1.toFixed(2) + '%' : '—'}</td><td class="r">${num(r.dy2) ? r.dy2.toFixed(2) + '%' : '—'}</td>
-         <td class="r">${num(r.pe1_pct_10y) ? (r.pe1_pct_10y * 100).toFixed(0) + '%（n=' + E(r.history_rows) + '，历史分位，不是预测）' : '—（源文件只有近 ' + E(r.history_rows ?? 0) + ' 行）'}</td></tr>`; }).join('')}
+         <td class="r">${percentile}<small style="display:block;color:var(--ink-3);font-size:11px">${percentileNote}</small></td></tr>`;
+       }).join('')}
        </tbody></table></div><p class="note">${E(V.note || '')}</p>`;
   }
 
