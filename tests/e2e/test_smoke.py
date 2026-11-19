@@ -34,6 +34,13 @@ VALUATION_FIXTURE = (
     / "market"
     / "valuation_percentiles.json"
 )
+TOP_RISK_FIXTURE = (
+    Path(__file__).resolve().parents[2]
+    / "frontend"
+    / "tests"
+    / "fixtures"
+    / "top_risk_latest.json"
+)
 NAV_PAGES = (
     "home.html",
     "index.html?code=sh000001",
@@ -260,6 +267,10 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "**/lab/mock/data/market/breadth_latest.json",
         lambda route: route.fulfill(path=str(BREADTH_FIXTURE)),
     )
+    page.route(
+        "**/lab/mock/data/market/top_risk_latest.json",
+        lambda route: route.fulfill(path=str(TOP_RISK_FIXTURE)),
+    )
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
     expect(page.locator("#s-lhb-seats")).to_be_visible()
@@ -332,7 +343,69 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         breadth.locator(".breadth-basis-table tbody tr").first.locator("td").nth(4)
     ).to_have_text("20.00")
     expect(breadth.locator(".breadth-history-table tbody tr")).to_have_count(1)
+    top_risk = page.locator("#s-top-risk")
+    expect(top_risk).to_have_attribute("data-ai-context", "顶部风险区")
+    expect(top_risk.locator(".top-risk-card")).to_have_count(4)
+    expect(top_risk.locator(".top-risk-common-item")).to_have_count(3)
+    expect(top_risk.locator(".top-risk-common-item .top-risk-bar span")).to_have_count(3)
+    expect(top_risk.locator(".top-risk-stat")).to_have_count(4)
+    expect(top_risk.locator(".top-risk-stats")).to_contain_text(
+        "上证指数 · n=7 段 · 42.9% · 基准 12.9%"
+    )
+    expect(top_risk.locator(".top-risk-card").first).to_contain_text("满足 3/3 项")
+    for card in top_risk.locator(".top-risk-card").all():
+        expect(card).not_to_contain_text("集中度")
+        expect(card).not_to_contain_text("融资余额")
+        expect(card).not_to_contain_text("宽度回落")
+    expect(top_risk.locator(".top-risk-card").first).to_contain_text(
+        "离250日低点 22.0%"
+    )
+    expect(top_risk.locator(".top-risk-table tbody tr").first).to_contain_text(
+        "待定（未满120日）"
+    )
+    verdicts = top_risk.locator(".top-risk-table tbody .top-risk-verdict")
+    expect(verdicts).to_have_count(2)
+    expect(verdicts.filter(has_text="顶部区间")).to_have_count(1)
+    expect(verdicts.filter(has_text="待定（未满120日）")).to_have_count(1)
+
+    def assert_verdicts_fit() -> None:
+        for cell in verdicts.all():
+            cell.scroll_into_view_if_needed()
+            assert cell.evaluate(
+                """cell => {
+                  const scroller = cell.closest('.table-scroll').getBoundingClientRect();
+                  const rect = cell.getBoundingClientRect();
+                  return cell.scrollWidth <= cell.clientWidth + 1 &&
+                    rect.left >= scroller.left - 1 && rect.right <= scroller.right + 1;
+                }"""
+            )
+
+    assert_verdicts_fit()
     page.set_viewport_size({"width": 390, "height": 844})
+    assert_verdicts_fit()
+    visible_episodes = top_risk.locator(
+        ".top-risk-table tbody tr:not([hidden])"
+    )
+    expect(visible_episodes).to_have_count(2)
+    filters = top_risk.get_by_role("group", name="按指数筛选历史时段")
+    filters.get_by_role("button", name="沪深300", exact=True).click()
+    expect(visible_episodes).to_have_count(1)
+    expect(visible_episodes.first).to_contain_text("沪深300")
+    expect(top_risk.locator('.top-risk-stat[data-index="沪深300"]')).to_have_class(
+        "top-risk-stat is-highlighted"
+    )
+    filters.get_by_role("button", name="科创50", exact=True).click()
+    expect(visible_episodes).to_have_count(0)
+    expect(top_risk.locator(".top-risk-filter-empty")).to_be_visible()
+    expect(top_risk.locator('.top-risk-stat[data-index="科创50"]')).to_have_class(
+        "top-risk-stat is-highlighted"
+    )
+    filters.get_by_role("button", name="全部", exact=True).click()
+    expect(visible_episodes).to_have_count(2)
+    assert "is-highlighted" not in top_risk.locator(
+        '.top-risk-stat[data-index="沪深300"]'
+    ).get_attribute("class")
+    assert top_risk.evaluate("(section) => section.scrollWidth <= section.clientWidth + 1")
     dimensions = page.evaluate(
         "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
     )

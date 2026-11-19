@@ -234,6 +234,31 @@ def test_market_daily_restores_and_saves_csindex_valuation_cache_around_fetch():
     assert save["with"]["path"] == "data/cache/valuation"
 
 
+def test_top_risk_runs_after_breadth_and_publishes_the_snapshot():
+    workflow = _workflow("market_daily.yml")
+    steps = workflow["jobs"]["collect"]["steps"]
+    breadth = next(step for step in steps if step.get("id") == "breadth")
+    top_risk = next(step for step in steps if step.get("id") == "top_risk")
+    publish = next(
+        step for step in steps if step.get("name") == "Publish to stock-results"
+    )
+    run = top_risk["run"]
+
+    assert steps.index(top_risk) > steps.index(breadth)
+    assert top_risk["continue-on-error"] is True
+    assert "research.data.top_risk" in run
+    assert '--date "${{ steps.fetch.outputs.asof }}"' in run
+    assert "--breadth out/market/breadth_latest.json" in run
+    assert 'previous="out/previous-market/top_risk_latest.json"' in run
+    assert '--previous "$previous"' in run
+    assert "steps.top_risk.outcome == 'success'" in publish["if"]
+    assert (
+        "cp out/market/top_risk_latest.json market/top_risk_latest.json"
+        in publish["run"]
+    )
+    assert "git add market/top_risk_latest.json" in publish["run"]
+
+
 def test_dip_env_workflow_publishes_when_options_archive_is_skipped():
     workflow = _workflow("dip_env.yml")
     publish = next(

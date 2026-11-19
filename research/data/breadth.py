@@ -60,6 +60,8 @@ ROW_FIELDS = (
     "lu",
     "ld",
     "amount_yi",
+    "top50_share",
+    "top100_share",
     "amount_ratio20",
     "P20",
     "P60",
@@ -422,6 +424,7 @@ def compute_daily_metrics(
     amount_total = float(stocks["amount"].sum())
     amount_up = float(stocks.loc[up, "amount"].sum())
     amount_down = float(stocks.loc[down, "amount"].sum())
+    ordered_amounts = stocks["amount"].fillna(0).sort_values(ascending=False)
     volume_up = float(stocks.loc[up, "volume"].sum())
     volume_down = float(stocks.loc[down, "volume"].sum())
     adv, dec = int(up.sum()), int(down.sum())
@@ -481,6 +484,16 @@ def compute_daily_metrics(
         "lu": int(up_limit.sum()),
         "ld": int(down_limit.sum()),
         "amount_yi": amount_total / 100_000_000,
+        "top50_share": (
+            float(ordered_amounts.head(50).sum() / amount_total)
+            if amount_total > 0
+            else None
+        ),
+        "top100_share": (
+            float(ordered_amounts.head(100).sum() / amount_total)
+            if amount_total > 0
+            else None
+        ),
     }
     spot_by_name = {
         label: spots.get(code) for label, code in BASIS_SPOT_CODES.values()
@@ -681,7 +694,16 @@ def _normalize_rows(frame: pd.DataFrame, close_matrix: pd.DataFrame) -> pd.DataF
         .drop_duplicates("date", keep="last")
         .reset_index(drop=True)
     )
-    for field in ("sh", "red", "amt_up", "trin_amt", "trin_vol", "amount_yi"):
+    for field in (
+        "sh",
+        "red",
+        "amt_up",
+        "trin_amt",
+        "trin_vol",
+        "amount_yi",
+        "top50_share",
+        "top100_share",
+    ):
         result[field] = pd.to_numeric(result[field], errors="coerce")
     result["adv"] = pd.to_numeric(result["adv"], errors="coerce").fillna(0).astype(int)
     result["dec"] = pd.to_numeric(result["dec"], errors="coerce").fillna(0).astype(int)
@@ -720,6 +742,8 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
             "lu",
             "ld",
             "amount_yi",
+            "top50_share",
+            "top100_share",
             "amount_ratio20",
             "P20",
             "P60",
@@ -740,12 +764,22 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
         "MCL",
         "trin_amt",
         "amount_yi",
+        "top50_share",
+        "top100_share",
         "amount_ratio20",
         "basis_ann_mean",
     )
     history = []
     for _, row in frame.tail(60).iterrows():
         history.append({field: _json_scalar(row.get(field)) for field in history_fields})
+    risk_history = []
+    for _, row in frame.tail(260).iterrows():
+        risk_history.append(
+            {
+                field: _json_scalar(row.get(field))
+                for field in ("date", "MCL", "top50_share", "top100_share")
+            }
+        )
     return {
         "schema": "breadth.v1",
         "asof": str(latest_data["date"]),
@@ -754,6 +788,7 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
         "mcl_warmup_days": int(len(frame)),
         "latest": latest_data,
         "history": history,
+        "risk_history": risk_history,
         "warnings": [],
     }
 
@@ -802,6 +837,11 @@ def collect_breadth(
     closes_path = cache_dir / "close_matrix.parquet"
     cached_rows = _load_rows(rows_path)
     cached_closes = _load_close_matrix(closes_path)
+    if rows_path.is_file():
+        cached_columns = set(pd.read_csv(rows_path, nrows=0).columns)
+        if not {"top50_share", "top100_share"}.issubset(cached_columns):
+            cached_rows = pd.DataFrame(columns=ROW_FIELDS)
+            cached_closes = pd.DataFrame()
     if not cached_rows.empty:
         cached_rows = cached_rows.loc[cached_rows["date"].map(_date_text) <= day]
     if not cached_closes.empty:
