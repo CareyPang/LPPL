@@ -235,6 +235,29 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
     expect(page.locator("#market-date")).to_have_text(
         "行情时间 2026-11-18 15:00:00"
     )
+    with page.expect_download() as card_download:
+        page.locator("#share-card").click()
+    card = card_download.value
+    assert card.suggested_filename.endswith("2026-11-18-30m-research.svg")
+    card_text = card.path().read_text(encoding="utf-8")
+    assert "30 分钟行情 · fixture" in card_text
+    assert "2026-11-18 15:00:00" in card_text
+    assert "tencent_fqkline" not in card_text
+    # Verify what the actual PNG exporter writes to its header.
+    page.evaluate("""() => {
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      window.exportHeader = [];
+      CanvasRenderingContext2D.prototype.fillText = function (text, ...args) {
+        if (!this.canvas.isConnected) window.exportHeader.push(String(text));
+        return original.call(this, text, ...args);
+      };
+    }""")
+    with page.expect_download() as png_download:
+        page.locator("#share-screenshot").click()
+    assert png_download.value.suggested_filename.endswith("2026-11-18-30m-chart.png")
+    header = "\n".join(page.evaluate("window.exportHeader"))
+    assert "30 分钟行情 · fixture" in header
+    assert "tencent_fqkline" not in header
     notice = page.locator("#intraday-notice").bounding_box()
     chart = page.locator("#chart-host").bounding_box()
     assert notice and chart and chart["y"] >= notice["y"] + notice["height"] + 12
@@ -254,6 +277,13 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
         assert page.evaluate(
             "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
         ), f"chart page overflows at {width}px"
+    page.locator('#period-selector [data-period="60"]').click()
+    expect(page.locator("#intraday-notice")).to_contain_text("分钟行情读取失败")
+    expect(page.locator("#share-card")).to_be_disabled()
+    expect(page.locator("#share-screenshot")).to_be_disabled()
+    page.locator('#period-selector [data-period="d"]').click()
+    expect(page.locator("#share-card")).to_be_enabled()
+    expect(page.locator("#data-source")).to_have_text("tencent_fqkline · 未复权")
     assert any(
         method == "GET"
         and (urlsplit(url).hostname or "").endswith(".workers.dev")
@@ -435,6 +465,9 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "上证指数 · n=7 段 · 42.9% · 基准 12.9%"
     )
     expect(top_risk.locator(".top-risk-card").first).to_contain_text("满足 3/3 项")
+    expect(top_risk.locator(".top-risk-card").first).to_contain_text("n=248")
+    expect(top_risk.locator(".top-risk-common")).to_contain_text("n=251")
+    expect(top_risk.locator(".top-risk-card").nth(1)).to_contain_text("分位样本数或数值未记录")
     for card in top_risk.locator(".top-risk-card").all():
         expect(card).not_to_contain_text("集中度")
         expect(card).not_to_contain_text("融资余额")

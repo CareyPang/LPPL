@@ -29,7 +29,7 @@ def max_drawdown(values: np.ndarray) -> float:
     return float(np.min(values / peaks - 1))
 
 
-def _metrics(
+def execution_metrics(
     equity: pd.DataFrame,
     trades: list[dict],
     positions: list[bool],
@@ -192,5 +192,5 @@ def run(
             }
         )
     equity = pd.DataFrame(rows)
-    metrics = _metrics(equity, trades, positions)
+    metrics = execution_metrics(equity, trades, positions)
     return equity, trades, metrics

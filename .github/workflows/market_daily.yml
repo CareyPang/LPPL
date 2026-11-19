@@ -306,7 +306,7 @@ jobs:
             cp out/market/top_risk_latest.json market/top_risk_latest.json
             git add market/top_risk_latest.json
           fi
-          if compgen -G "out/strategy/*.json" > /dev/null; then
+          if [[ "${{ steps.strategy.outcome }}" == "success" ]] && compgen -G "out/strategy/*.json" > /dev/null; then
             mkdir -p strategy
             cp out/strategy/*.json strategy/
             git add strategy/*.json

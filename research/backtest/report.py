@@ -5,7 +5,7 @@ from typing import Any
 
 import pandas as pd
 
-from .engine import EngineConfig, run
+from .engine import EngineConfig, execution_metrics, run
 from .rules import lppls_target, select_top_risk_variant, top_risk_target
 
 PREREG_DOC = "docs/preregistration_strategy_v1.md"
@@ -93,7 +93,9 @@ def _signal_quality(
         if target.iloc[index - 1] == 1 and target.iloc[index] == 0
     ]
     sample_dates = [date for date in dates if date in sample_days]
-    sample_signals = [signal for signal in signals if signal in sample_days]
+    sample_signals = [
+        signal for signal in signals if start <= signal <= end and signal in sample_days
+    ]
     active_zones = [
         (left, right)
         for left, right in zones
@@ -138,17 +140,29 @@ def _run_rule(
         if _segment_dates(prices, name)[0] <= _segment_dates(prices, name)[1]
     }
     segment_ranges["all"] = [first, last]
+    dates = prices["date"].tolist()
+    equity, trades, all_metrics = run(prices, target, EngineConfig())
+    all_trades = _label_trades(trades, segment_ranges)
+    held = pd.Series(False, index=equity.index)
+    for trade in trades:
+        # A sale at the open ends exposure for that day's close.
+        position = equity["date"].ge(trade["entry"])
+        if trade["exit"] is not None:
+            position &= equity["date"].lt(trade["exit"])
+        held |= position
     metrics: dict[str, dict[str, Any]] = {}
     for segment, (start, end) in segment_ranges.items():
-        selected = prices.loc[prices["date"].between(start, end)].copy()
-        if selected.empty:
-            continue
-        selected_target = target.reindex(selected["date"]).fillna(0)
-        selected_target.index = selected["date"]
-        equity, trades, result = run(selected, selected_target, EngineConfig())
+        result = all_metrics
+        if segment != "all":
+            mask = equity["date"].between(start, end)
+            indices = equity.index[mask]
+            # Include the preceding close so the first session's gain or loss counts.
+            segment_equity = equity.iloc[max(0, indices[0] - 1) : indices[-1] + 1]
+            segment_trades = [trade for trade in all_trades if trade["segment"] == segment]
+            result = execution_metrics(segment_equity, segment_trades, held[mask].tolist())
         quality = _signal_quality(
-            selected["date"].tolist(),
-            selected_target.reset_index(drop=True),
+            dates,
+            target.reindex(dates).reset_index(drop=True),
             top_days,
             sample_days,
             zones,
@@ -157,12 +171,9 @@ def _run_rule(
         )
         evidence = "dev_only" if segment == "dev" else "descriptive"
         metrics[segment] = {**result, **quality, "evidence": evidence}
-        if segment == "all":
-            all_equity = equity.to_dict("records")
-            all_trades = _label_trades(trades, segment_ranges)
     return {
         "metrics": metrics,
-        "equity": all_equity,
+        "equity": equity.to_dict("records"),
         "trades": all_trades,
         "segments": segment_ranges,
         "properties": {
@@ -207,7 +218,7 @@ def build_strategy_report(
         (dev_dates[0], dev_dates[-1]) if dev_dates else ("", "")
     )
     for variant in variants.values():
-        dev_n_on = n_on.reindex(dev_dates).fillna(0)
+        dev_n_on = n_on.reindex(dev_dates)
         dev_target = top_risk_target(dev_n_on, variant["K"], variant["M"])
         dev_target.index = dev_dates
         variant.update(
@@ -222,7 +233,7 @@ def build_strategy_report(
             )
         )
     tr1_target = top_risk_target(
-        n_on.reindex(prices["date"]).fillna(0), selected["K"], selected["M"]
+        n_on.reindex(prices["date"]), selected["K"], selected["M"]
     )
     tr1_target.index = prices["date"]
     note_parts = []

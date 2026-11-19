@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import worker, { klineCacheTtl, obvDivergence } from '../src/index.js';
+import worker, { QueryBudget, klineCacheTtl, obvDivergence } from '../src/index.js';
 
 const ORIGIN = 'https://careypang.github.io';
+
+function environment() {
+  const values = new Map();
+  const storage = { get: async key => values.get(key), put: async (key, value) => values.set(key, value) };
+  const budget = new QueryBudget({ storage }, {});
+  return { QUERY_BUDGET: { idFromName: name => name, get: () => budget } };
+}
 
 function request(path, method = 'GET') {
   return new Request(`https://worker.test${path}`, {
@@ -92,16 +99,37 @@ test('OBV divergence does not confirm pivots in the last five bars or equal-OBV 
   assert.deepEqual(obvDivergence(equalObv).divergences, []);
 });
 
+test('an in-progress minute bar retains its price but cannot confirm an OBV divergence', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-19T06:45:00Z') });
+  const rows = divergenceBars('top').slice(0, 22).map((bar, index) => ({
+    day: new Date(Date.UTC(2026, 10, 19, 15, (index - 21) * 30)).toISOString().slice(0, 19).replace('T', ' '),
+    open: bar.o, high: bar.h, low: bar.l, close: bar.c, volume: bar.v
+  }));
+  await withFetch(async () => Response.json(rows), async () => {
+    const read = async () => (await worker.fetch(request('/kline?code=600519&period=30'), environment())).json();
+    const during = await read();
+    assert.equal(during.asof, '2026-11-19 15:00:00');
+    assert.equal(during.fetched_at, '2026-11-19T06:45:00.000Z');
+    assert.equal(during.last_bar_ended, false);
+    assert.deepEqual(during.divergences, []);
+    t.mock.timers.tick(15 * 60 * 1000);
+    const after = await read();
+    assert.equal(after.last_bar_ended, true);
+    assert.equal(after.divergences[0].confirmed_at, after.asof);
+  });
+});
+
 test('GET /kline reads one Sina symbol, computes OBV, and reports source and limits', async () => {
   const calls = [];
   await withFetch(async (url, init) => {
     calls.push({ url: new URL(String(url)), init });
     return Response.json(sinaBars());
   }, async () => {
-    const response = await worker.fetch(request('/kline?code=600519&period=30'), {});
+    const response = await worker.fetch(request('/kline?code=600519&period=30'), environment());
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('Access-Control-Allow-Origin'), ORIGIN);
-    assert.match(response.headers.get('Cache-Control'), /^public, max-age=(60|600)$/);
+    const maxAge = /^public, max-age=(\d+)$/.exec(response.headers.get('Cache-Control'));
+    assert.ok(maxAge && Number(maxAge[1]) <= 600);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].url.hostname, 'money.finance.sina.com.cn');
     assert.equal(calls[0].url.searchParams.get('symbol'), 'sh600519');
@@ -134,7 +162,7 @@ test('GET /kline falls back to Tencent when Sina fails', async () => {
     assert.equal(parsed.searchParams.get('param'), 'sh600519,m60,,640');
     return Response.json({ code: 0, data: { sh600519: { m60: rows } } });
   }, async () => {
-    const response = await worker.fetch(request('/kline?code=600519&period=60'), {});
+    const response = await worker.fetch(request('/kline?code=600519&period=60'), environment());
     assert.equal(response.status, 200);
     const result = await response.json();
     assert.equal(result.source, 'tencent');
@@ -155,7 +183,7 @@ test('GET /kline daily uses Tencent qfq bars and never asks for a market-wide li
       ['2026-11-18', '10.5', '11', '11.5', '10', '200'],
     ] } } });
   }, async () => {
-    const response = await worker.fetch(request('/kline?code=600519&period=d'), {});
+    const response = await worker.fetch(request('/kline?code=600519&period=d'), environment());
     assert.equal(response.status, 200);
     const result = await response.json();
     assert.equal(result.source, 'tencent_fqkline_qfq');
@@ -170,7 +198,7 @@ test('GET /kline reports specific source failures as KLINE_UNAVAILABLE', async (
   await withFetch(async (url) => String(url).includes('sina')
     ? new Response('private upstream body', { status: 503 })
     : new Response('private upstream body', { status: 429 }), async () => {
-    const response = await worker.fetch(request('/kline?code=600519&period=30'), {});
+    const response = await worker.fetch(request('/kline?code=600519&period=30'), environment());
     assert.equal(response.status, 502);
     const result = await response.json();
     assert.equal(result.error_code, 'KLINE_UNAVAILABLE');
@@ -179,7 +207,8 @@ test('GET /kline reports specific source failures as KLINE_UNAVAILABLE', async (
   });
 });
 
-test('GET /kline caches a single symbol and period result', async () => {
+test('GET /kline cache hits never extend past the next Shanghai session or require upstream budget', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-16T04:59:20Z') });
   const previous = globalThis.caches;
   const previousHas = Object.hasOwn(globalThis, 'caches');
   const cache = memoryCache();
@@ -190,13 +219,21 @@ test('GET /kline caches a single symbol and period result', async () => {
       calls.push(true);
       return Response.json(sinaBars());
     }, async () => {
-      const first = await worker.fetch(request('/kline?code=600519&period=30'), {});
+      const first = await worker.fetch(request('/kline?code=600519&period=30'), environment());
+      assert.equal(first.headers.get('Cache-Control'), 'public, max-age=40');
+      t.mock.timers.tick(35000);
       const second = await worker.fetch(request('/kline?code=600519&period=30'), {});
       assert.equal(first.headers.get('X-Kline-Cache'), 'MISS');
       assert.equal(second.headers.get('X-Kline-Cache'), 'HIT');
+      assert.equal(second.headers.get('Cache-Control'), 'public, max-age=5');
       assert.equal((await first.json()).source, 'sina');
       assert.equal((await second.json()).source, 'sina');
       assert.equal(calls.length, 1);
+      t.mock.timers.tick(5000);
+      const third = await worker.fetch(request('/kline?code=600519&period=30'), environment());
+      assert.equal(third.headers.get('X-Kline-Cache'), 'MISS');
+      assert.equal(third.headers.get('Cache-Control'), 'public, max-age=60');
+      assert.equal(calls.length, 2);
     });
   } finally {
     if (previousHas) globalThis.caches = previous;
@@ -216,4 +253,48 @@ test('kline cache is short during mainland trading sessions and longer otherwise
   assert.equal(klineCacheTtl(new Date('2026-11-16T03:00:00Z')), 60);
   assert.equal(klineCacheTtl(new Date('2026-11-16T04:00:00Z')), 600);
   assert.equal(klineCacheTtl(new Date('2026-11-15T02:00:00Z')), 600);
+  assert.equal(klineCacheTtl(new Date('2026-11-16T01:29:20Z')), 40);
+  assert.equal(klineCacheTtl(new Date('2026-11-16T04:59:55Z')), 5);
+  assert.equal(klineCacheTtl(new Date('2026-11-16T04:59:59.900Z')), 0);
+});
+
+test('uncached kline reads require a functioning budget and stop upstream work at the per-IP limit', async () => {
+  const path = '/kline?code=600519&period=60';
+  const env = environment();
+  let calls = 0;
+  await withFetch(async () => { calls += 1; return Response.json(sinaBars()); }, async () => {
+    assert.equal((await worker.fetch(request(path), {})).status, 503);
+    assert.equal(calls, 0);
+    for (let i = 0; i < 30; i++) assert.equal((await worker.fetch(request(path), env)).status, 200);
+    const limited = await worker.fetch(request(path), env);
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('Retry-After'), '60');
+    assert.equal(calls, 30);
+  });
+});
+
+test('Sina timeout leaves time for Tencent before the chart deadline', async (t) => {
+  const rows = [['202611191130', '10', '10.5', '11', '9.5', '100']];
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let beginSina, beginTencent;
+  const sinaStarted = new Promise(resolve => { beginSina = resolve; });
+  const tencentStarted = new Promise(resolve => { beginTencent = resolve; });
+  await withFetch(async (url, init) => {
+    if (String(url).includes('sina')) {
+      beginSina();
+      return new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(new Error('timeout'))));
+    }
+    beginTencent();
+    return new Promise((resolve, reject) => {
+      init.signal.addEventListener('abort', () => reject(new Error('timeout')));
+      setTimeout(() => resolve(Response.json({ data: { sh600519: { m60: rows } } })), 4500);
+    });
+  }, async () => {
+    const pending = worker.fetch(request('/kline?code=600519&period=60'), environment());
+    await sinaStarted;
+    t.mock.timers.tick(5000);
+    await tencentStarted;
+    t.mock.timers.tick(4500);
+    assert.equal((await (await pending).json()).source, 'tencent');
+  });
 });

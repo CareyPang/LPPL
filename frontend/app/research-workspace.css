@@ -15,4 +15,13 @@
 @media(min-width:1200px){body.research-workspace-page.odn-sidebar-page{padding-left:208px}}
 .skip-link:not(:focus):not(:focus-visible){visibility:visible;transform:translateY(-200%)}
 .skip-link:focus,.skip-link:focus-visible{top:12px;transform:none;visibility:visible}
+#archive-panel {border-block:1px solid var(--line);padding:12px 0;margin:16px 0;overflow-wrap:anywhere}
+#archive-panel h3 {margin:0;font-size:16px}
+#archive-controls {display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#archive-controls label {display:grid;gap:4px;color:var(--muted);font-size:12px}
+#archive-controls input,#archive-controls select {min-height:44px;max-width:100%;border:1px solid var(--line);border-radius:6px;background:white;padding:4px 8px}
+#archive-records article {border-top:1px solid var(--line);padding:10px 0}
+#archive-records a {display:inline-flex;align-items:center;min-height:44px}
+#archive-records a + a {margin-inline-start:16px}
+#archive-records p {margin:4px 0;font-size:13px}
 @media (min-width:801px) and (max-width:1199px){.workspace-grid{grid-template-columns:1fr}.detail-panel{position:static}}

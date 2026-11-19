@@ -200,3 +200,18 @@ test('descriptive at scale, stock or band keeps n gate and is never upgraded by 
   assert.match(card.note, /历史分位，不是预测/);
   assert.equal(Core.bandEvidenceCode('research_candidate', { evidence: 'test' }), 'research_candidate');
 });
+test('minute export includes its own source and bar coverage and omits the daily model', () => {
+  const minute = Share.intradayRecord({
+    symbol: '600519', name: '贵州茅台', exchange: '上交所', quoteUnit: 'CNY',
+    dataSource: 'DAILY_ONLY', modelAsOf: '2020-01-01', predictionId: 'DAILY_PREDICTION'
+  }, {
+    period: '30', source: 'sina', lastBarEnded: false, fetchedAt: '2026-11-18T06:40:00Z', limits: {
+      first: '2026-11-17 10:00:00', last: '2026-11-18 15:00:00', n_bars: 20
+    }
+  });
+  assert.match(Share.lines(minute).join('\n'), /30 分钟行情 · sina/);
+  assert.match(Share.svg(minute), /2026-11-18 15:00:00/);
+  assert.match(Share.svg(minute), /末根未收盘/);
+  assert.match(Share.svg(minute), /2026-11-18T06:40:00Z/);
+  assert.doesNotMatch(Share.svg(minute), /DAILY_|2020-01-01|Prediction ID/);
+});

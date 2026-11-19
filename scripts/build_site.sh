@@ -73,3 +73,9 @@ PY
 fi
 mkdir -p "$SITE/lab/mock/data"
 python3 "$ROOT/scripts/build_changelog.py" --root "$ROOT" --out "$SITE/lab/mock/data/changelog.json"
+archive_args=()
+if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
+  archive_args+=(--stock-ref refs/heads/stock-results)
+fi
+python3 "$ROOT/scripts/build_watchlist_archive.py" --root "$ROOT" \
+  --out "$SITE/lab/mock/data/watchlist-archive" "${archive_args[@]}"

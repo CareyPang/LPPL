@@ -1813,7 +1813,7 @@ def _legu_pe_percentile(frame: pd.DataFrame, current_pe1: float, asof: str) -> d
     history = history.dropna(subset=["date", "pe"])
     history = history.loc[history["pe"].map(math.isfinite)]
     history = history.loc[history["date"] <= pd.Timestamp(asof).normalize()]
-    history = history.sort_values("date").drop_duplicates("date", keep="last")
+    history = history.drop_duplicates("date", keep="last").sort_values("date")
     if history.empty:
         raise RuntimeError(f"Legu PE history has no valid samples as of {asof}")
 
@@ -1859,8 +1859,8 @@ def _update_csindex_valuation_cache(
         merged = merged.dropna(subset=["date"])
         merged["date"] = merged["date"].dt.strftime("%Y-%m-%d")
         merged = (
-            merged.sort_values("date")
-            .drop_duplicates("date", keep="last")
+            merged.drop_duplicates("date", keep="last")
+            .sort_values("date")
             .reset_index(drop=True)
         )
         temporary = path.with_name(path.name + ".tmp")

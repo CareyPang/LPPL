@@ -129,9 +129,11 @@
       }
     }
     var focus = String(params.get('focus') || '').trim().slice(0, 200);
+    var archive = params.get('archive');
+    var badArchive = archive !== null && (!asof || !/^[a-f0-9]{64}$/.test(archive));
     return {
-      valid: !!assetType && !(requestedAsof && !asof) && (!requestedKind || requestedKind === assetType),
-      invalidReason: requestedAsof && !asof ? '历史截止日无效，请使用真实的 YYYY-MM-DD 日期；未改看最新。' :
+      valid: !!assetType && !badArchive && !(requestedAsof && !asof) && (!requestedKind || requestedKind === assetType),
+      invalidReason: badArchive ? '原档哈希或截止日无效。' : requestedAsof && !asof ? '历史截止日无效，请使用真实的 YYYY-MM-DD 日期；未改看最新。' :
         requestedKind && requestedKind !== assetType ? '资产类别与代码不匹配，请明确选择指数或股票。' : '',
       code: code,
       stockCode: stockCode,
@@ -140,6 +142,7 @@
       scale: scale,
       focus: focus,
       asof: asof,
+      archive: archive,
       from: safeFrom(params.get('from'), assetType, code || inputCode, stockCode),
     };
   }
@@ -266,7 +269,7 @@
       if (intraday && intraday.period === period && intraday.status === 'ready') {
         var limits = intraday.limits || {};
         return {
-          marketDate: '行情时间 ' + (limits.last || '未记录'),
+          marketDate: '行情时间 ' + (limits.last || '未记录') + (intraday.lastBarEnded === false ? '（末根未收盘）' : ''),
           dataSource: String(intraday.source || '未记录') + ' · ' + period + ' 分钟 · 不复权',
         };
       }

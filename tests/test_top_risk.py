@@ -8,6 +8,17 @@ from research.data import top_risk
 ASOF = "2026-11-18"
 
 
+def test_incremental_risk_states_only_use_complete_aligned_windows():
+    breadth, margin, indices = _breadth()["risk_history"], _margin_rows(), _index_histories()
+    states = top_risk.build_n_on_history(breadth, margin, indices, require_full_windows=True)
+    assert [row["date"] for row in states["sh000001"]] == [ASOF]
+    # Dropping the latest margin release must not silently reuse an older balance.
+    margin_without_previous_session = [row for row in margin if row["DIM_DATE"] != "2026-11-17"]
+    assert not top_risk.build_n_on_history(
+        breadth, margin_without_previous_session, indices, require_full_windows=True
+    )["sh000001"]
+
+
 def _breadth():
     dates = pd.date_range(end=ASOF, periods=260, freq="D")
     mcl = [0.0] * 250 + [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 1.0]
@@ -128,6 +139,37 @@ def test_margin_metrics_uses_latest_strictly_before_asof():
     assert metrics["date"] == "2026-11-17"
     assert metrics["rzye_yi"] == pytest.approx(252 / 1e8)
     assert metrics["pct252"] == 1
+    assert metrics["n"] == 252
+
+
+def test_stale_margin_cannot_create_current_risk_level(tmp_path, monkeypatch):
+    previous = tmp_path / "prior.json"
+    previous.write_bytes(b'{"asof":"2026-11-17"}')
+    breadth_path = tmp_path / "breadth.json"
+    breadth_path.write_text(json.dumps(_breadth()), encoding="utf-8")
+    stale = [row for row in _margin_rows() if row["DIM_DATE"] <= "2026-11-10"]
+    monkeypatch.setattr(top_risk, "fetch_margin_history", lambda *args, **kwargs: stale)
+    monkeypatch.setattr(top_risk, "fetch_index_history", lambda code, asof: _index_histories()[code])
+    output = tmp_path / "risk.json"
+    with pytest.raises(ValueError, match="previous trading session 2026-11-17"):
+        top_risk.run_pipeline(output, asof=ASOF, breadth_path=breadth_path, previous_path=previous)
+    assert output.read_bytes() == previous.read_bytes()
+
+
+def test_risk_snapshot_uses_actual_source_samples_across_weekend():
+    dates = pd.bdate_range(end="2026-11-16", periods=260).strftime("%Y-%m-%d").tolist()
+    breadth = _breadth()
+    for day, row in zip(dates, breadth["risk_history"], strict=True):
+        row["date"] = day
+    prices = {
+        code: [{"date": day, "close": 100} for day in dates[-250:]]
+        for code, _ in top_risk.INDEXES
+    }
+    margin = [{"date": day, "rzye": 100} for day in dates[-151:-1]]
+    snapshot = top_risk.build_snapshot(dates[-1], breadth, margin, prices)
+    assert snapshot["margin"]["date"] == "2026-11-13"
+    assert [snapshot["margin"]["n"], snapshot["indices"][0]["n"],
+            snapshot["breadth_drop"]["n"]] == [150, 250, 250]
 
 
 def test_pipeline_copies_previous_snapshot_when_source_fails(tmp_path, monkeypatch):

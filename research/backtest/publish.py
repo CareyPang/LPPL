@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from numbers import Integral
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import pandas as pd
@@ -38,6 +40,31 @@ def _strategy_prices(frame: pd.DataFrame, asof: str) -> pd.DataFrame:
     ].reset_index(drop=True)
 
 
+def _stored_states(code: str, rows: list[dict], asof: str) -> dict[str, dict]:
+    if not isinstance(rows, list):
+        raise ValueError(f"{code}: expected an array of stored risk states")
+    states = {}
+    flags = ("concentration_on", "margin_on", "index_on")
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError(f"{code}: invalid stored risk state")
+        date = row.get("date")
+        if not isinstance(date, str) or date != top_risk._date_text(date):
+            raise ValueError(f"{code}: invalid risk state date {date!r}")
+        if date in states or date > asof:
+            raise ValueError(f"{code}: duplicate or future risk state {date}")
+        count = row.get("n_on")
+        if isinstance(count, bool) or not isinstance(count, Integral) or not 0 <= count <= 3:
+            raise ValueError(f"{code}: invalid stored n_on on {date}")
+        if any(field in row for field in flags) and (
+            not all(isinstance(row.get(field), bool) for field in flags)
+            or sum(row[field] for field in flags) != count
+        ):
+            raise ValueError(f"{code}: stored risk flags disagree with n_on on {date}")
+        states[date] = row
+    return states
+
+
 def build_outputs(
     breadth_history: list[dict[str, Any]],
     margin_rows: list[dict[str, Any]],
@@ -52,19 +79,16 @@ def build_outputs(
         breadth_history,
         margin_rows,
         index_histories,
+        require_full_windows=True,
     )
     previous_states = previous_states or {}
     states = {}
     for code, rows in current_states.items():
-        merged = {
-            row["date"]: row
-            for row in previous_states.get(code, [])
-            if row.get("date") is not None
-        }
-        merged.update({row["date"]: row for row in rows})
+        merged = _stored_states(code, previous_states.get(code, []), asof)
+        for row in rows:
+            merged.setdefault(row["date"], row)
         states[code] = [merged[day] for day in sorted(merged)]
     history_dir = history_dir or ROOT / "web" / "mock" / "data"
-    out_dir.mkdir(parents=True, exist_ok=True)
     outputs = {}
     for code, _ in INDEXES:
         frame = _strategy_prices(price_frames[code], asof)
@@ -88,16 +112,24 @@ def build_outputs(
             asof=str(frame["date"].iloc[-1]),
             missing_open_days=int(frame["open"].isna().sum()),
         )
-        destination = out_dir / f"{code}.json"
-        destination.write_text(
-            json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
-            encoding="utf-8",
-        )
         outputs[code] = result
-    (out_dir / "n_on_history.json").write_text(
-        json.dumps(states, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    # Stage every byte before exposing any output. A new output directory appears
+    # in one rename; existing destinations receive complete files, with history last.
+    out_dir.parent.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(dir=out_dir.parent) as scratch:
+        staged = Path(scratch) / "strategy"
+        staged.mkdir()
+        files = {**outputs, "n_on_history": states}
+        for name, content in files.items():
+            (staged / f"{name}.json").write_text(
+                json.dumps(content, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+                encoding="utf-8",
+            )
+        if not out_dir.exists():
+            staged.rename(out_dir)
+        else:
+            for name in files:
+                (staged / f"{name}.json").replace(out_dir / f"{name}.json")
     return outputs
 
 
@@ -107,20 +139,21 @@ def run_live(
     out_dir: Path,
     previous_history_path: Path | None = None,
 ) -> dict[str, Any]:
-    breadth_snapshot = json.loads(breadth_path.read_text(encoding="utf-8"))
-    breadth_history = top_risk._clean_breadth_history(breadth_snapshot, asof)
-    margin_rows = top_risk.fetch_margin_history(asof)
     seed_path = ROOT / "data" / "top_risk_n_on_history.json"
     history_path = (
         previous_history_path
         if previous_history_path and previous_history_path.is_file()
         else seed_path
     )
-    previous_states = (
-        json.loads(history_path.read_text(encoding="utf-8"))
-        if history_path.is_file()
-        else {}
-    )
+    if not history_path.is_file():
+        raise FileNotFoundError(
+            "R-TR1 requires a historical n_on seed or previous strategy/n_on_history.json; "
+            "the daily snapshot cannot reconstruct the development period"
+        )
+    previous_states = json.loads(history_path.read_text(encoding="utf-8"))
+    breadth_snapshot = json.loads(breadth_path.read_text(encoding="utf-8"))
+    breadth_history = top_risk._clean_breadth_history(breadth_snapshot, asof)
+    margin_rows = top_risk.fetch_margin_history(asof)
     price_frames = {}
     index_histories = {}
     for code, _ in INDEXES:

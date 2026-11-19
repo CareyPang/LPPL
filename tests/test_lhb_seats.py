@@ -134,15 +134,15 @@ def test_aggregate_groups_depts_by_alias_and_merges_trades_by_stock():
         "net": 171,
         "n_stocks": 4,
         "trades": [
-            {"code": "600001", "name": "甲股份", "buy": 150, "sell": 30},
-            {"code": "000002", "name": "乙科技", "buy": 40, "sell": 0},
-            {"code": "300003", "name": "丙新材", "buy": 10, "sell": 5},
-            {"code": "000004", "name": "丁设备", "buy": 6, "sell": 0},
+            {"code": "600001", "name": "甲股份", "buy": 150, "sell": 30, "list": "single"},
+            {"code": "000002", "name": "乙科技", "buy": 40, "sell": 0, "list": "single"},
+            {"code": "300003", "name": "丙新材", "buy": 10, "sell": 5, "list": "single"},
+            {"code": "000004", "name": "丁设备", "buy": 6, "sell": 0, "list": "single"},
         ],
         "chips": [
-            {"code": "600001", "name": "甲股份", "side": "in", "amount": 150},
-            {"code": "000002", "name": "乙科技", "side": "in", "amount": 40},
-            {"code": "600001", "name": "甲股份", "side": "out", "amount": 30},
+            {"code": "600001", "name": "甲股份", "side": "in", "amount": 150, "list": "single"},
+            {"code": "000002", "name": "乙科技", "side": "in", "amount": 40, "list": "single"},
+            {"code": "600001", "name": "甲股份", "side": "out", "amount": 30, "list": "single"},
         ],
         "more_trades": 3,
         "sources": [
@@ -256,7 +256,8 @@ def test_aggregate_keeps_institution_rows_and_deduplicates_duplicate_causes():
     assert result["totals"]["n_stocks"] == 1
 
 
-def test_aggregate_deduplicates_identical_single_multi_rows_before_totals_and_alias_groups():
+@pytest.mark.parametrize("reversed_order", [False, True])
+def test_aggregate_deduplicates_identical_single_multi_rows_before_totals_and_alias_groups(reversed_order):
     single = "日涨幅偏离值达到7%"
     multi = "连续三个交易日内，涨幅偏离值累计达到20%"
     summary = [
@@ -283,6 +284,8 @@ def test_aggregate_deduplicates_identical_single_multi_rows_before_totals_and_al
         multi_alias,
         multi_institution,
     ]
+    if reversed_order:
+        details.reverse()
 
     result = lhb_seats.aggregate_lhb_seats(
         "2026-11-18",
@@ -305,7 +308,7 @@ def test_aggregate_deduplicates_identical_single_multi_rows_before_totals_and_al
         1,
     )
     assert group["trades"] == [
-        {"code": "600001", "name": "甲股份", "buy": 100, "sell": 50}
+        {"code": "600001", "name": "甲股份", "buy": 100, "sell": 50, "list": "single"}
     ]
     assert result["youzi_summary"]["top_buy"] == [
         {"code": "600001", "name": "甲股份", "buy": 100}
@@ -380,6 +383,37 @@ def test_youzi_buying_summary_excludes_sell_only_stocks():
     assert result["youzi_summary"]["top_buy"] == [
         {"code": "600001", "name": "甲股份", "buy": 100}
     ]
+
+
+def test_unverified_department_names_and_commentary_are_not_aliases():
+    aliases = lhb_seats._load_aliases()
+    invalid = {"东方财富证券上海东方路证券营业部", "光大证券昆明人民中路证券营业部",
+               "国信证券深圳泰然九路证券营业部", "华泰证券无锡梁清路证券营业部"}
+    assert not invalid.intersection(aliases)
+
+
+@pytest.mark.parametrize("explanation", [None, "", "某种未说明期限的公开披露"])
+def test_ambiguous_detail_does_not_default_to_single(explanation):
+    summary = [_summary_row("600001", "甲", "X", why, 100, 20)
+               for why in ("日涨幅偏离值达到7%", "连续三个交易日内，涨幅偏离值累计达到20%")]
+    row = _detail_row("X", "600001", "甲", "A", "席位甲", 100, 20, explanation)
+    with pytest.raises(RuntimeError, match="榜单类型不明确"):
+        lhb_seats.aggregate_lhb_seats("2026-11-18", summary, [row], [row.copy()])
+
+
+def test_same_alias_stock_overlapping_periods_use_single_ranking_and_separate_chips():
+    summary, details = [], []
+    for period, why, amount in [("single", "日涨幅偏离值达到7%", 100),
+                                ("multi", "连续三个交易日内，涨幅偏离值累计达到20%", 200)]:
+        summary.append(_summary_row("600001", "甲", period, why, amount, 0))
+        details.append(_detail_row(period, "600001", "甲", "A", "席位甲", amount, 0, why))
+    result = lhb_seats.aggregate_lhb_seats("2026-11-18", summary, details, details,
+                                           {"席位甲": {"alias": "游资甲"}})
+    assert result["totals"]["buy"] == result["youzi"][0]["buy"] == 100
+    assert result["youzi_summary"]["top_buy"] == [{"code": "600001", "name": "甲", "buy": 100}]
+    assert result["ranking_basis"] == "single_only"
+    assert {(t["list"], t["amount"]) for t in result["youzi"][0]["chips"]} == {("single", 100), ("multi", 200)}
+    assert result["youzi"][0]["n_stocks"] == 1
 
 
 def test_aggregate_uses_largest_same_type_disclosure():

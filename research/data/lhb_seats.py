@@ -158,13 +158,14 @@ def _presentation_groups(seats: list[dict]) -> tuple[list[dict], dict, list[dict
             }
         for trade in seat["trades"]:
             code = trade["code"]
+            period = trade["list"]
             stock = group["trades"].setdefault(
-                code,
-                {"code": code, "name": trade["name"], "buy": 0.0, "sell": 0.0},
+                (code, period),
+                {"code": code, "name": trade["name"], "list": period, "buy": 0.0, "sell": 0.0},
             )
             side = "buy" if trade["side"] == "in" else "sell"
             stock[side] += trade["amount"]
-            if side == "buy" and trade["amount"] > 0:
+            if side == "buy" and period == "single" and trade["amount"] > 0:
                 stock_total = stock_buys.setdefault(
                     code, {"code": code, "name": trade["name"], "buy": 0.0}
                 )
@@ -189,6 +190,7 @@ def _presentation_groups(seats: list[dict]) -> tuple[list[dict], dict, list[dict
                         "code": trade["code"],
                         "name": trade["name"],
                         "side": "in",
+                        "list": trade["list"],
                         "amount": trade["buy"],
                     }
                 )
@@ -198,6 +200,7 @@ def _presentation_groups(seats: list[dict]) -> tuple[list[dict], dict, list[dict
                         "code": trade["code"],
                         "name": trade["name"],
                         "side": "out",
+                        "list": trade["list"],
                         "amount": trade["sell"],
                     }
                 )
@@ -209,7 +212,7 @@ def _presentation_groups(seats: list[dict]) -> tuple[list[dict], dict, list[dict
                 "buy": round(group["buy"], 2),
                 "sell": round(group["sell"], 2),
                 "net": round(group["buy"] - group["sell"], 2),
-                "n_stocks": len(trades),
+                "n_stocks": len({trade["code"] for trade in trades}),
                 "trades": trades,
                 "chips": chips[:3],
                 "more_trades": max(0, len(chips) - 3),
@@ -323,6 +326,8 @@ def aggregate_lhb_seats(
         youzi, youzi_summary, other_seats = _presentation_groups([])
         return {
             "schema": "lhb_seats.v1",
+            "totals_basis": "single_preferred_per_stock",
+            "ranking_basis": "single_only",
             "asof": asof,
             "date_badge": _date_badge(asof),
             "totals": totals,
@@ -364,11 +369,13 @@ def aggregate_lhb_seats(
         list_types = disclosure_types.get((code, trade_id))
         if not list_types:
             raise RuntimeError(f"龙虎榜席位明细 TRADE_ID 不在汇总中: {code} {trade_id}")
-        row_list_type = _list_type(str(row.get("EXPLANATION") or ""))
-        if row_list_type in list_types:
-            list_type = row_list_type
-        elif len(list_types) == 1:
+        explanation = str(row.get("EXPLANATION") or "").strip()
+        if len(list_types) == 1:
             list_type = next(iter(list_types))
+        elif _list_type(explanation) == "multi":
+            list_type = "multi"
+        elif re.search(r"(?:单日|当日|首日|日(?:收盘|涨|跌|换手|价格|振幅))", explanation):
+            list_type = "single"
         else:
             raise RuntimeError(f"龙虎榜席位明细 TRADE_ID 榜单类型不明确: {code} {trade_id}")
         if selected_trade_ids[(code, list_type)] != trade_id:
@@ -379,7 +386,7 @@ def aggregate_lhb_seats(
         seat_code = _department_code(row)
         buy = _number(row.get("BUY"), "BUY")
         sell = _number(row.get("SELL"), "SELL")
-        identity = (trade_id, seat_code, buy, sell)
+        identity = (trade_id, seat_code or seat, buy, sell, list_type)
         entry = records.get(identity)
         if entry is not None:
             if entry["code"] != code:
@@ -401,7 +408,7 @@ def aggregate_lhb_seats(
     for identity, record in records.items():
         overlap_key = (
             record["code"],
-            record["seat_code"],
+            record["seat_code"] or record["seat"],
             record["buy"],
             record["sell"],
         )
@@ -427,6 +434,10 @@ def aggregate_lhb_seats(
 
     alias_map = aliases if aliases is not None else _load_aliases()
     seats = {}
+    # A multi-day disclosure includes the daily amount. For totals choose one
+    # period per security across all seats; retain both periods in drill-downs.
+    preferred = {code: "single" if "single" in kinds else "multi" for code, kinds in stock_types.items()}
+    selected = [row for row in records.values() if row["list"] == preferred[row["code"]]]
     for trade in records.values():
         seat = trade["seat"]
         kind = _seat_kind(seat, trade["seat_code"])
@@ -452,8 +463,9 @@ def aggregate_lhb_seats(
                 "trades": [],
             },
         )
-        aggregate["buy"] += trade["buy"]
-        aggregate["sell"] += trade["sell"]
+        if trade["list"] == preferred[trade["code"]]:
+            aggregate["buy"] += trade["buy"]
+            aggregate["sell"] += trade["sell"]
         for side, amount in (("in", trade["buy"]), ("out", trade["sell"])):
             if amount:
                 aggregate["trades"].append(
@@ -466,11 +478,11 @@ def aggregate_lhb_seats(
                     }
                 )
 
-    buy_total = sum(record["buy"] for record in records.values())
-    sell_total = sum(record["sell"] for record in records.values())
+    buy_total = sum(record["buy"] for record in selected)
+    sell_total = sum(record["sell"] for record in selected)
     institution_net = sum(
         record["buy"] - record["sell"]
-        for record in records.values()
+        for record in selected
         if _seat_kind(record["seat"], record["seat_code"]) == "institution"
     )
     for seat in seats.values():
@@ -496,6 +508,8 @@ def aggregate_lhb_seats(
     }
     return {
         "schema": "lhb_seats.v1",
+        "totals_basis": "single_preferred_per_stock",
+        "ranking_basis": "single_only",
         "asof": asof,
         "date_badge": _date_badge(asof),
         "totals": totals,
