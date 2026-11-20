@@ -59,7 +59,7 @@ test('missing volume stays empty', () => {
 
 test('sh600519: live published market bars preserve the stock Canvas OHLCV input', () => {
   const market = JSON.parse(fs.readFileSync(
-    path.join(__dirname, 'fixtures', 'stock_600519_market.json'), 'utf8',
+    path.resolve(__dirname, '../../web/mock/data/market/archives/sh600519_2026-11-17.json'), 'utf8',
   ));
   const oldInput = market.price;
   const candles = Chart.toCandles(oldInput);
