@@ -1,8 +1,8 @@
 {
  "symbol": "US_NFLX",
  "name": "奈飞",
- "asof": "2026-11-18",
- "data_version": "us_NFLX_20261118_bc2d7ca527bff07f",
+ "asof": "2026-11-19",
+ "data_version": "us_NFLX_20261119_8952ec12ed0033cc",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-04-15",
+   "start": "2025-04-16",
    "duration_days": 402,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.428,
-   "size_realized": -0.387,
-   "tc": "2026-12-02",
+   "size_model": -0.422,
+   "size_realized": -0.392,
+   "tc": "2026-12-03",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,7 +60,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-03-10",
+    "best_t1": "2026-03-11",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -104,7 +104,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-04-15",
+    "best_t1": "2025-04-16",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -112,8 +112,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.1,
-     "any": 0.1,
+     "tc_hi": 0.0,
+     "any": 0.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-18",
+   "table_asof": "2026-11-19",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +716,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.387,
+    "size_realized": -0.392,
     "duration_days": 402,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -760,7 +760,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-14",
    "2023-11-15",
    "2023-11-16",
    "2023-11-17",
@@ -1515,10 +1514,10 @@
    "2026-11-13",
    "2026-11-16",
    "2026-11-17",
-   "2026-11-18"
+   "2026-11-18",
+   "2026-11-19"
   ],
   "open": [
-   44.878,
    45.281,
    46.3,
    46.695,
@@ -2273,10 +2272,10 @@
    62.88,
    62.88,
    60.56,
-   59.7
+   59.7,
+   59.91
   ],
   "high": [
-   45.407,
    46.275,
    46.728,
    46.765,
@@ -3031,10 +3030,10 @@
    63.95,
    62.98,
    61.01,
-   60.5
+   60.5,
+   60.45
   ],
   "low": [
-   44.564,
    45.245,
    45.965,
    46.276,
@@ -3789,10 +3788,10 @@
    62.12,
    60.48,
    59.41,
-   59.42
+   59.42,
+   58.18
   ],
   "close": [
-   44.865,
    46.194,
    46.695,
    46.591,
@@ -4547,10 +4546,10 @@
    62.15,
    60.75,
    59.68,
-   59.82
+   59.82,
+   58.46
   ],
   "volume": [
-   4060521,
    5035129,
    3654843,
    2799745,
@@ -5305,7 +5304,8 @@
    36667880,
    36078335,
    35092626,
-   26936819
+   26936819,
+   38018801
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5359,7 +5359,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4315,
+  "n_bars": 4316,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5389,9 +5389,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "0ddbf574e293d3f1dff61823921ee87218ce5f53c23d297013dc86dd6fddc34d",
+ "fit_input_hash": "460e6eaa96412815908950f34e997d09473712a1e5b36cc55305fcb9854cc677",
  "history_input_hashes": {
-  "2023-11-15": "954f3c5a6adfe729ff9f6f1bddf589e5ab521e97db81a8a016e43885bb3bd37d",
   "2023-11-16": "7fbc0958ed4ee022a3106882a2202cad3a48bc0a3369d6e9b22ee14d99b75e7c",
   "2023-11-17": "02c6788d7a1c7250824fa16da0cf7975eeed3b1d5c1a301fb66cb7d69574a0f0",
   "2023-11-20": "ee02efc69ce009775703dbb1e2ec1e6e629878d937767888ee610952fb9f0010",
@@ -6145,10 +6144,11 @@
   "2026-11-13": "17706f35bc3cc5f36d8f8c414441bf3ce750ef36ca0b8ff931e2a1f47b51f36e",
   "2026-11-16": "73c70ba2bc33f486ccc4dc7861258df012ae80754c85aac7045a45dd393a9962",
   "2026-11-17": "ce89620e5531098bc1edac182b9e0bf34a29e312a3d091b710e9db84a91121e7",
-  "2026-11-18": "0ddbf574e293d3f1dff61823921ee87218ce5f53c23d297013dc86dd6fddc34d"
+  "2026-11-18": "0ddbf574e293d3f1dff61823921ee87218ce5f53c23d297013dc86dd6fddc34d",
+  "2026-11-19": "460e6eaa96412815908950f34e997d09473712a1e5b36cc55305fcb9854cc677"
  },
  "code": "US_NFLX",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-19T22:54:53.906354+00:00"
+ "generated_at": "2026-11-20T04:12:40.282096+00:00"
 }
