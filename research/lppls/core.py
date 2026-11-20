@@ -39,9 +39,17 @@ def design(t: np.ndarray, tc: float, m: float, w: float, k: int = K_LPPLS, allow
     return np.column_stack([np.ones_like(t), f, f * np.cos(ph), f * np.sin(ph)])
 
 
-def lin_fit(t: np.ndarray, y: np.ndarray, tc: float, m: float, w: float, k: int = K_LPPLS):
+def lin_fit(
+    t: np.ndarray,
+    y: np.ndarray,
+    tc: float,
+    m: float,
+    w: float,
+    k: int = K_LPPLS,
+    allow_inside: bool | None = None,
+):
     """返回 (sse, beta)。不可行点返回 (inf, None)。用 lstsq（SVD）而不是显式正规方程。"""
-    X = design(t, tc, m, w, k)
+    X = design(t, tc, m, w, k, allow_inside=allow_inside)
     if X is None:
         return np.inf, None
     beta, *_ = np.linalg.lstsq(X, y, rcond=None)
@@ -52,8 +60,8 @@ def lin_fit(t: np.ndarray, y: np.ndarray, tc: float, m: float, w: float, k: int 
     return sse, beta
 
 
-def sse(theta, t, y, k: int = K_LPPLS) -> float:
-    return lin_fit(t, y, theta[0], theta[1], theta[2], k)[0]
+def sse(theta, t, y, k: int = K_LPPLS, allow_inside: bool | None = None) -> float:
+    return lin_fit(t, y, theta[0], theta[1], theta[2], k, allow_inside=allow_inside)[0]
 
 
 @dataclass

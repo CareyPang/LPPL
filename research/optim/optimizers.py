@@ -34,22 +34,30 @@ class Result:
     extra: dict = field(default_factory=dict)
 
 
-def _objective(theta, t, y, k=K_LPPLS):
+def _objective(theta, t, y, k=K_LPPLS, allow_inside: bool | None = None):
     w = theta[2] if len(theta) > 2 else 0.0
-    return lin_fit(t, y, theta[0], theta[1], w, k)[0]
+    return lin_fit(t, y, theta[0], theta[1], w, k, allow_inside=allow_inside)[0]
 
 
-def _resid(theta, t, y, k=K_LPPLS):
+def _resid(theta, t, y, k=K_LPPLS, allow_inside: bool | None = None):
     w = theta[2] if len(theta) > 2 else 0.0
-    X = design(t, theta[0], theta[1], w, k)
+    X = design(t, theta[0], theta[1], w, k, allow_inside=allow_inside)
     if X is None:
         return np.full_like(y, 1e3)
     beta, *_ = np.linalg.lstsq(X, y, rcond=None)
     return y - X @ beta
 
 
-def _polish(theta, t, y, lo, hi, k=K_LPPLS) -> tuple[np.ndarray, float, int]:
-    r = minimize(_objective, theta, args=(t, y, k), method="L-BFGS-B", bounds=list(zip(lo, hi, strict=True)),
+def _polish(
+    theta,
+    t,
+    y,
+    lo,
+    hi,
+    k=K_LPPLS,
+    allow_inside: bool | None = None,
+) -> tuple[np.ndarray, float, int]:
+    r = minimize(_objective, theta, args=(t, y, k, allow_inside), method="L-BFGS-B", bounds=list(zip(lo, hi, strict=True)),
                  options=dict(maxiter=200, ftol=1e-12, gtol=1e-8))
     return r.x, float(r.fun), int(r.nfev)
 
@@ -89,19 +97,20 @@ def ms_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
     return Result(best[0], best[1], nfev, time.perf_counter() - t0, "ms_lm", f"converged {conv}/{budget['starts']}")
 
 
-def grid_profile(t, y, tcs, ms, ws, k=K_LPPLS):
+def grid_profile(t, y, tcs, ms, ws, k=K_LPPLS, *, allow_inside: bool | None = None):
     """批量计算 (tc, m, w) 网格上的 SSE（批量 SVD，与 lin_fit 的 lstsq 同解）。
 
     返回 sse 数组，形状 (n_tc, n_m, n_w)；k=K_POWER 时 n_w 维为 1。不可行点为 inf。
     """
     yy = float(y @ y)
+    inside = core.ALLOW_INSIDE if allow_inside is None else allow_inside
     ms = np.asarray(ms, float)
     ws = np.asarray(ws, float) if k == K_LPPLS else np.zeros(1)
     out = np.full((len(tcs), len(ms), len(ws)), np.inf)
     ones = np.ones_like(t)
     for i, tc in enumerate(tcs):
         dt = tc - t
-        if core.ALLOW_INSIDE:
+        if inside:
             dt = np.maximum(np.abs(dt), core.MIN_DT)
         elif np.any(dt <= 0):
             continue
@@ -125,7 +134,18 @@ def grid_profile(t, y, tcs, ms, ws, k=K_LPPLS):
     return out
 
 
-def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS, n_random: int = 0) -> Result:
+def tcgrid_lm(
+    t,
+    y,
+    lo,
+    hi,
+    seed=0,
+    budget=None,
+    *,
+    k=K_LPPLS,
+    n_random: int = 0,
+    allow_inside: bool | None = None,
+) -> Result:
     """tc 网格剖面 + 前 topk 起点 LM。n_random>0 时额外加 n_random 个均匀随机起点（§17.4 多起点，
     对应 Jiang 2010 的"多候选 + LM 取最小 SSE"），仍取全局最小 SSE。"""
     budget = budget or dict(n_tc=40, n_m=12, n_w=16, topk=5)
@@ -135,14 +155,14 @@ def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS, n_random: int = 0
     tcs = np.linspace(lo[0], hi[0], budget["n_tc"])
     ms = np.linspace(lo[1], hi[1], budget["n_m"])
     if k != K_LPPLS:
-        grid = grid_profile(t, y, tcs, ms, None, k)[:, :, 0]
+        grid = grid_profile(t, y, tcs, ms, None, k, allow_inside=allow_inside)[:, :, 0]
         nfev = grid.size
         prof = grid.min(axis=1)
         arg = [ms[int(np.argmin(grid[i]))] for i in range(len(tcs))]
         order = np.argsort(prof)[: budget["topk"]]
         best = None
         for x0 in [np.array([tcs[i], arg[i]]) for i in order] + extra:
-            r = least_squares(_resid, x0, args=(t, y, k), bounds=(lo, hi), method="trf",
+            r = least_squares(_resid, x0, args=(t, y, k, allow_inside), bounds=(lo, hi), method="trf",
                               x_scale="jac", ftol=1e-12, xtol=1e-12, gtol=1e-10, max_nfev=400)
             nfev += int(r.nfev)
             f = float(r.fun @ r.fun)
@@ -151,7 +171,7 @@ def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS, n_random: int = 0
         return Result(best[0], best[1], nfev, time.perf_counter() - t0, "tcgrid_lm", "",
                       dict(profile=prof, tcs=tcs))
     ws = np.linspace(lo[2], hi[2], budget["n_w"])
-    grid = grid_profile(t, y, tcs, ms, ws, k)
+    grid = grid_profile(t, y, tcs, ms, ws, k, allow_inside=allow_inside)
     nfev = grid.size
     prof = grid.reshape(len(tcs), -1).min(axis=1)
     arg = []
@@ -161,7 +181,7 @@ def tcgrid_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS, n_random: int = 0
     order = np.argsort(prof)[: budget["topk"]]
     best = None
     for x0 in [np.array([tcs[i], *arg[i]]) for i in order] + extra:
-        r = least_squares(_resid, x0, args=(t, y, k), bounds=(lo, hi), method="trf", x_scale="jac",
+        r = least_squares(_resid, x0, args=(t, y, k, allow_inside), bounds=(lo, hi), method="trf", x_scale="jac",
                           ftol=1e-12, xtol=1e-12, gtol=1e-10, max_nfev=400)
         nfev += int(r.nfev)
         f = float(r.fun @ r.fun)

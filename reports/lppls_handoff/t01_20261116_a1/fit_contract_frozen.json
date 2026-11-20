@@ -1,0 +1,677 @@
+{
+  "contract_version": "future_fullcycles_1p5_v1",
+  "model_status": "specification frozen; no B0 scan or evaluation run",
+  "domain": "future_only",
+  "units": "full_cycles",
+  "unit_definitions": {
+    "cycles_full": "omega / (2*pi) * ln((tc - t1) / (tc - t2)); NaN when tc <= t2",
+    "legacy_osc": "(omega / 2) * ln(abs(tc) / max(abs(tc - t2), 1e-3))",
+    "legacy_osc_to_full_cycles": "osc / pi",
+    "legacy_standard_threshold_equivalent": "2.5 / pi = 0.7957747154594768 full cycles",
+    "future_filter_threshold": "cycles_full >= 1.5",
+    "t1_zero_equivalence": "for t1=0 and tc>t2, the legacy log ratio equals the future formula's log ratio"
+  },
+  "input": {
+    "required_type": "LogPrice",
+    "constructors": [
+      "LogPrice.from_price",
+      "LogPrice.from_log_price"
+    ],
+    "recorded_provenance": [
+      "constructed_from",
+      "source_field",
+      "adjustment_type"
+    ],
+    "price_validation": "from_price rejects non-positive and non-finite values before log",
+    "double_log_note": "Whether arbitrary numeric values were already logged cannot be inferred; callers must select and record the correct constructor."
+  },
+  "search_bounds": {
+    "m": [
+      0.01,
+      2.0
+    ],
+    "omega": [
+      1.0,
+      50.0
+    ],
+    "tc_lower_formula": "t2 + MIN_DT",
+    "tc_upper_formula": "t2 + 0.2 * (t2 - t1)",
+    "tc_min_offset": 0.001,
+    "tc_max_offset_fraction": 0.2,
+    "tc_relation": "tc > t2",
+    "allow_inside": false,
+    "solver": "tcgrid_lm",
+    "budget": {
+      "n_tc": 40,
+      "n_m": 12,
+      "n_w": 16,
+      "topk": 5
+    },
+    "n_random": 10,
+    "seed": 0,
+    "boundary_tolerance_fraction": 1e-06,
+    "least_squares": {
+      "method": "trf",
+      "x_scale": "jac",
+      "ftol": 1e-12,
+      "xtol": 1e-12,
+      "gtol": 1e-10,
+      "max_nfev": 400
+    },
+    "source_evidence": {
+      "m": [
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 37,
+          "excerpt": "\"v2\": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 87,
+          "excerpt": "m: tuple[float, float] = (0.01, 2.0)"
+        }
+      ],
+      "omega": [
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 37,
+          "excerpt": "\"v2\": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 88,
+          "excerpt": "omega: tuple[float, float] = (1.0, 50.0)"
+        }
+      ],
+      "legacy_tc_domain": [
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 37,
+          "excerpt": "\"v2\": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),"
+        },
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 126,
+          "excerpt": "tc_lo, tc_hi = bx[\"tc\"]"
+        },
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 133,
+          "excerpt": "hi = np.array([dt + ahead_hi, bx[\"m\"][1], bx[\"w\"][1]])"
+        }
+      ],
+      "tc_lower": [
+        {
+          "file": "research/lppls/core.py",
+          "line": 22,
+          "excerpt": "MIN_DT = 1e-3"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 125,
+          "excerpt": "tc_lo = t2 + self.tc_min_offset"
+        }
+      ],
+      "tc_upper_fraction": [
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 133,
+          "excerpt": "hi = np.array([dt + ahead_hi, bx[\"m\"][1], bx[\"w\"][1]])"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 15,
+          "excerpt": "FIT_HORIZON_FRACTION = 0.2"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 126,
+          "excerpt": "tc_hi = t2 + self.tc_max_offset_fraction * dt"
+        }
+      ],
+      "tc_relation": {
+        "file": "research/lppls/future_contract.py",
+        "line": 91,
+        "excerpt": "tc_relation: str = \"tc > t2\""
+      },
+      "allow_inside": [
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 92,
+          "excerpt": "allow_inside: bool = False"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 516,
+          "excerpt": "allow_inside=False,"
+        }
+      ],
+      "solver": [
+        {
+          "file": "research/optim/optimizers.py",
+          "line": 137,
+          "excerpt": "def tcgrid_lm("
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 93,
+          "excerpt": "solver: str = \"tcgrid_lm\""
+        }
+      ],
+      "budget": {
+        "file": "research/optim/optimizers.py",
+        "line": 151,
+        "excerpt": "budget = budget or dict(n_tc=40, n_m=12, n_w=16, topk=5)"
+      },
+      "least_squares_defaults": {
+        "file": "research/optim/optimizers.py",
+        "line": 165,
+        "excerpt": "r = least_squares(_resid, x0, args=(t, y, k, allow_inside), bounds=(lo, hi), method=\"trf\","
+      },
+      "n_random": [
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 37,
+          "excerpt": "\"v2\": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 95,
+          "excerpt": "n_random: int = 10"
+        }
+      ],
+      "seed": [
+        {
+          "file": "research/features/lppls_scan.py",
+          "line": 137,
+          "excerpt": "r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)"
+        },
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 96,
+          "excerpt": "seed: int = 0"
+        }
+      ]
+    }
+  },
+  "filter_bounds": {
+    "primary_column": "g_fco_standard",
+    "headline_status_field": "top.signal_status",
+    "scales": [
+      {
+        "name": "1-3m",
+        "L_min": 21,
+        "L_max": 63
+      },
+      {
+        "name": "6-12m",
+        "L_min": 127,
+        "L_max": 252
+      },
+      {
+        "name": "12-24m",
+        "L_min": 253,
+        "L_max": 504
+      }
+    ],
+    "aggregation": "any scale has at least one standard-qualified window",
+    "direction": "B < 0",
+    "m": {
+      "min": 0.0,
+      "min_inclusive": false,
+      "max": 1.0,
+      "max_inclusive": true
+    },
+    "omega": [
+      2.0,
+      25.0
+    ],
+    "damping_min": 0.5,
+    "damping_formula": "m * abs(B) / (omega * hypot(C1, C2))",
+    "zero_amplitude_damping": "positive infinity when hypot(C1, C2) == 0, matching _derived",
+    "tc_relation": "tc > t2",
+    "cycles_full_min": 1.5,
+    "cycles_tolerance": 1e-12,
+    "r2_min": null,
+    "rel_err_max": null,
+    "horizon": null,
+    "legacy_osc_min_replaced": 2.5,
+    "non_headline_columns": [
+      "g_fco_early",
+      "g_fco_end",
+      "g_fco_pure"
+    ],
+    "source_evidence": {
+      "direction": {
+        "file": "research/features/lppls_rules.py",
+        "line": 93,
+        "excerpt": "fco = (d.B < 0) & (d.m > 0)"
+      },
+      "m": [
+        {
+          "file": "research/features/lppls_rules.py",
+          "line": 93,
+          "excerpt": "fco = (d.B < 0) & (d.m > 0)"
+        },
+        {
+          "file": "research/features/lppls_rules.py",
+          "line": 94,
+          "excerpt": "r[\"g_fco_standard\"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)"
+        }
+      ],
+      "omega": {
+        "file": "research/features/lppls_rules.py",
+        "line": 94,
+        "excerpt": "r[\"g_fco_standard\"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)"
+      },
+      "damping_min": [
+        {
+          "file": "research/features/lppls_rules.py",
+          "line": 94,
+          "excerpt": "r[\"g_fco_standard\"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)"
+        },
+        {
+          "file": "research/features/lppls_rules.py",
+          "line": 26,
+          "excerpt": "d[\"D\"] = np.where(C > 0, d.m * d.B.abs() / (d.w * C), np.inf)"
+        }
+      ],
+      "tc_relation": {
+        "file": "research/lppls/future_contract.py",
+        "line": 91,
+        "excerpt": "tc_relation: str = \"tc > t2\""
+      },
+      "cycles_full_min": [
+        {
+          "file": "research/lppls/future_contract.py",
+          "line": 173,
+          "excerpt": "cycles_full_min: float = 1.5"
+        },
+        {
+          "file": "research/features/lppls_rules.py",
+          "line": 28,
+          "excerpt": "d[\"osc\"] = d.w / 2 * np.log(np.abs(d.tc) / np.maximum(np.abs(d.tc - t2), 1e-3))"
+        }
+      ],
+      "r2_rel_err_horizon_absent": {
+        "file": "research/features/lppls_rules.py",
+        "line": 92,
+        "excerpt": "# FCO 平台公开的四套合格过滤集（文献 §16.16，前端原文数值）；公开文字未给 t_c 范围，故只用 B<0 与 m∈(0,1]"
+      },
+      "headline_standard_count_by_scale": {
+        "file": "research/eval/export_contract.py",
+        "line": 248,
+        "excerpt": "nq = int(gg[\"g_fco_standard\"][m].sum())"
+      },
+      "per_scale_signal_and_headline_aggregation": [
+        {
+          "file": "research/eval/export_contract.py",
+          "line": 256,
+          "excerpt": "\"signal_status\": \"display_only\" if display_only else (\"signal\" if nq > 0 else \"no_qualified_fit\")}"
+        },
+        {
+          "file": "research/eval/export_contract.py",
+          "line": 450,
+          "excerpt": "\"signal_status\": \"signal\" if any(v.get(\"signal_status\") == \"signal\" for k, v in ind.items() if k in SCALES_FCO) else \"no_qualified_fit\","
+        }
+      ],
+      "scale_ranges": {
+        "file": "research/features/lppls_rules.py",
+        "line": 63,
+        "excerpt": "SCALES_FCO = {\"1-3m\": (21, 63), \"6-12m\": (127, 252), \"12-24m\": (253, 504)}"
+      }
+    }
+  },
+  "headline_rule_finding": {
+    "field": "top.signal_status",
+    "primary_column": "g_fco_standard",
+    "primary_scales": [
+      "1-3m",
+      "6-12m",
+      "12-24m"
+    ],
+    "aggregation": "signal if any evaluated SCALES_FCO scale has at least one standard-qualified window",
+    "not_primary": [
+      "g_fco_early",
+      "g_fco_end",
+      "g_fco_pure"
+    ],
+    "separate_field": {
+      "field": "top.lppls_confidence",
+      "meaning": "distinct _conf(d, rules(d), asof) summary; not the top.signal_status rule",
+      "evidence": {
+        "file": "research/eval/export_contract.py",
+        "line": 452,
+        "excerpt": "\"lppls_confidence\": {**_conf(d, r, date), \"evidence\": \"dev_only\", \"scale_evidence\": SCALE_EVIDENCE,"
+      }
+    },
+    "evidence": [
+      {
+        "file": "research/features/lppls_rules.py",
+        "line": 94,
+        "excerpt": "r[\"g_fco_standard\"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)"
+      },
+      {
+        "file": "research/eval/export_contract.py",
+        "line": 248,
+        "excerpt": "nq = int(gg[\"g_fco_standard\"][m].sum())"
+      },
+      {
+        "file": "research/eval/export_contract.py",
+        "line": 256,
+        "excerpt": "\"signal_status\": \"display_only\" if display_only else (\"signal\" if nq > 0 else \"no_qualified_fit\")}"
+      },
+      {
+        "file": "research/eval/export_contract.py",
+        "line": 450,
+        "excerpt": "\"signal_status\": \"signal\" if any(v.get(\"signal_status\") == \"signal\" for k, v in ind.items() if k in SCALES_FCO) else \"no_qualified_fit\","
+      }
+    ],
+    "legacy_standard_filter": {
+      "direction": "B < 0",
+      "m": "0 < m <= 1",
+      "omega": "2 <= omega <= 25",
+      "damping": "D >= 0.5",
+      "oscillation": "legacy osc >= 2.5",
+      "r2": null,
+      "rel_err": null,
+      "horizon": null
+    },
+    "registered_corrections": [
+      "intersect the time domain with tc > t2",
+      "replace the legacy osc threshold with cycles_full >= 1.5"
+    ]
+  },
+  "window_and_attempt_schema": {
+    "one_window_summary_status": [
+      "fit_ok",
+      "all_attempts_failed",
+      "pending"
+    ],
+    "attempt_status": [
+      "success",
+      "invalid",
+      "numerical_failure",
+      "pending"
+    ],
+    "attempt_id": "SHA256(cache_key + seed + retry_idx)",
+    "one_tcgrid_lm_invocation_per_seed_retry": true,
+    "attempt_fields": [
+      "theta",
+      "beta",
+      "sse",
+      "finite",
+      "boundary_hits",
+      "design_rank",
+      "condition_number",
+      "error"
+    ],
+    "filter_outcome": [
+      "pass",
+      "reject with reasons",
+      "not_evaluated"
+    ],
+    "non_finite_behavior": "reject with non_finite reason; never pass through NaN comparisons"
+  },
+  "time_fields": {
+    "t1": "0 effective bars in the planned window",
+    "t2": "L - 1 effective bars in the planned window",
+    "lookback_L": "number of effective bars fitted",
+    "fit_horizon": "maximum future tc offset, 0.2 * (t2 - t1) bars",
+    "eval_H": 63,
+    "label_confirmation_E": null,
+    "fit_clock": "effective_bars",
+    "bar_to_session_index": "ordered calendar-session index for each fitted bar; gaps retain calendar positions",
+    "tc_offset_bars": "fitted tc - t2",
+    "inclusive_width_sessions": "b - a + 1"
+  },
+  "cache_key": {
+    "algorithm": "SHA256(canonical JSON; sorted keys, compact separators, UTF-8)",
+    "members": [
+      "data_hash",
+      "asof",
+      "window start/end/L",
+      "clock-map SHA256",
+      "domain=future_only",
+      "units=full_cycles",
+      "search_bounds",
+      "filter_bounds",
+      "solver name and budget",
+      "n_random",
+      "CONTRACT_VERSION",
+      "seed"
+    ]
+  },
+  "source_evidence": {
+    "legacy_v2_box": {
+      "file": "research/features/lppls_scan.py",
+      "line": 37,
+      "excerpt": "\"v2\": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),"
+    },
+    "legacy_fit_bounds": {
+      "file": "research/features/lppls_scan.py",
+      "line": 126,
+      "excerpt": "tc_lo, tc_hi = bx[\"tc\"]"
+    },
+    "legacy_tc_upper": {
+      "file": "research/features/lppls_scan.py",
+      "line": 133,
+      "excerpt": "hi = np.array([dt + ahead_hi, bx[\"m\"][1], bx[\"w\"][1]])"
+    },
+    "legacy_random_seed": {
+      "file": "research/features/lppls_scan.py",
+      "line": 137,
+      "excerpt": "r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)"
+    },
+    "legacy_global_design": {
+      "file": "research/lppls/core.py",
+      "line": 30,
+      "excerpt": "if ALLOW_INSIDE if allow_inside is None else allow_inside:"
+    },
+    "min_dt": {
+      "file": "research/lppls/core.py",
+      "line": 22,
+      "excerpt": "MIN_DT = 1e-3"
+    },
+    "solver_budget": {
+      "file": "research/optim/optimizers.py",
+      "line": 151,
+      "excerpt": "budget = budget or dict(n_tc=40, n_m=12, n_w=16, topk=5)"
+    },
+    "solver_entry": {
+      "file": "research/optim/optimizers.py",
+      "line": 137,
+      "excerpt": "def tcgrid_lm("
+    },
+    "solver_least_squares": {
+      "file": "research/optim/optimizers.py",
+      "line": 165,
+      "excerpt": "r = least_squares(_resid, x0, args=(t, y, k, allow_inside), bounds=(lo, hi), method=\"trf\","
+    },
+    "legacy_derived_damping": {
+      "file": "research/features/lppls_rules.py",
+      "line": 26,
+      "excerpt": "d[\"D\"] = np.where(C > 0, d.m * d.B.abs() / (d.w * C), np.inf)"
+    },
+    "legacy_derived_oscillation": {
+      "file": "research/features/lppls_rules.py",
+      "line": 28,
+      "excerpt": "d[\"osc\"] = d.w / 2 * np.log(np.abs(d.tc) / np.maximum(np.abs(d.tc - t2), 1e-3))"
+    },
+    "headline_direction_and_m_lower": {
+      "file": "research/features/lppls_rules.py",
+      "line": 93,
+      "excerpt": "fco = (d.B < 0) & (d.m > 0)"
+    },
+    "headline_standard_rule": {
+      "file": "research/features/lppls_rules.py",
+      "line": 94,
+      "excerpt": "r[\"g_fco_standard\"] = fco & (d.m <= 1) & d.w.between(2, 25) & (d.D >= 0.5) & (d.osc >= 2.5)"
+    },
+    "headline_no_other_bounds": {
+      "file": "research/features/lppls_rules.py",
+      "line": 92,
+      "excerpt": "# FCO 平台公开的四套合格过滤集（文献 §16.16，前端原文数值）；公开文字未给 t_c 范围，故只用 B<0 与 m∈(0,1]"
+    },
+    "headline_scale_windows": {
+      "file": "research/features/lppls_rules.py",
+      "line": 63,
+      "excerpt": "SCALES_FCO = {\"1-3m\": (21, 63), \"6-12m\": (127, 252), \"12-24m\": (253, 504)}"
+    },
+    "headline_standard_count": {
+      "file": "research/eval/export_contract.py",
+      "line": 248,
+      "excerpt": "nq = int(gg[\"g_fco_standard\"][m].sum())"
+    },
+    "headline_scale_signal": {
+      "file": "research/eval/export_contract.py",
+      "line": 256,
+      "excerpt": "\"signal_status\": \"display_only\" if display_only else (\"signal\" if nq > 0 else \"no_qualified_fit\")}"
+    },
+    "headline_aggregate": {
+      "file": "research/eval/export_contract.py",
+      "line": 450,
+      "excerpt": "\"signal_status\": \"signal\" if any(v.get(\"signal_status\") == \"signal\" for k, v in ind.items() if k in SCALES_FCO) else \"no_qualified_fit\","
+    },
+    "separate_lppls_confidence": {
+      "file": "research/eval/export_contract.py",
+      "line": 452,
+      "excerpt": "\"lppls_confidence\": {**_conf(d, r, date), \"evidence\": \"dev_only\", \"scale_evidence\": SCALE_EVIDENCE,"
+    },
+    "daily_global_box": {
+      "file": "research/pipeline/daily.py",
+      "line": 62,
+      "excerpt": "_core.ALLOW_INSIDE = bool(BOXES[BOX][\"inside\"])  # 与 lppls_scan.run 一致：v2 允许 t_c 落在窗内"
+    },
+    "daily_default_windows": {
+      "file": "research/pipeline/daily.py",
+      "line": 69,
+      "excerpt": "ws = full_windows(len(logp)) if windows is None else unique_windows(windows)"
+    },
+    "workflow_daily": {
+      "file": ".github/workflows/index_daily.yml",
+      "line": 49,
+      "excerpt": "if LPPLS_BOX=v2 python -m research.pipeline.daily \"$sym\" \\"
+    },
+    "workflow_replay": {
+      "file": ".github/workflows/index_replay.yml",
+      "line": 69,
+      "excerpt": "LPPLS_BOX=v2 python -m research.pipeline.daily \"$SYM\" --asof \"$ASOF\" --out out/index 2>&1 | tee out/index/run.log"
+    },
+    "legacy_scan_fit_one": {
+      "file": "research/features/lppls_scan.py",
+      "line": 121,
+      "excerpt": "def fit_one(y: np.ndarray) -> tuple:"
+    },
+    "future_logprice": {
+      "file": "research/lppls/future_contract.py",
+      "line": 19,
+      "excerpt": "def log_price_from_price(price: Sequence[float] | np.ndarray) -> np.ndarray:"
+    },
+    "future_search_bounds": {
+      "file": "research/lppls/future_contract.py",
+      "line": 86,
+      "excerpt": "class SearchBounds:"
+    },
+    "future_search_m": {
+      "file": "research/lppls/future_contract.py",
+      "line": 87,
+      "excerpt": "m: tuple[float, float] = (0.01, 2.0)"
+    },
+    "future_search_omega": {
+      "file": "research/lppls/future_contract.py",
+      "line": 88,
+      "excerpt": "omega: tuple[float, float] = (1.0, 50.0)"
+    },
+    "future_search_solver": {
+      "file": "research/lppls/future_contract.py",
+      "line": 93,
+      "excerpt": "solver: str = \"tcgrid_lm\""
+    },
+    "future_search_n_random": {
+      "file": "research/lppls/future_contract.py",
+      "line": 95,
+      "excerpt": "n_random: int = 10"
+    },
+    "future_search_seed": {
+      "file": "research/lppls/future_contract.py",
+      "line": 96,
+      "excerpt": "seed: int = 0"
+    },
+    "future_tc_relation": {
+      "file": "research/lppls/future_contract.py",
+      "line": 91,
+      "excerpt": "tc_relation: str = \"tc > t2\""
+    },
+    "future_tc_upper_fraction": {
+      "file": "research/lppls/future_contract.py",
+      "line": 15,
+      "excerpt": "FIT_HORIZON_FRACTION = 0.2"
+    },
+    "future_tc_numeric_bounds": {
+      "file": "research/lppls/future_contract.py",
+      "line": 125,
+      "excerpt": "tc_lo = t2 + self.tc_min_offset"
+    },
+    "future_tc_upper_numeric_bounds": {
+      "file": "research/lppls/future_contract.py",
+      "line": 126,
+      "excerpt": "tc_hi = t2 + self.tc_max_offset_fraction * dt"
+    },
+    "future_allow_inside": {
+      "file": "research/lppls/future_contract.py",
+      "line": 92,
+      "excerpt": "allow_inside: bool = False"
+    },
+    "future_explicit_false": {
+      "file": "research/lppls/future_contract.py",
+      "line": 516,
+      "excerpt": "allow_inside=False,"
+    },
+    "future_filter_bounds": {
+      "file": "research/lppls/future_contract.py",
+      "line": 154,
+      "excerpt": "class FilterBounds:"
+    },
+    "future_cycle_threshold": {
+      "file": "research/lppls/future_contract.py",
+      "line": 173,
+      "excerpt": "cycles_full_min: float = 1.5"
+    },
+    "future_cycles": {
+      "file": "research/lppls/future_contract.py",
+      "line": 71,
+      "excerpt": "def cycles_full(w: float, tc: float, t1: float, t2: float) -> float:"
+    },
+    "future_cache_key": {
+      "file": "research/lppls/future_contract.py",
+      "line": 233,
+      "excerpt": "def cache_key("
+    },
+    "future_fit_window": {
+      "file": "research/lppls/future_contract.py",
+      "line": 455,
+      "excerpt": "def fit_window("
+    },
+    "future_attempt_schema": {
+      "file": "research/lppls/future_contract.py",
+      "line": 302,
+      "excerpt": "class Attempt:"
+    },
+    "future_window_schema": {
+      "file": "research/lppls/future_contract.py",
+      "line": 336,
+      "excerpt": "class WindowResult:"
+    },
+    "future_session_map": {
+      "file": "research/lppls/future_contract.py",
+      "line": 271,
+      "excerpt": "def session_indices_for_bars(bar_dates: Sequence[str], calendar: Sequence[str]) -> tuple[int, ...]:"
+    },
+    "future_width_helper": {
+      "file": "research/lppls/future_contract.py",
+      "line": 286,
+      "excerpt": "def inclusive_width_sessions(a: int, b: int) -> int:"
+    }
+  }
+}
