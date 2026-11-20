@@ -23,6 +23,8 @@ import numpy as np
 import pandas as pd
 import requests
 
+from research.data.breadth_alerts import build_trend_ledger
+
 TDX_PACKAGE_URL = "https://www.tdx.com.cn/products/data/data/g4day/{ymd}.zip"
 TDX_BJ_FIRST_DAY = "20220506"
 TDX_MIN_PRICED = {"sh": 10000, "sz": 3000, "bj": 50}
@@ -57,6 +59,10 @@ ROW_FIELDS = (
     "amt_up",
     "trin_amt",
     "trin_vol",
+    "up_mean_amount",
+    "down_mean_amount",
+    "up_mean_volume",
+    "down_mean_volume",
     "lu",
     "ld",
     "amount_yi",
@@ -481,6 +487,10 @@ def compute_daily_metrics(
         "amt_up": amount_up / amount_total if amount_total > 0 else None,
         "trin_amt": trin_amt,
         "trin_vol": trin_vol,
+        "up_mean_amount": amount_up / adv if adv else None,
+        "down_mean_amount": amount_down / dec if dec else None,
+        "up_mean_volume": volume_up / adv if adv else None,
+        "down_mean_volume": volume_down / dec if dec else None,
         "lu": int(up_limit.sum()),
         "ld": int(down_limit.sum()),
         "amount_yi": amount_total / 100_000_000,
@@ -739,6 +749,10 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
             "amt_up",
             "trin_amt",
             "trin_vol",
+            "up_mean_amount",
+            "down_mean_amount",
+            "up_mean_volume",
+            "down_mean_volume",
             "lu",
             "ld",
             "amount_yi",
@@ -763,6 +777,11 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
         "P250",
         "MCL",
         "trin_amt",
+        "trin_vol",
+        "up_mean_amount",
+        "down_mean_amount",
+        "up_mean_volume",
+        "down_mean_volume",
         "amount_yi",
         "top50_share",
         "top100_share",
@@ -771,7 +790,9 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
     )
     history = []
     for _, row in frame.tail(60).iterrows():
-        history.append({field: _json_scalar(row.get(field)) for field in history_fields})
+        item = {field: _json_scalar(row.get(field)) for field in history_fields}
+        item["basis"] = json.loads(_json_scalar(row.get("basis_json")) or "{}")
+        history.append(item)
     risk_history = []
     for _, row in frame.tail(260).iterrows():
         risk_history.append(
@@ -787,6 +808,7 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
         "note": NOTE,
         "mcl_warmup_days": int(len(frame)),
         "latest": latest_data,
+        "trend_alerts": build_trend_ledger(frame.to_dict("records"), evidence="experimental")[-1],
         "history": history,
         "risk_history": risk_history,
         "warnings": [],

@@ -183,10 +183,13 @@ def test_strategy_replay_publishes_and_builds_from_stock_results_strategy():
         if step.get("name")
     }
     strategy = steps["Build strategy replay JSON"]["run"]
+    assert steps["Build strategy replay JSON"]["continue-on-error"] is True
     assert "origin/stock-results:strategy/n_on_history.json" in strategy
     assert "origin/stock-results:lab/mock/data/strategy/n_on_history.json" not in strategy
 
     publish = steps["Publish to stock-results"]["run"]
+    assert 'if [[ "${{ steps.strategy.outcome }}" == "success" ]]' in publish
+    assert "steps.breadth.outcome == 'success' ||" in steps["Publish to stock-results"]["if"]
     assert "mkdir -p strategy" in publish
     assert "cp out/strategy/*.json strategy/" in publish
     assert "git add strategy/*.json" in publish

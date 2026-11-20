@@ -40,12 +40,14 @@
     });
     var trades = Array.isArray(selected.trades) ? selected.trades.filter(function (t) { return segment === 'all' || !t.segment || t.segment === segment; }) : [];
     var equity = Array.isArray(selected.equity) ? selected.equity : [];
+    var note = data.note || '';
+    if (selected.note && !note.includes(selected.note)) note = [note, selected.note].filter(Boolean).join(' ');
     return {
       published: true, segment: segment, level: level, shown: ok, status: statusText(level),
       n: Number.isFinite(Number(m.n_trades)) ? Number(m.n_trades) : trades.length,
       metrics: metrics, trades: trades, equity: equity, segments: selected.segments || data.segments || {}, hasMetrics: selected.metrics || {}, props: selected.properties || {},
       rules: rules, selectedRule: selected.rule_id || data.rule_id,
-      rule: selected.rule_id || data.rule_id, prereg: selected.prereg_doc || data.prereg_doc || '', asof: selected.asof || data.asof || '', note: selected.note || data.note || '',
+      rule: selected.rule_id || data.rule_id, prereg: selected.prereg_doc || data.prereg_doc || '', asof: selected.asof || data.asof || '', note: note,
     };
   }
 
@@ -101,9 +103,9 @@
       var P = M.props;
       var rows = [['登记规则', M.rule], ['事前登记文档', M.prereg], ['结果截止', M.asof], ['成交假设', P.t_plus_1 === false ? '无 T+1' : 'A 股 T+1：买入次日才能卖出'], ['涨跌停', P.limit_lock === false ? '不处理' : '一字涨跌停当日不可成交，顺延到下一可成交日'],
         ['佣金', P.fee_bps != null ? P.fee_bps + ' bp / 边' : '—'], ['印花税', P.stamp_bps != null ? P.stamp_bps + ' bp（卖出）' : '—'], ['滑点', P.slippage_bps != null ? P.slippage_bps + ' bp / 边' : '—'], ['开发 / 校准 / 测试', ['dev', 'cal', 'test'].map(function (k) { var s = M.segments[k]; return s ? s[0] + '→' + s[1] : '—'; }).join(' · ')]];
-      body = '<table class="sp-props">' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1] || '—') + '</td></tr>'; }).join('') + '</table>' + (M.note ? '<p class="sp-dim">' + esc(M.note) + '</p>' : '');
+      body = '<table class="sp-props">' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1] || '—') + '</td></tr>'; }).join('') + '</table>';
     }
-    return head + '<div class="sp-body">' + body + '</div>';
+    return head + (M.note ? '<p class="sp-dim">' + esc(M.note) + '</p>' : '') + '<div class="sp-body">' + body + '</div>';
   }
 
   function mount(o) {

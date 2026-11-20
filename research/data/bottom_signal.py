@@ -237,7 +237,10 @@ def compute_bottom_signal(ebs: pd.DataFrame, pbn: pd.DataFrame) -> dict:
             "erp_pct": _finite(latest["erp_pct"]) if latest is not None else None,
             "pbn_ratio": _finite(latest["pbn_ratio"]) if latest is not None else None,
             "pbn_pct": _finite(latest["pbn_pct"]) if latest is not None else None,
-            "signal": bool(latest["signal"]) if latest is not None else False,
+            "signal": (
+                bool(latest["signal"]) if latest is not None
+                and pd.notna(latest["erp_pct"]) and pd.notna(latest["pbn_pct"]) else None
+            ),
             "last_event_date": events[-1]["date"] if events else None,
         },
         "events": events,
@@ -299,20 +302,19 @@ def _a500_payload(ak, pbn: pd.DataFrame, history: pd.DataFrame) -> dict:
     if index_fetcher is None:
         raise AttributeError("AkShare 缺少中证A500指数日线数据接口")
     index = index_fetcher(symbol="sh000510")
-    close = _source_series(index, ("date", "日期"), "close").reindex(pe.index)
+    close = _source_series(index, ("date", "日期"), "close")
     erp = 1.0 / pe - y10 / 100.0
     frame = pd.DataFrame(
         {
-            "日期": pe.index,
-            "股债利差": erp.to_numpy(),
+            "日期": close.index,
+            "股债利差": erp.reindex(close.index).to_numpy(),
             "沪深300指数": close.to_numpy(),
         }
     ).replace([float("inf"), float("-inf")], float("nan"))
-    frame = frame.dropna(subset=["股债利差", "沪深300指数"])
     result = compute_bottom_signal(frame, pbn)
     result["rule"] = result["rule"].replace(
         "以 ak.stock_ebs_lg 的交易日为准",
-        "以中证A500成分股合成滚动市盈率（1/PE_TTM − 10年国债收益率）可用日期为准",
+        "以中证A500指数行情的交易日为准，缺估值的交易日保留且股债利差留空",
     ).replace("沪深300", "中证A500")
     result["notes"].append("成分股按当前名单回溯，2005 年只有 179 只有数据")
     result["sources"] = {

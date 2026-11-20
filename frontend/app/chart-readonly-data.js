@@ -67,6 +67,29 @@
   }
   async function historical(adapter, context) {
     if (!context.asof || !context.valid) throw new Error('历史截止日无效。');
+    if (context.archive) {
+      const stock = context.assetType === 'stock';
+      const code = stock ? context.stockCode : context.code;
+      const id = context.assetType + ':' + code;
+      const catalog = await adapter.fetchResult('watchlist-archive/' + context.assetType + '-' + code + '.json');
+      const row = catalog.data?.asset_id === id && catalog.data.schema_version === 1 &&
+        catalog.data.observations.find(r => r.asof === context.asof && r.sha256 === context.archive);
+      if (!row?.chart_path) throw missing('此版本没有可核对的归档行情。');
+      const job = /^stock\/jobs\/([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\/(\d{6})\.json$/.exec(row.chart_path);
+      if (stock ? !job || job[2] !== code : row.chart_path !== 'watchlist-archive/originals/' + context.archive + '.json')
+        throw missing('原档目录与标的不一致。');
+      const raw = (await adapter.fetchResult(row.chart_path)).data;
+      if (!raw?.symbol || raw.model_version !== row.model_version || raw.data_version !== row.data_version ||
+          (stock && (raw.job_id !== job[1] || raw.code !== code)))
+        throw missing('未能核对该版本的行情与模型来源。');
+      if (!globalThis.crypto?.subtle || !/^[a-f0-9]{64}$/.test(row.chart_content_sha256))
+        throw missing('当前无法核验原档图表的内容指纹。');
+      const encoded = new TextEncoder().encode(JSON.stringify(raw));
+      const digest = new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', encoded));
+      const hex = Array.from(digest, byte => byte.toString(16).padStart(2, '0')).join('');
+      if (hex !== row.chart_content_sha256) throw missing('原档内容指纹不一致，已停止绘图。');
+      return exactResult(raw, context);
+    }
     // The adapter's explicit REPLAYS allowlist takes its static-JSON branch.
     // Never pass an arbitrary date to load(): its other branch can POST a job.
     var staticDates = adapter.REPLAYS && adapter.REPLAYS[context.code];

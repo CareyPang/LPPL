@@ -15,6 +15,24 @@ const published = {
   properties: { t_plus_1: true, limit_lock: true, fee_bps: 2.5, stamp_bps: 5, slippage_bps: 5 },
 };
 
+test('every rule tab preserves report-wide and rule-specific qualifications once', () => {
+  const data = {
+    ...published, note: '收盘价截至本周。检验段不是严格样本外。',
+    rules: [
+      { ...published, rule_id: 'R-TR1', note: '收盘价截至本周。' },
+      { ...published, rule_id: 'R-LC1', note: 'LPPLS 为事后重算。' },
+    ],
+  };
+  for (const rule of data.rules) {
+    const model = SP.model(data, 'test', rule.rule_id);
+    for (const tab of ['metrics', 'trades', 'props']) {
+      const html = SP.render(model, tab);
+      assert.match(html, /检验段不是严格样本外/);
+      assert.equal(html.split(rule.note).length, 2);
+    }
+  }
+});
+
 test('unpublished data renders the fallback text and never a number', () => {
   for (const data of [null, undefined, {}, { metrics: {} }]) {
     const M = SP.model(data, 'test');

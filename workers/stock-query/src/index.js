@@ -16,6 +16,8 @@ const NEWS_TIMEOUT_MS = 8000;
 const QUOTE_TTL_SECONDS = 60;
 const QUOTE_TIMEOUT_MS = 5000;
 const KLINE_TIMEOUT_MS = 8000;
+// The chart waits 12 seconds for both sequential minute-data sources combined.
+const INTRADAY_SOURCE_TIMEOUT_MS = 5000;
 const KLINE_PERIODS = new Set(['30', '60', 'd']);
 const AI_TIMEOUT_MS = 60_000;
 const AI_MAX_BODY_BYTES = 64 * 1024;
@@ -815,9 +817,9 @@ async function liveQuote(request, env, url) {
   }
 }
 
-async function fetchKlinePayload(url) {
+async function fetchKlinePayload(url, timeoutMs = KLINE_TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), KLINE_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(url, {
       headers: { Accept: 'application/json, text/plain, */*' },
@@ -845,13 +847,13 @@ async function fetchIntradayKline(code, period) {
   sina.searchParams.set('ma', 'no');
   sina.searchParams.set('datalen', '1023');
   try {
-    const payload = await fetchKlinePayload(sina.toString());
+    const payload = await fetchKlinePayload(sina.toString(), INTRADAY_SOURCE_TIMEOUT_MS);
     return { bars: normalizeKlineBars(payload, period), source: 'sina' };
   } catch (sinaError) {
     const tencent = new URL('https://ifzq.gtimg.cn/appstock/app/kline/mkline');
     tencent.searchParams.set('param', `${symbol},m${period},,640`);
     try {
-      const payload = await fetchKlinePayload(tencent.toString());
+      const payload = await fetchKlinePayload(tencent.toString(), INTRADAY_SOURCE_TIMEOUT_MS);
       const rows = payload?.data?.[symbol]?.[`m${period}`];
       return { bars: normalizeKlineBars(rows, period), source: 'tencent' };
     } catch (tencentError) {
@@ -885,7 +887,7 @@ async function liveKline(request, env, url) {
   }
 
   const origin = request.headers.get('Origin') || 'none';
-  const cacheKey = new Request(`https://lppl-stock-query.invalid/kline?code=${code}&period=${period}&origin=${encodeURIComponent(origin)}`);
+  const cacheKey = new Request(`https://lppl-stock-query.invalid/kline-v2?code=${code}&period=${period}&origin=${encodeURIComponent(origin)}`);
   let cache = null;
   try {
     if (typeof caches !== 'undefined' && caches.default) cache = caches.default;
@@ -893,16 +895,29 @@ async function liveKline(request, env, url) {
   if (cache) {
     try {
       const cached = await cache.match(cacheKey);
-      if (cached) {
+      const ttlRemaining = cached && Math.floor((Date.parse(cached.headers.get('Expires')) - Date.now()) / 1000);
+      if (ttlRemaining > 0) {
         const response = new Response(cached.body, {
           status: cached.status,
           statusText: cached.statusText,
           headers: cached.headers,
         });
         response.headers.set('X-Kline-Cache', 'HIT');
+        response.headers.set('Cache-Control', `public, max-age=${Math.min(ttlRemaining, klineCacheTtl())}`);
         return response;
       }
     } catch { cache = null; }
+  }
+
+  try {
+    const budget = await reserve(env, request.headers.get('CF-Connecting-IP') || 'unknown', 'kline');
+    if (!budget.ok) {
+      const detail = await budget.json();
+      return jsonResponse(request, env, detail, budget.status,
+        budget.status === 429 ? { 'Retry-After': String(detail.retry_after || 60) } : {});
+    }
+  } catch {
+    return jsonResponse(request, env, { error_code: 'SERVICE_UNAVAILABLE', error: '行情额度服务暂时不可用' }, 503);
   }
 
   try {
@@ -910,22 +925,29 @@ async function liveKline(request, env, url) {
     const computed = obvDivergence(result.bars);
     const first = computed.bars[0]?.t || null;
     const last = computed.bars.at(-1)?.t || null;
-    const ttl = klineCacheTtl();
+    const now = new Date();
+    // Minute providers can label the active, still-changing bar with its future end.
+    const localNow = new Date(now.getTime() + BEIJING_OFFSET_MS).toISOString().slice(0, 19).replace('T', ' ');
+    const intraday = period !== 'd';
+    const ttl = klineCacheTtl(now);
     const response = jsonResponse(request, env, {
       schema: 'kline_obv.v1',
       code,
       period,
       source: result.source,
       asof: last,
+      fetched_at: now.toISOString(),
+      ...(intraday && { last_bar_ended: last <= localNow }),
       bars: computed.bars,
-      divergences: computed.divergences,
+      divergences: intraday ? computed.divergences.filter(event => event.confirmed_at <= localNow) : computed.divergences,
       note: '历史形态描述，不是买卖信号',
       limits: { n_bars: computed.bars.length, first, last },
     }, 200, {
       'Cache-Control': `public, max-age=${ttl}`,
+      'Expires': new Date(now.getTime() + ttl * 1000).toUTCString(),
       'X-Kline-Cache': cache ? 'MISS' : 'BYPASS',
     });
-    if (cache) {
+    if (cache && ttl > 0) {
       try { await cache.put(cacheKey, response.clone()); }
       catch { /* A cache failure must not hide available kline data. */ }
     }
@@ -990,18 +1012,19 @@ export class QueryBudget extends SerializedObject {
     const { ip, resource = 'query' } = await request.json();
     const now = Date.now();
     const state = await this.ctx.storage.get(resource) || { global: [], ips: {} };
-    const windowMs = resource === 'market' ? 60_000 : 600_000;
-    const globalWindow = resource === 'market' ? 60_000 : resource === 'ai' ? 86_400_000 : 3_600_000;
+    const quoteResource = resource === 'market' || resource === 'kline';
+    const windowMs = quoteResource ? 60_000 : 600_000;
+    const globalWindow = quoteResource ? 60_000 : resource === 'ai' ? 86_400_000 : 3_600_000;
     state.global = state.global.filter((at) => at > now - globalWindow);
     for (const key of Object.keys(state.ips)) {
       state.ips[key] = state.ips[key].filter((at) => at > now - windowMs);
       if (!state.ips[key].length) delete state.ips[key];
     }
     const perIP = state.ips[ip] || [];
-    const ipLimit = resource === 'market' ? 30 : resource === 'ai'
+    const ipLimit = quoteResource ? 30 : resource === 'ai'
       ? budgetNumber(this.env, 'AI_PER_IP_10M', 10, 100)
       : budgetNumber(this.env, 'QUERIES_PER_IP_10M', 5, 100);
-    const globalLimit = resource === 'market' ? 300 : resource === 'ai'
+    const globalLimit = quoteResource ? 300 : resource === 'ai'
       ? budgetNumber(this.env, 'AI_PER_DAY', 200, 5000)
       : budgetNumber(this.env, 'QUERIES_PER_HOUR', 60, 1000);
     if (perIP.length >= ipLimit || state.global.length >= globalLimit) {
@@ -1167,11 +1190,16 @@ export function klineCacheTtl(now = new Date()) {
   const instant = now instanceof Date ? now : new Date(now);
   const shanghai = new Date(instant.getTime() + 8 * 60 * 60 * 1000);
   const weekday = shanghai.getUTCDay();
+  if (weekday === 0 || weekday === 6) return 600;
   const minute = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
-  const trading = weekday >= 1 && weekday <= 5
-    && ((minute >= 9 * 60 + 30 && minute < 11 * 60 + 30)
-      || (minute >= 13 * 60 && minute < 15 * 60));
-  return trading ? 60 : 600;
+  for (const [open, close] of [[570, 690], [780, 900]]) {
+    if (minute < open) {
+      const untilOpenMs = (open - minute) * 60000 - shanghai.getUTCSeconds() * 1000 - shanghai.getUTCMilliseconds();
+      return Math.min(600, Math.floor(untilOpenMs / 1000));
+    }
+    if (minute < close) return 60;
+  }
+  return 600;
 }
 
 async function readResult(env, code, kind, jobId = null) {

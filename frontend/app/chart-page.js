@@ -244,19 +244,24 @@
     try {
       var data = await LPPL.stock.kline(context.stockCode, period);
       if (run !== intradayRequest || selectedPeriod !== period) return;
-      if (!data || data.schema !== 'kline_obv.v1') throw new Error('Worker 返回的分钟线格式无效');
+      if (!data || data.schema !== 'kline_obv.v1' || data.code !== context.stockCode ||
+          data.period !== period || !Array.isArray(data.bars) || !data.bars.length) {
+        throw new Error('Worker 返回的分钟线标的、周期或数据无效');
+      }
+      chart.setIntraday(data);
       activeIntradayMetadata = {
         period: period, status: 'ready', source: data.source, limits: data.limits || {},
+        lastBarEnded: data.last_bar_ended, fetchedAt: data.fetched_at,
       };
       renderMarketMetadata(current || {});
-      chart.setIntraday(data);
       var limits = data.limits || {};
       el('obv-caption').textContent = 'OBV 背离为' +
         (data.note || '历史形态描述，不是买卖信号') +
         '；分钟线仅含最近约 ' + (limits.n_bars || (Array.isArray(data.bars) ? data.bars.length : 0)) +
         ' 根（' + (limits.first || '—') + '–' + (limits.last || '—') + '）';
       el('obv-caption').hidden = false;
-      el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间。';
+      el('intraday-notice').textContent = '分钟线不显示 LPPLS 区间。' +
+        (data.last_bar_ended === false ? '末根 K 线仍在形成，标签为该周期结束时间。' : '');
     } catch (error) {
       if (run !== intradayRequest || selectedPeriod !== period) return;
       activeIntradayMetadata = { period: period, status: 'error' };
@@ -274,6 +279,10 @@
     var metadata = Core.marketMetadata(data, selectedPeriod, activeIntradayMetadata);
     setText('market-date', metadata.marketDate);
     setText('data-source', metadata.dataSource);
+    var exportable = !!current && (selectedPeriod === 'd' ||
+      (activeIntradayMetadata && activeIntradayMetadata.status === 'ready'));
+    el('share-card').disabled = !exportable;
+    el('share-screenshot').disabled = !exportable;
   }
 
   function drawHeader(data) {
@@ -310,6 +319,10 @@
     var notice = el('asof-notice');
     var visible = !!context.asof;
     notice.hidden = !visible;
+    if (context.archive && visible) {
+      notice.textContent = '正在查看指定版本的原档。图表仅使用已通过内容校验的归档行情与模型。公开首发时间未知。';
+      return;
+    }
     notice.textContent = visible
       ? (data.historyFallback ? '使用精确日期的历史封存帧；价格截自当前已发布历史行情，其修订时点未记录。' : '只读查看此日期的封存结果。') +
         '历史重放与真实提前发布分开；未记录首次可见时间时，不声称当时已发布。'
@@ -367,8 +380,6 @@
       else applyInitialFocus(data);
     } else if (view && chart.setVisibleRange) chart.setVisibleRange(view);
     el('loading').hidden = true;
-    el('share-card').disabled = false;
-    el('share-screenshot').disabled = false;
     page.dataset.loaded = 'true';
   }
 
@@ -438,6 +449,11 @@
 
   async function loadEvents(request) {
     var run = ++eventRequest;
+    if (context.archive) {
+      el('events-note').textContent = '此原档未封存独立事件流。';
+      el('events-retry').disabled = true;
+      moduleState('events-status', '原档未包含事件'); return;
+    }
     if (context.assetType !== 'stock') {
       el('events-note').textContent = '当前数据入口未提供指数事件；没有将个股事件套用到指数。';
       el('events-retry').disabled = true;
@@ -598,18 +614,27 @@
   });
 
   function researchCard() {
+    if (selectedPeriod !== 'd') {
+      return activeIntradayMetadata && activeIntradayMetadata.status === 'ready'
+        ? Share.intradayRecord(current, activeIntradayMetadata) : null;
+    }
     return Share.record(current, context, evidenceFor(current, context.scale), intervalRows(current, context.scale), Core.bandEvidencePolicy, Core.bandEvidenceCode);
   }
-  function download(blob, suffix) {
+  function download(blob, suffix, card) {
     var url = URL.createObjectURL(blob), link = document.createElement('a');
-    link.href = url; link.download = 'LPPL-' + current.symbol + '-' + (current.modelAsOf || current.marketAsOf || 'undated') + suffix;
+    var vintage = [card.modelAsOf, card.marketAsOf].find(function (date) { return /^\d{4}-\d{2}-\d{2}/.test(date); }) || 'undated';
+    if (card.period) vintage = card.last.slice(0, 10) + '-' + card.period + 'm';
+    link.href = url; link.download = 'LPPL-' + card.symbol + '-' + vintage + suffix;
     document.body.appendChild(link); link.click(); link.remove();
     root.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
   el('share-card').addEventListener('click', function () {
     if (!current) return;
-    download(new Blob([Share.svg(researchCard())], { type: 'image/svg+xml;charset=utf-8' }), '-research.svg');
-    el('action-feedback').textContent = '匿名研究卡已下载，含来源、截止日、模型版本和证据；不含自选、笔记或持仓。';
+    var card = researchCard();
+    if (!card) return;
+    download(new Blob([Share.svg(card)], { type: 'image/svg+xml;charset=utf-8' }), '-research.svg', card);
+    el('action-feedback').textContent = card.period ? '分钟行情卡已下载，含来源、周期和覆盖时段。' :
+      '匿名研究卡已下载，含来源、截止日、模型版本和证据；不含自选、笔记或持仓。';
   });
   el('share-screenshot').addEventListener('click', async function () {
     if (!current || !chart) return;
@@ -620,9 +645,11 @@
       if (drawing) await new Promise(function (resolve) {
         requestAnimationFrame(function () { requestAnimationFrame(resolve); });
       });
+      var card = researchCard();
+      if (!card) return;
       var shot = chart.takeScreenshot(includeDrawings);
       if (includeDrawings && drawing) drawing.composeScreenshot(shot);
-      var lines = Share.lines(researchCard());
+      var lines = Share.lines(card);
       var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
       var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
       var ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -633,7 +660,7 @@
       ctx.drawImage(shot, 0, header);
       var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
       if (!blob) throw new Error('图片编码失败');
-      download(blob, '-chart.png');
+      download(blob, '-chart.png', card);
       el('action-feedback').textContent = includeDrawings
         ? '当前图表与证据截图已下载，包含你选择的个人标注。'
         : '当前图表与证据截图已下载；不含私人研究资料。';
@@ -651,6 +678,7 @@
   function latestResultsHref() {
     var params = new URLSearchParams(root.location.search);
     params.delete('asof');
+    params.delete('archive');
     var query = params.toString();
     return root.location.pathname + (query ? '?' + query : '') + root.location.hash;
   }
@@ -687,6 +715,7 @@
         var market = Object.assign({}, result.market, { price: result.bars, asof: context.asof, cutoff: context.asof });
         data = Core.assembleStockData(context.code, result.raw, market, null);
       } else data = Core.assembleIndexData(context.code, result);
+      if (context.archive) data.firstVisibleAt = null;
       data.historyFallback = !!result.historyFallback;
       data.eventRows = activeEvents; data.events = activeEvents;
       data.marketAsOf = data.bars.length ? data.bars[data.bars.length - 1].date : '';

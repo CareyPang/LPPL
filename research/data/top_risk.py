@@ -201,6 +201,7 @@ def margin_metrics(rows: list[dict[str, Any]], asof: str) -> dict[str, Any]:
         "date": current["date"],
         "rzye_yi": current["rzye"] / 100_000_000,
         "pct252": pct252,
+        "n": len(window),
         "threshold": threshold,
         "on": pct252 >= threshold,
     }
@@ -265,6 +266,7 @@ def breadth_drop_metrics(history: list[dict[str, Any]]) -> dict[str, Any]:
         "std250": std250,
         "threshold": threshold,
         "mcl_pct250": percentile_rank(mcl[-GAIN_LOOKBACK:]),
+        "n": len(mcl[-GAIN_LOOKBACK:]),
     }
 
 
@@ -311,6 +313,7 @@ def index_metrics(
         "name": name,
         "close": current,
         "pos_pct252": pct252,
+        "n": len(closes[-LOOKBACK:]),
         "pos_threshold": position_threshold,
         "gain_from_250_low": gain_from_250_low,
         "gain_threshold": gain_threshold,
@@ -324,6 +327,8 @@ def build_n_on_history(
     breadth_history: list[dict[str, Any]],
     margin_rows: list[dict[str, Any]],
     index_histories: dict[str, list[dict[str, Any]]],
+    *,
+    require_full_windows: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
     """Build daily risk states by applying the snapshot metrics to each date."""
     breadth = sorted(
@@ -364,6 +369,8 @@ def build_n_on_history(
         try:
             concentration = concentration_metrics(eligible_breadth)
             margin_end = bisect.bisect_left(margin_dates, day)
+            if require_full_windows and margin_end < LOOKBACK:
+                continue
             margin = margin_metrics(
                 margin_ordered[max(0, margin_end - LOOKBACK) : margin_end], day
             )
@@ -373,6 +380,14 @@ def build_n_on_history(
             raise
         for code, rows in histories.items():
             price_end = bisect.bisect_right(history_dates[code], day)
+            if require_full_windows:
+                sessions = history_dates[code][:price_end]
+                if (
+                    len(sessions) <= LOOKBACK
+                    or sessions[-LOOKBACK - 1 : -1] != margin_dates[margin_end - LOOKBACK : margin_end]
+                    or sessions[-5:] != [item["date"] for item in eligible_breadth]
+                ):
+                    continue
             eligible_prices = rows[max(0, price_end - LOOKBACK) : price_end]
             if not eligible_prices or eligible_prices[-1]["date"] != day:
                 continue
@@ -424,6 +439,17 @@ def build_snapshot(
     breadth_history = _clean_breadth_history(breadth, day)
     concentration = concentration_metrics(breadth_history)
     margin = margin_metrics(margin_rows, day)
+    # Use observed exchange sessions rather than subtracting a calendar day (weekends/holidays).
+    benchmark_days = (_date_text(row["date"]) for row in index_histories["sh000001"])
+    expected_margin_day = max(
+        breadth_history[-2]["date"],
+        max(session for session in benchmark_days if session < day),
+    )
+    if margin["date"] != expected_margin_day:
+        raise ValueError(
+            f"financing balance asof {margin['date']}; expected previous trading session "
+            f"{expected_margin_day} for {day}"
+        )
     breadth_drop = breadth_drop_metrics(breadth_history)
     indices = [
         index_metrics(
@@ -437,6 +463,10 @@ def build_snapshot(
         for code, name in INDEXES
     ]
     research = _load_research_results(episodes_path)
+    margin["source"] = "东方财富两融历史"
+    breadth_drop["source"] = "通达信全市场盘后包"
+    for metric in indices:
+        metric["source"] = "腾讯指数日线"
     return {
         "schema": "top_risk.v1",
         "asof": day,

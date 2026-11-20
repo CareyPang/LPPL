@@ -774,6 +774,20 @@ def test_csindex_cache_accumulates_daily_rows_and_replaces_revisions(tmp_path):
     assert cached.loc[cached["date"] == "2026-10-30", "pe1"].item() == 13.7
 
 
+def test_pe_overlapping_history_revisions_preserve_source_order(tmp_path):
+    dates = pd.bdate_range("2025-01-01", periods=90).strftime("%Y-%m-%d")
+    base = pd.DataFrame({"date": dates, "pe1": 1.0, "pe2": 2.0, "dy1": 3.0, "dy2": 4.0})
+    revised = base.iloc[10:80].sample(frac=1, random_state=12).assign(pe1=7.0)
+    for values in (base, revised):
+        assert market._update_csindex_valuation_cache("000300", values, tmp_path) is None
+    saved = pd.read_parquet(tmp_path / "000300.parquet").set_index("date")
+    assert saved.index.is_monotonic_increasing and saved.index.is_unique
+    assert (saved.loc[revised["date"], "pe1"] == 7).all()
+    monthly = pd.concat([base, revised]).rename(columns={"date": "日期", "pe1": "静态市盈率"})
+    stats = market._legu_pe_percentile(monthly, 3.0, dates[-1])
+    assert stats["pe_pct_n"] == 90 and stats["pe_pct10y"] == pytest.approx(20 / 90)
+
+
 def test_eastmoney_403_is_not_retried():
     class Response:
         status_code = 403

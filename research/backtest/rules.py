@@ -10,10 +10,16 @@ VARIANTS = tuple(product((2, 3), (5, 20)))
 
 
 def top_risk_target(n_on: pd.Series, threshold: int, reentry_days: int) -> pd.Series:
+    invalid = ~n_on.isin([0, 1, 2, 3])
+    if invalid.any():
+        raise ValueError(
+            f"R-TR1 risk history missing or invalid on {int(invalid.sum())} sessions; "
+            f"first: {n_on.index[invalid][0]}"
+        )
     target = []
     invested = True
     clear_days = 0
-    for value in n_on.fillna(0):
+    for value in n_on:
         if invested and value >= threshold:
             invested = False
             clear_days = 0
@@ -71,7 +77,7 @@ def select_top_risk_variant(
     dates = pd.to_datetime(dev["date"]).dt.strftime("%Y-%m-%d")
     aligned = n_on.copy()
     aligned.index = pd.to_datetime(aligned.index).strftime("%Y-%m-%d")
-    selected = aligned.reindex(dates).fillna(0)
+    selected = aligned.reindex(dates)
     variants = {}
     for threshold, reentry_days in VARIANTS:
         target = top_risk_target(selected, threshold, reentry_days)

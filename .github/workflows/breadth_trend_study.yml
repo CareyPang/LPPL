@@ -1,0 +1,68 @@
+name: Breadth trend research replay
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/breadth_trend_study.yml
+      - research/data/breadth.py
+      - research/data/breadth_alerts.py
+      - research/eval/breadth_trend_study.py
+      - research/eval/breadth_warning_replay.py
+      - tests/test_breadth*trend*.py
+      - tests/test_breadth_alerts.py
+      - tests/test_breadth_warning_replay.py
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Restore the frozen November 18 market sample
+        id: breadth
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache/breadth
+          key: market-breadth-v1-5e6a1724a7396e8fdac4e35999c2f3873374c2d1a915f9ae1995d5895bfd0cc8-44466581829-1
+      - name: Replay against closed observations
+        env:
+          INPUT_REF: 9430d1dda8937833501cb26150b1e6ff767f1cf5
+        run: |
+          set -euo pipefail
+          mkdir -p out/breadth-study
+          source_url="https://raw.githubusercontent.com/CareyPang/LPPL/${INPUT_REF}"
+          curl --fail --silent --show-error --location --retry 2 "$source_url/index/sh000001_latest.json" -o "$RUNNER_TEMP/index.json"
+          if [[ -s data/cache/breadth/rows.csv ]]; then
+            rows=data/cache/breadth/rows.csv
+            sample=production_cache
+          else
+            rows="$RUNNER_TEMP/breadth_latest.json"
+            curl --fail --silent --show-error --location --retry 2 "$source_url/market/breadth_latest.json" -o "$rows"
+            sample=public_60_session_history
+          fi
+          python -m research.eval.breadth_trend_study --rows "$rows" --index "$RUNNER_TEMP/index.json" --asof 2026-11-18 --out out/breadth-study
+          python -m research.eval.breadth_warning_replay --rows "$rows" --index "$RUNNER_TEMP/index.json" --asof 2026-11-18 --out out/breadth-study
+          {
+            echo "sample=$sample"
+            echo "index_git_ref=$INPUT_REF"
+            echo "cutoff=2026-11-18"
+            echo "rows_sha256=$(sha256sum "$rows" | cut -d' ' -f1)"
+            echo "index_sha256=$(sha256sum "$RUNNER_TEMP/index.json" | cut -d' ' -f1)"
+          } | tee out/breadth-study/inputs.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Save research evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: breadth-trend-replay
+          path: out/breadth-study/
+          retention-days: 30
+          if-no-files-found: error

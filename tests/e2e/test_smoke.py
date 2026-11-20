@@ -235,6 +235,29 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
     expect(page.locator("#market-date")).to_have_text(
         "行情时间 2026-11-18 15:00:00"
     )
+    with page.expect_download() as card_download:
+        page.locator("#share-card").click()
+    card = card_download.value
+    assert card.suggested_filename.endswith("2026-11-18-30m-research.svg")
+    card_text = card.path().read_text(encoding="utf-8")
+    assert "30 分钟行情 · fixture" in card_text
+    assert "2026-11-18 15:00:00" in card_text
+    assert "tencent_fqkline" not in card_text
+    # Verify what the actual PNG exporter writes to its header.
+    page.evaluate("""() => {
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      window.exportHeader = [];
+      CanvasRenderingContext2D.prototype.fillText = function (text, ...args) {
+        if (!this.canvas.isConnected) window.exportHeader.push(String(text));
+        return original.call(this, text, ...args);
+      };
+    }""")
+    with page.expect_download() as png_download:
+        page.locator("#share-screenshot").click()
+    assert png_download.value.suggested_filename.endswith("2026-11-18-30m-chart.png")
+    header = "\n".join(page.evaluate("window.exportHeader"))
+    assert "30 分钟行情 · fixture" in header
+    assert "tencent_fqkline" not in header
     notice = page.locator("#intraday-notice").bounding_box()
     chart = page.locator("#chart-host").bounding_box()
     assert notice and chart and chart["y"] >= notice["y"] + notice["height"] + 12
@@ -254,6 +277,13 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
         assert page.evaluate(
             "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
         ), f"chart page overflows at {width}px"
+    page.locator('#period-selector [data-period="60"]').click()
+    expect(page.locator("#intraday-notice")).to_contain_text("分钟行情读取失败")
+    expect(page.locator("#share-card")).to_be_disabled()
+    expect(page.locator("#share-screenshot")).to_be_disabled()
+    page.locator('#period-selector [data-period="d"]').click()
+    expect(page.locator("#share-card")).to_be_enabled()
+    expect(page.locator("#data-source")).to_have_text("tencent_fqkline · 未复权")
     assert any(
         method == "GET"
         and (urlsplit(url).hostname or "").endswith(".workers.dev")
@@ -268,7 +298,13 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
 def test_flow_4_index_chip_updates_header(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
     expect(page.locator("#sym-n")).to_contain_text("上证指数")
-    page.locator('#ticker button[data-c="沪深300"]').click()
+    # Switching the identity updates the header before the optional live quote finishes.
+    # Await its intercepted response so teardown can audit the complete request.
+    with page.expect_response(lambda response: (
+        urlsplit(response.url).path == "/quote"
+        and parse_qs(urlsplit(response.url).query).get("codes") == ["sh000300"]
+    )):
+        page.locator('#ticker button[data-c="沪深300"]').click()
     expect(page.locator("#sym-n")).to_contain_text("沪深300")
 
 
@@ -345,6 +381,7 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text("全部 5 只")
     expect(page.locator("#lhb-seats-body .lhb-meta")).to_have_text(
         "样本 34 只（其中单日榜 28、多日榜 6） · 历史分位，不是预测"
+        " · 旧快照未区分重叠榜期，合计可能包含重复披露。"
     )
     seat_rows = page.locator("#lhb-seats-body .lhb-youzi-row")
     expect(seat_rows).to_have_count(2)
@@ -419,7 +456,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(breadth.locator("#breadth-body")).to_contain_text("52.5%")
     expect(breadth.locator("#breadth-body")).to_contain_text("14.7%")
     expect(breadth.locator("#breadth-body")).to_contain_text("8.1%")
-    expect(breadth.locator("#breadth-body")).to_contain_text("预警规则回测中，暂不显示")
+    expect(breadth.locator("#breadth-trend")).to_contain_text("这份行情没有附带趋势评估")
+    expect(page.locator("#trend-summary")).to_be_hidden()
     expect(breadth.locator(".breadth-basis-table tbody tr")).to_have_count(4)
     expect(
         breadth.locator(".breadth-basis-table tbody tr").first.locator("td").nth(4)
@@ -435,6 +473,9 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "上证指数 · n=7 段 · 42.9% · 基准 12.9%"
     )
     expect(top_risk.locator(".top-risk-card").first).to_contain_text("满足 3/3 项")
+    expect(top_risk.locator(".top-risk-card").first).to_contain_text("n=248")
+    expect(top_risk.locator(".top-risk-common")).to_contain_text("n=251")
+    expect(top_risk.locator(".top-risk-card").nth(1)).to_contain_text("分位样本数或数值未记录")
     for card in top_risk.locator(".top-risk-card").all():
         expect(card).not_to_contain_text("集中度")
         expect(card).not_to_contain_text("融资余额")
@@ -1876,6 +1917,43 @@ def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) 
     bench_context = ask_context()
     assert "开发段 2000" in bench_context
     assert len(bench_context) <= 8000
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize("width", [390, 1280])
+def test_market_reversal_notice_links_to_its_dated_evidence(page: Page, width: int) -> None:
+    page.clock.set_fixed_time("2026-11-18T18:00:00+08:00")
+    page.set_viewport_size({"width": width, "height": 844})
+    day = "2026-11-18"
+    breadth = json.loads(BREADTH_FIXTURE.read_text(encoding="utf-8"))
+    breadth["trend_alerts"] = {
+        "schema": "breadth-alerts.v1", "evidence": "experimental",
+        "asof": day, "state": "watch",
+        "phase": {"label": "持续下跌", "asof": "2026-11-17"},
+        "alerts": [{
+            "kind": "reversal", "level": "strengthening", "active": True,
+            "evidence": "experimental", "title": "下跌趋势可能扭转",
+            "message": "回落后又有更多股票上涨。",
+            "trigger_date": "2026-11-16", "update_date": day,
+            "reasons": ["上涨的股票继续增加。"], "next_check": "回踩时能否守住前低。",
+        }],
+    }
+    market_source = BREADTH_FIXTURE.parents[3] / "web/mock/data/market/market_latest.json"
+    market = json.loads(market_source.read_text(encoding="utf-8"))
+    market["asof"] = day
+    page.route("**/lab/mock/data/market/breadth_latest.json", lambda route: route.fulfill(json=breadth))
+    page.route("**/lab/mock/data/market/market_latest.json", lambda route: route.fulfill(json=market))
+    page.goto(f"{BASE_URL}/market.html")
+    summary = page.locator("#trend-summary")
+    expect(summary).to_be_visible()
+    expect(summary).to_contain_text("下跌趋势可能扭转（迹象增强）")
+    summary.focus()
+    summary.press("Enter")
+    detail = page.locator("#breadth-trend")
+    expect(detail).to_be_focused()
+    expect(detail).to_contain_text("首次符合条件 2026-11-16 · 判断更新 2026-11-18")
+    expect(detail).to_contain_text("回踩时能否守住前低")
+    assert detail.evaluate("el => el.scrollWidth <= el.clientWidth")
 
 
 @pytest.mark.e2e

@@ -54,6 +54,17 @@
           <div class="detail-top"><span class="section-kicker" id="detail-kind">RESEARCH DESK</span><button id="close-detail" type="button" class="text-button">收起 ↑</button></div>
           <div class="detail-identity"><h2 id="detail-heading"></h2><p class="asset-id" id="detail-code"></p></div>
           <div id="detail-summary"></div>
+          <section id="archive-panel" aria-labelledby="archive-heading">
+            <h3 id="archive-heading">封存记录与区间变化</h3>
+            <p id="archive-state" class="record-caption" role="status"></p>
+            <div id="archive-controls" hidden>
+              <label>封存时间范围<select id="archive-mode"><option value="all">全部已收录原档</option><option value="close">指定交易日收盘前</option></select></label>
+              <label id="archive-cutoff-label" hidden>交易日<input id="archive-cutoff" type="date"></label>
+            </div>
+            <div id="archive-records"></div>
+            <button id="archive-more" type="button" class="text-button" hidden>显示更早变化</button>
+            <button id="archive-retry" type="button" class="text-button" hidden>重新读取封存记录</button>
+          </section>
           <label class="detail-group">归入分组<select id="asset-group" aria-label="标的分组"></select></label>
           <a class="button button-primary button-wide" id="open-analysis" href="stock.html">打开最新分析 <span aria-hidden="true">↗</span></a>
           <p class="context-note" id="context-note">保留当前清单；返回后继续研究。</p>
@@ -99,6 +110,7 @@
   <script src="app/watchlist.js"></script>
   <script src="app/rule-labels.js"></script>
   <script src="app/research-workspace-core.js"></script>
+  <script src="app/watchlist-archive.js"></script>
   <script src="app/research-workspace.js"></script>
   <script src="app/research-personal-core.js"></script>
   <script src="app/research-personal.js"></script>

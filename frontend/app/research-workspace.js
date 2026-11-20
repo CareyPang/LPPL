@@ -187,6 +187,7 @@
     const asset = selectedAsset();
     $('detail-empty').hidden = !!asset;
     $('detail-content').hidden = !asset;
+    archive.select(asset?.id || null, asset?.id === replayRequest?.asset.id ? replayRequest?.asof : inspectRecord?.asof);
     if (!asset) { activeNoteKey = null; return; }
     const replaying = replayRequest?.asset.id === asset.id;
     const savedReplay = replaying && inspectRecord?.asset?.id === asset.id && inspectRecord.asof === replayRequest.asof;
@@ -228,7 +229,7 @@
     const fullChart = new URLSearchParams({ code: asset.code, kind: asset.kind, from: 'research-workspace.html?' + workspaceReturn.toString() });
     if (returnAsOf) fullChart.set('asof', returnAsOf);
     $('open-full-chart').href = 'chart.html?' + fullChart.toString();
-    $('open-full-chart').textContent = returnAsOf ? '查看截至 ' + returnAsOf + ' 的完整图表 ↗' : '打开完整图表 ↗';
+    $('open-full-chart').textContent = returnAsOf ? '查看截至 ' + returnAsOf + ' 的完整图表 ↗' : '打开最新完整图表 ↗';
     $('context-note').textContent = replaying ? '正在按截止日回放本机保存的研究摘要；完整图表只读取同日封存结果。' : inspectRecord ? '正在查看本机保存的历史摘要。上方链接会恢复该历史日期。' : '打开站点最新分析；返回后保留本页分组、筛选与研究记录。';
     const key = noteKey(s), note = lastNote(s);
     if (key !== activeNoteKey) {
@@ -506,7 +507,7 @@
     $('watch-heading').scrollIntoView({ block: 'nearest' });
     $('watch-heading').focus({ preventScroll: true });
   });
-  $('refresh-results').addEventListener('click', () => { notify(''); refresh(); });
+  $('refresh-results').addEventListener('click', () => { notify(''); refresh(); archive.read(); });
   $('open-full-chart').addEventListener('click', () => {
     const asset = selectedAsset(), link = new URL($('open-full-chart').href, window.location.href);
     if (!asset) return;
@@ -548,6 +549,7 @@
     inspectRecord = recordList(replayRequest.asset.id).findLast(record => record.asof === replayRequest.asof) || null;
   }
   for (const a of assets) { const latest = recordList(a.id).at(-1); if (latest) summaries.set(a.id, latest); }
+  const archive = window.WatchlistArchive.bind(document, API);
   render();
   if (state.scrollY) requestAnimationFrame(() => window.scrollTo(0, state.scrollY));
   refresh();

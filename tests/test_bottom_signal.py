@@ -249,6 +249,31 @@ def test_a500_sources_prefer_legacy_akshare_functions_when_available(monkeypatch
     assert result["sources"]["close"] == "ak.stock_zh_index_daily(sh000510)"
 
 
+def test_a500_missing_valuation_keeps_price_horizons():
+    ebs, pbn, dates = _frames(860)
+    close = ebs["沪深300指数"].copy()
+    close.iloc[850] = 30.0
+    close.iloc[851] = 20.0  # Beyond the event's 250-day horizon
+    pe = pd.DataFrame({"pe_ttm": 20.0}, index=dates)
+    pe.iloc[600] = 5.0
+    pbn.loc[600, "below_net_asset_ratio"] = 0.8
+    ak = SimpleNamespace(
+        bond_zh_us_rate=lambda **_: pd.DataFrame({"日期": dates, "中国国债收益率10年": 3.0}),
+        stock_zh_index_daily=lambda **_: pd.DataFrame({"date": dates, "close": close}),
+    )
+    full = bottom_signal._a500_payload(ak, pbn, pe)
+    gapped = bottom_signal._a500_payload(ak, pbn, pe.drop(dates[[620, 859]]))
+    assert len(full["events"]) == len(gapped["events"]) == 1
+    event = gapped["events"][0]
+    assert event["date"] == dates[600].date().isoformat()
+    assert event["post_min_date"] == dates[850].date().isoformat()
+    for horizon in (120, 250):
+        assert event[f"ret_{horizon}"] == full["events"][0][f"ret_{horizon}"]
+        assert event[f"ret_{horizon}"] == round(close.iloc[600 + horizon] / close.iloc[600] - 1, 4)
+    assert gapped["asof"] == dates[-1].date().isoformat()
+    assert gapped["current"]["signal"] is None
+
+
 def test_cli_passes_a500_history_and_skip_flags(monkeypatch, tmp_path):
     calls = {}
 

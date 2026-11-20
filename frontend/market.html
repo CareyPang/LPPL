@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>临界点 · 市场背景</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
-<meta name="description" content="A 股资金流、涨跌停、两融、北向与估值的当日描述性统计，不是预测。">
+<meta name="description" content="查看上证收盘走势提醒、上涨股票占比、股指期货升贴水和 A 股市场复盘。">
 <meta name="theme-color" content="#1f5fd6">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="临界点">
 <meta property="og:title" content="临界点 · 市场">
-<meta property="og:description" content="A 股资金流、涨跌停、两融、北向与估值的当日描述性统计，不是预测。">
+<meta property="og:description" content="查看上证收盘走势提醒、上涨股票占比、股指期货升贴水和 A 股市场复盘。">
 <meta name="twitter:card" content="summary">
 <style>
 :root {
@@ -326,6 +326,21 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 #s-breadth .breadth-method { margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface); padding: var(--s3); }
 #s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
 #s-breadth .breadth-method p { line-height: 1.6; }
+#trend-summary:not([hidden]) { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: 44px; margin-bottom: var(--s2); padding: var(--s2) var(--s3); color: var(--real); border: 1px solid var(--line); border-left: 3px solid var(--real); font-weight: 600; overflow-wrap: anywhere; }
+#trend-summary:hover { background: var(--surface-2); }
+#breadth-trend { margin-bottom: var(--s4); scroll-margin-top: 80px; }
+.trend-heading, .trend-card header { display: flex; gap: var(--s2); align-items: baseline; flex-wrap: wrap; }
+.trend-heading h3, .trend-card h4 { margin: 0; font-size: 15px; }
+.trend-meta { margin: 0; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.trend-phase { margin: var(--s1) 0; color: var(--ink-2); }
+.trend-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,280px),1fr)); gap: var(--s2); margin-top: var(--s2); }
+.trend-card { min-width: 0; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-left: 3px solid var(--real); overflow-wrap: anywhere; }
+.trend-card[data-level="strengthening"] { border-left-color: var(--warn); }
+.trend-card[data-level="invalidated"] { border-left-color: var(--ink-3); }
+.trend-card header span { color: var(--ink-2); font-size: 12px; }
+.trend-card p, .trend-card ul { margin: var(--s2) 0 0; }
+.trend-card ul { padding-left: 1.35em; color: var(--ink-2); }
+.trend-card .trend-next { padding-top: var(--s2); border-top: 1px solid var(--grid); }
 @media (max-width: 760px) { #s-breadth .breadth-tables { grid-template-columns: minmax(0, 1fr); } }
 #s-top-risk .top-risk-common { margin-bottom: var(--s4); }
 #s-top-risk .top-risk-common > h3 { margin: 0 0 var(--s2); font-size: 13px; }
@@ -374,6 +389,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   <div class="sec wide stale" id="stale-banner" role="status" hidden></div>
   <section class="sec wide" id="s-summary" aria-labelledby="h-summary">
     <div class="sec-h"><h2 id="h-summary">今日摘要</h2><span class="ev">descriptive</span></div>
+    <div aria-live="polite" aria-atomic="true"><a href="#breadth-trend" id="trend-summary" hidden><span></span><span aria-hidden="true">↓</span></a></div>
     <div id="today-summary" data-ai-context="今日摘要"><p class="note">摘要数据加载中…</p></div>
     <details class="summary-model-details" id="model-range-details">
       <summary>逐个指数看变化</summary>
@@ -381,7 +397,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     </details>
   </section>
   <section class="sec wide" id="s-breadth" aria-labelledby="h-breadth" data-ai-context="宽度与资金">
-    <div class="sec-h"><h2 id="h-breadth">宽度与资金</h2><span class="ev">descriptive</span><span class="src" id="src-breadth"></span></div>
+    <div class="sec-h"><h2 id="h-breadth">宽度与资金</h2><span class="src" id="src-breadth"></span></div>
+    <div id="breadth-trend" role="region" aria-label="上证走势提醒" tabindex="-1"><p class="note">正在读取收盘提醒…</p></div>
     <div id="breadth-body"><p class="note">宽度与资金数据加载中…</p></div>
   </section>
   <section class="sec wide" id="s-top-risk" aria-labelledby="h-top-risk" data-ai-context="顶部风险区">
@@ -510,7 +527,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   </section>
 </main>
 <div class="tip" id="tip" hidden></div>
-<footer>市场背景只作描述，不进入 LPPLS 报警或任何模型。</footer>
+<footer>上证走势提醒使用盘后市场数据独立计算。LPPLS 时间区间可在指数工作站查看。</footer>
 
 <script src="app/lppl-data.js"></script>
 <script src="app/news-feed.js"></script>
@@ -519,6 +536,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 <script src="app/trading-days.js"></script>
 <script src="app/top-clusters.js"></script>
 <script src="app/market-summary.js"></script>
+<script src="app/market-trend-alerts.js"></script>
 <script>
 (function () {
   'use strict';
@@ -560,6 +578,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   };
   let M = null, Macro = null, Growth = null, kind = 'industry', period = 'today', newsRefreshState = null;
   let marketResult = null, eventResult = null;
+  let breadthSnapshot = null, breadthCalendar = null;
   let limitTab = '1', limitSort = 'first_seal', limitSortDir = 1;
   let boardBox = null, pinnedTile = null;
   const tip = $('tip');
@@ -1508,13 +1527,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('lhb-subtitle').textContent = `游资与量化席位买卖动向 · 已识别游资 ${Number(summary.n_aliases) || 0} 家`;
     $('lhb-date-badge').textContent = data.date_badge || '盘后榜单';
     const note = String(data.note || '席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。');
+    const periodLabel = period => ({single: '单日榜', multi: '多日榜'}[period] || '榜期未区分');
+    const totalsBasis = data.totals_basis === 'single_preferred_per_stock'
+      ? '合计按股票优先单日榜，仅有多日榜时取多日榜。同股两榜分别列在明细中。'
+      : '旧快照未区分重叠榜期，合计可能包含重复披露。';
+    const rankingBasis = data.ranking_basis === 'single_only' ? '单日榜' : '旧快照 · 榜期未区分';
     const sourceLinks = (sources) => (Array.isArray(sources) ? sources : []).map((source, index) =>
       `<a href="${E(source.source_url)}" target="_blank" rel="noopener noreferrer" title="${E(source.source)}">${index ? `来源${index + 1}` : '来源'}</a>`
     ).join(' · ');
     const tradeMarkup = (group) => {
       const chips = Array.isArray(group.chips) ? group.chips : [];
       return `<div class="lhb-trades">${chips.map((trade) =>
-        `<span class="lhb-trade-chip ${trade.side === 'in' ? 'in' : 'out'}">${trade.side === 'in' ? '入' : '出'} ${E(trade.name || trade.code)} ${money(trade.amount)}</span>`
+        `<span class="lhb-trade-chip ${trade.side === 'in' ? 'in' : 'out'}">${trade.side === 'in' ? '入' : '出'} ${E(trade.name || trade.code)} ${money(trade.amount)} · ${periodLabel(trade.list)}</span>`
       ).join('')}${group.more_trades ? `<span class="lhb-more">+${E(group.more_trades)}笔</span>` : ''}</div>`;
     };
     const rankClasses = ['gold', 'silver', 'bronze'];
@@ -1540,8 +1564,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <div class="lhb-card sell">龙虎榜卖出<strong>${money(totals.sell)}</strong></div>
       <div class="lhb-card institution">机构净买入（已披露部分）<strong>${money(totals.institution_net)}</strong></div>
     </div>
-    <p class="lhb-meta">${E(data.sample_note || '')}</p>
-    <div class="lhb-top-buy"><strong>游资已披露买入：前6只</strong><span>${topBuy || '暂无可用样本'} · 全部 ${E(summary.n_stocks ?? 0)} 只</span></div>
+    <p class="lhb-meta">${E(data.sample_note || '')} · ${totalsBasis}</p>
+    <div class="lhb-top-buy"><strong>游资已披露买入：前6只</strong><span>${rankingBasis} · ${topBuy || '暂无可用样本'} · 全部 ${E(summary.n_stocks ?? 0)} 只</span></div>
     <div class="lhb-rows">${youziRows || '<p class="note">暂无已识别游资席位</p>'}</div>
     <h3 class="lhb-other-heading">其他主要席位 · 已披露样本</h3>
     <div class="lhb-other">${otherRows || '<p class="note">暂无其他主要席位</p>'}</div>
@@ -1694,6 +1718,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         LPPL.resultOf(LPPL.load(spec.sym), { empty: (data) => !data?.top || !data.bars?.length }),
         historyPromise,
       ]);
+      if (spec.sym === 'sh000001' && latest.data?.raw?.future_calendar) {
+        breadthCalendar = latest.data.raw.future_calendar;
+        if (breadthSnapshot) renderTrendAlerts();
+      }
       if (['sh000001', 'sz399001', 'sz399006'].includes(spec.sym)) {
         if (latest.reason) publishedIndexReasons.push(latest.reason);
         else {
@@ -1743,6 +1771,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       empty: (data) => !data || Object.keys(data).length === 0,
     });
     M = marketResult.data || {};
+    if (breadthSnapshot) renderTrendAlerts();
     renderAll();
     const banner = $('market-error-banner');
     if (marketResult.reason) {
@@ -1757,10 +1786,22 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     }
     if (typeof renderSummary === 'function') renderSummary();
   }
+  function renderTrendAlerts() {
+    const summary = $('trend-summary');
+    const selectedDate = new URLSearchParams(window.location.search).get('asof');
+    const model = LPPLMarketTrends.view(breadthSnapshot, M?.asof, Date.now(), breadthCalendar, selectedDate);
+    $('breadth-trend').innerHTML = LPPLMarketTrends.markup(model, E);
+    const text = model.headline ? model.asof + ' 收盘提醒 · ' + model.headline : '';
+    if (summary.firstElementChild.textContent !== text) summary.firstElementChild.textContent = text;
+    summary.hidden = !model.headline;
+  }
   function renderBreadth(data, reason) {
     const body = $('breadth-body');
     const latest = data?.schema === 'breadth.v1' ? data.latest : null;
     if (!latest) {
+      breadthSnapshot = null;
+      $('trend-summary').hidden = true;
+      $('breadth-trend').innerHTML = '<h3>上证走势提醒</h3><p class="note">收盘行情尚未读到，提醒暂时无法判断。</p>';
       $('src-breadth').textContent = '数据未加载';
       body.innerHTML = statusMarkup(
         reason || (data ? 'empty' : 'unpublished'),
@@ -1769,6 +1810,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       );
       return;
     }
+    breadthSnapshot = data;
+    renderTrendAlerts();
     const fixed = (value, digits = 2) =>
       num(value) ? value.toLocaleString('zh-CN', {
         minimumFractionDigits: digits,
@@ -1815,22 +1858,22 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       ? `<div class="warnl">数据提示：${warnings.map((item) => E(
         typeof item === 'string' ? item : JSON.stringify(item),
       )).join('；')}</div>`
-      : '<p class="note">预警规则回测中，暂不显示</p>';
+      : '';
     const sampleN = num(latest.n) ? latest.n : '—';
     $('src-breadth').textContent =
-      `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位，不是预测`;
+      `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN}`;
     body.innerHTML = `<div class="breadth-grid">
-        ${card('红盘率', percent(latest.red))}
+        ${card('收涨的股票', percent(latest.red), '红盘率')}
         ${card('上涨成交额占比', percent(latest.amt_up))}
-        ${card('P20', percent(latest.P20))}
-        ${card('P60', percent(latest.P60))}
-        ${card('P250', percent(latest.P250))}
-        ${card('MCL', fixed(latest.MCL, 0), E(trend))}
-        ${card('TRIN（成交额）', fixed(latest.trin_amt), `成交量口径 ${fixed(latest.trin_vol)}`)}
+        ${card('站上 20 日均线', percent(latest.P20), 'P20 · 股票占比')}
+        ${card('站上 60 日均线', percent(latest.P60), 'P60 · 股票占比')}
+        ${card('站上 250 日均线', percent(latest.P250), 'P250 · 股票占比')}
+        ${card('涨跌家数的变化', fixed(latest.MCL, 0), 'MCL · ' + E(trend))}
+        ${card('下跌股与上涨股的平均成交额之比', fixed(latest.trin_amt), `TRIN · 按成交股数算为 ${fixed(latest.trin_vol)}`)}
         ${card('成交额 / 量比', `${fixed(latest.amount_yi, 1)} 亿`, `量比 ${num(latest.amount_ratio20) ? `${fixed(latest.amount_ratio20)}×` : '—'}`)}
         ${card('涨停 / 跌停', `${num(latest.lu) ? latest.lu : '—'} / ${num(latest.ld) ? latest.ld : '—'}`, '按价格推断，含 ST 误差')}
       </div>
-      <p class="note">MCL EMA 可用历史 ${num(data.mcl_warmup_days) ? data.mcl_warmup_days : '—'} 个交易日递推。</p>
+      ${warningMarkup}
       <div class="breadth-tables">
         <div><h3>股指期货升贴水</h3>
           <div class="table-scroll"><table class="breadth-basis-table"><thead><tr>
@@ -1846,12 +1889,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
           </tr></thead><tbody>${historyRows}</tbody></table></div>` : '<p class="note">最近 20 日暂无可用数据。</p>'}
         </div>
       </div>
-      <section class="breadth-warnings" aria-label="预警区"><h3>预警区</h3>${warningMarkup}</section>
       <details class="breadth-method"><summary>口径说明</summary>
+        <p class="note">上证走势提醒结合指数走势和全 A 股票的涨跌与成交，是试行中的收盘观察。“首次符合条件”是按该日行情算出的日期；实际送达时间未知。</p>
+        <p class="note">宽度指标样本 n=${sampleN}；历史分位，不是预测。MCL 使用 ${num(data.mcl_warmup_days) ? data.mcl_warmup_days : '—'} 个交易日递推。</p>
         <p class="note">红盘率 = 上涨家数 ÷ 全A有效样本数；上涨成交额占比 = 上涨股票成交额合计 ÷ 全样本成交额合计。</p>
         <p class="note">P20、P60、P250 = 收盘价高于最近 N 个交易日（含当日）不复权收盘简单均线的股票数 ÷ 有 N 日连续有效价格历史的股票数；样本分母只计有完整 N 日历史的股票。</p>
         <p class="note">MCL = EMA(adv − dec, α=0.10, adjust=false) − EMA(adv − dec, α=0.05, adjust=false)；连续升降按每日 MCL 变化方向计数。</p>
-        <p class="note">成交额 TRIN = (上涨家数 ÷ 下跌家数) ÷ (上涨股票成交额 ÷ 下跌股票成交额)；成交量 TRIN 将成交额替换为成交量。TRIN 小于 1 表示资金比家数更偏向上涨股，大于 1 相反。</p>
+        <p class="note">成交额版 TRIN 是下跌股平均每只的成交额除以上涨股平均每只的成交额。大于 1 表示每只下跌股平均成交更多。成交量版用成交股数计算。</p>
         <p class="note">成交额（亿） = 全A有效样本成交额 ÷ 1 亿；量比 = 当日成交额 ÷ 前 20 个交易日成交额均值。</p>
         <p class="note">涨停、跌停按前收盘价乘以涨跌幅并四舍五入到分后，与收盘价比较；普通股票按 10%、代码 30/68 按 20%、北交所按 30%。普通10%档另将跌幅超过4.5%、收盘价不高于前收盘价95%且收在当日最低价附近的记录计为疑似ST跌停，价格推断可能有误差。</p>
         <p class="note">IF/IH/IC/IM 分别对应沪深300/上证50/中证500/中证1000现货指数；主力为未到期合约中成交量最大者，到期日按合约月第三个周五，节假日顺延暂不处理。基差率 = (期货 ÷ 现货 − 1) × 100%；年化基差 = 基差率 × 365 ÷ max(剩余自然日, 5)；年化均值为可用品种的算术平均。</p>
@@ -1859,13 +1903,10 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   }
   async function loadBreadth() {
     $('breadth-body').innerHTML = '<p class="note">宽度与资金数据加载中…</p>';
-    const [data, result] = await Promise.all([
-      LPPL.breadth(),
-      LPPL.fetchResult('market/breadth_latest.json', {
-        empty: (value) => !value || value.schema !== 'breadth.v1',
-      }),
-    ]);
-    renderBreadth(data, result.reason);
+    const result = await LPPL.fetchResult('market/breadth_latest.json', {
+      empty: (value) => !value || value.schema !== 'breadth.v1',
+    });
+    renderBreadth(result.data, result.reason);
   }
   function renderTopRisk(data, reason) {
     const body = $('top-risk-body');
@@ -1905,11 +1946,13 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const conc = data.conc || {};
     const margin = data.margin || {};
     const breadthDrop = data.breadth_drop || {};
+    const ranked = (value, group) => Number.isInteger(group.n) && group.n > 0 && num(value)
+      ? pct01(value) + ' · n=' + group.n : '分位样本数或数值未记录';
     const cards = (Array.isArray(data.indices) ? data.indices : []).map((index) => {
       const positionDetail = `阈值 ${pct01(index.pos_threshold)}；离250日低点 ${pct01(index.gain_from_250_low)}（阈值 ${pct01(index.gain_threshold)}）`;
       return `<article class="top-risk-card">
         <h3>${E(index.name || index.code || '指数')}<span class="top-risk-level ${levelClass(index.level)}">${E(index.level || '未触发')}</span></h3>
-        ${checkRow('指数位置 252日分位', pct01(index.pos_pct252), positionDetail, index.on, index.pos_pct252)}
+        ${checkRow('指数位置 252日分位', ranked(index.pos_pct252, index), positionDetail, index.on, index.n > 0 ? index.pos_pct252 : null)}
         <div class="top-risk-satisfied">满足 ${E(index.n_on ?? '—')}/3 项</div>
       </article>`;
     }).join('');
@@ -1928,19 +1971,19 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <div class="top-risk-common-item">
           ${checkRow(
             '融资余额 252日分位',
-            pct01(margin.pct252),
+            ranked(margin.pct252, margin),
             `${E(margin.date || '—')} · ${fixed(margin.rzye_yi)} 亿元 · 阈值 ${pct01(margin.threshold)}`,
             margin.on,
-            margin.pct252,
+            margin.n > 0 ? margin.pct252 : null,
           )}
         </div>
         <div class="top-risk-common-item">
           ${checkRow(
             '宽度回落（辅助）',
-            `MCL ${fixed(breadthDrop.mcl, 2)} · 250日分位 ${pct01(breadthDrop.mcl_pct250)}`,
+            `MCL ${fixed(breadthDrop.mcl, 2)} · 250日分位 ${ranked(breadthDrop.mcl_pct250, breadthDrop)}`,
             `阈值 ${fixed(breadthDrop.threshold, 2)}；近10日最高 ${fixed(breadthDrop.mcl_max10, 2)}；250日标准差 ${fixed(breadthDrop.std250, 2)}`,
             breadthDrop.on,
-            breadthDrop.mcl_pct250,
+            breadthDrop.n > 0 ? breadthDrop.mcl_pct250 : null,
           )}
         </div>
       </div>
@@ -1979,7 +2022,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-top-risk').textContent = `截至 ${data.asof || '—'} · ${data.source || '—'}`;
     body.innerHTML = `${commonConditions}
       <div class="top-risk-grid">${cards || '<p class="note">指数读数缺失。</p>'}</div>
-      <p class="note">样本少，不显著，不是买卖信号；历史分位不是预测，分位不是概率。</p>
+      <p class="note">指标旁的 n 是分位计算的观测数。历史分位，不是预测；分位不是概率。下表的 n 是历史时段数，样本少，结果不显著，不构成买卖信号。</p>
       <div class="top-risk-stats">${stats || '<p class="note">历史统计未加载。</p>'}</div>
       ${episodesMarkup}
       <details class="top-risk-method"><summary>定义与判断口径</summary>
@@ -2120,7 +2163,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
           ${reading('股债利差', current.erp, current.erp_pct)}
           ${reading('破净股占比', current.pbn_ratio, current.pbn_pct)}
         </div>
-        <p class="note">触发阈值：两项近3年分位均 ≥ 90%。当前状态：${current.signal ? '<span class="wn">亮</span>' : '未亮'}；最近触发日期 ${esc(current.last_event_date || '—')}。</p>
+        <p class="note">触发阈值：两项近3年分位均 ≥ 90%。当前状态：${current.signal == null ? '数据不足' : current.signal ? '<span class="wn">亮</span>' : '未亮'}；最近触发日期 ${esc(current.last_event_date || '—')}。</p>
         <p class="note">历史 ${summary.n_events ?? events.length} 次触发，之后 250 日上涨 ${upCount}/${summary.n_with_250d ?? outcomes.length}（下跌日基准 ${percent(baseline.share_up_250, 1)}）。</p>
         ${events.length ? `<div class="table-scroll"><table><thead><tr><th>触发日</th><th class="r">之后最低</th><th>最低日</th><th class="r">后120日</th><th class="r">后250日</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="note">暂无历史触发样本。</p>'}
         <p class="note">历史分位，不是预测。</p>
