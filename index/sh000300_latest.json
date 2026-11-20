@@ -1,8 +1,8 @@
 {
  "symbol": "sh000300",
  "name": "沪深300",
- "asof": "2026-11-19",
- "data_version": "vintage_20261119_tencent_sina",
+ "asof": "2026-11-20",
+ "data_version": "vintage_20261120_tencent_sina",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -39,13 +39,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-08-22",
+   "start": "2025-08-25",
    "duration_days": 300,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.11,
-   "size_realized": -0.09,
-   "tc": "2026-11-09",
+   "size_model": -0.134,
+   "size_realized": -0.115,
+   "tc": "2026-11-10",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -64,16 +64,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-10-23",
+    "best_t1": "2026-11-03",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.5,
-     "m_hi": 0.0,
-     "w_lo": 0.0,
-     "w_hi": 0.167,
-     "tc_lo": 0.0,
-     "tc_hi": 0.0,
-     "any": 0.5,
+     "m_lo": 0.167,
+     "m_hi": 0.167,
+     "w_lo": 0.167,
+     "w_hi": 0.0,
+     "tc_lo": 0.167,
+     "tc_hi": 0.167,
+     "any": 0.833,
      "tol": 0.01
     },
     "null_fpr": {
@@ -108,7 +108,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-09-24",
+    "best_t1": "2026-09-28",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -152,10 +152,10 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-06-17",
+    "best_t1": "2026-06-18",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.154,
+     "m_lo": 0.077,
      "m_hi": 0.0,
      "w_lo": 0.077,
      "w_hi": 0.0,
@@ -196,15 +196,15 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-05-06",
+    "best_t1": "2026-04-20",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.16,
+     "m_lo": 0.2,
      "m_hi": 0.32,
-     "w_lo": 0.52,
+     "w_lo": 0.44,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.6,
+     "tc_hi": 0.68,
      "any": 0.96,
      "tol": 0.01
     },
@@ -240,16 +240,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-10-30",
+    "best_t1": "2024-10-31",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.0,
-     "m_hi": 0.26,
-     "w_lo": 0.92,
+     "m_lo": 0.08,
+     "m_hi": 0.24,
+     "w_lo": 0.88,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.56,
-     "any": 0.92,
+     "tc_hi": 0.62,
+     "any": 0.98,
      "tol": 0.01
     },
     "null_fpr": {
@@ -278,22 +278,22 @@
     "n_windows": 80,
     "confidence": {
      "box": 0.0,
-     "standard": 0.05,
-     "early": 0.325,
+     "standard": 0.037,
+     "early": 0.263,
      "end": 0.0,
-     "pure": 0.025
+     "pure": 0.013
     },
-    "n_qualified_standard": 4,
-    "best_t1": "2024-10-23",
+    "n_qualified_standard": 3,
+    "best_t1": "2024-10-24",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.05,
-     "m_hi": 0.087,
-     "w_lo": 0.412,
+     "m_hi": 0.075,
+     "w_lo": 0.475,
      "w_hi": 0.0,
-     "tc_lo": 0.375,
-     "tc_hi": 0.163,
-     "any": 0.95,
+     "tc_lo": 0.312,
+     "tc_hi": 0.175,
+     "any": 0.963,
      "tol": 0.01
     },
     "null_fpr": {
@@ -321,8 +321,8 @@
   },
   "combo": {
    "p0.1": 0.0,
-   "p1": 0.008,
-   "p10": 0.042,
+   "p1": 0.006,
+   "p10": 0.031,
    "set": "standard",
    "scales": [
     "2-4w",
@@ -357,13 +357,13 @@
     "bins": []
    },
    "2-6y": {
-    "n": 4,
+    "n": 3,
     "bin_days": 5,
     "bins": [
      [
-      "2026-05-26",
-      "2026-06-02",
-      4
+      "2026-05-27",
+      "2026-06-03",
+      3
      ]
     ]
    }
@@ -420,7 +420,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-19",
+   "table_asof": "2026-11-20",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -902,7 +902,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.09,
+    "size_realized": -0.115,
     "duration_days": 300,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -974,16 +974,16 @@
     },
     "pe_latest": 12.48,
     "pe_date": "2026-09-30",
-    "close_ref": 3984.84,
-    "close_date": "2026-11-19",
+    "close_ref": 3954.57,
+    "close_date": "2026-11-20",
     "band_points": {
-     "q20": 3346.0,
-     "q50": 3447.0,
-     "q80": 4099.0
+     "q20": 3320.0,
+     "q50": 3421.0,
+     "q80": 4067.0
     },
     "floor_band_points": [
-     3346.0,
-     3447.0
+     3320.0,
+     3421.0
     ],
     "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理",
     "evidence": "descriptive"
@@ -1037,7 +1037,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-10-10",
    "2023-10-11",
    "2023-10-12",
    "2023-10-13",
@@ -1792,10 +1791,10 @@
    "2026-11-16",
    "2026-11-17",
    "2026-11-18",
-   "2026-11-19"
+   "2026-11-19",
+   "2026-11-20"
   ],
   "open": [
-   3696.25,
    3674.75,
    3697.93,
    3677.96,
@@ -2550,10 +2549,10 @@
    3984.77,
    3965.9,
    3991.16,
-   3972.43
+   3972.43,
+   3925.74
   ],
   "high": [
-   3701.26,
    3689.53,
    3711.5,
    3678.19,
@@ -3308,10 +3307,10 @@
    3997.4,
    3985.99,
    3991.16,
-   3995.55
+   3995.55,
+   3961.07
   ],
   "low": [
-   3655.59,
    3658.36,
    3682.84,
    3652.31,
@@ -4066,10 +4065,10 @@
    3959.93,
    3942.38,
    3948.5,
-   3937.75
+   3937.75,
+   3894.47
   ],
   "close": [
-   3657.13,
    3667.55,
    3702.38,
    3663.41,
@@ -4824,10 +4823,10 @@
    3979.8,
    3976.46,
    3983.77,
-   3984.84
+   3984.84,
+   3954.57
   ],
   "volume": [
-   99163730,
    102091587,
    114363225,
    98287987,
@@ -5582,7 +5581,8 @@
    185439196,
    179262855,
    167318271,
-   163357787
+   163357787,
+   210744943
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5611,7 +5611,7 @@
   },
   "cheap": {
    "evidence": "descriptive",
-   "dd_now": -0.2124,
+   "dd_now": -0.2184,
    "peak_date": "2026-06-22",
    "peak_close": 5059.66,
    "dd_rank": {
@@ -5637,13 +5637,13 @@
    "evidence": "rule",
    "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认，不是预测）",
    "state": "bear",
-   "ref_date": "2026-11-17",
-   "ref_close": 3976.46,
+   "ref_date": "2026-11-20",
+   "ref_close": 3954.57,
    "threshold": 0.15,
    "confirmed": false,
    "peak_date": "2026-06-22",
    "peak_close": 5059.66,
-   "rebound_from_low": 0.0021
+   "rebound_from_low": 0.0
   },
   "rebound": {
    "evidence": "descriptive",
