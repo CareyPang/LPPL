@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LPPLS 文献、代码与 V2588 框架评审 · 2026-11-16</title>
+<style>
+:root{color-scheme:light;--ink:#172a38;--muted:#566675;--line:#d7e1e5;--accent:#12566a;--paper:#fff;--bg:#f0f4f4}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1100px;margin:auto;padding:48px 48px 80px;background:var(--paper)}h1{font-size:38px;line-height:1.3;letter-spacing:-1px;margin:16px 0 24px}h2{font-size:25px;margin:50px 0 20px;padding-top:12px;border-top:1px solid var(--line)}h3{font-size:19px;margin:28px 0 12px}p{margin:12px 0}a{color:var(--accent);text-underline-offset:3px;overflow-wrap:anywhere}li{margin:8px 0}small,.muted{color:var(--muted)}.eyebrow{font-size:12px;letter-spacing:2px;font-weight:700}.lead{font-size:20px}.callout{border-left:4px solid #ad8246;background:#faf6eb;padding:16px 22px;margin:24px 0}.formula{padding:18px 22px;background:#edf3f5;font-family:Cambria,"Times New Roman",serif;font-size:18px;overflow-x:auto;white-space:normal}.tag{font:700 11px/1.4 system-ui;display:inline-block;border:1px solid #bacbd1;border-radius:4px;padding:3px 6px;margin-right:6px;vertical-align:middle;letter-spacing:.3px}.verified{background:#e5f2ed;color:#17573e}.pending{background:#faf0dc;color:#795717}nav{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin:26px 0;padding:22px;background:#f3f6f7}nav a{text-decoration:none;font-size:14px}.table-scroll{overflow:auto;margin:20px 0}table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px;line-height:1.65}td,th{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:12px}th{background:#edf3f5}code{font-family:Consolas,monospace;font-size:.92em;overflow-wrap:anywhere}.source{font-size:13px;color:var(--muted)}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{border:1px solid var(--line);padding:18px;border-radius:8px}.card b{display:block;margin-bottom:8px}.checklist{list-style:none;padding:0}.checklist li:before{content:'□';margin-right:10px}.ref{padding:13px 0;border-bottom:1px solid var(--line)}footer{margin-top:50px;border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:var(--muted)}@media(max-width:600px){main{padding:26px 20px 50px}h1{font-size:29px}h2{font-size:22px}body{font-size:15px}.lead{font-size:18px}nav,.summary-grid{grid-template-columns:1fr}table{font-size:13px}.callout{padding:14px}.formula{font-size:16px;padding:14px}}@media print{body{background:white}main{max-width:none;padding:0}nav{display:none}h2{break-after:avoid}.card,tr{break-inside:avoid}a{color:inherit}table{min-width:0}.table-scroll{overflow:visible}}
+</style></head><body><main>
+<div class="eyebrow">RESEARCH REVIEW · 2026-11-16 · READ-ONLY</div>
+<h1>LPPLS：哪些研究值得进入你的框架？</h1>
+<p class="lead">优先修正可识别性、时间窗与验证方式；把深度学习放在校准加速的候选位置。现有文献与 GitHub 示例，不能把“形状拟合得好”直接升级为“至少提前五天、准确定位十天内的阶段顶”。</p>
+<p class="muted">对照对象：长期记忆及本地交接文档中的 V2588 / DCTE、V4.8-R2 Time、PPE-U2-R5.1 Price；最新用户约束为完整振荡周期 1.5、局部顶与阶段顶分别评分、不用跌幅定义顶部成功。本文不是 CareyPang/LPPL 最新代码完整审计。</p>
+<div class="callout"><b>决策：</b>保留现有研究主线，暂不迁入 DS-LPPLS；优先做统一单位、逐日预测账本、相关残差下的不确定性和全流程假阳性验证。P-LNN 可以成为候选初值生成器，不能直接充当顶部报警器。价格层与底部层继续独立验证。</div>
+<div class="callout"><b>GitHub 交接更新：</b>本报告为文献研究快照。随后核对的 <a href="https://github.com/CareyPang/LPPL/pull/99">PR #99</a> 作者报告 F2/F3/F4 合成门未通过，未由本轮独立复现。执行优先级以 <a href="README.md">交接入口</a> 与 <a href="DEVIN_TASKS.md">任务单</a> 为准：先统一口径，W1先比较固定稀疏窗口；Lagrange/GLS/profile候选不绕过失败门。不要把旧文献建议解释成当前已通过或生产配置。</div><nav aria-label="目录"><a href="#scope">01 证据范围与阅读边界</a><a href="#model">02 模型到底能说明什么</a><a href="#map">03 文献主线与实际用途</a><a href="#deep">04 Deep LPPLS 深读</a><a href="#repo">05 DS-LPPLS 代码审计</a><a href="#cycles">06 振荡数：论文也有单位冲突</a><a href="#windows">07 时间窗与跨尺度聚类</a><a href="#uncertainty">08 不确定性与反向证据</a><a href="#framework">09 与长期记忆框架逐层对照</a><a href="#bottom">10 底部与价格层</a><a href="#experiments">11 可交给 Devin 的实验计划</a><a href="#ledger">12 预测账本与产品边界</a><a href="#roadmap">13 推进顺序与验收</a><a href="#bibliography">14 书目和阅读深度</a></nav>
+
+<section id="scope"><h2>01 · 证据范围与阅读边界</h2>
+<p><span class="tag verified">VERIFIED</span>本次读取用户指定论文正文与附录，核对其图表；静态阅读指定仓库的拟合、过滤、bootstrap、聚类与图表链路，并沿参考文献和后续引用检索稳定校准、分位数回归、profile likelihood、窗口选择、负泡沫、前瞻试验和反向研究。</p>
+<p>不能声称已经搜尽、读完所有 LPPL/LPPLS 文献。文末逐条列出“全文方法阅读”“关键章节”“摘要/元数据”等深度；受限全文不补造内容。论文的成功实验一律属于作者报告，本轮没有运行拟合、训练网络、重现统计结果或验证收益。</p>
+<div class="table-scroll"><table><thead><tr><th>标签</th><th>本文含义</th></tr></thead><tbody><tr><td>VERIFIED</td><td>已核对的文本、数学恒等式、静态代码或文档事实；不自动代表预测有效。</td></tr><tr><td>论文作者报告 / PR 作者报告</td><td>原作者声称的效果或性能；未由本轮独立重现。</td></tr><tr><td>NOT_ESTABLISHED</td><td>当前证据不能确立该能力、概率或泛化结论。</td></tr><tr><td>NOT_RUN / NOT_INSPECTED</td><td>本轮没有运行实验 / 未取得或检查对应材料。</td></tr><tr><td>研究建议</td><td>本报告提出的设计，必须通过预先冻结的检验，不是已经实现或有效。</td></tr></tbody></table></div>
+<p>交叉对照的本地原始文件：<code>V2588完整项目交接_HANDOFF.md</code>、<code>V2588历史研究证据报告.md</code>。这些历史文档帮助恢复方法和失败记录；它们不证明当前仓库已实现全部设计。本轮也未恢复 XAU/XAG、纳指、KOSPI 当年真实发布的原始预测包。</p>
+</section>
+
+<section id="model"><h2>02 · 先把模型、事件与收益分开</h2>
+<p><span class="tag verified">VERIFIED</span>在标准未来临界点任务中，令 <code>τ=t_c−t&gt;0</code>。Filimonov–Sornette 重参数化把四个线性系数与三个非线性参数分开，使校准更容易控制。</p>
+<div class="formula">y(t)=ln P(t)=A+Bτ<sup>m</sup>+C₁τ<sup>m</sup>cos(ω ln τ)+C₂τ<sup>m</sup>sin(ω ln τ)<br>θ=(t<sub>c</sub>,m,ω)，β=(A,B,C₁,C₂)<br>Q(θ)=min<sub>β</sub> ‖y−X(θ)β‖²</div>
+<p class="source">依据：<a href="https://arxiv.org/abs/1108.0099">Filimonov &amp; Sornette，2013</a>。建议实现用 QR/SVD 或稳定的最小二乘求解，避免显式求逆；“在合适数据上目标函数更平滑”不能推广为每条金融序列必有唯一全局解。</p>
+<p>需要区分四层问题：①曲线是否呈现 LPPLS 结构；②在这类结构假设下，参数 t<sub>c</sub>在哪里；③真实市场是否会在该时间附近形成所定义的顶部；④行动能否改善风险或收益。前三层之间也需要验证，不能直接从参数密度跳到交易建议。</p>
+<p><span class="tag verified">VERIFIED</span>JLS 理论中的临界时间与泡沫结束风险相关，不等于一个确定的崩盘预约日。对 0&lt;m&lt;1，模型的 log-price 在 t<sub>c</sub>处趋向 A，而其变化速度可能出现奇异行为。<span class="tag pending">NOT_ESTABLISHED</span>由此不能推得崩盘幅度或崩盘后的最低价。<a href="https://arxiv.org/abs/cond-mat/9810071">JLS 原文</a></p>
+<p><b>对现有框架的直接要求：</b>未来预测只接受 <code>t_c&gt;asof</code> 的定义；绝对值延拓 <code>|t_c−t|</code>、截断 τ、样本内部临界点属于另一模型/诊断任务。可以研究，但必须另设 model_id 和评分，不得用已发生的 t<sub>c</sub>计作提前命中。</p>
+<h3>参数与时间尺度：保留方法身份</h3>
+<p>历史交接的严格研究过滤包括 m∈(0.1,0.9)、ω∈(6,13)、方向约束、damping与拟合质量门槛；这些是历史经验规则，不是理论定理。周期门槛已按最新用户指示改为1.5完整周期研究基线。旧窗口族约为短60–225、中250–700、长750–2250、超长2500–7000/全历史观测；它们仅定义回看长度，不能代替顶部等级标签。旧主预测域不超过90个有效观测步的限制也必须记录，不能暗中改成更窄日期域。</p>
+<p>相对地，DS-LPPLS 的搜索范围约为 m∈[0,2]、ω∈[1,50]、t_c∈[0.95n,1.05n]。搜索域、后过滤域与时间轴均不同，直接比较最终图形或运行分钟数没有可比性。建议保存 search_bounds、filter_bounds、clock、lookback、forecast_horizon 与规则版本，而不是只记录“使用LPPLS”。</p></section>
+
+<section id="map"><h2>03 · 文献主线：各自解决什么，不解决什么</h2>
+<div class="table-scroll"><table><thead><tr><th>文献方向</th><th>可靠的用途</th><th>对你的框架的安排</th><th>不能直接推出</th></tr></thead><tbody>
+<tr><td><a href="https://arxiv.org/abs/1108.0099">稳定校准，2013</a></td><td>降低非线性维度</td><td>保留为 Time 求解基础；比较求解器时统一目标函数</td><td>最低拟合误差＝最佳顶部预警</td></tr>
+<tr><td><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0165819">多尺度分位数回归，2016</a></td><td>检查结论对价格路径不同部分的敏感性</td><td>中位数/分位数作为稳健性对照；Confidence 与 Trust 分开存</td><td>窗口通过比例＝见顶概率</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1602.08258">Modified profile likelihood，2016/2017</a></td><td>显式处理其他参数对 t_c 不确定性的影响</td><td>保留多情景及边界诊断；用模拟检查区间覆盖</td><td>profile likelihood 归一化后就是事件后验概率</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1707.07162">Lagrange 窗口正则化，2017</a></td><td>减少短窗天然更容易拟合造成的起点偏好</td><td>作为“选窗”单项对照，不和聚类同时改</td><td>正则化选出的起点就是真实泡沫起点</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1804.06261">比特币多尺度 t_c 聚类，2018/2019</a></td><td>组织不同窗口的候选时间</td><td>逐 asof 聚类、去重、跨日追踪；重新验证事件定义</td><td>密集峰等于经过校准的概率</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1905.09640">沪深300 Confidence，2019/2020</a></td><td>A股指数的历史检测实例与过滤模板</td><td>可做复现支线，尤其核对振荡数、残差检验</td><td>已证明对所有个股提前五天精准逃顶</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1003.5926">负泡沫/反弹，2010/2011</a></td><td>研究加速下跌结束</td><td>独立底部标签、负样本与阈值</td><td>把上涨模型翻号就获得准确抄底系统</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1011.2882">Financial Bubble Experiment</a></td><td>事前封存预测、事后公开核验的流程</td><td>优先借鉴不可改写的首次可见记录</td><td>其个案成功率可直接搬到新网站</td></tr>
+<tr><td><a href="https://arxiv.org/abs/1006.2010">参数 sloppiness，2010/2013</a></td><td>解释低误差与参数不稳定可以并存</td><td>同时检查 loss、参数变化与日期漂移</td><td>一条漂亮拟合曲线能证明 t_c 精确</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2405.12803v1">Deep LPPLS，2024</a></td><td>学习型参数估计</td><td>P-LNN 暖启动候选；保留独立搜索与拒绝机制</td><td>毫秒参数推理＝毫秒完成可靠预警</td></tr>
+<tr><td><a href="https://doi.org/10.1016/j.econlet.2024.112003">G-LPPLS-NN，2024</a></td><td>临界时间和临界价格扩展方向</td><td>列为探索项，先做基线增量验证</td><td>临界价格＝泡沫破裂后的低点</td></tr>
+<tr><td><a href="https://doi.org/10.1016/j.irfa.2025.104848">Log-periodicity: Fact or fiction?，2026</a></td><td>质疑特定拟合后残差检验的显著性解释</td><td>将整个搜索/过滤/筛选链纳入零假设模拟</td><td>一篇反向研究已否定所有 LPPLS 方法</td></tr>
+</tbody></table></div>
+<p>上表“安排”是本报告的研究建议。原论文中的应用结果属于作者报告，不代表本轮复现；详细阅读边界见书目。</p>
+</section>
+
+<section id="deep"><h2>04 · 用户指定的 Deep LPPLS：速度来自哪里？</h2>
+<p><span class="tag verified">VERIFIED</span><a href="https://arxiv.org/html/2405.12803v1">Nielsen、Sornette、Raissi（2024）</a>提出两种校准器：M-LNN 对每条序列另行训练；P-LNN 预先用合成 LPPLS 序列训练，再估计固定长度输入的非线性参数。本文版本的 P-LNN 使用 252 点输入，合成噪声包含白噪声与 AR(1)。</p>
+<div class="table-scroll"><table><thead><tr><th>论文表2：平均耗时</th><th>数值</th><th>证据状态</th></tr></thead><tbody><tr><td>LM</td><td>3.5795 秒</td><td>作者实验报告</td></tr><tr><td>M-LNN</td><td>11.5002 秒</td><td>作者实验报告</td></tr><tr><td>P-LNN</td><td>约 0.005 秒</td><td>作者实验报告，仅参数估计</td></tr></tbody></table></div>
+<p>这些数字未计网站排队、行情下载、全部窗口、不确定性重拟合和预训练总成本。金融实例为历史纳指与白银 ETF；纳指示例的“临界区间”覆盖从峰值到后续回撤低点的一段时期，不是你要求的狭窄顶部日期标签。本轮已核对原文图4/5及表2。<span class="tag pending">NOT_ESTABLISHED</span>本轮没有找到可确认为作者官方发布、且与论文一一对应的完整代码和权重。</p>
+<p>补充范围差异：论文 M-LNN 的归一化 t_c 软约束为 [0.8,1.2]，并非严格 future-only；原文没有充分说明样本内 t_c 的数值处理，不能替作者假设绝对值延拓。合成训练和测试属于同类生成机制，少数历史金融案例也不是全市场前瞻误报/漏报验证。</p><h3>原文之外，对你的项目最有价值的推论</h3>
+<p><b>可以把神经网络当初值生成器。</b>对同一窗口输出若干 θ 候选，再送入原来的 FS 目标函数精修和质量检查。需要保留一部分独立随机/网格初值，否则网络可能把所有窗口推入同一个训练先验偏好的局部解。这是提速方案，不是已经证实更准的模型。</p>
+<p><b>先问“有没有事件”，再问“哪一天”。</b>仅做参数回归的网络通常会对无泡沫输入也给一个 t_c。上线前必须提供域外/不支持状态；拒绝阈值由无泡沫对照与真实事件评价确定。不能把“总能吐出一个日期”当成产品完整性。</p>
+<p><b>252 点不是万能标准。</b>窗口的交易时钟、真实跨度、归一化、停牌与缺失处理必须一致。把不同长度时间序列插值为 252 点会改变可见振荡与噪声结构；若这么做，应把跨度和映射规则冻结，并重新生成相匹配的训练数据。</p>
+<p><b>误差需要分两张成绩单。</b>合成数据上的参数 RMSE/覆盖率说明能否恢复已知参数；逐日真实市场上的阶段顶漏报、误报和提前量说明有没有用。前者提高不保证后者提高。</p>
+<h3>相关第三方实现也不能直接当论文复现</h3>
+<p><span class="tag verified">静态核对</span><a href="https://github.com/mvs-86/lppls_py/tree/a81f4f685e1874810f912246f439f644845cf394">mvs-86/lppls_py，固定提交 a81f4f6</a>存在输入/时间映射需要另验的问题：合成数据归一化后再加噪，与真实输入归一化顺序有差异；推理将固定轴映射到起止自然日；不同实现对非正 τ 分别截断或拒绝。它不应作为“作者官方权重”使用。<a href="https://github.com/mvs-86/lppls_py/blob/a81f4f685e1874810f912246f439f644845cf394/lppls/inference.py">推理代码</a>、<a href="https://github.com/mvs-86/lppls_py/blob/a81f4f685e1874810f912246f439f644845cf394/lppls/mlnn.py">M-LNN代码</a></p>
+</section>
+
+<section id="repo"><h2>05 · DS-LPPLS：适合研究代码问题，不适合直接迁入</h2>
+<p><span class="tag verified">VERIFIED</span>审查固定提交 <code>d6eb89a40afca7024a245bf204d88d5649814b41</code>。这是传统拟合/过滤/图表项目，与上面的 Deep LPPLS 神经网络论文不是同一实现。主拟合对七个参数联合做 L-BFGS-B，并尝试正序、反序及组合初值；不是现有框架的 FS 三参数消元流程。</p>
+<div class="table-scroll"><table><thead><tr><th>位置与已见行为</th><th>影响判断</th><th>接入前必须做什么</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/ImanNasrEsfahani/DS-LPPLS/blob/d6eb89a40afca7024a245bf204d88d5649814b41/filter_model.py#L136">filter_model.py 振荡数</a>：存在正确完整周期函数，但主过滤使用 ω/2×ln 比值</td><td>数字 2.5 实际约为 0.796 完整周期，不能与当前 1.5 直接比较</td><td>所有规则保存公式与单位；旧结果另设 legacy_id</td></tr>
+<tr><td><a href="https://github.com/ImanNasrEsfahani/DS-LPPLS/blob/d6eb89a40afca7024a245bf204d88d5649814b41/run_model.py#L183">run_model.py KPSS 路径</a>：对已经取 log 的输入再取 log</td><td>检验残差与主拟合不在同一量纲</td><td>建立 raw_price/log_price 显式数据契约</td></tr>
+<tr><td><a href="https://github.com/ImanNasrEsfahani/DS-LPPLS/blob/d6eb89a40afca7024a245bf204d88d5649814b41/run_model.py#L277">run_model.py bootstrap</a>：重采样残差后取 exp</td><td>返回价格，再交给期望 log 输入的拟合路径；iid 重采样也会丢失时序相关性</td><td>逐步校验单位；相关噪声下用适当区块/参数法并检验覆盖</td></tr>
+<tr><td><a href="https://github.com/ImanNasrEsfahani/DS-LPPLS/blob/d6eb89a40afca7024a245bf204d88d5649814b41/filter_model.py#L349">filter_model.py Confidence/Trust</a>：两处 B 的正负方向命名不一致；bootstrap 汇总变量被逐窗覆盖</td><td>上下行指标和多窗分母不可直接解释</td><td>方向、窗口级统计、全局汇总分开测试</td></tr>
+<tr><td><a href="https://github.com/ImanNasrEsfahani/DS-LPPLS/blob/d6eb89a40afca7024a245bf204d88d5649814b41/show_charts.py#L80">show_charts.py</a>：本地坐标 t_c 与过滤后行号混合；跨历史行聚类</td><td>日期偏移；若据此回放早期预测，会引入后来的结果</td><td>先换算绝对交易日，再按 asof 单独聚类与追踪</td></tr>
+<tr><td>拟合允许 t_c 落入样本，而原式仍用 t_c−t；未完整检查优化成功/有限值</td><td>分数幂与 log 可能无效；不能把返回参数视为有效拟合</td><td>定义未来域、保留失败、边界与优化状态</td></tr>
+<tr><td>相位计算含整数转换；README 所述分位数能力未在主链找到</td><td>派生量与介绍不完全一致</td><td>按实际代码能力列功能，重新核对相位定义</td></tr>
+</tbody></table></div>
+<p><b>慢的来源也要按工作量拆开。</b>默认嵌套窗口约为 400 至 121 点、逐日重复；通过过滤后每窗又进行 100 次 bootstrap，每次调用多阶段优化。这个任务量与“只看最新一天、十几个窗口、没有 bootstrap”不能按总分钟数比较。这里是静态调用量判断，<b>没有实测该仓库运行速度</b>。</p>
+<p><span class="tag pending">作者声明 / NOT_ESTABLISHED</span>README 写有 MIT 声明，但本次未核实到完整对应 LICENSE 文本；不要把 README 描述当成数据、代码和模型权重均已获得相同许可。没有安装运行该项目、读取其 Excel 样本或验证其输出。本报告不修改该仓库。</p>
+</section>
+
+<section id="cycles"><h2>06 · 振荡数：统一公式，比争论数字重要</h2>
+<p><span class="tag verified">VERIFIED</span>对 cos(ω ln(t_c−t))，完整相位变化除以 2π 才是完整周期数：</p>
+<div class="formula">N<sub>cycles</sub> = [ω/(2π)] ln[(t<sub>c</sub>−t₁)/(t<sub>c</sub>−t₂)]，t<sub>c</sub>&gt;t₂</div>
+<div class="table-scroll"><table><thead><tr><th>实际表达式</th><th>阈值写 2.5 时对应完整周期</th><th>结论</th></tr></thead><tbody><tr><td>ω/(2π) × ln 比值</td><td>2.5</td><td>完整周期口径</td></tr><tr><td>ω/π × ln 比值</td><td>1.25</td><td>半周期口径</td></tr><tr><td>ω/2 × ln 比值</td><td>2.5/π≈0.796</td><td>不能标成完整周期数</td></tr><tr><td>当前研究基线</td><td>1.5</td><td>明确用第一行公式；尚不是最优阈值结论</td></tr></tbody></table></div>
+<p>关键发现：<a href="https://arxiv.org/pdf/1905.09640v2">Shu &amp; Zhu 论文</a>印刷页9–10的式(12)写 ω/2，而相邻正文写 half-periods、ω/π。这是目视 PDF 确认的同文不一致，不能靠“FCO口径”四个字消除。公开论文中的多种研究过滤器，也不足以确认当前商业 FCO 服务的私有实现。</p>
+<h3>它为何会影响提前量？这里可以直接推导</h3>
+<p>若窗口有 N 个等距交易观测，d=t_c−t₂&gt;0，则周期门槛 q 隐含：</p>
+<div class="formula">N<sub>cycles</sub> = [ω/(2π)] ln[(d+N−1)/d] ≥ q<br>⇒ d ≤ (N−1) / [exp(2πq/ω)−1]</div>
+<div class="table-scroll"><table><thead><tr><th>窗口点数 N</th><th>ω=13，门槛1.5</th><th>ω=13，门槛2.5</th></tr></thead><tbody><tr><td>60</td><td>d 上界约55.4交易步</td><td>约25.1交易步</td></tr><tr><td>100</td><td>约93.0</td><td>约42.2</td></tr><tr><td>250</td><td>约233.9</td><td>约106.1</td></tr></tbody></table></div>
+<p><span class="tag verified">数学推导</span>更高周期门槛会在给定窗口下排除较远的 t_c，可能让早期候选更难通过。表中是<strong>合格域的上界</strong>，不是保证能提前这么多天；实际还受 t_c 搜索域及其他过滤器限制。因此“严格一点必更准确”与“放宽必少漏报”都要用相同报警预算验证。</p>
+</section>
+
+<section id="windows"><h2>07 · 时间窗选择和跨尺度聚类如何改</h2>
+<p><b>先分清三条时间轴。</b>历史回看长度 L、未来预警范围 H、用于事后确认标签的观察长度 E 是不同参数。长期记忆里的短/中/长/超长窗口是回看范围，不能直接命名为“短期顶/阶段顶”。“1–6个月上涨后的阶段顶”需要独立事件定义与样本，不能仅靠窗口长度判断。</p>
+<p>固定窗基线继续保留。Lagrange 正则化是可比较的选窗方法，但要在每个 asof 只使用当时数据估计其选择规则。不能看见后来的顶部后再选择起点，也不能以同一个样本外成绩反复选择正则化强度。<a href="https://arxiv.org/abs/1707.07162">窗口起点研究</a></p>
+<h3>建议的聚类契约（尚未运行）</h3>
+<ol><li><b>窗口层：</b>每个 asof 保存全部候选和失败，记录 lookback、方向、seed、优化状态、t_c 交易坐标、过滤拒绝理由。</li><li><b>尺度内：</b>将同一窗口多 seed 收敛到的近重复解归为同一解族；多 seed 主要检查数值稳定，不能直接变成更多市场证据。</li><li><b>尺度间：</b>预先固定各尺度的总权重，避免某一尺度因枚举更密就支配峰值。按交易日坐标聚类，保存不同峰及其覆盖窗口。</li><li><b>跨日：</b>先在当日独立生成情景，再与既有情景匹配。后日结果只能形成修订，不能回写前日首次提醒。</li><li><b>概率层：</b>密度、跨尺度覆盖度、连续出现天数只能先做特征；经过严格样本外校准后，才可解释成指定事件概率。</li></ol>
+<p><b>不要把同源信号当独立投票。</b>181 个高度重叠窗口、同一序列的多个分位数、不同 seed 和相邻交易日往往高度相关。聚类峰高可能只是枚举设计的产物。尺度平衡后还需要统计验证，不能把“多个时间尺度同区间”直接转换成 80% 或 90%。比特币文献提供了组织情景的参考，并未替你的 A 股阶段顶任务做校准。<a href="https://arxiv.org/abs/1804.06261">Gerlach 等</a></p>
+<p><b>不要强行挤成十日窗。</b>先以最低支持/覆盖要求寻找可发布区间；若无法同时满足，应显示宽区间观察或无正式提醒。把所有分布裁成十日后再报告“区间精确”，只改变了展示，不增加信息。</p>
+</section>
+
+<section id="uncertainty"><h2>08 · 不确定性、假阳性与“看上去很准”的陷阱</h2>
+<p><span class="tag verified">文献方法</span>profile likelihood 的价值是：固定一个 t_c 后，重新优化其余参数，而不是只围绕最优点画一个窄钟形。多峰可能代表不同情景；边界解可能代表数据还不够识别。原文也未把完整大规模前瞻回测作为已完成结论。<a href="https://arxiv.org/abs/1602.08258">Modified profile likelihood</a></p>
+<p><b>对你的框架：</b>先检查旧 MPL 的工程修复与数值诊断是否一致，不能因为历史上曾有 MAXITER 问题，就断言修复后的版本仍存在同一故障；反过来，测试通过也不能恢复其市场预测能力。当前历史报告中的否定/不支持结果仍有效，除非新的独立实验推翻它们。</p>
+<p><span class="tag verified">已读历史报告</span>纳指历史窄窗分析曾出现明显残差相关；相关区块重采样下 t_c 区间大幅变宽、严格过滤通过率较低。因此过去某次点估计碰巧落在一周内，不能自动改称“一周置信区间经过验证”。本轮没有重新执行这些历史实验。</p>
+<p><b>残差相关性要进入区间构造。</b>iid bootstrap 会打散依赖结构。可对照 moving/stationary block bootstrap、明确假设的 AR 噪声及更复杂噪声，但每种都需检查适用性和模拟覆盖；“用了区块”本身也不保证正确。任何重采样都要重新跑选窗、拟合与过滤，不能只给最后一个参数点加噪。</p>
+<p><span class="tag">论文作者报告</span>Bree、Challet、Peirano 讨论 LPPL 参数的弱可识别性：不同参数可给相近拟合。Grobys 对特定 LPPLS 后残差 ADF/PP 结论提出全流程零假设校准问题。本轮后者仅核对摘要、作者公开复现说明及部分代码，未取得可完整阅读的正式论文。<a href="https://arxiv.org/abs/1006.2010">Sloppiness</a>；<a href="https://doi.org/10.1016/j.irfa.2025.104848">Grobys</a>；<a href="https://zenodo.org/records/17712092">作者复现材料</a></p>
+<p><b>因此建议增加对抗样本。</b>随机游走、带漂移随机游走、波动聚集/厚尾、跳跃、趋势改变、普通均值回归、无后续转折的持续上涨，都应穿过<strong>完整的同一条流水线</strong>。先模拟再搜索再过滤再挑峰，得到的假警报率才与线上行为可比。不能只比较一条真 LPPLS 曲线与一条干净白噪声。</p>
+<p>也应加入简单基线：无条件事件频率、相同报警预算的随机区间、仅趋势/动量/波动指标，以及现有固定窗口版本。复杂模型只有在未参与调参的数据中带来稳定增量才有价值。</p>
+</section>
+
+<section id="framework"><h2>09 · 与长期记忆框架逐层对照</h2>
+<div class="formula">L0 PIT → [V4.8-R2 Time ∥ PPE-U2-R5.1 Price ∥ Grouped Aux]<br>→ Cross-Fitted Joint → Resolution-Aware Governor → Portfolio / Execution</div>
+<p>这是从历史交接文档恢复的框架结构，<strong>不是已核实当前仓库的全功能完成状态</strong>。</p>
+<div class="table-scroll"><table><thead><tr><th>层</th><th>本次文献可提供的帮助</th><th>保留的边界</th></tr></thead><tbody>
+<tr><td>L0 / PIT</td><td>FBE 的事前封存思想；为每次拟合保存输入哈希、公司行动版本与 asof</td><td>今天下载的复权历史不等于当年可获得的版本；历史重放与真实发布分开</td></tr>
+<tr><td>S4 / Time</td><td>FS 消元、窗口正则化、profile、多尺度组织；神经初值为候选加速器</td><td>同一未来域、周期单位、失败保留；不能通过更窄搜索域制造精准日期</td></tr>
+<tr><td>事件映射层</td><td>把参数结构转为明确阶段顶目标的学习任务</td><td>分别估计事件是否发生与条件日期；保留 no-event，不将似然直接叫概率</td></tr>
+<tr><td>S5 / Price</td><td>仅将时间结构作为可检验的条件特征；临界价研究可作为探索基线</td><td>价格密度几何不是未来回撤分布；时间模型不直接决定低点</td></tr>
+<tr><td>Grouped Aux / HMM</td><td>可提供市场状态、流动性和变点特征</td><td>与价格同源，不算独立票；历史状态只能用 filtered，不能用含未来的 smoothed</td></tr>
+<tr><td>Cross-Fitted Joint</td><td>用按时间交叉拟合的结构特征评估增量</td><td>资产依赖和标签重叠要隔离；概率必须校准，不能直接相乘</td></tr>
+<tr><td>Governor / Execution</td><td>将“观察/正式提醒/无结论”与动作区分</td><td>以当时可交易信息决策；不把未来确认位置当作可买卖时点</td></tr>
+</tbody></table></div>
+<p><b>应保留的事件分解：</b><code>p_H=P(阶段顶在未来H内发生 | F_t)</code>；<code>g(u | 事件发生,F_t)</code>给事件条件下的日期分布；无事件质量为<code>1−p_H</code>。这是研究架构，不是当前已有可用概率。不同峰应分别显示，不能为了页面简洁揉成一个虚假的高精度区间。</p>
+<p><span class="tag pending">NOT_ESTABLISHED</span>H1/H2/H3、Q2、MPL、Ising、Q-DD2、PPE 的既往失败或不支持结果，不会因为新论文存在而晋级。旧的 top10_20_60 及价格/年龄模型实验可以保留作历史对照，不能重新用“未来跌10%”替代用户现在的顶部日期目标。已经反复查看的 2016–2025 数据也不能再称真正未见的最终测试集。</p>
+</section>
+
+<section id="bottom"><h2>10 · 底部与价格层：为什么不能直接镜像顶部</h2>
+<p><span class="tag verified">数学事实</span>在同一设计矩阵、无约束线性最小二乘下，把 y 改成 −y，会令 β 改成 −β，而残差平方和完全相同。因此 log P 与 −log P 的无约束拟合不是两张独立选票。方向约束、事件定义与判别器才会让两个任务真正不同。</p>
+<p>负泡沫研究讨论加速下跌及潜在反弹；anti-bubble 常指峰值后减速的对数周期衰退，二者不能混名。底部可能受到流动性、政策冲击、跳空和基本面重新定价影响，必须独立训练/评价。历史反弹实验是参考证据，不能直接证明当前 A 股个股抄底有效。<a href="https://arxiv.org/abs/1003.5926">Negative bubbles</a>；<a href="https://arxiv.org/abs/cond-mat/9907270">Anti-bubble 研究</a></p>
+<p>你需要的价格层包含三个不同输出：①未来回撤幅度的条件分布；②在指定未来时段内的价格区间；③接近底部后是否具备可操作的反转证据。<code>exp(A)</code>最多是特定 LPPLS 形式中临界时刻的拟合价格极限，绝不是泡沫破裂后的支撑位。</p>
+<p>G-LPPLS-NN 的临界价/时间扩展值得后续阅读和复现，但本轮仅取得摘要及部分章节，不能据此宣布解决回撤和低点。建议仍将 Price 的条件分位数、尾部覆盖、first-hitting 等单独评分，之后再测 Time 特征是否带来增量。任何潜势/KDE“价格密集区”在校准前只能叫历史结构区。<a href="https://doi.org/10.1016/j.econlet.2024.112003">Ma &amp; Li，2024</a></p>
+</section>
+
+<section id="experiments"><h2>11 · 可交给 Devin 的单项实验计划</h2>
+<p><span class="tag pending">研究建议 · NOT_RUN</span>每次只改变一项；先冻结数据、目标和指标，再比较结果。保留旧评价器和旧产物；以下不是授权本轮执行开发或模型计算。</p>
+<div class="table-scroll"><table><thead><tr><th>实验</th><th>只改变什么</th><th>主要记录</th><th>晋级条件</th></tr></thead><tbody>
+<tr><td>E0 单位与数值契约</td><td>显式完整周期、未来域、价格/log量纲、日期轴</td><td>旧值映射；有限值；边界；失败；重复解</td><td>数学单元检查与历史结果差异可解释</td></tr>
+<tr><td>E1 求解器</td><td>DE+独立L-BFGS-B vs 网格/多起点TRF</td><td>同预算/同误差目标两种比较；loss差、参数漂移、失败率、p50/p95耗时</td><td>数值可靠性与资源代价改善；不预设哪个更优</td></tr>
+<tr><td>E2 日期宽度</td><td>正式提醒发布规则，而不是隐藏裁剪分布</td><td>窄区间覆盖、宽观察比例、无事件、提前不足</td><td>固定报警预算下改善阶段顶表现</td></tr>
+<tr><td>E3 窗口选择</td><td>固定窗口 vs 正则化/有限候选起点</td><td>拒绝原因、事件召回、不同尺度贡献</td><td>独立时期可复现，不依赖少数名例</td></tr>
+<tr><td>E4 聚类</td><td>原始密度 vs 去重/尺度平衡/跨日追踪</td><td>有效解族数、情景漂移、报警寿命与新提醒数</td><td>相同提醒次数及报警占用天数下有增量</td></tr>
+<tr><td>E5 不确定性</td><td>iid vs 相关噪声方法及完整pipeline零假设</td><td>合成参数覆盖、真实事件覆盖、假阳性、区间宽度</td><td>在合理噪声压力下不过度自信</td></tr>
+<tr><td>E6 神经暖启动</td><td>在已验证的求解流程前加 P-LNN 候选</td><td>训练/推理/精修全部成本、域外失败、遗漏低loss解</td><td>保留独立探索时节省耗时，事件指标不劣于冻结基线</td></tr>
+</tbody></table></div>
+<h3>阶段顶评价必须与用户目标一致</h3>
+<p>局部顶、阶段顶、两者重合分别保留；事后标签可以使用未来确认信息，但特征、阈值和发布日期绝不能使用这些未来信息。阶段顶强调 1–6 个月上涨后的转折，具体标签半径、平台高点规则、同段多个峰的处理应沿用已确认例集并版本化，不能由本报告悄悄重定义。</p>
+<ul><li>逐事件记录：未提醒、窗口偏早、偏晚、过宽、提前不足，以及多个问题同时发生。分别保存<strong>首次正式区间</strong>与后续最佳修订，主成绩不得用最佳修订冒充首次预报。</li><li>提前量从首次真实可见时间计算；日终生成不能在同日收盘前视为可执行。至少5个交易日与最多10交易日的愿望是需要检验的门槛，不是设计后自然满足的保证。</li><li>事件与提醒做确定的一对一匹配，避免一个长期报警覆盖多个顶、一个顶被重复算命中。相同提醒次数之外，同时控制报警占用天数，防止长时间常亮取得高召回。</li><li>报告阶段顶漏报率、合格提前召回、匹配区间覆盖/宽度、误报频度、提醒修订幅度、各市场/波动/行情状态的分层结果。不仅展示成功案例。</li><li>先在训练/校准段确定规则，然后锁定外层测试。标签未成熟标 pending；切分按实际 label_end 去重叠，依赖资产按共同日期分组。统计不确定性按时间/事件块处理，不能把数千重叠窗口当独立样本。</li></ul>
+<h3>速度对比如何公平</h3>
+<p>同时做“相同计算预算”和“达到相同质量所需时间”两张表。统一机器、线程数、数据、范围、精度容限、随机种子策略及失败处理；分别记录行情 I/O、排队、拟合、bootstrap、历史回放。先校准最新日，历史重放后台按需触发。旧窗口缓存只有在数据哈希与模型契约完全一致时可复用；新增一天可暖启动，但不是无需重新验证的一次简单增量相加。</p>
+</section>
+
+<section id="ledger"><h2>12 · 账本与前端：让速度和证据同时可见</h2>
+<p>借鉴前瞻实验最值得做的是保留“当时到底说了什么”。FBE 的数字指纹/事前封存提供了流程示例，但预先存证和预先冻结完整评分规则是两回事；历史作者成绩不能代替你的网站评价。<a href="https://arxiv.org/abs/1011.2882">FBE III</a></p>
+<div class="formula">prediction_id · parent_id · asof · data_cutoff · generated_at · first_visible_at<br>mode={historical_replay,prospective} · model_id · data_hash · code_commit<br>event_level · state · tc_intervals · no_event_status · reject_reasons · supersedes</div>
+<p>状态转换应可追溯：早期观察 → 正式区间提醒；同一事件情景变化形成修订；不相关的新情景产生新提醒。所有转换只使用当时已有信息。预测即使没有合格窗口，也要记录“未形成正式区间”和原因，避免只保存成功输出造成选择偏差。</p>
+<p>工作站的推荐呈现顺序：行情与截止日立即显示 → 已有分析连同 stale 标记显示 → 当前分析独立排队 → 历史重放按需启动。模型仍处观察状态时展示具体原因，例如“跨尺度支持不足”“区间过宽”“未来临界点受边界限制”“数据不足”，不能显示“无风险”。</p>
+<p>以上为产品与接口建议，未修改前后端，也未验证最新 Devin 工作分支。</p>
+</section>
+
+<section id="roadmap"><h2>13 · 具体推进顺序与验收门槛</h2>
+<div class="summary-grid"><div class="card"><b>第一步：修正比较基础</b>冻结1.5完整周期、future-only、数据量纲、交易日轴、旧结果映射、阶段顶标签和首次提醒评分。先完成E0，并把已有91个阶段顶的失败分类做成可复核表。</div><div class="card"><b>第二步：找出真正的性能瓶颈</b>跑E1数值对照；在同一账本上分别做E2/E3/E4。不要同一版本同时改窗口、聚类和概率阈值，否则无法归因。</div><div class="card"><b>第三步：校准可信程度</b>执行E5全流程对抗检验，报告覆盖与无事件表现。只有通过后，才讨论正式提醒阈值与概率用语。</div><div class="card"><b>第四步：验证提速与扩展</b>E6作为挑战者。底部与Price另开冻结实验；不靠顶部结果替它们背书。真实前瞻账本持续积累，成熟后独立评估。</div></div>
+<p>时间安排可用第一周完成契约/样本核对、一个月内完成有限资产的单项对照与对抗验证、三个月积累前瞻记录；这是规划窗口，计算量和事件数量未实测，不承诺三个月即可证明有效。</p>
+<ul class="checklist"><li>所有振荡数显示公式版本和单位；legacy规则可复现。</li><li>固定种子、线程/预算、数据哈希、代码提交；成功/失败/未完成数量守恒。</li><li>每次 t_c 参数转换与交易日映射可逆可核对，不混自然日。</li><li>profile 固定 t_c 后重新优化 nuisance 参数；记录多峰及边界。</li><li>按 asof 聚类，不跨未来行；同一解和高度重叠窗口不得伪增样本量。</li><li>局部顶、阶段顶分别评分；保留 no-event 与 pending；不用10%跌幅替代日期目标。</li><li>同报警预算及占用天数下比较漏报、误报、提前量、宽度，不只报平均拟合误差。</li><li>首次发布与历史重放分开，修订不可覆盖原预测。</li><li>价格和底部输出都有独立成绩，失败实验原样保留。</li><li>未完成检验前使用“研究候选/观察区间”，不写“已验证精准逃顶/抄底”。</li></ul>
+</section>
+
+<section id="bibliography"><h2>14 · 书目与阅读深度</h2>
+<p>以下是本轮已定位并使用的核心文献与实现。年份区分预印本和期刊；“全文方法阅读”表示核对研究问题、方法与限制，不表示逐式证明、重现全部实验。</p>
+<div id="reference-list"><div class="ref" id="R01"><a href="https://arxiv.org/abs/cond-mat/9810071">R01 · Crashes as Critical Points</a><p class="source">Johansen; Ledoit; Sornette · 2000（预印本1998） · 阅读深度：摘要及理论定位；未逐式核验原始推导。用途：临界时间、随机崩盘与事件定义边界</p></div>
+<div class="ref" id="R02"><a href="https://arxiv.org/abs/1108.0099">R02 · A Stable and Robust Calibration Scheme of the Log-Periodic Power Law Model</a><p class="source">Filimonov; Sornette · 2013（预印本2011） · 阅读深度：全文重点：重参数化、目标函数、校准方法。用途：保留三非线性参数与四线性参数分离的校准基础</p></div>
+<div class="ref" id="R03"><a href="https://arxiv.org/abs/1006.2010">R03 · Prediction accuracy and sloppiness of log-periodic functions</a><p class="source">Brée; Challet; Peirano · 2013（预印本2010） · 阅读深度：全文重点：参数可识别性、Hessian与噪声实验。用途：低拟合误差不保证临界日期稳定</p></div>
+<div class="ref" id="R04"><a href="https://arxiv.org/abs/1602.08258">R04 · Modified Profile Likelihood Inference and Interval Forecast of the Burst of Financial Bubbles</a><p class="source">Filimonov; Demos; Sornette · 2017（预印本2016） · 阅读深度：全文方法与适用范围；未逐式验证所有推导。用途：显式处理nuisance参数、多峰与区间不确定性</p></div>
+<div class="ref" id="R05"><a href="https://arxiv.org/abs/1707.07162">R05 · Comparing nested data sets and objectively determining financial bubbles’ inceptions（预印本：Lagrange regularisation approach…）</a><p class="source">Demos; Sornette · 2019（预印本2017） · 阅读深度：全文重点：窗口选择及正则化。用途：作为固定窗口基线的单项挑战者</p></div>
+<div class="ref" id="R06"><a href="https://doi.org/10.1080/14697688.2016.1231417">R06 · Birth or burst of financial bubbles: which one is easier to diagnose?</a><p class="source">Demos; Sornette · 2017 · 阅读深度：摘要与出版信息。用途：允许起点与终点可识别性不同；未收敛时保留观察状态</p></div>
+<div class="ref" id="R07"><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0165819">R07 · Early Warning Signals of Financial Crises with Multi-Scale Quantile Regressions of Log-Periodic Power Law Singularities</a><p class="source">Qun Zhang; Qunzhi Zhang; Sornette · 2016 · 阅读深度：全文重点：分位数、Confidence/Trust定义与案例。用途：研究稳健性；不能当成校准的未来事件概率</p></div>
+<div class="ref" id="R08"><a href="https://arxiv.org/abs/1003.5926">R08 · Diagnosis and Prediction of Market Rebounds in Financial Markets</a><p class="source">Yan; Woodard; Sornette · 2010，修订2011 · 阅读深度：全文重点：负泡沫、标签、训练测试设计。用途：底部单独建模；历史伪样本外与真实发布分开</p></div>
+<div class="ref" id="R09"><a href="https://arxiv.org/abs/0911.0454">R09 · The Financial Bubble Experiment: advanced diagnostics and forecasts of bubble terminations, Volume I</a><p class="source">Sornette; R. Woodard; Fedorovsky; Reimann; H. Woodard; Zhou · 2009–2010 · 阅读深度：全文重点：封存/披露协议；未独立重算所有hash。用途：首次预测存证；存证不等于冻结完整评分规则</p></div>
+<div class="ref" id="R10"><a href="https://arxiv.org/abs/1005.5675">R10 · The Financial Bubble Experiment: advanced diagnostics and forecasts of bubble terminations, Volume II — Master Document</a><p class="source">Sornette等 · 2010 · 阅读深度：全文重点：协议与区间表；未重新核算成功率。用途：前瞻账本设计参考，不外推一周精度</p></div>
+<div class="ref" id="R11"><a href="https://arxiv.org/abs/1011.2882">R11 · The Financial Bubble Experiment: advanced diagnostics and forecasts of bubble terminations, Volume III</a><p class="source">Woodard; Sornette; Fedorovsky · 2010，修订2011 · 阅读深度：摘要、版本与披露安排。用途：前瞻实验线索；具体成功率未独立确认</p></div>
+<div class="ref" id="R12"><a href="https://arxiv.org/abs/cond-mat/0101031">R12 · A Statistical Analysis of Log-Periodic Precursors to Financial Crashes</a><p class="source">Feigenbaum · 2001 · 阅读深度：摘要。用途：加入早期截断和合理噪声对照；不以此裁定所有后续模型</p></div>
+<div class="ref" id="R13"><a href="https://arxiv.org/abs/cond-mat/0106520">R13 · Significance of log-periodic precursors to financial crashes</a><p class="source">Sornette; Johansen · 2001 · 阅读深度：摘要；与批评成对读取。用途：避免只读支持或反对单一方向</p></div>
+<div class="ref" id="R14"><a href="https://arxiv.org/abs/1002.1010">R14 · Testing for financial crashes using the Log Periodic Power Law model</a><p class="source">Brée; Joseph · 2013（预印本2010） · 阅读深度：全文重点：研究设计与过滤规则敏感性。用途：完整日历中的误报、漏报与参数规则敏感性</p></div>
+<div class="ref" id="R15"><a href="https://arxiv.org/abs/1905.09640v2">R15 · Detection of Chinese Stock Market Bubbles with LPPLS Confidence Indicator</a><p class="source">Shu; Zhu · 2019预印本；2020期刊 · 阅读深度：全文重点；PDF印刷页9–10额外渲染目视核验。用途：确认原文振荡数公式与半周期正文不一致；A股历史对照</p></div>
+<div class="ref" id="R16"><a href="https://arxiv.org/abs/1905.09647">R16 · Real-time Prediction of Bitcoin Bubble Crashes</a><p class="source">Shu; Zhu · 2019 · 阅读深度：摘要。用途：采样频率与事件尺度匹配；不外推加密货币成绩</p></div>
+<div class="ref" id="R17"><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2693634">R17 · Real-time prediction and post-mortem analysis of the Shanghai 2015 stock market bubble and crash</a><p class="source">Sornette; Demos; Qun Zhang; Cauwels; Filimonov; Qunzhi Zhang · 2015 · 阅读深度：摘要与作者/期刊元数据；未审计全部原始预警文件。用途：中国市场前瞻案例追索线索，不认定具体提前命中</p></div>
+<div class="ref" id="R18"><a href="https://arxiv.org/html/2405.12803v1">R18 · Deep LPPLS: Forecasting of temporal critical points in natural, engineering and financial systems</a><p class="source">Nielsen; Sornette; Raissi · 2024，v1 · 阅读深度：正文及附录方法/实验；图4/5与表2额外PDF目视核验。用途：神经校准可作暖启动挑战者；速度与真实事件效果分开</p></div>
+<div class="ref" id="R19"><a href="https://arxiv.org/abs/1804.06261">R19 · Dissection of Bitcoin’s Multiscale Bubble History from January 2012 to February 2018</a><p class="source">Gerlach; Demos; Sornette · 2019（预印本2018） · 阅读深度：全文关键方法、窗口/聚类与案例选择；未重现。用途：逐asof多尺度候选组织；不直接移植事件成绩</p></div>
+<div class="ref" id="R20"><a href="https://doi.org/10.1016/j.irfa.2025.104848">R20 · Log-periodicity: Fact or fiction?</a><p class="source">Grobys · 2026期刊；2025复现材料 · 阅读深度：摘要、作者Zenodo复现README及部分脚本；正式全文访问受限。用途：完整拟合与过滤链的零假设校准；不报告未核实百分比</p></div>
+<div class="ref" id="R21"><a href="https://doi.org/10.1016/j.econlet.2024.112003">R21 · Detecting market bubbles: A generalized LPPLS neural network model</a><p class="source">Juntao Ma; Chenchen Li · 2024 · 阅读深度：出版页面摘要、引言与部分方法；未完整审查附录。用途：临界价/时间扩展候选，不等于崩盘后低点预测</p></div>
+<div class="ref" id="R22"><a href="https://arxiv.org/abs/cond-mat/9907270">R22 · Log-periodic power law bubbles in Latin-American and Asian markets and correlated anti-bubbles in Western stock markets: An empirical study</a><p class="source">Johansen; Sornette · 2001（预印本1999） · 阅读深度：摘要。用途：区分峰值后减速结构与加速下跌负泡沫</p></div></div>
+</section>
+<footer><p>公开原文与公式核对页：<a href="https://arxiv.org/pdf/2405.12803v1">Deep LPPLS 原论文</a> · <a href="https://arxiv.org/pdf/1905.09640v2">Shu–Zhu 原论文</a> · <a href="https://arxiv.org/pdf/1905.09640v2#page=9">公式所在页</a> · <a href="https://arxiv.org/pdf/1905.09640v2#page=10">半周期说明页</a>。</p><p><a href="literature-evidence-index.json">下载机器可读证据目录 JSON</a>（含22篇文献、阅读深度、仓库提交和历史框架文件哈希）。</p>核查日期：2026-11-16。范围：公开论文、公开代码静态阅读及本地历史交接文件。原文研究阶段未执行模型、未修改项目或推送。本次仅将报告与任务单提交文档 Draft PR；未部署或发布。报告结论涉及未验证的研究设计时，均应通过固定口径的独立实验后再晋级。</footer>
+</main></body></html>
