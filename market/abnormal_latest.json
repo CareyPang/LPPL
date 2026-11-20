@@ -1,11 +1,11 @@
 {
   "asof": "2026-11-20",
-  "generated": "2026-11-20T11:07:20.026686+00:00",
+  "generated": "2026-11-20T16:29:53.910609+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
-    "candidate_count": 140,
-    "available_count": 140,
+    "candidate_count": 139,
+    "available_count": 139,
     "missing": 2,
     "missing_codes": [
       {
@@ -22,10 +22,10 @@
     "rule_source": "交易所异常波动规则摘要"
   },
   "counts": {
-    "candidate_count": 140,
-    "available_count": 140,
-    "near": 35,
-    "triggered": 17,
+    "candidate_count": 139,
+    "available_count": 139,
+    "near": 34,
+    "triggered": 16,
     "stale_bar": 0
   },
   "rules": {
@@ -129,43 +129,6 @@
       "dev_3d": 23.132176885204125,
       "dev_10d": 6.339836918900477,
       "dev_30d": 3.422458069647817,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "up",
-        "threshold_pct": 20.0,
-        "remaining_pp": 0.0
-      },
-      "remaining_pp": 0.0,
-      "near": true,
-      "triggered": true
-    },
-    {
-      "code": "000711",
-      "name": "京蓝科技",
-      "board": "深主板",
-      "benchmark": "sz399001",
-      "last_bar_date": "2026-11-20",
-      "stale_bar": false,
-      "candidate_sources": [
-        "hot_eastmoney"
-      ],
-      "dev_3d": 25.74384573432385,
-      "dev_10d": 19.146169601615725,
-      "dev_30d": 4.457195689751282,
       "thresholds": {
         "3d": {
           "up": 20.0,
@@ -1855,8 +1818,7 @@
       "last_bar_date": "2026-11-20",
       "stale_bar": false,
       "candidate_sources": [
-        "hot_ths",
-        "hot_eastmoney"
+        "hot_ths"
       ],
       "dev_3d": 12.568863182921096,
       "dev_10d": 6.347518245890038,
@@ -1958,6 +1920,43 @@
       "remaining_pp": 7.903388885093857,
       "near": false,
       "triggered": false
+    },
+    {
+      "code": "603118",
+      "name": "共进股份",
+      "board": "沪主板",
+      "benchmark": "sh000001",
+      "last_bar_date": "2026-11-20",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_dt"
+      ],
+      "dev_3d": -12.096611114906143,
+      "dev_10d": 9.828746914832,
+      "dev_30d": -5.226527884708065,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "down",
+        "threshold_pct": -20.0,
+        "remaining_pp": 7.903388885093857
+      },
+      "remaining_pp": 7.903388885093857,
+      "near": false,
+      "triggered": false
     }
   ],
   "evidence": "descriptive",
@@ -1965,7 +1964,7 @@
   "version": {
     "kind": "abnormal",
     "asof": "2026-11-20",
-    "file": "versions/abnormal/2026-11-20/20261120T110720Z_418ea90a.json.gz",
-    "sha256": "418ea90a87ae621142bca3a3470abecfa385ae1734dcbcc09ae05a9a9bd197b0"
+    "file": "versions/abnormal/2026-11-20/20261120T162953Z_19db42db.json.gz",
+    "sha256": "19db42dbaa81dbfc2b74fe8a60d3228e9c7ec766771db0e3bad8e69cbb37a730"
   }
 }
