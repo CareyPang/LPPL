@@ -1,28 +1,27 @@
 {
   "asof": "2026-11-20",
-  "generated": "2026-11-19T22:30:57+00:00",
+  "generated": "2026-11-20T03:41:54+00:00",
   "evidence": "descriptive",
   "note": "只作市场背景，不进入 LPPLS 报警或任何模型。",
   "sources": {
     "treasury": {
       "provider": "home.treasury.gov",
       "asof": "2026-11-19",
-      "fetched_at": "2026-11-19T22:30:57+00:00",
+      "fetched_at": "2026-11-20T03:41:54+00:00",
       "ok": true,
       "stale": false
     },
     "nyfed": {
       "provider": "markets.newyorkfed.org",
-      "asof": "2026-11-17",
-      "fetched_at": "2026-11-19T22:30:57+00:00",
-      "ok": false,
-      "stale": true,
-      "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      "asof": "2026-11-18",
+      "fetched_at": "2026-11-20T03:41:55+00:00",
+      "ok": true,
+      "stale": false
     },
     "fed_h10": {
       "provider": "www.federalreserve.gov",
       "asof": "2026-11-13",
-      "fetched_at": "2026-11-19T22:30:58+00:00",
+      "fetched_at": "2026-11-20T03:41:55+00:00",
       "ok": true,
       "stale": false
     }
@@ -1614,16 +1613,11 @@
   "rates": {
     "sofr": {
       "latest": {
-        "date": "2026-11-17",
-        "rate": 3.92,
-        "volume_in_billions": 3173.0
+        "date": "2026-11-18",
+        "rate": 3.9,
+        "volume_in_billions": 3134.0
       },
       "series": [
-        {
-          "date": "2025-11-17",
-          "rate": 4.0,
-          "volume_in_billions": 3278.0
-        },
         {
           "date": "2025-11-18",
           "rate": 3.94,
@@ -2868,25 +2862,23 @@
           "date": "2026-11-17",
           "rate": 3.92,
           "volume_in_billions": 3173.0
+        },
+        {
+          "date": "2026-11-18",
+          "rate": 3.9,
+          "volume_in_billions": 3134.0
         }
       ]
     },
     "effr": {
       "latest": {
-        "date": "2026-11-17",
+        "date": "2026-11-18",
         "rate": 3.88,
-        "volume_in_billions": 95.0,
+        "volume_in_billions": 88.0,
         "target_rate_from": 3.75,
         "target_rate_to": 4.0
       },
       "series": [
-        {
-          "date": "2025-11-19",
-          "rate": 3.88,
-          "volume_in_billions": 76.0,
-          "target_rate_from": 3.75,
-          "target_rate_to": 4.0
-        },
         {
           "date": "2025-11-20",
           "rate": 3.88,
@@ -4627,6 +4619,13 @@
           "date": "2026-11-17",
           "rate": 3.88,
           "volume_in_billions": 95.0,
+          "target_rate_from": 3.75,
+          "target_rate_to": 4.0
+        },
+        {
+          "date": "2026-11-18",
+          "rate": 3.88,
+          "volume_in_billions": 88.0,
           "target_rate_from": 3.75,
           "target_rate_to": 4.0
         }
@@ -7685,7 +7684,7 @@
   "version": {
     "kind": "macro",
     "asof": "2026-11-20",
-    "file": "versions/macro/2026-11-20/20261119T223057Z_aa666737.json.gz",
-    "sha256": "aa66673733c6db94d35bef9109837b66ed8a40d38b3893ec85be450b711db002"
+    "file": "versions/macro/2026-11-20/20261120T034154Z_5a22dfdc.json.gz",
+    "sha256": "5a22dfdcf759a99b77d1a9d043ca19c6a3bd708416bfc15496010a77beb9bb7d"
   }
 }
