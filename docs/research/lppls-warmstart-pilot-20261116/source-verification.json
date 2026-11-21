@@ -1,0 +1,192 @@
+{
+  "schema_version": "plnn_source_verification_v1",
+  "verified_on": "2026-11-16",
+  "mode": "READ_ONLY_STATIC_NO_MODEL_EXECUTION",
+  "pr": 105,
+  "prior_pr_head": "221678b3f5d018f8ae479968c5b94e3d25636618",
+  "conclusion": {
+    "official_plnn_source_chain": "NOT_ESTABLISHED",
+    "usable_checkpoint": "NOT_ESTABLISHED",
+    "P_arm": "NOT_RUN_MODEL_UNAVAILABLE",
+    "full_phase_A": "BLOCKED_CHECKPOINT_PROVENANCE",
+    "phase_B": "HOLD_PENDING_PHASE_A_REVIEW"
+  },
+  "sources": [
+    {
+      "id": "paper_v1",
+      "url": "https://arxiv.org/html/2405.12803v1",
+      "type": "primary_paper",
+      "document_license": "CC-BY-NC-SA-4.0",
+      "code_or_weight_link_in_body": false,
+      "software_or_weight_license": "NOT_ESTABLISHED",
+      "depth": "HTML body and resource link inspection",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "boulder_traditional",
+      "repository": "Boulder-Investment-Technologies/lppls",
+      "commit": "eaa0da95b76b63f2b90df7b839d62150494a464b",
+      "url": "https://github.com/Boulder-Investment-Technologies/lppls/tree/eaa0da95b76b63f2b90df7b839d62150494a464b",
+      "relation": "author-associated traditional LPPLS library, not established Deep LPPLS distribution",
+      "tree_entries": 44,
+      "tree_truncated": false,
+      "plnn_code_found": false,
+      "checkpoint_found": false,
+      "license_api": "MIT",
+      "license_path": "license.txt",
+      "releases": [
+        {
+          "tag": "0.6.23",
+          "assets": 0
+        },
+        {
+          "tag": "0.4.4",
+          "assets": 0
+        }
+      ],
+      "status": "VERIFIED"
+    },
+    {
+      "id": "mvs_keras",
+      "repository": "mvs-86/lppls_py",
+      "commit": "a81f4f685e1874810f912246f439f644845cf394",
+      "url": "https://github.com/mvs-86/lppls_py/tree/a81f4f685e1874810f912246f439f644845cf394",
+      "relation": "third_party_reimplementation",
+      "tree_files": 19,
+      "tree_truncated": false,
+      "checkpoint_found": false,
+      "releases": [],
+      "license_api": null,
+      "license_readme_claim": "MIT",
+      "standalone_license_file_found": false,
+      "weight_license": null,
+      "example_path": "models/plnn_white.keras",
+      "example_path_is_published_asset": false,
+      "gitignore_excludes": [
+        "models/",
+        "*.keras",
+        "*.h5",
+        "*.ckpt*"
+      ],
+      "framework": "Keras/TensorFlow",
+      "architecture": [
+        252,
+        252,
+        252,
+        252,
+        252,
+        3
+      ],
+      "output_order": [
+        "tc_norm",
+        "m",
+        "omega"
+      ],
+      "training_time_axis": "linspace(0,1,252)",
+      "training_tc_range": [
+        1,
+        1.1984126984126984
+      ],
+      "training_m_range": [
+        0.1,
+        0.9
+      ],
+      "training_omega_range": [
+        6,
+        13
+      ],
+      "pitfalls": [
+        "training clean series minmax before noise; inference re-minmax noisy series",
+        "calendar span tc mapping",
+        "narrow training-domain filter",
+        "silently drops invalid windows",
+        "minimum dependencies not locked"
+      ],
+      "status": "VERIFIED_STATIC"
+    },
+    {
+      "id": "fatcrash_torch",
+      "repository": "unbalancedparentheses/fatcrash",
+      "commit": "dba203828e35b97342f87d514003c7ae6c75e576",
+      "url": "https://github.com/unbalancedparentheses/fatcrash/tree/dba203828e35b97342f87d514003c7ae6c75e576",
+      "relation": "third_party_reimplementation",
+      "tree_entries": 226,
+      "tree_truncated": false,
+      "checkpoint_found": false,
+      "releases": [],
+      "license_api": null,
+      "standalone_license_file_found": false,
+      "weight_license": null,
+      "framework": "PyTorch",
+      "architecture": [
+        252,
+        512,
+        256,
+        128,
+        64,
+        3
+      ],
+      "output_order": [
+        "tc_scaled",
+        "m",
+        "omega"
+      ],
+      "training_time_axis": "0..251 when n_obs=252",
+      "training_tc_target": "tc/(n_obs+50); scale 302 when training n_obs=252",
+      "pitfalls": [
+        "weights_only=False loader",
+        "last-252 truncation",
+        "left zero padding",
+        "decode by current n_obs+50",
+        "m/omega clipping",
+        "rss-derived confidence is not project event probability"
+      ],
+      "status": "VERIFIED_STATIC"
+    },
+    {
+      "id": "raissi_research",
+      "url": "https://maziarraissi.github.io/research/",
+      "resource_entry_found_in_inspected_page": false,
+      "status": "BOUNDED_PAGE_INSPECTION"
+    },
+    {
+      "id": "openreview",
+      "url": "https://openreview.net/forum?id=Y93F5eNmZG",
+      "status": "NOT_INSPECTED",
+      "reason": "browser verification; not bypassed"
+    }
+  ],
+  "checkpoint": {
+    "download_url": null,
+    "path": null,
+    "bytes": null,
+    "sha256": null,
+    "code_commit": null,
+    "weight_license": null,
+    "training_distribution": null,
+    "scaler": null,
+    "architecture_verified": false,
+    "load_verified": false,
+    "inference_verified": false,
+    "status": "NOT_RUN_MODEL_UNAVAILABLE"
+  },
+  "local_search": {
+    "scope": "Existing LPPL development checkout and names matching lppl/plnn/lnn under designated torch/HuggingFace cache only",
+    "candidate_found": false,
+    "entire_disks_scanned": false
+  },
+  "not_performed": [
+    "package installation",
+    "weight download",
+    "model loading",
+    "inference",
+    "training",
+    "fitting",
+    "backtest",
+    "paid compute",
+    "deployment",
+    "merge",
+    "publish"
+  ],
+  "search_boundary": "Negative result only for the inspected public resources and bounded local inventory; does not establish that no author or private checkpoint exists anywhere."
+}

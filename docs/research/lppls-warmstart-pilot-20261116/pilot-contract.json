@@ -1,0 +1,262 @@
+{
+  "schema_version": "lppls_warmstart_pilot_spec_v2",
+  "status": "SOURCE_PREFLIGHT_COMPLETE_CHECKPOINT_BLOCKED_EXPERIMENTS_NOT_RUN",
+  "frozen_run_manifest_required": true,
+  "base_main_sha": "e90f2de736ff7eb957946d4b5e627c334d702727",
+  "references": {
+    "pr100": "3f2de2e541c519e962d010055da8715733101e20",
+    "pr102": "e104c7f0f29dc1712df839e50e0c880e98af2255",
+    "pr104": "4b62fb181fb2a56a1f36e7c3486c534f84aa6652"
+  },
+  "minimum_full_cycles": 1.5,
+  "time_domain": "tc>t2; no abs/clamp; explicit per-call propagation",
+  "old_results": "immutable_preserve_hashes",
+  "arms": [
+    {
+      "id": "D",
+      "pipeline": "DE multi-seed + independent L-BFGS-B",
+      "seeds": [
+        11,
+        29,
+        47
+      ]
+    },
+    {
+      "id": "G",
+      "pipeline": "grid + multistart TRF",
+      "grid_shape": [
+        40,
+        12,
+        16
+      ],
+      "grid_top_starts": 5,
+      "random_starts": 10
+    },
+    {
+      "id": "P",
+      "pipeline": "one frozen P-LNN candidate + independent TRF",
+      "fallback": "disabled; preserve failure",
+      "checkpoint": "NOT_RUN_MODEL_UNAVAILABLE",
+      "checkpoint_sha256": null,
+      "weight_license": null
+    }
+  ],
+  "common_fit": {
+    "price": "log adjusted close; original observations for refinement",
+    "linear_solve": "four coefficient least squares recomputed each theta",
+    "search_m": [
+      0.01,
+      2.0
+    ],
+    "search_omega": [
+      1.0,
+      50.0
+    ],
+    "search_tc": "[t2+MIN_DT,t2+0.2*(t2-t1)] from pinned future contract",
+    "qualification": "pinned future_fullcycles_1p5_v1; no added R2 rule",
+    "representative": "minimum numerical-valid SSE before structural qualification",
+    "nn_out_of_bounds": "INVALID_INIT; no silent projection",
+    "seed_vote_count": "one per planned window only"
+  },
+  "sampling": {
+    "seed": 20261116,
+    "phase_A_real": 36,
+    "phase_A_synthetic": 48,
+    "phase_A_groups": {
+      "white_lppls": 12,
+      "ar1_lppls": 12,
+      "stress_lppls": 12,
+      "non_lppls": 12
+    },
+    "common_refiner_diagnostic_real_cases": 12,
+    "common_refiner_diagnostic_candidates_per_source": 1,
+    "timing_repeat_cases": 6,
+    "timing_repeats": 3,
+    "phase_B_assets_order": [
+      "sh000300",
+      "sh000001"
+    ],
+    "phase_B_templates": [
+      "B2_two_assets",
+      "B1_sh000300_only"
+    ],
+    "phase_B_choice": "largest template fitting 80% wall and CPU budget using A timing only, before B effects; otherwise NOT_RUN",
+    "phase_B_warmup_sessions": 63,
+    "phase_B_scored_asof_sessions": 63,
+    "phase_B_cadence": "daily",
+    "phase_B_window_count": 12,
+    "phase_B_window_selection": "four pinned scale groups: first/lower-median/last in each; mismatch blocks run",
+    "phase_B_block_selection": "min SHA256('20261116|symbol|start_session') over preregistered eligible development blocks; no outcome-based selection",
+    "development_asof_max": "2018-12-31",
+    "right_label_context": "through frozen maturity horizon; no new tail predictions",
+    "left_censoring": "require complete H=63 history and resolved episode state or report LEFT_CENSORED",
+    "evidence_scope": "consumed_development_pilot_not_full_B0_or_holdout",
+    "phase_A_lengths": [
+      60,
+      180,
+      360
+    ],
+    "phase_B_windows": [
+      30,
+      45,
+      60,
+      65,
+      95,
+      125,
+      130,
+      190,
+      250,
+      255,
+      375,
+      500
+    ],
+    "phase_B_scale_quotas": [
+      3,
+      3,
+      3,
+      3
+    ],
+    "phase_A_task_units_max": 324,
+    "timing_repeats_include_first_run": true,
+    "phase_B_pipeline_tasks": {
+      "B2": 9072,
+      "B1": 4536
+    },
+    "phase_B_name": "PILOT_SPARSE12_DAILY_C1",
+    "stage_event_cohort": "peak in [first_scored_asof,last_scored_asof], common mature event set with complete H prior opportunity; solver failures do not remove events",
+    "claim_matching": "full warmup+scoring ledger before cohort filtering; preserve T02 unknown/pending and duplicate rules",
+    "bootstrap": "disabled for superiority inference in 1-2 blocks; events<30 => INSUFFICIENT_EVIDENCE; 30 not sufficient power guarantee"
+  },
+  "budgets": {
+    "phase_A_wall_minutes": 20,
+    "phase_A_cpu_minutes": 80,
+    "phase_B_wall_minutes": 90,
+    "phase_B_cpu_minutes": 360,
+    "max_cpu_workers": 4,
+    "blas_threads_per_worker": 1,
+    "memory_gib": 8,
+    "automatic_training": false,
+    "paid_compute": false,
+    "automatic_expansion": false,
+    "limit_action": "append checkpoint; unfinished pending; cumulative across resumes"
+  },
+  "metrics": [
+    "stage_no_formal_alert_rate",
+    "first_formal_interval_coverage",
+    "QualifiedStageRecall5",
+    "StrictStageRecall5W10",
+    "strict_stage_miss_rate",
+    "resolved_claim_precision",
+    "lead_and_width",
+    "alert_occupied_sessions",
+    "notifications",
+    "failure_pending_counts",
+    "p50_p95_total_time",
+    "cpu_gpu_cost",
+    "objective_and_linear_solve_counts",
+    "precision_action_cohort"
+  ],
+  "matching": "pinned T02 earliest formal claim; revisions do not repair; all mature eligible events kept",
+  "s10": "compatibility appendix only; never substitute for formal interval score",
+  "evidence_modes": {
+    "historical_first_visible_at": null,
+    "action_time": "same frozen latency and cutoff mapping; late computations shift action time"
+  },
+  "unresolved_before_execution": [
+    "exact cases and window hashes",
+    "checkpoint license/hash/scaler/training provenance",
+    "exact random initial starts",
+    "hardware and dependencies",
+    "A resource isolation and B per-window equal-time cutoff",
+    "budget failure tolerance and expand recommendation criterion",
+    "data and label hash/maturity context",
+    "initial episode state and full H=63 action opportunities including next-session off-by-one; if unproven NOT_RUN_INITIAL_STATE, no hidden cold reset",
+    "actual P checkpoint artifact and permission; source review complete but checkpoint remains unavailable"
+  ],
+  "allowed_outcomes": [
+    "PILOT_FEASIBLE",
+    "NO_CLEAR_GAIN",
+    "REGRESSION",
+    "INSUFFICIENT_EVIDENCE"
+  ],
+  "deployment_allowed": false,
+  "merge_allowed": false,
+  "publish_allowed": false,
+  "new_model_execution_in_this_PR": "NOT_RUN",
+  "clustering": {
+    "entrypoint": "research/lppls/window_clusters.py::analyze_asof",
+    "mode": "full",
+    "selection": "clusters.cross.primary",
+    "expected_windows": "independent calendar/history eligibility intersect fixed 12, never derive from successful fits",
+    "qualified_predicate": "explicit pinned future_fullcycles_1p5_v1; never default prepare predicate",
+    "continuous_width_max": 10,
+    "min_members": 3,
+    "min_supported_scales": 2,
+    "min_scale_fraction": 0.05,
+    "window_weight": "1/(4*M_s)",
+    "date_conversion": "floor(lo), ceil(hi) relative to asof; then T02 gate; never narrow interval",
+    "compatibility_only": "B0or4"
+  },
+  "precision": {
+    "resolved_claim_precision": "pinned T02 union: action within scored block OR target event in E; resolved first formal claims only",
+    "precision_action_cohort": "action within scored block; resolved first formal claims, retaining no-event/duplicate penalties, target may be outside E"
+  },
+  "matched_notification_diagnostic": "same opportunity dates every fifth scored asof and at most one formal claim per opportunity; same ledger and current-only information; report underfill, never force equal actual counts with future top-K",
+  "active_phase": "A_ONLY",
+  "source_verification": "source-verification.json",
+  "execution_instructions": "P_LNN_PREFLIGHT.md",
+  "phase_A_execution": {
+    "full_three_arm_status": "BLOCKED_CHECKPOINT_PROVENANCE",
+    "sample_cases": 84,
+    "planned_primary_slots": 252,
+    "D_G_partial_allowed": true,
+    "partial_status": "A_PARTIAL_DG_ONLY",
+    "P_missing_slots": 84,
+    "P_no_weight_action": "record NOT_RUN; no random network, no demo or automatic training",
+    "result_cache": "only identical task identities; cache retrieval never solver timing",
+    "stop_after": "A_REPORT and A_DECISION; B disabled"
+  },
+  "phase_B_execution": {
+    "enabled": false,
+    "status": "HOLD_PENDING_PHASE_A_REVIEW",
+    "requires": [
+      "complete audited three-arm A evidence",
+      "engineering fixtures PASS",
+      "cost and fit-quality review with documented rationale",
+      "A_DECISION.json and separate preregistered B enablement change before outcomes"
+    ],
+    "automatic_transition": false
+  },
+  "checkpoint_acceptance": {
+    "all_required": [
+      "source identity and immutable code commit",
+      "actual artifact bytes and SHA256",
+      "applicable code and weight permission",
+      "framework and exact architecture shapes",
+      "output order and fixed label scale",
+      "training distribution and model selection provenance",
+      "scaler, resampling and clock contract",
+      "restricted load and finite output fixtures"
+    ],
+    "metadata_only_is_sufficient": false,
+    "example_path_is_sufficient": false,
+    "current_download_url": null,
+    "load_tested": false,
+    "inference_tested": false
+  },
+  "deferred_methods": [
+    "P-L-GRU",
+    "P-L-LSTM",
+    "M-LNN retraining",
+    "G-LPPLS",
+    "neural posterior/SBI",
+    "RL/self-play"
+  ],
+  "handoff": {
+    "executor": "Devin",
+    "scope": "preflight plus bounded Phase A only",
+    "dispatch_evidence": "PR task documents and conversation handoff; external session start NOT_ESTABLISHED",
+    "no_training": true
+  },
+  "phase_specific_gate": "Resolve each arm/phase requirements before that work; B-only unresolved values do not block A, P-only unavailable checkpoint does not block correctly frozen D/G partial baseline"
+}
