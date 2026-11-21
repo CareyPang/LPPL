@@ -1,8 +1,8 @@
 {
  "symbol": "US_KLAC",
  "name": "科磊",
- "asof": "2026-11-19",
- "data_version": "us_KLAC_20261119_a4394fb54022b329",
+ "asof": "2026-11-20",
+ "data_version": "us_KLAC_20261120_f7f3213fd728806e",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-05-21",
+   "start": "2026-05-22",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": -0.854,
-   "size_realized": -0.23,
-   "tc": "2026-12-15",
+   "size_model": -0.971,
+   "size_realized": -0.326,
+   "tc": "2026-12-14",
    "progress": null,
    "longest_qualified_scale": "12-24m",
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -55,12 +55,12 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.0,
+     "early": 0.167,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-04-16",
+    "best_t1": "2026-04-17",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -68,8 +68,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.167,
-     "any": 0.167,
+     "tc_hi": 0.0,
+     "any": 0.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -98,22 +98,22 @@
     "n_windows": 10,
     "confidence": {
      "box": 0.0,
-     "standard": 0.5,
-     "early": 1.0,
+     "standard": 0.4,
+     "early": 0.8,
      "end": 0.0,
      "pure": 0.0
     },
-    "n_qualified_standard": 5,
-    "best_t1": "2025-10-15",
-    "t1_qualified": false,
+    "n_qualified_standard": 4,
+    "best_t1": "2024-12-27",
+    "t1_qualified": true,
     "boundary_share": {
-     "m_lo": 0.3,
+     "m_lo": 0.4,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.5,
-     "tc_hi": 0.0,
-     "any": 0.8,
+     "tc_lo": 0.3,
+     "tc_hi": 0.3,
+     "any": 0.9,
      "tol": 0.01
     },
     "null_fpr": {
@@ -145,9 +145,9 @@
    "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），FCO 'oscillations≥2.5' 的口径未公开核验"
   },
   "combo": {
-   "p0.1": 0.002,
-   "p1": 0.25,
-   "p10": 0.467,
+   "p0.1": 0.001,
+   "p1": 0.2,
+   "p10": 0.373,
    "set": "standard",
    "scales": [
     "6-12m",
@@ -174,32 +174,22 @@
     "bins": []
    },
    "12-24m": {
-    "n": 5,
+    "n": 4,
     "bin_days": 5,
     "bins": [
      [
-      "2026-06-23",
-      "2026-06-30",
+      "2026-07-01",
+      "2026-07-09",
+      2
+     ],
+     [
+      "2026-07-09",
+      "2026-07-16",
       1
      ],
      [
-      "2026-06-30",
-      "2026-07-08",
-      1
-     ],
-     [
-      "2026-07-08",
-      "2026-07-15",
-      1
-     ],
-     [
-      "2026-07-15",
-      "2026-07-22",
-      1
-     ],
-     [
-      "2026-07-22",
-      "2026-07-29",
+      "2026-07-16",
+      "2026-07-23",
       1
      ]
     ]
@@ -261,7 +251,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-19",
+   "table_asof": "2026-11-20",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -743,7 +733,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.23,
+    "size_realized": -0.326,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -787,7 +777,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-15",
    "2023-11-16",
    "2023-11-17",
    "2023-11-20",
@@ -1542,10 +1531,10 @@
    "2026-11-16",
    "2026-11-17",
    "2026-11-18",
-   "2026-11-19"
+   "2026-11-19",
+   "2026-11-20"
   ],
   "open": [
-   53.664,
    53.264,
    51.99,
    53.01,
@@ -2300,10 +2289,10 @@
    144.41,
    146.15,
    147.53,
-   151.04
+   151.04,
+   138.98
   ],
   "high": [
-   53.838,
    53.801,
    53.402,
    54.693,
@@ -3058,10 +3047,10 @@
    147.78,
    146.51,
    147.72,
-   151.33
+   151.33,
+   139.14
   ],
   "low": [
-   52.949,
    53.166,
    51.793,
    53.01,
@@ -3816,10 +3805,10 @@
    142.21,
    138.75,
    141.84,
-   140.22
+   140.22,
+   125.72
   ],
   "close": [
-   53.322,
    53.321,
    53.238,
    54.53,
@@ -4574,10 +4563,10 @@
    143.96,
    144.56,
    144.88,
-   141.48
+   141.48,
+   126.87
   ],
   "volume": [
-   881381,
    1193711,
    1315361,
    817533,
@@ -5332,7 +5321,8 @@
    10952094,
    16036316,
    9282519,
-   10811195
+   10811195,
+   22658712
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5386,7 +5376,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4316,
+  "n_bars": 4317,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5416,9 +5406,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
- "fit_input_hash": "2ba7a0a5b0eaa7aeb3791e9de363dc1c2b67f46ecad2958ae9406b7a203bab1a",
+ "fit_input_hash": "0f86b91f9a42dfa16751eafa0b7da0ac18bc7dbe03a960c806d5a76d4df1b0f8",
  "history_input_hashes": {
-  "2023-11-16": "e10547aabe523435452cc237db66a17e7c58bb57713314aae491cf91a97818da",
   "2023-11-17": "b5190a58ebf8cab8e443bf3c296358fa61971e6b775932f22e0938235f4565b7",
   "2023-11-20": "ea32e2683a3d00b8449f7f5fc4cf26598ff9e437e5b7237e316cb664d0afb654",
   "2023-11-21": "1711fc163f7853f6a9c8407163724e6c52a027f2fcdf9cd03fcaa4e94a889a59",
@@ -6172,10 +6161,11 @@
   "2026-11-16": "4f4161503ae662cad01c6df5ab75b0e075cb76b1f0da5911ab9fcbe8ebf9e94b",
   "2026-11-17": "eadfd7ca5904a4a13b8fb0d133bf79adcccbc12ee2ca0eb9c3a72456fdcef91c",
   "2026-11-18": "684714a46e93f6480d7d140db87f45d2b637f3befe39cef38fddd4587e652fca",
-  "2026-11-19": "2ba7a0a5b0eaa7aeb3791e9de363dc1c2b67f46ecad2958ae9406b7a203bab1a"
+  "2026-11-19": "2ba7a0a5b0eaa7aeb3791e9de363dc1c2b67f46ecad2958ae9406b7a203bab1a",
+  "2026-11-20": "0f86b91f9a42dfa16751eafa0b7da0ac18bc7dbe03a960c806d5a76d4df1b0f8"
  },
  "code": "US_KLAC",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-20T22:43:34.621872+00:00"
+ "generated_at": "2026-11-21T03:39:09.708263+00:00"
 }
