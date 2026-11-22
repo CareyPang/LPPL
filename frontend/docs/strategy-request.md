@@ -4,9 +4,9 @@
 数据只经 `LPPL.strategy(sym)` 读取 `lab/mock/data/strategy/<sym>.json`；文件不存在时组件整块显示「策略回测结果未发布」。
 
 ## 口径（硬规则）
-- 这是**事前登记规则的历史回放**，不叫“策略收益”，不是预测，不是收益承诺。
+- 这是**事前登记规则的历史回放**，不叫“策略收益”。
 - 每个区间的汇总带 `evidence`；`LPPL.ev(level).show === false`（`none` / `fail*` / `dev_only` / `dev_failed` / `pending_cal` / `pending_test`）时只显示状态文字，不显示任何数值。
-- 所有汇总显示 `n`（交易次数）与「历史回放，不是预测」。
+- 所有汇总显示 `n`（交易次数）与「历史回放」。
 - 只开放事前登记的规则（`rule_id` 对应 `docs/preregistration*.md`），不提供自由调参。
 
 ## 文件：`strategy/<sym>.json`

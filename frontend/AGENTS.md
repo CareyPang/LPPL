@@ -6,7 +6,7 @@
 - 不在前端重算模型，不添加或恢复本地模型引擎及其回退逻辑。
 - 字段含义以 `docs/od_field_mapping.md` 为准；证据显示遵守 `docs/frontend_contract.md` §3–4：
   - `none`、`fail*`、`dev_only`、`dev_failed` 不显示数值。
-  - `descriptive` 必须显示样本数 `n` 和“历史分位，不是预测”。
+  - `descriptive` 必须显示样本数 `n`，并标明“历史分位”。
   - `drawdown_price.value` 恒为 `null`，不得显示目标价。
   - 时间窗只显示为区间，不显示精确顶部日期。
 - 禁止新增或显示 `bubbleScore`、`bubbleMultiScaleScore`、`bubbleProgress`、`tcOffset`、t_c 概率密度及趋势/动量指标。
