@@ -553,3 +553,67 @@ def build_bottom_dashboard(
         "note": "所有阈值均为经验参数，非监管标准；两融与 ETF 份额严格滞后 1 交易日（PIT）；北向日频净买入已停披露故不纳入。",
         "evidence": "descriptive",
     }
+
+
+def compute_fco_neg_intensity_series(frames: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """为历史周度帧逐帧计算严格 PIT 的 FCO 风格底部绿色强度（0–1）与底部首次企稳标记。
+
+    模拟 ETH Zurich FCO 负泡沫（绿色柱）语义：
+    - 仅使用截至当前帧（as-of）的历史收盘价，绝不前瞻未来；
+    - 要求相对过去 52 周高点出现显著回撤（<= -15%），并结合“超跌深度 + 下跌斜率减速（不再加速杀跌）+ 企稳站上 10 周均线”合成 0–1 绿色柱强度；
+    - 若当前帧存在活跃正向顶部泡沫（6–12m 红柱），绿色强度强制归零，避免红绿冲突。
+    """
+    closes: list[float] = []
+    prev_green_active = False
+    enriched: list[dict[str, Any]] = []
+
+    for frame in frames:
+        c = frame.get("close")
+        w6 = (frame.get("w") or {}).get("6-12m")
+        has_top = bool(isinstance(w6, list) and len(w6) == 2 and w6[0])
+
+        intensity = 0.0
+        if c is not None and np.isfinite(float(c)) and float(c) > 0:
+            cur_c = float(c)
+            closes.append(cur_c)
+            if not has_top and len(closes) >= 20:
+                win52 = closes[-52:]
+                peak52 = max(win52)
+                dd = cur_c / peak52 - 1.0 if peak52 > 0 else 0.0
+                if dd <= -0.15:
+                    # 深度分：-15% -> 0.15, -45%+ -> 0.55
+                    depth_score = float(np.clip((-dd - 0.15) / 0.30, 0.0, 1.0)) * 0.55
+                    # 下跌减速/止跌分：近 4 周不再创新低或回升
+                    recent4 = closes[-4:]
+                    low12 = min(closes[-12:])
+                    stopped_falling = (min(recent4) > low12 * 1.005) or (cur_c >= recent4[0] * 0.995)
+                    # 右侧企稳分：站上 10 周均线
+                    ma10 = float(np.mean(closes[-10:]))
+                    above_ma10 = cur_c >= ma10
+                    # 恐慌后缩幅（近 4 周波动低于前 12 周波动）
+                    rets12 = np.diff(np.log(closes[-13:])) if len(closes) >= 13 else np.array([])
+                    vol_calm = (
+                        len(rets12) >= 8
+                        and float(np.std(rets12[-4:])) <= float(np.std(rets12)) * 1.05
+                    )
+                    stabilize_score = (
+                        (0.20 if stopped_falling else 0.0)
+                        + (0.15 if above_ma10 else 0.0)
+                        + (0.10 if vol_calm else 0.0)
+                    )
+                    intensity = round(float(np.clip(depth_score + stabilize_score, 0.0, 1.0)), 3)
+                    if intensity < 0.18:
+                        intensity = 0.0
+        else:
+            closes.append(closes[-1] if closes else 0.0)
+
+        green_active = intensity >= 0.45
+        first_bottom_flag = bool(green_active and not prev_green_active)
+        prev_green_active = green_active
+
+        new_frame = dict(frame)
+        new_frame["fco_neg_intensity"] = intensity
+        new_frame["bottom_first_alert_flag"] = first_bottom_flag
+        enriched.append(new_frame)
+
+    return enriched

@@ -280,3 +280,34 @@ def test_summarize_history_episodes_with_splits():
     assert s6["by_split"]["test"]["n_episodes"] == 1
 
 
+def test_fco_neg_intensity_strict_pit_and_red_green_mutex():
+    """FCO 绿色底部强度柱：严格 PIT（修改未来帧不影响历史帧）且与活跃顶部红柱互斥。"""
+    from research.eval.bottom_dashboard import compute_fco_neg_intensity_series
+
+    # 构造先涨到 4000 再腰斩到 2600 后横盘企稳的周度序列
+    closes = [3000 + i * 50 for i in range(20)] + [4000 - i * 100 for i in range(15)] + [2600 + i * 20 for i in range(12)]
+    frames = [
+        {"asof": f"2020-01-{i+1:02d}", "close": float(c), "w": {"6-12m": None}}
+        for i, c in enumerate(closes)
+    ]
+    # 第 40 帧若存在活跃 6-12m 顶部红柱，则绿柱必须归零
+    frames[40]["w"] = {"6-12m": ["2020-03-01", "2020-04-01"]}
+
+    out_a = compute_fco_neg_intensity_series(frames)
+    # 深跌并企稳区间应出现正的绿色强度
+    assert any((f.get("fco_neg_intensity") or 0) > 0 for f in out_a[30:40])
+    # 红绿互斥：有活跃顶部红柱时绿柱强制为 0
+    assert out_a[40]["fco_neg_intensity"] == 0.0
+    assert out_a[40]["bottom_first_alert_flag"] is False
+
+    # 严格 PIT：剧烈篡改最后 5 帧的收盘价，前 42 帧的结果必须完全一致
+    frames_b = [dict(f) for f in frames]
+    for i in range(42, len(frames_b)):
+        frames_b[i]["close"] = 9999.0
+    out_b = compute_fco_neg_intensity_series(frames_b)
+    for i in range(42):
+        assert out_a[i]["fco_neg_intensity"] == out_b[i]["fco_neg_intensity"]
+        assert out_a[i]["bottom_first_alert_flag"] == out_b[i]["bottom_first_alert_flag"]
+
+
+

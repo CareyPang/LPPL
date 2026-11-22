@@ -29,7 +29,9 @@ test('CPSCN exposes FCO red bar and first-alert flag renderers', () => {
   vm.runInNewContext(code, ctx);
   const S = ctx.window.CPSCN;
   assert.equal(S.FCO, '#D6303A');
+  assert.equal(S.FCO_BOT, '#11845A');
   assert.equal(typeof S.drawFcoBar, 'function');
+  assert.equal(typeof S.drawFcoBottomBar, 'function');
   assert.equal(typeof S.drawFirstAlert, 'function');
 
   const ops = [];
@@ -49,6 +51,9 @@ test('CPSCN exposes FCO red bar and first-alert flag renderers', () => {
   };
   S.drawFcoBar(fakeCtx, { x: 100, w: 6, bottom: 300, maxH: 80, intensity: 0.8, hot: false });
   assert.ok(ops.some((o) => Array.isArray(o) && o[0] === 'rect' && o[4] >= 60));
+
+  S.drawFcoBottomBar(fakeCtx, { x: 140, w: 6, bottom: 300, maxH: 80, intensity: 0.75, hot: true });
+  assert.ok(ops.some((o) => Array.isArray(o) && o[0] === 'rect' && o[1] === 137 && o[4] >= 58));
 
   S.drawFirstAlert(fakeCtx, { x: 120, y: 150, top: 20, bottom: 300, label: '首警 15-05', active: true });
   assert.ok(ops.some((o) => Array.isArray(o) && o[0] === 'text' && o[1] === '首警 15-05'));
