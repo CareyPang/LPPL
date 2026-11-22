@@ -18313,5 +18313,79 @@
   "label": "事后重算，不是样本外",
   "note": "2026-11 对三段历史重新计算；测试段结论仍以预登记的一次性结果为准（未通过）。",
   "replaces": "prereg_v1.7_v2.1"
+ },
+ "episode_summary": {
+  "6-12m": {
+   "scale": "6-12m",
+   "buffer_days": 15,
+   "n_episodes": 21,
+   "hit_rate_exact": 0.0,
+   "hit_rate_buffered": 0.0952,
+   "null_hit_rate_buffered": 0.0219,
+   "p_value_buffered": 0.0698,
+   "median_days_to_top": 219.0,
+   "by_split": {
+    "dev": {
+     "n_episodes": 18,
+     "hit_rate_exact": 0.0,
+     "hit_rate_buffered": 0.0556,
+     "null_hit_rate_buffered": 0.0317,
+     "p_value_buffered": 0.4585,
+     "median_days_to_top": 211.0
+    },
+    "cal": {
+     "n_episodes": 3,
+     "hit_rate_exact": 0.0,
+     "hit_rate_buffered": 0.3333,
+     "null_hit_rate_buffered": 0.0411,
+     "p_value_buffered": 0.1262,
+     "median_days_to_top": 457.0
+    },
+    "test": {
+     "n_episodes": 0,
+     "hit_rate_exact": null,
+     "hit_rate_buffered": null,
+     "null_hit_rate_buffered": null,
+     "p_value_buffered": null,
+     "median_days_to_top": null
+    }
+   }
+  },
+  "12-24m": {
+   "scale": "12-24m",
+   "buffer_days": 15,
+   "n_episodes": 8,
+   "hit_rate_exact": 0.0,
+   "hit_rate_buffered": 0.25,
+   "null_hit_rate_buffered": 0.0333,
+   "p_value_buffered": 0.0299,
+   "median_days_to_top": 67.0,
+   "by_split": {
+    "dev": {
+     "n_episodes": 5,
+     "hit_rate_exact": 0.0,
+     "hit_rate_buffered": 0.2,
+     "null_hit_rate_buffered": 0.038,
+     "p_value_buffered": 0.1794,
+     "median_days_to_top": 67.0
+    },
+    "cal": {
+     "n_episodes": 2,
+     "hit_rate_exact": 0.0,
+     "hit_rate_buffered": 0.5,
+     "null_hit_rate_buffered": 0.0417,
+     "p_value_buffered": 0.0864,
+     "median_days_to_top": 63.0
+    },
+    "test": {
+     "n_episodes": 1,
+     "hit_rate_exact": 0.0,
+     "hit_rate_buffered": 0.0,
+     "null_hit_rate_buffered": 0.0,
+     "p_value_buffered": 1.0,
+     "median_days_to_top": null
+    }
+   }
+  }
  }
 }
