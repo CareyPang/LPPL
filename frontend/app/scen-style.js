@@ -26,28 +26,42 @@
       if (secondary) ctx.setLineDash([]);
       ctx.lineWidth = 1;
     },
-    /* FCO 风格红色泡沫强度柱状图（底部向上）：
-       o = { x, w, bottom, maxH, intensity, hot }，intensity ∈ [0, 1] */
+    /* FCO 风格红色泡沫强度柱状图（底部向上，自动降噪分级）：
+       o = { x, w, bottom, maxH, intensity, hot, locked, highThreshold }，intensity ∈ [0, 1]
+       低于高置信门槛（默认 0.40）且未锁定的弱红柱自动淡化为背景参考，避免视觉噪音。 */
+    TOP_HIGH_THRESHOLD: 0.40,
+    BOT_HIGH_THRESHOLD: 0.50,
     drawFcoBar(ctx, o) {
       const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
       if (v <= 0) return;
-      const h = Math.max(4, Math.round(v * o.maxH));
-      const bw = Math.max(2, Math.round(o.w || 4));
+      const thr = o.highThreshold != null ? Number(o.highThreshold) : CPSCN.TOP_HIGH_THRESHOLD;
+      const highConf = Boolean(o.locked) || v >= thr;
+      const h = Math.max(highConf ? 4 : 2, Math.round(v * o.maxH * (highConf ? 1 : 0.72)));
+      const bw = Math.max(2, Math.round((o.w || 4) * (highConf ? 1 : 0.75)));
       const x = Math.round(o.x - bw / 2);
       const y = Math.round(o.bottom - h);
-      ctx.fillStyle = rgba(FCO, o.hot ? 0.72 : (0.18 + v * 0.42));
+      const alpha = o.hot ? 0.85 : (highConf ? (0.36 + v * 0.44) : (0.07 + v * 0.14));
+      ctx.fillStyle = rgba(FCO, alpha);
       ctx.fillRect(x, y, bw, h);
+      if (o.locked) {
+        ctx.fillStyle = FCO;
+        ctx.fillRect(x, y - 2, bw, 2);
+      }
     },
-    /* FCO 风格绿色底部/负泡沫强度柱状图（底部向上，红顶绿底）：
-       o = { x, w, bottom, maxH, intensity, hot }，intensity ∈ [0, 1] */
+    /* FCO 风格绿色底部/负泡沫强度柱状图（底部向上，红顶绿底，自动降噪分级）：
+       o = { x, w, bottom, maxH, intensity, hot, highThreshold }，intensity ∈ [0, 1]
+       低于 0.50 共振门槛的弱绿柱降级为极淡背景参考，≥ 0.50 共振区高亮突出。 */
     drawFcoBottomBar(ctx, o) {
       const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
       if (v <= 0) return;
-      const h = Math.max(4, Math.round(v * o.maxH));
-      const bw = Math.max(2, Math.round(o.w || 4));
+      const thr = o.highThreshold != null ? Number(o.highThreshold) : CPSCN.BOT_HIGH_THRESHOLD;
+      const highConf = v >= thr;
+      const h = Math.max(highConf ? 4 : 2, Math.round(v * o.maxH * (highConf ? 1 : 0.65)));
+      const bw = Math.max(2, Math.round((o.w || 4) * (highConf ? 1 : 0.75)));
       const x = Math.round(o.x - bw / 2);
       const y = Math.round(o.bottom - h);
-      ctx.fillStyle = rgba(FCO_BOT, o.hot ? 0.72 : (0.18 + v * 0.42));
+      const alpha = o.hot ? 0.85 : (highConf ? (0.36 + v * 0.44) : (0.06 + v * 0.12));
+      ctx.fillStyle = rgba(FCO_BOT, alpha);
       ctx.fillRect(x, y, bw, h);
     },
     /* 严格 as-of 首次预警旗标（每轮泡沫第一次出现顶部聚类的截止日）：

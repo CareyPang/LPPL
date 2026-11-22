@@ -343,8 +343,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       <div class="al-table" role="table" aria-label="提醒明细">
         <div class="al-row al-row-head" role="row">
           <span role="columnheader">首次预警日（as-of）</span>
-          <span role="columnheader">持续周数</span>
-          <span role="columnheader">首次主簇区间</span>
+          <span role="columnheader">持续 / 收敛锁定</span>
+          <span role="columnheader">主簇区间与时间中位数</span>
           <span role="columnheader">次级簇</span>
           <span role="columnheader">所属段</span>
           <span role="columnheader">事后顶与提前天数</span>
@@ -502,10 +502,16 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         : 0;
       frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
     });
-    // 标记每一轮预警段（Episode）的首次预警日（strict as-of）
+    // 标记每一轮预警段（Episode）的首次预警日（strict as-of）与连续 as-of 不漂移锁定状态
     const epList = (st.H.alertEpisodes && st.H.alertEpisodes[scale]) || [];
     const firstMap = new Map(epList.map((ep) => [ep.first_asof, ep]));
-    st.H.fr.forEach((frame) => { frame.firstAlertEp = firstMap.get(frame.asof) || null; });
+    const lockedRanges = epList
+      .filter((ep) => ep.convergence && ep.convergence.high_confidence)
+      .map((ep) => [ep.first_asof, ep.last_asof]);
+    st.H.fr.forEach((frame) => {
+      frame.firstAlertEp = firstMap.get(frame.asof) || null;
+      frame.topLocked = lockedRanges.some(([a, b]) => frame.asof >= a && frame.asof <= b);
+    });
     st.tmax = mx + 30 * DAY;
     $('sym-c').textContent = '周度截止日 · ' + (scale === '6-12m' ? '6–12 月档' : '12–24 月档');
   }
@@ -548,6 +554,17 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           .filter((k) => es.by_split && es.by_split[k] && es.by_split[k].n_episodes > 0)
           .map((k) => `${SPLIT[k]} ${es.by_split[k].n_episodes}轮(±15d ${fmtP(es.by_split[k].hit_rate_buffered)})`);
         const bs = st.H && st.H.bottom_summary;
+        const lockedEps = episodes.filter((ep) => ep.convergence && ep.convergence.high_confidence);
+        const latestEp = episodes[0] || null;
+        const latestConv = latestEp && latestEp.convergence ? latestEp.convergence : null;
+        const convHtml = `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
+          `<b style="color:#B4232C">🎯 顶部聚类置信度与连续 as-of 不漂移检验：</b>` +
+          `共 <b>${episodes.length}</b> 轮预警中，有 <b>${lockedEps.length}</b> 轮通过「连续 ≥3 周主簇时间中位数未后移」锁定检验（主图红柱顶带实心锚线，低强度弱柱已自动降噪淡化）。` +
+          (latestEp
+            ? ` 最近一轮（${E(latestEp.first_asof)}–${E(latestEp.last_asof)}）聚类时间中位数 <b>${E(latestEp.median_date || '—')}</b>，状态：<b>${E(latestConv ? latestConv.label : '观察中')}</b>` +
+              (latestConv && latestConv.drift_ratio != null ? `（漂移比 ${latestConv.drift_ratio}）` : '') + '。'
+            : '') +
+          `</div>`;
         const botHtml = (bs && bs.n_events > 0)
           ? `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
             `<b style="color:#11845A">🟢 A 股多维底部综合指数回测（补齐纯负泡沫 LPPLS 短板、避免纯估值提前套牢）：</b>` +
@@ -559,12 +576,13 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           : '';
         epBox.hidden = false;
         epBox.innerHTML =
-          `<div class="ep-kpi"><span>事件级预警轮数</span><b>${es.n_episodes} 轮</b><small>按连续聚类归并</small></div>` +
+          `<div class="ep-kpi"><span>事件级预警轮数</span><b>${es.n_episodes} 轮</b><small>其中高危锁定 ${lockedEps.length} 轮</small></div>` +
           `<div class="ep-kpi"><span>精确区间命中</span><b>${fmtP(es.hit_rate_exact)}</b><small>事后顶落入首次主簇</small></div>` +
           `<div class="ep-kpi"><span>±${es.buffer_days || 15}日缓冲命中</span><b>${fmtP(es.hit_rate_buffered)}</b><small>容忍 ±${es.buffer_days || 15} 自然日</small></div>` +
           `<div class="ep-kpi"><span>同频随机基线</span><b>${fmtP(es.null_hit_rate_buffered)}</b><small>300次置放 · ${fmtPval(es.p_value_buffered)}</small></div>` +
           `<div class="ep-kpi"><span>中位提前天数</span><b>${leadTxt}</b><small>首次预警 → 事后顶</small></div>` +
           `<div class="ep-verdict"><b>事件级检验结论：</b>${E(verdictTxt)}${spParts.length ? ' ｜ 分段：' + E(spParts.join(' · ')) : ''}</div>` +
+          convHtml +
           botHtml;
       }
     }
@@ -577,11 +595,20 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           ? `${E(top.date)} · 回撤 ${E(pct(Number(top.max_dd)))}${lead}` : `${E(top.date)}${lead}`;
       const clusters = episode.clusters;
       const main = Array.isArray(clusters) ? clusters[0] : null;
-      const mainText = main
+      const medTag = episode.median_date ? `<br><span style="color:var(--ink-3);font-size:11px">中位数 ${E(episode.median_date)}</span>` : '';
+      const mainText = (main
         ? `${E(main.q20_date)} – ${E(main.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(main))}）` : ''}`
         : clusters === null
           ? `${E(episode.window[0])} – ${E(episode.window[1])}`
-          : '—';
+          : '—') + medTag;
+      const conv = episode.convergence || null;
+      const convBadge = conv && conv.status === 'locked'
+        ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;color:#B4232C;background:#FFF0F1;border:1px solid #F7C7CA">🔒 高危锁定</span>`
+        : conv && conv.status === 'drifting'
+          ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#8A5600;background:#FFF7EB;border:1px solid #F3D9B1">🟡 漂移观察</span>`
+          : conv && conv.status === 'converging'
+            ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#1F5FD6;background:#EEF4FF;border:1px solid #C9DCFF">初步锚定</span>`
+            : '';
       const secondaryText = Array.isArray(clusters) && clusters.length > 1
         ? clusters.slice(1).map((cluster) =>
           `${E(cluster.q20_date)} – ${E(cluster.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(cluster))}）` : ''}`
@@ -591,7 +618,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const relationLabel = { before: '早于区间', inside: '落在区间内', after: '晚于区间' }[relationValue] || '无';
       const relation = relationValue === 'inside' ? `<span class="al-hit">${relationLabel}</span>` : relationLabel;
       return `<div class="al-row" role="row" tabindex="0" aria-selected="${st.alertId === id}" data-alert-id="${E(id)}">` +
-        `<span role="cell"><span class="al-badge">首次预警</span>${E(episode.first_asof)}</span><span role="cell">${episode.weeks} 周</span>` +
+        `<span role="cell"><span class="al-badge">首次预警</span>${E(episode.first_asof)}</span><span role="cell">${episode.weeks} 周${convBadge}</span>` +
         `<span role="cell">${mainText}</span><span role="cell">${secondaryText}</span>` +
         `<span role="cell">${E(SPLIT[episode.split] || episode.split || '—')}</span>` +
         `<span role="cell">${topText}</span><span role="cell">${relation}</span></div>`;
@@ -873,7 +900,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       if (f.fcoIntensity > 0) {
         CPSCN.drawFcoBar(ctx, {
           x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
-          intensity: f.fcoIntensity, hot: f === hot,
+          intensity: f.fcoIntensity, hot: f === hot, locked: Boolean(f.topLocked),
         });
       } else if (f.fcoNegIntensity > 0) {
         CPSCN.drawFcoBottomBar(ctx, {

@@ -108,6 +108,7 @@
     let hoveredScale = null, hoveredFutureDate = null, scaleInitialized = false;
     let historyMode = false, historyFrame = null, historyCutoffIndex = -1;
     let events = [], focusEvent = null;
+    let showFco = true, fcoByDate = new Map();
     let state = null, staticCode = null, staticGeneration = 0, closed = false;
     const initialParams = new URLSearchParams(root.location?.search || '');
     let pendingInitialAsOf = initialParams.get('asof');
@@ -124,6 +125,40 @@
       },
     });
 
+    function rebuildFcoOverlay() {
+      fcoByDate = new Map();
+      if (!allPrices.length) return;
+      // 1) 个股严格 PIT 底部出清绿柱（无前瞻）
+      if (root.BottomAction && typeof root.BottomAction.evaluateStockSeries === 'function') {
+        const evalRes = root.BottomAction.evaluateStockSeries(allPrices, { code: lastCode || shownMarketCode });
+        for (const item of evalRes.series || []) {
+          if (item.bottomIntensity > 0) {
+            fcoByDate.set(item.date, { top: 0, bottom: item.bottomIntensity, locked: false });
+          }
+        }
+      }
+      // 2) 若有历史回放帧，叠加顶部 FCO 红柱并做连续 as-of 不漂移锁定标记
+      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
+      if (frames.length) {
+        const eps = root.CPAlertLedger ? root.CPAlertLedger.episodes(frames, lastHistory?.tops || [], '6-12m') : [];
+        const lockedRanges = eps
+          .filter(ep => ep.convergence && ep.convergence.high_confidence)
+          .map(ep => [ep.first_asof, ep.last_asof]);
+        for (const f of frames) {
+          if (!f || !f.asof) continue;
+          const rawTop = f.fco_intensity != null && Number.isFinite(Number(f.fco_intensity))
+            ? Math.max(0, Math.min(1, Number(f.fco_intensity)))
+            : (Array.isArray(f.scenarios) && f.scenarios.length ? 0.45 : (f.w && f.w['6-12m'] && f.w['6-12m'][0] ? 0.55 : 0));
+          if (rawTop > 0) {
+            const locked = lockedRanges.some(([a, b]) => f.asof >= a && f.asof <= b);
+            const cur = fcoByDate.get(f.asof) || { top: 0, bottom: 0, locked: false };
+            cur.top = Math.max(cur.top, rawTop);
+            cur.locked = cur.locked || locked;
+            fcoByDate.set(f.asof, cur);
+          }
+        }
+      }
+    }
     function normalizedCode(value) {
       const text = String(value || '').toUpperCase();
       if (/^US_/.test(text)) return text;
@@ -645,6 +680,27 @@
           bandLabels.push({ band, x1, x2 });
         }
       }
+      if (showFco && root.CPSCN && fcoByDate.size) {
+        const fcoMaxH = Math.max(24, Math.round((priceBottom - top) * 0.22));
+        const fcoBarW = Math.max(2, Math.min(8, Math.round(candleWidth * 1.15)));
+        for (const [i, bar] of prices.entries()) {
+          const entry = fcoByDate.get(bar.date);
+          if (!entry) continue;
+          const globalIndex = windowStart + i;
+          const isHot = globalIndex === selected;
+          if (entry.top > 0) {
+            root.CPSCN.drawFcoBar(ctx, {
+              x: x(globalIndex), w: fcoBarW, bottom: priceBottom, maxH: fcoMaxH,
+              intensity: entry.top, hot: isHot, locked: Boolean(entry.locked),
+            });
+          } else if (entry.bottom > 0) {
+            root.CPSCN.drawFcoBottomBar(ctx, {
+              x: x(globalIndex), w: fcoBarW, bottom: priceBottom, maxH: fcoMaxH,
+              intensity: entry.bottom, hot: isHot,
+            });
+          }
+        }
+      }
       for (const [i, bar] of prices.entries()) {
         const globalIndex = windowStart + i;
         ctx.strokeStyle = ctx.fillStyle = bar.close >= bar.open ? '#D6303A' : '#11845A';
@@ -742,6 +798,7 @@
         Math.min(bar.open, bar.high, bar.low, bar.close) > 0 && bar.volume >= 0 &&
         bar.high >= Math.max(bar.open, bar.close, bar.low) && bar.low <= Math.min(bar.open, bar.close));
       const exists = allPrices.length > 0;
+      rebuildFcoOverlay();
       shownMarketCode = exists ? normalizedCode(code || market?.code) : null;
       $('market-stats').hidden = !exists;
       $('market-plot').hidden = !exists;
@@ -809,6 +866,7 @@
       const history = root.StockSession.compatible(next.current, next.history) ? next.history : null;
       if (next.current && (lastCurrent !== next.current || lastHistory !== history)) {
         lastCurrent = next.current; lastHistory = history;
+        rebuildFcoOverlay();
         options.renderResult(next.current, history, next.market);
         $('first-visible-note').textContent = '尚未记录此结果在本浏览器的可见时间。';
         visibility?.observe($('summary').querySelector('.top') || $('risk'), next.current);
@@ -915,6 +973,14 @@
       if (state) for (const mode of ['current', 'history']) session.resume(state.code, mode);
     });
     $('stock-history-exit')?.addEventListener('click', exitHistory);
+    const fcoToggle = $('stock-fco-toggle');
+    if (fcoToggle) {
+      fcoToggle.addEventListener('click', () => {
+        showFco = !showFco;
+        fcoToggle.setAttribute('aria-pressed', String(showFco));
+        draw();
+      });
+    }
     for (const button of doc.querySelectorAll('[data-days]')) button.addEventListener('click', () => {
       days = Number(button.dataset.days);
       setRangePreset(button);
