@@ -2,7 +2,7 @@
  "symbol": "sh000688",
  "name": "科创50",
  "asof": "2026-11-20",
- "data_version": "vintage_20261120_tencent_sina",
+ "data_version": "vintage_20261122_tencent_sina",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -64,14 +64,14 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-11-03",
+    "best_t1": "2026-10-26",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.333,
+     "m_lo": 0.167,
      "m_hi": 0.167,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.0,
+     "tc_lo": 0.167,
      "tc_hi": 0.0,
      "any": 0.5,
      "tol": 0.01
@@ -113,11 +113,11 @@
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.143,
-     "w_lo": 0.286,
+     "w_lo": 0.143,
      "w_hi": 0.0,
-     "tc_lo": 0.143,
+     "tc_lo": 0.0,
      "tc_hi": 0.0,
-     "any": 0.286,
+     "any": 0.143,
      "tol": 0.01
     },
     "null_fpr": {
@@ -160,8 +160,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.077,
-     "any": 0.077,
+     "tc_hi": 0.0,
+     "any": 0.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -235,7 +235,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.02,
-     "early": 0.56,
+     "early": 0.58,
      "end": 0.0,
      "pure": 0.0
     },
@@ -245,11 +245,11 @@
     "boundary_share": {
      "m_lo": 0.14,
      "m_hi": 0.0,
-     "w_lo": 0.14,
+     "w_lo": 0.12,
      "w_hi": 0.0,
-     "tc_lo": 0.4,
+     "tc_lo": 0.44,
      "tc_hi": 0.14,
-     "any": 0.8,
+     "any": 0.82,
      "tol": 0.01
     },
     "null_fpr": {
@@ -279,21 +279,21 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.863,
+     "early": 0.838,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-10-24",
+    "best_t1": "2020-09-10",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.163,
+     "m_lo": 0.175,
      "m_hi": 0.0,
-     "w_lo": 0.05,
+     "w_lo": 0.062,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.025,
-     "any": 0.212,
+     "tc_hi": 0.037,
+     "any": 0.237,
      "tol": 0.01
     },
     "null_fpr": {
@@ -932,7 +932,7 @@
     }
    },
    "valuation_floor": null,
-   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期"
+   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性"
   },
   "drawdown_time": {
    "value": null,
@@ -978,6 +978,18 @@
    "definition": "Zhang–Zhang–Sornette 2016 PLOS ONE：残差 bootstrap 100 次重拟合，满足 Table 3 条件 2 的比例，取窗口中位数",
    "note": "衡量拟合对噪声实现的敏感性（1=稳健），原站页面不显示；本项目未做预测性检验，仅描述"
   }
+ },
+ "cooling_state": {
+  "phase": "cooling_after_top",
+  "top_conf_cleared": true,
+  "omori_aftershock_active": true,
+  "drawdown_from_peak": -0.4424,
+  "elapsed_days_since_peak": 97,
+  "min_cooling_days": 20,
+  "drawdown_bucket": "全部",
+  "reentry_ready": false,
+  "note": "处于破裂余震冷却期，等待高频大阴线衰减与最小冷却周期完成",
+  "evidence": "descriptive"
  },
  "price_history": {
   "dates": [
@@ -5551,7 +5563,7 @@
   "entry_rule": {
    "value": null,
    "evidence": "none",
-   "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
+   "note": "仅参考上月体制带（描述性）与价格自高点回撤"
   }
  },
  "validation": [
@@ -5597,6 +5609,6 @@
   "descriptive": "描述已完成月份，非预测"
  },
  "params": {
-  "optimizer": "g3"
+  "optimizer": "de_trf"
  }
 }

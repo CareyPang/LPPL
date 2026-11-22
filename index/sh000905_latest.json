@@ -2,7 +2,7 @@
  "symbol": "sh000905",
  "name": "中证500",
  "asof": "2026-11-20",
- "data_version": "vintage_20261120_tencent_sina",
+ "data_version": "vintage_20261122_tencent_sina",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -39,13 +39,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-11-09",
-   "duration_days": 10,
+   "start": "2026-11-05",
+   "duration_days": 12,
    "scale": "other",
    "t1_qualified_standard": false,
-   "size_model": -0.183,
-   "size_realized": -0.088,
-   "tc": "2026-11-24",
+   "size_model": -0.879,
+   "size_realized": -0.109,
+   "tc": "2026-11-23",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -72,8 +72,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.167,
-     "any": 0.333,
+     "tc_hi": 0.0,
+     "any": 0.167,
      "tol": 0.01
     },
     "null_fpr": {
@@ -199,13 +199,13 @@
     "best_t1": "2026-05-07",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.24,
+     "m_lo": 0.12,
      "m_hi": 0.04,
      "w_lo": 0.48,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.44,
-     "any": 0.76,
+     "any": 0.64,
      "tol": 0.01
     },
     "null_fpr": {
@@ -278,22 +278,22 @@
     "n_windows": 80,
     "confidence": {
      "box": 0.0,
-     "standard": 0.113,
-     "early": 0.562,
+     "standard": 0.125,
+     "early": 0.725,
      "end": 0.0,
-     "pure": 0.075
+     "pure": 0.087
     },
-    "n_qualified_standard": 9,
+    "n_qualified_standard": 10,
     "best_t1": "2024-10-24",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.15,
-     "m_hi": 0.075,
-     "w_lo": 0.225,
+     "m_lo": 0.237,
+     "m_hi": 0.05,
+     "w_lo": 0.113,
      "w_hi": 0.0,
-     "tc_lo": 0.312,
-     "tc_hi": 0.1,
-     "any": 0.775,
+     "tc_lo": 0.263,
+     "tc_hi": 0.113,
+     "any": 0.7,
      "tol": 0.01
     },
     "null_fpr": {
@@ -321,8 +321,8 @@
   },
   "combo": {
    "p0.1": 0.0,
-   "p1": 0.019,
-   "p10": 0.094,
+   "p1": 0.021,
+   "p10": 0.104,
    "set": "standard",
    "scales": [
     "2-4w",
@@ -357,9 +357,14 @@
     "bins": []
    },
    "2-6y": {
-    "n": 9,
+    "n": 10,
     "bin_days": 5,
     "bins": [
+     [
+      "2026-05-20",
+      "2026-05-27",
+      1
+     ],
      [
       "2026-05-27",
       "2026-06-03",
@@ -907,8 +912,8 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.088,
-    "duration_days": 10,
+    "size_realized": -0.109,
+    "duration_days": 12,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
    },
@@ -981,7 +986,7 @@
     "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理",
     "evidence": "descriptive"
    },
-   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期"
+   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性"
   },
   "drawdown_time": {
    "value": null,
@@ -1027,6 +1032,18 @@
    "definition": "Zhang–Zhang–Sornette 2016 PLOS ONE：残差 bootstrap 100 次重拟合，满足 Table 3 条件 2 的比例，取窗口中位数",
    "note": "衡量拟合对噪声实现的敏感性（1=稳健），原站页面不显示；本项目未做预测性检验，仅描述"
   }
+ },
+ "cooling_state": {
+  "phase": "cooling_after_top",
+  "top_conf_cleared": true,
+  "omori_aftershock_active": true,
+  "drawdown_from_peak": -0.335,
+  "elapsed_days_since_peak": 97,
+  "min_cooling_days": 20,
+  "drawdown_bucket": "全部",
+  "reentry_ready": false,
+  "note": "处于破裂余震冷却期，等待高频大阴线衰减与最小冷却周期完成",
+  "evidence": "descriptive"
  },
  "price_history": {
   "dates": [
@@ -5600,7 +5617,7 @@
   "entry_rule": {
    "value": null,
    "evidence": "none",
-   "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
+   "note": "仅参考上月体制带（描述性）与价格自高点回撤"
   },
   "cheap": {
    "evidence": "descriptive",
@@ -5616,7 +5633,7 @@
      "pct": 0.214,
      "n": 28
     },
-    "note": "历史 58 次顶→谷回撤中，31% 比当前回撤浅（历史分位，不是预测）"
+    "note": "历史 58 次顶→谷回撤中，31% 比当前回撤浅（历史分位）"
    },
    "pe_pct": {
     "value": 0.75,
@@ -5624,11 +5641,11 @@
     "pe_date": "2026-09-30"
    },
    "floor_ref": "top.drawdown_price.valuation_floor",
-   "note": "价格与估值均为 as-of 描述；历史分位，不是预测"
+   "note": "价格与估值均为 as-of 描述；历史分位"
   },
   "confirm": {
    "evidence": "rule",
-   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认，不是预测）",
+   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认）",
    "state": "bear",
    "ref_date": "2026-11-20",
    "ref_close": 6006.08,
@@ -5687,7 +5704,7 @@
     }
    },
    "current": null,
-   "note": "历史分位，不是预测"
+   "note": "历史分位"
   }
  },
  "validation": [
@@ -5733,6 +5750,6 @@
   "descriptive": "描述已完成月份，非预测"
  },
  "params": {
-  "optimizer": "g3"
+  "optimizer": "de_trf"
  }
 }

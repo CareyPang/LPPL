@@ -2,7 +2,7 @@
  "symbol": "sz399006",
  "name": "创业板指",
  "asof": "2026-11-20",
- "data_version": "vintage_20261120_tencent_sina",
+ "data_version": "vintage_20261122_tencent_sina",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -64,16 +64,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-10-26",
+    "best_t1": "2026-11-05",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.167,
+     "m_lo": 0.333,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.167,
-     "any": 0.333,
+     "tc_hi": 0.333,
+     "any": 0.667,
      "tol": 0.01
     },
     "null_fpr": {
@@ -243,9 +243,9 @@
     "best_t1": "2024-10-31",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.06,
+     "m_lo": 0.12,
      "m_hi": 0.0,
-     "w_lo": 0.76,
+     "w_lo": 0.74,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.52,
@@ -279,21 +279,21 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.15,
-     "early": 0.512,
+     "early": 0.662,
      "end": 0.0,
      "pure": 0.125
     },
     "n_qualified_standard": 12,
-    "best_t1": "2024-10-10",
+    "best_t1": "2024-10-24",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.3,
+     "m_lo": 0.25,
      "m_hi": 0.0,
-     "w_lo": 0.212,
+     "w_lo": 0.15,
      "w_hi": 0.0,
-     "tc_lo": 0.212,
+     "tc_lo": 0.2,
      "tc_hi": 0.037,
-     "any": 0.725,
+     "any": 0.6,
      "tol": 0.01
     },
     "null_fpr": {
@@ -951,7 +951,7 @@
     "evidence": "none",
     "note": "PE 序列与价格指数口径不一致（创业板指价格与创业板50 PE 不一致），不给地板带"
    },
-   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期"
+   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性"
   },
   "drawdown_time": {
    "value": null,
@@ -997,6 +997,18 @@
    "definition": "Zhang–Zhang–Sornette 2016 PLOS ONE：残差 bootstrap 100 次重拟合，满足 Table 3 条件 2 的比例，取窗口中位数",
    "note": "衡量拟合对噪声实现的敏感性（1=稳健），原站页面不显示；本项目未做预测性检验，仅描述"
   }
+ },
+ "cooling_state": {
+  "phase": "cooling_after_top",
+  "top_conf_cleared": true,
+  "omori_aftershock_active": true,
+  "drawdown_from_peak": -0.494,
+  "elapsed_days_since_peak": 100,
+  "min_cooling_days": 20,
+  "drawdown_bucket": "全部",
+  "reentry_ready": false,
+  "note": "处于破裂余震冷却期，等待高频大阴线衰减与最小冷却周期完成",
+  "evidence": "descriptive"
  },
  "price_history": {
   "dates": [
@@ -5570,7 +5582,7 @@
   "entry_rule": {
    "value": null,
    "evidence": "none",
-   "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
+   "note": "仅参考上月体制带（描述性）与价格自高点回撤"
   },
   "cheap": {
    "evidence": "descriptive",
@@ -5586,7 +5598,7 @@
      "pct": 0.607,
      "n": 28
     },
-    "note": "历史 58 次顶→谷回撤中，62% 比当前回撤浅（历史分位，不是预测）"
+    "note": "历史 58 次顶→谷回撤中，62% 比当前回撤浅（历史分位）"
    },
    "pe_pct": {
     "value": null,
@@ -5595,11 +5607,11 @@
     "note": "PE 序列与价格指数口径不一致（创业板指价格与创业板50 PE 不一致），不给地板带"
    },
    "floor_ref": "top.drawdown_price.valuation_floor",
-   "note": "价格与估值均为 as-of 描述；历史分位，不是预测"
+   "note": "价格与估值均为 as-of 描述；历史分位"
   },
   "confirm": {
    "evidence": "rule",
-   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认，不是预测）",
+   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认）",
    "state": "bear",
    "ref_date": "2026-11-20",
    "ref_close": 2212.13,
@@ -5658,7 +5670,7 @@
     }
    },
    "current": null,
-   "note": "历史分位，不是预测"
+   "note": "历史分位"
   }
  },
  "validation": [
@@ -5704,6 +5716,6 @@
   "descriptive": "描述已完成月份，非预测"
  },
  "params": {
-  "optimizer": "g3"
+  "optimizer": "de_trf"
  }
 }

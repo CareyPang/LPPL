@@ -2,7 +2,7 @@
  "symbol": "sh000001",
  "name": "上证指数",
  "asof": "2026-11-20",
- "data_version": "vintage_20261120_tencent_sina",
+ "data_version": "vintage_20261122_tencent_sina",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -160,8 +160,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.154,
-     "any": 0.462,
+     "tc_hi": 0.077,
+     "any": 0.385,
      "tol": 0.01
     },
     "null_fpr": {
@@ -199,13 +199,13 @@
     "best_t1": "2026-01-08",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.68,
+     "m_lo": 0.76,
      "m_hi": 0.0,
      "w_lo": 0.08,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.08,
-     "any": 0.76,
+     "any": 0.84,
      "tol": 0.01
     },
     "null_fpr": {
@@ -279,7 +279,7 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.075,
-     "early": 0.2,
+     "early": 0.237,
      "end": 0.0,
      "pure": 0.062
     },
@@ -288,11 +288,11 @@
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.212,
-     "w_lo": 0.25,
+     "m_hi": 0.2,
+     "w_lo": 0.212,
      "w_hi": 0.0,
-     "tc_lo": 0.588,
-     "tc_hi": 0.062,
+     "tc_lo": 0.537,
+     "tc_hi": 0.113,
      "any": 0.9,
      "tol": 0.01
     },
@@ -1005,7 +1005,7 @@
     "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理；上证 PE 为上交所全市场序列，近似上证综指口径",
     "evidence": "descriptive"
    },
-   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期"
+   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性"
   },
   "drawdown_time": {
    "value": null,
@@ -1051,6 +1051,18 @@
    "definition": "Zhang–Zhang–Sornette 2016 PLOS ONE：残差 bootstrap 100 次重拟合，满足 Table 3 条件 2 的比例，取窗口中位数",
    "note": "衡量拟合对噪声实现的敏感性（1=稳健），原站页面不显示；本项目未做预测性检验，仅描述"
   }
+ },
+ "cooling_state": {
+  "phase": "reentry_watch",
+  "top_conf_cleared": true,
+  "omori_aftershock_active": false,
+  "drawdown_from_peak": -0.1671,
+  "elapsed_days_since_peak": 130,
+  "min_cooling_days": 20,
+  "drawdown_bucket": "全部",
+  "reentry_ready": true,
+  "note": "顶部置信度已归零且余震衰减，可结合历史回撤分位与右侧宽度确认分批观察",
+  "evidence": "descriptive"
  },
  "price_history": {
   "dates": [
@@ -5624,7 +5636,7 @@
   "entry_rule": {
    "value": null,
    "evidence": "none",
-   "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
+   "note": "仅参考上月体制带（描述性）与价格自高点回撤"
   },
   "cheap": {
    "evidence": "descriptive",
@@ -5640,7 +5652,7 @@
      "pct": 0.0,
      "n": 28
     },
-    "note": "历史 58 次顶→谷回撤中，3% 比当前回撤浅（历史分位，不是预测）"
+    "note": "历史 58 次顶→谷回撤中，3% 比当前回撤浅（历史分位）"
    },
    "pe_pct": {
     "value": 0.817,
@@ -5648,11 +5660,11 @@
     "pe_date": "2026-09-30"
    },
    "floor_ref": "top.drawdown_price.valuation_floor",
-   "note": "价格与估值均为 as-of 描述；历史分位，不是预测"
+   "note": "价格与估值均为 as-of 描述；历史分位"
   },
   "confirm": {
    "evidence": "rule",
-   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认，不是预测）",
+   "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认）",
    "state": "bull",
    "ref_date": "2026-05-13",
    "ref_close": 4242.57,
@@ -5711,7 +5723,7 @@
     }
    },
    "current": null,
-   "note": "历史分位，不是预测"
+   "note": "历史分位"
   }
  },
  "validation": [
@@ -5757,6 +5769,6 @@
   "descriptive": "描述已完成月份，非预测"
  },
  "params": {
-  "optimizer": "g3"
+  "optimizer": "de_trf"
  }
 }
