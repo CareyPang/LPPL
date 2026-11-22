@@ -188,6 +188,17 @@ a { color: var(--ink-2); text-decoration: none; }
 .pl-rows li::before { content: counter(r); font: 400 11px/1.6 var(--f-m); color: var(--ink-3); grid-row: span 2; }
 .pl-rows b { font-size: 13px; font-weight: 600; }
 .pl-rows span { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.bot-idx-card { margin: 0 0 var(--s3); padding: 10px 12px; border: 1px solid #C8E2D7; border-radius: 8px; background: #F4FBF7; }
+.bot-idx-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.bot-idx-t { font: 600 13px/1.3 var(--f-u); color: #0F6A48; }
+.bot-idx-sc { font: 700 20px/1 var(--f-m); color: #0F6A48; }
+.bot-idx-sc small { font: 400 11px/1 var(--f-m); color: var(--ink-3); margin-left: 2px; }
+.bot-idx-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 8px 0; }
+.bot-idx-b { font-size: 11px; color: var(--ink-2); }
+.bot-idx-b > div { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.bot-idx-tr { height: 5px; border-radius: 99px; background: #DCEBE4; overflow: hidden; }
+.bot-idx-tr i { display: block; height: 100%; background: #11845A; border-radius: 99px; }
+.bot-idx-ft { margin: 6px 0 0; padding-top: 6px; border-top: 1px dashed #CBE1D6; font-size: 11px; color: var(--ink-2); line-height: 1.5; }
 .cks { list-style: none; margin: var(--s3) 0 0; padding: 0; border-top: 1px solid var(--line); }
 .cks li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s2); padding: var(--s2) 0; border-bottom: 1px solid var(--grid); }
 .ck-s { font: 600 11px/1.6 var(--f-m); color: var(--ink-3); }
@@ -552,9 +563,19 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       const i = idxOf(b, t.date);
       if (i + 126 <= R.T) tops.push({ i, date: t.date, dd: t.max_dd });
     }
+    const validFrames = H.frames.filter((f) => f.asof && f.asof <= R.asof);
+    const lastHistFrame = validFrames.length ? validFrames[validFrames.length - 1] : null;
+    const latestBottom = lastHistFrame ? {
+      asof: lastHistFrame.asof,
+      score: Math.round(Math.max(0, Math.min(1, Number(lastHistFrame.fco_neg_intensity) || 0)) * 100),
+      firstBottom: Boolean(lastHistFrame.bottom_first_alert_flag),
+      factors: lastHistFrame.bottom_factors || null,
+    } : null;
     return {
       frames, fcoFrames, fcoBotFrames, tops, clusterFrames, rule: H.rule, evidence: H.evidence,
       scale_evidence: H.scale_evidence || {},
+      bottom_summary: H.bottom_summary || null,
+      latestBottom,
       last: H.frames.length ? H.frames[H.frames.length - 1].asof : '',
     };
   }
@@ -1386,7 +1407,38 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     ][planTab];
     const badgeHtml = window.CPEvidenceBadge ? window.CPEvidenceBadge.html(P.badge) : '';
     const backtestLink = `<a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}">打开 FCO 历史回测 ›</a> · <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>`;
-    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
+    let botIndexHtml = '';
+    if (planTab === 1 && R.hist) {
+      const lb = R.hist.latestBottom || { score: 0, asof: R.asof, factors: null, firstBottom: false };
+      const bs = R.hist.bottom_summary || null;
+      const f = lb.factors || {};
+      const sc = lb.score || 0;
+      const scState = sc >= 50 ? '🟢 底部共振区' : (sc >= 25 ? '🟡 左侧观察区' : '⚪ 非底部区');
+      const vVal = f.valuation != null ? Math.round(Number(f.valuation) * 100) : 0;
+      const vClr = f.clearing != null ? Math.round(Number(f.clearing) * 100) : 0;
+      const vStb = f.stabilize != null ? Math.round(Number(f.stabilize) * 100) : 0;
+      const vRgt = f.right_side != null ? Math.round(Number(f.right_side) * 100) : 0;
+      const erpTxt = f.erp_pct != null ? `ERP ${Math.round(Number(f.erp_pct) * 100)}%` : '未进超跌区';
+      const pbnTxt = f.pbn_pct != null ? `破净 ${Math.round(Number(f.pbn_pct) * 100)}%` : '';
+      const valSub = [erpTxt, pbnTxt].filter(Boolean).join(' / ');
+      const histProof = bs && bs.n_events > 0
+        ? `历史实证（${bs.n_events} 次共振）：50 周上涨胜率 <b>${(Number(bs.win_rate_50w) * 100).toFixed(1)}%</b>` +
+          `（普通下跌基线 ${(Number(bs.baseline_win_rate_50w) * 100).toFixed(1)}%，<b>+${(Number(bs.win_rate_lift_50w) * 100).toFixed(1)}pp</b>），` +
+          `50 周收益中位数 <b>${bs.median_ret_50w >= 0 ? '+' : ''}${(Number(bs.median_ret_50w) * 100).toFixed(1)}%</b>。`
+        : '严格 PIT 四维合成：兼顾估值安全边际与止跌右侧确认，避免纯估值提前一年套牢。';
+      botIndexHtml =
+        `<div class="bot-idx-card" id="bot-index-card">` +
+        `<div class="bot-idx-hd"><span class="bot-idx-t">A 股多维底部综合指数 · ${E(scState)}</span><span class="bot-idx-sc">${sc}<small>/100</small></span></div>` +
+        `<div class="bot-idx-bars">` +
+        `<div class="bot-idx-b"><div><span>够不够便宜（35%）</span><span>${E(valSub)}</span></div><div class="bot-idx-tr"><i style="width:${vVal}%"></i></div></div>` +
+        `<div class="bot-idx-b"><div><span>跌完没·超跌（30%）</span><span>${f.dd_52w != null ? (Number(f.dd_52w) * 100).toFixed(0) + '%' : '—'}</span></div><div class="bot-idx-tr"><i style="width:${vClr}%"></i></div></div>` +
+        `<div class="bot-idx-b"><div><span>防死猫跳（20%）</span><span>${vStb}%</span></div><div class="bot-idx-tr"><i style="width:${vStb}%"></i></div></div>` +
+        `<div class="bot-idx-b"><div><span>企稳没·均线（15%）</span><span>${vRgt}%</span></div><div class="bot-idx-tr"><i style="width:${vRgt}%"></i></div></div>` +
+        `</div>` +
+        `<p class="bot-idx-ft">${histProof}</p>` +
+        `</div>`;
+    }
+    $('plan').innerHTML = botIndexHtml + `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
       `</ol><p class="pl-meta">${backtestLink} · <a href="guide.html">方法论图解 →</a></p>`;
   }
 

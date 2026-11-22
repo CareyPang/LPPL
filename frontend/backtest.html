@@ -290,7 +290,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <aside class="side" aria-label="说明" data-ai-context="说明">
     <section class="blk">
       <p class="blk-k">FCO 图读法</p>
-      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示超跌出清/负泡沫底部强度（FCO 底部观察，需配合六维仪表盘右侧确认）；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
+      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示严格 PIT 的<b>「A 股多维底部综合指数」</b>（融合全 A 股债利差 ERP + 破净率回答“够不够便宜”，叠加 52 周超跌 + 防死猫跳 + 10 周均线回答“跌完没、企稳没”，既补齐纯负泡沫 LPPLS 胜率短板，又避免纯估值提前一年套牢）；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
       <p><b>琥珀横线</b>从截止日收盘价向右延伸到主簇/次级簇时间区间；<b>蓝色三角</b>为事后确认顶（顶后 126 交易日回撤 ≥15%）用于回测对照。</p>
       <p id="cluster-footnote"></p>
     </section>
@@ -514,7 +514,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         const bs = st.H && st.H.bottom_summary;
         const botHtml = (bs && bs.n_events > 0)
           ? `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
-            `<b style="color:#11845A">🟢 A 股四维底部共振回测（补齐纯负泡沫 LPPLS 短板）：</b>` +
+            `<b style="color:#11845A">🟢 A 股多维底部综合指数回测（补齐纯负泡沫 LPPLS 短板、避免纯估值提前套牢）：</b>` +
             `共 <b>${bs.n_events}</b> 次独立共振，50 周上涨胜率 <b>${fmtP(bs.win_rate_50w)}</b>` +
             `（普通下跌基线 ${fmtP(bs.baseline_win_rate_50w)}${bs.win_rate_lift_50w != null ? '，<b>' + (bs.win_rate_lift_50w >= 0 ? '+' : '') + (bs.win_rate_lift_50w * 100).toFixed(1) + 'pp</b>' : ''}），` +
             `50 周收益中位数 <b>${bs.median_ret_50w != null ? (bs.median_ret_50w >= 0 ? '+' : '') + (bs.median_ret_50w * 100).toFixed(1) + '%' : '—'}</b>，` +
