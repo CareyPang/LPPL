@@ -1256,6 +1256,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     history.push(['估值地板带', vf && vf.floor_band_points
       ? vf.floor_band_points[0] + '–' + vf.floor_band_points[1] + ' 点 · PE ' + vf.pe_latest + '（' + vf.pe_date + '）· n=' + vf.n
       : (vf && vf.note) || '不提供', '']);
+    if (window.BottomAction && typeof window.BottomAction.evaluatePricePhysics === 'function') {
+      const pp = window.BottomAction.evaluatePricePhysics(R.bars.slice(0, R.T + 1));
+      if (pp) {
+        history.push([
+          '筹码势阱 · 物理价格层',
+          `${pp.label}（自由能 F=${pp.wellF} · 距250日均价 ${(pp.vwapGap * 100 >= 0 ? '+' : '') + (pp.vwapGap * 100).toFixed(1)}% · OBV背离 ${pp.obvDiv >= 0 ? '+' : ''}${pp.obvDiv}）`,
+          pp.inVacuum ? 'up' : (pp.inTrappedWell ? 'dn' : ''),
+        ]);
+      }
+    }
     if (dp.evidence === 'descriptive') {
       history.push(['桶说明', (dp.bucket ? '桶：' + dp.bucket + '；' : '') + '历史分位', '']);
     }

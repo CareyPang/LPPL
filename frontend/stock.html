@@ -1326,10 +1326,19 @@
       const ph = d?.price_history || {};
       const dates = Array.isArray(ph.dates) ? ph.dates : [];
       const closes = Array.isArray(ph.close) ? ph.close : [];
-      const bars = dates.map((dt, idx) => ({ date: dt, close: Number(closes[idx]) }));
+      const bars = dates.map((dt, idx) => ({
+        date: dt,
+        close: Number(closes[idx]),
+        high: Number((ph.high && ph.high[idx]) ?? closes[idx]),
+        low: Number((ph.low && ph.low[idx]) ?? closes[idx]),
+        volume: Number((ph.volume && ph.volume[idx]) ?? 1),
+      }));
       const top = d?.top || {};
       const hasTop = top.signal_status === 'signal';
       const evalRes = window.BottomAction.evaluateStockSeries(bars, { code: code6(d?.symbol), hasTop });
+      const pp = typeof window.BottomAction.evaluatePricePhysics === 'function'
+        ? window.BottomAction.evaluatePricePhysics(bars)
+        : null;
       if (!evalRes || !evalRes.latest || !evalRes.action) {
         host.hidden = true;
         return;
@@ -1378,6 +1387,9 @@
 
       host.dataset.tone = act.tone;
       host.hidden = false;
+      const ppHtml = pp
+        ? `<div class="sac-box"><b>🔬 价格层物理结构（势阱 × OBV）</b><br><b>${esc(pp.label)}</b>（自由能 F=${pp.wellF}，${pp.noWellBelow ? '下方无更深旧势阱' : '下方仍有旧势阱'}）。<br>距 250 日筹码均价 <b>${(pp.vwapGap * 100 >= 0 ? '+' : '') + (pp.vwapGap * 100).toFixed(1)}%</b> · OBV 底背离 <b>${pp.obvDiv >= 0 ? '+' : ''}${pp.obvDiv}</b>。</div>`
+        : '';
       host.innerHTML =
         `<div class="sac-hd">` +
           `<div class="sac-title">${esc(act.glyph)} 个股顶底与防死猫跳结论：${esc(act.positionLabel)} · ${esc(act.canBuyLabel)}</div>` +
@@ -1387,6 +1399,7 @@
           `<div class="sac-box"><b>🎯 顶部聚类与收敛提醒</b><br>${topNote}<br><span style="color:#6A6D78">主图低强度弱红/绿柱已自动降噪，仅高亮高置信信号。</span></div>` +
           `<div class="sac-box"><b>🛡️ 防死猫跳 · Omori 余震检验</b><br>${omoriBadge}<br>52 周回撤 <b>${(latest.dd252 * 100).toFixed(1)}%</b> · 右侧均线：${esc(maText)}。</div>` +
           `<div class="sac-box"><b>🧭 所属宽基与仓位上限</b><br>${boardText}<br>${capHint}</div>` +
+          ppHtml +
         `</div>` +
         `<div class="sac-steps">` +
           window.BottomAction.STEPS.map((st) => `<div class="sac-step${act.stepIndex >= st.idx ? ' on' : ''}">${esc(st.title)}（${esc(st.pct)}）<br>${esc(st.cond)}</div>`).join('') +
