@@ -455,6 +455,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 <script src="app/lppl-data.js"></script>
 <script src="app/scen-style.js"></script>
 <script src="app/bottom-action.js"></script>
+<script src="app/alert-ledger.js"></script>
 <script src="app/watchlist.js"></script>
 <script>
 (function () {
@@ -581,6 +582,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (i + 126 <= R.T) tops.push({ i, date: t.date, dd: t.max_dd });
     }
     const validFrames = H.frames.filter((f) => f.asof && f.asof <= R.asof);
+    const topConv = window.CPAlertLedger
+      ? window.CPAlertLedger.latestConvergence(validFrames, H.tops, '6-12m')
+      : { active: null, latest: null, lockedCount: 0, total: 0 };
+    const eps6 = window.CPAlertLedger ? window.CPAlertLedger.episodes(validFrames, H.tops, '6-12m') : [];
+    const lockedRanges = eps6
+      .filter((ep) => ep.convergence && ep.convergence.high_confidence)
+      .map((ep) => [ep.first_asof, ep.last_asof]);
+    fcoFrames.forEach((f) => {
+      f.locked = lockedRanges.some(([a, b]) => f.asof >= a && f.asof <= b);
+    });
     const lastHistFrame = validFrames.length ? validFrames[validFrames.length - 1] : null;
     const latestBottom = lastHistFrame ? {
       asof: lastHistFrame.asof,
@@ -593,6 +604,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       scale_evidence: H.scale_evidence || {},
       bottom_summary: H.bottom_summary || null,
       latestBottom,
+      topConv,
       last: H.frames.length ? H.frames[H.frames.length - 1].asof : '',
     };
   }
@@ -820,7 +832,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         const barW = Math.max(2, Math.min(8, Math.round(pp * 3.5)));
         const maxBarH = Math.max(26, Math.round((pb - pt) * 0.22));
         for (const f of fcoVis) {
-          CPSCN.drawFcoBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3 });
+          CPSCN.drawFcoBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3, locked: Boolean(f.locked) });
         }
         for (const f of fcoBotVis) {
           CPSCN.drawFcoBottomBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3 });
@@ -1318,9 +1330,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       $('vh').textContent = '🟢 当前无泡沫信号（常态结构）';
       $('vh').className = 'vh';
     }
+    const tc0 = R.hist && R.hist.topConv ? R.hist.topConv : null;
+    const activeConv = tc0 && tc0.active ? tc0.active : null;
+    const convText = activeConv && activeConv.convergence
+      ? ` 顶部收敛检验：聚类时间中位数 ${activeConv.median_date || '—'}，${activeConv.convergence.label}（低强度弱红/绿柱已在主图自动降噪）。`
+      : (tc0 && tc0.latest && tc0.latest.convergence
+          ? ` 最近历史顶部聚类（${tc0.latest.first_asof}，中位数 ${tc0.latest.median_date || '—'}，${tc0.latest.convergence.label}）已结束。`
+          : '');
     const mainSummary = hasMainBubble
-      ? ('6–12 月主尺度出现正向泡沫聚类，临界区间 ' + (w.start ? U.range(w.start, w.end, R.asof, last) : '已触发') + '，严禁追高。')
-      : ('6–12 月与 12–24 月主尺度均无正向泡沫红柱' + (extraScales.length ? '（仅 ' + extraScales.map(k => SCN[k] || k).join('、') + ' 存在零散拟合，持续观察）' : '，未见泡沫加速见顶特征') + '。');
+      ? ('6–12 月主尺度出现正向泡沫聚类，临界区间 ' + (w.start ? U.range(w.start, w.end, R.asof, last) : '已触发') + '，严禁追高。' + convText)
+      : ('6–12 月与 12–24 月主尺度均无正向泡沫红柱' + (extraScales.length ? '（仅 ' + extraScales.map(k => SCN[k] || k).join('、') + ' 存在零散拟合，持续观察）' : '，未见泡沫加速见顶特征') + '。' + convText);
     const regimeSummary = rb.state ? (' 体制带（' + rb.month + '）：' + (REG[rb.state] || rb.state) + '。') : '';
     const coolSummary = dash0 && dash0.headline
       ? (' 抄底/冷却判定：' + (lightGlyph0[dash0.verdict_light] || '⚪') + ' ' + dash0.headline + '。')

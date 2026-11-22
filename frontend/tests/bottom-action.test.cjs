@@ -87,4 +87,58 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.match(bt, /id="ov-strip"/);
   assert.match(bt, /data-ledger-mode="bottom"/);
   assert.match(bt, /id="bottom-rows"/);
+  assert.match(bt, /主簇区间与时间中位数/);
+  assert.match(idx, /app\/alert-ledger\.js/);
+
+  const stock = fs.readFileSync(path.join(__dirname, '..', 'stock.html'), 'utf8');
+  assert.match(stock, /app\/scen-style\.js/);
+  assert.match(stock, /app\/bottom-action\.js/);
+  assert.match(stock, /app\/alert-ledger\.js/);
+  assert.match(stock, /id="stock-fco-toggle"/);
+  assert.match(stock, /id="stock-action-card"/);
+});
+
+test('alert-ledger detects locked non-drifting top cluster vs drifting cluster with median_date', () => {
+  const AlertLedger = require('../app/alert-ledger.js');
+  // 连续 4 周预测中位数稳定钉在 2025-06-15 附近（不往后漂移）
+  const lockedFrames = [
+    { asof: '2025-05-02', close: 3200, w: { '6-12m': ['2025-06-01', '2025-07-01'] } },
+    { asof: '2025-05-09', close: 3250, w: { '6-12m': ['2025-06-02', '2025-06-28'] } },
+    { asof: '2025-05-16', close: 3300, w: { '6-12m': ['2025-06-04', '2025-06-26'] } },
+    { asof: '2025-05-23', close: 3340, w: { '6-12m': ['2025-06-05', '2025-06-25'] } },
+  ];
+  const lockedEps = AlertLedger.episodes(lockedFrames, [], '6-12m');
+  assert.equal(lockedEps.length, 1);
+  assert.equal(lockedEps[0].convergence.status, 'locked');
+  assert.equal(lockedEps[0].convergence.high_confidence, true);
+  assert.equal(lockedEps[0].convergence.stable_weeks, 4);
+  assert.ok(lockedEps[0].median_date && lockedEps[0].median_date.startsWith('2025-06'));
+
+  // 连续 4 周每次往后推 10 天（典型追涨漂移伪信号）
+  const driftFrames = [
+    { asof: '2025-05-02', close: 3200, w: { '6-12m': ['2025-06-01', '2025-07-01'] } },
+    { asof: '2025-05-09', close: 3250, w: { '6-12m': ['2025-06-11', '2025-07-11'] } },
+    { asof: '2025-05-16', close: 3300, w: { '6-12m': ['2025-06-21', '2025-07-21'] } },
+    { asof: '2025-05-23', close: 3340, w: { '6-12m': ['2025-07-01', '2025-07-31'] } },
+  ];
+  const driftEps = AlertLedger.episodes(driftFrames, [], '6-12m');
+  assert.equal(driftEps[0].convergence.status, 'drifting');
+  assert.equal(driftEps[0].convergence.high_confidence, false);
+});
+
+test('bottom-action evaluateStockSeries maps board index and blocks heavy entry under Omori aftershocks', () => {
+  const bars = [];
+  let px = 160;
+  for (let i = 0; i < 80; i += 1) {
+    const dt = new Date(Date.UTC(2026, 7, 1 + i)).toISOString().slice(0, 10);
+    if (i > 40 && i < 65) px *= 0.985;
+    if (i === 72 || i === 75) px *= 0.93; // 近 15 日连续大阴线
+    bars.push({ date: dt, close: Number(px.toFixed(2)) });
+  }
+  const res = BottomAction.evaluateStockSeries(bars, { code: '300843', hasTop: false });
+  assert.equal(res.board.sym, 'sz399006');
+  assert.equal(res.latest.omoriRed, true);
+  assert.ok(res.latest.score <= 46);
+  assert.equal(res.action.canBuy, false);
+  assert.equal(res.action.tier, 'left_wait');
 });
