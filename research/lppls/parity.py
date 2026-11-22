@@ -482,8 +482,7 @@ def render_report(report: dict) -> str:
         "because `power` is not false, the browser also fits the nested power model.",
         f"- Critical top-scan options: `{json.dumps(metadata['critical_top_opt'], sort_keys=True)}` "
         "(the top rule is declared at `web/app/critical.js:90`, with executable comparisons "
-        "at lines 91–92; Python `TOP_RULE` is `research/lppls/core.py:91`, and the same "
-        "criteria are documented at `web/review.html:237`).",
+        "at lines 91–92; Python `TOP_RULE` is `research/lppls/core.py:91`).",
         "- `TOP_RULE` mirrors the critical top scan; it is intentionally distinct from the "
         "browser engine's `OD.FILTERS.ds` / `OD.FILTERS.strict` gates.",
         "- Real data: `sh000001`, frozen vintage `v20261024`, log-close windows.",

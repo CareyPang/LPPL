@@ -318,7 +318,7 @@ def calculate(market: dict, client=None, max_candidates: int = MAX_CANDIDATES) -
         },
         "items": items[:MAX_OUTPUT],
         "evidence": "descriptive",
-        "note": "异动提醒是对交易所异常波动规则的距离描述，不是预测或交易信号。",
+        "note": "异动提醒是对交易所异常波动规则的距离描述。",
     }
 
 

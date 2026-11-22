@@ -162,7 +162,7 @@
       if (!policy.draw) {
         extra.textContent = policy.message;
       } else if (bandEvidence === 'descriptive') {
-        extra.textContent = (share ? share + '；' : '') + 'n=' + band.n + '；历史分位，不是预测';
+        extra.textContent = (share ? share + '；' : '') + 'n=' + band.n + '；历史分位';
       } else if (bandEvidence === 'research_candidate') {
         extra.textContent = (share ? share + '；' : '') + '研究候选区间，非正式提醒；占比不是概率';
       } else if (band.source === 'scale_window') {
@@ -252,7 +252,7 @@
       chart.setIntraday(data);
       var limits = data.limits || {};
       el('obv-caption').textContent = 'OBV 背离为' +
-        (data.note || '历史形态描述，不是买卖信号') +
+        (data.note || '历史形态描述') +
         '；分钟线仅含最近约 ' + (limits.n_bars || (Array.isArray(data.bars) ? data.bars.length : 0)) +
         ' 根（' + (limits.first || '—') + '–' + (limits.last || '—') + '）';
       el('obv-caption').hidden = false;
@@ -349,7 +349,7 @@
     var displayMode = LPPLChart.priceMode(data.bars);
     page.dataset.priceMode = displayMode;
     el('price-mode-note').textContent = selectedPeriod !== 'd'
-      ? '分钟 K 线与成交量；OBV 背离为历史形态描述，不是买卖信号。'
+      ? '分钟 K 线与成交量；OBV 背离为历史形态描述。'
       : displayMode === 'close'
       ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
       : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';

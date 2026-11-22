@@ -352,6 +352,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
-  const changelog = () => opt('changelog.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, changelog, resultOf, fetchResult };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
 })(window);

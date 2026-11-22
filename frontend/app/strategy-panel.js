@@ -79,14 +79,14 @@
     if (!M.published) {
       return '<div class="sp-unpub"><p class="sp-unpub-t">策略回测结果未发布</p>' +
         '<p>后端还没有产出这只标的的策略回放 JSON。这里将来显示的是<b>事前登记规则的历史回放</b>：净值曲线与买入持有对比、开发 / 校准 / 测试三段分别的汇总、逐笔交易和假设（A 股 T+1、涨跌停不可成交、佣金印花税与滑点）。</p>' +
-        '<p class="sp-dim">规则与字段见 <a href="lab/guide.html">用户指南</a>；只开放事前登记的规则，不提供自由调参。历史回放不是预测，也不是收益承诺。</p></div>';
+        '<p class="sp-dim">规则与字段见 <a href="lab/guide.html">用户指南</a>；只开放事前登记的规则，不提供自由调参。</p></div>';
     }
     var ruleNav = M.rules.length ? '<div class="sp-rules" role="group" aria-label="策略规则">' + M.rules.map(function (r) {
       return '<button type="button" data-rule="' + esc(r.rule_id) + '" aria-pressed="' + (M.selectedRule === r.rule_id) + '">' + esc(ruleLabel(r)) + '</button>';
     }).join('') + '</div>' : '';
     var head = ruleNav + '<div class="sp-head"><div class="sp-segs" role="group" aria-label="区间">' + SEGMENTS.map(function (s) {
       return '<button type="button" data-seg="' + s[0] + '" aria-pressed="' + (M.segment === s[0]) + '"' + (!M.hasMetrics[s[0]] ? ' disabled' : '') + '>' + s[1] + '</button>';
-    }).join('') + '</div><span class="sp-ev ' + (M.shown ? 'ok' : 'off') + '">' + esc(M.status) + '</span><span class="sp-n m">n = ' + M.n + '</span><span class="sp-dim">历史回放，不是预测</span></div>' +
+    }).join('') + '</div><span class="sp-ev ' + (M.shown ? 'ok' : 'off') + '">' + esc(M.status) + '</span><span class="sp-n m">n = ' + M.n + '</span><span class="sp-dim">历史回放</span></div>' +
       '<nav class="sp-tabs" aria-label="报告页签">' + TABS.map(function (t) { return '<a href="#" data-tab="' + t[0] + '"' + (tab === t[0] ? ' aria-current="location"' : '') + '>' + t[1] + '</a>'; }).join('') + '</nav>';
     var body = '';
     if (tab === 'metrics') {

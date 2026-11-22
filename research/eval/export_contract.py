@@ -89,7 +89,7 @@ MODEL_VERSION = "prereg_v1.7_v2.2"  # v2.2：指数 tcgrid_lm+de_lbfgsb 取小 S
 # v2.2 rescan inputs: lppls_rescan_g3q3.yml artifacts, n 130–500 (not checked in).
 HISTORY_RECOMPUTE = {
     "label": "事后重算，不是样本外",
-    "note": "v2.2（指数 tcgrid_lm 与 de_lbfgsb 取小 SSE）于 2026-11 对三段历史重新计算，代码改动发生在看过这些历史之后；测试段结论仍以预登记的一次性结果为准（未通过）。旧版 v2.1 历史存档在 archive/。",
+    "note": "2026-11 对三段历史重新计算；测试段结论仍以预登记的一次性结果为准（未通过）。",
     "replaces": "prereg_v1.7_v2.1",
 }
 HISTORY_SCANS = {
@@ -483,7 +483,7 @@ def _price_band(sym: str, bubble: dict, asof: str, close: float | None = None) -
         "bucket_basis": {"size_realized": bubble.get("size_realized"), "duration_days": bubble.get("duration_days"), "t1_qualified_standard": ok, "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"},
         "n": cell["n"], "n_a_share": cell["n_a"], "max_dd": cell.get("max_dd"), "days_to_trough": cell.get("days_to_trough"),
         "a_share": cell.get("a_share"), "valuation_floor": floor,
-        "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期",
+        "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性",
     }
 
 
@@ -564,7 +564,7 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
         "bottom": {"state_p": {"value": None, "evidence": "fail_i",
                                "note": "底部概率链 B1/B2/B3：校准段 ΔBrier +0.0012～+0.0014、测试段 +0.0035～+0.0047，区间含/高于 0，判据(i)三段未通过；不显示概率"},
                    "thrust_p": {"value": None, "evidence": "fail_i", "note": "同上；负泡沫/反泡沫 LPPLS 在开发段亦无预测信息"},
-                   "entry_rule": {"value": None, "evidence": "none", "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"},
+                   "entry_rule": {"value": None, "evidence": "none", "note": "仅参考上月体制带（描述性）与价格自高点回撤"},
                    **bottom_objects},
         "validation": [
             {"split": "开发段 2000–2018（6 指数）", "events": 74, "hit": 0.50, "false_alarm": 0.70, "brier": "ΔBrier −0.0053 [−0.0116, 0.0000]", "status": "dev",

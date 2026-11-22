@@ -1020,7 +1020,7 @@ def history(
         "frames": frames,
         "tops": tops,
         "confirmed_tops": confirmed_tops,
-        "confirmed_tops_note": "PS-15% 标签顶，需观察未来 126 个交易日后确认；事后标签，不是预测",
+        "confirmed_tops_note": "PS-15% 标签顶，需观察未来 126 个交易日后确认；事后标签",
         "stock_meta": {
             **_stock_status_meta(ohlc, _name_and_st(code)[1], meta),
             "ipo_in_range": bool(meta["ipo_in_range"]),

@@ -42,7 +42,6 @@
   var HELP = [
     { t: '用户指南', h: 'guide.html' },
     { t: '研究仪表盘', h: 'lab/dashboard.html' },
-    { t: '更新日志', h: 'changelog.html' },
     { t: '数据状态', h: 'market.html#s-fresh' }
   ];
   var SUB = {
@@ -657,7 +656,7 @@
     HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(menu);
   var help = el('details', 'odn-help');
-  help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、更新日志、数据状态">?</summary><div class="odn-pop">' +
+  help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、数据状态">?</summary><div class="odn-pop">' +
     HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
   right.appendChild(help);
   l1.appendChild(right);

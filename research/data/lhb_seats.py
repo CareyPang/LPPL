@@ -21,7 +21,7 @@ REPORTS = {
     "buy": "RPT_BILLBOARD_DAILYDETAILSBUY",
     "sell": "RPT_BILLBOARD_DAILYDETAILSSELL",
 }
-NOTE = "本内容为每日复盘，仅供研究参考，不构成任何投资建议；游资别名按公开报道整理，可能有误或过时。"
+NOTE = "游资别名按公开报道整理，可能有误或过时。"
 
 
 def _number(value, field: str) -> float:
@@ -124,7 +124,7 @@ def _date_badge(asof: str) -> str:
 def _sample_note(totals: dict) -> str:
     return (
         f"样本 {totals['n_stocks']} 只（其中单日榜 {totals['n_stocks_single']}、"
-        f"多日榜 {totals['n_stocks_multi']}） · 历史分位，不是预测"
+        f"多日榜 {totals['n_stocks_multi']}） · 历史分位"
     )
 
 

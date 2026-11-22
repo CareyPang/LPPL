@@ -53,7 +53,7 @@
 | `top.drawdown_price` | **P1 顶后价格带**（下表） | — |
 | `top.drawdown_time`、`top.second_wave` | 恒为 `{value:null, evidence:none}`，显示"无有效预测" | — |
 
-`top.drawdown_price`（描述性，不是预测；全部按记录自身 `asof` 计算，回放不含未来事件）：
+`top.drawdown_price`（描述性；全部按记录自身 `asof` 计算，回放不含未来事件）：
 
 | 路径 | 含义 |
 |---|---|
@@ -83,7 +83,7 @@
 `evidence` 取值（`web/dashboard.html` 的 `EV` 表）：`dev` 开发段 · `cal` 校准段 · `test` 最终测试 · `none` 无证据 · `rule` 规则非预测 · `dev_failed` · `dev_only` · `fail_i_iii` · `fail_i` · `cal_fragile` · `descriptive` · `dev_pending` · `pending_cal` · `pending_test`。
 
 - `none` / `fail*` / `dev_failed` / `dev_only`：**不显示裸数字**；显示状态文字（"无证据"、"开发段有信号·校准/测试未通过"等）。
-- `descriptive`：显示数字时必须同屏显示 `n` 和"历史分位，不是预测"。
+- `descriptive`：显示数字时必须同屏显示 `n` 和“历史分位”。
 - `rule`：只显示规则文字。
 - 任何卡不得合成新的分数或概率；后端没有的字段前端不得自己算（含后端请求失败时的"内置引擎"回退——失败就显示"数据未加载"）。
 
@@ -111,12 +111,12 @@
 | `valuation.indices.<code>` | 中证指数 `000300`、`000905`、`000016`、`000852` 最新日期、PE1、PE2、股息率 DY1/DY2，以及文件历史可用时的滚动 10 年 PE1 分位。PE 倍数为倍，股息率为百分数。 |
 | `margin.data` | 用 `research/data/margin.py` 的上交所/深交所官方 fetcher 刷新近期数据；`fin_balance_sse`、`fin_balance_szse`、`fin_balance_all` 和变化值统一为人民币元。包含 `latest_date`、T+1 `available_date`、`stale`（距 asof 超过 5 个交易日为 true）。刷新失败、stale 或 SZSE/SSE 融资余额比率超出 `[0.3, 3]` 时 `sources.margin.ok=false`，仍展示可用数据。 |
 
-所有市场背景数值均带 `evidence: "descriptive"`；只能作为事实展示，不得转成预测、目标价或报警信号。
+所有市场背景数值均带 `evidence: "descriptive"`；不得转成目标价。
 
 ## 7. 策略回放 strategy/<sym>.json
 
 前端组件 `frontend/app/strategy-panel.js`，适配层 `LPPL.strategy(sym)`（未发布返回 `null`，页面显示“策略回测结果未发布”，不得填充任何数字）。
 
 - 顶层：`rule_id`（事前登记规则 id，必填）、`prereg_doc`、`asof`、`segments{dev,cal,test:[start,end]}`、`metrics{dev|cal|test|all}`、`equity[{date,nav,bh_nav?}]`、`trades[{entry,exit|null,side,bars,ret,segment}]`、`properties{t_plus_1,limit_lock,fee_bps,stamp_bps,slippage_bps}`、`note`。
-- `metrics.<seg>.evidence` 走 §3 的门控：`show=false` 的等级只显示状态文字；所有汇总显示 `n_trades` 与“历史回放，不是预测”。比例用小数。
-- 口径：事前登记规则的历史回放，不是预测，不是收益承诺；不开放自由调参。字段示例见 `frontend/docs/strategy-request.md`。
+- `metrics.<seg>.evidence` 走 §3 的门控：`show=false` 的等级只显示状态文字；所有汇总显示 `n_trades` 与“历史回放”。比例用小数。
+- 口径：事前登记规则的历史回放；不开放自由调参。字段示例见 `frontend/docs/strategy-request.md`。

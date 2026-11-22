@@ -57,7 +57,7 @@
   box.innerHTML = '<div class="odw-h"><b>☆ 自选</b><span class="n" id="odw-n"></span><button type="button" class="odw-x" aria-label="关闭自选">×</button></div>' +
     '<div class="odw-v" role="group" aria-label="显示"><button type="button" data-v="quote" aria-pressed="true">行情</button><button type="button" data-v="model" aria-pressed="false">模型状态</button></div>' +
     '<div class="odw-b" id="odw-b"></div>' +
-    '<div class="odw-f">行情优先显示腾讯实时报价（不复权，仅供参考，不参与模型）；取不到时显示后端日更收盘价。模型状态来自已发布结果，描述历史结构，不是预测。自选只存在本浏览器。</div>';
+    '<div class="odw-f">行情优先显示腾讯实时报价（不复权，仅供参考，不参与模型）；取不到时显示后端日更收盘价。模型状态来自已发布结果，描述历史结构。自选只存在本浏览器。</div>';
   document.body.appendChild(bg); document.body.appendChild(box);
   var body = box.querySelector('#odw-b'), nEl = box.querySelector('#odw-n');
 

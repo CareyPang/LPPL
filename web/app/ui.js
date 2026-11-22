@@ -52,7 +52,7 @@
       exit.rows.push(['窗口开启前 10 个交易日内', rm.conf >= CP.RULES.alertConf ? '先卖出一半仓位' : '一致度未到 15%，暂不减仓，继续观察']);
       exit.rows.push(['剩余一半', '移动止盈：从预警后的最高收盘回落 ' + pct(trail) + ' 就全部卖出']);
       exit.rows.push(['窗口结束 5 日后仍未破位', '视为误报，买回减掉的仓位']);
-      if (rm.topPx) exit.rows.push(['窗口内的参考价位', px(rm.topPx[0]) + ' – ' + px(rm.topPx[1]) + '（按当前波动估算，不是目标价）']);
+      if (rm.topPx) exit.rows.push(['窗口内的参考价位', px(rm.topPx[0]) + ' – ' + px(rm.topPx[1]) + '（按当前波动估算）']);
     } else {
       exit.lead = '暂无见顶窗口';
       exit.meta = '合格窗口 ' + R.scan.nq + '/' + R.scan.total + '，没有形成一致的临界时间';

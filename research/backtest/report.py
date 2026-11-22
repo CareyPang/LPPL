@@ -256,7 +256,7 @@ def build_strategy_report(
             lc_prices,
             lc_target,
             lc_price_outcomes,
-            "LPPLS 区间为 v2.2 事后重算，不是样本外；周度更新。",
+            "LPPLS 区间为事后重算，不是样本外；周度更新。",
         )
         lc["rule_id"] = "R-LC1"
         lc["name"] = "LPPLS 区间退出"

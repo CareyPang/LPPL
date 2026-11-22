@@ -129,7 +129,7 @@
       if (!allowedWindow(evidence, value.n)) { rejectedDates = true; return; }
       if (result.windows.some(w => w.scale === scale && w.start === start && w.end === end)) return;
       result.windows.push({ scale, start, end, evidence, rank: value.rank === 'secondary' ? 'secondary' : 'main',
-        ...(evidence === 'descriptive' ? { n: value.n, note: '历史分位，不是预测' } : {}) });
+        ...(evidence === 'descriptive' ? { n: value.n, note: '历史分位' } : {}) });
     }
     const scaleWindows = Array.isArray(top.scale_windows) ? top.scale_windows : [];
     SCALES.forEach(scale => {
@@ -181,7 +181,7 @@
       return !!gate && gate.status !== 'not_computed' && allowedWindow(gate.evidence, w.n);
     }).slice(0, 60)
       .map(w => ({ scale: w.scale, start: w.start, end: w.end, evidence: w.evidence, rank: w.rank === 'secondary' ? 'secondary' : 'main',
-        ...(w.evidence === 'descriptive' ? { n: w.n, note: '历史分位，不是预测' } : {}) }));
+        ...(w.evidence === 'descriptive' ? { n: w.n, note: '历史分位' } : {}) }));
     const status = !windows.length && ['has_window', 'expired'].includes(value.status) ? 'evidence_hidden' : value.status;
     return { asset: a, asof: value.asof, modelVersion: text(value.modelVersion, 120) || null,
       predictionId: text(value.predictionId, 200) || null, generatedAt: timestamp(value.generatedAt),

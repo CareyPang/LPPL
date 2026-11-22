@@ -372,8 +372,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
     <div class="tools">
       <a class="tc wide glass reveal" href="index.html"><div class="tag"><span>WORKSTATION</span><span style="color:var(--cyan)">推荐</span></div><h3>分析工作站</h3><p>K 线叠加六尺度置信度、情景区间（未校准，仅供参考）、顶后回撤历史分位与估值地板带，可看 2007 / 2015 回放。</p><span class="go">index.html →</span></a>
       <a class="tc glass reveal" href="backtest.html"><div class="tag"><span>BACKTEST</span><span>回测</span></div><h3>历史情景区间</h3><p>2000–2025 每个周度截止日模型给出的 6–12 月档区间（未校准，仅供参考），与事后确认的顶放在同一张图上。</p></a>
-      <a class="tc glass reveal" href="lab/dashboard.html"><div class="tag"><span>LAB</span><span>研究</span></div><h3>研究仪表盘</h3><p>旧版研究页：Combo 滑块、Movie 双面板、六尺度切换和资产目录。</p><span class="go">lab/dashboard.html →</span></a>
-      <div class="tc glass soon reveal"><div class="tag"><span>CONFIDENCE</span><span style="color:var(--amber)">建设中</span></div><h3>多尺度置信度</h3><p>短 / 中 / 长期泡沫置信度历史、t<sub>c</sub> 分布与泡沫看板。</p><span class="go">即将上线</span></div>
+      <a class="tc glass reveal" href="lab/dashboard.html"><div class="tag"><span>LAB</span><span>研究</span></div><h3>研究仪表盘</h3><p>Combo 滑块、Movie 双面板、六尺度切换和资产目录。</p><span class="go">lab/dashboard.html →</span></a>
       <a class="tc glass reveal" href="lab/guide.html"><div class="tag"><span>GUIDE</span><span>DOC</span></div><h3>用户指南</h3><p>每个指标怎么读、证据等级是什么意思、哪些数字不显示。</p><span class="go">lab/guide.html →</span></a>
     </div>
   </section>
@@ -387,7 +386,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
       <div class="col glass reveal"><div class="k">3<small>个参数</small></div><h4>稳定标定</h4><p>按 Filimonov–Sornette 方法消去线性参数，只对 t<sub>c</sub>、m、ω 做非线性搜索。</p></div>
       <div class="col glass reveal"><div class="k">0<small>次校准</small></div><h4>研究输出</h4><p>置信度是“通过筛选的窗口占比”，不是事件发生概率，尚未做样本外校准。</p></div>
     </div>
-    <div class="warn reveal"><b>风险提示：</b>本工具只用于研究和学习，不构成投资建议。A 股有涨跌停、T+1 和停牌等限制，模型里的“价格触及”不等于实际能成交。</div>
+    <div class="warn reveal">A 股有涨跌停、T+1 和停牌等限制，模型里的“价格触及”不等于实际能成交。</div>
     <div class="creed reveal">浪成于微澜之间，<br>也终归于平静。<small lang="en">Small causes, large waves — and no wave is fate.</small></div>
     <footer><span id="foot">数据：东方财富公开日线快照</span><span>临界点 · 背景影像由即梦 AI 生成</span></footer>
   </section>
@@ -620,7 +619,7 @@ function card(D){
   el.innerHTML=`<div class="h"><span class="n">${D.name}</span><span class="px">${isFinite(px)?px.toFixed(2):'—'}<span style="color:${ch>=0?'var(--upT)':'var(--downT)'}">${isFinite(ch)?(ch>=0?'▲ +':'▼ ')+ch.toFixed(2)+'%':''}</span></span></div>
     ${spark(c, yr>=0)}
     <div class="row"><span>顶</span>${top}</div>
-    <div class="row"><span>底</span><span class="v">${(T.negative_bubble&&T.negative_bubble.signal_status)==='signal'?'负泡沫有合格拟合':'无负泡沫信号'}（不预测底部）</span></div>
+    <div class="row"><span>底</span><span class="v">${(T.negative_bubble&&T.negative_bubble.signal_status)==='signal'?'负泡沫有合格拟合':'无负泡沫信号'}</span></div>
     <div class="st"><b style="color:${col}">${txt}</b>${REG[rb.state]||''}${rb.month?'（'+rb.month+'，描述性）':''} · Combo p=0.1，${e.label}，不是概率 · <a href="index.html?code=${D.sym.sym}">进入终端</a></div>`;
   return el;
 }

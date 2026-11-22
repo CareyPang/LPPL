@@ -52,7 +52,7 @@ test('descriptive dates need positive sample n and carry required text', () => {
   assert.equal(Core.summarize(index, raw, at).windows.length, 0);
   raw.top.scale_clusters['6-12m'][0].n = 12;
   const window = Core.summarize(index, raw, at).windows[0];
-  assert.equal(window.n, 12); assert.equal(window.note, '历史分位，不是预测');
+  assert.equal(window.n, 12); assert.equal(window.note, '历史分位');
 });
 test('band evidence cannot upgrade a restricted scale and not-computed never revives a band', () => {
   const raw = payload(); raw.top.lppls_confidence.scale_evidence['6-12m'] = 'none';
@@ -79,7 +79,7 @@ test('stock identity never bypasses descriptive sample-count evidence at any lay
     const window = Core.summarize(stock, raw, at).windows[0];
     assert.equal(window.evidence, 'descriptive', layer);
     assert.equal(window.n, 12, layer);
-    assert.equal(window.note, '历史分位，不是预测', layer);
+    assert.equal(window.note, '历史分位', layer);
   }
 });
 test('band dev cannot upgrade a descriptive scale and stock failure still blocks descriptive output', () => {
