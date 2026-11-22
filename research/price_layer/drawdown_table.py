@@ -189,7 +189,7 @@ def build(asof: str | None = None) -> dict:
         "table": summarize(ev),
         "events": ev.to_dict("records"),
         "valuation_floor": floors,
-        "note": "描述性历史分位，不是预测；最后一个顶（其后尚无新合格顶，下跌可能仍在进行）不计入；分桶按起点→顶的实际涨幅与时长；同一市场多指数在同月见顶计多个事件（非独立），n_distinct_top_months 为去重后的独立顶月数",
+        "note": "描述性历史分位；最后一个顶（其后尚无新合格顶，下跌可能仍在进行）不计入；分桶按起点→顶的实际涨幅与时长；同一市场多指数在同月见顶计多个事件（非独立），n_distinct_top_months 为去重后的独立顶月数",
     }
 
 
@@ -223,7 +223,7 @@ def write_md(rec: dict) -> str:
     for e in rec["events"]:
         dd120 = "—" if e["dd120"] is None else f"{e['dd120']:+.0%}"
         out.append(f"| {e['market']} | {rec['symbols'][e['sym']]} | {e['start']} | {e['top']} | {e['trough']} | {e['run_up']:+.0%} | {e['dur_days']} | {e['max_dd']:+.0%} | {e['days_to_trough']} | {dd120} |")
-    out += ["", "所有数字为历史描述性分位（evidence = descriptive），不是预测；A 股单独 n<5 的桶不显示 A 股分位。"]
+    out += ["", "所有数字为历史描述性分位（evidence = descriptive）；A 股单独 n<5 的桶不显示 A 股分位。"]
     return "\n".join(out) + "\n"
 
 

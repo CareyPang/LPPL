@@ -217,7 +217,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <a href="#view=scenario" data-view="scenario" aria-current="location">情景区间</a>
   <a href="#view=strategy" data-view="strategy">策略回测</a>
   <a href="#view=bench" data-view="bench">三段验证</a>
-  <span class="bt-views-note">策略回测 = 事前登记规则的历史回放，不是预测</span>
+  <span class="bt-views-note">策略回测 = 事前登记规则的历史回放</span>
 </nav>
 <div class="recompute-notice" id="recompute-notice" hidden role="note" aria-label="历史重算说明">
   <strong id="recompute-label"></strong>
@@ -241,7 +241,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 </section>
 
 <main class="app">
-  <p class="scenario-note">旧评价口径：顶后 126 个交易日回撤 ≥15% 的事后标签；新的局部顶/阶段顶双层评分尚未用于线上成绩。</p>
+  <p class="scenario-note">评价口径：顶后 126 个交易日回撤 ≥15% 的事后标签。</p>
   <div class="left">
     <div class="chead od-row" data-ai-context="当前标的">
       <div class="od-fixed">

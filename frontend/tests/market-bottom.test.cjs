@@ -74,7 +74,7 @@ test('bottom signal renders separate HS300 and A500 panels and sample counts', (
     elements['bottom-body'].innerHTML,
     /截至 2026-11-12，滞后于沪深300（截至 2026-11-13） · 样本 n=1/,
   );
-  assert.match(elements['bottom-body'].innerHTML, /历史分位，不是预测。/);
+  assert.match(elements['bottom-body'].innerHTML, /历史分位。/);
   assert.equal(elements['src-bottom'].textContent, 'AkShare');
 });
 

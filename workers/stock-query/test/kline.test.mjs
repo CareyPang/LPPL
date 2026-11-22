@@ -118,7 +118,7 @@ test('GET /kline reads one Sina symbol, computes OBV, and reports source and lim
     assert.equal(result.limits.n_bars, 16);
     assert.equal(result.limits.first, result.bars[0].t);
     assert.equal(result.limits.last, result.bars.at(-1).t);
-    assert.equal(result.note, '历史形态描述，不是买卖信号');
+    assert.equal(result.note, '历史形态描述');
   });
 });
 

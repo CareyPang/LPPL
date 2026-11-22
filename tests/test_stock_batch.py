@@ -89,7 +89,7 @@ def test_breadth_counts_only_in_stats_members_and_flags_mixed_asof(tmp_path):
     assert b["planned_asof"] == "2026-10-30"
     assert b["asof_counts"] == {"2026-10-30": 2}
     assert b["excluded_asof_counts"] == {"2025-02-05": 1}
-    assert b["evidence"] == "descriptive" and "不是预测" in b["note"]
+    assert b["evidence"] == "descriptive" and "不进入拟合" in b["note"]
 
 
 def test_breadth_flags_in_stats_asof_that_differs_from_planned(tmp_path):

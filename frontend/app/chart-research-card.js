@@ -23,7 +23,7 @@
         var code = bandEvidenceCode ? bandEvidenceCode(evidence.code, band) :
           evidence.code === 'descriptive' || band.evidence === 'descriptive' ? 'descriptive' : band.evidence || evidence.code;
         return { start: band.q20_date, end: band.q80_date, n: band.n == null ? null : band.n, evidence: code,
-          note: code === 'descriptive' ? '历史分位，不是预测' : code === 'research_candidate' ? '研究候选，非正式提醒' : '研究区间，不是概率' };
+          note: code === 'descriptive' ? '历史分位' : code === 'research_candidate' ? '研究候选，非正式提醒' : '研究区间，不是概率' };
       }) : [];
     return { schema: 'lppl.anonymous-research-card.v1', symbol: str(data.symbol), name: str(data.name),
       assetType: str(data.assetType), exchange: str(data.exchange), unit: str(data.quoteUnit),
@@ -33,7 +33,7 @@
       evidence: str(evidence.code), evidenceLabel: str(evidence.label), intervals: intervals,
       mode: context.asof ? '历史重放；不等同于提前发布预测' : '已发布研究结果',
       note: evidence.code === 'descriptive' || intervals.some(function (item) { return item.evidence === 'descriptive'; })
-        ? '历史分位，不是预测' : evidence.code === 'research_candidate' ? '研究候选，非正式提醒；区间不是概率；无价格目标' : '区间不是概率；无价格目标',
+        ? '历史分位' : evidence.code === 'research_candidate' ? '研究候选，非正式提醒；区间不是概率' : '区间不是概率',
       stale: data.stale === true, staleReason: str(data.staleReason), exportedAt: new Date().toISOString() };
   }
   function lines(item) {

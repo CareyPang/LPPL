@@ -37,7 +37,7 @@ test('evidence gating: dev_only hides values and shows status text; descriptive 
   assert.equal(t.n, 4);
   const h2 = SP.render(t, 'metrics');
   assert.match(h2, /n = 4/);
-  assert.match(h2, /历史回放，不是预测/);
+  assert.match(h2, /历史回放/);
   assert.match(h2, /\+12\.00%/);
   assert.match(h2, /买入持有/);
 });
@@ -87,6 +87,6 @@ test('registered rule chips select backend metrics and show descriptive signal q
   const html = SP.render(model, 'metrics');
   assert.match(html, /LPPLS 区间/);
   assert.match(html, /随机基准占比（不是概率）/);
-  assert.match(html, /历史回放，不是预测/);
+  assert.match(html, /历史回放/);
   assert.match(html, /100\.00%/);
 });

@@ -472,7 +472,7 @@ def test_aggregate_counts_unique_stock_across_single_and_multi_lists():
     assert result["totals"]["n_stocks_single"] == 1
     assert result["totals"]["n_stocks_multi"] == 1
     assert result["sample_note"] == (
-        "样本 1 只（其中单日榜 1、多日榜 1） · 历史分位，不是预测"
+        "样本 1 只（其中单日榜 1、多日榜 1） · 历史分位"
     )
 
 

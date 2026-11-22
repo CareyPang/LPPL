@@ -222,7 +222,7 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
     )
     expect(page.locator("#obv-caption")).to_be_visible()
     expect(page.locator("#obv-caption")).to_contain_text(
-        "OBV 背离为历史形态描述，不是买卖信号"
+        "OBV 背离为历史形态描述"
     )
     expect(page.locator("#obv-caption")).to_contain_text(
         "分钟线仅含最近约 20 根"
@@ -287,9 +287,7 @@ def test_flow_5_backtest_alert_ledger_has_evidence_and_rows(page: Page) -> None:
 @pytest.mark.e2e
 def test_backtest_recompute_notice_uses_history_metadata_in_scenario_and_strategy(page: Page) -> None:
     note = (
-        "v2.2（指数 tcgrid_lm 与 de_lbfgsb 取小 SSE）于 2026-11 对三段历史重新计算，"
-        "代码改动发生在看过这些历史之后；测试段结论仍以预登记的一次性结果为准（未通过）。"
-        "旧版 v2.1 历史存档在 archive/。"
+        "2026-11 对三段历史重新计算；测试段结论仍以预登记的一次性结果为准（未通过）。"
     )
 
     def add_recompute_metadata(route) -> None:
@@ -344,7 +342,7 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     )
     expect(page.locator("#lhb-seats-body .lhb-top-buy")).to_contain_text("全部 5 只")
     expect(page.locator("#lhb-seats-body .lhb-meta")).to_have_text(
-        "样本 34 只（其中单日榜 28、多日榜 6） · 历史分位，不是预测"
+        "样本 34 只（其中单日榜 28、多日榜 6） · 历史分位"
     )
     seat_rows = page.locator("#lhb-seats-body .lhb-youzi-row")
     expect(seat_rows).to_have_count(2)

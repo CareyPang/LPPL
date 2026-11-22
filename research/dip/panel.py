@@ -520,7 +520,7 @@ def build_panel(prices: pd.DataFrame, data_dir: Path | str | None = None) -> dic
         {
             "evidence": "descriptive",
             "oos": oos_verdict,
-            "note": "历史分位，不是预测；样本外检验结果见各卡片标识",
+            "note": "历史分位；样本外检验结果见各卡片标识",
             "lib": lib_info,
             "state": state,
             "in_structure": in_structure,

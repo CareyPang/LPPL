@@ -15,7 +15,7 @@
       var t = D.top || {}, w = t.window || {}, b = D.bars;
       var ev = G.LPPL.ev(w.evidence, D.raw.evidence_levels);
       var win = '';
-      if (w.start && w.end && ev.show) win = '情景区间 ' + w.start + ' – ' + w.end + '（' + ev.label + '，未校准，不是峰值日预测）';
+      if (w.start && w.end && ev.show) win = '情景区间 ' + w.start + ' – ' + w.end + '（' + ev.label + '，未校准）';
       return {
         name: D.name, sym: D.sym.sym, code: D.sym.code, asof: D.asof, bars: b,
         last: b[b.length - 1], prev: b[b.length - 2],

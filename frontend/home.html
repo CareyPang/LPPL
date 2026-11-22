@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>临界点 · A 股非线性动力学研究工作台</title>
-<meta name="description" content="用 LPPLS 多窗口拟合观察七大 A 股指数的价格结构：只给区间不给日期，证据不足直接写明，未通过的检验同样公开。">
+<meta name="description" content="A 股七大指数 LPPLS 研究工作台。未通过的检验同样公开。">
 <meta name="theme-color" content="#1f5fd6">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="临界点">
 <meta property="og:title" content="临界点 · 浪成于微澜之间">
-<meta property="og:description" content="A 股七大指数 LPPLS 研究工作台。只描述，不预测；未通过的检验同样公开。">
+<meta property="og:description" content="A 股七大指数 LPPLS 研究工作台。未通过的检验同样公开。">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
@@ -176,7 +176,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 </div></section>
 
 <section class="w" id="today" data-ai-context="今日摘要"><div class="wrap">
- <div class="hd"><h2>今日市场</h2><span class="tag">描述，不是预测</span><p id="mk-d"></p><a class="more" href="market.html">查看市场 →</a></div>
+ <div class="hd"><h2>今日市场</h2><p id="mk-d"></p><a class="more" href="market.html">查看市场 →</a></div>
  <div class="kpis" id="kpis"></div>
 </div></section>
 
@@ -210,10 +210,10 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
  <div class="fg">
   <div><div class="brand">临界点</div><p>A 股非线性动力学研究工作台。只读后端已发布的数据，页面不做任何模型计算。</p></div>
   <div><h4>产品</h4><a href="index.html">终端</a><a href="backtest.html">回测</a><a href="market.html">市场</a><a href="nt.html">宽基ETF</a><a href="stock.html">个股</a></div>
-  <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a><a href="changelog.html">更新日志</a></div>
+  <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a></div>
   <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
  </div>
- <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：腾讯、新浪；市场背景来源见市场页</span><span class="risk">风险提示：所有输出都是历史统计描述，不是预测，不构成投资建议。</span></div>
+ <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：腾讯、新浪；市场背景来源见市场页</span></div>
 </div></footer>
 
 <script>
@@ -331,17 +331,9 @@ updateSparkRangeUI();
 /* ---------- 最近更新提示条：数据新鲜度 + 更新日志最新一条 ---------- */
 function recent(asof){
  const box=$('recent');if(!box)return;
- const show=(log)=>{
-  const g=bizGap(asof);
-  box.innerHTML=`<span class="tg">最近更新</span><span>指数数据截至 <b>${E(asof)}</b>${g>5?' · 距今约 '+g+' 个交易日':''}</span>`+
-   (log?`<span>· 更新日志 <b>${E(String(log.date).slice(0,10))}</b> ${E(log.subject)}</span>`:'')+`<a href="changelog.html">全部更新 ›</a>`;
-  box.hidden=false;
- };
- (LPPL.changelog?LPPL.changelog():Promise.resolve(null)).then(d=>{
-  const all=[].concat(...Object.values((d&&d.files)||{})).filter(c=>c&&c.date);
-  all.sort((a,b)=>a.date<b.date?1:-1);
-  show(all[0]||null);
- }).catch(()=>show(null));
+ const g=bizGap(asof);
+ box.innerHTML=`<span class="tg">最近更新</span><span>指数数据截至 <b>${E(asof)}</b>${g>5?' · 距今约 '+g+' 个交易日':''}</span>`;
+ box.hidden=false;
 }
 /* ---------- 首屏搜索框：交给全站搜索弹窗（od-nav.js） ---------- */
 (function(){

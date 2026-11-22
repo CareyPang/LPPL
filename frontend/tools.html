@@ -144,7 +144,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <div class="visual-media" aria-hidden="true"><img src="assets/visual-suite/scenario-960.webp" srcset="assets/visual-suite/scenario-480.webp 480w, assets/visual-suite/scenario-960.webp 960w" sizes="(max-width:640px) calc(100vw - 34px), (max-width:1080px) 46vw, 380px" width="1536" height="1024" alt="" loading="lazy" decoding="async"><span class="art-fallback">配图暂不可用</span></div>
       <h2>金价汇率情景</h2>
       <p class="sub">美元金价不变，比较两个汇率下人民币金价差多少</p>
-      <span class="tag">情景计算 · 不是预测</span>
+      <span class="tag">情景计算</span>
       <div class="peek kv"><span>汇率 7.00 → 7.20</span><b id="pk-scen">—</b></div>
       <button class="open" data-tool="scen">打开工具</button>
     </article>
@@ -165,13 +165,6 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
       <ul>
         <li>所有数字都是你输入的值算出来的，示例值只是为了演示，不是当前行情。</li>
         <li>每个结果下方写明公式、单位和舍入规则；显示保留的位数不影响内部计算精度。</li>
-        <li>自动填入参考汇率和金价会在下一步接入，届时会写明来源、日期和“参考价，不是成交价”。</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3>更新历史</h3>
-      <ul class="hist">
-        <li><time>2026-11-17</time><span>首批 6 个工具预览：汇率、时差、单位、金银、情景、房贷</span></li>
       </ul>
     </div>
   </section>
@@ -221,7 +214,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
   var dlg = $('dlg'), body = $('dlg-body');
   dlg.querySelector('.x').addEventListener('click', function () { dlg.close(); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-  function meta(lines) { return '<div class="meta">' + lines.map(function (l) { return '<div><b>' + l[0] + '：</b>' + l[1] + '</div>'; }).join('') + '<div><b>版本：</b>tools-calc v1 · 本地计算，输入不上传</div></div>'; }
+  function meta(lines) { return '<div class="meta">' + lines.map(function (l) { return '<div><b>' + l[0] + '：</b>' + l[1] + '</div>'; }).join('') + '</div>'; }
   function out(html) { return '<div class="result" aria-live="polite">' + html + '</div>'; }
   function err(r) { return '<div class="err">' + r.error + '</div>'; }
 
@@ -300,7 +293,7 @@ dialog::backdrop { background: rgba(19, 23, 34, .35); }
         var r = T.fxScenario($('s-g').value, $('s-a').value, $('s-b').value);
         $('s-out').innerHTML = out(r.status !== 'ready' ? err(r) :
           '<div class="kv"><span>情景 A</span><b>' + fmt(r.a, 2) + ' 元/克</b><span>情景 B</span><b>' + fmt(r.b, 2) + ' 元/克</b></div><div class="big" style="margin-top:6px">' + (r.diff >= 0 ? '+' : '') + fmt(r.diff, 2) + ' 元/克（' + fmt(r.diffPct * 100, 2) + '%）</div>') +
-          meta([['公式', '差额 = 美元价 × (B − A) ÷ 31.1034768；变化率 = B ÷ A − 1'], ['说明', '只隔离汇率变化，美元金价假设不变；这是情景计算，不是预测']]);
+          meta([['公式', '差额 = 美元价 × (B − A) ÷ 31.1034768；变化率 = B ÷ A − 1'], ['说明', '只隔离汇率变化，美元金价假设不变；这是情景计算']]);
       } },
     loan: { title: '房贷计算器', html:
       '<div class="seg" role="group" aria-label="还款方式"><button type="button" data-k="annuity" aria-pressed="true">等额本息</button><button type="button" data-k="linear" aria-pressed="false">等额本金</button></div>' +

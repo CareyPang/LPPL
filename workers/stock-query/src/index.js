@@ -919,7 +919,7 @@ async function liveKline(request, env, url) {
       asof: last,
       bars: computed.bars,
       divergences: computed.divergences,
-      note: '历史形态描述，不是买卖信号',
+      note: '历史形态描述',
       limits: { n_bars: computed.bars.length, first, last },
     }, 200, {
       'Cache-Control': `public, max-age=${ttl}`,

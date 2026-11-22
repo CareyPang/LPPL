@@ -123,7 +123,7 @@ const server = http.createServer((req, res) => {
     modelOverride.top.scale_windows[0].evidence = 'descriptive'; modelOverride.top.scale_windows[0].n = 0; await gateReload();
     assert.equal(await page.locator('#interval-list span').count(), 0);
     modelOverride.top.scale_windows[0].n = 4; await gateReload();
-    assert.match(await page.locator('#interval-list').innerText(), /n=4；历史分位，不是预测/);
+    assert.match(await page.locator('#interval-list').innerText(), /n=4；历史分位/);
     modelOverride.top.indicators['6-12m'].signal_status = 'not_computed'; await gateReload();
     assert.equal(await page.locator('#interval-list span').count(), 0);
     assert.equal(await page.evaluate(() => LPPLChart.bandsForAllScales(window.__qaChartData).length), 0);

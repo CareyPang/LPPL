@@ -21,7 +21,7 @@
     var S = currentSym();
     if (!S || !panel) return;
     document.getElementById('sv-title').textContent = S.name + ' · 策略回放';
-    document.getElementById('sv-sub').textContent = S.sym + ' · 事前登记规则的历史回放 · 不是预测';
+    document.getElementById('sv-sub').textContent = S.sym + ' · 事前登记规则的历史回放';
     if (loadedFor === S.sym) return;
     loadedFor = S.sym;
     panel.set(null);

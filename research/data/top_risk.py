@@ -32,7 +32,7 @@ INDEXES = (
     ("sh000688", "科创50"),
 )
 SOURCE = "通达信全市场盘后包、东方财富两融历史、腾讯指数日线"
-NOTE = "历史状态描述；历史分位不是概率，也不是预测或买卖信号。"
+NOTE = "历史分位不是概率。"
 
 
 def _date_text(value: str | dt.date | dt.datetime) -> str:

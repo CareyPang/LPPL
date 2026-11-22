@@ -24,7 +24,7 @@
     return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
   };
   const dateLabel = value => value || '未提供';
-  const windowEvidence = w => (w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位，不是预测' : '') +
+  const windowEvidence = w => (w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位' : '') +
     ' · ' + window.RuleLabels.RULES.box.source;
   const displayRuleNote = note => /占比|比例|lppls_confidence/i.test(note || '') && !String(note).includes('占比不是概率')
     ? note + '；占比不是概率'

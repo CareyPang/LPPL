@@ -66,7 +66,7 @@
     <table><tbody id="bottom"></tbody></table>
     <div class="legend">LPPLS 负泡沫 / 反泡沫在开发段与校准段均无预测证据；底部概率链（B1/B2/B3）三段均未通过，不显示概率。</div></div>
   <div class="card" id="reboundcard"><h2>W 历史反弹 <span id="rebound-badge"></span></h2><div id="rebound"></div>
-    <div class="legend">历史分位，不是预测；恢复比例可以超过 100%。</div></div>
+    <div class="legend">历史分位；恢复比例可以超过 100%。</div></div>
   <div class="card">
     <h2>历史验证（样本外汇总，不是单案例）</h2>
     <table>
@@ -101,7 +101,7 @@ function render(D){
   const I = T.indicators || {}, SETS = ['standard','end','pure','early','box'], SN = {standard:'STANDARD',end:'END',pure:'PURE',early:'EARLY',box:'box(本项目)'};
   const bar = v => `<span style="display:inline-block;width:${Math.round((v||0)*60)}px;height:8px;background:var(--red);vertical-align:middle;margin-right:4px"></span>${pct(v)}`;
   const NB = T.negative_bubble || {}, NBC = NB.confidence_standard || null;
-  const negHtml = `<div class="sub">负泡沫置信度（对 −ln P 拟合，STANDARD）${badge('none')} <span class="muted">A 股六指数开发段 0/424 稳健（§17.12），仅描述，不预测底部</span></div>` +
+  const negHtml = `<div class="sub">负泡沫置信度（对 −ln P 拟合，STANDARD）${badge('none')} <span class="muted">A 股六指数开发段 0/424 稳健（§17.12）</span></div>` +
     (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${NBC[k] == null ? '<span class="muted">未计算</span>' : bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
   $('conf').innerHTML = selBar() + (SEL.dir === 'neg' ? negHtml : `<div class="sub">DS LPPLS 置信度 = 该尺度窗口中通过过滤集的比例 ${badge(L.evidence)}</div>` +
     `<table><tr><th>尺度</th>${SETS.map(k => `<th>${SN[k]}</th>`).join('')}<th>最佳起点 t1（Lagrange）</th><th>状态</th></tr>` +
@@ -123,7 +123,7 @@ function render(D){
     ['顶部区间（情景）', T.window.start ? `${T.window.start} – ${T.window.end}<div class="sub muted">${T.window.rule}</div>` : `<span class="muted">${T.window.rule}</span>`, badge(T.window.evidence)],
     ['失效条件', T.invalidation.rule, badge(T.invalidation.evidence)],
     ['信号状态', T.signal_status || '—', badge('rule')],
-    ['顶后价格带 P1（描述性）', P1 && P1.max_dd && P1.days_to_trough ? `同类泡沫（${P1.bucket}，n=${P1.n}${P1.n_a_share != null ? '，A 股 ' + P1.n_a_share : ''}）历史顶→谷回撤 <b>${sp(P1.max_dd.q80)} ～ ${sp(P1.max_dd.q20)}</b>（中位 ${sp(P1.max_dd.q50)}），见谷 ${P1.days_to_trough.q20}–${P1.days_to_trough.q80} 个交易日${P1.valuation_floor && P1.valuation_floor.floor_band_points ? `；估值地板带 <b>${P1.valuation_floor.floor_band_points[0]}–${P1.valuation_floor.floor_band_points[1]}</b> 点（底部 PE 20–50% 分位 × 最新 PE ${P1.valuation_floor.pe_latest}）` : ''}<div class="sub muted">不是预测、不是目标价；详见下方 P1 卡</div>` : P1 ? `<span class="muted">截至 ${P1.table_asof} 可用历史样本不足</span>` : '<span class="muted">回撤情景表未加载</span>', badge(P1 ? P1.evidence || 'descriptive' : 'none')],
+    ['顶后价格带 P1（描述性）', P1 && P1.max_dd && P1.days_to_trough ? `同类泡沫（${P1.bucket}，n=${P1.n}${P1.n_a_share != null ? '，A 股 ' + P1.n_a_share : ''}）历史顶→谷回撤 <b>${sp(P1.max_dd.q80)} ～ ${sp(P1.max_dd.q20)}</b>（中位 ${sp(P1.max_dd.q50)}），见谷 ${P1.days_to_trough.q20}–${P1.days_to_trough.q80} 个交易日${P1.valuation_floor && P1.valuation_floor.floor_band_points ? `；估值地板带 <b>${P1.valuation_floor.floor_band_points[0]}–${P1.valuation_floor.floor_band_points[1]}</b> 点（底部 PE 20–50% 分位 × 最新 PE ${P1.valuation_floor.pe_latest}）` : ''}<div class="sub muted">详见下方 P1 卡</div>` : P1 ? `<span class="muted">截至 ${P1.table_asof} 可用历史样本不足</span>` : '<span class="muted">回撤情景表未加载</span>', badge(P1 ? P1.evidence || 'descriptive' : 'none')],
     ['回落时间', '<span class="muted">无有效预测</span>', badge(T.drawdown_time.evidence)],
     ['二波参考', '<span class="muted">无有效预测</span>', badge(T.second_wave.evidence)],
     ['上月体制带（描述性）', D.regime_band && D.regime_band.state ? `${D.regime_band.month}：${D.regime_band.state}${D.regime_band.channel ? '（通道 ' + D.regime_band.channel + '）' : ''} <span class="muted">${D.regime_band.rule}</span>` : '<span class="muted">数据不足</span>', badge(D.regime_band ? D.regime_band.evidence : 'none')]];
@@ -146,9 +146,9 @@ function render(D){
   $('bottom-cheap').innerHTML = `<div class="sub">便宜度（价格与估值描述）${badge(C.evidence || 'none')}</div>` +
     `<div>近 500 日高点回撤 <b>${pct1(C.dd_now)}</b> <span class="sub muted">as-of 事实</span></div>` +
     `<div class="sub muted">近 500 日高点 ${money(C.peak_close)}（${C.peak_date || '—'}）</div>` +
-    `<div>已确认顶→谷中，比当前回撤浅 <b>${pct1(rankAll.pct)}</b> <span class="sub muted">n=${rankAll.n ?? 0}；历史分位，不是预测</span></div>` +
-    (rank.a_share ? `<div>A 股比当前回撤浅 <b>${pct1(rank.a_share.pct)}</b> <span class="sub muted">n=${rank.a_share.n}；历史分位，不是预测</span></div>` : '<div class="sub muted">A 股历史样本 n&lt;5，不显示分位</div>') +
-    `<div>PE 分位 <b>${pct1(pe.value)}</b> <span class="sub muted">n=${pe.n_months ?? 0}；历史分位，不是预测${pe.pe_date ? `；PE 月份 ${pe.pe_date}` : ''}</span></div>` +
+    `<div>已确认顶→谷中，比当前回撤浅 <b>${pct1(rankAll.pct)}</b> <span class="sub muted">n=${rankAll.n ?? 0}；历史分位</span></div>` +
+    (rank.a_share ? `<div>A 股比当前回撤浅 <b>${pct1(rank.a_share.pct)}</b> <span class="sub muted">n=${rank.a_share.n}；历史分位</span></div>` : '<div class="sub muted">A 股历史样本 n&lt;5，不显示分位</div>') +
+    `<div>PE 分位 <b>${pct1(pe.value)}</b> <span class="sub muted">n=${pe.n_months ?? 0}；历史分位${pe.pe_date ? `；PE 月份 ${pe.pe_date}` : ''}</span></div>` +
     (pe.note ? `<div class="sub muted">${pe.note}</div>` : '') +
     `<div class="sub muted">估值地板带引用：${C.floor_ref || 'top.drawdown_price.valuation_floor'}（不重复计算）</div>` +
     `<div class="sub muted">${C.note || rank.note || ''}</div>`;
@@ -157,16 +157,16 @@ function render(D){
     : `${CF.state === 'bull' ? '牛市状态' : '状态未计算'} · 当前参考 ${CF.ref_date || '—'}（${money(CF.ref_close)}）` +
       (CF.last_trough_date ? `<br>最近确认低点 ${CF.last_trough_date}（${money(CF.last_trough_close)}）· 确认日 ${CF.confirmed_date || '—'}` : '<br>尚无已确认熊市低点');
   $('bottom-confirm').innerHTML = `<div class="sub">LT 规则状态 ${badge(CF.evidence || 'none')}</div><div>${confirmFacts}</div>` +
-    `<div class="sub muted">规则状态，滞后确认，不是预测。${CF.rule || ''}</div>`;
+    `<div class="sub muted">规则状态，滞后确认。${CF.rule || ''}</div>`;
   $('rebound-badge').innerHTML = badge(W.evidence || 'none');
   $('rebound').innerHTML = W.evidence === 'none' ? '<div class="sub muted">无完整历史事件</div>' :
-    `<div>恢复比例 20/50/80 分位：<b>${W.recovery ? [pct1(W.recovery.q20), pct1(W.recovery.q50), pct1(W.recovery.q80)].join(' / ') : '—'}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测</span></div>` +
-    `<div>谷至高点交易日 20/50/80 分位：<b>${W.days_to_high ? [W.days_to_high.q20, W.days_to_high.q50, W.days_to_high.q80].join(' / ') : '—'}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测</span></div>` +
-    `<div>对数恢复比例 q20/q50/q80：<b>${quant(W.recovery_log, num3)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测${W.a_share ? `；A 股 ${quant(W.a_share.recovery_log, num3)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
-    `<div>谷后反弹收益 q20/q50/q80：<b>${quant(W.rebound_ret, pct1)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测${W.a_share ? `；A 股 ${quant(W.a_share.rebound_ret, pct1)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
-    `<div>250 日内回前高占比：<b>${pct1(W.back_to_peak_share)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测${W.a_share ? `；A 股 ${pct1(W.a_share.back_to_peak_share)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
-    (W.a_share ? `<div>A 股恢复比例 20/50/80 分位：<b>${[pct1(W.a_share.recovery.q20), pct1(W.a_share.recovery.q50), pct1(W.a_share.recovery.q80)].join(' / ')}</b> <span class="sub muted">n=${W.a_share.n}；历史分位，不是预测</span></div><div>A 股谷至高点交易日 20/50/80 分位：<b>${[W.a_share.days_to_high.q20, W.a_share.days_to_high.q50, W.a_share.days_to_high.q80].join(' / ')}</b> <span class="sub muted">n=${W.a_share.n}；历史分位，不是预测</span></div>` : '<div class="sub muted">A 股历史样本 n&lt;5，不显示分位</div>') +
-    (W.current ? `<div>当前事件：${W.current.peak_date} → ${W.current.trough_date}，价格恢复 <b>${pct1(W.current.recovery_now)}</b>，对数恢复 ${num3(W.current.recovery_log_now)}，反弹收益 ${pct1(W.current.rebound_ret_now)}，已过 ${W.current.days_since_trough} 个交易日；历史价格恢复分位 <b>${pct1(W.current.rank_pct)}</b> <span class="sub muted">n=${W.n}；历史分位，不是预测</span></div>` : '');
+    `<div>恢复比例 20/50/80 分位：<b>${W.recovery ? [pct1(W.recovery.q20), pct1(W.recovery.q50), pct1(W.recovery.q80)].join(' / ') : '—'}</b> <span class="sub muted">n=${W.n}；历史分位</span></div>` +
+    `<div>谷至高点交易日 20/50/80 分位：<b>${W.days_to_high ? [W.days_to_high.q20, W.days_to_high.q50, W.days_to_high.q80].join(' / ') : '—'}</b> <span class="sub muted">n=${W.n}；历史分位</span></div>` +
+    `<div>对数恢复比例 q20/q50/q80：<b>${quant(W.recovery_log, num3)}</b> <span class="sub muted">n=${W.n}；历史分位${W.a_share ? `；A 股 ${quant(W.a_share.recovery_log, num3)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
+    `<div>谷后反弹收益 q20/q50/q80：<b>${quant(W.rebound_ret, pct1)}</b> <span class="sub muted">n=${W.n}；历史分位${W.a_share ? `；A 股 ${quant(W.a_share.rebound_ret, pct1)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
+    `<div>250 日内回前高占比：<b>${pct1(W.back_to_peak_share)}</b> <span class="sub muted">n=${W.n}；历史分位${W.a_share ? `；A 股 ${pct1(W.a_share.back_to_peak_share)}（n=${W.a_share.n}）` : '；A 股样本 n<5，不显示'}</span></div>` +
+    (W.a_share ? `<div>A 股恢复比例 20/50/80 分位：<b>${[pct1(W.a_share.recovery.q20), pct1(W.a_share.recovery.q50), pct1(W.a_share.recovery.q80)].join(' / ')}</b> <span class="sub muted">n=${W.a_share.n}；历史分位</span></div><div>A 股谷至高点交易日 20/50/80 分位：<b>${[W.a_share.days_to_high.q20, W.a_share.days_to_high.q80].join(' / ')}</b> <span class="sub muted">n=${W.a_share.n}；历史分位</span></div>` : '<div class="sub muted">A 股历史样本 n&lt;5，不显示分位</div>') +
+    (W.current ? `<div>当前事件：${W.current.peak_date} → ${W.current.trough_date}，价格恢复 <b>${pct1(W.current.recovery_now)}</b>，对数恢复 ${num3(W.current.recovery_log_now)}，反弹收益 ${pct1(W.current.rebound_ret_now)}，已过 ${W.current.days_since_trough} 个交易日；历史价格恢复分位 <b>${pct1(W.current.rank_pct)}</b> <span class="sub muted">n=${W.n}；历史分位</span></div>` : '');
   const legacyBottom = Object.entries(BT).filter(([k]) => !['cheap', 'confirm', 'rebound'].includes(k));
   $('bottom').innerHTML = legacyBottom.map(([k,v]) => `<tr><td style="width:28%">${k}</td><td>${typeof v === 'object' && v !== null ? (v.value ?? '—') : v}${v && v.note ? `<div class="sub muted">${v.note}</div>` : ''}</td><td style="width:22%">${badge(v && v.evidence ? v.evidence : 'none')}</td></tr>`).join('') || '<tr><td class="muted">无字段</td></tr>';
 }
@@ -189,7 +189,7 @@ function renderP1(D, P1){
       <div class="sub">as-of ${P1.table_asof}：当前泡沫（FCO 起点 t1）实际涨幅 <b>${sp(P1.bucket_basis && P1.bucket_basis.size_realized)}</b>、持续 <b>${P1.bucket_basis && P1.bucket_basis.duration_days != null ? P1.bucket_basis.duration_days : '—'}</b> 个交易日 → 匹配桶 <b>${P1.bucket}</b>（n=${P1.n}）。事件 = Pagan–Sossounov 转折点且顶后 126 日内回撤 ≥15%，A 股 6 指数 + 恒生/标普500/纳指100/日经225，共 ${P1.n_events} 个（A 股 ${P1.n_events_a}）；进行中的泡沫不计入。</div>
       <table>${hdr}${row('全部', t.all, P1.bucket === '全部')}${Object.entries(t.by_run_up).map(([k,c]) => row('涨幅 ' + k, c, P1.bucket === '涨幅 ' + k)).join('')}${Object.entries(t.by_duration).map(([k,c]) => row('时长 ' + k, c, false)).join('')}${Object.entries(t.by_run_up_x_duration).filter(([k,c]) => c.n).map(([k,c]) => row(k.replace('|',' × '), c, P1.bucket === k.replace('|',' × '))).join('')}</table>
       <div class="sub" style="margin-top:8px">估值地板带：${V && V.floor_band_points ? `历次 PS 底部（n=${V.n}）所在月 PE 20/50/80% 分位 ${V.trough_pe.q20} / ${V.trough_pe.q50} / ${V.trough_pe.q80}；最新 PE ${V.pe_latest}（${V.pe_date}，月频）→ 地板带 <b>${V.floor_band_points[0]}–${V.floor_band_points[1]}</b> 点（q80 参考 ${V.band_points.q80}；收盘 ${V.close_ref} @ ${V.close_date}）` : `<span class="muted">${V && V.note ? V.note : '底部样本不足或无 PE 数据'}</span>`}</div>
-      <div class="legend">所有数字是历史分位，不是预测、不是目标价；"便宜"不等于"要涨"。P1 不参与任何报警。</div>`;
+      <div class="legend">所有数字是历史分位；P1 不参与任何报警。</div>`;
   }
   const anchor = document.getElementById('bottomcard'); anchor.parentNode.insertBefore(card, anchor);
 }

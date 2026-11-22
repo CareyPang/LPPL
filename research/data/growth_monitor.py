@@ -338,10 +338,10 @@ def _pending_position() -> dict:
         None,
         "%",
         None,
-        "本版未取数",
+        "暂无数据",
         RULES["fund_growth_position"],
-        note="待统一口径",
-        missing_reason="本版不取数，待统一基金样本、成长行业分类与规模加权份额口径。",
+        note="",
+        missing_reason="暂无数据。",
     )
 
 

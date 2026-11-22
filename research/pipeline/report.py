@@ -76,7 +76,7 @@ def main(asof: str | None = None) -> Path:
                    f"{pct((r.get('conf') or {}).get('12-24m', {}).get('standard'))} | {r.get('longest_qualified_scale') or '—'} | {r.get('tc_representative') or '—'} |" for r in sig]
         else:
             md.append("\n当前没有任何标的有合格拟合。")
-    md += ["", "---", "来源：契约字段定义 `docs/product_contract.md`、公式核对 `docs/fco_indicator_audit.md`、用户指南 `docs/user_guide.md`。本报告不构成投资建议。"]
+    md += ["", "---", "来源：契约字段定义 `docs/product_contract.md`、公式核对 `docs/fco_indicator_audit.md`、用户指南 `docs/user_guide.md`。"]
     OUT.mkdir(parents=True, exist_ok=True)
     p = OUT / f"{asof}.md"
     p.write_text("\n".join(md))

@@ -119,7 +119,7 @@ test('anonymous card allowlist excludes private data, escapes SVG and hides forb
   assert.match(Share.svg(item), /&lt;script&gt;/);
   const descriptive = Share.record(data, { scale: '6-12m', asof: '2026-06-26' },
     { code: 'descriptive', show: true }, bands, Core.bandEvidencePolicy);
-  assert.equal(descriptive.intervals[0].n, 3); assert.match(descriptive.note, /不是预测/);
+  assert.equal(descriptive.intervals[0].n, 3); assert.match(descriptive.note, /历史分位/);
   assert.match(descriptive.mode, /不等同于提前发布/);
 });
 test('long source and ID fields are complete and wrap inside SVG and PNG content width', () => {
@@ -196,7 +196,7 @@ test('descriptive at scale, stock or band keeps n gate and is never upgraded by 
   const band = { q20_date: '2026-07-01', q80_date: '2026-07-10', evidence: 'descriptive', n: 4 };
   const card = Share.record({}, { scale: '6-12m' }, { code: 'research_candidate', show: true }, [band], Core.bandEvidencePolicy, Core.bandEvidenceCode);
   assert.equal(card.intervals[0].evidence, 'descriptive');
-  assert.match(card.intervals[0].note, /历史分位，不是预测/);
-  assert.match(card.note, /历史分位，不是预测/);
+  assert.match(card.intervals[0].note, /历史分位/);
+  assert.match(card.note, /历史分位/);
   assert.equal(Core.bandEvidenceCode('research_candidate', { evidence: 'test' }), 'research_candidate');
 });

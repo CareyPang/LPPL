@@ -29,7 +29,7 @@
         ? 'n=' + escape(eventCount)
         : escape(row.events);
       var note = show ? row.note || '' : '';
-      if (evidence.code === 'descriptive') note = (note ? note + '；' : '') + '历史分位，不是预测';
+      if (evidence.code === 'descriptive') note = (note ? note + '；' : '') + '历史分位';
       return '<tr><td>' + escape(row.split) + '</td><td>' + (show ? eventText : '—') +
         '</td><td>' + (show ? percent(row.hit) : '—') +
         '</td><td>' + (show ? percent(row.false_alarm) : '—') +

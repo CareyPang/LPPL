@@ -34,7 +34,7 @@ SYMBOL_NAMES = {
 }
 CONFIRM_RULE = (
     "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束"
-    "（滞后确认，不是预测）"
+    "（滞后确认）"
 )
 
 
@@ -181,10 +181,10 @@ def _cheap(sym: str, logp: pd.Series, asof: pd.Timestamp, p1: dict) -> dict:
         shallow_pct = round(all_rank["pct"] * 100)
         note = (
             f"历史 {all_rank['n']} 次顶→谷回撤中，{shallow_pct}% 比当前回撤浅"
-            "（历史分位，不是预测）"
+            "（历史分位）"
         )
     else:
-        note = "历史样本为 0，无法计算当前回撤分位（历史分位，不是预测）"
+        note = "历史样本为 0，无法计算当前回撤分位（历史分位）"
     return {
         "evidence": "descriptive",
         "dd_now": round(float(dd_now), 4),
@@ -193,7 +193,7 @@ def _cheap(sym: str, logp: pd.Series, asof: pd.Timestamp, p1: dict) -> dict:
         "dd_rank": {"all": all_rank, "a_share": a_rank, "note": note},
         "pe_pct": _pe_percentile(sym, asof),
         "floor_ref": "top.drawdown_price.valuation_floor",
-        "note": "价格与估值均为 as-of 描述；历史分位，不是预测",
+        "note": "价格与估值均为 as-of 描述；历史分位",
     }
 
 
@@ -322,7 +322,7 @@ def build(sym: str, asof: str, logp: pd.Series | None = None) -> dict:
         **all_dist,
         "a_share": a_dist,
         "current": _current_rebound(sym, logp, state, events),
-        "note": "历史分位，不是预测",
+        "note": "历史分位",
     }
     return {
         "cheap": _cheap(sym, logp, asof_ts, p1),
@@ -359,7 +359,7 @@ def write_rebound_table(asof: str | None = None) -> dict:
         "days_to_high": all_dist["days_to_high"],
         "a_share": a_dist,
         "events": _export_events(events),
-        "note": "历史分位，不是预测",
+        "note": "历史分位",
     }
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_MD.parent.mkdir(parents=True, exist_ok=True)
@@ -369,7 +369,7 @@ def write_rebound_table(asof: str | None = None) -> dict:
         "",
         f"as-of {asof}；n={all_dist['n']}；价格恢复比例分位 {all_dist['recovery']}；对数恢复比例分位 {all_dist['recovery_log']}；"
         f"反弹收益分位 {all_dist['rebound_ret']}；回前高比例 {all_dist['back_to_peak_share']}；"
-        f"顶至高点交易日分位 {all_dist['days_to_high']}；历史分位，不是预测。",
+        f"顶至高点交易日分位 {all_dist['days_to_high']}；历史分位。",
         "",
         "| 指数 | 市场 | 顶日期 | 谷日期 | 回撤 | 250 日内高点日期 | 价格恢复比例 | 对数恢复比例 | 反弹收益 | 回前高 | 回前高交易日 | 谷至高点交易日 |",
         "|---|---|---|---|---:|---|---:|---:|---:|---|---:|---:|",
@@ -381,7 +381,7 @@ def write_rebound_table(asof: str | None = None) -> dict:
             f"| {row['rebound_ret']:.3f} | {'是' if row['back_to_peak'] else '否'} "
             f"| {row['days_to_peak'] if row['days_to_peak'] is not None else '—'} | {row['days_to_high']} |"
         )
-    rows.extend(["", "历史分位，不是预测。"])
+    rows.extend(["", "历史分位。"])
     OUT_MD.write_text("\n".join(rows) + "\n", encoding="utf-8")
     return table
 

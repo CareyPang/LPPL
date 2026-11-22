@@ -32,7 +32,7 @@ test('bench table renders visible validation metrics and descriptive evidence co
   assert.match(html, /n=12/);
   assert.match(html, /50%/);
   assert.match(html, /20%/);
-  assert.match(html, /历史分位，不是预测/);
+  assert.match(html, /历史分位/);
 });
 
 test('bench table hides all metrics for none, fail, and development-only evidence', () => {

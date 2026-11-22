@@ -33,7 +33,7 @@ INDEX_BY_CATEGORY = {
     "MSCI A50": "sh000985",
 }
 ALL_SHARE_INDEX = "sh000985"
-NOTE = "汇金重仓 ETF 份额变化（申赎估算）。全市场申赎合计，不能全部归因于国家队；不进入模型，不构成买卖建议。"
+NOTE = "汇金重仓 ETF 份额变化（申赎估算）。全市场申赎合计，不能全部归因于国家队；不进入模型。"
 FLAG_MIN_YI = 5.0
 FLAG_SHARE_PCT = 0.03
 FLAG_MEDIAN_MULT = 5.0

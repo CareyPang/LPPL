@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>临界点 · 市场背景</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
-<meta name="description" content="A 股资金流、涨跌停、两融、北向与估值的当日描述性统计，不是预测。">
+<meta name="description" content="A 股资金流、涨跌停、两融、北向与估值的当日统计。">
 <meta name="theme-color" content="#1f5fd6">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="临界点">
 <meta property="og:title" content="临界点 · 市场">
-<meta property="og:description" content="A 股资金流、涨跌停、两融、北向与估值的当日描述性统计，不是预测。">
+<meta property="og:description" content="A 股资金流、涨跌停、两融、北向与估值的当日统计。">
 <meta name="twitter:card" content="summary">
 <style>
 :root {
@@ -748,7 +748,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     let content = '';
     if (active.id === 'zb' || active.id === 'dt') {
       const rows = active.id === 'zb' ? zbRows : dtRows;
-      if (!rows) content = `<p class="note">旧版数据未包含${active.label}明细。</p>`;
+      if (!rows) content = `<p class="note">暂无${active.label}明细。</p>`;
       else if (!rows.length) content = `<p class="note">暂无${active.label}明细。</p>`;
       else if (active.id === 'zb') content = `<div class="scroll"><table class="limit-table"><thead><tr><th>名称</th><th>首封时间</th><th class="r">炸板次数</th><th class="r">涨跌幅</th></tr></thead><tbody>
         ${rows.map((row) => `<tr><td class="name-cell">${E(row.name || '—')}<small>${E(row.code || '—')}</small></td><td>${E(time(row.first_seal))}</td><td class="r">${E(row.break_times ?? '—')}</td><td class="r">${pct(row.pct)}</td></tr>`).join('')}
@@ -1224,7 +1224,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
          const percentileNote = r.pe_pct_error
            ? `乐咕月度取数失败：${E(r.pe_pct_error)}`
            : hasPercentile
-             ? `乐咕月度，自 ${E(String(r.pe_pct_start || '').slice(0, 4))} 年起，n=${E(r.pe_pct_n ?? 0)}（历史分位，不是预测）`
+             ? `乐咕月度，自 ${E(String(r.pe_pct_start || '').slice(0, 4))} 年起，n=${E(r.pe_pct_n ?? 0)}（历史分位）`
              : '乐咕月度历史分位暂不可用';
          return `<tr><td>${names[k]} ${k}</td><td>${E(r.date || '—')}</td><td class="r">${num(r.pe1) ? r.pe1.toFixed(2) : '—'}</td><td class="r">${num(r.pe2) ? r.pe2.toFixed(2) : '—'}</td>
          <td class="r">${num(r.dy1) ? r.dy1.toFixed(2) + '%' : '—'}</td><td class="r">${num(r.dy2) ? r.dy2.toFixed(2) + '%' : '—'}</td>
@@ -1354,7 +1354,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <div class="table-scroll"><table><thead><tr><th>序列</th><th>数据日</th><th class="r">最新</th><th class="r">样本 n</th><th>报价方向</th></tr></thead>
           <tbody>${fxRows || '<tr><td colspan="5">暂无可用汇率数据</td></tr>'}</tbody></table></div>
         <p class="note">H.10 数据通常滞后约一周；asof ${E(F.asof || '—')}。</p></section>
-      <p class="note">${E(D.note || '只作背景，不进入模型。')} 历史分位，不是预测；本卡仅展示官方观测，不计算分位。</p>`;
+      <p class="note">${E(D.note || '只作背景，不进入模型。')} 本卡仅展示官方观测，不计算分位。</p>`;
   }
   function renderGrowth(data) {
     const box = $('growth-body');
@@ -1368,7 +1368,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       not_met: '未满足',
       partial: '数据不全',
       missing: '缺数据',
-      pending_definition: '待统一口径',
+      pending_definition: '暂无数据',
     };
     const amount = (value) => {
       if (value == null || !Number.isFinite(Number(value))) return '—';
@@ -1416,7 +1416,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     };
     const valueText = (item) => {
       const value = item.value;
-      if (item.id === 'fund_growth_position') return '—（待统一口径）';
+      if (item.id === 'fund_growth_position') return '—';
       if (item.id === 'semi_etf_flow') {
         const weeks = value?.last_two_complete_weeks || [];
         return `近两周净申购：${weeks.map((week) => amount(week.flow_yuan)).join(' / ') || '—'}`;
@@ -1483,7 +1483,6 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       </article>`;
     }).join('');
     box.innerHTML = `<div class="growth-summary">核心条件满足 ${Number(summary.core_met) || 0}/3${pendingKinds ? `（${pendingKinds}）` : ''} · 确认项：${E(confirmLabel)}</div>
-      <p class="growth-meta">仅描述各项条件当前是否满足，不是预测，也不构成买卖建议。</p>
       <div class="growth-grid">${cards}</div>`;
   }
 
@@ -1507,7 +1506,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const otherSeats = Array.isArray(data.other_seats) ? data.other_seats : [];
     $('lhb-subtitle').textContent = `游资与量化席位买卖动向 · 已识别游资 ${Number(summary.n_aliases) || 0} 家`;
     $('lhb-date-badge').textContent = data.date_badge || '盘后榜单';
-    const note = String(data.note || '席位标签依据公开报道，不等于实际账户身份；仅描述当日盘后榜单，不构成建议。');
+    const note = String(data.note || '席位标签依据公开报道，不等于实际账户身份。');
     const sourceLinks = (sources) => (Array.isArray(sources) ? sources : []).map((source, index) =>
       `<a href="${E(source.source_url)}" target="_blank" rel="noopener noreferrer" title="${E(source.source)}">${index ? `来源${index + 1}` : '来源'}</a>`
     ).join(' · ');
@@ -1818,7 +1817,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       : '<p class="note">预警规则回测中，暂不显示</p>';
     const sampleN = num(latest.n) ? latest.n : '—';
     $('src-breadth').textContent =
-      `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位，不是预测`;
+      `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位`;
     body.innerHTML = `<div class="breadth-grid">
         ${card('红盘率', percent(latest.red))}
         ${card('上涨成交额占比', percent(latest.amt_up))}
@@ -1979,7 +1978,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-top-risk').textContent = `截至 ${data.asof || '—'} · ${data.source || '—'}`;
     body.innerHTML = `${commonConditions}
       <div class="top-risk-grid">${cards || '<p class="note">指数读数缺失。</p>'}</div>
-      <p class="note">样本少，不显著，不是买卖信号；历史分位不是预测，分位不是概率。</p>
+      <p class="note">样本少，不显著；分位不是概率。</p>
       <div class="top-risk-stats">${stats || '<p class="note">历史统计未加载。</p>'}</div>
       ${episodesMarkup}
       <details class="top-risk-method"><summary>定义与判断口径</summary>
@@ -2096,7 +2095,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const renderPanel = (name, panel, asof, warningAsOf = '') => {
       if (!panel) {
         return `<section class="bottom-panel"><h3>${name}</h3>
-          <p class="note">中证A500 数据未加载。</p><p class="note">历史分位，不是预测。</p></section>`;
+          <p class="note">中证A500 数据未加载。</p><p class="note">历史分位。</p></section>`;
       }
       const asofLine = warningAsOf
         ? `<p class="warnl">截至 ${esc(asof)}，滞后于沪深300（截至 ${esc(warningAsOf)}） · 样本 n=${sampleCount(panel)}</p>`
@@ -2123,7 +2122,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <p class="note">触发阈值：两项近3年分位均 ≥ 90%。当前状态：${current.signal ? '<span class="wn">亮</span>' : '未亮'}；最近触发日期 ${esc(current.last_event_date || '—')}。</p>
         <p class="note">历史 ${summary.n_events ?? events.length} 次触发，之后 250 日上涨 ${upCount}/${summary.n_with_250d ?? outcomes.length}（下跌日基准 ${percent(baseline.share_up_250, 1)}）。</p>
         ${events.length ? `<div class="table-scroll"><table><thead><tr><th>触发日</th><th class="r">之后最低</th><th>最低日</th><th class="r">后120日</th><th class="r">后250日</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="note">暂无历史触发样本。</p>'}
-        <p class="note">历史分位，不是预测。</p>
+        <p class="note">历史分位。</p>
         ${notes.length ? `<ul class="note">${notes.map((note) => `<li>${esc(note)}</li>`).join('')}</ul>` : ''}
       </section>`;
     };
