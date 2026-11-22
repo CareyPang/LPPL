@@ -256,3 +256,27 @@ def test_bottom_dashboard_dead_cat_bounce_blocked(tmp_path):
     assert dash["verdict"] == "aftershock_block"
     assert dash["verdict_light"] == "red"
 
+
+def test_summarize_history_episodes_with_splits():
+    """模块三：summarize_history_episodes 输出 6-12m/12-24m 与 dev/cal/test 分段摘要。"""
+    from research.eval import episode_backtest
+
+    frames = [
+        {"asof": "2015-04-10", "split": "dev", "w": {"6-12m": ["2015-05-15", "2015-06-20"]}, "clusters": {"6-12m": []}},
+        {"asof": "2015-04-17", "split": "dev", "w": {"6-12m": None}, "clusters": {"6-12m": []}},
+        {"asof": "2024-01-12", "split": "test", "w": {"6-12m": ["2024-02-01", "2024-03-01"]}, "clusters": {"6-12m": []}},
+        {"asof": "2024-01-19", "split": "test", "w": {"6-12m": None}, "clusters": {"6-12m": []}},
+    ]
+    tops = [
+        {"date": "2015-06-12", "max_dd": -0.42},
+        {"date": "2024-02-20", "max_dd": -0.18},
+    ]
+    summary = episode_backtest.summarize_history_episodes(frames, tops, n_perm=50, seed=42)
+    assert "6-12m" in summary and "12-24m" in summary
+    s6 = summary["6-12m"]
+    assert s6["n_episodes"] == 2
+    assert s6["hit_rate_exact"] == 1.0
+    assert s6["by_split"]["dev"]["n_episodes"] == 1
+    assert s6["by_split"]["test"]["n_episodes"] == 1
+
+
