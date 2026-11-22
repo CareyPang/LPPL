@@ -471,7 +471,10 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
     document.querySelectorAll('[data-alert-scale]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.alertScale === st.alertScale));
     });
-    caveat.hidden = true;
+    caveat.hidden = false;
+    caveat.textContent = evidence === 'dev'
+      ? '开发段证据：聚类区间占比不是概率，单轮历史命中不代表通过样本外检验。'
+      : '研究级回溯：聚类区间占比不是概率，样本外证据状态见「三段验证」。';
     const showNumbers = CPAlertEvidence.showsNumbers(st.H, st.alertScale);
     count.textContent = blocked ? '暂无该尺度预警段' : '共 ' + episodes.length + ' 轮预警段（含首次预警日与事后顶对照）';
     rows.innerHTML = episodes.map((episode) => {
