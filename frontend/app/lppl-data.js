@@ -173,6 +173,7 @@
   }
 
   const catalog = () => getJSON('catalog.json');
+  const overview = () => opt('overview_latest.json');
   const history = (sym) => getJSON(sym + '_history.json');
   /** 策略回放（事前登记规则的历史回放，不是预测）：未发布时返回 null，页面须显示“策略回测结果未发布” */
   const strategy = (sym) => getJSON('strategy/' + sym + '.json').catch((e) => {
@@ -352,5 +353,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
+  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
 })(window);

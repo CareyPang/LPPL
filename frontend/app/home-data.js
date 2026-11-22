@@ -10,9 +10,10 @@
   var SIG = { signal: '有合格拟合：顶部结构', no_qualified_fit: '主尺度没有合格拟合', t1_not_qualified: '泡沫起点未达标准', not_computed: '未计算' };
 
   /* 返回 { name, sym, code, asof, bars, last, prev, status, windowText, action }；失败返回 { sym, name, error } */
-  function one(s) {
+  function one(s, ovMap) {
     var loadMain = G.LPPL.load(s.sym);
-    var loadHist = G.LPPL.history ? G.LPPL.history(s.sym).catch(function () { return null; }) : Promise.resolve(null);
+    var ovItem = ovMap && ovMap[s.sym] ? ovMap[s.sym] : null;
+    var loadHist = !ovItem && G.LPPL.history ? G.LPPL.history(s.sym).catch(function () { return null; }) : Promise.resolve(null);
     return Promise.all([loadMain, loadHist]).then(function (pair) {
       var D = pair[0], H = pair[1];
       var t = D.top || {}, w = t.window || {}, b = D.bars;
@@ -22,11 +23,12 @@
       var cs = (D.raw && D.raw.cooling_state) || null;
       var dash = cs && cs.dashboard ? cs.dashboard : null;
       var omoriDim = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find(function (d) { return d && d.id === 'omori'; }) : null;
-      var action = G.BottomAction && H
-        ? G.BottomAction.fromHistory(s.sym, H, {
-            hasTop: t.signal_status === 'signal' || Boolean(w.start && ev.show),
-            omoriRed: Boolean(omoriDim && omoriDim.light === 'red'),
-          })
+      var actOpts = {
+        hasTop: t.signal_status === 'signal' || Boolean(w.start && ev.show),
+        omoriRed: Boolean(omoriDim && omoriDim.light === 'red'),
+      };
+      var action = G.BottomAction
+        ? (ovItem ? G.BottomAction.fromOverviewItem(ovItem, actOpts) : (H ? G.BottomAction.fromHistory(s.sym, H, actOpts) : null))
         : null;
       return {
         name: D.name, sym: D.sym.sym, code: D.sym.code, asof: D.asof, bars: b,
@@ -40,7 +42,14 @@
   }
   function all() {
     if (!G.LPPL) return Promise.resolve([]);
-    return Promise.all(G.LPPL.SYMS.map(one));
+    var ovPromise = G.LPPL.overview ? G.LPPL.overview().catch(function () { return null; }) : Promise.resolve(null);
+    return ovPromise.then(function (ov) {
+      var ovMap = {};
+      if (ov && Array.isArray(ov.indices)) {
+        ov.indices.forEach(function (it) { if (it && it.sym) ovMap[it.sym] = it; });
+      }
+      return Promise.all(G.LPPL.SYMS.map(function (s) { return one(s, ovMap); }));
+    });
   }
   G.HOMEDATA = { one: one, all: all };
 })(window);

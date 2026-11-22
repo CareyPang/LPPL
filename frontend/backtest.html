@@ -209,6 +209,23 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 .al-row[data-alert-id]:hover{background:#F7F9FC;color:var(--ink)}
 .al-row[data-alert-id][aria-selected=true]{background:#FFF5E0;color:var(--ink)}
 .al-empty{margin:12px 0 0;padding:12px 0;color:var(--ink-3);font-size:13px}
+.ov-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:#FAFBFD;font-size:12px}
+.ov-strip-k{color:var(--ink-3);font-weight:600;margin-right:4px}
+.ov-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-2);font:500 12px/1.3 var(--f-u);cursor:pointer}
+.ov-chip:hover{border-color:var(--real);color:var(--ink)}
+.ov-chip[aria-current="true"]{border-color:var(--real);box-shadow:inset 0 0 0 1px var(--real);color:var(--ink);font-weight:600}
+.ov-chip[data-tone="green"],.ov-chip[data-tone="emerald"]{background:#EFFAF4;border-color:#BFE4D2;color:#0E6545}
+.ov-chip[data-tone="amber"]{background:#FFF8EB;border-color:#F0DCB4;color:#8C5400}
+.ov-chip[data-tone="red"]{background:#FDEEF0;border-color:#F4C4C9;color:#9F1F2A}
+.ov-chip b{font-family:var(--f-m)}
+.al-mode{display:flex;gap:4px;margin-right:8px}
+.al-chip.bot-on[aria-pressed=true]{border-color:#11845A;color:#0E6545;background:#EFFAF4}
+.bot-row{display:grid;grid-template-columns:minmax(130px,1.1fr) minmax(80px,.6fr) minmax(100px,.8fr) minmax(110px,.9fr) minmax(110px,.9fr) minmax(180px,1.4fr);align-items:center;min-height:36px;color:var(--ink-2)}
+.bot-row>span{min-width:0;padding:8px;border-bottom:1px solid var(--grid);font-size:12px}
+.bot-row-head{min-height:32px;background:var(--surface-2);color:var(--ink-3);font-weight:600}
+.bot-row-head>span{border-bottom-color:var(--line)}
+.bot-row[data-bot-asof]{cursor:pointer}
+.bot-row[data-bot-asof]:hover{background:#EFFAF4;color:var(--ink)}
 @media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:760px}}
 </style>
 </head>
@@ -229,6 +246,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <a href="#view=bench" data-view="bench">三段验证</a>
   <span class="bt-views-note" data-evidence-badge="dev_only" data-evidence-label="历史回测口径" data-evidence-detail="严格 Point-in-Time：每帧只用截止日当天及以前数据，通过与未通过样本外检验均原样呈现。"></span>
 </nav>
+<div class="ov-strip" id="ov-strip" hidden aria-label="全市场 7 大指数底部综合分横向对比"></div>
 <div class="recompute-notice" id="recompute-notice" hidden role="note" aria-label="历史重算说明">
   <strong id="recompute-label"></strong>
   <details>
@@ -310,14 +328,18 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         <p class="al-note">按每轮泡沫第一次出现顶部聚类归并为一个预警段（Episode），点击任意行即刻在主图定位当时的首次预警视角。</p>
         <p class="al-caveat" id="alert-caveat" hidden></p>
       </div>
-      <div class="al-controls" id="alert-scales" role="group" aria-label="提醒区间尺度">
+      <div class="al-controls" id="alert-scales" role="group" aria-label="账本类型与提醒区间尺度">
+        <div class="al-mode" id="ledger-mode" role="group" aria-label="账本切换">
+          <button class="al-chip" type="button" data-ledger-mode="top" aria-pressed="true">🔴 顶部预警账本</button>
+          <button class="al-chip bot-on" type="button" data-ledger-mode="bottom" aria-pressed="false">🟢 底部共振账本</button>
+        </div>
         <button class="al-chip" type="button" data-alert-scale="6-12m" aria-pressed="true">6–12 月</button>
         <button class="al-chip" type="button" data-alert-scale="12-24m" aria-pressed="false">12–24 月</button>
       </div>
     </div>
     <p class="al-count" id="alert-count" aria-live="polite">共 0 次</p>
     <div class="ep-summary" id="episode-summary" hidden aria-label="事件级回测摘要与随机基线对照"></div>
-    <div class="al-scroll">
+    <div class="al-scroll" id="top-ledger-wrap">
       <div class="al-table" role="table" aria-label="提醒明细">
         <div class="al-row al-row-head" role="row">
           <span role="columnheader">首次预警日（as-of）</span>
@@ -331,12 +353,26 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         <div id="alert-rows" role="rowgroup"></div>
       </div>
     </div>
+    <div class="al-scroll" id="bottom-ledger-wrap" hidden>
+      <div class="al-table" role="table" aria-label="底部共振事件明细">
+        <div class="bot-row bot-row-head" role="row">
+          <span role="columnheader">底部共振触发日（as-of）</span>
+          <span role="columnheader">所属段</span>
+          <span role="columnheader">底部综合分</span>
+          <span role="columnheader">24 周后收益</span>
+          <span role="columnheader">50 周后收益</span>
+          <span role="columnheader">当时因子拆解（严格 PIT）</span>
+        </div>
+        <div id="bottom-rows" role="rowgroup"></div>
+      </div>
+    </div>
     <p class="al-empty" id="alert-empty" role="status" hidden></p>
   </section>
 </main>
 
 <script src="app/evidence-badge.js"></script>
 <script src="app/lppl-data.js"></script>
+<script src="app/bottom-action.js"></script>
 <script src="app/scen-style.js"></script>
 <script src="app/top-clusters.js"></script>
 <script src="app/alert-ledger.js"></script>
@@ -364,7 +400,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   const T = (d) => Date.parse(d + 'T00:00:00Z');
   const ymd = (t) => new Date(t).toISOString().slice(0, 10);
   const pct = (x) => (x * 100).toFixed(0) + '%';
-  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', alertId: null, alertFrame: null };
+  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', ledgerMode: 'top', alertId: null, alertFrame: null, overview: null };
   $('cluster-footnote').textContent = CPTopClusters.NOTE;
   const q = new URLSearchParams(location.search);
   const requestedSym = q.get('sym') || q.get('code');
@@ -588,6 +624,69 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
     }
     return true;
   }
+  function renderOverviewStrip() {
+    const strip = $('ov-strip');
+    if (!strip || !st.overview || !Array.isArray(st.overview.indices) || !st.overview.indices.length) return;
+    const sorted = [...st.overview.indices].sort((a, b) => (b.bottom_score || 0) - (a.bottom_score || 0));
+    strip.innerHTML = `<span class="ov-strip-k">全市场底部综合分（截至 ${E(st.overview.asof || '—')}）：</span>` +
+      sorted.map((it) => {
+        const act = window.BottomAction ? window.BottomAction.fromOverviewItem(it) : null;
+        const tone = act ? act.tone : 'gray';
+        const pos = act && act.tier === 'bottom_probe' ? ' · 🟢30%'
+          : act && act.tier === 'right_confirm' ? ' · ✅加仓'
+          : act && act.tier === 'top_risk' ? ' · 🔴减仓' : '';
+        return `<button type="button" class="ov-chip" data-ov-sym="${E(it.sym)}" data-tone="${E(tone)}" aria-current="${st.sym === it.sym}">` +
+          `${E(it.name)} <b>${it.bottom_score ?? 0}</b>${pos}</button>`;
+      }).join('');
+    strip.hidden = false;
+  }
+  function renderBottomLedger() {
+    const botRows = $('bottom-rows');
+    const empty = $('alert-empty');
+    if (!botRows) return;
+    const frames = (st.H && st.H.fr) ? st.H.fr : [];
+    const bs = st.H && st.H.bottom_summary;
+    const evMap = {};
+    if (bs && Array.isArray(bs.events)) {
+      bs.events.forEach((ev) => { if (ev && ev.asof) evMap[ev.asof] = ev; });
+    }
+    const items = frames.filter((f) => f.bottom_first_alert_flag).slice().reverse();
+    $('alert-count').textContent = `A 股多维底部综合指数 · 独立底部共振共 ${items.length} 次（点击任意行在主图定位）`;
+    const fmtRet = (v) => v == null ? '未满期' : ((v >= 0 ? '+' : '') + (Number(v) * 100).toFixed(1) + '%');
+    botRows.innerHTML = items.map((f) => {
+      const ev = evMap[f.asof] || {};
+      const bf = f.bottom_factors || {};
+      const parts = [];
+      if (bf.dd_52w != null) parts.push(`回撤 ${(Number(bf.dd_52w) * 100).toFixed(0)}%`);
+      if (bf.erp_pct != null) parts.push(`ERP ${Math.round(Number(bf.erp_pct) * 100)}%`);
+      if (bf.pbn_pct != null) parts.push(`破净 ${Math.round(Number(bf.pbn_pct) * 100)}%`);
+      if (bf.stabilize != null) parts.push(`止跌 ${Math.round(Number(bf.stabilize) * 100)}%`);
+      const r24 = ev.ret_24w;
+      const r50 = ev.ret_50w;
+      return `<div class="bot-row" role="row" tabindex="0" data-bot-asof="${E(f.asof)}">` +
+        `<span role="cell"><span class="al-badge" style="color:#0E6545;border-color:#BFE4D2;background:#EFFAF4">底部共振</span>${E(f.asof)}</span>` +
+        `<span role="cell">${E(SPLIT[f.split] || f.split || '—')}</span>` +
+        `<span role="cell"><b style="color:#0E6545">${Math.round((f.fcoNegIntensity || 0) * 100)} / 100</b></span>` +
+        `<span role="cell" style="color:${r24 == null ? 'var(--ink-3)' : r24 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r24))}</span>` +
+        `<span role="cell" style="color:${r50 == null ? 'var(--ink-3)' : r50 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r50))}</span>` +
+        `<span role="cell">${E(parts.join(' · ') || '—')}</span></div>`;
+    }).join('');
+    empty.textContent = '该指数暂无独立底部共振记录';
+    empty.hidden = items.length > 0;
+  }
+  function applyLedgerMode() {
+    const isBot = st.ledgerMode === 'bottom';
+    document.querySelectorAll('#ledger-mode [data-ledger-mode]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.ledgerMode === st.ledgerMode));
+    });
+    document.querySelectorAll('#alert-scales [data-alert-scale]').forEach((b) => {
+      b.hidden = isBot;
+    });
+    if ($('top-ledger-wrap')) $('top-ledger-wrap').hidden = isBot;
+    if ($('bottom-ledger-wrap')) $('bottom-ledger-wrap').hidden = !isBot;
+    if (isBot) renderBottomLedger();
+    else renderAlertLedger();
+  }
   function chooseAlertScale(scale) {
     if (!['6-12m', '12-24m'].includes(scale) || scale === st.alertScale) return;
     if (st.alertId) {
@@ -599,9 +698,34 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
     renderAlertLedger();
   }
   $('alert-scales').onclick = (event) => {
+    const modeBtn = event.target.closest('[data-ledger-mode]');
+    if (modeBtn) {
+      st.ledgerMode = modeBtn.dataset.ledgerMode === 'bottom' ? 'bottom' : 'top';
+      applyLedgerMode();
+      return;
+    }
     const button = event.target.closest('[data-alert-scale]');
     if (button) chooseAlertScale(button.dataset.alertScale);
   };
+  if ($('ov-strip')) {
+    $('ov-strip').addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-ov-sym]');
+      if (!btn || btn.dataset.ovSym === st.sym) return;
+      st.sym = btn.dataset.ovSym;
+      renderOverviewStrip();
+      load();
+    });
+  }
+  if ($('bottom-rows')) {
+    $('bottom-rows').addEventListener('click', (event) => {
+      const row = event.target.closest('[data-bot-asof]');
+      if (!row || !st.H) return;
+      const frame = st.H.fr.find((item) => item.asof === row.dataset.botAsof);
+      if (!frame) return;
+      st.hover = { f: frame };
+      setView(frame.t - 180 * DAY, Math.min(st.tmax, frame.t + 365 * DAY));
+    });
+  }
   $('alert-rows').addEventListener('click', (event) => {
     const row = event.target.closest('[data-alert-id]');
     if (!row) return;
@@ -671,7 +795,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         if (initialAlert) setAlertScaleData(initialAlert.scale);
         else writeAlertParam(null);
       }
-      renderAlertLedger();
+      applyLedgerMode();
+      renderOverviewStrip();
       setPreset(st.preset >= 0 ? st.preset : 0);
       if (initialAlert) selectAlert(initialAlert, false);
     } catch (e) {
@@ -976,6 +1101,9 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   })();
 
   let rz = 0; window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { draw(); drawOv(); }); });
+  if (LPPL.overview) {
+    LPPL.overview().then((ov) => { if (ov) { st.overview = ov; renderOverviewStrip(); } }).catch(() => {});
+  }
   load();
 })();
 </script>
