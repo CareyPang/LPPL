@@ -42,16 +42,40 @@ def _objective(theta, t, y, k=K_LPPLS):
 def _resid(theta, t, y, k=K_LPPLS):
     w = theta[2] if len(theta) > 2 else 0.0
     X = design(t, theta[0], theta[1], w, k)
-    if X is None:
+    if X is None or not np.all(np.isfinite(X)):
         return np.full_like(y, 1e3)
-    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
-    return y - X @ beta
+    try:
+        beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+        res = y - X @ beta
+    except np.linalg.LinAlgError:
+        return np.full_like(y, 1e3)
+    if not np.all(np.isfinite(res)):
+        return np.full_like(y, 1e3)
+    return res
 
 
 def _polish(theta, t, y, lo, hi, k=K_LPPLS) -> tuple[np.ndarray, float, int]:
     r = minimize(_objective, theta, args=(t, y, k), method="L-BFGS-B", bounds=list(zip(lo, hi, strict=True)),
                  options=dict(maxiter=200, ftol=1e-12, gtol=1e-8))
     return r.x, float(r.fun), int(r.nfev)
+
+
+def _polish_trf(theta, t, y, lo, hi, k=K_LPPLS, max_nfev: int = 200) -> tuple[np.ndarray, float, int]:
+    """有界非线性最小二乘精修（TRF），专为残差平方和设计，较 L-BFGS-B 更快且边界更稳。"""
+    x0 = _clip(np.asarray(theta, float), lo, hi)
+    r = least_squares(
+        _resid,
+        x0,
+        args=(t, y, k),
+        bounds=(lo, hi),
+        method="trf",
+        x_scale="jac",
+        ftol=1e-12,
+        xtol=1e-12,
+        gtol=1e-10,
+        max_nfev=max_nfev,
+    )
+    return r.x, float(r.fun @ r.fun), int(r.nfev)
 
 
 def _clip(x, lo, hi):
@@ -67,6 +91,52 @@ def de_lbfgsb(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
     x, f, n2 = _polish(r.x, t, y, lo, hi, k)
     return Result(x, f, int(r.nfev) + n2, time.perf_counter() - t0, "de_lbfgsb", str(r.message),
                   dict(de_sse=float(r.fun)))
+
+
+def de_trf(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS, warm_starts=None) -> Result:
+    """固定种子轻量 DE + 有界 TRF 非线性最小二乘精修（支持热启动候选）。"""
+    budget = budget or dict(popsize=8, maxiter=25, trf_nfev=150)
+    t0 = time.perf_counter()
+    r = differential_evolution(
+        _objective,
+        list(zip(lo, hi, strict=True)),
+        args=(t, y, k),
+        seed=seed,
+        polish=False,
+        strategy="rand1bin",
+        popsize=budget["popsize"],
+        maxiter=budget["maxiter"],
+        tol=1e-6,
+        mutation=(0.5, 1.0),
+        recombination=0.7,
+        init="latinhypercube",
+    )
+    nfev = int(r.nfev)
+    candidates = [r.x]
+    if warm_starts:
+        for ws in warm_starts:
+            arr = np.asarray(ws, float)
+            if arr.shape == np.asarray(lo, float).shape and np.all(np.isfinite(arr)):
+                candidates.append(_clip(arr, lo, hi))
+    best_x, best_f = r.x, float(r.fun)
+    trf_nfev = int(budget.get("trf_nfev", 150))
+    for cand in candidates:
+        try:
+            x, f, n2 = _polish_trf(cand, t, y, lo, hi, k, max_nfev=trf_nfev)
+            nfev += n2
+            if np.isfinite(f) and f < best_f:
+                best_x, best_f = x, f
+        except Exception:  # noqa: BLE001
+            continue
+    return Result(
+        best_x,
+        best_f,
+        nfev,
+        time.perf_counter() - t0,
+        "de_trf",
+        str(r.message),
+        dict(de_sse=float(r.fun)),
+    )
 
 
 def ms_lm(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
@@ -194,4 +264,4 @@ def cmaes(t, y, lo, hi, seed=0, budget=None, *, k=K_LPPLS) -> Result:
     return Result(x, f, nfev + n2, time.perf_counter() - t0, "cmaes", str(es.stop()))
 
 
-METHODS = dict(de_lbfgsb=de_lbfgsb, ms_lm=ms_lm, tcgrid_lm=tcgrid_lm, cmaes=cmaes)
+METHODS = dict(de_lbfgsb=de_lbfgsb, de_trf=de_trf, ms_lm=ms_lm, tcgrid_lm=tcgrid_lm, cmaes=cmaes)

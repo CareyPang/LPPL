@@ -7,6 +7,17 @@ on:
   repository_dispatch:
     types: [index_daily]
   workflow_dispatch:
+    inputs:
+      opt:
+        description: "LPPLS optimizer (default: de_trf, fallback: g3/de/tcgrid)"
+        required: false
+        default: "de_trf"
+        type: choice
+        options:
+          - de_trf
+          - g3
+          - de
+          - tcgrid
   pull_request:
     paths:
       - .github/workflows/index_daily.yml
@@ -113,12 +124,13 @@ jobs:
         env:
           ASOF: ${{ needs.plan.outputs.asof }}
           SYM: ${{ matrix.sym }}
+          LPPLS_DAILY_OPT: ${{ inputs.opt || 'de_trf' }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p out/index
           LPPLS_BOX=v2 python -m research.pipeline.daily "$SYM" \
-            --asof "$ASOF" --out out/index
+            --asof "$ASOF" --opt "$LPPLS_DAILY_OPT" --out out/index
       - name: Upload index fit artifact
         if: always()
         uses: actions/upload-artifact@v4

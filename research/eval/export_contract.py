@@ -163,6 +163,98 @@ def _scenario_records(q: pd.DataFrame, scen: pd.DataFrame, gg: pd.DataFrame,
     ]
 
 
+def _fco_intensity(conf: dict, clusters: dict) -> tuple[float, int]:
+    """合成 FCO 风格正向泡沫综合强度 [0, 1] 与活跃尺度数（严格仅用当前 as-of 帧数据）。"""
+    scales = list(HISTORY_SCALES)
+    active = 0
+    scores: list[float] = []
+    for scale in scales:
+        c_val = conf.get(scale)
+        cl = clusters.get(scale) or []
+        main_share = float(cl[0]["share"]) if cl and cl[0].get("share") is not None else 0.0
+        has_signal = bool(cl) or (c_val is not None and float(c_val) >= 0.05)
+        if has_signal:
+            active += 1
+        c_num = float(c_val) if c_val is not None and np.isfinite(c_val) else 0.0
+        # 结合置信度占比与主簇集中度，避免单一尺度噪声误触发满格
+        scale_score = min(1.0, 0.65 * min(1.0, c_num / 0.35) + 0.35 * main_share) if has_signal else 0.0
+        scores.append(scale_score)
+    if not scores or active == 0:
+        return 0.0, 0
+    intensity = min(1.0, float(np.mean(scores)) * (0.75 + 0.25 * (active / len(scales))))
+    return round(intensity, 3), active
+
+
+def _cooling_state(
+    ohlc: pd.DataFrame,
+    cal: pd.DatetimeIndex,
+    date: pd.Timestamp,
+    ind: dict,
+    window: dict,
+    band: pd.Series | None,
+    price_band: dict,
+) -> dict:
+    """逃顶后防过早回补三道防线状态（严格 Point-in-Time，仅用截至 as-of 日的已收盘数据）。"""
+    close = _close(ohlc, cal)
+    close_pit = close[close.index <= date].dropna()
+    tail = close_pit.tail(252)
+    drawdown_from_peak: float | None = None
+    elapsed_days_since_peak: int | None = None
+    omori_aftershock_active = False
+    if len(tail) >= 2:
+        peak_idx = tail.idxmax()
+        peak_val = float(tail.loc[peak_idx])
+        cur_val = float(tail.iloc[-1])
+        if peak_val > 0:
+            drawdown_from_peak = round(cur_val / peak_val - 1.0, 4)
+        elapsed_days_since_peak = int(len(tail.loc[peak_idx:]) - 1)
+        # Omori 余震代理：近 15 个交易日出现 >=2 次单日跌幅 <= -2.5% 或近 10 日年化波动显著放大
+        rets = tail.pct_change().dropna()
+        recent15 = rets.tail(15)
+        big_drops = int((recent15 <= -0.025).sum())
+        vol10 = float(rets.tail(10).std() * np.sqrt(252)) if len(rets) >= 10 else 0.0
+        vol60 = float(rets.tail(60).std() * np.sqrt(252)) if len(rets) >= 20 else vol10
+        omori_aftershock_active = big_drops >= 2 or (vol60 > 0 and vol10 > vol60 * 1.35)
+
+    c6 = ((ind.get("6-12m") or {}).get("confidence") or {}).get("box")
+    c12 = ((ind.get("12-24m") or {}).get("confidence") or {}).get("box")
+    top_conf_cleared = (c6 is None or float(c6) < 0.05) and (c12 is None or float(c12) < 0.05)
+    has_active_top = bool(window and window.get("start")) or not top_conf_cleared
+    regime_str = str(band.state) if band is not None and isinstance(band.state, str) else ""
+    in_bear = "bear" in regime_str.lower() or (drawdown_from_peak is not None and drawdown_from_peak <= -0.15)
+    min_cooling_days = 20
+
+    if has_active_top:
+        phase = "active_top"
+        reentry_ready = False
+        note = "顶部聚类活跃，6–12 月或 12–24 月档置信度尚未归零，严禁左侧追高"
+    elif in_bear and (omori_aftershock_active or (elapsed_days_since_peak is not None and elapsed_days_since_peak < min_cooling_days)):
+        phase = "cooling_after_top"
+        reentry_ready = False
+        note = "处于破裂余震冷却期，等待高频大阴线衰减与最小冷却周期完成"
+    elif in_bear:
+        phase = "reentry_watch"
+        reentry_ready = True
+        note = "顶部置信度已归零且余震衰减，可结合历史回撤分位与右侧宽度确认分批观察"
+    else:
+        phase = "normal"
+        reentry_ready = True
+        note = "无活跃顶部聚类与余震冷却限制，处于常态结构观察期"
+
+    return {
+        "phase": phase,
+        "top_conf_cleared": bool(top_conf_cleared),
+        "omori_aftershock_active": bool(omori_aftershock_active),
+        "drawdown_from_peak": drawdown_from_peak,
+        "elapsed_days_since_peak": elapsed_days_since_peak,
+        "min_cooling_days": min_cooling_days,
+        "drawdown_bucket": price_band.get("bucket") if isinstance(price_band, dict) else None,
+        "reentry_ready": bool(reentry_ready),
+        "note": note,
+        "evidence": "descriptive",
+    }
+
+
 def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
                    cal: pd.DatetimeIndex, close: float, split: str,
                    include_scenarios: bool = False, market: str = "cn") -> dict:
@@ -179,44 +271,29 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
                 _to_cal(cal, date, float(row.q80), market),
             ]
     conf = _conf(dd, rr, date)
-    fco_rows = dd.n.between(
-        SCALES_FCO6["6-12m"][0], SCALES_FCO6["12-24m"][1]
+    clusters = _scale_cluster_records(
+        q,
+        cal,
+        date,
+        market,
+        {scale: SCALES_FCO[scale] for scale in HISTORY_SCALES},
     )
+    fco_intensity, fco_scales_active = _fco_intensity(conf, clusters)
     frame = {
         "asof": str(date.date()),
         "split": split,
         "close": round(float(close), 2),
         "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
-        "fco_intensity": round(float(rr.box[fco_rows].mean()), 3) if fco_rows.any() else None,
-        "fco_scales_active": sum(windows[scale] is not None for scale in HISTORY_SCALES),
         "w": windows,
-        "clusters": _scale_cluster_records(
-            q,
-            cal,
-            date,
-            market,
-            {scale: SCALES_FCO6[scale] for scale in HISTORY_SCALES},
-        ),
+        "clusters": clusters,
+        "fco_intensity": fco_intensity,
+        "fco_scales_active": fco_scales_active,
     }
     if include_scenarios:
         gg = grid_rules(dd)
         scen = scenarios(q) if len(q) else pd.DataFrame()
         frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date, market)
     return frame
-
-
-def _add_first_alert_fields(frames: list[dict]) -> None:
-    previous_windows = None
-    for frame in frames:
-        windows = frame["w"]
-        scales = [
-            scale for scale in HISTORY_SCALES
-            if windows[scale] is not None
-            and (previous_windows is None or previous_windows[scale] is None)
-        ]
-        frame["first_alert_flag"] = bool(scales)
-        frame["first_alert_scales"] = scales
-        previous_windows = windows
 
 
 def _top_window(
@@ -541,6 +618,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc, market)
     bottom_objects = _bottom_objects(sym, asof, cal, ohlc)
     window = _top_window(sw, cal, date, market)
+    price_band = _price_band(sym, bubble, asof, float(ohlc[ohlc.date <= pd.Timestamp(asof)].close.iloc[-1]))
+    cooling_state = _cooling_state(ohlc, cal, date, ind, window, band, price_band)
     rec = {
         "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
         "future_calendar": future_calendar_metadata(cal, market, date),
@@ -572,10 +651,11 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
                 for x in sw.itertuples()
             ],
             "invalidation": {"rule": "6–12 月与 12–24 月档置信度均<5%（连续 2 个 as-of）", "evidence": "rule"},
-            "drawdown_price": _price_band(sym, bubble, asof, float(ohlc[ohlc.date <= pd.Timestamp(asof)].close.iloc[-1])),
+            "drawdown_price": price_band,
             "drawdown_time": {"value": None, "evidence": "none"},
             "second_wave": {"value": None, "evidence": "none"},
         },
+        "cooling_state": cooling_state,
         "price_history": _price_history(ohlc, cal, date),
         "regime_band": ({"month": prev_month, "state": band.state, "channel": band.channel,
                          "rule": "FCO 公开定义：相对自身前 60 个月分位", "evidence": "descriptive"}
@@ -655,16 +735,21 @@ def history(sym: str, market: str = "cn") -> dict:
     r = rules(d)
     cal = logp.index
     frames = []
+    prev_active = False
     for date, dd in d.groupby("date", sort=True):
         split_values = dd["split"].unique()
         if len(split_values) != 1:
             raise ValueError(f"{sym} has multiple source splits on {date.date()}")
-        frames.append(
-            _history_frame(
-                d, r, date, cal, close.loc[date], str(split_values[0]), market=market
-            )
+        frame = _history_frame(
+            d, r, date, cal, close.loc[date], str(split_values[0]), market=market
         )
-    _add_first_alert_fields(frames)
+        # 严格 as-of 首次预警标记：本轮预警段首次出现 6-12m 顶部区间或集群时置 True
+        w_map = frame.get("w") or {}
+        cl_map = frame.get("clusters") or {}
+        cur_active = bool(w_map.get("6-12m") or cl_map.get("6-12m"))
+        frame["first_alert_flag"] = bool(cur_active and not prev_active)
+        prev_active = cur_active
+        frames.append(frame)
 
     top_logp = load_drawdown_logp(sym)
     top_values = top_logp.to_numpy()
@@ -687,7 +772,6 @@ def history(sym: str, market: str = "cn") -> dict:
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "frames": frames,
         "tops": tops,
-        "fco_intensity_rule": "6–12 月与 12–24 月两档全部窗口中合格拟合（box）的比例",
     }
 
 
