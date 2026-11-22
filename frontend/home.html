@@ -66,6 +66,13 @@ a.row:hover{background:#f7f9fd}
 .row .s{grid-column:1;grid-row:2;align-self:start;text-align:left;font-size:12px;color:var(--mute);overflow-wrap:anywhere}
 .row .s.on{color:var(--warn)}
 .row .w{grid-column:1/-1;font-size:12px;color:var(--warn);margin-top:4px}
+.row .act-strip{grid-column:1/-1;margin-top:6px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;line-height:1.4}
+.row .act-strip[data-tone="green"],.row .act-strip[data-tone="emerald"]{background:#effaf4;border-color:#bfe4d2;color:#0e6545}
+.row .act-strip[data-tone="amber"]{background:#fff8eb;border-color:#f0dcb4;color:#8c5400}
+.row .act-strip[data-tone="red"]{background:#fdeef0;border-color:#f4c4c9;color:#9f1f2a}
+.row .act-strip[data-tone="gray"]{background:#f6f8fb;border-color:#e3e7ee;color:#4c525e}
+.row .act-pos{font-weight:700;white-space:nowrap}
+.row .act-meta{font-size:11px;opacity:.9;overflow-wrap:anywhere}
 .pf{padding:10px 20px;border-top:1px solid var(--line2);font-size:12px;color:var(--mute);display:flex;gap:12px;align-items:center}
 .pf a{margin-left:auto;color:var(--pri);font-weight:600;white-space:nowrap}
 .sk{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#eef1f6 25%,#f6f8fb 50%,#eef1f6 75%);background-size:200% 100%;animation:sk 1.2s linear infinite}
@@ -138,6 +145,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 @media(max-width:720px){.wrap{padding:0 16px}.kpis{grid-template-columns:1fr 1fr}.ent,.evi,.cases{grid-template-columns:1fr}section{padding:56px 0}.hd h2{font-size:24px}.row{grid-template-columns:minmax(0,1fr) 64px minmax(0,.9fr);padding:12px 16px}.row svg{width:64px}.row .spark-meta{font-size:9px}.row .times{white-space:normal}.row .lag{display:block;margin-left:0}.fg{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
 </style>
+<script src="app/bottom-action.js"></script>
 <script src="app/home-data.js"></script>
 <script src="app/lppl-data.js"></script>
 <script src="app/home-sparkline.js"></script>
@@ -272,7 +280,9 @@ function renderIdxRows(){
   const chart=charts[i],period=chart.values.length?chart.values[chart.values.length-1]:0,ch=r.prev?r.last.close/r.prev.close-1:0;
   const lag=r.bars.reduce((n,b)=>n+(b.date>r.asof?1:0),0),dateText=shortDate(r.asof),lineColor=period>=0?'var(--up)':'var(--dn)';
   const insufficient=chart.bars.length<sparkRange;
-  return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="index.html?code=${r.sym}" aria-label="${E(r.name)}，近${SPARK_LABELS[sparkRange]} ${pct(period,1)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg class="sparkline" data-range="${sparkRange}" data-y-domain="${domain.min.toFixed(8)},${domain.max.toFixed(8)}" viewBox="0 0 80 30" aria-hidden="true"><line class="spark-zero" x1="2" x2="78" y1="${zeroY}" y2="${zeroY}"/><path class="spark-line" d="${sparkPath(chart.values,domain)}" stroke="${lineColor}"/></svg><div class="spark-meta ${period>=0?'up':'dn'}"><span>近${SPARK_LABELS[sparkRange]} ${pct(period,1)}</span>${insufficient?`<small>数据不足 ${sparkRange} 日</small>`:''}</div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.statusTitle || r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}</a></li>`}).join('');
+  const act=r.action;
+  const actHtml=act?`<div class="act-strip" data-tone="${E(act.tone)}"><span class="act-pos">${E(act.glyph)} ${E(act.positionLabel)} · ${E(act.positionText)}</span><span class="act-meta">${act.score>0?'综合分 '+act.score+'/100 · ':''}${E(act.canBuyLabel)}</span></div>`:'';
+  return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="index.html?code=${r.sym}" aria-label="${E(r.name)}，近${SPARK_LABELS[sparkRange]} ${pct(period,1)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg class="sparkline" data-range="${sparkRange}" data-y-domain="${domain.min.toFixed(8)},${domain.max.toFixed(8)}" viewBox="0 0 80 30" aria-hidden="true"><line class="spark-zero" x1="2" x2="78" y1="${zeroY}" y2="${zeroY}"/><path class="spark-line" d="${sparkPath(chart.values,domain)}" stroke="${lineColor}"/></svg><div class="spark-meta ${period>=0?'up':'dn'}"><span>近${SPARK_LABELS[sparkRange]} ${pct(period,1)}</span>${insufficient?`<small>数据不足 ${sparkRange} 日</small>`:''}</div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.statusTitle || r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}${actHtml}</a></li>`}).join('');
  return true;
 }
 function loadIdx(){
