@@ -1272,6 +1272,21 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         : (rb.state && String(rb.state).toLowerCase().includes('bear'))
           ? '破裂冷却期 · 等待 Omori 余震衰减与右侧结构确认后分批回补'
           : '常态观察 · 无活跃顶部聚类，按常规风控跟踪';
+    const dash = cs && cs.dashboard ? cs.dashboard : null;
+    const lightGlyph = { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚪' };
+    const coolRows = dash && Array.isArray(dash.dimensions) && dash.dimensions.length
+      ? [
+          ['三层综合判定', (lightGlyph[dash.verdict_light] || '⚪') + ' ' + dash.headline],
+          ...dash.dimensions.map((d) => [
+            (lightGlyph[d.light] || '⚪') + ' ' + d.name,
+            (d.value_text ? d.value_text + ' — ' : '') + (d.plain_text || ''),
+          ]),
+        ]
+      : [
+          ['当前冷却态', coolState],
+          ['耗散深度参照', dp.bucket ? ('当前回撤桶 ' + dp.bucket) : ((b.state_p || {}).note || '参考历史顶→谷回撤分位与筹码势阱')],
+          ['右侧确认规则', (b.entry_rule || {}).note || '等待熊市结束确认与市场宽度修复后分批进场（30%→30%→40%）'],
+        ];
     const P = [
       {
         badge: 'dev_only',
@@ -1284,12 +1299,10 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       },
       {
         badge: 'descriptive',
-        lead: '防过早回补三道锁：逃顶信号与再入场解耦，先过冷却期、再看耗散深度与右侧确认。',
-        rows: [
-          ['当前冷却态', coolState],
-          ['耗散深度参照', dp.bucket ? ('当前回撤桶 ' + dp.bucket) : ((b.state_p || {}).note || '参考历史顶→谷回撤分位与筹码势阱')],
-          ['右侧确认规则', (b.entry_rule || {}).note || '等待熊市结束确认与市场宽度修复后分批进场（30%→30%→40%）'],
-        ],
+        lead: dash && dash.headline
+          ? ('六维说人话底部与冷却期仪表盘：' + dash.headline + '（所有阈值均为经验参数，严格 PIT）')
+          : '防过早回补三道锁：逃顶信号与再入场解耦，先过冷却期、再看耗散深度与右侧确认。',
+        rows: coolRows,
       },
       {
         badge: (t.second_wave || {}).evidence || 'none',
