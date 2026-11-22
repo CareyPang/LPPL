@@ -22,7 +22,7 @@ from ..eval.dataset import SPLITS, _snapshot, price_series
 from ..labels.run_top import INDEXES
 from ..lppls import core as _core
 from ..lppls.core import K_POWER, design, lin_fit
-from ..optim.optimizers import de_lbfgsb, tcgrid_lm
+from ..optim.optimizers import de_lbfgsb, de_trf, tcgrid_lm
 
 # 搜索域版本（预登记 v1.7 §17.1）：v1 = 宽域（v1.1 登记：m∈[0.01,2]、ω∈[1,50]、t_c≤t₂+0.2dt）；
 # v2 = 原型 engine.js / Filimonov–Sornette 2013 域（m∈[0.01,0.99]、ω∈[2,25]、t_c≤t₂+min(0.2dt,115)）。
@@ -57,7 +57,7 @@ COLS = ["date", "n", "tc", "m", "w", "A", "B", "C1", "C2", "sse", "r2", "pow_tc"
 # §20 偏离 _g3：LPPLS_G3=1 → tcgrid_lm 与 de_lbfgsb 取最小 SSE（g3_src=哪一个赢）；§22 Q3：LPPLS_Q3=K>0 → 对过 box 的窗口做 K 个
 # 循环平移对照重拟，记 q3_p=(1+#{e*≤e})/(K+1)（e=√(SSE/n)/σ_y），未过 box 的窗口 q3_p=NaN。两者默认关闭，关闭时输出与现行逐位相同。
 G3 = os.environ.get("LPPLS_G3", "") == "1"
-OPTIMIZER_NAMES = {"tcgrid": "tcgrid_lm", "g3": "g3", "de": "de_lbfgsb"}
+OPTIMIZER_NAMES = {"tcgrid": "tcgrid_lm", "g3": "g3", "de": "de_lbfgsb", "de_trf": "de_trf"}
 OPT = os.environ.get("LPPLS_OPT", "g3" if G3 else "tcgrid")
 if OPT not in OPTIMIZER_NAMES:
     raise ValueError(f"LPPLS_OPT must be one of {sorted(OPTIMIZER_NAMES)}, got {OPT!r}")
@@ -149,6 +149,9 @@ def fit_one(y: np.ndarray, opt: str | None = None) -> tuple:
     if effective_opt == "de":
         r2 = de_lbfgsb(t, y, lo, hi, seed=0)
         r, src = r2, "de_lbfgsb"
+    elif effective_opt == "de_trf":
+        r2 = de_trf(t, y, lo, hi, seed=0)
+        r, src = r2, "de_trf"
     else:
         r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)
         src = "tcgrid_lm"
@@ -205,6 +208,8 @@ def _q3_p(y: np.ndarray, row: tuple, lo, hi, n_random: int, opt: str | None = No
         if effective_opt == "de":
             f2 = de_lbfgsb(t, ys, lo, hi, seed=0)
             f = f2
+        elif effective_opt == "de_trf":
+            f = de_trf(t, ys, lo, hi, seed=0)
         else:
             f = tcgrid_lm(t, ys, lo, hi, seed=0, n_random=n_random)
             if effective_opt == "g3":
