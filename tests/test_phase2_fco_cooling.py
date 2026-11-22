@@ -163,6 +163,7 @@ def test_episode_backtest_extract_and_null_baseline():
 def test_bottom_dashboard_pit_and_three_layers(tmp_path):
     """模块二六维说人话仪表盘：验证严格 PIT（不读取未来快照）、死猫跳拦截与三层达标合成。"""
     import json
+
     from research.eval.bottom_dashboard import build_bottom_dashboard
 
     cal = pd.bdate_range("2024-01-02", periods=140)

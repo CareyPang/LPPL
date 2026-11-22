@@ -327,7 +327,7 @@ def _eval_turnover(ohlc: pd.DataFrame, date: pd.Timestamp, close_pit: pd.Series)
     ma20 = float(vol.tail(20).mean())
     ratio20 = round(ma5 / ma20, 2) if ma20 > 0 else 1.0
     pct_cur = float((vol <= float(vol.iloc[-1])).mean())
-    had_dry_volume_20d = float((vol.tail(20).min() <= vol.quantile(0.20))) > 0
+    had_dry_volume_20d = float(vol.tail(20).min() <= vol.quantile(0.20)) > 0
     above_ma20 = len(close_pit) >= 20 and float(close_pit.iloc[-1]) >= float(close_pit.tail(20).mean())
 
     passed_bottom = bool(had_dry_volume_20d and ratio20 >= 1.05 and above_ma20)
