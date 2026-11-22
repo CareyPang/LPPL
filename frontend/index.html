@@ -199,6 +199,22 @@ a { color: var(--ink-2); text-decoration: none; }
 .bot-idx-tr { height: 5px; border-radius: 99px; background: #DCEBE4; overflow: hidden; }
 .bot-idx-tr i { display: block; height: 100%; background: #11845A; border-radius: 99px; }
 .bot-idx-ft { margin: 6px 0 0; padding-top: 6px; border-top: 1px dashed #CBE1D6; font-size: 11px; color: var(--ink-2); line-height: 1.5; }
+.act-box { margin: 8px 0 0; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: #F8FAFC; font-size: 12px; line-height: 1.5; }
+.act-box[data-tone="green"], .act-box[data-tone="emerald"] { background: #EFFAF4; border-color: #BFE4D2; color: #0E6545; }
+.act-box[data-tone="amber"] { background: #FFF8EB; border-color: #F0DCB4; color: #8C5400; }
+.act-box[data-tone="red"] { background: #FDEEF0; border-color: #F4C4C9; color: #9F1F2A; }
+.act-box-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-weight: 700; margin-bottom: 4px; }
+.act-box-pos { font-family: var(--f-m); font-size: 12px; padding: 1px 7px; border-radius: 99px; background: rgba(255,255,255,.78); border: 1px solid currentColor; }
+.act-box-v { margin: 4px 0 0; color: var(--ink-2); font-size: 12px; }
+.act-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 8px 0 2px; }
+.act-step { padding: 5px 6px; border-radius: 6px; border: 1px solid #D5E5DD; background: rgba(255,255,255,.72); font-size: 11px; color: var(--ink-3); line-height: 1.35; }
+.act-step b { display: block; font-family: var(--f-m); font-size: 12px; color: var(--ink); }
+.act-step.on { border-color: #11845A; background: #E3F6EC; color: #0E6545; }
+.act-step.on b { color: #0E6545; }
+.tk-tag { font-size: 10px; line-height: 1; padding: 2px 5px; border-radius: 99px; border: 1px solid var(--line); background: #F6F8FB; color: var(--ink-2); margin-left: 2px; }
+.tk-tag[data-tone="green"], .tk-tag[data-tone="emerald"] { background: #EFFAF4; border-color: #BFE4D2; color: #0E6545; font-weight: 600; }
+.tk-tag[data-tone="amber"] { background: #FFF8EB; border-color: #F0DCB4; color: #8C5400; }
+.tk-tag[data-tone="red"] { background: #FDEEF0; border-color: #F4C4C9; color: #9F1F2A; font-weight: 600; }
 .cks { list-style: none; margin: var(--s3) 0 0; padding: 0; border-top: 1px solid var(--line); }
 .cks li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s2); padding: var(--s2) 0; border-bottom: 1px solid var(--grid); }
 .ck-s { font: 600 11px/1.6 var(--f-m); color: var(--ink-3); }
@@ -438,6 +454,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 <script src="app/ui.js"></script>
 <script src="app/lppl-data.js"></script>
 <script src="app/scen-style.js"></script>
+<script src="app/bottom-action.js"></script>
 <script src="app/watchlist.js"></script>
 <script>
 (function () {
@@ -1308,8 +1325,27 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const coolSummary = dash0 && dash0.headline
       ? (' 抄底/冷却判定：' + (lightGlyph0[dash0.verdict_light] || '⚪') + ' ' + dash0.headline + '。')
       : (cs0 && cs0.phase ? (' 冷却态：' + (coolLabelMap[cs0.phase] || cs0.phase) + '。') : '');
+    const omoriDim0 = dash0 && Array.isArray(dash0.dimensions) ? dash0.dimensions.find((d) => d && d.id === 'omori') : null;
+    const lb0 = R.hist && R.hist.latestBottom ? R.hist.latestBottom : null;
+    const act0 = window.BottomAction
+      ? window.BottomAction.evaluate({
+          sym: R.sym.code,
+          hasTop: hasMainBubble,
+          score: lb0 ? lb0.score : 0,
+          factors: lb0 ? lb0.factors : null,
+          summary: R.hist ? R.hist.bottom_summary : null,
+          omoriRed: Boolean(omoriDim0 && omoriDim0.light === 'red'),
+        })
+      : null;
+    const actSummaryHtml = act0
+      ? `<div class="act-box" id="action-verdict" data-tone="${E(act0.tone)}">` +
+        `<div class="act-box-hd"><span>${E(act0.glyph)} ${E(act0.positionLabel)} · ${E(act0.canBuyLabel)}</span><span class="act-box-pos">${E(act0.positionText)}</span></div>` +
+        `<p class="act-box-v"><b>怎么买：</b>${E(act0.vehicle)}</p>` +
+        `</div>`
+      : '';
     $('vs').innerHTML = E(mainSummary + regimeSummary + coolSummary) +
-      ' ' + (window.CPEvidenceBadge ? window.CPEvidenceBadge.html('dev', { label: '开发段验证', detail: '6–12 月与 12–24 月档具备开发段证据，时间区间为簇内合格拟合 t_c 分位区间。' }) : '');
+      ' ' + (window.CPEvidenceBadge ? window.CPEvidenceBadge.html('dev', { label: '开发段验证', detail: '6–12 月与 12–24 月档具备开发段证据，时间区间为簇内合格拟合 t_c 分位区间。' }) : '') +
+      actSummaryHtml;
     appendEvidenceHelp($('vs'));
     if (!planTabPinned) {
       planTab = hasMainBubble ? 0 : 1;
@@ -1426,6 +1462,24 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           `（普通下跌基线 ${(Number(bs.baseline_win_rate_50w) * 100).toFixed(1)}%，<b>+${(Number(bs.win_rate_lift_50w) * 100).toFixed(1)}pp</b>），` +
           `50 周收益中位数 <b>${bs.median_ret_50w >= 0 ? '+' : ''}${(Number(bs.median_ret_50w) * 100).toFixed(1)}%</b>。`
         : '严格 PIT 四维合成：兼顾估值安全边际与止跌右侧确认，避免纯估值提前一年套牢。';
+      const omoriDim1 = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find((d) => d && d.id === 'omori') : null;
+      const act1 = window.BottomAction
+        ? window.BottomAction.evaluate({
+            sym: R.sym.code,
+            hasTop: hasTopSignal,
+            score: sc,
+            factors: f,
+            summary: bs,
+            omoriRed: Boolean(omoriDim1 && omoriDim1.light === 'red'),
+          })
+        : null;
+      const stepsHtml = act1 && window.BottomAction.STEPS
+        ? `<div class="act-steps" aria-label="30%-30%-40% 分批抄底节奏">` +
+          window.BottomAction.STEPS.map((st) =>
+            `<div class="act-step${act1.stepIndex >= st.idx ? ' on' : ''}"><b>${E(st.pct)}</b>${E(st.title)}<br>${E(st.cond)}</div>`
+          ).join('') +
+          `</div>`
+        : '';
       botIndexHtml =
         `<div class="bot-idx-card" id="bot-index-card">` +
         `<div class="bot-idx-hd"><span class="bot-idx-t">A 股多维底部综合指数 · ${E(scState)}</span><span class="bot-idx-sc">${sc}<small>/100</small></span></div>` +
@@ -1435,6 +1489,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         `<div class="bot-idx-b"><div><span>防死猫跳（20%）</span><span>${vStb}%</span></div><div class="bot-idx-tr"><i style="width:${vStb}%"></i></div></div>` +
         `<div class="bot-idx-b"><div><span>企稳没·均线（15%）</span><span>${vRgt}%</span></div><div class="bot-idx-tr"><i style="width:${vRgt}%"></i></div></div>` +
         `</div>` +
+        stepsHtml +
         `<p class="bot-idx-ft">${histProof}</p>` +
         `</div>`;
     }
@@ -1556,7 +1611,25 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     if (cur) document.querySelectorAll('.tk').forEach((x) => x.setAttribute('aria-current', String(x.dataset.c === cur.sym.label)));
   }
   (function ticker() {
-    Promise.all(LPPL.SYMS.map((x) => LPPL.load(x.sym).catch(() => null))).then((L) => {
+    Promise.all(LPPL.SYMS.map((x) =>
+      Promise.all([
+        LPPL.load(x.sym).catch(() => null),
+        LPPL.history ? LPPL.history(x.sym).catch(() => null) : Promise.resolve(null),
+      ]).then(([D, H]) => {
+        if (!D) return null;
+        const t = D.top || {}, w = t.window || {};
+        const cs = (D.raw && D.raw.cooling_state) || null;
+        const dash = cs && cs.dashboard ? cs.dashboard : null;
+        const omoriDim = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find((d) => d && d.id === 'omori') : null;
+        D._action = window.BottomAction && H
+          ? window.BottomAction.fromHistory(x.sym, H, {
+              hasTop: t.signal_status === 'signal' || Boolean(w.start),
+              omoriRed: Boolean(omoriDim && omoriDim.light === 'red'),
+            })
+          : null;
+        return D;
+      })
+    )).then((L) => {
       tickerData = L.filter(Boolean);
       drawTicker();
     });
@@ -1568,7 +1641,11 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         const s = b.slice(-60).map((x) => x.close), lo = Math.min(...s), hi = Math.max(...s), sw = 56, sh = 20;
         const sp = s.map((v, i) => (i ? 'L' : 'M') + (1 + i / (s.length - 1) * (sw - 2)).toFixed(1) + ' ' + (2 + (1 - (v - lo) / ((hi - lo) || 1)) * (sh - 4)).toFixed(1)).join('');
         const sc = s[s.length - 1] >= s[0] ? 'var(--up)' : 'var(--dn)';
-        return `<button class="tk" type="button" data-c="${E(D.name)}" aria-current="false" title="${E(D.name)} · ${q.date} · 迷你走势为最近 60 个交易日收盘"><span class="tk-n">${star ? '<span class="tk-star" aria-label="自选">★</span>' : ''}${E(D.name)}</span><svg class="tk-s" viewBox="0 0 ${sw} ${sh}" aria-hidden="true"><path d="${sp}" stroke="${sc}"/></svg><span class="tk-v ${cls}">${U.px(q.close)} ${U.sp(ch, 2)}</span></button>`;
+        const a = D._action;
+        const tag = a
+          ? `<span class="tk-tag" data-tone="${E(a.tone)}" title="${E(a.positionLabel + ' · ' + a.positionText)}">${a.tier === 'bottom_probe' ? '🟢30%' : a.tier === 'right_confirm' ? '✅加仓' : a.tier === 'top_risk' ? '🔴减仓' : a.score >= 20 ? '🟡' + a.score + '分' : '⚪观望'}</span>`
+          : '';
+        return `<button class="tk" type="button" data-c="${E(D.name)}" aria-current="false" title="${E(D.name)} · ${q.date}${a ? ' · ' + a.shortBadge : ''}"><span class="tk-n">${star ? '<span class="tk-star" aria-label="自选">★</span>' : ''}${E(D.name)}</span><svg class="tk-s" viewBox="0 0 ${sw} ${sh}" aria-hidden="true"><path d="${sp}" stroke="${sc}"/></svg><span class="tk-v ${cls}">${U.px(q.close)} ${U.sp(ch, 2)}</span>${tag}</button>`;
       }
   }
 
