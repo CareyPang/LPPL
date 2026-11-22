@@ -34,6 +34,29 @@ def test_de_trf_deterministic_and_registered():
     assert warm.sse <= base.sse + 1e-12
 
 
+def test_daily_fit_asof_de_trf_uses_adjacent_warm_starts(monkeypatch):
+    from research.pipeline import daily
+
+    dates = pd.bdate_range("2024-01-02", periods=160)
+    logp = pd.Series(np.linspace(1.0, 2.0, len(dates)), index=dates)
+    seen = []
+
+    def fake_fit_one(y, opt=None, warm_starts=None):
+        seen.append((len(y), opt, warm_starts))
+        n = len(y)
+        base_row = [n, float(n - 1 + 10.0), 0.5, 8.0]
+        return tuple(base_row + [0.0] * (len(daily.COLS) - 1 - len(base_row)))
+
+    monkeypatch.setattr(daily, "fit_one", fake_fit_one)
+    daily.fit_asof(logp, dates[-1], (60, 80, 100), opt="de_trf")
+
+    assert seen[0] == (60, "de_trf", None)
+    assert seen[1][0] == 80 and seen[1][1] == "de_trf"
+    assert seen[1][2] == [(89.0, 0.5, 8.0)]
+    assert seen[2][0] == 100 and seen[2][1] == "de_trf"
+    assert seen[2][2] == [(109.0, 0.5, 8.0)]
+
+
 def test_fco_intensity_and_cooling_state_pit():
     intensity0, active0 = export_contract._fco_intensity({"6-12m": 0.0, "12-24m": 0.0}, {"6-12m": [], "12-24m": []})
     assert intensity0 == 0.0 and active0 == 0

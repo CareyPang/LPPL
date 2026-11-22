@@ -42,10 +42,16 @@ def _objective(theta, t, y, k=K_LPPLS):
 def _resid(theta, t, y, k=K_LPPLS):
     w = theta[2] if len(theta) > 2 else 0.0
     X = design(t, theta[0], theta[1], w, k)
-    if X is None:
+    if X is None or not np.all(np.isfinite(X)):
         return np.full_like(y, 1e3)
-    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
-    return y - X @ beta
+    try:
+        beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+        res = y - X @ beta
+    except np.linalg.LinAlgError:
+        return np.full_like(y, 1e3)
+    if not np.all(np.isfinite(res)):
+        return np.full_like(y, 1e3)
+    return res
 
 
 def _polish(theta, t, y, lo, hi, k=K_LPPLS) -> tuple[np.ndarray, float, int]:

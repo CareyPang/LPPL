@@ -358,7 +358,8 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
         {"cron": "45 7 * * 1-5"},
         {"cron": "0 11 * * 1-5"},
     ]
-    assert triggers["workflow_dispatch"] is None
+    assert "workflow_dispatch" in triggers
+    assert triggers["workflow_dispatch"]["inputs"]["opt"]["default"] == "de_trf"
     assert 'asof="$(python -c \'from research.data.trading_date import latest_closed_trading_day; print(latest_closed_trading_day())\')"' in plan_step["run"]
     assert 'symbols=\'["sh000001","sh000016","sh000300","sh000905","sh000688","sz399001","sz399006"]\'' in plan_step["run"]
     assert 'symbols=\'["sh000001"]\'' in plan_step["run"]
@@ -377,7 +378,7 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     assert fit["strategy"]["fail-fast"] is False
     assert fit["strategy"]["max-parallel"] == 7
     assert 'LPPLS_BOX=v2 python -m research.pipeline.daily "$SYM"' in run_index["run"]
-    assert '--asof "$ASOF" --out out/index' in run_index["run"]
+    assert '--asof "$ASOF" --opt "$LPPLS_DAILY_OPT" --out out/index' in run_index["run"]
     assert upload["with"]["name"] == (
         "index-fit-${{ matrix.sym }}-${{ github.run_id }}-${{ github.run_attempt }}"
     )

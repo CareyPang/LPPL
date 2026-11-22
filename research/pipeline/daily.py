@@ -51,10 +51,20 @@ def fit_asof(
     if i < 0:
         raise ValueError(f"as-of {asof.date()} 不是交易日")
     rows = []
+    prev_n: int | None = None
+    prev_theta: tuple[float, float, float] | None = None
     for n in windows:
         if i + 1 < n:
             continue
-        rows.append((asof, *fit_one(logp.iloc[i + 1 - n : i + 1].to_numpy(), opt=opt)))
+        warm_starts = None
+        if opt == "de_trf" and prev_theta is not None and prev_n is not None:
+            # 将相邻窗长的 ahead = tc - (prev_n - 1) 映射到当前窗长作为 TRF 热启动候选
+            prev_ahead = prev_theta[0] - (prev_n - 1)
+            warm_starts = [(float(n - 1 + prev_ahead), prev_theta[1], prev_theta[2])]
+        row = fit_one(logp.iloc[i + 1 - n : i + 1].to_numpy(), opt=opt, warm_starts=warm_starts)
+        rows.append((asof, *row))
+        prev_n = int(n)
+        prev_theta = (float(row[1]), float(row[2]), float(row[3]))
     d = pd.DataFrame(rows, columns=COLS)
     lp = logp.to_numpy()
     d["y_std"] = [lp[i + 1 - n : i + 1].std() for n in d.n]
@@ -105,9 +115,10 @@ def main() -> None:
     ap.add_argument("--asof")
     ap.add_argument("--windows", help="逗号分隔窗口长度（自检用）")
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--opt", default="g3", choices=sorted(OPTIMIZER_NAMES))
     a = ap.parse_args()
     ws = tuple(int(x) for x in a.windows.split(",")) if a.windows else None
-    p = run(a.sym, a.frozen, a.asof, ws, out=a.out, opt="g3")
+    p = run(a.sym, a.frozen, a.asof, ws, out=a.out, opt=a.opt)
     rec = json.loads(p.read_text())
     print(p, json.dumps(rec["top"]["lppls_confidence"], ensure_ascii=False))
 
