@@ -1,7 +1,8 @@
 # LPPL 金融物理系统完整架构（时间层 × 价格层 × 底部引擎）与实战抄底手册
 
 > **文档定位**：本文件为 `CareyPang/LPPL` 项目的系统总纲与实战操作指南，**可直接完整喂给 GPT / LLM 作为深度审阅、策略讨论与二次开发的上下文**。
-> **最新同步基准**：截至 `2026-11-20`（7 大 A 股宽基指数 `*_history.json` 已完成全量周度回测延续，PR #168–#175 全部合并进 `main`）。
+> **配套规范**：全部打分信号的精确公式、权重、红绿柱降噪阈值与 5 档仓位映射见 [`docs/SCORING_SIGNALS_SPEC.md`](./SCORING_SIGNALS_SPEC.md)；2026-11-22 实战复盘见 [`docs/CONVERSATION_AND_PLAYBOOK_LOG_2026_11_22.md`](./CONVERSATION_AND_PLAYBOOK_LOG_2026_11_22.md)。
+> **最新同步基准**：截至 `2026-11-20`（7 大 A 股宽基指数 `*_history.json` 已完成全量周度回测延续，PR #168–#179 全部合并进 `main`）。
 
 ---
 
