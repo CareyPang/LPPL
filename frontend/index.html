@@ -1203,11 +1203,23 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       : '截止日 ' + R.asof) + ' · 日波动 ' + U.pct(rm.sigma, 2);
 
     // 结论
-    const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {};
+    const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, cs0 = J.cooling_state || null;
+    const ind0 = t.indicators || {};
+    const extraScales = Object.keys(ind0).filter(k => k !== '6-12m' && k !== '12-24m' && ind0[k] && ind0[k].signal_status === 'signal');
+    const coolLabelMap = {
+      active_top: '顶部活跃·严禁追高',
+      cooling_after_top: '余震冷却期·暂不抄底',
+      reentry_watch: '冷却解除·可右侧观察',
+      normal: '常态观察·无冷却限制',
+    };
     $('vh').textContent = SIG[t.signal_status] || ('状态：' + (t.signal_status || '—'));
     $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
-    $('vs').innerHTML = E((w.start ? '6–12 月档临界区间 ' + U.range(w.start, w.end, R.asof, last) + '。' : (w.rule || '当前未触发 6–12 月档顶部聚类。')) +
-      (rb.state ? ' 体制带（' + rb.month + '）：' + (REG[rb.state] || rb.state) + '。' : '')) +
+    const mainSummary = w.start
+      ? '6–12 月档临界区间 ' + U.range(w.start, w.end, R.asof, last) + '。'
+      : ('当前无 6–12 月档正向泡沫红柱' + (extraScales.length ? '（仅 ' + extraScales.map(k => SCN[k] || k).join('、') + ' 存在零散短/长尺度拟合）' : '') + '。');
+    const regimeSummary = rb.state ? (' 体制带（' + rb.month + '）：' + (REG[rb.state] || rb.state) + '。') : '';
+    const coolSummary = cs0 && cs0.phase ? (' 冷却态：' + (coolLabelMap[cs0.phase] || cs0.phase) + '。') : '';
+    $('vs').innerHTML = E(mainSummary + regimeSummary + coolSummary) +
       ' ' + (window.CPEvidenceBadge ? window.CPEvidenceBadge.html('dev', { label: '开发段验证', detail: '6–12 月与 12–24 月档具备开发段证据，时间区间为簇内合格拟合 t_c 分位区间。' }) : '');
     appendEvidenceHelp($('vs'));
     renderScaleBar();

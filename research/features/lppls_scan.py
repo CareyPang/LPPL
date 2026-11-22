@@ -129,7 +129,7 @@ def _effective_opt(opt: str | None) -> str:
     return effective
 
 
-def fit_one(y: np.ndarray, opt: str | None = None) -> tuple:
+def fit_one(y: np.ndarray, opt: str | None = None, warm_starts=None) -> tuple:
     effective_opt = _effective_opt(opt)
     n = len(y)
     t = np.arange(n, dtype=float)
@@ -150,7 +150,7 @@ def fit_one(y: np.ndarray, opt: str | None = None) -> tuple:
         r2 = de_lbfgsb(t, y, lo, hi, seed=0)
         r, src = r2, "de_lbfgsb"
     elif effective_opt == "de_trf":
-        r2 = de_trf(t, y, lo, hi, seed=0)
+        r2 = de_trf(t, y, lo, hi, seed=0, warm_starts=warm_starts)
         r, src = r2, "de_trf"
     else:
         r = tcgrid_lm(t, y, lo, hi, seed=0, n_random=n_random)
