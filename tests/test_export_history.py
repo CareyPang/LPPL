@@ -85,6 +85,7 @@ def test_history_contract_exposes_per_scale_evidence_and_recompute_metadata(
         "_history_frame",
         lambda _d, _r, date, _cal, close, split, **_kwargs: {
             "asof": str(date.date()), "close": close, "split": split,
+            "w": {scale: None for scale in export_contract.HISTORY_SCALES},
         },
     )
     monkeypatch.setattr(export_contract, "load_drawdown_logp", lambda _sym: logp)

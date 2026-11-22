@@ -179,11 +179,16 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
                 _to_cal(cal, date, float(row.q80), market),
             ]
     conf = _conf(dd, rr, date)
+    fco_rows = dd.n.between(
+        SCALES_FCO6["6-12m"][0], SCALES_FCO6["12-24m"][1]
+    )
     frame = {
         "asof": str(date.date()),
         "split": split,
         "close": round(float(close), 2),
         "conf": {scale: conf[scale] for scale in HISTORY_SCALES},
+        "fco_intensity": round(float(rr.box[fco_rows].mean()), 3) if fco_rows.any() else None,
+        "fco_scales_active": sum(windows[scale] is not None for scale in HISTORY_SCALES),
         "w": windows,
         "clusters": _scale_cluster_records(
             q,
@@ -198,6 +203,20 @@ def _history_frame(d: pd.DataFrame, r: pd.DataFrame, date: pd.Timestamp,
         scen = scenarios(q) if len(q) else pd.DataFrame()
         frame["scenarios"] = _scenario_records(fit_rows, scen, gg, cal, date, market)
     return frame
+
+
+def _add_first_alert_fields(frames: list[dict]) -> None:
+    previous_windows = None
+    for frame in frames:
+        windows = frame["w"]
+        scales = [
+            scale for scale in HISTORY_SCALES
+            if windows[scale] is not None
+            and (previous_windows is None or previous_windows[scale] is None)
+        ]
+        frame["first_alert_flag"] = bool(scales)
+        frame["first_alert_scales"] = scales
+        previous_windows = windows
 
 
 def _top_window(
@@ -645,6 +664,7 @@ def history(sym: str, market: str = "cn") -> dict:
                 d, r, date, cal, close.loc[date], str(split_values[0]), market=market
             )
         )
+    _add_first_alert_fields(frames)
 
     top_logp = load_drawdown_logp(sym)
     top_values = top_logp.to_numpy()
@@ -667,6 +687,7 @@ def history(sym: str, market: str = "cn") -> dict:
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "frames": frames,
         "tops": tops,
+        "fco_intensity_rule": "6–12 月与 12–24 月两档全部窗口中合格拟合（box）的比例",
     }
 
 
