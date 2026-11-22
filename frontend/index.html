@@ -1245,12 +1245,21 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const R = cur, t = R.top, b = R.J.bottom || {}, dp = R.J.drawdown_pct || {}, rb = R.J.regime_band || {};
     document.querySelectorAll('#seg [role=tab]').forEach((x, i) => { x.setAttribute('aria-selected', String(i === planTab)); x.tabIndex = i === planTab ? 0 : -1; });
     $('plan').setAttribute('aria-labelledby', 'sg-' + planTab);
+    const cs = R.J.cooling_state || null;
     const hasTopSignal = t.signal_status === 'signal' || Boolean(t.window && t.window.start);
-    const coolState = hasTopSignal
-      ? '顶部聚类活跃 · 严禁左侧追高，等待泡沫置信度归零'
-      : (rb.state && String(rb.state).toLowerCase().includes('bear'))
-        ? '破裂冷却期 · 等待 Omori 余震衰减与右侧结构确认后分批回补'
-        : '常态观察 · 无活跃顶部聚类，按常规风控跟踪';
+    const coolPhaseMap = {
+      active_top: '顶部聚类活跃 · 严禁左侧追高，等待泡沫置信度归零',
+      cooling_after_top: '破裂余震冷却期 · 等待大阴线衰减与最小冷却周期完成',
+      reentry_watch: '冷却期解除观察 · 可结合历史回撤分位与右侧宽度确认分批回补',
+      normal: '常态观察 · 无活跃顶部聚类与冷却限制',
+    };
+    const coolState = cs && cs.phase
+      ? (coolPhaseMap[cs.phase] || cs.phase) + (cs.elapsed_days_since_peak != null ? `（距高点 ${cs.elapsed_days_since_peak} 交易日` + (cs.drawdown_from_peak != null ? `，回撤 ${(cs.drawdown_from_peak * 100).toFixed(1)}%` : '') + '）' : '')
+      : hasTopSignal
+        ? '顶部聚类活跃 · 严禁左侧追高，等待泡沫置信度归零'
+        : (rb.state && String(rb.state).toLowerCase().includes('bear'))
+          ? '破裂冷却期 · 等待 Omori 余震衰减与右侧结构确认后分批回补'
+          : '常态观察 · 无活跃顶部聚类，按常规风控跟踪';
     const P = [
       {
         badge: 'dev_only',
