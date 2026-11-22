@@ -181,9 +181,23 @@
     });
   }
 
+  /** 从 overview_latest.json 中的单条指数摘要直接评估（免下载完整历史帧） */
+  function fromOverviewItem(item, opts) {
+    if (!item) return evaluate(opts || {});
+    return evaluate({
+      sym: item.sym,
+      hasTop: Boolean((opts && opts.hasTop) || item.has_top),
+      score: item.bottom_score != null ? item.bottom_score : (item.fco_neg_intensity || 0),
+      factors: item.bottom_factors || null,
+      summary: item.bottom_summary || null,
+      omoriRed: Boolean(opts && opts.omoriRed),
+    });
+  }
+
   return {
     evaluate,
     fromHistory,
+    fromOverviewItem,
     STEPS: [
       { idx: 1, pct: '30%', title: '第 1 笔 · 试探仓', cond: '综合分≥50 且止跌（买宽基 ETF 打底）' },
       { idx: 2, pct: '30%', title: '第 2 笔 · 右侧仓', cond: '站稳 20 日均线 + 宽度回升（可切弹性）' },

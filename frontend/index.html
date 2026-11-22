@@ -1611,25 +1611,32 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     if (cur) document.querySelectorAll('.tk').forEach((x) => x.setAttribute('aria-current', String(x.dataset.c === cur.sym.label)));
   }
   (function ticker() {
-    Promise.all(LPPL.SYMS.map((x) =>
-      Promise.all([
-        LPPL.load(x.sym).catch(() => null),
-        LPPL.history ? LPPL.history(x.sym).catch(() => null) : Promise.resolve(null),
-      ]).then(([D, H]) => {
-        if (!D) return null;
-        const t = D.top || {}, w = t.window || {};
-        const cs = (D.raw && D.raw.cooling_state) || null;
-        const dash = cs && cs.dashboard ? cs.dashboard : null;
-        const omoriDim = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find((d) => d && d.id === 'omori') : null;
-        D._action = window.BottomAction && H
-          ? window.BottomAction.fromHistory(x.sym, H, {
-              hasTop: t.signal_status === 'signal' || Boolean(w.start),
-              omoriRed: Boolean(omoriDim && omoriDim.light === 'red'),
-            })
-          : null;
-        return D;
-      })
-    )).then((L) => {
+    const ovPromise = LPPL.overview ? LPPL.overview().catch(() => null) : Promise.resolve(null);
+    ovPromise.then((ov) => {
+      const ovMap = {};
+      if (ov && Array.isArray(ov.indices)) ov.indices.forEach((it) => { if (it && it.sym) ovMap[it.sym] = it; });
+      return Promise.all(LPPL.SYMS.map((x) => {
+        const ovItem = ovMap[x.sym] || null;
+        return Promise.all([
+          LPPL.load(x.sym).catch(() => null),
+          !ovItem && LPPL.history ? LPPL.history(x.sym).catch(() => null) : Promise.resolve(null),
+        ]).then(([D, H]) => {
+          if (!D) return null;
+          const t = D.top || {}, w = t.window || {};
+          const cs = (D.raw && D.raw.cooling_state) || null;
+          const dash = cs && cs.dashboard ? cs.dashboard : null;
+          const omoriDim = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find((d) => d && d.id === 'omori') : null;
+          const opts = {
+            hasTop: t.signal_status === 'signal' || Boolean(w.start),
+            omoriRed: Boolean(omoriDim && omoriDim.light === 'red'),
+          };
+          D._action = window.BottomAction
+            ? (ovItem ? window.BottomAction.fromOverviewItem(ovItem, opts) : (H ? window.BottomAction.fromHistory(x.sym, H, opts) : null))
+            : null;
+          return D;
+        });
+      }));
+    }).then((L) => {
       tickerData = L.filter(Boolean);
       drawTicker();
     });

@@ -65,13 +65,26 @@ test('bottom-action evaluates all 7 published *_history.json files cleanly', () 
   assert.equal(out.sh000001.tier, 'neutral');
 });
 
-test('home.html and index.html wire bottom-action.js next to each index', () => {
+test('home.html, index.html, backtest.html wire overview_latest.json, radar bar and bottom ledger', () => {
   const home = fs.readFileSync(path.join(__dirname, '..', 'home.html'), 'utf8');
   const idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const bt = fs.readFileSync(path.join(__dirname, '..', 'backtest.html'), 'utf8');
+  const ov = JSON.parse(fs.readFileSync(path.join(ROOT, 'web/mock/data/overview_latest.json'), 'utf8'));
+
+  assert.equal(ov.indices.length, 7);
+  const kc = BottomAction.fromOverviewItem(ov.indices.find((x) => x.sym === 'sh000688'));
+  assert.equal(kc.tier, 'bottom_probe');
+  assert.equal(kc.targetPct, 30);
+
   assert.match(home, /app\/bottom-action\.js/);
   assert.match(home, /class="act-strip"/);
+  assert.match(home, /id="radar-bar"/);
+  assert.match(home, /id="radar-sort"/);
   assert.match(idx, /app\/bottom-action\.js/);
   assert.match(idx, /id="action-verdict"/);
   assert.match(idx, /class="act-steps"/);
   assert.match(idx, /class="tk-tag"/);
+  assert.match(bt, /id="ov-strip"/);
+  assert.match(bt, /data-ledger-mode="bottom"/);
+  assert.match(bt, /id="bottom-rows"/);
 });
