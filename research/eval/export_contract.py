@@ -194,32 +194,23 @@ def _cooling_state(
     band: pd.Series | None,
     price_band: dict,
 ) -> dict:
-    """逃顶后防过早回补三道防线状态（严格 Point-in-Time，仅用截至 as-of 日的已收盘数据）。"""
+    """逃顶后防过早回补 + 六维说人话底部仪表盘（严格 Point-in-Time，仅用截至 as-of 日的已收盘数据）。"""
+    from .bottom_dashboard import build_bottom_dashboard
+
     close = _close(ohlc, cal)
     close_pit = close[close.index <= date].dropna()
-    tail = close_pit.tail(252)
-    drawdown_from_peak: float | None = None
-    elapsed_days_since_peak: int | None = None
-    omori_aftershock_active = False
-    if len(tail) >= 2:
-        peak_idx = tail.idxmax()
-        peak_val = float(tail.loc[peak_idx])
-        cur_val = float(tail.iloc[-1])
-        if peak_val > 0:
-            drawdown_from_peak = round(cur_val / peak_val - 1.0, 4)
-        elapsed_days_since_peak = int(len(tail.loc[peak_idx:]) - 1)
-        # Omori 余震代理：近 15 个交易日出现 >=2 次单日跌幅 <= -2.5% 或近 10 日年化波动显著放大
-        rets = tail.pct_change().dropna()
-        recent15 = rets.tail(15)
-        big_drops = int((recent15 <= -0.025).sum())
-        vol10 = float(rets.tail(10).std() * np.sqrt(252)) if len(rets) >= 10 else 0.0
-        vol60 = float(rets.tail(60).std() * np.sqrt(252)) if len(rets) >= 20 else vol10
-        omori_aftershock_active = big_drops >= 2 or (vol60 > 0 and vol10 > vol60 * 1.35)
 
     c6 = ((ind.get("6-12m") or {}).get("confidence") or {}).get("box")
     c12 = ((ind.get("12-24m") or {}).get("confidence") or {}).get("box")
     top_conf_cleared = (c6 is None or float(c6) < 0.05) and (c12 is None or float(c12) < 0.05)
     has_active_top = bool(window and window.get("start")) or not top_conf_cleared
+
+    dashboard = build_bottom_dashboard(ohlc, close_pit, date, has_active_top)
+    omori = dashboard["omori"]
+    drawdown_from_peak = omori.get("drawdown_from_peak")
+    elapsed_days_since_peak = omori.get("elapsed_days_since_peak")
+    omori_aftershock_active = bool(omori.get("active"))
+
     regime_str = str(band.state) if band is not None and isinstance(band.state, str) else ""
     in_bear = "bear" in regime_str.lower() or (drawdown_from_peak is not None and drawdown_from_peak <= -0.15)
     min_cooling_days = 20
@@ -231,26 +222,35 @@ def _cooling_state(
     elif in_bear and (omori_aftershock_active or (elapsed_days_since_peak is not None and elapsed_days_since_peak < min_cooling_days)):
         phase = "cooling_after_top"
         reentry_ready = False
-        note = "处于破裂余震冷却期，等待高频大阴线衰减与最小冷却周期完成"
+        note = omori.get("plain_text") or "处于破裂余震冷却期，等待高频大阴线衰减与最小冷却周期完成"
     elif in_bear:
         phase = "reentry_watch"
         reentry_ready = True
-        note = "顶部置信度已归零且余震衰减，可结合历史回撤分位与右侧宽度确认分批观察"
+        note = dashboard["headline"]
     else:
         phase = "normal"
         reentry_ready = True
-        note = "无活跃顶部聚类与余震冷却限制，处于常态结构观察期"
+        note = dashboard["headline"]
 
     return {
         "phase": phase,
         "top_conf_cleared": bool(top_conf_cleared),
         "omori_aftershock_active": bool(omori_aftershock_active),
+        "dead_cat_risk": bool(omori.get("dead_cat_risk")),
         "drawdown_from_peak": drawdown_from_peak,
         "elapsed_days_since_peak": elapsed_days_since_peak,
         "min_cooling_days": min_cooling_days,
         "drawdown_bucket": price_band.get("bucket") if isinstance(price_band, dict) else None,
         "reentry_ready": bool(reentry_ready),
         "note": note,
+        "dashboard": {
+            "verdict": dashboard["verdict"],
+            "verdict_light": dashboard["verdict_light"],
+            "headline": dashboard["headline"],
+            "layers": dashboard["layers"],
+            "dimensions": dashboard["dimensions"],
+            "note": dashboard["note"],
+        },
         "evidence": "descriptive",
     }
 
@@ -762,6 +762,11 @@ def history(sym: str, market: str = "cn") -> dict:
         }
         for i in peaks
     ]
+    from .bottom_dashboard import compute_fco_neg_intensity_series
+    from .episode_backtest import summarize_history_episodes
+
+    frames = compute_fco_neg_intensity_series(frames)
+
     return {
         "symbol": sym,
         "future_calendar": future_calendar_metadata(cal, market),
@@ -770,6 +775,7 @@ def history(sym: str, market: str = "cn") -> dict:
         "evidence": "dev_only",
         "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
+        "episode_summary": summarize_history_episodes(frames, tops, scales=HISTORY_SCALES),
         "frames": frames,
         "tops": tops,
     }

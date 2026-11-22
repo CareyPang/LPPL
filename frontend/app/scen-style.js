@@ -2,10 +2,10 @@
    只负责画法，不含任何数据或模型计算。输入全部来自 window.LPPL 取回的静态 JSON。 */
 (function (G) {
   'use strict';
-  const WARN = '#9A5B00', REAL = '#1F5FD6', FCO = '#D6303A';
+  const WARN = '#9A5B00', REAL = '#1F5FD6', FCO = '#D6303A', FCO_BOT = '#11845A';
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; };
   const CPSCN = {
-    WARN, REAL, FCO, rgba,
+    WARN, REAL, FCO, FCO_BOT, rgba,
     /* 同屏截止日多于该数量时进入"密集模式"：不画连接线，区间线更细，重叠处自然叠亮 */
     DENSE_PER_PX: 0.5,
     isDense(n, w) { return w > 0 && n / w > CPSCN.DENSE_PER_PX; },
@@ -36,6 +36,18 @@
       const x = Math.round(o.x - bw / 2);
       const y = Math.round(o.bottom - h);
       ctx.fillStyle = rgba(FCO, o.hot ? 0.72 : (0.18 + v * 0.42));
+      ctx.fillRect(x, y, bw, h);
+    },
+    /* FCO 风格绿色底部/负泡沫强度柱状图（底部向上，红顶绿底）：
+       o = { x, w, bottom, maxH, intensity, hot }，intensity ∈ [0, 1] */
+    drawFcoBottomBar(ctx, o) {
+      const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
+      if (v <= 0) return;
+      const h = Math.max(4, Math.round(v * o.maxH));
+      const bw = Math.max(2, Math.round(o.w || 4));
+      const x = Math.round(o.x - bw / 2);
+      const y = Math.round(o.bottom - h);
+      ctx.fillStyle = rgba(FCO_BOT, o.hot ? 0.72 : (0.18 + v * 0.42));
       ctx.fillRect(x, y, bw, h);
     },
     /* 严格 as-of 首次预警旗标（每轮泡沫第一次出现顶部聚类的截止日）：

@@ -77,6 +77,7 @@ a { color: var(--ink-2); text-decoration: none; }
 .lgd span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .sw { display: inline-block; width: 18px; height: 3px; background: var(--warn); }
 .sw.fco { width: 10px; height: 12px; background: rgba(214,48,58,.62); border-radius: 1px; }
+.sw.fcobot { width: 10px; height: 12px; background: rgba(17,132,90,.62); border-radius: 1px; }
 .sw.first { width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid #D6303A; }
 .sw.t { width: 0; height: 0; background: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--real); }
 .sw.s { width: 14px; height: 10px; background: rgba(31,95,214,.12); border: 1px solid rgba(31,95,214,.35); }
@@ -186,6 +187,10 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 .sp-props{width:100%;border-collapse:collapse;font-size:13px}.sp-props th{text-align:left;color:var(--ink-3,#6A6D78);font-weight:500;padding:8px;width:150px;border-bottom:1px solid var(--grid,#EEF1F6)}.sp-props td{padding:8px;border-bottom:1px solid var(--grid,#EEF1F6)}
 .sp-empty{color:var(--ink-3,#6A6D78);padding:16px 0}
 .alert-ledger{grid-column:1/-1;min-width:0;width:100%;padding:16px;background:var(--surface);border-top:1px solid var(--line)}
+.ep-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg,#F6F8FB)}
+.ep-kpi{display:grid;gap:2px;min-width:0}.ep-kpi span{font-size:11px;color:var(--ink-3,#6A6D78)}.ep-kpi b{font-family:var(--f-m,monospace);font-size:15px;font-weight:600;color:var(--ink,#131722);font-variant-numeric:tabular-nums}.ep-kpi small{font-size:11px;color:var(--ink-2,#4C525E)}
+.ep-verdict{grid-column:1/-1;font-size:12px;color:var(--ink-2,#4C525E);padding-top:6px;border-top:1px dashed var(--line);line-height:1.5}
+.ep-verdict b{color:var(--ink,#131722)}
 .al-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .al-title{min-width:0}.al-title h2{margin:0;font-size:18px;line-height:1.35}
 .al-note,.al-caveat{margin:6px 0 0;color:var(--ink-2);font-size:12px}.al-caveat{color:var(--warn)}
@@ -254,7 +259,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         <div class="sym-c" id="sym-c">周度截止日 · 6–12 月档</div>
       </div>
       <div class="lgd od-cluster" aria-label="图例">
-        <span><i class="sw fco"></i>FCO 泡沫强度柱</span>
+        <span><i class="sw fco"></i>FCO 顶部红柱</span>
+        <span><i class="sw fcobot"></i>FCO 底部绿柱</span>
         <span><i class="sw first"></i>首次预警（顶部聚类）</span>
         <span><i class="sw"></i>聚类区间<button type="button" class="ai-ask-inline" data-ai-ask="现在的顶部聚类区间是什么意思？">问研究助手</button></span>
         <span><i class="sw t"></i>事后确认顶</span>
@@ -284,7 +290,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <aside class="side" aria-label="说明" data-ai-context="说明">
     <section class="blk">
       <p class="blk-k">FCO 图读法</p>
-      <p><b>红色柱子</b>表示当时检测到顶部泡沫聚类的强度（类似 FCO 泡沫指标）；<b>红色旗标</b>标出每一轮泡沫第一次发出预警的严格 as-of 日期。</p>
+      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示超跌出清/负泡沫底部强度（FCO 底部观察，需配合六维仪表盘右侧确认）；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
       <p><b>琥珀横线</b>从截止日收盘价向右延伸到主簇/次级簇时间区间；<b>蓝色三角</b>为事后确认顶（顶后 126 交易日回撤 ≥15%）用于回测对照。</p>
       <p id="cluster-footnote"></p>
     </section>
@@ -310,6 +316,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       </div>
     </div>
     <p class="al-count" id="alert-count" aria-live="polite">共 0 次</p>
+    <div class="ep-summary" id="episode-summary" hidden aria-label="事件级回测摘要与随机基线对照"></div>
     <div class="al-scroll">
       <div class="al-table" role="table" aria-label="提醒明细">
         <div class="al-row al-row-head" role="row">
@@ -454,6 +461,9 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         const mainShare = frame.ranges[0] && Number.isFinite(frame.ranges[0].share) ? frame.ranges[0].share : (hasCur ? 0.45 : 0);
         frame.fcoIntensity = hasCur ? Math.min(1, 0.35 + mainShare * 0.45 + (hasOther ? 0.2 : 0)) : (hasOther ? 0.18 : 0);
       }
+      frame.fcoNegIntensity = frame.fco_neg_intensity != null && Number.isFinite(Number(frame.fco_neg_intensity))
+        ? Math.max(0, Math.min(1, Number(frame.fco_neg_intensity)))
+        : 0;
       frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
     });
     // 标记每一轮预警段（Episode）的首次预警日（strict as-of）
@@ -477,6 +487,40 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       : '研究级回溯：聚类区间占比不是概率，样本外证据状态见「三段验证」。';
     const showNumbers = CPAlertEvidence.showsNumbers(st.H, st.alertScale);
     count.textContent = blocked ? '暂无该尺度预警段' : '共 ' + episodes.length + ' 轮预警段（含首次预警日与事后顶对照）';
+    const epBox = $('episode-summary');
+    if (epBox) {
+      const es = (!blocked && st.H && st.H.episode_summary && st.H.episode_summary[st.alertScale]) || null;
+      if (!es || !es.n_episodes) {
+        epBox.hidden = true;
+        epBox.innerHTML = '';
+      } else {
+        const fmtP = (v) => (v == null || !Number.isFinite(Number(v)) ? '—' : (Number(v) * 100).toFixed(1) + '%');
+        const fmtPval = (v) => (v == null || !Number.isFinite(Number(v)) ? '—' : 'p=' + Number(v).toFixed(3));
+        const leadTxt = es.median_days_to_top != null ? (Math.round(Number(es.median_days_to_top)) + ' 天') : '—';
+        let verdictTxt = '暂无足够事后顶样本用于置换检验。';
+        if (es.p_value_buffered != null && es.null_hit_rate_buffered != null) {
+          const lift = Number(es.hit_rate_buffered) - Number(es.null_hit_rate_buffered);
+          if (Number(es.p_value_buffered) <= 0.05 && lift > 0) {
+            verdictTxt = `🟢 显著优于随机置放基线（±${es.buffer_days || 15} 日缓冲命中率高出随机基线 ${(lift * 100).toFixed(1)} 个百分点，${fmtPval(es.p_value_buffered)}）。`;
+          } else if (lift > 0) {
+            verdictTxt = `🟡 命中率高于随机置放基线（+${(lift * 100).toFixed(1)} 个百分点），但当前样本轮数下未达 5% 统计显著性（${fmtPval(es.p_value_buffered)}），仍按研究参考对待。`;
+          } else {
+            verdictTxt = `⚪ 当前尺度下命中率未显著高于同频随机置放基线（${fmtPval(es.p_value_buffered)}），请结合其它维度谨慎使用。`;
+          }
+        }
+        const spParts = ['dev', 'cal', 'test']
+          .filter((k) => es.by_split && es.by_split[k] && es.by_split[k].n_episodes > 0)
+          .map((k) => `${SPLIT[k]} ${es.by_split[k].n_episodes}轮(±15d ${fmtP(es.by_split[k].hit_rate_buffered)})`);
+        epBox.hidden = false;
+        epBox.innerHTML =
+          `<div class="ep-kpi"><span>事件级预警轮数</span><b>${es.n_episodes} 轮</b><small>按连续聚类归并</small></div>` +
+          `<div class="ep-kpi"><span>精确区间命中</span><b>${fmtP(es.hit_rate_exact)}</b><small>事后顶落入首次主簇</small></div>` +
+          `<div class="ep-kpi"><span>±${es.buffer_days || 15}日缓冲命中</span><b>${fmtP(es.hit_rate_buffered)}</b><small>容忍 ±${es.buffer_days || 15} 自然日</small></div>` +
+          `<div class="ep-kpi"><span>同频随机基线</span><b>${fmtP(es.null_hit_rate_buffered)}</b><small>300次置放 · ${fmtPval(es.p_value_buffered)}</small></div>` +
+          `<div class="ep-kpi"><span>中位提前天数</span><b>${leadTxt}</b><small>首次预警 → 事后顶</small></div>` +
+          `<div class="ep-verdict"><b>事件级检验结论：</b>${E(verdictTxt)}${spParts.length ? ' ｜ 分段：' + E(spParts.join(' · ')) : ''}</div>`;
+      }
+    }
     rows.innerHTML = episodes.map((episode) => {
       const id = episode.scale + ':' + episode.first_asof;
       const top = episode.next_top;
@@ -575,7 +619,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const fr = (Array.isArray(H.frames) ? H.frames : []).filter((f) => f.close != null).map((f) => ({
         asof: f.asof, split: f.split, close: f.close, w: f.w || {}, clusters: f.clusters,
         fco_intensity: f.fco_intensity, bubble_intensity: f.bubble_intensity,
-        t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, firstAlertEp: null,
+        fco_neg_intensity: f.fco_neg_intensity, bottom_first_alert_flag: Boolean(f.bottom_first_alert_flag),
+        t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, fcoNegIntensity: 0, firstAlertEp: null,
       })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
       const last = fr[fr.length - 1].t;
@@ -691,6 +736,11 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
           intensity: f.fcoIntensity, hot: f === hot,
         });
+      } else if (f.fcoNegIntensity > 0) {
+        CPSCN.drawFcoBottomBar(ctx, {
+          x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
+          intensity: f.fcoNegIntensity, hot: f === hot,
+        });
       }
     }
     // 聚类区间（含区间完全在窗口内/部分在窗口内的帧）
@@ -771,11 +821,15 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       ctx.fillStyle = rgba(col.real, sp === 'cal' ? 0.1 : 0.18); ctx.fillRect(px(s[0].t), 0, px(s[s.length - 1].t + 7 * DAY) - px(s[0].t), Hh);
     }
     ctx.strokeStyle = col.ink3; ctx.lineWidth = 1; ctx.beginPath(); all.forEach((f, i) => { const x = px(f.t), y = Y(f.close); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
-    // 缩略轴底部叠加 FCO 红色泡沫柱
+    // 缩略轴底部叠加 FCO 红色顶部柱与绿色底部柱
     for (const f of all) {
       if (f.fcoIntensity > 0) {
         ctx.fillStyle = rgba(CPSCN.FCO, 0.25 + f.fcoIntensity * 0.45);
         const h = Math.max(2, Math.round(f.fcoIntensity * 16));
+        ctx.fillRect(Math.round(px(f.t)), Hh - h, 2, h);
+      } else if (f.fcoNegIntensity > 0) {
+        ctx.fillStyle = rgba(CPSCN.FCO_BOT, 0.25 + f.fcoNegIntensity * 0.45);
+        const h = Math.max(2, Math.round(f.fcoNegIntensity * 16));
         ctx.fillRect(Math.round(px(f.t)), Hh - h, 2, h);
       }
     }
@@ -867,8 +921,10 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         ? `<br><span style="color:#D6303A;font-weight:600">● 首次预警日（持续 ${best.firstAlertEp.weeks} 周${best.firstAlertEp.days_to_top != null ? ' · 距事后顶 ' + best.firstAlertEp.days_to_top + ' 天' : ''}）</span>`
         : '';
       const fcoLine = best.fcoIntensity > 0
-        ? `<br><span style="color:#D6303A">FCO 泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
-        : '';
+        ? `<br><span style="color:#D6303A">FCO 顶部泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
+        : (best.fcoNegIntensity > 0
+          ? `<br><span style="color:#11845A">FCO 底部出清强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}</span>`
+          : '');
       const topText = top
         ? top.max_dd != null && Number.isFinite(Number(top.max_dd))
           ? `<br><span class="re">▼ 事后确认顶：${E(top.date)} · 回撤 ${pct(Number(top.max_dd))}</span>`

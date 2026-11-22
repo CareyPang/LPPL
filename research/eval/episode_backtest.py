@@ -183,6 +183,7 @@ def evaluate_episodes(
 
     return {
         "scale": scale,
+        "buffer_days": buffer_days,
         "n_episodes": n_ep,
         "hit_rate_exact": round(hit_exact, 4),
         "hit_rate_buffered": round(hit_buf, 4),
@@ -191,3 +192,47 @@ def evaluate_episodes(
         "median_days_to_top": round(median_lead, 1) if median_lead is not None else None,
         "episodes": episodes,
     }
+
+
+def summarize_history_episodes(
+    frames: list[dict[str, Any]],
+    tops: list[dict[str, Any]],
+    scales: tuple[str, ...] = ("6-12m", "12-24m"),
+    buffer_days: int = 15,
+    n_perm: int = 300,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """为 *_history.json 生成精简的事件级回测摘要（含全样本与 dev/cal/test 分段）。"""
+    out: dict[str, Any] = {}
+    for scale in scales:
+        full = evaluate_episodes(
+            frames, tops, scale=scale, buffer_days=buffer_days, n_perm=n_perm, seed=seed
+        )
+        by_split: dict[str, Any] = {}
+        for sp in ("dev", "cal", "test"):
+            sp_frames = [f for f in frames if f.get("split") == sp]
+            if not sp_frames:
+                continue
+            sp_eval = evaluate_episodes(
+                sp_frames, tops, scale=scale, buffer_days=buffer_days, n_perm=n_perm, seed=seed
+            )
+            by_split[sp] = {
+                "n_episodes": sp_eval["n_episodes"],
+                "hit_rate_exact": sp_eval["hit_rate_exact"],
+                "hit_rate_buffered": sp_eval["hit_rate_buffered"],
+                "null_hit_rate_buffered": sp_eval["null_hit_rate_buffered"],
+                "p_value_buffered": sp_eval["p_value_buffered"],
+                "median_days_to_top": sp_eval["median_days_to_top"],
+            }
+        out[scale] = {
+            "scale": scale,
+            "buffer_days": buffer_days,
+            "n_episodes": full["n_episodes"],
+            "hit_rate_exact": full["hit_rate_exact"],
+            "hit_rate_buffered": full["hit_rate_buffered"],
+            "null_hit_rate_buffered": full["null_hit_rate_buffered"],
+            "p_value_buffered": full["p_value_buffered"],
+            "median_days_to_top": full["median_days_to_top"],
+            "by_split": by_split,
+        }
+    return out
