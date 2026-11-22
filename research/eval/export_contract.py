@@ -762,7 +762,7 @@ def history(sym: str, market: str = "cn") -> dict:
         }
         for i in peaks
     ]
-    from .bottom_dashboard import compute_fco_neg_intensity_series
+    from .bottom_dashboard import compute_fco_neg_intensity_series, summarize_bottom_backtest
     from .episode_backtest import summarize_history_episodes
 
     frames = compute_fco_neg_intensity_series(frames)
@@ -776,6 +776,7 @@ def history(sym: str, market: str = "cn") -> dict:
         "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "episode_summary": summarize_history_episodes(frames, tops, scales=HISTORY_SCALES),
+        "bottom_summary": summarize_bottom_backtest(frames),
         "frames": frames,
         "tops": tops,
     }

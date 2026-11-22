@@ -541,7 +541,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (intensity > 0) {
         fcoFrames.push({ i, asof: f.asof, intensity, firstAlert, has6, has12 });
       } else if (negIntensity > 0) {
-        fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag) });
+        fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag), factors: f.bottom_factors || null });
       }
       if (has6) {
         frames.push({ i, lo: idxOf(b, w6[0]), hi: idxOf(b, w6[1]), asof: f.asof, split: f.split, w: w6, intensity, firstAlert });
@@ -1427,7 +1427,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         if (nearTop) {
           lines.push((nearTop.firstAlert ? '🔴 首次预警周 · ' : 'FCO 顶部泡沫周 · ') + '强度 ' + Math.round(nearTop.intensity * 100) + '%（' + nearTop.asof + '）');
         } else if (nearBot) {
-          lines.push((nearBot.firstBottom ? '🟢 底部企稳关注 · ' : 'FCO 底部出清周 · ') + '强度 ' + Math.round(nearBot.intensity * 100) + '%（' + nearBot.asof + '）');
+          const bf = nearBot.factors;
+          const det = bf && bf.erp_pct != null ? ` · ERP分位 ${Math.round(bf.erp_pct * 100)}% / 破净分位 ${bf.pbn_pct != null ? Math.round(bf.pbn_pct * 100) + '%' : '—'}` : '';
+          lines.push((nearBot.firstBottom ? '🟢 四维底部企稳关注 · ' : 'FCO 底部共振周 · ') + '强度 ' + Math.round(nearBot.intensity * 100) + '%' + det + '（' + nearBot.asof + '）');
         }
       }
     } else lines.push('截止日之后的推算区域，只有预测叠加层。');

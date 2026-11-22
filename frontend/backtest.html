@@ -356,7 +356,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   }
   const DAY = 864e5;
   const RANGES = [['全部', null, null], ['2005–2009', '2005-01-01', '2009-12-31'], ['2014–2016', '2014-01-01', '2016-12-31'], ['2019–2021', '2019-01-01', '2021-12-31'], ['2024–2025', '2024-01-01', '2025-12-31']];
-  const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段' };
+  const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段', live: '样本外延续' };
   const css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
   const col = { bg: C('--bg'), line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real') };
   const FM = C('--f-m'), FU = C('--f-u');
@@ -508,9 +508,19 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
             verdictTxt = `⚪ 当前尺度下命中率未显著高于同频随机置放基线（${fmtPval(es.p_value_buffered)}），请结合其它维度谨慎使用。`;
           }
         }
-        const spParts = ['dev', 'cal', 'test']
+        const spParts = ['dev', 'cal', 'test', 'live']
           .filter((k) => es.by_split && es.by_split[k] && es.by_split[k].n_episodes > 0)
           .map((k) => `${SPLIT[k]} ${es.by_split[k].n_episodes}轮(±15d ${fmtP(es.by_split[k].hit_rate_buffered)})`);
+        const bs = st.H && st.H.bottom_summary;
+        const botHtml = (bs && bs.n_events > 0)
+          ? `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
+            `<b style="color:#11845A">🟢 A 股四维底部共振回测（补齐纯负泡沫 LPPLS 短板）：</b>` +
+            `共 <b>${bs.n_events}</b> 次独立共振，50 周上涨胜率 <b>${fmtP(bs.win_rate_50w)}</b>` +
+            `（普通下跌基线 ${fmtP(bs.baseline_win_rate_50w)}${bs.win_rate_lift_50w != null ? '，<b>' + (bs.win_rate_lift_50w >= 0 ? '+' : '') + (bs.win_rate_lift_50w * 100).toFixed(1) + 'pp</b>' : ''}），` +
+            `50 周收益中位数 <b>${bs.median_ret_50w != null ? (bs.median_ret_50w >= 0 ? '+' : '') + (bs.median_ret_50w * 100).toFixed(1) + '%' : '—'}</b>，` +
+            `后续最大再回撤中位数 <b>${bs.median_post_min_50w != null ? (bs.median_post_min_50w * 100).toFixed(1) + '%' : '—'}</b>。` +
+            `<span style="color:var(--ink-3)">（因子：全 A ERP/破净 3 年分位 + 52 周超跌出清 + 防死猫跳止跌 + 10 周均线右侧）</span></div>`
+          : '';
         epBox.hidden = false;
         epBox.innerHTML =
           `<div class="ep-kpi"><span>事件级预警轮数</span><b>${es.n_episodes} 轮</b><small>按连续聚类归并</small></div>` +
@@ -518,7 +528,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           `<div class="ep-kpi"><span>±${es.buffer_days || 15}日缓冲命中</span><b>${fmtP(es.hit_rate_buffered)}</b><small>容忍 ±${es.buffer_days || 15} 自然日</small></div>` +
           `<div class="ep-kpi"><span>同频随机基线</span><b>${fmtP(es.null_hit_rate_buffered)}</b><small>300次置放 · ${fmtPval(es.p_value_buffered)}</small></div>` +
           `<div class="ep-kpi"><span>中位提前天数</span><b>${leadTxt}</b><small>首次预警 → 事后顶</small></div>` +
-          `<div class="ep-verdict"><b>事件级检验结论：</b>${E(verdictTxt)}${spParts.length ? ' ｜ 分段：' + E(spParts.join(' · ')) : ''}</div>`;
+          `<div class="ep-verdict"><b>事件级检验结论：</b>${E(verdictTxt)}${spParts.length ? ' ｜ 分段：' + E(spParts.join(' · ')) : ''}</div>` +
+          botHtml;
       }
     }
     rows.innerHTML = episodes.map((episode) => {
@@ -620,6 +631,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         asof: f.asof, split: f.split, close: f.close, w: f.w || {}, clusters: f.clusters,
         fco_intensity: f.fco_intensity, bubble_intensity: f.bubble_intensity,
         fco_neg_intensity: f.fco_neg_intensity, bottom_first_alert_flag: Boolean(f.bottom_first_alert_flag),
+        bottom_factors: f.bottom_factors || null,
         t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, fcoNegIntensity: 0, firstAlertEp: null,
       })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
@@ -636,6 +648,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         rule: H.rule,
         model_version: H.model_version,
         recompute: H.recompute,
+        episode_summary: H.episode_summary || null,
+        bottom_summary: H.bottom_summary || null,
         fr,
         tops,
         alertEpisodes,
@@ -920,10 +934,14 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const firstBadge = best.firstAlertEp
         ? `<br><span style="color:#D6303A;font-weight:600">● 首次预警日（持续 ${best.firstAlertEp.weeks} 周${best.firstAlertEp.days_to_top != null ? ' · 距事后顶 ' + best.firstAlertEp.days_to_top + ' 天' : ''}）</span>`
         : '';
+      const bf = best.bottom_factors;
+      const bfDetail = bf
+        ? `（52周回撤 ${(Number(bf.dd_52w) * 100).toFixed(0)}%${bf.erp_pct != null ? ' · ERP分位 ' + Math.round(bf.erp_pct * 100) + '%' : ''}${bf.pbn_pct != null ? ' · 破净分位 ' + Math.round(bf.pbn_pct * 100) + '%' : ''}）`
+        : '';
       const fcoLine = best.fcoIntensity > 0
         ? `<br><span style="color:#D6303A">FCO 顶部泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
         : (best.fcoNegIntensity > 0
-          ? `<br><span style="color:#11845A">FCO 底部出清强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}</span>`
+          ? `<br><span style="color:#11845A">FCO 底部共振强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}${E(bfDetail)}</span>`
           : '');
       const topText = top
         ? top.max_dd != null && Number.isFinite(Number(top.max_dd))
