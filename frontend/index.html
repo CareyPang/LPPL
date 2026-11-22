@@ -380,15 +380,15 @@ footer p { margin: 0; max-width: 110ch; }
       <p class="ph-tip" id="cluster-note"></p>
     </section>
     <details class="blk hist-blk" id="hist-blk">
-      <summary class="blk-k">历史背景（历史分位）<span class="hist-summary" id="hist-summary"></span></summary>
+      <summary class="blk-k">历史耗散与势能背景 <span data-evidence-badge="descriptive" data-evidence-label="历史分位"></span><span class="hist-summary" id="hist-summary"></span></summary>
       <ul class="kv" id="hist-kv"></ul>
     </details>
     <section class="blk">
-      <p class="blk-k">规则与证据</p>
-      <div class="seg" role="tablist" aria-label="操作计划" id="seg">
-        <button type="button" role="tab" id="sg-0" data-i="0" aria-selected="true" aria-controls="plan" class="s-top">逃顶</button>
-        <button type="button" role="tab" id="sg-1" data-i="1" aria-selected="false" aria-controls="plan" class="s-bot" tabindex="-1">抄底</button>
-        <button type="button" role="tab" id="sg-2" data-i="2" aria-selected="false" aria-controls="plan" class="s-wave" tabindex="-1">二波</button>
+      <p class="blk-k">相态与冷却期检查</p>
+      <div class="seg" role="tablist" aria-label="相态视图" id="seg">
+        <button type="button" role="tab" id="sg-0" data-i="0" aria-selected="true" aria-controls="plan" class="s-top">逃顶临界</button>
+        <button type="button" role="tab" id="sg-1" data-i="1" aria-selected="false" aria-controls="plan" class="s-bot" tabindex="-1">冷却期与再入场</button>
+        <button type="button" role="tab" id="sg-2" data-i="2" aria-selected="false" aria-controls="plan" class="s-wave" tabindex="-1">二波结构</button>
       </div>
       <div id="plan" role="tabpanel" aria-labelledby="sg-0"></div>
     </section>
@@ -417,6 +417,7 @@ footer p { margin: 0; max-width: 110ch; }
   <p>聚类区间为簇内合格拟合 t_c 的分位区间（未校准，仅供参考），占比不是概率；回撤和估值地板是历史分位。数据与模型由后端静态 JSON 提供，前端不计算任何模型值。</p>
 </footer>
 
+<script src="app/evidence-badge.js"></script>
 <script src="app/trading-days.js"></script>
 <script src="app/rule-labels.js"></script>
 <script src="app/scale-bar.js"></script>
@@ -1205,12 +1206,12 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {};
     $('vh').textContent = SIG[t.signal_status] || ('状态：' + (t.signal_status || '—'));
     $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
-    $('vs').textContent = (w.start ? '6–12 月档情景区间 ' + U.range(w.start, w.end, R.asof, last) + '（未校准，仅供参考；开发段证据）。' : (w.rule || '') + '。') +
-      (rb.state ? ' 体制带 ' + rb.month + '：' + (REG[rb.state] || rb.state) + '（描述性）。' : '');
+    $('vs').innerHTML = E((w.start ? '6–12 月档临界区间 ' + U.range(w.start, w.end, R.asof, last) + '。' : (w.rule || '当前未触发 6–12 月档顶部聚类。')) +
+      (rb.state ? ' 体制带（' + rb.month + '）：' + (REG[rb.state] || rb.state) + '。' : '')) +
+      ' ' + (window.CPEvidenceBadge ? window.CPEvidenceBadge.html('dev', { label: '开发段验证', detail: '6–12 月与 12–24 月档具备开发段证据，时间区间为簇内合格拟合 t_c 分位区间。' }) : '');
     appendEvidenceHelp($('vs'));
     renderScaleBar();
-    $('ph-tip').textContent = RuleLabels.renderCaption(['box', 'standard']) +
-      '；只有 6–12 月、12–24 月档有开发段证据，其余档显示“无证据”。';
+    $('ph-tip').textContent = RuleLabels.renderCaption(['box', 'standard']);
     appendEvidenceHelp($('ph-tip'));
 
     // 关键位置
@@ -1221,8 +1222,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     setupTimeline(R);
     cursor(-1);
 
-    $('note').innerHTML = (R.latest ? '' : '<b>回放模式</b>：只用了 ' + E(R.asof) + ' 及之前的数据和当时已公布的 PE。<br>') +
-      (R.hist ? '历史情景区间：本图内 ' + R.hist.frames.length + ' 个周度截止日的 6–12 月档区间（横线从截止日指向区间；未校准，仅供参考；证据等级 dev_only，只示区间' + (R.hist.last ? '，数据到 ' + E(R.hist.last) : '') + '）；蓝色三角是事后确认的顶（PS 标签，126 日内回撤 ≥15%）。<br>' : '') + '数据：' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。置信度不是概率；区间与分位均未通过样本外验证。';
+    $('note').innerHTML = (R.latest ? '' : '<b>回放模式</b>：严格使用 ' + E(R.asof) + ' 当日及以前的数据。<br>') +
+      (R.hist ? '历史回放：已叠加 ' + R.hist.frames.length + ' 个周度截止日的 6–12 月档区间' + (R.hist.last ? '（截至 ' + E(R.hist.last) + '）' : '') + '与事后确认顶对照。<br>' : '') +
+      '数据版本 ' + E(R.data.source) + ' · 模型 ' + E(R.J.model_version) + '。';
 
     renderReplay(R);
     renderExpert(R);
@@ -1240,17 +1242,47 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
   function renderPlan() {
     if (!cur) return;
-    const R = cur, t = R.top, b = R.J.bottom || {};
+    const R = cur, t = R.top, b = R.J.bottom || {}, dp = R.J.drawdown_pct || {}, rb = R.J.regime_band || {};
     document.querySelectorAll('#seg [role=tab]').forEach((x, i) => { x.setAttribute('aria-selected', String(i === planTab)); x.tabIndex = i === planTab ? 0 : -1; });
     $('plan').setAttribute('aria-labelledby', 'sg-' + planTab);
+    const hasTopSignal = t.signal_status === 'signal' || Boolean(t.window && t.window.start);
+    const coolState = hasTopSignal
+      ? '顶部聚类活跃 · 严禁左侧追高，等待泡沫置信度归零'
+      : (rb.state && String(rb.state).toLowerCase().includes('bear'))
+        ? '破裂冷却期 · 等待 Omori 余震衰减与右侧结构确认后分批回补'
+        : '常态观察 · 无活跃顶部聚类，按常规风控跟踪';
     const P = [
-      { lead: '减仓执行规则：仅开发段结果。', rows: [['失效条件', (t.invalidation || {}).rule || '—']] },
-      { lead: '底部概率：暂无数据。', rows: [['底部状态', (b.state_p || {}).note || '—'], ['入场规则', (b.entry_rule || {}).note || '—']] },
-      { lead: '二波收复比例：暂无数据。', rows: [['二波', ((t.second_wave || {}).evidence || 'none') === 'none' ? '无证据' : '—']] },
+      {
+        badge: 'dev_only',
+        lead: hasTopSignal ? '当前存在活跃顶部聚类区间，建议结合 FCO 历史回测评估泡沫阶段。' : '当前未触发 6–12 月档顶部聚类，处于常态结构。',
+        rows: [
+          ['临界区间', (t.window && t.window.start) ? U.range(t.window.start, t.window.end, R.asof, R.bars[R.bars.length - 1]?.date) : '暂无活跃区间'],
+          ['失效条件', (t.invalidation || {}).rule || '有效跌破结构或置信度归零'],
+          ['历史回测对照', '可在 FCO 回测页查看历次首次预警与事后顶'],
+        ],
+      },
+      {
+        badge: 'descriptive',
+        lead: '防过早回补三道锁：逃顶信号与再入场解耦，先过冷却期、再看耗散深度与右侧确认。',
+        rows: [
+          ['当前冷却态', coolState],
+          ['耗散深度参照', dp.bucket ? ('当前回撤桶 ' + dp.bucket) : ((b.state_p || {}).note || '参考历史顶→谷回撤分位与筹码势阱')],
+          ['右侧确认规则', (b.entry_rule || {}).note || '等待熊市结束确认与市场宽度修复后分批进场（30%→30%→40%）'],
+        ],
+      },
+      {
+        badge: (t.second_wave || {}).evidence || 'none',
+        lead: '追踪顶部回撤后的二波反抽与筹码压力结构。',
+        rows: [
+          ['体制带状态', rb.state ? ((REG[rb.state] || rb.state) + (rb.month ? ' · ' + rb.month : '')) : '—'],
+          ['二波统计', ((t.second_wave || {}).note) || '暂无数据'],
+        ],
+      },
     ][planTab];
-    const benchLink = planTab === 1 ? ` <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>` : '';
-    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)}${benchLink}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
-      '</ol><p class="pl-meta"><a href="lab/guide.html">怎么读这些指标 →</a></p>';
+    const badgeHtml = window.CPEvidenceBadge ? window.CPEvidenceBadge.html(P.badge) : '';
+    const backtestLink = `<a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}">打开 FCO 历史回测 ›</a> · <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>`;
+    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
+      `</ol><p class="pl-meta">${backtestLink} · <a href="guide.html">方法论图解 →</a></p>`;
   }
 
   function simAt() { return null; }

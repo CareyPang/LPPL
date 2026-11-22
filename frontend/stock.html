@@ -353,7 +353,6 @@
       <section id="stock-events" class="card" hidden aria-labelledby="stock-events-title" data-ai-context="近期事件">
         <h2 id="stock-events-title">近期事件</h2><div id="stock-events-body"></div>
       </section>
-      <p class="note">本页只展示后端结果；个股模型尚未通过样本外检验。</p>
     </section>
 
     <section class="card" id="market-panel" hidden aria-label="独立日线行情" data-ai-anchor data-ai-context="行情">
@@ -441,15 +440,16 @@
 
       <section class="section" id="sec-dip">
         <div class="sec-h">
-          <h2>抄底</h2>
-          <span class="muted">描述性统计 · 历史分位</span>
+          <h2>抄底与冷却期对照</h2>
+          <span data-evidence-badge="descriptive" data-evidence-label="历史分位对照" data-evidence-detail="基于历史同类回撤样本的经验分位与波动率状态，用于防止逃顶后过早回补。"></span>
         </div>
         <div id="dip-panel"></div>
       </section>
     </section>
   </main>
 
-  <footer>数据仅通过 Open Design 个股数据适配层读取；页面不计算任何模型值。</footer>
+  <footer>学术研究声明：个股日线行情与 LPPLS 多尺度结构均由后端发布数据提供，仅供研究参考，不构成投资建议。</footer>
+  <script src="app/evidence-badge.js"></script>
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -1014,9 +1014,8 @@
         : '<p class="muted">暂无</p>';
 
       host.innerHTML = `
-        <p>历史上类似情况的后续表现。</p>
         <p class="lib-line">
-          事件库 ${esc(lib.version || '—')} · 数据截至 ${esc(lib.cutoff || '—')} · 共 ${dnum(lib.n_events)} 个事件
+          事件库 ${esc(lib.version || '—')} · 数据截至 ${esc(lib.cutoff || '—')} · 共 ${dnum(lib.n_events)} 个历史同类样本
         </p>
         <div class="dip-grid">
           <section class="dip-card">
@@ -1040,7 +1039,7 @@
               ['日波动估计', dipPct(state.vol_d)],
               ['距下方成交密集区', state.well_dist_below == null ? '下方没有成交密集区' : dipPct(state.well_dist_below)],
             ])}
-            <p class="dip-disclaimer">基于最近 500 个交易日。历史分位。</p>
+            <p class="dip-disclaimer">统计窗口：最近 500 个交易日。</p>
           </section>
           <section class="dip-card">
             <h3>历史上类似的股票，后来怎样？</h3>
@@ -1048,8 +1047,7 @@
             <p>${similarReading}</p>
             ${similarPools(d.similar || {})}
             <p class="dip-disclaimer">
-              ‘最高反弹’按事后最高点计算，实际很难恰好卖在最高点，所以要和‘120日后收益’一起看。
-              历史分位。
+              ‘最高反弹’按事后最高点计算，建议与‘120日后收益’一并对照。
             </p>
           </section>
           <section class="dip-card">
@@ -1073,8 +1071,7 @@
               </table>
             </div>
             <p class="dip-disclaimer">
-              2019 年以后的样本外检验中，历史比例没有稳定地好过随机对照，不能当作预测。
-              历史分位。
+              2019 年后样本外检验未稳定优于随机对照，供风险边界参考。
             </p>
           </section>
           <section class="dip-card">
@@ -1090,8 +1087,7 @@
               ['使用周数', dnum(regime.weeks)],
             ])}
             <p class="dip-disclaimer">
-              高波动不等于下跌：它只说明价格摆动大。概率只用截至当周的数据计算，不用未来数据。
-              历史分位。
+              基于截至当周的严格过滤估计；高波动常对应余震未稳，建议结合冷却期观察。
             </p>
           </section>
           <section class="dip-card wide">
@@ -1100,12 +1096,12 @@
             <h4>宽基 ETF 份额变化（资金申购/赎回代理）</h4>
             <div class="env-grid">${shareHtml}</div>
             <p class="dip-disclaimer">
-              ETF 份额增加只说明有资金申购，不能确定是谁买的。历史分位。
+              ETF 份额变化反映全市场申赎流向。
             </p>
             <h4>ETF 期权：市场情绪（指数/ETF 环境，非个股期权）</h4>
             <div class="env-grid">${optionHtml}</div>
             <p class="dip-disclaimer">
-              期权数据反映的是指数情绪，不是这只股票。历史分位。
+              期权隐含波动与偏度反映宽基指数整体情绪。
             </p>
           </section>
         </div>

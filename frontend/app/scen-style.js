@@ -2,10 +2,10 @@
    只负责画法，不含任何数据或模型计算。输入全部来自 window.LPPL 取回的静态 JSON。 */
 (function (G) {
   'use strict';
-  const WARN = '#9A5B00', REAL = '#1F5FD6';
+  const WARN = '#9A5B00', REAL = '#1F5FD6', FCO = '#D6303A';
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; };
   const CPSCN = {
-    WARN, REAL, rgba,
+    WARN, REAL, FCO, rgba,
     /* 同屏截止日多于该数量时进入"密集模式"：不画连接线，区间线更细，重叠处自然叠亮 */
     DENSE_PER_PX: 0.5,
     isDense(n, w) { return w > 0 && n / w > CPSCN.DENSE_PER_PX; },
@@ -25,6 +25,50 @@
       ctx.beginPath(); ctx.moveTo(o.xa, y); ctx.lineTo(Math.max(o.xa + 2, o.xb), y); ctx.stroke();
       if (secondary) ctx.setLineDash([]);
       ctx.lineWidth = 1;
+    },
+    /* FCO 风格红色泡沫强度柱状图（底部向上）：
+       o = { x, w, bottom, maxH, intensity, hot }，intensity ∈ [0, 1] */
+    drawFcoBar(ctx, o) {
+      const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
+      if (v <= 0) return;
+      const h = Math.max(4, Math.round(v * o.maxH));
+      const bw = Math.max(2, Math.round(o.w || 4));
+      const x = Math.round(o.x - bw / 2);
+      const y = Math.round(o.bottom - h);
+      ctx.fillStyle = rgba(FCO, o.hot ? 0.72 : (0.18 + v * 0.42));
+      ctx.fillRect(x, y, bw, h);
+    },
+    /* 严格 as-of 首次预警旗标（每轮泡沫第一次出现顶部聚类的截止日）：
+       o = { x, y, top, bottom, label, active } */
+    drawFirstAlert(ctx, o) {
+      const x = Math.round(o.x) + 0.5;
+      ctx.save();
+      ctx.strokeStyle = rgba(FCO, o.active ? 0.92 : 0.52);
+      ctx.lineWidth = o.active ? 1.6 : 1;
+      ctx.setLineDash(o.active ? [] : [3, 3]);
+      ctx.beginPath(); ctx.moveTo(x, o.top); ctx.lineTo(x, o.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      // 价格点圆环标记
+      if (Number.isFinite(o.y)) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = FCO;
+        ctx.lineWidth = o.active ? 2.2 : 1.6;
+        ctx.beginPath(); ctx.arc(x, o.y, o.active ? 4.5 : 3.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+      // 顶部红色旗标胶囊
+      if (o.label) {
+        ctx.font = '600 10px "JetBrains Mono","PingFang SC","Microsoft YaHei",sans-serif';
+        const tw = ctx.measureText(o.label).width;
+        const pw = tw + 10, ph = 16;
+        const bx = Math.round(x - pw / 2), by = Math.round(o.top + 3);
+        ctx.fillStyle = o.active ? FCO : rgba(FCO, 0.9);
+        ctx.fillRect(bx, by, pw, ph);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(o.label, x, by + ph / 2 + 0.5);
+      }
+      ctx.restore();
     },
     /* 事后确认顶的三角标记，(x, y) 为三角尖端 */
     drawTop(ctx, x, y) {
