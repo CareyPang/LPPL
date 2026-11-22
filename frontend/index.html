@@ -106,21 +106,24 @@ a { color: var(--ink-2); text-decoration: none; }
 .sym-c { font: 400 12px/1.2 var(--f-m); color: var(--ink-3); white-space: nowrap; }
 .mode { font: 600 11px/1 var(--f-u); padding: var(--s1) var(--s2); border: 1px solid var(--real); color: var(--real); letter-spacing: 0.06em; white-space: nowrap; }
 .mode.live { border-color: var(--ink-3); color: var(--ink-2); }
-.tg { --od-gap: var(--s1); }
-.tgb { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink-3); padding: 0 var(--s2); min-height: 28px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: color var(--t-fast) ease-out, border-color var(--t-fast) ease-out; }
-.tgb:hover { border-color: var(--ink-3); }
-.tgb[aria-pressed="true"] { color: var(--ink); border-color: #C3C9D4; background: var(--surface); }
-.tgb i { display: block; width: 12px; height: 8px; flex: none; }
-.tgb[aria-pressed="false"] i { opacity: 0.35; }
-.sw-top { background: rgba(154, 91, 0, 0.28); }
+.tg { --od-gap: 6px; }
+.tgb { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink-3); padding: 0 10px; min-height: 30px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color var(--t-fast) ease-out, border-color var(--t-fast) ease-out, background var(--t-fast) ease-out; }
+.tgb:hover { border-color: var(--ink-3); color: var(--ink-2); }
+.tgb[aria-pressed="true"] { color: var(--ink); border-color: #9AA6BC; background: #EEF2F9; font-weight: 600; }
+.tgb i { display: block; width: 12px; height: 8px; flex: none; border-radius: 2px; }
+.tgb[aria-pressed="false"] i { opacity: 0.3; }
+.sw-fco { background: linear-gradient(90deg, #D6303A 0 50%, #11845A 50% 100%); }
+.sw-top { background: rgba(154, 91, 0, 0.38); }
 .sw-bot { border: 1px solid var(--bot); background: rgba(17, 132, 90, 0.14); }
 .sw-wave { height: 0 !important; border-top: 2px dashed var(--wave); }
 .sw-real { height: 0 !important; border-top: 2px dashed var(--real); }
 .sw-act { width: 0 !important; height: 0 !important; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid var(--up); }
-.sw-vol { background: #C3C9D4; }
+.sw-vol { background: #A7B0C0; }
 .sw-conf { background: var(--warn); }
+.bt-cta { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 7px; background: var(--real); color: #fff; font: 600 12px/1 var(--f-u); text-decoration: none; white-space: nowrap; margin-left: auto; transition: background var(--t-fast) ease-out, transform var(--t-fast) ease-out; }
+.bt-cta:hover { background: #184CB0; color: #fff; }
 
-.chart { grid-area: chart; position: relative; height: clamp(400px, 62vh, 760px); background: var(--bg); }
+.chart { grid-area: chart; position: relative; height: clamp(440px, 68vh, 800px); background: var(--bg); }
 .chart canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: pan-y; }
 .chart canvas.grab { cursor: grabbing; }
 .chart canvas:focus-visible { outline: 2px solid var(--real); outline-offset: -2px; }
@@ -185,6 +188,17 @@ a { color: var(--ink-2); text-decoration: none; }
 .pl-rows li::before { content: counter(r); font: 400 11px/1.6 var(--f-m); color: var(--ink-3); grid-row: span 2; }
 .pl-rows b { font-size: 13px; font-weight: 600; }
 .pl-rows span { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.bot-idx-card { margin: 0 0 var(--s3); padding: 10px 12px; border: 1px solid #C8E2D7; border-radius: 8px; background: #F4FBF7; }
+.bot-idx-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.bot-idx-t { font: 600 13px/1.3 var(--f-u); color: #0F6A48; }
+.bot-idx-sc { font: 700 20px/1 var(--f-m); color: #0F6A48; }
+.bot-idx-sc small { font: 400 11px/1 var(--f-m); color: var(--ink-3); margin-left: 2px; }
+.bot-idx-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 8px 0; }
+.bot-idx-b { font-size: 11px; color: var(--ink-2); }
+.bot-idx-b > div { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.bot-idx-tr { height: 5px; border-radius: 99px; background: #DCEBE4; overflow: hidden; }
+.bot-idx-tr i { display: block; height: 100%; background: #11845A; border-radius: 99px; }
+.bot-idx-ft { margin: 6px 0 0; padding-top: 6px; border-top: 1px dashed #CBE1D6; font-size: 11px; color: var(--ink-2); line-height: 1.5; }
 .cks { list-style: none; margin: var(--s3) 0 0; padding: 0; border-top: 1px solid var(--line); }
 .cks li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s2); padding: var(--s2) 0; border-bottom: 1px solid var(--grid); }
 .ck-s { font: 600 11px/1.6 var(--f-m); color: var(--ink-3); }
@@ -299,13 +313,6 @@ footer p { margin: 0; max-width: 110ch; }
   <span class="strip-k" id="tk-all-k">指数</span>
   <div class="od-row od-fixed" id="ticker" style="--od-gap:0" aria-label="指数"></div>
 </div>
-<div data-od-sub>
-  <span class="strip-k">回放</span>
-  <div class="chips od-row od-fixed" aria-label="历史回放">
-    <button class="chip" type="button" data-c="上证指数" data-d="2007-10-12">2007-10-12</button>
-    <button class="chip" type="button" data-c="上证指数" data-d="2015-06-12">2015-06-12</button>
-  </div>
-</div>
 <script src="app/od-nav.js" data-section="terminal"></script>
 <p class="err" id="err" role="alert" hidden></p>
 
@@ -327,10 +334,12 @@ footer p { margin: 0; max-width: 110ch; }
     <span class="mode od-fixed" id="mode" hidden></span>
     <button class="wbtn od-fixed" id="wbtn" type="button" aria-pressed="false" disabled>☆ 加自选</button>
     <div class="tg od-cluster od-fill" id="toggles" role="group" aria-label="图层开关">
-      <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>情景区间</button>
-      <button class="tgb" type="button" data-k="hist" aria-pressed="true"><i class="sw-top" style="opacity:.5"></i>历史情景区间</button>
+      <button class="tgb" type="button" data-k="fco" aria-pressed="true"><i class="sw-fco"></i>FCO 红/绿柱</button>
+      <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>顶部情景区间</button>
+      <button class="tgb" type="button" data-k="hist" aria-pressed="true"><i class="sw-top" style="opacity:.45"></i>历史情景线</button>
       <button class="tgb" type="button" data-k="vol" aria-pressed="true"><i class="sw-vol"></i>成交量</button>
     </div>
+    <a class="bt-cta od-fixed" id="bt-cta" href="backtest.html">FCO 历史回测 →</a>
   </div>
 
   <div class="chart" id="chartwrap" data-ai-anchor>
@@ -345,7 +354,7 @@ footer p { margin: 0; max-width: 110ch; }
     </div>
   </div>
 
-  <div class="tl od-row">
+  <div class="tl od-row" hidden aria-hidden="true">
     <button class="ib od-fixed" id="tl-prev" type="button" aria-label="截止日后退 5 个交易日" title="后退一周"></button>
     <button class="ib od-fixed" id="tl-play" type="button" aria-pressed="false" aria-label="自动逐周回放" title="自动逐周回放"></button>
     <button class="ib od-fixed" id="tl-next" type="button" aria-label="截止日前进 5 个交易日" title="前进一周"></button>
@@ -370,6 +379,15 @@ footer p { margin: 0; max-width: 110ch; }
       <p class="vs" id="vs"></p>
     </section>
     <section class="blk">
+      <p class="blk-k">相态与冷却期检查</p>
+      <div class="seg" role="tablist" aria-label="相态视图" id="seg">
+        <button type="button" role="tab" id="sg-0" data-i="0" aria-selected="true" aria-controls="plan" class="s-top">逃顶临界</button>
+        <button type="button" role="tab" id="sg-1" data-i="1" aria-selected="false" aria-controls="plan" class="s-bot" tabindex="-1">冷却期与再入场</button>
+        <button type="button" role="tab" id="sg-2" data-i="2" aria-selected="false" aria-controls="plan" class="s-wave" tabindex="-1">二波结构</button>
+      </div>
+      <div id="plan" role="tabpanel" aria-labelledby="sg-0"></div>
+    </section>
+    <section class="blk">
       <p class="blk-k">六尺度情景区间</p>
       <div class="phs" id="phs" role="radiogroup" aria-label="六尺度情景区间"></div>
       <p class="ph-tip" id="ph-tip"></p>
@@ -383,15 +401,6 @@ footer p { margin: 0; max-width: 110ch; }
       <summary class="blk-k">历史耗散与势能背景 <span data-evidence-badge="descriptive" data-evidence-label="历史分位"></span><span class="hist-summary" id="hist-summary"></span></summary>
       <ul class="kv" id="hist-kv"></ul>
     </details>
-    <section class="blk">
-      <p class="blk-k">相态与冷却期检查</p>
-      <div class="seg" role="tablist" aria-label="相态视图" id="seg">
-        <button type="button" role="tab" id="sg-0" data-i="0" aria-selected="true" aria-controls="plan" class="s-top">逃顶临界</button>
-        <button type="button" role="tab" id="sg-1" data-i="1" aria-selected="false" aria-controls="plan" class="s-bot" tabindex="-1">冷却期与再入场</button>
-        <button type="button" role="tab" id="sg-2" data-i="2" aria-selected="false" aria-controls="plan" class="s-wave" tabindex="-1">二波结构</button>
-      </div>
-      <div id="plan" role="tabpanel" aria-labelledby="sg-0"></div>
-    </section>
     <section class="blk">
       <p class="blk-k">光标所在日</p>
       <div class="cur-d" id="cur-d">—</div>
@@ -554,9 +563,19 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       const i = idxOf(b, t.date);
       if (i + 126 <= R.T) tops.push({ i, date: t.date, dd: t.max_dd });
     }
+    const validFrames = H.frames.filter((f) => f.asof && f.asof <= R.asof);
+    const lastHistFrame = validFrames.length ? validFrames[validFrames.length - 1] : null;
+    const latestBottom = lastHistFrame ? {
+      asof: lastHistFrame.asof,
+      score: Math.round(Math.max(0, Math.min(1, Number(lastHistFrame.fco_neg_intensity) || 0)) * 100),
+      firstBottom: Boolean(lastHistFrame.bottom_first_alert_flag),
+      factors: lastHistFrame.bottom_factors || null,
+    } : null;
     return {
       frames, fcoFrames, fcoBotFrames, tops, clusterFrames, rule: H.rule, evidence: H.evidence,
       scale_evidence: H.scale_evidence || {},
+      bottom_summary: H.bottom_summary || null,
+      latestBottom,
       last: H.frames.length ? H.frames[H.frames.length - 1].asof : '',
     };
   }
@@ -623,7 +642,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('chartwrap');
     const st = { R: null, a: 0, b: 100, maxI: 100, hover: -1, my: -1, ghost: -1, cross: true, W: 0, H: 0, dpr: 1, drag: null,
       scaleBands: [], scaleSelected: ScaleBar.DEFAULT_SCALE, scaleHover: null,
-      show: { top: true, hist: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
+      show: { fco: true, top: true, hist: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
     let col = {}, fm = 'monospace', fu = 'sans-serif', onHover = () => {}, onScaleHover = () => {}, onScaleSelect = () => {};
     function readCol() {
       const s = getComputedStyle(document.documentElement), g = (n) => s.getPropertyValue(n).trim();
@@ -777,7 +796,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         });
         ctx.lineWidth = 1;
       }
-      if (st.show.hist && R.hist) {
+      if (st.show.fco && R.hist) {
         // FCO 红色顶部泡沫强度柱 + 绿色底部出清强度柱（主图价格区底部）与严格 as-of 首次预警旗标
         const fcoVis = (R.hist.fcoFrames || []).filter((f) => vis(f.i, f.i));
         const fcoBotVis = (R.hist.fcoBotFrames || []).filter((f) => vis(f.i, f.i));
@@ -805,6 +824,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
             active: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3,
           });
         }
+      }
+      if (st.show.hist && R.hist) {
         const hv = R.hist.frames.filter((f) => vis(Math.min(f.i, f.lo), Math.max(f.i, f.hi))), dense = CPSCN.isDense(hv.length, g.W);
         for (const f of hv) {
           CPSCN.drawRange(ctx, { x0: X(f.i), xa: X(f.lo), xb: X(f.hi + 1), y: Y(R.bars[Math.min(f.i, R.bars.length - 1)].close), dense });
@@ -1236,6 +1257,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
 
     $('sym-n').textContent = name;
+    const btCta = $('bt-cta');
+    if (btCta) btCta.href = 'backtest.html?sym=' + encodeURIComponent(R.sym.code);
     $('sym-c').textContent = R.sym.code + ' · 日线 · 对数坐标';
     $('mode').hidden = false;
     $('mode').textContent = R.latest ? (latestClosed ? '最新交易日' : '当前可用') : '回放 · 截止 ' + R.asof;
@@ -1384,7 +1407,38 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     ][planTab];
     const badgeHtml = window.CPEvidenceBadge ? window.CPEvidenceBadge.html(P.badge) : '';
     const backtestLink = `<a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}">打开 FCO 历史回测 ›</a> · <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>`;
-    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
+    let botIndexHtml = '';
+    if (planTab === 1 && R.hist) {
+      const lb = R.hist.latestBottom || { score: 0, asof: R.asof, factors: null, firstBottom: false };
+      const bs = R.hist.bottom_summary || null;
+      const f = lb.factors || {};
+      const sc = lb.score || 0;
+      const scState = sc >= 50 ? '🟢 底部共振区' : (sc >= 25 ? '🟡 左侧观察区' : '⚪ 非底部区');
+      const vVal = f.valuation != null ? Math.round(Number(f.valuation) * 100) : 0;
+      const vClr = f.clearing != null ? Math.round(Number(f.clearing) * 100) : 0;
+      const vStb = f.stabilize != null ? Math.round(Number(f.stabilize) * 100) : 0;
+      const vRgt = f.right_side != null ? Math.round(Number(f.right_side) * 100) : 0;
+      const erpTxt = f.erp_pct != null ? `ERP ${Math.round(Number(f.erp_pct) * 100)}%` : '未进超跌区';
+      const pbnTxt = f.pbn_pct != null ? `破净 ${Math.round(Number(f.pbn_pct) * 100)}%` : '';
+      const valSub = [erpTxt, pbnTxt].filter(Boolean).join(' / ');
+      const histProof = bs && bs.n_events > 0
+        ? `历史实证（${bs.n_events} 次共振）：50 周上涨胜率 <b>${(Number(bs.win_rate_50w) * 100).toFixed(1)}%</b>` +
+          `（普通下跌基线 ${(Number(bs.baseline_win_rate_50w) * 100).toFixed(1)}%，<b>+${(Number(bs.win_rate_lift_50w) * 100).toFixed(1)}pp</b>），` +
+          `50 周收益中位数 <b>${bs.median_ret_50w >= 0 ? '+' : ''}${(Number(bs.median_ret_50w) * 100).toFixed(1)}%</b>。`
+        : '严格 PIT 四维合成：兼顾估值安全边际与止跌右侧确认，避免纯估值提前一年套牢。';
+      botIndexHtml =
+        `<div class="bot-idx-card" id="bot-index-card">` +
+        `<div class="bot-idx-hd"><span class="bot-idx-t">A 股多维底部综合指数 · ${E(scState)}</span><span class="bot-idx-sc">${sc}<small>/100</small></span></div>` +
+        `<div class="bot-idx-bars">` +
+        `<div class="bot-idx-b"><div><span>够不够便宜（35%）</span><span>${E(valSub)}</span></div><div class="bot-idx-tr"><i style="width:${vVal}%"></i></div></div>` +
+        `<div class="bot-idx-b"><div><span>跌完没·超跌（30%）</span><span>${f.dd_52w != null ? (Number(f.dd_52w) * 100).toFixed(0) + '%' : '—'}</span></div><div class="bot-idx-tr"><i style="width:${vClr}%"></i></div></div>` +
+        `<div class="bot-idx-b"><div><span>防死猫跳（20%）</span><span>${vStb}%</span></div><div class="bot-idx-tr"><i style="width:${vStb}%"></i></div></div>` +
+        `<div class="bot-idx-b"><div><span>企稳没·均线（15%）</span><span>${vRgt}%</span></div><div class="bot-idx-tr"><i style="width:${vRgt}%"></i></div></div>` +
+        `</div>` +
+        `<p class="bot-idx-ft">${histProof}</p>` +
+        `</div>`;
+    }
+    $('plan').innerHTML = botIndexHtml + `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
       `</ol><p class="pl-meta">${backtestLink} · <a href="guide.html">方法论图解 →</a></p>`;
   }
 
