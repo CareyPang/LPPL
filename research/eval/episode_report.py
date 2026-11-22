@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ..price_layer.drawdown_table import TURN_WINDOW
 from .dataset import price_series
 
 DATA = Path("web/mock/data")
@@ -63,7 +64,19 @@ def segment_arrays(frames: list[dict], scale: str, cal: pd.DatetimeIndex) -> dic
     return out
 
 
-def score(p: np.ndarray, a: np.ndarray, lo: np.ndarray, hi: np.ndarray, tops: np.ndarray) -> dict:
+def _trim(seg: dict, last_ok: float) -> dict:
+    keep = seg["p"] + H <= last_ok
+    return {
+        "p": seg["p"][keep],
+        "a": seg["a"][keep],
+        "lo": seg["lo"][keep],
+        "hi": seg["hi"][keep],
+        "asof": [asof for asof, include in zip(seg["asof"], keep, strict=True) if include],
+    }
+
+
+def score(p: np.ndarray, a: np.ndarray, lo: np.ndarray, hi: np.ndarray, tops: np.ndarray,
+          last_ok: float = np.inf) -> dict:
     """tops：确认顶的交易日位置（升序）。返回预警段数、两种命中数、覆盖的顶数与段内顶数。"""
     starts = np.flatnonzero(a & ~np.r_[False, a[:-1]])
     n_main = n_h = n_main_ok = 0
@@ -72,18 +85,19 @@ def score(p: np.ndarray, a: np.ndarray, lo: np.ndarray, hi: np.ndarray, tops: np
         top = tops[k] if k < len(tops) else None
         if top is not None and top - p[i] <= H:
             n_h += 1
-        if np.isfinite(lo[i]):
+        if np.isfinite(lo[i]) and np.isfinite(hi[i]) and p[i] + hi[i] + BUFFER <= last_ok:
             n_main_ok += 1
             if top is not None and p[i] + lo[i] - BUFFER <= top <= p[i] + hi[i] + BUFFER:
                 n_main += 1
-    seg_tops = tops[(tops >= p[0]) & (tops <= p[-1])]
+    seg_tops = tops[(tops >= p[0]) & (tops <= p[-1]) & (tops <= last_ok)]
     ap = p[a]
     covered = sum(bool(((ap < t) & (ap >= t - H)).any()) for t in seg_tops)
     return {"episodes": len(starts), "with_main": n_main_ok, "hit_main": n_main, "hit_h": n_h,
             "tops": len(seg_tops), "covered": covered}
 
 
-def episodes(seg: dict, tops: np.ndarray, top_rows: list[dict], cal: pd.DatetimeIndex, frames_by_date: dict, scale: str) -> list[dict]:
+def episodes(seg: dict, tops: np.ndarray, top_rows: list[dict], cal: pd.DatetimeIndex,
+             frames_by_date: dict, scale: str, last_ok: float = np.inf) -> list[dict]:
     p, a = seg["p"], seg["a"]
     rows = []
     for i in np.flatnonzero(a & ~np.r_[False, a[:-1]]):
@@ -106,6 +120,7 @@ def episodes(seg: dict, tops: np.ndarray, top_rows: list[dict], cal: pd.Datetime
             "max_dd": top.get("max_dd") if top else None,
             "hit_h": bool(top is not None and lead <= H),
             "hit_main": in_main,
+            "mature": bool(p[i] + H <= last_ok),
         })
     return rows
 
@@ -121,43 +136,51 @@ def run(syms=SYMS, seed: int = 0) -> dict:
         cal = price_series(sym).index
         top_rows = sorted(h["tops"], key=lambda t: t["date"])
         tops = np.array([_pos(cal, t["date"]) for t in top_rows])
-        last_ok = len(cal) - 1 - LOOK
+        last_ok = len(cal) - 1 - max(LOOK, TURN_WINDOW)
         by_date = {f["asof"]: f for f in h["frames"]}
         per[sym] = {"cal": cal, "tops": tops, "top_rows": top_rows, "last_ok": last_ok,
                     "segs": {s: segment_arrays(h["frames"], s, cal) for s in SCALES}, "by_date": by_date}
 
     summary, listing = [], {}
+    m = MIN_SHIFT // STEP
     for sym, v in per.items():
         listing[sym] = {s: [e for split, seg in v["segs"][s].items()
-                            for e in [dict(x, split=split) for x in episodes(seg, v["tops"], v["top_rows"], v["cal"], v["by_date"], s)]]
+                            for e in [dict(x, split=split) for x in episodes(
+                                seg, v["tops"], v["top_rows"], v["cal"], v["by_date"], s, v["last_ok"])]]
                         for s in SCALES}
     for scale in SCALES:
         for split in SPLITS:
-            segs = {sym: v["segs"][scale][split] for sym, v in per.items() if split in v["segs"][scale]}
-            if not segs:
+            raw_segs = {sym: v["segs"][scale][split] for sym, v in per.items() if split in v["segs"][scale]}
+            if not raw_segs:
                 continue
-            for sym, seg in segs.items():
-                if seg["p"][-1] + H > per[sym]["last_ok"]:
-                    raise ValueError(f"{sym} {split} 末端预警尚未成熟")
+            segs, excluded = {}, []
+            for sym, seg in raw_segs.items():
+                trimmed = _trim(seg, per[sym]["last_ok"])
+                if len(trimmed["a"]) <= 2 * m:
+                    excluded.append(sym)
+                else:
+                    segs[sym] = trimmed
             obs = {k: 0 for k in ("episodes", "with_main", "hit_main", "hit_h", "tops", "covered")}
             for sym, seg in segs.items():
-                for k, x in score(seg["p"], seg["a"], seg["lo"], seg["hi"], per[sym]["tops"]).items():
+                for k, x in score(seg["p"], seg["a"], seg["lo"], seg["hi"], per[sym]["tops"],
+                                  per[sym]["last_ok"]).items():
                     obs[k] += x
             null = np.zeros((N_PERM, 3))
             for b in range(N_PERM):
                 tot = np.zeros(5)
                 for sym, seg in segs.items():
                     n = len(seg["a"])
-                    m = MIN_SHIFT // STEP
-                    k = int(rng.integers(m, n - m + 1)) if n > 2 * m else int(rng.integers(1, n))
-                    s = score(seg["p"], np.roll(seg["a"], k), np.roll(seg["lo"], k), np.roll(seg["hi"], k), per[sym]["tops"])
+                    k = int(rng.integers(m, n - m + 1))
+                    s = score(seg["p"], np.roll(seg["a"], k), np.roll(seg["lo"], k), np.roll(seg["hi"], k),
+                              per[sym]["tops"], per[sym]["last_ok"])
                     tot += [s["episodes"], s["with_main"], s["hit_main"], s["hit_h"], s["covered"]]
                 null[b] = [tot[2] / tot[1] if tot[1] else np.nan, tot[3] / tot[0] if tot[0] else np.nan,
                            tot[4] / obs["tops"] if obs["tops"] else np.nan]
             rate = {"hit_main": obs["hit_main"] / obs["with_main"] if obs["with_main"] else None,
                     "hit_h": obs["hit_h"] / obs["episodes"] if obs["episodes"] else None,
                     "coverage": obs["covered"] / obs["tops"] if obs["tops"] else None}
-            row = {"scale": scale, "split": split, "symbols": sorted(segs), **obs, "hit_main_n": obs["hit_main"], "hit_h_n": obs["hit_h"]}
+            row = {"scale": scale, "split": split, "symbols": sorted(segs), "excluded": sorted(excluded),
+                   **obs, "hit_main_n": obs["hit_main"], "hit_h_n": obs["hit_h"]}
             for c, key in enumerate(("hit_main", "hit_h", "coverage")):
                 col = null[:, c]
                 col = col[np.isfinite(col)]
@@ -185,11 +208,12 @@ def _pct(x):
 def markdown(rep: dict) -> str:
     md = ["# 预警段事件级回测", "", rep["rule"], ""]
     md += [f"- {k}：{v}" for k, v in rep["params"].items() if isinstance(v, str)]
-    md += ["", "| 尺度 | 段 | 预警段 | 主簇命中 | 基准 | p | H 日命中 | 基准 | p | 顶 | 覆盖率 | 基准 | p |", "|" + "---|" * 13]
+    md += ["", "| 尺度 | 段 | 预警段 | 主簇命中 | 基准 | p | H 日命中 | 基准 | p | 顶 | 覆盖率 | 基准 | p | 排除 |", "|" + "---|" * 14]
     for r in rep["summary"]:
+        excluded = ",".join(r["excluded"]) or "—"
         md.append(f"| {r['scale']} | {SPLIT_LABEL[r['split']]} | {r['episodes']} | {r['hit_main_n']}/{r['with_main']} = {_pct(r['hit_main'])} | "
                   f"{_pct(r['hit_main_null'])} | {r['hit_main_p']} | {r['hit_h_n']}/{r['episodes']} = {_pct(r['hit_h'])} | {_pct(r['hit_h_null'])} | {r['hit_h_p']} | "
-                  f"{r['tops']} | {_pct(r['coverage'])} | {_pct(r['coverage_null'])} | {r['coverage_p']} |")
+                  f"{r['tops']} | {_pct(r['coverage'])} | {_pct(r['coverage_null'])} | {r['coverage_p']} | {excluded} |")
     return "\n".join(md) + "\n"
 
 

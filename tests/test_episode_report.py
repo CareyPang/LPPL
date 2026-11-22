@@ -49,3 +49,38 @@ def test_score_counts_episode_without_main_cluster_but_not_with_main():
         "tops": 1,
         "covered": 1,
     }
+
+
+def test_score_excludes_main_window_past_maturity():
+    p = np.arange(0, 200, 5)
+    alarm = np.zeros(len(p), dtype=bool)
+    alarm[:2] = True
+    lo = np.full(len(p), np.nan)
+    hi = np.full(len(p), np.nan)
+    lo[0], hi[0] = 0, 110
+    tops = np.array([], dtype=int)
+
+    complete = episode_report.score(p, alarm, lo, hi, tops)
+    mature = episode_report.score(p, alarm, lo, hi, tops, last_ok=129)
+
+    # The main window ends at day 130, so it is counted without a cutoff but not by day 129.
+    assert complete["with_main"] == 1
+    assert mature["with_main"] == 0
+
+
+def test_trim_drops_immature_trailing_frames_from_all_segment_fields():
+    seg = {
+        "p": np.array([0, 5, 10]),
+        "a": np.array([True, False, True]),
+        "lo": np.array([1.0, 2.0, 3.0]),
+        "hi": np.array([4.0, 5.0, 6.0]),
+        "asof": ["2000-01-03", "2000-01-10", "2000-01-17"],
+    }
+
+    trimmed = episode_report._trim(seg, last_ok=episode_report.H + 5)
+
+    assert np.array_equal(trimmed["p"], np.array([0, 5]))
+    assert np.array_equal(trimmed["a"], np.array([True, False]))
+    assert np.array_equal(trimmed["lo"], np.array([1.0, 2.0]))
+    assert np.array_equal(trimmed["hi"], np.array([4.0, 5.0]))
+    assert trimmed["asof"] == ["2000-01-03", "2000-01-10"]
