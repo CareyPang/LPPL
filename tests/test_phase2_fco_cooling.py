@@ -286,9 +286,10 @@ def test_fco_neg_intensity_strict_pit_and_red_green_mutex():
 
     # 构造先涨到 4000 再腰斩到 2600 后横盘企稳的周度序列
     closes = [3000 + i * 50 for i in range(20)] + [4000 - i * 100 for i in range(15)] + [2600 + i * 20 for i in range(12)]
+    dates = pd.date_range("2020-01-03", periods=len(closes), freq="W-FRI")
     frames = [
-        {"asof": f"2020-01-{i+1:02d}", "close": float(c), "w": {"6-12m": None}}
-        for i, c in enumerate(closes)
+        {"asof": str(d.date()), "close": float(c), "w": {"6-12m": None}}
+        for d, c in zip(dates, closes, strict=True)
     ]
     # 第 40 帧若存在活跃 6-12m 顶部红柱，则绿柱必须归零
     frames[40]["w"] = {"6-12m": ["2020-03-01", "2020-04-01"]}
@@ -308,6 +309,30 @@ def test_fco_neg_intensity_strict_pit_and_red_green_mutex():
     for i in range(42):
         assert out_a[i]["fco_neg_intensity"] == out_b[i]["fco_neg_intensity"]
         assert out_a[i]["bottom_first_alert_flag"] == out_b[i]["bottom_first_alert_flag"]
+
+
+def test_summarize_bottom_backtest_computes_win_rate_and_baseline():
+    """四维底部事件级回测：正确计算 50 周上涨胜率、收益中位数与基线对比。"""
+    from research.eval.bottom_dashboard import summarize_bottom_backtest
+
+    frames = []
+    for i in range(80):
+        # 20 周跌到 2500，第 25 周触发底部关注，随后 50 周稳步涨到 3500
+        c = 4000.0 - i * 60.0 if i < 25 else 2500.0 + (i - 25) * 20.0
+        frames.append(
+            {
+                "asof": f"2020-{(i // 28) + 1:02d}-{(i % 28) + 1:02d}",
+                "split": "dev",
+                "close": c,
+                "fco_neg_intensity": 0.72 if i == 25 else 0.0,
+                "bottom_first_alert_flag": i == 25,
+            }
+        )
+    summary = summarize_bottom_backtest(frames)
+    assert summary["n_events"] == 1
+    assert summary["win_rate_50w"] == 1.0
+    assert summary["median_ret_50w"] > 0.35
+
 
 
 
