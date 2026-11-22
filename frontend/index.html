@@ -1011,7 +1011,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   })();
 
   /* ================= 状态与调度 ================= */
-  let cur = null, curCode = '', busy = false, want = null, playing = false, tlTimer = 0, playTimer = 0, planTab = 0, latestSessionRequest = 0;
+  let cur = null, curCode = '', busy = false, want = null, playing = false, tlTimer = 0, playTimer = 0, planTab = 0, planTabPinned = false, latestSessionRequest = 0;
 
   function clearView() {
     cur = null; curCode = '';
@@ -1202,26 +1202,42 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         : latestClosed ? '最新交易日 ' + R.asof : `当前可用分析截至 ${R.asof}（落后 ${lag} 个交易日）`
       : '截止日 ' + R.asof) + ' · 日波动 ' + U.pct(rm.sigma, 2);
 
-    // 结论
+    // 结论（直接用大白话回答：有没有泡沫 + 能不能抄底）
     const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, cs0 = J.cooling_state || null;
     const ind0 = t.indicators || {};
     const extraScales = Object.keys(ind0).filter(k => k !== '6-12m' && k !== '12-24m' && ind0[k] && ind0[k].signal_status === 'signal');
+    const hasMainBubble = t.signal_status === 'signal' || Boolean(w.start);
     const coolLabelMap = {
       active_top: '顶部活跃·严禁追高',
       cooling_after_top: '余震冷却期·暂不抄底',
       reentry_watch: '冷却解除·可右侧观察',
       normal: '常态观察·无冷却限制',
     };
-    $('vh').textContent = SIG[t.signal_status] || ('状态：' + (t.signal_status || '—'));
-    $('vh').className = 'vh ' + (t.signal_status === 'signal' ? 't-warn' : '');
-    const mainSummary = w.start
-      ? '6–12 月档临界区间 ' + U.range(w.start, w.end, R.asof, last) + '。'
-      : ('当前无 6–12 月档正向泡沫红柱' + (extraScales.length ? '（仅 ' + extraScales.map(k => SCN[k] || k).join('、') + ' 存在零散短/长尺度拟合）' : '') + '。');
+    const lightGlyph0 = { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚪' };
+    const dash0 = cs0 && cs0.dashboard ? cs0.dashboard : null;
+    if (hasMainBubble) {
+      $('vh').textContent = '🔴 存在泡沫预警（顶部结构活跃）';
+      $('vh').className = 'vh t-warn';
+    } else if (extraScales.length) {
+      $('vh').textContent = '🟡 暂未形成主泡沫（局部尺度过热）';
+      $('vh').className = 'vh';
+    } else {
+      $('vh').textContent = '🟢 当前无泡沫信号（常态结构）';
+      $('vh').className = 'vh';
+    }
+    const mainSummary = hasMainBubble
+      ? ('6–12 月主尺度出现正向泡沫聚类，临界区间 ' + (w.start ? U.range(w.start, w.end, R.asof, last) : '已触发') + '，严禁追高。')
+      : ('6–12 月与 12–24 月主尺度均无正向泡沫红柱' + (extraScales.length ? '（仅 ' + extraScales.map(k => SCN[k] || k).join('、') + ' 存在零散拟合，持续观察）' : '，未见泡沫加速见顶特征') + '。');
     const regimeSummary = rb.state ? (' 体制带（' + rb.month + '）：' + (REG[rb.state] || rb.state) + '。') : '';
-    const coolSummary = cs0 && cs0.phase ? (' 冷却态：' + (coolLabelMap[cs0.phase] || cs0.phase) + '。') : '';
+    const coolSummary = dash0 && dash0.headline
+      ? (' 抄底/冷却判定：' + (lightGlyph0[dash0.verdict_light] || '⚪') + ' ' + dash0.headline + '。')
+      : (cs0 && cs0.phase ? (' 冷却态：' + (coolLabelMap[cs0.phase] || cs0.phase) + '。') : '');
     $('vs').innerHTML = E(mainSummary + regimeSummary + coolSummary) +
       ' ' + (window.CPEvidenceBadge ? window.CPEvidenceBadge.html('dev', { label: '开发段验证', detail: '6–12 月与 12–24 月档具备开发段证据，时间区间为簇内合格拟合 t_c 分位区间。' }) : '');
     appendEvidenceHelp($('vs'));
+    if (!planTabPinned) {
+      planTab = hasMainBubble ? 0 : 1;
+    }
     renderScaleBar();
     $('ph-tip').textContent = RuleLabels.renderCaption(['box', 'standard']);
     appendEvidenceHelp($('ph-tip'));
@@ -1550,10 +1566,10 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   });
 
   // 操作计划分段
-  $('seg').addEventListener('click', (e) => { const b = e.target.closest('[role=tab]'); if (!b) return; planTab = +b.dataset.i; renderPlan(); });
+  $('seg').addEventListener('click', (e) => { const b = e.target.closest('[role=tab]'); if (!b) return; planTabPinned = true; planTab = +b.dataset.i; renderPlan(); });
   $('seg').addEventListener('keydown', (e) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    e.preventDefault(); planTab = (planTab + (e.key === 'ArrowRight' ? 1 : 2)) % 3; renderPlan(); $('sg-' + planTab).focus();
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault(); planTabPinned = true; planTab = (planTab + (e.key === 'ArrowRight' ? 1 : 2)) % 3; renderPlan(); $('sg-' + planTab).focus();
   });
 
   // 底部面板
