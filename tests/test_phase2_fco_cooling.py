@@ -158,3 +158,101 @@ def test_episode_backtest_extract_and_null_baseline():
     assert res["episodes"][0]["first_asof"] == "2024-01-12"
     assert res["episodes"][0]["weeks"] == 2
     assert res["episodes"][0]["max_fco_intensity"] == 0.78
+
+
+def test_bottom_dashboard_pit_and_three_layers(tmp_path):
+    """模块二六维说人话仪表盘：验证严格 PIT（不读取未来快照）、死猫跳拦截与三层达标合成。"""
+    import json
+
+    from research.eval.bottom_dashboard import build_bottom_dashboard
+
+    cal = pd.bdate_range("2024-01-02", periods=140)
+    # 阶段 1: 涨到 150 -> 急跌到 110 -> 缩量企稳并站上 20 日线
+    prices = np.concatenate([
+        np.linspace(100.0, 150.0, 60),
+        np.linspace(146.0, 110.0, 15),
+        np.linspace(110.0, 111.0, 45),
+        np.linspace(111.5, 118.0, 20),
+    ])
+    vols = np.concatenate([
+        np.full(60, 1000.0),
+        np.full(15, 1600.0),
+        np.full(55, 350.0),  # 缩量地量（含近 20 日内）
+        np.full(10, 650.0),  # 最近 10 日温和放量站上20日线
+    ])
+    ohlc = pd.DataFrame({"date": cal, "close": prices, "amount": vols})
+    asof = cal[-1]
+    close_pit = pd.Series(prices, index=cal)
+
+    # 1. 构造合规 PIT 快照（asof 与当前日一致），三层全部绿灯
+    bs_path = tmp_path / "bs.json"
+    bs_path.write_text(json.dumps({
+        "asof": asof.strftime("%Y-%m-%d"),
+        "current": {"erp": 6.8, "erp_pct": 0.90, "pbn_pct": 0.14},
+    }), encoding="utf-8")
+    etf_path = tmp_path / "etf.json"
+    etf_path.write_text(json.dumps({
+        "asof": asof.strftime("%Y-%m-%d"),
+        "categories": [{"category": "沪深300", "d5_bn": 12.5, "d21_bn": 28.0}],
+    }), encoding="utf-8")
+    br_path = tmp_path / "br.json"
+    br_path.write_text(json.dumps({
+        "asof": asof.strftime("%Y-%m-%d"),
+        "latest": {"above_ma20": 0.55},
+    }), encoding="utf-8")
+
+    dash = build_bottom_dashboard(
+        ohlc, close_pit, asof, has_active_top=False,
+        bottom_signal_path=bs_path, nt_etf_path=etf_path, breadth_path=br_path,
+        margin_path=tmp_path / "missing_margin.parquet",
+    )
+    assert len(dash["dimensions"]) == 6
+    assert dash["layers"]["odds"] is True
+    assert dash["layers"]["clearing"] is True
+    assert dash["layers"]["right_side"] is True
+    assert dash["verdict"] == "reentry_green"
+    assert dash["verdict_light"] == "green"
+    # 缺失的两融缓存应优雅降级为 gray，而非报错
+    margin_dim = next(d for d in dash["dimensions"] if d["id"] == "margin")
+    assert margin_dim["light"] == "gray"
+
+    # 2. 严格 PIT：若快照日期晚于 asof，必须被拒绝（不得发生未来泄漏）
+    future_bs = tmp_path / "bs_future.json"
+    future_bs.write_text(json.dumps({
+        "asof": (asof + pd.Timedelta(days=5)).strftime("%Y-%m-%d"),
+        "current": {"erp": 7.5, "erp_pct": 0.98, "pbn_pct": 0.20},
+    }), encoding="utf-8")
+    dash_pit = build_bottom_dashboard(
+        ohlc, close_pit, asof, has_active_top=False,
+        bottom_signal_path=future_bs, nt_etf_path=tmp_path / "none.json",
+        breadth_path=tmp_path / "none2.json", margin_path=tmp_path / "none3.parquet",
+    )
+    erp_dim = next(d for d in dash_pit["dimensions"] if d["id"] == "erp")
+    assert erp_dim["light"] == "gray"
+    assert erp_dim["passed_bottom"] is False
+
+
+def test_bottom_dashboard_dead_cat_bounce_blocked(tmp_path):
+    """死猫跳二次破底必须被 Omori 防线拦截为 red / cooling_aftershock。"""
+    from research.eval.bottom_dashboard import build_bottom_dashboard
+
+    cal = pd.bdate_range("2024-01-02", periods=95)
+    # 急涨 -> 急跌 -> 小幅反抽（死猫跳） -> 再次急杀破前低
+    prices = np.concatenate([
+        np.linspace(100.0, 160.0, 55),
+        np.linspace(155.0, 125.0, 15),
+        np.linspace(126.0, 134.0, 15),  # 死猫跳反抽
+        np.array([130, 127, 124, 122, 121, 119, 117, 115, 113, 110], dtype=float),  # 再次破底
+    ])
+    ohlc = pd.DataFrame({"date": cal, "close": prices, "amount": np.full(len(cal), 800.0)})
+    asof = cal[-1]
+    dash = build_bottom_dashboard(
+        ohlc, pd.Series(prices, index=cal), asof, has_active_top=False,
+        bottom_signal_path=tmp_path / "x.json", nt_etf_path=tmp_path / "y.json",
+        breadth_path=tmp_path / "z.json", margin_path=tmp_path / "m.parquet",
+    )
+    assert dash["omori"]["dead_cat_risk"] is True
+    assert dash["omori"]["active"] is True
+    assert dash["verdict"] == "aftershock_block"
+    assert dash["verdict_light"] == "red"
+
