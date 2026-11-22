@@ -142,3 +142,21 @@ test('bottom-action evaluateStockSeries maps board index and blocks heavy entry 
   assert.equal(res.action.canBuy, false);
   assert.equal(res.action.tier, 'left_wait');
 });
+
+test('bottom-action evaluatePricePhysics identifies cleared vacuum below dense cost well', () => {
+  const bars = [];
+  for (let i = 0; i < 200; i += 1) {
+    const px = 100 + Math.sin(i / 5) * 1.5;
+    bars.push({ date: `2025-01-${String((i % 28) + 1).padStart(2, '0')}`, high: px * 1.01, low: px * 0.99, close: px, volume: 2e6 });
+  }
+  for (let i = 0; i < 50; i += 1) {
+    const px = 98 - i * 0.65;
+    bars.push({ date: `2025-10-${String((i % 28) + 1).padStart(2, '0')}`, high: px * 1.01, low: px * 0.99, close: px, volume: 8e5 });
+  }
+  const pp = BottomAction.evaluatePricePhysics(bars);
+  assert.ok(pp);
+  assert.ok(pp.wellF >= 1.25);
+  assert.equal(pp.noWellBelow, true);
+  assert.ok(pp.vwapGap < -0.10);
+  assert.equal(pp.inVacuum, true);
+});

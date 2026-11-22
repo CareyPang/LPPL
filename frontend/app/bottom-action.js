@@ -307,12 +307,168 @@
     return { series, latest, board, action };
   }
 
+  /**
+   * 价格层物理微观结构评估（严格 PIT，与 research/price_layer/physics_price.py 同源）：
+   * 基于 ≤asof 的日线 OHLCV 计算：
+   * 1) 自由能筹码势阱（500日时间衰减+成交量加权 KDE，高自由能+下方无旧势阱 = 跌穿套牢区进入出清真空区）
+   * 2) 250日筹码均价折价率（vwap_gap）
+   * 3) OBV 20日量价底背离（obv_div）
+   * 4) Amihud 流动性枯竭比（amihud_ratio）
+   * 明确剔除未通过 2019+ 样本外检验的排列信息熵与 DFA 权重。
+   */
+  function evaluatePricePhysics(prices) {
+    const bars = Array.isArray(prices)
+      ? prices.filter((b) => b && Number.isFinite(Number(b.close)) && Number(b.close) > 0)
+      : [];
+    if (bars.length < 120) return null;
+    const n = bars.length;
+    const c = bars.map((b) => Number(b.close));
+    const h = bars.map((b) => Number.isFinite(Number(b.high)) && Number(b.high) > 0 ? Number(b.high) : Number(b.close));
+    const l = bars.map((b) => Number.isFinite(Number(b.low)) && Number(b.low) > 0 ? Number(b.low) : Number(b.close));
+    const v = bars.map((b) => Number.isFinite(Number(b.volume)) && Number(b.volume) > 0 ? Number(b.volume) : 1);
+
+    // 1) 500日时间衰减 + 成交量加权 KDE 自由能势阱
+    const wLen = Math.min(n, 500);
+    const start = n - wLen;
+    const x = [], r2 = [], vol = [];
+    for (let i = start; i < n; i += 1) {
+      x.push(Math.log((h[i] + l[i] + c[i]) / 3));
+      const hl = Math.log(Math.max(h[i], 1e-12)) - Math.log(Math.max(l[i], 1e-12));
+      r2.push((hl * hl) / 12);
+      vol.push(v[i]);
+    }
+    const sortedV = vol.slice().sort((a, b) => a - b);
+    const vmed = sortedV[Math.floor(sortedV.length / 2)] || 1;
+    const w = [];
+    let wSum = 0, wSqSum = 0, mu = 0;
+    for (let i = 0; i < wLen; i += 1) {
+      const age = wLen - 1 - i;
+      const vw = Math.max(0.2, Math.min(5.0, Math.sqrt(vol[i] / vmed)));
+      const wi = Math.pow(2, -age / 120) * vw;
+      w.push(wi);
+      wSum += wi;
+      wSqSum += wi * wi;
+      mu += wi * x[i];
+    }
+    mu /= wSum || 1;
+    let varX = 0;
+    for (let i = 0; i < wLen; i += 1) varX += w[i] * (x[i] - mu) * (x[i] - mu);
+    const sd = Math.sqrt(varX / (wSum || 1));
+    const neff = (wSum * wSum) / (wSqSum || 1);
+    const h0 = Math.max(0.006, 0.5 * 1.06 * sd * Math.pow(neff, -0.2));
+    const xMin = Math.min(...x) - 4 * h0;
+    const xMax = Math.max(...x) + 4 * h0;
+    const GRID = 80;
+    const dx = (xMax - xMin) / (GRID - 1) || 1e-6;
+    const rho = new Array(GRID).fill(0);
+    for (let i = 0; i < wLen; i += 1) {
+      const sig2 = h0 * h0 + r2[i];
+      const invSig = w[i] / Math.sqrt(sig2);
+      for (let g = 0; g < GRID; g += 1) {
+        const gx = xMin + g * dx;
+        const d2 = ((gx - x[i]) * (gx - x[i])) / (2 * sig2);
+        if (d2 < 18) rho[g] += invSig * Math.exp(-d2);
+      }
+    }
+    let area = 0;
+    for (let g = 0; g < GRID; g += 1) area += rho[g] * dx;
+    const F = rho.map((val) => -Math.log(val / Math.max(area, 1e-300) + 1e-12));
+    const fMin = Math.min(...F);
+    for (let g = 0; g < GRID; g += 1) F[g] -= fMin;
+
+    const xNow = Math.log(c[n - 1]);
+    const gNow = Math.max(0, Math.min(GRID - 1, Math.round((xNow - xMin) / dx)));
+    const wellF = F[gNow];
+    let hasWellBelow = false;
+    for (let g = 1; g < GRID - 1; g += 1) {
+      if (F[g] < F[g - 1] && F[g] <= F[g + 1]) {
+        const gx = xMin + g * dx;
+        if (gx < xNow - 0.03 && F[g] < wellF - 0.04) hasWellBelow = true;
+      }
+    }
+    const noWellBelow = !hasWellBelow;
+
+    // 2) 250日筹码均价折价率
+    const vLen = Math.min(n, 250);
+    let pvSum = 0, vSum250 = 0;
+    for (let i = n - vLen; i < n; i += 1) {
+      pvSum += c[i] * v[i];
+      vSum250 += v[i];
+    }
+    const vwap250 = vSum250 > 0 ? pvSum / vSum250 : c[n - 1];
+    const vwapGap = c[n - 1] / vwap250 - 1;
+
+    // 3) OBV 20日量价底背离
+    const r = [0];
+    const obv = [0];
+    for (let i = 1; i < n; i += 1) {
+      r.push(Math.log(c[i] / c[i - 1]));
+      const s = c[i] > c[i - 1] ? 1 : (c[i] < c[i - 1] ? -1 : 0);
+      obv.push(obv[i - 1] + s * v[i]);
+    }
+    const stdArr = (arr) => {
+      if (arr.length < 2) return 0;
+      const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+      const vr = arr.reduce((a, b) => a + (b - m) * (b - m), 0) / arr.length;
+      return Math.sqrt(vr);
+    };
+    const obvDiffs = [];
+    for (let i = Math.max(1, n - 120); i < n; i += 1) obvDiffs.push(obv[i] - obv[i - 1]);
+    const obvStd = stdArr(obvDiffs) * Math.sqrt(20) + 1e-12;
+    const pxStd = stdArr(r.slice(Math.max(1, n - 120))) * Math.sqrt(20) + 1e-12;
+    const obvDiv = ((obv[n - 1] - obv[n - 21]) / obvStd) - ((c[n - 1] / c[n - 21] - 1) / pxStd);
+
+    // 4) Amihud 流动性枯竭比（20日 / 120日）
+    const am = [];
+    for (let i = Math.max(1, n - 120); i < n; i += 1) {
+      const dv = c[i] * v[i];
+      if (dv > 0) am.push(Math.abs(r[i]) / dv);
+    }
+    const med = (arr) => {
+      if (!arr.length) return null;
+      const s = arr.slice().sort((a, b) => a - b);
+      return s[Math.floor(s.length / 2)];
+    };
+    const am20 = med(am.slice(-20));
+    const am120 = med(am);
+    const amRatio = (am20 != null && am120 != null && am120 > 0) ? am20 / am120 : null;
+
+    const inVacuum = wellF >= 1.25 && noWellBelow;
+    const inTrappedWell = wellF <= 0.55;
+    const deepDiscount = vwapGap <= -0.10;
+    const obvBullDiv = obvDiv >= 0.65;
+    const liquidityDry = amRatio != null && amRatio >= 1.25;
+
+    let label = '价格物理结构中性';
+    if (inVacuum && (deepDiscount || obvBullDiv)) label = '跌穿旧筹码势阱 · 高自由能出清区';
+    else if (inTrappedWell) label = '位于半山腰旧筹码密集区（套牢阻力阱）';
+    else if ((inVacuum ? 1 : 0) + (deepDiscount ? 1 : 0) + (obvBullDiv ? 1 : 0) + (liquidityDry ? 1 : 0) >= 2) {
+      label = '价格空间接近出清区';
+    }
+
+    return {
+      label,
+      wellF: Number(wellF.toFixed(2)),
+      noWellBelow,
+      vwap250: Number(vwap250.toFixed(2)),
+      vwapGap: Number(vwapGap.toFixed(4)),
+      obvDiv: Number(obvDiv.toFixed(2)),
+      amRatio: amRatio != null ? Number(amRatio.toFixed(2)) : null,
+      inVacuum,
+      inTrappedWell,
+      deepDiscount,
+      obvBullDiv,
+      liquidityDry,
+    };
+  }
+
   return {
     evaluate,
     fromHistory,
     fromOverviewItem,
     boardIndexForStock,
     evaluateStockSeries,
+    evaluatePricePhysics,
     STEPS: [
       { idx: 1, pct: '30%', title: '第 1 笔 · 试探仓', cond: '综合分≥50 且止跌（买宽基 ETF 打底）' },
       { idx: 2, pct: '30%', title: '第 2 笔 · 右侧仓', cond: '站稳 20 日均线 + 宽度回升（可切弹性）' },
