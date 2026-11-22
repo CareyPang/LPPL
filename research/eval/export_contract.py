@@ -762,7 +762,10 @@ def history(sym: str, market: str = "cn") -> dict:
         }
         for i in peaks
     ]
+    from .bottom_dashboard import compute_fco_neg_intensity_series
     from .episode_backtest import summarize_history_episodes
+
+    frames = compute_fco_neg_intensity_series(frames)
 
     return {
         "symbol": sym,

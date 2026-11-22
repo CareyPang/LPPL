@@ -514,9 +514,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     R.hist = H ? histView(H, R) : null;
     return R;
   }
-  /* 历史情景区间与 FCO 泡沫强度：严格只取截止日及之前的帧；事后标签顶只在确认期（126 交易日）结束于截止日之前时显示 */
+  /* 历史情景区间与 FCO 泡沫/底部强度：严格只取截止日及之前的帧；事后标签顶只在确认期（126 交易日）结束于截止日之前时显示 */
   function histView(H, R) {
-    const b = R.bars, first = b[0].date, frames = [], fcoFrames = [], tops = [];
+    const b = R.bars, first = b[0].date, frames = [], fcoFrames = [], fcoBotFrames = [], tops = [];
     let prevActive6 = false;
     for (const f of H.frames) {
       if (!f.asof || f.asof < first || f.asof > R.asof) continue;
@@ -533,10 +533,15 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         const share = cl6 && Number.isFinite(Number(cl6.share)) ? Number(cl6.share) : 0.45;
         intensity = has6 ? Math.min(1, 0.35 + share * 0.45 + (has12 ? 0.2 : 0)) : 0.22;
       }
+      const negIntensity = f.fco_neg_intensity != null && Number.isFinite(Number(f.fco_neg_intensity))
+        ? Math.max(0, Math.min(1, Number(f.fco_neg_intensity)))
+        : 0;
       const firstAlert = Boolean(f.first_alert_flag) || (has6 && !prevActive6);
       prevActive6 = has6;
       if (intensity > 0) {
         fcoFrames.push({ i, asof: f.asof, intensity, firstAlert, has6, has12 });
+      } else if (negIntensity > 0) {
+        fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag) });
       }
       if (has6) {
         frames.push({ i, lo: idxOf(b, w6[0]), hi: idxOf(b, w6[1]), asof: f.asof, split: f.split, w: w6, intensity, firstAlert });
@@ -550,7 +555,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (i + 126 <= R.T) tops.push({ i, date: t.date, dd: t.max_dd });
     }
     return {
-      frames, fcoFrames, tops, clusterFrames, rule: H.rule, evidence: H.evidence,
+      frames, fcoFrames, fcoBotFrames, tops, clusterFrames, rule: H.rule, evidence: H.evidence,
       scale_evidence: H.scale_evidence || {},
       last: H.frames.length ? H.frames[H.frames.length - 1].asof : '',
     };
@@ -773,12 +778,16 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         ctx.lineWidth = 1;
       }
       if (st.show.hist && R.hist) {
-        // FCO 红色泡沫强度柱（主图价格区底部）与严格 as-of 首次预警旗标
+        // FCO 红色顶部泡沫强度柱 + 绿色底部出清强度柱（主图价格区底部）与严格 as-of 首次预警旗标
         const fcoVis = (R.hist.fcoFrames || []).filter((f) => vis(f.i, f.i));
+        const fcoBotVis = (R.hist.fcoBotFrames || []).filter((f) => vis(f.i, f.i));
         const barW = Math.max(2, Math.min(8, Math.round(pp * 3.5)));
         const maxBarH = Math.max(26, Math.round((pb - pt) * 0.22));
         for (const f of fcoVis) {
           CPSCN.drawFcoBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3 });
+        }
+        for (const f of fcoBotVis) {
+          CPSCN.drawFcoBottomBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3 });
         }
         let lastFlagX = -999;
         for (const f of fcoVis) {
@@ -1412,10 +1421,13 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const lines = [];
     if (idx <= N - 1) {
       if (idx > T) lines.push('这一天在截止日之后，模型没有看到。');
-      else if (R.hist && R.hist.fcoFrames && R.hist.fcoFrames.length) {
-        const near = R.hist.fcoFrames.find((f) => Math.abs(f.i - idx) <= 3);
-        if (near) {
-          lines.push((near.firstAlert ? '🔴 首次预警周 · ' : 'FCO 泡沫周 · ') + '强度 ' + Math.round(near.intensity * 100) + '%（' + near.asof + '）');
+      else if (R.hist) {
+        const nearTop = (R.hist.fcoFrames || []).find((f) => Math.abs(f.i - idx) <= 3);
+        const nearBot = !nearTop && (R.hist.fcoBotFrames || []).find((f) => Math.abs(f.i - idx) <= 3);
+        if (nearTop) {
+          lines.push((nearTop.firstAlert ? '🔴 首次预警周 · ' : 'FCO 顶部泡沫周 · ') + '强度 ' + Math.round(nearTop.intensity * 100) + '%（' + nearTop.asof + '）');
+        } else if (nearBot) {
+          lines.push((nearBot.firstBottom ? '🟢 底部企稳关注 · ' : 'FCO 底部出清周 · ') + '强度 ' + Math.round(nearBot.intensity * 100) + '%（' + nearBot.asof + '）');
         }
       }
     } else lines.push('截止日之后的推算区域，只有预测叠加层。');
