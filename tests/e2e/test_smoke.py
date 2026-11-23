@@ -793,10 +793,12 @@ def test_home_assistant_switch_persists_without_changing_other_page_defaults(pag
 
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
-    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    page.evaluate("localStorage.removeItem('lppl.assistant.wide:index.html')")
+    page.reload()
+    expect(page.locator(".ai-panel.ai-dock")).to_be_hidden()
     page.evaluate("localStorage.setItem('lppl.assistant.home', '1')")
     page.reload()
-    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    expect(page.locator(".ai-panel.ai-dock")).to_be_hidden()
 
 
 @pytest.mark.e2e
@@ -1901,7 +1903,7 @@ def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
 @pytest.mark.e2e
 def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     page.goto(f"{BASE_URL}/market.html")
-    tabs = page.locator(".odn-sub a.odn-t")
+    tabs = page.locator('.odn-sub a.odn-t[href^="#s-"]')
     expect(tabs).to_have_count(5)
     emotion_tab = tabs.filter(has_text="情绪")
     emotion_tab.click()
@@ -1922,7 +1924,7 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
         ("宏观", ["s-val", "s-macro", "s-growth"]),
     ]
     page.goto(f"{BASE_URL}/market.html")
-    tabs = page.locator(".odn-sub a.odn-t")
+    tabs = page.locator('.odn-sub a.odn-t[href^="#s-"]')
     expect(tabs).to_have_count(5)
     seen: set[str] = set()
 
@@ -2072,6 +2074,109 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
         "s-lhb",
         "s-lhb-seats",
     }
+
+
+@pytest.mark.e2e
+def test_market_evidence_badges_render_chinese_levels(page: Page) -> None:
+    page.goto(f"{BASE_URL}/market.html")
+    badges = page.locator(".ev")
+    expect(badges.first).to_have_text("描述统计")
+    texts = badges.all_inner_texts()
+    assert texts
+    assert all(not re.fullmatch(r"[a-z_]+", text.strip()) for text in texts)
+
+
+@pytest.mark.e2e
+def test_market_assistant_defaults_closed_and_persists(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/market.html")
+    page.evaluate("localStorage.removeItem('lppl.assistant.wide:market.html')")
+    page.reload()
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.locator(".ai-switch")
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "208px"
+    main_left = page.locator("main").evaluate("(el) => el.getBoundingClientRect().left")
+    assert main_left == 208, main_left
+
+    switch.click()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    assert page.evaluate(
+        "localStorage.getItem('lppl.assistant.wide:market.html')"
+    ) == "1"
+    page.reload()
+    expect(panel).to_be_visible()
+    switch.click()
+    expect(panel).to_be_hidden()
+    page.reload()
+    expect(panel).to_be_hidden()
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "208px"
+
+
+@pytest.mark.e2e
+def test_market_stale_banner_is_compact_and_expandable_on_mobile(page: Page) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+
+    def add_stale_market_fixture(route) -> None:
+        response = route.fetch()
+        payload = response.json()
+        payload["asof"] = "2020-01-01"
+        route.fulfill(status=response.status, json=payload)
+
+    page.route(
+        "**/lab/mock/data/market/market_latest.json",
+        add_stale_market_fixture,
+    )
+    page.goto(f"{BASE_URL}/market.html")
+    summary = page.locator("#stale-banner details > summary")
+    expect(summary).to_contain_text("项数据未按时更新")
+    metrics = summary.evaluate(
+        "(el) => ({height: el.getBoundingClientRect().height, "
+        "lineHeight: parseFloat(getComputedStyle(el).lineHeight), "
+        "whiteSpace: getComputedStyle(el).whiteSpace})"
+    )
+    assert metrics["height"] <= metrics["lineHeight"] * 2, metrics
+    assert metrics["whiteSpace"] == "nowrap"
+    expect(page.locator("#stale-banner details")).not_to_have_attribute("open", "")
+
+    summary.click()
+    expect(page.locator("#stale-banner details")).to_have_attribute("open", "")
+    detail = page.locator("#stale-banner details > div")
+    expect(detail).to_contain_text("页面显示的是最近一次发布的数据")
+    expect(detail.locator('a[href="#s-fresh"]')).to_have_text("数据更新状态")
+
+
+@pytest.mark.e2e
+def test_wide_etf_subtab_is_visible_on_mobile_and_current_on_nt_page(page: Page) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{BASE_URL}/market.html")
+    wide_etf = page.locator(".odn-sub a.odn-t").filter(has_text="宽基ETF")
+    expect(wide_etf).to_be_visible()
+    expect(page.locator('.odn-sidebar .odn-side-sub a[href="nt.html"]')).to_have_count(1)
+    bounds = wide_etf.bounding_box()
+    assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= 390
+    expect(wide_etf).to_have_attribute("href", "nt.html")
+    wide_etf.click()
+    page.wait_for_url(f"{BASE_URL}/nt.html")
+
+    nt_tabs = page.locator(".odn-sub a.odn-t")
+    expect(nt_tabs.filter(has_text="宽基ETF")).to_have_attribute(
+        "aria-current", "page"
+    )
+    expected_market_hrefs = [
+        "market.html#s-summary",
+        "market.html#s-breadth",
+        "market.html#s-limit",
+        "market.html#s-top-risk",
+        "market.html#s-val",
+    ]
+    assert nt_tabs.evaluate_all(
+        "(tabs) => tabs.filter((tab) => tab.getAttribute('href').startsWith('market.html#'))"
+        ".map((tab) => tab.getAttribute('href'))"
+    ) == expected_market_hrefs
+
 
 @pytest.mark.e2e
 def test_market_valuation_macro_tab_shows_legu_monthly_pe_percentiles(page: Page) -> None:

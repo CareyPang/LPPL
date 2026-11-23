@@ -8,6 +8,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const nav = fs.readFileSync(path.join(root, 'app/od-nav.js'), 'utf8');
 const market = fs.readFileSync(path.join(root, 'market.html'), 'utf8');
+const nt = fs.readFileSync(path.join(root, 'nt.html'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'home.html'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const backtest = fs.readFileSync(path.join(root, 'backtest.html'), 'utf8');
@@ -55,6 +56,22 @@ test('market groups use ordered anchors and cover every section except freshness
     { t: '风险', h: '#s-top-risk', ids: ['s-top-risk', 's-bottom', 's-abnormal', 's-range'] },
     { t: '宏观', h: '#s-val', ids: ['s-val', 's-macro', 's-growth'] },
   ]);
+  const etfLink = groups[1].match(/\{ t: '宽基ETF'[^}]*\}/);
+  assert.ok(etfLink);
+  assert.match(etfLink[0], /h: 'nt\.html'/);
+  assert.match(etfLink[0], /page: 'nt'/);
+  assert.match(etfLink[0], /nested: true/);
+  assert.doesNotMatch(etfLink[0], /ids:/);
+  assert.ok(groups[1].indexOf("t: '资金'") < groups[1].indexOf("t: '宽基ETF'"));
+  assert.ok(groups[1].indexOf("t: '宽基ETF'") < groups[1].indexOf("t: '情绪'"));
+  assert.match(nav, /market: MARKET_SUB,/);
+  assert.match(
+    nav,
+    /nt: MARKET_SUB\.map\(function \(x\) \{[\s\S]*?return x\.page === 'nt'[\s\S]*?h: 'nt\.html', page: 'nt'[\s\S]*?h: 'market\.html' \+ x\.h/,
+  );
+  assert.match(nt, /app\/od-nav\.js" data-section="nt"/);
+  assert.match(nav, /addSideLink\(sub, def, m\.k, !!item\.nested\)/);
+  assert.doesNotMatch(nav, /addSideLink\(sub, \{ t: '宽基ETF'/);
   const main = market.match(/<main\b[^>]*>([\s\S]*?)<\/main>/);
   assert.ok(main);
   const sectionIds = [...main[1].matchAll(
@@ -76,9 +93,8 @@ test('market groups use ordered anchors and cover every section except freshness
     assert.equal(groupCounts.get(id) || 0, id === 's-fresh' ? 0 : 1, id);
   });
   assert.deepEqual(sectionIds.filter((id) => !groupCounts.has(id)), ['s-fresh']);
-  assert.doesNotMatch(groups[1], /s-fresh|tools\.html|nt\.html/);
+  assert.doesNotMatch(groups[1], /s-fresh|tools\.html/);
   assert.match(nav, /\{ t: '数据状态', h: 'market\.html#s-fresh' \}/);
-  assert.match(nav, /addSideLink\(sub, \{ t: '宽基ETF', h: 'nt\.html', page: 'nt' \}/);
 });
 
 test('home navigation anchors and assistant context remain on the published page', () => {

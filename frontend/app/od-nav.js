@@ -16,6 +16,7 @@
   var MARKET_SUB = [
     { t: '今日', h: '#s-summary', ids: ['s-summary', 's-news', 's-events'] },
     { t: '资金', h: '#s-breadth', ids: ['s-breadth', 's-board', 's-nb', 's-mg', 's-lhb', 's-lhb-seats'] },
+    { t: '宽基ETF', h: 'nt.html', page: 'nt', nested: true },
     { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot'] },
     { t: '风险', h: '#s-top-risk', ids: ['s-top-risk', 's-bottom', 's-abnormal', 's-range'] },
     { t: '宏观', h: '#s-val', ids: ['s-val', 's-macro', 's-growth'] }
@@ -47,7 +48,11 @@
   ];
   var SUB = {
     market: MARKET_SUB,
-    nt: MARKET_SUB.map(function (x) { return { t: x.t, h: 'market.html' + x.h }; }),
+    nt: MARKET_SUB.map(function (x) {
+      return x.page === 'nt'
+        ? { t: x.t, h: 'nt.html', page: 'nt' }
+        : { t: x.t, h: 'market.html' + x.h };
+    }),
     /* 标的页的页签由页面自己的吸顶头部提供（app/stock-header.js），顶栏不再重复一层 */
     stock: null
   };
@@ -259,11 +264,8 @@
       var sub = el('div', 'odn-side-sub');
       m.sub.forEach(function (item) {
         var def = Object.assign({}, item);
-        if (m.k === 'market') def.h = 'market.html' + item.h;
-        addSideLink(sub, def, m.k, false);
-        if (m.k === 'market' && item.t === '资金') {
-          addSideLink(sub, { t: '宽基ETF', h: 'nt.html', page: 'nt' }, m.k, true);
-        }
+        if (m.k === 'market' && item.h.charAt(0) === '#') def.h = 'market.html' + item.h;
+        addSideLink(sub, def, m.k, !!item.nested);
       });
       group.appendChild(sub);
     }
