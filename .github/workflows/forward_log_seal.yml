@@ -65,8 +65,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: forward-log-fit-*
-          path: web/mock/data
+          path: fit-out/
           merge-multiple: true
+      - name: Validate and stage fitted index JSONs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for sym in sh000001 sh000016 sh000300 sh000905 sz399001 sz399006; do
+            src="fit-out/${sym}_latest.json"
+            if [[ ! -f "$src" ]]; then
+              echo "::error::missing fit for $sym"
+              exit 1
+            fi
+            cp "$src" web/mock/data/
+          done
       - name: Configure Git identity
         run: |
           git config user.name "github-actions[bot]"

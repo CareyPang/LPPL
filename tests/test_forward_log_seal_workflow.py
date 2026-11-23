@@ -35,7 +35,17 @@ def test_fit_matrix_and_seal_dependency():
         if step.get("uses") == "actions/download-artifact@v4"
     )
     assert download["with"]["pattern"] == "forward-log-fit-*"
-    assert download["with"]["path"] == "web/mock/data"
+    assert download["with"]["path"] == "fit-out/"
+
+    steps = workflow["jobs"]["seal"]["steps"]
+    stage = next(step for step in steps if step.get("name") == "Validate and stage fitted index JSONs")
+    assert stage["shell"] == "bash"
+    assert "for sym in " + " ".join(symbols) + "; do" in stage["run"]
+    assert 'echo "::error::missing fit for $sym"' in stage["run"]
+    assert 'cp "$src" web/mock/data/' in stage["run"]
+    assert steps.index(stage) < next(
+        i for i, step in enumerate(steps) if step.get("name") == "Seal and verify"
+    )
 
 
 def test_runs_daily_update_then_seals_only_forward_log():
