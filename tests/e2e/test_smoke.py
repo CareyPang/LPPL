@@ -1990,6 +1990,37 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
         re.compile(r"^https://lppl-stock-query\.careypang\.workers\.dev/news(?:\?|$)"),
         lambda route: route.fulfill(status=200, json={"cls": [], "eastmoney": []}),
     )
+    page.context.route(
+        "https://lppl-stock-query.careypang.workers.dev/**",
+        lambda route: route.fulfill(
+            status=200,
+            headers={"access-control-allow-origin": "*"},
+            json={"quotes": {}}
+            if urlsplit(route.request.url).path == "/quote"
+            else {"cls": [], "eastmoney": []},
+        ),
+    )
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="情绪").click()
+    original_hash = page.evaluate("location.hash")
+    expect(page.locator('.odn-sub a.odn-t[href="#s-limit"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    with page.context.expect_page() as new_page_info:
+        page.locator('.odn-sidebar .odn-side-sub a[href$="#s-breadth"]').click(
+            modifiers=["Control"]
+        )
+    new_page = new_page_info.value
+    try:
+        new_page.wait_for_load_state("load")
+        expect(new_page).to_have_url(f"{BASE_URL}/market.html#s-breadth")
+        assert page.evaluate("location.hash") == original_hash == "#s-limit"
+        expect(page.locator('.odn-sub a.odn-t[href="#s-limit"]')).to_have_attribute(
+            "aria-current", "location"
+        )
+    finally:
+        new_page.close()
+
     page.goto(f"{BASE_URL}/market.html")
     tabs.filter(has_text="资金").click()
     page.evaluate(

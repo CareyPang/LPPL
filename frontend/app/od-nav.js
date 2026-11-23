@@ -892,6 +892,7 @@
     };
     subTabs.forEach(function (t, i) {
       t.a.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         showGroup(i, '', true);
         syncSidebarActive();
@@ -903,6 +904,7 @@
       var linkId = decodeURIComponent(item.a.hash.slice(1));
       if (groupOf(linkId) < 0) return;
       item.a.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         var id = decodeURIComponent(item.a.hash.slice(1));
         var g = groupOf(id);
