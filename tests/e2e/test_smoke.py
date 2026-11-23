@@ -1948,6 +1948,36 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
         "aria-current", "location"
     )
 
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="情绪").click()
+    page.evaluate("window.scrollTo(0, 1500)")
+    page.wait_for_function("window.scrollY >= 1490")
+    page.locator('.odn-sidebar .odn-side-sub a[href$="#s-breadth"]').click()
+    page.wait_for_function("location.hash === '#s-breadth' && window.scrollY === 0")
+    breadth_top = page.locator("#s-breadth").evaluate(
+        "(section) => section.getBoundingClientRect().top"
+    )
+    header_bottom = page.locator("header.odn").evaluate(
+        "(header) => header.getBoundingClientRect().bottom"
+    )
+    assert page.evaluate("window.scrollY") == 0
+    assert breadth_top >= header_bottom
+
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="宏观").click()
+    page.evaluate("document.body.style.minHeight = '2400px'; window.scrollTo(0, 1500)")
+    page.wait_for_function("window.scrollY === 1500")
+    page.locator('.odn-sidebar .odn-side-sub a[href$="#s-summary"]').click()
+    page.wait_for_function("location.hash === '#s-summary' && window.scrollY === 0")
+    summary_top = page.locator("#s-summary").evaluate(
+        "(section) => section.getBoundingClientRect().top"
+    )
+    header_bottom = page.locator("header.odn").evaluate(
+        "(header) => header.getBoundingClientRect().bottom"
+    )
+    assert page.evaluate("window.scrollY") == 0
+    assert summary_top >= header_bottom
+
 
 @pytest.mark.e2e
 def test_market_valuation_macro_tab_shows_legu_monthly_pe_percentiles(page: Page) -> None:

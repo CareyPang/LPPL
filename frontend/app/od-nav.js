@@ -880,9 +880,10 @@
       var h = '#' + (anchor || subTabs[g].ids[0]);
       if (push && location.hash !== h && history.pushState) history.pushState(null, '', h);
       if (changed) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); /* 让热力图等按新宽度重绘 */
-      var n = anchor && anchor !== subTabs[g].ids[0] ? document.getElementById(anchor) : null;
+      var first = anchor && anchor === subTabs[g].ids[0];
+      var n = anchor && !first ? document.getElementById(anchor) : null;
       if (n) { n.style.scrollMarginTop = (hdr.getBoundingClientRect().height + 12) + 'px'; n.scrollIntoView(); }
-      else if (changed && push) window.scrollTo(0, 0);
+      else if ((changed && push) || first) window.scrollTo(0, 0);
     };
     var fromHash = function () {
       gStyle.textContent = '.odn-gh{display:none!important}';
