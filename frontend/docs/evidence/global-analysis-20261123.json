@@ -1,0 +1,938 @@
+{
+  "scope": "local loopback preview; no deployment or publication",
+  "live": {
+    "assets": [
+      {
+        "symbol": "US_MRVL",
+        "asof": "2026-11-20",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.285338+00:00",
+        "completed": "2026-11-23T12:21:50.868859+00:00",
+        "source_status": "ready",
+        "aftershock_method": "daily_aftershock_v1",
+        "modules": {
+          "omori": {
+            "status": "insufficient_data",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "observed_after_days": 11,
+              "aftershock_events": 1,
+              "horizon_days": 20,
+              "mature": false,
+              "min_fit_days": 10,
+              "min_fit_events": 4,
+              "elapsed_since_mainshock": 11
+            },
+            "parameters": null
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "observed_after_days": 11,
+              "horizon_days": 20,
+              "mature": false,
+              "elapsed_since_mainshock": 11
+            },
+            "parameters": {
+              "gap_log10": 0.15932479753928588,
+              "mainshock_abs_log_return": 0.1794470900225118,
+              "largest_aftershock_abs_log_return": 0.1243402174424908,
+              "later_larger": false,
+              "formula": "log10(initial absolute log return / largest subsequent absolute log return)"
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "mature_events": 37,
+              "pending_events": 1,
+              "min_mature_events": 12,
+              "training_start": "2000-10-17",
+              "training_last_event": "2026-06-05",
+              "horizon_days": 20,
+              "training_years": 20
+            },
+            "parameters": {
+              "alpha": -1.4872148480590712,
+              "intercept": 2.741032100216475,
+              "alpha_ci95": [
+                -2.926503851090006,
+                -0.04792584502813679
+              ],
+              "alpha_cluster_year_se": 0.7343311239953747,
+              "alpha_interval_includes_zero": false,
+              "expected_20d_events": 2.35959475662605,
+              "count_unit": "large_move_trading_days_either_direction",
+              "raw_poisson_mean": 2.35959475662605,
+              "training_magnitude_range": [
+                3.088836081605472,
+                8.323507076116925
+              ],
+              "current_magnitude_extrapolated": false,
+              "current_prediction_status": "descriptive",
+              "optimizer_success": true,
+              "optimizer_message": "Optimization terminated successfully.",
+              "mean_observed_count": 1.864864864864865,
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 72
+      },
+      {
+        "symbol": "JP_N225",
+        "asof": "2026-11-20",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.301103+00:00",
+        "completed": "2026-11-23T12:22:24.981814+00:00",
+        "source_status": "ready",
+        "aftershock_method": "daily_aftershock_v1",
+        "modules": {
+          "omori": {
+            "status": "insufficient_data",
+            "mainshock_date": "2026-11-06",
+            "samples": {
+              "observed_after_days": 10,
+              "aftershock_events": 1,
+              "horizon_days": 20,
+              "mature": false,
+              "min_fit_days": 10,
+              "min_fit_events": 4,
+              "elapsed_since_mainshock": 10
+            },
+            "parameters": null
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-11-06",
+            "samples": {
+              "observed_after_days": 10,
+              "horizon_days": 20,
+              "mature": false,
+              "elapsed_since_mainshock": 10
+            },
+            "parameters": {
+              "gap_log10": 0.07354612135581426,
+              "mainshock_abs_log_return": 0.06150021213675316,
+              "largest_aftershock_abs_log_return": 0.051919498928072016,
+              "later_larger": false,
+              "formula": "log10(initial absolute log return / largest subsequent absolute log return)"
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-11-06",
+            "samples": {
+              "mature_events": 36,
+              "pending_events": 1,
+              "min_mature_events": 12,
+              "training_start": "2000-04-17",
+              "training_last_event": "2026-03-09",
+              "horizon_days": 20,
+              "training_years": 20
+            },
+            "parameters": {
+              "alpha": -0.05528492680847346,
+              "intercept": 1.4203806873697462,
+              "alpha_ci95": [
+                -0.8612600714037137,
+                0.7506902177867669
+              ],
+              "alpha_cluster_year_se": 0.41121180846695937,
+              "alpha_interval_includes_zero": true,
+              "expected_20d_events": 3.836257847353982,
+              "count_unit": "large_move_trading_days_either_direction",
+              "raw_poisson_mean": 3.836257847353982,
+              "training_magnitude_range": [
+                3.0721326290897917,
+                6.851886762607849
+              ],
+              "current_magnitude_extrapolated": false,
+              "current_prediction_status": "descriptive",
+              "optimizer_success": true,
+              "optimizer_message": "Optimization terminated successfully.",
+              "mean_observed_count": 3.8333333333333335,
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 12
+      },
+      {
+        "symbol": "KR_KOSPI",
+        "asof": "2026-11-23",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.303694+00:00",
+        "completed": "2026-11-23T12:23:04.949563+00:00",
+        "source_status": "ready",
+        "aftershock_method": "daily_aftershock_v1",
+        "modules": {
+          "omori": {
+            "status": "insufficient_data",
+            "mainshock_date": "2026-06-23",
+            "samples": {
+              "observed_after_days": 20,
+              "aftershock_events": 2,
+              "horizon_days": 20,
+              "mature": true,
+              "min_fit_days": 10,
+              "min_fit_events": 4,
+              "elapsed_since_mainshock": 103
+            },
+            "parameters": null
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-06-23",
+            "samples": {
+              "observed_after_days": 20,
+              "horizon_days": 20,
+              "mature": true,
+              "elapsed_since_mainshock": 103
+            },
+            "parameters": {
+              "gap_log10": 0.0503384966400745,
+              "mainshock_abs_log_return": 0.10526969801920671,
+              "largest_aftershock_abs_log_return": 0.09374861933613765,
+              "later_larger": false,
+              "formula": "log10(initial absolute log return / largest subsequent absolute log return)"
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-06-23",
+            "samples": {
+              "mature_events": 40,
+              "pending_events": 0,
+              "min_mature_events": 12,
+              "training_start": "2000-04-17",
+              "training_last_event": "2026-06-23",
+              "horizon_days": 20,
+              "training_years": 23
+            },
+            "parameters": {
+              "alpha": 0.19775709172760264,
+              "intercept": 0.8942225399444644,
+              "alpha_ci95": [
+                -0.8123045453756492,
+                1.2078187288308544
+              ],
+              "alpha_cluster_year_se": 0.5153375699506387,
+              "alpha_interval_includes_zero": true,
+              "expected_20d_events": 3.046522864821471,
+              "count_unit": "large_move_trading_days_either_direction",
+              "raw_poisson_mean": 3.046522864821471,
+              "training_magnitude_range": [
+                3.0294329445006136,
+                8.602834501133279
+              ],
+              "current_magnitude_extrapolated": false,
+              "current_prediction_status": "descriptive",
+              "optimizer_success": true,
+              "optimizer_message": "Optimization terminated successfully.",
+              "mean_observed_count": 3.175,
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 12
+      },
+      {
+        "symbol": "US_NDX",
+        "asof": "2026-11-20",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.314415+00:00",
+        "completed": "2026-11-23T12:23:57.086226+00:00",
+        "source_status": "ready",
+        "aftershock_method": "ixic_ndx_quake_20261123_v1",
+        "modules": {
+          "omori": {
+            "status": "available",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "observed_after_days": 33,
+              "baseline_days": 27,
+              "baseline_bars": 702,
+              "latest_mainshock_after_days": 0,
+              "bars_per_session": 26,
+              "latest5_events": 58,
+              "previous5_events": 24,
+              "latest_day_events": 18
+            },
+            "parameters": {
+              "c": 1,
+              "p": 0.0,
+              "background": 5.392939205506302,
+              "amplitude": 0.0010001599603588981,
+              "optimizer_success": true,
+              "constant_rate": 5.393939393939394,
+              "nll": 103.67746423284495,
+              "aic_omori": 213.3549284656899,
+              "aic_constant": 209.3549284656899,
+              "aic_exponential": 170.76950629918815,
+              "exponential_slope": 0.05195157581319006,
+              "last_rate": 5.393939365466661,
+              "first_rate": 5.393939365466661,
+              "p_at_boundary": true,
+              "decay_identified": false,
+              "predicted": [
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661,
+                5.393939365466661
+              ]
+            }
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "observed_after_days": 11,
+              "horizon_days": 20,
+              "mature": false,
+              "historical_events": 47
+            },
+            "parameters": {
+              "gap_log10": 0.055760359063858164,
+              "mainshock_abs_log_return": 0.06566580397472957,
+              "largest_aftershock_abs_log_return": 0.057753579547210186,
+              "latest_to_previous_largest_ratio": 0.8795076897167927,
+              "historical_larger_aftershock_fraction": 0.425531914893617,
+              "historical_gap_quantiles": [
+                -0.2678805953589112,
+                -0.11576972919180756,
+                0.03108475005958027,
+                0.1994890457404911,
+                0.2776692377192306
+              ],
+              "historical_fraction_is_current_probability": false
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "mature_events": 47,
+              "training_years": 28,
+              "training_start": "1990-01-01",
+              "training_end": "2025-12-31",
+              "current_observed_after_days": 0,
+              "horizon_days": 20
+            },
+            "parameters": {
+              "alpha": 0.4508279850426499,
+              "intercept": 0.8537211428653594,
+              "alpha_ci95": [
+                -0.29473136617504575,
+                1.1963873362603457
+              ],
+              "alpha_cluster_year_se": 0.38038742409066106,
+              "alpha_interval_includes_zero": true,
+              "expected_20d_events": 4.26616156422454,
+              "mean_observed_count": 4.276595744680851,
+              "optimizer_success": true,
+              "count_unit": "large_move_trading_days_either_direction",
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 12
+      },
+      {
+        "symbol": "US_SPX",
+        "asof": "2026-11-20",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.317079+00:00",
+        "completed": "2026-11-23T12:24:45.948713+00:00",
+        "source_status": "ready",
+        "aftershock_method": "daily_aftershock_v1",
+        "modules": {
+          "omori": {
+            "status": "insufficient_data",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "observed_after_days": 0,
+              "aftershock_events": 0,
+              "horizon_days": 20,
+              "mature": false,
+              "min_fit_days": 10,
+              "min_fit_events": 4,
+              "elapsed_since_mainshock": 0
+            },
+            "parameters": null
+          },
+          "bath": {
+            "status": "insufficient_data",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "observed_after_days": 0,
+              "horizon_days": 20,
+              "mature": false,
+              "elapsed_since_mainshock": 0
+            },
+            "parameters": null
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "mature_events": 42,
+              "pending_events": 1,
+              "min_mature_events": 12,
+              "training_start": "2000-04-14",
+              "training_last_event": "2025-10-10",
+              "horizon_days": 20,
+              "training_years": 20
+            },
+            "parameters": {
+              "alpha": 1.2503174151111855,
+              "intercept": -0.2574778512091423,
+              "alpha_ci95": [
+                0.5321106618066471,
+                1.968524168415724
+              ],
+              "alpha_cluster_year_se": 0.3664320169921114,
+              "alpha_interval_includes_zero": false,
+              "expected_20d_events": 4.146261872602416,
+              "count_unit": "large_move_trading_days_either_direction",
+              "raw_poisson_mean": 4.146261872602416,
+              "training_magnitude_range": [
+                3.028652635463267,
+                7.847059413589433
+              ],
+              "current_magnitude_extrapolated": false,
+              "current_prediction_status": "descriptive",
+              "optimizer_success": true,
+              "optimizer_message": "Optimization terminated successfully.",
+              "mean_observed_count": 4.380952380952381,
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 11
+      },
+      {
+        "symbol": "US_DJI",
+        "asof": "2026-11-20",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.320288+00:00",
+        "completed": "2026-11-23T12:25:26.807307+00:00",
+        "source_status": "ready",
+        "aftershock_method": "daily_aftershock_v1",
+        "modules": {
+          "omori": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "observed_after_days": 11,
+              "aftershock_events": 4,
+              "horizon_days": 20,
+              "mature": false,
+              "min_fit_days": 10,
+              "min_fit_events": 4,
+              "elapsed_since_mainshock": 11
+            },
+            "parameters": {
+              "p": 2.0000004491112473,
+              "c": 1.0,
+              "background": 0.36363290685774896,
+              "amplitude": 9.999886984124221e-05,
+              "p_at_boundary": false,
+              "decay_identified": false,
+              "constant_rate": 0.36363636363636365,
+              "aic_omori": 22.092844022784426,
+              "aic_constant": 18.09280729342784,
+              "rate_unit": "large_move_days_per_trading_day",
+              "optimizer_success": true,
+              "optimizer_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+              "predicted_rates": [
+                0.36365790656742686,
+                0.3636440178378047,
+                0.36363915678322284,
+                0.3636369068096514,
+                0.3636356846018982,
+                0.3636349476492275,
+                0.36363446933863103,
+                0.36363414141047934,
+                0.36363390684541325,
+                0.3636337332937998,
+                0.3636336012935701
+              ],
+              "confidence_interval": null
+            }
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "observed_after_days": 11,
+              "horizon_days": 20,
+              "mature": false,
+              "elapsed_since_mainshock": 11
+            },
+            "parameters": {
+              "gap_log10": 0.1976108031317923,
+              "mainshock_abs_log_return": 0.03495925867082583,
+              "largest_aftershock_abs_log_return": 0.02217948263682956,
+              "later_larger": false,
+              "formula": "log10(initial absolute log return / largest subsequent absolute log return)"
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "mature_events": 41,
+              "pending_events": 1,
+              "min_mature_events": 12,
+              "training_start": "2000-04-14",
+              "training_last_event": "2025-10-10",
+              "horizon_days": 20,
+              "training_years": 21
+            },
+            "parameters": {
+              "alpha": 0.8567643075840685,
+              "intercept": 0.26641384574043747,
+              "alpha_ci95": [
+                0.003824522726786461,
+                1.7097040924413505
+              ],
+              "alpha_cluster_year_se": 0.4351733596210623,
+              "alpha_interval_includes_zero": false,
+              "expected_20d_events": 5.0328943067763285,
+              "count_unit": "large_move_trading_days_either_direction",
+              "raw_poisson_mean": 5.0328943067763285,
+              "training_magnitude_range": [
+                3.001225600573259,
+                7.775309948992257
+              ],
+              "current_magnitude_extrapolated": false,
+              "current_prediction_status": "descriptive",
+              "optimizer_success": true,
+              "optimizer_message": "Optimization terminated successfully.",
+              "mean_observed_count": 4.195121951219512,
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 12
+      },
+      {
+        "symbol": "KR_KOSDAQ",
+        "asof": "2026-11-23",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:21:32.322958+00:00",
+        "completed": "2026-11-23T12:26:04.413006+00:00",
+        "source_status": "ready",
+        "aftershock_method": "daily_aftershock_v1",
+        "modules": {
+          "omori": {
+            "status": "insufficient_data",
+            "mainshock_date": "2026-06-08",
+            "samples": {
+              "observed_after_days": 20,
+              "aftershock_events": 3,
+              "horizon_days": 20,
+              "mature": true,
+              "min_fit_days": 10,
+              "min_fit_events": 4,
+              "elapsed_since_mainshock": 114
+            },
+            "parameters": null
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-06-08",
+            "samples": {
+              "observed_after_days": 20,
+              "horizon_days": 20,
+              "mature": true,
+              "elapsed_since_mainshock": 114
+            },
+            "parameters": {
+              "gap_log10": 0.06113785150778326,
+              "mainshock_abs_log_return": 0.0952213867395848,
+              "largest_aftershock_abs_log_return": 0.08271735721542939,
+              "later_larger": false,
+              "formula": "log10(initial absolute log return / largest subsequent absolute log return)"
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-06-08",
+            "samples": {
+              "mature_events": 63,
+              "pending_events": 0,
+              "min_mature_events": 12,
+              "training_start": "2001-09-12",
+              "training_last_event": "2026-06-08",
+              "horizon_days": 20,
+              "training_years": 26
+            },
+            "parameters": {
+              "alpha": 0.22241588577560847,
+              "intercept": 0.9683896712055909,
+              "alpha_ci95": [
+                -0.6318922509513806,
+                1.0767240225025976
+              ],
+              "alpha_cluster_year_se": 0.4358714983300965,
+              "alpha_interval_includes_zero": true,
+              "expected_20d_events": 3.371253783746032,
+              "count_unit": "large_move_trading_days_either_direction",
+              "raw_poisson_mean": 3.371253783746032,
+              "training_magnitude_range": [
+                3.0106700644713538,
+                8.809629628181579
+              ],
+              "current_magnitude_extrapolated": false,
+              "current_prediction_status": "descriptive",
+              "optimizer_success": true,
+              "optimizer_message": "Optimization terminated successfully.",
+              "mean_observed_count": 3.5555555555555554,
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "empty",
+        "news_items": 0
+      },
+      {
+        "symbol": "US_IXIC",
+        "asof": "2026-11-20",
+        "fit_counts": {
+          "expected": 27,
+          "completed": 27,
+          "failed": 0,
+          "pending": 0
+        },
+        "cache_reused": 0,
+        "started": "2026-11-23T12:17:19.766398+00:00",
+        "completed": "2026-11-23T12:17:59.869527+00:00",
+        "source_status": "ready",
+        "aftershock_method": "ixic_ndx_quake_20261123_v1",
+        "modules": {
+          "omori": {
+            "status": "available",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "observed_after_days": 33,
+              "baseline_days": 27,
+              "baseline_bars": 702,
+              "latest_mainshock_after_days": 0,
+              "bars_per_session": 26,
+              "latest5_events": 52,
+              "previous5_events": 20,
+              "latest_day_events": 16
+            },
+            "parameters": {
+              "c": 1,
+              "p": 0.0,
+              "background": 4.574758105110631,
+              "amplitude": 0.0009993633951471783,
+              "optimizer_success": true,
+              "constant_rate": 4.575757575757576,
+              "nll": 97.78288148388592,
+              "aic_omori": 201.56576296777183,
+              "aic_constant": 197.5657629677717,
+              "aic_exponential": 152.13608631542138,
+              "exponential_slope": 0.06183148708833989,
+              "last_rate": 4.5757574685057785,
+              "first_rate": 4.5757574685057785,
+              "p_at_boundary": true,
+              "decay_identified": false,
+              "predicted": [
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785,
+                4.5757574685057785
+              ]
+            }
+          },
+          "bath": {
+            "status": "available",
+            "mainshock_date": "2026-11-05",
+            "samples": {
+              "observed_after_days": 11,
+              "horizon_days": 20,
+              "mature": false,
+              "historical_events": 52
+            },
+            "parameters": {
+              "gap_log10": 0.019890667944590747,
+              "mainshock_abs_log_return": 0.05681715337723328,
+              "largest_aftershock_abs_log_return": 0.05427362170117614,
+              "latest_to_previous_largest_ratio": 0.9552330321941764,
+              "historical_larger_aftershock_fraction": 0.4423076923076923,
+              "historical_gap_quantiles": [
+                -0.24898434492005922,
+                -0.11120116089373885,
+                0.06094842636588302,
+                0.2044256942961404,
+                0.30578104583585264
+              ],
+              "historical_fraction_is_current_probability": false
+            }
+          },
+          "productivity": {
+            "status": "available",
+            "mainshock_date": "2026-11-20",
+            "samples": {
+              "mature_events": 52,
+              "training_years": 28,
+              "training_start": "1990-01-01",
+              "training_end": "2025-12-31",
+              "current_observed_after_days": 0,
+              "horizon_days": 20
+            },
+            "parameters": {
+              "alpha": 0.6332996045144443,
+              "intercept": 0.5532453347425135,
+              "alpha_ci95": [
+                -0.14580578112760434,
+                1.412404990156493
+              ],
+              "alpha_cluster_year_se": 0.3975027477765555,
+              "alpha_interval_includes_zero": true,
+              "expected_20d_events": 4.173042784866626,
+              "mean_observed_count": 4.096153846153846,
+              "optimizer_success": true,
+              "count_unit": "large_move_trading_days_either_direction",
+              "calibrated_probability": false
+            }
+          }
+        },
+        "events_status": "ok",
+        "news_items": 12
+      }
+    ],
+    "security": [
+      {
+        "route": "/lab/mock/data/global/catalog.json",
+        "status": 403,
+        "headers": {
+          "Host": "untrusted.example:8796"
+        }
+      },
+      {
+        "route": "/api/global-analysis",
+        "status": 403,
+        "headers": {
+          "Origin": "https://untrusted.example"
+        }
+      }
+    ]
+  },
+  "browser_readonly": {
+    "checks": [
+      "1440: US_IXIC real modules, source dates, readable controls",
+      "1440: US_NDX real modules, source dates, readable controls",
+      "1440: US_MRVL real modules, source dates, readable controls",
+      "1440: MRVL to NDX identity-preserving asset navigation",
+      "1440: exact historical study preserved when later prices are revealed",
+      "390: US_IXIC real modules, source dates, readable controls",
+      "390: US_NDX real modules, source dates, readable controls",
+      "390: US_MRVL real modules, source dates, readable controls",
+      "390: MRVL to NDX identity-preserving asset navigation",
+      "390: exact historical study preserved when later prices are revealed"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  "browser_real_clicks": {
+    "checks": [
+      "1440: click -> real refreshed data -> 27 cached fits -> matched cards",
+      "1440: invalid/unavailable date fails explicitly; prior chart remains usable",
+      "1440: new exact historical endpoint persists; reload and history list agree; no future news",
+      "390: click -> real refreshed data -> 27 cached fits -> matched cards",
+      "390: invalid/unavailable date fails explicitly; prior chart remains usable",
+      "390: new exact historical endpoint persists; reload and history list agree; no future news"
+    ],
+    "errors": [],
+    "posts": [
+      {
+        "url": "http://127.0.0.1:8796/api/global-analysis",
+        "method": "POST"
+      },
+      {
+        "url": "http://127.0.0.1:8796/api/global-analysis",
+        "method": "POST"
+      },
+      {
+        "url": "http://127.0.0.1:8796/api/global-analysis",
+        "method": "POST"
+      },
+      {
+        "url": "http://127.0.0.1:8796/api/global-analysis",
+        "method": "POST"
+      },
+      {
+        "url": "http://127.0.0.1:8796/api/global-analysis",
+        "method": "POST"
+      },
+      {
+        "url": "http://127.0.0.1:8796/api/global-analysis",
+        "method": "POST"
+      }
+    ],
+    "jobs": [
+      {
+        "job_id": "1a43a65919014276a05d72747cc60ea4",
+        "symbol": "US_IXIC",
+        "requested_asof": null,
+        "status": "complete",
+        "progress": {
+          "completed": 27,
+          "expected": 27
+        },
+        "created_at": "2026-11-23T12:26:26.167835+00:00",
+        "updated_at": "2026-11-23T12:26:33.950177+00:00",
+        "result_url": "/api/global-analysis/1a43a65919014276a05d72747cc60ea4/result",
+        "asof": "2026-11-20",
+        "error": null,
+        "source_status": "ready",
+        "source_note": null,
+        "cache_reused": 27,
+        "modules": {
+          "lppls": "complete",
+          "aftershock": "complete",
+          "events": "ok"
+        },
+        "completed_at": "2026-11-23T12:26:33.950177+00:00"
+      },
+      {
+        "job_id": "d86fd48bb53b46f5bc749fa334e6e9cb",
+        "symbol": "US_IXIC",
+        "requested_asof": null,
+        "status": "complete",
+        "progress": {
+          "completed": 27,
+          "expected": 27
+        },
+        "created_at": "2026-11-23T12:27:41.490588+00:00",
+        "updated_at": "2026-11-23T12:27:56.951995+00:00",
+        "result_url": "/api/global-analysis/d86fd48bb53b46f5bc749fa334e6e9cb/result",
+        "asof": "2026-11-20",
+        "error": null,
+        "source_status": "ready",
+        "source_note": null,
+        "cache_reused": 27,
+        "modules": {
+          "lppls": "complete",
+          "aftershock": "complete",
+          "events": "ok"
+        },
+        "completed_at": "2026-11-23T12:27:56.951995+00:00"
+      }
+    ],
+    "inspected_at": "2026-11-23T12:28:31.597Z"
+  }
+}

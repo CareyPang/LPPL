@@ -1,0 +1,85 @@
+name: global_research_refresh
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/global_research_refresh.yml
+      - research/pipeline/global_refresh.py
+      - research/pipeline/global_daily.py
+      - research/pipeline/long_rolling.py
+      - research/pipeline/global_jobs.py
+      - research/data/global_terminal.py
+      - tests/test_global_refresh.py
+      - tests/test_global_daily.py
+      - tests/test_global_jobs.py
+      - tests/test_global_full_history.py
+  workflow_dispatch:
+  # Schedule is deliberately not enabled by this draft PR.
+  # After an explicit deployment decision, add:
+  # schedule:
+  #   - cron: '30 0 * * *'  # 08:30 Asia/Shanghai and Asia/Singapore.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: global-research-refresh-${{ github.event_name == 'pull_request' && github.ref || 'daily' }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Offline scheduler contracts
+        run: python -m pytest tests/test_global_refresh.py tests/test_global_daily.py tests/test_global_jobs.py -m 'not network'
+      - name: Validate configuration without fetching or fitting
+        env:
+          TASK_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          base = Path(os.environ['TASK_TEMP']).resolve() / 'global-refresh-contract'
+          config = {name: str(base / name) for name in ('source_root', 'jobs_root', 'state_root', 'long_state_root', 'fit_cache')}
+          config['symbols'] = ['US_IXIC', 'US_NDX', 'KR_KOSPI', 'KR_KOSDAQ']
+          config['long_assets'] = list(config['symbols'])
+          config['seed_study_root'] = None
+          config['long_workers'] = 4
+          path = Path(os.environ['TASK_TEMP']) / 'global-refresh-config.json'
+          path.write_text(json.dumps(config), encoding='utf-8')
+          PY
+          python -m research.pipeline.global_daily --config "$TASK_TEMP/global-refresh-config.json" --dry-run
+
+  refresh:
+    # The separately provisioned runner and repository variable are opt-in.
+    # No raw data, headlines or result artifacts are uploaded by this workflow.
+    if: github.event_name == 'workflow_dispatch' && vars.GLOBAL_RESEARCH_REFRESH_ENABLED == 'true'
+    runs-on: [self-hosted, global-research]
+    timeout-minutes: 240
+    env:
+      GLOBAL_RESEARCH_CONFIG_PATH: ${{ vars.GLOBAL_RESEARCH_CONFIG_PATH }}
+      GLOBAL_RESEARCH_PYTHON: ${{ vars.GLOBAL_RESEARCH_PYTHON }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run configured local refresh
+        shell: pwsh
+        run: |
+          . 'D:\CodexData\config\analysis-env.ps1'
+          if (-not $env:GLOBAL_RESEARCH_CONFIG_PATH -or -not $env:GLOBAL_RESEARCH_PYTHON) {
+            throw 'Configure absolute config and Python paths on the opt-in runner first.'
+          }
+          if (-not [IO.Path]::IsPathRooted($env:GLOBAL_RESEARCH_CONFIG_PATH) -or -not [IO.Path]::IsPathRooted($env:GLOBAL_RESEARCH_PYTHON)) {
+            throw 'Only absolute local paths are accepted.'
+          }
+          & $env:GLOBAL_RESEARCH_PYTHON -m research.pipeline.global_daily --config $env:GLOBAL_RESEARCH_CONFIG_PATH
+          exit $LASTEXITCODE

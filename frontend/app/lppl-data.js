@@ -1,10 +1,11 @@
 /* 临界点 · 数据适配层（国际资产扩展见 PR #182；不改变原有 A 股接口）
-   只读后端静态 JSON（站点 lab/mock/data/），不做任何模型计算；取数失败直接抛错，页面显示"数据未加载"。
+   后端静态 JSON与用户显式启动的本机国际回测统一入口；前端不做模型计算。
    字段含义：docs/frontend_contract.md、docs/od_field_mapping.md */
 (function (G) {
   'use strict';
   const BASE = (G.LPPL_DATA_BASE || 'lab/mock/data/');
   const QUERY_API = (G.LPPL_QUERY_API || 'https://lppl-stock-query.careypang.workers.dev').replace(/\/$/, '');
+  const GLOBAL_ANALYSIS_API = (G.LPPL_GLOBAL_ANALYSIS_API || '/api/global-analysis').replace(/\/$/, '');
   const SYMS = [
     { sym: 'sh000001', name: '上证指数', code: '000001', alias: ['上证', '上证综指', '上证指数'] },
     { sym: 'sh000016', name: '上证50', code: '000016', alias: ['上证50'] },
@@ -38,7 +39,39 @@
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(asof))) throw new Error('历史日期无效');
       return getJSON('global/' + requiredGlobal(input).sym + '_' + asof + '.json');
     },
+    capabilities: async () => {
+      if (!globalAnalysisConnected()) return { available: false, reason: '本页面未连接可运行的本机后端；已有结果仍可浏览。' };
+      try { return await fetchJSONBounded(GLOBAL_ANALYSIS_API, { cache: 'no-store' }, true) || { available: false, reason: '本机服务尚未提供回测接口。' }; }
+      catch { return { available: false, reason: '本机回测服务暂不可用；已有行情与结果仍可浏览。' }; }
+    },
+    startAnalysis: ({ symbol, asof = null, refresh = true }) => {
+      const asset = requiredGlobal(symbol);
+      if (!globalAnalysisConnected()) return Promise.reject(new Error('本页面未连接可运行的本机后端。'));
+      if (asof !== null && !validGlobalDate(asof)) return Promise.reject(new Error('请选择有效的截止日期，或留空使用最新完整日线。'));
+      return fetchJSONBounded(GLOBAL_ANALYSIS_API, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: asset.sym, asof, refresh: refresh === true }) });
+    },
+    analysisJob: id => globalJobRequest(id, ''),
+    analysisResult: id => globalJobRequest(id, '/result'),
+    clearCache: (input, asof) => {
+      const symbol = requiredGlobal(input).sym;
+      cache.delete('global/' + symbol + '_history.json');
+      if (asof && validGlobalDate(asof)) cache.delete('global/' + symbol + '_' + asof + '.json');
+      else cache.delete('global/' + symbol + '_latest.json');
+    },
   };
+  function globalAnalysisConnected() {
+    return !!G.LPPL_GLOBAL_ANALYSIS_API || /^(localhost|127\.0\.0\.1|\[?::1\]?)$/i.test(G.location && G.location.hostname || '');
+  }
+  function validGlobalDate(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(value + 'T00:00:00Z');
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }
+  function globalJobRequest(id, suffix) {
+    if (!globalAnalysisConnected()) return Promise.reject(new Error('本页面未连接可运行的本机后端。'));
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(String(id || ''))) return Promise.reject(new Error('回测任务编号无效。'));
+    return fetchJSONBounded(GLOBAL_ANALYSIS_API + '/' + encodeURIComponent(id) + suffix, { cache: 'no-store' });
+  }
   function requiredGlobal(input) { const item = globalAsset(input); if (!item) throw new Error('国际资产身份未登记'); return item; }
   const HIDE = new Set(['none', 'fail', 'fail_i', 'fail_i_iii', 'dev_only', 'dev_failed', 'pending_cal', 'pending_test']);
   const cache = new Map();

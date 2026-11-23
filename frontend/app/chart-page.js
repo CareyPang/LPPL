@@ -27,6 +27,9 @@
   var activeIntradayMetadata = null;
   var selectedPeriod = 'd';
   var terminal = null;
+  var longHorizon = null;
+  var analysisJob = null;
+  var aftershock = null;
   var futureBars = null;
   var scales = Core.SCALES;
   var scaleLabels = {
@@ -360,6 +363,13 @@
     data = Core.withRule(data, context.rule);
     var view = preserveView && chart.getVisibleRange ? chart.getVisibleRange() : null;
     current = data;
+    if (longHorizon) longHorizon.render(data);
+    if (aftershock) aftershock.render(data);
+    if (root.LPPLGlobalEvents && Reader.globalAsset(LPPL,context)) {
+      var eventView=root.LPPLGlobalEvents.model(data,context);
+      root.LPPLGlobalEvents.render(document,eventView,function(event){chart.focusDate(event.date,event.id);context.focus=event.id;updateAddress(context.scale,event.id);});
+      data.eventRows=eventView.markers;data.events=eventView.markers;activeEvents=eventView.markers;
+    }
     var lastBar = data.bars[data.bars.length - 1] || {};
     page.dataset.code = data.symbol;
     page.dataset.barCount = String(data.bars.length);
@@ -462,6 +472,10 @@
 
   async function loadEvents(request) {
     var run = ++eventRequest;
+    if (Reader.globalAsset(LPPL,context)) {
+      moduleState('events-status','资讯随对应截止日结果读取');
+      el('events-retry').disabled=false;return;
+    }
     if (context.assetType !== 'stock' || context.market !== 'cn') {
       el('events-note').textContent = '当前事件入口仅提供 A 股个股事件；本标的尚未接入。';
       el('events-retry').disabled = true;
@@ -541,7 +555,10 @@
   });
 
   el('retry-button').addEventListener('click', function () { void load(); });
-  el('events-retry').addEventListener('click', function () { void loadEvents(sequence); });
+  el('events-retry').addEventListener('click', function () {
+    if (Reader.globalAsset(LPPL,context)) { LPPL.global.clearCache(context.code,context.asof);void load(); }
+    else void loadEvents(sequence);
+  });
 
   var drawer = el('evidence-panel');
   var identityStrip = el('identity-strip');
@@ -736,10 +753,38 @@
     }
   }
 
+  function presentAnalysisResult(raw, requested, job) {
+    if (requested.symbol !== context.code || !Reader.sameSymbol(raw.symbol, context)) throw new Error('回测结果与当前标的不匹配。');
+    var nextContext = Object.assign({}, context, { asof:raw.asof });
+    var result = Reader.exactResult(raw, nextContext);
+    var data = context.assetType === 'stock'
+      ? Core.assembleStockData(context.code, raw, Reader.marketFromPublished(raw, context.stockCode), null)
+      : Core.assembleIndexData(context.code, result);
+    // Invalidate earlier in-flight page reads before presenting the requested snapshot.
+    sequence++;
+    context.asof = requested.asof || '';
+    futureBars = null; page.dataset.showFuture = 'false';
+    el('terminal-show-future').checked = false;
+    var params = new URLSearchParams(root.location.search);
+    if (context.asof) params.set('asof',context.asof); else params.delete('asof');
+    params.set('mode',context.asof ? 'replay' : 'diagnosis');
+    root.history.replaceState(null,'',root.location.pathname+'?'+params.toString()+root.location.hash);
+    if (terminal && terminal.syncContext) terminal.syncContext();
+    data.eventRows=[];data.events=[];activeEvents=[];
+    data.marketAsOf=data.bars.length ? data.bars[data.bars.length-1].date : '';
+    el('error-panel').hidden=true;
+    moduleState('market-status','所选截止日行情已就绪');
+    moduleState('model-status',job.status==='complete' ? '本次回测结果已读取' : '当前结果已读取，其他分析继续');
+    present(data,!!current);
+  }
+
   try {
     chart = LPPLChart.mount(el('chart-host'), { height: 520 });
     chart.setScale(context.scale);
     drawing = root.ChartDrawing.attach(chart, { symbol: context.code, asof: context.asof });
+    if (root.LPPLLongHorizon) longHorizon = root.LPPLLongHorizon.attach({ document: document, context: context, badge: root.CPEvidenceBadge });
+    if (root.LPPLAftershock) aftershock = root.LPPLAftershock.attach({ document:document, badge:root.CPEvidenceBadge });
+    if (root.LPPLGlobalAnalysis) analysisJob = root.LPPLGlobalAnalysis.attach({ document:document, adapter:LPPL, context:context, onResult:presentAnalysisResult });
     if (root.LPPLUnifiedTerminal && context.valid) terminal = root.LPPLUnifiedTerminal.attach({
       document: document, adapter: LPPL, reader: Reader, core: Core, context: context, search: root.location.search,
       navigate: function (url) { root.location.assign(url); },
@@ -771,5 +816,6 @@
   }
   root.addEventListener('pagehide', function (event) {
     if (!event.persisted && drawing) { drawing.detach(); drawing = null; }
+    if (!event.persisted && analysisJob) analysisJob.dispose();
   });
 })(window);

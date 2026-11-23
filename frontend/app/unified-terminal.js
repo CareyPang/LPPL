@@ -200,19 +200,17 @@
       .catch(function () { historyFailed = true; historyStarted = false; dates = datesFrom(null, adapter.REPLAYS && adapter.REPLAYS[context.code]); renderControls(); });
     }
     if (mode === 'replay') loadHistory();
-    return { render: function (data, bands) {
+    return { syncContext:function () {
+      mode=context.asof ? 'replay' : 'diagnosis';futureRun++;historyStarted=false;historyFailed=false;historyData=null;dates=[];
+      el('terminal-show-future').checked=false;
+      renderControls();
+      if (mode==='replay') loadHistory();
+    }, render: function (data, bands) {
       current = data;
       var s = summary(data, bands, context.asof);
       el('terminal-alert-status').textContent = s.status;
       el('terminal-alert-window').textContent = s.window;
       el('terminal-alert-detail').textContent = s.detail;
-      var cooling = data.raw && data.raw.cooling_state;
-      el('terminal-aftershock').hidden = false;
-      var omori = cooling && cooling.dashboard && (cooling.dashboard.dimensions || []).find(function (d) { return d.id === 'omori'; });
-      el('terminal-omori').textContent = omori ? omori.value_text || omori.label || omori.status || '已发布余震状态' : '当前封存未提供';
-      el('terminal-bath').textContent = '尚未接入真实拟合';
-      el('terminal-productivity').textContent = '尚未接入真实拟合';
-      el('terminal-aftershock-note').textContent = cooling ? (cooling.note || '已发布的冷却期与余震状态。') + ' · 启发式余震状态，尚非三定律参数拟合 · 数据截至 ' + data.modelAsOf : '三定律区预留真实接口；当前没有对应结果的项目保持空状态。';
       renderControls();
     } };
   }

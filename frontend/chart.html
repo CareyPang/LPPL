@@ -100,6 +100,10 @@
   <link rel="stylesheet" href="app/chart-professional.css">
   <link rel="stylesheet" href="app/chart-drawing.css">
   <link rel="stylesheet" href="app/unified-terminal.css">
+  <link rel="stylesheet" href="app/long-horizon.css">
+  <link rel="stylesheet" href="app/global-analysis.css">
+  <link rel="stylesheet" href="app/aftershock.css">
+  <link rel="stylesheet" href="app/global-events.css">
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
@@ -164,6 +168,11 @@
         <p id="terminal-replay-status" class="terminal-replay-status" role="status" aria-live="polite"></p>
       </section>
 
+      <section id="global-analysis" class="global-analysis" aria-label="运行单日回测" hidden>
+        <div class="global-analysis-controls"><label for="global-analysis-asof">回测截止日<input id="global-analysis-asof" type="date" aria-describedby="global-analysis-status"></label><button id="global-analysis-run" type="button" disabled>运行回测</button><button id="global-analysis-resume" type="button" hidden>继续查询原任务</button></div>
+        <p id="global-analysis-status" role="status" aria-live="polite">正在检查本机回测服务…</p>
+        <progress id="global-analysis-progress" max="1" value="0" aria-label="回测完成窗口数" hidden></progress>
+      </section>
       <p id="asof-notice" class="calendar-notice" role="status" hidden></p>
 
       <section id="error-panel" class="error-panel" role="alert" hidden>
@@ -229,6 +238,10 @@
           </section>
         </aside>
       </div>
+      <details id="long-horizon-card" class="long-horizon" hidden>
+        <summary><span><strong>长窗口研究</strong><small>900–950 日 · 6500–6700 日</small></span><span id="long-horizon-summary">等待独立研究结果</span></summary>
+        <div id="long-horizon-content" class="long-horizon-content"></div>
+      </details>
       <section id="terminal-history" class="terminal-history" aria-labelledby="terminal-history-title" hidden>
         <header class="terminal-section-heading"><h2 id="terminal-history-title">历史区间记录</h2><a id="terminal-backtest-link" class="terminal-backtest-link" href="backtest.html">查看回测评估 <span aria-hidden="true">↗</span></a></header>
         <p id="terminal-history-note" class="terminal-history-note" role="status">选择记录，回到对应日期查看行情与区间。</p>
@@ -236,13 +249,14 @@
         <button id="terminal-history-more" class="terminal-history-more" type="button" hidden>查看更多记录</button>
       </section>
       <section id="terminal-aftershock" class="terminal-aftershock" aria-labelledby="terminal-aftershock-title" hidden>
-        <header class="terminal-section-heading"><div><p class="eyebrow">下跌之后</p><h2 id="terminal-aftershock-title">余震结构</h2></div><span class="terminal-section-note">Omori · Båth · Productivity</span></header>
+        <header class="terminal-section-heading"><div><p class="eyebrow">下跌之后</p><h2 id="terminal-aftershock-title">余震结构</h2></div><span class="terminal-section-note">Omori · Båth · Productivity <span id="terminal-aftershock-badge"></span></span></header>
         <div class="terminal-aftershock-grid">
-          <article><p class="terminal-label">余震频率 <span>Omori</span></p><p id="terminal-omori" class="terminal-research-value">尚无可用结果</p><p class="terminal-research-caption">查看后续波动出现的频率如何变化。</p></article>
-          <article><p class="terminal-label">余震大小 <span>Båth</span></p><p id="terminal-bath" class="terminal-research-value">尚无可用结果</p><p class="terminal-research-caption">比较主跌段与最大后续波动的大小。</p></article>
-          <article><p class="terminal-label">余震数量 <span>Productivity</span></p><p id="terminal-productivity" class="terminal-research-value">尚无可用结果</p><p class="terminal-research-caption">观察主跌段大小与后续波动次数的关系。</p></article>
+          <article><p class="terminal-label">余震频率 <span>Omori</span></p><div id="terminal-omori" class="aftershock-module">尚无可用结果</div></article>
+          <article><p class="terminal-label">余震大小 <span>Båth</span></p><div id="terminal-bath" class="aftershock-module">尚无可用结果</div></article>
+          <article><p class="terminal-label">余震数量 <span>Productivity</span></p><div id="terminal-productivity" class="aftershock-module">尚无可用结果</div></article>
         </div>
         <p id="terminal-aftershock-note" class="evidence-note">等待当前标的的可追溯研究结果。</p>
+        <div id="terminal-aftershock-evidence"></div>
       </section>
       <section class="events-card" aria-labelledby="events-title">
       <div class="events-heading"><h2 id="events-title">标的事件</h2><button id="events-retry" type="button">重新读取事件</button></div>
@@ -254,6 +268,10 @@
   <script src="app/evidence-badge.js"></script>
   <script src="app/ai-assistant.js" data-page="stock" data-default="closed"></script>
   <script src="app/unified-terminal.js"></script>
+  <script src="app/long-horizon.js"></script>
+  <script src="app/global-analysis.js"></script>
+  <script src="app/aftershock.js"></script>
+  <script src="app/global-events.js"></script>
   <script src="app/chart-page.js"></script>
 </body>
 </html>
