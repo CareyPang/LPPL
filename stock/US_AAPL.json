@@ -2,7 +2,7 @@
  "symbol": "US_AAPL",
  "name": "苹果",
  "asof": "2026-11-20",
- "data_version": "us_AAPL_20261120_1f7ba7f039cf0645",
+ "data_version": "us_AAPL_20261120_aa7809c8725ea3ba",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -1052,7 +1052,7 @@
    },
    "a_share": null,
    "valuation_floor": null,
-   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性，不是预测，不给目标价/日期"
+   "rule": "历史同类泡沫顶→谷回撤与时长的 20/50/80 分位（PS 标签，A 股 6 指数 + 外部 4 指数）；描述性"
   },
   "drawdown_time": {
    "value": null,
@@ -1063,6 +1063,115 @@
    "evidence": "none"
   },
   "evidence_override": "research_candidate"
+ },
+ "cooling_state": {
+  "phase": "active_top",
+  "top_conf_cleared": false,
+  "omori_aftershock_active": false,
+  "dead_cat_risk": false,
+  "drawdown_from_peak": -0.0385,
+  "elapsed_days_since_peak": 5,
+  "min_cooling_days": 20,
+  "drawdown_bucket": "50–100% × 1–2 年",
+  "reentry_ready": false,
+  "note": "顶部聚类活跃，6–12 月或 12–24 月档置信度尚未归零，严禁左侧追高",
+  "dashboard": {
+   "verdict": "top_warning",
+   "verdict_light": "red",
+   "headline": "顶部风险活跃 → 严禁追高，注意逢高减仓",
+   "layers": {
+    "odds": true,
+    "clearing": false,
+    "right_side": false,
+    "passed_count": 1
+   },
+   "dimensions": [
+    {
+     "id": "omori",
+     "name": "Omori 余震衰减",
+     "value_text": "大阴线 0 次 · 波动比 0.94×",
+     "pct": null,
+     "light": "gray",
+     "active": false,
+     "drawdown_from_peak": -0.0385,
+     "elapsed_days_since_peak": 5,
+     "dead_cat_risk": false,
+     "drop_threshold": -0.02,
+     "plain_text": "距年内高点回撤 -3.9%，未进入主震下跌相，无余震限制。",
+     "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
+     "top_rule": "高位剧烈波动放大提示筹码松动",
+     "is_proxy": false
+    },
+    {
+     "id": "erp",
+     "name": "股债性价比 ERP",
+     "value_text": "ERP 6.31% · 分位 47% · 破净分位 84%",
+     "pct": 0.472,
+     "pbn_pct": 0.8407,
+     "light": "yellow",
+     "passed_bottom": true,
+     "passed_top": false,
+     "plain_text": "估值或破净率已有一项进入便宜区间，具备赔率支撑，但仍需等待出清与右侧确认。",
+     "bottom_rule": "ERP ≥80% 分位或破净率 ≥80% 分位（只保证赔率不保证时点）",
+     "top_rule": "ERP ≤20% 分位 + 顶部泡沫加速 = 高危减仓",
+     "is_proxy": false
+    },
+    {
+     "id": "margin",
+     "name": "融资余额（杠杆出清）",
+     "value_text": "两融缓存待同步",
+     "pct": null,
+     "light": "gray",
+     "passed_bottom": false,
+     "passed_top": false,
+     "plain_text": "本地尚无两融日频缓存（交易所 T+1 披露），暂不计入出清打分。",
+     "bottom_rule": "余额停止下降 + 20 日净偿还减速 + 指数不创新低",
+     "top_rule": "余额加速上行且创近 1 年高分位（≥90%）",
+     "is_proxy": false
+    },
+    {
+     "id": "turnover",
+     "name": "成交地量（换手代理）",
+     "value_text": "5/20日量比 0.99× · 年内分位 98%",
+     "pct": 0.9762,
+     "ratio20": 0.99,
+     "light": "gray",
+     "passed_bottom": false,
+     "passed_top": false,
+     "plain_text": "成交量能处于常态区间（以成交额/量比作换手率代理），无极端地量或天量。",
+     "bottom_rule": "先缩至年内 20% 分位以下地量，再温和放量站上 20 日线",
+     "top_rule": "成交冲上年内 95% 分位天量且量比 ≥1.35×",
+     "is_proxy": true
+    },
+    {
+     "id": "nt_etf",
+     "name": "头部300ETF（国家队代理）",
+     "value_text": "5日 -45.0 亿 · 21日 +2032.6 亿",
+     "pct": null,
+     "light": "yellow",
+     "passed_bottom": false,
+     "passed_top": false,
+     "plain_text": "近 5 日头部 300ETF 呈净赎回，暂未看到大资金逆势托底。",
+     "bottom_rule": "回撤期 4 只头部 300ETF 逆势净申购（5 日 ≥50 亿或 21 日 ≥150 亿）",
+     "top_rule": "高位期持续净赎回（5 日 ≤-50 亿且 21 日 ≤-100 亿）",
+     "is_proxy": true
+    },
+    {
+     "id": "right_side",
+     "name": "右侧结构与宽度",
+     "value_text": "距 20 日线 -1.4%",
+     "pct": null,
+     "light": "red",
+     "passed_bottom": false,
+     "plain_text": "价格仍在 20 日线下方运行，右侧趋势尚未扭转，不急于抢跑。",
+     "bottom_rule": "收盘站上 20 日线且 20 日线走平/拐头向上",
+     "top_rule": "跌破 20 日线且反弹无力",
+     "is_proxy": false
+    }
+   ],
+   "note": "所有阈值均为经验参数，非监管标准；两融与 ETF 份额严格滞后 1 交易日（PIT）；北向日频净买入已停披露故不纳入。"
+  },
+  "evidence": "descriptive"
  },
  "price_history": {
   "dates": [
@@ -5611,7 +5720,7 @@
    37407516,
    34209726,
    40906840,
-   80433974
+   80692545
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5636,7 +5745,7 @@
   "entry_rule": {
    "value": null,
    "evidence": "none",
-   "note": "不预测起涨时间；仅参考上月体制带（描述性）与价格自高点回撤"
+   "note": "仅参考上月体制带（描述性）与价格自高点回撤"
   }
  },
  "validation": [],
@@ -5694,7 +5803,7 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "6c5bbb19fa843628f29f99e0d907f42780f1c6e20ac8383ed2c3c883442c8ba3",
+ "fit_code_version": "c067e13e7d852e347aee718e0dac6422f722d3f6b184e43b3ae82cbb509d4228",
  "fit_input_hash": "0678485042141188feab63d24de79699112c97eef7b346859e31934a0c398aba",
  "history_input_hashes": {
   "2023-11-17": "429dae621d55e0597ab0cda9253944c8fafceef2302d8372a486a7d60153a8bb",
@@ -6456,5 +6565,5 @@
  "code": "US_AAPL",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-21T04:02:51.985843+00:00"
+ "generated_at": "2026-11-23T23:02:48.398905+00:00"
 }
