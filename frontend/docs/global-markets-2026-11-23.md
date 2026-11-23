@@ -124,6 +124,8 @@ python scripts/preview_global_terminal.py --results 'D:\CodexData\work\c0ecae6f8
 
 两处既有Python规范问题仅改UTC别名及局部变量名，不改变数学计算。全库ruff通过。完整离线Python首跑618通过、4跳过、2失败；两项均为本机环境：封存文件被Git转成CRLF、bash指向WSL。分别恢复Git HEAD原始字节、在测试进程中优先使用Git Bash后，2项定点复核通过。账本hash未改、forward_log没有Git差异；未以修改封存记录或放宽测试解决失败。GitHub最终状态见PR Checks。
 
+GitHub Linux CI在提交`3c6f948`上已完成全库ruff、532项前端/Worker及620项Python测试（4项跳过）。60个浏览器功能断言也通过，但“切换沪深300”用例仅等待标题，测试收尾先于后续行情请求完成，触发未路由审计；该用例补充等待指定行情响应及请求完成，不移除请求拦截或降低断言。最新提交的最终CI结果以PR Checks为准。
+
 为审计硬化，计算缓存键新增拟合包装函数指纹并排除无关的前端HEAD变化。本次已完成结果保留旧方法hash，没有静默改名冒充新键；用 `--reexport-manifest` 校验封存manifest及源/拟合hash，只重导出，不抓取和不重新拟合。该入口与新计算入口分别有测试。
 
 下一步在生产启用之前：接入逐市场交易所日历；明确数据分发权和部署位置；设置日更任务与失败告警；按相同窗口计划扩大历史重放并单独评分阶段顶漏报、误报及提前量。此次没有自动部署这些服务。

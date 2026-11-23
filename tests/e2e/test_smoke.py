@@ -268,8 +268,18 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
 def test_flow_4_index_chip_updates_header(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
     expect(page.locator("#sym-n")).to_contain_text("上证指数")
-    page.locator('#ticker button[data-c="沪深300"]').click()
+    # The header renders before its quote refresh starts. Wait for this exact
+    # intercepted request to finish so teardown cannot race route.fulfill().
+    with page.expect_response(
+        lambda response: urlsplit(response.url).hostname == "lppl-stock-query.careypang.workers.dev"
+        and urlsplit(response.url).path == "/quote"
+        and parse_qs(urlsplit(response.url).query).get("codes") == ["sh000300"]
+    ) as quote_response:
+        page.locator('#ticker button[data-c="沪深300"]').click()
     expect(page.locator("#sym-n")).to_contain_text("沪深300")
+    response = quote_response.value
+    response.finished()
+    assert response.status == 503  # The offline route, never the live Worker.
 
 
 @pytest.mark.e2e
