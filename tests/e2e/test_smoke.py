@@ -268,7 +268,11 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
 def test_flow_4_index_chip_updates_header(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
     expect(page.locator("#sym-n")).to_contain_text("上证指数")
-    page.locator('#ticker button[data-c="沪深300"]').click()
+    with page.expect_response(
+        lambda response: urlsplit(response.url).path == "/quote"
+        and parse_qs(urlsplit(response.url).query).get("codes") == ["sh000300"]
+    ):
+        page.locator('#ticker button[data-c="沪深300"]').click()
     expect(page.locator("#sym-n")).to_contain_text("沪深300")
 
 
