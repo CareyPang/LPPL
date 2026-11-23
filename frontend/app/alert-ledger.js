@@ -54,6 +54,114 @@
       });
   }
 
+  function isoFromTime(ms) {
+    if (!Number.isFinite(ms)) return null;
+    return new Date(ms).toISOString().slice(0, 10);
+  }
+
+  /**
+   * 估算单个主簇/区间的临界时间中位数日期（q50_date）：
+   * 若后端已提供 q50_date 则直接采用，否则取 [q20_date, q80_date] 的对称中点日期。
+   */
+  function clusterMedianDate(cluster, fallbackWindow) {
+    if (cluster && dateValue(cluster.q50_date) !== null) return cluster.q50_date;
+    var lo = cluster && cluster.q20_date ? cluster.q20_date : (fallbackWindow && fallbackWindow[0]);
+    var hi = cluster && cluster.q80_date ? cluster.q80_date : (fallbackWindow && fallbackWindow[1]);
+    var t0 = dateValue(lo), t1 = dateValue(hi);
+    if (t0 === null || t1 === null) return null;
+    return isoFromTime(Math.round((t0 + t1) / 2));
+  }
+
+  /**
+   * 连续 as-of 顶部区间不漂移检验（t_c Convergence / Non-Drifting Test）：
+   * 追踪一个连续顶部聚类轮次中每一周的主簇中位数 t_c_med：
+   * - drift_ratio = Δ(t_c_med) / Δ(asof)：
+   *   * 若连续 ≥ 3 周且 drift_ratio ≤ 0.35（且中位数总漂移 ≤ 21 自然日），判定为「高危锁定（locked）」——真顶部概率大幅提高；
+   *   * 若连续 ≥ 2 周但 drift_ratio > 0.55（预测顶部随截止日同步后移），判定为「漂移观察（drifting）」——大概率是趋势追涨伪信号；
+   *   * 其余为「观察收敛中（forming）」。
+   */
+  function analyzeRunConvergence(run, scale) {
+    if (!Array.isArray(run) || !run.length) return null;
+    var points = run.map(function (item) {
+      var cls = frameClusters(item.frame, scale);
+      var main = cls && cls[0] ? cls[0] : null;
+      var q20 = main ? main.q20_date : item.window[0];
+      var q80 = main ? main.q80_date : item.window[1];
+      var med = clusterMedianDate(main, item.window);
+      var t0 = dateValue(q20), t1 = dateValue(q80), tm = dateValue(med), ta = dateValue(item.frame.asof);
+      return {
+        asof: item.frame.asof,
+        asof_ms: ta,
+        q20_date: q20,
+        q80_date: q80,
+        median_date: med,
+        median_ms: tm,
+        width_days: (t0 !== null && t1 !== null) ? Math.max(0, Math.round((t1 - t0) / DAY)) : null,
+        share: main ? main.share : null,
+      };
+    }).filter(function (p) { return p.asof_ms !== null && p.median_ms !== null; });
+
+    if (!points.length) return null;
+    var first = points[0], last = points[points.length - 1];
+    // 稳健时间中位数：取本轮所有有效周主簇中位数的中位数（抗单周离群）
+    var sortedMed = points.map(function (p) { return p.median_ms; }).sort(function (a, b) { return a - b; });
+    var midIdx = Math.floor(sortedMed.length / 2);
+    var clusterMedMs = sortedMed.length % 2
+      ? sortedMed[midIdx]
+      : Math.round((sortedMed[midIdx - 1] + sortedMed[midIdx]) / 2);
+    var clusterMedianDateStr = isoFromTime(clusterMedMs);
+
+    var elapsedDays = Math.max(0, Math.round((last.asof_ms - first.asof_ms) / DAY));
+    var medianShiftDays = Math.round((last.median_ms - first.median_ms) / DAY);
+    var driftRatio = elapsedDays >= 7 ? Number((medianShiftDays / elapsedDays).toFixed(2)) : null;
+
+    // 统计从最近一帧往回看，连续多少周中位数落在一个 ±18 自然日窄带内（不往后漂移）
+    var anchorMs = last.median_ms;
+    var stableWeeks = 1;
+    for (var i = points.length - 2; i >= 0; i -= 1) {
+      if (Math.abs(points[i].median_ms - anchorMs) <= 18 * DAY) stableWeeks += 1;
+      else break;
+    }
+
+    var widthNarrowing = first.width_days != null && last.width_days != null
+      ? (last.width_days - first.width_days)
+      : null;
+
+    var status = 'forming';
+    var label = '观察收敛中';
+    var highConfidence = false;
+    if (points.length === 1) {
+      status = 'single';
+      label = '单周初现';
+    } else if (stableWeeks >= 3 && (driftRatio === null || driftRatio <= 0.35)) {
+      status = 'locked';
+      label = '高危锁定（连续 ' + stableWeeks + ' 周未漂移）';
+      highConfidence = true;
+    } else if (driftRatio !== null && driftRatio > 0.55) {
+      status = 'drifting';
+      label = '漂移观察（随时间后移）';
+    } else if (stableWeeks >= 2) {
+      status = 'converging';
+      label = '初步锚定（连续 ' + stableWeeks + ' 周）';
+    }
+
+    return {
+      status: status,
+      label: label,
+      high_confidence: highConfidence,
+      weeks: points.length,
+      stable_weeks: stableWeeks,
+      median_date: clusterMedianDateStr,
+      latest_median_date: last.median_date,
+      median_shift_days: medianShiftDays,
+      elapsed_days: elapsedDays,
+      drift_ratio: driftRatio,
+      width_days_first: first.width_days,
+      width_days_last: last.width_days,
+      width_delta_days: widthNarrowing,
+    };
+  }
+
   function episodes(frames, tops, scale) {
     var ordered = (Array.isArray(frames) ? frames : [])
       .map(function (frame, index) { return { frame: frame, index: index }; })
@@ -85,7 +193,8 @@
         mainRelation = top.date < main.q20_date ? 'before' :
           top.date <= main.q80_date ? 'inside' : 'after';
       }
-      result.push({
+      var convergence = analyzeRunConvergence(run, scale);
+      var ep = {
         scale: scale,
         first_asof: first.frame.asof,
         last_asof: last.frame.asof,
@@ -99,7 +208,17 @@
         top_vs_window: relation,
         top_vs_main: mainRelation,
         days_to_top: top ? Math.round((dateValue(top.date) - dateValue(first.frame.asof)) / DAY) : null,
+      };
+      // 以非枚举属性附加收敛与时间中位数，严格保持 episodes() 原有可枚举字段向后兼容
+      Object.defineProperty(ep, 'median_date', {
+        value: convergence ? convergence.median_date : clusterMedianDate(main, firstWindow),
+        enumerable: false,
       });
+      Object.defineProperty(ep, 'convergence', {
+        value: convergence,
+        enumerable: false,
+      });
+      result.push(ep);
       run = [];
     }
 
@@ -112,5 +231,25 @@
     return result;
   }
 
-  return { episodes: episodes };
+  /**
+   * 返回「正在进行中（截至最后一帧仍活跃）」或最近一轮的高置信顶部收敛摘要，
+   * 供指数/个股回测结论栏用文字直接提醒。
+   */
+  function latestConvergence(frames, tops, scale) {
+    var eps = episodes(frames, tops, scale || '6-12m');
+    if (!eps.length) return { active: null, latest: null, lockedCount: 0, total: 0 };
+    var ordered = (Array.isArray(frames) ? frames : []).filter(function (f) { return f && f.asof; });
+    var lastAsof = ordered.length ? ordered[ordered.length - 1].asof : null;
+    var latest = eps[eps.length - 1];
+    var active = (lastAsof && latest.last_asof === lastAsof) ? latest : null;
+    var lockedCount = eps.filter(function (e) { return e.convergence && e.convergence.high_confidence; }).length;
+    return { active: active, latest: latest, lockedCount: lockedCount, total: eps.length };
+  }
+
+  return {
+    episodes: episodes,
+    clusterMedianDate: clusterMedianDate,
+    analyzeRunConvergence: analyzeRunConvergence,
+    latestConvergence: latestConvergence,
+  };
 });

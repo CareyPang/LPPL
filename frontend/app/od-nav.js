@@ -27,12 +27,12 @@
       { t: '我的研究', h: 'research-workspace.html', page: 'research-workspace.html' }
     ] },
   { k: 'stock', t: '标的', h: 'stock.html', sections: ['stock', 'terminal', 'chart'], sub: [
-    { t: '标的目录', h: 'stock.html', page: 'stock' },
-    { t: '指数', h: 'index.html?code=sh000001', page: 'terminal' }
+    { t: '指数终端', h: 'index.html?code=sh000001', page: 'terminal' },
+    { t: '标的目录', h: 'stock.html', page: 'stock' }
     ] },
     { k: 'market', t: '市场', h: 'market.html', sections: ['market', 'nt'], sub: MARKET_SUB },
     { k: 'backtest', t: '历史检验', h: 'backtest.html', sections: ['backtest'], sub: [
-      { t: '历史回放', h: 'backtest.html#view=scenario', key: 'scenario' },
+      { t: 'FCO 历史回测', h: 'backtest.html#view=scenario', key: 'scenario' },
       { t: '策略回测', h: 'backtest.html#view=strategy', key: 'strategy' },
       { t: '三段验证', h: 'backtest.html#view=bench', key: 'bench' }
     ] },

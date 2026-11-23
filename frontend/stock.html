@@ -298,8 +298,25 @@
       #stock-scales { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .stock-event-actions { flex-basis: 100%; }
     }
+    .stock-action-card{margin:14px 0 18px;padding:14px 16px;border-radius:10px;border:1px solid #D9E2EC;background:#F8FAFC}
+    .stock-action-card[data-tone="red"]{border-color:#F5C2C7;background:#FFF5F5}
+    .stock-action-card[data-tone="amber"]{border-color:#F3D9B1;background:#FFFBF2}
+    .stock-action-card[data-tone="green"],.stock-action-card[data-tone="emerald"]{border-color:#BFE4D2;background:#F2FBF6}
+    .sac-hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .sac-title{font-size:15px;font-weight:700;color:#131722}
+    .sac-pos{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:#FFFFFF;border:1px solid #D9E2EC;color:#131722}
+    .sac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:8px}
+    .sac-box{padding:10px 12px;border-radius:8px;background:#FFFFFF;border:1px solid #E5EAF0;font-size:12.5px;line-height:1.55;color:#2E3440}
+    .sac-box b{color:#131722}
+    .sac-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .sac-step{padding:8px 10px;border-radius:7px;background:#FFFFFF;border:1px solid #E5EAF0;font-size:12px;color:#525B6A}
+    .sac-step.on{border-color:#11845A;background:#EFFAF4;color:#0E6545;font-weight:600}
+    .sac-fco-btn[aria-pressed="true"]{background:#131722;color:#FFFFFF;border-color:#131722}
   </style>
   <script src="app/lppl-data.js"></script>
+  <script src="app/scen-style.js"></script>
+  <script src="app/bottom-action.js"></script>
+  <script src="app/alert-ledger.js"></script>
   <script src="app/stock-search.js"></script>
   <script src="app/stock-session.js"></script>
   <script src="app/stock-visibility.js"></script>
@@ -363,6 +380,7 @@
           <button type="button" data-days="60" aria-pressed="false">3个月</button>
           <button type="button" data-days="120" aria-pressed="true">6个月</button>
           <button type="button" data-days="250" aria-pressed="false">1年</button>
+          <button type="button" id="stock-fco-toggle" class="sac-fco-btn" aria-pressed="true" title="叠加 FCO 顶部红柱与底部出清绿柱（低强度自动降噪）">FCO 红/绿柱</button>
           <span class="period-mode" id="range-mode" aria-live="polite">6个月</span>
         </div>
       </div>
@@ -412,6 +430,7 @@
         <p class="visibility-note" id="first-visible-note"></p>
       </div>
       <div class="summary" id="summary"></div>
+      <section class="stock-action-card" id="stock-action-card" hidden aria-label="个股顶底置信度与防死猫跳决策卡"></section>
 
       <section class="section" id="recent-events" hidden>
         <div class="sec-h">
@@ -759,6 +778,48 @@
         context.moveTo(0, height * index / 4);
         context.lineTo(width, height * index / 4);
         context.stroke();
+      }
+      // 叠加降噪 FCO 顶部红柱（历史回放帧）与底部出清绿柱（严格 PIT 后复权价格序列）
+      if (window.CPSCN) {
+        const fcoMaxH = Math.max(20, Math.round((height - 16) * 0.24));
+        const fcoBottom = height - 8;
+        const barW = Math.max(2, Math.min(6, Math.round(width / Math.max(40, dates.length / 5))));
+        const topByDate = new Map();
+        const eps = (!hidden && window.CPAlertLedger && frames.length)
+          ? window.CPAlertLedger.episodes(frames, history?.tops || [], '6-12m')
+          : [];
+        const lockedRanges = eps
+          .filter((ep) => ep.convergence && ep.convergence.high_confidence)
+          .map((ep) => [ep.first_asof, ep.last_asof]);
+        for (const frame of frames) {
+          if (!frame || !frame.asof) continue;
+          const topInt = frame.fco_intensity != null && Number.isFinite(Number(frame.fco_intensity))
+            ? Math.max(0, Math.min(1, Number(frame.fco_intensity)))
+            : (Array.isArray(frame.scenarios) && frame.scenarios.length ? 0.45 : (frame.w && frame.w['6-12m'] && frame.w['6-12m'][0] ? 0.55 : 0));
+          if (topInt > 0) {
+            const locked = lockedRanges.some(([a, b]) => frame.asof >= a && frame.asof <= b);
+            topByDate.set(frame.asof, { top: topInt, locked });
+          }
+        }
+        if (window.BottomAction && typeof window.BottomAction.evaluateStockSeries === 'function') {
+          const bars = dates.map((dt, idx) => ({ date: dt, close: Number(closes[idx]) }));
+          const evalRes = window.BottomAction.evaluateStockSeries(bars, { code: code6(d.symbol) });
+          for (let idx = 0; idx < evalRes.series.length; idx += 5) {
+            const item = evalRes.series[idx];
+            if (!topByDate.has(item.date) && item.bottomIntensity > 0) {
+              window.CPSCN.drawFcoBottomBar(context, {
+                x: x(item.date), w: barW, bottom: fcoBottom, maxH: fcoMaxH,
+                intensity: item.bottomIntensity, hot: false,
+              });
+            }
+          }
+        }
+        for (const [dt, info] of topByDate.entries()) {
+          window.CPSCN.drawFcoBar(context, {
+            x: x(dt), w: barW, bottom: fcoBottom, maxH: fcoMaxH,
+            intensity: info.top, hot: false, locked: info.locked,
+          });
+        }
       }
       if (!hidden) {
         for (const frame of frames) {
@@ -1246,6 +1307,105 @@
       `;
     }
 
+    let overviewCache = null;
+    async function loadOverviewCached() {
+      if (overviewCache) return overviewCache;
+      try {
+        const res = await LPPL.fetchResult('overview_latest.json');
+        if (res && res.data && Array.isArray(res.data.indices)) {
+          overviewCache = res.data;
+          return overviewCache;
+        }
+      } catch { /* optional */ }
+      return null;
+    }
+
+    async function renderStockActionCard(d, history) {
+      const host = $('stock-action-card');
+      if (!host || !window.BottomAction || typeof window.BottomAction.evaluateStockSeries !== 'function') return;
+      const ph = d?.price_history || {};
+      const dates = Array.isArray(ph.dates) ? ph.dates : [];
+      const closes = Array.isArray(ph.close) ? ph.close : [];
+      const bars = dates.map((dt, idx) => ({
+        date: dt,
+        close: Number(closes[idx]),
+        high: Number((ph.high && ph.high[idx]) ?? closes[idx]),
+        low: Number((ph.low && ph.low[idx]) ?? closes[idx]),
+        volume: Number((ph.volume && ph.volume[idx]) ?? 1),
+      }));
+      const top = d?.top || {};
+      const hasTop = top.signal_status === 'signal';
+      const evalRes = window.BottomAction.evaluateStockSeries(bars, { code: code6(d?.symbol), hasTop });
+      const pp = typeof window.BottomAction.evaluatePricePhysics === 'function'
+        ? window.BottomAction.evaluatePricePhysics(bars)
+        : null;
+      if (!evalRes || !evalRes.latest || !evalRes.action) {
+        host.hidden = true;
+        return;
+      }
+      const latest = evalRes.latest;
+      const act = evalRes.action;
+      const board = evalRes.board;
+      const frames = Array.isArray(history?.frames) ? history.frames : [];
+      const topConv = (window.CPAlertLedger && frames.length)
+        ? window.CPAlertLedger.latestConvergence(frames, history?.tops || [], '6-12m')
+        : null;
+      const mainView = scaleClusterView(d, '6-12m');
+      const mainCl = mainView.kind === 'clusters' ? mainView.clusters[0] : (mainView.kind === 'legacy' ? mainView.window : null);
+      const medDate = mainCl && window.CPAlertLedger ? window.CPAlertLedger.clusterMedianDate(mainCl, null) : null;
+      let topNote = '当前 6–12 月主尺度<b>无合格顶部聚类</b>（非泡沫见顶阶段）。';
+      if (mainCl) {
+        const convLabel = topConv && topConv.active && topConv.active.convergence
+          ? `，连续 as-of 检验：<b>${esc(topConv.active.convergence.label)}</b>`
+          : '（需结合历史回放做连续 as-of 不漂移核验）';
+        topNote = `6–12 月顶部主簇区间 <b>${esc(mainCl.q20_date)} – ${esc(mainCl.q80_date)}</b>` +
+          (medDate ? `，聚类时间中位数 <b>${esc(medDate)}</b>` : '') + convLabel + '。';
+      } else if (topConv && topConv.latest && topConv.latest.convergence) {
+        topNote += ` 历史最近一轮顶部聚类（${esc(topConv.latest.first_asof)}，中位数 ${esc(topConv.latest.median_date || '—')}，${esc(topConv.latest.convergence.label)}）已结束。`;
+      }
+
+      const ov = await loadOverviewCached();
+      const boardItem = ov && Array.isArray(ov.indices)
+        ? ov.indices.find((it) => it.sym === board.sym) || null
+        : null;
+      const boardAct = boardItem ? window.BottomAction.fromOverviewItem(boardItem) : null;
+      const boardText = boardItem && boardAct
+        ? `所属宽基 <b>${esc(boardItem.name)}</b> 底部综合分 <b>${boardItem.bottom_score ?? 0}/100</b>（${esc(boardAct.shortBadge)}）`
+        : `所属宽基 <b>${esc(board.board)}</b>（数据同步中）`;
+
+      const omoriBadge = latest.omoriRed
+        ? `🔴 <b>Omori 余震红灯亮起</b>（近 15 日大阴线 ${latest.bigDrops15d} 次${latest.hitNewLow10d ? '、近 10 日刷新 60 日新低' : ''}），防死猫跳拦截重仓`
+        : `🟢 <b>余震可控</b>（近 15 日大阴线 ${latest.bigDrops15d} 次${latest.hitNewLow10d ? '，但仍在 60 日低位试探' : '，未再刷新 60 日新低'}）`;
+      const maText = latest.aboveMa20 && latest.aboveMa60
+        ? '已站上 MA20 与 MA60（右侧多头）'
+        : latest.aboveMa20
+          ? '仅站上 MA20，未站上 MA60（反弹确认中）'
+          : '仍处 MA20/MA60 下方（右侧未成立）';
+      const capHint = latest.omoriRed || (boardAct && !boardAct.canBuy)
+        ? '单票风控上限：余震/板块未共振前<b>严禁一把重仓（≤10%–15% 轻仓试探或观望）</b>，待缩量回踩不破底再分批。'
+        : '单票风控上限：遵循 30%→30%→40% 分批纪律，单只个股不超过总仓位 20%–30%。';
+
+      host.dataset.tone = act.tone;
+      host.hidden = false;
+      const ppHtml = pp
+        ? `<div class="sac-box"><b>🔬 价格层物理结构（势阱 × OBV）</b><br><b>${esc(pp.label)}</b>（自由能 F=${pp.wellF}，${pp.noWellBelow ? '下方无更深旧势阱' : '下方仍有旧势阱'}）。<br>距 250 日筹码均价 <b>${(pp.vwapGap * 100 >= 0 ? '+' : '') + (pp.vwapGap * 100).toFixed(1)}%</b> · OBV 底背离 <b>${pp.obvDiv >= 0 ? '+' : ''}${pp.obvDiv}</b>。</div>`
+        : '';
+      host.innerHTML =
+        `<div class="sac-hd">` +
+          `<div class="sac-title">${esc(act.glyph)} 个股顶底与防死猫跳结论：${esc(act.positionLabel)} · ${esc(act.canBuyLabel)}</div>` +
+          `<div class="sac-pos">个股底部出清分 ${latest.score}/100 · ${esc(act.positionText)}</div>` +
+        `</div>` +
+        `<div class="sac-grid">` +
+          `<div class="sac-box"><b>🎯 顶部聚类与收敛提醒</b><br>${topNote}<br><span style="color:#6A6D78">主图低强度弱红/绿柱已自动降噪，仅高亮高置信信号。</span></div>` +
+          `<div class="sac-box"><b>🛡️ 防死猫跳 · Omori 余震检验</b><br>${omoriBadge}<br>52 周回撤 <b>${(latest.dd252 * 100).toFixed(1)}%</b> · 右侧均线：${esc(maText)}。</div>` +
+          `<div class="sac-box"><b>🧭 所属宽基与仓位上限</b><br>${boardText}<br>${capHint}</div>` +
+          ppHtml +
+        `</div>` +
+        `<div class="sac-steps">` +
+          window.BottomAction.STEPS.map((st) => `<div class="sac-step${act.stepIndex >= st.idx ? ' on' : ''}">${esc(st.title)}（${esc(st.pct)}）<br>${esc(st.cond)}</div>`).join('') +
+        `</div>`;
+    }
+
     function render(d, history, market) {
       $('results').hidden = false;
       $('asof').textContent = d.asof ? `截至 ${d.asof}` : '—';
@@ -1257,6 +1417,7 @@
         : evidence ? evLabel(evidence) : '证据状态未知';
       document.title = `${name || code6(d.symbol)} · 临界点标的`;
       $('summary').innerHTML = summaryHtml(d, name);
+      void renderStockActionCard(d, history);
       if (window.StockHeaderView) StockHeaderView.update(d, name, market);
       const us = d.symbol?.startsWith('US_');
       const priceHistory = d.price_history || {};

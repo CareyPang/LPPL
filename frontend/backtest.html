@@ -60,10 +60,10 @@ a { color: var(--ink-2); text-decoration: none; }
 .tk:hover { background: var(--surface-2); color: var(--ink); }
 .tk[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: inset 0 -2px 0 var(--warn); }
 .strip-k { padding: 0 var(--s3) 0 var(--s4); font-size: 11px; color: var(--ink-3); letter-spacing: .08em; white-space: nowrap; }
-.chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 32px; font-size: 12px; color: var(--ink-2); cursor: pointer; white-space: nowrap; margin-right: var(--s1); transition: border-color var(--t-fast) ease-out; }
-.chip:hover { border-color: var(--ink-3); color: var(--ink); }
-.chip[aria-pressed="true"] { border-color: var(--warn); color: var(--warn); }
-.chip:disabled { opacity: .35; cursor: not-allowed; border-color: var(--line); color: var(--ink-3); }
+.chip { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: var(--s1) var(--s3); min-height: 30px; font-size: 12px; font-weight: 500; color: var(--ink-2); cursor: pointer; white-space: nowrap; margin-right: var(--s1); transition: border-color var(--t-fast) ease-out, background var(--t-fast) ease-out, color var(--t-fast) ease-out; }
+.chip:hover { border-color: var(--ink-3); color: var(--ink); background: var(--surface-2); }
+.chip[aria-pressed="true"] { border-color: var(--real); background: #E9F0FD; color: var(--real); font-weight: 600; }
+.chip:disabled { opacity: .35; cursor: not-allowed; border-color: var(--line); color: var(--ink-3); background: transparent; }
 .chip:disabled:hover { border-color: var(--line); color: var(--ink-3); }
 .chips { padding-right: var(--s4); --od-gap: 0; }
 
@@ -97,8 +97,8 @@ a { color: var(--ink-2); text-decoration: none; }
 .brush { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s2) var(--s3) var(--s3); }
 .brush-h { --od-gap: var(--s2); margin-bottom: var(--s1); font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
 .brush-h output { font: 500 12px/1 var(--f-m); color: var(--ink-2); margin-left: auto; white-space: nowrap; }
-.bt { border: 1px solid var(--line); background: transparent; color: var(--ink-2); min-height: 28px; min-width: 44px; padding: 0 var(--s2); font-size: 12px; cursor: pointer; }
-.bt:hover { color: var(--ink); border-color: var(--ink-3); }
+.bt { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink-2); min-height: 28px; min-width: 44px; padding: 0 var(--s2); font-size: 12px; font-weight: 500; cursor: pointer; transition: border-color var(--t-fast) ease-out, background var(--t-fast) ease-out, color var(--t-fast) ease-out; }
+.bt:hover { color: var(--ink); border-color: var(--ink-3); background: var(--surface-2); }
 .ov { position: relative; height: 64px; }
 .ov canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: ew-resize; }
 
@@ -209,6 +209,23 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 .al-row[data-alert-id]:hover{background:#F7F9FC;color:var(--ink)}
 .al-row[data-alert-id][aria-selected=true]{background:#FFF5E0;color:var(--ink)}
 .al-empty{margin:12px 0 0;padding:12px 0;color:var(--ink-3);font-size:13px}
+.ov-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:#FAFBFD;font-size:12px}
+.ov-strip-k{color:var(--ink-3);font-weight:600;margin-right:4px}
+.ov-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-2);font:500 12px/1.3 var(--f-u);cursor:pointer}
+.ov-chip:hover{border-color:var(--real);color:var(--ink)}
+.ov-chip[aria-current="true"]{border-color:var(--real);box-shadow:inset 0 0 0 1px var(--real);color:var(--ink);font-weight:600}
+.ov-chip[data-tone="green"],.ov-chip[data-tone="emerald"]{background:#EFFAF4;border-color:#BFE4D2;color:#0E6545}
+.ov-chip[data-tone="amber"]{background:#FFF8EB;border-color:#F0DCB4;color:#8C5400}
+.ov-chip[data-tone="red"]{background:#FDEEF0;border-color:#F4C4C9;color:#9F1F2A}
+.ov-chip b{font-family:var(--f-m)}
+.al-mode{display:flex;gap:4px;margin-right:8px}
+.al-chip.bot-on[aria-pressed=true]{border-color:#11845A;color:#0E6545;background:#EFFAF4}
+.bot-row{display:grid;grid-template-columns:minmax(130px,1.1fr) minmax(80px,.6fr) minmax(100px,.8fr) minmax(110px,.9fr) minmax(110px,.9fr) minmax(180px,1.4fr);align-items:center;min-height:36px;color:var(--ink-2)}
+.bot-row>span{min-width:0;padding:8px;border-bottom:1px solid var(--grid);font-size:12px}
+.bot-row-head{min-height:32px;background:var(--surface-2);color:var(--ink-3);font-weight:600}
+.bot-row-head>span{border-bottom-color:var(--line)}
+.bot-row[data-bot-asof]{cursor:pointer}
+.bot-row[data-bot-asof]:hover{background:#EFFAF4;color:var(--ink)}
 @media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:760px}}
 </style>
 </head>
@@ -224,11 +241,12 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 <script src="app/od-nav.js" data-section="backtest"></script>
 
 <nav class="bt-views" aria-label="回测视图" data-ai-fallback>
-  <a href="#view=scenario" data-view="scenario" aria-current="location">FCO 情景回测</a>
+  <a href="#view=scenario" data-view="scenario" aria-current="location">FCO 历史回测</a>
   <a href="#view=strategy" data-view="strategy">策略与冷却期</a>
   <a href="#view=bench" data-view="bench">三段验证</a>
   <span class="bt-views-note" data-evidence-badge="dev_only" data-evidence-label="历史回测口径" data-evidence-detail="严格 Point-in-Time：每帧只用截止日当天及以前数据，通过与未通过样本外检验均原样呈现。"></span>
 </nav>
+<div class="ov-strip" id="ov-strip" hidden aria-label="全市场 7 大指数底部综合分横向对比"></div>
 <div class="recompute-notice" id="recompute-notice" hidden role="note" aria-label="历史重算说明">
   <strong id="recompute-label"></strong>
   <details>
@@ -290,7 +308,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <aside class="side" aria-label="说明" data-ai-context="说明">
     <section class="blk">
       <p class="blk-k">FCO 图读法</p>
-      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示超跌出清/负泡沫底部强度（FCO 底部观察，需配合六维仪表盘右侧确认）；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
+      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示严格 PIT 的<b>「A 股多维底部综合指数」</b>（融合全 A 股债利差 ERP + 破净率回答“够不够便宜”，叠加 52 周超跌 + 防死猫跳 + 10 周均线回答“跌完没、企稳没”，既补齐纯负泡沫 LPPLS 胜率短板，又避免纯估值提前一年套牢）；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
       <p><b>琥珀横线</b>从截止日收盘价向右延伸到主簇/次级簇时间区间；<b>蓝色三角</b>为事后确认顶（顶后 126 交易日回撤 ≥15%）用于回测对照。</p>
       <p id="cluster-footnote"></p>
     </section>
@@ -310,19 +328,23 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         <p class="al-note">按每轮泡沫第一次出现顶部聚类归并为一个预警段（Episode），点击任意行即刻在主图定位当时的首次预警视角。</p>
         <p class="al-caveat" id="alert-caveat" hidden></p>
       </div>
-      <div class="al-controls" id="alert-scales" role="group" aria-label="提醒区间尺度">
+      <div class="al-controls" id="alert-scales" role="group" aria-label="账本类型与提醒区间尺度">
+        <div class="al-mode" id="ledger-mode" role="group" aria-label="账本切换">
+          <button class="al-chip" type="button" data-ledger-mode="top" aria-pressed="true">🔴 顶部预警账本</button>
+          <button class="al-chip bot-on" type="button" data-ledger-mode="bottom" aria-pressed="false">🟢 底部共振账本</button>
+        </div>
         <button class="al-chip" type="button" data-alert-scale="6-12m" aria-pressed="true">6–12 月</button>
         <button class="al-chip" type="button" data-alert-scale="12-24m" aria-pressed="false">12–24 月</button>
       </div>
     </div>
     <p class="al-count" id="alert-count" aria-live="polite">共 0 次</p>
     <div class="ep-summary" id="episode-summary" hidden aria-label="事件级回测摘要与随机基线对照"></div>
-    <div class="al-scroll">
+    <div class="al-scroll" id="top-ledger-wrap">
       <div class="al-table" role="table" aria-label="提醒明细">
         <div class="al-row al-row-head" role="row">
           <span role="columnheader">首次预警日（as-of）</span>
-          <span role="columnheader">持续周数</span>
-          <span role="columnheader">首次主簇区间</span>
+          <span role="columnheader">持续 / 收敛锁定</span>
+          <span role="columnheader">主簇区间与时间中位数</span>
           <span role="columnheader">次级簇</span>
           <span role="columnheader">所属段</span>
           <span role="columnheader">事后顶与提前天数</span>
@@ -331,12 +353,26 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         <div id="alert-rows" role="rowgroup"></div>
       </div>
     </div>
+    <div class="al-scroll" id="bottom-ledger-wrap" hidden>
+      <div class="al-table" role="table" aria-label="底部共振事件明细">
+        <div class="bot-row bot-row-head" role="row">
+          <span role="columnheader">底部共振触发日（as-of）</span>
+          <span role="columnheader">所属段</span>
+          <span role="columnheader">底部综合分</span>
+          <span role="columnheader">24 周后收益</span>
+          <span role="columnheader">50 周后收益</span>
+          <span role="columnheader">当时因子拆解（严格 PIT）</span>
+        </div>
+        <div id="bottom-rows" role="rowgroup"></div>
+      </div>
+    </div>
     <p class="al-empty" id="alert-empty" role="status" hidden></p>
   </section>
 </main>
 
 <script src="app/evidence-badge.js"></script>
 <script src="app/lppl-data.js"></script>
+<script src="app/bottom-action.js"></script>
 <script src="app/scen-style.js"></script>
 <script src="app/top-clusters.js"></script>
 <script src="app/alert-ledger.js"></script>
@@ -356,7 +392,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   }
   const DAY = 864e5;
   const RANGES = [['全部', null, null], ['2005–2009', '2005-01-01', '2009-12-31'], ['2014–2016', '2014-01-01', '2016-12-31'], ['2019–2021', '2019-01-01', '2021-12-31'], ['2024–2025', '2024-01-01', '2025-12-31']];
-  const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段' };
+  const SPLIT = { dev: '开发段', cal: '校准段', test: '测试段', live: '样本外延续' };
   const css = getComputedStyle(document.documentElement), C = (n) => css.getPropertyValue(n).trim();
   const col = { bg: C('--bg'), line: C('--line'), grid: C('--grid'), ink: C('--ink'), ink2: C('--ink-2'), ink3: C('--ink-3'), warn: C('--warn'), real: C('--real') };
   const FM = C('--f-m'), FU = C('--f-u');
@@ -364,7 +400,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   const T = (d) => Date.parse(d + 'T00:00:00Z');
   const ymd = (t) => new Date(t).toISOString().slice(0, 10);
   const pct = (x) => (x * 100).toFixed(0) + '%';
-  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', alertId: null, alertFrame: null };
+  const st = { sym: 'sh000001', preset: 0, H: null, tmin: 0, tmax: 1, va: 0, vb: 1, hover: null, G: null, alertScale: '6-12m', ledgerMode: 'top', alertId: null, alertFrame: null, overview: null };
   $('cluster-footnote').textContent = CPTopClusters.NOTE;
   const q = new URLSearchParams(location.search);
   const requestedSym = q.get('sym') || q.get('code');
@@ -466,10 +502,16 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         : 0;
       frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
     });
-    // 标记每一轮预警段（Episode）的首次预警日（strict as-of）
+    // 标记每一轮预警段（Episode）的首次预警日（strict as-of）与连续 as-of 不漂移锁定状态
     const epList = (st.H.alertEpisodes && st.H.alertEpisodes[scale]) || [];
     const firstMap = new Map(epList.map((ep) => [ep.first_asof, ep]));
-    st.H.fr.forEach((frame) => { frame.firstAlertEp = firstMap.get(frame.asof) || null; });
+    const lockedRanges = epList
+      .filter((ep) => ep.convergence && ep.convergence.high_confidence)
+      .map((ep) => [ep.first_asof, ep.last_asof]);
+    st.H.fr.forEach((frame) => {
+      frame.firstAlertEp = firstMap.get(frame.asof) || null;
+      frame.topLocked = lockedRanges.some(([a, b]) => frame.asof >= a && frame.asof <= b);
+    });
     st.tmax = mx + 30 * DAY;
     $('sym-c').textContent = '周度截止日 · ' + (scale === '6-12m' ? '6–12 月档' : '12–24 月档');
   }
@@ -508,17 +550,40 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
             verdictTxt = `⚪ 当前尺度下命中率未显著高于同频随机置放基线（${fmtPval(es.p_value_buffered)}），请结合其它维度谨慎使用。`;
           }
         }
-        const spParts = ['dev', 'cal', 'test']
+        const spParts = ['dev', 'cal', 'test', 'live']
           .filter((k) => es.by_split && es.by_split[k] && es.by_split[k].n_episodes > 0)
           .map((k) => `${SPLIT[k]} ${es.by_split[k].n_episodes}轮(±15d ${fmtP(es.by_split[k].hit_rate_buffered)})`);
+        const bs = st.H && st.H.bottom_summary;
+        const lockedEps = episodes.filter((ep) => ep.convergence && ep.convergence.high_confidence);
+        const latestEp = episodes[0] || null;
+        const latestConv = latestEp && latestEp.convergence ? latestEp.convergence : null;
+        const convHtml = `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
+          `<b style="color:#B4232C">🎯 顶部聚类置信度与连续 as-of 不漂移检验：</b>` +
+          `共 <b>${episodes.length}</b> 轮预警中，有 <b>${lockedEps.length}</b> 轮通过「连续 ≥3 周主簇时间中位数未后移」锁定检验（主图红柱顶带实心锚线，低强度弱柱已自动降噪淡化）。` +
+          (latestEp
+            ? ` 最近一轮（${E(latestEp.first_asof)}–${E(latestEp.last_asof)}）聚类时间中位数 <b>${E(latestEp.median_date || '—')}</b>，状态：<b>${E(latestConv ? latestConv.label : '观察中')}</b>` +
+              (latestConv && latestConv.drift_ratio != null ? `（漂移比 ${latestConv.drift_ratio}）` : '') + '。'
+            : '') +
+          `</div>`;
+        const botHtml = (bs && bs.n_events > 0)
+          ? `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
+            `<b style="color:#11845A">🟢 A 股多维底部综合指数回测（补齐纯负泡沫 LPPLS 短板、避免纯估值提前套牢）：</b>` +
+            `共 <b>${bs.n_events}</b> 次独立共振，50 周上涨胜率 <b>${fmtP(bs.win_rate_50w)}</b>` +
+            `（普通下跌基线 ${fmtP(bs.baseline_win_rate_50w)}${bs.win_rate_lift_50w != null ? '，<b>' + (bs.win_rate_lift_50w >= 0 ? '+' : '') + (bs.win_rate_lift_50w * 100).toFixed(1) + 'pp</b>' : ''}），` +
+            `50 周收益中位数 <b>${bs.median_ret_50w != null ? (bs.median_ret_50w >= 0 ? '+' : '') + (bs.median_ret_50w * 100).toFixed(1) + '%' : '—'}</b>，` +
+            `后续最大再回撤中位数 <b>${bs.median_post_min_50w != null ? (bs.median_post_min_50w * 100).toFixed(1) + '%' : '—'}</b>。` +
+            `<span style="color:var(--ink-3)">（因子：全 A ERP/破净 3 年分位 + 52 周超跌出清 + 防死猫跳止跌 + 10 周均线右侧）</span></div>`
+          : '';
         epBox.hidden = false;
         epBox.innerHTML =
-          `<div class="ep-kpi"><span>事件级预警轮数</span><b>${es.n_episodes} 轮</b><small>按连续聚类归并</small></div>` +
+          `<div class="ep-kpi"><span>事件级预警轮数</span><b>${es.n_episodes} 轮</b><small>其中高危锁定 ${lockedEps.length} 轮</small></div>` +
           `<div class="ep-kpi"><span>精确区间命中</span><b>${fmtP(es.hit_rate_exact)}</b><small>事后顶落入首次主簇</small></div>` +
           `<div class="ep-kpi"><span>±${es.buffer_days || 15}日缓冲命中</span><b>${fmtP(es.hit_rate_buffered)}</b><small>容忍 ±${es.buffer_days || 15} 自然日</small></div>` +
           `<div class="ep-kpi"><span>同频随机基线</span><b>${fmtP(es.null_hit_rate_buffered)}</b><small>300次置放 · ${fmtPval(es.p_value_buffered)}</small></div>` +
           `<div class="ep-kpi"><span>中位提前天数</span><b>${leadTxt}</b><small>首次预警 → 事后顶</small></div>` +
-          `<div class="ep-verdict"><b>事件级检验结论：</b>${E(verdictTxt)}${spParts.length ? ' ｜ 分段：' + E(spParts.join(' · ')) : ''}</div>`;
+          `<div class="ep-verdict"><b>事件级检验结论：</b>${E(verdictTxt)}${spParts.length ? ' ｜ 分段：' + E(spParts.join(' · ')) : ''}</div>` +
+          convHtml +
+          botHtml;
       }
     }
     rows.innerHTML = episodes.map((episode) => {
@@ -530,11 +595,20 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           ? `${E(top.date)} · 回撤 ${E(pct(Number(top.max_dd)))}${lead}` : `${E(top.date)}${lead}`;
       const clusters = episode.clusters;
       const main = Array.isArray(clusters) ? clusters[0] : null;
-      const mainText = main
+      const medTag = episode.median_date ? `<br><span style="color:var(--ink-3);font-size:11px">中位数 ${E(episode.median_date)}</span>` : '';
+      const mainText = (main
         ? `${E(main.q20_date)} – ${E(main.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(main))}）` : ''}`
         : clusters === null
           ? `${E(episode.window[0])} – ${E(episode.window[1])}`
-          : '—';
+          : '—') + medTag;
+      const conv = episode.convergence || null;
+      const convBadge = conv && conv.status === 'locked'
+        ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;color:#B4232C;background:#FFF0F1;border:1px solid #F7C7CA">🔒 高危锁定</span>`
+        : conv && conv.status === 'drifting'
+          ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#8A5600;background:#FFF7EB;border:1px solid #F3D9B1">🟡 漂移观察</span>`
+          : conv && conv.status === 'converging'
+            ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#1F5FD6;background:#EEF4FF;border:1px solid #C9DCFF">初步锚定</span>`
+            : '';
       const secondaryText = Array.isArray(clusters) && clusters.length > 1
         ? clusters.slice(1).map((cluster) =>
           `${E(cluster.q20_date)} – ${E(cluster.q80_date)}${showNumbers ? `（${E(CPTopClusters.shareText(cluster))}）` : ''}`
@@ -544,7 +618,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const relationLabel = { before: '早于区间', inside: '落在区间内', after: '晚于区间' }[relationValue] || '无';
       const relation = relationValue === 'inside' ? `<span class="al-hit">${relationLabel}</span>` : relationLabel;
       return `<div class="al-row" role="row" tabindex="0" aria-selected="${st.alertId === id}" data-alert-id="${E(id)}">` +
-        `<span role="cell"><span class="al-badge">首次预警</span>${E(episode.first_asof)}</span><span role="cell">${episode.weeks} 周</span>` +
+        `<span role="cell"><span class="al-badge">首次预警</span>${E(episode.first_asof)}</span><span role="cell">${episode.weeks} 周${convBadge}</span>` +
         `<span role="cell">${mainText}</span><span role="cell">${secondaryText}</span>` +
         `<span role="cell">${E(SPLIT[episode.split] || episode.split || '—')}</span>` +
         `<span role="cell">${topText}</span><span role="cell">${relation}</span></div>`;
@@ -577,6 +651,69 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
     }
     return true;
   }
+  function renderOverviewStrip() {
+    const strip = $('ov-strip');
+    if (!strip || !st.overview || !Array.isArray(st.overview.indices) || !st.overview.indices.length) return;
+    const sorted = [...st.overview.indices].sort((a, b) => (b.bottom_score || 0) - (a.bottom_score || 0));
+    strip.innerHTML = `<span class="ov-strip-k">全市场底部综合分（截至 ${E(st.overview.asof || '—')}）：</span>` +
+      sorted.map((it) => {
+        const act = window.BottomAction ? window.BottomAction.fromOverviewItem(it) : null;
+        const tone = act ? act.tone : 'gray';
+        const pos = act && act.tier === 'bottom_probe' ? ' · 🟢30%'
+          : act && act.tier === 'right_confirm' ? ' · ✅加仓'
+          : act && act.tier === 'top_risk' ? ' · 🔴减仓' : '';
+        return `<button type="button" class="ov-chip" data-ov-sym="${E(it.sym)}" data-tone="${E(tone)}" aria-current="${st.sym === it.sym}">` +
+          `${E(it.name)} <b>${it.bottom_score ?? 0}</b>${pos}</button>`;
+      }).join('');
+    strip.hidden = false;
+  }
+  function renderBottomLedger() {
+    const botRows = $('bottom-rows');
+    const empty = $('alert-empty');
+    if (!botRows) return;
+    const frames = (st.H && st.H.fr) ? st.H.fr : [];
+    const bs = st.H && st.H.bottom_summary;
+    const evMap = {};
+    if (bs && Array.isArray(bs.events)) {
+      bs.events.forEach((ev) => { if (ev && ev.asof) evMap[ev.asof] = ev; });
+    }
+    const items = frames.filter((f) => f.bottom_first_alert_flag).slice().reverse();
+    $('alert-count').textContent = `A 股多维底部综合指数 · 独立底部共振共 ${items.length} 次（点击任意行在主图定位）`;
+    const fmtRet = (v) => v == null ? '未满期' : ((v >= 0 ? '+' : '') + (Number(v) * 100).toFixed(1) + '%');
+    botRows.innerHTML = items.map((f) => {
+      const ev = evMap[f.asof] || {};
+      const bf = f.bottom_factors || {};
+      const parts = [];
+      if (bf.dd_52w != null) parts.push(`回撤 ${(Number(bf.dd_52w) * 100).toFixed(0)}%`);
+      if (bf.erp_pct != null) parts.push(`ERP ${Math.round(Number(bf.erp_pct) * 100)}%`);
+      if (bf.pbn_pct != null) parts.push(`破净 ${Math.round(Number(bf.pbn_pct) * 100)}%`);
+      if (bf.stabilize != null) parts.push(`止跌 ${Math.round(Number(bf.stabilize) * 100)}%`);
+      const r24 = ev.ret_24w;
+      const r50 = ev.ret_50w;
+      return `<div class="bot-row" role="row" tabindex="0" data-bot-asof="${E(f.asof)}">` +
+        `<span role="cell"><span class="al-badge" style="color:#0E6545;border-color:#BFE4D2;background:#EFFAF4">底部共振</span>${E(f.asof)}</span>` +
+        `<span role="cell">${E(SPLIT[f.split] || f.split || '—')}</span>` +
+        `<span role="cell"><b style="color:#0E6545">${Math.round((f.fcoNegIntensity || 0) * 100)} / 100</b></span>` +
+        `<span role="cell" style="color:${r24 == null ? 'var(--ink-3)' : r24 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r24))}</span>` +
+        `<span role="cell" style="color:${r50 == null ? 'var(--ink-3)' : r50 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r50))}</span>` +
+        `<span role="cell">${E(parts.join(' · ') || '—')}</span></div>`;
+    }).join('');
+    empty.textContent = '该指数暂无独立底部共振记录';
+    empty.hidden = items.length > 0;
+  }
+  function applyLedgerMode() {
+    const isBot = st.ledgerMode === 'bottom';
+    document.querySelectorAll('#ledger-mode [data-ledger-mode]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.ledgerMode === st.ledgerMode));
+    });
+    document.querySelectorAll('#alert-scales [data-alert-scale]').forEach((b) => {
+      b.hidden = isBot;
+    });
+    if ($('top-ledger-wrap')) $('top-ledger-wrap').hidden = isBot;
+    if ($('bottom-ledger-wrap')) $('bottom-ledger-wrap').hidden = !isBot;
+    if (isBot) renderBottomLedger();
+    else renderAlertLedger();
+  }
   function chooseAlertScale(scale) {
     if (!['6-12m', '12-24m'].includes(scale) || scale === st.alertScale) return;
     if (st.alertId) {
@@ -588,9 +725,34 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
     renderAlertLedger();
   }
   $('alert-scales').onclick = (event) => {
+    const modeBtn = event.target.closest('[data-ledger-mode]');
+    if (modeBtn) {
+      st.ledgerMode = modeBtn.dataset.ledgerMode === 'bottom' ? 'bottom' : 'top';
+      applyLedgerMode();
+      return;
+    }
     const button = event.target.closest('[data-alert-scale]');
     if (button) chooseAlertScale(button.dataset.alertScale);
   };
+  if ($('ov-strip')) {
+    $('ov-strip').addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-ov-sym]');
+      if (!btn || btn.dataset.ovSym === st.sym) return;
+      st.sym = btn.dataset.ovSym;
+      renderOverviewStrip();
+      load();
+    });
+  }
+  if ($('bottom-rows')) {
+    $('bottom-rows').addEventListener('click', (event) => {
+      const row = event.target.closest('[data-bot-asof]');
+      if (!row || !st.H) return;
+      const frame = st.H.fr.find((item) => item.asof === row.dataset.botAsof);
+      if (!frame) return;
+      st.hover = { f: frame };
+      setView(frame.t - 180 * DAY, Math.min(st.tmax, frame.t + 365 * DAY));
+    });
+  }
   $('alert-rows').addEventListener('click', (event) => {
     const row = event.target.closest('[data-alert-id]');
     if (!row) return;
@@ -620,6 +782,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         asof: f.asof, split: f.split, close: f.close, w: f.w || {}, clusters: f.clusters,
         fco_intensity: f.fco_intensity, bubble_intensity: f.bubble_intensity,
         fco_neg_intensity: f.fco_neg_intensity, bottom_first_alert_flag: Boolean(f.bottom_first_alert_flag),
+        bottom_factors: f.bottom_factors || null,
         t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, fcoNegIntensity: 0, firstAlertEp: null,
       })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
@@ -636,6 +799,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         rule: H.rule,
         model_version: H.model_version,
         recompute: H.recompute,
+        episode_summary: H.episode_summary || null,
+        bottom_summary: H.bottom_summary || null,
         fr,
         tops,
         alertEpisodes,
@@ -657,7 +822,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         if (initialAlert) setAlertScaleData(initialAlert.scale);
         else writeAlertParam(null);
       }
-      renderAlertLedger();
+      applyLedgerMode();
+      renderOverviewStrip();
       setPreset(st.preset >= 0 ? st.preset : 0);
       if (initialAlert) selectAlert(initialAlert, false);
     } catch (e) {
@@ -734,7 +900,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       if (f.fcoIntensity > 0) {
         CPSCN.drawFcoBar(ctx, {
           x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
-          intensity: f.fcoIntensity, hot: f === hot,
+          intensity: f.fcoIntensity, hot: f === hot, locked: Boolean(f.topLocked),
         });
       } else if (f.fcoNegIntensity > 0) {
         CPSCN.drawFcoBottomBar(ctx, {
@@ -920,10 +1086,14 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const firstBadge = best.firstAlertEp
         ? `<br><span style="color:#D6303A;font-weight:600">● 首次预警日（持续 ${best.firstAlertEp.weeks} 周${best.firstAlertEp.days_to_top != null ? ' · 距事后顶 ' + best.firstAlertEp.days_to_top + ' 天' : ''}）</span>`
         : '';
+      const bf = best.bottom_factors;
+      const bfDetail = bf
+        ? `（52周回撤 ${(Number(bf.dd_52w) * 100).toFixed(0)}%${bf.erp_pct != null ? ' · ERP分位 ' + Math.round(bf.erp_pct * 100) + '%' : ''}${bf.pbn_pct != null ? ' · 破净分位 ' + Math.round(bf.pbn_pct * 100) + '%' : ''}）`
+        : '';
       const fcoLine = best.fcoIntensity > 0
         ? `<br><span style="color:#D6303A">FCO 顶部泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
         : (best.fcoNegIntensity > 0
-          ? `<br><span style="color:#11845A">FCO 底部出清强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}</span>`
+          ? `<br><span style="color:#11845A">FCO 底部共振强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}${E(bfDetail)}</span>`
           : '');
       const topText = top
         ? top.max_dd != null && Number.isFinite(Number(top.max_dd))
@@ -958,6 +1128,9 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   })();
 
   let rz = 0; window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { draw(); drawOv(); }); });
+  if (LPPL.overview) {
+    LPPL.overview().then((ov) => { if (ov) { st.overview = ov; renderOverviewStrip(); } }).catch(() => {});
+  }
   load();
 })();
 </script>
