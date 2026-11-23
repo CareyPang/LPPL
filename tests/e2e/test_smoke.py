@@ -2152,6 +2152,23 @@ def test_market_stale_banner_is_compact_and_expandable_on_mobile(page: Page) -> 
 def test_wide_etf_subtab_is_visible_on_mobile_and_current_on_nt_page(page: Page) -> None:
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(f"{BASE_URL}/market.html")
+
+    def assert_subtabs_fit(viewport_width: int) -> None:
+        page.set_viewport_size({"width": viewport_width, "height": 844})
+        tabs = page.locator(".odn-sub a.odn-t")
+        expect(tabs).to_have_count(6)
+        last_bounds = tabs.last.bounding_box()
+        bar_size = page.locator(".odn-sub").evaluate(
+            "(el) => ({scrollWidth: el.scrollWidth, clientWidth: el.clientWidth})"
+        )
+        assert last_bounds is not None
+        assert last_bounds["x"] + last_bounds["width"] <= viewport_width, last_bounds
+        assert bar_size["scrollWidth"] <= bar_size["clientWidth"], bar_size
+
+    for viewport_width in (390, 360):
+        assert_subtabs_fit(viewport_width)
+
+    page.set_viewport_size({"width": 390, "height": 844})
     wide_etf = page.locator(".odn-sub a.odn-t").filter(has_text="宽基ETF")
     expect(wide_etf).to_be_visible()
     expect(page.locator('.odn-sidebar .odn-side-sub a[href="nt.html"]')).to_have_count(1)
@@ -2165,6 +2182,8 @@ def test_wide_etf_subtab_is_visible_on_mobile_and_current_on_nt_page(page: Page)
     expect(nt_tabs.filter(has_text="宽基ETF")).to_have_attribute(
         "aria-current", "page"
     )
+    for viewport_width in (390, 360):
+        assert_subtabs_fit(viewport_width)
     expected_market_hrefs = [
         "market.html#s-summary",
         "market.html#s-breadth",
