@@ -68,14 +68,14 @@ def evaluate_price_physics(ohlc: pd.DataFrame, asof: pd.Timestamp | str | None =
 
     c = df["close"].to_numpy(float)
     h = df["high"].to_numpy(float)
-    l = df["low"].to_numpy(float)
+    lows = df["low"].to_numpy(float)
     v = df["volume"].to_numpy(float)
     n = len(c)
 
     # 1) 自由能筹码势阱（取最近最多 500 个交易日，与 wells.py 保持一致）
     w_len = min(n, 500)
-    x_tp = np.log((h[-w_len:] + l[-w_len:] + c[-w_len:]) / 3.0)
-    r2_tp = ((np.log(np.maximum(h[-w_len:], 1e-12)) - np.log(np.maximum(l[-w_len:], 1e-12))) ** 2) / 12.0
+    x_tp = np.log((h[-w_len:] + lows[-w_len:] + c[-w_len:]) / 3.0)
+    r2_tp = ((np.log(np.maximum(h[-w_len:], 1e-12)) - np.log(np.maximum(lows[-w_len:], 1e-12))) ** 2) / 12.0
     well_F, well_depth, dist_below = well_features_at(x_tp, r2_tp, v[-w_len:], float(np.log(c[-1])))
     no_well_below = bool(np.isnan(dist_below))
 
@@ -104,8 +104,8 @@ def evaluate_price_physics(ohlc: pd.DataFrame, asof: pd.Timestamp | str | None =
     am_ratio = float(am20 / am120) if np.isfinite(am20) and np.isfinite(am120) and am120 > 0 else None
 
     # 5) CMF-20（仅作短期回撤护栏，不作为抄底加分项）
-    rng = np.where((h - l) > 0, h - l, np.nan)
-    clv = np.where(np.isfinite(rng), ((c - l) - (h - c)) / rng, 0.0)
+    rng = np.where((h - lows) > 0, h - lows, np.nan)
+    clv = np.where(np.isfinite(rng), ((c - lows) - (h - c)) / rng, 0.0)
     v20 = float(np.sum(v[-20:]))
     cmf20 = float(np.sum(clv[-20:] * v[-20:]) / v20) if v20 > 0 else None
 

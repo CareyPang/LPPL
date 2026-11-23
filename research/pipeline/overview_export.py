@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -100,7 +100,7 @@ def build_overview(data_dir: Path = DEFAULT_DATA_DIR) -> dict[str, Any]:
 
     return {
         "schema_version": "overview_v1",
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "asof": latest_asof,
         "counts": counts,
         "indices": indices,
