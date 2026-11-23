@@ -58,7 +58,7 @@
     var el = function (id) { return doc.getElementById(id); };
     if (!el('terminal-context')) return { render: function () {} };
     var mode = new URLSearchParams(options.search).get('mode') === 'replay' || context.asof ? 'replay' : 'diagnosis';
-    var dates = [], historyFailed = false, current = null, futureRun = 0, historyData = null, historyLimit = 12;
+    var dates = [], historyFailed = false, historyStarted = false, current = null, futureRun = 0, historyData = null, historyLimit = 12;
     el('terminal-context').hidden = false;
     function go(changes) { options.navigate(href(context, Object.assign({ mode: mode }, changes))); }
     function renderControls() {
@@ -157,6 +157,7 @@
       mode = 'diagnosis'; renderControls(); options.replaceAddress({ mode: mode });
     });
     el('terminal-mode-replay').addEventListener('click', function () {
+      loadHistory();
       mode = 'replay'; renderControls(); options.replaceAddress({ mode: mode });
     });
     el('terminal-asof').addEventListener('change', function () {
@@ -187,13 +188,18 @@
       } finally { if (run === futureRun) checkbox.disabled = false; }
     });
     renderControls();
-    reader.timed(function () { return historyFor(adapter, reader, context); }, '历史目录')
+    function loadHistory() {
+      if (historyStarted) return;
+      historyStarted = true;
+      reader.timed(function () { return historyFor(adapter, reader, context); }, '历史目录')
       .then(function (history) {
         var first = history && history.frames && history.frames[0];
         if (first && !reader.historyFrame(history, Object.assign({}, context, { asof: first.asof }))) throw Error('历史目录资产不匹配');
-        historyData = history; dates = datesFrom(history, adapter.REPLAYS && adapter.REPLAYS[context.code]); renderControls();
+        historyFailed = false; historyData = history; dates = datesFrom(history, adapter.REPLAYS && adapter.REPLAYS[context.code]); renderControls();
       })
-      .catch(function () { historyFailed = true; dates = datesFrom(null, adapter.REPLAYS && adapter.REPLAYS[context.code]); renderControls(); });
+      .catch(function () { historyFailed = true; historyStarted = false; dates = datesFrom(null, adapter.REPLAYS && adapter.REPLAYS[context.code]); renderControls(); });
+    }
+    if (mode === 'replay') loadHistory();
     return { render: function (data, bands) {
       current = data;
       var s = summary(data, bands, context.asof);

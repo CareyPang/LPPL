@@ -5,16 +5,22 @@
     benchView = document.getElementById('bench-view'), benchPanel = document.getElementById('bench-panel'),
     app = document.querySelector('main.app');
   if (!views || !sv || !benchView || !benchPanel || !app) return;
+  if (document.getElementById('ld')?.dataset.assetUnavailable === 'true') return;
   var panel = window.StrategyPanel ? StrategyPanel.mount({ el: document.getElementById('strategy-panel') }) : null;
   var loadedFor = '', benchLoadedFor = '', benchRequest = 0;
   function currentSym() {
     /* 先看页面当前选中的标的，地址参数只作初始值 */
     var name = (document.getElementById('sym-n') || {}).textContent || '';
     var hit = (window.LPPL && LPPL.SYMS || []).filter(function (x) { return x.name === name.trim(); })[0];
-    if (hit) return hit;
+    if (hit) return !hit.market || hit.market === 'cn' ? hit : null;
     var params = new URLSearchParams(location.search);
     var q = params.get('sym') || params.get('code');
-    var S = window.LPPL && q ? LPPL.resolve(q) : null;
+    var query = String(q || '').trim().toUpperCase();
+    var S = window.LPPL && q ? LPPL.resolve(q) || (LPPL.GLOBAL_SYMS || []).find(function (asset) {
+      return [asset.sym, asset.code, asset.name].concat(asset.alias || []).some(function (value) { return String(value).toUpperCase() === query; });
+    }) : null;
+    if (S && S.market && S.market !== 'cn') return null;
+    if (q && !S) return null;
     return S || (window.LPPL && LPPL.SYMS && LPPL.SYMS[0]) || null;
   }
   function loadStrategy() {

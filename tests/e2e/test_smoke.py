@@ -1346,6 +1346,62 @@ def test_chart_undo_keeps_history_drawings_hidden(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_current_diagnosis_loads_history_only_on_replay(page: Page) -> None:
+    history_requests = []
+
+    def serve_history(route) -> None:
+        history_requests.append(route.request.url)
+        route.fulfill(json={"symbol": "sh601838", "frames": []})
+
+    page.route("**/lab/mock/data/stock/601838_history.json", serve_history)
+    page.goto(f"{BASE_URL}/chart.html?code=sh601838&scale=6-12m")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    expect(page.locator("#terminal-history")).to_be_hidden()
+    assert history_requests == []
+    with page.expect_response("**/lab/mock/data/stock/601838_history.json"):
+        page.locator("#terminal-mode-replay").click()
+    expect(page.locator("#terminal-history")).to_be_visible()
+    assert len(history_requests) == 1
+    page.locator("#terminal-mode-diagnosis").click()
+    page.locator("#terminal-mode-replay").click()
+    expect(page.locator("#terminal-history")).to_be_visible()
+    assert len(history_requests) == 1
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    ("query", "symbol"),
+    [("SPX", "US_SPX"), ("日经", "JP_N225"), ("KOPSI", "KR_KOSPI")],
+)
+def test_legacy_index_global_alias_uses_shared_chart(page: Page, query: str, symbol: str) -> None:
+    # This tests the old entry's routing boundary, independently of global data coverage.
+    page.route("**/chart.html?*", lambda route: route.fulfill(body="<h1>Shared chart</h1>", content_type="text/html"))
+    page.goto(f"{BASE_URL}/index.html?code={query}&asof=2026-06-26")
+    page.wait_for_url(re.compile(r"/chart\.html\?"))
+    assert page.url == (
+        f"{BASE_URL}/chart.html?code={symbol}&kind=index&from=index.html&asof=2026-06-26"
+    )
+    assert not any("/global/" in url for _, url, _ in page._e2e_requests)
+
+
+@pytest.mark.e2e
+def test_legacy_index_search_rejects_unknown_and_routes_known_global(page: Page) -> None:
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    page.locator("#code").fill("ZZ_UNKNOWN")
+    page.locator("#go").click()
+    expect(page.locator("#err")).to_contain_text("无法识别")
+    assert page.evaluate("new URL(location.href).searchParams.get('code')") in {"sh000001", "上证指数"}
+    page.route("**/chart.html?*", lambda route: route.fulfill(body="<h1>Shared chart</h1>", content_type="text/html"))
+    page.locator("#code").fill("NDX")
+    page.locator("#asof").fill("2026-06-26")
+    page.locator("#go").click()
+    page.wait_for_url(re.compile(r"/chart\.html\?code=US_NDX&kind=index"))
+    assert "asof=2026-06-26" in page.url
+
+
+@pytest.mark.e2e
 def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")
@@ -1766,7 +1822,7 @@ def test_rule_labels_index_and_chart_evidence(page: Page) -> None:
     source = page.locator("#evidence-rule-source")
     expect(source).to_be_visible()
     expect(source).to_have_text("区间来源：形态框规则（不含振荡/阻尼条件）")
-    expect(page).to_have_title("完整图表 · 临界点")
+    expect(page).to_have_title("标的诊断与回测 · 临界点")
 
 
 @pytest.mark.e2e

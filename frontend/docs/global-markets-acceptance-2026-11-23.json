@@ -17,6 +17,7 @@
       "1440: four market tabs and no mixed index identities",
       "1440: index click and return restore US market tab",
       "1440: MRVL search opens its own US stock result",
+      "1440: legacy entries retain global identity and unknown queries do not default to A-share",
       "1440: US_SPX real current and exact archive; later prices do not change model",
       "1440: US_IXIC real current and exact archive; later prices do not change model",
       "1440: US_NDX real current and exact archive; later prices do not change model",
@@ -29,6 +30,7 @@
       "390: four market tabs and no mixed index identities",
       "390: index click and return restore US market tab",
       "390: MRVL search opens its own US stock result",
+      "390: legacy entries retain global identity and unknown queries do not default to A-share",
       "390: US_SPX real current and exact archive; later prices do not change model",
       "390: US_IXIC real current and exact archive; later prices do not change model",
       "390: US_NDX real current and exact archive; later prices do not change model",
@@ -447,5 +449,28 @@
     "audit_hash": "268da9f91fc8b4a45d1c93a34870953cab465601ec69efd55ee35f1900c6c136"
   },
   "catalog_sha256": "755c121c465d0264346645e3d604316281a09dbe8b7b0cebaa555856eed8e255",
-  "final_export_audit_sha256": "2c6d96ec8b656a1ed6a5688db6d0bf22ab343dba9db9cdeade14696bdd749769"
+  "final_export_audit_sha256": "2c6d96ec8b656a1ed6a5688db6d0bf22ab343dba9db9cdeade14696bdd749769",
+  "frontend_and_worker_contract_tests": {
+    "passed": 532,
+    "failed": 0
+  },
+  "local_ci_browser": {
+    "passed": 60,
+    "failed": 0,
+    "transport": "read-only local CI-equivalent mapping",
+    "browser": "Chrome",
+    "new_cases": 5
+  },
+  "local_offline_suite": {
+    "initial_passed": 618,
+    "initial_failed": 2,
+    "skipped": 4,
+    "environment_failures_rechecked_passed": 2,
+    "environment_causes": [
+      "Windows checkout CRLF changed raw ledger file hashes; restored Git HEAD bytes without modifying ledger",
+      "WindowsApps WSL bash could not resolve Windows script path; test-only PATH prioritizes Git Bash"
+    ],
+    "full_suite_repeated": false
+  },
+  "ruff_research_tests": "passed"
 }

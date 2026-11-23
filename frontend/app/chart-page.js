@@ -119,7 +119,7 @@
       return;
     }
     ruleSource.hidden = false;
-    ruleSource.textContent = (data.ruleLabel ? data.ruleLabel + '。' + data.ruleSource : RuleLabels.RULES.box.source) +
+    ruleSource.textContent = (Reader.globalAsset(LPPL, context) && data.ruleLabel ? data.ruleLabel + '。' + data.ruleSource : RuleLabels.RULES.box.source) +
       (Core.researchNote(data) ? ' ' + Core.researchNote(data) : '');
     var evidence = evidenceFor(data, selectedScale);
     var bands = intervalRows(data, selectedScale);

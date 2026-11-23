@@ -404,14 +404,39 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   $('cluster-footnote').textContent = CPTopClusters.NOTE;
   const q = new URLSearchParams(location.search);
   const requestedSym = q.get('sym') || q.get('code');
-  if (requestedSym) { const S = LPPL.resolve(requestedSym); if (S) st.sym = S.sym; }
+  if (requestedSym) {
+    const query = requestedSym.trim().toUpperCase();
+    const S = LPPL.resolve(requestedSym) || (LPPL.GLOBAL_SYMS || []).find((asset) =>
+      [asset.sym, asset.code, asset.name].concat(asset.alias || []).some((value) => String(value).toUpperCase() === query));
+    if (S && S.market && S.market !== 'cn') {
+      const target = new URL('chart.html', location.href);
+      target.searchParams.set('code', S.sym);
+      target.searchParams.set('kind', S.kind);
+      target.searchParams.set('mode', 'replay');
+      target.searchParams.set('from', 'home.html?market=' + S.market);
+      if (q.get('asof')) target.searchParams.set('asof', q.get('asof'));
+      if (q.get('rule')) target.searchParams.set('rule', q.get('rule'));
+      location.replace(target.href);
+      return;
+    }
+    if (!S) {
+      $('sym-n').textContent = '无法识别标的';
+      $('ld').hidden = false;
+      $('ld').className = 'ld err';
+      $('ld').dataset.assetUnavailable = 'true';
+      $('ld').setAttribute('role', 'alert');
+      $('ld').textContent = '无法识别“' + requestedSym + '”。请从首页搜索并选择标的后打开回放。';
+      return;
+    }
+    if (S) st.sym = S.sym;
+  }
   const requestedRange = q.get('range');
   if (requestedRange === '2007') st.preset = 1;
   else if (requestedRange === '2015') st.preset = 2;
   else if (requestedRange === '2021') st.preset = 3;
   else if (requestedRange === '2024') st.preset = 4;
 
-  $('syms').innerHTML = LPPL.SYMS.filter((s) => s.history !== false).map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
+  $('syms').innerHTML = LPPL.SYMS.filter((s) => (!s.market || s.market === 'cn') && s.history !== false).map((s) => `<button class="tk" type="button" data-s="${s.sym}" aria-pressed="false">${E(s.name)}</button>`).join('');
   $('ranges').innerHTML = RANGES.map((r, i) => `<button class="chip" type="button" data-r="${i}" aria-pressed="false">${E(r[0])}</button>`).join('');
   $('syms').onclick = (e) => {
     const b = e.target.closest('[data-s]');

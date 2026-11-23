@@ -341,7 +341,7 @@
   document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
   document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('close', () => focusedBeforeDialog?.focus()));
   $('open-add').addEventListener('click', () => { $('add-error').textContent = ''; openDialog('add-dialog'); });
-  $('add-index').innerHTML = API.SYMS.map(s => '<option value="' + esc(s.sym) + '">' + esc(s.name + ' · ' + s.sym) + '</option>').join('');
+  $('add-index').innerHTML = API.SYMS.filter(s => !s.market || s.market === 'cn').map(s => '<option value="' + esc(s.sym) + '">' + esc(s.name + ' · ' + s.sym) + '</option>').join('');
   $('add-kind').addEventListener('change', () => {
     const index = $('add-kind').value === 'index';
     $('stock-code-label').hidden = index; $('index-code-label').hidden = !index;

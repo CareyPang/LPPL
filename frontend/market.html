@@ -1682,7 +1682,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     });
     publishedIndexRows = [];
     const publishedIndexReasons = [];
-    summaryModels = await Promise.all(LPPL.SYMS.map(async (spec) => {
+    summaryModels = await Promise.all(LPPL.SYMS.filter((spec) => !spec.market || spec.market === 'cn').map(async (spec) => {
       const base = { symbol: spec.sym, name: spec.name };
       const historyPromise = spec.history !== false
         ? LPPL.fetchResult(spec.sym + '_history.json', {

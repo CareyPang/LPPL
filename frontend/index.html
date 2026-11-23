@@ -1153,6 +1153,18 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     };
   }
   function request(code, asof) {
+    const asset = LPPL.resolve(code);
+    // The legacy page contains A-share-only valuation/breadth panels.
+    // Global index aliases must retain their market identity in the shared chart.
+    if (asset && asset.market && asset.market !== 'cn') {
+      const target = new URL('chart.html', location.href);
+      target.searchParams.set('code', asset.sym);
+      target.searchParams.set('kind', asset.kind || 'index');
+      target.searchParams.set('from', 'index.html');
+      if (asof) target.searchParams.set('asof', asof);
+      location.assign(target.href);
+      return;
+    }
     clearTimeout(replayTimer); replayWait = null; latestSessionRequest++;
     want = { code, asof };
     if (!busy) pump();
@@ -1644,7 +1656,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     ovPromise.then((ov) => {
       const ovMap = {};
       if (ov && Array.isArray(ov.indices)) ov.indices.forEach((it) => { if (it && it.sym) ovMap[it.sym] = it; });
-      return Promise.all(LPPL.SYMS.map((x) => {
+      return Promise.all(LPPL.SYMS.filter((x) => !x.market || x.market === 'cn').map((x) => {
         const ovItem = ovMap[x.sym] || null;
         return Promise.all([
           LPPL.load(x.sym).catch(() => null),

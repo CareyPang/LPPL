@@ -142,7 +142,9 @@ def browser() -> Browser:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        instance = playwright.chromium.launch(headless=True)
+        instance = playwright.chromium.launch(
+            headless=True, executable_path=os.environ.get("E2E_BROWSER_EXECUTABLE") or None
+        )
         yield instance
         instance.close()
 
@@ -193,7 +195,7 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
             ):
                 allowed_console_errors[status] += 1
                 return
-        console_errors.append(message.text)
+        console_errors.append(message.text + " @ " + str(message.location.get("url", "")))
 
     def route_request(route: Route) -> None:
         if is_local_url(route.request.url):

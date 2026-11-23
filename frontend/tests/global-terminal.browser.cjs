@@ -47,6 +47,28 @@ const pass=s=>{checks.push(s);console.log('PASS '+s)};
    await mrvl.first().click();await page.waitForFunction(()=>document.querySelector('#chart-page')?.dataset.loaded==='true');
    assert.equal((await page.evaluate(()=>window.__qaData.symbol)).toUpperCase(),'US_MRVL');
    pass(width+': MRVL search opens its own US stock result');
+   const koreanDate=read('KR_KOSPI_history.json').frames[0].asof;
+   for(const [entry,asset,kind,date] of [
+    ['backtest.html?code=KOSPI&asof='+koreanDate,'KR_KOSPI','index',koreanDate],
+    ['backtest.html?code=MRVL','US_MRVL','stock',null],
+    ['index.html?code=KOSPI','KR_KOSPI','index',null]
+   ]){
+    await page.goto(origin+'/'+entry);
+    await page.waitForURL('**/chart.html?**');
+    await page.waitForFunction(()=>document.querySelector('#chart-page')?.dataset.loaded==='true');
+    const route=new URL(page.url());
+    assert.equal(route.searchParams.get('code'),asset);
+    assert.equal(route.searchParams.get('kind'),kind);
+    if(date)assert.equal(await page.locator('#chart-page').getAttribute('data-model-as-of'),date);
+   }
+   const unknownRequests=[];
+   const recordUnknown=req=>{if(/sh000001.*\.json/.test(req.url()))unknownRequests.push(req.url())};
+   page.on('request',recordUnknown);
+   await page.goto(origin+'/backtest.html?code=NOT_AN_ASSET#view=strategy');
+   await page.locator('#sym-n').filter({hasText:'无法识别标的'}).waitFor();
+   assert.equal(unknownRequests.length,0,'unknown legacy query must not silently load Shanghai');
+   page.off('request',recordUnknown);
+   pass(width+': legacy entries retain global identity and unknown queries do not default to A-share');
    for(const asset of catalog.assets){
     assert.equal(asset.status,'complete_sample',asset.id+' must have completed actual fits');
     const record=read(asset.id+'_latest.json'),history=read(asset.id+'_history.json');
