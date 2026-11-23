@@ -1,28 +1,28 @@
 {
   "asof": "2026-11-23",
-  "generated_at": "2026-11-23T07:51:41.497477+00:00",
+  "generated_at": "2026-11-23T08:35:23.900805+00:00",
   "sources": {
     "board_flow_industry": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T07:47:45.716569+00:00",
+      "fetched_at": "2026-11-23T08:32:47.972559+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f164&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf109%2Cf164%2Cf165%2Cf257&pn=2"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_concept": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T07:47:51.812446+00:00",
+      "fetched_at": "2026-11-23T08:32:52.244229+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_region": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T07:48:45.681680+00:00",
+      "fetched_at": "2026-11-23T08:33:30.498842+00:00",
       "ok": true,
       "fallback_from": "RuntimeError: Eastmoney board hosts failed: push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_history": {
       "url_host": "push2his.eastmoney.com",
-      "fetched_at": "2026-11-23T07:48:47.101343+00:00",
+      "fetched_at": "2026-11-23T08:33:31.203869+00:00",
       "ok": true,
       "provider": "eastmoney",
       "code": "BK0475",
@@ -32,80 +32,81 @@
     },
     "limit_pools": {
       "url_host": "push2ex.eastmoney.com",
-      "fetched_at": "2026-11-23T07:48:52.490834+00:00",
+      "fetched_at": "2026-11-23T08:33:35.827457+00:00",
       "ok": true
     },
     "themes": {
       "url_host": "zx.10jqka.com.cn",
-      "fetched_at": "2026-11-23T07:48:54.001879+00:00",
+      "fetched_at": "2026-11-23T08:33:36.823168+00:00",
       "ok": true
     },
     "breadth": {
       "url_host": "push2delay.eastmoney.com",
-      "fetched_at": "2026-11-23T07:49:49.533754+00:00",
-      "ok": true
+      "fetched_at": "2026-11-23T08:33:40.669096+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/ulist.np/get?secids=1.000001%2C0.399001&fields=f12%2Cf14%2Cf104%2Cf105%2Cf106%2Cf6&fltt=2&invt=2"
     },
     "board_strength": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T07:49:59.619880+00:00",
+      "fetched_at": "2026-11-23T08:33:50.507004+00:00",
       "ok": true,
       "provider": "sina",
       "fallback_from": "push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140"
     },
     "hot_ths": {
       "url_host": "dq.10jqka.com.cn",
-      "fetched_at": "2026-11-23T07:50:01.510910+00:00",
+      "fetched_at": "2026-11-23T08:33:51.467405+00:00",
       "ok": true
     },
     "hot_eastmoney": {
       "url_host": "emappdata.eastmoney.com",
-      "fetched_at": "2026-11-23T07:50:03.726100+00:00",
-      "ok": true
+      "fetched_at": "2026-11-23T08:33:56.617988+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/ulist.np/get?ut=f057cbcbce2a86e2866ab8877db1d059&fltt=2&invt=2&fields=f14%2Cf3%2Cf12%2Cf2&secids=1.688836%2C0.002242%2C0.002579%2C0.000530%2C0.300502%2C0.002148%2C0.002086%2C0.002771%2C1.600410%2C0.300308%2C0.002685%2C0.000823%2C0.000678%2C1.600715%2C0.301313%2C0.300394%2C1.600467%2C0.002384%2C0.300413%2C1.600103%2C1.601188%2C1.603324%2C1.601398%2C1.688825%2C0.002584%2C0.000636%2C1.600327%2C1.603466%2C0.300059%2C1.605488%2C0.002747%2C0.002343%2C1.603366%2C1.603893%2C0.301052%2C1.688585%2C0.000711%2C1.600519%2C1.605577%2C0.002172%2C0.002708%2C0.002642%2C1.600206%2C0.300006%2C0.002815%2C1.601689%2C0.002164%2C1.603960%2C0.300007%2C1.601595"
     },
     "dragon_tiger": {
       "url_host": "datacenter-web.eastmoney.com",
-      "fetched_at": "2026-11-23T07:50:05.312654+00:00",
-      "ok": false,
-      "error": "RuntimeError: Eastmoney LHB response lacks result.data"
+      "fetched_at": "2026-11-23T08:33:58.310246+00:00",
+      "ok": true
     },
     "news_cls": {
       "url_host": "www.cls.cn",
-      "fetched_at": "2026-11-23T07:50:06.517261+00:00",
+      "fetched_at": "2026-11-23T08:33:59.119933+00:00",
       "ok": true
     },
     "news_eastmoney": {
       "url_host": "np-weblist.eastmoney.com",
-      "fetched_at": "2026-11-23T07:50:08.042731+00:00",
+      "fetched_at": "2026-11-23T08:34:00.263476+00:00",
       "ok": true
     },
     "northbound": {
       "url_host": "www.hkex.com.hk",
-      "fetched_at": "2026-11-23T07:50:08.604372+00:00",
+      "fetched_at": "2026-11-23T08:34:00.769786+00:00",
       "ok": true
     },
     "index_valuation_000300": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T07:50:14.046005+00:00",
+      "fetched_at": "2026-11-23T08:34:12.718644+00:00",
       "ok": true
     },
     "index_valuation_000905": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T07:50:20.157410+00:00",
+      "fetched_at": "2026-11-23T08:34:17.677231+00:00",
       "ok": true
     },
     "index_valuation_000016": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T07:50:22.841067+00:00",
+      "fetched_at": "2026-11-23T08:34:24.101894+00:00",
       "ok": true
     },
     "index_valuation_000852": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T07:50:25.871613+00:00",
+      "fetched_at": "2026-11-23T08:34:29.153699+00:00",
       "ok": true
     },
     "margin": {
       "url_host": "sse.szse.official",
-      "fetched_at": "2026-11-23T07:51:41.497462+00:00",
+      "fetched_at": "2026-11-23T08:35:23.900790+00:00",
       "ok": true,
       "provider": "sse.szse.official",
       "asof": "2026-11-19",
@@ -8470,7 +8471,7 @@
         "seal_fund": 2340612.0,
         "board_amount": 49617787.0,
         "days": 1,
-        "open_times": 27,
+        "open_times": 26,
         "amount": 91076536.0,
         "turnover": 5.494396686553955,
         "industry": "化学纤维"
@@ -8815,48 +8816,8 @@
   },
   "breadth": {
     "evidence": "descriptive",
-    "note": "这是实时快照，仅在收盘后同日运行时有效。只作市场背景，不进入 LPPLS 报警或任何模型。",
-    "up": 4344,
-    "down": 806,
-    "flat": 140,
-    "amount_yuan": 1552880172836.8428,
-    "indices": [
-      {
-        "code": "000001",
-        "name": "上证指数",
-        "up": 1797,
-        "down": 483,
-        "flat": 74,
-        "amount_yuan": 738500418823.1
-      },
-      {
-        "code": "399001",
-        "name": "深证成指",
-        "up": 2547,
-        "down": 323,
-        "flat": 66,
-        "amount_yuan": 814379754013.7428
-      }
-    ],
-    "snapshot_at": "2026-11-23T07:48:54.672458+00:00",
-    "dist": {
-      "zt": 146,
-      "gt10": 108,
-      "7_10": 287,
-      "3_7": 1752,
-      "0_3": 2365,
-      "flat": 140,
-      "m0_3": 674,
-      "m3_7": 94,
-      "m7_10": 7,
-      "lt10": 4,
-      "dt": 3
-    },
-    "dist_n": 5580,
-    "dist_source": "sina hs_a",
-    "dist_limit_sets": true,
-    "amount_prev_yuan": 1422200422937.394,
-    "amount_prev_date": "2026-11-20"
+    "note": "实时市场宽度快照；仅在收盘后同日运行时有效。只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "data": null
   },
   "themes": {
     "evidence": "descriptive",
@@ -10796,7 +10757,7 @@
         "rank": 1,
         "code": "002242",
         "name": "九阳股份",
-        "heat": 7761836.0,
+        "heat": 7171223.0,
         "pct": 10.0138,
         "rank_chg": 0.0,
         "concepts": [
@@ -10807,24 +10768,11 @@
       },
       {
         "rank": 2,
-        "code": "300308",
-        "name": "中际旭创",
-        "heat": 5080486.0,
-        "pct": 6.1038,
-        "rank_chg": 0.0,
-        "concepts": [
-          "共封装光学(CPO)",
-          "F5G概念"
-        ],
-        "popularity_tag": "持续上榜"
-      },
-      {
-        "rank": 3,
         "code": "300502",
         "name": "新易盛",
-        "heat": 5066192.0,
+        "heat": 4979395.0,
         "pct": 9.9152,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "共封装光学(CPO)",
           "5G"
@@ -10832,12 +10780,25 @@
         "popularity_tag": null
       },
       {
+        "rank": 3,
+        "code": "300308",
+        "name": "中际旭创",
+        "heat": 4946480.0,
+        "pct": 6.1038,
+        "rank_chg": -1.0,
+        "concepts": [
+          "共封装光学(CPO)",
+          "F5G概念"
+        ],
+        "popularity_tag": "持续上榜"
+      },
+      {
         "rank": 4,
         "code": "688836",
         "name": "宇树科技",
-        "heat": 4536822.0,
+        "heat": 4848482.0,
         "pct": 20.0,
-        "rank_chg": 7.0,
+        "rank_chg": 0.0,
         "concepts": [
           "人形机器人",
           "科创次新股"
@@ -10848,9 +10809,9 @@
         "rank": 5,
         "code": "000530",
         "name": "冰山冷热",
-        "heat": 4467453.0,
+        "heat": 4451365.0,
         "pct": 10.0081,
-        "rank_chg": 2.0,
+        "rank_chg": 0.0,
         "concepts": [
           "无人零售",
           "冰雪产业"
@@ -10861,9 +10822,9 @@
         "rank": 6,
         "code": "002148",
         "name": "北纬科技",
-        "heat": 4408189.0,
+        "heat": 4017438.0,
         "pct": 10.0398,
-        "rank_chg": -1.0,
+        "rank_chg": 0.0,
         "concepts": [
           "手机游戏",
           "网络游戏"
@@ -10872,24 +10833,11 @@
       },
       {
         "rank": 7,
-        "code": "002579",
-        "name": "中京电子",
-        "heat": 4144317.0,
-        "pct": 10.0075,
-        "rank_chg": -3.0,
-        "concepts": [
-          "共封装光学(CPO)",
-          "PCB概念"
-        ],
-        "popularity_tag": "3天3板"
-      },
-      {
-        "rank": 8,
         "code": "600410",
         "name": "华胜天成",
-        "heat": 4020985.0,
+        "heat": 3952775.0,
         "pct": -3.8684,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "云计算",
           "网络安全"
@@ -10897,12 +10845,25 @@
         "popularity_tag": "持续上榜"
       },
       {
+        "rank": 8,
+        "code": "002579",
+        "name": "中京电子",
+        "heat": 3728681.0,
+        "pct": 10.0075,
+        "rank_chg": -1.0,
+        "concepts": [
+          "共封装光学(CPO)",
+          "PCB概念"
+        ],
+        "popularity_tag": "3天3板"
+      },
+      {
         "rank": 9,
         "code": "002086",
         "name": "东方海洋",
-        "heat": 3997106.0,
+        "heat": 3636980.0,
         "pct": 10.1333,
-        "rank_chg": -3.0,
+        "rank_chg": 0.0,
         "concepts": [
           "预制菜",
           "幽门螺杆菌概念"
@@ -10913,9 +10874,9 @@
         "rank": 10,
         "code": "600715",
         "name": "文投控股",
-        "heat": 3598471.0,
+        "heat": 3492227.0,
         "pct": 4.0146,
-        "rank_chg": 2.0,
+        "rank_chg": 0.0,
         "concepts": [
           "短剧游戏",
           "手机游戏"
@@ -10926,9 +10887,9 @@
         "rank": 11,
         "code": "002771",
         "name": "真视通",
-        "heat": 3434726.0,
+        "heat": 3262128.0,
         "pct": 9.9874,
-        "rank_chg": -1.0,
+        "rank_chg": 0.0,
         "concepts": [
           "算力租赁",
           "东数西算(算力)"
@@ -10939,9 +10900,9 @@
         "rank": 12,
         "code": "002685",
         "name": "华东重机",
-        "heat": 3369199.0,
+        "heat": 3070122.0,
         "pct": 10.0,
-        "rank_chg": -3.0,
+        "rank_chg": 0.0,
         "concepts": [
           "信创",
           "芯片概念"
@@ -10952,7 +10913,7 @@
         "rank": 13,
         "code": "601398",
         "name": "工商银行",
-        "heat": 3121554.0,
+        "heat": 3000360.0,
         "pct": -2.6596,
         "rank_chg": 0.0,
         "concepts": [
@@ -10965,7 +10926,7 @@
         "rank": 14,
         "code": "002384",
         "name": "东山精密",
-        "heat": 2904881.0,
+        "heat": 2905253.0,
         "pct": 5.7249,
         "rank_chg": 0.0,
         "concepts": [
@@ -10978,7 +10939,7 @@
         "rank": 15,
         "code": "000678",
         "name": "襄阳轴承",
-        "heat": 2712511.0,
+        "heat": 2781090.0,
         "pct": 10.0118,
         "rank_chg": 0.0,
         "concepts": [
@@ -10989,24 +10950,11 @@
       },
       {
         "rank": 16,
-        "code": "688825",
-        "name": "长鑫科技",
-        "heat": 2347805.0,
-        "pct": 2.1047,
-        "rank_chg": 2.0,
-        "concepts": [
-          "存储芯片",
-          "国家大基金持股"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 17,
         "code": "300394",
         "name": "天孚通信",
-        "heat": 2291791.0,
+        "heat": 2420318.0,
         "pct": 13.8188,
-        "rank_chg": 3.0,
+        "rank_chg": 1.0,
         "concepts": [
           "共封装光学(CPO)",
           "光纤概念"
@@ -11014,10 +10962,49 @@
         "popularity_tag": null
       },
       {
+        "rank": 17,
+        "code": "688825",
+        "name": "长鑫科技",
+        "heat": 2344492.0,
+        "pct": 2.1047,
+        "rank_chg": -1.0,
+        "concepts": [
+          "存储芯片",
+          "国家大基金持股"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 18,
+        "code": "300413",
+        "name": "芒果超媒",
+        "heat": 2221875.0,
+        "pct": 15.2118,
+        "rank_chg": 1.0,
+        "concepts": [
+          "AI视频",
+          "短剧游戏"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 19,
+        "code": "000823",
+        "name": "超声电子",
+        "heat": 2217844.0,
+        "pct": 7.4554,
+        "rank_chg": 1.0,
+        "concepts": [
+          "PCB概念",
+          "共封装光学(CPO)"
+        ],
+        "popularity_tag": "2天1板"
+      },
+      {
+        "rank": 20,
         "code": "301313",
         "name": "凡拓数创",
-        "heat": 2289662.0,
+        "heat": 2086578.0,
         "pct": 19.9966,
         "rank_chg": -2.0,
         "concepts": [
@@ -11027,49 +11014,10 @@
         "popularity_tag": "2天2板"
       },
       {
-        "rank": 19,
-        "code": "300413",
-        "name": "芒果超媒",
-        "heat": 2215716.0,
-        "pct": 15.2118,
-        "rank_chg": 2.0,
-        "concepts": [
-          "AI视频",
-          "短剧游戏"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 20,
-        "code": "000823",
-        "name": "超声电子",
-        "heat": 2156671.0,
-        "pct": 7.4554,
-        "rank_chg": -3.0,
-        "concepts": [
-          "PCB概念",
-          "共封装光学(CPO)"
-        ],
-        "popularity_tag": "2天1板"
-      },
-      {
         "rank": 21,
-        "code": "601188",
-        "name": "龙江交通",
-        "heat": 1788647.0,
-        "pct": 10.0239,
-        "rank_chg": -2.0,
-        "concepts": [
-          "冰雪产业",
-          "黑龙江自贸区"
-        ],
-        "popularity_tag": "首板涨停"
-      },
-      {
-        "rank": 22,
         "code": "600206",
         "name": "有研新材",
-        "heat": 1754877.0,
+        "heat": 1783563.0,
         "pct": 5.7082,
         "rank_chg": 1.0,
         "concepts": [
@@ -11079,10 +11027,36 @@
         "popularity_tag": null
       },
       {
+        "rank": 22,
+        "code": "603366",
+        "name": "日出东方",
+        "heat": 1647600.0,
+        "pct": 7.8579,
+        "rank_chg": 2.0,
+        "concepts": [
+          "建筑节能",
+          "PPP概念"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 23,
+        "code": "601188",
+        "name": "龙江交通",
+        "heat": 1624204.0,
+        "pct": 10.0239,
+        "rank_chg": -2.0,
+        "concepts": [
+          "冰雪产业",
+          "黑龙江自贸区"
+        ],
+        "popularity_tag": "首板涨停"
+      },
+      {
+        "rank": 24,
         "code": "603324",
         "name": "盛剑科技",
-        "heat": 1727104.0,
+        "heat": 1612403.0,
         "pct": 9.9964,
         "rank_chg": -1.0,
         "concepts": [
@@ -11092,23 +11066,10 @@
         "popularity_tag": "5天5板"
       },
       {
-        "rank": 24,
-        "code": "603366",
-        "name": "日出东方",
-        "heat": 1511300.0,
-        "pct": 7.8579,
-        "rank_chg": 0.0,
-        "concepts": [
-          "建筑节能",
-          "PPP概念"
-        ],
-        "popularity_tag": null
-      },
-      {
         "rank": 25,
         "code": "000158",
         "name": "常山北明",
-        "heat": 1490716.0,
+        "heat": 1461459.0,
         "pct": -1.2574,
         "rank_chg": 0.0,
         "concepts": [
@@ -11121,9 +11082,9 @@
         "rank": 26,
         "code": "301052",
         "name": "果麦文化",
-        "heat": 1416532.0,
+        "heat": 1441340.0,
         "pct": 20.0,
-        "rank_chg": 24.0,
+        "rank_chg": 0.0,
         "concepts": [
           "短剧游戏",
           "文化传媒概念"
@@ -11134,9 +11095,9 @@
         "rank": 27,
         "code": "603986",
         "name": "兆易创新",
-        "heat": 1408874.0,
+        "heat": 1417123.0,
         "pct": 4.2403,
-        "rank_chg": 1.0,
+        "rank_chg": 0.0,
         "concepts": [
           "存储芯片",
           "汽车芯片"
@@ -11145,24 +11106,11 @@
       },
       {
         "rank": 28,
-        "code": "688981",
-        "name": "中芯国际",
-        "heat": 1349714.0,
-        "pct": -3.0767,
-        "rank_chg": 1.0,
-        "concepts": [
-          "国家大基金持股",
-          "中芯国际概念"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 29,
         "code": "603466",
         "name": "风语筑",
-        "heat": 1348999.0,
+        "heat": 1387772.0,
         "pct": 8.3217,
-        "rank_chg": 10.0,
+        "rank_chg": 1.0,
         "concepts": [
           "AI视频",
           "文化传媒概念"
@@ -11170,25 +11118,51 @@
         "popularity_tag": "2天1板"
       },
       {
-        "rank": 30,
-        "code": "300085",
-        "name": "银之杰",
-        "heat": 1309925.0,
-        "pct": 6.5185,
-        "rank_chg": 3.0,
+        "rank": 29,
+        "code": "600327",
+        "name": "大东方",
+        "heat": 1382151.0,
+        "pct": 9.9379,
+        "rank_chg": 13.0,
         "concepts": [
-          "数字货币",
-          "语音技术"
+          "信托概念",
+          "预制菜"
+        ],
+        "popularity_tag": "12天7板"
+      },
+      {
+        "rank": 30,
+        "code": "600467",
+        "name": "好当家",
+        "heat": 1319073.0,
+        "pct": 10.1399,
+        "rank_chg": 5.0,
+        "concepts": [
+          "预制菜",
+          "中韩自贸区"
+        ],
+        "popularity_tag": "8天5板"
+      },
+      {
+        "rank": 31,
+        "code": "688981",
+        "name": "中芯国际",
+        "heat": 1307566.0,
+        "pct": -3.0767,
+        "rank_chg": -3.0,
+        "concepts": [
+          "国家大基金持股",
+          "中芯国际概念"
         ],
         "popularity_tag": null
       },
       {
-        "rank": 31,
+        "rank": 32,
         "code": "002463",
         "name": "沪电股份",
-        "heat": 1299595.0,
+        "heat": 1305730.0,
         "pct": 2.9631,
-        "rank_chg": 6.0,
+        "rank_chg": -1.0,
         "concepts": [
           "PCB概念",
           "2026三季报预增"
@@ -11196,12 +11170,12 @@
         "popularity_tag": null
       },
       {
-        "rank": 32,
+        "rank": 33,
         "code": "002185",
         "name": "华天科技",
-        "heat": 1294613.0,
+        "heat": 1303416.0,
         "pct": -0.0725,
-        "rank_chg": 8.0,
+        "rank_chg": -1.0,
         "concepts": [
           "国家大基金持股",
           "存储芯片"
@@ -11209,10 +11183,36 @@
         "popularity_tag": null
       },
       {
-        "rank": 33,
+        "rank": 34,
+        "code": "600261",
+        "name": "阳光照明",
+        "heat": 1300057.0,
+        "pct": 6.0096,
+        "rank_chg": 2.0,
+        "concepts": [
+          "跨境电商",
+          "氢能源"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 35,
+        "code": "300085",
+        "name": "银之杰",
+        "heat": 1294737.0,
+        "pct": 6.5185,
+        "rank_chg": -5.0,
+        "concepts": [
+          "数字货币",
+          "语音技术"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 36,
         "code": "601899",
         "name": "紫金矿业",
-        "heat": 1290164.0,
+        "heat": 1227455.0,
         "pct": 2.2335,
         "rank_chg": -3.0,
         "concepts": [
@@ -11222,49 +11222,23 @@
         "popularity_tag": null
       },
       {
-        "rank": 34,
-        "code": "605577",
-        "name": "龙版传媒",
-        "heat": 1286800.0,
-        "pct": 10.0062,
-        "rank_chg": 7.0,
+        "rank": 37,
+        "code": "002156",
+        "name": "通富微电",
+        "heat": 1215068.0,
+        "pct": 1.2352,
+        "rank_chg": 1.0,
         "concepts": [
-          "AI视频",
-          "文化传媒概念"
-        ],
-        "popularity_tag": "2天2板"
-      },
-      {
-        "rank": 35,
-        "code": "600467",
-        "name": "好当家",
-        "heat": 1285850.0,
-        "pct": 10.1399,
-        "rank_chg": -9.0,
-        "concepts": [
-          "预制菜",
-          "中韩自贸区"
-        ],
-        "popularity_tag": "8天5板"
-      },
-      {
-        "rank": 36,
-        "code": "600261",
-        "name": "阳光照明",
-        "heat": 1258688.0,
-        "pct": 6.0096,
-        "rank_chg": -1.0,
-        "concepts": [
-          "跨境电商",
-          "氢能源"
+          "国家大基金持股",
+          "存储芯片"
         ],
         "popularity_tag": null
       },
       {
-        "rank": 37,
+        "rank": 38,
         "code": "600103",
         "name": "青山纸业",
-        "heat": 1255027.0,
+        "heat": 1195972.0,
         "pct": 9.9688,
         "rank_chg": -1.0,
         "concepts": [
@@ -11274,51 +11248,25 @@
         "popularity_tag": "首板涨停"
       },
       {
-        "rank": 38,
-        "code": "002156",
-        "name": "通富微电",
-        "heat": 1246969.0,
-        "pct": 1.2352,
-        "rank_chg": 0.0,
-        "concepts": [
-          "国家大基金持股",
-          "存储芯片"
-        ],
-        "popularity_tag": null
-      },
-      {
         "rank": 39,
-        "code": "605488",
-        "name": "福莱新材",
-        "heat": 1246552.0,
-        "pct": 9.9953,
-        "rank_chg": -12.0,
+        "code": "605577",
+        "name": "龙版传媒",
+        "heat": 1195192.0,
+        "pct": 10.0062,
+        "rank_chg": -5.0,
         "concepts": [
-          "人形机器人",
-          "苹果概念"
+          "AI视频",
+          "文化传媒概念"
         ],
-        "popularity_tag": "首板涨停"
+        "popularity_tag": "2天2板"
       },
       {
         "rank": 40,
-        "code": "603893",
-        "name": "瑞芯微",
-        "heat": 1242866.0,
-        "pct": 9.9978,
-        "rank_chg": -9.0,
-        "concepts": [
-          "智能音箱",
-          "AI眼镜"
-        ],
-        "popularity_tag": "首板涨停"
-      },
-      {
-        "rank": 41,
         "code": "600519",
         "name": "贵州茅台",
-        "heat": 1234427.0,
+        "heat": 1194225.0,
         "pct": -3.1466,
-        "rank_chg": -9.0,
+        "rank_chg": 1.0,
         "concepts": [
           "超级品牌",
           "同花顺漂亮100"
@@ -11326,25 +11274,38 @@
         "popularity_tag": null
       },
       {
-        "rank": 42,
-        "code": "600327",
-        "name": "大东方",
-        "heat": 1215127.0,
-        "pct": 9.9379,
-        "rank_chg": -8.0,
+        "rank": 41,
+        "code": "300058",
+        "name": "蓝色光标",
+        "heat": 1163974.0,
+        "pct": 5.0879,
+        "rank_chg": 4.0,
         "concepts": [
-          "信托概念",
-          "预制菜"
+          "快手概念",
+          "小红书概念"
         ],
-        "popularity_tag": "12天7板"
+        "popularity_tag": null
+      },
+      {
+        "rank": 42,
+        "code": "603893",
+        "name": "瑞芯微",
+        "heat": 1157271.0,
+        "pct": 9.9978,
+        "rank_chg": -2.0,
+        "concepts": [
+          "智能音箱",
+          "AI眼镜"
+        ],
+        "popularity_tag": "首板涨停"
       },
       {
         "rank": 43,
         "code": "300750",
         "name": "宁德时代",
-        "heat": 1163258.0,
+        "heat": 1152832.0,
         "pct": -0.1712,
-        "rank_chg": 1.0,
+        "rank_chg": 0.0,
         "concepts": [
           "同花顺漂亮100",
           "钠离子电池"
@@ -11353,11 +11314,24 @@
       },
       {
         "rank": 44,
+        "code": "605488",
+        "name": "福莱新材",
+        "heat": 1151420.0,
+        "pct": 9.9953,
+        "rank_chg": -5.0,
+        "concepts": [
+          "人形机器人",
+          "苹果概念"
+        ],
+        "popularity_tag": "首板涨停"
+      },
+      {
+        "rank": 45,
         "code": "600584",
         "name": "长电科技",
-        "heat": 1149706.0,
+        "heat": 1149290.0,
         "pct": 0.2191,
-        "rank_chg": 5.0,
+        "rank_chg": -1.0,
         "concepts": [
           "国家大基金持股",
           "存储芯片"
@@ -11365,25 +11339,12 @@
         "popularity_tag": null
       },
       {
-        "rank": 45,
-        "code": "300058",
-        "name": "蓝色光标",
-        "heat": 1141023.0,
-        "pct": 5.0879,
-        "rank_chg": 20.0,
-        "concepts": [
-          "快手概念",
-          "小红书概念"
-        ],
-        "popularity_tag": null
-      },
-      {
         "rank": 46,
         "code": "601138",
         "name": "工业富联",
-        "heat": 1090909.0,
+        "heat": 1101698.0,
         "pct": 3.0132,
-        "rank_chg": 9.0,
+        "rank_chg": 0.0,
         "concepts": [
           "共封装光学(CPO)",
           "同花顺果指数"
@@ -11392,14 +11353,14 @@
       },
       {
         "rank": 47,
-        "code": "601288",
-        "name": "农业银行",
-        "heat": 1087105.0,
-        "pct": 0.7722,
-        "rank_chg": -5.0,
+        "code": "600825",
+        "name": "新华传媒",
+        "heat": 1100546.0,
+        "pct": 6.1151,
+        "rank_chg": 2.0,
         "concepts": [
-          "证金持股",
-          "同花顺中特估100"
+          "AI语料",
+          "无人零售"
         ],
         "popularity_tag": null
       },
@@ -11407,9 +11368,9 @@
         "rank": 48,
         "code": "600487",
         "name": "亨通光电",
-        "heat": 1082487.0,
+        "heat": 1090628.0,
         "pct": 2.7492,
-        "rank_chg": 4.0,
+        "rank_chg": 0.0,
         "concepts": [
           "光纤概念",
           "共封装光学(CPO)"
@@ -11418,443 +11379,545 @@
       },
       {
         "rank": 49,
-        "code": "600825",
-        "name": "新华传媒",
-        "heat": 1071412.0,
-        "pct": 6.1151,
-        "rank_chg": 8.0,
+        "code": "300059",
+        "name": "东方财富",
+        "heat": 1042516.0,
+        "pct": 1.1407,
+        "rank_chg": 5.0,
         "concepts": [
-          "AI语料",
-          "无人零售"
+          "期货概念",
+          "互联网保险"
         ],
         "popularity_tag": null
       },
       {
         "rank": 50,
-        "code": "002584",
-        "name": "西陇科学",
-        "heat": 1061468.0,
-        "pct": 9.9612,
-        "rank_chg": 13.0,
+        "code": "301660",
+        "name": "粤芯半导体",
+        "heat": 1037082.0,
+        "pct": 4.541,
+        "rank_chg": 6.0,
         "concepts": [
-          "光刻胶",
-          "氟化工概念"
+          "注册制次新股",
+          "汽车芯片"
         ],
-        "popularity_tag": "首板涨停"
+        "popularity_tag": null
       }
     ],
-    "eastmoney": [
-      {
-        "rank": 1,
-        "code": "688836",
-        "name": "宇树科技-W",
-        "price": 708.0,
-        "pct": 20.0,
-        "rank_chg": 149.0
-      },
-      {
-        "rank": 2,
-        "code": "002242",
-        "name": "九阳股份",
-        "price": 31.86,
-        "pct": 10.01,
-        "rank_chg": 24.0
-      },
-      {
-        "rank": 3,
-        "code": "002579",
-        "name": "中京电子",
-        "price": 14.73,
-        "pct": 10.01,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 4,
-        "code": "000530",
-        "name": "冰山冷热",
-        "price": 13.52,
-        "pct": 10.01,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 5,
-        "code": "300502",
-        "name": "新易盛",
-        "price": 181.36,
-        "pct": 9.92,
-        "rank_chg": 34.0
-      },
-      {
-        "rank": 6,
-        "code": "002148",
-        "name": "北纬科技",
-        "price": 11.07,
-        "pct": 10.04,
-        "rank_chg": -3.0
-      },
-      {
-        "rank": 7,
-        "code": "002086",
-        "name": "东方海洋",
-        "price": 4.13,
-        "pct": 10.13,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 8,
-        "code": "600410",
-        "name": "华胜天成",
-        "price": 16.65,
-        "pct": -3.87,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 9,
-        "code": "002771",
-        "name": "真视通",
-        "price": 17.4,
-        "pct": 9.99,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 10,
-        "code": "300308",
-        "name": "中际旭创",
-        "price": 417.2,
-        "pct": 6.1,
-        "rank_chg": 8.0
-      },
-      {
-        "rank": 11,
-        "code": "002685",
-        "name": "华东重机",
-        "price": 8.14,
-        "pct": 10.0,
-        "rank_chg": 11.0
-      },
-      {
-        "rank": 12,
-        "code": "000823",
-        "name": "超声电子",
-        "price": 19.89,
-        "pct": 7.46,
-        "rank_chg": -7.0
-      },
-      {
-        "rank": 13,
-        "code": "600715",
-        "name": "文投控股",
-        "price": 2.85,
-        "pct": 4.01,
-        "rank_chg": 14.0
-      },
-      {
-        "rank": 14,
-        "code": "000678",
-        "name": "襄阳轴承",
-        "price": 18.68,
-        "pct": 10.01,
-        "rank_chg": 33.0
-      },
-      {
-        "rank": 15,
-        "code": "301313",
-        "name": "凡拓数创",
-        "price": 70.99,
-        "pct": 20.0,
-        "rank_chg": 21.0
-      },
-      {
-        "rank": 16,
-        "code": "300394",
-        "name": "天孚通信",
-        "price": 116.3,
-        "pct": 13.82,
-        "rank_chg": 33.0
-      },
-      {
-        "rank": 17,
-        "code": "002384",
-        "name": "东山精密",
-        "price": 71.47,
-        "pct": 5.72,
-        "rank_chg": 20.0
-      },
-      {
-        "rank": 18,
-        "code": "600467",
-        "name": "好当家",
-        "price": 3.15,
-        "pct": 10.14,
-        "rank_chg": -14.0
-      },
-      {
-        "rank": 19,
-        "code": "300413",
-        "name": "芒果超媒",
-        "price": 31.28,
-        "pct": 15.21,
-        "rank_chg": 63.0
-      },
-      {
-        "rank": 20,
-        "code": "601188",
-        "name": "龙江交通",
-        "price": 4.61,
-        "pct": 10.02,
-        "rank_chg": 39.0
-      },
-      {
-        "rank": 21,
-        "code": "600103",
-        "name": "青山纸业",
-        "price": 3.53,
-        "pct": 9.97,
-        "rank_chg": 85.0
-      },
-      {
-        "rank": 22,
-        "code": "601398",
-        "name": "工商银行",
-        "price": 9.15,
-        "pct": -2.66,
-        "rank_chg": 13.0
-      },
-      {
-        "rank": 23,
-        "code": "603324",
-        "name": "盛剑科技",
-        "price": 30.48,
-        "pct": 10.0,
-        "rank_chg": -9.0
-      },
-      {
-        "rank": 24,
-        "code": "688825",
-        "name": "长鑫科技",
-        "price": 35.9,
-        "pct": 2.1,
-        "rank_chg": 24.0
-      },
-      {
-        "rank": 25,
-        "code": "603466",
-        "name": "风语筑",
-        "price": 15.49,
-        "pct": 8.32,
-        "rank_chg": -8.0
-      },
-      {
-        "rank": 26,
-        "code": "300059",
-        "name": "东方财富",
-        "price": 18.62,
-        "pct": 1.14,
-        "rank_chg": -13.0
-      },
-      {
-        "rank": 27,
-        "code": "002584",
-        "name": "西陇科学",
-        "price": 8.5,
-        "pct": 9.96,
-        "rank_chg": 89.0
-      },
-      {
-        "rank": 28,
-        "code": "600327",
-        "name": "大东方",
-        "price": 5.31,
-        "pct": 9.94,
-        "rank_chg": -9.0
-      },
-      {
-        "rank": 29,
-        "code": "605488",
-        "name": "福莱新材",
-        "price": 46.77,
-        "pct": 10.0,
-        "rank_chg": 52.0
-      },
-      {
-        "rank": 30,
-        "code": "603366",
-        "name": "日出东方",
-        "price": 10.02,
-        "pct": 7.86,
-        "rank_chg": 34.0
-      },
-      {
-        "rank": 31,
-        "code": "000636",
-        "name": "风华高科",
-        "price": 28.99,
-        "pct": 10.02,
-        "rank_chg": 345.0
-      },
-      {
-        "rank": 32,
-        "code": "002343",
-        "name": "慈文传媒",
-        "price": 7.37,
-        "pct": 10.0,
-        "rank_chg": 141.0
-      },
-      {
-        "rank": 33,
-        "code": "603893",
-        "name": "瑞芯微",
-        "price": 202.88,
-        "pct": 10.0,
-        "rank_chg": 158.0
-      },
-      {
-        "rank": 34,
-        "code": "301052",
-        "name": "果麦文化",
-        "price": 44.16,
-        "pct": 20.0,
-        "rank_chg": 39.0
-      },
-      {
-        "rank": 35,
-        "code": "688585",
-        "name": "上纬新材",
-        "price": 178.99,
-        "pct": 20.0,
-        "rank_chg": 710.0
-      },
-      {
-        "rank": 36,
-        "code": "600519",
-        "name": "贵州茅台",
-        "price": 1439.0,
-        "pct": -3.15,
-        "rank_chg": -21.0
-      },
-      {
-        "rank": 37,
-        "code": "002747",
-        "name": "埃斯顿",
-        "price": 26.68,
-        "pct": 10.02,
-        "rank_chg": 329.0
-      },
-      {
-        "rank": 38,
-        "code": "600206",
-        "name": "有研新材",
-        "price": 40.0,
-        "pct": 5.71,
-        "rank_chg": 36.0
-      },
-      {
-        "rank": 39,
-        "code": "000711",
-        "name": "京蓝科技",
-        "price": 4.25,
-        "pct": 10.1,
-        "rank_chg": 2.0
-      },
-      {
-        "rank": 40,
-        "code": "605577",
-        "name": "龙版传媒",
-        "price": 17.81,
-        "pct": 10.01,
-        "rank_chg": -20.0
-      },
-      {
-        "rank": 41,
-        "code": "002708",
-        "name": "光洋股份",
-        "price": 20.99,
-        "pct": 10.01,
-        "rank_chg": 232.0
-      },
-      {
-        "rank": 42,
-        "code": "002172",
-        "name": "澳洋健康",
-        "price": 5.13,
-        "pct": 10.09,
-        "rank_chg": 146.0
-      },
-      {
-        "rank": 43,
-        "code": "002642",
-        "name": "荣联科技",
-        "price": 7.99,
-        "pct": 10.06,
-        "rank_chg": -33.0
-      },
-      {
-        "rank": 44,
-        "code": "300006",
-        "name": "莱美药业",
-        "price": 8.74,
-        "pct": 20.05,
-        "rank_chg": 131.0
-      },
-      {
-        "rank": 45,
-        "code": "000158",
-        "name": "常山北明",
-        "price": 13.35,
-        "pct": -1.26,
-        "rank_chg": -21.0
-      },
-      {
-        "rank": 46,
-        "code": "002815",
-        "name": "崇达技术",
-        "price": 14.96,
-        "pct": 10.0,
-        "rank_chg": 85.0
-      },
-      {
-        "rank": 47,
-        "code": "002164",
-        "name": "宁波东力",
-        "price": 17.94,
-        "pct": 9.99,
-        "rank_chg": 345.0
-      },
-      {
-        "rank": 48,
-        "code": "002185",
-        "name": "华天科技",
-        "price": 13.79,
-        "pct": -0.07,
-        "rank_chg": 95.0
-      },
-      {
-        "rank": 49,
-        "code": "603960",
-        "name": "克来机电",
-        "price": 15.37,
-        "pct": 10.02,
-        "rank_chg": -18.0
-      },
-      {
-        "rank": 50,
-        "code": "601595",
-        "name": "上海电影",
-        "price": 32.52,
-        "pct": 10.01,
-        "rank_chg": 373.0
-      }
-    ]
+    "eastmoney": null
   },
   "dragon_tiger": {
     "evidence": "descriptive",
     "note": "盘后龙虎榜按证券代码汇总；不展示营业部或席位。只作市场背景，不进入 LPPLS 报警或任何模型。",
-    "data": null
+    "date": "2026-11-23",
+    "n_stocks": 42,
+    "top_buy": [
+      {
+        "code": "002242",
+        "name": "九阳股份",
+        "reason": "日涨幅偏离值达到7%的前5只证券",
+        "close": 31.86,
+        "pct": 10.0138,
+        "net": 321750888.04,
+        "buy": 531736868.46,
+        "sell": 209985980.42,
+        "turnover": 10.6231
+      },
+      {
+        "code": "000530",
+        "name": "冰山冷热",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券；日换手率达到20%的前5只证券；日涨幅偏离值达到7%的前5只证券",
+        "close": 13.52,
+        "pct": 10.0081,
+        "net": 193444346.02,
+        "buy": 856505064.25,
+        "sell": 663060718.23,
+        "turnover": 37.309
+      },
+      {
+        "code": "300006",
+        "name": "莱美药业",
+        "reason": "日涨幅达到15%的前5只证券",
+        "close": 8.74,
+        "pct": 20.0549,
+        "net": 181257936.96,
+        "buy": 292958219.65,
+        "sell": 111700282.69,
+        "turnover": 20.1872
+      },
+      {
+        "code": "000636",
+        "name": "风华高科",
+        "reason": "日涨幅偏离值达到7%的前5只证券",
+        "close": 28.99,
+        "pct": 10.019,
+        "net": 180419170.33,
+        "buy": 502778759.69,
+        "sell": 322359589.36,
+        "turnover": 7.3242
+      },
+      {
+        "code": "002086",
+        "name": "东方海洋",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "close": 4.13,
+        "pct": 10.1333,
+        "net": 164943734.32,
+        "buy": 504910046.65,
+        "sell": 339966312.33,
+        "turnover": 26.5935
+      },
+      {
+        "code": "002642",
+        "name": "荣联科技",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "close": 7.99,
+        "pct": 10.0551,
+        "net": 138805323.83,
+        "buy": 196395543.83,
+        "sell": 57590220.0,
+        "turnover": 5.9563
+      },
+      {
+        "code": "301313",
+        "name": "凡拓数创",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到30%的证券；日换手率达到30%的前5只证券；日涨幅达到15%的前5只证券",
+        "close": 70.99,
+        "pct": 19.9966,
+        "net": 115035670.29,
+        "buy": 560257610.18,
+        "sell": 445221939.89,
+        "turnover": 33.7766
+      },
+      {
+        "code": "300829",
+        "name": "金丹科技",
+        "reason": "日涨幅达到15%的前5只证券",
+        "close": 31.44,
+        "pct": 20.0,
+        "net": 67840323.08,
+        "buy": 251658923.8,
+        "sell": 183818600.72,
+        "turnover": 26.3913
+      },
+      {
+        "code": "002771",
+        "name": "真视通",
+        "reason": "日换手率达到20%的前5只证券",
+        "close": 17.4,
+        "pct": 9.9874,
+        "net": 67292536.15,
+        "buy": 226337343.9,
+        "sell": 159044807.75,
+        "turnover": 60.4067
+      },
+      {
+        "code": "001358",
+        "name": "兴欣新材",
+        "reason": "日振幅值达到15%的前5只证券",
+        "close": 28.88,
+        "pct": 10.019,
+        "net": 66965320.79,
+        "buy": 117631811.0,
+        "sell": 50666490.21,
+        "turnover": 25.0137
+      },
+      {
+        "code": "000766",
+        "name": "通化金马",
+        "reason": "日振幅值达到15%的前5只证券",
+        "close": 10.96,
+        "pct": 10.0402,
+        "net": 64605651.5,
+        "buy": 151470162.0,
+        "sell": 86864510.5,
+        "turnover": 5.684
+      },
+      {
+        "code": "002046",
+        "name": "国机精工",
+        "reason": "日振幅值达到15%的前5只证券",
+        "close": 30.56,
+        "pct": 10.0072,
+        "net": 40537507.1,
+        "buy": 202161518.26,
+        "sell": 161624011.16,
+        "turnover": 5.8885
+      },
+      {
+        "code": "300872",
+        "name": "天阳科技",
+        "reason": "日跌幅达到15%的前5只证券",
+        "close": 9.48,
+        "pct": -15.9574,
+        "net": 34061441.34,
+        "buy": 102968703.43,
+        "sell": 68907262.09,
+        "turnover": 12.3475
+      },
+      {
+        "code": "002199",
+        "name": "东晶电子",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "close": 10.4,
+        "pct": 10.0529,
+        "net": 28416408.1,
+        "buy": 70227566.0,
+        "sell": 41811157.9,
+        "turnover": 9.5165
+      },
+      {
+        "code": "920690",
+        "name": "捷众科技",
+        "reason": "当日收盘价涨幅达到20%的前5只股票；当日价格振幅达到30%的前5只股票；北交所股票连续3个交易日内日收盘价涨跌幅偏离值累计达到+40%(-40%)",
+        "close": 22.67,
+        "pct": 29.9885,
+        "net": 19784815.9,
+        "buy": 41149029.9,
+        "sell": 21364214.0,
+        "turnover": 17.0505
+      },
+      {
+        "code": "002579",
+        "name": "中京电子",
+        "reason": "日换手率达到20%的前5只证券；日涨幅偏离值达到7%的前5只证券",
+        "close": 14.73,
+        "pct": 10.0075,
+        "net": 19541367.03,
+        "buy": 390616769.58,
+        "sell": 371075402.55,
+        "turnover": 30.3364
+      },
+      {
+        "code": "000593",
+        "name": "德龙汇能",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "close": 19.26,
+        "pct": 9.9943,
+        "net": 19067670.76,
+        "buy": 61567060.0,
+        "sell": 42499389.24,
+        "turnover": 1.0844
+      },
+      {
+        "code": "301052",
+        "name": "果麦文化",
+        "reason": "日涨幅达到15%的前5只证券；日换手率达到30%的前5只证券；连续三个交易日内，涨幅偏离值累计达到30%的证券",
+        "close": 44.16,
+        "pct": 20.0,
+        "net": 18401639.4,
+        "buy": 198446253.56,
+        "sell": 180044614.16,
+        "turnover": 45.9576
+      },
+      {
+        "code": "002148",
+        "name": "北纬科技",
+        "reason": "日换手率达到20%的前5只证券",
+        "close": 11.07,
+        "pct": 10.0398,
+        "net": 11935942.75,
+        "buy": 263486811.78,
+        "sell": 251550869.03,
+        "turnover": 40.4973
+      },
+      {
+        "code": "920309",
+        "name": "菊乐股份",
+        "reason": "当日换手率达到20%的前5只股票",
+        "close": 35.8,
+        "pct": 6.6111,
+        "net": 4183975.61,
+        "buy": 25200096.04,
+        "sell": 21016120.43,
+        "turnover": 31.5806
+      }
+    ],
+    "top_sell": [
+      {
+        "code": "301218",
+        "name": "华是科技",
+        "reason": "日振幅值达到30%的前5只证券；日涨幅达到15%的前5只证券",
+        "close": 87.0,
+        "pct": 20.0,
+        "net": -226590153.08,
+        "buy": 288620844.76,
+        "sell": 515210997.84,
+        "turnover": 28.8365
+      },
+      {
+        "code": "000823",
+        "name": "超声电子",
+        "reason": "日换手率达到20%的前5只证券",
+        "close": 19.89,
+        "pct": 7.4554,
+        "net": -157238254.33,
+        "buy": 523881300.7,
+        "sell": 681119555.03,
+        "turnover": 33.99
+      },
+      {
+        "code": "002746",
+        "name": "仙坛股份",
+        "reason": "日跌幅偏离值达到7%的前5只证券",
+        "close": 5.82,
+        "pct": -6.88,
+        "net": -75170282.8,
+        "buy": 52722425.0,
+        "sell": 127892707.8,
+        "turnover": 4.7457
+      },
+      {
+        "code": "000678",
+        "name": "襄阳轴承",
+        "reason": "日涨幅偏离值达到7%的前5只证券；连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "close": 18.68,
+        "pct": 10.0118,
+        "net": -45912570.34,
+        "buy": 268667080.33,
+        "sell": 314579650.67,
+        "turnover": 29.9391
+      },
+      {
+        "code": "002811",
+        "name": "郑中设计",
+        "reason": "日振幅值达到15%的前5只证券",
+        "close": 15.0,
+        "pct": 2.459,
+        "net": -40008807.7,
+        "buy": 80895498.12,
+        "sell": 120904305.82,
+        "turnover": 14.4165
+      },
+      {
+        "code": "301697",
+        "name": "贝特利",
+        "reason": "日换手率达到30%的前5只证券",
+        "close": 26.95,
+        "pct": 10.8597,
+        "net": -26158223.28,
+        "buy": 70285383.2,
+        "sell": 96443606.48,
+        "turnover": 36.5952
+      },
+      {
+        "code": "002843",
+        "name": "泰嘉股份",
+        "reason": "连续三个交易日内，跌幅偏离值累计达到20%的证券",
+        "close": 13.15,
+        "pct": -6.4057,
+        "net": -18779143.29,
+        "buy": 187425284.71,
+        "sell": 206204428.0,
+        "turnover": 17.4137
+      },
+      {
+        "code": "002535",
+        "name": "林州重机",
+        "reason": "日振幅值达到15%的前5只证券",
+        "close": 2.52,
+        "pct": 3.2787,
+        "net": -11881224.5,
+        "buy": 21327118.5,
+        "sell": 33208343.0,
+        "turnover": 16.9669
+      },
+      {
+        "code": "301660",
+        "name": "粤芯半导体",
+        "reason": "日换手率达到30%的前5只证券",
+        "close": 32.0,
+        "pct": 4.541,
+        "net": -10096688.23,
+        "buy": 274824163.44,
+        "sell": 284920851.67,
+        "turnover": 33.9302
+      },
+      {
+        "code": "123275",
+        "name": "肇民转债",
+        "reason": "日涨幅达到15%的前5只可转债",
+        "close": 162.154,
+        "pct": 20.0003,
+        "net": -8129855.92000008,
+        "buy": 711048018.66,
+        "sell": 719177874.58,
+        "turnover": null
+      }
+    ]
   },
   "news": {
     "evidence": "descriptive",
     "note": "标题来自第三方，只作资讯索引，不进入模型。只作市场背景，不进入 LPPLS 报警或任何模型。",
     "cls": [
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:31",
+        "title": "美股恐慌指数VIX回落至31附近",
+        "url": "https://api3.cls.cn/share/article/2541760?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:30",
+        "title": "财联社11月23日电，在岸人民币兑美元收盘报6.6643，较上一交易日上涨92点。",
+        "url": "https://api3.cls.cn/share/article/2541759?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:30",
+        "title": "国家药监局推进真实世界研究工作",
+        "url": "https://api3.cls.cn/share/article/2541758?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:30",
+        "title": "财联社11月23日电，德国11月制造业PMI初值为55，预期54，前值54.2；11月服务业PMI初值为54，预期52.3，前值52.5。",
+        "url": "https://api3.cls.cn/share/article/2541756?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:29",
+        "title": "我国发布第六批鼓励研发申报儿童药品清单",
+        "url": "https://api3.cls.cn/share/article/2541755?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:27",
+        "title": "新疆阿克苏地区拜城县发生4.1级地震 震源深度10公里",
+        "url": "https://api3.cls.cn/share/article/2541753?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:24",
+        "title": "美国天然气期货日内跌6%",
+        "url": "https://api3.cls.cn/share/article/2541749?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:24",
+        "title": "工信部NVDB提示：防范OpenJDK缓冲区溢出高危漏洞",
+        "url": "https://api3.cls.cn/share/article/2541748?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:24",
+        "title": "中国足协发布《红图计划》 提出要摒弃急功近利的短期成绩导向",
+        "url": "https://api3.cls.cn/share/article/2541746?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:21",
+        "title": "鲁北化工：拟通过祥海科技投资45亿元建设年产30万吨氯化法钛白粉新材料项目",
+        "url": "https://api3.cls.cn/share/article/2541742?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:21",
+        "title": "大摩前瞻WorkdayQ3财报：AI撬动整体增长尚需时日 维持“减持”评级",
+        "url": "https://api3.cls.cn/share/article/2541740?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:16",
+        "title": "中金所增加10年期国债期货合约可交割国债",
+        "url": "https://api3.cls.cn/share/article/2541736?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:15",
+        "title": "财联社11月23日电，法国11月制造业PMI初值为47.9，预期49.9，前值49.5。",
+        "url": "https://api3.cls.cn/share/article/2541734?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:13",
+        "title": "财联社11月23日电，南非主要股指上涨1%，至105,713点。",
+        "url": "https://api3.cls.cn/share/article/2541732?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:12",
+        "title": "焦作市投资集团副总经理关玉红接受审查调查",
+        "url": "https://api3.cls.cn/share/article/2541730?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:11",
+        "title": "宝莱特：子公司天津挚信遭国家药监局飞行检查 被责令暂停生产",
+        "url": "https://api3.cls.cn/share/article/2541728?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:11",
+        "title": "比亚迪：Ti7车型未侵犯捷豹路虎任何权利 将提起上诉",
+        "url": "https://api3.cls.cn/share/article/2541718?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:11",
+        "title": "上期能源：对部分客户采取限制开仓监管措施",
+        "url": "https://api3.cls.cn/share/article/2541727?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:10",
+        "title": "香港恒生指数收跌0.12% 新能源汽车板块下挫",
+        "url": "https://api3.cls.cn/share/article/2541725?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:10",
+        "title": "丁薛祥会见新加坡副总理颜金勇并共同主持中新双边合作机制会议",
+        "url": "https://api3.cls.cn/share/article/2541724?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:05",
+        "title": "俄国防部：俄军打击乌能源、物流及港口设施",
+        "url": "https://api3.cls.cn/share/article/2541714?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:03",
+        "title": "欧洲主要股指开盘多数上涨",
+        "url": "https://api3.cls.cn/share/article/2541712?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:01",
+        "title": "上期所对部分客户采取限制开仓监管措施",
+        "url": "https://api3.cls.cn/share/article/2541711?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 16:01",
+        "title": "国家药监局批准和记黄埔1类创新药醋酸索乐匹尼布片上市",
+        "url": "https://api3.cls.cn/share/article/2541710?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 15:58",
+        "title": "高盛表示股市反弹取决于美联储信号和AI盈利",
+        "url": "https://api3.cls.cn/share/article/2541707?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 15:56",
+        "title": "财联社11月23日电，截至目前，南向资金净卖出额达90亿港元。",
+        "url": "https://api3.cls.cn/share/article/2541705?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 15:55",
+        "title": "浦东创投集团、农银投资等成立集成电路产业私募基金",
+        "url": "https://api3.cls.cn/share/article/2541703?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-23 15:52",
+        "title": "财联社11月23日电，截至目前，南向资金净卖出额达80亿港元。",
+        "url": "https://api3.cls.cn/share/article/2541700?os=web&sv=7.7.5&app="
+      },
       {
         "source": "财联社",
         "time": "2026-11-23 15:49",
@@ -11866,326 +11929,158 @@
         "time": "2026-11-23 15:47",
         "title": "财联社11月23日电，广期所品种仓单及变化如下：碳酸锂期货仓单19419手，环比上个交易日增加245手；多晶硅期货仓单14820手，环比上个交易日减少530手；",
         "url": "https://api3.cls.cn/share/article/2541693?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:46",
-        "title": "11月23日连板股分析：连板股晋级率100% 机器人概念股集体爆发",
-        "url": "https://api3.cls.cn/share/article/2541691?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:45",
-        "title": "财联社11月23日电，截至目前，南向资金净卖出额达60亿港元。",
-        "url": "https://api3.cls.cn/share/article/2541690?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:45",
-        "title": "江苏证监局对常州力中投资管理有限公司采取责令改正措施",
-        "url": "https://api3.cls.cn/share/article/2541689?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:44",
-        "title": "加拿大皇家银行：下调标普500目标位 但仍看好16.5%上行空间",
-        "url": "https://api3.cls.cn/share/article/2541688?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:44",
-        "title": "人社部：非法骗取社保基金支出或者社保待遇 拟处骗取金额2倍以上5倍以下的罚款",
-        "url": "https://api3.cls.cn/share/article/2541686?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:41",
-        "title": "奥特维：实控人提议回购1亿元至1.2亿元股份",
-        "url": "https://api3.cls.cn/share/article/2541684?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:40",
-        "title": "财联社11月23日电，土耳其主要BIST-100指数上涨1.3%，主要银行指数上涨2%。",
-        "url": "https://api3.cls.cn/share/article/2541683?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:40",
-        "title": "财联社11月23日电，截至目前，南向资金净卖出额达50亿港元。",
-        "url": "https://api3.cls.cn/share/article/2541682?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:39",
-        "title": "三星电气：预中标2.78亿元国家电网招标采购项目",
-        "url": "https://api3.cls.cn/share/article/2541680?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:38",
-        "title": "人社部：基本养老保险基金可委托国务院授权的机构实行市场化投资运营",
-        "url": "https://api3.cls.cn/share/article/2541678?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:38",
-        "title": "港股商米科技涨40%创历史新高",
-        "url": "https://api3.cls.cn/share/article/2541677?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:37",
-        "title": "社会保险基金监督条例公开征求意见",
-        "url": "https://api3.cls.cn/share/article/2541676?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:36",
-        "title": "今日投资舆情热点",
-        "url": "https://api3.cls.cn/share/article/2541664?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:35",
-        "title": "工信部：推动传统电子信息领域与人工智能深度融合 加大产业链上下游利益共担机制建设",
-        "url": "https://api3.cls.cn/share/article/2541672?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:35",
-        "title": "财联社11月23日电，截至目前，南向资金净卖出额达40亿港元。",
-        "url": "https://api3.cls.cn/share/article/2541671?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:32",
-        "title": "财联社11月23日电，阿尔斯通在欧洲获得一项价值约12亿欧元的新订单。",
-        "url": "https://api3.cls.cn/share/article/2541663?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:30",
-        "title": "外交部：对联合国气候大会未达成政治协议表示失望 但不应因此对多边进程丧失信心",
-        "url": "https://api3.cls.cn/share/article/2541661?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:28",
-        "title": "财联社11月23日电，截至目前，南向资金净卖出额达30亿港元。",
-        "url": "https://api3.cls.cn/share/article/2541659?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:28",
-        "title": "泽连斯基证实击沉俄罗斯护卫舰",
-        "url": "https://api3.cls.cn/share/article/2541658?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:28",
-        "title": "外交部：对话谈判是解决乌克兰危机唯一可行出路",
-        "url": "https://api3.cls.cn/share/article/2541657?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:27",
-        "title": "特朗普称只想向中国出售相对落后的芯片 外交部回应",
-        "url": "https://api3.cls.cn/share/article/2541653?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:25",
-        "title": "波兰总理即将访华？外交部：目前没有可以提供的信息",
-        "url": "https://api3.cls.cn/share/article/2541650?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:23",
-        "title": "财联社11月23日电，法国财政部长称，政府2027年经济增长1%的预测面临下调风险。\n\n",
-        "url": "https://api3.cls.cn/share/article/2541649?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:22",
-        "title": "寒潮预报威胁紧张库存 欧洲天然气价格飙升",
-        "url": "https://api3.cls.cn/share/article/2541648?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:20",
-        "title": "医防协同 我国高效推动医疗机构传染病防控工作",
-        "url": "https://api3.cls.cn/share/article/2541643?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:17",
-        "title": "东方港湾风控被质疑 但斌回应",
-        "url": "https://api3.cls.cn/share/article/2541640?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:16",
-        "title": "上周111家公募机构调研超410次 覆盖94只个股",
-        "url": "https://api3.cls.cn/share/article/2541639?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-23 15:16",
-        "title": "国债期货收盘多数下跌 30年期主力合约跌0.25%",
-        "url": "https://api3.cls.cn/share/article/2541638?os=web&sv=7.7.5&app="
       }
     ],
     "eastmoney": [
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:45",
-        "title": "荣耀700系列发布"
+        "time": "2026-11-23 16:32",
+        "title": "在岸人民币兑美元收盘报6.6643"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:45",
-        "title": "江苏证监局对常州力中投资管理有限公司采取责令改正措施"
+        "time": "2026-11-23 16:31",
+        "title": "工信部NVDB提示：防范OpenJDK缓冲区溢出高危漏洞"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:44",
-        "title": "加拿大皇家银行：下调标普500目标位 但仍看好16.5%上行空间"
+        "time": "2026-11-23 16:30",
+        "title": "国家药监局推进真实世界研究工作"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:44",
-        "title": "人社部：非法骗取社保基金支出或者社保待遇 拟处骗取金额2倍以上5倍以下的罚款"
+        "time": "2026-11-23 16:30",
+        "title": "德国11月制造业PMI初值为55 预期54"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:42",
-        "title": "华为哈勃入股陶智万象科技公司"
+        "time": "2026-11-23 16:28",
+        "title": "摩尔线程发布KUAE Training Suite v2.2.0"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:42",
-        "title": "Shopify CEO谈黄仁勋离职：系“精心策划” 英伟达董事会是“一群蠢货”"
+        "time": "2026-11-23 16:24",
+        "title": "美国天然气期货日内跌6%"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:41",
-        "title": "奥特维：实控人提议回购1亿元至1.2亿元股份"
+        "time": "2026-11-23 16:24",
+        "title": "欧莱新材：向特定对象发行A股股票获证监会同意注册批复"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:41",
-        "title": "精测电子在武汉成立显芯产业投资公司 注册资本5000万"
+        "time": "2026-11-23 16:24",
+        "title": "连锁反应！英伟达高层变动引韩国AI产业链担忧 决策模式是否会发生变化？"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:40",
-        "title": "土耳其主要BIST-100指数上涨1.3%"
+        "time": "2026-11-23 16:24",
+        "title": "中国足协发布《红图计划》 提出要摒弃急功近利的短期成绩导向"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:40",
-        "title": "南向资金净卖出额达50亿港元"
+        "time": "2026-11-23 16:24",
+        "title": "保障性住房技术交流会在渝举办"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:39",
-        "title": "欧洲加速摆脱美国云服务依赖：政府采购转向本土供应商 数字主权成新考量"
+        "time": "2026-11-23 16:22",
+        "title": "本立科技：拟3000万元-6000万元回购公司股份"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:38",
-        "title": "人社部：基本养老保险基金可委托国务院授权的机构实行市场化投资运营"
+        "time": "2026-11-23 16:21",
+        "title": "鲁北化工：拟投资45亿元建设年产30万吨氯化法钛白粉项目"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:38",
-        "title": "社会保险基金监督条例公开征求意见"
+        "time": "2026-11-23 16:20",
+        "title": "华润江中：复方草珊瑚含片获澳门中成药注册证明书"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:38",
-        "title": "港股商米科技涨40%创历史新高"
+        "time": "2026-11-23 16:19",
+        "title": "1至10月中国—中东欧国家经贸合作示范区贸易额破500亿元"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:38",
-        "title": "三星电气：预中标2.78亿元国家电网招标采购项目"
+        "time": "2026-11-23 16:18",
+        "title": "小米笔记本电脑今起涨价300元到500元？客服：随市场价格波动"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:37",
-        "title": "中汽协：1-10月销量排名前十MPV生产企业共销售64.8万辆"
+        "time": "2026-11-23 16:16",
+        "title": "丁薛祥会见新加坡副总理颜金勇并共同主持中新双边合作机制会议"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:35",
-        "title": "家联科技成立智造科技公司 含3D打印服务业务"
+        "time": "2026-11-23 16:16",
+        "title": "法国11月制造业PMI初值47.9"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:33",
-        "title": "花旗：即使英伟达融资计划全面终止 全球DRAM和NAND需求预计也仅下降12%和7%"
+        "time": "2026-11-23 16:16",
+        "title": "中金所增加10年期国债期货合约可交割国债"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:31",
-        "title": "荣耀700系列屏幕主供应商为维信诺"
+        "time": "2026-11-23 16:11",
+        "title": "宝莱特：子公司天津挚信遭国家药监局飞行检查 被责令暂停生产"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:31",
-        "title": "智谱GLM-5.4上线 3万亿参数GLM-5.5预计12月接力"
+        "time": "2026-11-23 16:11",
+        "title": "比亚迪：Ti7车型未侵犯捷豹路虎任何权利 将提起上诉"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:30",
-        "title": "AI可持续性担忧引发全球抛售 新兴市场股指料回吐年内全部涨幅"
+        "time": "2026-11-23 16:10",
+        "title": "11月23日港股收盘：恒指跌0.12% 恒生科技指数跌0.09%"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:28",
-        "title": "韩国政府承诺部署市场稳定资金 机构警告投资者过度恐慌"
+        "time": "2026-11-23 16:08",
+        "title": "中微半导推出BAT32A253车规触摸方案"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:28",
-        "title": "南向资金净卖出额达30亿港元"
+        "time": "2026-11-23 16:07",
+        "title": "监管明确两融调整要求 违约处置要稳妥审慎"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:28",
-        "title": "波兰总理图斯克将于12月访华？外交部：目前无可提供的信息"
+        "time": "2026-11-23 16:05",
+        "title": "百傲化学：拟2亿元至3亿元回购公司股份"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:28",
-        "title": "泽连斯基证实击沉俄罗斯护卫舰"
+        "time": "2026-11-23 16:05",
+        "title": "俄国防部：俄军打击乌能源、物流及港口设施"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:28",
-        "title": "回调至338港元后迎重估契机？美银和大摩双双指出腾讯现金流拐点将至"
+        "time": "2026-11-23 16:04",
+        "title": "比亚迪海洋网将推出9系MPV车型"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:27",
-        "title": "外交部：对联合国气候大会未达成政治协议表示失望 但不应因此对多边进程丧失信心"
+        "time": "2026-11-23 16:04",
+        "title": "欧洲主要股指开盘多数上涨"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:27",
-        "title": "特朗普称只想向中国出售相对落后的芯片 外交部回应"
+        "time": "2026-11-23 15:59",
+        "title": "上创超导董事长蔡传兵一行至中辰股份考察"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:26",
-        "title": "荷兰外相贝伦德森首次访华 中方有何期待？外交部回应"
+        "time": "2026-11-23 15:58",
+        "title": "我国发布第六批鼓励研发申报儿童药品清单"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 15:23",
-        "title": "史上最大IPO又如何 Anthropic信用恐被归入“垃圾级”？"
+        "time": "2026-11-23 15:58",
+        "title": "高盛表示股市反弹取决于美联储信号和AI盈利"
       }
     ]
   },
@@ -12275,7 +12170,7 @@
   "version": {
     "kind": "market",
     "asof": "2026-11-23",
-    "file": "versions/market/2026-11-23/20261123T075141Z_372a450b.json.gz",
-    "sha256": "372a450bd31dfbc9f8fad867745cd31462902947f1069b8b0bc592662ff74d15"
+    "file": "versions/market/2026-11-23/20261123T083523Z_8cc8fa36.json.gz",
+    "sha256": "8cc8fa364c8e6da5f82e9478bf00b2246300598c0d44d8ce91f05dd00babad62"
   }
 }
