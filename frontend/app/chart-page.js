@@ -26,6 +26,8 @@
   var intradayRequest = 0;
   var activeIntradayMetadata = null;
   var selectedPeriod = 'd';
+  var terminal = null;
+  var futureBars = null;
   var scales = Core.SCALES;
   var scaleLabels = {
     '2-4w': '2–4 周', '1-3m': '1–3 个月', '3-6m': '3–6 个月',
@@ -89,6 +91,9 @@
   }
 
   function renderEvidence(data, selectedScale) {
+    if (terminal) terminal.render(data, intervalRows(data, selectedScale).filter(function (band) {
+      return Core.bandEvidencePolicy(evidenceCode(data, selectedScale), band).showDates;
+    }));
     var state = el('evidence-state');
     var ruleSource = el('evidence-rule-source');
     var list = el('interval-list');
@@ -150,6 +155,7 @@
       var title = document.createElement('strong');
       title.textContent = band.source === 'scale_window'
         ? '已发布区间' : Clusters.label(band) || (index ? '次级簇' : '主簇');
+      if (band.q80_date < (context.asof || data.marketAsOf || data.modelAsOf || '')) title.textContent += ' · 历史区间已过';
       row.disabled = !policy.draw;
       row.appendChild(title);
       if (policy.showDates) {
@@ -280,7 +286,7 @@
     setText('asset-name', data.name);
     setText('asset-code', data.symbol);
     setText('asset-exchange', data.exchange);
-    setText('asset-type', data.assetType === 'index' ? '指数 · 指数点位' : 'A 股 · CNY · 元');
+    setText('asset-type', data.assetType === 'index' ? '指数 · 指数点位' : context.market === 'us' ? '美股 · USD · 美元' : 'A 股 · CNY · 元');
     setText('trading-status', '交易状态：' + (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
     setText('identity-strip-name', data.name);
     setText('identity-strip-code', data.symbol);
@@ -303,7 +309,8 @@
       data.freshness === 'not_established' ? '行情新鲜度未核验' : '按已发布截止日查看；不代表实时行情');
     el('index-replay').hidden = data.assetType !== 'index';
     el('index-replay').href = 'index.html?code=' + encodeURIComponent(data.symbol) +
-      (data.assetType === 'index' && context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
+      (context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
+    el('index-replay').textContent = '原版完整诊断';
   }
 
   function renderAsofNotice(data) {
@@ -311,7 +318,7 @@
     var visible = !!context.asof;
     notice.hidden = !visible;
     notice.textContent = visible
-      ? (data.historyFallback ? '使用精确日期的历史封存帧；价格截自当前已发布历史行情，其修订时点未记录。' : '只读查看此日期的封存结果。') +
+      ? (data.historyNote || (data.historyFallback ? '使用精确日期的历史封存帧；价格截自当前已发布历史行情，其修订时点未记录。' : '只读查看此日期的封存结果。')) +
         '历史重放与真实提前发布分开；未记录首次可见时间时，不声称当时已发布。'
       : '';
   }
@@ -356,7 +363,7 @@
     drawHeader(data);
     if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: context.asof || '' });
     if (selectedPeriod === 'd') {
-      chart.setData(chartPayload(data));
+      chart.setData(chartPayload(futureBars ? Object.assign({}, data, { bars: futureBars }) : data));
       if (data.asof) chart.setAsof(data.asof);
     }
     renderEvidence(data, context.scale);
@@ -400,6 +407,7 @@
   }
 
   async function loadModel(request) {
+    if (context.market === 'us') return load();
     if (context.asof || context.assetType === 'index') return load();
     var run = ++modelRequest;
     modelStatus = 'loading'; modelError = null;
@@ -438,10 +446,10 @@
 
   async function loadEvents(request) {
     var run = ++eventRequest;
-    if (context.assetType !== 'stock') {
-      el('events-note').textContent = '当前数据入口未提供指数事件；没有将个股事件套用到指数。';
+    if (context.assetType !== 'stock' || context.market === 'us') {
+      el('events-note').textContent = '当前事件入口仅提供 A 股个股事件；本标的尚未接入。';
       el('events-retry').disabled = true;
-      moduleState('events-status', '指数事件接口未提供'); return;
+      moduleState('events-status', '本标的事件接口未提供'); return;
     }
     moduleState('events-status', '事件独立读取中');
     try {
@@ -510,7 +518,7 @@
     button.addEventListener('click', function () { selectScale(scale, false); });
     el('scale-selector').appendChild(button);
   });
-  el('period-selector').hidden = context.assetType !== 'stock' || !!context.asof;
+  el('period-selector').hidden = context.assetType !== 'stock' || context.market === 'us' || !!context.asof;
   page.dataset.period = selectedPeriod;
   el('period-selector').querySelectorAll('[data-period]').forEach(function (button) {
     button.addEventListener('click', function () { void selectPeriod(button.dataset.period); });
@@ -623,6 +631,7 @@
       var shot = chart.takeScreenshot(includeDrawings);
       if (includeDrawings && drawing) drawing.composeScreenshot(shot);
       var lines = Share.lines(researchCard());
+      if (futureBars) lines.push('后来走势：当前行情版本至 ' + futureBars[futureBars.length - 1].date + '；模型仍固定于 ' + context.asof);
       var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
       var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
       var ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -657,6 +666,12 @@
 
   function showError(error) {
     el('loading').hidden = true;
+    if (!current && el('terminal-alert-status')) {
+      setText('asset-name', context.name || context.stockCode || context.code || '未选择标的');
+      setText('terminal-alert-status', error && error.pending ? '该记录尚未就绪' : '本次未读到结果');
+      setText('terminal-alert-window', '—');
+      setText('terminal-alert-detail', '可重试、切换已有记录，或返回原列表。');
+    }
     el('error-message').textContent = error && error.pending ? error.message : '读取失败：' + (error && error.message || '未知错误');
     el('error-panel').hidden = false;
     el('retry-button').hidden = false;
@@ -671,7 +686,7 @@
     el('error-panel').hidden = true;
     el('loading').hidden = !!current;
     if (!context.valid) { showError(new Error(context.invalidReason || '缺少有效的指数或 A 股代码。')); return; }
-    if (!context.asof && context.assetType === 'stock') {
+    if (!context.asof && context.assetType === 'stock' && context.market !== 'us') {
       void loadMarket(request); void loadModel(request); void loadEvents(request);
       return;
     }
@@ -680,14 +695,18 @@
     void loadEvents(request);
     try {
       var result = context.asof ? await Reader.historical(LPPL, context) :
+        context.market === 'us' ? await Reader.timed(function () { return LPPL.stock.latest(context.stockCode); }, '已发布美股数据') :
         await Reader.timed(function () { return LPPL.load(context.code); }, '指数数据');
       if (request !== sequence) return;
       var data;
-      if (context.assetType === 'stock') {
+      if (context.market === 'us' && !context.asof) {
+        data = Core.assembleStockData(context.code, result, Reader.marketFromPublished(result, context.stockCode), null);
+      } else if (context.assetType === 'stock') {
         var market = Object.assign({}, result.market, { price: result.bars, asof: context.asof, cutoff: context.asof });
         data = Core.assembleStockData(context.code, result.raw, market, null);
       } else data = Core.assembleIndexData(context.code, result);
       data.historyFallback = !!result.historyFallback;
+      data.historyNote = result.historyNote || '';
       data.eventRows = activeEvents; data.events = activeEvents;
       data.marketAsOf = data.bars.length ? data.bars[data.bars.length - 1].date : '';
       moduleState('market-status', '行情已就绪');
@@ -704,6 +723,22 @@
     chart = LPPLChart.mount(el('chart-host'), { height: 520 });
     chart.setScale(context.scale);
     drawing = root.ChartDrawing.attach(chart, { symbol: context.code, asof: context.asof });
+    if (root.LPPLUnifiedTerminal && context.valid) terminal = root.LPPLUnifiedTerminal.attach({
+      document: document, adapter: LPPL, reader: Reader, core: Core, context: context, search: root.location.search,
+      navigate: function (url) { root.location.assign(url); },
+      replaceAddress: function (values) {
+        var params = new URLSearchParams(root.location.search);
+        Object.keys(values).forEach(function (key) { params.set(key, values[key]); });
+        root.history.replaceState(null, '', root.location.pathname + '?' + params);
+      },
+      showFuture: function (bars) {
+        if (!current) return;
+        futureBars = bars;
+        page.dataset.showFuture = String(!!bars);
+        chart.setData(chartPayload(bars ? Object.assign({}, current, { bars: bars }) : current));
+        chart.setAsof(current.asof);
+      },
+    });
     chart.on('scale', function (scale) {
       if (scale !== context.scale) context.scale = scale;
     });

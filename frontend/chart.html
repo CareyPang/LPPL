@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <title>完整图表 · 临界点</title>
+  <meta name="theme-color" content="#f5f7fb">
+  <title>标的诊断与回测 · 临界点</title>
   <style>
     :root { color-scheme: light; font-family: Inter, "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6fa; }
     * { box-sizing: border-box; }
@@ -99,6 +99,7 @@
   </style>
   <link rel="stylesheet" href="app/chart-professional.css">
   <link rel="stylesheet" href="app/chart-drawing.css">
+  <link rel="stylesheet" href="app/unified-terminal.css">
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
@@ -120,7 +121,7 @@
     <div class="chart-content">
       <header class="page-heading">
       <div>
-        <p class="eyebrow">研究图表 · 完整视图</p>
+        <p class="eyebrow">研究工作站 <span aria-hidden="true">/</span> 行情与时间区间</p>
         <h1 id="asset-name">加载中…</h1>
         <div class="asset-line">
           <span id="asset-code" class="asset-code"></span>
@@ -138,6 +139,30 @@
       </nav>
       </header>
 
+      <section id="terminal-context" class="terminal-context" aria-label="标的诊断与历史回测" hidden>
+        <div class="terminal-control-row">
+          <label class="terminal-asset-field" for="terminal-asset">
+            <span>切换标的</span>
+            <select id="terminal-asset" aria-label="切换研究标的"></select>
+          </label>
+          <div class="terminal-mode" role="group" aria-label="研究视图">
+            <button id="terminal-mode-diagnosis" type="button" aria-pressed="true">当前诊断</button>
+            <button id="terminal-mode-replay" type="button" aria-pressed="false">历史回测</button>
+          </div>
+          <p class="terminal-control-hint">同一标的，同一份证据</p>
+        </div>
+        <div id="terminal-replay-controls" class="terminal-replay-controls" hidden>
+          <label class="terminal-date-field" for="terminal-asof"><span>回到当时</span><input id="terminal-asof" type="date"></label>
+          <div class="terminal-date-actions" role="group" aria-label="选择历史快照">
+            <button id="terminal-prev" type="button" aria-label="上一个历史快照">← 上一期</button>
+            <button id="terminal-next" type="button" aria-label="下一个历史快照">下一期 →</button>
+            <button id="terminal-latest" type="button">最新一期</button>
+          </div>
+          <label class="terminal-future-toggle" for="terminal-show-future"><input id="terminal-show-future" type="checkbox"><span>查看后来走势（只改变行情）</span></label>
+        </div>
+        <p id="terminal-replay-status" class="terminal-replay-status" role="status" aria-live="polite"></p>
+      </section>
+
       <p id="asof-notice" class="calendar-notice" role="status" hidden></p>
 
       <section id="error-panel" class="error-panel" role="alert" hidden>
@@ -147,6 +172,11 @@
       </section>
 
       <div class="module-status" aria-label="各模块读取状态" role="status"><span id="market-status">行情等待中</span><span id="model-status">模型等待中</span><span id="events-status">事件等待中</span></div>
+      <section class="terminal-summary" aria-label="提醒与区间摘要">
+        <div class="terminal-summary-state"><p class="terminal-label">提醒状态</p><p id="terminal-alert-status" class="terminal-summary-value">正在读取</p></div>
+        <div class="terminal-summary-window"><p class="terminal-label"><span class="terminal-window-key" aria-hidden="true"></span>顶部时间区间</p><p id="terminal-alert-window" class="terminal-summary-value">—</p></div>
+        <div class="terminal-summary-explanation"><p class="terminal-label">如何解读</p><p id="terminal-alert-detail">选择标的后，查看当前区间及其依据。</p></div>
+      </section>
     <div class="chart-actions" aria-label="图表操作">
       <button id="evidence-toggle" type="button" aria-expanded="true" aria-controls="evidence-panel">收起证据</button>
       <button id="chart-fullscreen" type="button" aria-pressed="false">全屏图表</button>
@@ -158,6 +188,7 @@
     <div class="layout">
         <section id="chart-card" class="chart-card" aria-label="价格图表">
         <button id="fullscreen-exit" type="button" hidden>退出全屏 · Esc</button>
+          <div class="terminal-chart-heading"><h2>价格与研究区间</h2><span>拖动查看 · 滚轮缩放</span></div>
           <div id="period-selector" class="period-selector" role="group" aria-label="行情周期" hidden>
             <button class="period-button" type="button" data-period="d" aria-pressed="true">日线</button>
             <button class="period-button" type="button" data-period="60" aria-pressed="false">60分钟</button>
@@ -197,6 +228,21 @@
           </section>
         </aside>
       </div>
+      <section id="terminal-history" class="terminal-history" aria-labelledby="terminal-history-title" hidden>
+        <header class="terminal-section-heading"><h2 id="terminal-history-title">历史区间记录</h2><a id="terminal-backtest-link" class="terminal-backtest-link" href="backtest.html">查看回测评估 <span aria-hidden="true">↗</span></a></header>
+        <p id="terminal-history-note" class="terminal-history-note" role="status">选择记录，回到对应日期查看行情与区间。</p>
+        <div id="terminal-history-list" class="terminal-history-list" aria-label="已封存的历史区间记录"></div>
+        <button id="terminal-history-more" class="terminal-history-more" type="button" hidden>查看更多记录</button>
+      </section>
+      <section id="terminal-aftershock" class="terminal-aftershock" aria-labelledby="terminal-aftershock-title" hidden>
+        <header class="terminal-section-heading"><div><p class="eyebrow">下跌之后</p><h2 id="terminal-aftershock-title">余震结构</h2></div><span class="terminal-section-note">Omori · Båth · Productivity</span></header>
+        <div class="terminal-aftershock-grid">
+          <article><p class="terminal-label">余震频率 <span>Omori</span></p><p id="terminal-omori" class="terminal-research-value">尚无可用结果</p><p class="terminal-research-caption">查看后续波动出现的频率如何变化。</p></article>
+          <article><p class="terminal-label">余震大小 <span>Båth</span></p><p id="terminal-bath" class="terminal-research-value">尚无可用结果</p><p class="terminal-research-caption">比较主跌段与最大后续波动的大小。</p></article>
+          <article><p class="terminal-label">余震数量 <span>Productivity</span></p><p id="terminal-productivity" class="terminal-research-value">尚无可用结果</p><p class="terminal-research-caption">观察主跌段大小与后续波动次数的关系。</p></article>
+        </div>
+        <p id="terminal-aftershock-note" class="evidence-note">等待当前标的的可追溯研究结果。</p>
+      </section>
       <section class="events-card" aria-labelledby="events-title">
       <div class="events-heading"><h2 id="events-title">标的事件</h2><button id="events-retry" type="button">重新读取事件</button></div>
       <div id="event-list"></div><p id="events-note">事件独立读取，不阻塞行情。</p>
@@ -206,6 +252,7 @@
   </main>
   <script src="app/evidence-badge.js"></script>
   <script src="app/ai-assistant.js" data-page="stock" data-default="closed"></script>
+  <script src="app/unified-terminal.js"></script>
   <script src="app/chart-page.js"></script>
 </body>
 </html>

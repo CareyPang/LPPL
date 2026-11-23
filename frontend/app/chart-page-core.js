@@ -114,8 +114,9 @@
     var inputCode = String(params.get('code') || '').trim();
     var requestedKind = params.get('kind') || params.get('type') || '';
     var index = requestedKind === 'stock' ? null : indexFor(inputCode, indexSymbols);
-    var stockSymbol = /^(?:sh|sz|bj)\d{6}$/i.test(inputCode) ? inputCode.toLowerCase() : '';
-    var stockCode = stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '';
+    var usSymbol = /^US_[A-Z.]{1,6}$/i.test(inputCode) ? inputCode.toUpperCase() : '';
+    var stockSymbol = usSymbol || (/^(?:sh|sz|bj)\d{6}$/i.test(inputCode) ? inputCode.toLowerCase() : '');
+    var stockCode = usSymbol || (stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '');
     var code = index ? index.sym : stockSymbol || (stockCode ? stockCode : '');
     var assetType = index ? 'index' : stockCode ? 'stock' : '';
     var requestedScale = params.get('scale') || '';
@@ -136,6 +137,7 @@
       code: code,
       stockCode: stockCode,
       assetType: assetType,
+      market: usSymbol ? 'us' : assetType ? 'cn' : '',
       name: index ? index.name : '',
       scale: scale,
       focus: focus,
@@ -145,6 +147,7 @@
   }
 
   function exchangeFor(symbol) {
+    if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return '美国市场（交易所未记录）';
     var prefix = String(symbol || '').slice(0, 2).toLowerCase();
     return prefix === 'sh' ? '上海证券交易所'
       : prefix === 'sz' ? '深圳证券交易所'
@@ -152,6 +155,7 @@
   }
 
   function inferStockSymbol(symbol) {
+    if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return String(symbol).toUpperCase();
     if (/^(?:sh|sz|bj)\d{6}$/i.test(String(symbol || ''))) return String(symbol).toLowerCase();
     var match = String(symbol || '').trim().toLowerCase().match(/^(?:sh|sz|bj)?(\d{6})$/);
     if (!match) return '';
@@ -171,6 +175,9 @@
   function assembleIndexData(code, result) {
     if (!result || !Array.isArray(result.bars)) throw new Error('指数适配器未返回日线');
     var raw = result.raw || result;
+    if (raw.symbol && String(raw.symbol).toLowerCase() !== String(code).toLowerCase()) {
+      throw new Error('指数行情资产身份与请求不匹配，已停止显示。');
+    }
     // The legacy adapter fills absent OHLC with close. Restore missingness using
     // the raw published fields so this chart can explicitly show a close line.
     var ph = raw.price_history;
@@ -216,24 +223,24 @@
     var hasLatest = !!latest && typeof latest === 'object';
     var raw = hasLatest ? latest.raw || latest : {};
     var expectedSymbol = inferStockSymbol(symbol);
-    if (market.symbol && expectedSymbol && String(market.symbol).toLowerCase() !== expectedSymbol) {
+    if (market.symbol && expectedSymbol && inferStockSymbol(market.symbol) !== expectedSymbol) {
       throw new Error('行情资产身份与请求不匹配，已停止显示。');
     }
     if (hasLatest && raw.symbol && expectedSymbol && inferStockSymbol(raw.symbol) !== expectedSymbol) {
       modelError = new Error('模型资产身份与行情不匹配；仅保留行情。');
       hasLatest = false; raw = {};
     }
-    var resolvedSymbol = String(
-      hasLatest && inferStockSymbol(latest.symbol) || market.symbol || expectedSymbol || symbol || '',
-    ).toLowerCase();
+    var resolvedSymbol = inferStockSymbol(hasLatest && raw.symbol || market.symbol || expectedSymbol || symbol) || String(symbol || '');
+    var isUS = /^US_/.test(resolvedSymbol);
     var model = modelRecord(raw, hasLatest ? latest : null);
     var lastBar = market.price[market.price.length - 1];
     return {
       assetType: 'stock',
+      market: isUS ? 'us' : 'cn',
       symbol: resolvedSymbol,
       code: resolvedSymbol,
       name: hasLatest && (latest.name || raw.name) || market.name || market.stock_name || resolvedSymbol,
-      exchange: exchangeFor(resolvedSymbol),
+      exchange: isUS ? market.exchange || raw.exchange || exchangeFor(resolvedSymbol) : exchangeFor(resolvedSymbol),
       bars: market.price,
       asof: hasLatest ? latest.asof || raw.asof || '' : '',
       modelAsOf: hasLatest ? latest.asof || raw.asof || '' : '',
@@ -250,12 +257,13 @@
       adjustment: market.adjustment || '未记录',
       volumeUnit: market.volume_unit || '未记录',
       tradingStatus: market.trading_status || '未记录',
-      quoteUnit: 'CNY · 元',
+      quoteUnit: isUS ? 'USD · 美元' : 'CNY · 元',
+      currency: isUS ? 'USD' : 'CNY',
       stale: market.stale === true,
       staleReason: market.stale_reason || '',
       freshness: market.asof_freshness || 'not_established',
       firstVisibleAt: raw.first_visible_at || null,
-      modelAdjustment: raw.price_history && raw.price_history.adjustment || '未记录',
+      modelAdjustment: raw.price_history && raw.price_history.adjustment || raw.adjust || '未记录',
       raw: raw,
     };
   }

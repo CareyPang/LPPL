@@ -13,7 +13,7 @@
     })]).finally(function () { clearTimeout(timer); });
   }
   function barsFrom(raw) {
-    var ph = raw.price_history || {};
+    var ph = raw && raw.price_history || {};
     if (!Array.isArray(ph.dates) || !Array.isArray(ph.close)) return [];
     return ph.dates.map(function (date, i) {
       var close = ph.close[i];
@@ -25,6 +25,30 @@
   }
   function cutoffBars(bars, asof) {
     return (bars || []).filter(function (bar) { return (bar.date || bar.time) <= asof; });
+  }
+  function marketFromPublished(raw, code) {
+    raw = raw && (raw.raw || raw);
+    if (raw == null) throw missing('尚未读到该美股的已发布日线（可能尚未发布，或读取失败）；未发起新计算。');
+    if (!/^US_[A-Z.]{1,6}$/i.test(String(code || '')) ||
+        String(raw.symbol || '').toUpperCase() !== String(code).toUpperCase()) {
+      throw new Error('已发布行情的资产身份与请求不匹配，已停止显示。');
+    }
+    var bars = barsFrom(raw);
+    if (raw.asof) bars = cutoffBars(bars, raw.asof);
+    if (!bars.length) throw missing('该美股尚无已发布的日线；未发起新计算。');
+    var ph = raw.price_history || {};
+    return {
+      symbol: String(code).toUpperCase(), name: raw.name || String(code).toUpperCase(),
+      price: bars, asof: bars[bars.length - 1].date,
+      source: ph.source || raw.source || '已发布日线（底层源未记录）',
+      adjustment: ph.adjustment || raw.adjust || '未记录',
+      volume_unit: ph.volume_unit || '未记录', currency: 'USD',
+      exchange: raw.exchange || '美国市场（交易所未记录）',
+      trading_status: raw.trading_status || '未记录', future_calendar: raw.future_calendar || null,
+      asof_freshness: raw.asof_freshness || 'not_established', stale: raw.stale === true,
+      stale_reason: raw.stale_reason || '', published_asof: raw.asof || null,
+      data_version: raw.data_version || null, price_note: '已发布复权日线；并非实时成交价。',
+    };
   }
   function exactResult(raw, context) {
     raw = raw && (raw.raw || raw);
@@ -38,6 +62,9 @@
       sym: { sym: context.code }, historical: true };
   }
   function sameSymbol(symbol, context) {
+    if (context.market === 'us' || /^US_/i.test(context.stockCode || '')) {
+      return String(symbol).toUpperCase() === String(context.stockCode).toUpperCase();
+    }
     return context.assetType === 'stock'
       ? String(symbol).replace(/^(sh|sz|bj)/i, '') === context.stockCode
       : String(symbol).toLowerCase() === context.code.toLowerCase();
@@ -90,12 +117,27 @@
     if (!frame) throw missing('没有 ' + context.asof + ' 的封存模型。只读访问未发起计算。' +
       (replayError ? '（封存服务状态：' + replayError + '）' : ''));
     if (frame.price_history && context.assetType === 'index') return exactResult(Object.assign({}, frame, { symbol: context.code }), context);
+    var isUS = context.market === 'us' || /^US_/i.test(context.stockCode || '');
     var market = await timed(function () {
+      if (isUS) return adapter.stock.latest(context.stockCode).then(function (raw) {
+        return marketFromPublished(raw, context.stockCode);
+      });
       return context.assetType === 'index' ? adapter.load(context.code) : adapter.stock.market(context.stockCode);
     }, '历史行情');
     var bars = context.assetType === 'index' ? market.raw && market.raw.price_history ? barsFrom(market.raw) : market.bars : market.price;
     var result = packedFrame(history, frame, context, bars, market.name);
     if (!result.bars.length) throw missing('封存模型存在，但行情未覆盖该截止日。');
+    if (isUS) {
+      // A history frame does not seal its OHLC payload. Keep that distinction
+      // explicit and never pass later bars to chart assembly.
+      market = Object.assign({}, market, { price: result.bars,
+        asof: result.bars[result.bars.length - 1].date,
+        price_note: '历史模型配合当前已发布版本行情；行情已截断至所选日期，非当时封存的 OHLC。' });
+      result.priceHistoryOrigin = 'current_published_version';
+      result.historyNote = market.price_note;
+      result.raw.adjust = market.adjustment;
+      result.raw.data_version = frame.data_version || history.data_version || null;
+    }
     result.market = market;
     return result;
   }
@@ -114,5 +156,6 @@
     return { rows: rows, excluded: excluded };
   }
   return { timed: timed, historical: historical, exactResult: exactResult, historyFrame: historyFrame,
-    packedFrame: packedFrame, eventsFor: eventsFor, cutoffBars: cutoffBars };
+    packedFrame: packedFrame, eventsFor: eventsFor, cutoffBars: cutoffBars,
+    barsFrom: barsFrom, marketFromPublished: marketFromPublished };
 });
