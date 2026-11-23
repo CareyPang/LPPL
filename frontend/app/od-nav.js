@@ -880,10 +880,9 @@
       var h = '#' + (anchor || subTabs[g].ids[0]);
       if (push && location.hash !== h && history.pushState) history.pushState(null, '', h);
       if (changed) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); /* 让热力图等按新宽度重绘 */
-      var first = anchor && anchor === subTabs[g].ids[0];
-      var n = anchor && !first ? document.getElementById(anchor) : null;
+      var n = anchor && anchor !== subTabs[g].ids[0] ? document.getElementById(anchor) : null;
       if (n) { n.style.scrollMarginTop = (hdr.getBoundingClientRect().height + 12) + 'px'; n.scrollIntoView(); }
-      else if ((changed && push) || first) window.scrollTo(0, 0);
+      else if (changed && push) window.scrollTo(0, 0);
     };
     var fromHash = function () {
       gStyle.textContent = '.odn-gh{display:none!important}';
@@ -895,6 +894,22 @@
       t.a.addEventListener('click', function (e) {
         e.preventDefault();
         showGroup(i, '', true);
+        syncSidebarActive();
+      });
+    });
+    sidebarLinks.filter(function (item) {
+      return item.mainKey === 'market' && item.ids.length;
+    }).forEach(function (item) {
+      var linkId = decodeURIComponent(item.a.hash.slice(1));
+      if (groupOf(linkId) < 0) return;
+      item.a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var id = decodeURIComponent(item.a.hash.slice(1));
+        var g = groupOf(id);
+        if (g < 0) return;
+        var first = id === subTabs[g].ids[0];
+        showGroup(g, first ? '' : id, true);
+        if (first) window.scrollTo(0, 0);
         syncSidebarActive();
       });
     });

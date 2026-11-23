@@ -337,6 +337,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     )
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
+    expect(page.locator("#s-lhb-seats")).to_be_hidden()
+    page.locator('.odn-sub a.odn-t[href="#s-breadth"]').click()
     expect(page.locator("#s-lhb-seats")).to_be_visible()
     expect(page.locator("#lhb-seats-body .lhb-card.buy strong")).to_contain_text("12.30亿")
     expect(page.locator("#lhb-subtitle")).to_contain_text("已识别游资 2 家")
@@ -464,6 +466,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
                 }"""
             )
 
+    page.locator('.odn-sub a.odn-t[href="#s-top-risk"]').click()
+    expect(top_risk).to_be_visible()
     assert_verdicts_fit()
     page.set_viewport_size({"width": 390, "height": 844})
     assert_verdicts_fit()
@@ -494,6 +498,7 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
     )
     assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    page.locator('.odn-sub a.odn-t[href="#s-breadth"]').click()
     assert page.locator("#s-lhb-seats").evaluate(
         "(section) => section.scrollWidth <= section.clientWidth + 1"
     )
@@ -1977,7 +1982,65 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
     )
     assert page.evaluate("window.scrollY") == 0
     assert summary_top >= header_bottom
-
+    page.route(
+        re.compile(r"^https://lppl-stock-query\.careypang\.workers\.dev/quote\?"),
+        lambda route: route.fulfill(status=200, json={"quotes": {}}),
+    )
+    page.route(
+        re.compile(r"^https://lppl-stock-query\.careypang\.workers\.dev/news(?:\?|$)"),
+        lambda route: route.fulfill(status=200, json={"cls": [], "eastmoney": []}),
+    )
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="资金").click()
+    page.evaluate(
+        "window.scrollTo(0, 800); "
+        "sessionStorage.setItem('market-tab-scroll-restore', String(window.scrollY)); "
+        "sessionStorage.removeItem('market-tab-top-reset')"
+    )
+    page.wait_for_function("window.scrollY >= 790")
+    page.add_init_script(
+        """
+        (() => {
+          const navigation = performance.getEntriesByType('navigation')[0];
+          if (navigation && navigation.type === 'reload') {
+            const y = Number(sessionStorage.getItem('market-tab-scroll-restore') || 0);
+            const scrollTo = window.scrollTo.bind(window);
+            window.scrollTo = function (x, y) {
+              if (Number(x) === 0 && Number(y) === 0) {
+                sessionStorage.setItem('market-tab-top-reset', '1');
+              }
+              return scrollTo(x, y);
+            };
+            addEventListener('pageshow', () => {
+              setTimeout(() => window.scrollTo(0, y), 50);
+            }, { once: true });
+          }
+        })();
+        """
+    )
+    page.reload()
+    page.wait_for_function(
+        "() => window.scrollY > 0 && "
+        "document.querySelector('#s-lhb-seats')?.getClientRects().length"
+    )
+    assert page.evaluate("window.scrollY") > 0
+    assert page.evaluate(
+        "sessionStorage.getItem('market-tab-top-reset')"
+    ) is None
+    expect(tabs.filter(has_text="资金")).to_have_attribute(
+        "aria-current", "location"
+    )
+    visible_ids = page.locator("main > section.sec[id]").evaluate_all(
+        "(sections) => sections.filter((section) => section.getClientRects().length).map((section) => section.id)"
+    )
+    assert set(visible_ids) == {
+        "s-breadth",
+        "s-board",
+        "s-nb",
+        "s-mg",
+        "s-lhb",
+        "s-lhb-seats",
+    }
 
 @pytest.mark.e2e
 def test_market_valuation_macro_tab_shows_legu_monthly_pe_percentiles(page: Page) -> None:
