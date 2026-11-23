@@ -14,9 +14,10 @@
   var theme = (me && me.dataset.theme) || 'light';
 
   var MARKET_SUB = [
-    { t: '今日', h: '#s-news', ids: ['s-summary', 's-news', 's-events'] },
-    { t: '资金', h: '#s-board', ids: ['s-board', 's-nb', 's-mg'] },
-    { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot', 's-lhb', 's-bottom', 's-abnormal', 's-range'] },
+    { t: '今日', h: '#s-summary', ids: ['s-summary', 's-news', 's-events'] },
+    { t: '资金', h: '#s-breadth', ids: ['s-breadth', 's-board', 's-nb', 's-mg', 's-lhb', 's-lhb-seats'] },
+    { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot'] },
+    { t: '风险', h: '#s-top-risk', ids: ['s-top-risk', 's-bottom', 's-abnormal', 's-range'] },
     { t: '宏观', h: '#s-val', ids: ['s-val', 's-macro', 's-growth'] }
   ];
   var MAIN = [
@@ -846,13 +847,16 @@
       for (var i = 0; i < subTabs.length; i++) if (subTabs[i].ids.indexOf(id) >= 0) return i;
       return -1;
     };
+    var groupedIds = [];
+    subTabs.forEach(function (t) { groupedIds = groupedIds.concat(t.ids); });
     /* 首屏：正文还没解析，先用 id 选择器隐藏其他组，避免整页闪一下 */
     var g0 = groupOf(decodeURIComponent(location.hash.slice(1)));
     if (g0 < 0) g0 = DEF;
     var pre = [];
     subTabs.forEach(function (t, i) { if (i !== g0) t.ids.forEach(function (id) { pre.push('#' + id); }); });
+    pre.push('main > section.sec[id]' + groupedIds.map(function (id) { return ':not(#' + id + ')'; }).join('') + ':not(:target)');
     var gStyle = el('style');
-    gStyle.textContent = '.odn-gh{display:none!important}' + (pre.length ? pre.join(',') + '{display:none!important}' : '');
+    gStyle.textContent = '.odn-gh{display:none!important}' + pre.join(',') + '{display:none!important}';
     document.head.appendChild(gStyle);
     var curG = -1;
     var showGroup = function (g, anchor, push) {
@@ -868,6 +872,11 @@
           else if (l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l + w - s.clientWidth + 24;
         } else t.a.removeAttribute('aria-current');
       });
+      var target = anchor && document.getElementById(anchor);
+      var showUngrouped = !!(target && target.matches('main > section.sec[id]') && groupOf(target.id) < 0);
+      Array.prototype.forEach.call(document.querySelectorAll('main > section.sec[id]'), function (n) {
+        if (groupOf(n.id) < 0) n.classList.toggle('odn-gh', !showUngrouped || n !== target);
+      });
       var h = '#' + (anchor || subTabs[g].ids[0]);
       if (push && location.hash !== h && history.pushState) history.pushState(null, '', h);
       if (changed) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); /* 让热力图等按新宽度重绘 */
@@ -878,7 +887,8 @@
     var fromHash = function () {
       gStyle.textContent = '.odn-gh{display:none!important}';
       var id = decodeURIComponent(location.hash.slice(1));
-      showGroup(groupOf(id), groupOf(id) >= 0 || id === 's-fresh' ? id : '', false);
+      var target = id && document.getElementById(id);
+      showGroup(groupOf(id), groupOf(id) >= 0 || (target && target.matches('main > section.sec[id]')) ? id : '', false);
     };
     subTabs.forEach(function (t, i) {
       t.a.addEventListener('click', function (e) {

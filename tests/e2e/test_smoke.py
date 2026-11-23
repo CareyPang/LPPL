@@ -1885,10 +1885,10 @@ def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
     assert page.evaluate("window.scrollY") == 0
-    expect(page.locator('.odn-sidebar .odn-side-link[href="market.html#s-news"]')).to_have_attribute(
+    expect(page.locator('.odn-sidebar .odn-side-link[href="market.html#s-summary"]')).to_have_attribute(
         "aria-current", "location"
     )
-    expect(page.locator('.odn-l2 .odn-sub a[href="#s-news"]')).to_have_attribute(
+    expect(page.locator('.odn-l2 .odn-sub a[href="#s-summary"]')).to_have_attribute(
         "aria-current", "location"
     )
 
@@ -1897,7 +1897,7 @@ def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
 def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     page.goto(f"{BASE_URL}/market.html")
     tabs = page.locator(".odn-sub a.odn-t")
-    expect(tabs).to_have_count(4)
+    expect(tabs).to_have_count(5)
     emotion_tab = tabs.filter(has_text="情绪")
     emotion_tab.click()
     expect(page.locator("#s-limit")).to_be_visible()
@@ -1905,6 +1905,48 @@ def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     expect(
         page.locator(".odn-sidebar .odn-side-link").filter(has_text="情绪")
     ).to_have_attribute("aria-current", "location")
+
+
+@pytest.mark.e2e
+def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> None:
+    groups = [
+        ("今日", ["s-summary", "s-news", "s-events"]),
+        ("资金", ["s-breadth", "s-board", "s-nb", "s-mg", "s-lhb", "s-lhb-seats"]),
+        ("情绪", ["s-limit", "s-sentiment", "s-ladder", "s-strength", "s-themes", "s-hot"]),
+        ("风险", ["s-top-risk", "s-bottom", "s-abnormal", "s-range"]),
+        ("宏观", ["s-val", "s-macro", "s-growth"]),
+    ]
+    page.goto(f"{BASE_URL}/market.html")
+    tabs = page.locator(".odn-sub a.odn-t")
+    expect(tabs).to_have_count(5)
+    seen: set[str] = set()
+
+    for title, expected_ids in groups:
+        tab = tabs.filter(has_text=title)
+        tab.click()
+        expect(tab).to_have_attribute("aria-current", "location")
+        assert tab.get_attribute("href") == f"#{expected_ids[0]}"
+        visible_ids = page.locator("main > section.sec[id]").evaluate_all(
+            "(sections) => sections.filter((section) => section.getClientRects().length).map((section) => section.id)"
+        )
+        assert set(visible_ids) == set(expected_ids)
+        assert len(visible_ids) == len(expected_ids)
+        assert seen.isdisjoint(visible_ids)
+        seen.update(visible_ids)
+        assert page.locator("#s-fresh").evaluate(
+            "(section) => section.getClientRects().length"
+        ) == 0
+
+    expected_group_ids = {section_id for _, ids in groups for section_id in ids}
+    assert seen == expected_group_ids
+
+    page.goto(f"{BASE_URL}/market.html#s-fresh")
+    assert page.locator("#s-fresh").evaluate(
+        "(section) => section.getClientRects().length"
+    ) > 0
+    expect(page.locator('.odn-sub a.odn-t[href="#s-summary"]')).to_have_attribute(
+        "aria-current", "location"
+    )
 
 
 @pytest.mark.e2e
