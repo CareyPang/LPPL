@@ -1,5 +1,5 @@
 name: forward_log_seal
-# 前瞻日志每日封存：跑 scripts/daily_update.sh（6 指数最新 as-of 拟合 → 契约 JSON → forward_log seal），
+# 前瞻日志每日封存：六指数独立矩阵并行拟合后，将最新契约 JSON 汇总封存，
 # 只把 forward_log/ 的新增提交到 main（追加式，不改已封存文件）。取数走 research.data.cache（腾讯/新浪，限速）。
 # 取数失败的交易日不补封（补了就不是 PIT）；缺日由 forward_log_check 周检报告。
 
@@ -18,9 +18,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  seal:
+  fit:
     runs-on: ubuntu-latest
-    timeout-minutes: 240 # 实测 GitHub runner 每个指数日更约 24–26 分钟（6 指数串行约 2.5 小时）；18:30 开跑，北京时间当日 22:30 前结束，guard 的"当日"判定不受影响
+    timeout-minutes: 90 # 单指数实测 21–43 分钟；矩阵并行并预留高峰余量
+    strategy:
+      fail-fast: false
+      matrix:
+        sym: [sh000001, sh000016, sh000300, sh000905, sz399001, sz399006]
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -32,13 +36,46 @@ jobs:
           python-version: "3.12"
       - name: Install project
         run: python -m pip install -e .
-      - name: Daily update + seal
+      - name: Fit one index
+        shell: bash
+        run: SYMS=${{ matrix.sym }} SKIP_SEAL=1 bash scripts/daily_update.sh
+      - name: Upload seal input
+        uses: actions/upload-artifact@v4
+        with:
+          name: forward-log-fit-${{ matrix.sym }}
+          path: web/mock/data/${{ matrix.sym }}_latest.json
+          if-no-files-found: error
+          retention-days: 1
+  seal:
+    needs: fit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # 汇总封存、校验与提交
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Download fitted index JSONs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: forward-log-fit-*
+          path: web/mock/data
+          merge-multiple: true
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Seal and verify
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          bash scripts/daily_update.sh
+          python -m research.pipeline.forward_log seal
           python -m research.pipeline.forward_log verify | tail -8
       - name: Guard — only today's as-of may be sealed (no backfill)
         shell: bash
