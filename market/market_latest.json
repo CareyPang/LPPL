@@ -1,28 +1,28 @@
 {
   "asof": "2026-11-23",
-  "generated_at": "2026-11-23T11:23:34.979119+00:00",
+  "generated_at": "2026-11-23T19:34:48.805608+00:00",
   "sources": {
     "board_flow_industry": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T11:20:03.318306+00:00",
+      "fetched_at": "2026-11-23T19:31:50.278687+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f164&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf109%2Cf164%2Cf165%2Cf257&pn=1"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f164&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf109%2Cf164%2Cf165%2Cf257&pn=3"
     },
     "board_flow_concept": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T11:20:23.297010+00:00",
+      "fetched_at": "2026-11-23T19:31:54.608184+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: ReadTimeout; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_region": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T11:21:11.978976+00:00",
+      "fetched_at": "2026-11-23T19:32:35.960921+00:00",
       "ok": true,
       "fallback_from": "RuntimeError: Eastmoney board hosts failed: push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_history": {
       "url_host": "push2his.eastmoney.com",
-      "fetched_at": "2026-11-23T11:21:15.944034+00:00",
+      "fetched_at": "2026-11-23T19:32:37.094123+00:00",
       "ok": true,
       "provider": "eastmoney",
       "code": "BK0475",
@@ -32,79 +32,79 @@
     },
     "limit_pools": {
       "url_host": "push2ex.eastmoney.com",
-      "fetched_at": "2026-11-23T11:21:21.106394+00:00",
+      "fetched_at": "2026-11-23T19:32:41.850143+00:00",
       "ok": true
     },
     "themes": {
       "url_host": "zx.10jqka.com.cn",
-      "fetched_at": "2026-11-23T11:21:22.525395+00:00",
+      "fetched_at": "2026-11-23T19:32:43.407889+00:00",
       "ok": true
     },
     "breadth": {
       "url_host": "push2delay.eastmoney.com",
-      "fetched_at": "2026-11-23T11:22:09.476536+00:00",
+      "fetched_at": "2026-11-23T19:33:27.323023+00:00",
       "ok": true
     },
     "board_strength": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-23T11:22:19.502014+00:00",
+      "fetched_at": "2026-11-23T19:33:36.780876+00:00",
       "ok": true,
       "provider": "sina",
-      "fallback_from": "push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: ConnectionError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140"
+      "fallback_from": "push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140"
     },
     "hot_ths": {
       "url_host": "dq.10jqka.com.cn",
-      "fetched_at": "2026-11-23T11:22:21.003720+00:00",
+      "fetched_at": "2026-11-23T19:33:37.966426+00:00",
       "ok": true
     },
     "hot_eastmoney": {
       "url_host": "emappdata.eastmoney.com",
-      "fetched_at": "2026-11-23T11:22:23.076389+00:00",
+      "fetched_at": "2026-11-23T19:33:39.824436+00:00",
       "ok": true
     },
     "dragon_tiger": {
       "url_host": "datacenter-web.eastmoney.com",
-      "fetched_at": "2026-11-23T11:22:25.042183+00:00",
+      "fetched_at": "2026-11-23T19:33:41.699452+00:00",
       "ok": true
     },
     "news_cls": {
       "url_host": "www.cls.cn",
-      "fetched_at": "2026-11-23T11:22:26.220237+00:00",
+      "fetched_at": "2026-11-23T19:33:42.588141+00:00",
       "ok": true
     },
     "news_eastmoney": {
       "url_host": "np-weblist.eastmoney.com",
-      "fetched_at": "2026-11-23T11:22:27.203109+00:00",
+      "fetched_at": "2026-11-23T19:33:43.651257+00:00",
       "ok": true
     },
     "northbound": {
       "url_host": "www.hkex.com.hk",
-      "fetched_at": "2026-11-23T11:22:27.600688+00:00",
+      "fetched_at": "2026-11-23T19:33:43.935540+00:00",
       "ok": true
     },
     "index_valuation_000300": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T11:22:30.699898+00:00",
+      "fetched_at": "2026-11-23T19:33:47.012926+00:00",
       "ok": true
     },
     "index_valuation_000905": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T11:22:33.454220+00:00",
+      "fetched_at": "2026-11-23T19:33:49.078309+00:00",
       "ok": true
     },
     "index_valuation_000016": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T11:22:35.475905+00:00",
+      "fetched_at": "2026-11-23T19:33:51.289859+00:00",
       "ok": true
     },
     "index_valuation_000852": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-23T11:22:37.562831+00:00",
+      "fetched_at": "2026-11-23T19:33:53.327272+00:00",
       "ok": true
     },
     "margin": {
       "url_host": "sse.szse.official",
-      "fetched_at": "2026-11-23T11:23:34.979106+00:00",
+      "fetched_at": "2026-11-23T19:34:48.805595+00:00",
       "ok": true,
       "provider": "sse.szse.official",
       "asof": "2026-11-19",
@@ -4552,14 +4552,6 @@
       "reference_board": true,
       "rows": [
         {
-          "date": "2026-05-28",
-          "main_net": -1402562304.0,
-          "small_net": 898751488.0,
-          "medium_net": 503810816.0,
-          "large_net": -397601536.0,
-          "super_net": -1004960768.0
-        },
-        {
           "date": "2026-05-29",
           "main_net": 2448591104.0,
           "small_net": -1447900160.0,
@@ -6653,7 +6645,7 @@
         "pct": 9.965636253356934,
         "amount": 678818464.0,
         "turnover": 13.141639709472656,
-        "reason": "中国航展+军工+专业照明",
+        "reason": "中国航展+军工+专业照明+“羊”字辈",
         "zt_days": 1,
         "zt_ct": 1
       },
@@ -7149,7 +7141,7 @@
         "pct": 29.98853302001953,
         "amount": 193151200.0,
         "turnover": 17.05050277709961,
-        "reason": "机器人齿轮+汽车零部件+飞行汽车",
+        "reason": null,
         "zt_days": 1,
         "zt_ct": 1
       },
@@ -8837,7 +8829,7 @@
         "amount_yuan": 814379754013.7428
       }
     ],
-    "snapshot_at": "2026-11-23T11:21:23.053324+00:00",
+    "snapshot_at": "2026-11-23T19:32:43.830014+00:00",
     "dist": {
       "zt": 146,
       "gt10": 108,
@@ -8862,1212 +8854,1204 @@
     "note": "同花顺题材涨停统计，只作标签与当日归类。只作市场背景，不进入 LPPLS 报警或任何模型。",
     "harden_rows": [
       {
-        "code": "603926",
-        "name": "铁流股份",
-        "reason": "机器人零部件+电机轴+三季报净利增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600156",
-        "name": "华升股份",
-        "reason": "算力租赁+重组推进+湖南国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603151",
-        "name": "邦基科技",
-        "reason": "猪饲料+生猪养殖",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600327",
-        "name": "大东方",
-        "reason": "百货零售+医疗服务+股份注销",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002548",
-        "name": "金新农",
-        "reason": "生猪养殖+养殖机器人+猪饲料",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600467",
-        "name": "好当家",
-        "reason": "海参+水产养殖+预制菜",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000678",
-        "name": "襄阳轴承",
-        "reason": "机器人轴承+湖北国资+“羊”字辈",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300243",
-        "name": "瑞丰高材",
-        "reason": "电子级环氧树脂+低介电树脂+覆铜板+PVC助剂",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301010",
-        "name": "晶雪节能",
-        "reason": "冰雪经济+数据中心+冷库围护",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301218",
-        "name": "华是科技",
-        "reason": "AI短剧+机器人投资+智慧城市",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600243",
-        "name": "*ST海华",
-        "reason": "减速器+机械装备+天然气+清洁能源",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000530",
-        "name": "冰山冷热",
-        "reason": "冰雪工程+数据中心液冷+船舶制冷+股权受让",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002248",
-        "name": "华东数控",
-        "reason": "工业母机+谐波减速器+半导体订单",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000636",
-        "name": "风华高科",
-        "reason": "MLCC+商业航天+广东国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603305",
-        "name": "旭升集团",
-        "reason": "人形机器人+汽车轻量化+特斯拉概念+商业航天",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301265",
-        "name": "华新科技",
-        "reason": "存储芯片再制造+贵金属回收",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002527",
-        "name": "新时达",
-        "reason": "人形机器人+具身智能+海尔定增",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002249",
-        "name": "大洋电机",
-        "reason": "机器人关节+散热风机+羊字辈",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001266",
-        "name": "宏英智能",
-        "reason": "电路板设计+智能控制+液冷储能+三季报增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688836",
-        "name": "宇树科技",
-        "reason": "人形机器人+物理AI+具身智能",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688611",
-        "name": "杭州柯林",
-        "reason": "人形机器人+电网数字化+增持",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688585",
-        "name": "上纬新材",
-        "reason": "人形机器人+战略合作+智元入主+风电树脂",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688286",
-        "name": "敏芯股份",
-        "reason": "人形机器人+六维力传感器+MEMS+浦丹光电",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "605577",
-        "name": "龙版传媒",
-        "reason": "AI漫剧+出版发行+黑龙江国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603662",
-        "name": "柯力传感",
-        "reason": "六维力传感器+人形机器人+触觉传感器",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603598",
-        "name": "引力传媒",
-        "reason": "AI营销+AI短剧+广告营销",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603533",
-        "name": "掌阅科技",
-        "reason": "AI短剧+短剧出海",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603175",
-        "name": "超颖电子",
-        "reason": "AI算力PCB+存储PCB+高阶PCB认证",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "601177",
-        "name": "杭齿前进",
-        "reason": "人形机器人关节组件+船用齿轮箱",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600814",
-        "name": "杭州解百",
-        "reason": "百货零售+间接持股中科宇航+杭州国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300007",
-        "name": "汉威科技",
-        "reason": "人形机器人+柔性触觉+气体传感器",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300006",
-        "name": "莱美药业",
-        "reason": "纳米炭铁+卡纳琳+创新药+三季报减亏",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "003041",
-        "name": "真爱美家",
-        "reason": "回购+毛毯出口+探迹科技入主",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "003033",
-        "name": "征和工业",
-        "reason": "灵巧手+人形机器人+农机链",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "003028",
-        "name": "振邦智能",
-        "reason": "人形机器人+智能控制器+机器人零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002747",
-        "name": "埃斯顿",
-        "reason": "人形机器人+工业机器人+控股股东增持",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002687",
-        "name": "乔治白",
-        "reason": "职业装+校服+股东户数下降",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002343",
-        "name": "慈文传媒",
-        "reason": "AI影视+微短剧+江西国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001331",
-        "name": "胜通能源",
-        "reason": "七腾机器人控股+机器人产业链+LNG运贸",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001326",
-        "name": "联域股份",
-        "reason": "机器人+参股芯智华+植物照明+回购",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000559",
-        "name": "万向钱潮",
-        "reason": "人形机器人+关节模组+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603901",
-        "name": "永创智能",
-        "reason": "人形机器人+智能包装+三季报增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603706",
-        "name": "东方环宇",
-        "reason": "东方系+天然气+集中供热",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603278",
-        "name": "大业股份",
-        "reason": "人形机器人+胎圈钢丝+商业航天",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "920690",
-        "name": "捷众科技",
-        "reason": "机器人齿轮+汽车零部件+飞行汽车",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "601689",
-        "name": "拓普集团",
-        "reason": "人形机器人+机器人执行器+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "605288",
-        "name": "凯迪股份",
-        "reason": "具身机器人+线性驱动+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603667",
-        "name": "五洲新春",
-        "reason": "人形机器人+丝杠+轴承",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603337",
-        "name": "杰克科技",
-        "reason": "人形机器人+缝制机械+机器人测试",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603286",
-        "name": "日盈电子",
-        "reason": "人形机器人+电子皮肤+汽车洗涤系统",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603283",
-        "name": "赛腾股份",
-        "reason": "HBM检测+三星供货+电路板设备+三季报增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603236",
-        "name": "移远通信",
-        "reason": "机器人+端侧AI+物联网模组",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603131",
-        "name": "上海沪工",
-        "reason": "焊接机器人+商业航天+三季报扭亏",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603127",
-        "name": "昭衍新药",
-        "reason": "创新药CRO+实验猴+在手订单增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002696",
-        "name": "百洋股份",
-        "reason": "“羊”字辈+水产加工+鱼粉鱼油+青岛国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600838",
-        "name": "上海九百",
-        "reason": "商贸零售+商业地产+洗染服务+上海国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "003021",
-        "name": "兆威机电",
-        "reason": "人形机器人+灵巧手+微型传动",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002896",
-        "name": "中大力德",
-        "reason": "人形机器人+精密减速器+关节模组",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001360",
-        "name": "南矿集团",
-        "reason": "黄金+境外金矿收购+矿山装备",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002623",
-        "name": "亚玛顿",
-        "reason": "控制权变更+光伏玻璃+电子玻璃",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002565",
-        "name": "顺灏股份",
-        "reason": "太空算力+商业航天+特种防伪环保纸",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002046",
-        "name": "国机精工",
-        "reason": "机器人轴承+金刚石散热+航天轴承",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001400",
-        "name": "江顺科技",
-        "reason": "3D打印+铝挤压模具",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001330",
-        "name": "博纳影业",
-        "reason": "AI影视+AI短剧+院线影院+三季报减亏",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000766",
-        "name": "通化金马",
-        "reason": "阿尔茨海默病新药+医保目录+董事长增持",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603048",
-        "name": "浙江黎明",
-        "reason": "关注机器人行业+汽车零部件+股权转让",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603051",
-        "name": "鹿山新材",
-        "reason": "电子皮肤+光伏胶膜+回购",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603166",
-        "name": "福达股份",
-        "reason": "人形机器人+精密减速器+曲轴",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301529",
-        "name": "福赛科技",
-        "reason": "机器人零部件+汽车内饰+新能源三电嵌件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301052",
-        "name": "果麦文化",
-        "reason": "AI短剧+AI视频+图书出版",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301252",
-        "name": "同星科技",
-        "reason": "人形机器人+数据中心液冷+换热器",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688004",
-        "name": "博汇科技",
-        "reason": "AI视听安全+传媒安全+视听大数据",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603009",
-        "name": "北特科技",
-        "reason": "人形机器人丝杠+昆山基地投产+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301502",
-        "name": "华阳智能",
-        "reason": "机器人关节模组+无框电机+微特电机",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603728",
-        "name": "鸣志电器",
-        "reason": "人形机器人+运动控制",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301030",
-        "name": "*ST仕净",
-        "reason": "预重整+氨回收+光伏环保",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002173",
-        "name": "创新医疗",
-        "reason": "脑机接口+医疗器械注册证+医疗服务",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300703",
-        "name": "创源股份",
-        "reason": "AI玩具+IP文创+祈福文创+国企改革",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002045",
-        "name": "国光电器",
-        "reason": "AI眼镜+智能音箱+声学模组",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603037",
-        "name": "凯众股份",
-        "reason": "机器人零部件+汽车减震+拟收购拓盛",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600980",
-        "name": "北矿科技",
-        "reason": "矿冶机器人+磁性材料",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000700",
-        "name": "模塑科技",
-        "reason": "人形机器人+汽车外饰件+机器人外覆盖件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603324",
-        "name": "盛剑科技",
-        "reason": "光刻胶配套+电子化学品+半导体附属装备",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "003032",
-        "name": "传智教育",
-        "reason": "AI职业培训+AI具身智能+人形机器人",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002148",
-        "name": "北纬科技",
-        "reason": "四足机器人+物联网+手机游戏",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603004",
-        "name": "鼎龙科技",
-        "reason": "光刻胶+特种工程材料单体+染发剂原料",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300721",
-        "name": "怡达股份",
-        "reason": "湿电子化学品+光刻胶+醇醚",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002584",
-        "name": "西陇科学",
-        "reason": "光刻胶配套试剂+电子化学品+化学试剂",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001358",
-        "name": "兴欣新材",
-        "reason": "光刻胶剥离液+电子化学品项目+股份回购",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "600103",
-        "name": "青山纸业",
-        "reason": "光模块+竹浆纸+福建国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002913",
-        "name": "奥士康",
-        "reason": "PCB+AI服务器+南通智算项目+三季报增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002289",
-        "name": "宇顺电子",
-        "reason": "算力租赁+IDC数据中心+三季报扭亏",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603920",
-        "name": "世运电路",
-        "reason": "AI服务器PCB+人形机器人+回购",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000711",
-        "name": "京蓝科技",
-        "reason": "7N高纯铟+铟资源循环+资产出售",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "605287",
-        "name": "德才股份",
-        "reason": "AI漫剧+互动影游+智能体+建筑装饰",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688203",
-        "name": "海正生材",
-        "reason": "聚乳酸+3D打印+产能投产",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002724",
-        "name": "海洋王",
-        "reason": "中国航展+军工+专业照明",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002655",
-        "name": "共达电声",
-        "reason": "消费电子+声学元器件+拟参投硅臻芯片+控股股东增持",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603893",
-        "name": "瑞芯微",
-        "reason": "端侧AI+机器人芯片+协处理器",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603040",
-        "name": "新坐标",
-        "reason": "机器人丝杠+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301261",
-        "name": "恒工精密",
-        "reason": "人形机器人+减速器+具身智能",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002414",
-        "name": "高德红外",
-        "reason": "机器人+红外芯片+军工",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603119",
-        "name": "浙江荣泰",
-        "reason": "人形机器人+精密结构件+云母绝缘",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301313",
-        "name": "凡拓数创",
-        "reason": "具身智能数据+物理AI数据基座+机器人训练场",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300508",
-        "name": "维宏股份",
-        "reason": "灵巧手电机+人形机器人+数控系统",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002172",
-        "name": "澳洋健康",
-        "reason": "“羊”字辈+脑机接口+医疗服务+国资控股",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001283",
-        "name": "豪鹏科技",
-        "reason": "机器人电池+智能眼镜电池+固态电池+三季报增长",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "601595",
-        "name": "上海电影",
-        "reason": "AI影视+即梦合作+IP运营+院线",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000819",
-        "name": "岳阳兴长",
-        "reason": "MOFs材料+茂金属聚烯烃+国企+“羊”字辈",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301000",
-        "name": "肇民科技",
-        "reason": "人形机器人+精密注塑+以塑代钢",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "601188",
-        "name": "龙江交通",
-        "reason": "冰雪旅游保障+高速公路运营+黑龙江国资",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "000026",
-        "name": "飞亚达",
-        "reason": "人形机器人+精密减速器+中航系",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002009",
-        "name": "天奇股份",
-        "reason": "具身智能数据+人形机器人+智能装备",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688667",
-        "name": "菱电电控",
-        "reason": "汽车电控+低空飞行+混动电控",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603179",
-        "name": "新泉股份",
-        "reason": "机器人零部件+汽车饰件+座椅业务",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603516",
-        "name": "淳中科技",
-        "reason": "音视频芯片+显控系统+芯片概念",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301413",
-        "name": "安培龙",
-        "reason": "人形机器人+力传感器+压力传感器",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688069",
-        "name": "德林海",
-        "reason": "蓝藻治理+湖泊生态医院+美人鱼AI平台",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603103",
-        "name": "横店影视",
-        "reason": "AI短剧+影视全产业链+IP运营",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603528",
-        "name": "多伦科技",
-        "reason": "交通机器人+具身智能+智慧交通+超跌修复",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "605398",
-        "name": "新炬网络",
-        "reason": "短剧营销+AI应用+智能运维",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "605018",
-        "name": "长华集团",
-        "reason": "人形机器人+行星滚柱丝杠+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002703",
-        "name": "浙江世宝",
-        "reason": "无人驾驶+线控转向+汽车转向",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603666",
-        "name": "亿嘉和",
-        "reason": "人形机器人+华为云合作+电力机器人",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002242",
-        "name": "九阳股份",
-        "reason": "厨房小家电+机器人投资+“羊”字辈",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301575",
-        "name": "艾芬达",
-        "reason": "机器人结构件+卫浴毛巾架+北美头部客户",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "605488",
-        "name": "福莱新材",
-        "reason": "柔性传感+数据采集手套+人形机器人",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "601599",
-        "name": "浙文影业",
-        "reason": "影视业务+微短剧+国企改革",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603626",
-        "name": "科森科技",
-        "reason": "机器人结构件+消费电子结构件+苹果供应链+固态电池",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001278",
-        "name": "一彬科技",
-        "reason": "半导体掩模基板+激光除草机+汽车零部件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "300829",
-        "name": "金丹科技",
-        "reason": "涨价+乳酸+聚乳酸+3D打印",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002199",
-        "name": "东晶电子",
-        "reason": "石英晶体元器件+碳酸锂",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "301318",
-        "name": "维海德",
-        "reason": "AI应用+云办公+音视频设备",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002815",
-        "name": "崇达技术",
-        "reason": "PCB+AI服务器+珠海二厂产能爬坡",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002122",
-        "name": "汇洲智能",
-        "reason": "摘帽复牌+人形机器人+物理AI+数据服务",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603021",
-        "name": "*ST华鹏",
-        "reason": "日用玻璃+债权转让+账户解冻",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002983",
-        "name": "芯瑞达",
-        "reason": "MicroLED+AI眼镜+像素车灯",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002931",
-        "name": "锋龙股份",
-        "reason": "机器人关节+优必选+机电组件",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002708",
-        "name": "光洋股份",
-        "reason": "机器人关节+PCB+黄山国资+“羊”字辈",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002086",
-        "name": "东方海洋",
-        "reason": "海洋养殖+大健康+董事会换届+“羊”字辈",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "688033",
-        "name": "*ST天宜",
-        "reason": "退市风险警示+重整进展+商业航天",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002685",
-        "name": "华东重机",
-        "reason": "GPU芯片+港口装卸设备+定增注册",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002579",
-        "name": "中京电子",
-        "reason": "高阶HDI+算力+存储+人形机器人",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002642",
-        "name": "荣联科技",
-        "reason": "存储设备集采+算力服务+国企",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002164",
-        "name": "宁波东力",
-        "reason": "人形机器人+精密减速器+尼得科合作",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "001229",
-        "name": "魅视科技",
-        "reason": "算力服务+AI算力采购+专业视听",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002771",
-        "name": "真视通",
-        "reason": "液冷算力+华为算力+多媒体视讯",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "603960",
-        "name": "克来机电",
-        "reason": "工业机器人+柔性自动化装备+AI应用",
-        "pct": null,
-        "turnover": null,
-        "amount": null
-      },
-      {
-        "code": "002036",
-        "name": "联创电子",
-        "reason": "机器视觉+车载光学+光学器件送样",
-        "pct": null,
-        "turnover": null,
-        "amount": null
+        "code": "600340",
+        "name": "*ST华幸",
+        "reason": "重整保证金到位+产业新城+此前跌幅较大",
+        "pct": 10.588,
+        "turnover": 0.52,
+        "amount": 1908.0
       },
       {
         "code": "000593",
         "name": "德龙汇能",
         "reason": "天然气+参股半导体+氢能",
-        "pct": null,
-        "turnover": null,
-        "amount": null
+        "pct": 9.994,
+        "turnover": 1.08,
+        "amount": 7487.0
       },
       {
-        "code": "600340",
-        "name": "*ST华幸",
-        "reason": "重整保证金到位+产业新城+此前跌幅较大",
-        "pct": null,
-        "turnover": null,
-        "amount": null
+        "code": "002036",
+        "name": "联创电子",
+        "reason": "机器视觉+车载光学+光学器件送样",
+        "pct": 9.932,
+        "turnover": 1.25,
+        "amount": 6408.0
+      },
+      {
+        "code": "603960",
+        "name": "克来机电",
+        "reason": "工业机器人+柔性自动化装备+AI应用",
+        "pct": 10.022,
+        "turnover": 0.92,
+        "amount": 3713.0
+      },
+      {
+        "code": "002771",
+        "name": "真视通",
+        "reason": "液冷算力+华为算力+多媒体视讯",
+        "pct": 9.987,
+        "turnover": 60.41,
+        "amount": 185169.0
+      },
+      {
+        "code": "001229",
+        "name": "魅视科技",
+        "reason": "算力服务+AI算力采购+专业视听",
+        "pct": 10.004,
+        "turnover": 1.38,
+        "amount": 2798.0
+      },
+      {
+        "code": "002164",
+        "name": "宁波东力",
+        "reason": "人形机器人+精密减速器+尼得科合作",
+        "pct": 9.994,
+        "turnover": 3.68,
+        "amount": 31086.0
+      },
+      {
+        "code": "002642",
+        "name": "荣联科技",
+        "reason": "存储设备集采+算力服务+国企",
+        "pct": 10.055,
+        "turnover": 5.96,
+        "amount": 31485.0
+      },
+      {
+        "code": "002579",
+        "name": "中京电子",
+        "reason": "高阶HDI+算力+存储+人形机器人",
+        "pct": 10.008,
+        "turnover": 30.34,
+        "amount": 258670.0
+      },
+      {
+        "code": "002685",
+        "name": "华东重机",
+        "reason": "GPU芯片+港口装卸设备+定增注册",
+        "pct": 10.0,
+        "turnover": 20.15,
+        "amount": 163699.0
+      },
+      {
+        "code": "688033",
+        "name": "*ST天宜",
+        "reason": "退市风险警示+重整进展+商业航天",
+        "pct": 19.932,
+        "turnover": 1.39,
+        "amount": 2716.0
+      },
+      {
+        "code": "002086",
+        "name": "东方海洋",
+        "reason": "海洋养殖+大健康+董事会换届+“羊”字辈",
+        "pct": 10.133,
+        "turnover": 26.59,
+        "amount": 172943.0
+      },
+      {
+        "code": "002708",
+        "name": "光洋股份",
+        "reason": "机器人关节+PCB+黄山国资+“羊”字辈",
+        "pct": 10.011,
+        "turnover": 6.61,
+        "amount": 69642.0
+      },
+      {
+        "code": "002931",
+        "name": "锋龙股份",
+        "reason": "机器人关节+优必选+机电组件",
+        "pct": 10.0,
+        "turnover": 4.8,
+        "amount": 40441.0
+      },
+      {
+        "code": "002983",
+        "name": "芯瑞达",
+        "reason": "MicroLED+AI眼镜+像素车灯",
+        "pct": 9.996,
+        "turnover": 5.49,
+        "amount": 17400.0
+      },
+      {
+        "code": "603021",
+        "name": "*ST华鹏",
+        "reason": "日用玻璃+债权转让+账户解冻",
+        "pct": 9.966,
+        "turnover": 1.04,
+        "amount": 1038.0
+      },
+      {
+        "code": "002122",
+        "name": "汇洲智能",
+        "reason": "摘帽复牌+人形机器人+物理AI+数据服务",
+        "pct": 10.037,
+        "turnover": 3.07,
+        "amount": 17595.0
+      },
+      {
+        "code": "002815",
+        "name": "崇达技术",
+        "reason": "PCB+AI服务器+珠海二厂产能爬坡",
+        "pct": 10.0,
+        "turnover": 16.48,
+        "amount": 186492.0
+      },
+      {
+        "code": "301318",
+        "name": "维海德",
+        "reason": "AI应用+云办公+音视频设备",
+        "pct": 20.011,
+        "turnover": 7.54,
+        "amount": 14698.0
+      },
+      {
+        "code": "002199",
+        "name": "东晶电子",
+        "reason": "石英晶体元器件+碳酸锂",
+        "pct": 10.053,
+        "turnover": 9.52,
+        "amount": 22336.0
+      },
+      {
+        "code": "300829",
+        "name": "金丹科技",
+        "reason": "涨价+乳酸+聚乳酸+3D打印",
+        "pct": 20.0,
+        "turnover": 25.7,
+        "amount": 135633.0
+      },
+      {
+        "code": "001278",
+        "name": "一彬科技",
+        "reason": "半导体掩模基板+激光除草机+汽车零部件",
+        "pct": 9.992,
+        "turnover": 5.11,
+        "amount": 5700.0
+      },
+      {
+        "code": "603626",
+        "name": "科森科技",
+        "reason": "机器人结构件+消费电子结构件+苹果供应链+固态电池",
+        "pct": 10.014,
+        "turnover": 7.43,
+        "amount": 95883.0
+      },
+      {
+        "code": "601599",
+        "name": "浙文影业",
+        "reason": "影视业务+微短剧+国企改革",
+        "pct": 9.94,
+        "turnover": 20.12,
+        "amount": 83383.0
+      },
+      {
+        "code": "605488",
+        "name": "福莱新材",
+        "reason": "柔性传感+数据采集手套+人形机器人",
+        "pct": 9.995,
+        "turnover": 11.28,
+        "amount": 152905.0
+      },
+      {
+        "code": "301575",
+        "name": "艾芬达",
+        "reason": "机器人结构件+卫浴毛巾架+北美头部客户",
+        "pct": 20.0,
+        "turnover": 29.81,
+        "amount": 60162.0
+      },
+      {
+        "code": "002242",
+        "name": "九阳股份",
+        "reason": "厨房小家电+机器人投资+“羊”字辈",
+        "pct": 10.014,
+        "turnover": 10.62,
+        "amount": 251865.0
+      },
+      {
+        "code": "603666",
+        "name": "亿嘉和",
+        "reason": "人形机器人+华为云合作+电力机器人",
+        "pct": 10.022,
+        "turnover": 5.94,
+        "amount": 30000.0
+      },
+      {
+        "code": "002703",
+        "name": "浙江世宝",
+        "reason": "无人驾驶+线控转向+汽车转向",
+        "pct": 9.992,
+        "turnover": 15.41,
+        "amount": 123844.0
+      },
+      {
+        "code": "605018",
+        "name": "长华集团",
+        "reason": "人形机器人+行星滚柱丝杠+汽车零部件",
+        "pct": 10.039,
+        "turnover": 4.25,
+        "amount": 21608.0
+      },
+      {
+        "code": "605398",
+        "name": "新炬网络",
+        "reason": "短剧营销+AI应用+智能运维",
+        "pct": 9.995,
+        "turnover": 3.0,
+        "amount": 9469.0
+      },
+      {
+        "code": "603528",
+        "name": "多伦科技",
+        "reason": "交通机器人+具身智能+智慧交通+超跌修复",
+        "pct": 9.929,
+        "turnover": 4.5,
+        "amount": 19016.0
+      },
+      {
+        "code": "603103",
+        "name": "横店影视",
+        "reason": "AI短剧+影视全产业链+IP运营",
+        "pct": 10.007,
+        "turnover": 3.79,
+        "amount": 38619.0
+      },
+      {
+        "code": "688069",
+        "name": "德林海",
+        "reason": "蓝藻治理+湖泊生态医院+美人鱼AI平台",
+        "pct": 19.991,
+        "turnover": 4.99,
+        "amount": 20962.0
+      },
+      {
+        "code": "301413",
+        "name": "安培龙",
+        "reason": "人形机器人+力传感器+压力传感器",
+        "pct": 20.0,
+        "turnover": 15.82,
+        "amount": 85702.0
+      },
+      {
+        "code": "603516",
+        "name": "淳中科技",
+        "reason": "音视频芯片+显控系统+芯片概念",
+        "pct": 10.012,
+        "turnover": 3.48,
+        "amount": 30583.0
+      },
+      {
+        "code": "603179",
+        "name": "新泉股份",
+        "reason": "机器人零部件+汽车饰件+座椅业务",
+        "pct": 9.99,
+        "turnover": 3.98,
+        "amount": 116027.0
+      },
+      {
+        "code": "688667",
+        "name": "菱电电控",
+        "reason": "汽车电控+低空飞行+混动电控",
+        "pct": 20.0,
+        "turnover": 1.89,
+        "amount": 9096.0
+      },
+      {
+        "code": "002009",
+        "name": "天奇股份",
+        "reason": "具身智能数据+人形机器人+智能装备",
+        "pct": 10.03,
+        "turnover": 12.36,
+        "amount": 61906.0
+      },
+      {
+        "code": "000026",
+        "name": "飞亚达",
+        "reason": "人形机器人+精密减速器+中航系",
+        "pct": 10.011,
+        "turnover": 7.54,
+        "amount": 54650.0
+      },
+      {
+        "code": "601188",
+        "name": "龙江交通",
+        "reason": "冰雪旅游保障+高速公路运营+黑龙江国资",
+        "pct": 10.024,
+        "turnover": 25.08,
+        "amount": 145364.0
+      },
+      {
+        "code": "301000",
+        "name": "肇民科技",
+        "reason": "人形机器人+精密注塑+以塑代钢",
+        "pct": 20.0,
+        "turnover": 7.91,
+        "amount": 53165.0
+      },
+      {
+        "code": "000819",
+        "name": "岳阳兴长",
+        "reason": "MOFs材料+茂金属聚烯烃+国企+“羊”字辈",
+        "pct": 10.0,
+        "turnover": 12.87,
+        "amount": 64540.0
+      },
+      {
+        "code": "601595",
+        "name": "上海电影",
+        "reason": "AI影视+即梦合作+IP运营+院线",
+        "pct": 10.014,
+        "turnover": 4.39,
+        "amount": 61510.0
+      },
+      {
+        "code": "001283",
+        "name": "豪鹏科技",
+        "reason": "机器人电池+智能眼镜电池+固态电池+三季报增长",
+        "pct": 10.002,
+        "turnover": 6.29,
+        "amount": 30520.0
+      },
+      {
+        "code": "002172",
+        "name": "澳洋健康",
+        "reason": "“羊”字辈+脑机接口+医疗服务+国资控股",
+        "pct": 10.086,
+        "turnover": 16.75,
+        "amount": 63163.0
+      },
+      {
+        "code": "300508",
+        "name": "维宏股份",
+        "reason": "灵巧手电机+人形机器人+数控系统",
+        "pct": 20.0,
+        "turnover": 10.53,
+        "amount": 31127.0
+      },
+      {
+        "code": "301313",
+        "name": "凡拓数创",
+        "reason": "具身智能数据+物理AI数据基座+机器人训练场",
+        "pct": 19.997,
+        "turnover": 33.79,
+        "amount": 174053.0
+      },
+      {
+        "code": "603119",
+        "name": "浙江荣泰",
+        "reason": "人形机器人+精密结构件+云母绝缘",
+        "pct": 10.0,
+        "turnover": 2.52,
+        "amount": 58530.0
+      },
+      {
+        "code": "002414",
+        "name": "高德红外",
+        "reason": "机器人+红外芯片+军工",
+        "pct": 10.042,
+        "turnover": 2.83,
+        "amount": 97258.0
+      },
+      {
+        "code": "301261",
+        "name": "恒工精密",
+        "reason": "人形机器人+减速器+具身智能",
+        "pct": 20.0,
+        "turnover": 5.1,
+        "amount": 33436.0
+      },
+      {
+        "code": "603040",
+        "name": "新坐标",
+        "reason": "机器人丝杠+汽车零部件",
+        "pct": 10.01,
+        "turnover": 3.05,
+        "amount": 19100.0
+      },
+      {
+        "code": "603893",
+        "name": "瑞芯微",
+        "reason": "端侧AI+机器人芯片+协处理器",
+        "pct": 9.998,
+        "turnover": 4.42,
+        "amount": 365475.0
+      },
+      {
+        "code": "002655",
+        "name": "共达电声",
+        "reason": "消费电子+声学元器件+拟参投硅臻芯片+控股股东增持",
+        "pct": 10.014,
+        "turnover": 6.56,
+        "amount": 55761.0
+      },
+      {
+        "code": "002724",
+        "name": "海洋王",
+        "reason": "中国航展+军工+专业照明+“羊”字辈",
+        "pct": 9.966,
+        "turnover": 13.14,
+        "amount": 67881.0
+      },
+      {
+        "code": "688203",
+        "name": "海正生材",
+        "reason": "聚乳酸+3D打印+产能投产",
+        "pct": 19.965,
+        "turnover": 7.93,
+        "amount": 20881.0
+      },
+      {
+        "code": "605287",
+        "name": "德才股份",
+        "reason": "AI漫剧+互动影游+智能体+建筑装饰",
+        "pct": 10.003,
+        "turnover": 7.9,
+        "amount": 36597.0
+      },
+      {
+        "code": "000711",
+        "name": "京蓝科技",
+        "reason": "7N高纯铟+铟资源循环+资产出售",
+        "pct": 10.104,
+        "turnover": 11.66,
+        "amount": 110409.0
+      },
+      {
+        "code": "603920",
+        "name": "世运电路",
+        "reason": "AI服务器PCB+人形机器人+回购",
+        "pct": 10.0,
+        "turnover": 3.53,
+        "amount": 84478.0
+      },
+      {
+        "code": "002289",
+        "name": "宇顺电子",
+        "reason": "算力租赁+IDC数据中心+三季报扭亏",
+        "pct": 10.018,
+        "turnover": 3.05,
+        "amount": 25095.0
+      },
+      {
+        "code": "002913",
+        "name": "奥士康",
+        "reason": "PCB+AI服务器+南通智算项目+三季报增长",
+        "pct": 10.004,
+        "turnover": 3.82,
+        "amount": 66818.0
+      },
+      {
+        "code": "600103",
+        "name": "青山纸业",
+        "reason": "光模块+竹浆纸+福建国资",
+        "pct": 9.969,
+        "turnover": 14.12,
+        "amount": 104335.0
+      },
+      {
+        "code": "001358",
+        "name": "兴欣新材",
+        "reason": "光刻胶剥离液+电子化学品项目+股份回购",
+        "pct": 10.019,
+        "turnover": 25.01,
+        "amount": 34046.0
+      },
+      {
+        "code": "002584",
+        "name": "西陇科学",
+        "reason": "光刻胶配套试剂+电子化学品+化学试剂",
+        "pct": 9.961,
+        "turnover": 26.62,
+        "amount": 102619.0
+      },
+      {
+        "code": "300721",
+        "name": "怡达股份",
+        "reason": "湿电子化学品+光刻胶+醇醚",
+        "pct": 20.0,
+        "turnover": 26.44,
+        "amount": 69336.0
+      },
+      {
+        "code": "603004",
+        "name": "鼎龙科技",
+        "reason": "光刻胶+特种工程材料单体+染发剂原料",
+        "pct": 9.989,
+        "turnover": 22.29,
+        "amount": 24707.0
+      },
+      {
+        "code": "002148",
+        "name": "北纬科技",
+        "reason": "四足机器人+物联网+手机游戏",
+        "pct": 10.04,
+        "turnover": 40.5,
+        "amount": 195130.0
+      },
+      {
+        "code": "003032",
+        "name": "传智教育",
+        "reason": "AI职业培训+AI具身智能+人形机器人",
+        "pct": 10.05,
+        "turnover": 11.88,
+        "amount": 28805.0
+      },
+      {
+        "code": "603324",
+        "name": "盛剑科技",
+        "reason": "光刻胶配套+电子化学品+半导体附属装备",
+        "pct": 9.996,
+        "turnover": 19.68,
+        "amount": 80784.0
+      },
+      {
+        "code": "000700",
+        "name": "模塑科技",
+        "reason": "人形机器人+汽车外饰件+机器人外覆盖件",
+        "pct": 9.992,
+        "turnover": 7.64,
+        "amount": 96494.0
+      },
+      {
+        "code": "600980",
+        "name": "北矿科技",
+        "reason": "矿冶机器人+磁性材料",
+        "pct": 9.98,
+        "turnover": 2.65,
+        "amount": 7835.0
+      },
+      {
+        "code": "603037",
+        "name": "凯众股份",
+        "reason": "机器人零部件+汽车减震+拟收购拓盛",
+        "pct": 10.042,
+        "turnover": 6.4,
+        "amount": 17097.0
+      },
+      {
+        "code": "002045",
+        "name": "国光电器",
+        "reason": "AI眼镜+智能音箱+声学模组",
+        "pct": 9.963,
+        "turnover": 10.08,
+        "amount": 47815.0
+      },
+      {
+        "code": "300703",
+        "name": "创源股份",
+        "reason": "AI玩具+IP文创+祈福文创+国企改革",
+        "pct": 20.0,
+        "turnover": 9.32,
+        "amount": 17824.0
+      },
+      {
+        "code": "002173",
+        "name": "创新医疗",
+        "reason": "脑机接口+医疗器械注册证+医疗服务",
+        "pct": 10.015,
+        "turnover": 8.27,
+        "amount": 48225.0
+      },
+      {
+        "code": "301030",
+        "name": "*ST仕净",
+        "reason": "预重整+氨回收+光伏环保",
+        "pct": 20.061,
+        "turnover": 18.43,
+        "amount": 13506.0
+      },
+      {
+        "code": "603728",
+        "name": "鸣志电器",
+        "reason": "人形机器人+运动控制",
+        "pct": 9.996,
+        "turnover": 2.7,
+        "amount": 52069.0
+      },
+      {
+        "code": "301502",
+        "name": "华阳智能",
+        "reason": "机器人关节模组+无框电机+微特电机",
+        "pct": 20.0,
+        "turnover": 27.3,
+        "amount": 33037.0
+      },
+      {
+        "code": "603009",
+        "name": "北特科技",
+        "reason": "人形机器人丝杠+昆山基地投产+汽车零部件",
+        "pct": 10.0,
+        "turnover": 4.15,
+        "amount": 61518.0
+      },
+      {
+        "code": "688004",
+        "name": "博汇科技",
+        "reason": "AI视听安全+传媒安全+视听大数据",
+        "pct": 20.0,
+        "turnover": 18.31,
+        "amount": 43107.0
+      },
+      {
+        "code": "301252",
+        "name": "同星科技",
+        "reason": "人形机器人+数据中心液冷+换热器",
+        "pct": 20.0,
+        "turnover": 8.23,
+        "amount": 37272.0
+      },
+      {
+        "code": "301052",
+        "name": "果麦文化",
+        "reason": "AI短剧+AI视频+图书出版",
+        "pct": 20.0,
+        "turnover": 45.98,
+        "amount": 146762.0
+      },
+      {
+        "code": "301529",
+        "name": "福赛科技",
+        "reason": "机器人零部件+汽车内饰+新能源三电嵌件",
+        "pct": 20.0,
+        "turnover": 10.58,
+        "amount": 98433.0
+      },
+      {
+        "code": "603166",
+        "name": "福达股份",
+        "reason": "人形机器人+精密减速器+曲轴",
+        "pct": 9.966,
+        "turnover": 3.39,
+        "amount": 20552.0
+      },
+      {
+        "code": "603051",
+        "name": "鹿山新材",
+        "reason": "电子皮肤+光伏胶膜+回购",
+        "pct": 10.0,
+        "turnover": 6.96,
+        "amount": 22427.0
+      },
+      {
+        "code": "603048",
+        "name": "浙江黎明",
+        "reason": "关注机器人行业+汽车零部件+股权转让",
+        "pct": 10.0,
+        "turnover": 3.39,
+        "amount": 8917.0
+      },
+      {
+        "code": "000766",
+        "name": "通化金马",
+        "reason": "阿尔茨海默病新药+医保目录+董事长增持",
+        "pct": 10.04,
+        "turnover": 5.68,
+        "amount": 55597.0
+      },
+      {
+        "code": "001330",
+        "name": "博纳影业",
+        "reason": "AI影视+AI短剧+院线影院+三季报减亏",
+        "pct": 9.919,
+        "turnover": 9.66,
+        "amount": 57816.0
+      },
+      {
+        "code": "001400",
+        "name": "江顺科技",
+        "reason": "3D打印+铝挤压模具",
+        "pct": 10.0,
+        "turnover": 7.58,
+        "amount": 15340.0
+      },
+      {
+        "code": "002046",
+        "name": "国机精工",
+        "reason": "机器人轴承+金刚石散热+航天轴承",
+        "pct": 10.007,
+        "turnover": 5.89,
+        "amount": 90338.0
+      },
+      {
+        "code": "002565",
+        "name": "顺灏股份",
+        "reason": "太空算力+商业航天+特种防伪环保纸",
+        "pct": 10.068,
+        "turnover": 10.02,
+        "amount": 80624.0
+      },
+      {
+        "code": "002623",
+        "name": "亚玛顿",
+        "reason": "控制权变更+光伏玻璃+电子玻璃",
+        "pct": 10.012,
+        "turnover": 6.7,
+        "amount": 22191.0
+      },
+      {
+        "code": "001360",
+        "name": "南矿集团",
+        "reason": "黄金+境外金矿收购+矿山装备",
+        "pct": 10.0,
+        "turnover": 4.74,
+        "amount": 9793.0
+      },
+      {
+        "code": "002896",
+        "name": "中大力德",
+        "reason": "人形机器人+精密减速器+关节模组",
+        "pct": 10.008,
+        "turnover": 4.24,
+        "amount": 42291.0
+      },
+      {
+        "code": "003021",
+        "name": "兆威机电",
+        "reason": "人形机器人+灵巧手+微型传动",
+        "pct": 9.996,
+        "turnover": 5.47,
+        "amount": 92135.0
+      },
+      {
+        "code": "600838",
+        "name": "上海九百",
+        "reason": "商贸零售+商业地产+洗染服务+上海国资",
+        "pct": 10.026,
+        "turnover": 12.9,
+        "amount": 40734.0
+      },
+      {
+        "code": "002696",
+        "name": "百洋股份",
+        "reason": "“羊”字辈+水产加工+鱼粉鱼油+青岛国资",
+        "pct": 10.045,
+        "turnover": 22.23,
+        "amount": 52376.0
+      },
+      {
+        "code": "603127",
+        "name": "昭衍新药",
+        "reason": "创新药CRO+实验猴+在手订单增长",
+        "pct": 9.994,
+        "turnover": 5.46,
+        "amount": 115008.0
+      },
+      {
+        "code": "603131",
+        "name": "上海沪工",
+        "reason": "焊接机器人+商业航天+三季报扭亏",
+        "pct": 9.975,
+        "turnover": 7.19,
+        "amount": 29788.0
+      },
+      {
+        "code": "603236",
+        "name": "移远通信",
+        "reason": "机器人+端侧AI+物联网模组",
+        "pct": 10.005,
+        "turnover": 5.86,
+        "amount": 184185.0
+      },
+      {
+        "code": "603283",
+        "name": "赛腾股份",
+        "reason": "HBM检测+三星供货+电路板设备+三季报增长",
+        "pct": 9.989,
+        "turnover": 6.27,
+        "amount": 80214.0
+      },
+      {
+        "code": "603286",
+        "name": "日盈电子",
+        "reason": "人形机器人+电子皮肤+汽车洗涤系统",
+        "pct": 10.002,
+        "turnover": 4.78,
+        "amount": 26263.0
+      },
+      {
+        "code": "603337",
+        "name": "杰克科技",
+        "reason": "人形机器人+缝制机械+机器人测试",
+        "pct": 10.0,
+        "turnover": 3.07,
+        "amount": 53663.0
+      },
+      {
+        "code": "603667",
+        "name": "五洲新春",
+        "reason": "人形机器人+丝杠+轴承",
+        "pct": 10.0,
+        "turnover": 6.4,
+        "amount": 106534.0
+      },
+      {
+        "code": "605288",
+        "name": "凯迪股份",
+        "reason": "具身机器人+线性驱动+汽车零部件",
+        "pct": 10.008,
+        "turnover": 2.21,
+        "amount": 12205.0
+      },
+      {
+        "code": "601689",
+        "name": "拓普集团",
+        "reason": "人形机器人+机器人执行器+汽车零部件",
+        "pct": 9.998,
+        "turnover": 3.12,
+        "amount": 276074.0
+      },
+      {
+        "code": "603278",
+        "name": "大业股份",
+        "reason": "人形机器人+胎圈钢丝+商业航天",
+        "pct": 9.991,
+        "turnover": 14.38,
+        "amount": 54520.0
+      },
+      {
+        "code": "603706",
+        "name": "东方环宇",
+        "reason": "东方系+天然气+集中供热",
+        "pct": 9.981,
+        "turnover": 7.96,
+        "amount": 33834.0
+      },
+      {
+        "code": "603901",
+        "name": "永创智能",
+        "reason": "人形机器人+智能包装+三季报增长",
+        "pct": 10.0,
+        "turnover": 4.12,
+        "amount": 21552.0
+      },
+      {
+        "code": "000559",
+        "name": "万向钱潮",
+        "reason": "人形机器人+关节模组+汽车零部件",
+        "pct": 10.031,
+        "turnover": 2.76,
+        "amount": 91972.0
+      },
+      {
+        "code": "001326",
+        "name": "联域股份",
+        "reason": "机器人+参股芯智华+植物照明+回购",
+        "pct": 10.0,
+        "turnover": 9.12,
+        "amount": 14115.0
+      },
+      {
+        "code": "001331",
+        "name": "胜通能源",
+        "reason": "七腾机器人控股+机器人产业链+LNG运贸",
+        "pct": 10.0,
+        "turnover": 4.46,
+        "amount": 34084.0
+      },
+      {
+        "code": "002343",
+        "name": "慈文传媒",
+        "reason": "AI影视+微短剧+江西国资",
+        "pct": 10.0,
+        "turnover": 27.05,
+        "amount": 89264.0
+      },
+      {
+        "code": "002687",
+        "name": "乔治白",
+        "reason": "职业装+校服+股东户数下降",
+        "pct": 9.942,
+        "turnover": 3.84,
+        "amount": 8514.0
+      },
+      {
+        "code": "002747",
+        "name": "埃斯顿",
+        "reason": "人形机器人+工业机器人+控股股东增持",
+        "pct": 10.021,
+        "turnover": 6.57,
+        "amount": 130551.0
+      },
+      {
+        "code": "003028",
+        "name": "振邦智能",
+        "reason": "人形机器人+智能控制器+机器人零部件",
+        "pct": 10.0,
+        "turnover": 4.49,
+        "amount": 6529.0
+      },
+      {
+        "code": "003033",
+        "name": "征和工业",
+        "reason": "灵巧手+人形机器人+农机链",
+        "pct": 10.01,
+        "turnover": 3.47,
+        "amount": 15202.0
+      },
+      {
+        "code": "003041",
+        "name": "真爱美家",
+        "reason": "回购+毛毯出口+探迹科技入主",
+        "pct": 10.0,
+        "turnover": 1.99,
+        "amount": 8045.0
+      },
+      {
+        "code": "300006",
+        "name": "莱美药业",
+        "reason": "纳米炭铁+卡纳琳+创新药+三季报减亏",
+        "pct": 20.055,
+        "turnover": 20.19,
+        "amount": 170470.0
+      },
+      {
+        "code": "300007",
+        "name": "汉威科技",
+        "reason": "人形机器人+柔性触觉+气体传感器",
+        "pct": 20.013,
+        "turnover": 11.82,
+        "amount": 112921.0
+      },
+      {
+        "code": "600814",
+        "name": "杭州解百",
+        "reason": "百货零售+间接持股中科宇航+杭州国资",
+        "pct": 10.048,
+        "turnover": 2.51,
+        "amount": 12182.0
+      },
+      {
+        "code": "601177",
+        "name": "杭齿前进",
+        "reason": "人形机器人关节组件+船用齿轮箱",
+        "pct": 10.009,
+        "turnover": 3.86,
+        "amount": 18056.0
+      },
+      {
+        "code": "603175",
+        "name": "超颖电子",
+        "reason": "AI算力PCB+存储PCB+高阶PCB认证",
+        "pct": 10.0,
+        "turnover": 5.07,
+        "amount": 26106.0
+      },
+      {
+        "code": "603533",
+        "name": "掌阅科技",
+        "reason": "AI短剧+短剧出海",
+        "pct": 10.013,
+        "turnover": 11.99,
+        "amount": 124174.0
+      },
+      {
+        "code": "603598",
+        "name": "引力传媒",
+        "reason": "AI营销+AI短剧+广告营销",
+        "pct": 10.012,
+        "turnover": 9.8,
+        "amount": 45655.0
+      },
+      {
+        "code": "603662",
+        "name": "柯力传感",
+        "reason": "六维力传感器+人形机器人+触觉传感器",
+        "pct": 9.998,
+        "turnover": 3.47,
+        "amount": 45039.0
+      },
+      {
+        "code": "605577",
+        "name": "龙版传媒",
+        "reason": "AI漫剧+出版发行+黑龙江国资",
+        "pct": 10.006,
+        "turnover": 11.13,
+        "amount": 83613.0
+      },
+      {
+        "code": "688286",
+        "name": "敏芯股份",
+        "reason": "人形机器人+六维力传感器+MEMS+浦丹光电",
+        "pct": 19.991,
+        "turnover": 17.64,
+        "amount": 67672.0
+      },
+      {
+        "code": "688585",
+        "name": "上纬新材",
+        "reason": "人形机器人+战略合作+智元入主+风电树脂",
+        "pct": 19.999,
+        "turnover": 3.14,
+        "amount": 209459.0
+      },
+      {
+        "code": "688611",
+        "name": "杭州柯林",
+        "reason": "人形机器人+电网数字化+增持",
+        "pct": 19.992,
+        "turnover": 3.63,
+        "amount": 32544.0
+      },
+      {
+        "code": "688836",
+        "name": "宇树科技",
+        "reason": "人形机器人+物理AI+具身智能",
+        "pct": 20.0,
+        "turnover": 23.99,
+        "amount": 467697.0
+      },
+      {
+        "code": "001266",
+        "name": "宏英智能",
+        "reason": "电路板设计+智能控制+液冷储能+三季报增长",
+        "pct": 10.008,
+        "turnover": 5.55,
+        "amount": 9019.0
+      },
+      {
+        "code": "002249",
+        "name": "大洋电机",
+        "reason": "机器人关节+散热风机+羊字辈",
+        "pct": 9.933,
+        "turnover": 5.79,
+        "amount": 67362.0
+      },
+      {
+        "code": "002527",
+        "name": "新时达",
+        "reason": "人形机器人+具身智能+海尔定增",
+        "pct": 10.012,
+        "turnover": 3.68,
+        "amount": 18665.0
+      },
+      {
+        "code": "301265",
+        "name": "华新科技",
+        "reason": "存储芯片再制造+贵金属回收",
+        "pct": 19.99,
+        "turnover": 6.16,
+        "amount": 34700.0
+      },
+      {
+        "code": "603305",
+        "name": "旭升集团",
+        "reason": "人形机器人+汽车轻量化+特斯拉概念+商业航天",
+        "pct": 9.971,
+        "turnover": 4.78,
+        "amount": 60729.0
+      },
+      {
+        "code": "000636",
+        "name": "风华高科",
+        "reason": "MLCC+商业航天+广东国资",
+        "pct": 10.019,
+        "turnover": 7.32,
+        "amount": 231813.0
+      },
+      {
+        "code": "002248",
+        "name": "华东数控",
+        "reason": "工业母机+谐波减速器+半导体订单",
+        "pct": 10.039,
+        "turnover": 9.66,
+        "amount": 24040.0
+      },
+      {
+        "code": "000530",
+        "name": "冰山冷热",
+        "reason": "冰雪工程+数据中心液冷+船舶制冷+股权受让",
+        "pct": 10.008,
+        "turnover": 37.31,
+        "amount": 288887.0
+      },
+      {
+        "code": "600243",
+        "name": "*ST海华",
+        "reason": "减速器+机械装备+天然气+清洁能源",
+        "pct": 10.081,
+        "turnover": 2.27,
+        "amount": 2614.0
+      },
+      {
+        "code": "301218",
+        "name": "华是科技",
+        "reason": "AI短剧+机器人投资+智慧城市",
+        "pct": 20.0,
+        "turnover": 28.84,
+        "amount": 161616.0
+      },
+      {
+        "code": "301010",
+        "name": "晶雪节能",
+        "reason": "冰雪经济+数据中心+冷库围护",
+        "pct": 19.979,
+        "turnover": 18.57,
+        "amount": 41998.0
+      },
+      {
+        "code": "300243",
+        "name": "瑞丰高材",
+        "reason": "电子级环氧树脂+低介电树脂+覆铜板+PVC助剂",
+        "pct": 20.0,
+        "turnover": 13.97,
+        "amount": 40222.0
+      },
+      {
+        "code": "000678",
+        "name": "襄阳轴承",
+        "reason": "机器人轴承+湖北国资+“羊”字辈",
+        "pct": 10.012,
+        "turnover": 29.94,
+        "amount": 244828.0
+      },
+      {
+        "code": "600467",
+        "name": "好当家",
+        "reason": "海参+水产养殖+预制菜",
+        "pct": 10.14,
+        "turnover": 28.7,
+        "amount": 126778.0
+      },
+      {
+        "code": "002548",
+        "name": "金新农",
+        "reason": "生猪养殖+养殖机器人+猪饲料",
+        "pct": 10.106,
+        "turnover": 15.79,
+        "amount": 49480.0
+      },
+      {
+        "code": "600327",
+        "name": "大东方",
+        "reason": "百货零售+医疗服务+股份注销",
+        "pct": 9.938,
+        "turnover": 29.42,
+        "amount": 128338.0
+      },
+      {
+        "code": "603151",
+        "name": "邦基科技",
+        "reason": "猪饲料+生猪养殖",
+        "pct": 9.995,
+        "turnover": 4.63,
+        "amount": 14961.0
+      },
+      {
+        "code": "600156",
+        "name": "华升股份",
+        "reason": "算力租赁+重组推进+湖南国资",
+        "pct": 9.975,
+        "turnover": 18.91,
+        "amount": 62235.0
+      },
+      {
+        "code": "603926",
+        "name": "铁流股份",
+        "reason": "机器人零部件+电机轴+三季报净利增长",
+        "pct": 10.0,
+        "turnover": 3.81,
+        "amount": 12277.0
       }
     ],
     "tags": [
@@ -10118,7 +10102,7 @@
       },
       {
         "tag": "汽车零部件",
-        "n": 9,
+        "n": 8,
         "codes": [
           "000559",
           "001278",
@@ -10127,13 +10111,12 @@
           "603040",
           "603048",
           "605018",
-          "605288",
-          "920690"
+          "605288"
         ]
       },
       {
         "tag": "羊”字辈",
-        "n": 7,
+        "n": 8,
         "codes": [
           "000678",
           "000819",
@@ -10141,7 +10124,8 @@
           "002172",
           "002242",
           "002696",
-          "002708"
+          "002708",
+          "002724"
         ]
       },
       {
@@ -10795,7 +10779,7 @@
         "rank": 1,
         "code": "002242",
         "name": "九阳股份",
-        "heat": 7161977.0,
+        "heat": 7141423.0,
         "pct": 10.0138,
         "rank_chg": 0.0,
         "concepts": [
@@ -10808,7 +10792,7 @@
         "rank": 2,
         "code": "688836",
         "name": "宇树科技",
-        "heat": 5043987.0,
+        "heat": 5157298.0,
         "pct": 20.0,
         "rank_chg": 0.0,
         "concepts": [
@@ -10821,7 +10805,7 @@
         "rank": 3,
         "code": "300502",
         "name": "新易盛",
-        "heat": 4958304.0,
+        "heat": 5064280.0,
         "pct": 9.9152,
         "rank_chg": 0.0,
         "concepts": [
@@ -10834,7 +10818,7 @@
         "rank": 4,
         "code": "300308",
         "name": "中际旭创",
-        "heat": 4863065.0,
+        "heat": 5038960.0,
         "pct": 6.1038,
         "rank_chg": 0.0,
         "concepts": [
@@ -10847,7 +10831,7 @@
         "rank": 5,
         "code": "000530",
         "name": "冰山冷热",
-        "heat": 4482573.0,
+        "heat": 4414949.0,
         "pct": 10.0081,
         "rank_chg": 0.0,
         "concepts": [
@@ -10860,20 +10844,20 @@
         "rank": 6,
         "code": "002148",
         "name": "北纬科技",
-        "heat": 3987491.0,
+        "heat": 4009735.0,
         "pct": 10.0398,
         "rank_chg": 0.0,
         "concepts": [
           "手机游戏",
           "网络游戏"
         ],
-        "popularity_tag": "9天6板"
+        "popularity_tag": "持续上榜"
       },
       {
         "rank": 7,
         "code": "600410",
         "name": "华胜天成",
-        "heat": 3922525.0,
+        "heat": 3829210.0,
         "pct": -3.8684,
         "rank_chg": 0.0,
         "concepts": [
@@ -10886,7 +10870,7 @@
         "rank": 8,
         "code": "002579",
         "name": "中京电子",
-        "heat": 3682212.0,
+        "heat": 3649735.0,
         "pct": 10.0075,
         "rank_chg": 0.0,
         "concepts": [
@@ -10899,7 +10883,7 @@
         "rank": 9,
         "code": "002086",
         "name": "东方海洋",
-        "heat": 3619354.0,
+        "heat": 3547153.0,
         "pct": 10.1333,
         "rank_chg": 0.0,
         "concepts": [
@@ -10912,7 +10896,7 @@
         "rank": 10,
         "code": "600715",
         "name": "文投控股",
-        "heat": 3440223.0,
+        "heat": 3389113.0,
         "pct": 4.0146,
         "rank_chg": 0.0,
         "concepts": [
@@ -10925,7 +10909,7 @@
         "rank": 11,
         "code": "002771",
         "name": "真视通",
-        "heat": 3274623.0,
+        "heat": 3224561.0,
         "pct": 9.9874,
         "rank_chg": 0.0,
         "concepts": [
@@ -10938,7 +10922,7 @@
         "rank": 12,
         "code": "002685",
         "name": "华东重机",
-        "heat": 3080287.0,
+        "heat": 3100009.0,
         "pct": 10.0,
         "rank_chg": 0.0,
         "concepts": [
@@ -10949,22 +10933,9 @@
       },
       {
         "rank": 13,
-        "code": "601398",
-        "name": "工商银行",
-        "heat": 2926164.0,
-        "pct": -2.6596,
-        "rank_chg": 0.0,
-        "concepts": [
-          "证金持股",
-          "同花顺中特估100"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 14,
         "code": "002384",
         "name": "东山精密",
-        "heat": 2875281.0,
+        "heat": 2991246.0,
         "pct": 5.7249,
         "rank_chg": 0.0,
         "concepts": [
@@ -10974,10 +10945,10 @@
         "popularity_tag": null
       },
       {
-        "rank": 15,
+        "rank": 14,
         "code": "000678",
         "name": "襄阳轴承",
-        "heat": 2844984.0,
+        "heat": 2853864.0,
         "pct": 10.0118,
         "rank_chg": 0.0,
         "concepts": [
@@ -10987,10 +10958,23 @@
         "popularity_tag": "3天2板"
       },
       {
+        "rank": 15,
+        "code": "601398",
+        "name": "工商银行",
+        "heat": 2848522.0,
+        "pct": -2.6596,
+        "rank_chg": 0.0,
+        "concepts": [
+          "证金持股",
+          "同花顺中特估100"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 16,
         "code": "300394",
         "name": "天孚通信",
-        "heat": 2435495.0,
+        "heat": 2531461.0,
         "pct": 13.8188,
         "rank_chg": 0.0,
         "concepts": [
@@ -11003,7 +10987,7 @@
         "rank": 17,
         "code": "688825",
         "name": "长鑫科技",
-        "heat": 2355247.0,
+        "heat": 2365680.0,
         "pct": 2.1047,
         "rank_chg": 0.0,
         "concepts": [
@@ -11016,7 +11000,7 @@
         "rank": 18,
         "code": "300413",
         "name": "芒果超媒",
-        "heat": 2213904.0,
+        "heat": 2189469.0,
         "pct": 15.2118,
         "rank_chg": 0.0,
         "concepts": [
@@ -11029,7 +11013,7 @@
         "rank": 19,
         "code": "000823",
         "name": "超声电子",
-        "heat": 2200771.0,
+        "heat": 2134775.0,
         "pct": 7.4554,
         "rank_chg": 0.0,
         "concepts": [
@@ -11042,7 +11026,7 @@
         "rank": 20,
         "code": "301313",
         "name": "凡拓数创",
-        "heat": 2068134.0,
+        "heat": 2130191.0,
         "pct": 19.9966,
         "rank_chg": 0.0,
         "concepts": [
@@ -11055,7 +11039,7 @@
         "rank": 21,
         "code": "600206",
         "name": "有研新材",
-        "heat": 1778266.0,
+        "heat": 1819445.0,
         "pct": 5.7082,
         "rank_chg": 0.0,
         "concepts": [
@@ -11066,22 +11050,9 @@
       },
       {
         "rank": 22,
-        "code": "603366",
-        "name": "日出东方",
-        "heat": 1652068.0,
-        "pct": 7.8579,
-        "rank_chg": 0.0,
-        "concepts": [
-          "建筑节能",
-          "PPP概念"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 23,
         "code": "603324",
         "name": "盛剑科技",
-        "heat": 1629029.0,
+        "heat": 1687718.0,
         "pct": 9.9964,
         "rank_chg": 0.0,
         "concepts": [
@@ -11091,10 +11062,23 @@
         "popularity_tag": "5天5板"
       },
       {
+        "rank": 23,
+        "code": "603366",
+        "name": "日出东方",
+        "heat": 1660366.0,
+        "pct": 7.8579,
+        "rank_chg": 0.0,
+        "concepts": [
+          "建筑节能",
+          "PPP概念"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 24,
         "code": "601188",
         "name": "龙江交通",
-        "heat": 1616889.0,
+        "heat": 1623555.0,
         "pct": 10.0239,
         "rank_chg": 0.0,
         "concepts": [
@@ -11107,7 +11091,7 @@
         "rank": 25,
         "code": "301052",
         "name": "果麦文化",
-        "heat": 1451134.0,
+        "heat": 1449391.0,
         "pct": 20.0,
         "rank_chg": 0.0,
         "concepts": [
@@ -11118,22 +11102,9 @@
       },
       {
         "rank": 26,
-        "code": "000158",
-        "name": "常山北明",
-        "heat": 1437738.0,
-        "pct": -1.2574,
-        "rank_chg": 0.0,
-        "concepts": [
-          "算力租赁",
-          "ERP概念"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 27,
         "code": "600327",
         "name": "大东方",
-        "heat": 1427598.0,
+        "heat": 1436140.0,
         "pct": 9.9379,
         "rank_chg": 0.0,
         "concepts": [
@@ -11143,10 +11114,10 @@
         "popularity_tag": "12天7板"
       },
       {
-        "rank": 28,
+        "rank": 27,
         "code": "603986",
         "name": "兆易创新",
-        "heat": 1411581.0,
+        "heat": 1418480.0,
         "pct": 4.2403,
         "rank_chg": 0.0,
         "concepts": [
@@ -11156,23 +11127,23 @@
         "popularity_tag": null
       },
       {
-        "rank": 29,
-        "code": "603466",
-        "name": "风语筑",
-        "heat": 1369334.0,
-        "pct": 8.3217,
+        "rank": 28,
+        "code": "000158",
+        "name": "常山北明",
+        "heat": 1379017.0,
+        "pct": -1.2574,
         "rank_chg": 0.0,
         "concepts": [
-          "AI视频",
-          "文化传媒概念"
+          "算力租赁",
+          "ERP概念"
         ],
-        "popularity_tag": "2天1板"
+        "popularity_tag": null
       },
       {
-        "rank": 30,
+        "rank": 29,
         "code": "600467",
         "name": "好当家",
-        "heat": 1362597.0,
+        "heat": 1379006.0,
         "pct": 10.1399,
         "rank_chg": 0.0,
         "concepts": [
@@ -11182,36 +11153,23 @@
         "popularity_tag": "8天5板"
       },
       {
+        "rank": 30,
+        "code": "603466",
+        "name": "风语筑",
+        "heat": 1321040.0,
+        "pct": 8.3217,
+        "rank_chg": 0.0,
+        "concepts": [
+          "AI视频",
+          "文化传媒概念"
+        ],
+        "popularity_tag": "2天1板"
+      },
+      {
         "rank": 31,
-        "code": "600261",
-        "name": "阳光照明",
-        "heat": 1292537.0,
-        "pct": 6.0096,
-        "rank_chg": 1.0,
-        "concepts": [
-          "跨境电商",
-          "氢能源"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 32,
-        "code": "002185",
-        "name": "华天科技",
-        "heat": 1290460.0,
-        "pct": -0.0725,
-        "rank_chg": -1.0,
-        "concepts": [
-          "国家大基金持股",
-          "存储芯片"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 33,
         "code": "002463",
         "name": "沪电股份",
-        "heat": 1286875.0,
+        "heat": 1309248.0,
         "pct": 2.9631,
         "rank_chg": 0.0,
         "concepts": [
@@ -11221,10 +11179,49 @@
         "popularity_tag": null
       },
       {
+        "rank": 32,
+        "code": "600103",
+        "name": "青山纸业",
+        "heat": 1276954.0,
+        "pct": 9.9688,
+        "rank_chg": 0.0,
+        "concepts": [
+          "共封装光学(CPO)",
+          "海峡两岸"
+        ],
+        "popularity_tag": "首板涨停"
+      },
+      {
+        "rank": 33,
+        "code": "002185",
+        "name": "华天科技",
+        "heat": 1271732.0,
+        "pct": -0.0725,
+        "rank_chg": 0.0,
+        "concepts": [
+          "国家大基金持股",
+          "存储芯片"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 34,
+        "code": "600261",
+        "name": "阳光照明",
+        "heat": 1256168.0,
+        "pct": 6.0096,
+        "rank_chg": 0.0,
+        "concepts": [
+          "跨境电商",
+          "氢能源"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 35,
         "code": "688981",
         "name": "中芯国际",
-        "heat": 1278908.0,
+        "heat": 1233432.0,
         "pct": -3.0767,
         "rank_chg": 0.0,
         "concepts": [
@@ -11234,10 +11231,23 @@
         "popularity_tag": null
       },
       {
-        "rank": 35,
+        "rank": 36,
+        "code": "605488",
+        "name": "福莱新材",
+        "heat": 1226197.0,
+        "pct": 9.9953,
+        "rank_chg": 0.0,
+        "concepts": [
+          "人形机器人",
+          "苹果概念"
+        ],
+        "popularity_tag": "首板涨停"
+      },
+      {
+        "rank": 37,
         "code": "300085",
         "name": "银之杰",
-        "heat": 1268292.0,
+        "heat": 1219688.0,
         "pct": 6.5185,
         "rank_chg": 0.0,
         "concepts": [
@@ -11247,38 +11257,12 @@
         "popularity_tag": null
       },
       {
-        "rank": 36,
-        "code": "600103",
-        "name": "青山纸业",
-        "heat": 1211142.0,
-        "pct": 9.9688,
-        "rank_chg": 1.0,
-        "concepts": [
-          "共封装光学(CPO)",
-          "海峡两岸"
-        ],
-        "popularity_tag": "首板涨停"
-      },
-      {
-        "rank": 37,
-        "code": "601899",
-        "name": "紫金矿业",
-        "heat": 1205235.0,
-        "pct": 2.2335,
-        "rank_chg": -1.0,
-        "concepts": [
-          "金属铅",
-          "黄金概念"
-        ],
-        "popularity_tag": null
-      },
-      {
         "rank": 38,
         "code": "605577",
         "name": "龙版传媒",
-        "heat": 1198026.0,
+        "heat": 1204545.0,
         "pct": 10.0062,
-        "rank_chg": 2.0,
+        "rank_chg": 0.0,
         "concepts": [
           "AI视频",
           "文化传媒概念"
@@ -11287,9 +11271,61 @@
       },
       {
         "rank": 39,
+        "code": "601138",
+        "name": "工业富联",
+        "heat": 1182808.0,
+        "pct": 3.0132,
+        "rank_chg": 1.0,
+        "concepts": [
+          "共封装光学(CPO)",
+          "同花顺果指数"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 40,
+        "code": "603893",
+        "name": "瑞芯微",
+        "heat": 1181990.0,
+        "pct": 9.9978,
+        "rank_chg": -1.0,
+        "concepts": [
+          "智能音箱",
+          "AI眼镜"
+        ],
+        "popularity_tag": "首板涨停"
+      },
+      {
+        "rank": 41,
+        "code": "002156",
+        "name": "通富微电",
+        "heat": 1171556.0,
+        "pct": 1.2352,
+        "rank_chg": 0.0,
+        "concepts": [
+          "国家大基金持股",
+          "存储芯片"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 42,
+        "code": "601899",
+        "name": "紫金矿业",
+        "heat": 1166946.0,
+        "pct": 2.2335,
+        "rank_chg": 0.0,
+        "concepts": [
+          "金属铅",
+          "黄金概念"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 43,
         "code": "600519",
         "name": "贵州茅台",
-        "heat": 1193530.0,
+        "heat": 1162945.0,
         "pct": -3.1466,
         "rank_chg": 0.0,
         "concepts": [
@@ -11299,127 +11335,10 @@
         "popularity_tag": null
       },
       {
-        "rank": 40,
-        "code": "002156",
-        "name": "通富微电",
-        "heat": 1190845.0,
-        "pct": 1.2352,
-        "rank_chg": -2.0,
-        "concepts": [
-          "国家大基金持股",
-          "存储芯片"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 41,
-        "code": "300750",
-        "name": "宁德时代",
-        "heat": 1151119.0,
-        "pct": -0.1712,
-        "rank_chg": 1.0,
-        "concepts": [
-          "同花顺漂亮100",
-          "钠离子电池"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 42,
-        "code": "603893",
-        "name": "瑞芯微",
-        "heat": 1150504.0,
-        "pct": 9.9978,
-        "rank_chg": 1.0,
-        "concepts": [
-          "智能音箱",
-          "AI眼镜"
-        ],
-        "popularity_tag": "首板涨停"
-      },
-      {
-        "rank": 43,
-        "code": "605488",
-        "name": "福莱新材",
-        "heat": 1150209.0,
-        "pct": 9.9953,
-        "rank_chg": 1.0,
-        "concepts": [
-          "人形机器人",
-          "苹果概念"
-        ],
-        "popularity_tag": "首板涨停"
-      },
-      {
         "rank": 44,
-        "code": "300058",
-        "name": "蓝色光标",
-        "heat": 1148867.0,
-        "pct": 5.0879,
-        "rank_chg": -3.0,
-        "concepts": [
-          "快手概念",
-          "小红书概念"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 45,
-        "code": "600584",
-        "name": "长电科技",
-        "heat": 1132299.0,
-        "pct": 0.2191,
-        "rank_chg": 0.0,
-        "concepts": [
-          "国家大基金持股",
-          "存储芯片"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 46,
-        "code": "600825",
-        "name": "新华传媒",
-        "heat": 1104362.0,
-        "pct": 6.1151,
-        "rank_chg": 0.0,
-        "concepts": [
-          "AI语料",
-          "无人零售"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 47,
-        "code": "601138",
-        "name": "工业富联",
-        "heat": 1102448.0,
-        "pct": 3.0132,
-        "rank_chg": 0.0,
-        "concepts": [
-          "共封装光学(CPO)",
-          "同花顺果指数"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 48,
-        "code": "600487",
-        "name": "亨通光电",
-        "heat": 1086073.0,
-        "pct": 2.7492,
-        "rank_chg": 0.0,
-        "concepts": [
-          "光纤概念",
-          "共封装光学(CPO)"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 49,
         "code": "000636",
         "name": "风华高科",
-        "heat": 1055125.0,
+        "heat": 1153429.0,
         "pct": 10.019,
         "rank_chg": 0.0,
         "concepts": [
@@ -11429,17 +11348,82 @@
         "popularity_tag": "首板涨停"
       },
       {
-        "rank": 50,
-        "code": "301660",
-        "name": "粤芯半导体",
-        "heat": 1031567.0,
-        "pct": 4.541,
+        "rank": 45,
+        "code": "300750",
+        "name": "宁德时代",
+        "heat": 1132035.0,
+        "pct": -0.1712,
         "rank_chg": 0.0,
         "concepts": [
-          "注册制次新股",
-          "汽车芯片"
+          "同花顺漂亮100",
+          "钠离子电池"
         ],
         "popularity_tag": null
+      },
+      {
+        "rank": 46,
+        "code": "300058",
+        "name": "蓝色光标",
+        "heat": 1131672.0,
+        "pct": 5.0879,
+        "rank_chg": 0.0,
+        "concepts": [
+          "快手概念",
+          "小红书概念"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 47,
+        "code": "600584",
+        "name": "长电科技",
+        "heat": 1121944.0,
+        "pct": 0.2191,
+        "rank_chg": 0.0,
+        "concepts": [
+          "国家大基金持股",
+          "存储芯片"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 48,
+        "code": "600825",
+        "name": "新华传媒",
+        "heat": 1098476.0,
+        "pct": 6.1151,
+        "rank_chg": 0.0,
+        "concepts": [
+          "AI语料",
+          "无人零售"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 49,
+        "code": "600487",
+        "name": "亨通光电",
+        "heat": 1083538.0,
+        "pct": 2.7492,
+        "rank_chg": 0.0,
+        "concepts": [
+          "光纤概念",
+          "共封装光学(CPO)"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 50,
+        "code": "300006",
+        "name": "莱美药业",
+        "heat": 1035590.0,
+        "pct": 20.0549,
+        "rank_chg": 0.0,
+        "concepts": [
+          "知识产权保护",
+          "细胞免疫治疗"
+        ],
+        "popularity_tag": "首板涨停"
       }
     ],
     "eastmoney": [
@@ -11449,7 +11433,7 @@
         "name": "宇树科技-W",
         "price": 708.0,
         "pct": 20.0,
-        "rank_chg": 149.0
+        "rank_chg": 0.0
       },
       {
         "rank": 2,
@@ -11457,23 +11441,23 @@
         "name": "九阳股份",
         "price": 31.86,
         "pct": 10.01,
-        "rank_chg": 24.0
+        "rank_chg": 0.0
       },
       {
         "rank": 3,
+        "code": "300502",
+        "name": "新易盛",
+        "price": 181.36,
+        "pct": 9.92,
+        "rank_chg": 3.0
+      },
+      {
+        "rank": 4,
         "code": "002579",
         "name": "中京电子",
         "price": 14.73,
         "pct": 10.01,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 4,
-        "code": "000530",
-        "name": "冰山冷热",
-        "price": 13.52,
-        "pct": 10.01,
-        "rank_chg": -2.0
+        "rank_chg": -1.0
       },
       {
         "rank": 5,
@@ -11481,23 +11465,23 @@
         "name": "北纬科技",
         "price": 11.07,
         "pct": 10.04,
-        "rank_chg": -2.0
+        "rank_chg": 0.0
       },
       {
         "rank": 6,
-        "code": "300502",
-        "name": "新易盛",
-        "price": 181.36,
-        "pct": 9.92,
-        "rank_chg": 33.0
+        "code": "000530",
+        "name": "冰山冷热",
+        "price": 13.52,
+        "pct": 10.01,
+        "rank_chg": -2.0
       },
       {
         "rank": 7,
-        "code": "002086",
-        "name": "东方海洋",
-        "price": 4.13,
-        "pct": 10.13,
-        "rank_chg": -1.0
+        "code": "300308",
+        "name": "中际旭创",
+        "price": 417.2,
+        "pct": 6.1,
+        "rank_chg": 0.0
       },
       {
         "rank": 8,
@@ -11505,14 +11489,14 @@
         "name": "真视通",
         "price": 17.4,
         "pct": 9.99,
-        "rank_chg": -1.0
+        "rank_chg": 0.0
       },
       {
         "rank": 9,
-        "code": "600410",
-        "name": "华胜天成",
-        "price": 16.65,
-        "pct": -3.87,
+        "code": "002086",
+        "name": "东方海洋",
+        "price": 4.13,
+        "pct": 10.13,
         "rank_chg": 0.0
       },
       {
@@ -11521,7 +11505,7 @@
         "name": "华东重机",
         "price": 8.14,
         "pct": 10.0,
-        "rank_chg": 12.0
+        "rank_chg": 1.0
       },
       {
         "rank": 11,
@@ -11529,319 +11513,319 @@
         "name": "襄阳轴承",
         "price": 18.68,
         "pct": 10.01,
-        "rank_chg": 36.0
+        "rank_chg": 1.0
       },
       {
         "rank": 12,
-        "code": "300308",
-        "name": "中际旭创",
-        "price": 417.2,
-        "pct": 6.1,
-        "rank_chg": 6.0
+        "code": "600410",
+        "name": "华胜天成",
+        "price": 16.65,
+        "pct": -3.87,
+        "rank_chg": -2.0
       },
       {
         "rank": 13,
-        "code": "000823",
-        "name": "超声电子",
-        "price": 19.89,
-        "pct": 7.46,
-        "rank_chg": -8.0
-      },
-      {
-        "rank": 14,
-        "code": "301313",
-        "name": "凡拓数创",
-        "price": 70.99,
-        "pct": 20.0,
-        "rank_chg": 22.0
-      },
-      {
-        "rank": 15,
-        "code": "600715",
-        "name": "文投控股",
-        "price": 2.85,
-        "pct": 4.01,
-        "rank_chg": 12.0
-      },
-      {
-        "rank": 16,
-        "code": "600467",
-        "name": "好当家",
-        "price": 3.15,
-        "pct": 10.14,
-        "rank_chg": -12.0
-      },
-      {
-        "rank": 17,
-        "code": "600103",
-        "name": "青山纸业",
-        "price": 3.53,
-        "pct": 9.97,
-        "rank_chg": 89.0
-      },
-      {
-        "rank": 18,
         "code": "300394",
         "name": "天孚通信",
         "price": 116.3,
         "pct": 13.82,
-        "rank_chg": 31.0
+        "rank_chg": 3.0
       },
       {
-        "rank": 19,
-        "code": "601188",
-        "name": "龙江交通",
-        "price": 4.61,
-        "pct": 10.02,
-        "rank_chg": 40.0
-      },
-      {
-        "rank": 20,
+        "rank": 14,
         "code": "603324",
         "name": "盛剑科技",
         "price": 30.48,
         "pct": 10.0,
-        "rank_chg": -6.0
+        "rank_chg": -1.0
       },
       {
-        "rank": 21,
-        "code": "300413",
-        "name": "芒果超媒",
-        "price": 31.28,
-        "pct": 15.21,
-        "rank_chg": 61.0
-      },
-      {
-        "rank": 22,
+        "rank": 15,
         "code": "000636",
         "name": "风华高科",
         "price": 28.99,
         "pct": 10.02,
-        "rank_chg": 354.0
+        "rank_chg": 0.0
       },
       {
-        "rank": 23,
-        "code": "002384",
-        "name": "东山精密",
-        "price": 71.47,
-        "pct": 5.72,
-        "rank_chg": 14.0
+        "rank": 16,
+        "code": "600103",
+        "name": "青山纸业",
+        "price": 3.53,
+        "pct": 9.97,
+        "rank_chg": -2.0
       },
       {
-        "rank": 24,
-        "code": "600327",
-        "name": "大东方",
-        "price": 5.31,
-        "pct": 9.94,
-        "rank_chg": -5.0
-      },
-      {
-        "rank": 25,
-        "code": "002747",
-        "name": "埃斯顿",
-        "price": 26.68,
-        "pct": 10.02,
-        "rank_chg": 341.0
-      },
-      {
-        "rank": 26,
-        "code": "002584",
-        "name": "西陇科学",
-        "price": 8.5,
-        "pct": 9.96,
-        "rank_chg": 90.0
-      },
-      {
-        "rank": 27,
-        "code": "605488",
-        "name": "福莱新材",
-        "price": 46.77,
-        "pct": 10.0,
-        "rank_chg": 54.0
-      },
-      {
-        "rank": 28,
-        "code": "002343",
-        "name": "慈文传媒",
-        "price": 7.37,
-        "pct": 10.0,
-        "rank_chg": 145.0
-      },
-      {
-        "rank": 29,
-        "code": "301052",
-        "name": "果麦文化",
-        "price": 44.16,
-        "pct": 20.0,
-        "rank_chg": 44.0
-      },
-      {
-        "rank": 30,
-        "code": "601398",
-        "name": "工商银行",
-        "price": 9.15,
-        "pct": -2.66,
-        "rank_chg": 5.0
-      },
-      {
-        "rank": 31,
-        "code": "000711",
-        "name": "京蓝科技",
-        "price": 4.25,
-        "pct": 10.1,
-        "rank_chg": 10.0
-      },
-      {
-        "rank": 32,
-        "code": "603893",
-        "name": "瑞芯微",
-        "price": 202.88,
-        "pct": 10.0,
-        "rank_chg": 159.0
-      },
-      {
-        "rank": 33,
-        "code": "002642",
-        "name": "荣联科技",
-        "price": 7.99,
-        "pct": 10.06,
-        "rank_chg": -23.0
-      },
-      {
-        "rank": 34,
-        "code": "688825",
-        "name": "长鑫科技",
-        "price": 35.9,
-        "pct": 2.1,
-        "rank_chg": 14.0
-      },
-      {
-        "rank": 35,
-        "code": "605577",
-        "name": "龙版传媒",
-        "price": 17.81,
-        "pct": 10.01,
-        "rank_chg": -15.0
-      },
-      {
-        "rank": 36,
-        "code": "603466",
-        "name": "风语筑",
-        "price": 15.49,
-        "pct": 8.32,
-        "rank_chg": -19.0
-      },
-      {
-        "rank": 37,
-        "code": "300059",
-        "name": "东方财富",
-        "price": 18.62,
-        "pct": 1.14,
-        "rank_chg": -24.0
-      },
-      {
-        "rank": 38,
-        "code": "601689",
-        "name": "拓普集团",
-        "price": 52.92,
-        "pct": 10.0,
-        "rank_chg": 324.0
-      },
-      {
-        "rank": 39,
-        "code": "002708",
-        "name": "光洋股份",
-        "price": 20.99,
-        "pct": 10.01,
-        "rank_chg": 234.0
-      },
-      {
-        "rank": 40,
-        "code": "002172",
-        "name": "澳洋健康",
-        "price": 5.13,
-        "pct": 10.09,
-        "rank_chg": 148.0
-      },
-      {
-        "rank": 41,
+        "rank": 17,
         "code": "603960",
         "name": "克来机电",
         "price": 15.37,
         "pct": 10.02,
-        "rank_chg": -10.0
+        "rank_chg": 4.0
       },
       {
-        "rank": 42,
-        "code": "688585",
-        "name": "上纬新材",
-        "price": 178.99,
+        "rank": 18,
+        "code": "600467",
+        "name": "好当家",
+        "price": 3.15,
+        "pct": 10.14,
+        "rank_chg": -1.0
+      },
+      {
+        "rank": 19,
+        "code": "002642",
+        "name": "荣联科技",
+        "price": 7.99,
+        "pct": 10.06,
+        "rank_chg": 5.0
+      },
+      {
+        "rank": 20,
+        "code": "002747",
+        "name": "埃斯顿",
+        "price": 26.68,
+        "pct": 10.02,
+        "rank_chg": -1.0
+      },
+      {
+        "rank": 21,
+        "code": "601689",
+        "name": "拓普集团",
+        "price": 52.92,
+        "pct": 10.0,
+        "rank_chg": 1.0
+      },
+      {
+        "rank": 22,
+        "code": "301313",
+        "name": "凡拓数创",
+        "price": 70.99,
         "pct": 20.0,
-        "rank_chg": 703.0
+        "rank_chg": -4.0
       },
       {
-        "rank": 43,
-        "code": "300006",
-        "name": "莱美药业",
-        "price": 8.74,
-        "pct": 20.05,
-        "rank_chg": 132.0
+        "rank": 23,
+        "code": "002584",
+        "name": "西陇科学",
+        "price": 8.5,
+        "pct": 9.96,
+        "rank_chg": -3.0
       },
       {
-        "rank": 44,
+        "rank": 24,
+        "code": "002384",
+        "name": "东山精密",
+        "price": 71.47,
+        "pct": 5.72,
+        "rank_chg": 1.0
+      },
+      {
+        "rank": 25,
+        "code": "601188",
+        "name": "龙江交通",
+        "price": 4.61,
+        "pct": 10.02,
+        "rank_chg": -2.0
+      },
+      {
+        "rank": 26,
+        "code": "605577",
+        "name": "龙版传媒",
+        "price": 17.81,
+        "pct": 10.01,
+        "rank_chg": 2.0
+      },
+      {
+        "rank": 27,
+        "code": "000711",
+        "name": "京蓝科技",
+        "price": 4.25,
+        "pct": 10.1,
+        "rank_chg": 2.0
+      },
+      {
+        "rank": 28,
+        "code": "002122",
+        "name": "汇洲智能",
+        "price": 2.96,
+        "pct": 10.04,
+        "rank_chg": 14.0
+      },
+      {
+        "rank": 29,
+        "code": "600327",
+        "name": "大东方",
+        "price": 5.31,
+        "pct": 9.94,
+        "rank_chg": -2.0
+      },
+      {
+        "rank": 30,
+        "code": "605018",
+        "name": "长华集团",
+        "price": 11.29,
+        "pct": 10.04,
+        "rank_chg": 11.0
+      },
+      {
+        "rank": 31,
         "code": "002815",
         "name": "崇达技术",
         "price": 14.96,
         "pct": 10.0,
-        "rank_chg": 87.0
+        "rank_chg": 6.0
       },
       {
-        "rank": 45,
+        "rank": 32,
+        "code": "002548",
+        "name": "金新农",
+        "price": 4.14,
+        "pct": 10.11,
+        "rank_chg": 4.0
+      },
+      {
+        "rank": 33,
+        "code": "605488",
+        "name": "福莱新材",
+        "price": 46.77,
+        "pct": 10.0,
+        "rank_chg": -2.0
+      },
+      {
+        "rank": 34,
         "code": "600519",
         "name": "贵州茅台",
         "price": 1439.0,
         "pct": -3.15,
-        "rank_chg": -30.0
+        "rank_chg": 4.0
       },
       {
-        "rank": 46,
-        "code": "603366",
-        "name": "日出东方",
-        "price": 10.02,
-        "pct": 7.86,
-        "rank_chg": 18.0
-      },
-      {
-        "rank": 47,
+        "rank": 35,
         "code": "300007",
         "name": "汉威科技",
         "price": 36.1,
         "pct": 20.01,
-        "rank_chg": 1003.0
+        "rank_chg": -3.0
       },
       {
-        "rank": 48,
+        "rank": 36,
+        "code": "000823",
+        "name": "超声电子",
+        "price": 19.89,
+        "pct": 7.46,
+        "rank_chg": -10.0
+      },
+      {
+        "rank": 37,
+        "code": "002708",
+        "name": "光洋股份",
+        "price": 20.99,
+        "pct": 10.01,
+        "rank_chg": 6.0
+      },
+      {
+        "rank": 38,
+        "code": "601138",
+        "name": "工业富联",
+        "price": 38.29,
+        "pct": 3.01,
+        "rank_chg": 39.0
+      },
+      {
+        "rank": 39,
+        "code": "300059",
+        "name": "东方财富",
+        "price": 18.62,
+        "pct": 1.14,
+        "rank_chg": 1.0
+      },
+      {
+        "rank": 40,
+        "code": "600156",
+        "name": "华升股份",
+        "price": 8.82,
+        "pct": 9.98,
+        "rank_chg": 6.0
+      },
+      {
+        "rank": 41,
+        "code": "603893",
+        "name": "瑞芯微",
+        "price": 202.88,
+        "pct": 10.0,
+        "rank_chg": -2.0
+      },
+      {
+        "rank": 42,
+        "code": "002036",
+        "name": "联创电子",
+        "price": 4.87,
+        "pct": 9.93,
+        "rank_chg": 18.0
+      },
+      {
+        "rank": 43,
         "code": "002164",
         "name": "宁波东力",
         "price": 17.94,
         "pct": 9.99,
-        "rank_chg": 344.0
+        "rank_chg": 4.0
+      },
+      {
+        "rank": 44,
+        "code": "603004",
+        "name": "鼎龙科技",
+        "price": 20.04,
+        "pct": 9.99,
+        "rank_chg": 8.0
+      },
+      {
+        "rank": 45,
+        "code": "002414",
+        "name": "高德红外",
+        "price": 10.41,
+        "pct": 10.04,
+        "rank_chg": 5.0
+      },
+      {
+        "rank": 46,
+        "code": "603236",
+        "name": "移远通信",
+        "price": 81.25,
+        "pct": 10.01,
+        "rank_chg": 9.0
+      },
+      {
+        "rank": 47,
+        "code": "000559",
+        "name": "万向钱潮",
+        "price": 10.53,
+        "pct": 10.03,
+        "rank_chg": 1.0
+      },
+      {
+        "rank": 48,
+        "code": "002172",
+        "name": "澳洋健康",
+        "price": 5.13,
+        "pct": 10.09,
+        "rank_chg": -3.0
       },
       {
         "rank": 49,
-        "code": "601595",
-        "name": "上海电影",
-        "price": 32.52,
-        "pct": 10.01,
-        "rank_chg": 374.0
+        "code": "002343",
+        "name": "慈文传媒",
+        "price": 7.37,
+        "pct": 10.0,
+        "rank_chg": -15.0
       },
       {
         "rank": 50,
-        "code": "603533",
-        "name": "掌阅科技",
-        "price": 24.94,
-        "pct": 10.01,
-        "rank_chg": 169.0
+        "code": "301052",
+        "name": "果麦文化",
+        "price": 44.16,
+        "pct": 20.0,
+        "rank_chg": -15.0
       }
     ]
   },
@@ -12191,335 +12175,335 @@
     "cls": [
       {
         "source": "财联社",
-        "time": "2026-11-23 19:21",
-        "title": "摩根士丹利将Jefferies评级下调至低配 目标价降至45美元",
-        "url": "https://api3.cls.cn/share/article/2542060?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 03:32",
+        "title": "财联社11月24日电，WTI原油期货结算价为每桶80.17美元，跌幅3.88%。",
+        "url": "https://api3.cls.cn/share/article/2542365?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:21",
-        "title": "上海多区发布寒潮蓝色预警",
-        "url": "https://api3.cls.cn/share/article/2542059?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 03:12",
+        "title": "财联社11月24日电，在岸人民币兑美元（CNY）北京时间03:00收报6.6667元，较上周五夜盘收盘涨47点。成交量594.77亿美元。\n",
+        "url": "https://api3.cls.cn/share/article/2542364?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:21",
-        "title": "香港暂停进口加拿大、英国、美国和日本部分地区禽肉及禽类产品",
-        "url": "https://api3.cls.cn/share/article/2542058?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 03:10",
+        "title": "财联社11月24日电，迪士尼、ESPN与美国职业橄榄球大联盟将把第61届超级碗引入IMAX影院。",
+        "url": "https://api3.cls.cn/share/article/2542363?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:20",
-        "title": "布伦特原油期货跌破91美元/桶",
-        "url": "https://api3.cls.cn/share/article/2542057?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 03:07",
+        "title": "苹果准备在假日季推出红色HomePod mini和AirPods Max",
+        "url": "https://api3.cls.cn/share/article/2542362?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:18",
-        "title": "美国银行预计2027年欧元区GDP增长0.8%",
-        "url": "https://api3.cls.cn/share/article/2542043?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 03:01",
+        "title": "财联社11月24日电，恒生指数主连夜盘收涨0.7%，报22527点；恒生科技指数主连夜盘收涨1.85%，报3573点。",
+        "url": "https://api3.cls.cn/share/article/2542361?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:17",
-        "title": "财联社11月23日电，美银全球研究预计英国2027年GDP增速为1.5%。",
-        "url": "https://api3.cls.cn/share/article/2542042?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:50",
+        "title": "英伟达强势反弹凸显投资者两难 减持巨头虽能抗跌却可能错失反弹",
+        "url": "https://api3.cls.cn/share/article/2542360?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:14",
-        "title": "财联社11月23日电，花旗集团将Salesforce公司目标价从263美元下调至198美元。",
-        "url": "https://api3.cls.cn/share/article/2542038?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:47",
+        "title": "财联社11月24日电，Kalshi表示，因联邦法院作出不利终审判决，将暂停在犹他州的运营。",
+        "url": "https://api3.cls.cn/share/article/2542359?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:14",
-        "title": "美国对进口自中国的三（羟甲基）氨基甲烷作出反倾销初裁",
-        "url": "https://api3.cls.cn/share/article/2542037?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:44",
+        "title": "财联社11月24日电，英伟达员工视频显示，黄仁勋返回公司总部。黄仁勋表示感谢员工给予“第二次机会”，他会成为更优秀的CEO。",
+        "url": "https://api3.cls.cn/share/article/2542358?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:10",
-        "title": "十七次中欧财金对话举行 围绕宏观经济形势和政策、中欧在二十国集团（G20）框架下的多边合作等议题进行深入讨论",
-        "url": "https://api3.cls.cn/share/article/2542033?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:41",
+        "title": "财联社11月24日电，国际铜业研究组织（ICSG）数据显示，2026年9月全球精炼铜市场短缺3万吨。",
+        "url": "https://api3.cls.cn/share/article/2542357?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，纳指ETF国泰(513100)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542032?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:38",
+        "title": "财联社11月24日电，摩根士丹利预计2027年证券化信贷市场将迎来尾部风险。",
+        "url": "https://api3.cls.cn/share/article/2542356?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，美国50ETF易方达(513850)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542024?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:34",
+        "title": "财联社11月24日电，乐高计划在葡萄牙投资约10亿欧元建设其在欧洲的第四座工厂，预计于2030年投产。",
+        "url": "https://api3.cls.cn/share/article/2542355?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，纳指100ETF博时(513390)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542021?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:26",
+        "title": "亚马逊拟斥资约75亿美元收购Decart 加码Trainium芯片挑战英伟达",
+        "url": "https://api3.cls.cn/share/article/2542352?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，纳斯达克ETF华夏(513300)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542018?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:22",
+        "title": "财联社11月24日电，法拉利首席执行官表示，必须要在F1赛事中保持竞争力。\n\n",
+        "url": "https://api3.cls.cn/share/article/2542351?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，纳指ETF富国(513870)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542017?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:08",
+        "title": "财联社11月24日电，Anthropic正在发布新的安全系统，使企业客户在使用其AI模型时能够保持对自身数据的控制。",
+        "url": "https://api3.cls.cn/share/article/2542350?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "【电报解读】SK海力士计划采购混合键合设备，服务未来HBM内存生产需求，机构看好混合键合技术是后摩尔时代突破算力瓶颈的关键使能技术，这家公司相关产品交付量实现了快速增长",
-        "url": "https://api3.cls.cn/share/article/2542019?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:05",
+        "title": "财联社11月24日电，美国两年期国债中标收益率为4.700%，发行前预发行收益率为4.703%。",
+        "url": "https://api3.cls.cn/share/article/2542349?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，标普500ETF博时(513500)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542027?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 02:04",
+        "title": "研究人员正利用Meta的开放权重AI模型推动医学变革",
+        "url": "https://api3.cls.cn/share/article/2542348?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:09",
-        "title": "财联社11月23日电，全球芯片LOF(501225)将于2026年11月24日开市起至当日10:30停牌。",
-        "url": "https://api3.cls.cn/share/article/2542029?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:54",
+        "title": "财联社11月24日电，据报道，英伟达董事会恢复黄仁勋职务未事先征询公司高级管理层意见。",
+        "url": "https://api3.cls.cn/share/article/2542347?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:08",
-        "title": "广田集团：股票收盘价首次低于1元 存在终止上市风险",
-        "url": "https://api3.cls.cn/share/article/2542031?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:51",
+        "title": "财联社11月24日电，英伟达股价涨幅收窄至30%。",
+        "url": "https://api3.cls.cn/share/article/2542346?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:08",
-        "title": "科源制药：子公司获二羟基吲哚染发新原料注册证",
-        "url": "https://api3.cls.cn/share/article/2542028?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:50",
+        "title": "财联社11月24日电，亚马逊为中小企业和个体经营者打造首个“黑色星期五”，推出特别优惠计划及人工智能工具。",
+        "url": "https://api3.cls.cn/share/article/2542345?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:07",
-        "title": "财联社11月23日电，美股恐慌指数VIX回落至30以下，上周五一度升至40。",
-        "url": "https://api3.cls.cn/share/article/2542026?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:47",
+        "title": "伊朗称击毁一架美制“卢卡斯”无人机",
+        "url": "https://api3.cls.cn/share/article/2542344?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:06",
-        "title": "财联社11月23日电，德国10月粗钢产量同比下降9.6%。",
-        "url": "https://api3.cls.cn/share/article/2542023?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:11",
+        "title": "财联社11月24日电，交易公司ODDO表示，伦敦金属交易所应介入此次历史性的铝市逼空。",
+        "url": "https://api3.cls.cn/share/article/2542343?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:06",
-        "title": "圣邦股份：拟将所持钰泰半导体25.0171%股份转让给艾为电子",
-        "url": "https://api3.cls.cn/share/article/2542022?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:08",
+        "title": "财联社11月24日电，美国参议员Scott表示，黄仁勋公开听证会将于12月3日举行。",
+        "url": "https://api3.cls.cn/share/article/2542342?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:06",
-        "title": "光大同创：拟5亿元投建高速硅光模块智能制造基地项目 生产400G/800G硅光模块",
-        "url": "https://api3.cls.cn/share/article/2542020?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 01:01",
+        "title": "夜盘期货收盘：沪铜收涨2.77% 沪锌收涨1.49%",
+        "url": "https://api3.cls.cn/share/article/2542340?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:05",
-        "title": "预计以色列正直党今晚将再与利库德集团进行组阁谈判",
-        "url": "https://api3.cls.cn/share/article/2542016?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:58",
+        "title": "财联社11月24日电，据报道，美国副总统万斯周末曾与黄仁勋通话，并与英伟达方面展开沟通。",
+        "url": "https://api3.cls.cn/share/article/2542339?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:04",
-        "title": "财联社11月23日电，伯恩斯坦将拼多多评级从与大市一致上调至跑赢大市。",
-        "url": "https://api3.cls.cn/share/article/2542015?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:54",
+        "title": "财联社11月24日电，纽约诉讼案令市场预测平台Kalshi面临全美停运威胁。",
+        "url": "https://api3.cls.cn/share/article/2542338?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:03",
-        "title": "财联社11月23日电，得克萨斯太平洋土地公司将以约30亿美元价值的股票交易收购EagleRock。",
-        "url": "https://api3.cls.cn/share/article/2542014?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:44",
+        "title": "财联社11月24日电，洛克希德·马丁公司向秘鲁提供Indago 4无人机用于厄尔尼诺现象应急响应。",
+        "url": "https://api3.cls.cn/share/article/2542335?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 19:02",
-        "title": "俄罗斯西伯利亚东南部发生5.0级地震",
-        "url": "https://api3.cls.cn/share/article/2542013?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:43",
+        "title": "财联社11月24日电，花旗将英伟达目标价从225美元上调至240美元，维持买入评级。",
+        "url": "https://api3.cls.cn/share/article/2542334?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 18:59",
-        "title": "摩尔线程：拟使用不超45亿元募集资金进行现金管理",
-        "url": "https://api3.cls.cn/share/article/2542012?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:40",
+        "title": "财联社11月24日电，黄仁勋将其X个人简介更新为“英伟达首席执行官”。",
+        "url": "https://api3.cls.cn/share/article/2542333?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 18:58",
-        "title": "通合科技：拟投资10.03亿元建设算力储能一体化电源装备项目",
-        "url": "https://api3.cls.cn/share/article/2542011?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:32",
+        "title": "欧洲股市集体收涨 德国DAX指数涨超2%",
+        "url": "https://api3.cls.cn/share/article/2542332?os=web&sv=7.7.5&app="
       },
       {
         "source": "财联社",
-        "time": "2026-11-23 18:57",
-        "title": "河北主流大矿炼焦煤价格下跌40-70元/吨 山西停产煤矿增至49座",
-        "url": "https://api3.cls.cn/share/article/2542010?os=web&sv=7.7.5&app="
+        "time": "2026-11-24 00:26",
+        "title": "财联社11月24日电，英国首相伯纳姆表示，未经全民公投就让英国重返欧盟是不可想象的。",
+        "url": "https://api3.cls.cn/share/article/2542330?os=web&sv=7.7.5&app="
       }
     ],
     "eastmoney": [
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:18",
-        "title": "美国银行预计2027年欧元区GDP增长0.8%"
+        "time": "2026-11-24 03:12",
+        "title": "在岸人民币兑美元（CNY）北京时间03:00收报6.6667元"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:17",
-        "title": "美银全球研究预计2027年全球经济增速为3.4%"
+        "time": "2026-11-24 03:10",
+        "title": "迪士尼、ESPN与美国职业橄榄球大联盟将把第61届超级碗引入IMAX影院"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:16",
-        "title": "广田集团：拟3000万元-6000万元回购公司股份"
+        "time": "2026-11-24 03:07",
+        "title": "苹果准备在假日季推出红色HomePod mini和AirPods Max"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:15",
-        "title": "富创精密：实控人提议回购1亿至2亿元股份"
+        "time": "2026-11-24 03:01",
+        "title": "恒生指数主连夜盘收涨0.7%"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:15",
-        "title": "奥拓电子：董事长提议1000万元—2000万元回购公司股份"
+        "time": "2026-11-24 02:50",
+        "title": "英伟达强势反弹凸显投资者两难 减持巨头虽能抗跌却可能错失反弹"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:14",
-        "title": "花旗集团将Salesforce公司目标价从263美元下调至198美元"
+        "time": "2026-11-24 02:47",
+        "title": "Kalshi表示 因联邦法院作出不利终审判决 将暂停在犹他州的运营"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:14",
-        "title": "美国对进口自中国的三（羟甲基）氨基甲烷作出反倾销初裁"
+        "time": "2026-11-24 02:44",
+        "title": "英伟达员工视频显示 黄仁勋返回公司总部"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:11",
-        "title": "南京银行：大股东江苏交控增持股份至15.09%"
+        "time": "2026-11-24 02:41",
+        "title": "国际铜业研究组织（ICSG）数据显示 2026年9月全球精炼铜市场短缺3万吨"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:10",
-        "title": "Tims天好中国第三季度总营收同比下降18%"
+        "time": "2026-11-24 02:38",
+        "title": "摩根士丹利预计2027年证券化信贷市场将迎来尾部风险"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:08",
-        "title": "广田集团：股票收盘价首次低于1元 存在终止上市风险"
+        "time": "2026-11-24 02:34",
+        "title": "乐高计划在葡萄牙投资约10亿欧元建设其在欧洲的第四座工厂 预计于2030年投产"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:08",
-        "title": "科源制药：子公司获二羟基吲哚染发新原料注册证"
+        "time": "2026-11-24 02:22",
+        "title": "法拉利首席执行官表示：必须要在F1赛事中保持竞争力"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:07",
-        "title": "美股恐慌指数VIX回落至30以下"
+        "time": "2026-11-24 02:08",
+        "title": "Anthropic正在发布新的安全系统 使企业客户在使用其AI模型时能够保持对自身数据的控制"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:07",
-        "title": "赣锋锂业：取得不超3.6亿元股票回购专项贷款承诺函"
+        "time": "2026-11-24 02:05",
+        "title": "美国两年期国债中标收益率为4.700% 发行前预发行收益率为4.703%"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:06",
-        "title": "全国数据职业教育教学指导委员会成立"
+        "time": "2026-11-24 02:04",
+        "title": "研究人员正利用Meta的开放权重AI模型推动医学变革"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:06",
-        "title": "预计以色列正直党今晚将再与利库德集团进行组阁谈判"
+        "time": "2026-11-24 01:54",
+        "title": "据报道 英伟达董事会将黄仁勋复职的决定此前未征询公司高级管理层意见"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:06",
-        "title": "光大同创：拟5亿元投建高速硅光模块智能制造基地项目"
+        "time": "2026-11-24 01:51",
+        "title": "英伟达股价涨幅收窄至30%"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 19:04",
-        "title": "伯恩斯坦将拼多多评级从与大市一致上调至跑赢大市"
+        "time": "2026-11-24 01:50",
+        "title": "亚马逊为中小企业和个体经营者打造首个“黑色星期五” 推出特别优惠计划及人工智能工具"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:59",
-        "title": "摩尔线程：拟使用不超45亿元募集资金进行现金管理"
+        "time": "2026-11-24 01:49",
+        "title": "伊朗称击毁一架美制“卢卡斯”无人机"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:57",
-        "title": "摩尔线程：拟5亿元至10亿元回购公司股份 回购价格不超过511元/股"
+        "time": "2026-11-24 01:43",
+        "title": "诺华CEO质疑AI业界的治癌预期 称对缩短新药研发周期过于乐观"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:55",
-        "title": "力鼎光电：实控人提议回购4000万元-8000万元公司股份"
+        "time": "2026-11-24 01:38",
+        "title": "头部企业加速布局新鲜零食"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:54",
-        "title": "珂玛科技：拟7000万元—1.2亿元回购公司股份"
+        "time": "2026-11-24 01:23",
+        "title": "高密度算力散热需求大 液冷领域快步扩容"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:53",
-        "title": "辰欣药业：董事长杜振新拟1000万元—2000万元增持公司股份"
+        "time": "2026-11-24 01:18",
+        "title": "洛克希德·马丁公司向秘鲁提供Indago 4无人机用于厄尔尼诺现象应急响应"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:52",
-        "title": "华联控股：拟5000万元至1亿元回购公司股份"
+        "time": "2026-11-24 01:14",
+        "title": "安联首席投资官：黄仁勋回归难解AI泡沫"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:52",
-        "title": "致远互联：拟1000万元—2000万元回购公司股份"
+        "time": "2026-11-24 01:11",
+        "title": "交易公司ODDO表示：伦敦金属交易所应介入此次历史性的铝市逼空"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:51",
-        "title": "久吾高科：拟变更2000万元募集资金用于固态电解质材料中试项目"
+        "time": "2026-11-24 01:08",
+        "title": "美国参议员Scott表示：黄仁勋公开听证会将于12月3日举行"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:51",
-        "title": "汇丰将小鹏集团评级从买入下调至持有"
+        "time": "2026-11-24 01:01",
+        "title": "夜盘期货收盘：沪铜收涨2.77% 沪锌收涨1.49%"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:50",
-        "title": "瑞银：预计2027年中国股票将有更好表现"
+        "time": "2026-11-24 00:58",
+        "title": "据报道 美国副总统万斯周末曾与黄仁勋通话 并与英伟达方面展开沟通"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:48",
-        "title": "交控科技：原董事长郜春海留置措施变更为责令候查 已回岗正常履职"
+        "time": "2026-11-24 00:54",
+        "title": "纽约诉讼案令市场预测平台Kalshi面临全美停运威胁"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:48",
-        "title": "美国银行全球研究部上调宝洁公司目标价"
+        "time": "2026-11-24 00:43",
+        "title": "花旗将英伟达目标价从225美元上调至240美元 维持买入评级"
       },
       {
         "source": "东方财富",
-        "time": "2026-11-23 18:48",
-        "title": "永辉超市：拟解散清算参股茅台酒销售公司北京友谊使者"
+        "time": "2026-11-24 00:40",
+        "title": "黄仁勋将其X个人简介更新为“英伟达首席执行官”"
       }
     ]
   },
@@ -12540,50 +12524,50 @@
     "note": "PE1/PE2 与股息率取中证官方；PE 10 年分位使用乐咕月度静态 PE1 历史计算。只作市场背景，不进入 LPPLS 报警或任何模型。",
     "indices": {
       "000300": {
-        "date": "2026-11-20",
-        "pe1": 13.78,
-        "pe2": 14.89,
-        "dy1": 3.04,
+        "date": "2026-11-23",
+        "pe1": 13.71,
+        "pe2": 14.9,
+        "dy1": 3.06,
         "dy2": 2.75,
-        "pe_pct10y": 0.7083333333333334,
+        "pe_pct10y": 0.6942148760330579,
         "pe_pct_source": "legulegu 月度历史",
-        "pe_pct_n": 120,
+        "pe_pct_n": 121,
         "pe_pct_start": "2016-11-30",
         "pe_pct_error": null
       },
       "000905": {
-        "date": "2026-11-20",
-        "pe1": 23.58,
-        "pe2": 24.87,
-        "dy1": 1.75,
-        "dy2": 1.59,
-        "pe_pct10y": 0.6083333333333333,
+        "date": "2026-11-23",
+        "pe1": 24.01,
+        "pe2": 25.38,
+        "dy1": 1.72,
+        "dy2": 1.55,
+        "pe_pct10y": 0.628099173553719,
         "pe_pct_source": "legulegu 月度历史",
-        "pe_pct_n": 120,
+        "pe_pct_n": 121,
         "pe_pct_start": "2016-11-30",
         "pe_pct_error": null
       },
       "000016": {
-        "date": "2026-11-20",
-        "pe1": 12.39,
-        "pe2": 13.65,
-        "dy1": 3.51,
-        "dy2": 3.04,
-        "pe_pct10y": 0.8583333333333333,
+        "date": "2026-11-23",
+        "pe1": 12.21,
+        "pe2": 13.53,
+        "dy1": 3.56,
+        "dy2": 3.07,
+        "pe_pct10y": 0.8429752066115702,
         "pe_pct_source": "legulegu 月度历史",
-        "pe_pct_n": 120,
+        "pe_pct_n": 121,
         "pe_pct_start": "2016-11-30",
         "pe_pct_error": null
       },
       "000852": {
-        "date": "2026-11-20",
-        "pe1": 25.62,
-        "pe2": 26.11,
-        "dy1": 1.44,
-        "dy2": 1.33,
-        "pe_pct10y": 0.375,
+        "date": "2026-11-23",
+        "pe1": 26.35,
+        "pe2": 26.88,
+        "dy1": 1.4,
+        "dy2": 1.29,
+        "pe_pct10y": 0.45454545454545453,
         "pe_pct_source": "legulegu 月度历史",
-        "pe_pct_n": 120,
+        "pe_pct_n": 121,
         "pe_pct_start": "2016-11-30",
         "pe_pct_error": null
       }
@@ -12616,7 +12600,7 @@
   "version": {
     "kind": "market",
     "asof": "2026-11-23",
-    "file": "versions/market/2026-11-23/20261123T112334Z_f9ee5ed9.json.gz",
-    "sha256": "f9ee5ed923908205ed37817ada32288bd370bd9f46a358e2c7b84940b459fc91"
+    "file": "versions/market/2026-11-23/20261123T193448Z_4ac8c58d.json.gz",
+    "sha256": "4ac8c58ddd3454218d26fa4294f48a91726020385dbbe08739cae0167436e06e"
   }
 }
