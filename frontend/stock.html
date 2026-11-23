@@ -1370,8 +1370,8 @@
         : null;
       const boardAct = boardItem ? window.BottomAction.fromOverviewItem(boardItem) : null;
       const boardText = boardItem && boardAct
-        ? `所属宽基 <b>${esc(boardItem.name)}</b> 底部综合分 <b>${boardItem.bottom_score ?? 0}/100</b>（${esc(boardAct.shortBadge)}）`
-        : `所属宽基 <b>${esc(board.board)}</b>（数据同步中）`;
+        ? `市场参考 <b>${esc(boardItem.name)}</b> 底部综合分 <b>${boardItem.bottom_score ?? 0}/100</b>（${esc(boardAct.shortBadge)}；不是成分股归属）`
+        : `市场参考 <b>${esc(board.board)}</b>（数据同步中；不是成分股归属）`;
 
       const omoriBadge = latest.omoriRed
         ? `🔴 <b>Omori 余震红灯亮起</b>（近 15 日大阴线 ${latest.bigDrops15d} 次${latest.hitNewLow10d ? '、近 10 日刷新 60 日新低' : ''}），防死猫跳拦截重仓`
@@ -1398,7 +1398,7 @@
         `<div class="sac-grid">` +
           `<div class="sac-box"><b>🎯 顶部聚类与收敛提醒</b><br>${topNote}<br><span style="color:#6A6D78">主图低强度弱红/绿柱已自动降噪，仅高亮高置信信号。</span></div>` +
           `<div class="sac-box"><b>🛡️ 防死猫跳 · Omori 余震检验</b><br>${omoriBadge}<br>52 周回撤 <b>${(latest.dd252 * 100).toFixed(1)}%</b> · 右侧均线：${esc(maText)}。</div>` +
-          `<div class="sac-box"><b>🧭 所属宽基与仓位上限</b><br>${boardText}<br>${capHint}</div>` +
+          `<div class="sac-box"><b>🧭 市场参考与仓位上限</b><br>${boardText}<br>${capHint}</div>` +
           ppHtml +
         `</div>` +
         `<div class="sac-steps">` +

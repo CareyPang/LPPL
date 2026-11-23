@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>临界点 · LPPLS 金融物理诊断与历史回测平台</title>
-<meta name="description" content="输入任意 A 股指数或个股代码，一键运行多尺度 LPPLS 泡沫临界结构诊断、历史回放与 FCO 周期检验。">
+<meta name="description" content="按市场查询指数与已覆盖个股，查看多尺度 LPPLS 顶部区间、历史回放和证据。">
 <meta name="theme-color" content="#1f5fd6">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="临界点">
@@ -153,6 +153,14 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 @media(max-width:1080px){.hero{grid-template-columns:1fr;gap:40px;padding:48px 0 56px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.ent{grid-template-columns:1fr 1fr}.fg{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.wrap{padding:0 16px}.kpis{grid-template-columns:1fr 1fr}.ent,.evi,.cases{grid-template-columns:1fr}section{padding:56px 0}.hd h2{font-size:24px}.row{grid-template-columns:minmax(0,1fr) 64px minmax(0,.9fr);padding:12px 16px}.row svg{width:64px}.row .spark-meta{font-size:9px}.row .times{white-space:normal}.row .lag{display:block;margin-left:0}.fg{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+#radar-bar[hidden]{display:none!important}
+#index-overview{scroll-margin-top:88px}
+.fmeta span{min-width:0;overflow-wrap:anywhere}
+#market-tabs{display:flex;gap:8px;padding:0 22px 16px;border-bottom:1px solid var(--line,#e5e8ed)}
+#market-tabs button{min-height:44px;padding:9px 22px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted,#606b7a);font:inherit;cursor:pointer}
+#market-tabs button[aria-selected="true"]{background:#edf3ff;color:#245de0;border-color:#d7e4ff;font-weight:650}
+#market-tabs button:focus-visible{outline:2px solid #245de0;outline-offset:2px}
+@media(max-width:520px){#market-tabs{padding:0 12px 12px;gap:4px}#market-tabs button{flex:1;padding:9px 8px}}
 </style>
 <script src="app/bottom-action.js"></script>
 <script src="app/home-data.js"></script>
@@ -200,7 +208,13 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
     <button type="button" data-sort="bottom" aria-pressed="false">按底部综合分</button>
    </div>
   </div>
-  <ul class="rows" id="rows" aria-live="polite"></ul>
+  <div id="market-tabs" role="tablist" aria-label="指数市场">
+   <button type="button" id="market-cn" role="tab" aria-selected="true" aria-controls="rows" data-market="cn">A 股</button>
+   <button type="button" id="market-us" role="tab" aria-selected="false" aria-controls="rows" data-market="us" tabindex="-1">美股</button>
+   <button type="button" id="market-jp" role="tab" aria-selected="false" aria-controls="rows" data-market="jp" tabindex="-1">日股</button>
+   <button type="button" id="market-kr" role="tab" aria-selected="false" aria-controls="rows" data-market="kr" tabindex="-1">韩股</button>
+  </div>
+  <ul class="rows" id="rows" role="tabpanel" aria-labelledby="market-cn" aria-live="polite"></ul>
   <div class="pwl" id="pwl" hidden></div>
  <div class="pf"><span id="pfn">实时报价仅供参考；取不到时显示未复权收盘价</span><a href="index.html">查看全部 ›</a></div>
  </div>
@@ -213,14 +227,14 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 </div></section>
 
 <section class="w" id="today" data-ai-context="今日摘要"><div class="wrap">
- <div class="hd"><h2>今日市场</h2><span data-evidence-badge="descriptive" data-evidence-label="盘面复盘" data-evidence-detail="汇总今日涨跌停、市场宽度、成交额与两融数据，用于盘后复盘观察。"></span><p id="mk-d"></p><a class="more" href="market.html">进入市场复盘 →</a></div>
+ <div class="hd"><h2>A 股今日市场</h2><span data-evidence-badge="descriptive" data-evidence-label="盘面复盘" data-evidence-detail="汇总今日涨跌停、市场宽度、成交额与两融数据，用于盘后复盘观察。"></span><p id="mk-d"></p><a class="more" href="market.html">进入市场复盘 →</a></div>
  <div class="kpis" id="kpis"></div>
 </div></section>
 
 <section id="tools"><div class="wrap">
  <div class="hd"><h2>核心工作流</h2><p>从单标的诊断、FCO 历史回测到每日市场复盘。</p><a class="more" href="stock.html">查看全部标的 ›</a></div>
  <div class="ent">
-  <a class="en" href="chart.html?code=sh000001&kind=index&from=home.html"><svg id="t1" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>指数终端</h3><p>七大宽基指数的多尺度临界区间、冷却期状态与物理拟合参数。</p><div class="go">进入终端 →</div></div></a>
+  <a class="en" href="chart.html?code=sh000001&kind=index&from=home.html"><svg id="t1" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>指数终端</h3><p>按 A 股、美股、日股和韩股查看指数；对照顶部区间、证据与历史快照。</p><div class="go">进入终端 →</div></div></a>
   <a class="en" href="backtest.html"><svg id="t2" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>FCO 历史回测</h3><p>叠加红色泡沫强度柱与首次预警旗标，按 as-of 视角检验每轮顶部聚类。</p><div class="go">打开回测 →</div></div></a>
   <a class="en" href="market.html"><svg id="t3" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>市场复盘</h3><p>快讯资讯、涨停情绪、资金流热力图、事件日历、两融与估值全览。</p><div class="go">进入复盘 →</div></div></a>
   <a class="en" href="stock.html"><svg id="t4" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>个股诊断</h3><p>输入六位代码，查看日线、逃顶/抄底结构与历史回放；支持本地自选。</p><div class="go">查询个股 →</div></div></a>
@@ -249,7 +263,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
   <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a></div>
   <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
  </div>
- <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：腾讯、新浪；市场背景来源见市场页</span></div>
+ <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：A 股腾讯／新浪；国际日线 Yahoo Finance；市场背景见市场页</span></div>
 </div></footer>
 
 <script>
@@ -272,11 +286,14 @@ const quoteSessionDate=q=>{const raw=String(q?.time||''),m=/^(\d{4})(\d{2})(\d{2
 
 /* ---------- 六指数面板 ---------- */
 const rows=$('rows');
-let IDXROWS=null,idxSort='default';
-const skel=()=>{rows.innerHTML=LPPL.SYMS.map(s=>`<li class="row"><div><div class="n">${E(s.name)}</div><div class="c">${s.sym}</div></div><span class="sk" style="grid-row:1/3;grid-column:2;height:24px"></span><span class="sk" style="grid-column:1/-1;grid-row:3;width:70%"></span><span class="sk" style="grid-column:1/-1;grid-row:4;width:85%;height:24px;margin-top:6px"></span></li>`).join('');$('asof').textContent='读取中…'};
+let IDXROWS=null,idxSort='default',indexRequest=0;
+let selectedMarket=new URLSearchParams(location.search).get('market')||'cn';
+if(!['cn','us','jp','kr'].includes(selectedMarket))selectedMarket='cn';
+const indexHref=sym=>'chart.html?kind=index&code='+encodeURIComponent(sym)+'&from='+encodeURIComponent(selectedMarket==='cn'?'home.html':'home.html?market='+selectedMarket);
+const skel=()=>{rows.innerHTML=LPPL.SYMS.filter(s=>(s.market||'cn')===selectedMarket).map(s=>`<li class="row"><div><div class="n">${E(s.name)}</div><div class="c">${s.sym}</div></div><span class="sk" style="grid-row:1/3;grid-column:2;height:24px"></span><span class="sk" style="grid-column:1/-1;grid-row:3;width:70%"></span><span class="sk" style="grid-column:1/-1;grid-row:4;width:85%;height:24px;margin-top:6px"></span></li>`).join('');$('asof').textContent='读取中…'};
 function updateSparkRangeUI(){
  document.querySelectorAll('#spark-range button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.sparkRange)===sparkRange)));
- $('pfn').textContent='实时报价仅供参考，不参与模型；取不到时显示未复权收盘价。迷你走势：同一纵轴、起点归零的涨跌幅，最近 '+sparkRange+' 个交易日收盘';
+ $('pfn').textContent=(selectedMarket==='cn'?'实时报价仅供参考，不参与模型；取不到时显示未复权收盘价。':'国际指数为日线收盘；27窗研究样本，完整周期1.5。')+'迷你走势：同一纵轴、起点归零的涨跌幅，最近 '+sparkRange+' 个交易日收盘';
 }
 function renderRadar(L){
  const bar=$('radar-bar'),pills=$('radar-pills');
@@ -297,10 +314,7 @@ function renderRadar(L){
 function renderIdxRows(){
  if(!IDXROWS)return false;
  const rawL=IDXROWS||[],ok=rawL.filter(r=>!r.error);
- if(!ok.length){
-  rows.innerHTML=`<li class="errbox">数据未加载：${E((rawL[0]||{}).error||'网络不可用')}<br><button type="button" id="retry">重试</button></li>`;
-  $('asof').textContent='—';$('retry').onclick=loadIdx;return false;
- }
+ if(!ok.length)$('asof').textContent='结果尚未就绪；可打开标的核对状态';
  renderRadar(rawL);
  const L=idxSort==='bottom'
   ?[...rawL].sort((a,b)=>((b&&b.action?b.action.score:-1)-(a&&a.action?a.action.score:-1)))
@@ -312,21 +326,24 @@ function renderIdxRows(){
  });
  const domain=HomeSparkline.sharedDomain(charts.map(s=>s.values)),zeroY=(27-(0-domain.min)/(domain.max-domain.min)*24).toFixed(1);
  rows.innerHTML=L.map((r,i)=>{
-  if(r.error)return `<li class="row"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-column:1/-1;grid-row:3;text-align:left">数据未加载</span></li>`;
+  if(r.error)return `<li><a class="row" href="${indexHref(r.sym)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><span class="s" style="grid-column:1/-1;grid-row:3;text-align:left">结果未就绪 · 查看状态 →</span></a></li>`;
   const chart=charts[i],period=chart.values.length?chart.values[chart.values.length-1]:0,ch=r.prev?r.last.close/r.prev.close-1:0;
   const lag=r.bars.reduce((n,b)=>n+(b.date>r.asof?1:0),0),dateText=shortDate(r.asof),lineColor=period>=0?'var(--up)':'var(--dn)';
   const insufficient=chart.bars.length<sparkRange;
   const act=r.action;
   const actHtml=act?`<div class="act-strip" data-tone="${E(act.tone)}"><span class="act-pos">${E(act.glyph)} ${E(act.positionLabel)} · ${E(act.positionText)}</span><span class="act-meta">${act.score>0?'综合分 '+act.score+'/100 · ':''}${E(act.canBuyLabel)}</span></div>`:'';
-  return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="chart.html?kind=index&from=home.html&code=${r.sym}" aria-label="${E(r.name)}，近${SPARK_LABELS[sparkRange]} ${pct(period,1)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg class="sparkline" data-range="${sparkRange}" data-y-domain="${domain.min.toFixed(8)},${domain.max.toFixed(8)}" viewBox="0 0 80 30" aria-hidden="true"><line class="spark-zero" x1="2" x2="78" y1="${zeroY}" y2="${zeroY}"/><path class="spark-line" d="${sparkPath(chart.values,domain)}" stroke="${lineColor}"/></svg><div class="spark-meta ${period>=0?'up':'dn'}"><span>近${SPARK_LABELS[sparkRange]} ${pct(period,1)}</span>${insufficient?`<small>数据不足 ${sparkRange} 日</small>`:''}</div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.statusTitle || r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}${actHtml}</a></li>`}).join('');
+  return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="${indexHref(r.sym)}" aria-label="${E(r.name)}，近${SPARK_LABELS[sparkRange]} ${pct(period,1)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg class="sparkline" data-range="${sparkRange}" data-y-domain="${domain.min.toFixed(8)},${domain.max.toFixed(8)}" viewBox="0 0 80 30" aria-hidden="true"><line class="spark-zero" x1="2" x2="78" y1="${zeroY}" y2="${zeroY}"/><path class="spark-line" d="${sparkPath(chart.values,domain)}" stroke="${lineColor}"/></svg><div class="spark-meta ${period>=0?'up':'dn'}"><span>近${SPARK_LABELS[sparkRange]} ${pct(period,1)}</span>${insufficient?`<small>数据不足 ${sparkRange} 日</small>`:''}</div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.statusTitle || r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}${actHtml}</a></li>`}).join('');
  return true;
 }
 function loadIdx(){
+ const request=++indexRequest;
  skel();
- HOMEDATA.all().then(L=>{
+ HOMEDATA.all(selectedMarket).then(L=>{
+  if(request!==indexRequest)return;
   IDXROWS=L;
   if(!renderIdxRows()){if(qTimer)refreshQuotes();else startQuotes();mine();return}
   const ok=L.filter(r=>!r.error),S=ok.find(r=>r.sym==='sh000001')||ok[0];
+  if(!S){mine();return;}
   $('asof').textContent='报价与模型时间见各行';
   if(qTimer)paintQuotes();else startQuotes();mine();recent(S.asof);
   thumbs(S);evidence(S.sym);
@@ -349,7 +366,7 @@ function paintQuotes(){
 }
 function refreshQuotes(){
  if(!LPPL.quote||document.visibilityState==='hidden')return;
- const W=window.IndexWatchlist,syms=new Set(LPPL.SYMS.map(s=>s.sym));
+ const W=window.IndexWatchlist,syms=new Set(LPPL.SYMS.filter(s=>(s.market||'cn')==='cn').map(s=>s.sym));
  if(W&&W.available()){W.read().forEach(s=>syms.add(s));W.stocks().forEach(c=>{const s=stockSym(c);if(s)syms.add(s)})}
  const id=++qReq,done=d=>{if(id!==qReq)return;QT=(d&&d.quotes)||{};paintQuotes();mine()};
  LPPL.quote([...syms]).then(done,()=>done(null));
@@ -374,6 +391,12 @@ function mine0(){
  box.innerHTML='<div class="wl">'+iHtml+sHtml+'</div>';
 }
 addEventListener('storage',mine);addEventListener('lppl-watch',mine);
+/* Market tabs preserve list context and do not mix exchange calendars. */
+const marketButtons=Array.from(document.querySelectorAll('#market-tabs button'));
+function syncMarketTabs(){marketButtons.forEach(b=>{const active=b.dataset.market===selectedMarket;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1});rows.setAttribute('aria-labelledby','market-'+selectedMarket)}
+function chooseMarket(value){selectedMarket=value;const url=new URL(location.href);url.searchParams.set('market',value);history.replaceState(null,'',url);syncMarketTabs();updateSparkRangeUI();loadIdx()}
+marketButtons.forEach((b,i)=>{b.onclick=()=>chooseMarket(b.dataset.market);b.onkeydown=e=>{let j=i;if(e.key==='ArrowRight')j=(i+1)%4;else if(e.key==='ArrowLeft')j=(i+3)%4;else if(e.key==='Home')j=0;else if(e.key==='End')j=3;else return;e.preventDefault();marketButtons[j].focus();chooseMarket(marketButtons[j].dataset.market)}});
+syncMarketTabs();
 /* ---------- 面板切换：指数 / 我的自选 ---------- */
 document.querySelectorAll('.pseg button').forEach(b=>b.onclick=()=>{
  const m=b.dataset.v==='mine';

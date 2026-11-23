@@ -97,26 +97,31 @@
 
   function indexFor(value, indexSymbols) {
     var code = String(value || '').toLowerCase();
+    if (!code) return null;
     var entries = Array.isArray(indexSymbols) ? indexSymbols : [];
     for (var i = 0; i < entries.length; i += 1) {
       var entry = entries[i];
       if (!entry) continue;
-      if (String(entry.sym || '').toLowerCase() === code ||
-          String(entry.code || '').toLowerCase() === code) {
-        return { sym: String(entry.sym || code).toLowerCase(), name: entry.name || '' };
+      if ([entry.sym, entry.code, entry.name].concat(entry.alias || []).some(function (value) {
+        return String(value || '').toLowerCase() === code;
+      })) {
+        return Object.assign({}, entry, { sym: String(entry.sym || code), name: entry.name || '' });
       }
     }
     return null;
   }
 
-  function parseContext(search, indexSymbols) {
+  function parseContext(search, indexSymbols, globalSymbols) {
     var params = new URLSearchParams(String(search || '').replace(/^\?/, ''));
     var inputCode = String(params.get('code') || '').trim();
     var requestedKind = params.get('kind') || params.get('type') || '';
-    var index = requestedKind === 'stock' ? null : indexFor(inputCode, indexSymbols);
-    var usSymbol = /^US_[A-Z.]{1,6}$/i.test(inputCode) ? inputCode.toUpperCase() : '';
+    var knownIndex = indexFor(inputCode, indexSymbols);
+    var reservedIndex = knownIndex && /^(US_|JP_|KR_)/i.test(knownIndex.sym);
+    var index = requestedKind === 'stock' && !reservedIndex ? null : knownIndex;
+    var stockIdentity = indexFor(inputCode, (globalSymbols || []).filter(function (item) { return item.kind === 'stock'; }));
+    var usSymbol = stockIdentity && stockIdentity.market === 'us' ? stockIdentity.sym : /^US_[A-Z.]{1,6}$/i.test(inputCode) ? inputCode.toUpperCase() : '';
     var stockSymbol = usSymbol || (/^(?:sh|sz|bj)\d{6}$/i.test(inputCode) ? inputCode.toLowerCase() : '');
-    var stockCode = usSymbol || (stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '');
+    var stockCode = index ? '' : usSymbol || (stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '');
     var code = index ? index.sym : stockSymbol || (stockCode ? stockCode : '');
     var assetType = index ? 'index' : stockCode ? 'stock' : '';
     var requestedScale = params.get('scale') || '';
@@ -130,6 +135,8 @@
       }
     }
     var focus = String(params.get('focus') || '').trim().slice(0, 200);
+    var requestedRule = params.get('rule');
+    var international = !!(index && index.market && index.market !== 'cn' || stockIdentity && stockIdentity.market !== 'cn');
     return {
       valid: !!assetType && !(requestedAsof && !asof) && (!requestedKind || requestedKind === assetType),
       invalidReason: requestedAsof && !asof ? '历史截止日无效，请使用真实的 YYYY-MM-DD 日期；未改看最新。' :
@@ -137,16 +144,22 @@
       code: code,
       stockCode: stockCode,
       assetType: assetType,
-      market: usSymbol ? 'us' : assetType ? 'cn' : '',
-      name: index ? index.name : '',
+      market: index && index.market || stockIdentity && stockIdentity.market || (usSymbol ? 'us' : assetType ? 'cn' : ''),
+      currency: index && index.currency || stockIdentity && stockIdentity.currency || (usSymbol ? 'USD' : assetType ? 'CNY' : ''),
+      exchange: index && index.exchange || stockIdentity && stockIdentity.exchange || '',
+      timezone: index && index.timezone || stockIdentity && stockIdentity.timezone || '',
+      name: index ? index.name : stockIdentity && stockIdentity.name || '',
       scale: scale,
       focus: focus,
+      rule: requestedRule === 'box' || requestedRule === 'cycles_1_5' ? requestedRule : international ? 'cycles_1_5' : 'box',
       asof: asof,
       from: safeFrom(params.get('from'), assetType, code || inputCode, stockCode),
     };
   }
 
   function exchangeFor(symbol) {
+    if (/^JP_/i.test(String(symbol || ''))) return '日本市场（交易所未记录）';
+    if (/^KR_/i.test(String(symbol || ''))) return '韩国市场（交易所未记录）';
     if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return '美国市场（交易所未记录）';
     var prefix = String(symbol || '').slice(0, 2).toLowerCase();
     return prefix === 'sh' ? '上海证券交易所'
@@ -186,14 +199,21 @@
         high: ph.high && ph.high[i] != null ? ph.high[i] : null, low: ph.low && ph.low[i] != null ? ph.low[i] : null,
         volume: ph.volume && ph.volume[i] != null ? ph.volume[i] : null };
     }).filter(function (bar) { return !result.asof || bar.date <= result.asof; }) : result.bars;
-    var symbol = String(result.sym && result.sym.sym || raw.symbol || code || '').toLowerCase();
+    var symbol = String(result.sym && result.sym.sym || raw.symbol || code || '');
+    symbol = /^(US_|JP_|KR_)/i.test(symbol) ? symbol.toUpperCase() : symbol.toLowerCase();
+    var identity = result.sym || {};
+    var market = raw.market || identity.market || (/^US_/.test(symbol) ? 'us' : /^JP_/.test(symbol) ? 'jp' : /^KR_/.test(symbol) ? 'kr' : 'cn');
+    var currency = raw.currency || identity.currency || ({ us: 'USD', jp: 'JPY', kr: 'KRW', cn: 'CNY' })[market] || '未记录';
     var model = modelRecord(raw, result);
     return {
       assetType: 'index',
+      market: market,
+      currency: currency,
+      timezone: raw.timezone || identity.timezone || '',
       symbol: symbol,
       code: symbol,
       name: result.name || raw.name || result.sym && result.sym.name || symbol,
-      exchange: exchangeFor(symbol),
+      exchange: raw.exchange || identity.exchange || exchangeFor(symbol),
       bars: bars,
       asof: result.asof || raw.asof || '',
       modelAsOf: result.asof || raw.asof || '',
@@ -258,7 +278,7 @@
       volumeUnit: market.volume_unit || '未记录',
       tradingStatus: market.trading_status || '未记录',
       quoteUnit: isUS ? 'USD · 美元' : 'CNY · 元',
-      currency: isUS ? 'USD' : 'CNY',
+      currency: market.currency || raw.currency || (isUS ? 'USD' : 'CNY'),
       stale: market.stale === true,
       staleReason: market.stale_reason || '',
       freshness: market.asof_freshness || 'not_established',
@@ -297,6 +317,28 @@
       band && band.q20_date || '', band && band.q80_date || ''].join(':');
   }
 
+  function withRule(data, rule) {
+    var raw = data.raw || {}, selected = rule === 'cycles_1_5' ? 'cycles_1_5' : 'box';
+    var research = raw.research || {}, available = selected === 'box' ? !!(raw.top || data.top) :
+      !!(research.cycles_1_5 && typeof research.cycles_1_5 === 'object');
+    var top = selected === 'box' ? raw.top || data.top || {} : available ? research.cycles_1_5 : {};
+    return Object.assign({}, data, { top: top, researchRule: selected, ruleAvailable: available,
+      ruleLabel: selected === 'box' ? '旧 box 对照（无完整周期门槛）' : '完整周期 ≥ 1.5 · 未来临界点候选',
+      ruleSource: selected === 'box' ? '使用后端封存的原 box 聚合结果。' : available
+        ? '使用后端封存的 box + ahead > 0 + 完整周期 ≥ 1.5 聚合；同一拟合池，未另做仅未来临界点拟合。'
+        : '该档案未封存完整周期 1.5 口径，当前不展示区间；可切换旧 box 对照。' });
+  }
+
+  function researchNote(data) {
+    var raw = data.raw || {};
+    if (raw.schema_version !== 'global_terminal_v1' && !(raw.research && raw.research.sample_scope)) return '';
+    var count = raw.params && raw.params.window_count;
+    var parts = [Number.isInteger(count) ? count + ' 个稀疏窗口（非 181 窗完整扫描）' : '稀疏窗口研究样本'];
+    parts.push('固定截止日小样本重放，尚未进行样本外预警评分');
+    if (raw.future_calendar && raw.future_calendar.note) parts.push(raw.future_calendar.note);
+    return parts.join('；');
+  }
+
   return {
     SCALES: SCALES,
     NUMERIC_EVIDENCE: NUMERIC_EVIDENCE,
@@ -311,5 +353,7 @@
     assembleStockData: assembleStockData,
     marketMetadata: marketMetadata,
     intervalId: intervalId,
+    withRule: withRule,
+    researchNote: researchNote,
   };
 });

@@ -15,7 +15,7 @@
   }
   function href(context, changes) {
     var values = Object.assign({ code: context.code, kind: context.assetType, scale: context.scale,
-      asof: context.asof, from: context.from, mode: context.asof ? 'replay' : 'diagnosis' }, changes);
+      asof: context.asof, from: context.from, rule: context.rule, mode: context.asof ? 'replay' : 'diagnosis' }, changes);
     var p = new URLSearchParams();
     Object.keys(values).forEach(function (key) { if (values[key]) p.set(key, values[key]); });
     return 'chart.html?' + p.toString();
@@ -33,8 +33,25 @@
       window: future.map(function (b) { return b.q20_date + ' — ' + b.q80_date; }).join(' / '),
       detail: stale ? '行情比模型更新，旧区间保留供核对。' : '重点观察区间内的价格变化；切换尺度可对照其他时间长度。',
     };
+    var counts = data.raw && data.raw.fit_counts;
     return { status: prefix + (old.length ? '区间已过' : '没有可展示区间'), window: old.length ? '旧区间见证据列表' : '—',
-      detail: old.length ? '这些是历史提醒，不再标作当前有效预警。' : '可切换尺度；拟合与证据状态在右侧分别说明。' };
+      detail: old.length ? '这些是历史提醒，不再标作当前有效预警。' : counts
+        ? '六档共完成 ' + counts.completed + ' / ' + counts.expected + ' 个窗口。本尺度未形成区间；可切换尺度或查看筛选口径。'
+        : '可切换尺度；拟合与证据状态在右侧分别说明。' };
+  }
+  function historyFor(adapter, reader, context) {
+    if (reader.globalAsset(adapter, context)) return adapter.global.history(context.code);
+    if (context.assetType === 'index' && context.market && context.market !== 'cn') return Promise.reject(Error('该国际标的尚未连接历史目录。'));
+    return context.assetType === 'index' ? adapter.history(context.code) : adapter.stock.history(context.stockCode);
+  }
+  async function laterBars(adapter, reader, core, context) {
+    if (context.assetType === 'stock' && context.market === 'cn') {
+      var market = await adapter.stock.market(context.stockCode);
+      return core.assembleStockData(context.code, null, market, null).bars;
+    }
+    var result = await reader.currentResult(adapter, context);
+    if (context.assetType === 'index') return core.assembleIndexData(context.code, result).bars;
+    return core.assembleStockData(context.code, result, reader.marketFromPublished(result, context.stockCode), null).bars;
   }
   function attach(options) {
     var doc = options.document, adapter = options.adapter, reader = options.reader, context = options.context;
@@ -65,7 +82,7 @@
       if (!el('terminal-history')) return;
       el('terminal-history').hidden = mode !== 'replay';
       el('terminal-backtest-link').href = 'backtest.html?code=' + encodeURIComponent(context.code);
-      el('terminal-backtest-link').hidden = context.assetType !== 'index';
+      el('terminal-backtest-link').hidden = context.assetType !== 'index' || context.market !== 'cn';
       var frames = (historyData && historyData.frames || []).filter(function (f) { return !context.asof || f.asof <= context.asof; })
         .slice().sort(function (a, b) { return b.asof.localeCompare(a.asof); });
       el('terminal-history-note').textContent = frames.length ? '按截止日封存，点击查看当时区间。首次可见时间单独记录，不把历史计算当作提前发布。' : '该标的尚未读到历史记录。';
@@ -76,12 +93,12 @@
         var date = doc.createElement('strong'); date.textContent = frame.asof; item.appendChild(date);
         var description = doc.createElement('span');
         var packed = reader.packedFrame(historyData, frame, context, [], context.name);
-        var data = { raw: packed.raw, top: packed.top, assetType: context.assetType, modelStatus: 'ok' };
+        var data = options.core.withRule({ raw: packed.raw, top: packed.top, assetType: context.assetType, modelStatus: 'ok' }, context.rule);
         var scaleEvidence = options.core.evidenceFor(data, context.scale);
-        var clusters = packed.top.scale_clusters && packed.top.scale_clusters[context.scale];
-        var windows = Array.isArray(clusters) ? clusters : (packed.top.scale_windows || []).filter(function (b) { return b.scale === context.scale; });
+        var clusters = data.top.scale_clusters && data.top.scale_clusters[context.scale];
+        var windows = Array.isArray(clusters) ? clusters : (data.top.scale_windows || []).filter(function (b) { return b.scale === context.scale; });
         var allowed = windows.filter(function (b) { return options.core.bandEvidencePolicy(scaleEvidence, b).showDates; });
-        description.textContent = allowed.length ? allowed.map(function (b) { return b.q20_date + ' — ' + b.q80_date; }).join(' / ') : '查看拟合与证据状态';
+        description.textContent = !data.ruleAvailable ? '此口径未随目录封存，点击读取原档' : allowed.length ? allowed.map(function (b) { return b.q20_date + ' — ' + b.q80_date; }).join(' / ') : '查看拟合与证据状态';
         item.appendChild(description);
         var known = doc.createElement('small'); known.textContent = frame.first_visible_at ? '首次可见 ' + frame.first_visible_at : '首次可见时间未记录';
         item.appendChild(known); el('terminal-history-list').appendChild(item);
@@ -95,20 +112,30 @@
       node.dataset.kind = kind; group.appendChild(node);
       if (code.toUpperCase() === String(context.assetType === 'stock' ? context.stockCode : context.code).toUpperCase()) el('terminal-asset').value = code;
     }
-    function group(label) { var node = doc.createElement('optgroup'); node.label = label; el('terminal-asset').appendChild(node); return node; }
+    var groups = {};
+    function group(label) {
+      if (groups[label]) return groups[label];
+      var node = doc.createElement('optgroup'); node.label = label; el('terminal-asset').appendChild(node); groups[label] = node; return node;
+    }
+    function marketGroup(market, kind) {
+      var label = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[market || 'cn'] || '其他市场';
+      return group(label + (kind === 'index' ? '指数' : '个股'));
+    }
     el('terminal-asset').replaceChildren();
-    var indices = group('A 股指数');
-    (adapter.SYMS || []).forEach(function (item) { option(item.sym, item.name, 'index', indices); });
-    var stocks = group('A 股已发布标的'), us = group('美股已发布观察清单');
-    if (context.assetType === 'stock') option(context.stockCode, context.name || context.stockCode, 'stock', context.market === 'us' ? us : stocks);
+    (adapter.SYMS || []).forEach(function (item) { option(item.sym, item.name, 'index', marketGroup(item.market, 'index')); });
+    (adapter.GLOBAL_SYMS || []).filter(function (item) { return item.kind === 'stock'; }).forEach(function (item) {
+      option(item.sym, item.name, 'stock', marketGroup(item.market, 'stock'));
+    });
+    var stocks = marketGroup('cn', 'stock'), us = marketGroup('us', 'stock');
+    if (context.assetType === 'stock') option(context.stockCode, context.name || context.stockCode, 'stock', marketGroup(context.market, 'stock'));
     Promise.allSettled([adapter.stock.index(), adapter.stock.usIndex()]).then(function (results) {
       results.forEach(function (result, i) {
         if (result.status !== 'fulfilled') return;
-        var payload = result.value, rows = Array.isArray(payload) ? payload : Object.keys(payload || {}).filter(function (key) {
+        var payload = result.value, rows = Array.isArray(payload) ? payload : payload && Array.isArray(payload.stocks) ? payload.stocks : Object.keys(payload || {}).filter(function (key) {
           return /^\d{6}$/.test(key);
         }).map(function (key) { return Object.assign({ code: key }, payload[key]); });
         rows.forEach(function (item) {
-          var code = i ? 'US_' + String(item.ticker || '').toUpperCase() : String(item.code || '');
+          var code = i ? 'US_' + String(item.ticker || item.code || item.symbol || '').replace(/^US_/i, '').toUpperCase() : String(item.code || '');
           if (i ? /^US_[A-Z.]{1,6}$/.test(code) : /^\d{6}$/.test(code)) option(code, item.name || code, 'stock', i ? us : stocks);
         });
       });
@@ -116,8 +143,15 @@
     el('terminal-asset').addEventListener('change', function () {
       var selected = el('terminal-asset').selectedOptions[0];
       // Keep the exact cutoff when switching assets; missing archives remain missing.
-      go({ code: selected.value, kind: selected.dataset.kind });
+      var targetGlobal = adapter.global && adapter.global.isAsset(selected.value);
+      go({ code: selected.value, kind: selected.dataset.kind,
+        rule: targetGlobal ? reader.globalAsset(adapter, context) ? context.rule : 'cycles_1_5' : 'box' });
     });
+    if (el('terminal-rule')) {
+      el('terminal-rule-field').hidden = !reader.globalAsset(adapter, context);
+      el('terminal-rule').value = context.rule;
+      el('terminal-rule').addEventListener('change', function () { go({ rule: el('terminal-rule').value }); });
+    }
     el('terminal-mode-diagnosis').addEventListener('click', function () {
       if (context.asof) return go({ mode: 'diagnosis', asof: '' });
       mode = 'diagnosis'; renderControls(); options.replaceAddress({ mode: mode });
@@ -142,14 +176,8 @@
       checkbox.disabled = true;
       el('terminal-replay-status').textContent = '读取后来行情，历史模型和截止日保持不变…';
       try {
-        var market = await reader.timed(function () {
-          if (context.assetType === 'index') return adapter.load(context.code);
-          if (context.market === 'us') return adapter.stock.latest(context.stockCode).then(function (raw) { return reader.marketFromPublished(raw, context.stockCode); });
-          return adapter.stock.market(context.stockCode);
-        }, '后来行情');
+        var bars = await reader.timed(function () { return laterBars(adapter, reader, options.core, context); }, '后来行情');
         if (run !== futureRun) return;
-        var bars = context.assetType === 'index' ? options.core.assembleIndexData(context.code, market).bars :
-          options.core.assembleStockData(context.code, null, market, null).bars;
         if (!bars || !bars.some(function (b) { return (b.date || b.time) > context.asof; })) throw Error('行情尚未覆盖截止日之后。');
         options.showFuture(bars);
         el('terminal-replay-status').textContent = '正在查看后来走势（当前行情版本）；模型、区间与证据仍固定在 ' + context.asof + '。';
@@ -159,7 +187,7 @@
       } finally { if (run === futureRun) checkbox.disabled = false; }
     });
     renderControls();
-    reader.timed(function () { return context.assetType === 'index' ? adapter.history(context.code) : adapter.stock.history(context.stockCode); }, '历史目录')
+    reader.timed(function () { return historyFor(adapter, reader, context); }, '历史目录')
       .then(function (history) {
         var first = history && history.frames && history.frames[0];
         if (first && !reader.historyFrame(history, Object.assign({}, context, { asof: first.asof }))) throw Error('历史目录资产不匹配');
@@ -182,5 +210,5 @@
       renderControls();
     } };
   }
-  return { datesFrom: datesFrom, neighbour: neighbour, href: href, summary: summary, attach: attach };
+  return { datesFrom: datesFrom, neighbour: neighbour, href: href, summary: summary, historyFor: historyFor, laterBars: laterBars, attach: attach };
 });

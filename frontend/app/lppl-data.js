@@ -1,4 +1,4 @@
-/* 临界点 · 数据适配层（Devin 维护，Open Design 不改）
+/* 临界点 · 数据适配层（国际资产扩展见 PR #182；不改变原有 A 股接口）
    只读后端静态 JSON（站点 lab/mock/data/），不做任何模型计算；取数失败直接抛错，页面显示"数据未加载"。
    字段含义：docs/frontend_contract.md、docs/od_field_mapping.md */
 (function (G) {
@@ -15,12 +15,37 @@
     { sym: 'sz399006', name: '创业板指', code: '399006', alias: ['创业板', '创业板指'] },
   ];
   const REPLAYS = { sh000001: ['2007-10-12', '2015-06-12'] };
+  // Stable identities: index providers and currency are never inferred from a stock prefix.
+  const GLOBAL_SYMS = [
+    {sym:'US_SPX',name:'标普500',code:'SPX',market:'us',kind:'index',exchange:'S&P DJI',currency:'USD',timezone:'America/New_York',provider_symbol:'^GSPC',alias:['SPX','^GSPC','标普','S&P500']},
+    {sym:'US_IXIC',name:'纳斯达克综合',code:'IXIC',market:'us',kind:'index',exchange:'NASDAQ',currency:'USD',timezone:'America/New_York',provider_symbol:'^IXIC',alias:['IXIC','^IXIC','纳指','纳斯达克']},
+    {sym:'US_NDX',name:'纳斯达克100',code:'NDX',market:'us',kind:'index',exchange:'NASDAQ',currency:'USD',timezone:'America/New_York',provider_symbol:'^NDX',alias:['NDX','^NDX','纳指100']},
+    {sym:'US_DJI',name:'道琼斯工业',code:'DJI',market:'us',kind:'index',exchange:'S&P DJI',currency:'USD',timezone:'America/New_York',provider_symbol:'^DJI',alias:['DJI','^DJI','DOW','道琼斯']},
+    {sym:'JP_N225',name:'日经225',code:'N225',market:'jp',kind:'index',exchange:'Nikkei / 东京市场',currency:'JPY',timezone:'Asia/Tokyo',provider_symbol:'^N225',alias:['N225','^N225','日经']},
+    {sym:'KR_KOSPI',name:'韩国综合 KOSPI',code:'KOSPI',market:'kr',kind:'index',exchange:'KRX',currency:'KRW',timezone:'Asia/Seoul',provider_symbol:'^KS11',alias:['KOSPI','KOPSI','^KS11','韩国综合']},
+    {sym:'KR_KOSDAQ',name:'韩国创业板 KOSDAQ',code:'KOSDAQ',market:'kr',kind:'index',exchange:'KRX',currency:'KRW',timezone:'Asia/Seoul',provider_symbol:'^KQ11',alias:['KOSDAQ','^KQ11']},
+    {sym:'US_MRVL',name:'迈威尔科技',code:'MRVL',market:'us',kind:'stock',exchange:'NASDAQ',currency:'USD',timezone:'America/New_York',provider_symbol:'MRVL',alias:['MRVL','迈威尔']},
+  ];
+  SYMS.forEach(s => { s.market = 'cn'; s.kind = 'index'; });
+  SYMS.push(...GLOBAL_SYMS.filter(s => s.kind === 'index'));
+  const globalAsset = input => GLOBAL_SYMS.find(s => s.sym.toUpperCase() === String(input).toUpperCase()) || null;
+  const globalData = {
+    isAsset: input => !!globalAsset(input),
+    catalog: () => getJSON('global/catalog.json'),
+    latest: input => getJSON('global/' + requiredGlobal(input).sym + '_latest.json'),
+    history: input => getJSON('global/' + requiredGlobal(input).sym + '_history.json'),
+    result: (input, asof) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(asof))) throw new Error('历史日期无效');
+      return getJSON('global/' + requiredGlobal(input).sym + '_' + asof + '.json');
+    },
+  };
+  function requiredGlobal(input) { const item = globalAsset(input); if (!item) throw new Error('国际资产身份未登记'); return item; }
   const HIDE = new Set(['none', 'fail', 'fail_i', 'fail_i_iii', 'dev_only', 'dev_failed', 'pending_cal', 'pending_test']);
   const cache = new Map();
 
   function resolve(input) {
     const s = String(input || '').trim().replace(/\.(SH|SZ)$/i, '');
-    return SYMS.find((x) => x.sym === s.toLowerCase() || x.code === s || x.name === s || x.alias.includes(s)) || null;
+    return SYMS.find((x) => x.sym.toLowerCase() === s.toLowerCase() || x.code.toLowerCase() === s.toLowerCase() || x.name === s || x.alias.some(a => a.toLowerCase() === s.toLowerCase())) || null;
   }
 
   async function fetchJSONBounded(url, options = {}, allowMissing = false, deadlineMs = 12000) {
@@ -118,6 +143,7 @@
   async function load(input, asof) {
     const S = resolve(input);
     if (!S) throw new Error('无法识别：目前只支持 ' + SYMS.map((x) => x.name).join(' / '));
+    if (globalAsset(S.sym)) return pack(await (asof ? globalData.result(S.sym, asof) : globalData.latest(S.sym)), S, asof, !asof, !!asof);
     let file = S.sym + '_latest.json', latest = true;
     if (asof) {
       const ok = REPLAYS[S.sym] || [];
@@ -174,7 +200,7 @@
 
   const catalog = () => getJSON('catalog.json');
   const overview = () => opt('overview_latest.json');
-  const history = (sym) => getJSON(sym + '_history.json');
+  const history = (sym) => globalAsset(sym) ? globalData.history(sym) : getJSON(sym + '_history.json');
   /** 策略回放（事前登记规则的历史回放，不是预测）：未发布时返回 null，页面须显示“策略回测结果未发布” */
   const strategy = (sym) => getJSON('strategy/' + sym + '.json').catch((e) => {
     if (e && (e.status === 404 || /\b404\b/.test(String(e.message || e)))) return null; /* 未发布 */
@@ -200,12 +226,18 @@
   const queryJSON = async (path, options, deadlineMs = 12000) => {
     return fetchJSONBounded(queryApi() + path, options, false, deadlineMs);
   };
+  function stockRecord(input, isHistory) {
+    const code = okCode(input), identity = globalAsset(code);
+    if (identity && identity.kind !== 'stock') throw new Error('该代码是指数，请使用指数数据入口');
+    return identity ? (isHistory ? globalData.history(code) : globalData.latest(code))
+      : opt('stock/' + code + (isHistory ? '_history' : '') + '.json');
+  }
   /** 按需个股结果（stock-results 分支经 Pages 叠加）；缺文件返回 null。证据恒为 research_candidate，置信度按 dev_only 不显示数值 */
   const stock = {
     index: () => opt('stock/index.json'),
     usIndex: () => opt('stock/us_index.json'),
-    latest: (c) => opt('stock/' + okCode(c) + '.json'),
-    history: (c) => opt('stock/' + okCode(c) + '_history.json'),
+    latest: (c) => stockRecord(c, false),
+    history: (c) => stockRecord(c, true),
     dipEnv: () => opt('stock/_dip_env.json'),
     error: (c) => opt('stock/' + okCode(c) + '_error.json'),
     api: () => queryApi(),
@@ -353,5 +385,5 @@
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
-  G.LPPL = { BASE, SYMS, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
+  G.LPPL = { BASE, SYMS, GLOBAL_SYMS, global: globalData, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
 })(window);

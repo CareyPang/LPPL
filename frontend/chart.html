@@ -149,6 +149,7 @@
             <button id="terminal-mode-diagnosis" type="button" aria-pressed="true">当前诊断</button>
             <button id="terminal-mode-replay" type="button" aria-pressed="false">历史回测</button>
           </div>
+          <div id="terminal-rule-field" hidden><label class="terminal-asset-field" for="terminal-rule"><span>筛选口径</span><select id="terminal-rule"><option value="cycles_1_5">完整周期 ≥ 1.5</option><option value="box">旧 box 对照</option></select></label></div>
           <p class="terminal-control-hint">同一标的，同一份证据</p>
         </div>
         <div id="terminal-replay-controls" class="terminal-replay-controls" hidden>
@@ -212,7 +213,7 @@
           <p id="evidence-rule-source" class="evidence-note" hidden></p>
             <a class="evidence-help" href="backtest.html#view=bench">证据等级是什么？</a>
             <div id="interval-list" class="interval-list"></div>
-            <p id="evidence-note" class="evidence-note"></p>
+            <div id="evidence-note" class="evidence-note"></div>
           </section>
           <section class="meta-card" aria-labelledby="meta-title">
             <h2 id="meta-title">数据说明</h2>

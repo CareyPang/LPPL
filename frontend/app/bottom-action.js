@@ -196,12 +196,13 @@
 
   /** 根据 A 股 6 位代码推断所属核心宽基指数 */
   function boardIndexForStock(code) {
-    const clean = String(code || '').replace(/^[a-zA-Z]+/, '');
+    const clean = String(code || '').replace(/^(sh|sz|bj)(?=\d{6}$)/i, '');
+    if (!/^\d{6}$/.test(clean)) return { sym: null, board: '市场参考未覆盖', supported: false };
     if (/^(300|301)/.test(clean)) return { sym: 'sz399006', board: '创业板指' };
     if (/^688/.test(clean)) return { sym: 'sh000688', board: '科创50' };
     if (/^(600|601|603|605)/.test(clean)) return { sym: 'sh000001', board: '上证综指' };
     if (/^(000|001|002|003)/.test(clean)) return { sym: 'sz399001', board: '深证成指' };
-    return { sym: 'sh000300', board: '沪深300' };
+    return { sym: null, board: '市场参考未覆盖', supported: false };
   }
 
   /**
@@ -213,7 +214,7 @@
     const bars = Array.isArray(prices) ? prices.filter((b) => b && b.date && Number.isFinite(Number(b.close)) && Number(b.close) > 0) : [];
     const cfg = opts || {};
     const board = boardIndexForStock(cfg.code);
-    if (bars.length < 30) {
+    if (board.supported === false || bars.length < 30) {
       return { series: [], latest: null, board, action: null };
     }
     const closes = bars.map((b) => Number(b.close));

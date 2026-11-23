@@ -28,22 +28,24 @@
   }
   function marketFromPublished(raw, code) {
     raw = raw && (raw.raw || raw);
-    if (raw == null) throw missing('尚未读到该美股的已发布日线（可能尚未发布，或读取失败）；未发起新计算。');
-    if (!/^US_[A-Z.]{1,6}$/i.test(String(code || '')) ||
+    if (raw == null) throw missing('尚未读到该标的的已发布日线（可能尚未发布，或读取失败）；未发起新计算。');
+    if (!/^(US_[A-Z.]{1,6}|JP_N225|KR_KOSPI|KR_KOSDAQ)$/i.test(String(code || '')) ||
         String(raw.symbol || '').toUpperCase() !== String(code).toUpperCase()) {
       throw new Error('已发布行情的资产身份与请求不匹配，已停止显示。');
     }
     var bars = barsFrom(raw);
     if (raw.asof) bars = cutoffBars(bars, raw.asof);
-    if (!bars.length) throw missing('该美股尚无已发布的日线；未发起新计算。');
+    if (!bars.length) throw missing('该标的尚无已发布的日线；未发起新计算。');
     var ph = raw.price_history || {};
+    var market = raw.market || (/^JP_/i.test(code) ? 'jp' : /^KR_/i.test(code) ? 'kr' : 'us');
     return {
       symbol: String(code).toUpperCase(), name: raw.name || String(code).toUpperCase(),
+      market: market, timezone: raw.timezone || '',
       price: bars, asof: bars[bars.length - 1].date,
       source: ph.source || raw.source || '已发布日线（底层源未记录）',
       adjustment: ph.adjustment || raw.adjust || '未记录',
-      volume_unit: ph.volume_unit || '未记录', currency: 'USD',
-      exchange: raw.exchange || '美国市场（交易所未记录）',
+      volume_unit: ph.volume_unit || '未记录', currency: raw.currency || ({ us: 'USD', jp: 'JPY', kr: 'KRW' })[market] || '未记录',
+      exchange: raw.exchange || ({ us: '美国', jp: '日本', kr: '韩国' })[market] + '市场（交易所未记录）',
       trading_status: raw.trading_status || '未记录', future_calendar: raw.future_calendar || null,
       asof_freshness: raw.asof_freshness || 'not_established', stale: raw.stale === true,
       stale_reason: raw.stale_reason || '', published_asof: raw.asof || null,
@@ -59,15 +61,36 @@
     var bars = cutoffBars(barsFrom(raw), context.asof);
     if (!bars.length) throw missing('该日模型已封存，但未提供可核对的历史行情。');
     return { raw: raw, top: raw.top || {}, bars: bars, asof: raw.asof, name: raw.name || context.name,
-      sym: { sym: context.code }, historical: true };
+      sym: { sym: context.code, market: context.market, currency: context.currency, exchange: context.exchange, timezone: context.timezone }, historical: true };
   }
   function sameSymbol(symbol, context) {
+    if (context.assetType === 'index') return String(symbol).toUpperCase() === String(context.code).toUpperCase();
     if (context.market === 'us' || /^US_/i.test(context.stockCode || '')) {
       return String(symbol).toUpperCase() === String(context.stockCode).toUpperCase();
     }
     return context.assetType === 'stock'
       ? String(symbol).replace(/^(sh|sz|bj)/i, '') === context.stockCode
       : String(symbol).toLowerCase() === context.code.toLowerCase();
+  }
+  function globalAsset(adapter, context) {
+    return !!(adapter.global && typeof adapter.global.isAsset === 'function' && adapter.global.isAsset(context.code));
+  }
+  async function currentResult(adapter, context) {
+    if (!context.valid) throw new Error('资产身份无效。');
+    if (globalAsset(adapter, context)) {
+      var raw = await timed(function () { return adapter.global.latest(context.code); }, '国际已发布数据');
+      if (!raw || !raw.asof) throw missing('该国际标的尚无带截止日的已发布结果。');
+      if (!sameSymbol(raw.symbol, context)) throw new Error('已发布结果的资产身份不匹配。');
+      if (context.assetType === 'stock') return raw;
+      var result = exactResult(raw, Object.assign({}, context, { asof: raw.asof }));
+      result.historical = false; return result;
+    }
+    if (context.assetType === 'index') {
+      if (context.market && context.market !== 'cn') throw missing('该国际指数尚未连接已发布数据接口。');
+      return timed(function () { return adapter.load(context.code); }, '指数数据');
+    }
+    if (context.market === 'us') return timed(function () { return adapter.stock.latest(context.stockCode); }, '已发布美股数据');
+    throw new Error('此读取入口不启动个股行情查询。');
   }
   function historyFrame(history, context) {
     if (!history || history.symbol && !sameSymbol(history.symbol, context)) return null;
@@ -87,13 +110,26 @@
     var raw = { symbol: history.symbol || context.code, name: name || context.name, asof: frame.asof, top: top,
       model_version: frame.model_version || history.model_version || null,
       prediction_id: frame.prediction_id || null, first_visible_at: frame.first_visible_at || null,
-      evidence_levels: history.evidence_levels || {}, future_calendar: history.future_calendar || null };
+      evidence_levels: history.evidence_levels || {}, future_calendar: history.future_calendar || null,
+      research: frame.research || null, params: frame.params || null };
     if (stockMeta) raw.stock_meta = stockMeta;
     return { raw: raw, top: top, asof: frame.asof, bars: cutoffBars(bars, context.asof),
       sym: { sym: context.code }, name: raw.name, historical: true, historyFallback: true };
   }
   async function historical(adapter, context) {
     if (!context.asof || !context.valid) throw new Error('历史截止日无效。');
+    if (globalAsset(adapter, context)) {
+      var archived;
+      try { archived = await timed(function () { return adapter.global.result(context.code, context.asof); }, '国际精确历史封存'); }
+      catch (error) { throw missing('未读到 ' + context.asof + ' 的国际标的精确封存，未替换成最新或其他市场数据。（' + error.message + '）'); }
+      if (archived && !sameSymbol(archived.symbol, context)) throw new Error('国际历史封存的资产身份不匹配。');
+      var exact = exactResult(archived, context);
+      if (context.assetType === 'stock') exact.market = marketFromPublished(exact.raw, context.stockCode);
+      return exact;
+    }
+    if (context.assetType === 'index' && context.market && context.market !== 'cn') {
+      throw missing('该国际指数尚无可读取的精确历史封存。');
+    }
     // The adapter's explicit REPLAYS allowlist takes its static-JSON branch.
     // Never pass an arbitrary date to load(): its other branch can POST a job.
     var staticDates = adapter.REPLAYS && adapter.REPLAYS[context.code];
@@ -155,7 +191,7 @@
       });
     return { rows: rows, excluded: excluded };
   }
-  return { timed: timed, historical: historical, exactResult: exactResult, historyFrame: historyFrame,
+  return { timed: timed, historical: historical, currentResult: currentResult, globalAsset: globalAsset, sameSymbol: sameSymbol, exactResult: exactResult, historyFrame: historyFrame,
     packedFrame: packedFrame, eventsFor: eventsFor, cutoffBars: cutoffBars,
     barsFrom: barsFrom, marketFromPublished: marketFromPublished };
 });

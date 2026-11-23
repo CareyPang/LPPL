@@ -9,6 +9,78 @@
    本模块不读取、不计算任何业务数据。 */
 (function () {
   'use strict';
+  /* Identity-only routing: a search hit must keep its asset kind. A missing
+     match is never replaced with a default index or a guessed market. */
+  var SearchRoutes = (function () {
+    var GLOBAL_INDICES = [
+      { sym: 'US_SPX', code: 'US_SPX', name: '标普500', alias: ['SPX', '^GSPC', 'SP500', 'S&P500', 'S&P 500', '标普'] },
+      { sym: 'US_IXIC', code: 'US_IXIC', name: '纳斯达克综合指数', alias: ['IXIC', '^IXIC', 'NASDAQ Composite', '纳指综合', '纳斯达克综合'] },
+      { sym: 'US_NDX', code: 'US_NDX', name: '纳斯达克100', alias: ['NDX', '^NDX', 'NASDAQ100', 'NASDAQ 100', '纳指100'] },
+      { sym: 'US_DJI', code: 'US_DJI', name: '道琼斯工业指数', alias: ['DJI', '^DJI', 'DOW', '道琼斯', '道指'] },
+      { sym: 'JP_N225', code: 'JP_N225', name: '日经225', alias: ['N225', '^N225', 'NIKKEI', 'NIKKEI225', '日经'] },
+      { sym: 'KR_KOSPI', code: 'KR_KOSPI', name: '韩国综合指数', alias: ['KOSPI', 'KOPSI', '^KS11', '韩国综合', '韩综指'] },
+      { sym: 'KR_KOSDAQ', code: 'KR_KOSDAQ', name: '韩国创业板', alias: ['KOSDAQ', '^KQ11', '韩国创业板指数'] }
+    ];
+    function key(value) { return String(value || '').trim().toUpperCase().replace(/\s+/g, ''); }
+    function catalog(indices, extra) {
+      var out = [], seen = Object.create(null);
+      (indices || []).concat(extra || [], GLOBAL_INDICES).forEach(function (item) {
+        if (!item || !item.sym || item.kind && item.kind !== 'index' || seen[key(item.sym)]) return;
+        var fallback = GLOBAL_INDICES.find(function (entry) { return key(entry.sym) === key(item.sym); }) || {};
+        seen[key(item.sym)] = true;
+        out.push(Object.assign({}, fallback, item, { code: item.code || item.sym,
+          alias: Array.from(new Set((fallback.alias || []).concat(item.alias || []))) }));
+      });
+      return out;
+    }
+    function findIndex(value, indices) {
+      var target = key(value);
+      return target && (indices || []).find(function (item) {
+        return [item.sym, item.code, item.name].concat(item.alias || []).some(function (alias) { return key(alias) === target; });
+      }) || null;
+    }
+    function rowCode(row) { return String(Array.isArray(row) ? row[0] : row && row.code || ''); }
+    function knownStock(code, rows, published) {
+      return (rows || []).some(function (row) { return key(rowCode(row)) === key(code); }) ||
+        !!(published && typeof published.has === 'function' && published.has(code));
+    }
+    function route(hit, indices, rows, published) {
+      if (!hit) return null;
+      var code = String(hit.code || ''), index = findIndex(hit.sym || code, indices);
+      var reservedIndex = index && /^(US_|JP_|KR_)/.test(index.sym);
+      if (hit.kind === 'index' || reservedIndex) {
+        if (!index) return null;
+        return Object.assign({}, hit, { code: index.code, sym: index.sym, t: index.name,
+          kind: 'index', tags: ['指数'], h: 'chart.html?code=' + encodeURIComponent(index.sym) + '&kind=index&from=home.html',
+          chart: 'chart.html?code=' + encodeURIComponent(index.sym) + '&kind=index&from=home.html' });
+      }
+      if (/^US_[A-Z][A-Z.]{0,5}$/i.test(code)) {
+        code = code.toUpperCase();
+        if (!knownStock(code, rows, published)) return null;
+        return Object.assign({}, hit, { code: code, sym: '', kind: 'us', tags: ['美股'],
+          h: 'chart.html?code=' + encodeURIComponent(code) + '&kind=stock&from=home.html' });
+      }
+      if (/^(?:(?:sh|sz|bj))?\d{6}$/i.test(code)) {
+        return Object.assign({}, hit, { kind: 'stock', h: 'chart.html?code=' + encodeURIComponent(code) + '&kind=stock&from=stock.html' });
+      }
+      // Preserve explicitly typed industry entries. Unknown index/stock
+      // identifiers cannot be sent into a legacy page's default selection.
+      return hit.kind === 'industry' && /^BK\d+$/i.test(code) ? hit : null;
+    }
+    function search(engine, options) {
+      var result = [], seen = Object.create(null);
+      engine.search(options).forEach(function (hit) {
+        var resolved = route(hit, options.idx, options.rows, options.published);
+        if (!resolved || seen[resolved.h]) return;
+        seen[resolved.h] = true; result.push(resolved);
+      });
+      return result;
+    }
+    return { catalog: catalog, findIndex: findIndex, route: route, search: search };
+  })();
+  if (typeof module === 'object' && module.exports) module.exports = SearchRoutes;
+  if (typeof document === 'undefined') return;
+  window.OdNavRoutes = SearchRoutes;
   var me = document.currentScript;
   var section = (me && me.dataset.section) || 'home';
   var theme = (me && me.dataset.theme) || 'light';
@@ -347,6 +419,7 @@
     { sym: 'sz399001', name: '深证成指', code: '399001', alias: ['深证'] },
     { sym: 'sz399006', name: '创业板指', code: '399006', alias: ['创业板'] }
   ];
+  IDX = SearchRoutes.catalog(IDX, window.LPPL && window.LPPL.GLOBAL_SYMS);
   var stockSearchUrl = me && me.src ? new URL('stock-search.js', me.src).href : 'app/stock-search.js';
   var stockSearchScriptPromise = null, stockRowsPromise = null, stockRows = null;
   function loadStockSearchModule() {
@@ -435,18 +508,45 @@
     }
     return searchDepsPromise;
   }
-  var publishedPromise = null, publishedCodes = null;
+  var publishedPromise = null, publishedCodes = null, usSearchRows = [];
+  function searchRows() {
+    var globalStocks = (window.LPPL && window.LPPL.GLOBAL_SYMS || []).filter(function (item) {
+      return item.kind === 'stock' && /^US_[A-Z][A-Z.]{0,5}$/i.test(item.sym || '');
+    }).map(function (item) { return { code: item.sym, name: item.name, py: '', kind: 'us' }; });
+    return (stockRows || []).concat(usSearchRows, globalStocks);
+  }
+  function searchIndices() { return SearchRoutes.catalog(window.LPPL && window.LPPL.SYMS || IDX, window.LPPL && window.LPPL.GLOBAL_SYMS); }
   function loadPublished() {
     if (publishedCodes) return Promise.resolve(publishedCodes);
     if (publishedPromise) return publishedPromise;
     if (!window.LPPL || !window.LPPL.stock || typeof window.LPPL.stock.index !== 'function') return Promise.resolve(null);
-    publishedPromise = window.LPPL.stock.index().then(function (J) {
-      var codes = [];
-      if (Array.isArray(J)) codes = J.map(function (r) { return r && (r.code || r.symbol || r); });
-      else if (J && Array.isArray(J.rows)) codes = J.rows.map(function (r) { return r && (r.code || r.symbol || r[0]); });
-      else if (J && Array.isArray(J.stocks)) codes = J.stocks.map(function (r) { return r && (r.code || r); });
-      else if (J && typeof J === 'object') codes = Object.keys(J).filter(function (k) { return /^(\d{6}|US_[A-Z.]+)$/.test(k); });
-      publishedCodes = new Set(codes.filter(function (c) { return typeof c === 'string'; }));
+    var stockAPI = window.LPPL.stock;
+    publishedPromise = Promise.allSettled([
+      Promise.resolve().then(function () { return stockAPI.index(); }),
+      Promise.resolve().then(function () { return typeof stockAPI.usIndex === 'function' ? stockAPI.usIndex() : null; })
+    ]).then(function (results) {
+      var codes = [], gotCatalog = false;
+      results.forEach(function (result, catalogIndex) {
+        if (result.status !== 'fulfilled' || !result.value) return;
+        gotCatalog = true;
+        var J = result.value, rows = Array.isArray(J) ? J : Array.isArray(J.rows) ? J.rows : Array.isArray(J.stocks) ? J.stocks :
+          Object.keys(J).filter(function (k) { return /^(\d{6}|US_[A-Z.]+)$/.test(k); }).map(function (k) { return { code: k }; });
+        rows.forEach(function (r) {
+          var code = Array.isArray(r) ? r[0] : typeof r === 'string' ? r : r && (r.code || r.symbol || r.ticker);
+          if (typeof code !== 'string') return;
+          if (catalogIndex === 1 && /^[A-Z][A-Z.]{0,5}$/i.test(code)) code = 'US_' + code.toUpperCase();
+          if (!/^(\d{6}|US_[A-Z][A-Z.]{0,5})$/i.test(code)) return;
+          if (/^US_/i.test(code)) {
+            code = code.toUpperCase();
+            if (!usSearchRows.some(function (row) { return row.code === code; })) {
+              usSearchRows.push({ code: code, name: (Array.isArray(r) ? r[1] : r && r.name) || code.slice(3), py: '', kind: 'us' });
+            }
+          }
+          codes.push(code);
+        });
+      });
+      if (!gotCatalog) { publishedPromise = null; return null; }
+      publishedCodes = new Set(codes);
       return publishedCodes;
     }).catch(function () { publishedPromise = null; return null; });
     return publishedPromise;
@@ -484,18 +584,20 @@
     function currentIndexSymbol() {
       var currentCode = String(new URLSearchParams(location.search).get('code') || '').trim();
       if (!currentCode) return 'sh000001';
-      var normalized = currentCode.toLowerCase();
-      var indexItem = ((window.LPPL && window.LPPL.SYMS) || []).filter(function (item) {
-        return String(item.sym || '').toLowerCase() === normalized ||
-          String(item.code || '').toLowerCase() === normalized || item.name === currentCode;
-      })[0];
+      var indexItem = SearchRoutes.findIndex(currentCode, searchIndices());
       return indexItem && indexItem.sym || 'sh000001';
     }
     function updateChartHref() {
+      var enteredCode = new URLSearchParams(location.search).get('code');
+      if (enteredCode && !SearchRoutes.findIndex(enteredCode, searchIndices())) {
+        chartLink.removeAttribute('href'); chartLink.setAttribute('aria-disabled', 'true');
+        chartLink.textContent = '未识别的指数'; return;
+      }
+      chartLink.removeAttribute('aria-disabled'); chartLink.textContent = '完整图表 ›';
       var source = location.pathname.split('/').pop() + location.search;
       var asof = validAsof(new URLSearchParams(location.search).get('asof'));
       chartLink.href = 'chart.html?code=' + encodeURIComponent(currentIndexSymbol()) +
-        '&from=' + encodeURIComponent(source) + (asof ? '&asof=' + encodeURIComponent(asof) : '');
+        '&kind=index&from=' + encodeURIComponent(source) + (asof ? '&asof=' + encodeURIComponent(asof) : '');
     }
     updateChartHref();
     ['click', 'focus', 'pointerenter'].forEach(function (name) {
@@ -547,18 +649,21 @@
     if (!S) { ml.innerHTML = '<li class="odm-e">搜索组件加载中…</li>'; return; }
     var q = mi.value.trim();
     if (!q) {
-      mHits = S.recentHits(store()).map(function (h) { if (h.kind !== 'index' && h.t === h.code) { var n = nameOf(h.code); if (n) h.t = n; } return h; });
+      mHits = S.recentHits(store()).map(function (h) {
+        if (h.kind !== 'index' && h.t === h.code) { var n = nameOf(h.code); if (n) h.t = n; }
+        return SearchRoutes.route(h, searchIndices(), searchRows(), publishedCodes);
+      }).filter(Boolean);
       if (mFilter !== 'all') mHits = mHits.filter(function (h) { return mFilter === 'index' ? h.kind === 'index' : h.kind !== 'index'; });
       if (mSel >= mHits.length) mSel = 0;
       ml.innerHTML = mHits.length
         ? '<li class="odm-g">最近访问</li>' + mHits.map(function (h, i) { return hitHtml(h, i, i === mSel); }).join('')
         : '<li class="odm-e">输入股票名、拼音首字母、6 位代码或指数名；美股输代码（如 NVDA）。</li>';
     } else {
-      mHits = S.search({ idx: IDX, rows: stockRows || [], query: q, filter: mFilter, limit: 10, published: publishedCodes });
+      mHits = SearchRoutes.search(S, { idx: searchIndices(), rows: searchRows(), query: q, filter: mFilter, limit: 10, published: publishedCodes });
       if (mSel >= mHits.length) mSel = 0;
       ml.innerHTML = mHits.length
         ? mHits.map(function (h, i) { return hitHtml(h, i, i === mSel); }).join('')
-        : '<li class="odm-e">没有匹配：可输入股票名、拼音、6 位代码或美股代码' + (stockRows ? '' : '（股票清单加载中…）') + '</li>';
+        : '<li class="odm-e">没有匹配的标的。请核对名称、代码和市场；不会自动改为其他指数。' + (stockRows ? '' : '（股票清单加载中…）') + '</li>';
     }
     if (mHits.length) mi.setAttribute('aria-activedescendant', 'odm-o-' + mSel); else mi.removeAttribute('aria-activedescendant');
   }
