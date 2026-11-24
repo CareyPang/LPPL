@@ -104,11 +104,14 @@
   <link rel="stylesheet" href="app/global-analysis.css">
   <link rel="stylesheet" href="app/aftershock.css">
   <link rel="stylesheet" href="app/global-events.css">
+  <link rel="stylesheet" href="app/decision-panel.css">
   <script src="app/lppl-data.js"></script>
   <script src="app/trading-days.js"></script>
   <script src="app/top-clusters.js"></script>
   <script src="app/rule-labels.js"></script>
   <script src="app/chart-page-core.js"></script>
+  <script src="app/decision-state.js"></script>
+  <script src="app/decision-controller.js"></script>
   <script src="app/chart-readonly-data.js"></script>
   <script src="app/chart-research-card.js"></script>
   <script src="vendor/lppl-lwc/1/lppl-lwc.js"></script>
@@ -238,6 +241,7 @@
           </section>
         </aside>
       </div>
+      <section id="decision-panel-host" class="decision-panel-host" aria-label="底部条件与综合判断"></section>
       <details id="long-horizon-card" class="long-horizon" hidden>
         <summary><span><strong>长窗口研究</strong><small>900–950 日 · 6500–6700 日</small></span><span id="long-horizon-summary">等待独立研究结果</span></summary>
         <div id="long-horizon-content" class="long-horizon-content"></div>
@@ -266,6 +270,7 @@
     </div>
   </main>
   <script src="app/evidence-badge.js"></script>
+  <script src="app/decision-panel.js"></script>
   <script src="app/ai-assistant.js" data-page="stock" data-default="closed"></script>
   <script src="app/unified-terminal.js"></script>
   <script src="app/long-horizon.js"></script>

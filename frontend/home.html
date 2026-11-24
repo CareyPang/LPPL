@@ -162,6 +162,8 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 #market-tabs button:focus-visible{outline:2px solid #245de0;outline-offset:2px}
 @media(max-width:520px){#market-tabs{padding:0 12px 12px;gap:4px}#market-tabs button{flex:1;padding:9px 8px}}
 </style>
+<script src="app/chart-page-core.js"></script>
+<script src="app/decision-state.js"></script>
 <script src="app/bottom-action.js"></script>
 <script src="app/home-data.js"></script>
 <script src="app/lppl-data.js"></script>
@@ -309,11 +311,35 @@ function renderRadar(L){
  const nWait=acts.filter(a=>a.tier==='left_wait').length;
  const nNeu=acts.filter(a=>a.tier==='neutral').length;
  pills.innerHTML=
-  `<span class="radar-pill g">🟢 可启动建仓 ${nBuy}</span>`+
+  `<span class="radar-pill g">🟢 具备底部条件 ${nBuy}</span>`+
   `<span class="radar-pill a">🟡 左侧观察 ${nWait}</span>`+
   (nTop?`<span class="radar-pill r">🔴 顶部预警 ${nTop}</span>`:`<span class="radar-pill">🔴 顶部预警 0</span>`)+
-  `<span class="radar-pill">⚪ 中性观望 ${nNeu}</span>`;
+  `<span class="radar-pill">⚪ 常态观察 ${nNeu}</span>`;
  bar.hidden=false;
+}
+function actionMarkup(act, historyStatus){
+ if(!act)return historyStatus==='loading'?'<div class="act-strip" data-tone="gray"><span class="act-meta">底部条件独立读取中，行情可先查看</span></div>':'';
+ return `<div class="act-strip" data-tone="${E(act.tone)}"><span class="act-pos">${E(act.glyph)} ${E(act.positionLabel)}${act.positionText?' · '+E(act.positionText):''}</span><span class="act-meta">${act.score!=null?'底部条件 '+act.score+'/100 · '+E(act.scoreAsOf)+(act.scoreStale?' 待更新':'')+' · ':''}${E(act.canBuyLabel)}</span></div>`;
+}
+function updateDecisionRow(row){
+ if(!IDXROWS)return;
+ const index=IDXROWS.findIndex(item=>item.sym===row.sym);
+ if(index<0)return;
+ IDXROWS[index]=row;
+ const item=Array.from(rows.querySelectorAll('a[data-sym]')).find(el=>el.dataset.sym===row.sym);
+ if(!item)return;
+ // Keep the existing quote, chart, DOM focus and reading anchor when evidence arrives.
+ const anchor=Array.from(rows.children).find(el=>el.getBoundingClientRect().bottom>0);
+ const anchorTop=anchor?anchor.getBoundingClientRect().top:null;
+ const old=item.querySelector('.act-strip');
+ if(old)old.remove();
+ item.insertAdjacentHTML('beforeend',actionMarkup(row.action,row.historyStatus));
+ if(idxSort==='bottom'){
+  const sorted=[...IDXROWS].sort((a,b)=>(b.action?.score??-1)-(a.action?.score??-1));
+  sorted.forEach(record=>{const node=Array.from(rows.children).find(el=>el.querySelector('a[data-sym]')?.dataset.sym===record.sym);if(node)rows.appendChild(node);});
+ }
+ renderRadar(IDXROWS);
+ if(anchor&&anchorTop<innerHeight&&anchorTop!=null){const shift=anchor.getBoundingClientRect().top-anchorTop;if(Math.abs(shift)>1)window.scrollBy(0,shift);}
 }
 function renderIdxRows(){
  if(!IDXROWS)return false;
@@ -321,7 +347,7 @@ function renderIdxRows(){
  if(!ok.length)$('asof').textContent='当前没有可用结果；可打开标的核对状态';
  renderRadar(rawL);
  const L=idxSort==='bottom'
-  ?[...rawL].sort((a,b)=>((b&&b.action?b.action.score:-1)-(a&&a.action?a.action.score:-1)))
+  ?[...rawL].sort((a,b)=>((b&&b.action&&b.action.score!=null?b.action.score:-1)-(a&&a.action&&a.action.score!=null?a.action.score:-1)))
   :rawL;
  const charts=L.map(r=>{
   if(r.error)return {bars:[],values:[]};
@@ -335,16 +361,22 @@ function renderIdxRows(){
   const lag=r.bars.reduce((n,b)=>n+(b.date>r.asof?1:0),0),dateText=shortDate(r.asof),lineColor=period>=0?'var(--up)':'var(--dn)';
   const insufficient=chart.bars.length<sparkRange;
   const act=r.action;
-  const actHtml=act?`<div class="act-strip" data-tone="${E(act.tone)}"><span class="act-pos">${E(act.glyph)} ${E(act.positionLabel)} · ${E(act.positionText)}</span><span class="act-meta">${act.score>0?'综合分 '+act.score+'/100 · ':''}${E(act.canBuyLabel)}</span></div>`:'';
+  const actHtml=actionMarkup(act,r.historyStatus);
   return `<li><a class="row" data-sym="${r.sym}" data-name="${E(r.name)}" data-close-date="${E(r.last.date)}" data-model-asof="${E(r.asof)}" data-status="${E(r.status)}" href="${indexHref(r.sym)}" aria-label="${E(r.name)}，近${SPARK_LABELS[sparkRange]} ${pct(period,1)}，收盘 ${r.last.close.toFixed(2)}，模型截至 ${dateText}，${E(r.status)}"><div><div class="n">${E(r.name)}</div><div class="c">${r.sym}</div></div><svg class="sparkline" data-range="${sparkRange}" data-y-domain="${domain.min.toFixed(8)},${domain.max.toFixed(8)}" viewBox="0 0 80 30" aria-hidden="true"><line class="spark-zero" x1="2" x2="78" y1="${zeroY}" y2="${zeroY}"/><path class="spark-line" d="${sparkPath(chart.values,domain)}" stroke="${lineColor}"/></svg><div class="spark-meta ${period>=0?'up':'dn'}"><span>近${SPARK_LABELS[sparkRange]} ${pct(period,1)}</span>${insufficient?`<small>数据不足 ${sparkRange} 日</small>`:''}</div><div class="p">${r.last.close.toFixed(2)} <small class="${ch>=0?'up':'dn'}" style="font-size:12px;font-weight:500">${pct(ch)}</small></div><div class="times"><span class="quote-time">收盘 ${shortDate(r.last.date)}</span><span class="model-date">模型截至 ${dateText}${lag>1?`<small class="lag">落后 ${lag} 个交易日</small>`:''}</span></div><div class="s${r.windowText?' on':''}" title="${E(r.statusTitle || r.status)}">${E(r.status)}</div>${r.windowText?`<div class="w">${E(r.windowText)}</div>`:''}${actHtml}</a></li>`}).join('');
  return true;
 }
 function loadIdx(){
  const request=++indexRequest;
  skel();
- HOMEDATA.all(selectedMarket).then(L=>{
+ const buffered=new Map();let initialReady=false;
+ HOMEDATA.all(selectedMarket,row=>{
   if(request!==indexRequest)return;
-  IDXROWS=L;
+  buffered.set(row.sym,row);
+  if(initialReady)updateDecisionRow(row);
+ }).then(L=>{
+  if(request!==indexRequest)return;
+  IDXROWS=L.map(row=>buffered.get(row.sym)||row);
+  initialReady=true;
   if(!renderIdxRows()){if(qTimer)refreshQuotes();else startQuotes();mine();return}
   const ok=L.filter(r=>!r.error),S=ok.find(r=>r.sym==='sh000001')||ok[0];
   if(!S){mine();return;}

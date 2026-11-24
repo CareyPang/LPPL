@@ -72,6 +72,25 @@
       ? String(symbol).replace(/^(sh|sz|bj)/i, '') === context.stockCode
       : String(symbol).toLowerCase() === context.code.toLowerCase();
   }
+  function stockMarketFromArchive(raw, context) {
+    raw = raw && (raw.raw || raw);
+    if (!raw || context.assetType !== 'stock' || context.market !== 'cn' ||
+        !raw.symbol || !sameSymbol(raw.symbol, context) || !/^\d{4}-\d{2}-\d{2}$/.test(raw.asof || '')) {
+      throw missing('没有身份与截止日可核对的个股行情原档。');
+    }
+    var bars = cutoffBars(barsFrom(raw), raw.asof).filter(function (bar) {
+      return typeof bar.close === 'number' && Number.isFinite(bar.close) && bar.close > 0;
+    });
+    if (!bars.length) throw missing('个股原档没有可展示的真实日线。');
+    var ph = raw.price_history || {};
+    return { symbol: raw.symbol, name: raw.name || context.name, price: bars,
+      asof: bars[bars.length - 1].date, source: ph.source || raw.source || '已发布模型行情原档',
+      adjustment: ph.adjustment || raw.adjust || '', volume_unit: ph.volume_unit || '',
+      currency: raw.currency || 'CNY', exchange: raw.exchange || context.exchange || '',
+      stale: true, stale_reason: '行情更新接口暂未读到，保留已发布原档。',
+      price_note: '已发布原档行情；本次未取得更新，缺失 OHLC 不补造。',
+      future_calendar: raw.future_calendar || null };
+  }
   function globalAsset(adapter, context) {
     return !!(adapter.global && typeof adapter.global.isAsset === 'function' && adapter.global.isAsset(context.code));
   }
@@ -112,6 +131,12 @@
       prediction_id: frame.prediction_id || null, first_visible_at: frame.first_visible_at || null,
       evidence_levels: history.evidence_levels || {}, future_calendar: history.future_calendar || null,
       research: frame.research || null, params: frame.params || null };
+    // Only fields sealed in this exact frame travel with a historical model.
+    // Never attach today's dashboard or whole-history performance summary.
+    ['fco_neg_intensity', 'bottom_score', 'bottom_factors', 'bottom_first_alert_flag',
+      'cooling_state', 'bottom', 'data_version', 'score_version'].forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(frame, key)) raw[key] = frame[key];
+    });
     if (stockMeta) raw.stock_meta = stockMeta;
     return { raw: raw, top: top, asof: frame.asof, bars: cutoffBars(bars, context.asof),
       sym: { sym: context.code }, name: raw.name, historical: true, historyFallback: true };
@@ -193,5 +218,5 @@
   }
   return { timed: timed, historical: historical, currentResult: currentResult, globalAsset: globalAsset, sameSymbol: sameSymbol, exactResult: exactResult, historyFrame: historyFrame,
     packedFrame: packedFrame, eventsFor: eventsFor, cutoffBars: cutoffBars,
-    barsFrom: barsFrom, marketFromPublished: marketFromPublished };
+    barsFrom: barsFrom, marketFromPublished: marketFromPublished, stockMarketFromArchive: stockMarketFromArchive };
 });

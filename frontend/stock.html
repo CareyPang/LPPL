@@ -316,6 +316,11 @@
   <script src="app/lppl-data.js"></script>
   <script src="app/scen-style.js"></script>
   <script src="app/bottom-action.js"></script>
+  <script src="app/chart-page-core.js"></script>
+  <script src="app/chart-readonly-data.js"></script>
+  <script src="app/decision-state.js"></script>
+  <link rel="stylesheet" href="app/decision-panel.css">
+  <script src="app/decision-panel.js"></script>
   <script src="app/alert-ledger.js"></script>
   <script src="app/stock-search.js"></script>
   <script src="app/stock-session.js"></script>
@@ -801,15 +806,14 @@
             topByDate.set(frame.asof, { top: topInt, locked });
           }
         }
-        if (window.BottomAction && typeof window.BottomAction.evaluateStockSeries === 'function') {
-          const bars = dates.map((dt, idx) => ({ date: dt, close: Number(closes[idx]) }));
-          const evalRes = window.BottomAction.evaluateStockSeries(bars, { code: code6(d.symbol) });
-          for (let idx = 0; idx < evalRes.series.length; idx += 5) {
-            const item = evalRes.series[idx];
-            if (!topByDate.has(item.date) && item.bottomIntensity > 0) {
+        // Draw only published observations; do not create another browser score.
+        for (const frame of frames) {
+          const intensity = frame.fco_neg_intensity;
+          if (typeof intensity === 'number' && Number.isFinite(intensity) && intensity > 0 && intensity <= 1) {
+            if (!topByDate.has(frame.asof)) {
               window.CPSCN.drawFcoBottomBar(context, {
-                x: x(item.date), w: barW, bottom: fcoBottom, maxH: fcoMaxH,
-                intensity: item.bottomIntensity, hot: false,
+                x: x(frame.asof), w: barW, bottom: fcoBottom, maxH: fcoMaxH,
+                intensity, hot: false,
               });
             }
           }
@@ -1320,90 +1324,42 @@
       return null;
     }
 
-    async function renderStockActionCard(d, history) {
+    let stockDecisionPanel = null;
+    let stockDecisionCurrent = null;
+    let stockDecisionHistory = null;
+    let stockDecisionMarket = null;
+    let stockDecisionFrame = null;
+    let stockDecisionScale = '6-12m';
+    function renderStockActionCard(d, history, frame) {
       const host = $('stock-action-card');
-      if (!host || !window.BottomAction || typeof window.BottomAction.evaluateStockSeries !== 'function') return;
-      const ph = d?.price_history || {};
-      const dates = Array.isArray(ph.dates) ? ph.dates : [];
-      const closes = Array.isArray(ph.close) ? ph.close : [];
-      const bars = dates.map((dt, idx) => ({
-        date: dt,
-        close: Number(closes[idx]),
-        high: Number((ph.high && ph.high[idx]) ?? closes[idx]),
-        low: Number((ph.low && ph.low[idx]) ?? closes[idx]),
-        volume: Number((ph.volume && ph.volume[idx]) ?? 1),
-      }));
-      const top = d?.top || {};
-      const hasTop = top.signal_status === 'signal';
-      const evalRes = window.BottomAction.evaluateStockSeries(bars, { code: code6(d?.symbol), hasTop });
-      const pp = typeof window.BottomAction.evaluatePricePhysics === 'function'
-        ? window.BottomAction.evaluatePricePhysics(bars)
-        : null;
-      if (!evalRes || !evalRes.latest || !evalRes.action) {
-        host.hidden = true;
-        return;
+      if (!host || !window.LPPLDecisionState || !window.LPPLDecisionPanel) return;
+      const code = String(d?.symbol || '');
+      const market = /^US_/i.test(code) ? 'us' : /^KR_/i.test(code) ? 'kr' : 'cn';
+      const context = { code, stockCode: code6(code), assetType: 'stock', market,
+        asof: frame?.asof || '', scale: stockDecisionScale, rule: market === 'cn' ? 'box' : 'cycles_1_5' };
+      const raw = frame && window.LPPLChartReadOnly
+        ? window.LPPLChartReadOnly.packedFrame(history || {}, frame, context, [], stockName(d)).raw : d;
+      const data = window.LPPLChartPageCore.withRule({raw, top: raw?.top || {}, symbol: code,
+        assetType: 'stock', modelStatus: raw ? 'ok' : 'missing', modelAsOf: raw?.asof || '',
+        marketAsOf: frame?.asof || stockDecisionMarket?.asof || d?.asof || '',
+        stale: !frame && stockDecisionMarket?.stale === true}, context.rule);
+      const decision = window.LPPLDecisionState.build({data, history, context});
+      const summary = $('summary');
+      if (summary) {
+        const card = document.createElement('section'); card.className = 'sum-card top';
+        const title = document.createElement('h3'); title.textContent = decision.conclusion.title;
+        const detail = document.createElement('p'); detail.textContent = decision.conclusion.detail + ' ' + decision.conclusion.next;
+        const date = document.createElement('p'); date.className = 'sum-foot';
+        date.textContent = (frame ? '回到当时 · ' : '当前记录 · ') + (decision.asof || '截止日未提供');
+        card.append(title, detail, date); summary.replaceChildren(card);
       }
-      const latest = evalRes.latest;
-      const act = evalRes.action;
-      const board = evalRes.board;
-      const frames = Array.isArray(history?.frames) ? history.frames : [];
-      const topConv = (window.CPAlertLedger && frames.length)
-        ? window.CPAlertLedger.latestConvergence(frames, history?.tops || [], '6-12m')
-        : null;
-      const mainView = scaleClusterView(d, '6-12m');
-      const mainCl = mainView.kind === 'clusters' ? mainView.clusters[0] : (mainView.kind === 'legacy' ? mainView.window : null);
-      const medDate = mainCl && window.CPAlertLedger ? window.CPAlertLedger.clusterMedianDate(mainCl, null) : null;
-      let topNote = '当前 6–12 月主尺度<b>无合格顶部聚类</b>（非泡沫见顶阶段）。';
-      if (mainCl) {
-        const convLabel = topConv && topConv.active && topConv.active.convergence
-          ? `，连续 as-of 检验：<b>${esc(topConv.active.convergence.label)}</b>`
-          : '（需结合历史回放做连续 as-of 不漂移核验）';
-        topNote = `6–12 月顶部主簇区间 <b>${esc(mainCl.q20_date)} – ${esc(mainCl.q80_date)}</b>` +
-          (medDate ? `，聚类时间中位数 <b>${esc(medDate)}</b>` : '') + convLabel + '。';
-      } else if (topConv && topConv.latest && topConv.latest.convergence) {
-        topNote += ` 历史最近一轮顶部聚类（${esc(topConv.latest.first_asof)}，中位数 ${esc(topConv.latest.median_date || '—')}，${esc(topConv.latest.convergence.label)}）已结束。`;
-      }
-
-      const ov = await loadOverviewCached();
-      const boardItem = ov && Array.isArray(ov.indices)
-        ? ov.indices.find((it) => it.sym === board.sym) || null
-        : null;
-      const boardAct = boardItem ? window.BottomAction.fromOverviewItem(boardItem) : null;
-      const boardText = boardItem && boardAct
-        ? `市场参考 <b>${esc(boardItem.name)}</b> 底部综合分 <b>${boardItem.bottom_score ?? 0}/100</b>（${esc(boardAct.shortBadge)}；不是成分股归属）`
-        : `市场参考 <b>${esc(board.board)}</b>（数据同步中；不是成分股归属）`;
-
-      const omoriBadge = latest.omoriRed
-        ? `🔴 <b>Omori 余震红灯亮起</b>（近 15 日大阴线 ${latest.bigDrops15d} 次${latest.hitNewLow10d ? '、近 10 日刷新 60 日新低' : ''}），防死猫跳拦截重仓`
-        : `🟢 <b>余震可控</b>（近 15 日大阴线 ${latest.bigDrops15d} 次${latest.hitNewLow10d ? '，但仍在 60 日低位试探' : '，未再刷新 60 日新低'}）`;
-      const maText = latest.aboveMa20 && latest.aboveMa60
-        ? '已站上 MA20 与 MA60（右侧多头）'
-        : latest.aboveMa20
-          ? '仅站上 MA20，未站上 MA60（反弹确认中）'
-          : '仍处 MA20/MA60 下方（右侧未成立）';
-      const capHint = latest.omoriRed || (boardAct && !boardAct.canBuy)
-        ? '单票风控上限：余震/板块未共振前<b>严禁一把重仓（≤10%–15% 轻仓试探或观望）</b>，待缩量回踩不破底再分批。'
-        : '单票风控上限：遵循 30%→30%→40% 分批纪律，单只个股不超过总仓位 20%–30%。';
-
-      host.dataset.tone = act.tone;
+      // Latest-only diagnostic sections must not appear as historical evidence.
+      for (const id of ['sec-top', 'sec-dip']) { const section = $(id); if (section) section.hidden = !!frame; }
+      if (!stockDecisionPanel) stockDecisionPanel = window.LPPLDecisionPanel.mount(host,
+        {document, badge: window.CPEvidenceBadge, showSummary: false});
       host.hidden = false;
-      const ppHtml = pp
-        ? `<div class="sac-box"><b>🔬 价格层物理结构（势阱 × OBV）</b><br><b>${esc(pp.label)}</b>（自由能 F=${pp.wellF}，${pp.noWellBelow ? '下方无更深旧势阱' : '下方仍有旧势阱'}）。<br>距 250 日筹码均价 <b>${(pp.vwapGap * 100 >= 0 ? '+' : '') + (pp.vwapGap * 100).toFixed(1)}%</b> · OBV 底背离 <b>${pp.obvDiv >= 0 ? '+' : ''}${pp.obvDiv}</b>。</div>`
-        : '';
-      host.innerHTML =
-        `<div class="sac-hd">` +
-          `<div class="sac-title">${esc(act.glyph)} 个股顶底与防死猫跳结论：${esc(act.positionLabel)} · ${esc(act.canBuyLabel)}</div>` +
-          `<div class="sac-pos">个股底部出清分 ${latest.score}/100 · ${esc(act.positionText)}</div>` +
-        `</div>` +
-        `<div class="sac-grid">` +
-          `<div class="sac-box"><b>🎯 顶部聚类与收敛提醒</b><br>${topNote}<br><span style="color:#6A6D78">主图低强度弱红/绿柱已自动降噪，仅高亮高置信信号。</span></div>` +
-          `<div class="sac-box"><b>🛡️ 防死猫跳 · Omori 余震检验</b><br>${omoriBadge}<br>52 周回撤 <b>${(latest.dd252 * 100).toFixed(1)}%</b> · 右侧均线：${esc(maText)}。</div>` +
-          `<div class="sac-box"><b>🧭 市场参考与仓位上限</b><br>${boardText}<br>${capHint}</div>` +
-          ppHtml +
-        `</div>` +
-        `<div class="sac-steps">` +
-          window.BottomAction.STEPS.map((st) => `<div class="sac-step${act.stepIndex >= st.idx ? ' on' : ''}">${esc(st.title)}（${esc(st.pct)}）<br>${esc(st.cond)}</div>`).join('') +
-        `</div>`;
+      host.dataset.tone = decision.conclusion.tone;
+      stockDecisionPanel.render(decision);
     }
 
     function render(d, history, market) {
@@ -1416,8 +1372,8 @@
       $('stock-evidence').textContent = evidence === 'research_candidate' ? '研究候选 · 未经样本外检验'
         : evidence ? evLabel(evidence) : '证据状态未知';
       document.title = `${name || code6(d.symbol)} · 临界点标的`;
-      $('summary').innerHTML = summaryHtml(d, name);
-      void renderStockActionCard(d, history);
+      stockDecisionCurrent = d; stockDecisionHistory = history; stockDecisionMarket = market;
+      renderStockActionCard(d, history, stockDecisionFrame);
       if (window.StockHeaderView) StockHeaderView.update(d, name, market);
       const us = d.symbol?.startsWith('US_');
       const priceHistory = d.price_history || {};
@@ -1721,12 +1677,28 @@
       normalizeCode,
       isStaticCode: code => code.startsWith('US_'),
       loadStaticCode: loadStaticUS,
-      onCodeChange: code => syncEventsFor(code),
+      onCodeChange: code => {
+        syncEventsFor(code);
+        const host = $('stock-action-card');
+        if (host) { host.hidden = true; host.replaceChildren(); }
+        stockDecisionPanel = null; stockDecisionCurrent = null; stockDecisionHistory = null;
+        stockDecisionMarket = null; stockDecisionFrame = null; stockDecisionScale = '6-12m';
+      },
+      onHistoryChange: frame => {
+        stockDecisionFrame = frame;
+        if (stockDecisionCurrent) renderStockActionCard(stockDecisionCurrent, stockDecisionHistory, frame);
+      },
+      onScaleSelected: scale => {
+        stockDecisionScale = scale;
+        if (stockDecisionCurrent) renderStockActionCard(stockDecisionCurrent, stockDecisionHistory, stockDecisionFrame);
+      },
       renderResult: (current, history, market) => {
         render(current, history, market);
         syncEventsFor(current && current.symbol);
       },
       renderMarket: (current, market) => {
+        stockDecisionMarket = market;
+        if (stockDecisionCurrent) renderStockActionCard(stockDecisionCurrent, stockDecisionHistory, stockDecisionFrame);
         if (window.StockHeaderView) StockHeaderView.update(current, stockName(current), market);
         refreshEventAvailability();
       },

@@ -30,6 +30,8 @@
   var longHorizon = null;
   var analysisJob = null;
   var aftershock = null;
+  var decisionController = null;
+  var decisionPanel = null;
   var futureBars = null;
   var scales = Core.SCALES;
   var scaleLabels = {
@@ -115,6 +117,7 @@
     if (terminal) terminal.render(data, intervalRows(data, selectedScale).filter(function (band) {
       return Core.bandEvidencePolicy(evidenceCode(data, selectedScale), band).showDates;
     }));
+    if (decisionController) decisionController.render(data);
     var state = el('evidence-state');
     var ruleSource = el('evidence-rule-source');
     var list = el('interval-list');
@@ -454,6 +457,18 @@
       presentStock();
     } catch (error) {
       if (request !== sequence) return;
+      // Existing adapter archive remains usable when the quote API is down.
+      try {
+        var saved = activeModel || await Reader.timed(function () { return LPPL.stock.latest(context.stockCode); }, '已发布行情原档');
+        if (request !== sequence) return;
+        activeMarket = Reader.stockMarketFromArchive(saved, context);
+        moduleState('market-status', '行情更新失败；显示原档 ' + activeMarket.asof);
+        presentStock();
+        el('error-message').textContent = '更新行情未成功：' + error.message + '。已保留 ' + activeMarket.asof + ' 的真实行情原档。';
+        el('error-panel').hidden = false; el('retry-button').hidden = false;
+        return;
+      } catch (_) { /* Preserve the original quote failure if no archive exists. */ }
+      if (request !== sequence) return;
       moduleState('market-status', '行情读取失败');
       showError(error);
     }
@@ -732,6 +747,10 @@
 
   function showError(error) {
     el('loading').hidden = true;
+    if (!current && decisionController) decisionController.render({
+      symbol: context.code, raw: null, top: {}, modelStatus: 'error',
+      modelAsOf: context.asof || '', marketAsOf: '', modelMessage: error && error.message
+    });
     if (!current && el('terminal-alert-status')) {
       setText('asset-name', context.name || context.stockCode || context.code || '未选择标的');
       setText('terminal-alert-status', error && error.pending ? '当前没有可用记录' : '本次未读到结果');
@@ -834,6 +853,30 @@
         }));
       },
     });
+    if (root.LPPLDecisionState && root.LPPLDecisionPanel && root.LPPLDecisionController && context.valid) {
+      decisionPanel = root.LPPLDecisionPanel.mount(el('decision-panel-host'), {
+        document: document, badge: root.CPEvidenceBadge, showSummary: false,
+        onRetry: function () { if (decisionController) decisionController.retry(); }
+      });
+      decisionController = root.LPPLDecisionController.attach({
+        adapter: LPPL, reader: Reader, context: context, state: root.LPPLDecisionState,
+        onChange: function (view) {
+          decisionPanel.render(view);
+          page.dataset.decisionStatus = view.conclusion.status;
+          page.dataset.decisionAsOf = view.asof || '';
+          page.dataset.bottomScore = view.bottom.score == null ? '' : String(view.bottom.score);
+          page.dataset.bottomAsOf = view.bottom.asof || '';
+          page.dataset.decisionHistoryStatus = view.provenance.historyStatus || '';
+          el('terminal-alert-status').textContent = view.conclusion.title;
+          el('terminal-alert-window').textContent = view.top.windows.length
+            ? view.top.windows.map(function (band) { return band.q20_date + ' — ' + band.q80_date; }).join(' / ')
+            : view.top.label;
+          el('terminal-alert-detail').textContent = view.conclusion.detail + ' ' + view.conclusion.next;
+          var summary = el('terminal-alert-status').closest('.terminal-summary');
+          if (summary) summary.dataset.tone = view.conclusion.tone;
+        }
+      });
+    }
     chart.on('scale', function (scale) {
       if (scale !== context.scale) context.scale = scale;
     });
@@ -847,5 +890,6 @@
   root.addEventListener('pagehide', function (event) {
     if (!event.persisted && drawing) { drawing.detach(); drawing = null; }
     if (!event.persisted && analysisJob) analysisJob.dispose();
+    if (!event.persisted && decisionController) decisionController.close();
   });
 })(window);
