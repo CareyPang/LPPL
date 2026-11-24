@@ -1,6 +1,6 @@
 # 底分 / 三定律校准回测
 
-- Seed: `20261124`; random/bootstrap repetitions: `2000/2000`; runtime: `102.029s`.
+- Seed: `20261124`; random/bootstrap repetitions: `2000/2000`; runtime: `126.775s`.
 - Weekly inputs are the seven published index history files; daily PIT inputs are the long local `research.data.cache` qfq caches.
 - `live` frames are excluded from samples, decisions, and forward-outcome closes.
 
@@ -39,15 +39,29 @@
 | test | B4 | 24w | 120 | 23 | 0.478 | -0.001 | — | 0.217/0.391/0.522 | -0.126 to 0.219 | 否 |
 | test | B4 | 50w | 115 | 21 | 0.476 | -0.008 | -0.139 | 0.238/0.429/0.571 | -0.057 to 0.234 | 否 |
 
+## B3 候选周三定律指标分布
+
+| 段 | B3 候选周 | 指标 | 有效数 | P10 | P50 | P90 |
+|---|---:|---|---:|---:|---:|---:|
+| dev | 1038 | p | 211 | -0.362 | 0.161 | 0.600 |
+| dev | 1038 | delta_m | 860 | 0.004 | 0.050 | 0.345 |
+| dev | 1038 | productivity_ratio | 964 | 0.000 | 0.955 | 1.920 |
+| cal | 49 | p | 39 | 0.209 | 0.464 | 0.638 |
+| cal | 49 | delta_m | 47 | 0.121 | 0.254 | 0.343 |
+| cal | 49 | productivity_ratio | 49 | 0.149 | 0.851 | 1.156 |
+| test | 198 | p | 37 | -0.889 | 0.418 | 0.725 |
+| test | 198 | delta_m | 147 | 0.056 | 0.113 | 0.222 |
+| test | 198 | productivity_ratio | 192 | 0.000 | 0.964 | 2.643 |
+
 ## 三定律阈值网格（dev 选阈值）
 
 ### p
 
 | threshold | n_weeks | n_events | win_rate_50w | B3 win_rate_50w | lift | eligible |
 |---:|---:|---:|---:|---:|---:|---|
-| 0.6 | 32 | 9 | 0.444 | 0.621 | -0.177 | 否 |
-| 0.7 | 20 | 8 | 0.375 | 0.621 | -0.246 | 否 |
-| 0.85 | 2 | 2 | 0.000 | 0.621 | -0.621 | 否 |
+| 0.6 | 21 | 7 | 0.571 | 0.621 | -0.050 | 否 |
+| 0.7 | 11 | 6 | 0.500 | 0.621 | -0.121 | 否 |
+| 0.85 | 1 | 1 | 0.000 | 0.621 | -0.621 | 否 |
 | 1.0 | 0 | 0 | — | 0.621 | — | 否 |
 
 Selected threshold: `None`.
@@ -59,28 +73,28 @@ Selected threshold and prototype control:
 | selected | dev | None | 0 | 0 | — | — | — | — |
 | selected | cal | None | 0 | 0 | — | — | — | — |
 | selected | test | None | 0 | 0 | — | — | — | — |
-| prototype | dev | {'min': 0.85} | 2 | 2 | 0.000 | -0.621 | — | — |
-| prototype | cal | {'min': 0.85} | 1 | 1 | 0.000 | -1.000 | -1.000 to -1.000 | descriptive_only |
-| prototype | test | {'min': 0.85} | 1 | 1 | 1.000 | 0.314 | — | — |
+| prototype | dev | {'min': 0.85} | 1 | 1 | 0.000 | -0.621 | — | — |
+| prototype | cal | {'min': 0.85} | 0 | 0 | — | — | — to — | descriptive_only |
+| prototype | test | {'min': 0.85} | 0 | 0 | — | — | — | — |
 
 ### delta_m
 
 | threshold | n_weeks | n_events | win_rate_50w | B3 win_rate_50w | lift | eligible |
 |---:|---:|---:|---:|---:|---:|---|
-| 0.0 | 1584 | 182 | 0.500 | 0.621 | -0.121 | 是 |
-| 0.1 | 535 | 82 | 0.451 | 0.621 | -0.170 | 是 |
-| 0.2 | 264 | 36 | 0.528 | 0.621 | -0.093 | 是 |
-| 0.3 | 173 | 23 | 0.348 | 0.621 | -0.273 | 否 |
+| 0.0 | 860 | 119 | 0.597 | 0.621 | -0.025 | 是 |
+| 0.1 | 278 | 47 | 0.553 | 0.621 | -0.068 | 是 |
+| 0.2 | 161 | 25 | 0.560 | 0.621 | -0.061 | 否 |
+| 0.3 | 122 | 17 | 0.412 | 0.621 | -0.209 | 否 |
 
-Selected threshold: `0.2`.
+Selected threshold: `0.0`.
 
 Selected threshold and prototype control:
 
 | 组 | 段 | 阈值 | n_weeks | n_events | win_rate_50w | lift vs B3 | cal CI vs B3 | verdict |
 |---|---|---|---:|---:|---:|---:|---|---|
-| selected | dev | 0.2 | 264 | 36 | 0.528 | -0.093 | — | — |
-| selected | cal | 0.2 | 95 | 18 | 0.889 | -0.111 | -0.235 to 0.000 | descriptive_only |
-| selected | test | 0.2 | 138 | 18 | 0.333 | -0.352 | — | — |
+| selected | dev | 0.0 | 860 | 119 | 0.597 | -0.025 | — | — |
+| selected | cal | 0.0 | 47 | 10 | 1.000 | 0.000 | 0.000 to 0.000 | descriptive_only |
+| selected | test | 0.0 | 128 | 26 | 0.692 | 0.007 | — | — |
 | prototype | dev | {'min': 0.72, 'max': 1.45} | 0 | 0 | — | — | — | — |
 | prototype | cal | {'min': 0.72, 'max': 1.45} | 0 | 0 | — | — | — to — | descriptive_only |
 | prototype | test | {'min': 0.72, 'max': 1.45} | 0 | 0 | — | — | — | — |
@@ -89,22 +103,22 @@ Selected threshold and prototype control:
 
 | threshold | n_weeks | n_events | win_rate_50w | B3 win_rate_50w | lift | eligible |
 |---:|---:|---:|---:|---:|---:|---|
-| 1.0 | 0 | 0 | — | 0.621 | — | 否 |
-| 1.35 | 0 | 0 | — | 0.621 | — | 否 |
-| 2.0 | 0 | 0 | — | 0.621 | — | 否 |
+| 1.0 | 505 | 88 | 0.625 | 0.621 | 0.004 | 是 |
+| 1.35 | 675 | 102 | 0.549 | 0.621 | -0.072 | 是 |
+| 2.0 | 877 | 123 | 0.618 | 0.621 | -0.003 | 是 |
 
-Selected threshold: `None`.
+Selected threshold: `1.0`.
 
 Selected threshold and prototype control:
 
 | 组 | 段 | 阈值 | n_weeks | n_events | win_rate_50w | lift vs B3 | cal CI vs B3 | verdict |
 |---|---|---|---:|---:|---:|---:|---|---|
-| selected | dev | None | 0 | 0 | — | — | — | — |
-| selected | cal | None | 0 | 0 | — | — | — | — |
-| selected | test | None | 0 | 0 | — | — | — | — |
-| prototype | dev | {'max': 1.35} | 0 | 0 | — | — | — | — |
-| prototype | cal | {'max': 1.35} | 0 | 0 | — | — | — to — | descriptive_only |
-| prototype | test | {'max': 1.35} | 0 | 0 | — | — | — | — |
+| selected | dev | 1.0 | 505 | 88 | 0.625 | 0.004 | — | — |
+| selected | cal | 1.0 | 34 | 9 | 1.000 | 0.000 | 0.000 to 0.000 | descriptive_only |
+| selected | test | 1.0 | 94 | 25 | 0.600 | -0.086 | — | — |
+| prototype | dev | {'max': 1.35} | 675 | 102 | 0.549 | -0.072 | — | — |
+| prototype | cal | {'max': 1.35} | 48 | 10 | 1.000 | 0.000 | 0.000 to 0.000 | descriptive_only |
+| prototype | test | {'max': 1.35} | 114 | 26 | 0.615 | -0.070 | — | — |
 
 ## Productivity GLM
 

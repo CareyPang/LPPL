@@ -29,6 +29,11 @@ PROTOTYPE = {
     "delta_m": {"min": 0.72, "max": 1.45},
     "productivity": {"max": 1.35},
 }
+LAW_METRIC_KEYS = {
+    "p": "p",
+    "delta_m": "delta_m",
+    "productivity": "productivity_ratio",
+}
 RANDOM_REPEATS = 2000
 BOOTSTRAP_REPEATS = 2000
 BLOCK_WEEKS = 26
@@ -265,9 +270,11 @@ def _group_contains(row: dict[str, Any], group: Any) -> bool:
     if isinstance(group, str):
         return bool(row["buckets"].get(group, False))
     kind, law, threshold = group
-    if "B3" not in row["buckets"]:
+    if not row["buckets"].get("B3", False):
         return False
-    value = row["laws"].get(law)
+    if law not in LAW_METRIC_KEYS:
+        raise ValueError(f"unknown law: {law}")
+    value = row["laws"].get(LAW_METRIC_KEYS[law])
     if kind == "gate":
         return _law_pass(_number(value), law, float(threshold))
     if kind == "prototype":
@@ -756,6 +763,7 @@ def run_calibration(
         "candidate_week_counts": candidate_counts,
         "dev_productivity_models": models,
         "tables": tables,
+        "b3_law_distributions": _b3_law_distributions(observations),
         "three_laws": {
             "threshold_grid": grid,
             "selected": law_reports,
@@ -763,6 +771,43 @@ def run_calibration(
         "exclusions": exclusions,
         "runtime_seconds": round(time.perf_counter() - started, 3),
     }
+
+
+def _b3_law_distributions(
+    observations: dict[str, dict[str, list[dict[str, Any]]]],
+) -> dict[str, Any]:
+    distributions: dict[str, Any] = {}
+    for segment in SEGMENTS:
+        rows = [
+            row
+            for index_rows in _segment_groups(observations, segment).values()
+            for row in index_rows
+            if row["candidate"] and row["buckets"].get("B3", False)
+        ]
+        result: dict[str, Any] = {"n_b3_candidate_weeks": len(rows)}
+        for metric in LAW_METRIC_KEYS.values():
+            values = [
+                value
+                for row in rows
+                if (value := _number(row["laws"].get(metric))) is not None
+            ]
+            if values:
+                p10, p50, p90 = np.quantile(values, [0.1, 0.5, 0.9])
+                result[metric] = {
+                    "count": len(values),
+                    "p10": float(p10),
+                    "p50": float(p50),
+                    "p90": float(p90),
+                }
+            else:
+                result[metric] = {
+                    "count": 0,
+                    "p10": None,
+                    "p50": None,
+                    "p90": None,
+                }
+        distributions[segment] = result
+    return distributions
 
 
 def _fmt(value: Any, digits: int = 3) -> str:
@@ -797,6 +842,18 @@ def render_markdown(report: dict[str, Any]) -> str:
                     f"| {_fmt(stats['median_post_min'])} | {random_text} | {ci_text} "
                     f"| {'是' if stats['superior_to_random'] else '否'} |"
                 )
+
+    lines.extend(["", "## B3 候选周三定律指标分布", ""])
+    lines.append("| 段 | B3 候选周 | 指标 | 有效数 | P10 | P50 | P90 |")
+    lines.append("|---|---:|---|---:|---:|---:|---:|")
+    for segment, distributions in report["b3_law_distributions"].items():
+        for metric in LAW_METRIC_KEYS.values():
+            result = distributions[metric]
+            lines.append(
+                f"| {segment} | {distributions['n_b3_candidate_weeks']} | {metric} "
+                f"| {result['count']} | {_fmt(result['p10'])} | {_fmt(result['p50'])} "
+                f"| {_fmt(result['p90'])} |"
+            )
 
     lines.extend(["", "## 三定律阈值网格（dev 选阈值）", ""])
     for law, law_result in report["three_laws"]["selected"].items():
