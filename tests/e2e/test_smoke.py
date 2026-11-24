@@ -557,6 +557,7 @@ def test_market_stale_banner_summary_expands_on_mobile(page: Page) -> None:
     expect(banner.locator("details > div")).to_be_visible()
 
 
+@pytest.mark.e2e
 def test_flow_7_mortgage_calculator_shows_monthly_payment(page: Page) -> None:
     page.goto(f"{BASE_URL}/tools.html")
     page.locator('[data-tool="loan"]').click()
