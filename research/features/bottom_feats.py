@@ -52,6 +52,8 @@ def omori(logp: pd.Series, k_sigma: float = 2.0) -> pd.DataFrame:
             continue
         d = t - last
         days[t] = d
+        if not np.isfinite(sig_ref.iloc[t]):
+            continue
         if d >= AFTER_W:
             recent = exceed[t - AFTER_W + 1 : t + 1].mean()
             ratio[t] = recent / max(base_at, 1 / BASE_W) if np.isfinite(base_at) else np.nan

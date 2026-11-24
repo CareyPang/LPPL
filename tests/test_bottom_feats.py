@@ -29,6 +29,19 @@ def test_omori_marks_shock_and_decays():
     assert o.days_since_shock_20.iloc[300] == 250  # 无主震时取上限
 
 
+def test_early_shock_without_finite_sigma_keeps_omori_metrics_nan():
+    returns = np.zeros(320)
+    returns[100] = -0.12
+    logp = pd.Series(np.cumsum(returns), pd.bdate_range("2010-01-01", periods=len(returns)))
+
+    result = omori(logp, 2.0)
+
+    assert result.days_since_shock_20.iloc[100] == 0
+    assert result.days_since_shock_20.iloc[115] == 15
+    assert result.after_ratio_20.iloc[100:130].isna().all()
+    assert result.omori_p_20.iloc[100:130].isna().all()
+
+
 def test_omori_freezes_pre_shock_sigma_through_high_volatility_episode():
     logp, _ = _series()
     returns = logp.diff()
