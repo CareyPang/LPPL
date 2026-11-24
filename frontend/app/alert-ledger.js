@@ -16,7 +16,11 @@
 
   function frameWindow(frame, scale) {
     var value = frame && frame.w && frame.w[scale];
-    return Array.isArray(value) && value.length >= 2 ? [value[0], value[1]] : null;
+    if (Array.isArray(value) && value.length >= 2) return [value[0], value[1]];
+    var clusters = frameClusters(frame, scale);
+    return clusters && clusters.length
+      ? [clusters[0].q20_date, clusters[0].q80_date]
+      : null;
   }
 
   function frameClusters(frame, scale) {
@@ -224,7 +228,7 @@
 
     ordered.forEach(function (item) {
       var frame = item.frame, window = frameWindow(frame, scale);
-      if (frame.close != null && window) run.push({ frame: frame, window: window });
+      if (window) run.push({ frame: frame, window: window });
       else flush();
     });
     flush();

@@ -92,6 +92,11 @@
     });
     return Array.from(byDate.values()).sort(function (a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
   }
+  function toVolumeBars(bars) {
+    return (Array.isArray(bars) ? bars : []).filter(function (bar) {
+      return bar && Number.isFinite(bar.volume) && bar.volume >= 0;
+    }).map(function (bar) { return { time: bar.time, value: bar.volume }; });
+  }
   function priceMode(bars, preferCandles) {
     var closeCount = toCloses(bars).length;
     var candleCount = toCandles(bars).length;
@@ -337,10 +342,10 @@
       }).concat(currentWhitespace));
       if (price !== previousPrice) emit('priceSeries', price);
       var candleByTime = new Map(candles.map(function (bar) { return [bar.time, bar]; }));
-      var volumeBars = intraday ? candles : toCloses(current.bars || []);
-      volume.setData(volumeBars.filter(function (bar) { return bar.volume != null; }).map(function (bar) {
+      var volumeBars = toVolumeBars(candles);
+      volume.setData(volumeBars.map(function (bar) {
         var candle = candleByTime.get(bar.time);
-        return { time: bar.time, value: bar.volume,
+        return { time: bar.time, value: bar.value,
           color: closeOnly || !candle ? '#7485a9' : candle.close >= candle.open ? '#d6303a' : '#11845a' };
       }));
       obvLine.applyOptions({ visible: intraday });
@@ -571,7 +576,7 @@
 
   return {
     mount: mount, toCandles: toCandles, toIntradayCandles: toIntradayCandles,
-    toCloses: toCloses, priceMode: priceMode, futureWhitespace: futureWhitespace,
+    toCloses: toCloses, toVolumeBars: toVolumeBars, priceMode: priceMode, futureWhitespace: futureWhitespace,
     bandsFor: bandsFor, bandsForAllScales: bandsForAllScales,
     bandStyle: bandStyle, intervalId: intervalId, bandSlotRange: bandSlotRange,
     needsCalendarCoverage: needsCalendarCoverage,

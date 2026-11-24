@@ -125,8 +125,29 @@
       },
     });
 
+    function renderAsofConvergence() {
+      const host = $('stock-asof-convergence-card');
+      const copy = $('stock-asof-convergence-copy');
+      if (!host || !copy) return;
+      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
+      const convergence = frames.length && root.CPAlertLedger
+        ? root.CPAlertLedger.latestConvergence(frames, lastHistory?.tops || [], '6-12m')
+        : null;
+      const latest = convergence?.latest;
+      const result = latest?.convergence;
+      if (!latest || !result) {
+        host.hidden = true;
+        copy.textContent = '';
+        return;
+      }
+      const drift = result.drift_ratio == null ? '—' : String(result.drift_ratio);
+      copy.textContent = `顶部聚类中心 ${latest.median_date || '—'} · ${result.label} · 漂移比 ${drift} · 锁定 ${result.stable_weeks || 0} 轮`;
+      host.hidden = false;
+    }
+
     function rebuildFcoOverlay() {
       fcoByDate = new Map();
+      renderAsofConvergence();
       if (!allPrices.length) return;
       // 1) 个股严格 PIT 底部出清绿柱（无前瞻）
       if (root.BottomAction && typeof root.BottomAction.evaluateStockSeries === 'function') {

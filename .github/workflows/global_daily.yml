@@ -3,6 +3,7 @@ name: global_daily
 on:
   schedule:
     - cron: "30 22 * * 1-5"
+    - cron: "30 7 * * 1-5"
   workflow_dispatch:
   repository_dispatch:
     types: [global_daily]
@@ -41,11 +42,24 @@ jobs:
           else
             echo "No stock-results history available to seed"
           fi
+      - name: Select asset list
+        id: asset-list
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "schedule" && "$SCHEDULE" == "30 7 * * 1-5" ]]; then
+            assets="JP_N225,KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX"
+          else
+            assets="US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX,US_MRVL"
+          fi
+          echo "assets=$assets" >> "$GITHUB_OUTPUT"
       - name: Run global daily pipeline
         run: >-
           python -m research.pipeline.global_terminal
           --root "$RUNNER_TEMP/gt"
-          --assets US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX,US_MRVL
+          --assets "${{ steps.asset-list.outputs.assets }}"
           --workers 4
           --budget-seconds 900
       - name: Publish to stock-results

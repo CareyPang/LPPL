@@ -478,15 +478,19 @@ def test_global_daily_workflow_schedule_assets_and_stock_results_publish():
         (ROOT / ".github/workflows/global_daily.yml").read_text(encoding="utf-8")
     )
     triggers = workflow.get("on", workflow.get(True, {}))
-    assert triggers["schedule"] == [{"cron": "30 22 * * 1-5"}]
+    assert triggers["schedule"] == [
+        {"cron": "30 22 * * 1-5"},
+        {"cron": "30 7 * * 1-5"},
+    ]
     assert "workflow_dispatch" in triggers
     assert triggers["repository_dispatch"] == {"types": ["global_daily"]}
     steps = workflow["jobs"]["publish"]["steps"]
     run = next(step["run"] for step in steps if step.get("name") == "Run global daily pipeline")
-    assert (
-        "--assets US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,"
-        "KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX,US_MRVL"
-    ) in run
+    assert '--assets "${{ steps.asset-list.outputs.assets }}"' in run
+    asset_step = next(step for step in steps if step.get("id") == "asset-list")
+    assert '"$SCHEDULE" == "30 7 * * 1-5"' in asset_step["run"]
+    assert 'JP_N225,KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX' in asset_step["run"]
+    assert 'US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX,US_MRVL' in asset_step["run"]
     assert "--budget-seconds 900" in run
     assert workflow["jobs"]["publish"]["timeout-minutes"] == 25
     assert source.ASSETS["US_SOX"]["ticker"] == "^SOX"
@@ -512,3 +516,21 @@ def test_global_daily_workflow_schedule_assets_and_stock_results_publish():
     build = (ROOT / "scripts/build_site.sh").read_text(encoding="utf-8")
     assert "stock-results:global/catalog.json" in build
     assert 'git -C "$ROOT" archive stock-results global' in build
+    assert 'cp -a "$RUNNER_TEMP/gt/global/." global/' in publish
+    assert "rm -rf global" not in publish
+
+
+def test_partial_pipeline_run_preserves_unselected_catalog_entries(tmp_path):
+    output = tmp_path / "global"
+    output.mkdir()
+    existing = {
+        "assets": [
+            {"id": "US_SPX", "status": "complete_sample", "asof": "2026-11-20"},
+            {"id": "JP_N225", "status": "complete_sample", "asof": "2026-11-20"},
+        ]
+    }
+    (output / "catalog.json").write_text(json.dumps(existing), encoding="utf-8")
+
+    assert pipeline.preserved_catalog_entries(output, ["JP_N225"]) == {
+        "US_SPX": {"id": "US_SPX", "status": "complete_sample", "asof": "2026-11-20"}
+    }

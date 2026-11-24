@@ -17,7 +17,7 @@ function frame(asof, window = ['2020-02-01', '2020-02-10'], options = {}) {
   };
 }
 
-test('episodes split at frames without an interval or close', () => {
+test('episodes split at frames without an interval', () => {
   const rows = AlertLedger.episodes([
     frame('2020-01-01'),
     frame('2020-01-08', null),
@@ -27,8 +27,33 @@ test('episodes split at frames without an interval or close', () => {
 
   assert.deepEqual(rows.map(row => [row.first_asof, row.last_asof, row.weeks]), [
     ['2020-01-01', '2020-01-01', 1],
-    ['2020-01-22', '2020-01-22', 1],
+    ['2020-01-15', '2020-01-22', 2],
   ]);
+});
+
+test('frames with a window and no close still form episodes', () => {
+  const rows = AlertLedger.episodes([
+    frame('2020-01-01', ['2020-02-01', '2020-02-10'], { close: null }),
+    frame('2020-01-08', ['2020-02-02', '2020-02-11'], { close: null }),
+  ], [], '6-12m');
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].weeks, 2);
+});
+
+test('frame windows fall back to the leading cluster interval', () => {
+  const rows = AlertLedger.episodes([
+    frame('2020-01-01', null, {
+      clusters: {
+        '6-12m': [
+          { q20_date: '2020-03-01', q80_date: '2020-03-10', share: 0.4 },
+          { q20_date: '2020-02-01', q80_date: '2020-02-10', share: 0.6 },
+        ],
+      },
+    }),
+  ], [], '6-12m');
+
+  assert.deepEqual(rows[0].window, ['2020-02-01', '2020-02-10']);
 });
 
 test('episode metadata uses the first and last windows and first-frame split', () => {

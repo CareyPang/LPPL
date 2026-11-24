@@ -10,6 +10,7 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'app', 'stock-view.js'
 const tradingDaysSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'trading-days.js'), 'utf8');
 const scaleBarSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'scale-bar.js'), 'utf8');
 const topClustersSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'top-clusters.js'), 'utf8');
+const alertLedgerSource = fs.readFileSync(path.join(__dirname, '..', 'app', 'alert-ledger.js'), 'utf8');
 
 function setupView({ search = '', hash = '' } = {}) {
   const listeners = {};
@@ -138,6 +139,7 @@ function setupView({ search = '', hash = '' } = {}) {
   vm.runInNewContext(tradingDaysSource, { window, URLSearchParams });
   vm.runInNewContext(scaleBarSource, { window, URLSearchParams });
   vm.runInNewContext(topClustersSource, { window });
+  vm.runInNewContext(alertLedgerSource, { window });
   vm.runInNewContext(source, { window, URLSearchParams, URL });
   const view = window.StockView.mount({
     document: doc,
@@ -382,6 +384,35 @@ test('scenario mapping preserves all per-scale clusters and ranks', () => {
     ['main', 0.6, '2026-11-10'],
     ['secondary', 0.4, '2026-11-13'],
   ]);
+});
+
+test('as-of convergence card renders the latest replay episode and hides without one', () => {
+  const view = setupView();
+  const price = barsEnding('2026-11-16', 30);
+  const current = currentRecord('601838', [], { '6-12m': 'dev' });
+  const history = {
+    symbol: 'sh601838',
+    tops: [],
+    frames: [
+      { asof: '2026-10-01', close: null, w: { '6-12m': ['2027-03-01', '2027-03-10'] } },
+      { asof: '2026-10-08', close: null, w: { '6-12m': ['2027-03-01', '2027-03-10'] } },
+    ],
+  };
+  view.setState({
+    code: '601838',
+    market: marketRecord('601838', price),
+    current,
+    history,
+  });
+
+  const card = view.elements.get('stock-asof-convergence-card');
+  assert.equal(card.hidden, false);
+  assert.match(view.elements.get('stock-asof-convergence-copy').textContent, /顶部聚类中心 2027-03-05 ·/);
+  assert.match(view.elements.get('stock-asof-convergence-copy').textContent, /漂移比 0 · 锁定 2 轮/);
+
+  view.setState({ code: '601838', market: marketRecord('601838', price), current, history: null });
+  assert.equal(card.hidden, true);
+  assert.equal(view.elements.get('stock-asof-convergence-copy').textContent, '');
 });
 
 test('narrow chart uses a bounded short band label, left-aligns its first date, and moves the future note down', () => {

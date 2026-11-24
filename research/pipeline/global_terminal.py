@@ -459,13 +459,29 @@ def primary_provider_for_asset(asset_id: str) -> str:
     return "naver" if asset["kind"] == "stock" and asset["market"] == "kr" else "yahoo"
 
 
+def preserved_catalog_entries(output: Path, asset_ids: list[str]) -> dict[str, dict]:
+    catalog_path = output / "catalog.json"
+    if not catalog_path.is_file():
+        return {}
+    try:
+        assets = json.loads(catalog_path.read_text(encoding="utf-8")).get("assets", [])
+    except (OSError, json.JSONDecodeError):
+        return {}
+    selected = set(asset_ids)
+    return {
+        entry["id"]: entry
+        for entry in assets
+        if isinstance(entry, dict) and entry.get("id") and entry["id"] not in selected
+    }
+
+
 def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, refresh: bool = False) -> dict:
     root = checked_root(root)
     start = time.perf_counter()
     output = root / "global"
     output.mkdir(parents=True, exist_ok=True)
     method = method_identity()
-    sources, failures, entries, errors = {}, {}, {}, []
+    sources, failures, entries, errors = {}, {}, preserved_catalog_entries(output, asset_ids), []
     for asset_id in asset_ids:
         if time.perf_counter() - start >= budget_seconds:
             entries[asset_id] = {"id": asset_id, "symbol": asset_id, **ASSETS[asset_id], "status": "source_pending"}

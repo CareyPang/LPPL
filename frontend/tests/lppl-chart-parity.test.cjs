@@ -57,6 +57,23 @@ test('missing volume stays empty', () => {
   assert.notEqual(bar.volume, 0);
 });
 
+test('volume bars use the valid price timeline so the default range ends at the as-of candle', () => {
+  const bars = [
+    { date: '2026-08-27', open: 10, high: 12, low: 9, close: 11, volume: 100 },
+    { date: '2026-08-28', open: 11, high: 10, low: 9, close: 11, volume: 200 },
+    { date: '2026-08-31', open: 11, high: 13, low: 10, close: 12, volume: null },
+  ];
+  const closes = Chart.toCloses(bars);
+  const candles = Chart.toCandles(bars);
+  const volume = Chart.toVolumeBars(candles);
+  const range = Chart.defaultVisibleRange(candles, [], '2026-08-31', new Set(), candles.length - 1);
+
+  assert.deepEqual(closes.map(bar => bar.time), ['2026-08-27', '2026-08-28', '2026-08-31']);
+  assert.deepEqual(candles.map(bar => bar.time), ['2026-08-27', '2026-08-31']);
+  assert.deepEqual(volume, [{ time: '2026-08-27', value: 100 }]);
+  assert.equal(candles[range.to].time, '2026-08-31');
+});
+
 test('sh600519: live published market bars preserve the stock Canvas OHLCV input', () => {
   const market = JSON.parse(fs.readFileSync(
     path.join(__dirname, 'fixtures', 'stock_600519_market.json'), 'utf8',
