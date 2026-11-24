@@ -1,6 +1,6 @@
 {
   "asof": "2026-11-24",
-  "generated": "2026-11-24T08:57:32.420064+00:00",
+  "generated": "2026-11-24T09:54:20.579662+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
@@ -19,8 +19,8 @@
   "counts": {
     "candidate_count": 168,
     "available_count": 168,
-    "near": 42,
-    "triggered": 26,
+    "near": 41,
+    "triggered": 25,
     "stale_bar": 0
   },
   "rules": {
@@ -955,7 +955,8 @@
       "last_bar_date": "2026-11-24",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt"
+        "limit_pools_zt",
+        "hot_eastmoney"
       ],
       "dev_3d": 33.936553699830725,
       "dev_10d": 19.76815760107137,
@@ -1000,43 +1001,6 @@
       "dev_3d": 25.575099612549312,
       "dev_10d": -7.060984792557411,
       "dev_30d": 95.72786553424419,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "up",
-        "threshold_pct": 20.0,
-        "remaining_pp": 0.0
-      },
-      "remaining_pp": 0.0,
-      "near": true,
-      "triggered": true
-    },
-    {
-      "code": "605577",
-      "name": "龙版传媒",
-      "board": "沪主板",
-      "benchmark": "sh000001",
-      "last_bar_date": "2026-11-24",
-      "stale_bar": false,
-      "candidate_sources": [
-        "hot_ths"
-      ],
-      "dev_3d": 24.52682176917227,
-      "dev_10d": 8.530383735656654,
-      "dev_30d": -0.44886645954561644,
       "thresholds": {
         "3d": {
           "up": 20.0,
@@ -1965,6 +1929,43 @@
       "remaining_pp": 6.4551446339898,
       "near": false,
       "triggered": false
+    },
+    {
+      "code": "301398",
+      "name": "星源卓镁",
+      "board": "创业板",
+      "benchmark": "sz399006",
+      "last_bar_date": "2026-11-24",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_zb"
+      ],
+      "dev_3d": 23.513149731863923,
+      "dev_10d": 8.056369790927286,
+      "dev_30d": 45.605401346318544,
+      "thresholds": {
+        "3d": {
+          "up": 30.0,
+          "down": -30.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "up",
+        "threshold_pct": 30.0,
+        "remaining_pp": 6.486850268136077
+      },
+      "remaining_pp": 6.486850268136077,
+      "near": false,
+      "triggered": false
     }
   ],
   "evidence": "descriptive",
@@ -1972,7 +1973,7 @@
   "version": {
     "kind": "abnormal",
     "asof": "2026-11-24",
-    "file": "versions/abnormal/2026-11-24/20261124T085732Z_d8b373cb.json.gz",
-    "sha256": "d8b373cbe31ff9d0821785bdd1e277050853577a190d43c4be69ec0bb8c06b48"
+    "file": "versions/abnormal/2026-11-24/20261124T095420Z_820eb857.json.gz",
+    "sha256": "820eb857394a18199e890c6b0d7872d84e07929a01648847dfe0a2f909948478"
   }
 }
