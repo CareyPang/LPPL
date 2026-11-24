@@ -45,7 +45,7 @@ jobs:
         run: >-
           python -m research.pipeline.global_terminal
           --root "$RUNNER_TEMP/gt"
-          --assets US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,KR_KOSPI,KR_KOSDAQ,US_MRVL
+          --assets US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX,US_MRVL
           --workers 4
           --budget-seconds 900
       - name: Publish to stock-results

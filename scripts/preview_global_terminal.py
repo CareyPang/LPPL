@@ -193,8 +193,8 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--results', type=Path, required=True)
     parser.add_argument('--port', type=int, default=8796)
-    parser.add_argument('--long-results', type=Path,
-                        help='Optional local long-horizon summary directory; no archive mutation')
+    parser.add_argument('--long-results', type=Path, action='append', default=[],
+                        help='Local long-horizon summary directory; repeat for independent batches')
     parser.add_argument('--jobs-root', type=Path, help='Enable local queued analysis; store jobs outside checkout')
     parser.add_argument('--aftershock-archive', type=Path, help='Verified source research archive, read only')
     args = parser.parse_args()
@@ -203,7 +203,7 @@ def main():
     service = None
     if args.jobs_root:
         from research.pipeline.global_jobs import GlobalJobs
-        service = GlobalJobs(args.jobs_root, args.results, args.aftershock_archive, args.long_results)
+        service = GlobalJobs(args.jobs_root, args.results, args.aftershock_archive)
 
     class Handler(SimpleHTTPRequestHandler):
         def translate_path(self, path):
@@ -245,7 +245,12 @@ def main():
                         'schema_version': 'aftershock_v1', 'symbol': record.get('symbol'), 'asof': record.get('asof'),
                         'data_version': record.get('data_version'), 'status': 'failed', 'modules': {},
                         'reason': f'{type(error).__name__}: {error}'}}}
-            return decorate_long_horizon(record, args.long_results)
+            for directory in args.long_results:
+                enriched = decorate_long_horizon(record, directory)
+                if enriched.get('research', {}).get('long_horizon'):
+                    return enriched
+                record = enriched
+            return record
 
         def do_GET(self):
             if not self.local_request():

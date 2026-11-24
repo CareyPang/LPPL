@@ -6,7 +6,7 @@
   else root.LPPLLongHorizon = api;
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
-  var ASSETS = new Set(['US_IXIC', 'US_NDX', 'KR_KOSPI', 'KR_KOSDAQ']);
+  var ASSETS = new Set(['US_IXIC', 'US_NDX', 'KR_KOSPI', 'KR_KOSDAQ', 'KR_SKHYNIX']);
   var WINDOWS = new Set([900, 925, 950, 6500, 6600, 6700]);
   var RULES = ['cycles_1_5', 'cycles_2_5'];
   var NOTES = {

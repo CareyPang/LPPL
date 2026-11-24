@@ -215,6 +215,10 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
    <button type="button" id="market-kr" role="tab" aria-selected="false" aria-controls="rows" data-market="kr" tabindex="-1">韩股</button>
   </div>
   <ul class="rows" id="rows" role="tabpanel" aria-labelledby="market-cn" aria-live="polite"></ul>
+  <div id="korean-stocks" hidden>
+   <h3 style="margin:16px 22px 8px;font-size:14px">韩股个股</h3>
+   <ul class="rows" id="korean-stock-rows" aria-label="韩股个股"></ul>
+  </div>
   <div class="pwl" id="pwl" hidden></div>
  <div class="pf"><span id="pfn">实时报价仅供参考；取不到时显示未复权收盘价</span><a href="index.html">查看全部 ›</a></div>
  </div>
@@ -263,7 +267,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
   <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a></div>
   <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
  </div>
- <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：A 股腾讯／新浪；国际日线 Yahoo Finance；市场背景见市场页</span></div>
+ <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：A 股腾讯／新浪；国际日线 Yahoo Finance／Naver Finance；市场背景见市场页</span></div>
 </div></footer>
 
 <script>
@@ -349,6 +353,27 @@ function loadIdx(){
   thumbs(S);evidence(S.sym);
  });
 }
+function loadKoreanStocks() {
+ const group=$('korean-stocks'), list=$('korean-stock-rows');
+ group.hidden=selectedMarket!=='kr'||document.querySelector('.pseg [data-v="mine"]').getAttribute('aria-pressed')==='true';
+ if(group.hidden||list.children.length)return;
+ const stocks=LPPL.GLOBAL_SYMS.filter(s=>s.market==='kr'&&s.kind==='stock');
+ for(const stock of stocks){
+  const row=document.createElement('li'), link=document.createElement('a');
+  link.className='row';
+  link.href='chart.html?kind=stock&code='+encodeURIComponent(stock.sym)+'&from='+encodeURIComponent('home.html?market=kr');
+  link.innerHTML='<div><div class="n">'+E(stock.name)+'</div><div class="c">'+E(stock.code)+' · '+E(stock.exchange)+'</div></div>';
+  const status=document.createElement('span');
+  status.className='s';status.style.gridColumn='1 / -1';status.style.textAlign='left';
+  status.textContent='读取日线…';link.appendChild(status);row.appendChild(link);list.appendChild(row);
+  LPPL.global.latest(stock.sym).then(result=>{
+   if(!result||result.symbol!==stock.sym||result.currency!==stock.currency)throw Error('个股身份不匹配');
+   const close=result.price_history?.close?.at(-1);
+   if(!Number.isFinite(close)||!result.asof)throw Error('日线尚不可用');
+   status.textContent=close.toLocaleString('zh-CN')+' 韩元 · 日线截至 '+result.asof+(result.stale?' · 已保留上次结果':'')+' · 查看回测 →';
+  }).catch(()=>{status.textContent='暂无可用日线 · 查看状态 →'});
+ }
+}
 /* ---------- 实时价：腾讯行情（不复权，只用于显示，不参与模型）；取不到时显示日更收盘 ---------- */
 let QT={},qTimer=0,qReq=0;
 const stockSym=c=>{c=String(c||'');if(/^(?:sh|sz|bj)\d{6}$/i.test(c))return c.toLowerCase();if(!/^\d{6}$/.test(c))return null;if(/^92/.test(c))return 'bj'+c;if(/^[69]/.test(c))return 'sh'+c;if(/^[03]/.test(c))return 'sz'+c;if(/^[48]/.test(c))return 'bj'+c;return null};
@@ -393,7 +418,7 @@ function mine0(){
 addEventListener('storage',mine);addEventListener('lppl-watch',mine);
 /* Market tabs preserve list context and do not mix exchange calendars. */
 const marketButtons=Array.from(document.querySelectorAll('#market-tabs button'));
-function syncMarketTabs(){marketButtons.forEach(b=>{const active=b.dataset.market===selectedMarket;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1});rows.setAttribute('aria-labelledby','market-'+selectedMarket)}
+function syncMarketTabs(){marketButtons.forEach(b=>{const active=b.dataset.market===selectedMarket;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1});rows.setAttribute('aria-labelledby','market-'+selectedMarket);loadKoreanStocks()}
 function chooseMarket(value){selectedMarket=value;const url=new URL(location.href);url.searchParams.set('market',value);history.replaceState(null,'',url);syncMarketTabs();updateSparkRangeUI();loadIdx()}
 marketButtons.forEach((b,i)=>{b.onclick=()=>chooseMarket(b.dataset.market);b.onkeydown=e=>{let j=i;if(e.key==='ArrowRight')j=(i+1)%4;else if(e.key==='ArrowLeft')j=(i+3)%4;else if(e.key==='Home')j=0;else if(e.key==='End')j=3;else return;e.preventDefault();marketButtons[j].focus();chooseMarket(marketButtons[j].dataset.market)}});
 syncMarketTabs();
@@ -401,7 +426,7 @@ syncMarketTabs();
 document.querySelectorAll('.pseg button').forEach(b=>b.onclick=()=>{
  const m=b.dataset.v==='mine';
  document.querySelectorAll('.pseg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
- rows.hidden=m;$('pwl').hidden=!m;if(m)mine();
+ rows.hidden=m;$('pwl').hidden=!m;loadKoreanStocks();if(m)mine();
 });
 document.querySelectorAll('#spark-range button').forEach(b=>b.onclick=()=>{
  sparkRange=Number(b.dataset.sparkRange);

@@ -26,6 +26,8 @@ from .trading_calendar import completed_market_sessions, market_sessions
 
 NORMALIZER_VERSION = "global_yahoo_v2_nonpositive_ohlc_null"
 NAVER_NORMALIZER_VERSION = "global_naver_index_v1_unmodified_close"
+NAVER_HYNIX_NORMALIZER_VERSION = "global_naver_hynix_v1_provider_close"
+NAVER_SYMBOLS = {"KR_KOSDAQ": "KOSDAQ", "KR_SKHYNIX": "000660"}
 FULL_HISTORY_PERIOD1 = -2208988800  # 1900-01-01; range=max may downgrade daily bars.
 CROSS_CHECK_LOOKBACK_SESSIONS = 250
 CROSS_CHECK_MAX_REL_DIFF = 0.005
@@ -47,6 +49,7 @@ ASSETS = {
     "JP_N225": dict(ticker="^N225", name="日经225", kind="index", market="jp", currency="JPY", timezone="Asia/Tokyo"),
     "KR_KOSPI": dict(ticker="^KS11", name="韩国综合指数", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul"),
     "KR_KOSDAQ": dict(ticker="^KQ11", name="韩国科斯达克", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul"),
+    "KR_SKHYNIX": dict(ticker="000660.KS", name="SK 海力士", kind="stock", market="kr", currency="KRW", timezone="Asia/Seoul"),
     "US_MRVL": dict(ticker="MRVL", name="迈威尔科技", kind="stock", market="us", currency="USD", timezone="America/New_York"),
 }
 
@@ -237,7 +240,7 @@ def _fetch_naver_cross_check(asset_id: str, fetched_at: datetime) -> pd.DataFram
     asset = ASSETS[asset_id]
     end_date = fetched_at.astimezone(ZoneInfo(asset["timezone"])).date()
     start_date = end_date - timedelta(days=500)
-    symbol = "KOSDAQ" if asset_id == "KR_KOSDAQ" else "KOSPI"
+    symbol = NAVER_SYMBOLS.get(asset_id, "KOSPI")
     response = requests.get(
         "https://api.finance.naver.com/siseJson.naver",
         params={
@@ -357,13 +360,13 @@ def _atomic_pointer(path: Path, value: dict) -> None:
 
 
 def normalise_naver(raw: bytes, asset_id: str, fetched_at: datetime) -> tuple[pd.DataFrame, dict]:
-    """Preserve Naver's entire KOSDAQ series without filling from another vendor.
+    """Preserve the entire Naver series without filling from another vendor.
 
     The endpoint returns a JavaScript-like literal, not strict JSON. literal_eval
     parses data without executing code. Historical Saturday sessions are retained.
     """
-    if asset_id != 'KR_KOSDAQ':
-        raise ValueError('Naver full-history adapter is only verified for KR_KOSDAQ')
+    if asset_id not in NAVER_SYMBOLS:
+        raise ValueError('Unsupported Naver asset')
     data = ast.literal_eval(raw.decode('utf-8-sig').strip())
     expected = ['날짜', '시가', '고가', '저가', '종가', '거래량', '외국인소진율']
     if not isinstance(data, list) or not data or data[0] != expected:
@@ -393,7 +396,7 @@ def normalise_naver(raw: bytes, asset_id: str, fetched_at: datetime) -> tuple[pd
         raise ValueError('No completed positive daily bars')
     if frame.date.duplicated().any() or not frame.date.is_monotonic_increasing:
         raise ValueError('Naver daily dates must be unique and ascending')
-    return frame, {
+    info = {
         'id': asset_id, **asset, 'exchange': 'KOSDAQ', 'provider': 'naver',
         'provider_symbol': 'KOSDAQ', 'provider_currency': 'KRW',
         'identity_validation': 'request_bound_symbol; response has no independent symbol field',
@@ -416,6 +419,19 @@ def normalise_naver(raw: bytes, asset_id: str, fetched_at: datetime) -> tuple[pd
             'independent_exchange_adjudication': 'NOT_ESTABLISHED',
         },
     }
+    if asset_id == 'KR_SKHYNIX':
+        info.pop('index_level_basis')
+        info.update(
+            exchange='KRX KOSPI', provider_symbol=NAVER_SYMBOLS[asset_id],
+            adjustment='Naver 原始返回的历史价格口径，未另做复权',
+            normalizer_version=NAVER_HYNIX_NORMALIZER_VERSION,
+            data_quality={
+                'status': 'provider_price_basis',
+                'policy': '保留 Naver 完整价格序列，不拼接 Yahoo 复权价格。',
+                'independent_exchange_adjudication': 'NOT_ESTABLISHED',
+            },
+        )
+    return frame, info
 
 
 def _vintage_comparison(frame: pd.DataFrame, previous: pd.DataFrame, previous_info: dict) -> dict:
@@ -523,13 +539,16 @@ def fetch_snapshot(asset_id: str, root: Path, *, refresh: bool = False,
     if minimum_rows is not None and (isinstance(minimum_rows, bool) or not isinstance(minimum_rows, int) or minimum_rows < 1):
         raise ValueError('minimum_rows must be a positive integer')
     asset = ASSETS[asset_id]
-    if provider not in (None, 'yahoo', 'naver') or (provider == 'naver' and asset_id != 'KR_KOSDAQ'):
+    if provider not in (None, 'yahoo', 'naver') or (provider == 'naver' and asset_id not in NAVER_SYMBOLS):
         raise ValueError('Unsupported asset/provider combination')
+    if asset_id == 'KR_SKHYNIX' and provider not in (None, 'naver'):
+        raise ValueError('SK hynix requires its validated Naver price series')
     folder = Path(root) / "source" / asset_id
     pointer = folder / "latest.json"
     previous, previous_info = _cached_snapshot(asset_id, folder) if pointer.exists() else (None, {})
     effective_full_history = full_history or previous_info.get('full_history_requested', False)
-    selected_provider = provider or ('naver' if asset_id == 'KR_KOSDAQ' and full_history else previous_info.get('provider', 'yahoo'))
+    use_naver = asset_id == 'KR_SKHYNIX' or (asset_id == 'KR_KOSDAQ' and full_history)
+    selected_provider = provider or ('naver' if use_naver else previous_info.get('provider', 'yahoo'))
     same_provider = selected_provider == previous_info.get('provider', 'yahoo')
     if previous is not None and same_provider and not refresh and (not full_history or previous_info.get('full_history_requested')):
         problem = _coverage_problem(previous, minimum_rows, None)
@@ -538,7 +557,7 @@ def fetch_snapshot(asset_id: str, root: Path, *, refresh: bool = False,
         return previous, previous_info
     if selected_provider == 'naver':
         url = 'https://api.finance.naver.com/siseJson.naver'
-        params = {'symbol': 'KOSDAQ', 'requestType': 1, 'startTime': '19000101' if effective_full_history else '20000101',
+        params = {'symbol': NAVER_SYMBOLS[asset_id], 'requestType': 1, 'startTime': '19000101' if effective_full_history else '20000101',
                   'endTime': datetime.now(ZoneInfo(asset['timezone'])).strftime('%Y%m%d'), 'timeframe': 'day'}
     else:
         url = "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(asset["ticker"], safe="")

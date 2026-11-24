@@ -178,7 +178,7 @@ def test_global_daily_workflow_schedule_assets_and_stock_results_publish():
     run = next(step["run"] for step in steps if step.get("name") == "Run global daily pipeline")
     assert (
         "--assets US_SPX,US_IXIC,US_NDX,US_DJI,US_SOX,JP_N225,"
-        "KR_KOSPI,KR_KOSDAQ,US_MRVL"
+        "KR_KOSPI,KR_KOSDAQ,KR_SKHYNIX,US_MRVL"
     ) in run
     assert source.ASSETS["US_SOX"]["ticker"] == "^SOX"
     assert source.ASSETS["US_SOX"]["name"] == "费城半导体指数"

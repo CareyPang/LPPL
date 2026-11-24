@@ -29,7 +29,7 @@
   function marketFromPublished(raw, code) {
     raw = raw && (raw.raw || raw);
     if (raw == null) throw missing('该标的当前没有可用的已发布日线。');
-    if (!/^(US_[A-Z.]{1,6}|JP_N225|KR_KOSPI|KR_KOSDAQ)$/i.test(String(code || '')) ||
+    if (!/^(US_[A-Z.]{1,6}|JP_N225|KR_KOSPI|KR_KOSDAQ|KR_SKHYNIX)$/i.test(String(code || '')) ||
         String(raw.symbol || '').toUpperCase() !== String(code).toUpperCase()) {
       throw new Error('已发布行情的资产身份与请求不匹配，已停止显示。');
     }
@@ -49,7 +49,7 @@
       trading_status: raw.trading_status || '', future_calendar: raw.future_calendar || null,
       asof_freshness: raw.asof_freshness || 'not_established', stale: raw.stale === true,
       stale_reason: raw.stale_reason || '', published_asof: raw.asof || null,
-      data_version: raw.data_version || null, price_note: '已发布复权日线；并非实时成交价。',
+      data_version: raw.data_version || null, price_note: '已发布日线；价格口径见行情信息。',
     };
   }
   function exactResult(raw, context) {
@@ -65,7 +65,7 @@
   }
   function sameSymbol(symbol, context) {
     if (context.assetType === 'index') return String(symbol).toUpperCase() === String(context.code).toUpperCase();
-    if (context.market === 'us' || /^US_/i.test(context.stockCode || '')) {
+    if (context.market === 'us' || context.market === 'kr' || /^US_/i.test(context.stockCode || '')) {
       return String(symbol).toUpperCase() === String(context.stockCode).toUpperCase();
     }
     return context.assetType === 'stock'

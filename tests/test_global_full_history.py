@@ -157,6 +157,21 @@ def test_kosdaq_full_history_selects_whole_naver_source_and_retains_saturdays(mo
     assert calls[-1]['startTime'] == '19000101'
 
 
+def test_hynix_preserves_naver_stock_price_basis_and_rejects_vendor_switch(monkeypatch, tmp_path):
+    calls = response(monkeypatch, naver_payload())
+    frame, info = source.fetch_snapshot('KR_SKHYNIX', tmp_path, full_history=True)
+
+    assert calls[0]['symbol'] == '000660'
+    assert info['ticker'] == '000660.KS' and info['kind'] == 'stock'
+    assert info['exchange'] == 'KRX KOSPI' and info['currency'] == 'KRW'
+    assert info['data_quality']['status'] == 'provider_price_basis'
+    assert 'index_level_basis' not in info
+    assert frame.close.tolist() == [1000., 1001., 625.5]
+    with pytest.raises(ValueError, match='Naver price series'):
+        source.fetch_snapshot('KR_SKHYNIX', tmp_path, refresh=True, provider='yahoo')
+    assert len(calls) == 1
+
+
 def test_kosdaq_provider_transition_preserves_yahoo_vintage_and_material_difference(monkeypatch, tmp_path):
     old_data = payload(('2001-11-01',), close=[636.4000244140625])
     old_data['chart']['result'][0]['meta'].update(symbol='^KQ11', exchangeTimezoneName='Asia/Seoul', currency='KRW')
