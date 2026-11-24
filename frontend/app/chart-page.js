@@ -108,7 +108,7 @@
     if (data.modelStatus && data.modelStatus !== 'ok') {
       state.textContent = data.modelStatus === 'loading' ? '行情可先浏览，模型结果独立读取中…' : data.modelStatus === 'error'
         ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
-        : '没有读到已发布的模型结果（可能尚未发布，或读取失败）';
+        : '当前没有可用的已发布模型结果。';
       var retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'retry-button evidence-retry-button';
@@ -141,7 +141,7 @@
       var signal = indicator && (indicator.empty_reason || indicator.signal_status) || data.top && data.top.signal_status;
       var emptyReason = signal === 'no_qualified_fit' ? 'no_fit' :
         signal === 'not_computed' ? 'not_computed' : indicator && RuleLabels.emptyReason(data.top, selectedScale, false, true);
-      state.textContent = RuleLabels.reasonText(emptyReason) || '当前尺度未提供可核对区间';
+      state.textContent = RuleLabels.reasonText(emptyReason) || '当前尺度没有可核对区间';
       note.textContent = '没有区间不等于没有风险；可切换尺度，或在标的页检查拟合及过滤明细。';
       var diagnostics = data.raw && data.raw.research && data.raw.research.filter_diagnostics;
       if (diagnostics) {
@@ -459,7 +459,7 @@
       if (request !== sequence || run !== modelRequest) return;
       activeModel = model;
       modelStatus = model ? 'ok' : 'missing';
-      moduleState('model-status', model ? '模型已读取' : '模型尚未读到');
+      moduleState('model-status', model ? '模型已读取' : '模型当前不可用');
     } catch (error) {
       if (request !== sequence || run !== modelRequest) return;
       modelStatus = 'error'; modelError = error;
@@ -722,7 +722,7 @@
     el('loading').hidden = true;
     if (!current && el('terminal-alert-status')) {
       setText('asset-name', context.name || context.stockCode || context.code || '未选择标的');
-      setText('terminal-alert-status', error && error.pending ? '该记录尚未就绪' : '本次未读到结果');
+      setText('terminal-alert-status', error && error.pending ? '当前没有可用记录' : '本次未读到结果');
       setText('terminal-alert-window', '—');
       setText('terminal-alert-detail', '可重试、切换已有记录，或返回原列表。');
     }

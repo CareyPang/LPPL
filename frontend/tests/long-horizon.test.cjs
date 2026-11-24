@@ -36,14 +36,14 @@ test('research 1.5 and old 2.5 render independently without changing the saved r
   const p=fixture(), before=JSON.stringify(p), research=Long.html(p,'cycles_1_5'), old=Long.html(p,'cycles_2_5');
   assert.match(research,/单窗研究候选/);
   assert.match(research,/2026-12-01 — 2026-12-03/);
-  assert.match(old,/尚未形成跨窗口族分组/);
+  assert.match(old,/没有跨窗口族分组/);
   assert.ok(!old.includes('class="lh-window-state">单窗研究候选'));
   assert.match(old,/合格窗口：0/);
   assert.equal(JSON.stringify(p),before);
 });
 test('multiple seeds or same-family windows cannot become cross-scale confirmation', () => {
   const p=fixture();p.rules.cycles_1_5.cross_family_clusters[0].members=[{n:900},{n:925}];
-  assert.match(Long.html(p,'cycles_1_5'),/尚未形成跨窗口族分组/);
+  assert.match(Long.html(p,'cycles_1_5'),/没有跨窗口族分组/);
   assert.match(Long.html(p,'cycles_1_5'),/不是预测不确定性/);
 });
 test('one candidate date is not advertised as a precise top forecast', () => {
@@ -136,7 +136,7 @@ test('unresolved cross-source discrepancy is visible with actual source identity
     rows:7598,first_date:'1996-07-02',data_quality:{status:'unresolved_cross_source_discrepancy',affected_date:'2001-11-01',observed_naver_close:625.5,observed_yahoo_close:636.4,current_source_close:625.5}};
   const output=Long.html(p,'cycles_1_5');
   assert.match(output,/来源核验待完成：2001-11-01/);assert.match(output,/Naver Finance/);
-  assert.match(output,/7598 日/);assert.match(output,/尚未取得交易所裁定/);
+  assert.match(output,/7598 日/);assert.match(output,/当前没有交易所裁定/);
   assert.match(output,/Naver 收盘 625.5000/);assert.match(output,/Yahoo 收盘 636.4000/);
   assert.match(output,/本研究当前源原值 625.5000/);
 });

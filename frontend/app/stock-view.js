@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   const labels = {
-    idle: '尚未生成', loading: '读取中', submitting: '提交中', queued: '排队中',
+    idle: '未生成', loading: '读取中', submitting: '提交中', queued: '排队中',
     running: '计算中', current_running: '计算中', history_running: '计算中', current_ready: '可查看', history_ready: '可查看', publishing: '结果发布中', reconnecting: '连接恢复中',
     reconciliation_required: '待核对', paused: '任务已保留', unconfirmed: '提交待确认', ready: '可查看',
     stale: '缓存可查看 · 刷新未完成', failed: '本次更新未完成',
@@ -479,7 +479,7 @@
       );
       const summary = band
         ? '情景区间：' + SCALE_NAMES[band.scale] + ' ' + band.q20_date + ' 至 ' + band.q80_date + '（未校准）'
-        : root.RuleLabels?.reasonText(reason) || '这个尺度尚未计算';
+        : root.RuleLabels?.reasonText(reason) || '这个尺度未计算';
       canvas.setAttribute('aria-label',
         '未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量；' + summary);
     }
@@ -870,14 +870,14 @@
         options.renderResult(next.current, history, next.market);
         visibility?.observe($('summary').querySelector('.top') || $('risk'), next.current);
         if (next.history && !history) $('history-note').textContent =
-          '已有历史回放与当前模型版本尚未匹配，可重新生成；当前分析仍可查看。';
+          '历史回放与当前模型版本不匹配，可重新生成；当前分析仍可查看。';
       }
       updateScenario(next);
       updateMarketDate(next.market, next.current, next.code, next.marketStatus);
       applyInitialUrl(next, history);
       $('analysis-pending').hidden = !!next.current;
       $('analysis-pending').textContent = next.currentStatus === 'failed'
-        ? '本次分析暂未完成。行情仍可查看，也可以稍后重试。'
+        ? '本次分析未完成。行情仍可查看，也可以稍后重试。'
         : '当前分析在后台更新。你可以先看行情、切换股票，或稍后回来查看。';
       $('market-stage').textContent = '日线行情 · ' + (labels[next.marketStatus] || '读取中');
       $('current-stage').textContent = '当前分析 · ' + (labels[next.currentStatus] || '等待中');
@@ -890,7 +890,7 @@
       const staleReasons = {
         analysis_asof_behind_market: '分析截至日早于行情截至日。',
         source_revision_changed: '已有结果与当前计算代码版本不同。',
-        analysis_asof_or_source_behind_market: '结果截至日或计算代码版本尚未与当前行情核对一致。',
+        analysis_asof_or_source_behind_market: '结果截至日或计算代码版本与当前行情不一致。',
         refresh_failed_previous_result_retained: '本次刷新失败，保留上次成功结果及原始截止日。',
       };
       if (outdated && staleReasons[next.stale_reason]) messages.push(staleReasons[next.stale_reason]);

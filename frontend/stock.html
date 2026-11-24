@@ -481,7 +481,7 @@
         "'": '&#39;',
       })[char]);
     const dataReasonText = {
-      unpublished: '尚未发布',
+      unpublished: '未发布',
       unavailable: '暂时无法读取',
       empty: '数据源返回空结果',
       not_applicable: '不适用',
@@ -1238,7 +1238,7 @@
         }
         if (view.kind === 'empty') return `${scaleName[scale]} ${RuleLabels.reasonText(view.reason)}`;
         if (view.kind === 'legacy') return `${scaleName[scale]} ${esc(view.window.q20_date)} – ${esc(view.window.q80_date)}（本次结果未分簇）`;
-        return `${scaleName[scale]} ${RuleLabels.reasonText(view.reason) || '这个尺度尚未计算'}`;
+        return `${scaleName[scale]} ${RuleLabels.reasonText(view.reason) || '这个尺度未计算'}`;
       }).filter(Boolean).join('；');
       const topText = clusterScales.length
         ? `${clusterLines}。区间不是顶部日期，未校准，仅供参考。`

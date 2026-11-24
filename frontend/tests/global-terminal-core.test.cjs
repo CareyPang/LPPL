@@ -198,6 +198,6 @@ test('research note explicitly separates sparse fits, historical samples and cal
   const note = Core.researchNote({ raw: source });
   assert.match(note, /27 个稀疏窗口/);
   assert.match(note, /非 181 窗/);
-  assert.match(note, /尚未进行样本外预警评分/);
+  assert.match(note, /未进行样本外预警评分/);
   assert.match(note, /未核验本市场节假日/);
 });

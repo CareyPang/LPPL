@@ -83,7 +83,7 @@
     var host=doc.getElementById('global-analysis'), button=doc.getElementById('global-analysis-run'), input=doc.getElementById('global-analysis-asof');
     var status=doc.getElementById('global-analysis-status'), bar=doc.getElementById('global-analysis-progress'), resume=doc.getElementById('global-analysis-resume');
     if (!host || !api || !api.isAsset(context.code)) return { dispose:function () {} };
-    host.hidden=false; input.value=context.asof || ''; button.disabled=true;
+    host.hidden=true; input.value=context.asof || ''; button.disabled=true;
     var enabled=false, stopped=false;
     var runner=controller({api:api,onResult:options.onResult,onState:function (state) {
       button.disabled=!enabled || state.busy; input.disabled=!!state.busy;
@@ -107,9 +107,11 @@
       if (stopped) return;
       enabled=!!(capabilities && capabilities.available && Array.isArray(capabilities.symbols) && capabilities.symbols.indexOf(context.code)>=0);
       button.disabled=!enabled;
-      status.textContent=enabled ? '只计算所选截止日；留空使用最新完整日线，计算时行情仍可浏览。' : capabilities && capabilities.reason || '本页面未连接支持该标的的回测后端；已有结果可继续浏览。';
+      host.hidden=!enabled;
+      if (!enabled) return;
+      status.textContent='只计算所选截止日；留空使用最新完整日线，计算时行情仍可浏览。';
       host.dataset.status=enabled?'available':'unavailable';
-    }).catch(function () { if (!stopped) { status.textContent='暂时无法确认回测服务；已有结果可继续浏览。';host.dataset.status='unavailable'; } });
+    }).catch(function () { if (!stopped) { host.hidden=true;host.dataset.status='unavailable'; } });
     return {dispose:function () { stopped=true;runner.dispose(); }};
   }
   return {validDate:validDate,jobMatches:jobMatches,validateResult:validateResult,controller:controller,attach:attach};

@@ -59,7 +59,7 @@
       throw new Error('历史结果的资产身份不匹配，已停止显示。');
     }
     var bars = cutoffBars(barsFrom(raw), context.asof);
-    if (!bars.length) throw missing('该日模型已封存，但未提供可核对的历史行情。');
+    if (!bars.length) throw missing('该日模型已封存，但当前没有可核对的历史行情。');
     return { raw: raw, top: raw.top || {}, bars: bars, asof: raw.asof, name: raw.name || context.name,
       sym: { sym: context.code, market: context.market, currency: context.currency, exchange: context.exchange, timezone: context.timezone }, historical: true };
   }
@@ -86,7 +86,7 @@
       result.historical = false; return result;
     }
     if (context.assetType === 'index') {
-      if (context.market && context.market !== 'cn') throw missing('该国际指数尚未连接已发布数据接口。');
+      if (context.market && context.market !== 'cn') throw missing('该国际指数当前没有可用的已发布数据。');
       return timed(function () { return adapter.load(context.code); }, '指数数据');
     }
     if (context.market === 'us') return timed(function () { return adapter.stock.latest(context.stockCode); }, '已发布美股数据');

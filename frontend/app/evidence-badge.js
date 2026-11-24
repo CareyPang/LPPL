@@ -8,7 +8,7 @@
     passed:      { label: '样本外通过', tone: 'ok',   tip: '该指标在样本外测试段通过了预设检验标准。' },
     oos_passed:  { label: '样本外通过', tone: 'ok',   tip: '该指标在样本外测试段通过了预设检验标准。' },
     dev:         { label: '开发段验证', tone: 'info', tip: '开发段通过，仍处于样本外持续观察阶段。' },
-    dev_only:    { label: '开发段观测', tone: 'info', tip: '仅在开发段完成回测，尚未进入独立测试段定论。' },
+    dev_only:    { label: '开发段观测', tone: 'info', tip: '仅在开发段完成回测，独立测试段暂无结论。' },
     candidate:   { label: '研究候选',   tone: 'info', tip: '按统一 LPPLS 拟合口径生成的个股研究观测值。' },
     descriptive: { label: '描述统计',   tone: 'mute', tip: '基于历史同类样本的经验分位统计，供结构参照。' },
     dev_failed:  { label: '未过样本外', tone: 'warn', tip: '开发/测试段未通过预设统计阈值，保留观测值供复盘对照。' },

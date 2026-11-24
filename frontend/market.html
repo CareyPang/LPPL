@@ -529,7 +529,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
   const REASON_TEXT = {
-    unpublished: '尚未发布',
+    unpublished: '未发布',
     unavailable: '暂时无法读取',
     empty: '数据源返回空结果',
     not_applicable: '不适用',

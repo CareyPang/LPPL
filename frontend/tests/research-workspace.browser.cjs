@@ -148,7 +148,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.evaluate(() => document.activeElement.dataset.select), 'stock:600519');
     check('keyboard selection retains focus after list redraw');
 
-    assert.match(await page.locator('#detail-code').innerText(), /上交所 SSE.*CNY.*交易状态未提供/);
+    assert.match(await page.locator('#detail-code').innerText(), /上交所 SSE.*A 股 \/ CNY/);
     const publicDownload = page.waitForEvent('download');
     await page.locator('#share-summary').click();
     const publicFile = await publicDownload, publicCard = JSON.parse(fs.readFileSync(await publicFile.path(), 'utf8'));

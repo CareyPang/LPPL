@@ -19,11 +19,11 @@ test('daily productivity preserves alpha interval including zero and actual trai
  assert.match(html,/日线/);assert.match(html,/-0.1458 – 1.4124/);assert.match(html,/1990-01-01/);assert.match(html,/<dd>是<\/dd>/);
 });
 test('missing modules remain missing and untrusted strings are escaped',()=>{
- assert.match(Study.moduleHTML(null,'2026-11-20'),/暂无对应结果/);
+ assert.match(Study.moduleHTML(null,'2026-11-20'),/暂无数据/);
  const html=Study.moduleHTML({status:'failed',summary:'<img src=x onerror=alert(1)>'},'2026-11-20');assert.doesNotMatch(html,/<img/);assert.match(html,/&lt;img/);
 });
 test('evidence renders recorded provenance and never invents historical first visibility',()=>{
- const html=Study.evidenceHTML(source());assert.match(html,/历史重建/);assert.match(html,/真实首次可见时间<\/dt><dd>未建立/);assert.match(html,/核验过的独立研究归档/);assert.match(html,/abc/);
+ const html=Study.evidenceHTML(source());assert.match(html,/历史重建/);assert.doesNotMatch(html,/真实首次可见时间/);assert.match(html,/核验过的独立研究归档/);assert.match(html,/abc/);
 });
 test('future anchors and future training cutoffs cannot leak into an older replay',()=>{
  for(const module of [{anchor_date:'2026-11-23'},{mainshock_date:'2026-11-23'},{samples:{training_end:'2026-12-31'}}]){
@@ -48,8 +48,17 @@ test('each card exposes sample count and key estimate before its collapsed detai
 test('missing or unsupported estimates remain unestimated, while actual zero samples stay zero',()=>{
  for(const status of ['available','insufficient_data','not_available']){
   const before=Study.moduleHTML({status,samples:{observed_after_days:0},parameters:{p:null}},'2026-11-20','omori').split('<details>')[0];
-  assert.match(before,/起点后交易日 <strong>0<\/strong>/);assert.match(before,/p <strong>未估计<\/strong>/);
+  assert.match(before,/起点后交易日 <strong>0<\/strong>/);assert.doesNotMatch(before,/>p <strong>/);
  }
  const missing=Study.moduleHTML({status:'insufficient_data'},'2026-11-20','productivity').split('<details>')[0];
- assert.match(missing,/成熟事件 <strong>未提供/);assert.match(missing,/α <strong>未估计/);
+ assert.doesNotMatch(missing,/成熟事件|α|未提供|未估计/);
+});
+test('missing studies hide the entire aftershock section and missing fields produce no rows',()=>{
+ const nodes=Object.fromEntries(['terminal-aftershock','terminal-omori','terminal-bath','terminal-productivity','terminal-aftershock-note','terminal-aftershock-evidence','terminal-aftershock-badge'].map(id=>[id,{dataset:{},innerHTML:'stale',textContent:'stale'}]));
+ Study.attach({document:{getElementById:id=>nodes[id]}}).render(data(null));
+ assert.equal(nodes['terminal-aftershock'].hidden,true);
+ assert.equal(nodes['terminal-aftershock-note'].textContent,'');
+ assert.equal(nodes['terminal-aftershock-evidence'].innerHTML,'');
+ const html=Study.moduleHTML({samples:{observed_after_days:null},parameters:{p:null},anchor_date:null},'2026-11-20','omori');
+ assert.doesNotMatch(html,/起点后交易日|衰减参数 p|起点 null|未提供/);
 });

@@ -23,7 +23,7 @@
   function summary(data, bands, historical) {
     var reference = historical || [data.modelAsOf, data.marketAsOf].filter(Boolean).sort().pop() || '';
     var prefix = historical ? '当时' : reference ? '截至 ' + reference + ' · ' : '';
-    if (data.modelStatus !== 'ok') return { status: '行情可先查看', window: '模型尚未就绪',
+    if (data.modelStatus !== 'ok') return { status: '行情可先查看', window: '模型未就绪',
       detail: '可以继续缩放和画线，模型状态见右侧证据。' };
     var future = bands.filter(function (b) { return b.q20_date && b.q80_date && b.q80_date >= reference; });
     var old = bands.filter(function (b) { return b.q80_date && b.q80_date < reference; });
@@ -41,7 +41,7 @@
   }
   function historyFor(adapter, reader, context) {
     if (reader.globalAsset(adapter, context)) return adapter.global.history(context.code);
-    if (context.assetType === 'index' && context.market && context.market !== 'cn') return Promise.reject(Error('该国际标的尚未连接历史目录。'));
+    if (context.assetType === 'index' && context.market && context.market !== 'cn') return Promise.reject(Error('该国际标的暂无可用历史目录。'));
     return context.assetType === 'index' ? adapter.history(context.code) : adapter.stock.history(context.stockCode);
   }
   async function laterBars(adapter, reader, core, context) {
@@ -73,9 +73,9 @@
       el('terminal-prev').disabled = !neighbour(dates, date, -1);
       el('terminal-next').disabled = !neighbour(dates, date, 1);
       el('terminal-show-future').disabled = !context.asof || !current;
-      el('terminal-replay-status').textContent = el('terminal-show-future').checked ? '后来行情已展开；模型与证据仍固定在 ' + context.asof + '。' : historyFailed ? '历史目录暂未读到，可重试页面；不会用最新模型替代历史。' :
+      el('terminal-replay-status').textContent = el('terminal-show-future').checked ? '后来行情已展开；模型与证据仍固定在 ' + context.asof + '。' : historyFailed ? '历史目录当前不可用，可重试页面；不会用最新模型替代历史。' :
         dates.length ? dates.length + ' 个已封存截止日 · 前后按钮只切换已有记录。历史重放不等于当时已公开发布。' :
-        '尚未读到历史封存日期；不会自动启动回测。';
+        '暂无已封存的历史截止日；不会自动启动回测。';
       renderHistory();
     }
     function renderHistory() {
@@ -85,7 +85,7 @@
       el('terminal-backtest-link').hidden = context.assetType !== 'index' || context.market !== 'cn';
       var frames = (historyData && historyData.frames || []).filter(function (f) { return !context.asof || f.asof <= context.asof; })
         .slice().sort(function (a, b) { return b.asof.localeCompare(a.asof); });
-      el('terminal-history-note').textContent = frames.length ? '按截止日封存，点击查看当时区间。首次可见时间单独记录，不把历史计算当作提前发布。' : '该标的尚未读到历史记录。';
+      el('terminal-history-note').textContent = frames.length ? '按截止日封存，点击查看当时区间。首次可见时间单独记录，不把历史计算当作提前发布。' : '该标的暂无历史记录。';
       el('terminal-history-list').replaceChildren();
       frames.slice(0, historyLimit).forEach(function (frame) {
         var item = doc.createElement('a');
@@ -183,7 +183,7 @@
       try {
         var bars = await reader.timed(function () { return laterBars(adapter, reader, options.core, context); }, '后来行情');
         if (run !== futureRun) return;
-        if (!bars || !bars.some(function (b) { return (b.date || b.time) > context.asof; })) throw Error('行情尚未覆盖截止日之后。');
+        if (!bars || !bars.some(function (b) { return (b.date || b.time) > context.asof; })) throw Error('行情未覆盖截止日之后。');
         options.showFuture(bars);
         el('terminal-replay-status').textContent = '正在查看后来走势（当前行情版本）；模型、区间与证据仍固定在 ' + context.asof + '。';
       } catch (error) {

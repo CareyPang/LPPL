@@ -10,7 +10,7 @@
   var WINDOWS = new Set([900, 925, 950, 6500, 6600, 6700]);
   var RULES = ['cycles_1_5', 'cycles_2_5'];
   var NOTES = {
-    'Selected retrospective research, not out-of-sample accuracy measurement.':'本批为选定历史样本的研究，尚未衡量样本外预警效果。',
+    'Selected retrospective research, not out-of-sample accuracy measurement.':'本批研究未衡量样本外预警效果。',
     'Seed agreement measures numerical stability, not probability.':'seed 一致性只衡量数值稳定性，不是概率。',
     'No fixed-tc profile, bootstrap or price forecast was run.':'本批未运行固定 tc 剖面、bootstrap 或价格预测。',
     'One adjacent-window family is one scale, even if several lengths pass.':'相邻长度属于一个窗口族，多窗通过也只算一个尺度。',
@@ -18,7 +18,7 @@
     'Yahoo daily close, frozen reconstruction; not contemporaneously published forecast':'Yahoo 日线收盘价 · 冻结输入历史重建',
   };
   var GATES = { optimizer_not_converged:'优化器未收敛', m_gate:'m 超出门槛', omega_gate:'ω 超出门槛', top_sign:'不符合顶部方向', damping_below_1:'阻尼不足 1', r2_below_0_9:'R² 不足 0.9', rank_or_condition:'矩阵秩或数值条件未通过', parameter_boundary:'参数触及边界' };
-  var WINDOW_GATES = { incomplete_seed_pair:'两个 seed 尚未齐备', seed_tc_disagreement_gt_2_sessions:'两个 seed 的临界时间相差超过 2 个交易日', parameter_boundary:'存在参数触界', seed_quality_gate_failed:'seed 参数质量门槛未通过' };
+  var WINDOW_GATES = { incomplete_seed_pair:'两个 seed 数据不完整', seed_tc_disagreement_gt_2_sessions:'两个 seed 的临界时间相差超过 2 个交易日', parameter_boundary:'存在参数触界', seed_quality_gate_failed:'seed 参数质量门槛未通过' };
   function note(value) { return NOTES[value] || value || ''; }
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (s) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[s]; }); }
   function date(value) { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ''; }
@@ -42,7 +42,7 @@
     if (window.data_reason && seeds.some(function (s) { return s.status === 'not_available'; })) return '真实历史不足此窗口';
     if (seeds.some(function (s) { return missingArchive(s); })) return '数据不可用';
     if (seeds.some(function (s) { return s.status === 'failed'; })) return '部分 seed 失败';
-    if (!seeds.length || seeds.some(function (s) { return s.status !== 'complete'; })) return '计算尚未完成';
+    if (!seeds.length || seeds.some(function (s) { return s.status !== 'complete'; })) return '计算未完成';
     return eligible(window, rule) ? '单窗研究候选' : '未形成该规则候选';
   }
   function study(data, context) {
@@ -66,7 +66,7 @@
   function seedHtml(seed, rule) {
     var passed = seed.passes && seed.passes[rule] === true;
     return '<p><strong>seed ' + esc(seed.seed) + ' · ' + esc(state(seed.status)) + '</strong><br>' +
-      '本 seed 参数过滤：' + (passed ? '通过' : '未通过 / 尚未完成') + ' · 优化器收敛：' + (seed.optimizer_success === true ? '是' : seed.optimizer_success === false ? '否' : '—') + '<br>' +
+      '本 seed 参数过滤：' + (passed ? '通过' : '未通过 / 未完成') + ' · 优化器收敛：' + (seed.optimizer_success === true ? '是' : seed.optimizer_success === false ? '否' : '—') + '<br>' +
       'tc 相对截止日 ' + number(seed.tc_ahead) + ' 个交易日 · ' + esc(seed.boundary_status === 'INTERIOR' || seed.boundary_status === 'interior' ? '未触界' : seed.boundary_status ? '参数触界' : '—') + '<br>' +
       'm ' + number(seed.m, 4) + ' · ω ' + number(seed.omega, 4) + ' · R² ' + number(seed.r2, 4) + '<br>' +
       '阻尼 ' + number(seed.damping, 3) + ' · 完整周期 ' + number(seed.full_cycles, 3) +
@@ -98,7 +98,7 @@
     var cross = clusters.length ? clusters.map(function (c) {
       return '<p><strong>' + esc(dateRange([c.start, c.end])) + '</strong> · 跨度 ' + number(c.span_trading_days, 1) + ' 个交易日</p>' +
         '<p>成员：' + esc((c.members || []).map(function (m) { return typeof m === 'number' ? m + '日' : count(m.n) + '日 · ' + family(m.family); }).join('；')) + '</p>';
-    }).join('') : '<p>尚未形成跨窗口族分组。单窗候选和同一窗口的多个 seed 不算跨尺度确认。</p>';
+    }).join('') : '<p>没有跨窗口族分组。单窗候选和同一窗口的多个 seed 不算跨尺度确认。</p>';
     return '<div class="lh-cross"><h3>真正跨尺度分组</h3>' + cross + '</div><div class="lh-families">' +
       ['long_900', 'ultra_6600'].map(function (key) {
         var f = families.find(function (item) { return item.family === key; });
@@ -111,7 +111,7 @@
     var rows = payload.stability && payload.stability.history || [];
     rows = rows.filter(function (r) { return date(r.asof) && r.asof <= payload.asof; }).slice().sort(function (a,b) { return b.asof.localeCompare(a.asof); });
     function one(r) {
-        if (missingArchive(r)) return '<details class="lh-history-date"><summary>' + esc(r.asof) + ' · 原始档案未取得</summary><p class="lh-note">本期尚未完成原档核对，没有补造结果，也不计作已完成历史回放。</p></details>';
+        if (missingArchive(r)) return '<details class="lh-history-date"><summary>' + esc(r.asof) + ' · 原始档案未取得</summary><p class="lh-note">本期原档核对未完成，没有补造结果，也不计作已完成历史回放。</p></details>';
         return '<details class="lh-history-date"><summary>' + esc(r.asof) + ' · ' + esc(state(r.status)) + '</summary>' + budget(r.counts) + '<ul>' +
         (r.windows || []).filter(function (w) { return WINDOWS.has(w.n); }).map(function (w) {
           return '<li><strong>' + count(w.n) + '日 · ' + windowState(w, rule) + '</strong><br>' + esc(windowRange(w, rule)) + '<br>提前量 ' + esc(aheadRange(w.seed_ahead_range)) + '</li>';
@@ -153,12 +153,12 @@
     var definition = /^Both seeds converge;/.test(ruleData.definition || '') ? '两 seed 均收敛且未触界；B<0、0.1<m<0.9、6<ω<13、阻尼≥1、R²≥0.9，矩阵秩与数值条件通过；seed 临界时间差≤2个交易日；完整周期≥' + (rule === 'cycles_1_5' ? '1.5' : '2.5') + '。' : ruleData.definition;
     var calendar = payload.calendar || {};
     var quality = payload.source && payload.source.data_quality;
-    var qualityText = quality && quality.status === 'unresolved_cross_source_discrepancy' ? '来源核验待完成：' + (date(quality.affected_date) || '某历史交易日') + ' 在不同来源的收盘值存在差异。本研究保留当前来源原值，尚未取得交易所裁定。' : '';
-    var calendarText = calendar.status === 'us_cash_exchange_reference' ? '2026年采用纳斯达克已核对假日；2027年参考NYSE，尚未完成纳斯达克全年核验。交易日提前量为原始值。' : calendar.status === 'weekday_estimate' ? '按周一至周五外推，尚未扣除交易所休市日。' : calendar.status === 'observed_historical_sessions_else_weekday_estimate' ? '历史评分使用该标的实际交易日；尚未发生的日期按平日估算，未核对交易所休市日，韩股不套用美股日历。' : calendar.note || calendar.status;
+    var qualityText = quality && quality.status === 'unresolved_cross_source_discrepancy' ? '来源核验待完成：' + (date(quality.affected_date) || '某历史交易日') + ' 在不同来源的收盘值存在差异。本研究保留当前来源原值，当前没有交易所裁定。' : '';
+    var calendarText = calendar.status === 'us_cash_exchange_reference' ? '2026年采用纳斯达克已核对假日；2027年参考NYSE，纳斯达克全年核验未完成。交易日提前量为原始值。' : calendar.status === 'weekday_estimate' ? '按周一至周五外推，不扣除交易所休市日。' : calendar.status === 'observed_historical_sessions_else_weekday_estimate' ? '历史评分使用该标的实际交易日；未来日期按平日估算，交易所休市日未核对，韩股不套用美股日历。' : calendar.note || calendar.status;
     return '<div class="lh-heading"><p>截至 ' + esc(payload.asof) + ' · ' + esc(state(payload.status)) + '</p>' +
       (badge ? badge.html('research_candidate', { label:'长窗研究', detail:'独立长窗历史重建，未进行盲测预警效果验证。多 seed 差异只反映数值稳定性。' }) : '') + '</div>' + budget(payload.counts) +
       (qualityText ? '<p class="lh-note">' + esc(qualityText) + '</p>' : '') +
-      (calendar.status === 'observed_historical_sessions_else_weekday_estimate' ? '<p class="lh-note">未来日期为平日估算，交易所休市日尚未核验；请同时查看交易日提前量。</p>' : '') +
+      (calendar.status === 'observed_historical_sessions_else_weekday_estimate' ? '<p class="lh-note">未来日期为平日估算，交易所休市日未核验；请同时查看交易日提前量。</p>' : '') +
       '<div class="lh-rule-switch" role="group" aria-label="长窗口过滤规则"><button type="button" data-lh-rule="cycles_1_5" aria-pressed="' + (rule === 'cycles_1_5') + '">完整周期 1.5 · 研究</button>' +
       '<button type="button" data-lh-rule="cycles_2_5" aria-pressed="' + (rule === 'cycles_2_5') + '">完整周期 2.5 · 对照</button></div>' +
       '<p class="lh-note">' + esc(definition || '仅切换后端已计算的独立过滤结果；主图的 27 个窗口与原尺度不变。') + '</p>' + ruleHtml(payload, rule) +

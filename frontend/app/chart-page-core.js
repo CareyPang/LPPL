@@ -334,7 +334,7 @@
     if (raw.schema_version !== 'global_terminal_v1' && !(raw.research && raw.research.sample_scope)) return '';
     var count = raw.params && raw.params.window_count;
     var parts = [Number.isInteger(count) ? count + ' 个稀疏窗口（非 181 窗完整扫描）' : '稀疏窗口研究样本'];
-    parts.push('固定截止日小样本重放，尚未进行样本外预警评分');
+    parts.push('固定截止日小样本重放，未进行样本外预警评分');
     if (raw.future_calendar && raw.future_calendar.note) parts.push(raw.future_calendar.note);
     return parts.join('；');
   }

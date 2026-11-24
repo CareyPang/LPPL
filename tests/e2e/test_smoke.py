@@ -176,7 +176,7 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     expect(page.locator("#summary")).to_contain_text(
         "当前只算了 6–12 月、12–24 月两个尺度"
     )
-    expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
+    expect(page.locator("#risk")).to_contain_text("这个尺度未计算")
     empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
     expect(empty_tiles).to_have_count(3)
     for tile_index, label, reason in (
@@ -1636,9 +1636,7 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
     chart_page = page.locator("#chart-page")
     assert int(chart_page.get_attribute("data-bar-count") or "0") > 0
     expect(chart_page).to_have_attribute("data-model-status", "missing")
-    expect(page.locator("#evidence-state")).to_have_text(
-        "没有读到已发布的模型结果（可能尚未发布，或读取失败）"
-    )
+    expect(page.locator("#evidence-state")).to_have_text("当前没有可用的已发布模型结果。")
     expect(page.locator("#interval-list .interval-row")).to_have_count(0)
     expect(page.locator("#model-date")).to_have_text("模型日期 未读到")
     retry = page.locator("#evidence-note .evidence-retry-button")

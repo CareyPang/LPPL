@@ -59,7 +59,7 @@ test('historical chart routes through the read-only reader and keeps explicit la
 test('missing published model copy is uncertain and offers retry plus stock-page action', () => {
   assert.match(
     chartPageSource,
-    /没有读到已发布的模型结果（可能尚未发布，或读取失败）/,
+    /当前没有可用的已发布模型结果/,
   );
   assert.match(chartPageSource, /模型结果读取失败：/);
   assert.match(chartPageSource, /retry\.textContent = '重试读取'/);

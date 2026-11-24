@@ -1,6 +1,6 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.LPPLGlobalEvents=api;})(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
-  var REASONS={historical_news_not_archived:'该截止日没有当时保存的新闻档案',news_not_fetched:'尚未取得新闻',news_refresh_due:'新闻已超过六小时刷新周期',source_access_denied:'来源拒绝本次访问，保留已有可读资料',source_fetch_failed:'本次来源读取失败',corporate_actions_not_archived:'没有当时封存的公司行动资料'};
+  var REASONS={historical_news_not_archived:'该截止日没有当时保存的新闻档案',news_not_fetched:'暂无新闻',news_refresh_due:'新闻已超过六小时刷新周期',source_access_denied:'来源拒绝本次访问，保留已有可读资料',source_fetch_failed:'本次来源读取失败',corporate_actions_not_archived:'没有当时封存的公司行动资料'};
   function dateParts(instant,timezone){
     if(typeof instant!=='string'||!/(Z|[+-]\d{2}:\d{2})$/.test(instant)||!Number.isFinite(Date.parse(instant)))return null;
     try {var values={};new Intl.DateTimeFormat('en-CA',{timeZone:timezone||'UTC',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(instant)).forEach(function(p){values[p.type]=p.value;});return {date:values.year+'-'+values.month+'-'+values.day,time:values.hour+':'+values.minute+':'+values.second};}catch(_){return null;}
@@ -28,7 +28,8 @@
     view.rows.slice(0,24).forEach(function(row){
       var article=doc.createElement('article');article.className='global-event';
       var link=doc.createElement('a');link.href=row.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=row.label;article.appendChild(link);
-      var meta=doc.createElement('p');meta.textContent='来源 '+row.source+' · 发布时间 '+(row.publishedAt||'未提供')+' · 首次留存 '+row.knownAt;article.appendChild(meta);
+      var metaParts=['来源 '+row.source,row.publishedAt?'发布时间 '+row.publishedAt:'',row.knownAt?'首次留存 '+row.knownAt:''].filter(Boolean);
+      if(metaParts.length){var meta=doc.createElement('p');meta.textContent=metaParts.join(' · ');article.appendChild(meta);}
       if(row.effectiveAt){var effective=doc.createElement('p');effective.textContent='生效日 '+row.date+'（不是公告发布时间）';article.appendChild(effective);}
       var state=doc.createElement('p');state.className='global-event-scope';state.textContent=row.afterModel?'模型截止日之后取得的当前资讯':'模型截止日前已留存的资料';article.appendChild(state);
       if(!row.afterModel&&onFocus){var button=doc.createElement('button');button.type='button';button.textContent='在图表中定位 '+row.date;button.addEventListener('click',function(){onFocus(row);});article.appendChild(button);}

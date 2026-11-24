@@ -17,7 +17,7 @@ test('builds four linked summary rows from available market data', () => {
   assert.equal(result.lines[0].text, '上证指数 +1.20%');
   assert.equal(result.lines[1].text, '今日 3 项：金风科技解禁；浦发银行除息');
   assert.equal(result.lines[2].text, '今日 2 条自选相关快讯');
-  assert.equal(result.lines[3].text, '对比日期未提供：1 项变化，1 项不变');
+  assert.equal(result.lines[3].text, '暂无可比较的模型区间');
 });
 
 test('model summary names the compared dates', () => {

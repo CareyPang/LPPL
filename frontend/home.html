@@ -314,7 +314,7 @@ function renderRadar(L){
 function renderIdxRows(){
  if(!IDXROWS)return false;
  const rawL=IDXROWS||[],ok=rawL.filter(r=>!r.error);
- if(!ok.length)$('asof').textContent='结果尚未就绪；可打开标的核对状态';
+ if(!ok.length)$('asof').textContent='当前没有可用结果；可打开标的核对状态';
  renderRadar(rawL);
  const L=idxSort==='bottom'
   ?[...rawL].sort((a,b)=>((b&&b.action?b.action.score:-1)-(a&&a.action?a.action.score:-1)))
@@ -358,8 +358,8 @@ function paintQuotes(){
  rows.querySelectorAll('a.row[data-sym]').forEach(a=>{
   const q=QT[a.dataset.sym],p=a.querySelector('.p'),time=a.querySelector('.quote-time'),model=a.querySelector('.model-date'),period=a.querySelector('.spark-meta span')?.textContent||'';if(!p)return;
   if(p.dataset.c==null)p.dataset.c=p.innerHTML;
-  if(q){p.innerHTML=qHtml(q);p.title='腾讯实时行情，仅供参考，不参与模型';const timing=LPPL.quoteTimeLabel?LPPL.quoteTimeLabel(q.time,q.tz):null;time.textContent=timing&&timing.time!=='—'?'报价 '+timing.time:'报价时间未提供';updateModelLag(a,quoteSessionDate(q))}
-  else{p.innerHTML=p.dataset.c;p.title='日更收盘';time.textContent='收盘 '+shortDate(a.dataset.closeDate);updateModelLag(a,a.dataset.closeDate)}
+  if(q){p.innerHTML=qHtml(q);p.title='腾讯实时行情，仅供参考，不参与模型';const timing=LPPL.quoteTimeLabel?LPPL.quoteTimeLabel(q.time,q.tz):null;time.textContent=timing&&timing.time!=='—'?'报价 '+timing.time:'';time.hidden=!time.textContent;updateModelLag(a,quoteSessionDate(q))}
+  else{p.innerHTML=p.dataset.c;p.title='日更收盘';time.textContent='收盘 '+shortDate(a.dataset.closeDate);time.hidden=false;updateModelLag(a,a.dataset.closeDate)}
   a.setAttribute('aria-label',`${a.dataset.name}，${period?period+'，':''}${time.textContent}，${model.textContent}，${a.dataset.status}`)
  });
  updateSparkRangeUI();

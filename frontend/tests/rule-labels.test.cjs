@@ -34,7 +34,7 @@ test('classifies uncomputed scales when indicators are absent or confidence is n
   assert.equal(RuleLabels.emptyReason({}, '6-12m', false, true), 'not_computed');
   assert.equal(RuleLabels.emptyReason(topFor(null), '6-12m', false, true), 'not_computed');
   assert.equal(RuleLabels.emptyReason(topFor(0, 'not_computed'), '6-12m', false, true), 'not_computed');
-  assert.equal(RuleLabels.reasonText('not_computed'), '这个尺度尚未计算');
+  assert.equal(RuleLabels.reasonText('not_computed'), '这个尺度未计算');
 });
 
 test('classifies computed scales without fits or clusters', () => {

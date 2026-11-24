@@ -34,7 +34,7 @@ test('summary reveals gated intervals, no score, no precise tc, no synthetic pre
   assert.equal(result.status, 'has_window');
   assert.equal(result.windows[0].start, '2026-11-20');
   assert.equal(result.predictionId, null);
-  assert.equal(result.source, '来源未提供');
+  assert.equal(result.source, '');
   assert.equal(result.coverage.filter(x => x.computed).length, 1);
   assert.equal('confidence' in result, false);
   assert.equal('share' in result.windows[0], false);
@@ -134,7 +134,7 @@ test('empty-state text matches shared rule labels', () => {
   raw.top.indicators['6-12m'] = { n_windows: 6, signal_status: 'signal' };
   assert.equal(Core.summarize(index, raw, at).statusText, RuleLabels.EMPTY_REASONS.no_cluster);
   assert.equal(Core.summarize(index, payload(), at).statusText, '有研究观察区间');
-  assert.equal(Core.summarize(index, null, at).statusText, '尚未取得可用分析');
+  assert.equal(Core.summarize(index, null, at).statusText, '当前没有可用分析');
 
   assert.equal(Core.summarize(index, payload(), at).status, 'has_window');
   const expired = payload();

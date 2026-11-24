@@ -20,7 +20,7 @@
   });
   var FOOTNOTE = '两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。';
   var EMPTY_REASONS = Object.freeze({
-    not_computed: '这个尺度尚未计算',
+    not_computed: '这个尺度未计算',
     no_fit: '已计算，没有合格拟合（不代表风险较低）',
     no_cluster: '有合格拟合，但没有形成聚类区间',
     not_formal: '已形成候选区间，证据不足，不作正式提醒',

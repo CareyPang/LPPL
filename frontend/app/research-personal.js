@@ -52,12 +52,13 @@
     if (eventStatus === 'loading' && !events) { el.append(node('p', 'personal-empty', '读取事件数据，工作台其他功能可继续操作。')); return; }
     if (eventStatus === 'error' && !events) { el.append(node('p', 'personal-empty', '未取得可用的事件快照。请稍后重试；此状态不表示没有公司事件。')); return; }
     if (!events) { el.append(node('p', 'personal-empty', '展开日历时读取自选股票的事件快照。')); return; }
-    $('events-asof').textContent = '快照截止 ' + events.asof + ' · 生成于 ' + (events.generated || '未知') + (eventStatus === 'error' ? ' · 刷新失败，保留上次读取内容' : '');
+    $('events-asof').textContent = [events.asof ? '快照截止 ' + events.asof : '', events.generated ? '生成于 ' + events.generated : '', eventStatus === 'error' ? '刷新失败，保留上次读取内容' : ''].filter(Boolean).join(' · ');
     const sourceBox = $('events-sources'); clear(sourceBox);
     for (const source of events.sources) {
       const coverage = events.coverage[source.type] || [];
-      const status = source.status === 'ok' ? (source.stale ? '旧快照' : '源返回成功') : source.status === 'failed' ? '源读取失败' : '源状态未知';
-      sourceBox.append(node('p', 'personal-meta', source.label + ' · ' + source.source + ' · ' + status + (source.staleReason ? '：' + source.staleReason : '') + ' · 采集 ' + (source.fetchedAt || '未知') + ' · 覆盖 ' + (coverage.length === 2 ? coverage.join(' 至 ') : '未提供')));
+      const status = source.status === 'ok' ? (source.stale ? '旧快照' : '源返回成功') : source.status === 'failed' ? '源读取失败' : '';
+      const details = [source.label, source.source, status, source.staleReason, source.fetchedAt ? '采集 ' + source.fetchedAt : '', coverage.length === 2 ? '覆盖 ' + coverage.join(' 至 ') : ''].filter(Boolean);
+      if (details.length) sourceBox.append(node('p', 'personal-meta', details.join(' · ')));
     }
     const codes = stocks(), month = $('calendar-month').value, day = $('calendar-day').value;
     const rows = Core.filterEvents(events, { codes, asset: $('calendar-asset').value, month, day });
@@ -69,7 +70,10 @@
       head.append(button(event.name + ' · ' + event.code, () => select('stock:' + event.code), 'personal-link'), node('time', 'personal-date', event.date));
       card.append(head, node('p', '', event.label + ' · ' + event.status));
       if (event.description) card.append(node('p', 'personal-event-description', event.description));
-      card.append(node('p', 'personal-meta', '来源 ' + event.source.source + ' · 截止 ' + event.asof), node('p', 'personal-meta', '发布 ' + (event.publishedAt || event.publicationDate || '未知') + ' · 首次采集 ' + (event.firstSeen || '未知')));
+      const eventMeta = [event.source.source ? '来源 ' + event.source.source : '', event.asof ? '截止 ' + event.asof : ''].filter(Boolean);
+      const eventTimes = [event.publishedAt || event.publicationDate ? '发布 ' + (event.publishedAt || event.publicationDate) : '', event.firstSeen ? '首次采集 ' + event.firstSeen : ''].filter(Boolean);
+      if (eventMeta.length) card.append(node('p', 'personal-meta', eventMeta.join(' · ')));
+      if (eventTimes.length) card.append(node('p', 'personal-meta', eventTimes.join(' · ')));
       if (day) card.append(node('p', 'personal-knowledge', Core.knowledgeAt(event, day)));
       if (event.source.status !== 'ok' || event.source.stale) card.append(node('p', 'personal-knowledge', event.source.staleReason || '该来源当前不可确认新鲜度，请核对原始公告。'));
       el.append(card);
@@ -118,7 +122,7 @@
   $('calendar-clear').addEventListener('click', () => { $('calendar-month').value = ''; $('calendar-day').value = ''; $('calendar-asset').value = 'all'; renderEvents(); });
   $('holding-unit').addEventListener('change', renderHoldings);
   window.ResearchPersonalActions = { hasUnsaved: () => ['holding-code', 'holding-name', 'holding-shares', 'holding-cost'].some(id => $(id).value.trim() !== '') };
-  $('holding-form').addEventListener('input', () => { $('holding-error').textContent = '持仓草稿尚未保存。'; });
+    $('holding-form').addEventListener('input', () => { $('holding-error').textContent = '持仓草稿未保存。'; });
   $('holding-form').addEventListener('submit', event => {
     event.preventDefault();
     const row = Core.holding({ code: $('holding-code').value.trim(), name: $('holding-name').value, shares: $('holding-shares').value, cost: $('holding-cost').value, currency: 'CNY', updatedAt: new Date().toISOString() });

@@ -133,7 +133,7 @@ const server = http.createServer((req, res) => {
     modelMissing = true; modelDelay = 0;
     await page.reload(); await page.waitForFunction(() => document.querySelector('#chart-page').dataset.modelStatus === 'missing');
     assert.equal(await page.locator('#chart-page').getAttribute('data-last-close'), marketClose);
-    assert.match(await page.locator('#evidence-state').innerText(), /尚未发布，或读取失败/);
+    assert.match(await page.locator('#evidence-state').innerText(), /当前没有可用的已发布模型结果/);
     assert.equal(await page.locator('#interval-list button').count(), 0);
     pass('missing model and failed events keep market candles without invented intervals');
 

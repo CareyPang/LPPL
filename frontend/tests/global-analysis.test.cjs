@@ -72,6 +72,15 @@ test('invalid dates are rejected before submission; leap-day dates remain valid'
  assert.equal(Jobs.validDate('2026-02-30'),false);assert.equal(Jobs.validDate('2024-02-29'),true);
  const h=harness({startAnalysis:()=>{throw Error('must not submit');}});await h.c.start({symbol,asof:'2026-02-30'});assert.equal(h.states.at(-1).status,'invalid');
 });
+test('unavailable replay service hides the cutoff and run controls',async()=>{
+ const ids=['global-analysis','global-analysis-run','global-analysis-asof','global-analysis-status','global-analysis-progress','global-analysis-resume'];
+ const nodes=Object.fromEntries(ids.map(id=>[id,{hidden:false,dataset:{},addEventListener(){}}]));
+ const adapter={global:{isAsset:()=>true,capabilities:async()=>({available:false,reason:'unavailable'})}};
+ Jobs.attach({document:{getElementById:id=>nodes[id]},adapter,context:{code:symbol,asof:null}});
+ await flush();
+ assert.equal(nodes['global-analysis'].hidden,true);
+ assert.equal(nodes['global-analysis-run'].disabled,true);
+});
 test('default browser timer is not invoked with the private clock object as receiver',async()=>{
  const browser={module:{exports:{}},setTimeout:function(fn){assert.equal(this,undefined,'native browser timer requires no private receiver');return fn;},clearTimeout:function(){assert.equal(this,undefined);}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../app/global-analysis.js'),'utf8'),browser);
