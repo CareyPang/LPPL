@@ -93,6 +93,18 @@ def test_cross_check_records_unavailable_provider_reason(monkeypatch):
     assert "offline fixture" in result["reason"]
 
 
+def test_cross_check_is_unavailable_without_independent_stock_source():
+    yahoo = _close_frame(["2026-11-23"], [100.0])
+
+    result = source.fetch_cross_check(
+        "KR_SKHYNIX", yahoo, datetime(2026, 11, 24, tzinfo=UTC)
+    )
+
+    assert result["status"] == "unavailable"
+    assert result["provider"] == "not_configured"
+    assert "independent second source" in result["reason"]
+
+
 def test_yahoo_session_validation_drops_non_sessions_and_counts_missing_rows():
     fetched_at = datetime(2026, 12, 1, tzinfo=UTC)
     expected = completed_market_sessions("us", pd.Timestamp(fetched_at))

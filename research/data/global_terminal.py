@@ -324,6 +324,15 @@ def fetch_cross_check(
 ) -> dict:
     fetched_at = fetched_at or datetime.now(UTC)
     market = ASSETS[asset_id]["market"]
+    if asset_id == "KR_SKHYNIX":
+        return {
+            "provider": "not_configured",
+            "overlap": 0,
+            "max_rel_diff": None,
+            "missing_in_yahoo": 0,
+            "status": "unavailable",
+            "reason": "No independent second source is configured for this asset",
+        }
     provider = {
         "us": "sina_us_daily_k",
         "jp": "stooq_daily_csv",
