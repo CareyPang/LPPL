@@ -63,7 +63,7 @@ test('assistant exports an idempotent public opener and delegates prompt clicks'
 test('wide assistant switch uses safe page-specific defaults and persistence', () => {
   const chart = page('chart.html');
   assert.match(assistant, /var HOME_STORAGE_KEY = 'lppl\.assistant\.home'/);
-  assert.match(assistant, /var defaultOpen = page !== 'home' && !\(me && me\.dataset\.default === 'closed'\)/);
+  assert.match(assistant, /var defaultOpen = !!\(me && me\.dataset\.default === 'open'\)/);
   assert.match(assistant, /return 'lppl\.assistant\.wide:' \+ filename/);
   assert.match(assistant, /if \(value === '1'\) return true;[\s\S]*?if \(value === '0'\) return false;[\s\S]*?return defaultOpen;/);
   assert.match(assistant, /root\.localStorage\.setItem\(preferenceKey\(\), open \? '1' : '0'\)/);

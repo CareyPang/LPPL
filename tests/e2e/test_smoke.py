@@ -343,6 +343,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     )
     page.set_viewport_size({"width": 1280, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
+    expect(page.locator("#s-lhb-seats")).to_be_hidden()
+    page.locator('.odn-sub a.odn-t[href="#s-breadth"]').click()
     expect(page.locator("#s-lhb-seats")).to_be_visible()
     expect(page.locator("#lhb-seats-body .lhb-card.buy strong")).to_contain_text("12.30亿")
     expect(page.locator("#lhb-subtitle")).to_contain_text("已识别游资 2 家")
@@ -377,10 +379,10 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(page.locator("#lhb-seats-body .lhb-note")).to_contain_text(
         "游资别名按公开报道整理，可能有误或过时。"
     )
-    assistant_button = page.locator(".ai-btn")
-    if assistant_button.get_attribute("aria-expanded") != "true":
-        assistant_button.click()
-    expect(assistant_button).to_have_attribute("aria-expanded", "true")
+    assistant_switch = page.locator(".ai-switch")
+    if assistant_switch.get_attribute("aria-checked") != "true":
+        assistant_switch.click()
+    expect(assistant_switch).to_have_attribute("aria-checked", "true")
     expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
     assert page.locator("#s-lhb-seats").evaluate(
         "(section) => section.scrollWidth <= section.clientWidth + 1"
@@ -470,6 +472,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
                 }"""
             )
 
+    page.locator('.odn-sub a.odn-t[href="#s-top-risk"]').click()
+    expect(top_risk).to_be_visible()
     assert_verdicts_fit()
     page.set_viewport_size({"width": 390, "height": 844})
     assert_verdicts_fit()
@@ -500,6 +504,7 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "() => ({scrollWidth: document.documentElement.scrollWidth, innerWidth})"
     )
     assert dimensions["scrollWidth"] <= dimensions["innerWidth"] + 1, dimensions
+    page.locator('.odn-sub a.odn-t[href="#s-breadth"]').click()
     assert page.locator("#s-lhb-seats").evaluate(
         "(section) => section.scrollWidth <= section.clientWidth + 1"
     )
@@ -735,6 +740,11 @@ def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
     expect(sidebar).to_be_visible()
     expect(page.locator(".odn-side-main")).to_have_count(5)
     assistant = page.locator(".ai-panel.ai-dock")
+    assistant_switch = page.locator(".ai-switch")
+    expect(assistant).to_be_hidden()
+    expect(assistant_switch).to_have_attribute("aria-checked", "false")
+    assert page.locator("main").evaluate("(el) => el.getBoundingClientRect().left") == 208
+    assistant_switch.click()
     expect(assistant).to_be_visible()
     sidebar_box = sidebar.bounding_box()
     assistant_box = assistant.bounding_box()
@@ -748,6 +758,7 @@ def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
 
 @pytest.mark.e2e
 def test_home_assistant_switch_persists_without_changing_other_page_defaults(page: Page) -> None:
+    page._e2e_mock_quote_news = True
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/home.html")
     page.evaluate("localStorage.removeItem('lppl.assistant.home')")
@@ -794,10 +805,12 @@ def test_home_assistant_switch_persists_without_changing_other_page_defaults(pag
 
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
-    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    page.evaluate("localStorage.removeItem('lppl.assistant.wide:index.html')")
+    page.reload()
+    expect(page.locator(".ai-panel.ai-dock")).to_be_hidden()
     page.evaluate("localStorage.setItem('lppl.assistant.home', '1')")
     page.reload()
-    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    expect(page.locator(".ai-panel.ai-dock")).to_be_hidden()
 
 
 @pytest.mark.e2e
@@ -834,6 +847,9 @@ def test_index_assistant_close_button_persists_wide_preference(page: Page) -> No
     panel = page.locator(".ai-panel.ai-dock")
     switch = page.locator(".ai-switch")
     close = page.get_by_role("button", name="关闭研究助手")
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    switch.click()
     expect(panel).to_be_visible()
     expect(switch).to_have_attribute("aria-checked", "true")
     expect(close).to_be_visible()
@@ -1635,16 +1651,27 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
             }"""
         )
         assert content_left is not None, path
-        if path == "home.html" or path.startswith("chart.html"):
-            expect(panel).to_be_hidden()
-            assert content_left < 300, (path, content_left)
-        else:
+        expect(panel).to_be_hidden()
+        assert content_left < 300, (path, content_left)
+        if path != "home.html" and not path.startswith("chart.html"):
+            page.locator(".ai-switch").click()
             expect(panel).to_be_visible()
             panel_box = panel.bounding_box()
             head_box = page.locator(".ai-head").bounding_box()
+            opened_content_left = page.evaluate(
+                """() => {
+                  const el = document.body.classList.contains('vs-home')
+                    ? document.querySelector('.hero-copy')
+                    : document.querySelector('main') || document.querySelector('h1');
+                  return el && el.getBoundingClientRect().left;
+                }"""
+            )
             assert panel_box and head_box, path
             assert abs(panel_box["y"]) <= 1 and abs(head_box["y"]) <= 1, (path, panel_box, head_box)
-            assert content_left >= panel_box["x"] + panel_box["width"] + 23, (path, content_left)
+            assert opened_content_left >= panel_box["x"] + panel_box["width"] + 23, (
+                path,
+                opened_content_left,
+            )
 
         page.set_viewport_size({"width": 390, "height": 844})
         page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
@@ -1913,7 +1940,10 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
 def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
-    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    panel = page.locator(".ai-panel.ai-dock")
+    expect(panel).to_be_hidden()
+    page.locator(".ai-switch").click()
+    expect(panel).to_be_visible()
     expect(page.locator(".app")).to_be_visible()
 
     def ask_context() -> str:
@@ -1947,10 +1977,10 @@ def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/market.html")
     assert page.evaluate("window.scrollY") == 0
-    expect(page.locator('.odn-sidebar .odn-side-link[href="market.html#s-news"]')).to_have_attribute(
+    expect(page.locator('.odn-sidebar .odn-side-link[href="market.html#s-summary"]')).to_have_attribute(
         "aria-current", "location"
     )
-    expect(page.locator('.odn-l2 .odn-sub a[href="#s-news"]')).to_have_attribute(
+    expect(page.locator('.odn-l2 .odn-sub a[href="#s-summary"]')).to_have_attribute(
         "aria-current", "location"
     )
 
@@ -1958,8 +1988,8 @@ def test_market_defaults_to_today_highlight_at_scroll_top(page: Page) -> None:
 @pytest.mark.e2e
 def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     page.goto(f"{BASE_URL}/market.html")
-    tabs = page.locator(".odn-sub a.odn-t")
-    expect(tabs).to_have_count(4)
+    tabs = page.locator('.odn-sub a.odn-t[href^="#s-"]')
+    expect(tabs).to_have_count(5)
     emotion_tab = tabs.filter(has_text="情绪")
     emotion_tab.click()
     expect(page.locator("#s-limit")).to_be_visible()
@@ -1967,6 +1997,291 @@ def test_market_group_tabs_follow_anchor_ids(page: Page) -> None:
     expect(
         page.locator(".odn-sidebar .odn-side-link").filter(has_text="情绪")
     ).to_have_attribute("aria-current", "location")
+
+
+@pytest.mark.e2e
+def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> None:
+    groups = [
+        ("今日", ["s-summary", "s-news", "s-events"]),
+        ("资金", ["s-breadth", "s-board", "s-nb", "s-mg", "s-lhb", "s-lhb-seats"]),
+        ("情绪", ["s-limit", "s-sentiment", "s-ladder", "s-strength", "s-themes", "s-hot"]),
+        ("风险", ["s-top-risk", "s-bottom", "s-abnormal", "s-range"]),
+        ("宏观", ["s-val", "s-macro", "s-growth"]),
+    ]
+    page.goto(f"{BASE_URL}/market.html")
+    tabs = page.locator('.odn-sub a.odn-t[href^="#s-"]')
+    expect(tabs).to_have_count(5)
+    seen: set[str] = set()
+
+    for title, expected_ids in groups:
+        tab = tabs.filter(has_text=title)
+        tab.click()
+        expect(tab).to_have_attribute("aria-current", "location")
+        assert tab.get_attribute("href") == f"#{expected_ids[0]}"
+        visible_ids = page.locator("main > section.sec[id]").evaluate_all(
+            "(sections) => sections.filter((section) => section.getClientRects().length).map((section) => section.id)"
+        )
+        assert set(visible_ids) == set(expected_ids)
+        assert len(visible_ids) == len(expected_ids)
+        assert seen.isdisjoint(visible_ids)
+        seen.update(visible_ids)
+        assert page.locator("#s-fresh").evaluate(
+            "(section) => section.getClientRects().length"
+        ) == 0
+
+    expected_group_ids = {section_id for _, ids in groups for section_id in ids}
+    assert seen == expected_group_ids
+
+    page.goto(f"{BASE_URL}/market.html#s-fresh")
+    assert page.locator("#s-fresh").evaluate(
+        "(section) => section.getClientRects().length"
+    ) > 0
+    expect(page.locator('.odn-sub a.odn-t[href="#s-summary"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="情绪").click()
+    page.evaluate("window.scrollTo(0, 1500)")
+    page.wait_for_function("window.scrollY >= 1490")
+    page.locator('.odn-sidebar .odn-side-sub a[href$="#s-breadth"]').click()
+    page.wait_for_function("location.hash === '#s-breadth' && window.scrollY === 0")
+    breadth_top = page.locator("#s-breadth").evaluate(
+        "(section) => section.getBoundingClientRect().top"
+    )
+    header_bottom = page.locator("header.odn").evaluate(
+        "(header) => header.getBoundingClientRect().bottom"
+    )
+    assert page.evaluate("window.scrollY") == 0
+    assert breadth_top >= header_bottom
+
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="宏观").click()
+    page.evaluate("document.body.style.minHeight = '2400px'; window.scrollTo(0, 1500)")
+    page.wait_for_function("window.scrollY === 1500")
+    page.locator('.odn-sidebar .odn-side-sub a[href$="#s-summary"]').click()
+    page.wait_for_function("location.hash === '#s-summary' && window.scrollY === 0")
+    summary_top = page.locator("#s-summary").evaluate(
+        "(section) => section.getBoundingClientRect().top"
+    )
+    header_bottom = page.locator("header.odn").evaluate(
+        "(header) => header.getBoundingClientRect().bottom"
+    )
+    assert page.evaluate("window.scrollY") == 0
+    assert summary_top >= header_bottom
+    page.route(
+        re.compile(r"^https://lppl-stock-query\.careypang\.workers\.dev/quote\?"),
+        lambda route: route.fulfill(status=200, json={"quotes": {}}),
+    )
+    page.route(
+        re.compile(r"^https://lppl-stock-query\.careypang\.workers\.dev/news(?:\?|$)"),
+        lambda route: route.fulfill(status=200, json={"cls": [], "eastmoney": []}),
+    )
+    page.context.route(
+        "https://lppl-stock-query.careypang.workers.dev/**",
+        lambda route: route.fulfill(
+            status=200,
+            headers={"access-control-allow-origin": "*"},
+            json={"quotes": {}}
+            if urlsplit(route.request.url).path == "/quote"
+            else {"cls": [], "eastmoney": []},
+        ),
+    )
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="情绪").click()
+    original_hash = page.evaluate("location.hash")
+    expect(page.locator('.odn-sub a.odn-t[href="#s-limit"]')).to_have_attribute(
+        "aria-current", "location"
+    )
+    with page.context.expect_page() as new_page_info:
+        page.locator('.odn-sidebar .odn-side-sub a[href$="#s-breadth"]').click(
+            modifiers=["Control"]
+        )
+    new_page = new_page_info.value
+    try:
+        new_page.wait_for_load_state("load")
+        expect(new_page).to_have_url(f"{BASE_URL}/market.html#s-breadth")
+        assert page.evaluate("location.hash") == original_hash == "#s-limit"
+        expect(page.locator('.odn-sub a.odn-t[href="#s-limit"]')).to_have_attribute(
+            "aria-current", "location"
+        )
+    finally:
+        new_page.close()
+
+    page.goto(f"{BASE_URL}/market.html")
+    tabs.filter(has_text="资金").click()
+    page.evaluate(
+        "window.scrollTo(0, 800); "
+        "sessionStorage.setItem('market-tab-scroll-restore', String(window.scrollY)); "
+        "sessionStorage.removeItem('market-tab-top-reset')"
+    )
+    page.wait_for_function("window.scrollY >= 790")
+    page.add_init_script(
+        """
+        (() => {
+          const navigation = performance.getEntriesByType('navigation')[0];
+          if (navigation && navigation.type === 'reload') {
+            const scrollTo = window.scrollTo.bind(window);
+            window.scrollTo = function (x, y) {
+              if (Number(x) === 0 && Number(y) === 0) {
+                sessionStorage.setItem('market-tab-top-reset', '1');
+              }
+              return scrollTo(x, y);
+            };
+          }
+        })();
+        """
+    )
+    page.reload()
+    page.wait_for_function(
+        "document.querySelector('#s-lhb-seats')?.getClientRects().length"
+    )
+    page.evaluate(
+        "window.scrollTo(0, Number(sessionStorage.getItem('market-tab-scroll-restore') || 0))"
+    )
+    page.wait_for_function(
+        "() => window.scrollY > 0 && "
+        "document.querySelector('#s-lhb-seats')?.getClientRects().length"
+    )
+    assert page.evaluate("window.scrollY") > 0
+    assert page.evaluate(
+        "sessionStorage.getItem('market-tab-top-reset')"
+    ) is None
+    expect(tabs.filter(has_text="资金")).to_have_attribute(
+        "aria-current", "location"
+    )
+    visible_ids = page.locator("main > section.sec[id]").evaluate_all(
+        "(sections) => sections.filter((section) => section.getClientRects().length).map((section) => section.id)"
+    )
+    assert set(visible_ids) == {
+        "s-breadth",
+        "s-board",
+        "s-nb",
+        "s-mg",
+        "s-lhb",
+        "s-lhb-seats",
+    }
+
+
+@pytest.mark.e2e
+def test_market_evidence_badges_render_chinese_levels(page: Page) -> None:
+    page.goto(f"{BASE_URL}/market.html")
+    badges = page.locator(".ev")
+    expect(badges.first).to_have_text("描述统计")
+    texts = badges.all_inner_texts()
+    assert texts
+    assert all(not re.fullmatch(r"[a-z_]+", text.strip()) for text in texts)
+
+
+@pytest.mark.e2e
+def test_market_assistant_defaults_closed_and_persists(page: Page) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/market.html")
+    page.evaluate("localStorage.removeItem('lppl.assistant.wide:market.html')")
+    page.reload()
+    panel = page.locator(".ai-panel.ai-dock")
+    switch = page.locator(".ai-switch")
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "208px"
+    main_left = page.locator("main").evaluate("(el) => el.getBoundingClientRect().left")
+    assert main_left == 208, main_left
+
+    switch.click()
+    expect(panel).to_be_visible()
+    expect(switch).to_have_attribute("aria-checked", "true")
+    assert page.evaluate(
+        "localStorage.getItem('lppl.assistant.wide:market.html')"
+    ) == "1"
+    page.reload()
+    expect(panel).to_be_visible()
+    switch.click()
+    expect(panel).to_be_hidden()
+    page.reload()
+    expect(panel).to_be_hidden()
+    assert page.evaluate("getComputedStyle(document.body).paddingLeft") == "208px"
+
+
+@pytest.mark.e2e
+def test_market_stale_banner_is_compact_and_expandable_on_mobile(page: Page) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+
+    def add_stale_market_fixture(route) -> None:
+        response = route.fetch()
+        payload = response.json()
+        payload["asof"] = "2020-01-01"
+        route.fulfill(status=response.status, json=payload)
+
+    page.route(
+        "**/lab/mock/data/market/market_latest.json",
+        add_stale_market_fixture,
+    )
+    page.goto(f"{BASE_URL}/market.html")
+    summary = page.locator("#stale-banner details > summary")
+    expect(summary).to_contain_text("项数据未按时更新")
+    metrics = summary.evaluate(
+        "(el) => ({height: el.getBoundingClientRect().height, "
+        "lineHeight: parseFloat(getComputedStyle(el).lineHeight), "
+        "whiteSpace: getComputedStyle(el).whiteSpace})"
+    )
+    assert metrics["height"] <= metrics["lineHeight"] * 2, metrics
+    assert metrics["whiteSpace"] == "nowrap"
+    expect(page.locator("#stale-banner details")).not_to_have_attribute("open", "")
+
+    summary.click()
+    expect(page.locator("#stale-banner details")).to_have_attribute("open", "")
+    detail = page.locator("#stale-banner details > div")
+    expect(detail).to_contain_text("页面显示的是最近一次发布的数据")
+    expect(detail.locator('a[href="#s-fresh"]')).to_have_text("数据更新状态")
+
+
+@pytest.mark.e2e
+def test_wide_etf_subtab_is_visible_on_mobile_and_current_on_nt_page(page: Page) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{BASE_URL}/market.html")
+
+    def assert_subtabs_fit(viewport_width: int) -> None:
+        page.set_viewport_size({"width": viewport_width, "height": 844})
+        tabs = page.locator(".odn-sub a.odn-t")
+        expect(tabs).to_have_count(6)
+        last_bounds = tabs.last.bounding_box()
+        bar_size = page.locator(".odn-sub").evaluate(
+            "(el) => ({scrollWidth: el.scrollWidth, clientWidth: el.clientWidth})"
+        )
+        assert last_bounds is not None
+        assert last_bounds["x"] + last_bounds["width"] <= viewport_width, last_bounds
+        assert bar_size["scrollWidth"] <= bar_size["clientWidth"], bar_size
+
+    for viewport_width in (390, 360):
+        assert_subtabs_fit(viewport_width)
+
+    page.set_viewport_size({"width": 390, "height": 844})
+    wide_etf = page.locator(".odn-sub a.odn-t").filter(has_text="宽基ETF")
+    expect(wide_etf).to_be_visible()
+    expect(page.locator('.odn-sidebar .odn-side-sub a[href="nt.html"]')).to_have_count(1)
+    bounds = wide_etf.bounding_box()
+    assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= 390
+    expect(wide_etf).to_have_attribute("href", "nt.html")
+    wide_etf.click()
+    page.wait_for_url(f"{BASE_URL}/nt.html")
+
+    nt_tabs = page.locator(".odn-sub a.odn-t")
+    expect(nt_tabs.filter(has_text="宽基ETF")).to_have_attribute(
+        "aria-current", "page"
+    )
+    for viewport_width in (390, 360):
+        assert_subtabs_fit(viewport_width)
+    expected_market_hrefs = [
+        "market.html#s-summary",
+        "market.html#s-breadth",
+        "market.html#s-limit",
+        "market.html#s-top-risk",
+        "market.html#s-val",
+    ]
+    assert nt_tabs.evaluate_all(
+        "(tabs) => tabs.filter((tab) => tab.getAttribute('href').startsWith('market.html#'))"
+        ".map((tab) => tab.getAttribute('href'))"
+    ) == expected_market_hrefs
 
 
 @pytest.mark.e2e

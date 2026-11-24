@@ -18,7 +18,7 @@
   var HOME_STORAGE_KEY = 'lppl.assistant.home';
   var me = document.currentScript;
   var page = (me && me.dataset.page) || 'stock';
-  var defaultOpen = page !== 'home' && !(me && me.dataset.default === 'closed');
+  var defaultOpen = !!(me && me.dataset.default === 'open');
 
   function storeKey() {
     var q = new URLSearchParams(location.search);

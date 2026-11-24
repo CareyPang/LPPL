@@ -86,9 +86,11 @@
   var theme = (me && me.dataset.theme) || 'light';
 
   var MARKET_SUB = [
-    { t: '今日', h: '#s-news', ids: ['s-summary', 's-news', 's-events'] },
-    { t: '资金', h: '#s-board', ids: ['s-board', 's-nb', 's-mg'] },
-    { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot', 's-lhb', 's-bottom', 's-abnormal', 's-range'] },
+    { t: '今日', h: '#s-summary', ids: ['s-summary', 's-news', 's-events'] },
+    { t: '资金', h: '#s-breadth', ids: ['s-breadth', 's-board', 's-nb', 's-mg', 's-lhb', 's-lhb-seats'] },
+    { t: '宽基ETF', h: 'nt.html', page: 'nt', nested: true },
+    { t: '情绪', h: '#s-limit', ids: ['s-limit', 's-sentiment', 's-ladder', 's-strength', 's-themes', 's-hot'] },
+    { t: '风险', h: '#s-top-risk', ids: ['s-top-risk', 's-bottom', 's-abnormal', 's-range'] },
     { t: '宏观', h: '#s-val', ids: ['s-val', 's-macro', 's-growth'] }
   ];
   var MAIN = [
@@ -118,7 +120,11 @@
   ];
   var SUB = {
     market: MARKET_SUB,
-    nt: MARKET_SUB.map(function (x) { return { t: x.t, h: 'market.html' + x.h }; }),
+    nt: MARKET_SUB.map(function (x) {
+      return x.page === 'nt'
+        ? { t: x.t, h: 'nt.html', page: 'nt' }
+        : { t: x.t, h: 'market.html' + x.h };
+    }),
     /* 标的页的页签由页面自己的吸顶头部提供（app/stock-header.js），顶栏不再重复一层 */
     stock: null
   };
@@ -254,7 +260,7 @@
 '.odn-star{height:34px;padding:0 12px;border:1px solid #333;border-radius:999px;background:transparent;color:#b2b5be;font:600 13px/1 inherit;cursor:pointer;white-space:nowrap}' +
 '.odn-star:hover{color:#fff;background:#2a2a2a}.odn-light .odn-star{border-color:#d6dae3;color:#4c525e}.odn-light .odn-star:hover{background:#f0f3fa;color:#131722}' +
 '.odn-star b{font-weight:600;margin-left:4px;color:#2962ff}.odn-light .odn-star b{color:#1f5fd6}' +
-'@media (max-width:520px){.odn-star span{display:none}.odn-star{padding:0 10px}}' +
+'@media (max-width:520px){.odn-star span{display:none}.odn-star{padding:0 10px}.odn-sub{gap:2px}.odn-sub a.odn-t{font-size:12px!important;padding:0 3px!important;margin:0 2px!important}.odn-sub .odn-sep{display:none}}' +
 '@media (min-width:1200px){body.odn-sidebar-page{padding-left:572px}.odn-sidebar{display:flex}.odn-l1{padding:0 16px}.odn-brand,.odn-main-row{display:none}.odn-r{width:100%;gap:10px}.odn-q{width:300px}.odn-q input,.odn-light .odn-q input{box-sizing:border-box;width:100%;background-color:#fff;border-color:#9aa3b2;color:#131722}.odn-q input:focus,.odn-light .odn-q input:focus{width:100%;background-color:#fff}.odn-q input:hover,.odn-q input:focus-visible,.odn-light .odn-q input:hover,.odn-light .odn-q input:focus-visible{border-color:#315CF5;box-shadow:0 0 0 3px rgba(49,92,245,.18)}}' +
 '@media (min-width:1200px){body.odn-sidebar-page.vs-home:not(.ai-open){padding-left:208px}}' +
 '@media (min-width:1200px){body.odn-sidebar-page.ai-closed{padding-left:208px}}' +
@@ -330,11 +336,8 @@
       var sub = el('div', 'odn-side-sub');
       m.sub.forEach(function (item) {
         var def = Object.assign({}, item);
-        if (m.k === 'market') def.h = 'market.html' + item.h;
-        addSideLink(sub, def, m.k, false);
-        if (m.k === 'market' && item.t === '资金') {
-          addSideLink(sub, { t: '宽基ETF', h: 'nt.html', page: 'nt' }, m.k, true);
-        }
+        if (m.k === 'market' && item.h.charAt(0) === '#') def.h = 'market.html' + item.h;
+        addSideLink(sub, def, m.k, !!item.nested);
       });
       group.appendChild(sub);
     }
@@ -951,13 +954,16 @@
       for (var i = 0; i < subTabs.length; i++) if (subTabs[i].ids.indexOf(id) >= 0) return i;
       return -1;
     };
+    var groupedIds = [];
+    subTabs.forEach(function (t) { groupedIds = groupedIds.concat(t.ids); });
     /* 首屏：正文还没解析，先用 id 选择器隐藏其他组，避免整页闪一下 */
     var g0 = groupOf(decodeURIComponent(location.hash.slice(1)));
     if (g0 < 0) g0 = DEF;
     var pre = [];
     subTabs.forEach(function (t, i) { if (i !== g0) t.ids.forEach(function (id) { pre.push('#' + id); }); });
+    pre.push('main > section.sec[id]' + groupedIds.map(function (id) { return ':not(#' + id + ')'; }).join('') + ':not(:target)');
     var gStyle = el('style');
-    gStyle.textContent = '.odn-gh{display:none!important}' + (pre.length ? pre.join(',') + '{display:none!important}' : '');
+    gStyle.textContent = '.odn-gh{display:none!important}' + pre.join(',') + '{display:none!important}';
     document.head.appendChild(gStyle);
     var curG = -1;
     var showGroup = function (g, anchor, push) {
@@ -973,6 +979,11 @@
           else if (l + w > s.scrollLeft + s.clientWidth) s.scrollLeft = l + w - s.clientWidth + 24;
         } else t.a.removeAttribute('aria-current');
       });
+      var target = anchor && document.getElementById(anchor);
+      var showUngrouped = !!(target && target.matches('main > section.sec[id]') && groupOf(target.id) < 0);
+      Array.prototype.forEach.call(document.querySelectorAll('main > section.sec[id]'), function (n) {
+        if (groupOf(n.id) < 0) n.classList.toggle('odn-gh', !showUngrouped || n !== target);
+      });
       var h = '#' + (anchor || subTabs[g].ids[0]);
       if (push && location.hash !== h && history.pushState) history.pushState(null, '', h);
       if (changed) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0); /* 让热力图等按新宽度重绘 */
@@ -983,12 +994,31 @@
     var fromHash = function () {
       gStyle.textContent = '.odn-gh{display:none!important}';
       var id = decodeURIComponent(location.hash.slice(1));
-      showGroup(groupOf(id), groupOf(id) >= 0 || id === 's-fresh' ? id : '', false);
+      var target = id && document.getElementById(id);
+      showGroup(groupOf(id), groupOf(id) >= 0 || (target && target.matches('main > section.sec[id]')) ? id : '', false);
     };
     subTabs.forEach(function (t, i) {
       t.a.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         showGroup(i, '', true);
+        syncSidebarActive();
+      });
+    });
+    sidebarLinks.filter(function (item) {
+      return item.mainKey === 'market' && item.ids.length;
+    }).forEach(function (item) {
+      var linkId = decodeURIComponent(item.a.hash.slice(1));
+      if (groupOf(linkId) < 0) return;
+      item.a.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        var id = decodeURIComponent(item.a.hash.slice(1));
+        var g = groupOf(id);
+        if (g < 0) return;
+        var first = id === subTabs[g].ids[0];
+        showGroup(g, first ? '' : id, true);
+        if (first) window.scrollTo(0, 0);
         syncSidebarActive();
       });
     });
