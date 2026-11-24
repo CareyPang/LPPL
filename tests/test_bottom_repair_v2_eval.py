@@ -17,6 +17,7 @@ from research.eval.bottom_repair_v2_eval import (
     ema,
     event_metrics,
     f4_from_volatility,
+    label_window_after_sample_start,
     label_window_valid,
     old50_signal,
     report_without_event_rows,
@@ -91,6 +92,25 @@ def test_label_window_cannot_cross_segment_or_data_boundary() -> None:
     assert not label_window_valid(labels, position=3, lookback=2, forward=2)
     assert not label_window_valid(labels, position=1, lookback=2, forward=1)
     assert label_window_valid(["dev"] * 8, position=3, lookback=2, forward=2)
+
+
+def test_label_window_must_start_on_or_after_first_weekly_frame() -> None:
+    dates = list(pd.date_range("2000-01-01", periods=8))
+
+    assert not label_window_after_sample_start(
+        dates,
+        position=3,
+        sample_start=dates[2],
+        lookback=2,
+        forward=2,
+    )
+    assert label_window_after_sample_start(
+        dates,
+        position=3,
+        sample_start=dates[1],
+        lookback=2,
+        forward=2,
+    )
 
 
 def test_state_cooldown_skips_only_differences_below_20_sessions() -> None:

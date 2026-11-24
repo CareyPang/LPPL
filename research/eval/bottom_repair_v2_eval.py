@@ -270,6 +270,20 @@ def label_window_valid(
     return all(segment_labels[index] == segment for index in range(start, end + 1))
 
 
+def label_window_after_sample_start(
+    session_dates: list[pd.Timestamp],
+    position: int,
+    sample_start: pd.Timestamp,
+    lookback: int = LABEL_LOOKBACK,
+    forward: int = LABEL_FORWARD,
+) -> bool:
+    start = position - lookback
+    end = position + forward
+    if start < 0 or end >= len(session_dates):
+        return False
+    return all(session_dates[index] >= sample_start for index in range(start, end + 1))
+
+
 def select_state_positions(
     candidate_positions: list[int],
     state_flags: np.ndarray | list[bool],
@@ -644,7 +658,10 @@ def _bootstrap_difference(
 
 
 def _candidate_positions(
-    closes: np.ndarray, segment_labels: list[str]
+    closes: np.ndarray,
+    segment_labels: list[str],
+    session_dates: list[pd.Timestamp],
+    sample_start: pd.Timestamp,
 ) -> tuple[dict[str, list[int]], dict[str, dict[str, int]]]:
     dd252 = np.full(len(closes), np.nan, dtype=float)
     for position in range(DD_LOOKBACK - 1, len(closes)):
@@ -662,10 +679,15 @@ def _candidate_positions(
             for position in segment_positions
             if np.isfinite(dd252[position]) and dd252[position] <= DD_THRESHOLD
         ]
-        valid_positions = [
+        label_valid_positions = [
             position
             for position in dd_pass_positions
             if label_window_valid(segment_labels, position)
+        ]
+        valid_positions = [
+            position
+            for position in label_valid_positions
+            if label_window_after_sample_start(session_dates, position, sample_start)
         ]
         candidates[segment] = valid_positions
         diagnostics[segment] = {
@@ -674,7 +696,8 @@ def _candidate_positions(
                 not np.isfinite(dd252[position]) for position in segment_positions
             ),
             "dd252_threshold_pass_days": len(dd_pass_positions),
-            "label_window_excluded_days": len(dd_pass_positions) - len(valid_positions),
+            "label_window_excluded_days": len(dd_pass_positions) - len(label_valid_positions),
+            "sample_start_excluded_days": len(label_valid_positions) - len(valid_positions),
             "candidate_days": len(valid_positions),
         }
     return candidates, diagnostics
@@ -831,12 +854,13 @@ def _make_markdown_report(report: dict[str, Any]) -> str:
             "",
             "## Data coverage and exclusions",
             "",
-            "| Index | Raw OHLC rows | Duplicate rows dropped | Invalid OHLC rows dropped | Valid rows | Date range | Dev / Cal / Test / Live sessions |",
-            "|---|---:|---:|---:|---:|---|---|",
+            "| Index | Sample start | Raw OHLC rows | Duplicate rows dropped | Invalid OHLC rows dropped | Valid rows | Date range | Dev / Cal / Test / Live sessions |",
+            "|---|---|---:|---:|---:|---:|---|---|",
         ]
     )
     for symbol, _, _ in INDEX_LIST:
-        metadata = report["inputs"]["indexes"][symbol]["daily"]
+        index_input = report["inputs"]["indexes"][symbol]
+        metadata = index_input["daily"]
         index_counts = report["per_index_counts"][symbol]
         counts = index_counts["segments"]
         session_counts = " / ".join(
@@ -846,14 +870,15 @@ def _make_markdown_report(report: dict[str, Any]) -> str:
             ]
         )
         lines.append(
-            f"| {symbol} | {metadata['raw_rows']} | {metadata['duplicate_rows_dropped']} | "
+            f"| {symbol} | {index_input['sample_start']} | {metadata['raw_rows']} | "
+            f"{metadata['duplicate_rows_dropped']} | "
             f"{metadata['invalid_ohlc_rows_dropped']} | {metadata['valid_rows']} | "
             f"{metadata['first_date']}–{metadata['last_date']} | {session_counts} |"
         )
     lines.extend(
         [
             "",
-            "Candidate diagnostics (DD252 pass days, label-window exclusions, final candidates) and missing V2-score counts are in the JSON per-index ledger. Random-baseline shortfalls are recorded per state/segment/index in the JSON.",
+            "Candidate diagnostics (DD252 pass days, label-window and sample-start exclusions, final candidates) and missing V2-score counts are in the JSON per-index ledger. Random-baseline shortfalls are recorded per state/segment/index in the JSON.",
             "",
         ]
     )
@@ -877,13 +902,20 @@ def run_study(
         daily, daily_metadata = _load_daily_ohlc(symbol, cache_root)
         frames, frame_metadata = _load_frames(data_dir, symbol)
         dates = daily["date"]
-        segment_labels = [segment_for_date(date) for date in dates]
+        session_dates = [pd.Timestamp(date).normalize() for date in dates]
+        segment_labels = [segment_for_date(date) for date in session_dates]
+        sample_start = min(pd.Timestamp(frame["asof"]).normalize() for frame in frames)
         opens = daily["open"].to_numpy(dtype=float)
         highs = daily["high"].to_numpy(dtype=float)
         lows = daily["low"].to_numpy(dtype=float)
         closes = daily["close"].to_numpy(dtype=float)
         features = compute_features(highs, lows, closes)
-        candidates, diagnostics = _candidate_positions(closes, segment_labels)
+        candidates, diagnostics = _candidate_positions(
+            closes,
+            segment_labels,
+            session_dates,
+            sample_start,
+        )
         old50_flags, old50_scores = _prepare_old50(dates, frames)
         stopfall_flags = np.asarray(
             [
@@ -976,6 +1008,7 @@ def run_study(
         inputs_by_index[symbol] = {
             "daily": daily_metadata,
             "weekly_frames": frame_metadata,
+            "sample_start": sample_start.strftime("%Y-%m-%d"),
         }
         per_index_counts[symbol] = {
             "segments": candidate_diagnostics,
