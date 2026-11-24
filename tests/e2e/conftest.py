@@ -81,13 +81,17 @@ def is_allowed_ai_request(method: str, url: str, page_path: str) -> bool:
 
 
 def fulfill_503(route: Route, expected_console_errors: dict[int, int]) -> None:
-    route.fulfill(
-        status=503,
-        content_type="application/json",
-        headers=CORS_HEADERS,
-        body=json.dumps({"error": "offline smoke fixture"}),
-    )
     expected_console_errors[503] += 1
+    try:
+        route.fulfill(
+            status=503,
+            content_type="application/json",
+            headers=CORS_HEADERS,
+            body=json.dumps({"error": "offline smoke fixture"}),
+        )
+    except Exception:
+        expected_console_errors[503] -= 1
+        raise
 
 
 def fulfill_external(
@@ -215,6 +219,25 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
                 route.request.url,
                 urlsplit(page.url).path,
             )
+            if (
+                getattr(page, "_e2e_mock_quote_news", False)
+                and route.request.method == "GET"
+                and (parsed.hostname or "").lower() == WORKER_HOST
+                and parsed.path in {"/quote", "/news"}
+            ):
+                body = (
+                    {"quotes": {}, "missing": []}
+                    if parsed.path == "/quote"
+                    else {"cls": [], "eastmoney": []}
+                )
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    headers=CORS_HEADERS,
+                    body=json.dumps(body),
+                )
+                routed_external.add((route.request.method, route.request.url))
+                return
             fulfill_external(
                 route,
                 routed_external,

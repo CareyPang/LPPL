@@ -373,10 +373,10 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     expect(page.locator("#lhb-seats-body .lhb-note")).to_contain_text(
         "游资别名按公开报道整理，可能有误或过时。"
     )
-    assistant_button = page.locator(".ai-btn")
-    if assistant_button.get_attribute("aria-expanded") != "true":
-        assistant_button.click()
-    expect(assistant_button).to_have_attribute("aria-expanded", "true")
+    assistant_switch = page.locator(".ai-switch")
+    if assistant_switch.get_attribute("aria-checked") != "true":
+        assistant_switch.click()
+    expect(assistant_switch).to_have_attribute("aria-checked", "true")
     expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
     assert page.locator("#s-lhb-seats").evaluate(
         "(section) => section.scrollWidth <= section.clientWidth + 1"
@@ -734,6 +734,11 @@ def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
     expect(sidebar).to_be_visible()
     expect(page.locator(".odn-side-main")).to_have_count(5)
     assistant = page.locator(".ai-panel.ai-dock")
+    assistant_switch = page.locator(".ai-switch")
+    expect(assistant).to_be_hidden()
+    expect(assistant_switch).to_have_attribute("aria-checked", "false")
+    assert page.locator("main").evaluate("(el) => el.getBoundingClientRect().left") == 208
+    assistant_switch.click()
     expect(assistant).to_be_visible()
     sidebar_box = sidebar.bounding_box()
     assistant_box = assistant.bounding_box()
@@ -747,6 +752,7 @@ def test_desktop_sidebar_and_docked_assistant(page: Page) -> None:
 
 @pytest.mark.e2e
 def test_home_assistant_switch_persists_without_changing_other_page_defaults(page: Page) -> None:
+    page._e2e_mock_quote_news = True
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/home.html")
     page.evaluate("localStorage.removeItem('lppl.assistant.home')")
@@ -835,6 +841,9 @@ def test_index_assistant_close_button_persists_wide_preference(page: Page) -> No
     panel = page.locator(".ai-panel.ai-dock")
     switch = page.locator(".ai-switch")
     close = page.get_by_role("button", name="关闭研究助手")
+    expect(panel).to_be_hidden()
+    expect(switch).to_have_attribute("aria-checked", "false")
+    switch.click()
     expect(panel).to_be_visible()
     expect(switch).to_have_attribute("aria-checked", "true")
     expect(close).to_be_visible()
@@ -1580,16 +1589,27 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
             }"""
         )
         assert content_left is not None, path
-        if path == "home.html" or path.startswith("chart.html"):
-            expect(panel).to_be_hidden()
-            assert content_left < 300, (path, content_left)
-        else:
+        expect(panel).to_be_hidden()
+        assert content_left < 300, (path, content_left)
+        if path != "home.html" and not path.startswith("chart.html"):
+            page.locator(".ai-switch").click()
             expect(panel).to_be_visible()
             panel_box = panel.bounding_box()
             head_box = page.locator(".ai-head").bounding_box()
+            opened_content_left = page.evaluate(
+                """() => {
+                  const el = document.body.classList.contains('vs-home')
+                    ? document.querySelector('.hero-copy')
+                    : document.querySelector('main') || document.querySelector('h1');
+                  return el && el.getBoundingClientRect().left;
+                }"""
+            )
             assert panel_box and head_box, path
             assert abs(panel_box["y"]) <= 1 and abs(head_box["y"]) <= 1, (path, panel_box, head_box)
-            assert content_left >= panel_box["x"] + panel_box["width"] + 23, (path, content_left)
+            assert opened_content_left >= panel_box["x"] + panel_box["width"] + 23, (
+                path,
+                opened_content_left,
+            )
 
         page.set_viewport_size({"width": 390, "height": 844})
         page.locator('.odn-mobile-toggle button[data-mode="assistant"]').click()
@@ -1858,7 +1878,10 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
 def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
-    expect(page.locator(".ai-panel.ai-dock")).to_be_visible()
+    panel = page.locator(".ai-panel.ai-dock")
+    expect(panel).to_be_hidden()
+    page.locator(".ai-switch").click()
+    expect(panel).to_be_visible()
     expect(page.locator(".app")).to_be_visible()
 
     def ask_context() -> str:
@@ -2036,7 +2059,6 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
         (() => {
           const navigation = performance.getEntriesByType('navigation')[0];
           if (navigation && navigation.type === 'reload') {
-            const y = Number(sessionStorage.getItem('market-tab-scroll-restore') || 0);
             const scrollTo = window.scrollTo.bind(window);
             window.scrollTo = function (x, y) {
               if (Number(x) === 0 && Number(y) === 0) {
@@ -2044,14 +2066,17 @@ def test_market_tabs_show_only_their_sections_and_freshness_hash(page: Page) -> 
               }
               return scrollTo(x, y);
             };
-            addEventListener('pageshow', () => {
-              setTimeout(() => window.scrollTo(0, y), 50);
-            }, { once: true });
           }
         })();
         """
     )
     page.reload()
+    page.wait_for_function(
+        "document.querySelector('#s-lhb-seats')?.getClientRects().length"
+    )
+    page.evaluate(
+        "window.scrollTo(0, Number(sessionStorage.getItem('market-tab-scroll-restore') || 0))"
+    )
     page.wait_for_function(
         "() => window.scrollY > 0 && "
         "document.querySelector('#s-lhb-seats')?.getClientRects().length"
