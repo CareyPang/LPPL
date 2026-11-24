@@ -141,6 +141,16 @@ test('raw close-only history cannot become synthetic OHLC via a legacy adapter',
   assert.equal(data.bars[0].open, null); assert.equal(Chart.priceMode(data.bars), 'close');
   assert.equal(Chart.toCloses(data.bars).length, 2);
 });
+test('stock charts keep valid candles when isolated OHLC rows are inconsistent', () => {
+  const bars = [
+    { date: '2026-06-25', open: 10, high: 12, low: 9, close: 11, volume: 100 },
+    { date: '2026-06-26', open: 11, high: 12, low: 12, close: 11, volume: 110 },
+    { date: '2026-06-29', open: 11, high: 13, low: 10, close: 12, volume: 120 },
+  ];
+  assert.equal(Chart.toCandles(bars).length, 2);
+  assert.equal(Chart.priceMode(bars), 'close');
+  assert.equal(Chart.priceMode(bars, true), 'candles');
+});
 test('independent module timeout rejects without cancelling other completed work', async () => {
   const market = Reader.timed(async () => 'market-ready', '行情', 100);
   const model = Reader.timed(() => new Promise(() => {}), '模型', 10);

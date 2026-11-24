@@ -89,6 +89,24 @@
       ? [Object.assign({ rank: 'main', source: 'scale_window' }, window)] : [];
   }
 
+  function dailyPriceMode(data) {
+    return LPPLChart.priceMode(
+      data.bars || [], data.assetType === 'stock' && data.market !== 'cn',
+    );
+  }
+
+  function dailyPriceNote(data) {
+    if (dailyPriceMode(data) === 'close') {
+      return 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。';
+    }
+    var closeCount = LPPLChart.toCloses(data.bars || []).length;
+    var candleCount = LPPLChart.toCandles(data.bars || []).length;
+    if (data.assetType === 'stock' && data.market !== 'cn' && candleCount < closeCount) {
+      return '日线 K 线与成交量；' + (closeCount - candleCount) + ' 个 OHLC 不完整交易日未绘制 K 线。';
+    }
+    return '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+  }
+
   function dateRange(band) {
     return String(band.q20_date || '—') + '–' + String(band.q80_date || '—');
   }
@@ -249,9 +267,7 @@
         if (chart) chart.setData({ bars: [] });
         void load();
       }
-      el('price-mode-note').textContent = current && LPPLChart.priceMode(current.bars) === 'close'
-        ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
-        : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+      el('price-mode-note').textContent = dailyPriceNote(current || {});
       return;
     }
 
@@ -316,11 +332,7 @@
     setText('asset-name', data.name);
     setText('asset-code', data.displayCode || data.symbol);
     setOptionalText('asset-exchange', data.exchange);
-    var marketName = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[data.market || context.market] || '';
-    var assetType = data.assetType === 'index' ? marketName && marketName + '指数' : marketName && marketName + '个股';
-    setOptionalText('asset-type', [
-      assetType, data.quoteUnit, Core.currencyLabel(data.currency),
-    ].filter(Boolean).join(' · '));
+    setOptionalText('asset-type', Core.assetTypeLine(data));
     setOptionalText('trading-status', data.tradingStatus ? '交易状态：' + data.tradingStatus : '');
     setText('identity-strip-name', data.name);
     setText('identity-strip-code', data.displayCode || data.symbol);
@@ -396,13 +408,11 @@
     page.dataset.marketAsOf = String(data.marketAsOf || '');
     page.dataset.modelStatus = String(data.modelStatus || '');
     page.dataset.researchRule = data.researchRule;
-    var displayMode = LPPLChart.priceMode(data.bars);
+    var displayMode = dailyPriceMode(data);
     page.dataset.priceMode = displayMode;
     el('price-mode-note').textContent = selectedPeriod !== 'd'
       ? '分钟 K 线与成交量；OBV 背离为历史形态描述。'
-      : displayMode === 'close'
-      ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
-      : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+      : dailyPriceNote(data);
     drawHeader(data);
     if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: context.asof || '' });
     if (selectedPeriod === 'd') {
@@ -819,9 +829,9 @@
         page.dataset.showFuture = String(!!bars);
         chart.setData(chartPayload(bars ? Object.assign({}, current, { bars: bars }) : current));
         chart.setAsof(current.asof);
-        el('price-mode-note').textContent = LPPLChart.priceMode(bars || current.bars) === 'close'
-          ? '部分日线的 OHLC 未完整提供，当前显示真实收盘线与可用成交量；没有补造 K 线。'
-          : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+        el('price-mode-note').textContent = dailyPriceNote(Object.assign({}, current, {
+          bars: bars || current.bars,
+        }));
       },
     });
     chart.on('scale', function (scale) {

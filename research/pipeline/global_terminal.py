@@ -227,19 +227,36 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
     price = {"dates": [str(v.date()) for v in prefix.date], "source": display_source,
              "adjustment": metadata["adjustment"], "volume_unit": metadata["volume_unit"],
              "note": "本次下载版本的历史重建；不是当时保存的原始行情。"}
+    ohlc = prefix[["open", "high", "low"]]
+    invalid_fields = (~np.isfinite(ohlc) | (ohlc <= 0)).copy()
+    open_valid = np.isfinite(prefix.open) & (prefix.open > 0)
+    high_valid = np.isfinite(prefix.high) & (prefix.high > 0)
+    low_valid = np.isfinite(prefix.low) & (prefix.low > 0)
+    close_valid = np.isfinite(prefix.close) & (prefix.close > 0)
+    if asset["market"] == "kr" and asset["kind"] == "stock":
+        invalid_fields.loc[
+            high_valid & open_valid & close_valid & (prefix.high < np.maximum(prefix.open, prefix.close)),
+            "high",
+        ] = True
+        invalid_fields.loc[
+            low_valid & open_valid & close_valid & (prefix.low > np.minimum(prefix.open, prefix.close)),
+            "low",
+        ] = True
+        invalid_fields.loc[
+            high_valid & low_valid & (prefix.high < prefix.low), ["high", "low"]
+        ] = True
+    safe_ohlc = ohlc.mask(invalid_fields)
     for column in ("open", "high", "low", "close", "volume"):
         values = prefix[column]
         if column in ("open", "high", "low"):
-            values = values.where(np.isfinite(values) & (values > 0))
+            values = safe_ohlc[column]
         price[column] = clean(values.tolist())
-    ohlc = prefix[["open", "high", "low"]]
-    invalid_fields = ~np.isfinite(ohlc) | (ohlc <= 0)
     missing_ohlc = invalid_fields.any(axis=1)
     price["ohlc_missing_dates"] = [str(value.date()) for value in prefix.loc[missing_ohlc, "date"]]
     price["ohlc_missing_count"] = int(missing_ohlc.sum())
     price["ohlc_invalid_fields"] = {str(prefix.loc[index, "date"].date()): [key for key in ("open", "high", "low") if invalid_fields.loc[index, key]]
                                      for index in prefix.index[missing_ohlc]}
-    price["ohlc_sanitization"] = "nonpositive or nonfinite open/high/low exported as null; original source and model close unchanged"
+    price["ohlc_sanitization"] = "nonpositive or nonfinite open/high/low exported as null; inconsistent Korean-stock OHLC fields also exported as null; original source and model close unchanged"
     price["last_bar_kind"] = "close_only" if bool(missing_ohlc.iloc[-1]) else "ohlc"
     price["volume_missing_dates"] = [str(value.date()) for value in prefix.loc[prefix.volume.isna(), "date"]]
     if missing_ohlc.any():

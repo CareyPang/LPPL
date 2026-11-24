@@ -219,6 +219,12 @@ test('international terminal metadata uses Chinese labels instead of provider co
   assert.equal(Core.modelVersionLabel('global_sparse27_v1_production_v2_box'), '国际市场稀疏窗口研究样本');
   assert.equal(Core.volumeUnitLabel('vendor_native'), '');
   assert.equal(Core.currencyLabel('JPY'), '日元');
+  assert.equal(Core.assetTypeLine({
+    assetType: 'stock', market: 'kr', quoteUnit: 'KRW · 韩元', currency: 'KRW',
+  }), '韩国个股 · 韩元');
+  assert.equal(Core.assetTypeLine({
+    assetType: 'index', market: 'jp', quoteUnit: '指数点位', currency: 'JPY',
+  }), '日本指数 · 指数点位 · 日元');
   assert.match(chartPageSource, /setText\('asset-code', data\.displayCode \|\| data\.symbol\)/);
   assert.match(chartPageSource, /setText\('identity-strip-code', data\.displayCode \|\| data\.symbol\)/);
 });

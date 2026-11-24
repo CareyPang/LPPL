@@ -372,3 +372,25 @@ def test_missing_ohlc_is_labeled_not_synthesized(invalid):
     assert record["future_calendar"]["exchange"] == "XKRX"
     assert record["future_calendar"]["closures"]
     assert price["high"][-1] == 102.
+
+
+def test_inconsistent_ohlc_is_exported_as_missing_without_changing_close():
+    data = frame()
+    asof = data.date.iloc[-1]
+    data["high"] = np.maximum(data.open, data.close) + 2
+    data["low"] = np.minimum(data.open, data.close) - 2
+    data.loc[data.date == asof, "high"] = data.loc[data.date == asof, "close"] + 2
+    data.loc[data.date == asof, "low"] = data.loc[data.date == asof, "close"] + 1
+    metadata = {"source": "fixture", "asof": str(asof.date()), "adjustment": "none", "volume_unit": "vendor_native",
+                "timezone": "Asia/Seoul", "exchange": "KSE", "normalized_sha256": "fixture"}
+    cells = [{"n": n, "status": "complete", "row": row(n, asof), "fit_input_hash": str(n)} for n in pipeline.WINDOWS]
+
+    price = pipeline.make_record(
+        "KR_SKHYNIX", data, metadata, asof, cells, {"hash": "fixture", "source_sha": "fixture"}
+    )["price_history"]
+
+    assert price["low"][-1] is None
+    assert price["close"][-1] == data.close.iloc[-1]
+    assert price["ohlc_missing_dates"] == [str(asof.date())]
+    assert price["ohlc_invalid_fields"][str(asof.date())] == ["low"]
+    assert "inconsistent" in price["ohlc_sanitization"]

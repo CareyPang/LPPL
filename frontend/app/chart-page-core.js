@@ -377,6 +377,16 @@
     })[value] || value || '';
   }
 
+  function assetTypeLine(data) {
+    var marketName = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[data.market] || '';
+    var assetType = data.assetType === 'index' ? marketName && marketName + '指数' :
+      marketName && marketName + '个股';
+    var quote = data.assetType === 'stock' ? currencyLabel(data.currency) || data.quoteUnit :
+      data.quoteUnit;
+    return [assetType, quote, data.assetType === 'stock' ? '' : currencyLabel(data.currency)]
+      .filter(Boolean).join(' · ');
+  }
+
   function intervalId(scale, band) {
     return 'interval:' + [scale, band && band.rank || 'main',
       band && band.q20_date || '', band && band.q80_date || ''].join(':');
@@ -422,6 +432,7 @@
     modelVersionLabel: modelVersionLabel,
     volumeUnitLabel: volumeUnitLabel,
     currencyLabel: currencyLabel,
+    assetTypeLine: assetTypeLine,
     intervalId: intervalId,
     withRule: withRule,
     researchNote: researchNote,
