@@ -1,6 +1,6 @@
 # LPPLS 规则规格
 
-版本：`lppls-spec-v1`，唯一实现见 `research/lppls/spec.py`。
+版本：`lppls-spec-v1`。规则参考值汇总于 `research/lppls/spec.py`；消费者源文件参与拟合缓存或方法哈希，因此由 `tests/test_lppls_spec.py` 做行为一致性约束，不由管线导入此模块。
 
 ## 常规窗口
 

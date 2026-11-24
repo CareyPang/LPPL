@@ -28,34 +28,10 @@ import pandas as pd
 import scipy
 from scipy.optimize import differential_evolution, minimize
 
-from ..lppls.spec import (
-    LONG_B_MAX_EXCLUSIVE,
-    LONG_CONDITION_MAX,
-    LONG_CYCLE_RULES,
-    LONG_DAMPING_MIN,
-    LONG_FAMILIES,
-    LONG_FAMILY_SPAN_MAX_SESSIONS,
-    LONG_FAMILY_SPLIT,
-    LONG_FIT_ORDER,
-    LONG_INTERIOR_STATUS,
-    LONG_M_BOUNDS,
-    LONG_OMEGA_BOUNDS,
-    LONG_R2_MIN,
-    LONG_RANK_MIN,
-    LONG_SEED_GAP_MAX_SESSIONS,
-    LONG_SEEDS,
-    LONG_TC_AHEAD,
-    LONG_WINDOWS,
-    SPEC_VERSION,
-    long_cycle_threshold,
-    long_fit_bounds,
-    long_rule_definition,
-    long_seed_base_pass,
-)
 from .global_terminal import atomic_json, clean
 
-WINDOWS = LONG_WINDOWS
-SEEDS = LONG_SEEDS
+WINDOWS = (900, 925, 950, 6500, 6600, 6700)
+SEEDS = (11, 29)
 ASSETS = ("US_IXIC", "US_NDX")
 ASOF = "2026-11-20"
 HISTORY = ("2026-11-11", "2026-11-16", "2026-11-19")
@@ -91,10 +67,7 @@ def kernel(path, expected_hash):
     if {n.name for n in definitions} != names:
         raise ValueError("Required frozen functions absent")
     namespace = {"np": np, "math": math, "differential_evolution": differential_evolution,
-                 "minimize": minimize, "DE_CONFIG": DE, "LBFGS_CONFIG": LB,
-                 "long_fit_bounds": long_fit_bounds,
-                 "long_cycle_threshold": long_cycle_threshold,
-                 "long_seed_base_pass": long_seed_base_pass}
+                 "minimize": minimize, "DE_CONFIG": DE, "LBFGS_CONFIG": LB}
     exec(compile(ast.Module(body=definitions, type_ignores=[]), str(path), "exec"), namespace)
     return namespace
 
@@ -167,25 +140,17 @@ def seed_summary(record):
     fit = record["fit"]
     tc, m, omega = fit["x"]
     ahead = tc-(record["n"]-1)
-    base = long_seed_base_pass(
-        fit["optimizer_success"], m, omega, fit["beta"][1], fit["damping"],
-        fit["r2"], fit["rank"], fit["condition"]
-    )
-    passes = {
-        rule: bool(base and fit["nosc"] >= long_cycle_threshold(rule))
-        for rule, _ in LONG_CYCLE_RULES
-    }
+    base = (fit["optimizer_success"] and .1 < m < .9 and 6 < omega < 13 and fit["beta"][1] < 0
+            and fit["damping"] >= 1 and fit["r2"] >= .9 and fit["rank"] >= 4
+            and fit["condition"] <= 1/math.sqrt(np.finfo(float).eps))
+    passes = {f"cycles_{str(threshold).replace('.', '_')}": bool(base and fit["nosc"] >= threshold)
+              for threshold in (2.5, 1.5)}
     failed = []
-    for name, ok in (
-        ("optimizer_not_converged", fit["optimizer_success"]),
-        ("m_gate", LONG_M_BOUNDS[0] < m < LONG_M_BOUNDS[1]),
-        ("omega_gate", LONG_OMEGA_BOUNDS[0] < omega < LONG_OMEGA_BOUNDS[1]),
-        ("top_sign", fit["beta"][1] < LONG_B_MAX_EXCLUSIVE),
-        ("damping_below_1", fit["damping"] >= LONG_DAMPING_MIN),
-        ("r2_below_0_9", fit["r2"] >= LONG_R2_MIN),
-        ("rank_or_condition", fit["rank"] >= LONG_RANK_MIN and fit["condition"] <= LONG_CONDITION_MAX),
-        ("parameter_boundary", fit["boundary_status"] == LONG_INTERIOR_STATUS),
-    ):
+    for name, ok in (("optimizer_not_converged", fit["optimizer_success"]), ("m_gate", .1 < m < .9),
+                     ("omega_gate", 6 < omega < 13), ("top_sign", fit["beta"][1] < 0),
+                     ("damping_below_1", fit["damping"] >= 1), ("r2_below_0_9", fit["r2"] >= .9),
+                     ("rank_or_condition", fit["rank"] >= 4 and fit["condition"] <= 1/math.sqrt(np.finfo(float).eps)),
+                     ("parameter_boundary", fit["boundary_status"] == "INTERIOR")):
         if not ok:
             failed.append(name)
     row.update(tc_ahead=ahead, tc_date=date_for(record["asof"], ahead), m=m, omega=omega,
@@ -204,26 +169,20 @@ def summarize_windows(records, asof):
         done = [s for s in seeds if s["status"] == "complete"]
         ahead = [s["tc_ahead"] for s in done]
         gap = max(ahead)-min(ahead) if len(done) == 2 else None
-        eligible = {
-            rule: bool(
-                len(done) == len(SEEDS)
-                and gap <= LONG_SEED_GAP_MAX_SESSIONS
-                and all(s["passes"][rule] and s["boundary_status"] == LONG_INTERIOR_STATUS for s in done)
-            )
-            for rule, _ in LONG_CYCLE_RULES
-        }
+        eligible = {rule: bool(len(done) == 2 and gap <= 2 and all(s["passes"][rule] and s["boundary_status"] == "INTERIOR" for s in done))
+                    for rule in ("cycles_2_5", "cycles_1_5")}
         reasons = {}
         for rule in eligible:
-            reasons[rule] = (["incomplete_seed_pair"] if len(done) != len(SEEDS) else [])
-            if gap is not None and gap > LONG_SEED_GAP_MAX_SESSIONS:
+            reasons[rule] = (["incomplete_seed_pair"] if len(done) != 2 else [])
+            if gap is not None and gap > 2:
                 reasons[rule].append("seed_tc_disagreement_gt_2_sessions")
-            if any(s["boundary_status"] != LONG_INTERIOR_STATUS for s in done):
+            if any(s["boundary_status"] != "INTERIOR" for s in done):
                 reasons[rule].append("parameter_boundary")
             if any(not s["passes"][rule] for s in done):
                 reasons[rule].append("seed_quality_gate_failed")
         # An average of incompatible optimizer modes is not a candidate date.
         point = float(np.mean(ahead)) if any(eligible.values()) else None
-        windows.append({"n": n, "family": LONG_FAMILIES[0] if n < LONG_FAMILY_SPLIT else LONG_FAMILIES[1], "seeds": seeds,
+        windows.append({"n": n, "family": "long_900" if n < 1000 else "ultra_6600", "seeds": seeds,
                         "seed_gap_days": gap, "seed_gap_unit": "trading_sessions",
                         "seed_date_range": [date_for(asof, min(ahead)), date_for(asof, max(ahead))] if ahead else None,
                         "seed_ahead_range": [min(ahead), max(ahead)] if ahead else None,
@@ -235,10 +194,10 @@ def summarize_windows(records, asof):
 
 def summarize_rules(windows):
     output = {}
-    for rule, _ in LONG_CYCLE_RULES:
+    for rule in ("cycles_2_5", "cycles_1_5"):
         families = []
         qualified = [w for w in windows if w["eligible"][rule]]
-        for family in LONG_FAMILIES:
+        for family in ("long_900", "ultra_6600"):
             members = [w for w in qualified if w["family"] == family]
             dates = sorted(w["point_date"] for w in members)
             ahead = [w["point_ahead"] for w in members]
@@ -246,20 +205,20 @@ def summarize_rules(windows):
                              "dates": dates, "member_date_range": [dates[0], dates[-1]] if dates else None,
                              "tested_windows": [w["n"] for w in windows if w["family"] == family],
                              "member_span_trading_days": max(ahead)-min(ahead) if ahead else None,
-                             "neighbour_agreement_within_5_days": len(ahead) >= 2 and max(ahead)-min(ahead) <= LONG_FAMILY_SPAN_MAX_SESSIONS,
+                             "neighbour_agreement_within_5_days": len(ahead) >= 2 and max(ahead)-min(ahead) <= 5,
                              "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."})
         # Maximal cross-family point groups; no single-link chains or duplicate subsets.
         groups = []
         for length in range(2, len(qualified)+1):
             for members in itertools.combinations(qualified, length):
                 ahead = [w["point_ahead"] for w in members]
-                if len({w["family"] for w in members}) == 2 and max(ahead)-min(ahead) <= LONG_FAMILY_SPAN_MAX_SESSIONS:
+                if len({w["family"] for w in members}) == 2 and max(ahead)-min(ahead) <= 5:
                     ids = {w["n"] for w in members}
                     groups = [g for g in groups if not set(g["members"]) < ids]
                     dates = sorted(w["point_date"] for w in members)
                     groups.append({"start": dates[0], "end": dates[-1], "members": sorted(ids),
                                    "families": 2, "span_trading_days": max(ahead)-min(ahead)})
-        output[rule] = {"definition": long_rule_definition(rule),
+        output[rule] = {"definition": "Both seeds converge; B<0, .1<m<.9, 6<omega<13, damping>=1, R2>=.9, rank=4, conditioned; all parameters interior; seed tc gap<=2 sessions; full cycles>="+("2.5" if rule == "cycles_2_5" else "1.5"),
                         "families": families, "cross_family_clusters": groups}
     return output
 
@@ -267,11 +226,10 @@ def summarize_rules(windows):
 def snapshot(symbol, asof, records, manifest):
     windows = summarize_windows(records, asof)
     statuses = [s["status"] for w in windows for s in w["seeds"]]
-    expected = len(WINDOWS) * len(SEEDS)
-    counts = {"expected": expected, "completed": statuses.count("complete"), "failed": statuses.count("failed"),
+    counts = {"expected": 12, "completed": statuses.count("complete"), "failed": statuses.count("failed"),
               "pending": statuses.count("pending"), "not_available": statuses.count("not_available")}
     return {"schema_version": "long_horizon_v1", "symbol": symbol, "asof": asof,
-            "status": "complete" if counts["completed"] == expected else "not_available" if counts["not_available"] else "incomplete" if counts["failed"] else "running",
+            "status": "complete" if counts["completed"] == 12 else "not_available" if counts["not_available"] else "incomplete" if counts["failed"] else "running",
             "model_version": VERSION, "method_hash": manifest["method_hash"], "counts": counts,
             "source": {"label": "Yahoo daily close, frozen reconstruction; not contemporaneously published forecast",
                        "data_version": manifest["inputs"][symbol].get("data_version"),
@@ -293,9 +251,8 @@ def publish_summary(root, records, manifest, running=True):
         current["stability"] = {"history": history, "note": "Frozen historic input replay; no first-publication claim. Compare raw ahead and consistently mapped dates."}
         assets[symbol] = current
     counts = {key: sum(a["counts"][key] for a in assets.values()) for key in ("expected", "completed", "failed", "pending")}
-    expected = len(ASSETS) * len(WINDOWS) * len(SEEDS)
     summary = {"schema_version": "long_horizon_v1", "generated_at": datetime.now(UTC).isoformat(),
-               "counts": counts, "assets": assets, "status": "complete" if counts["completed"] == expected else "running" if running else "incomplete",
+               "counts": counts, "assets": assets, "status": "complete" if counts["completed"] == 24 else "running" if running else "incomplete",
                "historical_reuse": manifest.get("historical_reuse", [])}
     summary["report_version"] = signature({k: v for k, v in summary.items() if k != "generated_at"})
     if not running:
@@ -405,20 +362,16 @@ def run(args):
         shutil.copyfile(original_code, frozen)
     funcs = kernel(frozen, expected)
     frames, inputs = load_inputs(global_root)
-    method = {"model_version": VERSION, "lppls_spec": SPEC_VERSION,
-              "math_ast_hash": math_ast_hash(frozen), "kernel_sha256": expected,
+    method = {"model_version": VERSION, "math_ast_hash": math_ast_hash(frozen), "kernel_sha256": expected,
               "de": DE, "lbfgsb": LB, "numpy": np.__version__, "scipy": scipy.__version__, "seeds": list(SEEDS),
-              "tc_ahead": list(LONG_TC_AHEAD), "m_bounds": list(LONG_M_BOUNDS),
-              "omega_bounds": list(LONG_OMEGA_BOUNDS),
+              "tc_ahead": [1, 90], "m_bounds": [.1, .9], "omega_bounds": [6, 13],
               # Kept as initial provenance so a display-calendar correction cannot invalidate 24 frozen fits.
               "windows": list(WINDOWS), "calendar": LEGACY_CALENDAR, "new_asof": ASOF, "historical_asofs": list(HISTORY)}
     if np.__version__ != plan["numpy"] or scipy.__version__ != plan["scipy"]:
         raise ValueError("Use the archived numpy/scipy versions for this comparison")
     manifest = {"schema_version": "long_horizon_protocol_v1", "registered_at": datetime.now(UTC).isoformat(),
                 "method": method, "method_hash": signature(method), "inputs": inputs,
-                "expected_current": len(ASSETS) * len(WINDOWS) * len(SEEDS),
-                "expected_historical_reuse": len(ASSETS) * len(HISTORY) * len(WINDOWS) * len(SEEDS),
-                "export_calendar": CALENDAR,
+                "expected_current": 24, "expected_historical_reuse": 72, "export_calendar": CALENDAR,
                 "export_code_sha256": digest(Path(__file__)),
                 "boundary": "Local research only; original 27-window and archived results are untouched"}
     manifest_path = root/"manifest.json"
@@ -439,7 +392,7 @@ def run(args):
     atomic_json(manifest_path, manifest)
     jobs = []
     # Core first, then neighbours; ordering is frozen before current fits.
-    for n, symbol, seed in itertools.product(LONG_FIT_ORDER, ASSETS, SEEDS):
+    for n, symbol, seed in itertools.product((925, 6600, 900, 950, 6500, 6700), ASSETS, SEEDS):
         part = prefix(frames[symbol], ASOF, n)
         task = {"symbol": symbol, "asof": ASOF, "n": n, "seed": seed, "input_hash": input_identity(part),
                 "method_hash": manifest["method_hash"], "kernel_path": str(frozen), "kernel_sha256": expected,

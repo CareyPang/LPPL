@@ -1,3 +1,4 @@
+import ast
 import re
 from pathlib import Path
 
@@ -7,17 +8,27 @@ import pytest
 import yaml
 
 from research.features import lppls_rules, lppls_scan
-from research.lppls import core
+from research.lppls import frozen_v2588
 from research.lppls.spec import (
     GLOBAL_ALLOW_INSIDE,
     GLOBAL_BOX_CYCLES_1_5,
     GLOBAL_SEARCH_BOUNDS,
     GLOBAL_WINDOWS,
     LEGACY_VARIANT_NOTE,
+    LONG_B_MAX_EXCLUSIVE,
+    LONG_COMPARISON_RULE,
     LONG_CONDITION_MAX,
+    LONG_CYCLE_RULES,
+    LONG_DAMPING_MIN,
     LONG_FAMILY_SPAN_MAX_SESSIONS,
+    LONG_LEAD_5_DAYS,
     LONG_M_BOUNDS,
     LONG_OMEGA_BOUNDS,
+    LONG_PRIMARY_RULE,
+    LONG_PROFILE_GRID,
+    LONG_PROFILE_WINDOW,
+    LONG_R2_MIN,
+    LONG_RANK_MIN,
     LONG_SEED_GAP_MAX_SESSIONS,
     LONG_SEEDS,
     LONG_TC_AHEAD,
@@ -30,10 +41,12 @@ from research.lppls.spec import (
     SCAN_BOXES,
     SPEC_VERSION,
     long_fit_bounds,
+    long_profile_bounds,
 )
-from research.pipeline import daily, global_terminal, long_horizon, long_rolling
+from research.pipeline import global_terminal, long_horizon, long_rolling
 
 ROOT = Path(__file__).resolve().parents[1]
+FROZEN_KERNEL_HASH = "ac00580978ed58cc57a5a1a5c07b69846d5516ec7499722ea46f6d49fc715c01"
 
 
 def _rule_row(m=0.5, omega=9.0, ahead=30.0, B=-0.5):
@@ -63,35 +76,24 @@ def _box_passes(**values):
     return bool(lppls_rules.rules(lppls_rules._derived(raw)).box.iloc[0])
 
 
-def test_scan_v2_search_and_legacy_variants_are_the_spec_boxes():
-    assert lppls_scan.BOXES is SCAN_BOXES
-    assert lppls_scan.BOXES["v2"] == {
-        "m": (0.01, 2.0),
-        "w": (1.0, 50.0),
-        "tc": (-0.2, 0.2),
-        "inside": True,
-        "n_random": 10,
-        "short": True,
-    }
-    assert lppls_scan.BOXES["v1"] == SCAN_BOXES["v1"]
-    assert lppls_scan.BOXES["proto"] == SCAN_BOXES["proto"]
-    assert LEGACY_VARIANT_NOTE == (
-        "Legacy research variants (v1 = early registration, proto = old browser prototype domain, "
-        "never backtested); all production workflows set LPPLS_BOX=v2."
-    )
+def test_scan_box_definitions_match_spec_data():
+    assert SPEC_VERSION == "lppls-spec-v1"
+    assert lppls_scan.BOXES == SCAN_BOXES
+    assert "lppls.spec" not in Path(lppls_scan.__file__).read_text(encoding="utf-8")
 
 
-def test_normal_box_boundaries_are_inclusive():
-    assert _box_passes(m=NORMAL_BOX_M_BOUNDS[0], omega=NORMAL_BOX_OMEGA_BOUNDS[0],
-                       ahead=NORMAL_BOX_AHEAD_BOUNDS[0])
-    assert _box_passes(m=NORMAL_BOX_M_BOUNDS[1], omega=NORMAL_BOX_OMEGA_BOUNDS[1],
-                       ahead=NORMAL_BOX_AHEAD_BOUNDS[1])
-    assert not _box_passes(m=np.nextafter(NORMAL_BOX_M_BOUNDS[0], -np.inf))
-    assert not _box_passes(m=np.nextafter(NORMAL_BOX_M_BOUNDS[1], np.inf))
-    assert not _box_passes(omega=np.nextafter(NORMAL_BOX_OMEGA_BOUNDS[0], -np.inf))
-    assert not _box_passes(omega=np.nextafter(NORMAL_BOX_OMEGA_BOUNDS[1], np.inf))
-    assert not _box_passes(ahead=-1e-8)
-    assert not _box_passes(ahead=NORMAL_BOX_AHEAD_BOUNDS[1] + 1e-8)
+def test_normal_box_boundaries_match_spec_and_are_inclusive():
+    for field, (lower, upper) in (
+        ("m", NORMAL_BOX_M_BOUNDS),
+        ("omega", NORMAL_BOX_OMEGA_BOUNDS),
+        ("ahead", NORMAL_BOX_AHEAD_BOUNDS),
+    ):
+        lower_out = -1e-8 if field == "ahead" else np.nextafter(lower, -np.inf)
+        upper_out = upper + 1e-8 if field == "ahead" else np.nextafter(upper, np.inf)
+        assert _box_passes(**{field: lower})
+        assert _box_passes(**{field: upper})
+        assert not _box_passes(**{field: lower_out})
+        assert not _box_passes(**{field: upper_out})
     assert not _box_passes(B=NORMAL_BOX_B_MAX_EXCLUSIVE)
 
 
@@ -118,38 +120,51 @@ def _global_row(ahead, omega, n=252):
     }
 
 
-def test_global_variant_uses_spec_thresholds_and_boundaries():
-    target_omega = (
-        GLOBAL_BOX_CYCLES_1_5["full_cycles_min_inclusive"]
-        * 2
-        * np.pi
-        / np.log((251 + 90) / 90)
+def test_global_method_identity_matches_search_spec():
+    method = global_terminal.method_identity()
+    assert global_terminal.WINDOWS == GLOBAL_WINDOWS
+    assert method["windows"] == list(GLOBAL_WINDOWS)
+    assert method["search_bounds"] == GLOBAL_SEARCH_BOUNDS
+    assert method["allow_inside"] == GLOBAL_ALLOW_INSIDE
+    assert method["box"] == NORMAL_BOX_NAME
+    assert "lppls_spec" not in method
+
+
+def test_global_box_cycles_1_5_boundaries_match_spec():
+    cycles = GLOBAL_BOX_CYCLES_1_5["full_cycles_min_inclusive"]
+    ahead = 90.0
+    log_ratio = np.log((251.0 + ahead) / ahead)
+    target_omega = cycles * 2 * np.pi / log_ratio
+
+    derived, at_boundary = global_terminal.derived_and_rules(
+        [_global_row(ahead, target_omega)]
     )
-    _, above = global_terminal.derived_and_rules(
-        [_global_row(90, target_omega + 1e-9)]
+    _, below_boundary = global_terminal.derived_and_rules(
+        [_global_row(ahead, target_omega - 1e-9)]
     )
-    _, below = global_terminal.derived_and_rules(
-        [_global_row(90, target_omega - 1e-9)]
-    )
-    _, at_asof = global_terminal.derived_and_rules([_global_row(0, 9.0)])
-    assert bool(above["box_cycles_1_5"].iloc[0])
-    assert not bool(below["box_cycles_1_5"].iloc[0])
+    _, at_asof = global_terminal.derived_and_rules([_global_row(0.0, 9.0)])
+
+    assert derived.n_osc.iloc[0] == pytest.approx(cycles)
+    assert bool(at_boundary["box_cycles_1_5"].iloc[0])
+    assert not bool(below_boundary["box_cycles_1_5"].iloc[0])
     assert not bool(at_asof["box_cycles_1_5"].iloc[0])
+    assert GLOBAL_BOX_CYCLES_1_5["ahead_min_exclusive"] == 0
 
 
 def _long_record(
     n=925,
     seed=11,
-    ahead=1.0,
+    ahead=30.0,
     m=0.5,
     omega=9.0,
     B=-0.1,
-    damping=1.0,
-    r2=0.9,
-    rank=4,
+    damping=LONG_DAMPING_MIN,
+    r2=LONG_R2_MIN,
+    rank=LONG_RANK_MIN,
     condition=LONG_CONDITION_MAX,
     cycles=1.5,
     boundary="INTERIOR",
+    optimizer_success=True,
 ):
     return {
         "n": n,
@@ -167,27 +182,54 @@ def _long_record(
             "rank": rank,
             "condition": condition,
             "strict_pass": cycles >= 2.5,
-            "optimizer_success": True,
+            "optimizer_success": optimizer_success,
             "boundary_status": boundary,
         },
     }
 
 
-def test_long_bounds_and_gate_use_spec_at_inclusive_quality_edges():
+def _long_records(aheads=(30.0, 30.0), boundaries=("INTERIOR", "INTERIOR"), **values):
+    return {
+        (long_horizon.ASOF, 925, seed): _long_record(
+            seed=seed,
+            ahead=ahead,
+            boundary=boundary,
+            **values,
+        )
+        for seed, ahead, boundary in zip(LONG_SEEDS, aheads, boundaries, strict=True)
+    }
+
+
+def _long_window(records):
+    return next(
+        item
+        for item in long_horizon.summarize_windows(records, long_horizon.ASOF)
+        if item["n"] == 925
+    )
+
+
+def test_long_windows_seeds_and_seed_summary_match_spec_boundaries():
     assert long_horizon.WINDOWS == LONG_WINDOWS
     assert long_horizon.SEEDS == LONG_SEEDS
-    assert long_rolling.WINDOWS == LONG_WINDOWS
-    assert long_rolling.SEEDS == LONG_SEEDS
-    assert long_fit_bounds(925) == [
-        (925.0, 1014.0),
-        tuple(map(float, LONG_M_BOUNDS)),
-        tuple(map(float, LONG_OMEGA_BOUNDS)),
-    ]
-    assert LONG_TC_AHEAD == (1, 90)
 
-    summary = long_horizon.seed_summary(_long_record())
-    assert summary["passes"] == {"cycles_2_5": False, "cycles_1_5": True}
-    assert summary["failed_gates"] == []
+    low = long_horizon.seed_summary(
+        _long_record(ahead=LONG_TC_AHEAD[0], boundary="tc_LOW")
+    )
+    high = long_horizon.seed_summary(
+        _long_record(ahead=LONG_TC_AHEAD[1], boundary="tc_HIGH")
+    )
+    assert low["tc_ahead"] == LONG_TC_AHEAD[0]
+    assert high["tc_ahead"] == LONG_TC_AHEAD[1]
+    assert low["passes"]["cycles_1_5"]
+    assert high["passes"]["cycles_1_5"]
+    assert low["failed_gates"] == ["parameter_boundary"]
+    assert high["failed_gates"] == ["parameter_boundary"]
+
+
+@pytest.mark.parametrize(("rule", "threshold"), LONG_CYCLE_RULES)
+def test_long_cycle_thresholds_are_inclusive(rule, threshold):
+    summary = long_horizon.seed_summary(_long_record(cycles=threshold))
+    assert summary["passes"][rule]
 
 
 @pytest.mark.parametrize(
@@ -197,102 +239,105 @@ def test_long_bounds_and_gate_use_spec_at_inclusive_quality_edges():
         {"m": LONG_M_BOUNDS[1]},
         {"omega": LONG_OMEGA_BOUNDS[0]},
         {"omega": LONG_OMEGA_BOUNDS[1]},
-        {"B": 0.0},
-        {"damping": np.nextafter(1.0, -np.inf)},
-        {"r2": np.nextafter(0.9, -np.inf)},
-        {"rank": 3},
+        {"B": LONG_B_MAX_EXCLUSIVE},
+        {"damping": np.nextafter(LONG_DAMPING_MIN, -np.inf)},
+        {"r2": np.nextafter(LONG_R2_MIN, -np.inf)},
+        {"rank": LONG_RANK_MIN - 1},
         {"condition": np.nextafter(LONG_CONDITION_MAX, np.inf)},
+        {"optimizer_success": False},
     ],
 )
-def test_long_gate_rejects_each_noninterior_or_quality_boundary(changes):
+def test_long_seed_summary_rejects_each_failed_gate(changes):
     summary = long_horizon.seed_summary(_long_record(**changes))
     assert not any(summary["passes"].values())
 
 
-def test_long_gate_requires_all_parameters_interior():
-    records = {
-        (long_horizon.ASOF, 925, seed): _long_record(
-            seed=seed, boundary="tc_LOW" if seed == LONG_SEEDS[0] else "INTERIOR"
+def test_long_seed_pair_boundary_and_frozen_tc_boundaries():
+    assert LONG_TC_AHEAD == (1, 90)
+    assert LONG_SEED_GAP_MAX_SESSIONS == 2
+
+    at_gap = _long_window(_long_records(aheads=(30.0, 32.0)))
+    assert at_gap["seed_gap_days"] == LONG_SEED_GAP_MAX_SESSIONS
+    assert at_gap["eligible"]["cycles_1_5"]
+
+    over_gap = _long_window(_long_records(aheads=(30.0, 32.01)))
+    assert not over_gap["eligible"]["cycles_1_5"]
+
+    for ahead, boundary in (
+        (LONG_TC_AHEAD[0], "tc_LOW"),
+        (LONG_TC_AHEAD[1], "tc_HIGH"),
+    ):
+        records = _long_records(
+            aheads=(ahead, 30.0),
+            boundaries=(boundary, "INTERIOR"),
         )
-        for seed in LONG_SEEDS
-    }
-    window = next(
-        item for item in long_horizon.summarize_windows(records, long_horizon.ASOF)
-        if item["n"] == 925
+        assert not _long_window(records)["eligible"]["cycles_1_5"]
+
+
+def _bound_value(node, n):
+    if isinstance(node, ast.List):
+        return [_bound_value(value, n) for value in node.elts]
+    if isinstance(node, ast.Tuple):
+        return tuple(_bound_value(value, n) for value in node.elts)
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name) and node.id == "n":
+        return n
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "float":
+        return float(_bound_value(node.args[0], n))
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return _bound_value(node.left, n) + _bound_value(node.right, n)
+    raise AssertionError(f"Unsupported frozen bounds expression: {ast.dump(node)}")
+
+
+def _frozen_bounds(function_name, n):
+    source = Path(frozen_v2588.__file__).read_text(encoding="utf-8")
+    module = ast.parse(source)
+    function = next(
+        node
+        for node in module.body
+        if isinstance(node, ast.FunctionDef) and node.name == function_name
     )
-    assert not window["eligible"]["cycles_1_5"]
-
-
-def test_long_seed_agreement_accepts_exact_two_session_boundary():
-    records = {
-        (long_horizon.ASOF, 925, seed): _long_record(seed=seed, ahead=ahead)
-        for seed, ahead in zip(LONG_SEEDS, (30.0, 32.0), strict=True)
-    }
-    result = next(
-        item for item in long_horizon.summarize_windows(records, long_horizon.ASOF)
-        if item["n"] == 925
+    assignment = next(
+        node
+        for node in function.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "bounds" for target in node.targets)
     )
-    assert result["seed_gap_days"] == LONG_SEED_GAP_MAX_SESSIONS
-    assert result["eligible"]["cycles_1_5"]
-
-    unstable = {
-        (long_horizon.ASOF, 925, seed): _long_record(seed=seed, ahead=ahead)
-        for seed, ahead in zip(LONG_SEEDS, (30.0, 32.01), strict=True)
-    }
-    result = next(
-        item for item in long_horizon.summarize_windows(unstable, long_horizon.ASOF)
-        if item["n"] == 925
-    )
-    assert not result["eligible"]["cycles_1_5"]
+    return _bound_value(assignment.value, n)
 
 
-def test_global_metadata_and_long_rolling_method_match_spec():
-    method = global_terminal.method_identity()
-    assert global_terminal.WINDOWS == GLOBAL_WINDOWS
-    assert len(method["windows"]) == 27
-    assert method["search_bounds"] == GLOBAL_SEARCH_BOUNDS
-    assert method["box"] == NORMAL_BOX_NAME
-    assert method["allow_inside"] is GLOBAL_ALLOW_INSIDE
-    assert method["lppls_spec"] == SPEC_VERSION
-
-    rolling_method = long_rolling.experiment_method()
-    assert rolling_method["lppls_spec"] == SPEC_VERSION
-    assert rolling_method["windows"] == list(LONG_WINDOWS)
-    assert rolling_method["seeds"] == list(LONG_SEEDS)
-    assert rolling_method["future_tc_sessions"] == list(LONG_TC_AHEAD)
-    assert rolling_method["m_bounds"] == list(LONG_M_BOUNDS)
-    assert rolling_method["omega_bounds"] == list(LONG_OMEGA_BOUNDS)
-    assert rolling_method["family_width_max_sessions"] == LONG_FAMILY_SPAN_MAX_SESSIONS
-    assert rolling_method["seed_gap_max_sessions"] == LONG_SEED_GAP_MAX_SESSIONS
-    assert daily.SPEC_VERSION == SPEC_VERSION
-    assert long_horizon.SPEC_VERSION == SPEC_VERSION
+def test_frozen_kernel_bounds_match_spec_data():
+    assert _frozen_bounds("fit_one", 925) == long_fit_bounds(925)
+    assert _frozen_bounds("profile_fit", 925) == long_profile_bounds()
 
 
-def test_v2_synthetic_fit_matches_pre_refactor_parameters(monkeypatch):
-    monkeypatch.setattr(lppls_scan, "BOX", "v2")
-    monkeypatch.setattr(lppls_scan, "WINDOWS_MODE", "full")
-    monkeypatch.setattr(lppls_scan, "SIGN", "pos")
-    monkeypatch.setattr(lppls_scan, "ANCHOR", "end")
-    monkeypatch.setattr(lppls_scan, "G3", False)
-    monkeypatch.setattr(lppls_scan, "Q3_K", 0)
-    monkeypatch.setattr(core, "ALLOW_INSIDE", True)
+def test_long_rolling_method_fields_match_spec_data():
+    method = long_rolling.experiment_method()
+    assert method["windows"] == list(LONG_WINDOWS)
+    assert method["seeds"] == list(LONG_SEEDS)
+    assert method["future_tc_sessions"] == list(LONG_TC_AHEAD)
+    assert method["m_bounds"] == list(LONG_M_BOUNDS)
+    assert method["omega_bounds"] == list(LONG_OMEGA_BOUNDS)
+    assert method["primary_rule"] == LONG_PRIMARY_RULE
+    assert method["comparison_rule"] == LONG_COMPARISON_RULE
+    assert method["family_width_max_sessions"] == LONG_FAMILY_SPAN_MAX_SESSIONS
+    assert method["seed_gap_max_sessions"] == LONG_SEED_GAP_MAX_SESSIONS
+    assert method["lead_5_days"] == LONG_LEAD_5_DAYS
+    assert method["profile_grid"] == list(LONG_PROFILE_GRID)
+    assert method["profile_n"] == LONG_PROFILE_WINDOW
+    assert "lppls_spec" not in method
 
-    rng = np.random.default_rng(1)
-    n = 130
-    t = np.arange(n, dtype=float)
-    dt = n - 1
-    tc0 = dt + 0.05 * dt
-    design = core.design(t, tc0, 0.5, 9.0, allow_inside=True)
-    B = -0.6 / abs(tc0) ** 0.5
-    synthetic = design @ np.array([8.0, B, 0.1 * abs(B), 0.1 * abs(B)])
-    synthetic += rng.normal(0, 0.01, n)
 
-    row = lppls_scan.fit_one(synthetic, opt="tcgrid")
-    assert row[1:4] == pytest.approx(
-        [135.23304720438415, 0.5086536523219787, 8.978324404905349],
-        rel=1e-12,
-        abs=1e-12,
-    )
+def test_frozen_kernel_math_ast_hash_is_unchanged():
+    assert long_horizon.math_ast_hash(frozen_v2588.__file__) == FROZEN_KERNEL_HASH
+
+
+def test_legacy_variants_are_documented_as_unbacktested():
+    assert "v1 = early registration" in LEGACY_VARIANT_NOTE
+    assert "proto = old browser prototype domain" in LEGACY_VARIANT_NOTE
+    assert "never backtested" in LEGACY_VARIANT_NOTE
+    assert "all production workflows set LPPLS_BOX=v2" in LEGACY_VARIANT_NOTE
 
 
 def test_production_workflows_set_v2_for_every_pipeline_invocation():
@@ -327,7 +372,9 @@ def test_production_workflows_set_v2_for_every_pipeline_invocation():
                     for match in invocation.finditer(line):
                         target = match.group(1)
                         seen.add(target)
-                        inline_v2 = bool(re.search(r"\bLPPLS_BOX=v2\s+python", line[:match.start()]))
+                        inline_v2 = bool(
+                            re.search(r"\bLPPLS_BOX=v2\s+python", line[: match.start()])
+                        )
                         assert (
                             inline_v2
                             or exported_v2

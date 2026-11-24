@@ -112,7 +112,7 @@ def test_run_finishes_all_registered_work_and_counts_data_gaps(tmp_path, monkeyp
 
 
 def test_extracted_numerical_kernel_matches_audited_ast_and_budget():
-    assert math_ast_hash(frozen_v2588.__file__) == '46ee9e139b08b31df675803bfa7b558fcc79849a12819b2e81e88eee65dc339b'
+    assert math_ast_hash(frozen_v2588.__file__) == 'ac00580978ed58cc57a5a1a5c07b69846d5516ec7499722ea46f6d49fc715c01'
     method = rolling.experiment_method()
     assert method['de']['popsize'] == 25
     assert method['de']['maxiter'] == 1500

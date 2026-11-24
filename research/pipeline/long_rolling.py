@@ -21,18 +21,6 @@ import scipy
 
 from ..data.global_terminal import ASSETS, fetch_snapshot
 from ..lppls import frozen_v2588 as numerical
-from ..lppls.spec import (
-    LONG_COMPARISON_RULE,
-    LONG_CYCLE_RULES,
-    LONG_FAMILY_SPAN_MAX_SESSIONS,
-    LONG_M_BOUNDS,
-    LONG_OMEGA_BOUNDS,
-    LONG_PRIMARY_RULE,
-    LONG_PROFILE_WINDOW,
-    LONG_SEED_GAP_MAX_SESSIONS,
-    LONG_TC_AHEAD,
-    SPEC_VERSION,
-)
 from .global_terminal import atomic_json, clean
 from .long_horizon import (
     DE,
@@ -52,7 +40,7 @@ from .long_horizon import (
 
 VERSION = 'long_rolling_52x5_v1'
 DEFAULT_ASSETS = ('US_IXIC', 'US_NDX', 'KR_KOSPI', 'KR_KOSDAQ')
-PROFILE_GRID = tuple(range(LONG_TC_AHEAD[0], LONG_TC_AHEAD[1], 3)) + (LONG_TC_AHEAD[1],)
+PROFILE_GRID = tuple(range(1, 89, 3)) + (90,)
 
 
 def endpoint_dates(frame, count=52, step=5):
@@ -74,17 +62,14 @@ def market_date(dates, asof, ahead):
 
 
 def experiment_method():
-    return {'version': VERSION, 'lppls_spec': SPEC_VERSION,
-            'math_ast_hash': math_ast_hash(numerical.__file__),
+    return {'version': VERSION, 'math_ast_hash': math_ast_hash(numerical.__file__),
             'kernel_sha256': digest(numerical.__file__), 'de': DE, 'lbfgsb': LB,
             'numpy': np.__version__, 'scipy': scipy.__version__, 'windows': list(WINDOWS),
-            'seeds': list(SEEDS), 'future_tc_sessions': list(LONG_TC_AHEAD),
-            'm_bounds': list(LONG_M_BOUNDS), 'omega_bounds': list(LONG_OMEGA_BOUNDS),
-            'primary_rule': LONG_PRIMARY_RULE, 'comparison_rule': LONG_COMPARISON_RULE,
+            'seeds': list(SEEDS), 'future_tc_sessions': [1, 90], 'm_bounds': [.1, .9],
+            'omega_bounds': [6, 13], 'primary_rule': 'cycles_1_5', 'comparison_rule': 'cycles_2_5',
             'lead_5_days': 'report separately; never a filter',
-            'family_width_max_sessions': LONG_FAMILY_SPAN_MAX_SESSIONS,
-            'seed_gap_max_sessions': LONG_SEED_GAP_MAX_SESSIONS,
-            'profile_grid': list(PROFILE_GRID), 'profile_n': LONG_PROFILE_WINDOW}
+            'family_width_max_sessions': 5, 'seed_gap_max_sessions': 2,
+            'profile_grid': list(PROFILE_GRID), 'profile_n': 6600}
 
 
 def make_snapshot(symbol, asof, frame, metadata, records, method_hash, method):
@@ -148,7 +133,7 @@ def profile_job(task):
 
 def stability(rows):
     result = {}
-    for rule, _ in reversed(LONG_CYCLE_RULES):
+    for rule in ('cycles_1_5', 'cycles_2_5'):
         by_window = []
         for n in WINDOWS:
             selected = [(row, next(w for w in row['windows'] if w['n'] == n)) for row in rows]
@@ -284,10 +269,10 @@ def run(root, source_root, *, assets=DEFAULT_ASSETS, endpoints=52, step=5, worke
     if profiles:
         profile_tasks, profile_cells = [], []
         for symbol in assets:
-            if len(frames[symbol]) < LONG_PROFILE_WINDOW:
+            if len(frames[symbol]) < 6600:
                 profile_cells += [{'symbol': symbol, 'status': 'not_available'} for _ in range(len(PROFILE_GRID) * len(SEEDS))]
                 continue
-            part = frames[symbol].tail(LONG_PROFILE_WINDOW)
+            part = frames[symbol].tail(6600)
             for ahead in PROFILE_GRID:
                 for seed in SEEDS:
                     task = {'symbol': symbol, 'asof': grids[symbol][-1], 'ahead': ahead, 'seed': seed,
@@ -299,7 +284,7 @@ def run(root, source_root, *, assets=DEFAULT_ASSETS, endpoints=52, step=5, worke
                         if any(saved.get(k) != task[k] for k in task):
                             raise ValueError('Profile cache identity mismatch')
                         if saved['status'] == 'complete':
-                            q = numerical.lin(np.arange(LONG_PROFILE_WINDOW, dtype=float), np.log(part.close.to_numpy()), LONG_PROFILE_WINDOW - 1 + ahead, saved['fit']['m'], saved['fit']['omega'])
+                            q = numerical.lin(np.arange(6600, dtype=float), np.log(part.close.to_numpy()), 6599 + ahead, saved['fit']['m'], saved['fit']['omega'])
                             if not np.isclose(q['sse'], saved['fit']['sse'], rtol=1e-10, atol=1e-12):
                                 raise ValueError('Profile cached SSE mismatch')
                             profile_cells.append(saved)
@@ -327,10 +312,10 @@ def run(root, source_root, *, assets=DEFAULT_ASSETS, endpoints=52, step=5, worke
                 continue
             latest = summary['assets'][symbol]
             converged = [c for c in cells if c['fit']['de_success'] and c['fit']['lbfgs_success']]
-            free = [s['sse'] for w in latest['windows'] if w['n'] == LONG_PROFILE_WINDOW for s in w['seeds']
+            free = [s['sse'] for w in latest['windows'] if w['n'] == 6600 for s in w['seeds']
                     if s['status'] == 'complete' and s['optimizer_success']]
             minimum = min([c['fit']['sse'] for c in converged] + free) if converged else None
-            latest['profile_diagnostic'] = {'symbol': symbol, 'asof': latest['asof'], 'n': LONG_PROFILE_WINDOW,
+            latest['profile_diagnostic'] = {'symbol': symbol, 'asof': latest['asof'], 'n': 6600,
                 'data_version': metadata[symbol]['normalized_sha256'],
                 'status': 'complete' if converged else 'numerically_unresolved',
                 'counts': {'expected': len(PROFILE_GRID) * len(SEEDS), 'completed': len(cells), 'converged': len(converged)},

@@ -22,11 +22,20 @@ from ..eval.dataset import SPLITS, _snapshot, price_series
 from ..labels.run_top import INDEXES
 from ..lppls import core as _core
 from ..lppls.core import K_POWER, design, lin_fit
-from ..lppls.spec import SCAN_BOXES as BOXES
 from ..optim.optimizers import de_lbfgsb, de_trf, tcgrid_lm
 
-# 搜索域与遗留兼容变体见 research/lppls/spec.py。
+# 搜索域版本（预登记 v1.7 §17.1）：v1 = 宽域（v1.1 登记：m∈[0.01,2]、ω∈[1,50]、t_c≤t₂+0.2dt）；
+# v2 = 原型 engine.js / Filimonov–Sornette 2013 域（m∈[0.01,0.99]、ω∈[2,25]、t_c≤t₂+min(0.2dt,115)）。
+# 由环境变量 LPPLS_BOX 选择，输出目录随版本分开，v1 结果保留为失败记录不覆盖。
 BOX = os.environ.get("LPPLS_BOX", "v1")
+BOXES = {
+    # v1：E7 表 3 搜索域，但 t_c 只能在 t₂ 之后、无短尺度、单起点（v1.1 登记）
+    "v1": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(0.5, 0.2), inside=False, n_random=0, short=False),
+    # proto：原型 engine.js 搜索域（预登记 §17.1 的变体，非主版本）
+    "proto": dict(m=(0.01, 0.99), w=(2.0, 25.0), tc=(0.5, 0.2), inside=False, n_random=0, short=False, tc_cap=115.0),
+    # v2：§17.4 原版复现——E7 搜索域 + t_c∈[t₂−0.2dt, t₂+0.2dt] + 10 随机起点 + 短尺度 30–120 日窗口
+    "v2": dict(m=(0.01, 2.0), w=(1.0, 50.0), tc=(-0.2, 0.2), inside=True, n_random=10, short=True),
+}
 # §17.4-7 反泡沫两种形式：SIGN=neg → 对 −ln P 拟合（Yan–Woodard–Sornette 2010 负泡沫，t_c 在未来）；
 # ANCHOR=start → t_c 搜索域改为窗口起点之前 [t₁−0.2dt, t₁]（Johansen–Sornette 1999 反泡沫，描述峰后衰减振荡）。
 # §17.6 补齐：LPPLS_WINDOWS=full（默认）| xs（探索尺度 15–30 日，样本点少，只作参考）| lite（步长 10、随机起点 3，用于负泡沫/反泡沫减配扫描）
@@ -127,7 +136,7 @@ def fit_one(y: np.ndarray, opt: str | None = None, warm_starts=None) -> tuple:
     dt = n - 1
     bx = BOXES[BOX]
     tc_lo, tc_hi = bx["tc"]
-    ahead_hi = tc_hi * dt if bx.get("tc_cap") is None else min(tc_hi * dt, bx["tc_cap"])
+    ahead_hi = 0.2 * dt if bx.get("tc_cap") is None else min(0.2 * dt, bx["tc_cap"])
     if ANCHOR == "start":
         lo = np.array([-0.2 * dt, bx["m"][0], bx["w"][0]])
         hi = np.array([-0.5, bx["m"][1], bx["w"][1]])
