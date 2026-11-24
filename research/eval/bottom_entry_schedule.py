@@ -31,6 +31,8 @@ RANDOM_REPEATS = 2000
 BOOTSTRAP_REPEATS = 2000
 HORIZON_WEEKS = 50
 CONFIRMATION_WEEKS = 26
+EXECUTION_LAG_WEEKS = 1
+REQUIRED_EVENT_END_OFFSET = HORIZON_WEEKS + EXECUTION_LAG_WEEKS
 
 
 def first_confirmation_position(
@@ -68,21 +70,33 @@ def maximum_drawdown(equity: list[float]) -> float:
 
 
 def _planned_purchases(
-    strategy: str, t0: int, confirmation_position: int | None
+    strategy: str,
+    t0: int,
+    confirmation_position: int | None,
+    execution_lag_weeks: int,
 ) -> list[tuple[int, float]]:
+    initial_position = t0 + execution_lag_weeks
     if strategy == "S_full":
-        return [(t0, 1.0)]
+        return [(initial_position, 1.0)]
     if strategy == "S_fixed":
-        return [(t0, 0.3), (t0 + 4, 0.3), (t0 + 8, 0.4)]
+        return [
+            (initial_position, 0.3),
+            (t0 + 4 + execution_lag_weeks, 0.3),
+            (t0 + 8 + execution_lag_weeks, 0.4),
+        ]
     if strategy == "S_probe":
-        return [(t0, 0.3)]
+        return [(initial_position, 0.3)]
     if strategy == "S_confirm":
-        purchases = [(t0, 0.3)]
+        purchases = [(initial_position, 0.3)]
         if confirmation_position is not None:
-            purchases.append((confirmation_position, 0.7))
+            purchases.append((confirmation_position + execution_lag_weeks, 0.7))
         return purchases
     if strategy == "S_confirm_full":
-        return [(confirmation_position, 1.0)] if confirmation_position is not None else []
+        return (
+            [(confirmation_position + execution_lag_weeks, 1.0)]
+            if confirmation_position is not None
+            else []
+        )
     raise ValueError(f"unknown strategy: {strategy}")
 
 
@@ -92,9 +106,13 @@ def evaluate_strategy(
     t0: int,
     confirmation_position: int | None = None,
     horizon: int = HORIZON_WEEKS,
+    execution_lag_weeks: int = EXECUTION_LAG_WEEKS,
 ) -> dict[str, Any]:
-    end_position = t0 + horizon
-    planned = _planned_purchases(strategy, t0, confirmation_position)
+    anchor_position = t0 + execution_lag_weeks
+    end_position = anchor_position + horizon
+    planned = _planned_purchases(
+        strategy, t0, confirmation_position, execution_lag_weeks
+    )
     resolved: list[tuple[int, float, float]] = []
     for planned_position, weight in planned:
         buy_position = resolve_buy_position(closes, planned_position, end_position)
@@ -107,12 +125,14 @@ def evaluate_strategy(
 
     active_positions: list[tuple[float, float]] = []
     invested = 0.0
-    last_close: float | None = None
+    last_close: float | None = (
+        closes[anchor_position - 1] if anchor_position > 0 else None
+    )
     equity: list[float] = []
     occupied: list[float] = []
     purchase_index = 0
 
-    for position in range(t0, end_position + 1):
+    for position in range(anchor_position, end_position + 1):
         close = closes[position]
         if close is not None and close > 0:
             last_close = close
@@ -138,6 +158,7 @@ def evaluate_strategy(
         "max_drawdown": float(maximum_drawdown(equity)),
         "average_capital_occupied": float(np.mean(occupied)),
         "invested_fraction": float(invested),
+        "fill_positions": [position for position, _, _ in resolved],
         "return_on_invested_capital": (
             float(total_return / invested) if invested > 0 else None
         ),
@@ -151,7 +172,7 @@ def eligible_event_positions(
     closes: list[float | None],
     candidate_positions: list[int],
     segment: str,
-    horizon: int = HORIZON_WEEKS,
+    horizon: int = REQUIRED_EVENT_END_OFFSET,
 ) -> list[int]:
     in_segment = sorted(
         position
@@ -179,10 +200,17 @@ def _event_result(
     position: int,
     frames: list[dict[str, Any]],
     closes: list[float | None],
+    execution_lag_weeks: int,
 ) -> dict[str, Any]:
     confirmation_position = first_confirmation_position(closes, position)
     strategies = {
-        name: evaluate_strategy(name, closes, position, confirmation_position)
+        name: evaluate_strategy(
+            name,
+            closes,
+            position,
+            confirmation_position,
+            execution_lag_weeks=execution_lag_weeks,
+        )
         for name in STRATEGIES
     }
     return {
@@ -405,13 +433,83 @@ def _decision(
     }
 
 
+def _analyze_lag(
+    market_data: dict[str, dict[str, Any]], execution_lag_weeks: int
+) -> dict[str, Any]:
+    random_rng = np.random.default_rng(SEED)
+    bootstrap_rng = np.random.default_rng(SEED)
+    segment_results: dict[str, dict[str, Any]] = {}
+    for segment in SEGMENTS:
+        events_by_index: dict[str, list[dict[str, Any]]] = {}
+        pools_by_index: dict[str, list[dict[str, Any]]] = {}
+        for symbol, *_ in INDEX_LIST:
+            market = market_data[symbol]
+            data = market["segments"][segment]
+            results = {
+                position: _event_result(
+                    symbol,
+                    position,
+                    market["frames"],
+                    market["closes"],
+                    execution_lag_weeks,
+                )
+                for position in data["b0_positions"]
+            }
+            events_by_index[symbol] = [
+                results[position] for position in data["event_positions"]
+            ]
+            pools_by_index[symbol] = [
+                results[position] for position in data["b0_positions"]
+            ]
+        all_events = [
+            event
+            for symbol, *_ in INDEX_LIST
+            for event in events_by_index[symbol]
+        ]
+        summaries = {
+            strategy: _strategy_summary(all_events, strategy) for strategy in STRATEGIES
+        }
+        random_baselines = _random_baseline(
+            pools_by_index,
+            {
+                symbol: len(events_by_index[symbol])
+                for symbol, *_ in INDEX_LIST
+            },
+            random_rng,
+        )
+        paired = {
+            strategy: _paired_comparison(events_by_index, strategy, bootstrap_rng)
+            for strategy in ("S_confirm", "S_fixed")
+        }
+        segment_results[segment] = {
+            "n_events": len(all_events),
+            "n_events_by_index": {
+                symbol: len(events_by_index[symbol]) for symbol, *_ in INDEX_LIST
+            },
+            "n_b0_random_candidates_by_index": {
+                symbol: len(pools_by_index[symbol]) for symbol, *_ in INDEX_LIST
+            },
+            "strategies": summaries,
+            "random_baseline": random_baselines,
+            "paired_comparisons": paired,
+        }
+    decisions = {
+        strategy: _decision(segment_results, strategy)
+        for strategy in ("S_confirm", "S_fixed")
+    }
+    return {
+        "execution_lag_weeks": execution_lag_weeks,
+        "segments": segment_results,
+        "decisions": decisions,
+    }
+
+
 def run_study(data_dir: Path, cache_root: Path) -> dict[str, Any]:
     started = time.perf_counter()
     market_data: dict[str, dict[str, Any]] = {}
     coverage: dict[str, dict[str, Any]] = {}
-    names: dict[str, str] = {}
 
-    for symbol, name, _ in INDEX_LIST:
+    for symbol, _name, _ in INDEX_LIST:
         frames, metadata = _load_frames(data_dir, symbol)
         unknown_splits = {
             frame.get("split")
@@ -455,77 +553,25 @@ def run_study(data_dir: Path, cache_root: Path) -> dict[str, Any]:
             b0_positions = [
                 position
                 for position in candidate_positions
-                if _outcome(frames, closes, position, HORIZON_WEEKS) is not None
+                if _outcome(
+                    frames, closes, position, REQUIRED_EVENT_END_OFFSET
+                )
+                is not None
                 and all(
                     frames[index].get("split") == segment
-                    for index in range(position, position + HORIZON_WEEKS + 1)
+                    for index in range(
+                        position, position + REQUIRED_EVENT_END_OFFSET + 1
+                    )
                 )
             ]
-            results_by_position = {
-                position: _event_result(symbol, position, frames, closes)
-                for position in b0_positions
-            }
             by_segment[segment] = {
                 "b3_candidate_count": len(b3_candidate_positions),
                 "event_positions": event_positions,
                 "b0_positions": b0_positions,
-                "results_by_position": results_by_position,
             }
         market_data[symbol] = {"frames": frames, "closes": closes, "segments": by_segment}
-        names[symbol] = name
-
-    random_rng = np.random.default_rng(SEED)
-    bootstrap_rng = np.random.default_rng(SEED)
-    segment_results: dict[str, dict[str, Any]] = {}
-    for segment in SEGMENTS:
-        events_by_index: dict[str, list[dict[str, Any]]] = {}
-        pools_by_index: dict[str, list[dict[str, Any]]] = {}
-        for symbol, *_ in INDEX_LIST:
-            data = market_data[symbol]["segments"][segment]
-            results = data["results_by_position"]
-            events_by_index[symbol] = [
-                results[position] for position in data["event_positions"]
-            ]
-            pools_by_index[symbol] = [
-                results[position] for position in data["b0_positions"]
-            ]
-        all_events = [
-            event
-            for symbol, *_ in INDEX_LIST
-            for event in events_by_index[symbol]
-        ]
-        summaries = {
-            strategy: _strategy_summary(all_events, strategy) for strategy in STRATEGIES
-        }
-        random_baselines = _random_baseline(
-            pools_by_index,
-            {
-                symbol: len(events_by_index[symbol])
-                for symbol, *_ in INDEX_LIST
-            },
-            random_rng,
-        )
-        paired = {
-            strategy: _paired_comparison(events_by_index, strategy, bootstrap_rng)
-            for strategy in ("S_confirm", "S_fixed")
-        }
-        segment_results[segment] = {
-            "n_events": len(all_events),
-            "n_events_by_index": {
-                symbol: len(events_by_index[symbol]) for symbol, *_ in INDEX_LIST
-            },
-            "n_b0_random_candidates_by_index": {
-                symbol: len(pools_by_index[symbol]) for symbol, *_ in INDEX_LIST
-            },
-            "strategies": summaries,
-            "random_baseline": random_baselines,
-            "paired_comparisons": paired,
-        }
-
-    decisions = {
-        strategy: _decision(segment_results, strategy)
-        for strategy in ("S_confirm", "S_fixed")
-    }
+    primary = _analyze_lag(market_data, EXECUTION_LAG_WEEKS)
+    lag0 = _analyze_lag(market_data, 0)
     runtime = time.perf_counter() - started
     return {
         "study": "bottom_entry_schedule",
@@ -535,6 +581,8 @@ def run_study(data_dir: Path, cache_root: Path) -> dict[str, Any]:
         "cooldown_weeks": EVENT_COOLDOWN_WEEKS,
         "horizon_weeks": HORIZON_WEEKS,
         "confirmation_window_weeks": CONFIRMATION_WEEKS,
+        "execution_lag_weeks": EXECUTION_LAG_WEEKS,
+        "event_eligibility_end_offset_weeks": REQUIRED_EVENT_END_OFFSET,
         "strategies": list(STRATEGIES),
         "inputs": {
             "weekly_data_dir": str(data_dir),
@@ -546,8 +594,9 @@ def run_study(data_dir: Path, cache_root: Path) -> dict[str, Any]:
             ],
             "coverage": coverage,
         },
-        "segments": segment_results,
-        "decisions": decisions,
+        "segments": primary["segments"],
+        "decisions": primary["decisions"],
+        "sensitivity": {"lag0": lag0},
         "runtime_seconds": float(runtime),
     }
 
@@ -564,11 +613,12 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# 底部分批建仓规则回测",
         "",
-        f"- 事件：每指数、每段 B3（未取整 score_100 ≥ 50）候选周，按 {report['cooldown_weeks']} 周冷却独立化；要求同段内有有效 50 周结果。",
+        f"- 事件：每指数、每段 B3（未取整 score_100 ≥ 50）候选周，按 {report['cooldown_weeks']} 周冷却独立化；要求 t0+{report['event_eligibility_end_offset_weeks']} 有有效收盘，且 t0 至该周每帧均在同一段。",
         "- 纳入 dev/cal/test；live 不参与。",
+        f"- 主结果执行滞后：{report['execution_lag_weeks']} 周；按 t0+1 至 t0+51 共 51 个周收盘点评估。lag 0 仅作敏感性分析。",
         f"- 随机基准：每段、每指数从有效 B0 候选周无放回抽取与 B3 事件等量的周，{report['random_repeats']} 次；seed={report['seed']}。",
         f"- 配对 CI：按指数分层的事件级 bootstrap，{report['bootstrap_repeats']} 次；seed={report['seed']}。",
-        "- 收益按初始总资金计算；现金收益为 0。回撤为周收盘权益峰谷最大回撤；资金占用率为 51 个周收盘点上累计投入本金比例的事件均值。",
+        "- 收益按初始总资金计算；现金收益为 0。回撤为周收盘权益峰谷最大回撤；资金占用率为评估窗口 51 个周收盘点上累计投入本金比例的事件均值。",
         "- 投入资金收益为组合收益除以累计投入本金；未投入事件不计入该中位数。",
         f"- Runtime: {report['runtime_seconds']:.3f} seconds。",
         "",
@@ -667,6 +717,36 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{checks['test']['max_drawdown_condition']} | "
             f"{checks['test']['win_rate_condition']} |"
         )
+
+    lag0 = report["sensitivity"]["lag0"]
+    lines.extend(
+        [
+            "",
+            "## Lag 0 敏感性分析",
+            "",
+            "使用与主结果相同的 t0+51 合格事件与 B0 随机候选池；交易在信号/确认周收盘成交，评估 t0 至 t0+50。完整策略、随机基准和配对结果见 JSON `sensitivity.lag0`。",
+            "",
+            "| Segment | Strategy | n_events | Median return | Win rate | Median max DD | P90 max DD |",
+            "|---|---|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for segment in SEGMENTS:
+        for strategy in ("S_confirm", "S_fixed"):
+            row = lag0["segments"][segment]["strategies"][strategy]
+            lines.append(
+                f"| {segment} | {strategy} | {row['n_events']} | "
+                f"{_fmt_percent(row['median_return'])} | "
+                f"{_fmt_percent(row['win_rate'])} | "
+                f"{_fmt_percent(row['median_max_drawdown'])} | "
+                f"{_fmt_percent(row['p90_max_drawdown'])} |"
+            )
+    lines.extend(
+        [
+            "",
+            f"Lag 0 decisions: S_confirm **{lag0['decisions']['S_confirm']['decision']}**; "
+            f"S_fixed **{lag0['decisions']['S_fixed']['decision']}**.",
+        ]
+    )
 
     lines.extend(
         [
