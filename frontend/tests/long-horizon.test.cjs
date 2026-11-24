@@ -28,6 +28,7 @@ function qualifiedPayload() {
 function evidenceFixture() {
   return {
     schema_version:'long_window_pit_v1',
+    generated_from:{source_root_rows:{US_IXIC:{first_date:'1971-02-05',last_date:'2026-11-20',rows:14068}}},
     rules:{cycles_1_5:{US_IXIC:{
       long_900:{signal_asofs:12,episodes:[{top_hit:true,tc_est:'2026-12-02'},{top_hit:false},{DD120:-22}],
         metrics:{'DD120_le_-20':{obs:60,rand_p95:30},top_hit:{obs:20,rand_p95:35}}},
@@ -220,4 +221,18 @@ test('missing or invalid evidence schema adds no verdict block', () => {
   assert.equal(Long.verdict(p,incomplete,'cycles_1_5'),null);
   assert.ok(!Long.html(p,'cycles_1_5',verdictBadge()).includes('class="lh-verdict"'));
   assert.ok(Long.html(p,'cycles_1_5',verdictBadge(),e).includes('class="lh-verdict"'));
+});
+
+test('PIT verdicts do not use evidence beyond its source cutoff', () => {
+  const p=qualifiedPayload(),e=evidenceFixture();
+  assert.ok(Long.verdict(p,e,'cycles_1_5'));
+  const later=qualifiedPayload();later.asof='2026-11-21';
+  assert.ok(Long.verdict(later,e,'cycles_1_5'));
+  const earlier=qualifiedPayload();earlier.asof='2026-11-19';
+  assert.equal(Long.verdict(earlier,e,'cycles_1_5'),null);
+  assert.ok(!Long.html(earlier,'cycles_1_5',verdictBadge(),e).includes('class="lh-verdict"'));
+  const missing=structuredClone(e);delete missing.generated_from;
+  assert.equal(Long.verdict(p,missing,'cycles_1_5'),null);
+  const invalid=structuredClone(e);invalid.generated_from.source_root_rows.US_IXIC.last_date='2026-02-30';
+  assert.equal(Long.verdict(p,invalid,'cycles_1_5'),null);
 });

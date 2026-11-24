@@ -149,6 +149,15 @@
   function verdict(payload, evidence, rule) {
     rule = RULES.indexOf(rule) >= 0 ? rule : 'cycles_1_5';
     if (!payload || !evidence || evidence.schema_version !== 'long_window_pit_v1') return null;
+    var sourceRows = evidence.generated_from && evidence.generated_from.source_root_rows;
+    var sourceRow = sourceRows && sourceRows[payload.symbol];
+    var lastDate = sourceRow && sourceRow.last_date;
+    function validDate(value) {
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      var parsed = new Date(value + 'T00:00:00Z');
+      return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10) === value;
+    }
+    if (!validDate(lastDate) || !validDate(payload.asof) || payload.asof < lastDate) return null;
     var payloadRule = payload.rules && payload.rules[rule];
     var evidenceRule = evidence.rules && evidence.rules[rule];
     var verdictRule = evidence.verdicts && evidence.verdicts[rule];
