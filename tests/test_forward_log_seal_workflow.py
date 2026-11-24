@@ -64,6 +64,7 @@ def test_guard_checks_deadline_and_discards_multiple_asofs():
     guard = TXT[i:j]
     assert "Asia/Shanghai" in guard
     assert 'guard --asof "$new_asofs"' in guard
+    assert '--now "$sealed_last"' in guard, "按封存记录的 sealed_at 判定时限，不按校验时刻"
     assert "if [[ ${#asof_values[@]} -gt 1 ]]" in guard
     assert 'echo "::warning::$guard_output; discarding' in guard
     assert 'git checkout -- forward_log/' in guard and "git clean -fdq forward_log/" in guard
