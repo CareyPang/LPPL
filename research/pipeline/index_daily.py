@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pandas as pd
 
@@ -13,20 +13,18 @@ from ..features.aftershock import analyze_aftershock
 from . import daily
 
 
-def enrich_record(record: dict, source: pd.DataFrame) -> dict:
+def _data_version(source: pd.DataFrame, frozen: bool) -> str:
+    if frozen:
+        return f"frozen_{daily.FROZEN}"
+    return f"vintage_{source.attrs['vintage']}_{source.attrs['source']}"
+
+
+def enrich_record(record: dict, source: pd.DataFrame, version: str) -> dict:
     symbol = record["symbol"]
     asof = record["asof"]
     cutoff = pd.Timestamp(asof)
     frame = source.sort_values("date").reset_index(drop=True)
     frame = frame.loc[frame.date <= cutoff, ["date", "close"]].copy()
-    version = record.get("data_version")
-    if not version:
-        frozen = source.attrs.get("frozen")
-        version = (
-            f"frozen_{frozen}"
-            if frozen
-            else f"vintage_{source.attrs.get('vintage')}_{source.attrs.get('source')}"
-        )
     analysis = analyze_aftershock(
         symbol,
         frame,
@@ -67,15 +65,21 @@ def run(
         opt=opt,
     )
     record = json.loads(path.read_text(encoding="utf-8"))
-    source = cache.load(
-        sym,
-        frozen=daily.FROZEN if frozen else None,
-        auto_refresh=False,
-    )
     try:
-        record = enrich_record(record, source)
+        source = cache.load(
+            sym,
+            frozen=daily.FROZEN if frozen else None,
+            auto_refresh=False,
+        )
+        version = _data_version(source, frozen)
+        if version != record.get("data_version"):
+            reason = "price_vintage_mismatch"
+        else:
+            record = enrich_record(record, source, version)
+            reason = None
     except Exception as error:
         reason = f"{type(error).__name__}: {error}"
+    if reason is not None:
         record["research"] = {
             **(record.get("research") or {}),
             "aftershock_status": {"status": "unavailable", "reason": reason},

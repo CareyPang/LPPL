@@ -12,7 +12,7 @@ def test_index_daily_attaches_aftershock_from_pit_close_frame(tmp_path, monkeypa
     record = {
         "symbol": "sh000300",
         "asof": asof,
-        "data_version": "fixture-v1",
+        "data_version": "vintage_2026-01-08_fixture",
         "price_history": {"source": "history-source"},
         "top": {},
         "research": {"existing": True},
@@ -21,6 +21,7 @@ def test_index_daily_attaches_aftershock_from_pit_close_frame(tmp_path, monkeypa
     source = pd.DataFrame(
         {"date": dates, "close": [100.0, 101.0, 99.0, 102.0, 103.0]}
     )
+    source.attrs.update(vintage="2026-01-08", source="fixture")
     expected = {
         "schema_version": "aftershock_v1",
         "symbol": "sh000300",
@@ -88,7 +89,7 @@ def test_index_daily_attaches_aftershock_from_pit_close_frame(tmp_path, monkeypa
     assert captured["metadata"] == {
         "symbol": "sh000300",
         "asset_id": "sh000300",
-        "data_version": "fixture-v1",
+        "data_version": "vintage_2026-01-08_fixture",
         "source": "history-source",
         "timezone": None,
     }
@@ -104,7 +105,7 @@ def test_index_daily_keeps_fit_record_when_aftershock_enrichment_fails(
     record = {
         "symbol": "sh000300",
         "asof": asof,
-        "data_version": "fixture-v1",
+        "data_version": "vintage_2026-01-08_fixture",
         "top": {},
         "research": {"existing": True},
     }
@@ -112,6 +113,7 @@ def test_index_daily_keeps_fit_record_when_aftershock_enrichment_fails(
     source = pd.DataFrame(
         {"date": pd.bdate_range("2026-01-05", periods=5), "close": [1, 2, 3, 4, 5]}
     )
+    source.attrs.update(vintage="2026-01-08", source="fixture")
 
     monkeypatch.setattr(index_daily.daily, "run", lambda *_args, **_kwargs: path)
     monkeypatch.setattr(index_daily.cache, "load", lambda *_args, **_kwargs: source)
@@ -131,3 +133,46 @@ def test_index_daily_keeps_fit_record_when_aftershock_enrichment_fails(
         "reason": "RuntimeError: fixture failure",
     }
     assert "aftershock enrichment unavailable for sh000300" in capsys.readouterr().err
+
+
+def test_index_daily_skips_aftershock_for_mismatched_price_vintage(
+    tmp_path, monkeypatch
+):
+    asof = "2026-01-08"
+    path = tmp_path / f"sh000300_{asof}.json"
+    record = {
+        "symbol": "sh000300",
+        "asof": asof,
+        "data_version": "vintage_2026-01-07_fixture",
+        "top": {},
+        "research": {},
+    }
+    path.write_text(json.dumps(record))
+    source = pd.DataFrame(
+        {"date": pd.bdate_range("2026-01-05", periods=5), "close": [1, 2, 3, 4, 5]}
+    )
+    source.attrs.update(vintage="2026-01-08", source="fixture")
+    cache_calls = []
+
+    monkeypatch.setattr(index_daily.daily, "run", lambda *_args, **_kwargs: path)
+    monkeypatch.setattr(
+        index_daily.cache,
+        "load",
+        lambda *args, **kwargs: cache_calls.append((args, kwargs)) or source,
+    )
+
+    def unexpected_analysis(*_args, **_kwargs):
+        raise AssertionError("analysis must not run across price vintages")
+
+    monkeypatch.setattr(index_daily, "analyze_aftershock", unexpected_analysis)
+
+    result_path = index_daily.run("sh000300", asof=asof, out=tmp_path, trust_boot=0)
+    published = json.loads(result_path.read_text())
+
+    assert result_path == path
+    assert len(cache_calls) == 1
+    assert "aftershock" not in published["research"]
+    assert published["research"]["aftershock_status"] == {
+        "status": "unavailable",
+        "reason": "price_vintage_mismatch",
+    }
