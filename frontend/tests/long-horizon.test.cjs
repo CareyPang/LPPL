@@ -18,6 +18,27 @@ function fixture() {
     },stability:{history:[]},calendar:{status:'weekday_estimate'},limits:[]};
 }
 function data(payload) { return {symbol:'US_NDX',modelAsOf:'2026-11-20',raw:{asof:'2026-11-20',research:{long_horizon:payload}}}; }
+function qualifiedPayload() {
+  const p=fixture();p.symbol='US_IXIC';
+  p.rules.cycles_1_5.families[0].qualified_windows=[900,925];
+  p.rules.cycles_1_5.families[0].member_date_range=['2026-12-01','2026-12-04'];
+  p.rules.cycles_1_5.families[1].qualified_windows=[];
+  return p;
+}
+function evidenceFixture() {
+  return {
+    schema_version:'long_window_pit_v1',
+    rules:{cycles_1_5:{US_IXIC:{
+      long_900:{signal_asofs:12,episodes:[{top_hit:true,tc_est:'2026-12-02'},{top_hit:false},{DD120:-22}],
+        metrics:{'DD120_le_-20':{obs:60,rand_p95:30},top_hit:{obs:20,rand_p95:35}}},
+      ultra_6600:{signal_asofs:4,episodes:[],metrics:{}},
+    }}},
+    verdicts:{cycles_1_5:{US_IXIC:{long_900:'pass',ultra_6600:'insufficient'}}},
+  };
+}
+function verdictBadge() {
+  return {html:(level,options)=>'<span data-level="'+level+'">'+options.label+'</span>'};
+}
 
 test('long-window data requires the exact supported asset and cutoff', () => {
   const payload=fixture();
@@ -139,4 +160,64 @@ test('unresolved cross-source discrepancy is visible with actual source identity
   assert.match(output,/7598 日/);assert.match(output,/当前没有交易所裁定/);
   assert.match(output,/Naver 收盘 625.5000/);assert.match(output,/Yahoo 收盘 636.4000/);
   assert.match(output,/本研究当前源原值 625.5000/);
+});
+
+test('passing 900-day evidence renders its verdict, metrics and date range without an exact top date', () => {
+  const p=qualifiedPayload(),e=evidenceFixture(),result=Long.verdict(p,e,'cycles_1_5');
+  assert.equal(result.title,'大跌风险窗口');
+  assert.equal(result.range,'2026-12-01 — 2026-12-04');
+  assert.match(result.text,/60\.0%（随机 95% 分位 30\.0%，12 个截止日 \/ 2 轮）/);
+  assert.match(result.text,/顶部落在窗口 ±20 个交易日内的比例 20\.0%，不高于随机（95% 分位 35\.0%）/);
+  const output=Long.html(p,'cycles_1_5',verdictBadge(),e);
+  const start=output.indexOf('<section class="lh-verdict"'),end=output.indexOf('</section>',start);
+  const block=output.slice(start,end);
+  assert.ok(start >= 0);
+  assert.ok(output.indexOf('</div>',output.indexOf('class="lh-heading"')) < start);
+  assert.match(block,/大跌风险窗口/);
+  assert.match(block,/风险窗口 2026-12-01 — 2026-12-04/);
+  assert.match(block,/data-level="descriptive">历史回测/);
+  assert.ok(!block.includes('2026-12-02'));
+});
+
+test('failing and insufficient 900-day verdicts remain candidates without date claims', () => {
+  for (const [status,signalCount] of [['fail',12],['insufficient',7]]) {
+    const p=qualifiedPayload(),e=evidenceFixture();
+    e.verdicts.cycles_1_5.US_IXIC.long_900=status;
+    e.rules.cycles_1_5.US_IXIC.long_900.signal_asofs=signalCount;
+    const result=Long.verdict(p,e,'cycles_1_5');
+    assert.equal(result.title,'约 900 日窗口候选');
+    assert.equal(result.text,'历史同类信号未显著优于随机日期（'+signalCount+' 个截止日）。');
+    const output=Long.html(p,'cycles_1_5',verdictBadge(),e);
+    const start=output.indexOf('<section class="lh-verdict"'),end=output.indexOf('</section>',start);
+    assert.match(output.slice(start,end),/data-level="none">未经验证/);
+    assert.ok(!output.slice(start,end).includes('2026-12-02'));
+  }
+});
+
+test('6600-day-only evidence is research display and no qualifying family gets a plain message', () => {
+  const p=qualifiedPayload(),e=evidenceFixture();
+  p.rules.cycles_1_5.families[0].qualified_windows=[];
+  p.rules.cycles_1_5.families[1].qualified_windows=[6600];
+  let result=Long.verdict(p,e,'cycles_1_5');
+  assert.equal(result.title,'');
+  assert.equal(result.additionalText,'约 6600 日窗口：研究展示。需 26 年以上数据，历史可检验信号 4 个截止日，无法验证。');
+  let output=Long.html(p,'cycles_1_5',verdictBadge(),e);
+  let start=output.indexOf('<section class="lh-verdict"'),end=output.indexOf('</section>',start);
+  assert.match(output.slice(start,end),/data-level="none">未经验证/);
+  assert.ok(!output.slice(start,end).includes('大跌风险窗口'));
+  p.rules.cycles_1_5.families[1].qualified_windows=[];
+  result=Long.verdict(p,e,'cycles_1_5');
+  assert.equal(result.text,'本截止日没有合格的长窗顶部聚类。');
+  output=Long.html(p,'cycles_1_5',verdictBadge(),e);
+  assert.match(output,/本截止日没有合格的长窗顶部聚类。/);
+});
+
+test('missing or invalid evidence schema adds no verdict block', () => {
+  const p=qualifiedPayload(),e=evidenceFixture(),incomplete=evidenceFixture();
+  delete incomplete.rules.cycles_1_5.US_IXIC.ultra_6600;
+  assert.equal(Long.verdict(p,null,'cycles_1_5'),null);
+  assert.equal(Long.verdict(p,{schema_version:'other'},'cycles_1_5'),null);
+  assert.equal(Long.verdict(p,incomplete,'cycles_1_5'),null);
+  assert.ok(!Long.html(p,'cycles_1_5',verdictBadge()).includes('class="lh-verdict"'));
+  assert.ok(Long.html(p,'cycles_1_5',verdictBadge(),e).includes('class="lh-verdict"'));
 });
