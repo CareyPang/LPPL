@@ -607,6 +607,11 @@ def _verdict_for_state(state: str, results: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _calendar_quarter(event: dict[str, Any]) -> tuple[int, int]:
+    date = pd.Timestamp(event["date"])
+    return date.year, (date.month - 1) // 3 + 1
+
+
 def _bootstrap_difference(
     left_by_index: dict[str, list[dict[str, Any]]],
     right_by_index: dict[str, list[dict[str, Any]]],
@@ -618,42 +623,49 @@ def _bootstrap_difference(
     right_events = [event for rows in right_by_index.values() for event in rows]
     left_point = _metric_statistic(left_events, metric_name)
     right_point = _metric_statistic(right_events, metric_name)
-    if left_point is None or right_point is None:
-        return {
-            "difference": None,
-            "ci95": [None, None],
-            "left_events": len(left_events),
-            "right_events": len(right_events),
-            "statistic": "share" if metric_name in BOOLEAN_METRICS else "median",
-            "bootstrap_draws": repeats,
-        }
+    quarters = sorted({_calendar_quarter(event) for event in [*left_events, *right_events]})
+    left_by_quarter: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    right_by_quarter: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    for event in left_events:
+        left_by_quarter.setdefault(_calendar_quarter(event), []).append(event)
+    for event in right_events:
+        right_by_quarter.setdefault(_calendar_quarter(event), []).append(event)
 
     differences: list[float] = []
+    skipped_draws = 0
     for _ in range(repeats):
         resampled_left: list[dict[str, Any]] = []
         resampled_right: list[dict[str, Any]] = []
-        for symbol in left_by_index:
-            left_rows = left_by_index[symbol]
-            right_rows = right_by_index.get(symbol, [])
-            if left_rows:
-                indices = rng.integers(len(left_rows), size=len(left_rows))
-                resampled_left.extend(left_rows[int(index)] for index in indices)
-            if right_rows:
-                indices = rng.integers(len(right_rows), size=len(right_rows))
-                resampled_right.extend(right_rows[int(index)] for index in indices)
+        sampled_quarters = (
+            rng.choice(len(quarters), size=len(quarters), replace=True) if quarters else []
+        )
+        for quarter_index in sampled_quarters:
+            selected_quarter = quarters[int(quarter_index)]
+            resampled_left.extend(left_by_quarter.get(selected_quarter, []))
+            resampled_right.extend(right_by_quarter.get(selected_quarter, []))
+        if not resampled_left or not resampled_right:
+            skipped_draws += 1
+            continue
         left_value = _metric_statistic(resampled_left, metric_name)
         right_value = _metric_statistic(resampled_right, metric_name)
         if left_value is not None and right_value is not None:
             differences.append(left_value - right_value)
-    lower, upper = np.quantile(differences, [0.025, 0.975])
+        else:
+            skipped_draws += 1
+    lower, upper = np.quantile(differences, [0.025, 0.975]) if differences else (None, None)
     return {
-        "difference": float(left_point - right_point),
-        "ci95": [float(lower), float(upper)],
+        "difference": (
+            None if left_point is None or right_point is None else float(left_point - right_point)
+        ),
+        "ci95": [None, None] if lower is None or upper is None else [float(lower), float(upper)],
         "left_events": len(left_events),
         "right_events": len(right_events),
         "statistic": "share" if metric_name in BOOLEAN_METRICS else "median",
         "bootstrap_draws": repeats,
-        "resampling": "with replacement within each index, preserving each state's index counts",
+        "valid_draws": len(differences),
+        "skipped_draws": skipped_draws,
+        "quarter_blocks": len(quarters),
+        "resampling": "joint calendar-quarter blocks with replacement across all indexes",
     }
 
 
@@ -834,8 +846,10 @@ def _make_markdown_report(report: dict[str, Any]) -> str:
             "",
             "## Head-to-head: selected V2 minus OLD50",
             "",
-            "| Segment | Metric | V2−OLD50 | 95% bootstrap CI | V2 events | OLD50 events |",
-            "|---|---|---:|---:|---:|---:|",
+            "Joint calendar-quarter block bootstrap; draws with an empty side are skipped.",
+            "",
+            "| Segment | Metric | V2−OLD50 | 95% bootstrap CI | V2 events | OLD50 events | Quarters | Valid / skipped draws |",
+            "|---|---|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for segment, rows in report["head_to_head"].items():
@@ -846,7 +860,8 @@ def _make_markdown_report(report: dict[str, Any]) -> str:
             )
             lines.append(
                 f"| {segment} | {metric_name} | {number(row['difference'])} | "
-                f"{ci_text} | {row['left_events']} | {row['right_events']} |"
+                f"{ci_text} | {row['left_events']} | {row['right_events']} | "
+                f"{row['quarter_blocks']} | {row['valid_draws']} / {row['skipped_draws']} |"
             )
 
     lines.extend(

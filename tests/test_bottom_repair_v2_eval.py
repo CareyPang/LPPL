@@ -12,6 +12,7 @@ import pytest
 from research.eval.bottom_repair_v2_eval import (
     LEDGER_COLUMNS,
     V2_STATES,
+    _bootstrap_difference,
     _select_v2_variant,
     compute_features,
     ema,
@@ -150,6 +151,35 @@ def test_v2_selection_is_json_serializable_and_uses_specified_tiebreaks() -> Non
     assert selection["state"] == "V2_low_shock_70"
     assert len(selection["eligible_variants"]) == len(V2_STATES)
     assert json.loads(serialized)["state"] == selection["state"]
+
+
+def test_head_to_head_bootstrap_uses_joint_calendar_quarter_blocks() -> None:
+    left_by_index = {
+        "sh000001": [
+            {"date": "2020-01-10", "metrics": {"within5_60": True}},
+            {"date": "2020-03-10", "metrics": {"within5_60": False}},
+        ],
+        "sz399001": [{"date": "2020-04-10", "metrics": {"within5_60": True}}],
+    }
+    right_by_index = {
+        "sh000016": [{"date": "2020-04-20", "metrics": {"within5_60": False}}],
+    }
+
+    result = _bootstrap_difference(
+        left_by_index,
+        right_by_index,
+        "within5_60",
+        np.random.default_rng(20261124),
+        repeats=100,
+    )
+
+    assert result["difference"] == pytest.approx(2 / 3)
+    assert result["left_events"] == 3
+    assert result["right_events"] == 1
+    assert result["quarter_blocks"] == 2
+    assert result["valid_draws"] + result["skipped_draws"] == 100
+    assert result["valid_draws"] > 0
+    assert result["skipped_draws"] > 0
 
 
 def _sample_ledger_events() -> list[dict[str, object]]:
