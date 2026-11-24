@@ -13,13 +13,18 @@ import argparse
 import hashlib
 import json
 import shutil
-from datetime import datetime, timezone
+from collections.abc import Sequence
+from datetime import date, datetime, time, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
 
+from ..data.trading_calendar import future_trading_days
+
 UTC = timezone.utc  # noqa: UP017 — 运行环境 Python 3.10
+SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 ROOT = Path("forward_log")
 LEDGER = ROOT / "ledger.jsonl"
@@ -28,6 +33,39 @@ SYMS = ("sh000001", "sh000016", "sh000300", "sh000905", "sz399001", "sz399006")
 Q, H = 0.05, 120
 SETS = ("box", "standard", "end")
 SCALES = ("6-12m", "12-24m")
+
+
+def seal_deadline(asof: date | str) -> datetime:
+    asof_date = date.fromisoformat(asof) if isinstance(asof, str) else asof
+    next_trading_day = future_trading_days(pd.Timestamp(asof_date), 1)[0].date()
+    return datetime.combine(next_trading_day, time(9, 15), tzinfo=SHANGHAI)
+
+
+def guard(asofs: Sequence[date | str], now: datetime | str | None = None) -> tuple[bool, str]:
+    try:
+        distinct_asofs = {
+            date.fromisoformat(asof) if isinstance(asof, str) else asof for asof in asofs
+        }
+    except ValueError as exc:
+        return False, f"invalid as-of date: {exc}"
+
+    if len(distinct_asofs) != 1:
+        return False, f"expected exactly one distinct new as-of, got {len(distinct_asofs)}"
+
+    asof = next(iter(distinct_asofs))
+    if isinstance(now, str):
+        now = datetime.fromisoformat(now)
+    current = now or datetime.now(SHANGHAI)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=SHANGHAI)
+    current = current.astimezone(SHANGHAI)
+    if asof > current.date():
+        return False, f"as-of {asof} is after today {current.date()} Asia/Shanghai"
+
+    deadline = seal_deadline(asof)
+    if current >= deadline:
+        return False, f"sealed after deadline {deadline.isoformat(timespec='minutes')}"
+    return True, f"within seal deadline {deadline.isoformat(timespec='minutes')}"
 
 
 def _ledger() -> pd.DataFrame:
@@ -80,7 +118,7 @@ def check(max_stale_bdays: int = 5) -> dict:
     asofs = sorted(set(led["asof"]))
     bdays = pd.bdate_range(asofs[0], asofs[-1])
     out["missing_bdays"] = [str(d.date()) for d in bdays if str(d.date()) not in set(asofs)]
-    today = datetime.now(UTC).date()
+    today = datetime.now(SHANGHAI).date()
     out["stale_bdays"] = int(len(pd.bdate_range(asofs[-1], today)) - 1)
     out["stale"] = out["stale_bdays"] > max_stale_bdays
     keys0, drift, added = None, [], []
@@ -193,14 +231,21 @@ def precision(since: str = "2026-01-01", refresh: bool = False) -> pd.DataFrame:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["seal", "verify", "review", "check", "precision"])
+    ap.add_argument("cmd", choices=["seal", "verify", "review", "check", "precision", "guard"])
     ap.add_argument("--since", default="2026-01-01")
     ap.add_argument("--max-stale", type=int, default=5, help="最近一次封存距今工作日数上限，超过即判停更（exit 2）")
     ap.add_argument("--refresh", action="store_true", help="precision：本地无价格缓存时联网取数（CI 全新 runner 需要；默认只读缓存）")
+    ap.add_argument("--asof", action="append", default=[])
+    ap.add_argument("--now")
     a = ap.parse_args()
     if a.cmd == "seal":
         rows = seal()
         print(f"sealed {len(rows)}: " + ", ".join(f"{r['symbol']}@{r['asof']}" for r in rows))
+    elif a.cmd == "guard":
+        valid, message = guard(a.asof, a.now)
+        print(message)
+        if not valid:
+            raise SystemExit(3)
     elif a.cmd == "check":
         c = check(a.max_stale)
         print(json.dumps(c, ensure_ascii=False, indent=1))
@@ -213,7 +258,7 @@ def main() -> None:
     elif a.cmd == "verify":
         v = verify()
         print(v[["asof", "symbol", "ok"]].to_string(index=False) if len(v) else "ledger 为空")
-    else:
+    elif a.cmd == "review":
         review(a.since)
 
 
