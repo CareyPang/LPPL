@@ -159,6 +159,29 @@ test('episodes preserve first and last cluster arrays and fall back for legacy f
   assert.equal(legacy.top_vs_main, null);
 });
 
+test('lockedAsOf reflects each episode prefix and ignores later appended frames', () => {
+  const frames = [
+    frame('2020-01-01'),
+    frame('2020-01-08'),
+    frame('2020-01-15'),
+    frame('2020-01-22'),
+  ];
+  const locked = AlertLedger.lockedAsOf(frames, [], '6-12m');
+
+  assert.equal(locked.get('2020-01-01').high_confidence, false);
+  assert.equal(locked.get('2020-01-08').high_confidence, false);
+  assert.equal(locked.get('2020-01-15').high_confidence, true);
+  assert.equal(locked.get('2020-01-22').high_confidence, true);
+
+  const withFuture = AlertLedger.lockedAsOf([
+    ...frames,
+    frame('2020-01-29'),
+  ], [], '6-12m');
+  frames.forEach((item) => {
+    assert.deepEqual(withFuture.get(item.asof), locked.get(item.asof));
+  });
+});
+
 test('an explicit empty cluster list is not treated as missing metadata', () => {
   const episode = AlertLedger.episodes([
     frame('2020-01-01', undefined, { clusters: { '6-12m': [] } }),

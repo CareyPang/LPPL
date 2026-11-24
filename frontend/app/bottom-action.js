@@ -1,7 +1,4 @@
-/* 临界点 · 统一底部位置与分批抄底决策引擎（严格基于已发布数据，不做二次拟合）
-   输入：最新周度帧 / 顶部红柱状态 / 四维底部因子 / 50周历史实证摘要
-   输出：5 档状态机（顶部高危 / 中性非底 / 左侧余震严禁接刀 / 底部共振30%试探 / 右侧确认60%-100%加仓）
-         + 建议仓位 + 30%→30%→40% 三段步进索引 + 选品方向指引 */
+/* 根据已发布底分与顶部区间生成底部状态标签。 */
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -25,150 +22,94 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
-  /**
-   * 评估单个指数当前的位置、能不能抄底、建议仓位与买什么
-   * @param {Object} input
-   * @param {string} [input.sym]
-   * @param {boolean} [input.hasTop]      当前是否触发 6-12m 顶部泡沫红柱
-   * @param {number}  [input.score]       多维底部综合分（0-100，或 0-1 自动换算）
-   * @param {Object}  [input.factors]     { dd_52w, erp_pct, pbn_pct, valuation, clearing, stabilize, right_side }
-   * @param {Object}  [input.summary]     bottom_summary（n_events, win_rate_50w, baseline_win_rate_50w, median_ret_50w, median_post_min_50w）
-   * @param {boolean} [input.omoriRed]    实时六维仪表盘 Omori 余震是否亮红灯
-   */
+  /** 评估单个指数当前的顶部状态与底分档位。 */
   function evaluate(input) {
     const cfg = input || {};
-    const sym = String(cfg.sym || '').toLowerCase();
-    const prof = INDEX_PROFILE[sym] || { kind: 'broad', etf: '对应宽基 ETF', elastic: false };
     const hasTop = Boolean(cfg.hasTop);
     const rawScore = toNum(cfg.score, null);
-    const score = rawScore == null ? null : rawScore > 0 && rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
-    const f = cfg.factors || {};
-    const stab = toNum(f.stabilize, 0);
-    const right = toNum(f.right_side, 0);
-    const dd52 = f.dd_52w != null ? toNum(f.dd_52w, null) : null;
-    const summary = cfg.summary || null;
-    const mdd50 = summary && summary.median_post_min_50w != null
-      ? Math.round(Math.abs(Number(summary.median_post_min_50w)) * 100)
-      : null;
-    const win50 = summary && summary.win_rate_50w != null
-      ? Math.round(Number(summary.win_rate_50w) * 1000) / 10
-      : null;
+    const score = rawScore == null ? null : rawScore > 0 && rawScore <= 1 ? rawScore * 100 : rawScore;
 
     if (hasTop) {
       return {
         tier: 'top_risk',
         tone: 'red',
         glyph: '🔴',
-        positionLabel: '顶部高危区',
+        positionLabel: '顶部区间内 · 不抄底',
         canBuy: false,
-        canBuyLabel: '不能抄底 · 严禁追高',
-        targetPct: 0,
-        positionText: '减仓 30%–40%',
-        shortBadge: '🔴 顶部区 · 分批减仓',
-        stepIndex: -1,
-        vehicle: '锁定利润，严禁追高高弹性题材股，保留现金等待顶部冷却。',
-        reason: '6–12 月主尺度出现正向泡沫红柱，盈亏比已倒挂，应按顶部纪律分批止盈。',
-        score,
-        dd52,
-        win50,
-        mdd50,
+        canBuyLabel: '查看顶部区间和价格变化。',
+        targetPct: null,
+        positionText: '',
+        shortBadge: '顶部区间内 · 不抄底',
+        vehicle: '查看顶部区间和价格变化。',
+        reason: '当前仍有顶部区间。',
+        score: score,
       };
     }
 
-    if (score == null && !cfg.omoriRed) {
-      return { tier: 'unavailable', tone: 'gray', glyph: '—', positionLabel: '底部条件未覆盖',
-        canBuy: false, canBuyLabel: '等待已发布评分', targetPct: null, positionText: '评分未提供',
-        shortBadge: '评分未覆盖', stepIndex: 0, vehicle: '可以继续查看已有行情和顶部区间。',
-        reason: '当前结果没有提供底部条件分，未用零分替代。', score: null, dd52, win50, mdd50 };
+    if (score == null) {
+      return {
+        tier: 'unavailable',
+        tone: 'gray',
+        glyph: '—',
+        positionLabel: '底分未覆盖',
+        canBuy: false,
+        canBuyLabel: '等待底分记录。',
+        targetPct: null,
+        positionText: '',
+        shortBadge: '底分未覆盖',
+        vehicle: '查看已有行情和顶部区间。',
+        reason: '当前结果没有可核对的已发布底分。',
+        score: null,
+      };
     }
 
-    if (score != null && score < 20 && !cfg.omoriRed) {
+    if (score < 30) {
       return {
         tier: 'neutral',
         tone: 'gray',
         glyph: '⚪',
-        positionLabel: '中性非底部区',
+        positionLabel: '暂不进场',
         canBuy: false,
-        canBuyLabel: '无需抄底',
+        canBuyLabel: '等待底分回到 30 分以上。',
         targetPct: null,
-        positionText: '维持常规仓位',
-        shortBadge: '⚪ 非底部区 · 常规持有',
-        stepIndex: 0,
-        vehicle: '未进超跌底坑，也无顶部红柱；继续按趋势持有原仓位，不刻意左侧加仓。',
-        reason: '距 52 周高点回撤未达 -12% 深度出清门槛，不构成底部抄底窗口。',
-        score,
-        dd52,
-        win50,
-        mdd50,
+        positionText: '',
+        shortBadge: '暂不进场',
+        vehicle: '等待底分回到 30 分以上。',
+        reason: '底分低于 30 分：历史同档价格多在区间中上部，最终低点通常还要再过约 3 个月。',
+        score: score,
       };
     }
 
-    const aftershockBlocked = Boolean(cfg.omoriRed) || stab < 0.5;
-    if (score < 50 || aftershockBlocked) {
-      const isNear = score >= 40 && !cfg.omoriRed;
+    if (score < 50) {
       return {
-        tier: 'left_wait',
+        tier: 'bottom_watch',
         tone: 'amber',
-        glyph: isNear ? '🟡' : '🟠',
-        positionLabel: isNear ? '深跌左侧观察区' : '左侧下跌 / 余震未消',
+        glyph: '🟡',
+        positionLabel: '底部观察',
         canBuy: false,
-        canBuyLabel: isNear ? '暂缓 · 临门一脚' : '不能抄底 · 防接飞刀',
-        targetPct: 0,
-        positionText: '建议仓位 0%',
-        shortBadge: isNear ? `🟡 左侧观察(${score}分) · 仓位 0%` : `🟠 余震未消(${score}分) · 仓位 0%`,
-        stepIndex: 0,
-        vehicle: '暂不进场；先将 ' + prof.etf + ' 加入观察，严禁提前重仓押注高弹性小票。',
-        reason: aftershockBlocked
-          ? '防死猫跳/大森余震未通过（仍在创新低或波动未收敛），此时进场极易被二次杀跌套牢。'
-          : `多维底部综合分 ${score}/100 未达到 50 分共振门槛，等待进一步止跌确认后再动用第 1 笔资金。`,
-        score,
-        dd52,
-        win50,
-        mdd50,
-      };
-    }
-
-    if (right < 0.7) {
-      const mddHint = mdd50 != null ? `（历史共振后 50 周内仍有约 -${mdd50}% 中位再回撤）` : '';
-      return {
-        tier: 'bottom_probe',
-        tone: 'green',
-        glyph: '🟢',
-        positionLabel: '底部共振 · 第 1 笔试探区',
-        canBuy: true,
-        canBuyLabel: '可以抄底 · 启动第 1 笔',
-        targetPct: 30,
-        positionText: '先买 30% 试探仓',
-        shortBadge: `🟢 底部共振(${score}分) · 建仓 30%`,
-        stepIndex: 1,
-        vehicle: `首选 ${prof.etf} 拿先手打底；因右侧均线未拐头，暂不重仓单押高弹性个股。`,
-        reason: `多维底部综合分 ${score}/100 且已初步止跌${mddHint}；用 30% 试探仓防踏空、留 70% 现金防二次探底。`,
-        score,
-        dd52,
-        win50,
-        mdd50,
+        canBuyLabel: '跟踪底分能否达到 50 分。',
+        targetPct: null,
+        positionText: '',
+        shortBadge: '底部观察',
+        vehicle: '跟踪底分变化。',
+        reason: '底分 30–49 分：历史同档表现与随机回撤周接近。',
+        score: score,
       };
     }
 
     return {
-      tier: 'right_confirm',
-      tone: 'emerald',
-      glyph: '✅',
-      positionLabel: '底部 + 右侧确认区',
+      tier: 'bottom_probe',
+      tone: 'green',
+      glyph: '🟢',
+      positionLabel: '底部附近',
       canBuy: true,
-      canBuyLabel: '右侧成立 · 分批加仓',
-      targetPct: 60,
-      positionText: '加至 60% → 回踩打满 100%',
-      shortBadge: `✅ 右侧确认(${score}分) · 60%→100%`,
-      stepIndex: 2,
-      vehicle: prof.elastic
-        ? `宽基打底稳固，可将第 2/3 笔逐步切向 ${prof.etf} 及率先站上 20/60 日线的业绩龙头。`
-        : `第 2 笔 30% 站稳 20 日线加仓，回踩不破前低且放量至 20 日均量 1.3× 以上打满剩余 40%。`,
-      reason: `底部综合分 ${score}/100、余震已消且站上右侧均线，可按 30%→30%→40% 节奏推进至主升仓位。`,
-      score,
-      dd52,
-      win50,
-      mdd50,
+      canBuyLabel: '冷却、止跌与企稳分项作参考，不作为进场条件。',
+      targetPct: null,
+      positionText: '',
+      shortBadge: '底部附近',
+      vehicle: '查看历史同档表现与分项信息。',
+      reason: '底分 ≥50：历史同档比随机回撤周更靠近底部，价格距之后最低点中位约 10–14%。',
+      score: score,
     };
   }
 
@@ -177,9 +118,7 @@
     if (!view || !view.conclusion) return null;
     const c = view.conclusion, b = view.bottom || {}, top = view.top || {};
     const tier = c.status === 'top_watch' ? 'top_risk'
-      : c.status === 'bottom_probe' || c.status === 'right_confirm' ? c.status
-        : c.status === 'neutral' ? 'neutral'
-          : ['model_pending', 'unavailable', 'incomplete'].includes(c.status) ? 'unavailable' : 'left_wait';
+      : ['bottom_probe', 'bottom_watch', 'neutral'].includes(c.status) ? c.status : 'unavailable';
     const toneMap = { risk: 'red', danger: 'red', warning: 'amber', warn: 'amber', success: 'green',
       teal: 'green', positive: 'green', muted: 'gray', neutral: 'gray' };
     const tone = toneMap[c.tone] || c.tone || 'gray';
@@ -187,8 +126,8 @@
     return { tier, tone, glyph, score: b.score == null ? null : b.score,
       scoreAsOf: b.asof || '', scoreStale: !!b.stale,
       positionLabel: c.title, positionText: b.stale ? '底分待更新' : top.status === 'active' ? '查看时间区间' : '',
-      canBuy: c.status === 'bottom_probe' || c.status === 'right_confirm', canBuyLabel: c.next || c.detail || '',
-      shortBadge: c.title, targetPct: null, stepIndex: 0, vehicle: c.next || '', reason: c.detail || '',
+      canBuy: c.status === 'bottom_probe', canBuyLabel: c.next || c.detail || '',
+      shortBadge: c.title, targetPct: null, vehicle: c.next || '', reason: c.detail || '',
       decisionStatus: c.status };
   }
 
@@ -499,10 +438,5 @@
     boardIndexForStock,
     evaluateStockSeries,
     evaluatePricePhysics,
-    STEPS: [
-      { idx: 1, pct: '30%', title: '第 1 笔 · 试探仓', cond: '综合分≥50 且止跌（买宽基 ETF 打底）' },
-      { idx: 2, pct: '30%', title: '第 2 笔 · 右侧仓', cond: '站稳 20 日均线 + 宽度回升（可切弹性）' },
-      { idx: 3, pct: '40%', title: '第 3 笔 · 主升仓', cond: '回踩不破前低 + 放量 1.3× 打满' },
-    ],
   };
 });

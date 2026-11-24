@@ -92,31 +92,43 @@ test('positive structure without a current interval is not described as an activ
   assert.match(state.top.label, /尚无当前区间/);
 });
 
-test('a low score cannot conceal an explicit red cooling check', () => {
+test('cooling stays descriptive when the score is below 30', () => {
   const input = setup(); score(input, 0);
   input.data.raw.cooling_state = { dashboard: { verdict_light: 'red', dimensions: [{ id: 'omori', light: 'red' }] } };
   const state = Decision.build(input);
   assert.equal(state.bottom.score, 0);
   assert.equal(state.bottom.status, 'neutral');
   assert.equal(state.cooling.status, 'blocked');
-  assert.equal(state.conclusion.status, 'cooling_wait');
-  assert.notEqual(state.conclusion.title, '维持常规仓位');
+  assert.equal(state.conclusion.status, 'neutral');
 });
 
-test('20–24 scores consistently belong to observation when stop-falling evidence is present', () => {
-  for (const n of [20, 22, 24]) {
+test('scores 29.9, 30, 49.9, and 50 use the unrounded bottom tiers', () => {
+  for (const [n, bottomStatus, conclusionStatus] of [
+    [29.9, 'neutral', 'neutral'],
+    [30, 'watch', 'bottom_watch'],
+    [49.9, 'watch', 'bottom_watch'],
+    [50, 'candidate', 'bottom_probe'],
+  ]) {
     const input = setup(); score(input, n);
     const state = Decision.build(input);
-    assert.equal(state.bottom.status, 'watch');
-    assert.equal(state.conclusion.status, 'bottom_watch');
+    assert.equal(state.bottom.score, n);
+    assert.equal(state.bottom.status, bottomStatus);
+    assert.equal(state.conclusion.status, conclusionStatus);
   }
 });
 
-test('display rounding cannot move a published intensity across the 20 or 50 point boundaries', () => {
+test('red cooling does not gate a score of 55', () => {
+  const input = setup(); score(input, 55, { stabilize: 0, right_side: 0 });
+  input.data.raw.cooling_state = { dashboard: { verdict_light: 'red', dimensions: [{ id: 'omori', light: 'red' }] } };
+  const state = Decision.build(input);
+  assert.equal(state.cooling.status, 'blocked');
+  assert.equal(state.conclusion.status, 'bottom_probe');
+});
+
+test('display values stay precise at the 30 and 50 point boundaries', () => {
   for (const [intensity, expectedStatus, expectedConclusion] of [
-    [0.196, 'neutral', 'neutral'], [0.199999, 'neutral', 'neutral'],
-    [0.2, 'watch', 'bottom_watch'], [0.496, 'watch', 'bottom_watch'],
-    [0.49999, 'watch', 'bottom_watch'], [0.5, 'candidate', 'bottom_probe'],
+    [0.299, 'neutral', 'neutral'], [0.3, 'watch', 'bottom_watch'],
+    [0.499, 'watch', 'bottom_watch'], [0.5, 'candidate', 'bottom_probe'],
   ]) {
     const input = setup(); input.history.frames.at(-1).fco_neg_intensity = intensity;
     const state = Decision.build(input);

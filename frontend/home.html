@@ -307,12 +307,12 @@ function renderRadar(L){
  const acts=(L||[]).map(r=>r&&r.action).filter(Boolean);
  if(!acts.length){bar.hidden=true;return;}
  const nTop=acts.filter(a=>a.tier==='top_risk').length;
- const nBuy=acts.filter(a=>a.tier==='bottom_probe'||a.tier==='right_confirm').length;
- const nWait=acts.filter(a=>a.tier==='left_wait').length;
+ const nBuy=acts.filter(a=>a.tier==='bottom_probe').length;
+ const nWait=acts.filter(a=>a.tier==='bottom_watch').length;
  const nNeu=acts.filter(a=>a.tier==='neutral').length;
  pills.innerHTML=
   `<span class="radar-pill g">🟢 具备底部条件 ${nBuy}</span>`+
-  `<span class="radar-pill a">🟡 左侧观察 ${nWait}</span>`+
+  `<span class="radar-pill a">🟡 底部观察 ${nWait}</span>`+
   (nTop?`<span class="radar-pill r">🔴 顶部预警 ${nTop}</span>`:`<span class="radar-pill">🔴 顶部预警 0</span>`)+
   `<span class="radar-pill">⚪ 常态观察 ${nNeu}</span>`;
  bar.hidden=false;
