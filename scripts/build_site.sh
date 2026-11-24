@@ -76,3 +76,5 @@ PY
   fi
 fi
 mkdir -p "$SITE/lab/mock/data"
+cp "$ROOT/reports/bottom_calibration.json" "$SITE/lab/mock/data/"
+cp "$ROOT/reports/bottom_location.json" "$SITE/lab/mock/data/"

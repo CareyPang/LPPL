@@ -415,8 +415,19 @@
   const events = () => opt('events/events_latest.json');
   const abnormal = () => opt('market/abnormal_latest.json');
   const bottomSignal = () => opt('market/bottom_signal_latest.json');
+  const bottomEvidence = async () => {
+    const [calibration, location] = await Promise.all([
+      fetchResult('bottom_calibration.json'),
+      fetchResult('bottom_location.json'),
+    ]);
+    return {
+      calibration: calibration.data,
+      location: location.data,
+      reason: calibration.reason || location.reason,
+    };
+  };
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
-  G.LPPL = { BASE, SYMS, GLOBAL_SYMS, global: globalData, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
+  G.LPPL = { BASE, SYMS, GLOBAL_SYMS, global: globalData, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, bottomEvidence, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
 })(window);

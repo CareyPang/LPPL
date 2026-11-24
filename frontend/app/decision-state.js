@@ -127,7 +127,7 @@
       entries.some(function (frame) { return versionDifferences(raw, frame, history).length > 0; }));
     var factors = record && record.bottom_factors && typeof record.bottom_factors === 'object' ? record.bottom_factors : {};
     var score = record ? scoreOf(record) : null, scheme = factorScheme(factors, context, symbol);
-    var status = score == null ? 'missing' : score < 20 ? 'neutral' : score < 50 ? 'watch' : 'candidate';
+    var status = score == null ? 'missing' : score < 30 ? 'neutral' : score < 50 ? 'watch' : 'candidate';
     var scoreDate = record ? date(record.asof) : '';
     var prior = entries.filter(function (f) { return f.asof < scoreDate && scoreOf(f) != null; }).pop();
     var comparable = prior && !versionMismatch && versionDifferences(raw, prior, history).length === 0 &&
@@ -221,10 +221,6 @@
       blockers.push('正向结构尚在，时间区间未形成');
       return result('structure_watch', 'amber', '顶部结构仍需观察', top.detail, '等待形成明确区间或结构状态更新。');
     }
-    if (cooling.status === 'blocked') {
-      blockers.push('冲击与止跌检查未通过');
-      return result('cooling_wait', 'amber', '先等下跌冲击减弱', '底部条件与风险分开看：当前冷却检查尚未通过。', '观察是否停止创新低，以及下一期止跌检查。');
-    }
     if (modelStale || bottom.stale) {
       blockers.push('模型或底分尚未更新到同一时点');
       return result('stale_watch', 'amber', '已有结果等待更新', '来源状态或各项截止日表明结果仍待更新，保留已有评分与区间供核对。', '检查更新后再判断条件是否同时满足。');
@@ -235,25 +231,15 @@
       if (bottom.status === 'error') return result('incomplete', 'gray', '评分记录读取失败', '行情与已读取的顶部结果仍保留，暂未取得底部评分。', '重试读取评分记录。');
       return result('incomplete', 'gray', '底部条件尚未覆盖', '当前结果没有可核对的已发布底分。', '继续查看行情和顶部区间，等待本标的底部分项。');
     }
-    if (bottom.score < 20) return result('neutral', 'gray', '底部条件尚少', '当前已发布条件分低于观察门槛，未形成底部条件组合。', '跟踪后续分项变化，不把无顶部区间当作底部确认。');
-    if (unit(f.stabilize) == null) {
-      blockers.push('止跌分项未覆盖');
-      return result('incomplete', 'gray', '已有底分，确认条件未齐', '总分已提供，但关键止跌分项缺失。', '等待止跌分项更新后再判断阶段。');
-    }
-    if (f.stabilize < 0.5) {
-      blockers.push('止跌条件未通过');
-      return result('cooling_wait', 'amber', '底部条件在形成，先等止跌', '条件分保留；止跌分项仍未达到现有确认门槛。', '关注止跌分项是否改善，以及有没有新的冲击。');
-    }
-    if (bottom.score < 50) {
-      blockers.push('条件分尚未达到50分');
-      return result('bottom_watch', 'amber', '进入底部观察阶段', '部分条件已经出现，综合分仍未达到现有确认门槛。', '查看哪一项仍在等待，并跟踪下一期变化。');
-    }
-    if (unit(f.right_side) == null) {
-      blockers.push('价格企稳分项未覆盖');
-      return result('incomplete', 'gray', '条件分达标，企稳信息待补', '止跌分项已提供，价格企稳分项尚未覆盖。', '等待企稳分项，不用缺失值代替确认。');
-    }
-    if (f.right_side < 0.7) return result('bottom_probe', 'green', '底部条件初步形成', '条件分和止跌检查达到现有门槛；价格企稳仍待确认。', '加入重点观察，跟踪价格企稳条件与后续修订。');
-    return result('right_confirm', 'green', '底部条件与企稳同时满足', '已发布条件分、止跌及价格企稳分项达到现有门槛。', '持续跟踪条件是否维持，并查看历史同类事件。');
+    if (bottom.score < 30) return result('neutral', 'gray', '暂不进场',
+      '底分低于 30 分：历史同档价格多在区间中上部，最终低点通常还要再过约 3 个月。',
+      '等待底分回到 30 分以上。');
+    if (bottom.score < 50) return result('bottom_watch', 'amber', '底部观察',
+      '底分 30–49 分：历史同档表现与随机回撤周接近。',
+      '跟踪底分能否达到 50 分。');
+    return result('bottom_probe', 'green', '底部附近',
+      '底分 ≥50：历史同档比随机回撤周更靠近底部，价格距前后半年最低点中位约 10–14%。',
+      '冷却、止跌与企稳分项作参考，不作为进场条件。');
   }
   function build(options) {
     options = options || {};

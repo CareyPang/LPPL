@@ -226,6 +226,13 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 .bot-row-head>span{border-bottom-color:var(--line)}
 .bot-row[data-bot-asof]{cursor:pointer}
 .bot-row[data-bot-asof]:hover{background:#EFFAF4;color:var(--ink)}
+.bottom-evidence{padding:14px 16px;border-top:1px solid var(--line)}
+.bottom-evidence h3{margin:0 0 10px;font-size:14px;color:var(--ink)}
+.bottom-evidence-scroll{overflow-x:auto}
+.bottom-evidence-table{width:100%;min-width:1040px;border-collapse:collapse;font-size:12px}
+.bottom-evidence-table th,.bottom-evidence-table td{padding:8px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+.bottom-evidence-table thead{background:var(--surface-2);color:var(--ink-3)}
+.bottom-evidence-table th:first-child,.bottom-evidence-table td:first-child{text-align:left}
 @media(max-width:480px){.alert-ledger{padding:12px}.al-table{min-width:760px}}
 </style>
 </head>
@@ -365,6 +372,25 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         </div>
         <div id="bottom-rows" role="rowgroup"></div>
       </div>
+      <section class="bottom-evidence" id="bottom-evidence" hidden aria-labelledby="bottom-evidence-title">
+        <h3 id="bottom-evidence-title">底分分档历史检验（7 个 A 股指数）</h3>
+        <div class="bottom-evidence-scroll">
+          <table class="bottom-evidence-table">
+            <thead>
+              <tr>
+                <th rowspan="2">底分档位</th>
+                <th colspan="4">开发段</th>
+                <th colspan="4">测试段</th>
+              </tr>
+              <tr>
+                <th>50 周胜率（n）</th><th>随机 95% 分位</th><th>底部区比例（W=26）</th><th>距最低点中位数</th>
+                <th>50 周胜率（n）</th><th>随机 95% 分位</th><th>底部区比例（W=26）</th><th>距最低点中位数</th>
+              </tr>
+            </thead>
+            <tbody id="bottom-evidence-rows"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
     <p class="al-empty" id="alert-empty" role="status" hidden></p>
   </section>
@@ -524,18 +550,17 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       }
       frame.fcoNegIntensity = frame.fco_neg_intensity != null && Number.isFinite(Number(frame.fco_neg_intensity))
         ? Math.max(0, Math.min(1, Number(frame.fco_neg_intensity)))
-        : 0;
+        : null;
       frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
     });
     // 标记每一轮预警段（Episode）的首次预警日（strict as-of）与连续 as-of 不漂移锁定状态
     const epList = (st.H.alertEpisodes && st.H.alertEpisodes[scale]) || [];
     const firstMap = new Map(epList.map((ep) => [ep.first_asof, ep]));
-    const lockedRanges = epList
-      .filter((ep) => ep.convergence && ep.convergence.high_confidence)
-      .map((ep) => [ep.first_asof, ep.last_asof]);
+    const lockedByAsOf = CPAlertLedger.lockedAsOf(st.H.fr, st.H.tops, scale);
     st.H.fr.forEach((frame) => {
       frame.firstAlertEp = firstMap.get(frame.asof) || null;
-      frame.topLocked = lockedRanges.some(([a, b]) => frame.asof >= a && frame.asof <= b);
+      const convergence = lockedByAsOf.get(frame.asof);
+      frame.topLocked = Boolean(convergence && convergence.high_confidence);
     });
     st.tmax = mx + 30 * DAY;
     $('sym-c').textContent = '周度截止日 · ' + (scale === '6-12m' ? '6–12 月档' : '12–24 月档');
@@ -586,7 +611,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           `<b style="color:#B4232C">🎯 顶部聚类置信度与连续 as-of 不漂移检验：</b>` +
           `共 <b>${episodes.length}</b> 轮预警中，有 <b>${lockedEps.length}</b> 轮通过「连续 ≥3 周主簇时间中位数未后移」锁定检验（主图红柱顶带实心锚线，低强度弱柱已自动降噪淡化）。` +
           (latestEp
-            ? ` 最近一轮（${E(latestEp.first_asof)}–${E(latestEp.last_asof)}）聚类时间中位数 <b>${E(latestEp.median_date || '—')}</b>，状态：<b>${E(latestConv ? latestConv.label : '观察中')}</b>` +
+            ? ` 最近一轮（${E(latestEp.first_asof)}–${E(latestEp.last_asof)}）聚类时间中位数 <b>${E(latestEp.median_date || '—')}</b>，状态：<b>${E(latestConv ? '整轮复盘：' + latestConv.label : '观察中')}</b>` +
               (latestConv && latestConv.drift_ratio != null ? `（漂移比 ${latestConv.drift_ratio}）` : '') + '。'
             : '') +
           `</div>`;
@@ -628,11 +653,11 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           : '—') + medTag;
       const conv = episode.convergence || null;
       const convBadge = conv && conv.status === 'locked'
-        ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;color:#B4232C;background:#FFF0F1;border:1px solid #F7C7CA">🔒 高危锁定</span>`
+        ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700;color:#B4232C;background:#FFF0F1;border:1px solid #F7C7CA">🔒 整轮复盘：高危锁定</span>`
         : conv && conv.status === 'drifting'
-          ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#8A5600;background:#FFF7EB;border:1px solid #F3D9B1">🟡 漂移观察</span>`
+          ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#8A5600;background:#FFF7EB;border:1px solid #F3D9B1">🟡 整轮复盘：漂移观察</span>`
           : conv && conv.status === 'converging'
-            ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#1F5FD6;background:#EEF4FF;border:1px solid #C9DCFF">初步锚定</span>`
+            ? `<br><span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:3px;font-size:10px;color:#1F5FD6;background:#EEF4FF;border:1px solid #C9DCFF">整轮复盘：初步锚定</span>`
             : '';
       const secondaryText = Array.isArray(clusters) && clusters.length > 1
         ? clusters.slice(1).map((cluster) =>
@@ -682,14 +707,13 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
     const sorted = [...st.overview.indices].sort((a, b) => (b.bottom_score || 0) - (a.bottom_score || 0));
     strip.innerHTML = `<span class="ov-strip-k">全市场底部综合分（截至 ${E(st.overview.asof || '—')}）：</span>` +
       sorted.map((it) => {
-        const act = window.BottomAction ? window.BottomAction.fromOverviewItem(it) : null;
-        const tone = act ? act.tone : 'gray';
-        const pos = act && act.tier === 'bottom_probe' ? ' · 🟢30%'
-          : act && act.tier === 'right_confirm' ? ' · ✅加仓'
-          : act && act.tier === 'top_risk' ? ' · 🔴减仓' : '';
-        return `<button type="button" class="ov-chip" data-ov-sym="${E(it.sym)}" data-tone="${E(tone)}" aria-current="${st.sym === it.sym}">` +
-          `${E(it.name)} <b>${it.bottom_score ?? 0}</b>${pos}</button>`;
-      }).join('');
+      const act = window.BottomAction ? window.BottomAction.fromOverviewItem(it) : null;
+      const tone = act ? act.tone : 'gray';
+      const title = act ? act.positionLabel : '';
+      const score = it.bottom_score == null ? '未覆盖' : it.bottom_score;
+      return `<button type="button" class="ov-chip" data-ov-sym="${E(it.sym)}" data-tone="${E(tone)}" aria-current="${st.sym === it.sym}">` +
+        `${E(it.name)} <b>${E(score)}</b>${title ? ' · ' + E(title) : ''}</button>`;
+    }).join('');
     strip.hidden = false;
   }
   function renderBottomLedger() {
@@ -715,16 +739,53 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       if (bf.stabilize != null) parts.push(`止跌 ${Math.round(Number(bf.stabilize) * 100)}%`);
       const r24 = ev.ret_24w;
       const r50 = ev.ret_50w;
+      const score = f.fcoNegIntensity == null ? '未覆盖' : Math.round(f.fcoNegIntensity * 100) + ' / 100';
       return `<div class="bot-row" role="row" tabindex="0" data-bot-asof="${E(f.asof)}">` +
         `<span role="cell"><span class="al-badge" style="color:#0E6545;border-color:#BFE4D2;background:#EFFAF4">底部共振</span>${E(f.asof)}</span>` +
         `<span role="cell">${E(SPLIT[f.split] || f.split || '—')}</span>` +
-        `<span role="cell"><b style="color:#0E6545">${Math.round((f.fcoNegIntensity || 0) * 100)} / 100</b></span>` +
+        `<span role="cell"><b style="color:#0E6545">${E(score)}</b></span>` +
         `<span role="cell" style="color:${r24 == null ? 'var(--ink-3)' : r24 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r24))}</span>` +
         `<span role="cell" style="color:${r50 == null ? 'var(--ink-3)' : r50 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r50))}</span>` +
         `<span role="cell">${E(parts.join(' · ') || '—')}</span></div>`;
     }).join('');
     empty.textContent = '该指数暂无独立底部共振记录';
     empty.hidden = items.length > 0;
+  }
+  function renderBottomEvidence(evidence) {
+    const panel = $('bottom-evidence'), body = $('bottom-evidence-rows');
+    const calibration = evidence && evidence.calibration, location = evidence && evidence.location;
+    if (!panel || !body || !calibration || !calibration.tables || !location || !location.segments) return;
+    const fmtPct = (value) => value == null || !Number.isFinite(Number(value))
+      ? '—' : (Number(value) * 100).toFixed(1) + '%';
+    const buckets = [['B1', '<30'], ['B2', '30–49'], ['B3', '≥50']];
+    const cells = (segment, bucket) => {
+      const scoreRow = calibration.tables[segment] && calibration.tables[segment][bucket]
+        ? calibration.tables[segment][bucket]['50w'] : null;
+      const locationRow = location.segments[segment] && location.segments[segment].W26 &&
+        location.segments[segment].W26.groups ? location.segments[segment].W26.groups[bucket] : null;
+      return [
+        scoreRow ? fmtPct(scoreRow.win_rate) + ' (' + (scoreRow.n_events ?? '—') + ')' : '—',
+        scoreRow && scoreRow.random_win_rate ? fmtPct(scoreRow.random_win_rate.p95) : '—',
+        locationRow ? fmtPct(locationRow.in_bottom_zone_share) : '—',
+        locationRow ? fmtPct(locationRow.median_dist_to_trough) : '—',
+      ].map((value) => `<td>${E(value)}</td>`).join('');
+    };
+    body.innerHTML = buckets.map(([bucket, label]) =>
+      `<tr><th scope="row">${E(bucket)} · ${E(label)}</th>${cells('dev', bucket)}${cells('test', bucket)}</tr>`
+    ).join('');
+    panel.hidden = false;
+  }
+  async function loadBottomEvidence() {
+    const panel = $('bottom-evidence');
+    if (!panel) return;
+    panel.hidden = true;
+    try {
+      const evidence = await LPPL.bottomEvidence();
+      if (!evidence || evidence.reason || !evidence.calibration || !evidence.location) return;
+      renderBottomEvidence(evidence);
+    } catch {
+      panel.hidden = true;
+    }
   }
   function applyLedgerMode() {
     const isBot = st.ledgerMode === 'bottom';
@@ -808,7 +869,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         fco_intensity: f.fco_intensity, bubble_intensity: f.bubble_intensity,
         fco_neg_intensity: f.fco_neg_intensity, bottom_first_alert_flag: Boolean(f.bottom_first_alert_flag),
         bottom_factors: f.bottom_factors || null,
-        t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, fcoNegIntensity: 0, firstAlertEp: null,
+        t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, fcoNegIntensity: null, firstAlertEp: null,
       })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
       const last = fr[fr.length - 1].t;
@@ -849,6 +910,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       }
       applyLedgerMode();
       renderOverviewStrip();
+      loadBottomEvidence();
       setPreset(st.preset >= 0 ? st.preset : 0);
       if (initialAlert) selectAlert(initialAlert, false);
     } catch (e) {
@@ -927,7 +989,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
           intensity: f.fcoIntensity, hot: f === hot, locked: Boolean(f.topLocked),
         });
-      } else if (f.fcoNegIntensity > 0) {
+      } else if (f.fcoNegIntensity != null && f.fcoNegIntensity > 0) {
         CPSCN.drawFcoBottomBar(ctx, {
           x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
           intensity: f.fcoNegIntensity, hot: f === hot,
@@ -1018,7 +1080,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         ctx.fillStyle = rgba(CPSCN.FCO, 0.25 + f.fcoIntensity * 0.45);
         const h = Math.max(2, Math.round(f.fcoIntensity * 16));
         ctx.fillRect(Math.round(px(f.t)), Hh - h, 2, h);
-      } else if (f.fcoNegIntensity > 0) {
+      } else if (f.fcoNegIntensity != null && f.fcoNegIntensity > 0) {
         ctx.fillStyle = rgba(CPSCN.FCO_BOT, 0.25 + f.fcoNegIntensity * 0.45);
         const h = Math.max(2, Math.round(f.fcoNegIntensity * 16));
         ctx.fillRect(Math.round(px(f.t)), Hh - h, 2, h);
@@ -1117,7 +1179,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         : '';
       const fcoLine = best.fcoIntensity > 0
         ? `<br><span style="color:#D6303A">FCO 顶部泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
-        : (best.fcoNegIntensity > 0
+        : (best.fcoNegIntensity != null && best.fcoNegIntensity > 0
           ? `<br><span style="color:#11845A">FCO 底部共振强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}${E(bfDetail)}</span>`
           : '');
       const topText = top
