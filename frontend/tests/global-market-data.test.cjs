@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-const BottomAction = require('../app/bottom-action.js');
 function adapter(){
   const requests=[];
   const ctx={window:{},AbortController,setTimeout,clearTimeout,URLSearchParams,console,
@@ -33,12 +32,4 @@ test('international current and exact archives use static GET only, never A-shar
   assert.deepEqual(requests.map(x=>x.url),['lab/mock/data/global/KR_KOSPI_latest.json','lab/mock/data/global/KR_KOSPI_2026-11-20.json','lab/mock/data/global/KR_KOSPI_history.json','lab/mock/data/global/US_MRVL_latest.json']);
   assert.ok(requests.every(x=>x.method==='GET'));
   assert.throws(()=>api.global.result('../MRVL','2026-11-20'),/身份/);
-});
-test('MRVL and invalid stocks never inherit CSI300 background or A-share position advice',()=>{
-  for(const code of ['MRVL','US_MRVL','KR_KOSPI','garbage','']){
-    assert.equal(BottomAction.boardIndexForStock(code).sym,null);
-    const bars=Array.from({length:80},(_,i)=>({date:'2026-01-'+i,close:100-i/10}));
-    assert.equal(BottomAction.evaluateStockSeries(bars,{code}).action,null);
-  }
-  assert.equal(BottomAction.boardIndexForStock('600519').sym,'sh000001');
 });

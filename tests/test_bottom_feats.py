@@ -1,7 +1,14 @@
 import numpy as np
 import pandas as pd
 
-from research.features.bottom_feats import bear_state, liquidity, omori
+from research.features.bottom_feats import (
+    BASE_W,
+    SHOCK_LOOK,
+    _freeze_sigma_ref,
+    bear_state,
+    liquidity,
+    omori,
+)
 
 
 def _series(n=900, seed=0):
@@ -20,6 +27,34 @@ def test_omori_marks_shock_and_decays():
     assert o.after_ratio_20.iloc[625] > 1.5  # 主震后 20 日余震率远高于基准
     assert o.omori_p_20.iloc[700] > 0  # 余震已衰减
     assert o.days_since_shock_20.iloc[300] == 250  # 无主震时取上限
+
+
+def test_omori_freezes_pre_shock_sigma_through_high_volatility_episode():
+    logp, _ = _series()
+    returns = logp.diff()
+    sigma = returns.rolling(BASE_W).std().shift(1)
+    drawdown = logp - logp.rolling(SHOCK_LOOK).max()
+    shocks = (drawdown <= -0.10) & (drawdown.shift(1) > -0.10)
+    frozen = _freeze_sigma_ref(sigma, shocks)
+    reference = sigma.iloc[600]
+
+    assert np.isfinite(reference)
+    assert frozen.iloc[600:640].eq(reference).all()
+    old_count = (returns.abs().iloc[601:640] > 2.0 * sigma.iloc[601:640]).sum()
+    frozen_count = (returns.abs().iloc[601:640] > 2.0 * frozen.iloc[601:640]).sum()
+    assert frozen_count > old_count
+
+
+def test_omori_sigma_updates_only_at_the_next_accepted_shock():
+    sigma = pd.Series(np.arange(1.0, 101.0))
+    shocks = pd.Series(False, index=sigma.index)
+    shocks.iloc[10] = True
+    shocks.iloc[10 + SHOCK_LOOK] = True
+
+    frozen = _freeze_sigma_ref(sigma, shocks)
+
+    assert frozen.iloc[10 : 10 + SHOCK_LOOK].eq(sigma.iloc[10]).all()
+    assert frozen.iloc[10 + SHOCK_LOOK :].eq(sigma.iloc[10 + SHOCK_LOOK]).all()
 
 
 def test_liquidity_and_state_are_as_of():

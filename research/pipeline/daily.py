@@ -17,6 +17,7 @@ import pandas as pd
 
 from ..data import cache
 from ..eval.export_contract import build_record
+from ..features.aftershock import analyze_aftershock
 from ..features.lppls_rules import _derived, rules
 from ..features.lppls_scan import (
     BOX,
@@ -94,6 +95,20 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
         data_version=version,
         market="cn",
     )
+    analysis = analyze_aftershock(
+        sym,
+        ohlc_pit.loc[:, ["date", "close"]].copy(),
+        str(date.date()),
+        {
+            "symbol": sym,
+            "asset_id": sym,
+            "data_version": rec.get("data_version") or version,
+            "source": rec.get("source") or (rec.get("price_history") or {}).get("source") or version,
+            "timezone": rec.get("timezone"),
+        },
+        archive_root=None,
+    )
+    rec["research"] = {**(rec.get("research") or {}), "aftershock": analysis}
     rec["params"] = {"optimizer": OPTIMIZER_NAMES[effective_opt]}
     if trust_boot:
         from ..lppls.trust import trust
