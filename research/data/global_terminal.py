@@ -884,7 +884,9 @@ def fetch_snapshot(asset_id: str, root: Path, *, refresh: bool = False,
     if minimum_rows is not None and (isinstance(minimum_rows, bool) or not isinstance(minimum_rows, int) or minimum_rows < 1):
         raise ValueError('minimum_rows must be a positive integer')
     asset = ASSETS[asset_id]
-    if provider not in (None, 'yahoo', 'naver') or (provider == 'naver' and asset_id not in NAVER_SYMBOLS):
+    if (provider not in (None, 'yahoo', 'naver', 'yfinance')
+            or (provider == 'naver' and asset_id not in NAVER_SYMBOLS)
+            or (provider == 'yfinance' and asset_id not in {'US_IXIC', 'US_NDX'})):
         raise ValueError('Unsupported asset/provider combination')
     folder = Path(root) / "source" / asset_id
     pointer = folder / "latest.json"
@@ -901,6 +903,22 @@ def fetch_snapshot(asset_id: str, root: Path, *, refresh: bool = False,
         if problem:
             raise ValueError(problem)
         return previous, previous_info
+    if selected_provider == 'yfinance':
+        from .nasdaq_yfinance import download_nasdaq
+
+        raw, frame, info = download_nasdaq(
+            asset_id, Path(root), previous=previous, previous_info=previous_info,
+            full_history=effective_full_history,
+        )
+        info['minimum_rows_requested'] = minimum_rows
+        if previous is not None:
+            info['previous_vintage_comparison'] = _vintage_comparison(frame, previous, previous_info)
+            info['provider_changed'] = not same_provider
+        problem = _coverage_problem(frame, minimum_rows, previous)
+        if problem:
+            _save_rejection(folder, raw, info, problem)
+            raise ValueError(problem)
+        return frame, save_snapshot(folder, raw, frame, info)
     if selected_provider == 'naver':
         url = 'https://api.finance.naver.com/siseJson.naver'
         params = {'symbol': NAVER_SYMBOLS[asset_id], 'requestType': 1, 'startTime': '19000101' if effective_full_history else '20000101',

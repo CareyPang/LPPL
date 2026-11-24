@@ -455,6 +455,8 @@ def reexport_cached(root: Path, manifest_path: Path) -> dict:
 
 
 def primary_provider_for_asset(asset_id: str) -> str:
+    if asset_id in {'US_IXIC', 'US_NDX'}:
+        return 'yfinance'
     asset = ASSETS[asset_id]
     return "naver" if asset["kind"] == "stock" and asset["market"] == "kr" else "yahoo"
 
@@ -488,7 +490,9 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             continue
         try:
             frame, metadata = fetch_snapshot(
-                asset_id, root, refresh=refresh, provider=primary_provider_for_asset(asset_id)
+                asset_id, root, refresh=refresh, provider=primary_provider_for_asset(asset_id),
+                full_history=asset_id in {'US_IXIC', 'US_NDX'},
+                minimum_rows=6600 if asset_id in {'US_IXIC', 'US_NDX'} else None,
             )
             metadata["display_source"] = (
                 "Yahoo Finance"
