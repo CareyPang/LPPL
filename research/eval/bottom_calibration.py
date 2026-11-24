@@ -163,6 +163,8 @@ def three_law_metrics(daily: pd.DataFrame, asof: str) -> dict[str, Any]:
         return {"p": None, "delta_m": None, "m0": None, "q": q, "t": None, "n_aftershock": None}
     mainshock_position = int(lookback_positions[np.nanargmin(lookback)])
     mainshock_return = float(returns[mainshock_position])
+    if mainshock_return > q:
+        return {"p": None, "delta_m": None, "m0": None, "q": q, "t": None, "n_aftershock": None}
     exposure = end - mainshock_position
     after_positions = np.arange(mainshock_position + 1, end + 1)
     after_positions = after_positions[returns[after_positions] <= q]

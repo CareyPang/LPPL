@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from research.eval.bottom_calibration import (
     _b3_law_distributions,
@@ -7,8 +8,10 @@ from research.eval.bottom_calibration import (
     _outcome,
     _random_baseline,
     _summary,
+    add_productivity_ratio,
     bucket_membership,
     independent_positions,
+    three_law_metrics,
 )
 
 
@@ -100,6 +103,23 @@ def test_outcomes_are_purged_at_split_boundaries():
     assert _outcome(frames, closes, 29, 24) is None
     assert _outcome(frames, closes, 29, 50) is None
     assert _outcome(frames, closes, 5, 24) is not None
+
+
+def test_nonshock_minimum_has_no_three_law_or_productivity_metrics():
+    returns = np.full(600, 0.001)
+    returns[120:150] = -0.02
+    closes = 100.0 * np.cumprod(np.r_[1.0, 1.0 + returns])
+    dates = pd.bdate_range("2000-01-03", periods=len(closes))
+    daily = pd.DataFrame({"date": dates, "close": closes})
+
+    metrics = three_law_metrics(daily, dates[-1].strftime("%Y-%m-%d"))
+    assert metrics["q"] < 0
+    assert metrics["p"] is None
+    assert metrics["delta_m"] is None
+    assert metrics["m0"] is None
+    assert metrics["t"] is None
+    assert metrics["n_aftershock"] is None
+    assert add_productivity_ratio(metrics, {"k": 1.0, "alpha": 1.0})["productivity_ratio"] is None
 
 
 def test_b3_metric_distributions_use_b3_candidate_weeks():
