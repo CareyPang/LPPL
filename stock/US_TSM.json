@@ -1,8 +1,8 @@
 {
  "symbol": "US_TSM",
  "name": "台积电",
- "asof": "2026-11-20",
- "data_version": "us_TSM_20261120_c382828b013d91dc",
+ "asof": "2026-11-23",
+ "data_version": "us_TSM_20261123_d0cab1d149f74e7f",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-03-13",
-   "duration_days": 427,
+   "start": "2025-04-21",
+   "duration_days": 402,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 1.57,
-   "size_realized": 0.897,
-   "tc": "2026-08-27",
+   "size_model": 1.964,
+   "size_realized": 1.501,
+   "tc": "2026-08-11",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,16 +60,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-03-12",
+    "best_t1": "2026-03-13",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.333,
+     "m_lo": 0.167,
      "m_hi": 0.0,
-     "w_lo": 0.167,
+     "w_lo": 0.333,
      "w_hi": 0.0,
      "tc_lo": 0.333,
      "tc_hi": 0.0,
-     "any": 0.667,
+     "any": 0.833,
      "tol": 0.01
     },
     "null_fpr": {
@@ -99,12 +99,12 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.0,
+     "early": 0.1,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-03-13",
+    "best_t1": "2025-03-14",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-20",
+   "table_asof": "2026-11-23",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,8 +716,8 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.897,
-    "duration_days": 427,
+    "size_realized": 1.501,
+    "duration_days": 402,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
    },
@@ -763,12 +763,12 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": true,
-  "drawdown_from_peak": -0.3439,
-  "elapsed_days_since_peak": 34,
+  "drawdown_from_peak": -0.2515,
+  "elapsed_days_since_peak": 35,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": false,
-  "note": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.4%）；短期波动放大至 60 日均值的 1.43 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+  "note": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.4%）；短期波动放大至 60 日均值的 1.82 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
   "dashboard": {
    "verdict": "aftershock_block",
    "verdict_light": "red",
@@ -783,15 +783,15 @@
     {
      "id": "omori",
      "name": "Omori 余震衰减",
-     "value_text": "大阴线 3 次 · 波动比 1.43×",
+     "value_text": "大阴线 3 次 · 波动比 1.82×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.3439,
-     "elapsed_days_since_peak": 34,
+     "drawdown_from_peak": -0.2515,
+     "elapsed_days_since_peak": 35,
      "dead_cat_risk": true,
      "drop_threshold": -0.0439,
-     "plain_text": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.4%）；短期波动放大至 60 日均值的 1.43 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+     "plain_text": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.4%）；短期波动放大至 60 日均值的 1.82 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -826,9 +826,9 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 1.22× · 年内分位 99%",
-     "pct": 0.9921,
-     "ratio20": 1.22,
+     "value_text": "5/20日量比 1.28× · 年内分位 98%",
+     "pct": 0.9841,
+     "ratio20": 1.28,
      "light": "gray",
      "passed_bottom": false,
      "passed_top": false,
@@ -853,7 +853,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -18.7%",
+     "value_text": "距 20 日线 -6.5%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -869,7 +869,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-16",
    "2023-11-17",
    "2023-11-20",
    "2023-11-21",
@@ -1624,10 +1623,10 @@
    "2026-11-17",
    "2026-11-18",
    "2026-11-19",
-   "2026-11-20"
+   "2026-11-20",
+   "2026-11-23"
   ],
   "open": [
-   94.425,
    95.098,
    96.021,
    96.117,
@@ -2382,10 +2381,10 @@
    372.18,
    368.05,
    369.56,
-   338.24
+   338.24,
+   385.49
   ],
   "high": [
-   95.252,
    95.848,
    96.684,
    96.261,
@@ -3140,10 +3139,10 @@
    373.1,
    368.85,
    374.77,
-   343.75
+   343.75,
+   386.9
   ],
   "low": [
-   94.108,
    94.502,
    95.675,
    94.415,
@@ -3898,10 +3897,10 @@
    353.5,
    356.77,
    351.14,
-   318.48
+   318.48,
+   361.66
   ],
   "close": [
-   94.713,
    95.713,
    96.078,
    94.588,
@@ -4656,10 +4655,10 @@
    359.69,
    362.62,
    352.09,
-   318.71
+   318.71,
+   363.6
   ],
   "volume": [
-   8458972,
    7247703,
    6452894,
    10112491,
@@ -5414,7 +5413,8 @@
    25241316,
    12128474,
    18015575,
-   37271197
+   37271197,
+   31668191
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5468,7 +5468,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4952,
+  "n_bars": 4953,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5498,9 +5498,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "c067e13e7d852e347aee718e0dac6422f722d3f6b184e43b3ae82cbb509d4228",
- "fit_input_hash": "f352b8070bdaa8b0d30eee522dcc476d72fd23435e857c9317f200abc201b717",
+ "fit_input_hash": "4aca1d00ea9d0adb6192bfc8c2f6c3c3e0bb0f37be1ab8bd5cd4a9ff3953a8aa",
  "history_input_hashes": {
-  "2023-11-17": "d82abcab95876b0c66d3e80b34dabb7bfac986b1ea4d9ca0d99ac4447268867c",
   "2023-11-20": "70ce003c699277fe293695d52df21dca0b795d43aa31cde6752c502bf5a4038f",
   "2023-11-21": "b6f03f9c10a0b559e925eb2821a2764bdc8bac43e78b12d8fd54d60677caa393",
   "2023-11-22": "1bec7162828cc96cd9e21eabcdcd52efbda3a79e7f4e27211480e1cbf9d8d29b",
@@ -6254,10 +6253,11 @@
   "2026-11-17": "ea09aa3b3e1255d65d632a2b84f2b63309c370e181f2ba66fdb40efef3ad0436",
   "2026-11-18": "abf3a0e8a4bc967e97fd434134b0659cebb4204ebce42b2712ea520907a7fc78",
   "2026-11-19": "35e385879dddfd37faf0741eb8da179278e3d3220e373174256ca98870782446",
-  "2026-11-20": "f352b8070bdaa8b0d30eee522dcc476d72fd23435e857c9317f200abc201b717"
+  "2026-11-20": "f352b8070bdaa8b0d30eee522dcc476d72fd23435e857c9317f200abc201b717",
+  "2026-11-23": "4aca1d00ea9d0adb6192bfc8c2f6c3c3e0bb0f37be1ab8bd5cd4a9ff3953a8aa"
  },
  "code": "US_TSM",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-23T22:41:08.888366+00:00"
+ "generated_at": "2026-11-24T06:22:52.761940+00:00"
 }

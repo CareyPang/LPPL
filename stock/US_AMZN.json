@@ -1,8 +1,8 @@
 {
  "symbol": "US_AMZN",
  "name": "亚马逊",
- "asof": "2026-11-20",
- "data_version": "us_AMZN_20261120_9d27c01126373213",
+ "asof": "2026-11-23",
+ "data_version": "us_AMZN_20261123_efcecd338b9ac541",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -20,13 +20,13 @@
    ]
   },
   "bubble": {
-   "start": "2024-11-20",
+   "start": "2024-11-21",
    "duration_days": 502,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 0.368,
-   "size_realized": 0.217,
-   "tc": "2027-04-09",
+   "size_model": 0.397,
+   "size_realized": 0.287,
+   "tc": "2027-04-12",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,7 +60,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-02-04",
+    "best_t1": "2026-02-05",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -68,8 +68,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.5,
-     "any": 0.5,
+     "tc_hi": 0.333,
+     "any": 0.333,
      "tol": 0.01
     },
     "null_fpr": {
@@ -104,16 +104,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-05-23",
+    "best_t1": "2025-04-21",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.1,
+     "tc_lo": 0.2,
      "tc_hi": 0.3,
-     "any": 0.4,
+     "any": 0.5,
      "tol": 0.01
     },
     "null_fpr": {
@@ -234,7 +234,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-20",
+   "table_asof": "2026-11-23",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +716,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.217,
+    "size_realized": 0.287,
     "duration_days": 502,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -763,8 +763,8 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": false,
-  "drawdown_from_peak": -0.131,
-  "elapsed_days_since_peak": 78,
+  "drawdown_from_peak": -0.1008,
+  "elapsed_days_since_peak": 79,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": false,
@@ -783,12 +783,12 @@
     {
      "id": "omori",
      "name": "Omori 余震衰减",
-     "value_text": "大阴线 3 次 · 波动比 1.27×",
+     "value_text": "大阴线 3 次 · 波动比 1.31×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.131,
-     "elapsed_days_since_peak": 78,
+     "drawdown_from_peak": -0.1008,
+     "elapsed_days_since_peak": 79,
      "dead_cat_risk": false,
      "drop_threshold": -0.0322,
      "plain_text": "余震未消（近 15 日出现 3 次大阴线（阈值 -3.2%）），严禁左侧重仓抄底。",
@@ -826,8 +826,8 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 0.97× · 年内分位 94%",
-     "pct": 0.9365,
+     "value_text": "5/20日量比 0.97× · 年内分位 85%",
+     "pct": 0.8452,
      "ratio20": 0.97,
      "light": "gray",
      "passed_bottom": false,
@@ -853,7 +853,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -4.1%",
+     "value_text": "距 20 日线 -0.9%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -869,7 +869,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-16",
    "2023-11-17",
    "2023-11-20",
    "2023-11-21",
@@ -1624,10 +1623,10 @@
    "2026-11-17",
    "2026-11-18",
    "2026-11-19",
-   "2026-11-20"
+   "2026-11-20",
+   "2026-11-23"
   ],
   "open": [
-   140.91,
    142.66,
    145.13,
    143.91,
@@ -2382,10 +2381,10 @@
    257.55,
    259.81,
    272.56,
-   253.48
+   253.48,
+   260.26
   ],
   "high": [
-   143.32,
    145.23,
    146.63,
    144.05,
@@ -3140,10 +3139,10 @@
    259.9,
    268.29,
    274.0,
-   259.97
+   259.97,
+   262.48
   ],
   "low": [
-   139.52,
    142.54,
    144.72,
    141.5,
@@ -3898,10 +3897,10 @@
    254.0,
    259.51,
    256.75,
-   245.31
+   245.31,
+   251.25
   ],
   "close": [
-   142.83,
    145.18,
    146.13,
    143.9,
@@ -4656,10 +4655,10 @@
    257.89,
    267.74,
    257.37,
-   246.82
+   246.82,
+   255.39
   ],
   "volume": [
-   49653500,
    49678322,
    41978735,
    71225888,
@@ -5414,7 +5413,8 @@
    38685222,
    41289465,
    53117922,
-   74362636
+   74362636,
+   53277355
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5468,7 +5468,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4952,
+  "n_bars": 4953,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5498,9 +5498,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "c067e13e7d852e347aee718e0dac6422f722d3f6b184e43b3ae82cbb509d4228",
- "fit_input_hash": "952d9a03ea1f7a3b4d8c6f9c918fdeedd0554537a0a4c5b8dc0c6b6d53c6dd53",
+ "fit_input_hash": "fb3c5f7520f7f36cc8ec77f372cc23931434aa68311d6a6e70b5a2001521c56c",
  "history_input_hashes": {
-  "2023-11-17": "542c8d50fd1ead83555310078a4e206b43c114a9e42718a49adb0beeff017df3",
   "2023-11-20": "c5b5349bda5fba5069a94d28befcc65fda1c1230292816807218d9ff43b5ba3a",
   "2023-11-21": "f40905fbeede51da02bb5719e5246edde33955c3f818d225e35eb52ffecbd9cc",
   "2023-11-22": "d3fc7684e4aedaa6e5c50f576eabc39214621ff1577eb2c58594d6af7796b667",
@@ -6254,10 +6253,11 @@
   "2026-11-17": "7060d6c9ce6cb871f42d5ffa9e3252dfe7438142893d1affa75eeae40fbff6e8",
   "2026-11-18": "49a3eff7dc5e01f66820cdfff3eb5ff718fd00568c02098f6913dbdcd2a8a903",
   "2026-11-19": "18f556579edd2e8b751cdc4e1d619947c068ddfc88aae856fecdb3d339b7fced",
-  "2026-11-20": "952d9a03ea1f7a3b4d8c6f9c918fdeedd0554537a0a4c5b8dc0c6b6d53c6dd53"
+  "2026-11-20": "952d9a03ea1f7a3b4d8c6f9c918fdeedd0554537a0a4c5b8dc0c6b6d53c6dd53",
+  "2026-11-23": "fb3c5f7520f7f36cc8ec77f372cc23931434aa68311d6a6e70b5a2001521c56c"
  },
  "code": "US_AMZN",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-23T23:02:16.295172+00:00"
+ "generated_at": "2026-11-24T06:34:06.118982+00:00"
 }
