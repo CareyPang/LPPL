@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import argparse
 import bisect
+import csv
+import gzip
+import hashlib
+import io
 import json
 import math
 import time
@@ -74,6 +78,28 @@ METRIC_NAMES = (
     "R60",
     "win_R20",
     "MAE20",
+)
+LEDGER_COLUMNS = (
+    "state",
+    "segment",
+    "symbol",
+    "date",
+    "score",
+    "entry_open",
+    *(f"R{horizon}" for horizon in HORIZONS),
+    "win_R20",
+    "MAE20",
+    *(
+        f"{metric}_{window}"
+        for window in LOCATION_WINDOWS
+        for metric in (
+            "entry_dist",
+            "within5",
+            "range_pos",
+            "in_zone",
+            "low_offset",
+        )
+    ),
 )
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -692,6 +718,7 @@ def _make_markdown_report(report: dict[str, Any]) -> str:
         "- Candidate label windows require t−60 through t+61 to exist wholly inside the event segment. State events use a 20-session cooldown per index/state.",
         "- Outcomes use next-session open O(t+1); all prices are gross index prices with no costs. Indices are not tradable; ETF execution is a later round.",
         f"- Random baselines: {report['parameters']['random_repeats']} draws, seed {report['parameters']['seed']}; sample B0 events without replacement per index.",
+        f"- Event ledger: `{report['event_ledger']['path']}`; rows={report['event_ledger']['row_count']}; SHA-256 of uncompressed CSV=`{report['event_ledger']['sha256_uncompressed_csv']}`.",
         f"- Runtime: {report['runtime_seconds']:.3f} seconds.",
         "",
         "## Per-state, per-segment results",
@@ -1040,6 +1067,56 @@ def run_study(
     }
 
 
+def write_event_ledger(events: list[dict[str, Any]], path: Path) -> dict[str, Any]:
+    ordered_events = sorted(
+        events,
+        key=lambda row: (row["state"], row["segment"], row["symbol"], row["date"]),
+    )
+    csv_buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        csv_buffer,
+        fieldnames=LEDGER_COLUMNS,
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    for event in ordered_events:
+        row = {
+            "state": event["state"],
+            "segment": event["segment"],
+            "symbol": event["symbol"],
+            "date": event["date"],
+            "score": event["score"],
+            **event["metrics"],
+        }
+        writer.writerow(row)
+
+    csv_bytes = csv_buffer.getvalue().encode("utf-8")
+    compressed_buffer = io.BytesIO()
+    with gzip.GzipFile(
+        fileobj=compressed_buffer,
+        filename="",
+        mode="wb",
+        compresslevel=9,
+        mtime=0,
+    ) as compressed_file:
+        compressed_file.write(csv_bytes)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(compressed_buffer.getvalue())
+    return {
+        "path": path.name,
+        "row_count": len(ordered_events),
+        "sha256_uncompressed_csv": hashlib.sha256(csv_bytes).hexdigest(),
+    }
+
+
+def report_without_event_rows(
+    report: dict[str, Any], ledger_reference: dict[str, Any]
+) -> dict[str, Any]:
+    compact_report = {key: value for key, value in report.items() if key != "event_ledger"}
+    compact_report["event_ledger"] = ledger_reference
+    return compact_report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_CACHE_ROOT)
@@ -1051,6 +1128,9 @@ def main() -> None:
     args.report_dir.mkdir(parents=True, exist_ok=True)
     json_path = args.report_dir / "bottom_repair_v2_eval.json"
     markdown_path = args.report_dir / "bottom_repair_v2_eval.md"
+    ledger_path = args.report_dir / "bottom_repair_v2_eval_events.csv.gz"
+    ledger_reference = write_event_ledger(report["event_ledger"], ledger_path)
+    report = report_without_event_rows(report, ledger_reference)
     json_path.write_text(
         json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",

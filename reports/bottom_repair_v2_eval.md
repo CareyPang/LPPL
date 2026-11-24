@@ -5,7 +5,8 @@
 - Candidate label windows require t−60 through t+61 to exist wholly inside the event segment. State events use a 20-session cooldown per index/state.
 - Outcomes use next-session open O(t+1); all prices are gross index prices with no costs. Indices are not tradable; ETF execution is a later round.
 - Random baselines: 2000 draws, seed 20261124; sample B0 events without replacement per index.
-- Runtime: 95.908 seconds.
+- Event ledger: `bottom_repair_v2_eval_events.csv.gz`; rows=8422; SHA-256 of uncompressed CSV=`84eee094a086ab8c4fb42831eae1edf02e338c010f71d45254997f8289f0e47a`.
+- Runtime: 123.227 seconds.
 
 ## Per-state, per-segment results
 
