@@ -126,7 +126,7 @@
       (Core.researchNote(data) ? ' ' + Core.researchNote(data) : '');
     var evidence = evidenceFor(data, selectedScale);
     var bands = intervalRows(data, selectedScale);
-    state.textContent = '证据：' + (evidence && evidence.label || '证据状态未记录');
+    state.textContent = '证据：' + (evidence && evidence.label || '证据状态不可用');
     if (!evidence || !evidence.show) {
       // Keep main's four explicit reason labels, but missing fields alone do not
       // prove that an archived scale was never computed.
@@ -289,45 +289,60 @@
   }
 
   function setText(id, value) {
-    el(id).textContent = String(value == null || value === '' ? '未记录' : value);
+    el(id).textContent = String(value == null ? '' : value);
+  }
+
+  function setOptionalText(id, value) {
+    var node = el(id), text = value == null ? '' : String(value);
+    node.textContent = text;
+    node.hidden = !text;
+  }
+
+  function setMetaField(id, value) {
+    var node = el(id), text = value == null ? '' : String(value);
+    node.textContent = text;
+    node.hidden = !text;
+    var label = node.previousElementSibling;
+    if (label && label.tagName === 'DT') label.hidden = !text;
   }
 
   function renderMarketMetadata(data) {
     var metadata = Core.marketMetadata(data, selectedPeriod, activeIntradayMetadata);
-    setText('market-date', metadata.marketDate);
-    setText('data-source', metadata.dataSource);
+    setMetaField('market-date', metadata.marketDate);
+    setMetaField('data-source', metadata.dataSource);
   }
 
   function drawHeader(data) {
     setText('asset-name', data.name);
     setText('asset-code', data.symbol);
-    setText('asset-exchange', data.exchange);
-    var marketName = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[data.market || context.market] || '市场未记录';
-    setText('asset-type', data.assetType === 'index' ? marketName + '指数 · 指数点位' : marketName + '个股 · ' + data.currency);
-    setText('trading-status', '交易状态：' + (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    setOptionalText('asset-exchange', data.exchange);
+    var marketName = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[data.market || context.market] || '';
+    var assetType = data.assetType === 'index' ? marketName && marketName + '指数' : marketName && marketName + '个股';
+    setOptionalText('asset-type', [assetType, data.quoteUnit, data.currency].filter(Boolean).join(' · '));
+    setOptionalText('trading-status', data.tradingStatus ? '交易状态：' + data.tradingStatus : '');
     setText('identity-strip-name', data.name);
     setText('identity-strip-code', data.symbol);
-    setText('identity-strip-meta', data.exchange + ' · ' + data.quoteUnit + ' · 交易状态：' +
-      (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    setOptionalText('identity-strip-meta', [data.exchange, data.quoteUnit,
+      data.tradingStatus ? '交易状态：' + data.tradingStatus : ''].filter(Boolean).join(' · '));
     updateIdentityStrip();
-    setText('model-date', '模型日期 ' +
-      (data.modelStatus === 'loading' ? '读取中' : data.modelStatus !== 'ok' ? '未读到' : data.modelAsOf || '未记录'));
+    setOptionalText('model-date', data.modelStatus === 'loading' ? '模型日期 读取中' :
+      data.modelStatus !== 'ok' ? '模型日期 未读到' : data.modelAsOf ? '模型日期 ' + data.modelAsOf : '');
     var asofTag = el('asof-tag');
     asofTag.hidden = !context.asof;
     asofTag.textContent = context.asof
       ? '历史截止日 ' + context.asof + ' · 封存回放' : '';
     renderMarketMetadata(data);
-    setText('model-version', data.modelVersion || '未记录');
-    setText('prediction-id', data.predictionId || '未记录');
-    setText('volume-unit', data.volumeUnit === 'vendor_native' ? '供应商原始单位，股/手换算未核验' : data.volumeUnit);
-    setText('model-adjustment', data.modelAdjustment + '；显示设置不改变模型输入');
-    setText('first-visible', data.firstVisibleAt || '未记录；本次读取不作为提前发布证明');
-    setText('stale-state', data.stale ? '已过期：' + (data.staleReason || '来源未说明原因') :
-      data.freshness === 'not_established' ? '行情新鲜度未核验' : '按已发布截止日查看；不代表实时行情');
+    setMetaField('model-version', data.modelVersion);
+    setMetaField('prediction-id', data.predictionId);
+    setMetaField('volume-unit', data.volumeUnit === 'vendor_native' ? '供应商原始单位，股/手换算未核验' : data.volumeUnit);
+    setMetaField('model-adjustment', data.modelAdjustment);
+    setMetaField('first-visible', data.firstVisibleAt);
+    setMetaField('stale-state', data.stale ? '已过期' + (data.staleReason ? '：' + data.staleReason : '') :
+      data.freshness === 'not_established' ? '' : '按已发布截止日查看；不代表实时行情');
     el('index-replay').hidden = data.assetType !== 'index' || context.market !== 'cn';
     el('index-replay').href = 'index.html?code=' + encodeURIComponent(data.symbol) +
       (context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
-    el('index-replay').textContent = '原版完整诊断';
+    el('index-replay').textContent = '完整诊断';
   }
 
   function renderAsofNotice(data) {
@@ -335,8 +350,8 @@
     var visible = !!context.asof;
     notice.hidden = !visible;
     notice.textContent = visible
-      ? (data.historyNote || (data.historyFallback ? '使用精确日期的历史封存帧；价格截自当前已发布历史行情，其修订时点未记录。' : '只读查看此日期的封存结果。')) +
-        '历史重放与真实提前发布分开；未记录首次可见时间时，不声称当时已发布。'
+      ? (data.historyFallback ? '价格来自已发布历史行情。' : '只读查看此日期的封存结果。') +
+        '历史重放不等同于当时发布。'
       : '';
   }
 
@@ -458,8 +473,8 @@
     result.rows.slice(0, 20).forEach(function (event) {
       var button = document.createElement('button');
       button.type = 'button'; button.className = 'event-row';
-      button.textContent = event.date + ' · ' + event.label + ' · 来源 ' + event.source +
-        ' · 发布时间 ' + (event.knownAt || '未记录');
+      button.textContent = [event.date, event.label, event.source && '来源 ' + event.source,
+        event.knownAt && '发布时间 ' + event.knownAt].filter(Boolean).join(' · ');
       button.addEventListener('click', function () {
         if (chart) chart.focusDate(event.date, event.id);
         context.focus = event.id; updateAddress(context.scale, event.id);
@@ -472,14 +487,17 @@
 
   async function loadEvents(request) {
     var run = ++eventRequest;
+    var eventsCard = el('events-card'), eventsStatus = el('events-status');
+    if (context.assetType !== 'stock' || context.market !== 'cn') {
+      eventsCard.hidden = true;
+      eventsStatus.hidden = true;
+      return;
+    }
+    eventsCard.hidden = false;
+    eventsStatus.hidden = false;
     if (Reader.globalAsset(LPPL,context)) {
       moduleState('events-status','资讯随对应截止日结果读取');
       el('events-retry').disabled=false;return;
-    }
-    if (context.assetType !== 'stock' || context.market !== 'cn') {
-      el('events-note').textContent = '当前事件入口仅提供 A 股个股事件；本标的尚未接入。';
-      el('events-retry').disabled = true;
-      moduleState('events-status', '本标的事件接口未提供'); return;
     }
     moduleState('events-status', '事件独立读取中');
     try {

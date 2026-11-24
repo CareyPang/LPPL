@@ -22,7 +22,7 @@
   }
   function summary(data, bands, historical) {
     var reference = historical || [data.modelAsOf, data.marketAsOf].filter(Boolean).sort().pop() || '';
-    var prefix = historical ? '当时' : '截至 ' + (reference || '未记录日期') + ' · ';
+    var prefix = historical ? '当时' : reference ? '截至 ' + reference + ' · ' : '';
     if (data.modelStatus !== 'ok') return { status: '行情可先查看', window: '模型尚未就绪',
       detail: '可以继续缩放和画线，模型状态见右侧证据。' };
     var future = bands.filter(function (b) { return b.q20_date && b.q80_date && b.q80_date >= reference; });
@@ -100,8 +100,12 @@
         var allowed = windows.filter(function (b) { return options.core.bandEvidencePolicy(scaleEvidence, b).showDates; });
         description.textContent = !data.ruleAvailable ? '此口径未随目录封存，点击读取原档' : allowed.length ? allowed.map(function (b) { return b.q20_date + ' — ' + b.q80_date; }).join(' / ') : '查看拟合与证据状态';
         item.appendChild(description);
-        var known = doc.createElement('small'); known.textContent = frame.first_visible_at ? '首次可见 ' + frame.first_visible_at : '首次可见时间未记录';
-        item.appendChild(known); el('terminal-history-list').appendChild(item);
+        if (frame.first_visible_at) {
+          var known = doc.createElement('small');
+          known.textContent = '首次可见 ' + frame.first_visible_at;
+          item.appendChild(known);
+        }
+        el('terminal-history-list').appendChild(item);
       });
       el('terminal-history-more').hidden = frames.length <= historyLimit;
     }

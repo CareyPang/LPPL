@@ -67,7 +67,7 @@
       draw: !hidden && !missingSampleCount,
       showDates: !hidden && !missingSampleCount,
       showShare: !hidden && !missingSampleCount,
-      message: hidden ? '证据未建立，不显示数值' : missingSampleCount ? '描述性样本数未记录，不显示数值' : '',
+      message: hidden ? '证据未建立，不显示数值' : missingSampleCount ? '当前数据不支持显示描述性数值' : '',
     };
   }
 
@@ -158,13 +158,13 @@
   }
 
   function exchangeFor(symbol) {
-    if (/^JP_/i.test(String(symbol || ''))) return '日本市场（交易所未记录）';
-    if (/^KR_/i.test(String(symbol || ''))) return '韩国市场（交易所未记录）';
-    if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return '美国市场（交易所未记录）';
+    if (/^JP_/i.test(String(symbol || ''))) return '日本市场';
+    if (/^KR_/i.test(String(symbol || ''))) return '韩国市场';
+    if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return '美国市场';
     var prefix = String(symbol || '').slice(0, 2).toLowerCase();
     return prefix === 'sh' ? '上海证券交易所'
       : prefix === 'sz' ? '深圳证券交易所'
-        : prefix === 'bj' ? '北京证券交易所' : '未记录';
+        : prefix === 'bj' ? '北京证券交易所' : '';
   }
 
   function inferStockSymbol(symbol) {
@@ -203,7 +203,7 @@
     symbol = /^(US_|JP_|KR_)/i.test(symbol) ? symbol.toUpperCase() : symbol.toLowerCase();
     var identity = result.sym || {};
     var market = raw.market || identity.market || (/^US_/.test(symbol) ? 'us' : /^JP_/.test(symbol) ? 'jp' : /^KR_/.test(symbol) ? 'kr' : 'cn');
-    var currency = raw.currency || identity.currency || ({ us: 'USD', jp: 'JPY', kr: 'KRW', cn: 'CNY' })[market] || '未记录';
+    var currency = raw.currency || identity.currency || ({ us: 'USD', jp: 'JPY', kr: 'KRW', cn: 'CNY' })[market] || '';
     var model = modelRecord(raw, result);
     return {
       assetType: 'index',
@@ -223,15 +223,15 @@
       evidence_levels: raw.evidence_levels || result.evidence_levels || {},
       modelVersion: model.modelVersion,
       predictionId: model.predictionId,
-      dataSource: raw.source || raw.price_history && raw.price_history.source || 'LPPL 已发布指数数据（底层源未记录）',
-      adjustment: raw.price_history && raw.price_history.adjustment || '未记录',
-      volumeUnit: raw.price_history && raw.price_history.volume_unit || '未记录',
-      tradingStatus: raw.trading_status || '未记录',
+      dataSource: raw.source || raw.price_history && raw.price_history.source || '',
+      adjustment: raw.price_history && raw.price_history.adjustment || '',
+      volumeUnit: raw.price_history && raw.price_history.volume_unit || '',
+      tradingStatus: raw.trading_status || '',
       quoteUnit: '指数点位',
       modelStatus: 'ok',
       priceNote: raw.price_history && raw.price_history.note || '',
       firstVisibleAt: raw.first_visible_at || null,
-      modelAdjustment: raw.price_history && raw.price_history.adjustment || '未记录',
+      modelAdjustment: raw.price_history && raw.price_history.adjustment || '',
       raw: raw,
     };
   }
@@ -273,17 +273,17 @@
       predictionId: model.predictionId,
       modelStatus: modelError ? 'error' : hasLatest ? 'ok' : 'missing',
       modelMessage: modelError ? String(modelError.message || modelError) : '',
-      dataSource: market.source || '未记录',
-      adjustment: market.adjustment || '未记录',
-      volumeUnit: market.volume_unit || '未记录',
-      tradingStatus: market.trading_status || '未记录',
+      dataSource: market.source || '',
+      adjustment: market.adjustment || '',
+      volumeUnit: market.volume_unit || '',
+      tradingStatus: market.trading_status || '',
       quoteUnit: isUS ? 'USD · 美元' : 'CNY · 元',
       currency: market.currency || raw.currency || (isUS ? 'USD' : 'CNY'),
       stale: market.stale === true,
       staleReason: market.stale_reason || '',
       freshness: market.asof_freshness || 'not_established',
       firstVisibleAt: raw.first_visible_at || null,
-      modelAdjustment: raw.price_history && raw.price_history.adjustment || raw.adjust || '未记录',
+      modelAdjustment: raw.price_history && raw.price_history.adjustment || raw.adjust || '',
       raw: raw,
     };
   }
@@ -294,21 +294,21 @@
       if (intraday && intraday.period === period && intraday.status === 'ready') {
         var limits = intraday.limits || {};
         return {
-          marketDate: '行情时间 ' + (limits.last || '未记录'),
-          dataSource: String(intraday.source || '未记录') + ' · ' + period + ' 分钟 · 不复权',
+          marketDate: limits.last ? '行情时间 ' + limits.last : '',
+          dataSource: [intraday.source, period + ' 分钟', '不复权'].filter(Boolean).join(' · '),
         };
       }
       if (intraday && intraday.period === period && intraday.status === 'error') {
-        return { marketDate: '行情时间 未记录', dataSource: '未记录' };
+        return { marketDate: '', dataSource: '' };
       }
       return { marketDate: '行情时间 读取中…', dataSource: '读取中' };
     }
-    var source = data.dataSource || '未记录';
-    var adjustment = data.adjustment || '未记录';
+    var source = data.dataSource || '';
+    var adjustment = data.adjustment || '';
     return {
-      marketDate: '行情日期 ' + (data.marketAsOf || '未记录'),
-      dataSource: source + ' · ' +
-        (data.assetType === 'stock' && adjustment === 'none' ? '未复权' : adjustment),
+      marketDate: data.marketAsOf ? '行情日期 ' + data.marketAsOf : '',
+      dataSource: [source, data.assetType === 'stock' && adjustment === 'none' ? '未复权' : adjustment]
+        .filter(Boolean).join(' · '),
     };
   }
 
@@ -323,10 +323,10 @@
       !!(research.cycles_1_5 && typeof research.cycles_1_5 === 'object');
     var top = selected === 'box' ? raw.top || data.top || {} : available ? research.cycles_1_5 : {};
     return Object.assign({}, data, { top: top, researchRule: selected, ruleAvailable: available,
-      ruleLabel: selected === 'box' ? '旧 box 对照（无完整周期门槛）' : '完整周期 ≥ 1.5 · 未来临界点候选',
-      ruleSource: selected === 'box' ? '使用后端封存的原 box 聚合结果。' : available
-        ? '使用后端封存的 box + ahead > 0 + 完整周期 ≥ 1.5 聚合；同一拟合池，未另做仅未来临界点拟合。'
-        : '该档案未封存完整周期 1.5 口径，当前不展示区间；可切换旧 box 对照。' });
+      ruleLabel: selected === 'box' ? 'box 口径' : '完整周期 ≥ 1.5 · 未来临界点候选',
+      ruleSource: selected === 'box' ? '使用已发布的 box 聚合结果。' : available
+        ? '区间来自同一拟合池，并按完整周期 ≥ 1.5 条件筛选。'
+        : '该截止日没有完整周期 1.5 口径的区间，可切换 box 口径。' });
   }
 
   function researchNote(data) {

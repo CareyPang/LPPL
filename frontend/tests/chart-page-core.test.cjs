@@ -120,7 +120,7 @@ test('descriptive bands without finite n are hidden from charts and values', () 
     draw: false,
     showDates: false,
     showShare: false,
-    message: '描述性样本数未记录，不显示数值',
+    message: '当前数据不支持显示描述性数值',
   });
   assert.equal(Core.bandEvidencePolicy('descriptive', { n: 5 }).draw, true);
   assert.equal(Core.bandEvidencePolicy('test', {}).draw, true);

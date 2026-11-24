@@ -78,7 +78,7 @@ async function checkHistoryReplay(page, width, symbol, current) {
     assert.ok(expected, 'Attached historical result must exist in the retained research ledger');
     assert.deepEqual(long.windows, expected.windows);
   } else {
-    assert.match(await page.locator('#long-horizon-card').innerText(), /本截止日尚未接入|截止日.*不匹配/);
+    assert.match(await page.locator('#long-horizon-card').innerText(), /本截止日没有长窗口研究结果|截止日.*不匹配/);
   }
   const count = data.bars.length;
   await page.locator('#terminal-show-future').check();
@@ -166,7 +166,7 @@ async function checkHistoryReplay(page, width, symbol, current) {
           }
           assert.equal(await page.evaluate(() => JSON.stringify(window.__qaData.top)), primary);
         }
-        assert.equal(await card.locator('summary', { hasText: '原网站 G3 对照' }).count(), 0);
+        assert.equal(await card.locator('summary', { hasText: 'G3 对照' }).count(), 0);
         const profile = card.locator('.lh-profile');
         assert.equal(await profile.count(), 1);
         await profile.locator(':scope > summary').click();

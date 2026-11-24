@@ -29,7 +29,7 @@ test('long-window data requires the exact supported asset and cutoff', () => {
 });
 test('missing long-window coverage is explicit and does not replace ordinary chart data', () => {
   const original={symbol:'US_IXIC',top:{signal_status:'no_cluster'},raw:{}};
-  assert.match(Long.study(original,{}).error,/27/);
+  assert.match(Long.study(original,{}).error,/没有长窗口研究结果/);
   assert.deepEqual(original,{symbol:'US_IXIC',top:{signal_status:'no_cluster'},raw:{}});
 });
 test('research 1.5 and old 2.5 render independently without changing the saved result', () => {
@@ -48,27 +48,27 @@ test('multiple seeds or same-family windows cannot become cross-scale confirmati
 });
 test('one candidate date is not advertised as a precise top forecast', () => {
   assert.equal(Long.dateRange(['2026-12-01','2026-12-01']),'候选落在同一交易日；未形成日期宽度');
-  assert.equal(Long.dateRange(['2026-12-02','2026-12-01']),'日期区间未记录');
-  assert.equal(Long.aheadRange([null,1]),'提前量未记录');
+  assert.equal(Long.dateRange(['2026-12-02','2026-12-01']),'');
+  assert.equal(Long.aheadRange([null,1]),'');
 });
 test('history excludes later cutoff snapshots and does not invent first publication time', () => {
   const p=fixture();p.stability.history=[{asof:'2026-11-13',windows:[]},{asof:'2026-11-27',windows:[]}];
   const output=Long.html(p,'cycles_1_5');
   assert.match(output,/2026-11-13/);assert.ok(!output.includes('2026-11-27'));
-  assert.match(output,/首次可见：未记录；本次查看不补造历史发布时间/);
+  assert.ok(!output.includes('首次可见：'));
 });
 test('pending and failed seeds remain explicit and zero counts are preserved', () => {
   const p=fixture();p.status='incomplete';p.counts={expected:12,completed:8,failed:1,pending:3};
   p.windows[0].seeds[0]={seed:11,status:'failed',optimizer_success:false};
   const output=Long.html(p,'cycles_1_5');
   assert.match(output,/8 \/ 12/);assert.match(output,/失败 1/);assert.match(output,/待完成 3/);
-  assert.match(output,/优化器收敛：否/);assert.match(output,/tc 相对截止日 未记录/);
+  assert.match(output,/优化器收敛：否/);assert.match(output,/tc 相对截止日 —/);
 });
 test('G3 comparison keeps original results separate and rejects a different cutoff', () => {
   const p=fixture();p.g3_comparison={asof:p.asof,windows:[{n:925,status:'complete',ahead:-54.57,m:.8,omega:7,B:-.003,box_pass:false,cycles_1_5_pass:false}]};
-  assert.match(Long.html(p,'cycles_1_5'),/原网站 G3 对照 · 旧 box 合格 0\/1/);
+  assert.match(Long.html(p,'cycles_1_5'),/G3 对照 · box 合格 0\/1/);
   assert.match(Long.html(p,'cycles_1_5'),/搜索域与预算不同/);
-  p.g3_comparison.asof='2026-11-13';assert.ok(!Long.html(p,'cycles_1_5').includes('原网站 G3 对照'));
+  p.g3_comparison.asof='2026-11-13';assert.ok(!Long.html(p,'cycles_1_5').includes('G3 对照'));
 });
 test('data-sourced text is escaped instead of becoming executable markup', () => {
   const p=fixture();p.source='<img src=x onerror=alert(1)>';p.limits=['<script>evil()</script>'];

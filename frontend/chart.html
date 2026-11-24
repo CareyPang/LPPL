@@ -153,7 +153,7 @@
             <button id="terminal-mode-diagnosis" type="button" aria-pressed="true">当前诊断</button>
             <button id="terminal-mode-replay" type="button" aria-pressed="false">历史回测</button>
           </div>
-          <div id="terminal-rule-field" hidden><label class="terminal-asset-field" for="terminal-rule"><span>筛选口径</span><select id="terminal-rule"><option value="cycles_1_5">完整周期 ≥ 1.5</option><option value="box">旧 box 对照</option></select></label></div>
+          <div id="terminal-rule-field" hidden><label class="terminal-asset-field" for="terminal-rule"><span>筛选口径</span><select id="terminal-rule"><option value="cycles_1_5">完整周期 ≥ 1.5</option><option value="box">box 口径</option></select></label></div>
           <p class="terminal-control-hint">同一标的，同一份证据</p>
         </div>
         <div id="terminal-replay-controls" class="terminal-replay-controls" hidden>
@@ -181,7 +181,7 @@
         <a id="latest-results-link" class="latest-results-link" href="" hidden>改看最新结果</a>
       </section>
 
-      <div class="module-status" aria-label="各模块读取状态" role="status"><span id="market-status">行情等待中</span><span id="model-status">模型等待中</span><span id="events-status">事件等待中</span></div>
+      <div class="module-status" aria-label="各模块读取状态" role="status"><span id="market-status">行情等待中</span><span id="model-status">模型等待中</span><span id="events-status" hidden>事件等待中</span></div>
       <section class="terminal-summary" aria-label="提醒与区间摘要">
         <div class="terminal-summary-state"><p class="terminal-label">提醒状态</p><p id="terminal-alert-status" class="terminal-summary-value">正在读取</p></div>
         <div class="terminal-summary-window"><p class="terminal-label"><span class="terminal-window-key" aria-hidden="true"></span>顶部时间区间</p><p id="terminal-alert-window" class="terminal-summary-value">—</p></div>
@@ -227,13 +227,13 @@
           <section class="meta-card" aria-labelledby="meta-title">
             <h2 id="meta-title">数据说明</h2>
             <dl>
-              <dt>数据来源</dt><dd id="data-source">未记录</dd>
-              <dt>模型版本</dt><dd id="model-version">未记录</dd>
-              <dt>Prediction ID</dt><dd id="prediction-id">未记录</dd>
-            <dt>成交量单位</dt><dd id="volume-unit">未记录</dd>
-            <dt>模型输入复权</dt><dd id="model-adjustment">未记录</dd>
-            <dt>首次可见</dt><dd id="first-visible">未记录</dd>
-            <dt>新鲜度</dt><dd id="stale-state">未记录</dd>
+              <dt hidden>数据来源</dt><dd id="data-source" hidden></dd>
+              <dt hidden>模型版本</dt><dd id="model-version" hidden></dd>
+              <dt hidden>Prediction ID</dt><dd id="prediction-id" hidden></dd>
+              <dt hidden>成交量单位</dt><dd id="volume-unit" hidden></dd>
+              <dt hidden>模型输入复权</dt><dd id="model-adjustment" hidden></dd>
+              <dt hidden>首次可见</dt><dd id="first-visible" hidden></dd>
+              <dt hidden>新鲜度</dt><dd id="stale-state" hidden></dd>
             </dl>
           </section>
         </aside>
@@ -258,7 +258,7 @@
         <p id="terminal-aftershock-note" class="evidence-note">等待当前标的的可追溯研究结果。</p>
         <div id="terminal-aftershock-evidence"></div>
       </section>
-      <section class="events-card" aria-labelledby="events-title">
+      <section id="events-card" class="events-card" aria-labelledby="events-title" hidden>
       <div class="events-heading"><h2 id="events-title">标的事件</h2><button id="events-retry" type="button">重新读取事件</button></div>
       <div id="event-list"></div><p id="events-note">事件独立读取，不阻塞行情。</p>
     </section>

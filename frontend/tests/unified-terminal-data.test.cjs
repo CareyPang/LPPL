@@ -45,8 +45,8 @@ test('published US candles retain missing OHLC and truthful units and source', (
   assert.equal(data.market, 'us');
   assert.equal(data.currency, 'USD');
   assert.equal(data.quoteUnit, 'USD · 美元');
-  assert.equal(data.exchange, '美国市场（交易所未记录）');
-  assert.equal(data.volumeUnit, '未记录');
+  assert.equal(data.exchange, '美国市场');
+  assert.equal(data.volumeUnit, '');
   assert.equal(data.adjustment, raw.adjust);
   assert.equal(data.modelAdjustment, raw.adjust);
   assert.equal(data.dataSource, raw.source);
@@ -70,7 +70,7 @@ test('missing US publication explains missingness without inventing an identity 
   for (const raw of [null, undefined]) {
     assert.throws(() => Reader.marketFromPublished(raw, 'US_ARM'), error => {
       assert.equal(error.pending, true);
-      assert.match(error.message, /尚未发布，或读取失败/);
+      assert.match(error.message, /当前没有可用的已发布日线/);
       assert.doesNotMatch(error.message, /身份/);
       return true;
     });

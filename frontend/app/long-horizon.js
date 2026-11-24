@@ -22,25 +22,25 @@
   function note(value) { return NOTES[value] || value || ''; }
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (s) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[s]; }); }
   function date(value) { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ''; }
-  function number(value, digits) { return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits == null ? 2 : digits) : '未记录'; }
-  function count(value) { return Number.isInteger(value) && value >= 0 ? String(value) : '未记录'; }
-  function family(value) { return value === 'long_900' ? '约 900 日窗口族' : value === 'ultra_6600' ? '约 6600 日窗口族' : '窗口族未记录'; }
+  function number(value, digits) { return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits == null ? 2 : digits) : '—'; }
+  function count(value) { return Number.isInteger(value) && value >= 0 ? String(value) : '—'; }
+  function family(value) { return value === 'long_900' ? '约 900 日窗口族' : value === 'ultra_6600' ? '约 6600 日窗口族' : ''; }
   function familyCount(value) { return Array.isArray(value) ? String(value.length) : count(value); }
-  function state(value) { return ({running:'计算中',complete:'本批计算完成',complete_with_data_gaps:'可计算部分完成，仍有历史数据缺口',incomplete:'部分结果未完成',pending:'待计算',failed:'失败',missing_archive:'原始档案缺失',unavailable:'原始档案未取得',not_available:'原始档案未取得',not_established:'尚未核实'})[value] || value || '未记录'; }
+  function state(value) { return ({running:'计算中',complete:'本批计算完成',complete_with_data_gaps:'可计算部分完成，仍有历史数据缺口',incomplete:'部分结果未完成',pending:'待计算',failed:'失败',missing_archive:'数据不可用',unavailable:'数据不可用',not_available:'数据不可用',not_established:'当前状态不可用'})[value] || '当前状态不可用'; }
   function missingArchive(row) { return /missing|unavailable|not_available|not_established/i.test(row.status || ''); }
   function dateRange(values) {
-    if (!Array.isArray(values) || values.length !== 2 || !date(values[0]) || !date(values[1]) || values[0] > values[1]) return '日期区间未记录';
+    if (!Array.isArray(values) || values.length !== 2 || !date(values[0]) || !date(values[1]) || values[0] > values[1]) return '';
     return values[0] === values[1] ? '候选落在同一交易日；未形成日期宽度' : values[0] + ' — ' + values[1];
   }
   function aheadRange(values) {
-    if (!Array.isArray(values) || values.length !== 2 || values.some(function (v) { return typeof v !== 'number' || !Number.isFinite(v); })) return '提前量未记录';
+    if (!Array.isArray(values) || values.length !== 2 || values.some(function (v) { return typeof v !== 'number' || !Number.isFinite(v); })) return '';
     return number(values[0]) + ' — ' + number(values[1]) + ' 个交易日';
   }
   function eligible(window, rule) { return !!(window.eligible && window.eligible[rule] === true); }
   function windowState(window, rule) {
     var seeds = window.seeds || [];
     if (window.data_reason && seeds.some(function (s) { return s.status === 'not_available'; })) return '真实历史不足此窗口';
-    if (seeds.some(function (s) { return missingArchive(s); })) return '原始档案未取得';
+    if (seeds.some(function (s) { return missingArchive(s); })) return '数据不可用';
     if (seeds.some(function (s) { return s.status === 'failed'; })) return '部分 seed 失败';
     if (!seeds.length || seeds.some(function (s) { return s.status !== 'complete'; })) return '计算尚未完成';
     return eligible(window, rule) ? '单窗研究候选' : '未形成该规则候选';
@@ -49,7 +49,7 @@
     var symbol = data && data.symbol || context.code;
     if (!ASSETS.has(symbol)) return { hidden: true };
     var raw = data && data.raw || {}, payload = raw.research && raw.research.long_horizon;
-    if (!payload) return { hidden: false, error: '本截止日尚未接入长窗口研究结果。原有 27 窗口分析仍可使用。' };
+    if (!payload) return { hidden: false, error: '本截止日没有长窗口研究结果。' };
     var cutoff = context.asof || data.modelAsOf || data.asof || raw.asof;
     if (payload.schema_version !== 'long_horizon_v1' || payload.symbol !== symbol || !date(payload.asof) || payload.asof !== cutoff) {
       return { hidden: false, error: '长窗口档案的资产或截止日不匹配，未显示其他日期的研究结果。' };
@@ -66,19 +66,21 @@
   function seedHtml(seed, rule) {
     var passed = seed.passes && seed.passes[rule] === true;
     return '<p><strong>seed ' + esc(seed.seed) + ' · ' + esc(state(seed.status)) + '</strong><br>' +
-      '本 seed 参数过滤：' + (passed ? '通过' : '未通过 / 尚未完成') + ' · 优化器收敛：' + (seed.optimizer_success === true ? '是' : seed.optimizer_success === false ? '否' : '未记录') + '<br>' +
-      'tc 相对截止日 ' + number(seed.tc_ahead) + ' 个交易日 · ' + esc(seed.boundary_status === 'INTERIOR' || seed.boundary_status === 'interior' ? '未触界' : seed.boundary_status ? '参数触界' : '边界状态未记录') + '<br>' +
+      '本 seed 参数过滤：' + (passed ? '通过' : '未通过 / 尚未完成') + ' · 优化器收敛：' + (seed.optimizer_success === true ? '是' : seed.optimizer_success === false ? '否' : '—') + '<br>' +
+      'tc 相对截止日 ' + number(seed.tc_ahead) + ' 个交易日 · ' + esc(seed.boundary_status === 'INTERIOR' || seed.boundary_status === 'interior' ? '未触界' : seed.boundary_status ? '参数触界' : '—') + '<br>' +
       'm ' + number(seed.m, 4) + ' · ω ' + number(seed.omega, 4) + ' · R² ' + number(seed.r2, 4) + '<br>' +
       '阻尼 ' + number(seed.damping, 3) + ' · 完整周期 ' + number(seed.full_cycles, 3) +
       ((seed.failed_gates || []).length ? '<br>未通过项：' + esc(seed.failed_gates.map(function (g) { return GATES[g] || g; }).join('、')) : '') + '</p>';
   }
   function windowHtml(window, rule) {
     var reasons = window.rejection_reasons && window.rejection_reasons[rule] || [];
+    var range = windowRange(window, rule), ahead = aheadRange(window.seed_ahead_range);
     return '<article class="lh-window"><h4>' + count(window.n) + ' 日<span>' + family(window.family) + '</span></h4>' +
       '<p class="lh-window-state">' + windowState(window, rule) + '</p>' +
       (window.data_reason ? '<p class="lh-note">' + esc(window.data_reason) + '</p>' : '') +
       (reasons.length ? '<p>' + esc(reasons.map(function (r) { return WINDOW_GATES[r] || r; }).join('；')) + '</p>' : '') +
-      '<p>' + esc(windowRange(window, rule)) + '</p><p>多 seed 提前量跨度：' + esc(aheadRange(window.seed_ahead_range)) + '</p>' +
+      (range ? '<p>' + esc(range) + '</p>' : '') +
+      (ahead ? '<p>多 seed 提前量跨度：' + esc(ahead) + '</p>' : '') +
       '<p>seed 差 ' + number(window.seed_gap_days, 3) + ' 个交易日</p>' +
       '<details><summary>查看 seed 与拟合参数</summary><div class="lh-seeds">' + (window.seeds || []).map(function (seed) { return seedHtml(seed, rule); }).join('') + '</div></details></article>';
   }
@@ -100,9 +102,9 @@
     return '<div class="lh-cross"><h3>真正跨尺度分组</h3>' + cross + '</div><div class="lh-families">' +
       ['long_900', 'ultra_6600'].map(function (key) {
         var f = families.find(function (item) { return item.family === key; });
-        return '<article class="lh-family"><h3>' + family(key) + '</h3><p>合格窗口：' + (f ? familyCount(f.qualified_windows) : '未记录') +
+        return '<article class="lh-family"><h3>' + family(key) + '</h3><p>合格窗口：' + (f ? familyCount(f.qualified_windows) : '—') +
           (f && Array.isArray(f.qualified_windows) && f.qualified_windows.length ? '（' + f.qualified_windows.map(count).join('、') + ' 日）' : '') + '</p><p>' +
-          esc(f ? dateRange(f.member_date_range) : '成员日期区间未记录') + '</p><small>相邻窗只算一个窗口族；成员日期跨度不是概率或置信区间。</small></article>';
+          esc(f ? dateRange(f.member_date_range) : '') + '</p><small>相邻窗只算一个窗口族；成员日期跨度不是概率或置信区间。</small></article>';
       }).join('') + '</div>';
   }
   function historyHtml(payload, rule) {
@@ -128,7 +130,7 @@
     var finished = rows.filter(function (w) { return w.status === 'complete'; });
     var box = finished.filter(function (w) { return w.box_pass === true; }).length;
     var cycles = finished.filter(function (w) { return w.cycles_1_5_pass === true; }).length;
-    return '<details class="lh-method"><summary>原网站 G3 对照 · 旧 box 合格 ' + box + '/' + finished.length + ' · 1.5 周期合格 ' + cycles + '/' + finished.length + '</summary>' +
+    return '<details class="lh-method"><summary>G3 对照 · box 合格 ' + box + '/' + finished.length + ' · 1.5 周期合格 ' + cycles + '/' + finished.length + '</summary>' +
       '<p class="lh-note">同一截止日、补齐这六个窗口。G3 允许样本内 tc；上方研究臂仅搜索未来 tc，搜索域与预算不同，不能把两臂视为等价拟合或用信号数量判优。</p><ul>' +
       rows.map(function (w) { return '<li>' + count(w.n) + '日 · ' + esc(w.status) + ' · tc 相对截止日 ' + number(w.ahead) + ' 交易日 · m ' + number(w.m,4) + ' · ω ' + number(w.omega,4) + ' · B ' + number(w.B,6) + '</li>'; }).join('') + '</ul></details>';
   }
@@ -162,10 +164,13 @@
       '<p class="lh-note">' + esc(definition || '仅切换后端已计算的独立过滤结果；主图的 27 个窗口与原尺度不变。') + '</p>' + ruleHtml(payload, rule) +
       '<div class="lh-windows">' + (payload.windows || []).filter(function (w) { return WINDOWS.has(w.n); }).map(function (w) { return windowHtml(w, rule); }).join('') + '</div>' +
       '<p class="lh-note">多 seed 的窄差仅表示优化结果接近，不是预测不确定性；成员日期跨度不是统计置信区间。</p>' + historyHtml(payload, rule) + g3Html(payload) + profileHtml(payload) +
-      '<details class="lh-method"><summary>数据与证据说明</summary><ul><li>来源：' + esc(note(source) || '未记录') + '</li><li>版本：' + esc(payload.model_version || '未记录') + '</li>' +
-      (payload.source && typeof payload.source === 'object' && payload.source.rows != null ? '<li>真实日线：' + count(payload.source.rows) + ' 日 · ' + esc(date(payload.source.first_date) || '起日未记录') + ' 至 ' + esc(payload.asof) + '</li>' : '') +
+      '<details class="lh-method"><summary>数据与证据说明</summary><ul>' +
+      (note(source) ? '<li>来源：' + esc(note(source)) + '</li>' : '') +
+      (payload.model_version ? '<li>版本：' + esc(payload.model_version) + '</li>' : '') +
+      (payload.source && typeof payload.source === 'object' && payload.source.rows != null ? '<li>真实日线：' + count(payload.source.rows) + ' 日' + (date(payload.source.first_date) ? ' · 起日 ' + esc(date(payload.source.first_date)) : '') + ' · 截至 ' + esc(payload.asof) + '</li>' : '') +
       (qualityText ? '<li>来源差异（未裁定）：' + esc(date(quality.affected_date)) + ' · Naver 收盘 ' + number(quality.observed_naver_close,4) + ' · Yahoo 收盘 ' + number(quality.observed_yahoo_close,4) + ' · 本研究当前源原值 ' + number(quality.current_source_close,4) + '。未将另一来源值拼接或替换进本序列。</li>' : '') +
-      '<li>首次可见：' + esc(payload.first_visible_at || '未记录；本次查看不补造历史发布时间') + '</li><li>交易日历：' + esc(calendarText || '未记录') + '</li>' +
+      (payload.first_visible_at ? '<li>首次可见：' + esc(payload.first_visible_at) + '</li>' : '') +
+      (calendarText ? '<li>交易日历：' + esc(calendarText) + '</li>' : '') +
       (payload.limits || []).map(function (text) { return '<li>' + esc(note(text)) + '</li>'; }).join('') + '</ul></details>';
   }
   function attach(options) {

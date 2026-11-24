@@ -28,25 +28,25 @@
   }
   function marketFromPublished(raw, code) {
     raw = raw && (raw.raw || raw);
-    if (raw == null) throw missing('尚未读到该标的的已发布日线（可能尚未发布，或读取失败）；未发起新计算。');
+    if (raw == null) throw missing('该标的当前没有可用的已发布日线。');
     if (!/^(US_[A-Z.]{1,6}|JP_N225|KR_KOSPI|KR_KOSDAQ)$/i.test(String(code || '')) ||
         String(raw.symbol || '').toUpperCase() !== String(code).toUpperCase()) {
       throw new Error('已发布行情的资产身份与请求不匹配，已停止显示。');
     }
     var bars = barsFrom(raw);
     if (raw.asof) bars = cutoffBars(bars, raw.asof);
-    if (!bars.length) throw missing('该标的尚无已发布的日线；未发起新计算。');
+    if (!bars.length) throw missing('该标的当前没有可用的已发布日线。');
     var ph = raw.price_history || {};
     var market = raw.market || (/^JP_/i.test(code) ? 'jp' : /^KR_/i.test(code) ? 'kr' : 'us');
     return {
       symbol: String(code).toUpperCase(), name: raw.name || String(code).toUpperCase(),
       market: market, timezone: raw.timezone || '',
       price: bars, asof: bars[bars.length - 1].date,
-      source: ph.source || raw.source || '已发布日线（底层源未记录）',
-      adjustment: ph.adjustment || raw.adjust || '未记录',
-      volume_unit: ph.volume_unit || '未记录', currency: raw.currency || ({ us: 'USD', jp: 'JPY', kr: 'KRW' })[market] || '未记录',
-      exchange: raw.exchange || ({ us: '美国', jp: '日本', kr: '韩国' })[market] + '市场（交易所未记录）',
-      trading_status: raw.trading_status || '未记录', future_calendar: raw.future_calendar || null,
+      source: ph.source || raw.source || '',
+      adjustment: ph.adjustment || raw.adjust || '',
+      volume_unit: ph.volume_unit || '', currency: raw.currency || ({ us: 'USD', jp: 'JPY', kr: 'KRW' })[market] || '',
+      exchange: raw.exchange || (({ us: '美国', jp: '日本', kr: '韩国' })[market] || '') + (({ us: '美国', jp: '日本', kr: '韩国' })[market] ? '市场' : ''),
+      trading_status: raw.trading_status || '', future_calendar: raw.future_calendar || null,
       asof_freshness: raw.asof_freshness || 'not_established', stale: raw.stale === true,
       stale_reason: raw.stale_reason || '', published_asof: raw.asof || null,
       data_version: raw.data_version || null, price_note: '已发布复权日线；并非实时成交价。',
@@ -186,7 +186,7 @@
             var knownAt = row.published_at || row.announced_at || row.notice_date || null;
             if (asof && (!knownAt || String(knownAt).slice(0, 10) > asof)) { excluded++; return null; }
             return { id: definition[0] + ':' + row[definition[1]] + ':' + i, date: row[definition[1]],
-              label: definition[2], knownAt: knownAt, source: row.source || payload.source || '未记录' };
+              label: definition[2], knownAt: knownAt, source: row.source || payload.source || '' };
           }).filter(Boolean);
       });
     return { rows: rows, excluded: excluded };

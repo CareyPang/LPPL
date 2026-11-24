@@ -851,7 +851,7 @@
           renderHistoryBanner();
         }
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
-        $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; visibility?.observe(null, null); showMarket(null, next.code, false);
+        $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; $('first-visible-note').hidden = true; visibility?.observe(null, null); showMarket(null, next.code, false);
         options.onCodeChange?.(next.code);
       }
       $('market-panel').hidden = false; $('task-stages').hidden = false;
@@ -868,7 +868,6 @@
         lastCurrent = next.current; lastHistory = history;
         rebuildFcoOverlay();
         options.renderResult(next.current, history, next.market);
-        $('first-visible-note').textContent = '尚未记录此结果在本浏览器的可见时间。';
         visibility?.observe($('summary').querySelector('.top') || $('risk'), next.current);
         if (next.history && !history) $('history-note').textContent =
           '已有历史回放与当前模型版本尚未匹配，可重新生成；当前分析仍可查看。';

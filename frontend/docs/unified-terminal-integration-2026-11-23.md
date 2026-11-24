@@ -9,7 +9,6 @@
 | 对象 | 固定基线 | 用途 |
 | --- | --- | --- |
 | 主线 | `1e7b0b4bb1d7024a49864d4876b1e717b68e47fd` | 已有页面、图表、数据适配器和研究结果契约 |
-| 原型归档 | `727ae9fbab5b01159328e59d3b9c64bf6ec5534d`，`od/unified-terminal` | `frontend/docs/open-design-unified-terminal-prototype.zip`，仅含 HTML 和补丁建议 |
 | 实施分支 | `od/unified-terminal-integration-20261123` | 首页入口、统一详情控件、历史回放和美股只读兼容 |
 
 原型 ZIP 在上述提交中已经上传，不等于页面已经接入线上。本轮没有复制原型中生成示意 OHLC、成交量、`well_F`、三定律数值或仓位建议的代码。没有重跑 LPPLS，也没有改变参数、完整周期门槛、拟合器、聚类或评分规则；生产结果原有的 box/standard 等口径继续按字段与标签显示，不能统称为完整周期 1.5 的实验结果。
@@ -115,22 +114,6 @@ result.raw.cooling_state.dashboard.dimensions[id = "omori"]
 
 本地初轮曾出现两个与本轮逻辑无关的失败：`market.html` 的 LF 专用正则和 vendor bundle 的字节 SHA 校验。两文件与 HEAD 的差异仅为 Windows CRLF；恢复 HEAD 精确字节后对应测试通过，未产生源码 Git diff。没有放宽测试或修改 manifest 掩盖失败。
 
-### 页面前后对照
-
-截图目录：`frontend/docs/unified-terminal-evidence/`。图片证明特定浏览器、视口、数据与操作状态，不代替功能测试或金融结论。
-
-| 路径 | 改前 | 改后 | 阅读说明 |
-| --- | --- | --- | --- |
-| 首页 | [home-before.png](unified-terminal-evidence/home-before.png) | [home-after-1440.png](unified-terminal-evidence/home-after-1440.png) | 保留指数卡片和分组，改变详情入口 |
-| 指数详情 | [detail-before.png](unified-terminal-evidence/detail-before.png) | [detail-after-1440.png](unified-terminal-evidence/detail-after-1440.png) | 统一图表、候选区间摘要、尺度和证据 |
-| 相同历史截止日 | [replay-before.png](unified-terminal-evidence/replay-before.png) | [replay-static-after-1440.png](unified-terminal-evidence/replay-static-after-1440.png) | 两张均以 2015-06-12 为截止日比较布局，不能把不同历史片段当成效果提升 |
-| 额外动态回放 | — | [replay-after-1440.png](unified-terminal-evidence/replay-after-1440.png) | 2026-06-26 的回放交互，和上面的静态对照分开 |
-| 390px | — | [详情](unified-terminal-evidence/detail-after-390.png)、[回放](unified-terminal-evidence/replay-after-390.png) | 控件换行、证据抽屉及图表空间 |
-
-![桌面统一详情](unified-terminal-evidence/detail-after-1440.png)
-
-![390px 统一详情](unified-terminal-evidence/detail-after-390.png)
-
 ## 6. 交给 Devin 的后续接口任务
 
 本轮复用已有图表工具。Devin 不需要重做 Lightweight Charts、重新写一套绘图工具，也不应另起数据读取层覆盖 `lppl-data.js`。
@@ -159,4 +142,4 @@ result.raw.cooling_state.dashboard.dimensions[id = "omori"]
 - [x] 所有截图路径与最终文件对应；首页前后截图像素一致，仅入口改变。
 - 提交方式：Draft PR；描述中列出代码归属、数据缺口和验收范围。不合并、部署或发布。
 
-本机交互预览：使用只读同源代理连接 Pages 公开结果和 Worker GET 接口，避免本机跨域限制；只绑定 127.0.0.1，不是部署。首页实时 quote 在本次预览返回 403，已有日终卡片继续可用；茅台 market 接口返回 200，二者不可混为全部实时行情已验收。截图对照入口：[网页版对照](unified-terminal-comparison.html)。
+本机交互预览：使用只读同源代理连接 Pages 公开结果和 Worker GET 接口，避免本机跨域限制；只绑定 127.0.0.1，不是部署。首页实时 quote 在本次预览返回 403，已有日终卡片继续可用；茅台 market 接口返回 200，二者不可混为全部实时行情已验收。

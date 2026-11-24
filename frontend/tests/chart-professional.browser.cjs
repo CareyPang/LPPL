@@ -203,7 +203,7 @@ const server = http.createServer((req, res) => {
     await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');
     assert.equal(await page.locator('#chart-page').getAttribute('data-model-as-of'), '2025-08-11');
     assert.ok((await page.locator('#chart-page').getAttribute('data-last-bar-date')) <= '2025-08-11');
-    assert.match(await page.locator('#asof-notice').innerText(), /修订时点未记录/);
+    assert.match(await page.locator('#asof-notice').innerText(), /历史重放不等同于当时发布/);
     pass('exact published history frame fallback clips market bars and labels revision limits');
     await page.goto(origin + '/chart.html?code=sh000001&asof=2026-06-26');
     await page.locator('#error-panel').waitFor({ state:'visible' });

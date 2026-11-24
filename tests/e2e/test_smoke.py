@@ -523,6 +523,40 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_market_stale_banner_summary_expands_on_mobile(page: Page) -> None:
+    stale_fixture = (
+        Path(__file__).resolve().parents[2]
+        / "web"
+        / "mock"
+        / "data"
+        / "market"
+        / "market_latest.json"
+    )
+    page.route(
+        "**/lab/mock/data/market/market_latest.json",
+        lambda route: route.fulfill(path=str(stale_fixture)),
+    )
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{BASE_URL}/market.html")
+
+    banner = page.locator("#stale-banner")
+    expect(banner).to_be_visible()
+    summary = banner.locator("summary")
+    dimensions = summary.evaluate(
+        """el => {
+          const style = getComputedStyle(el);
+          const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4;
+          return { height: el.getBoundingClientRect().height, lineHeight };
+        }"""
+    )
+    assert dimensions["height"] <= dimensions["lineHeight"] * 2 + 1, dimensions
+    assert banner.locator("details").evaluate("(el) => !el.open")
+    expect(banner.locator("details > div")).to_be_hidden()
+    summary.click()
+    assert banner.locator("details").evaluate("(el) => el.open")
+    expect(banner.locator("details > div")).to_be_visible()
+
+
 def test_flow_7_mortgage_calculator_shows_monthly_payment(page: Page) -> None:
     page.goto(f"{BASE_URL}/tools.html")
     page.locator('[data-tool="loan"]').click()

@@ -443,11 +443,11 @@ function thumbs(S){
 /* ---------- 证据现状 ---------- */
 function evidence(sym){
  LPPL.load(sym).then(D=>{
-  const V=D.raw.validation||[],lv=D.raw.evidence_levels||{};
+  const V=D.raw.validation||[];
   $('ver').textContent='数据版本 '+(D.raw.data_version||'—')+' · 模型 '+(D.raw.model_version||'—');
   if(!V.length){$('evi').innerHTML='<p class="evnote" style="margin:0">验证结果未发布。</p>';return}
   $('evi').innerHTML=V.map(v=>{const pass=v.status==='dev',lab=pass?'开发段 · 有信号':'未通过';
-   const statusLabel=lv[v.status]||(window.CPEvidenceBadge?window.CPEvidenceBadge.meta(v.status).label:'观测态');
+   const statusLabel=window.CPEvidenceBadge?window.CPEvidenceBadge.meta(v.status).label:'观测态';
    return `<div class="ev"><span class="st ${pass?'ok':'no'}">${pass?'●':'○'} ${lab}</span><h3>${E(v.split)}</h3><div class="n">事件样本 n=${E(v.events??'—')}</div><p>${E(statusLabel)}</p></div>`}).join('');
  }).catch(()=>{$('evi').innerHTML='<p class="evnote" style="margin:0">验证结果未加载。</p>'});
 }

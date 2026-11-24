@@ -98,8 +98,8 @@ test('unknown, rule and failure evidence is fail-closed; descriptive needs posit
 test('metadata reports unknown units and model adjustment instead of inferring from note', () => {
   const data = Core.assembleStockData('600519', { symbol: 'sh600519', price_history: { note: 'daily' } },
     { price: [{ date: '2026-06-26', close: 10 }] });
-  assert.equal(data.modelAdjustment, '未记录'); assert.equal(data.volumeUnit, '未记录');
-  assert.equal(data.quoteUnit, 'CNY · 元'); assert.equal(data.tradingStatus, '未记录');
+  assert.equal(data.modelAdjustment, ''); assert.equal(data.volumeUnit, '');
+  assert.equal(data.quoteUnit, 'CNY · 元'); assert.equal(data.tradingStatus, '');
 });
 test('a mismatched model cannot relabel market bars and a mismatched quote is rejected', () => {
   const market = { symbol: 'sh600519', price: [{ date: '2026-06-26', close: 10 }] };
