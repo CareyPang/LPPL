@@ -10,7 +10,7 @@
     dev:         { label: '开发段验证', tone: 'info', tip: '开发段通过，仍处于样本外持续观察阶段。' },
     dev_only:    { label: '开发段观测', tone: 'info', tip: '仅在开发段完成回测，尚未进入独立测试段定论。' },
     candidate:   { label: '研究候选',   tone: 'info', tip: '按统一 LPPLS 拟合口径生成的个股研究观测值。' },
-    descriptive: { label: '历史统计',   tone: 'mute', tip: '基于历史同类样本的经验分位统计，供结构参照。' },
+    descriptive: { label: '描述统计',   tone: 'mute', tip: '基于历史同类样本的经验分位统计，供结构参照。' },
     dev_failed:  { label: '未过样本外', tone: 'warn', tip: '开发/测试段未通过预设统计阈值，保留观测值供复盘对照。' },
     fail:        { label: '未过样本外', tone: 'warn', tip: '该规则在测试段未通过统计检验，保留原样数据供复盘。' },
     none:        { label: '观测态',     tone: 'mute', tip: '暂无独立样本外结论，仅呈现客观物理拟合结构。' },
@@ -79,6 +79,9 @@
       const detail = el.getAttribute('data-evidence-detail');
       const label = el.getAttribute('data-evidence-label');
       el.innerHTML = renderHtml(lvl, { n: n ? Number(n) : null, detail: detail || '', label: label || '' });
+    });
+    document.querySelectorAll('.ev[data-evidence-level], .ev-pill[data-evidence-level]').forEach(function (el) {
+      el.textContent = META[norm(el.getAttribute('data-evidence-level'))].label;
     });
     document.addEventListener('click', function (ev) {
       const badge = ev.target && ev.target.closest ? ev.target.closest('.cp-evb') : null;
