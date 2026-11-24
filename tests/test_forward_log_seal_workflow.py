@@ -58,14 +58,19 @@ def test_runs_daily_update_then_seals_only_forward_log():
     assert 'git config user.name' in TXT and 'git config user.email' in TXT, "rebase 需要提交者身份"
 
 
-def test_guard_discards_non_today_asof():
+def test_guard_checks_deadline_and_discards_multiple_asofs():
     i = TXT.index("Guard")
     j = TXT.index("Commit forward_log to main")
     guard = TXT[i:j]
-    assert "Asia/Shanghai" in guard and 'git checkout -- forward_log/' in guard and "git clean -fdq forward_log/" in guard
+    assert "Asia/Shanghai" in guard
+    assert 'guard --asof "$new_asofs"' in guard
+    assert "if [[ ${#asof_values[@]} -gt 1 ]]" in guard
+    assert 'echo "::warning::$guard_output; discarding' in guard
+    assert 'git checkout -- forward_log/' in guard and "git clean -fdq forward_log/" in guard
     assert i < j, "守卫必须在提交之前"
 
 
 def test_no_backfill_flags():
-    assert "--asof" not in TXT, "封存只取当日 as-of，不得回填历史日期"
+    assert 'guard --asof "$new_asofs"' in TXT
+    assert "forward_log seal --asof" not in TXT, "seal 仍从最新契约读取 as-of"
     assert "--frozen" not in TXT
