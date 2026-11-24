@@ -82,7 +82,9 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.match(home, /id="radar-sort"/);
   assert.match(idx, /app\/bottom-action\.js/);
   assert.match(idx, /id="action-verdict"/);
-  assert.match(idx, /class="act-steps"/);
+  assert.match(idx, /LPPLDecisionPanel\.mount/);
+  assert.match(idx, /LPPLDecisionState\.build/);
+  assert.doesNotMatch(idx, /class="act-steps"/);
   assert.match(idx, /class="tk-tag"/);
   assert.match(bt, /id="ov-strip"/);
   assert.match(bt, /data-ledger-mode="bottom"/);
@@ -96,6 +98,33 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.match(stock, /app\/alert-ledger\.js/);
   assert.match(stock, /id="stock-fco-toggle"/);
   assert.match(stock, /id="stock-action-card"/);
+});
+
+test('missing bottom score stays missing, while zero and shock risk remain distinct', () => {
+  for (const score of [null, undefined, '']) {
+    const missing = BottomAction.evaluate({ sym: 'sh000001', score });
+    assert.equal(missing.score, null);
+    assert.equal(missing.tier, 'unavailable');
+    assert.equal(missing.canBuy, false);
+  }
+  assert.equal(BottomAction.evaluate({ score: 0 }).tier, 'neutral');
+  const risk = BottomAction.evaluate({ score: 0, omoriRed: true });
+  assert.equal(risk.score, 0);
+  assert.equal(risk.tier, 'left_wait');
+  assert.equal(risk.canBuy, false);
+});
+
+test('published decision compatibility preserves stale date and never invents a position', () => {
+  const view = { top: { status: 'none' }, bottom: { score: 51, asof: '2026-11-20', stale: true },
+    conclusion: { status: 'stale_watch', tone: 'amber', title: '评分待更新', detail: '旧档', next: '核对更新' } };
+  const action = BottomAction.fromDecision(view);
+  assert.equal(action.score, 51);
+  assert.equal(action.scoreAsOf, '2026-11-20');
+  assert.equal(action.scoreStale, true);
+  assert.equal(action.canBuy, false);
+  assert.equal(action.targetPct, null);
+  assert.equal(action.positionLabel, view.conclusion.title);
+  assert.equal(action.canBuyLabel, view.conclusion.next);
 });
 
 test('alert-ledger detects locked non-drifting top cluster vs drifting cluster with median_date', () => {

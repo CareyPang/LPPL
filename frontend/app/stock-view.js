@@ -149,17 +149,15 @@
       fcoByDate = new Map();
       renderAsofConvergence();
       if (!allPrices.length) return;
-      // 1) 个股严格 PIT 底部出清绿柱（无前瞻）
-      if (root.BottomAction && typeof root.BottomAction.evaluateStockSeries === 'function') {
-        const evalRes = root.BottomAction.evaluateStockSeries(allPrices, { code: lastCode || shownMarketCode });
-        for (const item of evalRes.series || []) {
-          if (item.bottomIntensity > 0) {
-            fcoByDate.set(item.date, { top: 0, bottom: item.bottomIntensity, locked: false });
-          }
+      // 1) Only published bottom observations; no competing client-side score.
+      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
+      for (const frame of frames) {
+        const intensity = frame?.fco_neg_intensity;
+        if (frame?.asof && typeof intensity === 'number' && Number.isFinite(intensity) && intensity > 0 && intensity <= 1) {
+          fcoByDate.set(frame.asof, { top: 0, bottom: intensity, locked: false });
         }
       }
       // 2) 若有历史回放帧，叠加顶部 FCO 红柱并做连续 as-of 不漂移锁定标记
-      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
       if (frames.length) {
         const eps = root.CPAlertLedger ? root.CPAlertLedger.episodes(frames, lastHistory?.tops || [], '6-12m') : [];
         const lockedRanges = eps
@@ -554,6 +552,7 @@
       const end = cutoffIndex + 1;
       setWindow(Math.max(0, end - span), end, end - 1);
       writeQueryParam('asof', frame.asof);
+      options.onHistoryChange?.(frame);
       if (eventDate && eventDate <= frame.asof) focusDate(eventDate, eventId);
       return { ok: true };
     }
@@ -570,6 +569,7 @@
       historyCutoffIndex = -1;
       renderHistoryBanner();
       writeQueryParam('asof', null);
+      options.onHistoryChange?.(null);
       updateScenario(state || {});
       updateMarketDate(state?.market, state?.current, state?.code, state?.marketStatus);
       const end = allPrices.length;

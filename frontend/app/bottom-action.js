@@ -20,6 +20,7 @@
   };
 
   function toNum(v, fallback) {
+    if (v == null || v === '' || typeof v === 'boolean') return fallback;
     const n = Number(v);
     return Number.isFinite(n) ? n : fallback;
   }
@@ -39,8 +40,8 @@
     const sym = String(cfg.sym || '').toLowerCase();
     const prof = INDEX_PROFILE[sym] || { kind: 'broad', etf: '对应宽基 ETF', elastic: false };
     const hasTop = Boolean(cfg.hasTop);
-    const rawScore = toNum(cfg.score, 0);
-    const score = rawScore > 0 && rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
+    const rawScore = toNum(cfg.score, null);
+    const score = rawScore == null ? null : rawScore > 0 && rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
     const f = cfg.factors || {};
     const stab = toNum(f.stabilize, 0);
     const right = toNum(f.right_side, 0);
@@ -74,7 +75,14 @@
       };
     }
 
-    if (score < 20) {
+    if (score == null && !cfg.omoriRed) {
+      return { tier: 'unavailable', tone: 'gray', glyph: '—', positionLabel: '底部条件未覆盖',
+        canBuy: false, canBuyLabel: '等待已发布评分', targetPct: null, positionText: '评分未提供',
+        shortBadge: '评分未覆盖', stepIndex: 0, vehicle: '可以继续查看已有行情和顶部区间。',
+        reason: '当前结果没有提供底部条件分，未用零分替代。', score: null, dd52, win50, mdd50 };
+    }
+
+    if (score != null && score < 20 && !cfg.omoriRed) {
       return {
         tier: 'neutral',
         tone: 'gray',
@@ -164,6 +172,26 @@
     };
   }
 
+  /** Compatibility shape for existing cards; all decisions come from one published view. */
+  function fromDecision(view) {
+    if (!view || !view.conclusion) return null;
+    const c = view.conclusion, b = view.bottom || {}, top = view.top || {};
+    const tier = c.status === 'top_watch' ? 'top_risk'
+      : c.status === 'bottom_probe' || c.status === 'right_confirm' ? c.status
+        : c.status === 'neutral' ? 'neutral'
+          : ['model_pending', 'unavailable', 'incomplete'].includes(c.status) ? 'unavailable' : 'left_wait';
+    const toneMap = { risk: 'red', danger: 'red', warning: 'amber', warn: 'amber', success: 'green',
+      teal: 'green', positive: 'green', muted: 'gray', neutral: 'gray' };
+    const tone = toneMap[c.tone] || c.tone || 'gray';
+    const glyph = ({ red: '🔴', amber: '🟡', green: '🟢', emerald: '🟢', blue: '🔵', gray: '⚪' })[tone] || '•';
+    return { tier, tone, glyph, score: b.score == null ? null : b.score,
+      scoreAsOf: b.asof || '', scoreStale: !!b.stale,
+      positionLabel: c.title, positionText: b.stale ? '底分待更新' : top.status === 'active' ? '查看时间区间' : '',
+      canBuy: c.status === 'bottom_probe' || c.status === 'right_confirm', canBuyLabel: c.next || c.detail || '',
+      shortBadge: c.title, targetPct: null, stepIndex: 0, vehicle: c.next || '', reason: c.detail || '',
+      decisionStatus: c.status };
+  }
+
   /** 从 *_history.json 直接提取最新一帧并评估 */
   function fromHistory(sym, hist, opts) {
     const frames = (hist && Array.isArray(hist.frames)) ? hist.frames : [];
@@ -174,7 +202,7 @@
     return evaluate({
       sym,
       hasTop,
-      score: last.fco_neg_intensity || 0,
+      score: last.fco_neg_intensity != null ? last.fco_neg_intensity : null,
       factors: last.bottom_factors || null,
       summary: hist.bottom_summary || null,
       omoriRed: Boolean(opts && opts.omoriRed),
@@ -187,7 +215,7 @@
     return evaluate({
       sym: item.sym,
       hasTop: Boolean((opts && opts.hasTop) || item.has_top),
-      score: item.bottom_score != null ? item.bottom_score : (item.fco_neg_intensity || 0),
+      score: item.bottom_score != null ? item.bottom_score : (item.fco_neg_intensity != null ? item.fco_neg_intensity : null),
       factors: item.bottom_factors || null,
       summary: item.bottom_summary || null,
       omoriRed: Boolean(opts && opts.omoriRed),
@@ -465,6 +493,7 @@
 
   return {
     evaluate,
+    fromDecision,
     fromHistory,
     fromOverviewItem,
     boardIndexForStock,

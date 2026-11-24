@@ -63,7 +63,10 @@ test('index terminal exposes independent FCO toggle, backtest CTA, and puts cool
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.match(html, /data-k="fco"[^>]*>.*FCO 红\/绿柱/);
   assert.match(html, /id="bt-cta"[^>]*href="backtest\.html"/);
-  assert.match(html, /A 股多维底部综合指数/);
+  assert.match(html, /id="legacy-decision-panel"[^>]*aria-label="统一诊断与底部条件"/);
+  assert.match(html, /LPPLDecisionPanel\.mount\(\$\('legacy-decision-panel'\)/);
+  assert.match(html, /decisionPanel\.render\(R\.decision\)/);
+  assert.doesNotMatch(html, /历史实证胜率|30%\s*\/\s*30%\s*\/\s*40%/);
   const verdictIdx = html.indexOf('id="vh"');
   const coolingIdx = html.indexOf('相态与冷却期检查');
   const scalesIdx = html.indexOf('六尺度情景区间');

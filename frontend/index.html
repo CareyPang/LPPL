@@ -12,6 +12,7 @@
 <meta property="og:title" content="临界点 · 终端">
 <meta property="og:description" content="七大 A 股指数日线、LPPLS 情景区间与证据状态，可按截止日回放。只给区间，不给目标价。">
 <meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="app/decision-panel.css">
 <style>
 /* OD-LAYOUT-PRIMITIVES v1 — structure only */
 @layer od-layout {
@@ -310,6 +311,14 @@ footer p { margin: 0; max-width: 110ch; }
   .tl input[type=range] { flex-basis: 100%; order: 9; }
   .legend { font-size: 11px; }
 }
+.legacy-decision-panel { padding: 24px; scroll-margin-top: 112px; }
+.vh[data-tone="red"] { color: #b52d43; }
+.vh[data-tone="amber"] { color: #925909; }
+.vh[data-tone="green"] { color: #087e65; }
+.legacy-raw-observations summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 14px; }
+.decision-jump { display: inline-flex; align-items: center; min-height: 44px; color: var(--real); font-size: 14px; }
+@media (min-width: 1101px) { .side { max-height: 790px; overflow: auto; overscroll-behavior: contain; } }
+@media (max-width: 520px) { .legacy-decision-panel { padding: 12px; } }
 </style>
 </head>
 <body>
@@ -429,6 +438,7 @@ footer p { margin: 0; max-width: 110ch; }
   </aside>
 
   <section class="bottom" aria-label="回放与参数" data-ai-context="回放与参数">
+    <div id="legacy-decision-panel" class="legacy-decision-panel" aria-label="统一诊断与底部条件"></div>
     <div class="tabs" role="tablist" aria-label="底部面板" id="btabs">
       <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="true" aria-controls="p-replay">回放</button>
       <button type="button" role="tab" id="bt-1" data-p="p-expert" aria-selected="false" aria-controls="p-expert" tabindex="-1">六尺度参数</button>
@@ -454,6 +464,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 <script src="app/ui.js"></script>
 <script src="app/lppl-data.js"></script>
 <script src="app/scen-style.js"></script>
+<script src="app/chart-page-core.js"></script>
+<script src="app/decision-state.js"></script>
+<script src="app/decision-panel.js"></script>
 <script src="app/bottom-action.js"></script>
 <script src="app/alert-ledger.js"></script>
 <script src="app/watchlist.js"></script>
@@ -538,6 +551,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     onProg && onProg('读取后端数据', 0.5);
     const D = await LPPL.load(code, asof), R = toView(D);
     const H = await LPPL.history(D.sym.sym).catch(() => null);
+    R.historyData = H;
     R.hist = H ? histView(H, R) : null;
     return R;
   }
@@ -1294,8 +1308,36 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     renderScaleBar();
     if (hadFocus) $('phs').querySelector('button[role="radio"][data-scale="' + scale + '"]')?.focus();
     renderKeyLocations(cur);
+    renderUnifiedDecision(cur);
+    renderPlan();
     CH.selectScale(scale);
     tryUrl(cur);
+  }
+
+  let decisionPanel = null;
+  function decisionFor(R) {
+    const Core = window.LPPLChartPageCore;
+    const data = Core.withRule(Core.assembleIndexData(R.sym.code, {
+      raw: R.J, top: R.top, bars: R.bars, asof: R.asof, name: R.sym.label,
+      sym: { sym: R.sym.code, market: 'cn' },
+    }), 'box');
+    return window.LPPLDecisionState.build({ data, history: R.historyData,
+      context: { code: R.sym.code, assetType: 'index', market: 'cn',
+        asof: R.latest ? '' : R.asof, scale: selectedScale, rule: 'box' } });
+  }
+  function renderUnifiedDecision(R) {
+    R.decision = decisionFor(R);
+    const c = R.decision.conclusion, ev = R.decision.evidence;
+    $('vh').textContent = c.title;
+    $('vh').className = 'vh';
+    $('vh').dataset.tone = c.tone;
+    $('vs').innerHTML = `<span>${E(c.detail)}</span><div class="act-box" id="action-verdict" data-tone="${E(c.tone)}"><b>下一步</b><p>${E(c.next)}</p></div>` +
+      (window.CPEvidenceBadge ? window.CPEvidenceBadge.html(ev.code, { label: ev.label, detail: ev.detail }) : '');
+    appendEvidenceHelp($('vs'));
+    if (!decisionPanel && window.LPPLDecisionPanel) {
+      decisionPanel = window.LPPLDecisionPanel.mount($('legacy-decision-panel'), { document, badge: window.CPEvidenceBadge });
+    }
+    if (decisionPanel) decisionPanel.render(R.decision);
   }
 
   function render(R) {
@@ -1329,68 +1371,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         : latestClosed ? '最新交易日 ' + R.asof : `当前可用分析截至 ${R.asof}（落后 ${lag} 个交易日）`
       : '截止日 ' + R.asof) + ' · 日波动 ' + U.pct(rm.sigma, 2);
 
-    // 结论（直接用大白话回答：有没有泡沫 + 能不能抄底）
-    const t = R.top, J = R.J, rb = J.regime_band || {}, w = t.window || {}, cs0 = J.cooling_state || null;
-    const ind0 = t.indicators || {};
-    const extraScales = Object.keys(ind0).filter(k => k !== '6-12m' && k !== '12-24m' && ind0[k] && ind0[k].signal_status === 'signal');
-    const hasMainBubble = t.signal_status === 'signal' || Boolean(w.start);
-    const coolLabelMap = {
-      active_top: '顶部活跃·严禁追高',
-      cooling_after_top: '余震冷却期·暂不抄底',
-      reentry_watch: '冷却解除·可右侧观察',
-      normal: '常态观察·无冷却限制',
-    };
-    const lightGlyph0 = { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚪' };
-    const dash0 = cs0 && cs0.dashboard ? cs0.dashboard : null;
-    if (hasMainBubble) {
-      $('vh').textContent = '🔴 存在泡沫预警（顶部结构活跃）';
-      $('vh').className = 'vh t-warn';
-    } else if (extraScales.length) {
-      $('vh').textContent = '🟡 当前未形成主泡沫（局部尺度过热）';
-      $('vh').className = 'vh';
-    } else {
-      $('vh').textContent = '🟢 当前无泡沫信号（常态结构）';
-      $('vh').className = 'vh';
-    }
-    const tc0 = R.hist && R.hist.topConv ? R.hist.topConv : null;
-    const activeConv = tc0 && tc0.active ? tc0.active : null;
-    const convText = activeConv && activeConv.convergence
-      ? ` 顶部收敛检验：聚类时间中位数 ${activeConv.median_date || '—'}，${activeConv.convergence.label}（低强度弱红/绿柱已在主图自动降噪）。`
-      : (tc0 && tc0.latest && tc0.latest.convergence
-          ? ` 最近历史顶部聚类（${tc0.latest.first_asof}，中位数 ${tc0.latest.median_date || '—'}，${tc0.latest.convergence.label}）已结束。`
-          : '');
-    const mainSummary = hasMainBubble
-      ? ('6–12 月主尺度出现正向泡沫聚类，临界区间 ' + (w.start ? U.range(w.start, w.end, R.asof, last) : '已触发') + '，严禁追高。' + convText)
-      : ('6–12 月与 12–24 月主尺度均无正向泡沫红柱' + (extraScales.length ? '（仅 ' + extraScales.map(k => SCN[k] || k).join('、') + ' 存在零散拟合，持续观察）' : '，未见泡沫加速见顶特征') + '。' + convText);
-    const regimeSummary = rb.state ? (' 体制带（' + rb.month + '）：' + (REG[rb.state] || rb.state) + '。') : '';
-    const coolSummary = dash0 && dash0.headline
-      ? (' 抄底/冷却判定：' + (lightGlyph0[dash0.verdict_light] || '⚪') + ' ' + dash0.headline + '。')
-      : (cs0 && cs0.phase ? (' 冷却态：' + (coolLabelMap[cs0.phase] || cs0.phase) + '。') : '');
-    const omoriDim0 = dash0 && Array.isArray(dash0.dimensions) ? dash0.dimensions.find((d) => d && d.id === 'omori') : null;
-    const lb0 = R.hist && R.hist.latestBottom ? R.hist.latestBottom : null;
-    const act0 = window.BottomAction
-      ? window.BottomAction.evaluate({
-          sym: R.sym.code,
-          hasTop: hasMainBubble,
-          score: lb0 ? lb0.score : 0,
-          factors: lb0 ? lb0.factors : null,
-          summary: R.hist ? R.hist.bottom_summary : null,
-          omoriRed: Boolean(omoriDim0 && omoriDim0.light === 'red'),
-        })
-      : null;
-    const actSummaryHtml = act0
-      ? `<div class="act-box" id="action-verdict" data-tone="${E(act0.tone)}">` +
-        `<div class="act-box-hd"><span>${E(act0.glyph)} ${E(act0.positionLabel)} · ${E(act0.canBuyLabel)}</span><span class="act-box-pos">${E(act0.positionText)}</span></div>` +
-        `<p class="act-box-v"><b>怎么买：</b>${E(act0.vehicle)}</p>` +
-        `</div>`
-      : '';
-    $('vs').innerHTML = E(mainSummary + regimeSummary + coolSummary) +
-      ' ' + (window.CPEvidenceBadge ? window.CPEvidenceBadge.html('dev', { label: '开发段验证', detail: '6–12 月与 12–24 月档具备开发段证据，时间区间为簇内合格拟合 t_c 分位区间。' }) : '') +
-      actSummaryHtml;
-    appendEvidenceHelp($('vs'));
-    if (!planTabPinned) {
-      planTab = hasMainBubble ? 0 : 1;
-    }
+    renderUnifiedDecision(R);
+    if (!planTabPinned) planTab = R.decision && ['active', 'other_scale'].includes(R.decision.top.status) ? 0 : 1;
     renderScaleBar();
     $('ph-tip').textContent = RuleLabels.renderCaption(['box', 'standard']);
     appendEvidenceHelp($('ph-tip'));
@@ -1426,51 +1408,29 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const R = cur, t = R.top, b = R.J.bottom || {}, dp = R.J.drawdown_pct || {}, rb = R.J.regime_band || {};
     document.querySelectorAll('#seg [role=tab]').forEach((x, i) => { x.setAttribute('aria-selected', String(i === planTab)); x.tabIndex = i === planTab ? 0 : -1; });
     $('plan').setAttribute('aria-labelledby', 'sg-' + planTab);
+    const view = R.decision || decisionFor(R);
     const cs = R.J.cooling_state || null;
-    const hasTopSignal = t.signal_status === 'signal' || Boolean(t.window && t.window.start);
-    const coolPhaseMap = {
-      active_top: '顶部聚类活跃 · 严禁左侧追高，等待泡沫置信度归零',
-      cooling_after_top: '破裂余震冷却期 · 等待大阴线衰减与最小冷却周期完成',
-      reentry_watch: '冷却期解除观察 · 可结合历史回撤分位与右侧宽度确认分批回补',
-      normal: '常态观察 · 无活跃顶部聚类与冷却限制',
-    };
-    const coolState = cs && cs.phase
-      ? (coolPhaseMap[cs.phase] || cs.phase) + (cs.elapsed_days_since_peak != null ? `（距高点 ${cs.elapsed_days_since_peak} 交易日` + (cs.drawdown_from_peak != null ? `，回撤 ${(cs.drawdown_from_peak * 100).toFixed(1)}%` : '') + '）' : '')
-      : hasTopSignal
-        ? '顶部聚类活跃 · 严禁左侧追高，等待泡沫置信度归零'
-        : (rb.state && String(rb.state).toLowerCase().includes('bear'))
-          ? '破裂冷却期 · 等待 Omori 余震衰减与右侧结构确认后分批回补'
-          : '常态观察 · 无活跃顶部聚类，按常规风控跟踪';
     const dash = cs && cs.dashboard ? cs.dashboard : null;
     const lightGlyph = { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚪' };
-    const coolRows = dash && Array.isArray(dash.dimensions) && dash.dimensions.length
-      ? [
-          ['三层综合判定', (lightGlyph[dash.verdict_light] || '⚪') + ' ' + dash.headline],
-          ...dash.dimensions.map((d) => [
-            (lightGlyph[d.light] || '⚪') + ' ' + d.name,
-            (d.value_text ? d.value_text + ' — ' : '') + (d.plain_text || ''),
-          ]),
-        ]
-      : [
-          ['当前冷却态', coolState],
-          ['耗散深度参照', dp.bucket ? ('当前回撤桶 ' + dp.bucket) : ((b.state_p || {}).note || '参考历史顶→谷回撤分位与筹码势阱')],
-          ['右侧确认规则', (b.entry_rule || {}).note || '等待熊市结束确认与市场宽度修复后分批进场（30%→30%→40%）'],
-        ];
+    const coolRows = dash && Array.isArray(dash.dimensions)
+      ? dash.dimensions.map((d) => [
+          (lightGlyph[d.light] || '⚪') + ' ' + (d.id === 'omori' ? '冲击与止跌检查' : d.name),
+          (d.value_text ? d.value_text + ' — ' : '') + (d.plain_text || ''),
+        ]) : [['当前状态', view.cooling.detail], ['下一步', view.conclusion.next]];
+    const currentWindows = (view.top.windows || []).concat(view.top.otherWindows || []);
     const P = [
       {
         badge: 'dev_only',
-        lead: hasTopSignal ? '当前存在活跃顶部聚类区间，建议结合 FCO 历史回测评估泡沫阶段。' : '当前未触发 6–12 月档顶部聚类，处于常态结构。',
+        lead: view.top.label + '。' + view.top.detail,
         rows: [
-          ['临界区间', (t.window && t.window.start) ? U.range(t.window.start, t.window.end, R.asof, R.bars[R.bars.length - 1]?.date) : '暂无活跃区间'],
+          ['当前有效区间', currentWindows.length ? currentWindows.map((w) => (SCN[w.scale] || w.scale || '') + ' ' + w.q20_date + ' — ' + w.q80_date).join(' / ') : '尚未形成当前有效区间'],
           ['失效条件', (t.invalidation || {}).rule || '有效跌破结构或置信度归零'],
           ['历史回测对照', '可在 FCO 回测页查看历次首次预警与事后顶'],
         ],
       },
       {
         badge: 'descriptive',
-        lead: dash && dash.headline
-          ? ('六维说人话底部与冷却期仪表盘：' + dash.headline + '（所有阈值均为经验参数，严格 PIT）')
-          : '防过早回补三道锁：逃顶信号与再入场解耦，先过冷却期、再看耗散深度与右侧确认。',
+        lead: view.conclusion.title + '。' + view.conclusion.detail,
         rows: coolRows,
       },
       {
@@ -1484,58 +1444,10 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     ][planTab];
     const badgeHtml = window.CPEvidenceBadge ? window.CPEvidenceBadge.html(P.badge) : '';
     const backtestLink = `<a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}">打开 FCO 历史回测 ›</a> · <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>`;
-    let botIndexHtml = '';
-    if (planTab === 1 && R.hist) {
-      const lb = R.hist.latestBottom || { score: 0, asof: R.asof, factors: null, firstBottom: false };
-      const bs = R.hist.bottom_summary || null;
-      const f = lb.factors || {};
-      const sc = lb.score || 0;
-      const scState = sc >= 50 ? '🟢 底部共振区' : (sc >= 25 ? '🟡 左侧观察区' : '⚪ 非底部区');
-      const vVal = f.valuation != null ? Math.round(Number(f.valuation) * 100) : 0;
-      const vClr = f.clearing != null ? Math.round(Number(f.clearing) * 100) : 0;
-      const vStb = f.stabilize != null ? Math.round(Number(f.stabilize) * 100) : 0;
-      const vRgt = f.right_side != null ? Math.round(Number(f.right_side) * 100) : 0;
-      const erpTxt = f.erp_pct != null ? `ERP ${Math.round(Number(f.erp_pct) * 100)}%` : '未进超跌区';
-      const pbnTxt = f.pbn_pct != null ? `破净 ${Math.round(Number(f.pbn_pct) * 100)}%` : '';
-      const valSub = [erpTxt, pbnTxt].filter(Boolean).join(' / ');
-      const histProof = bs && bs.n_events > 0
-        ? `历史实证（${bs.n_events} 次共振）：50 周上涨胜率 <b>${(Number(bs.win_rate_50w) * 100).toFixed(1)}%</b>` +
-          `（普通下跌基线 ${(Number(bs.baseline_win_rate_50w) * 100).toFixed(1)}%，<b>+${(Number(bs.win_rate_lift_50w) * 100).toFixed(1)}pp</b>），` +
-          `50 周收益中位数 <b>${bs.median_ret_50w >= 0 ? '+' : ''}${(Number(bs.median_ret_50w) * 100).toFixed(1)}%</b>。`
-        : '严格 PIT 四维合成：兼顾估值安全边际与止跌右侧确认，避免纯估值提前一年套牢。';
-      const omoriDim1 = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find((d) => d && d.id === 'omori') : null;
-      const act1 = window.BottomAction
-        ? window.BottomAction.evaluate({
-            sym: R.sym.code,
-            hasTop: hasTopSignal,
-            score: sc,
-            factors: f,
-            summary: bs,
-            omoriRed: Boolean(omoriDim1 && omoriDim1.light === 'red'),
-          })
-        : null;
-      const stepsHtml = act1 && window.BottomAction.STEPS
-        ? `<div class="act-steps" aria-label="30%-30%-40% 分批抄底节奏">` +
-          window.BottomAction.STEPS.map((st) =>
-            `<div class="act-step${act1.stepIndex >= st.idx ? ' on' : ''}"><b>${E(st.pct)}</b>${E(st.title)}<br>${E(st.cond)}</div>`
-          ).join('') +
-          `</div>`
-        : '';
-      botIndexHtml =
-        `<div class="bot-idx-card" id="bot-index-card">` +
-        `<div class="bot-idx-hd"><span class="bot-idx-t">A 股多维底部综合指数 · ${E(scState)}</span><span class="bot-idx-sc">${sc}<small>/100</small></span></div>` +
-        `<div class="bot-idx-bars">` +
-        `<div class="bot-idx-b"><div><span>够不够便宜（35%）</span><span>${E(valSub)}</span></div><div class="bot-idx-tr"><i style="width:${vVal}%"></i></div></div>` +
-        `<div class="bot-idx-b"><div><span>跌完没·超跌（30%）</span><span>${f.dd_52w != null ? (Number(f.dd_52w) * 100).toFixed(0) + '%' : '—'}</span></div><div class="bot-idx-tr"><i style="width:${vClr}%"></i></div></div>` +
-        `<div class="bot-idx-b"><div><span>防死猫跳（20%）</span><span>${vStb}%</span></div><div class="bot-idx-tr"><i style="width:${vStb}%"></i></div></div>` +
-        `<div class="bot-idx-b"><div><span>企稳没·均线（15%）</span><span>${vRgt}%</span></div><div class="bot-idx-tr"><i style="width:${vRgt}%"></i></div></div>` +
-        `</div>` +
-        stepsHtml +
-        `<p class="bot-idx-ft">${histProof}</p>` +
-        `</div>`;
-    }
-    $('plan').innerHTML = botIndexHtml + `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p><ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') +
-      `</ol><p class="pl-meta">${backtestLink} · <a href="guide.html">方法论图解 →</a></p>`;
+    const rowsHtml = `<ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') + '</ol>';
+    $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p>` +
+      (planTab === 1 ? `<p><a class="decision-jump" href="#legacy-decision-panel">查看彩色底部条件面板</a></p><details class="legacy-raw-observations"><summary>展开冲击与环境原始观测</summary>${rowsHtml}</details>` : rowsHtml) +
+      `<p class="pl-meta">${backtestLink} · <a href="guide.html">方法论图解</a></p>`;
   }
 
   function simAt() { return null; }
@@ -1652,32 +1564,17 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     if (cur) document.querySelectorAll('.tk').forEach((x) => x.setAttribute('aria-current', String(x.dataset.c === cur.sym.label)));
   }
   (function ticker() {
-    const ovPromise = LPPL.overview ? LPPL.overview().catch(() => null) : Promise.resolve(null);
-    ovPromise.then((ov) => {
-      const ovMap = {};
-      if (ov && Array.isArray(ov.indices)) ov.indices.forEach((it) => { if (it && it.sym) ovMap[it.sym] = it; });
-      return Promise.all(LPPL.SYMS.filter((x) => !x.market || x.market === 'cn').map((x) => {
-        const ovItem = ovMap[x.sym] || null;
-        return Promise.all([
-          LPPL.load(x.sym).catch(() => null),
-          !ovItem && LPPL.history ? LPPL.history(x.sym).catch(() => null) : Promise.resolve(null),
-        ]).then(([D, H]) => {
-          if (!D) return null;
-          const t = D.top || {}, w = t.window || {};
-          const cs = (D.raw && D.raw.cooling_state) || null;
-          const dash = cs && cs.dashboard ? cs.dashboard : null;
-          const omoriDim = dash && Array.isArray(dash.dimensions) ? dash.dimensions.find((d) => d && d.id === 'omori') : null;
-          const opts = {
-            hasTop: t.signal_status === 'signal' || Boolean(w.start),
-            omoriRed: Boolean(omoriDim && omoriDim.light === 'red'),
-          };
-          D._action = window.BottomAction
-            ? (ovItem ? window.BottomAction.fromOverviewItem(ovItem, opts) : (H ? window.BottomAction.fromHistory(x.sym, H, opts) : null))
-            : null;
-          return D;
-        });
-      }));
-    }).then((L) => {
+    Promise.all(LPPL.SYMS.filter((x) => !x.market || x.market === 'cn').map(async (x) => {
+      const [D, H] = await Promise.all([
+        LPPL.load(x.sym).catch(() => null), LPPL.history(x.sym).catch(() => null),
+      ]);
+      if (!D) return null;
+      const data = window.LPPLChartPageCore.withRule(window.LPPLChartPageCore.assembleIndexData(x.sym, D), 'box');
+      const view = window.LPPLDecisionState.build({ data, history: H,
+        context: { code: x.sym, assetType: 'index', market: 'cn', asof: '', scale: '6-12m', rule: 'box' } });
+      D._action = window.BottomAction.fromDecision(view);
+      return D;
+    })).then((L) => {
       tickerData = L.filter(Boolean);
       drawTicker();
     });
@@ -1691,7 +1588,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         const sc = s[s.length - 1] >= s[0] ? 'var(--up)' : 'var(--dn)';
         const a = D._action;
         const tag = a
-          ? `<span class="tk-tag" data-tone="${E(a.tone)}" title="${E(a.positionLabel + ' · ' + a.positionText)}">${a.tier === 'bottom_probe' ? '🟢30%' : a.tier === 'right_confirm' ? '✅加仓' : a.tier === 'top_risk' ? '🔴减仓' : a.score >= 20 ? '🟡' + a.score + '分' : '⚪观望'}</span>`
+          ? `<span class="tk-tag" data-tone="${E(a.tone)}" title="${E(a.positionLabel + ' · ' + a.positionText)}">${a.tier === 'top_risk' ? '区间提醒' : a.score != null ? (a.score + '分' + (a.scoreStale ? '·旧档' : '')) : '未覆盖'}</span>`
           : '';
         return `<button class="tk" type="button" data-c="${E(D.name)}" aria-current="false" title="${E(D.name)} · ${q.date}${a ? ' · ' + a.shortBadge : ''}"><span class="tk-n">${star ? '<span class="tk-star" aria-label="自选">★</span>' : ''}${E(D.name)}</span><svg class="tk-s" viewBox="0 0 ${sw} ${sh}" aria-hidden="true"><path d="${sp}" stroke="${sc}"/></svg><span class="tk-v ${cls}">${U.px(q.close)} ${U.sp(ch, 2)}</span>${tag}</button>`;
       }
