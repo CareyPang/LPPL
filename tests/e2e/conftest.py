@@ -24,6 +24,16 @@ MARKET_FIXTURES = {
 KLINE_FIXTURES = {
     ("600519", "30"): FIXTURES / "stock_600519_kline_30.json",
 }
+# This asset has no published bottom-score archive in the smoke dataset.
+# A symbol-correct empty response tests that boundary without masking real 404s.
+EMPTY_HISTORY_FIXTURES = {
+    "/lab/mock/data/stock/601838_history.json": {
+        "symbol": "sh601838",
+        "frames": [],
+        "status": "not_covered",
+        "source": "e2e_empty_history_fixture",
+    },
+}
 WORKER_HOST = "lppl-stock-query.careypang.workers.dev"
 CONSOLE_ERROR_ALLOWLIST = {
     404: re.compile(r"server responded with a status of 404"),
@@ -203,7 +213,11 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
 
     def route_request(route: Route) -> None:
         if is_local_url(route.request.url):
-            if urlsplit(route.request.url).path == "/lab/mock/data/stock/600519.json":
+            local_path = urlsplit(route.request.url).path
+            if local_path in EMPTY_HISTORY_FIXTURES:
+                route.fulfill(json=EMPTY_HISTORY_FIXTURES[local_path])
+                return
+            if local_path == "/lab/mock/data/stock/600519.json":
                 route.fulfill(
                     path=str(STOCK_600519_LATEST_FIXTURE),
                     content_type="application/json",

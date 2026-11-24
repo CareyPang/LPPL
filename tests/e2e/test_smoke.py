@@ -240,7 +240,7 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
     assert notice and chart and chart["y"] >= notice["y"] + notice["height"] + 12
     page.locator('#period-selector [data-period="d"]').click()
     expect(page.locator("#data-source")).to_have_text(
-        "tencent_fqkline · 未复权"
+        "腾讯行情"
     )
     expect(page.locator("#market-date")).to_have_text(
         "行情日期 2026-11-17"
@@ -1407,7 +1407,7 @@ def test_chart_undo_keeps_history_drawings_hidden(page: Page) -> None:
 
 
 @pytest.mark.e2e
-def test_chart_current_diagnosis_loads_history_only_on_replay(page: Page) -> None:
+def test_chart_current_score_reads_history_once_and_replay_reuses_it(page: Page) -> None:
     history_requests = []
 
     def serve_history(route) -> None:
@@ -1419,16 +1419,21 @@ def test_chart_current_diagnosis_loads_history_only_on_replay(page: Page) -> Non
     page.wait_for_function(
         "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
     )
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.decisionHistoryStatus === 'ready'"
+    )
     expect(page.locator("#terminal-history")).to_be_hidden()
-    assert history_requests == []
-    with page.expect_response("**/lab/mock/data/stock/601838_history.json"):
-        page.locator("#terminal-mode-replay").click()
+    assert len(history_requests) == 1
+    expect(page.locator("#chart-page")).to_have_attribute("data-bottom-score", "")
+    page.locator("#terminal-mode-replay").click()
     expect(page.locator("#terminal-history")).to_be_visible()
+    expect(page.locator("#terminal-history-note")).to_have_text("该标的暂无历史记录。")
     assert len(history_requests) == 1
     page.locator("#terminal-mode-diagnosis").click()
     page.locator("#terminal-mode-replay").click()
     expect(page.locator("#terminal-history")).to_be_visible()
     assert len(history_requests) == 1
+    assert not any(method == "POST" for method, _, _ in page._e2e_requests)
 
 
 @pytest.mark.e2e
