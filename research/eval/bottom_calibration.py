@@ -472,7 +472,13 @@ def _outcome(
 ) -> dict[str, float] | None:
     entry = closes[position]
     target = position + horizon
-    if entry is None or entry <= 0 or target >= len(frames) or closes[target] is None:
+    if (
+        entry is None
+        or entry <= 0
+        or target >= len(frames)
+        or frames[target].get("split") != frames[position].get("split")
+        or closes[target] is None
+    ):
         return None
     result = {"ret": float(closes[target] / entry - 1.0)}
     if horizon == 50:

@@ -4,6 +4,7 @@ from research.eval.bottom_calibration import (
     _b3_law_distributions,
     _event_rows,
     _group_contains,
+    _outcome,
     _random_baseline,
     _summary,
     bucket_membership,
@@ -90,6 +91,15 @@ def test_productivity_gate_and_prototype_read_productivity_ratio():
     }
     assert _group_contains(row, ("gate", "productivity", 1.0))
     assert _group_contains(row, ("prototype", "productivity", None))
+
+
+def test_outcomes_are_purged_at_split_boundaries():
+    frames = [{"split": "dev"} for _ in range(40)] + [{"split": "cal"} for _ in range(60)]
+    closes = [float(index + 1) for index in range(len(frames))]
+
+    assert _outcome(frames, closes, 29, 24) is None
+    assert _outcome(frames, closes, 29, 50) is None
+    assert _outcome(frames, closes, 5, 24) is not None
 
 
 def test_b3_metric_distributions_use_b3_candidate_weeks():
