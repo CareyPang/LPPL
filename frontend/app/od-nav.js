@@ -9,6 +9,9 @@
    本模块不读取、不计算任何业务数据。 */
 (function () {
   'use strict';
+  var KOREAN_STOCK = { sym: 'KR_SKHYNIX', code: '000660.KS', name: 'SK 海力士',
+    market: 'kr', kind: 'stock', exchange: 'KRX KOSPI', currency: 'KRW', timezone: 'Asia/Seoul',
+    provider_symbol: '000660.KS', alias: ['SK Hynix', '海力士', 'SK하이닉스'] };
   /* Identity-only routing: a search hit must keep its asset kind. A missing
      match is never replaced with a default index or a guessed market. */
   var SearchRoutes = (function () {
@@ -60,6 +63,11 @@
         return Object.assign({}, hit, { code: code, sym: '', kind: 'us', tags: ['美股'],
           h: 'chart.html?code=' + encodeURIComponent(code) + '&kind=stock&from=home.html' });
       }
+      if (key(code) === KOREAN_STOCK.sym) {
+        return Object.assign({}, hit, { code: KOREAN_STOCK.sym, sym: '', t: KOREAN_STOCK.name,
+          kind: 'kr', tags: ['韩股', KOREAN_STOCK.code], s: '韩股 · ' + KOREAN_STOCK.code,
+          h: 'chart.html?code=KR_SKHYNIX&kind=stock&from=home.html%3Fmarket%3Dkr' });
+      }
       if (/^(?:(?:sh|sz|bj))?\d{6}$/i.test(code)) {
         return Object.assign({}, hit, { kind: 'stock', h: 'chart.html?code=' + encodeURIComponent(code) + '&kind=stock&from=stock.html' });
       }
@@ -69,17 +77,28 @@
     }
     function search(engine, options) {
       var result = [], seen = Object.create(null);
+      var query = key(options.query);
+      if (query && options.filter !== 'index' && [KOREAN_STOCK.sym, KOREAN_STOCK.code, KOREAN_STOCK.name]
+        .concat(KOREAN_STOCK.alias).some(function (value) { return key(value).includes(query); })) {
+        var korean = route({ code: KOREAN_STOCK.sym }, options.idx, options.rows, options.published);
+        result.push(korean); seen[korean.h] = true;
+      }
       engine.search(options).forEach(function (hit) {
         var resolved = route(hit, options.idx, options.rows, options.published);
         if (!resolved || seen[resolved.h]) return;
         seen[resolved.h] = true; result.push(resolved);
       });
-      return result;
+      return result.slice(0, options.limit || result.length);
     }
     return { catalog: catalog, findIndex: findIndex, route: route, search: search };
   })();
   if (typeof module === 'object' && module.exports) module.exports = SearchRoutes;
   if (typeof document === 'undefined') return;
+  // Extend the shared adapter registry before the home and chart controllers initialize.
+  var registered = window.LPPL && window.LPPL.GLOBAL_SYMS;
+  if (registered && !registered.some(function (item) { return item.sym === KOREAN_STOCK.sym; })) {
+    registered.push(KOREAN_STOCK);
+  }
   window.OdNavRoutes = SearchRoutes;
   var me = document.currentScript;
   var section = (me && me.dataset.section) || 'home';

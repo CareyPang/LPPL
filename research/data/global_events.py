@@ -22,7 +22,7 @@ ENDPOINT = "https://query2.finance.yahoo.com/v1/finance/search"
 QUERIES = {
     "US_SPX": "S&P 500", "US_IXIC": "Nasdaq Composite", "US_NDX": "Nasdaq 100",
     "US_DJI": "Dow Jones", "JP_N225": "Nikkei 225", "KR_KOSPI": "KOSPI",
-    "KR_KOSDAQ": "KOSDAQ", "US_MRVL": "MRVL",
+    "KR_KOSDAQ": "KOSDAQ", "KR_SKHYNIX": "000660.KS", "US_MRVL": "MRVL",
 }
 TTL = timedelta(hours=6)
 SOURCE = {
@@ -155,7 +155,7 @@ def _corporate_actions(asset_id: str, root: Path, cutoff: datetime) -> dict:
     if hashlib.sha256(raw).hexdigest() != meta["raw_sha256"]:
         raise ValueError("Corporate-action source checksum mismatch")
     if meta.get("provider", "yahoo") != "yahoo":
-        # Naver's index table contains prices, not Yahoo's events envelope.
+        # Naver's daily table contains prices, not Yahoo's events envelope.
         # Its presence must not prevent independently archived news rendering.
         return {"status": "unavailable", "items": [], "fetched_at": meta["fetched_at"],
                 "stale_reason": "corporate_actions_not_supported_by_source",

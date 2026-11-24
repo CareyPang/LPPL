@@ -21,6 +21,7 @@ from .global_terminal import ROOT, atomic_json
 from .long_horizon import SEEDS, WINDOWS, input_identity, signature
 
 SCHEMA = 'global_daily_current_and_long_v1'
+SUPPORTED_LONG_ASSETS = (*long_rolling.DEFAULT_ASSETS, 'KR_SKHYNIX')
 
 
 def _now():
@@ -45,7 +46,7 @@ def parse_config(value):
     assets = value.get('long_assets', list(long_rolling.DEFAULT_ASSETS))
     if (not isinstance(assets, list) or not assets or any(not isinstance(s, str) for s in assets)
             or len(assets) != len(set(assets))
-            or any(s not in config['symbols'] or s not in long_rolling.DEFAULT_ASSETS for s in assets)):
+            or any(s not in config['symbols'] or s not in SUPPORTED_LONG_ASSETS for s in assets)):
         raise ValueError('long_assets must be unique supported assets included in symbols')
     config['long_assets'] = assets
     workers = value.get('long_workers', 4)

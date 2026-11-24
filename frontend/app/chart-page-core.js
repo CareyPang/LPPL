@@ -119,9 +119,10 @@
     var reservedIndex = knownIndex && /^(US_|JP_|KR_)/i.test(knownIndex.sym);
     var index = requestedKind === 'stock' && !reservedIndex ? null : knownIndex;
     var stockIdentity = indexFor(inputCode, (globalSymbols || []).filter(function (item) { return item.kind === 'stock'; }));
-    var usSymbol = stockIdentity && stockIdentity.market === 'us' ? stockIdentity.sym : /^US_[A-Z.]{1,6}$/i.test(inputCode) ? inputCode.toUpperCase() : '';
-    var stockSymbol = usSymbol || (/^(?:sh|sz|bj)\d{6}$/i.test(inputCode) ? inputCode.toLowerCase() : '');
-    var stockCode = index ? '' : usSymbol || (stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '');
+    var usSymbol = /^US_[A-Z.]{1,6}$/i.test(inputCode) ? inputCode.toUpperCase() : '';
+    var internationalStock = stockIdentity ? stockIdentity.sym : usSymbol;
+    var stockSymbol = internationalStock || (/^(?:sh|sz|bj)\d{6}$/i.test(inputCode) ? inputCode.toLowerCase() : '');
+    var stockCode = index ? '' : internationalStock || (stockSymbol ? stockSymbol.slice(2) : /^\d{6}$/.test(inputCode) ? inputCode : '');
     var code = index ? index.sym : stockSymbol || (stockCode ? stockCode : '');
     var assetType = index ? 'index' : stockCode ? 'stock' : '';
     var requestedScale = params.get('scale') || '';
@@ -168,7 +169,7 @@
   }
 
   function inferStockSymbol(symbol) {
-    if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return String(symbol).toUpperCase();
+    if (/^(US_[A-Z.]{1,6}|KR_SKHYNIX)$/i.test(String(symbol || ''))) return String(symbol).toUpperCase();
     if (/^(?:sh|sz|bj)\d{6}$/i.test(String(symbol || ''))) return String(symbol).toLowerCase();
     var match = String(symbol || '').trim().toLowerCase().match(/^(?:sh|sz|bj)?(\d{6})$/);
     if (!match) return '';
@@ -251,16 +252,18 @@
       hasLatest = false; raw = {};
     }
     var resolvedSymbol = inferStockSymbol(hasLatest && raw.symbol || market.symbol || expectedSymbol || symbol) || String(symbol || '');
-    var isUS = /^US_/.test(resolvedSymbol);
+    var marketCode = /^US_/.test(resolvedSymbol) ? 'us' : /^KR_/.test(resolvedSymbol) ? 'kr' : 'cn';
+    var currency = { us: 'USD', kr: 'KRW', cn: 'CNY' }[marketCode];
+    var quoteUnit = { us: 'USD · 美元', kr: 'KRW · 韩元', cn: 'CNY · 元' }[marketCode];
     var model = modelRecord(raw, hasLatest ? latest : null);
     var lastBar = market.price[market.price.length - 1];
     return {
       assetType: 'stock',
-      market: isUS ? 'us' : 'cn',
+      market: marketCode,
       symbol: resolvedSymbol,
       code: resolvedSymbol,
       name: hasLatest && (latest.name || raw.name) || market.name || market.stock_name || resolvedSymbol,
-      exchange: isUS ? market.exchange || raw.exchange || exchangeFor(resolvedSymbol) : exchangeFor(resolvedSymbol),
+      exchange: marketCode !== 'cn' ? market.exchange || raw.exchange || exchangeFor(resolvedSymbol) : exchangeFor(resolvedSymbol),
       bars: market.price,
       asof: hasLatest ? latest.asof || raw.asof || '' : '',
       modelAsOf: hasLatest ? latest.asof || raw.asof || '' : '',
@@ -277,8 +280,8 @@
       adjustment: market.adjustment || '',
       volumeUnit: market.volume_unit || '',
       tradingStatus: market.trading_status || '',
-      quoteUnit: isUS ? 'USD · 美元' : 'CNY · 元',
-      currency: market.currency || raw.currency || (isUS ? 'USD' : 'CNY'),
+      quoteUnit: quoteUnit,
+      currency: market.currency || raw.currency || currency,
       stale: market.stale === true,
       staleReason: market.stale_reason || '',
       freshness: market.asof_freshness || 'not_established',

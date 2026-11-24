@@ -17,6 +17,17 @@ function search(query, options = {}) {
   return Routes.search(Search, { idx, rows, query, filter: 'all', limit: 20, ...options });
 }
 
+test('SK hynix aliases resolve to the Korean share and never as an index', () => {
+  for (const query of ['SK 海力士', 'SK hynix', '000660.KS', '000660', 'SK하이닉스']) {
+    const hit = search(query)[0];
+    assert.equal(hit.code, 'KR_SKHYNIX');
+    const href = new URL(hit.h, 'https://local.example/');
+    assert.equal(href.searchParams.get('kind'), 'stock');
+    assert.equal(href.searchParams.get('from'), 'home.html?market=kr');
+  }
+  assert.equal(search('海力士', { filter: 'index' }).length, 0);
+});
+
 test('real stock-list MRVL keeps its US stock identity and opens the shared chart', () => {
   for (const query of ['MRVL', 'mrvl', 'US_MRVL', '迈威尔']) {
     const hit = search(query)[0];

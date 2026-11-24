@@ -448,7 +448,7 @@
   }
 
   async function loadModel(request) {
-    if (context.market === 'us') return load();
+    if (context.market !== 'cn') return load();
     if (context.asof || context.assetType === 'index') return load();
     var run = ++modelRequest;
     modelStatus = 'loading'; modelError = null;
@@ -744,14 +744,14 @@
       void loadMarket(request); void loadModel(request); void loadEvents(request);
       return;
     }
-    moduleState('market-status', context.asof ? '读取封存行情' : '指数行情读取中');
-    moduleState('model-status', context.asof ? '只读核对历史截止日' : '指数模型读取中');
+    moduleState('market-status', context.asof ? '读取封存行情' : '行情读取中');
+    moduleState('model-status', context.asof ? '只读核对历史截止日' : '模型读取中');
     void loadEvents(request);
     try {
       var result = context.asof ? await Reader.historical(LPPL, context) : await Reader.currentResult(LPPL, context);
       if (request !== sequence) return;
       var data;
-      if (context.assetType === 'stock' && context.market === 'us' && !context.asof) {
+      if (context.assetType === 'stock' && !context.asof) {
         data = Core.assembleStockData(context.code, result, Reader.marketFromPublished(result, context.stockCode), null);
       } else if (context.assetType === 'stock') {
         var market = Object.assign({}, result.market, { price: result.bars, asof: context.asof, cutoff: context.asof });
@@ -766,7 +766,7 @@
       present(data, !!current);
     } catch (error) {
       if (request !== sequence) return;
-      moduleState('model-status', context.asof ? '该日封存未就绪；未触发计算' : '指数数据读取失败');
+      moduleState('model-status', context.asof ? '该日封存未就绪；未触发计算' : '数据读取失败');
       showError(error);
     }
   }
