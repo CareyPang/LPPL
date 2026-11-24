@@ -123,18 +123,26 @@ def test_history_snapshot_has_only_asof_prices_and_independent_research():
     asof = data.date.iloc[-6]
     metadata = {"source": "test fixture only", "asof": str(data.date.iloc[-1].date()),
                 "adjustment": "none", "volume_unit": "vendor_native", "timezone": "America/New_York",
-                "exchange": "NMS", "normalized_sha256": "fixture"}
+                "exchange": "NMS", "normalized_sha256": "fixture",
+                "dropped_non_session_rows": 1, "dropped_non_session_dates": ["2026-11-21"],
+                "missing_sessions_last_250": 2, "missing_sessions_last_250_dates": ["2026-11-25", "2026-11-26"]}
     cells = [{"n": n, "status": "complete", "row": row(n, asof), "fit_input_hash": f"frozen-{n}"}
              for n in pipeline.WINDOWS]
     record = pipeline.make_record("US_SPX", data, metadata, asof, cells, {"hash": "fixture", "source_sha": "fixture"})
     assert record["price_history"]["dates"][-1] == str(asof.date())
     assert record["source_meta"]["model_asof"] == str(asof.date())
     assert record["source_meta"]["source_asof"] > record["source_meta"]["model_asof"]
+    assert record["source_meta"]["dropped_non_session_dates"] == ["2026-11-21"]
+    assert record["source_meta"]["missing_sessions_last_250_dates"] == [
+        "2026-11-25", "2026-11-26"
+    ]
     assert record["top"]["drawdown_price"]["value"] is None
     assert record["validation"] == []
     assert record["first_visible_at"] is None
+    assert record["exchange"] == "纽约证券交易所"
     assert record["future_calendar"]["status"] == "exchange_calendar"
     assert record["future_calendar"]["verified"] is True
+    assert record["future_calendar"]["note"] == "交易日按交易所日历计算，节假日已跳过。"
     historical = pipeline.history_frame(record)
     assert historical["research"]["cycles_1_5"] == record["research"]["cycles_1_5"]
     assert historical["params"] == record["params"]

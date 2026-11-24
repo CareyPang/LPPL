@@ -318,7 +318,9 @@
     setOptionalText('asset-exchange', data.exchange);
     var marketName = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[data.market || context.market] || '';
     var assetType = data.assetType === 'index' ? marketName && marketName + '指数' : marketName && marketName + '个股';
-    setOptionalText('asset-type', [assetType, data.quoteUnit, data.currency].filter(Boolean).join(' · '));
+    setOptionalText('asset-type', [
+      assetType, data.quoteUnit, Core.currencyLabel(data.currency),
+    ].filter(Boolean).join(' · '));
     setOptionalText('trading-status', data.tradingStatus ? '交易状态：' + data.tradingStatus : '');
     setText('identity-strip-name', data.name);
     setText('identity-strip-code', data.symbol);
@@ -332,10 +334,10 @@
     asofTag.textContent = context.asof
       ? '历史截止日 ' + context.asof + ' · 封存回放' : '';
     renderMarketMetadata(data);
-    setMetaField('model-version', data.modelVersion);
+    setMetaField('model-version', Core.modelVersionLabel(data.modelVersion));
     setMetaField('prediction-id', data.predictionId);
-    setMetaField('volume-unit', data.volumeUnit === 'vendor_native' ? '供应商原始单位，股/手换算未核验' : data.volumeUnit);
-    setMetaField('model-adjustment', data.modelAdjustment);
+    setMetaField('volume-unit', Core.volumeUnitLabel(data.volumeUnit));
+    setMetaField('model-adjustment', Core.modelAdjustmentLabel(data.modelAdjustment, data.assetType));
     setMetaField('first-visible', data.firstVisibleAt);
     setMetaField('stale-state', data.stale ? '已过期' + (data.staleReason ? '：' + data.staleReason : '') :
       data.freshness === 'not_established' ? '' : '按已发布截止日查看；不代表实时行情');

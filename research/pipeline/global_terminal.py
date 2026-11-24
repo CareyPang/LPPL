@@ -217,8 +217,14 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
     top["indicators"]["rule_note"] = "v2 搜索后使用原生产 box；27个预登记稀疏窗口，非181窗完整扫描。box 不含振荡周期门槛。"
     top["scale_clusters_note"] = "复用现有分尺度聚类；share 是合格拟合数量占比，不是顶部概率；区间为20–80%分位。"
     top["window"] = {"start": None, "end": None, "evidence": "research_candidate", "rule": "按尺度查看独立聚类"}
-    stock_meta = {"evidence": "research_candidate", "variant": "global_sparse27", "source": metadata["source"]}
-    price = {"dates": [str(v.date()) for v in prefix.date], "source": metadata["source"],
+    display_source = metadata.get(
+        "display_source",
+        "Yahoo Finance"
+        if metadata["source"] == "Yahoo Finance v8 chart"
+        else metadata["source"],
+    )
+    stock_meta = {"evidence": "research_candidate", "variant": "global_sparse27", "source": display_source}
+    price = {"dates": [str(v.date()) for v in prefix.date], "source": display_source,
              "adjustment": metadata["adjustment"], "volume_unit": metadata["volume_unit"],
              "note": "本次下载版本的历史重建；不是当时保存的原始行情。"}
     for column in ("open", "high", "low", "close", "volume"):
@@ -241,7 +247,8 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
     fields = ["id", "ticker", "market", "kind", "currency", "timezone", "exchange", "fetched_at",
               "source", "url", "raw_sha256", "normalized_sha256", "adjustment", "volume_unit", "history_vintage",
               "normalizer_version", "metadata_file", "dropped_unclosed_bars", "provider_currency",
-              "dropped_non_session_rows", "missing_sessions_last_250", "cross_check",
+              "dropped_non_session_rows", "dropped_non_session_dates",
+              "missing_sessions_last_250", "missing_sessions_last_250_dates", "cross_check",
               "publication_decision"]
     source_meta = {key: metadata.get(key) for key in fields}
     source_meta.update(asset_type=asset["kind"], source_asof=metadata["asof"], model_asof=str(asof.date()),
@@ -257,17 +264,17 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
         "verified": calendar_verified,
         "official_verification": "NOT_ESTABLISHED",
         "note": (
-            "Exchange sessions use the pinned exchange_calendars schedule."
+            "交易日按交易所日历计算，节假日已跳过。"
             if calendar_verified
-            else "Future dates use weekdays because no exchange calendar is configured."
+            else "未来日期按周一至周五估算。"
         ),
     }
     return clean({"schema_version": "global_terminal_v1", "symbol": asset_id, "code": asset_id,
         "name": asset["name"], "asset_type": asset["kind"], "market": asset["market"],
-        "currency": asset["currency"], "timezone": metadata["timezone"], "exchange": metadata["exchange"],
+        "currency": asset["currency"], "timezone": metadata["timezone"], "exchange": asset["display_exchange"],
         "asof": str(asof.date()), "generated_at": datetime.now(UTC).isoformat(), "first_visible_at": None,
         "model_version": MODEL_VERSION, "fit_code_version": method["hash"], "source_sha": method["source_sha"],
-        "data_version": metadata["normalized_sha256"], "source": metadata["source"], "source_meta": source_meta,
+        "data_version": metadata["normalized_sha256"], "source": display_source, "source_meta": source_meta,
         "evidence": "research_candidate", "evidence_levels": {"research_candidate": "国际市场稀疏窗口研究样本"},
         "params": {**method, "optimizer": "de_lbfgsb" if asset_id == "US_MRVL" else "g3", "window_count": len(expected)},
         "future_calendar": future_calendar,
@@ -441,7 +448,14 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             entries[asset_id] = {"id": asset_id, "symbol": asset_id, **ASSETS[asset_id], "status": "source_pending"}
             continue
         try:
-            frame, metadata = fetch_snapshot(asset_id, root, refresh=refresh)
+            frame, metadata = fetch_snapshot(
+                asset_id, root, refresh=refresh, provider="yahoo"
+            )
+            metadata["display_source"] = (
+                "Yahoo Finance"
+                if metadata.get("source") == "Yahoo Finance v8 chart"
+                else metadata.get("source", "")
+            )
             fetched_at = datetime.fromisoformat(
                 metadata.get("fetched_at", datetime.now(UTC).isoformat())
             )
@@ -450,6 +464,7 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             )
             if metadata.get("provider", "yahoo") != "yahoo":
                 session_meta["missing_sessions_last_250"] = None
+                session_meta["missing_sessions_last_250_dates"] = []
             metadata.update(session_meta)
             metadata["publication_decision"] = "owner_approved_2026-11-24"
             metadata["public_redistribution"] = metadata.get(
@@ -458,6 +473,7 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             selected_asofs(frame)  # Reject too-short sources here, not outside the source error boundary.
             time.sleep(0.5)
             metadata["cross_check"] = fetch_cross_check(asset_id, frame, fetched_at)
+            time.sleep(0.35)
             if metadata["cross_check"]["status"] == "mismatch":
                 entry = {
                     "id": asset_id,
@@ -465,7 +481,7 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
                     **ASSETS[asset_id],
                     "status": "source_mismatch",
                     "asof": metadata["asof"],
-                    "source": metadata["source"],
+                    "source": metadata["display_source"],
                     "source_meta": metadata,
                 }
                 latest_path = output / f"{asset_id}_latest.json"
@@ -480,11 +496,10 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
                 entries[asset_id] = entry
                 print(json.dumps({"event": "source_mismatch", "id": asset_id,
                                   "cross_check": metadata["cross_check"]}), flush=True)
-                time.sleep(.35)
                 continue
             sources[asset_id] = (frame, metadata)
             entries[asset_id] = {"id": asset_id, "symbol": asset_id, **ASSETS[asset_id], "status": "queued",
-                "asof": metadata["asof"], "source": metadata["source"], "source_meta": metadata,
+                "asof": metadata["asof"], "source": metadata["display_source"], "source_meta": metadata,
                 "latest_path": f"global/{asset_id}_latest.json", "history_path": f"global/{asset_id}_history.json"}
             print(json.dumps({"event": "source", "id": asset_id, "asof": metadata["asof"], "rows": len(frame)}), flush=True)
         except Exception as error:

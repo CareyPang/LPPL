@@ -157,7 +157,7 @@ def test_kosdaq_full_history_selects_whole_naver_source_and_retains_saturdays(mo
     assert calls[-1]['startTime'] == '19000101'
 
 
-def test_hynix_preserves_naver_stock_price_basis_and_rejects_vendor_switch(monkeypatch, tmp_path):
+def test_hynix_defaults_to_naver_and_allows_yahoo_primary_for_cross_check(monkeypatch, tmp_path):
     calls = response(monkeypatch, naver_payload())
     frame, info = source.fetch_snapshot('KR_SKHYNIX', tmp_path, full_history=True)
 
@@ -167,8 +167,23 @@ def test_hynix_preserves_naver_stock_price_basis_and_rejects_vendor_switch(monke
     assert info['data_quality']['status'] == 'provider_price_basis'
     assert 'index_level_basis' not in info
     assert frame.close.tolist() == [1000., 1001., 625.5]
-    with pytest.raises(ValueError, match='Naver price series'):
-        source.fetch_snapshot('KR_SKHYNIX', tmp_path, refresh=True, provider='yahoo')
+
+    yahoo_payload = payload()
+    yahoo_payload['chart']['result'][0]['meta'].update(
+        symbol='000660.KS', exchangeTimezoneName='Asia/Seoul', currency='KRW'
+    )
+    yahoo_payload['chart']['result'][0]['indicators']['adjclose'] = [
+        {'adjclose': [100., 101., 102.]}
+    ]
+    yahoo_calls = response(monkeypatch, yahoo_payload)
+    yahoo_frame, yahoo_info = source.fetch_snapshot(
+        'KR_SKHYNIX', tmp_path / 'yahoo', full_history=True, provider='yahoo'
+    )
+    assert len(yahoo_calls) == 1
+    assert yahoo_calls[0]['interval'] == '1d'
+    assert yahoo_info['provider'] == 'yahoo'
+    assert yahoo_info['ticker'] == '000660.KS'
+    assert len(yahoo_frame) == 3
     assert len(calls) == 1
 
 

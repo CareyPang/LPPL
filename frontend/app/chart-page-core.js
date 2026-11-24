@@ -298,7 +298,7 @@
         var limits = intraday.limits || {};
         return {
           marketDate: limits.last ? '行情时间 ' + limits.last : '',
-          dataSource: [intraday.source, period + ' 分钟', '不复权'].filter(Boolean).join(' · '),
+          dataSource: [displaySource(intraday.source), period + ' 分钟', '不复权'].filter(Boolean).join(' · '),
         };
       }
       if (intraday && intraday.period === period && intraday.status === 'error') {
@@ -307,12 +307,49 @@
       return { marketDate: '行情时间 读取中…', dataSource: '读取中' };
     }
     var source = data.dataSource || '';
-    var adjustment = data.adjustment || '';
     return {
       marketDate: data.marketAsOf ? '行情日期 ' + data.marketAsOf : '',
-      dataSource: [source, data.assetType === 'stock' && adjustment === 'none' ? '未复权' : adjustment]
-        .filter(Boolean).join(' · '),
+      dataSource: displaySource(source),
     };
+  }
+
+  function displaySource(source) {
+    return ({
+      'Yahoo Finance v8 chart': 'Yahoo Finance',
+      tencent_fqkline: '腾讯行情',
+      tencent: '腾讯行情',
+      sina: '新浪行情',
+    })[source] || source || '';
+  }
+
+  function modelAdjustmentLabel(value, assetType) {
+    if (value === 'none') return assetType === 'index' ? '不复权' : '未复权';
+    if (value === 'provider_adjclose_ratio_OHLC') return '按调整收盘价比例复权';
+    if (value === 'provider_index_level_unmodified') return '不复权';
+    return /[A-Za-z].*_/.test(String(value || '')) ? '' : value || '';
+  }
+
+  function modelVersionLabel(value) {
+    if (value === 'global_sparse27_v1_production_v2_box') return '国际市场稀疏窗口研究样本';
+    return /[A-Za-z].*_/.test(String(value || '')) ? '' : value || '';
+  }
+
+  function volumeUnitLabel(value) {
+    if (value === 'vendor_native') return '';
+    return ({
+      shares: '股',
+      lots: '手',
+      points: '指数点',
+    })[value] || (/[A-Za-z].*_/.test(String(value || '')) ? '' : value || '');
+  }
+
+  function currencyLabel(value) {
+    return ({
+      USD: '美元',
+      JPY: '日元',
+      KRW: '韩元',
+      CNY: '人民币',
+    })[value] || value || '';
   }
 
   function intervalId(scale, band) {
@@ -355,6 +392,10 @@
     assembleIndexData: assembleIndexData,
     assembleStockData: assembleStockData,
     marketMetadata: marketMetadata,
+    modelAdjustmentLabel: modelAdjustmentLabel,
+    modelVersionLabel: modelVersionLabel,
+    volumeUnitLabel: volumeUnitLabel,
+    currencyLabel: currencyLabel,
     intervalId: intervalId,
     withRule: withRule,
     researchNote: researchNote,

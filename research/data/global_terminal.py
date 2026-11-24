@@ -32,25 +32,28 @@ FULL_HISTORY_PERIOD1 = -2208988800  # 1900-01-01; range=max may downgrade daily 
 CROSS_CHECK_LOOKBACK_SESSIONS = 250
 CROSS_CHECK_MAX_REL_DIFF = 0.005
 SINA_US_SYMBOLS = {
-    "US_SPX": "SPX",
-    "US_IXIC": "IXIC",
-    "US_NDX": "NDX",
-    "US_DJI": "DJI",
     "US_SOX": "SOX",
     "US_MRVL": "MRVL",
 }
+FRED_SERIES = {
+    "US_SPX": "SP500",
+    "US_IXIC": "NASDAQCOM",
+    "US_NDX": "NASDAQ100",
+    "US_DJI": "DJIA",
+    "JP_N225": "NIKKEI225",
+}
 
 ASSETS = {
-    "US_SPX": dict(ticker="^GSPC", name="标普500", kind="index", market="us", currency="USD", timezone="America/New_York"),
-    "US_IXIC": dict(ticker="^IXIC", name="纳斯达克综合指数", kind="index", market="us", currency="USD", timezone="America/New_York"),
-    "US_NDX": dict(ticker="^NDX", name="纳斯达克100", kind="index", market="us", currency="USD", timezone="America/New_York"),
-    "US_DJI": dict(ticker="^DJI", name="道琼斯工业平均", kind="index", market="us", currency="USD", timezone="America/New_York"),
-    "US_SOX": dict(ticker="^SOX", name="费城半导体指数", kind="index", market="us", currency="USD", timezone="America/New_York"),
-    "JP_N225": dict(ticker="^N225", name="日经225", kind="index", market="jp", currency="JPY", timezone="Asia/Tokyo"),
-    "KR_KOSPI": dict(ticker="^KS11", name="韩国综合指数", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul"),
-    "KR_KOSDAQ": dict(ticker="^KQ11", name="韩国科斯达克", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul"),
-    "KR_SKHYNIX": dict(ticker="000660.KS", name="SK 海力士", kind="stock", market="kr", currency="KRW", timezone="Asia/Seoul"),
-    "US_MRVL": dict(ticker="MRVL", name="迈威尔科技", kind="stock", market="us", currency="USD", timezone="America/New_York"),
+    "US_SPX": dict(ticker="^GSPC", name="标普500", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纽约证券交易所"),
+    "US_IXIC": dict(ticker="^IXIC", name="纳斯达克综合指数", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "US_NDX": dict(ticker="^NDX", name="纳斯达克100", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "US_DJI": dict(ticker="^DJI", name="道琼斯工业平均", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纽约证券交易所"),
+    "US_SOX": dict(ticker="^SOX", name="费城半导体指数", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "JP_N225": dict(ticker="^N225", name="日经225", kind="index", market="jp", currency="JPY", timezone="Asia/Tokyo", display_exchange="东京证券交易所"),
+    "KR_KOSPI": dict(ticker="^KS11", name="韩国综合指数", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
+    "KR_KOSDAQ": dict(ticker="^KQ11", name="韩国科斯达克", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
+    "KR_SKHYNIX": dict(ticker="000660.KS", name="SK 海力士", kind="stock", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
+    "US_MRVL": dict(ticker="MRVL", name="迈威尔科技", kind="stock", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
 }
 
 
@@ -125,13 +128,18 @@ def validate_market_sessions(
     if market not in {"us", "jp", "kr"}:
         return frame.copy(), {
             "dropped_non_session_rows": 0,
+            "dropped_non_session_dates": [],
             "missing_sessions_last_250": 0,
+            "missing_sessions_last_250_dates": [],
         }
     if frame.empty:
         raise ValueError("Cannot validate an empty market history")
     dates = pd.to_datetime(frame.date).dt.normalize()
     sessions = market_sessions(market, dates.min(), dates.max())
     valid = dates.isin(sessions)
+    dropped_dates = sorted(
+        {date.date().isoformat() for date in dates.loc[~valid]}
+    )
     filtered = frame.loc[valid].copy().sort_values("date").reset_index(drop=True)
     if filtered.empty:
         raise ValueError("No bars remain on exchange sessions")
@@ -143,7 +151,11 @@ def validate_market_sessions(
     filtered_dates = pd.to_datetime(filtered.date)
     return filtered, {
         "dropped_non_session_rows": int((~valid).sum()),
+        "dropped_non_session_dates": dropped_dates,
         "missing_sessions_last_250": len(missing),
+        "missing_sessions_last_250_dates": [
+            date.date().isoformat() for date in missing
+        ],
         "rows": len(filtered),
         "first_date": str(filtered_dates.iloc[0].date()),
         "asof": str(filtered_dates.iloc[-1].date()),
@@ -159,7 +171,7 @@ def compare_cross_check(
     *,
     sessions: pd.DatetimeIndex | None = None,
 ) -> dict:
-    """Compare provider closes on recent exchange sessions without replacing Yahoo."""
+    """Compare closes only where both sources have reached the same date."""
     expected = (
         completed_market_sessions(
             market, pd.Timestamp(fetched_at), CROSS_CHECK_LOOKBACK_SESSIONS
@@ -180,8 +192,23 @@ def compare_cross_check(
             "overlap": 0,
             "max_rel_diff": None,
             "missing_in_yahoo": 0,
+            "missing_in_yahoo_dates": [],
+            "yahoo_lag_sessions": 0,
+            "yahoo_lag_session_dates": [],
             "status": "unavailable",
             "reason": "Second source returned no rows in the recent exchange-session window",
+        }
+    if yahoo.empty:
+        return {
+            "provider": provider,
+            "overlap": 0,
+            "max_rel_diff": None,
+            "missing_in_yahoo": 0,
+            "missing_in_yahoo_dates": [],
+            "yahoo_lag_sessions": 0,
+            "yahoo_lag_session_dates": [],
+            "status": "unavailable",
+            "reason": "Yahoo returned no rows in the recent exchange-session window",
         }
     yahoo_column = "raw_close" if "raw_close" in yahoo else "close"
     reference_column = "raw_close" if "raw_close" in reference else "close"
@@ -191,20 +218,44 @@ def compare_cross_check(
     reference = reference.drop_duplicates("date", keep="last")
     yahoo_closes = yahoo.set_index("date")[yahoo_column]
     reference_closes = reference.set_index("date")[reference_column]
+    yahoo_last_date = max(yahoo_closes.index)
+    reference_last_date = max(reference_closes.index)
+    common_end = min(yahoo_last_date, reference_last_date)
     reference_dates_set = set(reference_closes.index)
     yahoo_dates_set = set(yahoo_closes.index)
-    missing_in_yahoo = len(reference_dates_set - yahoo_dates_set)
-    overlap_dates = sorted(reference_dates_set & yahoo_dates_set)
+    missing_in_yahoo_dates = sorted(
+        date
+        for date in reference_dates_set
+        if date <= common_end and date not in yahoo_dates_set
+    )
+    yahoo_lag_session_dates = sorted(
+        date for date in reference_dates_set if date > yahoo_last_date
+    )
+    overlap_dates = sorted(
+        date
+        for date in (reference_dates_set & yahoo_dates_set)
+        if date <= common_end
+    )
+    date_lists = {
+        "missing_in_yahoo": len(missing_in_yahoo_dates),
+        "missing_in_yahoo_dates": [
+            date.date().isoformat() for date in missing_in_yahoo_dates
+        ],
+        "yahoo_lag_sessions": len(yahoo_lag_session_dates),
+        "yahoo_lag_session_dates": [
+            date.date().isoformat() for date in yahoo_lag_session_dates
+        ],
+    }
     if not overlap_dates:
         return {
             "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
-            "missing_in_yahoo": missing_in_yahoo,
-            "status": "mismatch" if missing_in_yahoo else "unavailable",
+            **date_lists,
+            "status": "mismatch" if missing_in_yahoo_dates else "unavailable",
             **(
                 {}
-                if missing_in_yahoo
+                if missing_in_yahoo_dates
                 else {"reason": "Second source has no overlapping Yahoo sessions"}
             ),
         }
@@ -221,17 +272,17 @@ def compare_cross_check(
             "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
-            "missing_in_yahoo": missing_in_yahoo,
+            **date_lists,
             "status": "unavailable",
             "reason": "No finite overlapping closes were returned",
         }
     max_rel_diff = max(relative_differences)
-    mismatch = missing_in_yahoo > 0 or max_rel_diff > CROSS_CHECK_MAX_REL_DIFF
+    mismatch = bool(missing_in_yahoo_dates) or max_rel_diff > CROSS_CHECK_MAX_REL_DIFF
     return {
         "provider": provider,
         "overlap": len(relative_differences),
         "max_rel_diff": max_rel_diff,
-        "missing_in_yahoo": missing_in_yahoo,
+        **date_lists,
         "status": "mismatch" if mismatch else "ok",
     }
 
@@ -275,23 +326,29 @@ def _fetch_naver_cross_check(asset_id: str, fetched_at: datetime) -> pd.DataFram
 
 
 def _fetch_sina_cross_check(asset_id: str) -> pd.DataFrame:
+    symbol = SINA_US_SYMBOLS[asset_id]
     response = requests.get(
         "https://stock.finance.sina.com.cn/usstock/api/jsonp.php/var/US_MinKService.getDailyK",
-        params={"symbol": SINA_US_SYMBOLS[asset_id], "num": CROSS_CHECK_LOOKBACK_SESSIONS + 10},
+        params={"symbol": symbol, "num": CROSS_CHECK_LOOKBACK_SESSIONS + 10},
         headers={"Referer": "https://finance.sina.com.cn/"},
         timeout=(12, 45),
     )
     response.raise_for_status()
-    match = re.search(r"\((\[[\s\S]*\])\)", response.text)
+    match = re.search(r"\((\[[^\n]+\])\)", response.text)
     if not match:
-        raise ValueError("Sina daily response did not contain a JSONP array")
+        body = " ".join(response.text.split())
+        if "var(null)" in body:
+            raise ValueError(f"Sina returned var(null) for {symbol}")
+        raise ValueError(
+            f"Sina daily response did not match its JSONP array format: {body[:120]}"
+        )
     data = json.loads(match.group(1))
     if not isinstance(data, list) or not data:
         raise ValueError("Sina returned no daily bars")
     rows = []
     for item in data:
-        date = pd.Timestamp(item["d"]).normalize()
-        close = float(item["c"])
+        date = pd.Timestamp(item.get("d")).normalize()
+        close = float(item.get("c", "nan"))
         if np.isfinite(close) and close > 0:
             rows.append({"date": date, "close": close})
     if not rows:
@@ -299,23 +356,32 @@ def _fetch_sina_cross_check(asset_id: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _fetch_stooq_cross_check() -> pd.DataFrame:
+def _fetch_fred_cross_check(asset_id: str) -> pd.DataFrame:
+    series = FRED_SERIES[asset_id]
     response = requests.get(
-        "https://stooq.com/q/d/l/?s=^nkx&i=d",
+        "https://fred.stlouisfed.org/graph/fredgraph.csv",
+        params={"id": series},
         timeout=(12, 45),
     )
     response.raise_for_status()
-    data = pd.read_csv(BytesIO(response.content))
-    if not {"Date", "Close"}.issubset(data.columns):
-        raise ValueError("Stooq daily CSV schema changed")
-    frame = data.loc[:, ["Date", "Close"]].rename(
-        columns={"Date": "date", "Close": "close"}
+    data = pd.read_csv(BytesIO(response.content), dtype=str)
+    date_column = next(
+        (column for column in data.columns if column.lower() in {"date", "observation_date"}),
+        None,
     )
-    frame["date"] = pd.to_datetime(frame.date).dt.normalize()
-    frame["close"] = pd.to_numeric(frame.close, errors="coerce")
-    frame = frame.loc[np.isfinite(frame.close) & (frame.close > 0)].dropna()
+    value_column = series if series in data.columns else next(
+        (column for column in data.columns if column != date_column), None
+    )
+    if date_column is None or value_column is None:
+        raise ValueError(f"FRED CSV schema changed for {series}")
+    frame = data.loc[:, [date_column, value_column]].rename(
+        columns={date_column: "date", value_column: "close"}
+    )
+    frame["date"] = pd.to_datetime(frame.date, errors="coerce").dt.normalize()
+    frame["close"] = pd.to_numeric(frame.close.replace(".", np.nan), errors="coerce")
+    frame = frame.loc[frame.date.notna() & np.isfinite(frame.close) & (frame.close > 0)]
     if frame.empty:
-        raise ValueError("Stooq returned no positive daily closes")
+        raise ValueError(f"FRED returned no positive daily closes for {series}")
     return frame
 
 
@@ -324,27 +390,32 @@ def fetch_cross_check(
 ) -> dict:
     fetched_at = fetched_at or datetime.now(UTC)
     market = ASSETS[asset_id]["market"]
-    if asset_id == "KR_SKHYNIX":
+    if asset_id in FRED_SERIES:
+        provider = "fredgraph_csv"
+    elif asset_id in SINA_US_SYMBOLS:
+        provider = "sina_us_daily_k"
+    elif market == "kr":
+        provider = "naver_siseJson"
+    else:
+        provider = "not_configured"
         return {
-            "provider": "not_configured",
+            "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
             "missing_in_yahoo": 0,
+            "missing_in_yahoo_dates": [],
+            "yahoo_lag_sessions": 0,
+            "yahoo_lag_session_dates": [],
             "status": "unavailable",
             "reason": "No independent second source is configured for this asset",
         }
-    provider = {
-        "us": "sina_us_daily_k",
-        "jp": "stooq_daily_csv",
-        "kr": "naver_siseJson",
-    }[market]
     try:
-        if market == "us":
+        if asset_id in FRED_SERIES:
+            reference = _fetch_fred_cross_check(asset_id)
+        elif asset_id in SINA_US_SYMBOLS:
             reference = _fetch_sina_cross_check(asset_id)
-        elif market == "kr":
-            reference = _fetch_naver_cross_check(asset_id, fetched_at)
         else:
-            reference = _fetch_stooq_cross_check()
+            reference = _fetch_naver_cross_check(asset_id, fetched_at)
         return compare_cross_check(
             yahoo_frame, reference, market, provider, fetched_at
         )
@@ -354,6 +425,9 @@ def fetch_cross_check(
             "overlap": 0,
             "max_rel_diff": None,
             "missing_in_yahoo": 0,
+            "missing_in_yahoo_dates": [],
+            "yahoo_lag_sessions": 0,
+            "yahoo_lag_session_dates": [],
             "status": "unavailable",
             "reason": f"{type(error).__name__}: {error}",
         }
@@ -541,6 +615,8 @@ def fetch_snapshot(asset_id: str, root: Path, *, refresh: bool = False,
     start; once this root has a full-history snapshot, refreshes retain that scope.
     A KOSDAQ full-history request selects the independent Naver series because
     Yahoo begins in 2000. provider='yahoo' explicitly selects the shorter source.
+    SK hynix defaults to Naver; an explicit Yahoo provider keeps it available as
+    the primary feed when Naver is used for an independent cross-check.
     Provider transitions keep all prior vintages and record overlap differences.
     """
     if not isinstance(full_history, bool):
@@ -550,13 +626,14 @@ def fetch_snapshot(asset_id: str, root: Path, *, refresh: bool = False,
     asset = ASSETS[asset_id]
     if provider not in (None, 'yahoo', 'naver') or (provider == 'naver' and asset_id not in NAVER_SYMBOLS):
         raise ValueError('Unsupported asset/provider combination')
-    if asset_id == 'KR_SKHYNIX' and provider not in (None, 'naver'):
-        raise ValueError('SK hynix requires its validated Naver price series')
     folder = Path(root) / "source" / asset_id
     pointer = folder / "latest.json"
     previous, previous_info = _cached_snapshot(asset_id, folder) if pointer.exists() else (None, {})
     effective_full_history = full_history or previous_info.get('full_history_requested', False)
-    use_naver = asset_id == 'KR_SKHYNIX' or (asset_id == 'KR_KOSDAQ' and full_history)
+    use_naver = (
+        (asset_id == 'KR_SKHYNIX' and provider != 'yahoo')
+        or (asset_id == 'KR_KOSDAQ' and full_history)
+    )
     selected_provider = provider or ('naver' if use_naver else previous_info.get('provider', 'yahoo'))
     same_provider = selected_provider == previous_info.get('provider', 'yahoo')
     if previous is not None and same_provider and not refresh and (not full_history or previous_info.get('full_history_requested')):
