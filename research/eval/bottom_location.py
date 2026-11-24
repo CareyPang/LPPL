@@ -426,7 +426,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "",
                 f"## W={window}",
                 "",
-                "| Segment | Group | n_events | Median dist_to_trough | P75 dist_to_trough | Median range_pos | In-bottom-zone share | Median trough_offset | Trough-ahead share | |offset|≤4 share |",
+                "| Segment | Group | n_events | Median dist_to_trough | P75 dist_to_trough | Median range_pos | In-bottom-zone share | Median trough_offset | Trough-ahead share | \\|offset\\|≤4 share |",
                 "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
             ]
         )
@@ -448,7 +448,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "",
                 "### 随机基准（B1–B3，P5 / P50 / P95）",
                 "",
-                "| Segment | Group | In-bottom-zone share | Median dist_to_trough | |offset|≤4 share |",
+                "| Segment | Group | In-bottom-zone share | Median dist_to_trough | \\|offset\\|≤4 share |",
                 "|---|---|---:|---:|---:|",
             ]
         )

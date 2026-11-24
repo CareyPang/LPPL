@@ -4,11 +4,11 @@
 - 窗口有效条件：t0−W 至 t0+W 每帧均存在、收盘非空且 split 与 t0 相同。
 - 随机基准：每段、每指数从有效 B0 候选周无放回抽取与该组事件数相同的周，2000 次；seed=20261124。B0 不做随机比较。
 - `range_pos` 在 max==min 时为 None；最低价并列时取窗口内最早一周。
-- Runtime: 10.741 seconds。
+- Runtime: 10.923 seconds。
 
 ## W=13
 
-| Segment | Group | n_events | Median dist_to_trough | P75 dist_to_trough | Median range_pos | In-bottom-zone share | Median trough_offset | Trough-ahead share | |offset|≤4 share |
+| Segment | Group | n_events | Median dist_to_trough | P75 dist_to_trough | Median range_pos | In-bottom-zone share | Median trough_offset | Trough-ahead share | \|offset\|≤4 share |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | dev | B0 | 221 | 11.4% | 18.7% | 0.443 | 17.2% | 4.0 | 57.9% | 23.1% |
 | dev | B1 | 97 | 11.0% | 18.8% | 0.435 | 12.4% | 7.0 | 69.1% | 21.6% |
@@ -25,7 +25,7 @@
 
 ### 随机基准（B1–B3，P5 / P50 / P95）
 
-| Segment | Group | In-bottom-zone share | Median dist_to_trough | |offset|≤4 share |
+| Segment | Group | In-bottom-zone share | Median dist_to_trough | \|offset\|≤4 share |
 |---|---|---:|---:|---:|
 | dev | B1 | 11.3% / 17.5% / 23.7% | 9.6% / 11.3% / 13.3% | 19.6% / 25.8% / 34.0% |
 | dev | B2 | 12.5% / 17.2% / 22.7% | 9.9% / 11.3% / 12.9% | 20.3% / 26.6% / 32.8% |
@@ -39,7 +39,7 @@
 
 ## W=26
 
-| Segment | Group | n_events | Median dist_to_trough | P75 dist_to_trough | Median range_pos | In-bottom-zone share | Median trough_offset | Trough-ahead share | |offset|≤4 share |
+| Segment | Group | n_events | Median dist_to_trough | P75 dist_to_trough | Median range_pos | In-bottom-zone share | Median trough_offset | Trough-ahead share | \|offset\|≤4 share |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | dev | B0 | 211 | 17.3% | 30.9% | 0.442 | 19.4% | 8.0 | 61.1% | 14.2% |
 | dev | B1 | 95 | 19.9% | 36.6% | 0.549 | 8.4% | 11.0 | 68.4% | 6.3% |
@@ -56,7 +56,7 @@
 
 ### 随机基准（B1–B3，P5 / P50 / P95）
 
-| Segment | Group | In-bottom-zone share | Median dist_to_trough | |offset|≤4 share |
+| Segment | Group | In-bottom-zone share | Median dist_to_trough | \|offset\|≤4 share |
 |---|---|---:|---:|---:|
 | dev | B1 | 14.7% / 21.1% / 28.4% | 13.7% / 16.0% / 18.5% | 9.5% / 15.8% / 22.1% |
 | dev | B2 | 15.6% / 22.1% / 27.9% | 13.8% / 15.8% / 18.0% | 10.7% / 15.6% / 21.3% |
