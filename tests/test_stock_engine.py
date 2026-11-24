@@ -1180,6 +1180,7 @@ def test_current_and_history_reuse_identical_fit_cache(monkeypatch, tmp_path):
     monkeypatch.setattr(stock, "fit_asof", fit)
     current = stock.predict("600519", procs=1, cache_dir=tmp_path)
     assert current["params"]["optimizer"] == "de_lbfgsb"
+    assert current["params"]["lppls_spec"] == "lppls-spec-v1"
     assert len(calls) == 2
     calls.clear()
     historical = stock.history("600519", weeks=1, procs=1, cache_dir=tmp_path)

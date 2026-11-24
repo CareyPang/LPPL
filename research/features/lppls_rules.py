@@ -15,6 +15,12 @@ import numpy as np
 import pandas as pd
 
 from ..lppls.core import TOP_RULE
+from ..lppls.spec import (
+    NORMAL_BOX_AHEAD_BOUNDS,
+    NORMAL_BOX_B_MAX_EXCLUSIVE,
+    NORMAL_BOX_M_BOUNDS,
+    NORMAL_BOX_OMEGA_BOUNDS,
+)
 
 
 def _derived(df: pd.DataFrame) -> pd.DataFrame:
@@ -48,7 +54,12 @@ def rules(d: pd.DataFrame) -> pd.DataFrame:
                      & (d.osc >= 2.5) & (d.D >= 1.0) & (d.rel_err <= 0.035))
     r["lit1_d08"] = ((d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & d.ahead.between(-0.15 * d.dt, 0.13 * d.dt)
                      & (d.osc >= 2.5) & (d.D >= 0.8) & (d.rel_err <= 0.035))
-    r["box"] = (d.B < 0) & d.m.between(0.1, 0.9) & d.w.between(6, 13) & d.ahead.between(0, 90)
+    r["box"] = (
+        (d.B < NORMAL_BOX_B_MAX_EXCLUSIVE)
+        & d.m.between(*NORMAL_BOX_M_BOUNDS)
+        & d.w.between(*NORMAL_BOX_OMEGA_BOUNDS)
+        & d.ahead.between(*NORMAL_BOX_AHEAD_BOUNDS)
+    )
     r["lit2"] = ((d.B < 0) & d.m.between(0.01, 1.2) & d.w.between(2, 25) & d.ahead.between(-0.2 * d.dt, 0.12 * d.dt)
                  & (d.osc >= 2.5) & (d.D >= 0.8) & (d.rel_err <= 0.14))
     if "q3_p" in d.columns:  # §22.3 研究臂：box ∧ 窗口级循环平移对照 p≤0.10（仅含 q3_p 列的研究扫描）

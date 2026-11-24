@@ -50,6 +50,7 @@ def test_daily_frozen_smoke(tmp_path, monkeypatch):
     assert rec["top"]["p20"]["evidence"] == "fail_i_iii"
     assert rec["top"]["bubble"]["evidence"] == "descriptive"
     assert rec["data_version"].startswith("frozen_")
+    assert rec["params"]["lppls_spec"] == daily.SPEC_VERSION
 
 
 def test_daily_cli_accepts_custom_output_directory(tmp_path, monkeypatch):
@@ -118,6 +119,7 @@ def test_daily_and_stock_full_share_unique_windows_and_trust_targets(
     assert captured["trust_opt"] == daily.OPT
     record = json.loads((tmp_path / f"sh000001_{dates[-1].date()}.json").read_text())
     assert record["params"]["optimizer"] == daily.OPTIMIZER_NAMES[daily.OPT]
+    assert record["params"]["lppls_spec"] == daily.SPEC_VERSION
     assert stock._variant_windows("stk_lite", len(ohlc)) == tuple(universe.WINDOWS)
     for n_bars in (100, 600, 1600):
         old_full = tuple(

@@ -1,7 +1,7 @@
 """Frozen numerical LPPLS kernel extracted from the audited user research.
 
 Original math AST (Xmat/lin/fit_one):
-ac00580978ed58cc57a5a1a5c07b69846d5516ec7499722ea46f6d49fc715c01.
+46ee9e139b08b31df675803bfa7b558fcc79849a12819b2e81e88eee65dc339b.
 No archive paths, data fetching or execution side effects. The legacy strict_pass
 field retains 2.5 full cycles; research aggregation separately evaluates 1.5.
 """
@@ -14,6 +14,12 @@ from scipy.optimize import differential_evolution, minimize
 
 from ..pipeline.long_horizon import DE as DE_CONFIG
 from ..pipeline.long_horizon import LB as LBFGS_CONFIG
+from .spec import (
+    long_cycle_threshold,
+    long_fit_bounds,
+    long_profile_bounds,
+    long_seed_base_pass,
+)
 
 
 def Xmat(t, tc, m, w):
@@ -35,7 +41,7 @@ def lin(t, y, tc, m, w):
 def fit_one(y, seed):
     n = len(y)
     t = np.arange(n, dtype=float)
-    bounds = [(float(n), float(n + 89)), (0.1, 0.9), (6.0, 13.0)]
+    bounds = long_fit_bounds(n)
 
     def obj(z):
         try:
@@ -69,13 +75,13 @@ def fit_one(y, seed):
             bd.append(nm + '_HIGH')
     lgood = bool(lb is not None and lb.success)
     ok = bool(de.success and lgood)
-    strict = bool(ok and 0.1 < z[1] < 0.9 and (6 < z[2] < 13) and (b[1] < 0) and (damp >= 1) and (nosc >= 2.5) and (r2 >= 0.9) and (q['rank'] >= 4) and (q['condition'] <= 1 / math.sqrt(np.finfo(float).eps)))
+    strict = long_seed_base_pass(ok, z[1], z[2], b[1], damp, r2, q['rank'], q['condition']) and nosc >= long_cycle_threshold("cycles_2_5")
     return {'x': z, 'beta': b, 'sse': q['sse'], 'r2': r2, 'damping': damp, 'nosc': nosc, 'rank': q['rank'], 'condition': q['condition'], 'strict_pass': strict, 'optimizer_success': ok, 'boundary_status': '|'.join(bd) if bd else 'INTERIOR', 'de': {'success': bool(de.success), 'message': str(de.message), 'fun': float(de.fun), 'nit': int(getattr(de, 'nit', -1)), 'nfev': int(getattr(de, 'nfev', -1)), 'x': np.asarray(de.x).tolist(), 'population': np.asarray(getattr(de, 'population', [])).tolist(), 'population_energies': np.asarray(getattr(de, 'population_energies', [])).tolist()}, 'lbfgs': {'success': lgood, 'message': str(lb.message) if lb is not None else lbe, 'fun': float(lb.fun) if lb is not None and np.isfinite(lb.fun) else None, 'nit': int(getattr(lb, 'nit', -1)) if lb is not None else -1, 'nfev': int(getattr(lb, 'nfev', -1)) if lb is not None else -1, 'x': np.asarray(lb.x).tolist() if lb is not None else None}, 'de_config': DE_CONFIG, 'lbfgs_config': LBFGS_CONFIG, 'linear_solver': 'numpy.linalg.lstsq SVD-backed'}
 
 def profile_fit(y, tc, seed):
     n = len(y)
     t = np.arange(n, dtype=float)
-    bounds = [(0.1, 0.9), (6.0, 13.0)]
+    bounds = long_profile_bounds()
 
     def obj(z):
         try:

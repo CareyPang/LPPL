@@ -12,11 +12,13 @@ from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
 
-os.environ.setdefault("LPPLS_BOX", "v2")
-
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import requests  # noqa: E402
+
+from ..lppls.spec import NORMAL_BOX_NAME, SPEC_VERSION  # noqa: E402
+
+os.environ.setdefault("LPPLS_BOX", "v2")
 
 from ..data import cache, us_stock  # noqa: E402
 from ..data.sources import UA, sina_raw_daily  # noqa: E402
@@ -78,9 +80,9 @@ def _set_allow_inside() -> bool:
 
 
 def _ensure_v2_box() -> None:
-    if lppls_scan.BOX != "v2":
+    if lppls_scan.BOX != NORMAL_BOX_NAME:
         raise RuntimeError(
-            f"stock engine requires LPPLS_BOX=v2, got {lppls_scan.BOX!r}"
+            f"stock engine requires LPPLS_BOX={NORMAL_BOX_NAME}, got {lppls_scan.BOX!r}"
         )
 
 
@@ -743,7 +745,7 @@ def _record(
         data_version=data_version,
         market=market,
     )
-    record["params"] = {"optimizer": "de_lbfgsb"}
+    record["params"] = {"optimizer": "de_lbfgsb", "lppls_spec": SPEC_VERSION}
     name, st = _name_and_st(code6)
     eligibility = _stock_status_meta(ohlc, st, meta, reference_asof)
     record["model_version"] = f"{MODEL_VERSION}+{variant}"
@@ -1012,7 +1014,7 @@ def history(
         "asof": str(logp.index[-1].date()),
         "fit_code_version": _version(),
         "model_version": f"{MODEL_VERSION}+{variant}",
-        "params": {"optimizer": "de_lbfgsb"},
+        "params": {"optimizer": "de_lbfgsb", "lppls_spec": SPEC_VERSION},
         "evidence": STOCK_EVIDENCE,
         "rule": "每个截止日仅用此前个股拟合生成的情景区间；个股未经过样本外检验",
         "variant": variant,

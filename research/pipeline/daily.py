@@ -30,6 +30,7 @@ from ..features.lppls_scan import (
     unique_windows,
 )
 from ..lppls import core as _core
+from ..lppls.spec import SPEC_VERSION
 
 FROZEN = "v20261024"
 OUT = Path("web/mock/data")
@@ -94,7 +95,7 @@ def run(sym: str, frozen: bool = False, asof: str | None = None, windows: tuple[
         data_version=version,
         market="cn",
     )
-    rec["params"] = {"optimizer": OPTIMIZER_NAMES[effective_opt]}
+    rec["params"] = {"optimizer": OPTIMIZER_NAMES[effective_opt], "lppls_spec": SPEC_VERSION}
     if trust_boot:
         from ..lppls.trust import trust
         rec["top"]["trust"] = trust(

@@ -31,11 +31,22 @@ from ..data.global_terminal import (
     validate_market_sessions,
 )
 from ..data.trading_calendar import future_calendar_metadata
+from ..lppls.spec import (
+    GLOBAL_ALLOW_INSIDE,
+    GLOBAL_BOX_CYCLES_1_5,
+    GLOBAL_BOX_CYCLES_1_5_DESCRIPTION,
+    GLOBAL_SEARCH_BOUNDS,
+    GLOBAL_WINDOWS,
+    NORMAL_BOX_AHEAD_BOUNDS,
+    NORMAL_BOX_B_MAX_EXCLUSIVE,
+    NORMAL_BOX_M_BOUNDS,
+    NORMAL_BOX_NAME,
+    NORMAL_BOX_OMEGA_BOUNDS,
+    SPEC_VERSION,
+)
 from .stock_jobs import atomic_json as _atomic_json
 
-WINDOWS = (10, 14, 18, 21, 30, 42, 52, 63, 64, 84, 105, 126,
-           127, 168, 210, 252, 253, 315, 378, 441, 504,
-           525, 630, 756, 1008, 1260, 1500)
+WINDOWS = GLOBAL_WINDOWS
 SCALES = {"2-4w": (10, 20), "1-3m": (21, 63), "3-6m": (64, 126),
           "6-12m": (127, 252), "12-24m": (253, 504), "2-6y": (505, 1500)}
 MODEL_VERSION = "global_sparse27_v1_production_v2_box"
@@ -78,12 +89,12 @@ def method_identity() -> dict:
     except Exception:
         sha = None
     value = {"source_sha": sha, "math_hashes": hashes, "numpy": np.__version__, "scipy": scipy.__version__,
-             "windows": list(WINDOWS), "box": "v2", "seed": 0, "bootstrap": 0, "q3": 0,
-             "search_bounds": {"m": [.01, 2.0], "omega": [1, 50], "ahead_fraction": [-.2, .2]},
-             "allow_inside": True}
+             "windows": list(WINDOWS), "box": NORMAL_BOX_NAME, "seed": 0, "bootstrap": 0, "q3": 0,
+             "search_bounds": GLOBAL_SEARCH_BOUNDS, "allow_inside": GLOBAL_ALLOW_INSIDE,
+             "lppls_spec": SPEC_VERSION}
     value["fit_wrapper_hash"] = hashlib.sha256(ast.dump(ast.parse(inspect.getsource(fit_job)), include_attributes=False).encode()).hexdigest()
-    value["fit_environment"] = {"LPPLS_BOX": "v2", "LPPLS_Q3": "0", "LPPLS_G3": "0", "LPPLS_SIGN": "pos",
-                                "LPPLS_ANCHOR": "end", "LPPLS_WINDOWS": "full", "ALLOW_INSIDE": True}
+    value["fit_environment"] = {"LPPLS_BOX": NORMAL_BOX_NAME, "LPPLS_Q3": "0", "LPPLS_G3": "0", "LPPLS_SIGN": "pos",
+                                "LPPLS_ANCHOR": "end", "LPPLS_WINDOWS": "full", "ALLOW_INSIDE": GLOBAL_ALLOW_INSIDE}
     # Git HEAD is provenance, not a mathematical dependency (frontend-only commits must not invalidate fits).
     value["hash"] = hashlib.sha256(json.dumps({k: v for k, v in value.items() if k != "source_sha"}, sort_keys=True).encode()).hexdigest()
     return value
@@ -106,7 +117,7 @@ def fit_key(frame: pd.DataFrame, asof: pd.Timestamp, n: int, optimizer: str, met
 
 def fit_job(task: dict) -> dict:
     """Trace optimizer calls without changing their parameters or results."""
-    os.environ["LPPLS_BOX"] = "v2"
+    os.environ["LPPLS_BOX"] = NORMAL_BOX_NAME
     os.environ["LPPLS_Q3"] = "0"
     os.environ["LPPLS_G3"] = "0"
     os.environ["LPPLS_SIGN"] = "pos"
@@ -115,9 +126,9 @@ def fit_job(task: dict) -> dict:
     from ..features import lppls_scan as scan
     from ..lppls import core
     from .daily import fit_asof
-    if scan.BOX != "v2" or scan.Q3_K or scan.G3 or scan.SIGN != "pos" or scan.ANCHOR != "end":
+    if scan.BOX != NORMAL_BOX_NAME or scan.Q3_K or scan.G3 or scan.SIGN != "pos" or scan.ANCHOR != "end":
         raise RuntimeError("Worker imported an incompatible fit configuration")
-    core.ALLOW_INSIDE = True
+    core.ALLOW_INSIDE = GLOBAL_ALLOW_INSIDE
     attempts, originals = [], {}
     for name in ("de_lbfgsb", "tcgrid_lm"):
         original = getattr(scan, name)
@@ -156,14 +167,21 @@ def derived_and_rules(rows: list[dict]):
     derived = _derived(frame)
     filters = rules(derived)
     # Same fitted candidates; separate research filter, not a future-only refit.
-    filters["box_cycles_1_5"] = filters.box & (derived.ahead > 0) & (derived.n_osc >= 1.5)
+    variant = GLOBAL_BOX_CYCLES_1_5
+    filters["box_cycles_1_5"] = (
+        filters.box
+        & (derived.ahead > variant["ahead_min_exclusive"])
+        & (derived.n_osc >= variant["full_cycles_min_inclusive"])
+    )
     return derived, filters
 
 
 def filter_diagnostics(derived, filters) -> dict:
     """Counts describe filter exclusions; overlapping failures are not additive."""
-    gates = {"B_negative": derived.B < 0, "m_0_1_to_0_9": derived.m.between(.1, .9),
-             "omega_6_to_13": derived.w.between(6, 13), "ahead_0_to_90": derived.ahead.between(0, 90)}
+    gates = {"B_negative": derived.B < NORMAL_BOX_B_MAX_EXCLUSIVE,
+             "m_0_1_to_0_9": derived.m.between(*NORMAL_BOX_M_BOUNDS),
+             "omega_6_to_13": derived.w.between(*NORMAL_BOX_OMEGA_BOUNDS),
+             "ahead_0_to_90": derived.ahead.between(*NORMAL_BOX_AHEAD_BOUNDS)}
     cumulative = pd.Series(True, index=derived.index)
     sequential = {}
     for name, gate in gates.items():
@@ -172,7 +190,8 @@ def filter_diagnostics(derived, filters) -> dict:
     return {"completed": len(derived), "standalone_pass": {k: int(v.sum()) for k, v in gates.items()},
             "sequential_pass": sequential, "box_qualified": int(filters.box.sum()),
             "cycles_1_5_qualified": int(filters.box_cycles_1_5.sum()),
-            "tc_inside_sample": int((derived.ahead < 0).sum()), "ahead_over_90": int((derived.ahead > 90).sum()),
+            "tc_inside_sample": int((derived.ahead < 0).sum()),
+            "ahead_over_90": int((derived.ahead > NORMAL_BOX_AHEAD_BOUNDS[1]).sum()),
             "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"}
 
 
@@ -300,7 +319,7 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
         "replay_kind": "historical_reconstruction", "research": {
             "sample_scope": "current plus two registered earlier trading-day endpoints; no outcome scoring",
             "cycles_1_5": aggregate(derived, filters, asof, calendar, asset["market"], "box_cycles_1_5"),
-            "cycles_1_5_rule": "production box AND ahead>0 AND full_cycles>=1.5; same fit pool, not future-only refit",
+            "cycles_1_5_rule": GLOBAL_BOX_CYCLES_1_5_DESCRIPTION,
             "oscillation_formula": "omega/(2*pi)*log(abs(tc)/max(abs(tc-t2),1e-3))",
             "filter_diagnostics": filter_diagnostics(derived, filters),
             "fit_input_hashes": {str(cell["n"]): cell["fit_input_hash"] for cell in cells},
@@ -391,8 +410,9 @@ def reexport_cached(root: Path, manifest_path: Path) -> dict:
     expected_hash = hashlib.sha256(json.dumps({k: v for k, v in method.items() if k not in ignored}, sort_keys=True).encode()).hexdigest()
     if expected_hash != method["hash"]:
         raise ValueError("Frozen manifest method hash mismatch")
-    for key in ("math_hashes", "numpy", "scipy", "windows", "box", "seed", "bootstrap", "q3", "search_bounds", "allow_inside"):
-        if method[key] != current[key]:
+    for key in ("math_hashes", "numpy", "scipy", "windows", "box", "seed", "bootstrap", "q3",
+                "search_bounds", "allow_inside", "lppls_spec"):
+        if method.get(key) != current[key]:
             raise ValueError(f"Export-only mathematical dependency changed: {key}")
     if "fit_wrapper_hash" in method and method["fit_wrapper_hash"] != current["fit_wrapper_hash"]:
         raise ValueError("Export-only fit wrapper changed")
