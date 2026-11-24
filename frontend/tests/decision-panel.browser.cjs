@@ -4,6 +4,7 @@ const out=process.env.LPPL_QA_OUTPUT || require('node:os').tmpdir()+'/lppl-decis
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH || undefined});
+ try {
  const results=[];
  for(const width of [1440,390]){
   const context=await browser.newContext({viewport:{width,height:width===390?844:1000}});
@@ -24,6 +25,8 @@ fs.mkdirSync(out,{recursive:true});
     await page.waitForTimeout(250);
     const snap=await page.evaluate(()=>({dataset:{...document.querySelector('#chart-page').dataset},width:innerWidth,scrollWidth:document.documentElement.scrollWidth,summary:document.querySelector('.terminal-summary').innerText,panel:document.querySelector('#decision-panel-host').innerText,error:document.querySelector('#error-panel').innerText,canvas:document.querySelectorAll('#chart-host canvas').length}));
     const checks={noOverflow:snap.scrollWidth<=width,noJsErrors:errors.length===before};
+    if(name!=='unknown')checks.realDataLoaded=snap.dataset.loaded==='true'&&Number(snap.dataset.barCount)>0;
+    else checks.noBorrowedResult=!snap.dataset.bottomScore&&snap.dataset.decisionStatus==='unavailable';
     if(name==='sse-history'){
      const original=snap.panel;
      const future=page.locator('#terminal-show-future');
@@ -41,7 +44,8 @@ fs.mkdirSync(out,{recursive:true});
     console.log(name,width,JSON.stringify(snap.dataset),JSON.stringify(checks));
   }
   await context.close();
+  if(writes.length)throw Error('Read-only UI check encountered a write request');
  }
- await browser.close();
  if(results.some(r=>Object.values(r.checks).some(v=>v===false)))throw Error('Browser contract failed; inspect live-qa.json');
+ } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1});
