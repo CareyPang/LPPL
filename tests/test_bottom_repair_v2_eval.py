@@ -10,9 +10,14 @@ import pandas as pd
 import pytest
 
 from research.eval.bottom_repair_v2_eval import (
+    BOOLEAN_METRICS,
     LEDGER_COLUMNS,
+    METRIC_NAMES,
+    SEGMENTS,
+    STATES,
     V2_STATES,
     _bootstrap_difference,
+    _random_baselines_by_state,
     _select_v2_variant,
     compute_features,
     ema,
@@ -180,6 +185,40 @@ def test_head_to_head_bootstrap_uses_joint_calendar_quarter_blocks() -> None:
     assert result["valid_draws"] + result["skipped_draws"] == 100
     assert result["valid_draws"] > 0
     assert result["skipped_draws"] > 0
+
+
+def test_test_segment_events_do_not_change_dev_random_baselines() -> None:
+    def make_event(value: int) -> dict[str, object]:
+        return {
+            "metrics": {
+                name: bool(value % 2) if name in BOOLEAN_METRICS else value / 100.0
+                for name in METRIC_NAMES
+            }
+        }
+
+    def make_events_by_state(test_event_count: int):
+        events_by_state = {
+            state: {segment: {"sh000001": []} for segment in SEGMENTS} for state in STATES
+        }
+        for segment in SEGMENTS:
+            events_by_state["B0"][segment]["sh000001"] = [make_event(value) for value in range(10)]
+        events_by_state[STATES[0]]["dev"]["sh000001"] = [
+            make_event(20),
+            make_event(21),
+        ]
+        events_by_state[STATES[0]]["test"]["sh000001"] = [
+            make_event(value) for value in range(30, 30 + test_event_count)
+        ]
+        events_by_state[STATES[1]]["dev"]["sh000001"] = [
+            make_event(40),
+            make_event(41),
+        ]
+        return events_by_state
+
+    original = _random_baselines_by_state(make_events_by_state(2), repeats=5)
+    changed_test = _random_baselines_by_state(make_events_by_state(4), repeats=5)
+
+    assert original[STATES[1]]["dev"] == changed_test[STATES[1]]["dev"]
 
 
 def _sample_ledger_events() -> list[dict[str, object]]:

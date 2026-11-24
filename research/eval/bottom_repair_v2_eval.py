@@ -503,6 +503,23 @@ def _random_baseline(
     }
 
 
+def _random_baselines_by_state(
+    events_by_state: dict[str, dict[str, dict[str, list[dict[str, Any]]]]],
+    repeats: int = RANDOM_REPEATS,
+) -> dict[str, dict[str, Any]]:
+    random_baselines: dict[str, dict[str, Any]] = {}
+    for state_index, state in enumerate(STATES):
+        random_baselines[state] = {}
+        for segment_index, segment in enumerate(SEGMENTS):
+            random_baselines[state][segment] = _random_baseline(
+                events_by_state[state][segment],
+                events_by_state["B0"][segment],
+                np.random.default_rng([SEED, state_index, segment_index]),
+                repeats=repeats,
+            )
+    return random_baselines
+
+
 def _select_v2_variant(results: dict[str, Any]) -> dict[str, Any]:
     score_order = {score_name: index for index, score_name in enumerate(SCORE_NAMES)}
     eligible: list[dict[str, Any]] = []
@@ -750,9 +767,9 @@ def _make_markdown_report(report: dict[str, Any]) -> str:
         "",
         "- Daily inputs: qfq OHLC from the local cache; weekly `fco_neg_intensity` frames are used only for OLD50.",
         "- Session segments: dev through 2018-12-31; cal 2019-01-01–2021-12-31; test 2022-01-01–2025-08-29; later sessions are live.",
-        "- Candidate label windows require t−60 through t+61 to exist wholly inside the event segment. State events use a 20-session cooldown per index/state.",
+        "- Candidate label windows require t−60 through t+61 to exist wholly inside the event segment and start on or after the index's first weekly-history `asof`. State events use a 20-session cooldown per index/state.",
         "- Outcomes use next-session open O(t+1); all prices are gross index prices with no costs. Indices are not tradable; ETF execution is a later round.",
-        f"- Random baselines: {report['parameters']['random_repeats']} draws, seed {report['parameters']['seed']}; sample B0 events without replacement per index.",
+        f"- Random baselines: {report['parameters']['random_repeats']} draws with independent per-state/segment streams; sample B0 events without replacement per index.",
         f"- Event ledger: `{report['event_ledger']['path']}`; rows={report['event_ledger']['row_count']}; SHA-256 of uncompressed CSV=`{report['event_ledger']['sha256_uncompressed_csv']}`.",
         f"- Runtime: {report['runtime_seconds']:.3f} seconds.",
         "",
@@ -1030,29 +1047,29 @@ def run_study(
             "live_sessions": int(sum(label == "live" for label in segment_labels)),
         }
 
-    rng = np.random.default_rng(SEED)
+    random_baselines = _random_baselines_by_state(events_by_state)
     results: dict[str, Any] = {}
     for state in STATES:
         results[state] = {}
         for segment in SEGMENTS:
             state_by_index = events_by_state[state][segment]
-            b0_by_index = events_by_state["B0"][segment]
             all_events = [event for symbol, _, _ in INDEX_LIST for event in state_by_index[symbol]]
             results[state][segment] = {
                 **_summarize_events(all_events),
                 "n_events_by_index": {
                     symbol: len(state_by_index[symbol]) for symbol, _, _ in INDEX_LIST
                 },
-                "random_baseline": _random_baseline(state_by_index, b0_by_index, rng),
+                "random_baseline": random_baselines[state][segment],
             }
 
     selection = _select_v2_variant(results)
     verdict_states = (selection["state"], "OLD50", "STOPFALL")
     verdicts = {state: _verdict_for_state(state, results) for state in verdict_states}
-    bootstrap_rng = np.random.default_rng(SEED)
     head_to_head: dict[str, Any] = {}
     selected_state = selection["state"]
     for segment in ("dev", "test"):
+        segment_index = SEGMENTS.index(segment)
+        bootstrap_rng = np.random.default_rng([SEED, 1000, segment_index])
         selected_by_index = events_by_state[selected_state][segment]
         old50_by_index = events_by_state["OLD50"][segment]
         head_to_head[segment] = {
@@ -1077,6 +1094,9 @@ def run_study(
             "seed": SEED,
             "random_repeats": RANDOM_REPEATS,
             "bootstrap_repeats": BOOTSTRAP_REPEATS,
+            "random_baseline_seed_sequence": "[seed, state_idx, segment_idx] in STATES and SEGMENTS order",
+            "bootstrap_seed_sequence": "[seed, 1000, segment_idx] per segment",
+            "bootstrap_resampling": "joint calendar-quarter blocks with replacement across all indexes",
             "dd_lookback_sessions": DD_LOOKBACK,
             "dd_threshold": DD_THRESHOLD,
             "label_lookback_sessions": LABEL_LOOKBACK,
