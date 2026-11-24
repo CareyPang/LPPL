@@ -7,6 +7,22 @@
   'use strict';
 
   var SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
+  var DISPLAY_CODES = {
+    JP_N225: 'N225', US_SPX: 'SPX', US_IXIC: 'IXIC', US_NDX: 'NDX', US_DJI: 'DJI',
+    US_SOX: 'SOX', KR_KOSPI: 'KOSPI', KR_KOSDAQ: 'KOSDAQ', KR_SKHYNIX: '000660', US_MRVL: 'MRVL'
+  };
+  var DISPLAY_EXCHANGES = {
+    US_SPX: '纽约证券交易所',
+    US_IXIC: '纳斯达克',
+    US_NDX: '纳斯达克',
+    US_DJI: '纽约证券交易所',
+    US_SOX: '纳斯达克',
+    JP_N225: '东京证券交易所',
+    KR_KOSPI: '韩国交易所',
+    KR_KOSDAQ: '韩国交易所',
+    KR_SKHYNIX: '韩国交易所',
+    US_MRVL: '纳斯达克'
+  };
   var RETURN_PAGES = new Set(['stock.html', 'index.html', 'backtest.html', 'market.html', 'home.html', 'research-workspace.html']);
   var NUMERIC_EVIDENCE = new Set(['dev', 'cal', 'test', 'cal_fragile', 'research_candidate', 'descriptive']);
   function restrictEvidence(scope, own) {
@@ -159,13 +175,20 @@
   }
 
   function exchangeFor(symbol) {
-    if (/^JP_/i.test(String(symbol || ''))) return '日本市场';
-    if (/^KR_/i.test(String(symbol || ''))) return '韩国市场';
+    var code = String(symbol || '').toUpperCase();
+    if (DISPLAY_EXCHANGES[code]) return DISPLAY_EXCHANGES[code];
+    if (/^JP_/i.test(code)) return '东京证券交易所';
+    if (/^KR_/i.test(code)) return '韩国交易所';
     if (/^US_[A-Z.]{1,6}$/i.test(String(symbol || ''))) return '美国市场';
     var prefix = String(symbol || '').slice(0, 2).toLowerCase();
     return prefix === 'sh' ? '上海证券交易所'
       : prefix === 'sz' ? '深圳证券交易所'
         : prefix === 'bj' ? '北京证券交易所' : '';
+  }
+
+  function displayCodeFor(symbol, preferredCode) {
+    var code = String(symbol || '');
+    return preferredCode || DISPLAY_CODES[code.toUpperCase()] || code;
   }
 
   function inferStockSymbol(symbol) {
@@ -213,8 +236,9 @@
       timezone: raw.timezone || identity.timezone || '',
       symbol: symbol,
       code: symbol,
+      displayCode: displayCodeFor(symbol, raw.display_code),
       name: result.name || raw.name || result.sym && result.sym.name || symbol,
-      exchange: raw.exchange || identity.exchange || exchangeFor(symbol),
+      exchange: raw.display_exchange || identity.display_exchange || exchangeFor(symbol),
       bars: bars,
       asof: result.asof || raw.asof || '',
       modelAsOf: result.asof || raw.asof || '',
@@ -262,8 +286,9 @@
       market: marketCode,
       symbol: resolvedSymbol,
       code: resolvedSymbol,
+      displayCode: displayCodeFor(resolvedSymbol, raw.display_code),
       name: hasLatest && (latest.name || raw.name) || market.name || market.stock_name || resolvedSymbol,
-      exchange: marketCode !== 'cn' ? market.exchange || raw.exchange || exchangeFor(resolvedSymbol) : exchangeFor(resolvedSymbol),
+      exchange: raw.display_exchange || market.display_exchange || exchangeFor(resolvedSymbol),
       bars: market.price,
       asof: hasLatest ? latest.asof || raw.asof || '' : '',
       modelAsOf: hasLatest ? latest.asof || raw.asof || '' : '',
@@ -389,6 +414,7 @@
     filterDescriptiveBands: filterDescriptiveBands,
     parseContext: parseContext,
     exchangeFor: exchangeFor,
+    displayCodeFor: displayCodeFor,
     assembleIndexData: assembleIndexData,
     assembleStockData: assembleStockData,
     marketMetadata: marketMetadata,

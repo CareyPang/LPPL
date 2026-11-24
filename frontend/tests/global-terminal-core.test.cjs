@@ -20,7 +20,12 @@ function context(code, asof = '') {
 }
 function raw(code, asof = '2026-11-23') {
   const item = identities.get(code);
-  return { symbol: code, name: item.name, market: item.market, currency: item.currency, exchange: item.exchange,
+  return { symbol: code, name: item.name, market: item.market, currency: item.currency,
+    exchange: code === 'JP_N225' ? 'Osaka' : item.exchange,
+    display_exchange: ({ US_SPX: '纽约证券交易所', US_IXIC: '纳斯达克', US_NDX: '纳斯达克',
+      US_DJI: '纽约证券交易所', US_SOX: '纳斯达克', JP_N225: '东京证券交易所',
+      KR_KOSPI: '韩国交易所', KR_KOSDAQ: '韩国交易所', KR_SKHYNIX: '韩国交易所',
+      US_MRVL: '纳斯达克' })[code],
     timezone: item.timezone, asof, model_version: 'fixture-v1', first_visible_at: null,
     top: { lppls_confidence: { evidence: 'research_candidate' } }, stock_meta: { evidence: 'research_candidate' },
     price_history: { dates: ['2026-11-19', '2026-11-20', '2026-11-23'], open: [100, 101, 102],
@@ -76,7 +81,8 @@ test('international current reads use only their own global payload and retain e
     assert.equal(data.symbol, item.sym);
     assert.equal(data.market, item.market);
     assert.equal(data.currency, item.currency);
-    assert.equal(data.exchange, item.exchange);
+    assert.equal(data.exchange, raw(item.sym).display_exchange);
+    assert.equal(data.displayCode, Core.displayCodeFor(item.sym));
     assert.equal(data.future_calendar, null);
     assert.equal(data.firstVisibleAt, null);
     if (item.market === 'jp' || item.market === 'kr') assert.notEqual(data.currency, 'CNY');

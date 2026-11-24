@@ -314,7 +314,7 @@
 
   function drawHeader(data) {
     setText('asset-name', data.name);
-    setText('asset-code', data.symbol);
+    setText('asset-code', data.displayCode || data.symbol);
     setOptionalText('asset-exchange', data.exchange);
     var marketName = ({ cn: 'A 股', us: '美国', jp: '日本', kr: '韩国' })[data.market || context.market] || '';
     var assetType = data.assetType === 'index' ? marketName && marketName + '指数' : marketName && marketName + '个股';
@@ -323,7 +323,7 @@
     ].filter(Boolean).join(' · '));
     setOptionalText('trading-status', data.tradingStatus ? '交易状态：' + data.tradingStatus : '');
     setText('identity-strip-name', data.name);
-    setText('identity-strip-code', data.symbol);
+    setText('identity-strip-code', data.displayCode || data.symbol);
     setOptionalText('identity-strip-meta', [data.exchange, data.quoteUnit,
       data.tradingStatus ? '交易状态：' + data.tradingStatus : ''].filter(Boolean).join(' · '));
     updateIdentityStrip();

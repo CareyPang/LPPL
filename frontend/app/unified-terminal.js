@@ -20,6 +20,10 @@
     Object.keys(values).forEach(function (key) { if (values[key]) p.set(key, values[key]); });
     return 'chart.html?' + p.toString();
   }
+  function optionLabel(core, code, name, preferredCode) {
+    var userCode = core.displayCodeFor(code, preferredCode);
+    return name && name !== code ? name + ' · ' + userCode : userCode;
+  }
   function summary(data, bands, historical) {
     var reference = historical || [data.modelAsOf, data.marketAsOf].filter(Boolean).sort().pop() || '';
     var prefix = historical ? '当时' : reference ? '截至 ' + reference + ' · ' : '';
@@ -109,10 +113,11 @@
       });
       el('terminal-history-more').hidden = frames.length <= historyLimit;
     }
-    function option(code, name, kind, group) {
+    function option(code, name, kind, group, displayCode) {
+      var label = optionLabel(options.core, code, name, displayCode);
       var existing = Array.from(el('terminal-asset').options).find(function (o) { return o.value === code; });
-      if (existing) { existing.textContent = name + ' · ' + code; return; }
-      var node = doc.createElement('option'); node.value = code; node.textContent = name + ' · ' + code;
+      if (existing) { existing.textContent = label; return; }
+      var node = doc.createElement('option'); node.value = code; node.textContent = label;
       node.dataset.kind = kind; group.appendChild(node);
       if (code.toUpperCase() === String(context.assetType === 'stock' ? context.stockCode : context.code).toUpperCase()) el('terminal-asset').value = code;
     }
@@ -126,12 +131,15 @@
       return group(label + (kind === 'index' ? '指数' : '个股'));
     }
     el('terminal-asset').replaceChildren();
-    (adapter.SYMS || []).forEach(function (item) { option(item.sym, item.name, 'index', marketGroup(item.market, 'index')); });
+    (adapter.SYMS || []).forEach(function (item) {
+      option(item.sym, item.name, 'index', marketGroup(item.market, 'index'), item.display_code || item.displayCode);
+    });
     (adapter.GLOBAL_SYMS || []).filter(function (item) { return item.kind === 'stock'; }).forEach(function (item) {
-      option(item.sym, item.name, 'stock', marketGroup(item.market, 'stock'));
+      option(item.sym, item.name, 'stock', marketGroup(item.market, 'stock'), item.display_code || item.displayCode);
     });
     var stocks = marketGroup('cn', 'stock'), us = marketGroup('us', 'stock');
-    if (context.assetType === 'stock') option(context.stockCode, context.name || context.stockCode, 'stock', marketGroup(context.market, 'stock'));
+    if (context.assetType === 'stock') option(context.stockCode, context.name || context.stockCode,
+        'stock', marketGroup(context.market, 'stock'), context.displayCode || context.display_code);
     Promise.allSettled([adapter.stock.index(), adapter.stock.usIndex()]).then(function (results) {
       results.forEach(function (result, i) {
         if (result.status !== 'fulfilled') return;
@@ -218,5 +226,6 @@
       renderControls();
     } };
   }
-  return { datesFrom: datesFrom, neighbour: neighbour, href: href, summary: summary, historyFor: historyFor, laterBars: laterBars, attach: attach };
+  return { datesFrom: datesFrom, neighbour: neighbour, href: href, optionLabel: optionLabel,
+    summary: summary, historyFor: historyFor, laterBars: laterBars, attach: attach };
 });

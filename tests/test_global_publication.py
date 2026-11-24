@@ -3,6 +3,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 import requests
@@ -56,6 +57,13 @@ def test_one_percent_cross_check_difference_is_a_mismatch():
 
     assert result["status"] == "mismatch"
     assert result["max_rel_diff"] == pytest.approx(0.01)
+    assert result["mismatches"] == [{
+        "date": "2026-11-23",
+        "field": "close",
+        "primary_value": 101.0,
+        "reference_value": 100.0,
+        "rel_diff": pytest.approx(0.01),
+    }]
 
 
 def test_second_source_session_missing_in_yahoo_is_a_mismatch():
@@ -98,6 +106,50 @@ def test_reference_sessions_after_yahoo_last_date_are_recorded_as_lag_not_mismat
     assert result["missing_in_yahoo_dates"] == []
     assert result["yahoo_lag_sessions"] == 1
     assert result["yahoo_lag_session_dates"] == ["2026-11-24"]
+
+
+def test_yahoo_secondary_sessions_after_naver_last_date_are_recorded_as_primary_lag():
+    dates = pd.to_datetime(["2026-11-20", "2026-11-23", "2026-11-24"])
+    naver = _close_frame(dates[:2], [100.0, 101.0])
+    yahoo = _close_frame(dates, [100.0, 101.0, 99.0])
+
+    result = source.compare_cross_check(
+        naver,
+        yahoo,
+        "kr",
+        "yahoo_chart_ohlcv_only",
+        datetime(2026, 11, 25, tzinfo=UTC),
+        sessions=pd.DatetimeIndex(dates),
+        compare_fields=("close",),
+        primary_label="naver",
+    )
+
+    assert result["status"] == "ok"
+    assert result["overlap"] == 2
+    assert result["missing_in_primary"] == 0
+    assert result["primary_lag_sessions"] == 1
+    assert result["primary_lag_session_dates"] == ["2026-11-24"]
+
+
+def test_yahoo_secondary_missing_common_range_session_is_a_mismatch():
+    dates = pd.to_datetime(["2026-11-20", "2026-11-23", "2026-11-24"])
+    naver = _close_frame(dates, [100.0, 101.0, 99.0])
+    yahoo = _close_frame(dates[[0, 2]], [100.0, 99.0])
+
+    result = source.compare_cross_check(
+        naver,
+        yahoo,
+        "kr",
+        "yahoo_chart_ohlcv_only",
+        datetime(2026, 11, 25, tzinfo=UTC),
+        sessions=pd.DatetimeIndex(dates),
+        primary_label="naver",
+        yahoo_source_is_reference=True,
+    )
+
+    assert result["status"] == "mismatch"
+    assert result["missing_in_yahoo"] == 1
+    assert result["missing_in_yahoo_dates"] == ["2026-11-23"]
 
 
 def test_cross_check_records_unavailable_provider_reason(monkeypatch):
@@ -161,21 +213,15 @@ def test_sina_daily_jsonp_uses_skill_endpoint_params_and_fields(monkeypatch):
     assert frame.close.tolist() == [101.0]
 
 
-def test_sina_null_response_marks_sox_cross_check_unavailable(monkeypatch):
-    class Response:
-        text = "/*<script>location.href='//sina.com';</script>*/\nvar(null);"
-
-        def raise_for_status(self):
-            pass
-
-    monkeypatch.setattr(source.requests, "get", lambda *_args, **_kwargs: Response())
+def test_nasdaq_failure_marks_sox_cross_check_unavailable(monkeypatch):
+    monkeypatch.setattr(source, "_fetch_nasdaq_cross_check", lambda *_args: (_ for _ in ()).throw(requests.HTTPError("offline")))
     result = source.fetch_cross_check(
         "US_SOX", _close_frame(["2026-11-23"], [100.0]), datetime(2026, 11, 24, tzinfo=UTC)
     )
 
-    assert result["provider"] == "sina_us_daily_k"
+    assert result["provider"] == "nasdaq_api"
     assert result["status"] == "unavailable"
-    assert "var(null)" in result["reason"]
+    assert "offline" in result["reason"]
 
 
 def test_hynix_cross_check_uses_naver_sise_json_stock_symbol(monkeypatch):
@@ -206,18 +252,141 @@ def test_hynix_cross_check_uses_naver_sise_json_stock_symbol(monkeypatch):
     assert frame.close.tolist() == [101.0]
 
 
-def test_skhynix_uses_naver_as_independent_cross_check(monkeypatch):
-    dates = pd.to_datetime(["2026-11-23"])
-    yahoo = _close_frame(dates, [100.0])
-    reference = _close_frame(dates, [100.0])
-    monkeypatch.setattr(source, "_fetch_naver_cross_check", lambda *_args: reference)
+def test_daum_daily_response_parses_unadjusted_chart_rows(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"data": [{
+                "date": "2026-11-23T00:00:00+09:00",
+                "openingPrice": "1,500,000",
+                "highPrice": "1,510,000",
+                "lowPrice": "1,490,000",
+                "tradePrice": "1,500,000",
+                "candleAccTradeVolume": "500",
+            }]}
+
+    calls = []
+    monkeypatch.setattr(source.requests, "get", lambda url, **kwargs: (calls.append((url, kwargs)) or Response()))
+    frame = source._fetch_daum_cross_check("KR_SKHYNIX")
+    assert calls[0][0] == "https://finance.daum.net/api/charts/A000660/days"
+    assert calls[0][1]["params"] == {"limit": 300, "adjusted": "false"}
+    assert calls[0][1]["headers"] == {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120 Safari/537.36"
+        ),
+        "Referer": "https://finance.daum.net/quotes/A000660",
+        "Accept": "application/json, text/plain, */*",
+    }
+    assert frame.date.dt.strftime("%Y-%m-%d").tolist() == ["2026-11-23"]
+    assert frame[["open", "high", "low", "close", "volume"]].iloc[0].tolist() == [
+        1500000, 1510000, 1490000, 1500000, 500
+    ]
+
+
+def test_daum_cross_check_compares_ohlc_and_flags_shared_session_gaps(monkeypatch):
+    dates = pd.to_datetime(["2026-11-20", "2026-11-23", "2026-11-24"])
+    primary = pd.DataFrame({
+        "date": dates,
+        "open": [100.0, 101.0, 102.0],
+        "high": [102.0, 103.0, 104.0],
+        "low": [99.0, 100.0, 101.0],
+        "close": [101.0, 102.0, 103.0],
+        "volume": [1000.0, 1100.0, 1200.0],
+    })
+    reference = primary.iloc[[0, 2]].copy()
+    reference.loc[2, "high"] = 102.0
+    monkeypatch.setattr(source, "_fetch_daum_cross_check", lambda *_args: reference)
 
     result = source.fetch_cross_check(
-        "KR_SKHYNIX", yahoo, datetime(2026, 11, 24, tzinfo=UTC)
+        "KR_SKHYNIX", primary, datetime(2026, 11, 25, tzinfo=UTC)
     )
 
-    assert result["provider"] == "naver_siseJson"
+    assert result["provider"] == "daum_finance_daily"
+    assert result["status"] == "mismatch"
+    assert result["missing_in_reference_dates"] == ["2026-11-23"]
+    assert result["comparison_fields"] == ["open", "high", "low", "close"]
+    assert result["excluded_fields"] == ["volume"]
+    assert result["mismatches"] == [{
+        "date": "2026-11-24",
+        "field": "high",
+        "primary_value": 104.0,
+        "reference_value": 102.0,
+        "rel_diff": pytest.approx(2 / 102),
+    }]
+
+
+def test_skhynix_yahoo_fallback_compares_ohl_only_and_records_exclusions(monkeypatch):
+    dates = pd.to_datetime(["2026-11-23"])
+    primary = pd.DataFrame({
+        "date": dates, "close": [101.0], "raw_close": [101.0],
+        "open": [99.0], "high": [103.0], "low": [98.0], "volume": [4928269.0],
+    })
+    reference = pd.DataFrame({
+        "date": dates, "raw_close": [90.0], "raw_open": [99.0],
+        "raw_high": [103.0], "raw_low": [98.0], "raw_volume": [151.0],
+    })
+    monkeypatch.setattr(source.time_module, "sleep", lambda *_args: None)
+    monkeypatch.setattr(
+        source,
+        "_fetch_daum_cross_check",
+        lambda *_args: (_ for _ in ()).throw(requests.HTTPError("403")),
+    )
+    monkeypatch.setattr(source, "_fetch_yahoo_cross_check", lambda *_args: reference)
+
+    result = source.fetch_cross_check("KR_SKHYNIX", primary, datetime(2026, 11, 24, tzinfo=UTC))
+
+    assert result["provider"] == "yahoo_chart_ohl_only"
     assert result["status"] == "ok"
+    assert result["max_rel_diff"] == 0
+    assert result["missing_in_yahoo"] == 0
+    assert result["missing_in_yahoo_dates"] == []
+    assert result["mismatches"] == []
+    assert result["comparison_fields"] == ["open", "high", "low"]
+    assert result["excluded_fields"] == ["close", "volume"]
+    assert "close and volume are unreliable" in result["excluded_fields_reason"]
+    assert "403" in result["fallback_reason"]
+
+    mismatch_reference = reference.copy()
+    mismatch_reference.loc[0, "raw_high"] = 102.0
+    monkeypatch.setattr(source, "_fetch_yahoo_cross_check", lambda *_args: mismatch_reference)
+    mismatch = source.fetch_cross_check("KR_SKHYNIX", primary, datetime(2026, 11, 24, tzinfo=UTC))
+
+    assert mismatch["status"] == "mismatch"
+    assert mismatch["mismatches"] == [{
+        "date": "2026-11-23",
+        "field": "high",
+        "primary_value": 103.0,
+        "reference_value": 102.0,
+        "rel_diff": pytest.approx(1 / 102),
+    }]
+
+
+def test_nasdaq_sox_parser_uses_official_history_response(monkeypatch):
+    calls = []
+
+    class Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"data": {"tradesTable": {"rows": [{
+                "date": "11/23/2026", "close": "1,234.50", "open": "1,200.00",
+                "high": "1,250.00", "low": "1,190.00", "volume": "--",
+            }]}}}
+
+    def get(url, **kwargs):
+        calls.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setattr(source.requests, "get", get)
+    frame = source._fetch_nasdaq_cross_check("US_SOX", datetime(2026, 11, 24, tzinfo=UTC))
+    assert calls[0][0] == "https://api.nasdaq.com/api/quote/SOX/historical"
+    assert calls[0][1]["params"]["assetclass"] == "index"
+    assert frame.close.tolist() == [1234.5]
+    assert np.isnan(frame.volume.iloc[0])
 
 
 def test_yahoo_session_validation_drops_non_sessions_and_counts_missing_rows():
@@ -322,6 +491,19 @@ def test_global_daily_workflow_schedule_assets_and_stock_results_publish():
     assert workflow["jobs"]["publish"]["timeout-minutes"] == 25
     assert source.ASSETS["US_SOX"]["ticker"] == "^SOX"
     assert source.ASSETS["US_SOX"]["name"] == "费城半导体指数"
+    assert source.ASSETS["KR_SKHYNIX"]["display_code"] == "000660"
+    assert {
+        asset_id: asset["display_code"] for asset_id, asset in source.ASSETS.items()
+    } == {
+        "US_SPX": "SPX", "US_IXIC": "IXIC", "US_NDX": "NDX", "US_DJI": "DJI",
+        "US_SOX": "SOX", "JP_N225": "N225", "KR_KOSPI": "KOSPI",
+        "KR_KOSDAQ": "KOSDAQ", "KR_SKHYNIX": "000660", "US_MRVL": "MRVL",
+    }
+    assert pipeline.primary_provider_for_asset("KR_SKHYNIX") == "naver"
+    assert pipeline.primary_provider_for_asset("KR_KOSPI") == "yahoo"
+    assert pipeline.primary_provider_for_asset("US_SOX") == "yahoo"
+    assert "US_SOX" not in source.SINA_US_SYMBOLS
+    assert source.NASDAQ_SYMBOLS["US_SOX"] == "SOX"
     assert source.ASSETS["JP_N225"]["display_exchange"] == "东京证券交易所"
     publish = next(step["run"] for step in steps if step.get("name") == "Publish to stock-results")
     assert "git rebase FETCH_HEAD" in publish

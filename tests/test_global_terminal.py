@@ -140,6 +140,7 @@ def test_history_snapshot_has_only_asof_prices_and_independent_research():
     assert record["validation"] == []
     assert record["first_visible_at"] is None
     assert record["exchange"] == "纽约证券交易所"
+    assert record["display_code"] == "SPX"
     assert record["future_calendar"]["status"] == "exchange_calendar"
     assert record["future_calendar"]["verified"] is True
     assert record["future_calendar"]["note"] == "交易日按交易所日历计算，节假日已跳过。"

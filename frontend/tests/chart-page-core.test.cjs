@@ -131,6 +131,7 @@ test('descriptive bands without finite n are hidden from charts and values', () 
 
 test('index assembly uses the adapted published bars and metadata without mixing sources', () => {
   const raw = JSON.parse(fs.readFileSync(path.join(fixtures, 'sh000001_latest.json'), 'utf8'));
+  raw.display_code = 'N225';
   const bars = raw.price_history.dates.map((date, index) => ({
     date,
     open: raw.price_history.open[index] ?? raw.price_history.close[index],
@@ -145,6 +146,7 @@ test('index assembly uses the adapted published bars and metadata without mixing
   });
   assert.equal(data.assetType, 'index');
   assert.equal(data.symbol, 'sh000001');
+  assert.equal(data.displayCode, 'N225');
   assert.equal(data.name, '上证指数');
   assert.equal(data.asof, raw.asof);
   assert.deepEqual(data.bars, bars);
@@ -217,6 +219,8 @@ test('international terminal metadata uses Chinese labels instead of provider co
   assert.equal(Core.modelVersionLabel('global_sparse27_v1_production_v2_box'), '国际市场稀疏窗口研究样本');
   assert.equal(Core.volumeUnitLabel('vendor_native'), '');
   assert.equal(Core.currencyLabel('JPY'), '日元');
+  assert.match(chartPageSource, /setText\('asset-code', data\.displayCode \|\| data\.symbol\)/);
+  assert.match(chartPageSource, /setText\('identity-strip-code', data\.displayCode \|\| data\.symbol\)/);
 });
 
 test('stock assembly keeps market bars when the latest model is missing and requires market data', () => {

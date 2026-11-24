@@ -18,6 +18,11 @@ test('switching assets retains exact cutoff, scale and return origin', () => {
   assert.equal(p.get('asof'),'2026-10-02'); assert.equal(p.get('from'),'home.html');
   assert.equal(p.get('scale'),'3-6m'); assert.equal(p.get('kind'),'stock');
 });
+test('international asset options use display codes while retaining canonical values', () => {
+  assert.equal(Terminal.optionLabel(Core, 'JP_N225', '日经225'), '日经225 · N225');
+  assert.equal(Terminal.optionLabel(Core, 'KR_SKHYNIX', 'SK 海力士'), 'SK 海力士 · 000660');
+  assert.equal(Terminal.optionLabel(Core, 'sh000001', '上证指数'), '上证指数 · sh000001');
+});
 test('expired intervals never become current alerts, but remain visible at original cutoff', () => {
   const data = {modelStatus:'ok',modelAsOf:'2026-11-20',marketAsOf:'2026-11-20'};
   const bands = [{q20_date:'2026-10-20',q80_date:'2026-11-01'}];

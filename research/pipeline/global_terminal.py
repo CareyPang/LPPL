@@ -270,7 +270,8 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
         ),
     }
     return clean({"schema_version": "global_terminal_v1", "symbol": asset_id, "code": asset_id,
-        "name": asset["name"], "asset_type": asset["kind"], "market": asset["market"],
+        "name": asset["name"], "display_code": asset["display_code"],
+        "asset_type": asset["kind"], "market": asset["market"],
         "currency": asset["currency"], "timezone": metadata["timezone"], "exchange": asset["display_exchange"],
         "asof": str(asof.date()), "generated_at": datetime.now(UTC).isoformat(), "first_visible_at": None,
         "model_version": MODEL_VERSION, "fit_code_version": method["hash"], "source_sha": method["source_sha"],
@@ -436,6 +437,11 @@ def reexport_cached(root: Path, manifest_path: Path) -> dict:
     return audit
 
 
+def primary_provider_for_asset(asset_id: str) -> str:
+    asset = ASSETS[asset_id]
+    return "naver" if asset["kind"] == "stock" and asset["market"] == "kr" else "yahoo"
+
+
 def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, refresh: bool = False) -> dict:
     root = checked_root(root)
     start = time.perf_counter()
@@ -449,11 +455,13 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             continue
         try:
             frame, metadata = fetch_snapshot(
-                asset_id, root, refresh=refresh, provider="yahoo"
+                asset_id, root, refresh=refresh, provider=primary_provider_for_asset(asset_id)
             )
             metadata["display_source"] = (
                 "Yahoo Finance"
                 if metadata.get("source") == "Yahoo Finance v8 chart"
+                else "Naver Finance"
+                if metadata.get("provider") == "naver"
                 else metadata.get("source", "")
             )
             fetched_at = datetime.fromisoformat(
@@ -462,9 +470,6 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             frame, session_meta = validate_market_sessions(
                 frame, ASSETS[asset_id]["market"], fetched_at
             )
-            if metadata.get("provider", "yahoo") != "yahoo":
-                session_meta["missing_sessions_last_250"] = None
-                session_meta["missing_sessions_last_250_dates"] = []
             metadata.update(session_meta)
             metadata["publication_decision"] = "owner_approved_2026-11-24"
             metadata["public_redistribution"] = metadata.get(

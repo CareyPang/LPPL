@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+import time as time_module
 import uuid
 from datetime import UTC, datetime, time, timedelta
 from io import BytesIO
@@ -24,7 +25,7 @@ import requests
 
 from .trading_calendar import completed_market_sessions, market_sessions
 
-NORMALIZER_VERSION = "global_yahoo_v2_nonpositive_ohlc_null"
+NORMALIZER_VERSION = "global_yahoo_v3_raw_ohlcv"
 NAVER_NORMALIZER_VERSION = "global_naver_index_v1_unmodified_close"
 NAVER_HYNIX_NORMALIZER_VERSION = "global_naver_hynix_v1_provider_close"
 NAVER_SYMBOLS = {"KR_KOSDAQ": "KOSDAQ", "KR_SKHYNIX": "000660"}
@@ -32,7 +33,6 @@ FULL_HISTORY_PERIOD1 = -2208988800  # 1900-01-01; range=max may downgrade daily 
 CROSS_CHECK_LOOKBACK_SESSIONS = 250
 CROSS_CHECK_MAX_REL_DIFF = 0.005
 SINA_US_SYMBOLS = {
-    "US_SOX": "SOX",
     "US_MRVL": "MRVL",
 }
 FRED_SERIES = {
@@ -42,18 +42,19 @@ FRED_SERIES = {
     "US_DJI": "DJIA",
     "JP_N225": "NIKKEI225",
 }
+NASDAQ_SYMBOLS = {"US_SOX": "SOX"}
 
 ASSETS = {
-    "US_SPX": dict(ticker="^GSPC", name="标普500", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纽约证券交易所"),
-    "US_IXIC": dict(ticker="^IXIC", name="纳斯达克综合指数", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
-    "US_NDX": dict(ticker="^NDX", name="纳斯达克100", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
-    "US_DJI": dict(ticker="^DJI", name="道琼斯工业平均", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纽约证券交易所"),
-    "US_SOX": dict(ticker="^SOX", name="费城半导体指数", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
-    "JP_N225": dict(ticker="^N225", name="日经225", kind="index", market="jp", currency="JPY", timezone="Asia/Tokyo", display_exchange="东京证券交易所"),
-    "KR_KOSPI": dict(ticker="^KS11", name="韩国综合指数", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
-    "KR_KOSDAQ": dict(ticker="^KQ11", name="韩国科斯达克", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
-    "KR_SKHYNIX": dict(ticker="000660.KS", name="SK 海力士", kind="stock", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
-    "US_MRVL": dict(ticker="MRVL", name="迈威尔科技", kind="stock", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "US_SPX": dict(ticker="^GSPC", name="标普500", display_code="SPX", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纽约证券交易所"),
+    "US_IXIC": dict(ticker="^IXIC", name="纳斯达克综合指数", display_code="IXIC", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "US_NDX": dict(ticker="^NDX", name="纳斯达克100", display_code="NDX", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "US_DJI": dict(ticker="^DJI", name="道琼斯工业平均", display_code="DJI", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纽约证券交易所"),
+    "US_SOX": dict(ticker="^SOX", name="费城半导体指数", display_code="SOX", kind="index", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
+    "JP_N225": dict(ticker="^N225", name="日经225", display_code="N225", kind="index", market="jp", currency="JPY", timezone="Asia/Tokyo", display_exchange="东京证券交易所"),
+    "KR_KOSPI": dict(ticker="^KS11", name="韩国综合指数", display_code="KOSPI", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
+    "KR_KOSDAQ": dict(ticker="^KQ11", name="韩国科斯达克", display_code="KOSDAQ", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
+    "KR_SKHYNIX": dict(ticker="000660.KS", name="SK 海力士", display_code="000660", kind="stock", market="kr", currency="KRW", timezone="Asia/Seoul", display_exchange="韩国交易所"),
+    "US_MRVL": dict(ticker="MRVL", name="迈威尔科技", display_code="MRVL", kind="stock", market="us", currency="USD", timezone="America/New_York", display_exchange="纳斯达克"),
 }
 
 
@@ -103,6 +104,7 @@ def normalise(payload: dict, asset_id: str, fetched_at: datetime) -> tuple[pd.Da
             value = values[i] if i < len(values) else None
             valid = value is not None and np.isfinite(value) and (column == "volume" or value > 0)
             row[column] = float(value) * (ratio if column != "volume" else 1) if valid else np.nan
+            row[f"raw_{column}"] = float(value) if valid else np.nan
         rows.append(row)
     frame = pd.DataFrame(rows)
     if frame.empty:
@@ -170,8 +172,12 @@ def compare_cross_check(
     fetched_at: datetime,
     *,
     sessions: pd.DatetimeIndex | None = None,
+    compare_fields: tuple[str, ...] = ("close",),
+    primary_label: str = "yahoo",
+    yahoo_source_is_reference: bool = False,
+    require_reference_coverage: bool = False,
 ) -> dict:
-    """Compare closes only where both sources have reached the same date."""
+    """Compare selected daily fields within the shared source range."""
     expected = (
         completed_market_sessions(
             market, pd.Timestamp(fetched_at), CROSS_CHECK_LOOKBACK_SESSIONS
@@ -182,6 +188,58 @@ def compare_cross_check(
     expected_dates = set(expected)
     yahoo = yahoo_frame.copy()
     reference = reference_frame.copy()
+
+    def date_lists(
+        missing: list[pd.Timestamp] | None = None,
+        lag: list[pd.Timestamp] | None = None,
+        missing_yahoo: list[pd.Timestamp] | None = None,
+        yahoo_lag: list[pd.Timestamp] | None = None,
+        missing_reference: list[pd.Timestamp] | None = None,
+        reference_lag: list[pd.Timestamp] | None = None,
+    ) -> dict:
+        missing = missing or []
+        lag = lag or []
+        if primary_label == "yahoo":
+            return {
+                "missing_in_yahoo": len(missing),
+                "missing_in_yahoo_dates": [date.date().isoformat() for date in missing],
+                "yahoo_lag_sessions": len(lag),
+                "yahoo_lag_session_dates": [date.date().isoformat() for date in lag],
+            }
+        result = {
+            "missing_in_primary": len(missing),
+            "missing_in_primary_dates": [date.date().isoformat() for date in missing],
+            "primary_lag_sessions": len(lag),
+            "primary_lag_session_dates": [date.date().isoformat() for date in lag],
+        }
+        if yahoo_source_is_reference:
+            missing_yahoo = missing_yahoo or []
+            yahoo_lag = yahoo_lag or []
+            result.update(
+                missing_in_yahoo=len(missing_yahoo),
+                missing_in_yahoo_dates=[
+                    date.date().isoformat() for date in missing_yahoo
+                ],
+                yahoo_lag_sessions=len(yahoo_lag),
+                yahoo_lag_session_dates=[
+                    date.date().isoformat() for date in yahoo_lag
+                ],
+            )
+        if require_reference_coverage:
+            missing_reference = missing_reference or []
+            reference_lag = reference_lag or []
+            result.update(
+                missing_in_reference=len(missing_reference),
+                missing_in_reference_dates=[
+                    date.date().isoformat() for date in missing_reference
+                ],
+                reference_lag_sessions=len(reference_lag),
+                reference_lag_session_dates=[
+                    date.date().isoformat() for date in reference_lag
+                ],
+            )
+        return result
+
     yahoo_dates = pd.to_datetime(yahoo.date).dt.normalize()
     reference_dates = pd.to_datetime(reference.date).dt.normalize()
     yahoo = yahoo.loc[yahoo_dates.isin(expected_dates)].copy()
@@ -191,10 +249,8 @@ def compare_cross_check(
             "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
-            "missing_in_yahoo": 0,
-            "missing_in_yahoo_dates": [],
-            "yahoo_lag_sessions": 0,
-            "yahoo_lag_session_dates": [],
+            **date_lists(),
+            "mismatches": [],
             "status": "unavailable",
             "reason": "Second source returned no rows in the recent exchange-session window",
         }
@@ -203,86 +259,148 @@ def compare_cross_check(
             "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
-            "missing_in_yahoo": 0,
-            "missing_in_yahoo_dates": [],
-            "yahoo_lag_sessions": 0,
-            "yahoo_lag_session_dates": [],
+            **date_lists(),
+            "mismatches": [],
             "status": "unavailable",
-            "reason": "Yahoo returned no rows in the recent exchange-session window",
+            "reason": "Primary source returned no rows in the recent exchange-session window",
         }
-    yahoo_column = "raw_close" if "raw_close" in yahoo else "close"
-    reference_column = "raw_close" if "raw_close" in reference else "close"
     yahoo["date"] = pd.to_datetime(yahoo.date).dt.normalize()
     reference["date"] = pd.to_datetime(reference.date).dt.normalize()
     yahoo = yahoo.drop_duplicates("date", keep="last")
     reference = reference.drop_duplicates("date", keep="last")
-    yahoo_closes = yahoo.set_index("date")[yahoo_column]
-    reference_closes = reference.set_index("date")[reference_column]
-    yahoo_last_date = max(yahoo_closes.index)
-    reference_last_date = max(reference_closes.index)
-    common_end = min(yahoo_last_date, reference_last_date)
-    reference_dates_set = set(reference_closes.index)
-    yahoo_dates_set = set(yahoo_closes.index)
-    missing_in_yahoo_dates = sorted(
+    yahoo_index = yahoo.set_index("date")
+    reference_index = reference.set_index("date")
+    primary_last_date = max(yahoo_index.index)
+    reference_last_date = max(reference_index.index)
+    common_end = min(primary_last_date, reference_last_date)
+    reference_dates_set = set(reference_index.index)
+    primary_dates_set = set(yahoo_index.index)
+    missing_in_primary_dates = sorted(
         date
         for date in reference_dates_set
-        if date <= common_end and date not in yahoo_dates_set
+        if date <= common_end and date not in primary_dates_set
     )
-    yahoo_lag_session_dates = sorted(
-        date for date in reference_dates_set if date > yahoo_last_date
+    primary_lag_dates = sorted(
+        date for date in reference_dates_set if date > primary_last_date
+    )
+    missing_in_yahoo_dates = (
+        sorted(
+            date
+            for date in primary_dates_set
+            if date <= common_end and date not in reference_dates_set
+        )
+        if yahoo_source_is_reference
+        else []
+    )
+    yahoo_lag_dates = (
+        sorted(date for date in primary_dates_set if date > reference_last_date)
+        if yahoo_source_is_reference
+        else []
+    )
+    missing_in_reference_dates = (
+        sorted(
+            date
+            for date in primary_dates_set
+            if date <= common_end and date not in reference_dates_set
+        )
+        if require_reference_coverage
+        else []
+    )
+    reference_lag_dates = (
+        sorted(date for date in primary_dates_set if date > reference_last_date)
+        if require_reference_coverage
+        else []
     )
     overlap_dates = sorted(
         date
-        for date in (reference_dates_set & yahoo_dates_set)
+        for date in (reference_dates_set & primary_dates_set)
         if date <= common_end
     )
-    date_lists = {
-        "missing_in_yahoo": len(missing_in_yahoo_dates),
-        "missing_in_yahoo_dates": [
-            date.date().isoformat() for date in missing_in_yahoo_dates
-        ],
-        "yahoo_lag_sessions": len(yahoo_lag_session_dates),
-        "yahoo_lag_session_dates": [
-            date.date().isoformat() for date in yahoo_lag_session_dates
-        ],
-    }
+    date_metadata = date_lists(
+        missing_in_primary_dates,
+        primary_lag_dates,
+        missing_in_yahoo_dates,
+        yahoo_lag_dates,
+        missing_in_reference_dates,
+        reference_lag_dates,
+    )
     if not overlap_dates:
         return {
             "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
-            **date_lists,
-            "status": "mismatch" if missing_in_yahoo_dates else "unavailable",
+            **date_metadata,
+            "mismatches": [],
+            "status": (
+                "mismatch"
+                if (
+                    missing_in_primary_dates
+                    or missing_in_yahoo_dates
+                    or missing_in_reference_dates
+                )
+                else "unavailable"
+            ),
             **(
                 {}
-                if missing_in_yahoo_dates
-                else {"reason": "Second source has no overlapping Yahoo sessions"}
+                if missing_in_primary_dates
+                else {"reason": "Sources have no overlapping shared-range sessions"}
             ),
         }
-    relative_differences = [
-        abs(float(yahoo_closes.loc[date]) - float(reference_closes.loc[date]))
-        / abs(float(reference_closes.loc[date]))
-        for date in overlap_dates
-        if np.isfinite(reference_closes.loc[date])
-        and float(reference_closes.loc[date]) != 0
-        and np.isfinite(yahoo_closes.loc[date])
-    ]
+    relative_differences = []
+    mismatches = []
+    for field in compare_fields:
+        primary_column = (
+            "raw_close" if field == "close" and "raw_close" in yahoo_index
+            else f"raw_{field}" if field != "close" and f"raw_{field}" in yahoo_index
+            else field
+        )
+        reference_column = (
+            "raw_close" if field == "close" and "raw_close" in reference_index
+            else f"raw_{field}" if field != "close" and f"raw_{field}" in reference_index
+            else field
+        )
+        if primary_column not in yahoo_index or reference_column not in reference_index:
+            continue
+        for date in overlap_dates:
+            primary_value = yahoo_index.loc[date, primary_column]
+            reference_value = reference_index.loc[date, reference_column]
+            if np.isfinite(primary_value) and np.isfinite(reference_value) and float(reference_value) != 0:
+                relative_difference = (
+                    abs(float(primary_value) - float(reference_value))
+                    / abs(float(reference_value))
+                )
+                relative_differences.append(relative_difference)
+                if relative_difference > CROSS_CHECK_MAX_REL_DIFF:
+                    mismatches.append({
+                        "date": date.date().isoformat(),
+                        "field": field,
+                        "primary_value": float(primary_value),
+                        "reference_value": float(reference_value),
+                        "rel_diff": relative_difference,
+                    })
     if not relative_differences:
         return {
             "provider": provider,
             "overlap": 0,
             "max_rel_diff": None,
-            **date_lists,
+            **date_metadata,
+            "mismatches": [],
             "status": "unavailable",
-            "reason": "No finite overlapping closes were returned",
+            "reason": "No finite overlapping comparison values were returned",
         }
     max_rel_diff = max(relative_differences)
-    mismatch = bool(missing_in_yahoo_dates) or max_rel_diff > CROSS_CHECK_MAX_REL_DIFF
+    mismatch = (
+        bool(missing_in_primary_dates)
+        or bool(missing_in_yahoo_dates)
+        or bool(missing_in_reference_dates)
+        or max_rel_diff > CROSS_CHECK_MAX_REL_DIFF
+    )
     return {
         "provider": provider,
-        "overlap": len(relative_differences),
+        "overlap": len(overlap_dates),
         "max_rel_diff": max_rel_diff,
-        **date_lists,
+        **date_metadata,
+        "mismatches": mismatches,
         "status": "mismatch" if mismatch else "ok",
     }
 
@@ -314,15 +432,98 @@ def _fetch_naver_cross_check(asset_id: str, fetched_at: datetime) -> pd.DataFram
             raise ValueError("Naver daily row schema changed")
         close = float(values[4])
         if np.isfinite(close) and close > 0:
-            rows.append(
-                {
-                    "date": pd.to_datetime(str(values[0]), format="%Y%m%d"),
-                    "close": close,
-                }
-            )
+            row = {"date": pd.to_datetime(str(values[0]), format="%Y%m%d"), "close": close}
+            for name, value in zip(("open", "high", "low", "volume"), (values[1], values[2], values[3], values[5]), strict=True):
+                try:
+                    row[name] = float(value)
+                except (TypeError, ValueError):
+                    row[name] = np.nan
+            rows.append(row)
     if not rows:
         raise ValueError("Naver returned no positive daily closes")
     return pd.DataFrame(rows)
+
+
+def _fetch_daum_cross_check(asset_id: str) -> pd.DataFrame:
+    symbol = NAVER_SYMBOLS[asset_id]
+    response = requests.get(
+        f"https://finance.daum.net/api/charts/A{symbol}/days",
+        params={"limit": 300, "adjusted": "false"},
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/120 Safari/537.36"
+            ),
+            "Referer": f"https://finance.daum.net/quotes/A{symbol}",
+            "Accept": "application/json, text/plain, */*",
+        },
+        timeout=(12, 45),
+    )
+    response.raise_for_status()
+    data = response.json()
+    if isinstance(data, dict):
+        data = data.get("data")
+    if not isinstance(data, list):
+        raise ValueError("Daum daily response is not a bar array")
+    timezone = ZoneInfo(ASSETS[asset_id]["timezone"])
+
+    def exchange_date(value):
+        date = pd.Timestamp(value)
+        if date.tzinfo is not None:
+            date = date.tz_convert(timezone).tz_localize(None)
+        return date.normalize()
+
+    def number(value):
+        return float(str(value).replace(",", ""))
+
+    rows = []
+    for item in data:
+        rows.append({
+            "date": exchange_date(item["date"]),
+            "open": number(item["openingPrice"]),
+            "high": number(item["highPrice"]),
+            "low": number(item["lowPrice"]),
+            "close": number(item["tradePrice"]),
+            "volume": number(item["candleAccTradeVolume"]),
+        })
+    if not rows:
+        raise ValueError("Daum returned no daily bars")
+    return pd.DataFrame(rows)
+
+
+def _fetch_yahoo_cross_check(asset_id: str) -> pd.DataFrame:
+    asset = ASSETS[asset_id]
+    response = requests.get(
+        "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(asset["ticker"], safe=""),
+        params={"range": "2y", "interval": "1d", "events": "div,split"},
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=(12, 45),
+    )
+    response.raise_for_status()
+    return normalise(response.json(), asset_id, datetime.now(UTC))[0]
+
+
+def _fetch_nasdaq_cross_check(asset_id: str, fetched_at: datetime) -> pd.DataFrame:
+    response = requests.get(
+        f"https://api.nasdaq.com/api/quote/{NASDAQ_SYMBOLS[asset_id]}/historical",
+        params={"assetclass": "index", "fromdate": (fetched_at.date() - timedelta(days=460)).isoformat(), "limit": 300},
+        headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+                 "Accept": "application/json, text/plain, */*", "Origin": "https://www.nasdaq.com",
+                 "Referer": "https://www.nasdaq.com/"},
+        timeout=(12, 45),
+    )
+    response.raise_for_status()
+    rows = response.json().get("data", {}).get("tradesTable", {}).get("rows", [])
+    if not rows:
+        raise ValueError("Nasdaq returned no historical rows")
+    def number(value):
+        return float(str(value).replace(",", "")) if value not in (None, "--", "") else np.nan
+    return pd.DataFrame([{
+        "date": pd.to_datetime(row["date"], format="%m/%d/%Y").normalize(),
+        "close": number(row["close"]), "open": number(row["open"]),
+        "high": number(row["high"]), "low": number(row["low"]),
+        "volume": number(row["volume"]),
+    } for row in rows])
 
 
 def _fetch_sina_cross_check(asset_id: str) -> pd.DataFrame:
@@ -389,9 +590,66 @@ def fetch_cross_check(
     asset_id: str, yahoo_frame: pd.DataFrame, fetched_at: datetime | None = None
 ) -> dict:
     fetched_at = fetched_at or datetime.now(UTC)
-    market = ASSETS[asset_id]["market"]
+    asset = ASSETS[asset_id]
+    market = asset["market"]
+    if asset["kind"] == "stock" and market == "kr":
+        daum_ohlc_metadata = {
+            "comparison_fields": ["open", "high", "low", "close"],
+            "excluded_fields": ["volume"],
+            "excluded_fields_reason": (
+                "The Daum cross-check compares OHLC fields; volume is not included."
+            ),
+        }
+        yahoo_ohl_metadata = {
+            "comparison_fields": ["open", "high", "low"],
+            "excluded_fields": ["close", "volume"],
+            "excluded_fields_reason": (
+                "Yahoo KR-stock close and volume are unreliable; the cross-check compares only open, high, and low."
+            ),
+        }
+        try:
+            reference = _fetch_daum_cross_check(asset_id)
+            result = compare_cross_check(
+                yahoo_frame, reference, market, "daum_finance_daily", fetched_at,
+                compare_fields=("open", "high", "low", "close"),
+                primary_label="naver",
+                require_reference_coverage=True,
+            )
+            if result["status"] == "unavailable":
+                raise ValueError(result["reason"])
+            result.update(daum_ohlc_metadata)
+            return result
+        except Exception as daum_error:
+            try:
+                time_module.sleep(0.35)
+                reference = _fetch_yahoo_cross_check(asset_id)
+                result = compare_cross_check(
+                    yahoo_frame, reference, market, "yahoo_chart_ohl_only",
+                    fetched_at, compare_fields=("open", "high", "low"),
+                    primary_label="naver",
+                    yahoo_source_is_reference=True,
+                )
+                result.update(yahoo_ohl_metadata)
+                result["fallback_reason"] = f"Daum unavailable: {type(daum_error).__name__}: {daum_error}"
+                return result
+            except Exception as yahoo_error:
+                return {
+                    "provider": "unavailable",
+                    "overlap": 0,
+                    "max_rel_diff": None,
+                    "missing_in_primary": 0,
+                    "missing_in_primary_dates": [],
+                    **yahoo_ohl_metadata,
+                    "status": "unavailable",
+                    "reason": (
+                        f"Daum unavailable: {type(daum_error).__name__}: {daum_error}; "
+                        f"Yahoo fallback unavailable: {type(yahoo_error).__name__}: {yahoo_error}"
+                    ),
+                }
     if asset_id in FRED_SERIES:
         provider = "fredgraph_csv"
+    elif asset_id in NASDAQ_SYMBOLS:
+        provider = "nasdaq_api"
     elif asset_id in SINA_US_SYMBOLS:
         provider = "sina_us_daily_k"
     elif market == "kr":
@@ -414,6 +672,8 @@ def fetch_cross_check(
             reference = _fetch_fred_cross_check(asset_id)
         elif asset_id in SINA_US_SYMBOLS:
             reference = _fetch_sina_cross_check(asset_id)
+        elif asset_id in NASDAQ_SYMBOLS:
+            reference = _fetch_nasdaq_cross_check(asset_id, fetched_at)
         else:
             reference = _fetch_naver_cross_check(asset_id, fetched_at)
         return compare_cross_check(
@@ -506,7 +766,7 @@ def normalise_naver(raw: bytes, asset_id: str, fetched_at: datetime) -> tuple[pd
         info.pop('index_level_basis')
         info.update(
             exchange='KRX KOSPI', provider_symbol=NAVER_SYMBOLS[asset_id],
-            adjustment='Naver 原始返回的历史价格口径，未另做复权',
+            adjustment='供应商原始价格口径，未另行复权',
             normalizer_version=NAVER_HYNIX_NORMALIZER_VERSION,
             data_quality={
                 'status': 'provider_price_basis',
