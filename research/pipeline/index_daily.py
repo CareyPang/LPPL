@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 
 import pandas as pd
 
@@ -71,7 +72,18 @@ def run(
         frozen=daily.FROZEN if frozen else None,
         auto_refresh=False,
     )
-    record = enrich_record(record, source)
+    try:
+        record = enrich_record(record, source)
+    except Exception as error:
+        reason = f"{type(error).__name__}: {error}"
+        record["research"] = {
+            **(record.get("research") or {}),
+            "aftershock_status": {"status": "unavailable", "reason": reason},
+        }
+        print(
+            f"Warning: aftershock enrichment unavailable for {sym}: {reason}",
+            file=sys.stderr,
+        )
     path.write_text(json.dumps(record, ensure_ascii=False, indent=1, default=str))
     return path
 

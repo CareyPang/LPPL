@@ -94,3 +94,40 @@ def test_index_daily_attaches_aftershock_from_pit_close_frame(tmp_path, monkeypa
     }
     assert captured["archive_root"] is None
     assert published["research"] == {"existing": True, "aftershock": expected}
+
+
+def test_index_daily_keeps_fit_record_when_aftershock_enrichment_fails(
+    tmp_path, monkeypatch, capsys
+):
+    asof = "2026-01-08"
+    path = tmp_path / f"sh000300_{asof}.json"
+    record = {
+        "symbol": "sh000300",
+        "asof": asof,
+        "data_version": "fixture-v1",
+        "top": {},
+        "research": {"existing": True},
+    }
+    path.write_text(json.dumps(record))
+    source = pd.DataFrame(
+        {"date": pd.bdate_range("2026-01-05", periods=5), "close": [1, 2, 3, 4, 5]}
+    )
+
+    monkeypatch.setattr(index_daily.daily, "run", lambda *_args, **_kwargs: path)
+    monkeypatch.setattr(index_daily.cache, "load", lambda *_args, **_kwargs: source)
+
+    def fail_analysis(*_args, **_kwargs):
+        raise RuntimeError("fixture failure")
+
+    monkeypatch.setattr(index_daily, "analyze_aftershock", fail_analysis)
+
+    result_path = index_daily.run("sh000300", asof=asof, out=tmp_path, trust_boot=0)
+    published = json.loads(result_path.read_text())
+
+    assert result_path == path
+    assert "aftershock" not in published["research"]
+    assert published["research"]["aftershock_status"] == {
+        "status": "unavailable",
+        "reason": "RuntimeError: fixture failure",
+    }
+    assert "aftershock enrichment unavailable for sh000300" in capsys.readouterr().err
