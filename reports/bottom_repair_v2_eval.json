@@ -4,6 +4,9 @@
     "seed": 20261124,
     "random_repeats": 2000,
     "bootstrap_repeats": 2000,
+    "random_baseline_seed_sequence": "[seed, state_idx, segment_idx] in STATES and SEGMENTS order",
+    "bootstrap_seed_sequence": "[seed, 1000, segment_idx] per segment",
+    "bootstrap_resampling": "joint calendar-quarter blocks with replacement across all indexes",
     "dd_lookback_sessions": 252,
     "dd_threshold": -0.12,
     "label_lookback_sessions": 60,
@@ -68,7 +71,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sh000001_history.json",
           "frames": 1303
-        }
+        },
+        "sample_start": "2000-01-10"
       },
       "sh000016": {
         "daily": {
@@ -84,7 +88,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sh000016_history.json",
           "frames": 1086
-        }
+        },
+        "sample_start": "2004-07-23"
       },
       "sh000300": {
         "daily": {
@@ -100,7 +105,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sh000300_history.json",
           "frames": 1025
-        }
+        },
+        "sample_start": "2005-10-26"
       },
       "sh000905": {
         "daily": {
@@ -116,7 +122,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sh000905_history.json",
           "frames": 940
-        }
+        },
+        "sample_start": "2007-07-27"
       },
       "sh000688": {
         "daily": {
@@ -132,7 +139,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sh000688_history.json",
           "frames": 308
-        }
+        },
+        "sample_start": "2020-07-23"
       },
       "sz399001": {
         "daily": {
@@ -148,7 +156,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sz399001_history.json",
           "frames": 1303
-        }
+        },
+        "sample_start": "2000-01-10"
       },
       "sz399006": {
         "daily": {
@@ -164,7 +173,8 @@
         "weekly_frames": {
           "path": "/home/ubuntu/repos/LPPL-calib/web/mock/data/sz399006_history.json",
           "frames": 775
-        }
+        },
+        "sample_start": "2010-12-15"
       }
     }
   },
@@ -176,40 +186,41 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 3947,
           "label_window_excluded_days": 61,
-          "candidate_days": 3886,
+          "sample_start_excluded_days": 1332,
+          "candidate_days": 2554,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
             "short": 0,
             "medium": 0
           },
-          "old50_unavailable_or_stale_candidate_days": 2869,
+          "old50_unavailable_or_stale_candidate_days": 1537,
           "state_signal_days": {
-            "V2_low_shock_50": 2602,
-            "V2_low_shock_60": 2184,
-            "V2_low_shock_70": 1684,
-            "V2_short_50": 1818,
-            "V2_short_60": 1426,
-            "V2_short_70": 1058,
-            "V2_medium_50": 1714,
-            "V2_medium_60": 1187,
-            "V2_medium_70": 715,
+            "V2_low_shock_50": 1674,
+            "V2_low_shock_60": 1394,
+            "V2_low_shock_70": 1055,
+            "V2_short_50": 1151,
+            "V2_short_60": 908,
+            "V2_short_70": 678,
+            "V2_medium_50": 1037,
+            "V2_medium_60": 714,
+            "V2_medium_70": 422,
             "OLD50": 1017,
-            "STOPFALL": 1295,
-            "B0": 3886
+            "STOPFALL": 839,
+            "B0": 2554
           },
           "events": {
-            "V2_low_shock_50": 193,
-            "V2_low_shock_60": 180,
-            "V2_low_shock_70": 160,
-            "V2_short_50": 156,
-            "V2_short_60": 136,
-            "V2_short_70": 119,
-            "V2_medium_50": 152,
-            "V2_medium_60": 118,
-            "V2_medium_70": 81,
+            "V2_low_shock_50": 128,
+            "V2_low_shock_60": 116,
+            "V2_low_shock_70": 104,
+            "V2_short_50": 104,
+            "V2_short_60": 87,
+            "V2_short_70": 78,
+            "V2_medium_50": 97,
+            "V2_medium_60": 72,
+            "V2_medium_70": 47,
             "OLD50": 64,
-            "STOPFALL": 125,
-            "B0": 217
+            "STOPFALL": 82,
+            "B0": 144
           }
         },
         "cal": {
@@ -217,6 +228,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 95,
           "label_window_excluded_days": 34,
+          "sample_start_excluded_days": 0,
           "candidate_days": 61,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -258,6 +270,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 249,
           "label_window_excluded_days": 14,
+          "sample_start_excluded_days": 0,
           "candidate_days": 235,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -304,6 +317,7 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 2158,
           "label_window_excluded_days": 61,
+          "sample_start_excluded_days": 0,
           "candidate_days": 2097,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -345,6 +359,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 224,
           "label_window_excluded_days": 94,
+          "sample_start_excluded_days": 0,
           "candidate_days": 130,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -386,6 +401,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 507,
           "label_window_excluded_days": 60,
+          "sample_start_excluded_days": 0,
           "candidate_days": 447,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -432,6 +448,7 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 1808,
           "label_window_excluded_days": 61,
+          "sample_start_excluded_days": 0,
           "candidate_days": 1747,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -473,6 +490,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 209,
           "label_window_excluded_days": 94,
+          "sample_start_excluded_days": 0,
           "candidate_days": 115,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -514,6 +532,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 543,
           "label_window_excluded_days": 60,
+          "sample_start_excluded_days": 0,
           "candidate_days": 483,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -560,6 +579,7 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 1398,
           "label_window_excluded_days": 61,
+          "sample_start_excluded_days": 0,
           "candidate_days": 1337,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -601,6 +621,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 217,
           "label_window_excluded_days": 52,
+          "sample_start_excluded_days": 0,
           "candidate_days": 165,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -642,6 +663,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 487,
           "label_window_excluded_days": 25,
+          "sample_start_excluded_days": 0,
           "candidate_days": 462,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -688,6 +710,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 0,
           "label_window_excluded_days": 0,
+          "sample_start_excluded_days": 0,
           "candidate_days": 0,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -729,6 +752,7 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 156,
           "label_window_excluded_days": 36,
+          "sample_start_excluded_days": 0,
           "candidate_days": 120,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -770,6 +794,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 656,
           "label_window_excluded_days": 79,
+          "sample_start_excluded_days": 0,
           "candidate_days": 577,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -816,40 +841,41 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 3935,
           "label_window_excluded_days": 61,
-          "candidate_days": 3874,
+          "sample_start_excluded_days": 1272,
+          "candidate_days": 2602,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
             "short": 0,
             "medium": 0
           },
-          "old50_unavailable_or_stale_candidate_days": 2575,
+          "old50_unavailable_or_stale_candidate_days": 1303,
           "state_signal_days": {
-            "V2_low_shock_50": 2628,
-            "V2_low_shock_60": 2208,
-            "V2_low_shock_70": 1739,
-            "V2_short_50": 1889,
-            "V2_short_60": 1472,
-            "V2_short_70": 1043,
-            "V2_medium_50": 1696,
-            "V2_medium_60": 1216,
-            "V2_medium_70": 728,
+            "V2_low_shock_50": 1734,
+            "V2_low_shock_60": 1458,
+            "V2_low_shock_70": 1102,
+            "V2_short_50": 1263,
+            "V2_short_60": 996,
+            "V2_short_70": 715,
+            "V2_medium_50": 1124,
+            "V2_medium_60": 826,
+            "V2_medium_70": 497,
             "OLD50": 1299,
-            "STOPFALL": 1311,
-            "B0": 3874
+            "STOPFALL": 906,
+            "B0": 2602
           },
           "events": {
-            "V2_low_shock_50": 194,
-            "V2_low_shock_60": 178,
-            "V2_low_shock_70": 165,
-            "V2_short_50": 156,
-            "V2_short_60": 138,
-            "V2_short_70": 115,
-            "V2_medium_50": 146,
-            "V2_medium_60": 117,
-            "V2_medium_70": 83,
+            "V2_low_shock_50": 132,
+            "V2_low_shock_60": 122,
+            "V2_low_shock_70": 111,
+            "V2_short_50": 104,
+            "V2_short_60": 94,
+            "V2_short_70": 79,
+            "V2_medium_50": 98,
+            "V2_medium_60": 77,
+            "V2_medium_70": 56,
             "OLD50": 79,
-            "STOPFALL": 126,
-            "B0": 215
+            "STOPFALL": 87,
+            "B0": 148
           }
         },
         "cal": {
@@ -857,6 +883,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 162,
           "label_window_excluded_days": 57,
+          "sample_start_excluded_days": 0,
           "candidate_days": 105,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -898,6 +925,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 659,
           "label_window_excluded_days": 49,
+          "sample_start_excluded_days": 0,
           "candidate_days": 610,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -944,6 +972,7 @@
           "dd252_unavailable_sessions": 251,
           "dd252_threshold_pass_days": 1238,
           "label_window_excluded_days": 61,
+          "sample_start_excluded_days": 0,
           "candidate_days": 1177,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -985,6 +1014,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 195,
           "label_window_excluded_days": 46,
+          "sample_start_excluded_days": 0,
           "candidate_days": 149,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -1026,6 +1056,7 @@
           "dd252_unavailable_sessions": 0,
           "dd252_threshold_pass_days": 824,
           "label_window_excluded_days": 84,
+          "sample_start_excluded_days": 0,
           "candidate_days": 740,
           "missing_v2_score_days_by_score": {
             "low_shock": 0,
@@ -1069,116 +1100,116 @@
   "results": {
     "V2_low_shock_50": {
       "dev": {
-        "n_events": 716,
+        "n_events": 589,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.26675977653631283,
-            "n_valid": 716
+            "value": 0.2903225806451613,
+            "n_valid": 589
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.09078212290502793,
-            "n_valid": 716
+            "value": 0.0967741935483871,
+            "n_valid": 589
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.08229982430017713,
-            "n_valid": 716
+            "value": 0.07744167815532665,
+            "n_valid": 589
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.14421036196966475,
-            "n_valid": 716
+            "value": 0.13921341334060666,
+            "n_valid": 589
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.48505597081155544,
-            "n_valid": 716
+            "value": 0.4891291291291295,
+            "n_valid": 589
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4445891565017635,
-            "n_valid": 716
+            "value": 0.46038171311113313,
+            "n_valid": 589
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.10614525139664804,
-            "n_valid": 716
+            "value": 0.10186757215619695,
+            "n_valid": 589
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.09916201117318436,
-            "n_valid": 716
+            "value": 0.08488964346349745,
+            "n_valid": 589
           },
           "low_offset_20": {
             "statistic": "median",
             "value": 1.0,
-            "n_valid": 716
+            "n_valid": 589
           },
           "low_offset_60": {
             "statistic": "median",
-            "value": 6.0,
-            "n_valid": 716
+            "value": 7.0,
+            "n_valid": 589
           },
           "R5": {
             "statistic": "median",
-            "value": -0.0037309151282475805,
-            "n_valid": 716
+            "value": -0.0020473680819751428,
+            "n_valid": 589
           },
           "R10": {
             "statistic": "median",
-            "value": -0.0038412472357288174,
-            "n_valid": 716
+            "value": -0.0035231614202604344,
+            "n_valid": 589
           },
           "R20": {
             "statistic": "median",
-            "value": -0.004091858690584371,
-            "n_valid": 716
+            "value": -0.003927069450326948,
+            "n_valid": 589
           },
           "R60": {
             "statistic": "median",
-            "value": -0.015727646385331917,
-            "n_valid": 716
+            "value": -0.0161650083957795,
+            "n_valid": 589
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.4818435754189944,
-            "n_valid": 716
+            "value": 0.4855687606112054,
+            "n_valid": 589
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.048276758724236535,
-            "n_valid": 716
+            "value": -0.04650996258436413,
+            "n_valid": 589
           }
         },
         "n_events_by_index": {
-          "sh000001": 193,
+          "sh000001": 128,
           "sh000016": 107,
           "sh000300": 90,
           "sh000905": 73,
           "sh000688": 0,
-          "sz399001": 194,
+          "sz399001": 132,
           "sz399006": 59
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 193,
+            "sh000001": 128,
             "sh000016": 107,
             "sh000300": 90,
             "sh000905": 73,
             "sh000688": 0,
-            "sz399001": 194,
+            "sz399001": 132,
             "sz399006": 59
           },
           "drawn_by_index": {
-            "sh000001": 193,
+            "sh000001": 128,
             "sh000016": 107,
             "sh000300": 90,
             "sh000905": 73,
             "sh000688": 0,
-            "sz399001": 194,
+            "sz399001": 132,
             "sz399006": 59
           },
           "shortfall_by_index": {
@@ -1191,118 +1222,118 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 716,
+          "total_events_per_draw": 589,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.28212290502793297,
-              "p5": 0.2737430167597765,
-              "p95": 0.2905027932960894,
+              "median": 0.30390492359932086,
+              "p5": 0.2937181663837012,
+              "p95": 0.31239388794567063,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08659217877094973,
-              "p5": 0.08100558659217877,
-              "p95": 0.09217877094972067,
+              "median": 0.0967741935483871,
+              "p5": 0.0899830220713073,
+              "p95": 0.10186757215619695,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.0812343171984371,
-              "p5": 0.07966321562282697,
-              "p95": 0.08330174049212735,
+              "median": 0.07712683209862004,
+              "p5": 0.07546767402256216,
+              "p95": 0.07909801515666448,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.1474815304960989,
-              "p5": 0.14432701984679286,
-              "p95": 0.15028028441460017,
+              "median": 0.13980767960214546,
+              "p5": 0.1376713117586088,
+              "p95": 0.142103923398756,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.48550187325988303,
-              "p5": 0.4767471964141229,
-              "p95": 0.4926730395270338,
+              "median": 0.4890774369409144,
+              "p5": 0.48355616076586605,
+              "p95": 0.4938524590163935,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4410987775310431,
-              "p5": 0.437631422512723,
-              "p95": 0.44655252069077145,
+              "median": 0.447374267413881,
+              "p5": 0.4407704160246534,
+              "p95": 0.4577935504967446,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11871508379888268,
-              "p5": 0.11173184357541899,
-              "p95": 0.12430167597765363,
+              "median": 0.11035653650254669,
+              "p5": 0.1035653650254669,
+              "p95": 0.11714770797962648,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.1005586592178771,
-              "p5": 0.09497206703910614,
-              "p95": 0.10614525139664804,
+              "median": 0.0865874363327674,
+              "p5": 0.07979626485568761,
+              "p95": 0.09168081494057725,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 5.0,
               "p5": 4.0,
-              "p95": 5.0,
+              "p95": 6.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
               "median": 9.0,
-              "p5": 8.5,
-              "p95": 10.0,
+              "p5": 9.0,
+              "p95": 11.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020375637313947426,
-              "p5": -0.002995241974792562,
-              "p95": -0.0013104172103484135,
+              "median": -0.0014392584940239317,
+              "p5": -0.0020473680819751428,
+              "p95": -0.0007597836646511258,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008133308993047539,
-              "p5": -0.009287317463099243,
-              "p95": -0.006478898721602566,
+              "median": -0.006881194269494295,
+              "p5": -0.008327954241025726,
+              "p95": -0.005324709007599848,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.0039248555296653165,
-              "p5": -0.0053673114355069496,
-              "p95": -0.002359762682460853,
+              "median": -0.00316191833945334,
+              "p5": -0.003953075186490906,
+              "p95": -0.0013155829802294905,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010120281138917275,
-              "p5": -0.013018388825914606,
-              "p95": -0.0064078806648383835,
+              "median": -0.01050228310502288,
+              "p5": -0.01336871519610805,
+              "p95": -0.008433916632688998,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.48044692737430167,
-              "p5": 0.47067039106145253,
-              "p95": 0.4888966480446927,
+              "median": 0.4855687606112054,
+              "p5": 0.47538200339558573,
+              "p95": 0.49745331069609505,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04937875560874283,
-              "p5": -0.05137294569921336,
-              "p95": -0.04826071749590205,
+              "median": -0.047008712023871246,
+              "p5": -0.04904634213272785,
+              "p95": -0.04539680984800254,
               "valid_draws": 2000
             }
           }
@@ -1436,8 +1467,8 @@
             "within5_20": {
               "statistic": "share",
               "median": 0.5370370370370371,
-              "p5": 0.5,
-              "p95": 0.5925925925925926,
+              "p5": 0.48148148148148145,
+              "p95": 0.5740740740740741,
               "valid_draws": 2000
             },
             "within5_60": {
@@ -1451,7 +1482,7 @@
               "statistic": "median",
               "median": 0.0464308242835938,
               "p5": 0.03988424791186995,
-              "p95": 0.04998409749687582,
+              "p95": 0.05032054597301361,
               "valid_draws": 2000
             },
             "entry_dist_60": {
@@ -1464,7 +1495,7 @@
             "range_pos_20": {
               "statistic": "median",
               "median": 0.34031395265813585,
-              "p5": 0.2755155254338617,
+              "p5": 0.26869066313036116,
               "p95": 0.3651586704641463,
               "valid_draws": 2000
             },
@@ -1486,7 +1517,7 @@
               "statistic": "share",
               "median": 0.2777777777777778,
               "p5": 0.24074074074074073,
-              "p95": 0.3148148148148148,
+              "p95": 0.3333333333333333,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -1499,14 +1530,14 @@
             "low_offset_60": {
               "statistic": "median",
               "median": -8.0,
-              "p5": -14.5,
+              "p5": -12.5,
               "p95": -3.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
               "median": 0.006537391217859345,
-              "p5": 0.0020152524692576097,
+              "p5": 0.0020687347358357977,
               "p95": 0.01258162238049454,
               "valid_draws": 2000
             },
@@ -1521,7 +1552,7 @@
               "statistic": "median",
               "median": 0.018892117345145842,
               "p5": 0.011973188291557468,
-              "p95": 0.02903461443832145,
+              "p95": 0.02604408940357894,
               "valid_draws": 2000
             },
             "R60": {
@@ -1710,9 +1741,9 @@
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.49590626136760463,
+              "median": 0.4963938768171544,
               "p5": 0.47461393619933157,
-              "p95": 0.5024459358081631,
+              "p95": 0.5029046944977082,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -1725,7 +1756,7 @@
             "in_zone_60": {
               "statistic": "share",
               "median": 0.12222222222222222,
-              "p5": 0.10555555555555556,
+              "p5": 0.1111111111111111,
               "p95": 0.13333333333333333,
               "valid_draws": 2000
             },
@@ -1747,14 +1778,14 @@
               "statistic": "median",
               "median": 0.002059719995249343,
               "p5": 0.0007456604896231012,
-              "p95": 0.0036111438532073735,
+              "p95": 0.0035889816125658225,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
               "median": -0.0021798192751132928,
               "p5": -0.0031029519429456864,
-              "p95": 0.002268044278777359,
+              "p95": 0.0020206509901170566,
               "valid_draws": 2000
             },
             "R20": {
@@ -1773,7 +1804,7 @@
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.43333333333333335,
+              "median": 0.4388888888888889,
               "p5": 0.4166666666666667,
               "p95": 0.45555555555555555,
               "valid_draws": 2000
@@ -1791,116 +1822,116 @@
     },
     "V2_low_shock_60": {
       "dev": {
-        "n_events": 662,
+        "n_events": 542,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.270392749244713,
-            "n_valid": 662
+            "value": 0.2952029520295203,
+            "n_valid": 542
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.09365558912386707,
-            "n_valid": 662
+            "value": 0.1014760147601476,
+            "n_valid": 542
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.08337617225517335,
-            "n_valid": 662
+            "value": 0.07787908850410397,
+            "n_valid": 542
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.14175545065319894,
-            "n_valid": 662
+            "value": 0.13723207965636752,
+            "n_valid": 542
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.4965133772657245,
-            "n_valid": 662
+            "value": 0.4985793781204343,
+            "n_valid": 542
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4437375505695844,
-            "n_valid": 662
+            "value": 0.4535741880773091,
+            "n_valid": 542
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.09969788519637462,
-            "n_valid": 662
+            "value": 0.0940959409594096,
+            "n_valid": 542
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.10876132930513595,
-            "n_valid": 662
+            "value": 0.08856088560885608,
+            "n_valid": 542
           },
           "low_offset_20": {
             "statistic": "median",
             "value": 1.0,
-            "n_valid": 662
+            "n_valid": 542
           },
           "low_offset_60": {
             "statistic": "median",
-            "value": 4.5,
-            "n_valid": 662
+            "value": 4.0,
+            "n_valid": 542
           },
           "R5": {
             "statistic": "median",
             "value": -0.002379894552334505,
-            "n_valid": 662
+            "n_valid": 542
           },
           "R10": {
             "statistic": "median",
-            "value": 0.0010998528748220604,
-            "n_valid": 662
+            "value": 0.0020902929591808395,
+            "n_valid": 542
           },
           "R20": {
             "statistic": "median",
-            "value": -0.003454466719575111,
-            "n_valid": 662
+            "value": -0.003304426401639915,
+            "n_valid": 542
           },
           "R60": {
             "statistic": "median",
-            "value": -0.011622138686061045,
-            "n_valid": 662
+            "value": -0.012144816778599632,
+            "n_valid": 542
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.48489425981873113,
-            "n_valid": 662
+            "value": 0.4833948339483395,
+            "n_valid": 542
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.046066246332171934,
-            "n_valid": 662
+            "value": -0.04349833877570747,
+            "n_valid": 542
           }
         },
         "n_events_by_index": {
-          "sh000001": 180,
+          "sh000001": 116,
           "sh000016": 97,
           "sh000300": 83,
           "sh000905": 66,
           "sh000688": 0,
-          "sz399001": 178,
+          "sz399001": 122,
           "sz399006": 58
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 180,
+            "sh000001": 116,
             "sh000016": 97,
             "sh000300": 83,
             "sh000905": 66,
             "sh000688": 0,
-            "sz399001": 178,
+            "sz399001": 122,
             "sz399006": 58
           },
           "drawn_by_index": {
-            "sh000001": 180,
+            "sh000001": 116,
             "sh000016": 97,
             "sh000300": 83,
             "sh000905": 66,
             "sh000688": 0,
-            "sz399001": 178,
+            "sz399001": 122,
             "sz399006": 58
           },
           "shortfall_by_index": {
@@ -1913,118 +1944,118 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 662,
+          "total_events_per_draw": 542,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2824773413897281,
-              "p5": 0.270392749244713,
-              "p95": 0.2930513595166163,
+              "median": 0.3025830258302583,
+              "p5": 0.2878228782287823,
+              "p95": 0.3154981549815498,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08610271903323263,
-              "p5": 0.07854984894259819,
-              "p95": 0.09365558912386707,
+              "median": 0.0959409594095941,
+              "p5": 0.08671586715867159,
+              "p95": 0.10516605166051661,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.0812343171984371,
-              "p5": 0.07935692340041578,
-              "p95": 0.08368083320306752,
+              "median": 0.07752938764306982,
+              "p5": 0.07500613297979786,
+              "p95": 0.07923084733275887,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.1474815304960989,
-              "p5": 0.14342253847792397,
-              "p95": 0.15117456325211598,
+              "median": 0.13975110993759032,
+              "p5": 0.1370231400052816,
+              "p95": 0.14256083319048474,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.485750074560095,
-              "p5": 0.4763474075879697,
-              "p95": 0.49371148703639134,
+              "median": 0.48936762372283793,
+              "p5": 0.4791225656425294,
+              "p95": 0.4982645766350058,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.44144362451194186,
-              "p5": 0.4368153042075885,
-              "p95": 0.4497381604655817,
+              "median": 0.4482429151525603,
+              "p5": 0.4406397970277305,
+              "p95": 0.45869521138356534,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11782477341389729,
-              "p5": 0.11027190332326284,
-              "p95": 0.1268882175226586,
+              "median": 0.11070110701107011,
+              "p5": 0.0996309963099631,
+              "p95": 0.11808118081180811,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.10120845921450151,
-              "p5": 0.09214501510574018,
-              "p95": 0.10876132930513595,
+              "median": 0.08671586715867159,
+              "p5": 0.07749077490774908,
+              "p95": 0.0940959409594096,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 5.0,
-              "p5": 4.0,
-              "p95": 5.5,
+              "p5": 3.5,
+              "p95": 6.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
-              "p5": 7.0,
-              "p95": 10.0,
+              "median": 9.5,
+              "p5": 8.0,
+              "p95": 11.5,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020375637313947426,
-              "p5": -0.0032442390776234453,
-              "p95": -0.0009795178676772487,
+              "median": -0.0014485092481332784,
+              "p5": -0.0025448239951197382,
+              "p95": -0.0006334384289956585,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008133308993047539,
-              "p5": -0.009804570301168047,
-              "p95": -0.0060778741157583305,
+              "median": -0.007009232431860579,
+              "p5": -0.008614961064339122,
+              "p95": -0.0049547437839168595,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.0039389653580781114,
-              "p5": -0.006267148465181338,
-              "p95": -0.002168345614273537,
+              "median": -0.0031509476013908966,
+              "p5": -0.00496601472431718,
+              "p95": -2.753298666208215e-05,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010153832338719915,
-              "p5": -0.013425036990176886,
-              "p95": -0.006164398619314837,
+              "median": -0.01040119712865073,
+              "p5": -0.014236345022954622,
+              "p95": -0.0064076623712137825,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4788519637462236,
-              "p5": 0.46676737160120846,
-              "p95": 0.49244712990936557,
+              "median": 0.48523985239852396,
+              "p5": 0.47232472324723246,
+              "p95": 0.5,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.049427769054351034,
-              "p5": -0.05180978738181197,
-              "p95": -0.04787089614131951,
+              "median": -0.04702504870345309,
+              "p5": -0.04913687118392701,
+              "p95": -0.04498528906196653,
               "valid_draws": 2000
             }
           }
@@ -2173,7 +2204,7 @@
               "statistic": "median",
               "median": 0.048899549096580675,
               "p5": 0.03864439910994666,
-              "p95": 0.05032054597301361,
+              "p95": 0.051382706709600545,
               "valid_draws": 2000
             },
             "entry_dist_60": {
@@ -2250,7 +2281,7 @@
               "statistic": "median",
               "median": 0.04315372977141796,
               "p5": 0.03738589139910009,
-              "p95": 0.052359222127981386,
+              "p95": 0.05247176687205396,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -2262,7 +2293,7 @@
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.031725456230905835,
+              "median": -0.03156882459073007,
               "p5": -0.034927097037169286,
               "p95": -0.02570136524118516,
               "valid_draws": 2000
@@ -2405,34 +2436,34 @@
             "within5_60": {
               "statistic": "share",
               "median": 0.12650602409638553,
-              "p5": 0.10813253012048195,
+              "p5": 0.10240963855421686,
               "p95": 0.13855421686746988,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.05927332068463398,
-              "p5": 0.054308494644358385,
-              "p95": 0.06087618476065637,
+              "p5": 0.05360189432869111,
+              "p95": 0.060999952189711326,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.11466703563536973,
+              "median": 0.11460234307294137,
               "p5": 0.11122386807533535,
-              "p95": 0.11956987672979824,
+              "p95": 0.11947051572097045,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4878557781524175,
-              "p5": 0.4608695443638129,
+              "median": 0.4855326657187723,
+              "p5": 0.45568721352595765,
               "p95": 0.5145997414195287,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4963938768171544,
+              "median": 0.49590626136760463,
               "p5": 0.47164888565724317,
               "p95": 0.5043976410092501,
               "valid_draws": 2000
@@ -2446,7 +2477,7 @@
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.12650602409638553,
+              "median": 0.12048192771084337,
               "p5": 0.10240963855421686,
               "p95": 0.13855421686746988,
               "valid_draws": 2000
@@ -2489,13 +2520,13 @@
             "R60": {
               "statistic": "median",
               "median": -0.009003058632905514,
-              "p5": -0.016843024118326444,
-              "p95": -0.004271661278725358,
+              "p5": -0.01648932925997354,
+              "p95": -0.002350779133835579,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.43373493975903615,
+              "median": 0.4397590361445783,
               "p5": 0.40963855421686746,
               "p95": 0.463855421686747,
               "valid_draws": 2000
@@ -2513,116 +2544,116 @@
     },
     "V2_low_shock_70": {
       "dev": {
-        "n_events": 601,
+        "n_events": 491,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.23460898502495842,
-            "n_valid": 601
+            "value": 0.2505091649694501,
+            "n_valid": 491
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.08319467554076539,
-            "n_valid": 601
+            "value": 0.08757637474541752,
+            "n_valid": 491
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.0838380136249135,
-            "n_valid": 601
+            "value": 0.0793028650477352,
+            "n_valid": 491
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.14375981722119113,
-            "n_valid": 601
+            "value": 0.13799527182566962,
+            "n_valid": 491
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.5049446392957843,
-            "n_valid": 601
+            "value": 0.526519132101131,
+            "n_valid": 491
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4489693686733076,
-            "n_valid": 601
+            "value": 0.45601075719474726,
+            "n_valid": 491
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.08652246256239601,
-            "n_valid": 601
+            "value": 0.0814663951120163,
+            "n_valid": 491
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.10149750415973377,
-            "n_valid": 601
+            "value": 0.0814663951120163,
+            "n_valid": 491
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -4.0,
-            "n_valid": 601
+            "n_valid": 491
           },
           "low_offset_60": {
             "statistic": "median",
             "value": 4.0,
-            "n_valid": 601
+            "n_valid": 491
           },
           "R5": {
             "statistic": "median",
-            "value": -0.0024963127655359685,
-            "n_valid": 601
+            "value": -0.0024747756203437055,
+            "n_valid": 491
           },
           "R10": {
             "statistic": "median",
-            "value": -0.0008346752775927335,
-            "n_valid": 601
+            "value": 0.0006877209932703021,
+            "n_valid": 491
           },
           "R20": {
             "statistic": "median",
-            "value": -0.011002669091335626,
-            "n_valid": 601
+            "value": -0.01055867927619536,
+            "n_valid": 491
           },
           "R60": {
             "statistic": "median",
-            "value": -0.007170961466771653,
-            "n_valid": 601
+            "value": -0.009793456012692325,
+            "n_valid": 491
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.45757071547420963,
-            "n_valid": 601
+            "value": 0.45417515274949083,
+            "n_valid": 491
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.049076328937405655,
-            "n_valid": 601
+            "value": -0.04600539236554568,
+            "n_valid": 491
           }
         },
         "n_events_by_index": {
-          "sh000001": 160,
+          "sh000001": 104,
           "sh000016": 89,
           "sh000300": 73,
           "sh000905": 61,
           "sh000688": 0,
-          "sz399001": 165,
+          "sz399001": 111,
           "sz399006": 53
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 160,
+            "sh000001": 104,
             "sh000016": 89,
             "sh000300": 73,
             "sh000905": 61,
             "sh000688": 0,
-            "sz399001": 165,
+            "sz399001": 111,
             "sz399006": 53
           },
           "drawn_by_index": {
-            "sh000001": 160,
+            "sh000001": 104,
             "sh000016": 89,
             "sh000300": 73,
             "sh000905": 61,
             "sh000688": 0,
-            "sz399001": 165,
+            "sz399001": 111,
             "sz399006": 53
           },
           "shortfall_by_index": {
@@ -2635,118 +2666,118 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 601,
+          "total_events_per_draw": 491,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.281198003327787,
-              "p5": 0.26622296173044924,
-              "p95": 0.2961730449251248,
+              "median": 0.3014256619144603,
+              "p5": 0.285132382892057,
+              "p95": 0.31771894093686354,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08652246256239601,
-              "p5": 0.07653910149750416,
-              "p95": 0.09650582362728785,
+              "median": 0.09572301425661914,
+              "p5": 0.0855397148676171,
+              "p95": 0.10590631364562118,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08128838500229674,
-              "p5": 0.07918382009555636,
-              "p95": 0.08395609949817673,
+              "median": 0.07793194318751961,
+              "p5": 0.07481286585490232,
+              "p95": 0.08020167307609882,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14766203758843277,
-              "p5": 0.14276590868962513,
-              "p95": 0.1522654660666271,
+              "median": 0.13980767960214546,
+              "p5": 0.13621974007786686,
+              "p95": 0.1428579633564988,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4857858634059047,
-              "p5": 0.4746493420954143,
-              "p95": 0.49600264652368137,
+              "median": 0.4896578105047615,
+              "p5": 0.47625981085503555,
+              "p95": 0.5033856350878626,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.441460109986451,
-              "p5": 0.43660450915112725,
-              "p95": 0.45155997122819597,
+              "median": 0.44774909075017333,
+              "p5": 0.43930570935193847,
+              "p95": 0.45999999999999996,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11813643926788686,
-              "p5": 0.10815307820299501,
-              "p95": 0.1281198003327787,
+              "median": 0.109979633401222,
+              "p5": 0.09775967413441955,
+              "p95": 0.12016293279022404,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.10149750415973377,
-              "p5": 0.09151414309484193,
-              "p95": 0.10981697171381032,
+              "median": 0.0855397148676171,
+              "p5": 0.07535641547861507,
+              "p95": 0.09572301425661914,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 5.0,
-              "p5": 4.0,
+              "p5": 3.0,
               "p95": 6.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
+              "median": 10.0,
               "p5": 7.0,
-              "p95": 10.0,
+              "p95": 12.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020278377053889463,
-              "p5": -0.0033951627236380455,
-              "p95": -0.0007597836646511258,
+              "median": -0.0014392584940239317,
+              "p5": -0.0030248364583902454,
+              "p95": -0.0005216680470254698,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008141286896381383,
-              "p5": -0.009916974169741799,
-              "p95": -0.005857656602826888,
+              "median": -0.007137270594226863,
+              "p5": -0.009372145217499073,
+              "p95": -0.004511707726686631,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.003937171569207476,
-              "p5": -0.0068021300100542526,
-              "p95": -0.001711964645079278,
+              "median": -0.00316191833945334,
+              "p5": -0.005521414133192293,
+              "p95": 0.000994711533655268,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010148938567664523,
-              "p5": -0.015307054396668351,
-              "p95": -0.005923886677538293,
+              "median": -0.01050228310502288,
+              "p5": -0.01709023644844776,
+              "p95": -0.005958522921300613,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.47920133111480867,
-              "p5": 0.46256239600665555,
-              "p95": 0.49584026622296173,
+              "median": 0.4847250509164969,
+              "p5": 0.4663951120162933,
+              "p95": 0.5031568228105905,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04942937693131588,
-              "p5": -0.052162947530018156,
-              "p95": -0.0474888040635989,
+              "median": -0.04704138538303493,
+              "p5": -0.04942937693131588,
+              "p95": -0.044918308696273446,
               "valid_draws": 2000
             }
           }
@@ -2893,14 +2924,14 @@
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.0464308242835938,
+              "median": 0.04660315449637187,
               "p5": 0.03795667382671353,
-              "p95": 0.051382706709600545,
+              "p95": 0.05163644194670647,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.07153768115915538,
+              "median": 0.0718599067565443,
               "p5": 0.0671326791472211,
               "p95": 0.07836314684847001,
               "valid_draws": 2000
@@ -2908,15 +2939,15 @@
             "range_pos_20": {
               "statistic": "median",
               "median": 0.34031395265813585,
-              "p5": 0.24592201710194503,
-              "p95": 0.37690052897819937,
+              "p5": 0.2539494578365349,
+              "p95": 0.3793230709831471,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
               "median": 0.2987058500451397,
-              "p5": 0.2753350478787657,
-              "p95": 0.3335828510636983,
+              "p5": 0.26661950467746853,
+              "p95": 0.33327031576677746,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -2950,7 +2981,7 @@
             "R5": {
               "statistic": "median",
               "median": 0.006537391217859345,
-              "p5": -0.0004092568333758373,
+              "p5": -0.0004442204159338936,
               "p95": 0.013630012565920668,
               "valid_draws": 2000
             },
@@ -2965,28 +2996,28 @@
               "statistic": "median",
               "median": 0.018892117345145842,
               "p5": 0.011091756212637582,
-              "p95": 0.03208950761078433,
+              "p95": 0.032295312604508686,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
               "median": 0.041701791683003475,
               "p5": 0.033830693039118565,
-              "p95": 0.050060052664350874,
+              "p95": 0.04926910658173722,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
               "median": 0.5869565217391305,
               "p5": 0.5217391304347826,
-              "p95": 0.6521739130434783,
+              "p95": 0.6739130434782609,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
               "median": -0.030752693312773416,
               "p5": -0.034927097037169286,
-              "p95": -0.024888655297500895,
+              "p95": -0.024826626051282275,
               "valid_draws": 2000
             }
           }
@@ -3121,7 +3152,7 @@
               "statistic": "share",
               "median": 0.43137254901960786,
               "p5": 0.39869281045751637,
-              "p95": 0.46405228758169936,
+              "p95": 0.45751633986928103,
               "valid_draws": 2000
             },
             "within5_60": {
@@ -3183,7 +3214,7 @@
             "low_offset_60": {
               "statistic": "median",
               "median": 14.0,
-              "p5": 14.0,
+              "p5": 12.0,
               "p95": 18.0,
               "valid_draws": 2000
             },
@@ -3198,34 +3229,34 @@
               "statistic": "median",
               "median": -0.002235591426179462,
               "p5": -0.0033985125350933787,
-              "p95": 0.002821965380352065,
+              "p95": 0.0027445522584161886,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
               "median": -0.0063103468212867275,
-              "p5": -0.009075815756766303,
+              "p5": -0.00890253377234107,
               "p95": -0.0026889552050770593,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.00923640595426889,
-              "p5": -0.01772490575876673,
+              "median": -0.008769711311542139,
+              "p5": -0.0168863980016547,
               "p95": 0.000322832103684334,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
               "median": 0.43790849673202614,
-              "p5": 0.39869281045751637,
+              "p5": 0.40522875816993464,
               "p95": 0.47058823529411764,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
               "median": -0.03783327404986847,
-              "p5": -0.0408472930322894,
+              "p5": -0.04002107362598084,
               "p95": -0.03337411189008621,
               "valid_draws": 2000
             }
@@ -3235,116 +3266,116 @@
     },
     "V2_short_50": {
       "dev": {
-        "n_events": 581,
+        "n_events": 477,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.21686746987951808,
-            "n_valid": 581
+            "value": 0.23060796645702306,
+            "n_valid": 477
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.0757314974182444,
-            "n_valid": 581
+            "value": 0.08176100628930817,
+            "n_valid": 477
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.08495589428900163,
-            "n_valid": 581
+            "value": 0.07951604114161182,
+            "n_valid": 477
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.14582160703003844,
-            "n_valid": 581
+            "value": 0.1398175557841077,
+            "n_valid": 477
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.524906042571713,
-            "n_valid": 581
+            "value": 0.5334834108266189,
+            "n_valid": 477
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4678935143827054,
-            "n_valid": 581
+            "value": 0.4782106538212347,
+            "n_valid": 477
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.03614457831325301,
-            "n_valid": 581
+            "value": 0.025157232704402517,
+            "n_valid": 477
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.08089500860585198,
-            "n_valid": 581
+            "value": 0.07337526205450734,
+            "n_valid": 477
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -4.0,
-            "n_valid": 581
+            "n_valid": 477
           },
           "low_offset_60": {
             "statistic": "median",
             "value": -4.0,
-            "n_valid": 581
+            "n_valid": 477
           },
           "R5": {
             "statistic": "median",
-            "value": -0.0027867420132184906,
-            "n_valid": 581
+            "value": -0.0027228243069508107,
+            "n_valid": 477
           },
           "R10": {
             "statistic": "median",
-            "value": -0.002577804538441253,
-            "n_valid": 581
+            "value": -0.0027067646027310044,
+            "n_valid": 477
           },
           "R20": {
             "statistic": "median",
             "value": -0.0006433206533899005,
-            "n_valid": 581
+            "n_valid": 477
           },
           "R60": {
             "statistic": "median",
-            "value": -0.01550150764448821,
-            "n_valid": 581
+            "value": -0.014199043754269058,
+            "n_valid": 477
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.4974182444061962,
-            "n_valid": 581
+            "value": 0.4968553459119497,
+            "n_valid": 477
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.04724799162289972,
-            "n_valid": 581
+            "value": -0.044316476961361095,
+            "n_valid": 477
           }
         },
         "n_events_by_index": {
-          "sh000001": 156,
+          "sh000001": 104,
           "sh000016": 88,
           "sh000300": 73,
           "sh000905": 57,
           "sh000688": 0,
-          "sz399001": 156,
+          "sz399001": 104,
           "sz399006": 51
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 156,
+            "sh000001": 104,
             "sh000016": 88,
             "sh000300": 73,
             "sh000905": 57,
             "sh000688": 0,
-            "sz399001": 156,
+            "sz399001": 104,
             "sz399006": 51
           },
           "drawn_by_index": {
-            "sh000001": 156,
+            "sh000001": 104,
             "sh000016": 88,
             "sh000300": 73,
             "sh000905": 57,
             "sh000688": 0,
-            "sz399001": 156,
+            "sz399001": 104,
             "sz399006": 51
           },
           "shortfall_by_index": {
@@ -3357,62 +3388,62 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 581,
+          "total_events_per_draw": 477,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2822719449225473,
-              "p5": 0.2667814113597246,
-              "p95": 0.29948364888123924,
+              "median": 0.3039832285115304,
+              "p5": 0.28721174004192873,
+              "p95": 0.32075471698113206,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08691910499139414,
-              "p5": 0.0757314974182444,
-              "p95": 0.0963855421686747,
+              "median": 0.09643605870020965,
+              "p5": 0.08385744234800839,
+              "p95": 0.1069182389937107,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.0812343171984371,
-              "p5": 0.07898027898027915,
-              "p95": 0.08395716081088467,
+              "median": 0.07712683209862004,
+              "p5": 0.07427947167578308,
+              "p95": 0.07971376268929942,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14730102340376505,
-              "p5": 0.14270596404392366,
-              "p95": 0.15227862804044823,
+              "median": 0.1395344359512487,
+              "p5": 0.13560896596079175,
+              "p95": 0.1428579633564988,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4857142857142853,
-              "p5": 0.47326837976943376,
-              "p95": 0.49600264652368137,
+              "median": 0.4890774369409144,
+              "p5": 0.4755360043092545,
+              "p95": 0.5033856350878626,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.44142713903743275,
-              "p5": 0.4358135278293908,
-              "p95": 0.451855620194793,
+              "median": 0.44774909075017333,
+              "p5": 0.4392514504569409,
+              "p95": 0.45999999999999996,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11876075731497418,
-              "p5": 0.10671256454388985,
-              "p95": 0.1291738382099827,
+              "median": 0.1090146750524109,
+              "p5": 0.09643605870020965,
+              "p95": 0.12159329140461216,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.10154905335628227,
-              "p5": 0.08950086058519793,
-              "p95": 0.11187607573149742,
+              "median": 0.0859538784067086,
+              "p5": 0.07536687631027254,
+              "p95": 0.09643605870020965,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -3426,49 +3457,49 @@
               "statistic": "median",
               "median": 9.0,
               "p5": 7.0,
-              "p95": 11.0,
+              "p95": 12.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020278377053889463,
-              "p5": -0.0034921581786094835,
-              "p95": -0.0007494343212094412,
+              "median": -0.0014577600022426251,
+              "p5": -0.003228041953773242,
+              "p95": -0.0004579624989198283,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008125331089713694,
-              "p5": -0.009916974169741799,
-              "p95": -0.005723538282722429,
+              "median": -0.006881194269494295,
+              "p5": -0.009372145217499073,
+              "p95": -0.004259915320141805,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.003937171569207476,
-              "p5": -0.007043700838891609,
-              "p95": -0.0013155829802294905,
+              "median": -0.00316191833945334,
+              "p5": -0.006109561264586283,
+              "p95": 0.001064836725035656,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010148938567664523,
-              "p5": -0.015307054396668351,
-              "p95": -0.005923886677538293,
+              "median": -0.01050228310502288,
+              "p5": -0.01709023644844776,
+              "p95": -0.005958522921300613,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4784853700516351,
-              "p5": 0.4612736660929432,
-              "p95": 0.4974182444061962,
+              "median": 0.4863731656184486,
+              "p5": 0.46540880503144655,
+              "p95": 0.5052410901467506,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04942937693131588,
-              "p5": -0.05248411591507829,
-              "p95": -0.04704138538303493,
+              "median": -0.047008712023871246,
+              "p5": -0.04952740382253229,
+              "p95": -0.04462803937794779,
               "valid_draws": 2000
             }
           }
@@ -3602,7 +3633,7 @@
             "within5_20": {
               "statistic": "share",
               "median": 0.5526315789473685,
-              "p5": 0.4473684210526316,
+              "p5": 0.47368421052631576,
               "p95": 0.631578947368421,
               "valid_draws": 2000
             },
@@ -3615,30 +3646,30 @@
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.0464308242835938,
+              "median": 0.045822720985539966,
               "p5": 0.035381454427330206,
-              "p95": 0.0528320593571181,
+              "p95": 0.05176989862053116,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.0718599067565443,
-              "p5": 0.06408334018602041,
-              "p95": 0.0788753873999497,
+              "median": 0.07153768115915538,
+              "p5": 0.0640945007798348,
+              "p95": 0.07940962778572869,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.3413104250873916,
-              "p5": 0.22913999598308393,
+              "median": 0.34031395265813585,
+              "p5": 0.24003886314356943,
               "p95": 0.40716373673841877,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
               "median": 0.2987058500451397,
-              "p5": 0.2664926093796311,
-              "p95": 0.34860336188795726,
+              "p5": 0.2665079205464984,
+              "p95": 0.34585163856544593,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -3651,7 +3682,7 @@
             "in_zone_60": {
               "statistic": "share",
               "median": 0.2894736842105263,
-              "p5": 0.18421052631578946,
+              "p5": 0.21052631578947367,
               "p95": 0.3684210526315789,
               "valid_draws": 2000
             },
@@ -3671,30 +3702,30 @@
             },
             "R5": {
               "statistic": "median",
-              "median": 0.005309350234096288,
+              "median": 0.005598009242875124,
               "p5": -0.0011036279668146798,
-              "p95": 0.014272041344494002,
+              "p95": 0.014561213318224464,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
               "median": 0.005738345722967164,
               "p5": -0.010232518202806018,
-              "p95": 0.011113447652469688,
+              "p95": 0.012608600991486751,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
               "median": 0.018892117345145842,
-              "p5": 0.004952963798095733,
-              "p95": 0.035285837639251194,
+              "p5": 0.0051802858338984015,
+              "p95": 0.03825996306484236,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
               "median": 0.04033081433727048,
-              "p5": 0.027392517885843737,
-              "p95": 0.05540106309204862,
+              "p5": 0.026320880639801314,
+              "p95": 0.054610117009434966,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -3707,7 +3738,7 @@
             "MAE20": {
               "statistic": "median",
               "median": -0.03156882459073007,
-              "p5": -0.0369163596028641,
+              "p5": -0.03642739098026887,
               "p95": -0.02401391610759801,
               "valid_draws": 2000
             }
@@ -3842,7 +3873,7 @@
             "within5_20": {
               "statistic": "share",
               "median": 0.423841059602649,
-              "p5": 0.3973509933774834,
+              "p5": 0.39072847682119205,
               "p95": 0.45695364238410596,
               "valid_draws": 2000
             },
@@ -3912,7 +3943,7 @@
             "R5": {
               "statistic": "median",
               "median": 0.0018123967940713026,
-              "p5": 0.00014498332691736948,
+              "p5": 0.00044833865620175217,
               "p95": 0.00582790916231124,
               "valid_draws": 2000
             },
@@ -3933,8 +3964,8 @@
             "R60": {
               "statistic": "median",
               "median": -0.00923640595426889,
-              "p5": -0.01772490575876673,
-              "p95": 0.0014071679572220663,
+              "p5": -0.0168863980016547,
+              "p95": 0.000322832103684334,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -3957,116 +3988,116 @@
     },
     "V2_short_60": {
       "dev": {
-        "n_events": 512,
+        "n_events": 419,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.1875,
-            "n_valid": 512
+            "value": 0.2052505966587112,
+            "n_valid": 419
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.0625,
-            "n_valid": 512
+            "value": 0.06682577565632458,
+            "n_valid": 419
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.08954049428803967,
-            "n_valid": 512
+            "value": 0.0867612179871109,
+            "n_valid": 419
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.15189543080365409,
-            "n_valid": 512
+            "value": 0.14511109003595246,
+            "n_valid": 419
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.557319723643547,
-            "n_valid": 512
+            "value": 0.5674822602463395,
+            "n_valid": 419
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.47550843941304627,
-            "n_valid": 512
+            "value": 0.4881386861313873,
+            "n_valid": 419
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.0234375,
-            "n_valid": 512
+            "value": 0.016706443914081145,
+            "n_valid": 419
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.0703125,
-            "n_valid": 512
+            "value": 0.05489260143198091,
+            "n_valid": 419
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -5.0,
-            "n_valid": 512
+            "n_valid": 419
           },
           "low_offset_60": {
             "statistic": "median",
             "value": -5.0,
-            "n_valid": 512
+            "n_valid": 419
           },
           "R5": {
             "statistic": "median",
-            "value": 0.002938558053110607,
-            "n_valid": 512
+            "value": 0.0022990527594033416,
+            "n_valid": 419
           },
           "R10": {
             "statistic": "median",
-            "value": -0.0003544107397330243,
-            "n_valid": 512
+            "value": -0.0017911306962257179,
+            "n_valid": 419
           },
           "R20": {
             "statistic": "median",
-            "value": -0.0010690900464754294,
-            "n_valid": 512
+            "value": -0.0007084083621857751,
+            "n_valid": 419
           },
           "R60": {
             "statistic": "median",
-            "value": -0.009844268455645178,
-            "n_valid": 512
+            "value": -0.007170961466771653,
+            "n_valid": 419
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.4921875,
-            "n_valid": 512
+            "value": 0.4916467780429594,
+            "n_valid": 419
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.04293435541406726,
-            "n_valid": 512
+            "value": -0.03982590036078271,
+            "n_valid": 419
           }
         },
         "n_events_by_index": {
-          "sh000001": 136,
+          "sh000001": 87,
           "sh000016": 78,
           "sh000300": 66,
           "sh000905": 48,
           "sh000688": 0,
-          "sz399001": 138,
+          "sz399001": 94,
           "sz399006": 46
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 136,
+            "sh000001": 87,
             "sh000016": 78,
             "sh000300": 66,
             "sh000905": 48,
             "sh000688": 0,
-            "sz399001": 138,
+            "sz399001": 94,
             "sz399006": 46
           },
           "drawn_by_index": {
-            "sh000001": 136,
+            "sh000001": 87,
             "sh000016": 78,
             "sh000300": 66,
             "sh000905": 48,
             "sh000688": 0,
-            "sz399001": 138,
+            "sz399001": 94,
             "sz399006": 46
           },
           "shortfall_by_index": {
@@ -4079,62 +4110,62 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 512,
+          "total_events_per_draw": 419,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.283203125,
-              "p5": 0.263671875,
-              "p95": 0.3028320312499999,
+              "median": 0.3031026252983294,
+              "p5": 0.28162291169451076,
+              "p95": 0.324582338902148,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.087890625,
-              "p5": 0.07421875,
-              "p95": 0.099609375,
+              "median": 0.0954653937947494,
+              "p5": 0.081145584725537,
+              "p95": 0.10978520286396182,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08087077962518296,
-              "p5": 0.07830791818503213,
-              "p95": 0.08461515553328469,
+              "median": 0.07712683209862004,
+              "p5": 0.0731557969704637,
+              "p95": 0.0802611759509817,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14712948386222313,
-              "p5": 0.14189462656553542,
-              "p95": 0.15315693677820408,
+              "median": 0.1395344359512487,
+              "p5": 0.13471005218076204,
+              "p95": 0.14350406859566855,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.48550187325988303,
-              "p5": 0.4650931398788869,
-              "p95": 0.50259191791348,
+              "median": 0.4890774369409144,
+              "p5": 0.47303772834752766,
+              "p95": 0.5053733031674208,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4410987775310431,
-              "p5": 0.4324071713856825,
-              "p95": 0.45619355721885047,
+              "median": 0.447374267413881,
+              "p5": 0.4366134306536757,
+              "p95": 0.4605910258084178,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.119140625,
-              "p5": 0.10546875,
-              "p95": 0.1328125,
+              "median": 0.10978520286396182,
+              "p5": 0.0954653937947494,
+              "p95": 0.12410501193317422,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.1015625,
-              "p5": 0.087890625,
-              "p95": 0.11328125,
+              "median": 0.08591885441527446,
+              "p5": 0.07159904534606205,
+              "p95": 0.09785202863961814,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -4148,49 +4179,49 @@
               "statistic": "median",
               "median": 9.0,
               "p5": 7.0,
-              "p95": 11.5,
+              "p95": 13.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.001996016650789717,
-              "p5": -0.003956552031852134,
-              "p95": -0.0005518235798656068,
+              "median": -0.0014392584940239317,
+              "p5": -0.0033951627236380455,
+              "p95": -9.583342408481244e-05,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008015737103544196,
-              "p5": -0.010438974754646169,
-              "p95": -0.004652066284112022,
+              "median": -0.006881194269494295,
+              "p5": -0.009826037295052381,
+              "p95": -0.0038531634713312446,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.0039248555296653165,
-              "p5": -0.007360008336737001,
-              "p95": 0.00042420380282504055,
+              "median": -0.00316191833945334,
+              "p5": -0.0063417212081793295,
+              "p95": 0.0015772071041912916,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010153832338719915,
-              "p5": -0.01712843495970967,
-              "p95": -0.004907186645856987,
+              "median": -0.01030011115227858,
+              "p5": -0.017893186584876708,
+              "p95": -0.005120936653108643,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.478515625,
-              "p5": 0.458984375,
-              "p95": 0.501953125,
+              "median": 0.48448687350835323,
+              "p5": 0.4630071599045346,
+              "p95": 0.5083532219570406,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04937875560874283,
-              "p5": -0.05284936485848646,
-              "p95": -0.04642131557231338,
+              "median": -0.047008712023871246,
+              "p5": -0.05073189278245993,
+              "p95": -0.044139223733962396,
               "valid_draws": 2000
             }
           }
@@ -4324,7 +4355,7 @@
             "within5_20": {
               "statistic": "share",
               "median": 0.53125,
-              "p5": 0.40625,
+              "p5": 0.4359375000000001,
               "p95": 0.625,
               "valid_draws": 2000
             },
@@ -4338,29 +4369,29 @@
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.04906056633371736,
-              "p5": 0.035381454427330206,
-              "p95": 0.05591598703635592,
+              "p5": 0.036025903714904065,
+              "p95": 0.0544853659017539,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
               "median": 0.07307676165789223,
-              "p5": 0.0640945007798348,
-              "p95": 0.0813864998721513,
+              "p5": 0.06424943356803103,
+              "p95": 0.08065381278602857,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
               "median": 0.35511301645556936,
-              "p5": 0.24592201710194503,
+              "p5": 0.24388120127691018,
               "p95": 0.44256888139922956,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.31123928316493255,
+              "median": 0.311031096590878,
               "p5": 0.2665079205464984,
-              "p95": 0.36781540616374436,
+              "p95": 0.36792904876603455,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -4381,35 +4412,35 @@
               "statistic": "median",
               "median": 1.0,
               "p5": -1.0,
-              "p95": 4.5,
+              "p95": 3.5,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
               "median": -6.0,
-              "p5": -18.025,
+              "p5": -18.5,
               "p95": 1.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
               "median": 0.005309350234096288,
-              "p5": -0.0015907685453618314,
-              "p95": 0.014767961276471064,
+              "p5": -0.0014179493007535071,
+              "p95": 0.015037845755235701,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": 0.0035912637895031962,
-              "p5": -0.010895377020591216,
-              "p95": 0.013907356300258522,
+              "median": 0.002217787275963279,
+              "p5": -0.010648515512694356,
+              "p95": 0.012761426107982771,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": 0.018685856399695333,
+              "median": 0.01857420579701452,
               "p5": -0.0005896116001053442,
-              "p95": 0.03825996306484236,
+              "p95": 0.035285837639251194,
               "valid_draws": 2000
             },
             "R60": {
@@ -4429,8 +4460,8 @@
             "MAE20": {
               "statistic": "median",
               "median": -0.032064646681349396,
-              "p5": -0.038333456218053674,
-              "p95": -0.02322674494284832,
+              "p5": -0.03804469762952645,
+              "p95": -0.02341453685814654,
               "valid_draws": 2000
             }
           }
@@ -4572,35 +4603,35 @@
               "statistic": "share",
               "median": 0.12307692307692308,
               "p5": 0.09230769230769231,
-              "p95": 0.14615384615384616,
+              "p95": 0.15384615384615385,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.05934528435688857,
-              "p5": 0.052715795340677274,
-              "p95": 0.062090423853975896,
+              "median": 0.05945720327275461,
+              "p5": 0.0524343848841311,
+              "p95": 0.062200838819668536,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.11602782538024603,
+              "median": 0.11605054766979073,
               "p5": 0.10925441443590467,
               "p95": 0.12165982919381624,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.48941618433956735,
+              "median": 0.48838685090553513,
               "p5": 0.44755321402934367,
-              "p95": 0.5281484313546637,
+              "p95": 0.5310254274146922,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
               "median": 0.49728908022045304,
-              "p5": 0.46731949158486336,
-              "p95": 0.5125877862752093,
+              "p5": 0.46526322862314984,
+              "p95": 0.511173510680375,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -4627,13 +4658,13 @@
             "low_offset_60": {
               "statistic": "median",
               "median": 15.5,
-              "p5": 10.475000000000001,
+              "p5": 10.5,
               "p95": 19.5,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": 0.0022667473010188344,
+              "median": 0.0022168811336599203,
               "p5": 3.1114864257553165e-05,
               "p95": 0.00688272480182428,
               "valid_draws": 2000
@@ -4641,21 +4672,21 @@
             "R10": {
               "statistic": "median",
               "median": -0.0018633569083576496,
-              "p5": -0.003843230734268843,
+              "p5": -0.004292557701616351,
               "p95": 0.0033381503968072934,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.006353439442574493,
-              "p5": -0.012468730446203745,
-              "p95": -0.001539516724509471,
+              "median": -0.006296690198220656,
+              "p5": -0.014929709183582496,
+              "p95": -0.0014899671927661173,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
               "median": -0.009280963667224085,
-              "p5": -0.018499680501838756,
+              "p5": -0.019283593455767634,
               "p95": 0.0019230287302977045,
               "valid_draws": 2000
             },
@@ -4669,7 +4700,7 @@
             "MAE20": {
               "statistic": "median",
               "median": -0.0376710793397963,
-              "p5": -0.04141865339844298,
+              "p5": -0.04146770518728082,
               "p95": -0.03311181803381413,
               "valid_draws": 2000
             }
@@ -4679,116 +4710,116 @@
     },
     "V2_short_70": {
       "dev": {
-        "n_events": 441,
+        "n_events": 364,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.16099773242630386,
-            "n_valid": 441
+            "value": 0.17582417582417584,
+            "n_valid": 364
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.05668934240362812,
-            "n_valid": 441
+            "value": 0.06318681318681318,
+            "n_valid": 364
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.09311596358660079,
-            "n_valid": 441
+            "value": 0.0905864957043856,
+            "n_valid": 364
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.1536334939358699,
-            "n_valid": 441
+            "value": 0.1463766647956568,
+            "n_valid": 364
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.6095813337746149,
-            "n_valid": 441
+            "value": 0.6277401572427292,
+            "n_valid": 364
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.48279560253808074,
-            "n_valid": 441
+            "value": 0.49309705577493473,
+            "n_valid": 364
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.015873015873015872,
-            "n_valid": 441
+            "value": 0.016483516483516484,
+            "n_valid": 364
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.04308390022675737,
-            "n_valid": 441
+            "value": 0.027472527472527472,
+            "n_valid": 364
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -6.0,
-            "n_valid": 441
+            "n_valid": 364
           },
           "low_offset_60": {
             "statistic": "median",
             "value": -8.0,
-            "n_valid": 441
+            "n_valid": 364
           },
           "R5": {
             "statistic": "median",
-            "value": 0.001642663131578681,
-            "n_valid": 441
+            "value": 0.0016733678664986318,
+            "n_valid": 364
           },
           "R10": {
             "statistic": "median",
-            "value": 0.0008269625045362883,
-            "n_valid": 441
+            "value": 0.0009761184947533197,
+            "n_valid": 364
           },
           "R20": {
             "statistic": "median",
-            "value": -0.0015791685169955771,
-            "n_valid": 441
+            "value": -0.0020316830132928176,
+            "n_valid": 364
           },
           "R60": {
             "statistic": "median",
-            "value": 0.0009738409414004057,
-            "n_valid": 441
+            "value": 0.0025933400282142083,
+            "n_valid": 364
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.4852607709750567,
-            "n_valid": 441
+            "value": 0.4835164835164835,
+            "n_valid": 364
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.043399226613883624,
-            "n_valid": 441
+            "value": -0.04234580178280967,
+            "n_valid": 364
           }
         },
         "n_events_by_index": {
-          "sh000001": 119,
+          "sh000001": 78,
           "sh000016": 68,
           "sh000300": 56,
           "sh000905": 42,
           "sh000688": 0,
-          "sz399001": 115,
+          "sz399001": 79,
           "sz399006": 41
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 119,
+            "sh000001": 78,
             "sh000016": 68,
             "sh000300": 56,
             "sh000905": 42,
             "sh000688": 0,
-            "sz399001": 115,
+            "sz399001": 79,
             "sz399006": 41
           },
           "drawn_by_index": {
-            "sh000001": 119,
+            "sh000001": 78,
             "sh000016": 68,
             "sh000300": 56,
             "sh000905": 42,
             "sh000688": 0,
-            "sz399001": 115,
+            "sz399001": 79,
             "sz399006": 41
           },
           "shortfall_by_index": {
@@ -4801,118 +4832,118 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 441,
+          "total_events_per_draw": 364,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2834467120181406,
-              "p5": 0.2585034013605442,
-              "p95": 0.30839002267573695,
+              "median": 0.3021978021978022,
+              "p5": 0.2774725274725275,
+              "p95": 0.32967032967032966,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08616780045351474,
-              "p5": 0.07256235827664399,
-              "p95": 0.10204081632653061,
+              "median": 0.09615384615384616,
+              "p5": 0.07967032967032966,
+              "p95": 0.11263736263736264,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08056130985578847,
-              "p5": 0.07749964239736795,
-              "p95": 0.08508236353208498,
+              "median": 0.07697068327111167,
+              "p5": 0.07179656983911675,
+              "p95": 0.08134155423504759,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.1465969301360135,
-              "p5": 0.14040961376601513,
-              "p95": 0.1546004093483746,
+              "median": 0.13962391970598287,
+              "p5": 0.13411373039104402,
+              "p95": 0.14499916437104696,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4857858634059047,
-              "p5": 0.4639294089590209,
-              "p95": 0.5050962196698864,
+              "median": 0.48936762372283793,
+              "p5": 0.46525500752983984,
+              "p95": 0.5107506150805977,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.44142713903743275,
-              "p5": 0.42923370353808704,
-              "p95": 0.45794331983805653,
+              "median": 0.44756167908202715,
+              "p5": 0.4348849691423383,
+              "p95": 0.46239869987361937,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11791383219954649,
-              "p5": 0.09977324263038549,
-              "p95": 0.13378684807256236,
+              "median": 0.10989010989010989,
+              "p5": 0.09340659340659341,
+              "p95": 0.12637362637362637,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.09977324263038549,
-              "p5": 0.08390022675736962,
-              "p95": 0.11564625850340136,
+              "median": 0.08516483516483517,
+              "p5": 0.06868131868131869,
+              "p95": 0.10164835164835165,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 5.0,
-              "p5": 3.0,
+              "p5": 2.5,
               "p95": 6.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
-              "p5": 6.0,
-              "p95": 12.0,
+              "median": 9.5,
+              "p5": 6.5,
+              "p95": 14.5,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.002047289757400539,
-              "p5": -0.004075244636236541,
-              "p95": -0.0002807578761093721,
+              "median": -0.0014889042229910276,
+              "p5": -0.003947173511529475,
+              "p95": 0.0001246577555642503,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008125331089713694,
-              "p5": -0.010744763579622618,
-              "p95": -0.004259915320141805,
+              "median": -0.0069850539479070495,
+              "p5": -0.010051463511982805,
+              "p95": -0.0034228239746130207,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.003937171569207476,
-              "p5": -0.008059696490708812,
-              "p95": 0.001064836725035656,
+              "median": -0.003201392077978704,
+              "p5": -0.007183947854171091,
+              "p95": 0.0018918307171432724,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010148938567664523,
-              "p5": -0.01866413203145245,
-              "p95": -0.0026908722972129873,
+              "median": -0.010961620391322258,
+              "p5": -0.01953105252004511,
+              "p95": -0.003937877767923251,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.48072562358276644,
-              "p5": 0.45351473922902497,
-              "p95": 0.5056689342403629,
+              "median": 0.48626373626373626,
+              "p5": 0.45879120879120877,
+              "p95": 0.5137362637362637,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04932813428616978,
-              "p5": -0.05364326559142174,
-              "p95": -0.04575341718276804,
+              "median": -0.04697096010099139,
+              "p5": -0.051407964573918774,
+              "p95": -0.04365813077264463,
               "valid_draws": 2000
             }
           }
@@ -5082,7 +5113,7 @@
               "statistic": "median",
               "median": 0.29907933929054953,
               "p5": 0.25706630386494894,
-              "p95": 0.3748713855740285,
+              "p95": 0.3803186012991147,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -5109,7 +5140,7 @@
             "low_offset_60": {
               "statistic": "median",
               "median": -8.0,
-              "p5": -24.0,
+              "p5": -28.0,
               "p95": 1.0,
               "valid_draws": 2000
             },
@@ -5117,7 +5148,7 @@
               "statistic": "median",
               "median": 0.006151930007248341,
               "p5": -0.0014432367642142063,
-              "p95": 0.019704217956945547,
+              "p95": 0.018991166706679996,
               "valid_draws": 2000
             },
             "R10": {
@@ -5131,7 +5162,7 @@
               "statistic": "median",
               "median": 0.024521113259354355,
               "p5": -0.006316716990874216,
-              "p95": 0.04304127746177544,
+              "p95": 0.04288688506507832,
               "valid_draws": 2000
             },
             "R60": {
@@ -5285,9 +5316,9 @@
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.41904761904761906,
+              "median": 0.42857142857142855,
               "p5": 0.37142857142857144,
-              "p95": 0.4857142857142857,
+              "p95": 0.47619047619047616,
               "valid_draws": 2000
             },
             "within5_60": {
@@ -5301,54 +5332,54 @@
               "statistic": "median",
               "median": 0.059748574998047976,
               "p5": 0.05190066561995521,
-              "p95": 0.06433280686247511,
+              "p95": 0.062425312041506364,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.11667916490061181,
-              "p5": 0.10812225575308587,
-              "p95": 0.12642598274164613,
+              "median": 0.11613796252176378,
+              "p5": 0.10777379048352609,
+              "p95": 0.12594463300464875,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
               "median": 0.48227282027299584,
-              "p5": 0.440749492185881,
-              "p95": 0.5445334859759594,
+              "p5": 0.44409527999497217,
+              "p95": 0.5384281554485383,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
               "median": 0.4968014647709033,
               "p5": 0.44365312107247623,
-              "p95": 0.5191471305823698,
+              "p95": 0.5178561561838105,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
               "median": 0.1523809523809524,
               "p5": 0.11428571428571428,
-              "p95": 0.2,
+              "p95": 0.19047619047619047,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
               "median": 0.12380952380952381,
               "p5": 0.08571428571428572,
-              "p95": 0.1619047619047619,
+              "p95": 0.1523809523809524,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
-              "median": 5.0,
+              "median": 7.0,
               "p5": 3.0,
               "p95": 10.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 14.0,
+              "median": 16.0,
               "p5": 7.0,
               "p95": 22.0,
               "valid_draws": 2000
@@ -5356,13 +5387,13 @@
             "R5": {
               "statistic": "median",
               "median": 0.0018123967940713026,
-              "p5": -0.00031566314573217014,
+              "p5": -0.0005021207996934729,
               "p95": 0.007295948326482504,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.002235591426179462,
+              "median": -0.0021240471240471237,
               "p5": -0.006341041904882494,
               "p95": 0.004545114802410266,
               "valid_draws": 2000
@@ -5371,19 +5402,19 @@
               "statistic": "median",
               "median": -0.0063103468212867275,
               "p5": -0.01711714437235068,
-              "p95": -0.0008461453379050576,
+              "p95": -0.0008281054162633581,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
               "median": -0.00923640595426889,
               "p5": -0.021903309247857772,
-              "p95": 0.004002736747333646,
+              "p95": 0.003727879529079159,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4380952380952381,
+              "median": 0.42857142857142855,
               "p5": 0.38095238095238093,
               "p95": 0.4857142857142857,
               "valid_draws": 2000
@@ -5401,116 +5432,116 @@
     },
     "V2_medium_50": {
       "dev": {
-        "n_events": 562,
+        "n_events": 459,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.21530249110320285,
-            "n_valid": 562
+            "value": 0.23311546840958605,
+            "n_valid": 459
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.05871886120996441,
-            "n_valid": 562
+            "value": 0.06753812636165578,
+            "n_valid": 459
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.08817040904922979,
-            "n_valid": 562
+            "value": 0.08258299342670417,
+            "n_valid": 459
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.15539835931837143,
-            "n_valid": 562
+            "value": 0.14639510655667798,
+            "n_valid": 459
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.5749323476953603,
-            "n_valid": 562
+            "value": 0.5870270517272894,
+            "n_valid": 459
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4962494304086934,
-            "n_valid": 562
+            "value": 0.5096207413756162,
+            "n_valid": 459
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.033807829181494664,
-            "n_valid": 562
+            "value": 0.030501089324618737,
+            "n_valid": 459
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.046263345195729534,
-            "n_valid": 562
+            "value": 0.034858387799564274,
+            "n_valid": 459
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -5.0,
-            "n_valid": 562
+            "n_valid": 459
           },
           "low_offset_60": {
             "statistic": "median",
             "value": -6.0,
-            "n_valid": 562
+            "n_valid": 459
           },
           "R5": {
             "statistic": "median",
-            "value": -0.001096197837680779,
-            "n_valid": 562
+            "value": -0.0006246550751708435,
+            "n_valid": 459
           },
           "R10": {
             "statistic": "median",
-            "value": -0.003934707179883201,
-            "n_valid": 562
+            "value": -0.0034455956473312677,
+            "n_valid": 459
           },
           "R20": {
             "statistic": "median",
-            "value": -0.004151892239618815,
-            "n_valid": 562
+            "value": -0.0045441127121615965,
+            "n_valid": 459
           },
           "R60": {
             "statistic": "median",
-            "value": -0.010754074220825749,
-            "n_valid": 562
+            "value": -0.007073057235923774,
+            "n_valid": 459
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.4750889679715303,
-            "n_valid": 562
+            "value": 0.47058823529411764,
+            "n_valid": 459
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.04638237157485736,
-            "n_valid": 562
+            "value": -0.043804523221219416,
+            "n_valid": 459
           }
         },
         "n_events_by_index": {
-          "sh000001": 152,
+          "sh000001": 97,
           "sh000016": 90,
           "sh000300": 70,
           "sh000905": 53,
           "sh000688": 0,
-          "sz399001": 146,
+          "sz399001": 98,
           "sz399006": 51
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 152,
+            "sh000001": 97,
             "sh000016": 90,
             "sh000300": 70,
             "sh000905": 53,
             "sh000688": 0,
-            "sz399001": 146,
+            "sz399001": 98,
             "sz399006": 51
           },
           "drawn_by_index": {
-            "sh000001": 152,
+            "sh000001": 97,
             "sh000016": 90,
             "sh000300": 70,
             "sh000905": 53,
             "sh000688": 0,
-            "sz399001": 146,
+            "sz399001": 98,
             "sz399006": 51
           },
           "shortfall_by_index": {
@@ -5523,62 +5554,62 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 562,
+          "total_events_per_draw": 459,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.28291814946619215,
-              "p5": 0.2669039145907473,
-              "p95": 0.30071174377224197,
+              "median": 0.3028322440087146,
+              "p5": 0.28540305010893247,
+              "p95": 0.3224400871459695,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08718861209964412,
-              "p5": 0.07651245551601424,
-              "p95": 0.09608540925266904,
+              "median": 0.09586056644880174,
+              "p5": 0.08278867102396514,
+              "p95": 0.10893246187363835,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08087077962518296,
-              "p5": 0.07857916489264882,
-              "p95": 0.08392515444265736,
+              "median": 0.07681453444360331,
+              "p5": 0.07410897846523268,
+              "p95": 0.08015888731590959,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14641392249372975,
-              "p5": 0.14207781647229767,
-              "p95": 0.15227170068580553,
+              "median": 0.1395344359512487,
+              "p5": 0.13524347975507411,
+              "p95": 0.14334100836017938,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.485750074560095,
-              "p5": 0.4718610491955635,
-              "p95": 0.49908211728147756,
+              "median": 0.4896578105047615,
+              "p5": 0.4746493420954143,
+              "p95": 0.5050962196698864,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4410987775310431,
-              "p5": 0.43411642658524996,
-              "p95": 0.4532406731391998,
+              "median": 0.447374267413881,
+              "p5": 0.43791623501553967,
+              "p95": 0.45999999999999996,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11743772241992882,
-              "p5": 0.10676156583629894,
-              "p95": 0.1298932384341637,
+              "median": 0.1111111111111111,
+              "p5": 0.09586056644880174,
+              "p95": 0.12200435729847495,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.099644128113879,
-              "p5": 0.08896797153024912,
-              "p95": 0.1103202846975089,
+              "median": 0.08496732026143791,
+              "p5": 0.07407407407407407,
+              "p95": 0.09586056644880174,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -5592,49 +5623,49 @@
               "statistic": "median",
               "median": 9.0,
               "p5": 7.0,
-              "p95": 11.0,
+              "p95": 12.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020376028936820445,
-              "p5": -0.0036428720950633653,
-              "p95": -0.0007546089929302835,
+              "median": -0.0014485092481332784,
+              "p5": -0.0032604362014736488,
+              "p95": -0.0004579624989198283,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008015737103544196,
-              "p5": -0.009928795019474634,
-              "p95": -0.005143949616150889,
+              "median": -0.006881194269494295,
+              "p5": -0.009372145217499073,
+              "p95": -0.004259915320141805,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.003945123377849191,
-              "p5": -0.007094415118576947,
-              "p95": -0.0012745588851248435,
+              "median": -0.00316191833945334,
+              "p5": -0.006109561264586283,
+              "p95": 0.0014012196637827046,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010125174909972667,
-              "p5": -0.01598985122331603,
-              "p95": -0.005131098255674871,
+              "median": -0.01030011115227858,
+              "p5": -0.017166633470971582,
+              "p95": -0.005616972246832441,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4786476868327402,
-              "p5": 0.4608540925266904,
-              "p95": 0.49644128113879005,
+              "median": 0.485838779956427,
+              "p5": 0.4662309368191721,
+              "p95": 0.5054466230936819,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.049283178505240055,
-              "p5": -0.05232353172254822,
-              "p95": -0.04698729678057323,
+              "median": -0.047008712023871246,
+              "p5": -0.05067221106163,
+              "p95": -0.04462803937794779,
               "valid_draws": 2000
             }
           }
@@ -5769,7 +5800,7 @@
               "statistic": "share",
               "median": 0.5333333333333333,
               "p5": 0.4666666666666667,
-              "p95": 0.6,
+              "p95": 0.6222222222222222,
               "valid_draws": 2000
             },
             "within5_60": {
@@ -5809,7 +5840,7 @@
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.35555555555555557,
+              "median": 0.37777777777777777,
               "p5": 0.3111111111111111,
               "p95": 0.4222222222222222,
               "valid_draws": 2000
@@ -5874,7 +5905,7 @@
               "statistic": "median",
               "median": -0.03090932495294918,
               "p5": -0.03481069492305444,
-              "p95": -0.02420170802289623,
+              "p95": -0.025506907844645155,
               "valid_draws": 2000
             }
           }
@@ -6008,7 +6039,7 @@
             "within5_20": {
               "statistic": "share",
               "median": 0.42748091603053434,
-              "p5": 0.3816793893129771,
+              "p5": 0.3893129770992366,
               "p95": 0.4732824427480916,
               "valid_draws": 2000
             },
@@ -6022,28 +6053,28 @@
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.05960464765353879,
-              "p5": 0.05249536068976779,
-              "p95": 0.06212758200316726,
+              "p5": 0.052373409078494415,
+              "p95": 0.06205326570478453,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
               "median": 0.11609251794267439,
-              "p5": 0.10812225575308587,
+              "p5": 0.11038657311872346,
               "p95": 0.12140246839974544,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
               "median": 0.4887925111645487,
-              "p5": 0.44579371328205514,
+              "p5": 0.44913676470190333,
               "p95": 0.5323946860451916,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
               "median": 0.4968014647709033,
-              "p5": 0.4674524885566948,
+              "p5": 0.4674672659980094,
               "p95": 0.5090945994472981,
               "valid_draws": 2000
             },
@@ -6071,7 +6102,7 @@
             "low_offset_60": {
               "statistic": "median",
               "median": 16.0,
-              "p5": 9.0,
+              "p5": 8.0,
               "p95": 19.0,
               "valid_draws": 2000
             },
@@ -6085,36 +6116,36 @@
             "R10": {
               "statistic": "median",
               "median": -0.0021240471240471237,
-              "p5": -0.003929255783808205,
-              "p95": 0.003564043040533482,
+              "p5": -0.003757205684729481,
+              "p95": 0.0029645276201214865,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
               "median": -0.0063103468212867275,
-              "p5": -0.015573209080955719,
+              "p5": -0.014286209286209273,
               "p95": -0.0011687382010197034,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
               "median": -0.00923640595426889,
-              "p5": -0.01774501137650264,
+              "p5": -0.01925434962717487,
               "p95": 0.0024388895033733426,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
               "median": 0.4351145038167939,
-              "p5": 0.3893129770992366,
-              "p95": 0.4736641221374042,
+              "p5": 0.3969465648854962,
+              "p95": 0.48091603053435117,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
               "median": -0.03783327404986847,
               "p5": -0.0408877763193638,
-              "p95": -0.03317447509131426,
+              "p95": -0.03318143698659204,
               "valid_draws": 2000
             }
           }
@@ -6123,116 +6154,116 @@
     },
     "V2_medium_60": {
       "dev": {
-        "n_events": 434,
+        "n_events": 348,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.16820276497695852,
-            "n_valid": 434
+            "value": 0.1896551724137931,
+            "n_valid": 348
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.04377880184331797,
-            "n_valid": 434
+            "value": 0.05459770114942529,
+            "n_valid": 348
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.09456421821731276,
-            "n_valid": 434
+            "value": 0.08972837972119263,
+            "n_valid": 348
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.16271081340173,
-            "n_valid": 434
+            "value": 0.15231620669901103,
+            "n_valid": 348
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.5816035067873309,
-            "n_valid": 434
+            "value": 0.5897152150631798,
+            "n_valid": 348
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.5037611772677593,
-            "n_valid": 434
+            "value": 0.5075006515921718,
+            "n_valid": 348
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.027649769585253458,
-            "n_valid": 434
+            "value": 0.022988505747126436,
+            "n_valid": 348
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.03917050691244239,
-            "n_valid": 434
+            "value": 0.020114942528735632,
+            "n_valid": 348
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -7.0,
-            "n_valid": 434
+            "n_valid": 348
           },
           "low_offset_60": {
             "statistic": "median",
-            "value": -15.0,
-            "n_valid": 434
+            "value": -15.5,
+            "n_valid": 348
           },
           "R5": {
             "statistic": "median",
-            "value": -0.0011249416079067709,
-            "n_valid": 434
+            "value": 0.00030572358960412327,
+            "n_valid": 348
           },
           "R10": {
             "statistic": "median",
-            "value": 0.0023798220460408137,
-            "n_valid": 434
+            "value": 0.0042854754593745215,
+            "n_valid": 348
           },
           "R20": {
             "statistic": "median",
             "value": -0.0012999672492438608,
-            "n_valid": 434
+            "n_valid": 348
           },
           "R60": {
             "statistic": "median",
-            "value": -0.0008280869664275547,
-            "n_valid": 434
+            "value": 0.0020054856642590657,
+            "n_valid": 348
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.49078341013824883,
-            "n_valid": 434
+            "value": 0.4885057471264368,
+            "n_valid": 348
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.04381202191140865,
-            "n_valid": 434
+            "value": -0.040181120571824824,
+            "n_valid": 348
           }
         },
         "n_events_by_index": {
-          "sh000001": 118,
+          "sh000001": 72,
           "sh000016": 66,
           "sh000300": 52,
           "sh000905": 41,
           "sh000688": 0,
-          "sz399001": 117,
+          "sz399001": 77,
           "sz399006": 40
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 118,
+            "sh000001": 72,
             "sh000016": 66,
             "sh000300": 52,
             "sh000905": 41,
             "sh000688": 0,
-            "sz399001": 117,
+            "sz399001": 77,
             "sz399006": 40
           },
           "drawn_by_index": {
-            "sh000001": 118,
+            "sh000001": 72,
             "sh000016": 66,
             "sh000300": 52,
             "sh000905": 41,
             "sh000688": 0,
-            "sz399001": 117,
+            "sz399001": 77,
             "sz399006": 40
           },
           "shortfall_by_index": {
@@ -6245,118 +6276,118 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 434,
+          "total_events_per_draw": 348,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2834101382488479,
-              "p5": 0.26036866359447003,
-              "p95": 0.3064516129032258,
+              "median": 0.3017241379310345,
+              "p5": 0.27298850574712646,
+              "p95": 0.33045977011494254,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08755760368663594,
-              "p5": 0.07142857142857142,
-              "p95": 0.10138248847926268,
+              "median": 0.09482758620689655,
+              "p5": 0.07758620689655173,
+              "p95": 0.11206896551724138,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08087077962518296,
-              "p5": 0.077313237247994,
-              "p95": 0.08512231281298925,
+              "median": 0.07754806427734218,
+              "p5": 0.07242321962731074,
+              "p95": 0.08209458626290911,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14694897676988927,
-              "p5": 0.14018869884497354,
-              "p95": 0.154257429643595,
+              "median": 0.13984483462702446,
+              "p5": 0.1335334809291615,
+              "p95": 0.1458801189808402,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4862086203065984,
-              "p5": 0.46340610003563176,
-              "p95": 0.5046544868719571,
+              "median": 0.4902345529439991,
+              "p5": 0.4696839508198845,
+              "p95": 0.5122505845415984,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4410987775310431,
-              "p5": 0.428931449423714,
-              "p95": 0.45869521138356534,
+              "median": 0.4484303268207065,
+              "p5": 0.43617551435219293,
+              "p95": 0.46263677479870374,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.1175115207373272,
-              "p5": 0.1012672811059908,
-              "p95": 0.1359447004608295,
+              "median": 0.10919540229885058,
+              "p5": 0.09195402298850575,
+              "p95": 0.12931034482758622,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.10138248847926268,
-              "p5": 0.08525345622119816,
-              "p95": 0.1152073732718894,
+              "median": 0.08620689655172414,
+              "p5": 0.06609195402298851,
+              "p95": 0.10057471264367816,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 5.0,
-              "p5": 3.0,
+              "p5": 2.5,
               "p95": 6.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
-              "p5": 6.0,
-              "p95": 12.5,
+              "median": 9.5,
+              "p5": 6.5,
+              "p95": 15.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020375637313947426,
-              "p5": -0.0040856011075163234,
-              "p95": -0.00021490771293714017,
+              "median": -0.0014485092481332784,
+              "p5": -0.003956552031852134,
+              "p95": 0.00016885549260796612,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008015737103544196,
-              "p5": -0.010884081946055613,
-              "p95": -0.004242698010335277,
+              "median": -0.007009232431860579,
+              "p5": -0.010292730530279015,
+              "p95": -0.0034228239746130207,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.003932807338307032,
-              "p5": -0.00809329147002269,
-              "p95": 0.0013105210838220138,
+              "median": -0.0033041622875969456,
+              "p5": -0.007402048735202063,
+              "p95": 0.002033477647844705,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010153832338719915,
-              "p5": -0.019214441542140158,
-              "p95": -0.0021930360850191243,
+              "median": -0.011062706367694408,
+              "p5": -0.019785357824780303,
+              "p95": -0.0037286044801576046,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4792626728110599,
-              "p5": 0.45161290322580644,
-              "p95": 0.5069124423963134,
+              "median": 0.48563218390804597,
+              "p5": 0.4540229885057471,
+              "p95": 0.514367816091954,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04933219195084826,
-              "p5": -0.053554655672512046,
-              "p95": -0.045819475306404456,
+              "median": -0.04706935895393205,
+              "p5": -0.052236771979753016,
+              "p95": -0.04365813077264463,
               "valid_draws": 2000
             }
           }
@@ -6504,7 +6535,7 @@
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.050066810735907685,
-              "p5": 0.036066183845954614,
+              "p5": 0.0346967250087058,
               "p95": 0.05886645804176904,
               "valid_draws": 2000
             },
@@ -6519,7 +6550,7 @@
               "statistic": "median",
               "median": 0.36284568292168073,
               "p5": 0.23118081180811878,
-              "p95": 0.47670238137614407,
+              "p95": 0.45713968927140847,
               "valid_draws": 2000
             },
             "range_pos_60": {
@@ -6540,7 +6571,7 @@
               "statistic": "share",
               "median": 0.2962962962962963,
               "p5": 0.18518518518518517,
-              "p95": 0.37037037037037035,
+              "p95": 0.4074074074074074,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -6561,7 +6592,7 @@
               "statistic": "median",
               "median": 0.006151930007248341,
               "p5": -0.001392661837292808,
-              "p95": 0.018991166706679996,
+              "p95": 0.01902681926919324,
               "valid_draws": 2000
             },
             "R10": {
@@ -6580,8 +6611,8 @@
             },
             "R60": {
               "statistic": "median",
-              "median": 0.043208185528896936,
-              "p5": 0.024473403559407414,
+              "median": 0.04323959974229785,
+              "p5": 0.02233012906732257,
               "p95": 0.06924705052326252,
               "valid_draws": 2000
             },
@@ -6745,13 +6776,13 @@
               "statistic": "median",
               "median": 0.059748574998047976,
               "p5": 0.05190066561995521,
-              "p95": 0.06489912181750834,
+              "p95": 0.0652989656960401,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
               "median": 0.11613796252176378,
-              "p5": 0.10777379048352609,
+              "p5": 0.10768181520217926,
               "p95": 0.12637734004831724,
               "valid_draws": 2000
             },
@@ -6765,7 +6796,7 @@
             "range_pos_60": {
               "statistic": "median",
               "median": 0.4977766956700028,
-              "p5": 0.4448017408123787,
+              "p5": 0.44365312107247623,
               "p95": 0.5191471305823698,
               "valid_draws": 2000
             },
@@ -6794,7 +6825,7 @@
               "statistic": "median",
               "median": 14.0,
               "p5": 5.0,
-              "p95": 22.049999999999955,
+              "p95": 23.0,
               "valid_draws": 2000
             },
             "R5": {
@@ -6813,7 +6844,7 @@
             },
             "R20": {
               "statistic": "median",
-              "median": -0.006908005381769389,
+              "median": -0.0063103468212867275,
               "p5": -0.01711714437235068,
               "p95": -0.0004853469050707382,
               "valid_draws": 2000
@@ -6821,8 +6852,8 @@
             "R60": {
               "statistic": "median",
               "median": -0.00923640595426889,
-              "p5": -0.021903309247857772,
-              "p95": 0.005759946220130763,
+              "p5": -0.022145460710350062,
+              "p95": 0.004002736747333646,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -6835,7 +6866,7 @@
             "MAE20": {
               "statistic": "median",
               "median": -0.03835854652527371,
-              "p5": -0.044307168597113436,
+              "p5": -0.04446829626113802,
               "p95": -0.03269353346848203,
               "valid_draws": 2000
             }
@@ -6845,116 +6876,116 @@
     },
     "V2_medium_70": {
       "dev": {
-        "n_events": 302,
+        "n_events": 241,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.1490066225165563,
-            "n_valid": 302
+            "value": 0.17427385892116182,
+            "n_valid": 241
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.029801324503311258,
-            "n_valid": 302
+            "value": 0.03734439834024896,
+            "n_valid": 241
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.10085370068055977,
-            "n_valid": 302
+            "value": 0.09355207258771214,
+            "n_valid": 241
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.1767721135079845,
-            "n_valid": 302
+            "value": 0.16071755306172242,
+            "n_valid": 241
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.6454440228431255,
-            "n_valid": 302
+            "value": 0.6650586454786229,
+            "n_valid": 241
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.5342830100467474,
-            "n_valid": 302
+            "value": 0.5375450443138653,
+            "n_valid": 241
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.023178807947019868,
-            "n_valid": 302
+            "value": 0.02074688796680498,
+            "n_valid": 241
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.023178807947019868,
-            "n_valid": 302
+            "value": 0.004149377593360996,
+            "n_valid": 241
           },
           "low_offset_20": {
             "statistic": "median",
             "value": -11.0,
-            "n_valid": 302
+            "n_valid": 241
           },
           "low_offset_60": {
             "statistic": "median",
-            "value": -24.0,
-            "n_valid": 302
+            "value": -29.0,
+            "n_valid": 241
           },
           "R5": {
             "statistic": "median",
-            "value": 0.0019471961994080855,
-            "n_valid": 302
+            "value": 0.004184609395907923,
+            "n_valid": 241
           },
           "R10": {
             "statistic": "median",
-            "value": 0.005647306835465549,
-            "n_valid": 302
+            "value": 0.009079110479970565,
+            "n_valid": 241
           },
           "R20": {
             "statistic": "median",
-            "value": 0.0006752574631416763,
-            "n_valid": 302
+            "value": 0.002999444349461422,
+            "n_valid": 241
           },
           "R60": {
             "statistic": "median",
-            "value": -0.00610262536262024,
-            "n_valid": 302
+            "value": 0.005590269759811584,
+            "n_valid": 241
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.5033112582781457,
-            "n_valid": 302
+            "value": 0.5186721991701245,
+            "n_valid": 241
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.040753201191358446,
-            "n_valid": 302
+            "value": -0.0379899716243155,
+            "n_valid": 241
           }
         },
         "n_events_by_index": {
-          "sh000001": 81,
+          "sh000001": 47,
           "sh000016": 41,
           "sh000300": 39,
           "sh000905": 30,
           "sh000688": 0,
-          "sz399001": 83,
+          "sz399001": 56,
           "sz399006": 28
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 81,
+            "sh000001": 47,
             "sh000016": 41,
             "sh000300": 39,
             "sh000905": 30,
             "sh000688": 0,
-            "sz399001": 83,
+            "sz399001": 56,
             "sz399006": 28
           },
           "drawn_by_index": {
-            "sh000001": 81,
+            "sh000001": 47,
             "sh000016": 41,
             "sh000300": 39,
             "sh000905": 30,
             "sh000688": 0,
-            "sz399001": 83,
+            "sz399001": 56,
             "sz399006": 28
           },
           "shortfall_by_index": {
@@ -6967,118 +6998,118 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 302,
+          "total_events_per_draw": 241,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2814569536423841,
-              "p5": 0.24834437086092714,
-              "p95": 0.31456953642384106,
+              "median": 0.2987551867219917,
+              "p5": 0.26141078838174275,
+              "p95": 0.34024896265560167,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08609271523178808,
-              "p5": 0.06622516556291391,
-              "p95": 0.10927152317880795,
+              "median": 0.0954356846473029,
+              "p5": 0.07053941908713693,
+              "p95": 0.12033195020746888,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08169335294537383,
-              "p5": 0.07595415672698376,
-              "p95": 0.08751873142490778,
+              "median": 0.07828159411108104,
+              "p5": 0.07014200261469394,
+              "p95": 0.08474810801605126,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14797501602758567,
-              "p5": 0.13914164015109032,
-              "p95": 0.15703617383214996,
+              "median": 0.14072412360833697,
+              "p5": 0.13263717954871135,
+              "p95": 0.1496775455733259,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.48591611988236433,
-              "p5": 0.45735084801992437,
-              "p95": 0.5120023240359206,
+              "median": 0.49081129538323665,
+              "p5": 0.4585330201473617,
+              "p95": 0.5212022029275106,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4420317279111858,
-              "p5": 0.4261901443375122,
-              "p95": 0.4621258856357901,
+              "median": 0.44774909075017333,
+              "p5": 0.4279649299738112,
+              "p95": 0.4733174545551139,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11920529801324503,
-              "p5": 0.09602649006622517,
-              "p95": 0.1423841059602649,
+              "median": 0.1078838174273859,
+              "p5": 0.08298755186721991,
+              "p95": 0.13692946058091288,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.10264900662251655,
-              "p5": 0.07947019867549669,
-              "p95": 0.12582781456953643,
+              "median": 0.08713692946058091,
+              "p5": 0.06224066390041494,
+              "p95": 0.11203319502074689,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 5.0,
-              "p5": 2.0,
-              "p95": 6.0,
+              "p5": 1.0,
+              "p95": 7.0,
               "valid_draws": 2000
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
+              "median": 10.0,
               "p5": 6.0,
-              "p95": 14.5,
+              "p95": 18.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0019544695701846915,
-              "p5": -0.004585668675693377,
-              "p95": 0.0004675769114029782,
+              "median": -0.0014392584940239317,
+              "p5": -0.004309855960077047,
+              "p95": 0.0018171541785430012,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008007759200210351,
-              "p5": -0.01232694237501521,
-              "p95": -0.0034608384751715414,
+              "median": -0.007137270594226863,
+              "p5": -0.011584392204733618,
+              "p95": -0.0016141233716751024,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.0038186087422565906,
-              "p5": -0.008749850603670395,
-              "p95": 0.002503756498312141,
+              "median": -0.00316191833945334,
+              "p5": -0.008479659473926149,
+              "p95": 0.0035860037188186755,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010153832338719915,
-              "p5": -0.02092092587750379,
-              "p95": -0.000275393392064414,
+              "median": -0.01030011115227858,
+              "p5": -0.023546314522367884,
+              "p95": 0.00026188220872569445,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.48013245033112584,
-              "p5": 0.44370860927152317,
-              "p95": 0.5165562913907285,
+              "median": 0.4854771784232365,
+              "p5": 0.44398340248962653,
+              "p95": 0.5269709543568465,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.049478390376924086,
-              "p5": -0.05555925827157593,
-              "p95": -0.044584198836597366,
+              "median": -0.04709733252482917,
+              "p5": -0.05418436774738555,
+              "p95": -0.041302110138960346,
               "valid_draws": 2000
             }
           }
@@ -7218,7 +7249,7 @@
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.18181818181818182,
+              "median": 0.2727272727272727,
               "p5": 0.09090909090909091,
               "p95": 0.36363636363636365,
               "valid_draws": 2000
@@ -7226,7 +7257,7 @@
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.05057428121011953,
-              "p5": 0.028350241391777775,
+              "p5": 0.026486785409802094,
               "p95": 0.07450318775970466,
               "valid_draws": 2000
             },
@@ -7240,7 +7271,7 @@
             "range_pos_20": {
               "statistic": "median",
               "median": 0.36284568292168073,
-              "p5": 0.19587737177197373,
+              "p5": 0.1991023194560163,
               "p95": 0.5172677944462172,
               "valid_draws": 2000
             },
@@ -7253,7 +7284,7 @@
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.2727272727272727,
+              "median": 0.36363636363636365,
               "p5": 0.09090909090909091,
               "p95": 0.5454545454545454,
               "valid_draws": 2000
@@ -7288,7 +7319,7 @@
             },
             "R10": {
               "statistic": "median",
-              "median": 0.008976789493872595,
+              "median": 0.00969701720691396,
               "p5": -0.025133294177771326,
               "p95": 0.04045955267814172,
               "valid_draws": 2000
@@ -7302,9 +7333,9 @@
             },
             "R60": {
               "statistic": "median",
-              "median": 0.03742202893224311,
+              "median": 0.04317677131549602,
               "p5": -0.010735288472998983,
-              "p95": 0.10895222957180195,
+              "p95": 0.10924886853876092,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -7465,7 +7496,7 @@
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.06018467015240847,
+              "median": 0.05997241282978005,
               "p5": 0.050686060204745864,
               "p95": 0.0679959171969029,
               "valid_draws": 2000
@@ -7495,12 +7526,12 @@
               "statistic": "share",
               "median": 0.14492753623188406,
               "p5": 0.08695652173913043,
-              "p95": 0.2028985507246377,
+              "p95": 0.21739130434782608,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.13043478260869565,
+              "median": 0.11594202898550725,
               "p5": 0.07246376811594203,
               "p95": 0.17391304347826086,
               "valid_draws": 2000
@@ -7523,28 +7554,28 @@
               "statistic": "median",
               "median": 0.002307043196427383,
               "p5": -0.001089578072241304,
-              "p95": 0.010242841975766526,
+              "p95": 0.010060395466203298,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
               "median": -0.0021240471240471237,
               "p5": -0.0067387091705799484,
-              "p95": 0.00654648560746085,
+              "p95": 0.006680905811421001,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
               "median": -0.006908005381769389,
-              "p5": -0.019596175955725124,
+              "p5": -0.019592239659931177,
               "p95": 0.0012594144346349534,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.00923640595426889,
+              "median": -0.00979221602290603,
               "p5": -0.026650477478252443,
-              "p95": 0.007243267670856701,
+              "p95": 0.007495875174833966,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -7693,58 +7724,58 @@
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2822085889570552,
-              "p5": 0.25153374233128833,
-              "p95": 0.3128834355828221,
+              "median": 0.3006134969325153,
+              "p5": 0.26993865030674846,
+              "p95": 0.3282208588957055,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08588957055214724,
-              "p5": 0.06748466257668712,
-              "p95": 0.10736196319018405,
+              "median": 0.0950920245398773,
+              "p5": 0.07668711656441718,
+              "p95": 0.11349693251533742,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08163555051597238,
-              "p5": 0.0766348184236634,
-              "p95": 0.08734908432813149,
+              "median": 0.07810676864930033,
+              "p5": 0.0724447601131345,
+              "p95": 0.08317626882067337,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.14702857207255537,
-              "p5": 0.13938259129239758,
-              "p95": 0.1556205761907312,
+              "median": 0.14056686868717605,
+              "p5": 0.13453527487668882,
+              "p95": 0.1474815304960989,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4862086203065984,
-              "p5": 0.459629148268955,
-              "p95": 0.5102273802078212,
+              "median": 0.48875712514107406,
+              "p5": 0.46337820407653235,
+              "p95": 0.5129103897359898,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4411152630055522,
-              "p5": 0.42685392194927174,
-              "p95": 0.4605702146309734,
+              "median": 0.4482429151525603,
+              "p5": 0.4344230992147937,
+              "p95": 0.46453010625442126,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.1165644171779141,
-              "p5": 0.0950920245398773,
-              "p95": 0.13803680981595093,
+              "median": 0.11042944785276074,
+              "p5": 0.08895705521472393,
+              "p95": 0.13190184049079753,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.09815950920245399,
-              "p5": 0.07668711656441718,
-              "p95": 0.1196319018404908,
+              "median": 0.08588957055214724,
+              "p5": 0.06748466257668712,
+              "p95": 0.10429447852760736,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -7756,51 +7787,51 @@
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
+              "median": 9.5,
               "p5": 6.0,
-              "p95": 14.5,
+              "p95": 16.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0016137041173724942,
-              "p5": -0.004249542312705102,
-              "p95": 0.0005199946770902963,
+              "median": -0.0014090225252186284,
+              "p5": -0.00398178262010862,
+              "p95": 0.00035112994345920523,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.007583761966999225,
-              "p5": -0.011530182651796738,
-              "p95": -0.00325861365349435,
+              "median": -0.007009232431860579,
+              "p5": -0.010438974754646169,
+              "p95": -0.0032423772502801484,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.0039389653580781114,
-              "p5": -0.008453448483773551,
-              "p95": 0.0021927836362979347,
+              "median": -0.0031509476013908966,
+              "p5": -0.0073938299888037795,
+              "p95": 0.0025015214731803903,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010125174909972667,
-              "p5": -0.020581094143244105,
-              "p95": -0.0007256046093351842,
+              "median": -0.01040119712865073,
+              "p5": -0.020376690491082095,
+              "p95": -0.0015706034062670793,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4785276073619632,
-              "p5": 0.4447852760736196,
-              "p95": 0.5122699386503068,
+              "median": 0.48466257668711654,
+              "p5": 0.4539877300613497,
+              "p95": 0.5184049079754601,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04999278854818892,
-              "p5": -0.05518433972139902,
-              "p95": -0.044837887054827955,
+              "median": -0.04706935895393205,
+              "p5": -0.052733907354978134,
+              "p95": -0.043027961771928414,
               "valid_draws": 2000
             }
           }
@@ -7948,13 +7979,13 @@
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.04285653045927862,
-              "p5": 0.02890430429948676,
+              "p5": 0.02902425580175816,
               "p95": 0.0544853659017539,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.0734780838803486,
+              "median": 0.07423800773816502,
               "p5": 0.051179714907287455,
               "p95": 0.0813864998721513,
               "valid_draws": 2000
@@ -7963,7 +7994,7 @@
               "statistic": "median",
               "median": 0.32295633249168776,
               "p5": 0.1889675610605443,
-              "p95": 0.41230567363901016,
+              "p95": 0.4217345446105977,
               "valid_draws": 2000
             },
             "range_pos_60": {
@@ -7977,20 +8008,20 @@
               "statistic": "share",
               "median": 0.375,
               "p5": 0.25,
-              "p95": 0.5,
+              "p95": 0.5625,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
               "median": 0.3125,
-              "p5": 0.125,
+              "p5": 0.1875,
               "p95": 0.4375,
               "valid_draws": 2000
             },
             "low_offset_20": {
               "statistic": "median",
               "median": 1.0,
-              "p5": -1.0,
+              "p5": -2.0,
               "p95": 4.0,
               "valid_draws": 2000
             },
@@ -8005,26 +8036,26 @@
               "statistic": "median",
               "median": 0.0051466595246675295,
               "p5": -0.006698626148301967,
-              "p95": 0.01566433295565215,
+              "p95": 0.015327017728966164,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
               "median": -0.0024289942994282776,
               "p5": -0.013460908312260433,
-              "p95": 0.018074449877146015,
+              "p95": 0.017291314959718695,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
               "median": 0.02524221745803079,
-              "p5": 0.0029193787343138326,
-              "p95": 0.051559362255876984,
+              "p5": 0.002332394600885579,
+              "p95": 0.05126962704038229,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": 0.05649888818722226,
+              "median": 0.05618886937530121,
               "p5": 0.038737621243697506,
               "p95": 0.09144748506915723,
               "valid_draws": 2000
@@ -8173,7 +8204,7 @@
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.3815789473684211,
+              "median": 0.39473684210526316,
               "p5": 0.3157894736842105,
               "p95": 0.4605263157894737,
               "valid_draws": 2000
@@ -8182,35 +8213,35 @@
               "statistic": "share",
               "median": 0.09210526315789473,
               "p5": 0.05263157894736842,
-              "p95": 0.14473684210526316,
+              "p95": 0.13157894736842105,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.06176440351009449,
-              "p5": 0.053764781918527405,
-              "p95": 0.0695712049279783,
+              "p5": 0.05449462617044576,
+              "p95": 0.06971613377420238,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.12365474578955205,
-              "p5": 0.10990431785351629,
-              "p95": 0.1359517606776236,
+              "median": 0.12362325501330251,
+              "p5": 0.10944180597490494,
+              "p95": 0.13644272313345474,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.49916734226979065,
-              "p5": 0.43959366104055403,
+              "median": 0.49631315708302776,
+              "p5": 0.4403935512201368,
               "p95": 0.5602272923254561,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4985553640751207,
+              "median": 0.4994505674784193,
               "p5": 0.4368371073856263,
-              "p95": 0.5300771535422208,
+              "p95": 0.5305275912873006,
               "valid_draws": 2000
             },
             "in_zone_20": {
@@ -8243,30 +8274,30 @@
             },
             "R5": {
               "statistic": "median",
-              "median": 0.0006570493920917686,
-              "p5": -0.002376869614443244,
-              "p95": 0.007840128119847134,
+              "median": 0.0007456604896231012,
+              "p5": -0.00282717510244479,
+              "p95": 0.007297048635722219,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.0025828270951826493,
-              "p5": -0.008799790016034148,
+              "median": -0.002590750124644825,
+              "p5": -0.00907523861982168,
               "p95": 0.005276800773960422,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
               "median": -0.007862003956715657,
-              "p5": -0.02071281813055087,
-              "p95": -0.0008253361093582783,
+              "p5": -0.020673455172611377,
+              "p95": -0.0007719056763111738,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
               "median": -0.016076239553212357,
-              "p5": -0.03190180969283202,
-              "p95": 0.00541702114780962,
+              "p5": -0.03245220317468278,
+              "p95": 0.005554449756936863,
               "valid_draws": 2000
             },
             "win_R20": {
@@ -8279,8 +8310,8 @@
             "MAE20": {
               "statistic": "median",
               "median": -0.04146770518728082,
-              "p5": -0.0464408174485319,
-              "p95": -0.035020751552177654,
+              "p5": -0.04643731957237835,
+              "p95": -0.03475981826281929,
               "valid_draws": 2000
             }
           }
@@ -8289,116 +8320,116 @@
     },
     "STOPFALL": {
       "dev": {
-        "n_events": 475,
+        "n_events": 393,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.1705263157894737,
-            "n_valid": 475
+            "value": 0.183206106870229,
+            "n_valid": 393
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.05894736842105263,
-            "n_valid": 475
+            "value": 0.06361323155216285,
+            "n_valid": 393
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.09184313847526293,
-            "n_valid": 475
+            "value": 0.08757599534854843,
+            "n_valid": 393
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.15048077304812502,
-            "n_valid": 475
+            "value": 0.14551319337951463,
+            "n_valid": 393
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.6114373475472041,
-            "n_valid": 475
+            "value": 0.6184812679370162,
+            "n_valid": 393
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4821720968649184,
-            "n_valid": 475
+            "value": 0.49203700269897144,
+            "n_valid": 393
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.021052631578947368,
-            "n_valid": 475
+            "value": 0.017811704834605598,
+            "n_valid": 393
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.05473684210526316,
-            "n_valid": 475
+            "value": 0.03816793893129771,
+            "n_valid": 393
           },
           "low_offset_20": {
             "statistic": "median",
-            "value": -6.0,
-            "n_valid": 475
+            "value": -5.0,
+            "n_valid": 393
           },
           "low_offset_60": {
             "statistic": "median",
-            "value": -6.0,
-            "n_valid": 475
+            "value": -7.0,
+            "n_valid": 393
           },
           "R5": {
             "statistic": "median",
-            "value": 0.0024825260504788282,
-            "n_valid": 475
+            "value": 0.003275133056553692,
+            "n_valid": 393
           },
           "R10": {
             "statistic": "median",
-            "value": 0.0005085453785937943,
-            "n_valid": 475
+            "value": 0.0009345438707031306,
+            "n_valid": 393
           },
           "R20": {
             "statistic": "median",
-            "value": -0.003980064661461058,
-            "n_valid": 475
+            "value": -0.0024748823293845312,
+            "n_valid": 393
           },
           "R60": {
             "statistic": "median",
-            "value": -0.005225471566946305,
-            "n_valid": 475
+            "value": -0.0008982487427796615,
+            "n_valid": 393
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.47789473684210526,
-            "n_valid": 475
+            "value": 0.48346055979643765,
+            "n_valid": 393
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.04290107929664533,
-            "n_valid": 475
+            "value": -0.04038958497721301,
+            "n_valid": 393
           }
         },
         "n_events_by_index": {
-          "sh000001": 125,
+          "sh000001": 82,
           "sh000016": 73,
           "sh000300": 62,
           "sh000905": 46,
           "sh000688": 0,
-          "sz399001": 126,
+          "sz399001": 87,
           "sz399006": 43
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 125,
+            "sh000001": 82,
             "sh000016": 73,
             "sh000300": 62,
             "sh000905": 46,
             "sh000688": 0,
-            "sz399001": 126,
+            "sz399001": 87,
             "sz399006": 43
           },
           "drawn_by_index": {
-            "sh000001": 125,
+            "sh000001": 82,
             "sh000016": 73,
             "sh000300": 62,
             "sh000905": 46,
             "sh000688": 0,
-            "sz399001": 126,
+            "sz399001": 87,
             "sz399006": 43
           },
           "shortfall_by_index": {
@@ -8411,62 +8442,62 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 475,
+          "total_events_per_draw": 393,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.28210526315789475,
-              "p5": 0.26305263157894737,
-              "p95": 0.3031578947368421,
+              "median": 0.30279898218829515,
+              "p5": 0.27735368956743,
+              "p95": 0.3256997455470738,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.0863157894736842,
-              "p5": 0.07368421052631578,
-              "p95": 0.09894736842105263,
+              "median": 0.09669211195928754,
+              "p5": 0.07888040712468193,
+              "p95": 0.11195928753180662,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.08118024939457746,
-              "p5": 0.07800177940950448,
-              "p95": 0.08475021763564397,
+              "median": 0.07712683209862004,
+              "p5": 0.0731557969704637,
+              "p95": 0.08056130985578847,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.1465969301360135,
-              "p5": 0.1413606977311539,
-              "p95": 0.15325760566316404,
+              "median": 0.13980767960214546,
+              "p5": 0.13448999743717294,
+              "p95": 0.1446358814701876,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4857142857142853,
-              "p5": 0.46612590085282446,
-              "p95": 0.5033856350878626,
+              "median": 0.4890774369409144,
+              "p5": 0.47045371862169316,
+              "p95": 0.5080784056425819,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4407704160246534,
-              "p5": 0.4312836903115011,
-              "p95": 0.45794331983805653,
+              "median": 0.447374267413881,
+              "p5": 0.43660450915112725,
+              "p95": 0.4611668233573593,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11789473684210526,
-              "p5": 0.1031578947368421,
-              "p95": 0.13473684210526315,
+              "median": 0.10941475826972011,
+              "p5": 0.09414758269720101,
+              "p95": 0.1248091603053434,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.09894736842105263,
-              "p5": 0.0863157894736842,
-              "p95": 0.11368421052631579,
+              "median": 0.08651399491094147,
+              "p5": 0.07124681933842239,
+              "p95": 0.09923664122137404,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -8479,50 +8510,50 @@
             "low_offset_60": {
               "statistic": "median",
               "median": 9.0,
-              "p5": 6.0,
-              "p95": 12.0,
+              "p5": 7.0,
+              "p95": 13.0,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020278377053889463,
-              "p5": -0.003996541929109476,
-              "p95": -0.0004579624989198283,
+              "median": -0.0014577600022426251,
+              "p5": -0.0034921581786094835,
+              "p95": -9.583342408481244e-05,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008125331089713694,
-              "p5": -0.01070390646120567,
-              "p95": -0.004511707726686631,
+              "median": -0.006881194269494295,
+              "p5": -0.00994061586920747,
+              "p95": -0.0038531634713312446,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.003937171569207476,
-              "p5": -0.00751956606872517,
-              "p95": 0.000994711533655268,
+              "median": -0.00316191833945334,
+              "p5": -0.007145129398262284,
+              "p95": 0.0017685360218442359,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010148938567664523,
-              "p5": -0.017166633470971582,
-              "p95": -0.002735511837862026,
+              "median": -0.01030011115227858,
+              "p5": -0.01925549120163661,
+              "p95": -0.0046934366386053306,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.48,
-              "p5": 0.4568421052631579,
-              "p95": 0.5052631578947369,
+              "median": 0.4860050890585242,
+              "p5": 0.4580152671755725,
+              "p95": 0.5114503816793893,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04942937693131588,
-              "p5": -0.053446979192780186,
-              "p95": -0.04605949066501602,
+              "median": -0.047008712023871246,
+              "p5": -0.051011080332409864,
+              "p95": -0.044139223733962396,
               "valid_draws": 2000
             }
           }
@@ -8662,9 +8693,9 @@
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.2903225806451613,
-              "p5": 0.22580645161290322,
-              "p95": 0.38870967741935336,
+              "median": 0.3225806451612903,
+              "p5": 0.1935483870967742,
+              "p95": 0.41935483870967744,
               "valid_draws": 2000
             },
             "entry_dist_20": {
@@ -8684,7 +8715,7 @@
             "range_pos_20": {
               "statistic": "median",
               "median": 0.34738034998945794,
-              "p5": 0.22709918015804909,
+              "p5": 0.23118081180811878,
               "p95": 0.45713968927140847,
               "valid_draws": 2000
             },
@@ -8719,15 +8750,15 @@
             "low_offset_60": {
               "statistic": "median",
               "median": -8.0,
-              "p5": -23.0,
-              "p95": 0.0,
+              "p5": -22.0,
+              "p95": 0.049999999999954525,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
               "median": 0.006151930007248341,
               "p5": -0.001392661837292808,
-              "p95": 0.016734850918281197,
+              "p95": 0.016195081960751923,
               "valid_draws": 2000
             },
             "R10": {
@@ -8896,13 +8927,13 @@
             "within5_20": {
               "statistic": "share",
               "median": 0.4247787610619469,
-              "p5": 0.37168141592920356,
+              "p5": 0.3805309734513274,
               "p95": 0.4778761061946903,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.12389380530973451,
+              "median": 0.11504424778761062,
               "p5": 0.08849557522123894,
               "p95": 0.1504424778761062,
               "valid_draws": 2000
@@ -8910,27 +8941,27 @@
             "entry_dist_20": {
               "statistic": "median",
               "median": 0.059748574998047976,
-              "p5": 0.05190066561995521,
+              "p5": 0.052373409078494415,
               "p95": 0.062425312041506364,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.11609251794267439,
+              "median": 0.11613796252176378,
               "p5": 0.10777379048352609,
               "p95": 0.12593877248974406,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.4945008815380745,
+              "median": 0.4887925111645487,
               "p5": 0.4441991251822538,
               "p95": 0.5384281554485383,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4968014647709033,
+              "median": 0.4977766956700028,
               "p5": 0.4448017408123787,
               "p95": 0.5178561561838105,
               "valid_draws": 2000
@@ -8946,7 +8977,7 @@
               "statistic": "share",
               "median": 0.12389380530973451,
               "p5": 0.08849557522123894,
-              "p95": 0.150884955752212,
+              "p95": 0.1504424778761062,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -8958,7 +8989,7 @@
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 16.0,
+              "median": 14.0,
               "p5": 7.0,
               "p95": 20.0,
               "valid_draws": 2000
@@ -8967,7 +8998,7 @@
               "statistic": "median",
               "median": 0.0018123967940713026,
               "p5": -0.000308216984757248,
-              "p95": 0.006891214190507089,
+              "p95": 0.007295948326482504,
               "valid_draws": 2000
             },
             "R10": {
@@ -9000,8 +9031,8 @@
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.03783327404986847,
-              "p5": -0.043111976402245955,
+              "median": -0.03835854652527371,
+              "p5": -0.043106958777879845,
               "p95": -0.03304219908103623,
               "valid_draws": 2000
             }
@@ -9011,116 +9042,116 @@
     },
     "B0": {
       "dev": {
-        "n_events": 792,
+        "n_events": 652,
         "metrics": {
           "within5_20": {
             "statistic": "share",
-            "value": 0.2828282828282828,
-            "n_valid": 792
+            "value": 0.30368098159509205,
+            "n_valid": 652
           },
           "within5_60": {
             "statistic": "share",
-            "value": 0.08712121212121213,
-            "n_valid": 792
+            "value": 0.09662576687116564,
+            "n_valid": 652
           },
           "entry_dist_20": {
             "statistic": "median",
-            "value": 0.0812343171984371,
-            "n_valid": 792
+            "value": 0.07697068327111167,
+            "n_valid": 652
           },
           "entry_dist_60": {
             "statistic": "median",
-            "value": 0.1474815304960989,
-            "n_valid": 792
+            "value": 0.13967105777669708,
+            "n_valid": 652
           },
           "range_pos_20": {
             "statistic": "median",
-            "value": 0.48550187325988303,
-            "n_valid": 792
+            "value": 0.48789019591991295,
+            "n_valid": 652
           },
           "range_pos_60": {
             "statistic": "median",
-            "value": 0.4410987775310431,
-            "n_valid": 792
+            "value": 0.44756167908202715,
+            "n_valid": 652
           },
           "in_zone_20": {
             "statistic": "share",
-            "value": 0.11868686868686869,
-            "n_valid": 792
+            "value": 0.11042944785276074,
+            "n_valid": 652
           },
           "in_zone_60": {
             "statistic": "share",
-            "value": 0.10101010101010101,
-            "n_valid": 792
+            "value": 0.08588957055214724,
+            "n_valid": 652
           },
           "low_offset_20": {
             "statistic": "median",
             "value": 5.0,
-            "n_valid": 792
+            "n_valid": 652
           },
           "low_offset_60": {
             "statistic": "median",
-            "value": 9.0,
-            "n_valid": 792
+            "value": 9.5,
+            "n_valid": 652
           },
           "R5": {
             "statistic": "median",
-            "value": -0.0020375637313947426,
-            "n_valid": 792
+            "value": -0.0014485092481332784,
+            "n_valid": 652
           },
           "R10": {
             "statistic": "median",
-            "value": -0.008133308993047539,
-            "n_valid": 792
+            "value": -0.007009232431860579,
+            "n_valid": 652
           },
           "R20": {
             "statistic": "median",
-            "value": -0.0039248555296653165,
-            "n_valid": 792
+            "value": -0.0031509476013908966,
+            "n_valid": 652
           },
           "R60": {
             "statistic": "median",
-            "value": -0.010120281138917275,
-            "n_valid": 792
+            "value": -0.01040119712865073,
+            "n_valid": 652
           },
           "win_R20": {
             "statistic": "share",
-            "value": 0.4797979797979798,
-            "n_valid": 792
+            "value": 0.48619631901840493,
+            "n_valid": 652
           },
           "MAE20": {
             "statistic": "median",
-            "value": -0.04937875560874283,
-            "n_valid": 792
+            "value": -0.04697096010099139,
+            "n_valid": 652
           }
         },
         "n_events_by_index": {
-          "sh000001": 217,
+          "sh000001": 144,
           "sh000016": 117,
           "sh000300": 100,
           "sh000905": 79,
           "sh000688": 0,
-          "sz399001": 215,
+          "sz399001": 148,
           "sz399006": 64
         },
         "random_baseline": {
           "draws": 2000,
           "requested_by_index": {
-            "sh000001": 217,
+            "sh000001": 144,
             "sh000016": 117,
             "sh000300": 100,
             "sh000905": 79,
             "sh000688": 0,
-            "sz399001": 215,
+            "sz399001": 148,
             "sz399006": 64
           },
           "drawn_by_index": {
-            "sh000001": 217,
+            "sh000001": 144,
             "sh000016": 117,
             "sh000300": 100,
             "sh000905": 79,
             "sh000688": 0,
-            "sz399001": 215,
+            "sz399001": 148,
             "sz399006": 64
           },
           "shortfall_by_index": {
@@ -9133,62 +9164,62 @@
             "sz399006": 0
           },
           "total_shortfall": 0,
-          "total_events_per_draw": 792,
+          "total_events_per_draw": 652,
           "metrics": {
             "within5_20": {
               "statistic": "share",
-              "median": 0.2828282828282828,
-              "p5": 0.2828282828282828,
-              "p95": 0.2828282828282828,
+              "median": 0.30368098159509205,
+              "p5": 0.30368098159509205,
+              "p95": 0.30368098159509205,
               "valid_draws": 2000
             },
             "within5_60": {
               "statistic": "share",
-              "median": 0.08712121212121213,
-              "p5": 0.08712121212121213,
-              "p95": 0.08712121212121213,
+              "median": 0.09662576687116564,
+              "p5": 0.09662576687116564,
+              "p95": 0.09662576687116564,
               "valid_draws": 2000
             },
             "entry_dist_20": {
               "statistic": "median",
-              "median": 0.0812343171984371,
-              "p5": 0.0812343171984371,
-              "p95": 0.0812343171984371,
+              "median": 0.07697068327111167,
+              "p5": 0.07697068327111167,
+              "p95": 0.07697068327111167,
               "valid_draws": 2000
             },
             "entry_dist_60": {
               "statistic": "median",
-              "median": 0.1474815304960989,
-              "p5": 0.1474815304960989,
-              "p95": 0.1474815304960989,
+              "median": 0.13967105777669708,
+              "p5": 0.13967105777669708,
+              "p95": 0.13967105777669708,
               "valid_draws": 2000
             },
             "range_pos_20": {
               "statistic": "median",
-              "median": 0.48550187325988303,
-              "p5": 0.48550187325988303,
-              "p95": 0.48550187325988303,
+              "median": 0.48789019591991295,
+              "p5": 0.48789019591991295,
+              "p95": 0.48789019591991295,
               "valid_draws": 2000
             },
             "range_pos_60": {
               "statistic": "median",
-              "median": 0.4410987775310431,
-              "p5": 0.4410987775310431,
-              "p95": 0.4410987775310431,
+              "median": 0.44756167908202715,
+              "p5": 0.44756167908202715,
+              "p95": 0.44756167908202715,
               "valid_draws": 2000
             },
             "in_zone_20": {
               "statistic": "share",
-              "median": 0.11868686868686869,
-              "p5": 0.11868686868686869,
-              "p95": 0.11868686868686869,
+              "median": 0.11042944785276074,
+              "p5": 0.11042944785276074,
+              "p95": 0.11042944785276074,
               "valid_draws": 2000
             },
             "in_zone_60": {
               "statistic": "share",
-              "median": 0.10101010101010101,
-              "p5": 0.10101010101010101,
-              "p95": 0.10101010101010101,
+              "median": 0.08588957055214724,
+              "p5": 0.08588957055214724,
+              "p95": 0.08588957055214724,
               "valid_draws": 2000
             },
             "low_offset_20": {
@@ -9200,51 +9231,51 @@
             },
             "low_offset_60": {
               "statistic": "median",
-              "median": 9.0,
-              "p5": 9.0,
-              "p95": 9.0,
+              "median": 9.5,
+              "p5": 9.5,
+              "p95": 9.5,
               "valid_draws": 2000
             },
             "R5": {
               "statistic": "median",
-              "median": -0.0020375637313947426,
-              "p5": -0.0020375637313947426,
-              "p95": -0.0020375637313947426,
+              "median": -0.0014485092481332784,
+              "p5": -0.0014485092481332784,
+              "p95": -0.0014485092481332784,
               "valid_draws": 2000
             },
             "R10": {
               "statistic": "median",
-              "median": -0.008133308993047539,
-              "p5": -0.008133308993047539,
-              "p95": -0.008133308993047539,
+              "median": -0.007009232431860579,
+              "p5": -0.007009232431860579,
+              "p95": -0.007009232431860579,
               "valid_draws": 2000
             },
             "R20": {
               "statistic": "median",
-              "median": -0.0039248555296653165,
-              "p5": -0.0039248555296653165,
-              "p95": -0.0039248555296653165,
+              "median": -0.0031509476013908966,
+              "p5": -0.0031509476013908966,
+              "p95": -0.0031509476013908966,
               "valid_draws": 2000
             },
             "R60": {
               "statistic": "median",
-              "median": -0.010120281138917275,
-              "p5": -0.010120281138917275,
-              "p95": -0.010120281138917275,
+              "median": -0.01040119712865073,
+              "p5": -0.01040119712865073,
+              "p95": -0.01040119712865073,
               "valid_draws": 2000
             },
             "win_R20": {
               "statistic": "share",
-              "median": 0.4797979797979798,
-              "p5": 0.4797979797979798,
-              "p95": 0.4797979797979798,
+              "median": 0.48619631901840493,
+              "p5": 0.48619631901840493,
+              "p95": 0.48619631901840493,
               "valid_draws": 2000
             },
             "MAE20": {
               "statistic": "median",
-              "median": -0.04937875560874283,
-              "p5": -0.04937875560874283,
-              "p95": -0.04937875560874283,
+              "median": -0.04697096010099139,
+              "p5": -0.04697096010099139,
+              "p95": -0.04697096010099139,
               "valid_draws": 2000
             }
           }
@@ -9736,100 +9767,100 @@
     "state": "V2_low_shock_60",
     "score": "low_shock",
     "threshold": 60,
-    "dev_events": 662,
-    "dev_within5_60_share": 0.09365558912386707,
-    "dev_random_median_within5_60": 0.08610271903323263,
-    "dev_lift": 0.007552870090634434,
+    "dev_events": 542,
+    "dev_within5_60_share": 0.1014760147601476,
+    "dev_random_median_within5_60": 0.0959409594095941,
+    "dev_lift": 0.0055350553505535,
     "score_order": 0,
     "eligible_variants": [
       {
         "state": "V2_low_shock_50",
         "score": "low_shock",
         "threshold": 50,
-        "dev_events": 716,
-        "dev_within5_60_share": 0.09078212290502793,
-        "dev_random_median_within5_60": 0.08659217877094973,
-        "dev_lift": 0.004189944134078208,
+        "dev_events": 589,
+        "dev_within5_60_share": 0.0967741935483871,
+        "dev_random_median_within5_60": 0.0967741935483871,
+        "dev_lift": 0.0,
         "score_order": 0
       },
       {
         "state": "V2_low_shock_60",
         "score": "low_shock",
         "threshold": 60,
-        "dev_events": 662,
-        "dev_within5_60_share": 0.09365558912386707,
-        "dev_random_median_within5_60": 0.08610271903323263,
-        "dev_lift": 0.007552870090634434,
+        "dev_events": 542,
+        "dev_within5_60_share": 0.1014760147601476,
+        "dev_random_median_within5_60": 0.0959409594095941,
+        "dev_lift": 0.0055350553505535,
         "score_order": 0
       },
       {
         "state": "V2_low_shock_70",
         "score": "low_shock",
         "threshold": 70,
-        "dev_events": 601,
-        "dev_within5_60_share": 0.08319467554076539,
-        "dev_random_median_within5_60": 0.08652246256239601,
-        "dev_lift": -0.0033277870216306266,
+        "dev_events": 491,
+        "dev_within5_60_share": 0.08757637474541752,
+        "dev_random_median_within5_60": 0.09572301425661914,
+        "dev_lift": -0.00814663951120162,
         "score_order": 0
       },
       {
         "state": "V2_short_50",
         "score": "short",
         "threshold": 50,
-        "dev_events": 581,
-        "dev_within5_60_share": 0.0757314974182444,
-        "dev_random_median_within5_60": 0.08691910499139414,
-        "dev_lift": -0.011187607573149738,
+        "dev_events": 477,
+        "dev_within5_60_share": 0.08176100628930817,
+        "dev_random_median_within5_60": 0.09643605870020965,
+        "dev_lift": -0.014675052410901473,
         "score_order": 1
       },
       {
         "state": "V2_short_60",
         "score": "short",
         "threshold": 60,
-        "dev_events": 512,
-        "dev_within5_60_share": 0.0625,
-        "dev_random_median_within5_60": 0.087890625,
-        "dev_lift": -0.025390625,
+        "dev_events": 419,
+        "dev_within5_60_share": 0.06682577565632458,
+        "dev_random_median_within5_60": 0.0954653937947494,
+        "dev_lift": -0.02863961813842482,
         "score_order": 1
       },
       {
         "state": "V2_short_70",
         "score": "short",
         "threshold": 70,
-        "dev_events": 441,
-        "dev_within5_60_share": 0.05668934240362812,
-        "dev_random_median_within5_60": 0.08616780045351474,
-        "dev_lift": -0.02947845804988662,
+        "dev_events": 364,
+        "dev_within5_60_share": 0.06318681318681318,
+        "dev_random_median_within5_60": 0.09615384615384616,
+        "dev_lift": -0.032967032967032975,
         "score_order": 1
       },
       {
         "state": "V2_medium_50",
         "score": "medium",
         "threshold": 50,
-        "dev_events": 562,
-        "dev_within5_60_share": 0.05871886120996441,
-        "dev_random_median_within5_60": 0.08718861209964412,
-        "dev_lift": -0.028469750889679714,
+        "dev_events": 459,
+        "dev_within5_60_share": 0.06753812636165578,
+        "dev_random_median_within5_60": 0.09586056644880174,
+        "dev_lift": -0.02832244008714596,
         "score_order": 2
       },
       {
         "state": "V2_medium_60",
         "score": "medium",
         "threshold": 60,
-        "dev_events": 434,
-        "dev_within5_60_share": 0.04377880184331797,
-        "dev_random_median_within5_60": 0.08755760368663594,
-        "dev_lift": -0.04377880184331797,
+        "dev_events": 348,
+        "dev_within5_60_share": 0.05459770114942529,
+        "dev_random_median_within5_60": 0.09482758620689655,
+        "dev_lift": -0.04022988505747126,
         "score_order": 2
       },
       {
         "state": "V2_medium_70",
         "score": "medium",
         "threshold": 70,
-        "dev_events": 302,
-        "dev_within5_60_share": 0.029801324503311258,
-        "dev_random_median_within5_60": 0.08609271523178808,
-        "dev_lift": -0.05629139072847682,
+        "dev_events": 241,
+        "dev_within5_60_share": 0.03734439834024896,
+        "dev_random_median_within5_60": 0.0954356846473029,
+        "dev_lift": -0.05809128630705394,
         "score_order": 2
       }
     ],
@@ -9841,16 +9872,16 @@
       "verdict": "NOT_VALID",
       "checks": {
         "dev": {
-          "n_events": 662,
+          "n_events": 542,
           "minimum_events_met": true,
-          "within5_60_share": 0.09365558912386707,
-          "random_within5_60_p95": 0.09365558912386707,
+          "within5_60_share": 0.1014760147601476,
+          "random_within5_60_p95": 0.10516605166051661,
           "location_condition": false,
-          "median_MAE20": -0.046066246332171934,
-          "random_median_MAE20": -0.049427769054351034,
+          "median_MAE20": -0.04349833877570747,
+          "random_median_MAE20": -0.04702504870345309,
           "mae_condition": true,
-          "win_R20_share": 0.48489425981873113,
-          "random_win_R20_p95": 0.49244712990936557
+          "win_R20_share": 0.4833948339483395,
+          "random_win_R20_p95": 0.5
         },
         "test": {
           "n_events": 166,
@@ -9867,8 +9898,8 @@
       },
       "return_context": {
         "dev": {
-          "win_R20_share": 0.48489425981873113,
-          "random_win_R20_p95": 0.49244712990936557
+          "win_R20_share": 0.4833948339483395,
+          "random_win_R20_p95": 0.5
         },
         "test": {
           "win_R20_share": 0.43373493975903615,
@@ -9885,19 +9916,19 @@
           "n_events": 326,
           "minimum_events_met": true,
           "within5_60_share": 0.10736196319018405,
-          "random_within5_60_p95": 0.10736196319018405,
+          "random_within5_60_p95": 0.11349693251533742,
           "location_condition": false,
           "median_MAE20": -0.041176309553328294,
-          "random_median_MAE20": -0.04999278854818892,
+          "random_median_MAE20": -0.04706935895393205,
           "mae_condition": true,
           "win_R20_share": 0.5061349693251533,
-          "random_win_R20_p95": 0.5122699386503068
+          "random_win_R20_p95": 0.5184049079754601
         },
         "test": {
           "n_events": 76,
           "minimum_events_met": true,
           "within5_60_share": 0.2631578947368421,
-          "random_within5_60_p95": 0.14473684210526316,
+          "random_within5_60_p95": 0.13157894736842105,
           "location_condition": true,
           "median_MAE20": -0.030531006037771757,
           "random_median_MAE20": -0.04146770518728082,
@@ -9909,7 +9940,7 @@
       "return_context": {
         "dev": {
           "win_R20_share": 0.5061349693251533,
-          "random_win_R20_p95": 0.5122699386503068
+          "random_win_R20_p95": 0.5184049079754601
         },
         "test": {
           "win_R20_share": 0.6447368421052632,
@@ -9923,16 +9954,16 @@
       "verdict": "NOT_VALID",
       "checks": {
         "dev": {
-          "n_events": 475,
+          "n_events": 393,
           "minimum_events_met": true,
-          "within5_60_share": 0.05894736842105263,
-          "random_within5_60_p95": 0.09894736842105263,
+          "within5_60_share": 0.06361323155216285,
+          "random_within5_60_p95": 0.11195928753180662,
           "location_condition": false,
-          "median_MAE20": -0.04290107929664533,
-          "random_median_MAE20": -0.04942937693131588,
+          "median_MAE20": -0.04038958497721301,
+          "random_median_MAE20": -0.047008712023871246,
           "mae_condition": true,
-          "win_R20_share": 0.47789473684210526,
-          "random_win_R20_p95": 0.5052631578947369
+          "win_R20_share": 0.48346055979643765,
+          "random_win_R20_p95": 0.5114503816793893
         },
         "test": {
           "n_events": 113,
@@ -9941,7 +9972,7 @@
           "random_within5_60_p95": 0.1504424778761062,
           "location_condition": false,
           "median_MAE20": -0.03715110940745425,
-          "random_median_MAE20": -0.03783327404986847,
+          "random_median_MAE20": -0.03835854652527371,
           "mae_condition": true,
           "win_R20_share": 0.4336283185840708,
           "random_win_R20_p95": 0.48672566371681414
@@ -9949,8 +9980,8 @@
       },
       "return_context": {
         "dev": {
-          "win_R20_share": 0.47789473684210526,
-          "random_win_R20_p95": 0.5052631578947369
+          "win_R20_share": 0.48346055979643765,
+          "random_win_R20_p95": 0.5114503816793893
         },
         "test": {
           "win_R20_share": 0.4336283185840708,
@@ -9963,61 +9994,73 @@
   "head_to_head": {
     "dev": {
       "within5_60_share": {
-        "difference": -0.013706374066316987,
+        "difference": -0.005885948430036453,
         "ci95": [
-          -0.05335314996385742,
-          0.025986738457546375
+          -0.04883674464702529,
+          0.0402149486678536
         ],
-        "left_events": 662,
+        "left_events": 542,
         "right_events": 326,
         "statistic": "share",
         "bootstrap_draws": 2000,
-        "resampling": "with replacement within each index, preserving each state's index counts"
+        "valid_draws": 2000,
+        "skipped_draws": 0,
+        "quarter_blocks": 60,
+        "resampling": "joint calendar-quarter blocks with replacement across all indexes"
       },
       "median_R20": {
-        "difference": -0.004249995910168669,
+        "difference": -0.004099955592233473,
         "ci95": [
-          -0.015519047297187342,
-          0.010039677390482156
+          -0.017950764031748775,
+          0.007497809915798418
         ],
-        "left_events": 662,
+        "left_events": 542,
         "right_events": 326,
         "statistic": "median",
         "bootstrap_draws": 2000,
-        "resampling": "with replacement within each index, preserving each state's index counts"
+        "valid_draws": 2000,
+        "skipped_draws": 0,
+        "quarter_blocks": 60,
+        "resampling": "joint calendar-quarter blocks with replacement across all indexes"
       }
     },
     "test": {
       "within5_60_share": {
         "difference": -0.20894102726696256,
         "ci95": [
-          -0.3081800887761572,
-          -0.10859226379201015
+          -0.3680850165778132,
+          -0.05366627708696579
         ],
         "left_events": 166,
         "right_events": 76,
         "statistic": "share",
         "bootstrap_draws": 2000,
-        "resampling": "with replacement within each index, preserving each state's index counts"
+        "valid_draws": 2000,
+        "skipped_draws": 0,
+        "quarter_blocks": 13,
+        "resampling": "joint calendar-quarter blocks with replacement across all indexes"
       },
       "median_R20": {
         "difference": -0.0350421806784032,
         "ci95": [
-          -0.05650766192508633,
-          -0.018463235213937203
+          -0.0610573927058565,
+          -0.01620406140049989
         ],
         "left_events": 166,
         "right_events": 76,
         "statistic": "median",
         "bootstrap_draws": 2000,
-        "resampling": "with replacement within each index, preserving each state's index counts"
+        "valid_draws": 2000,
+        "skipped_draws": 0,
+        "quarter_blocks": 13,
+        "resampling": "joint calendar-quarter blocks with replacement across all indexes"
       }
     }
   },
-  "runtime_seconds": 123.22686049574986,
+  "runtime_seconds": 103.84620457980782,
   "event_ledger": {
     "path": "bottom_repair_v2_eval_events.csv.gz",
-    "row_count": 8422,
-    "sha256_uncompressed_csv": "84eee094a086ab8c4fb42831eae1edf02e338c010f71d45254997f8289f0e47a"
+    "row_count": 7319,
+    "sha256_uncompressed_csv": "0d3898de948807a3b07efe6358a71f9dc362e321fd8f4750afdc7824a9de88d4"
   }
 }
