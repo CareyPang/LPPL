@@ -10,6 +10,7 @@ import ast
 import hashlib
 import json
 import os
+import re
 import uuid
 from datetime import UTC, datetime, time, timedelta
 from io import BytesIO
@@ -21,15 +22,28 @@ import numpy as np
 import pandas as pd
 import requests
 
+from .trading_calendar import completed_market_sessions, market_sessions
+
 NORMALIZER_VERSION = "global_yahoo_v2_nonpositive_ohlc_null"
 NAVER_NORMALIZER_VERSION = "global_naver_index_v1_unmodified_close"
 FULL_HISTORY_PERIOD1 = -2208988800  # 1900-01-01; range=max may downgrade daily bars.
+CROSS_CHECK_LOOKBACK_SESSIONS = 250
+CROSS_CHECK_MAX_REL_DIFF = 0.005
+SINA_US_SYMBOLS = {
+    "US_SPX": "SPX",
+    "US_IXIC": "IXIC",
+    "US_NDX": "NDX",
+    "US_DJI": "DJI",
+    "US_SOX": "SOX",
+    "US_MRVL": "MRVL",
+}
 
 ASSETS = {
     "US_SPX": dict(ticker="^GSPC", name="标普500", kind="index", market="us", currency="USD", timezone="America/New_York"),
     "US_IXIC": dict(ticker="^IXIC", name="纳斯达克综合指数", kind="index", market="us", currency="USD", timezone="America/New_York"),
     "US_NDX": dict(ticker="^NDX", name="纳斯达克100", kind="index", market="us", currency="USD", timezone="America/New_York"),
     "US_DJI": dict(ticker="^DJI", name="道琼斯工业平均", kind="index", market="us", currency="USD", timezone="America/New_York"),
+    "US_SOX": dict(ticker="^SOX", name="费城半导体指数", kind="index", market="us", currency="USD", timezone="America/New_York"),
     "JP_N225": dict(ticker="^N225", name="日经225", kind="index", market="jp", currency="JPY", timezone="Asia/Tokyo"),
     "KR_KOSPI": dict(ticker="^KS11", name="韩国综合指数", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul"),
     "KR_KOSDAQ": dict(ticker="^KQ11", name="韩国科斯达克", kind="index", market="kr", currency="KRW", timezone="Asia/Seoul"),
@@ -99,6 +113,238 @@ def normalise(payload: dict, asset_id: str, fetched_at: datetime) -> tuple[pd.Da
         "history_vintage": "current_download_reconstruction",
         "close_cutoff_policy": "exchange date; regular close plus 20 minutes; previous dates retained",
     }
+
+
+def validate_market_sessions(
+    frame: pd.DataFrame, market: str, fetched_at: datetime
+) -> tuple[pd.DataFrame, dict]:
+    """Drop non-session bars and count recent completed sessions absent from Yahoo."""
+    if market not in {"us", "jp", "kr"}:
+        return frame.copy(), {
+            "dropped_non_session_rows": 0,
+            "missing_sessions_last_250": 0,
+        }
+    if frame.empty:
+        raise ValueError("Cannot validate an empty market history")
+    dates = pd.to_datetime(frame.date).dt.normalize()
+    sessions = market_sessions(market, dates.min(), dates.max())
+    valid = dates.isin(sessions)
+    filtered = frame.loc[valid].copy().sort_values("date").reset_index(drop=True)
+    if filtered.empty:
+        raise ValueError("No bars remain on exchange sessions")
+    expected = completed_market_sessions(
+        market, pd.Timestamp(fetched_at), CROSS_CHECK_LOOKBACK_SESSIONS
+    )
+    present = pd.DatetimeIndex(pd.to_datetime(filtered.date).dt.normalize())
+    missing = expected.difference(present)
+    filtered_dates = pd.to_datetime(filtered.date)
+    return filtered, {
+        "dropped_non_session_rows": int((~valid).sum()),
+        "missing_sessions_last_250": len(missing),
+        "rows": len(filtered),
+        "first_date": str(filtered_dates.iloc[0].date()),
+        "asof": str(filtered_dates.iloc[-1].date()),
+    }
+
+
+def compare_cross_check(
+    yahoo_frame: pd.DataFrame,
+    reference_frame: pd.DataFrame,
+    market: str,
+    provider: str,
+    fetched_at: datetime,
+    *,
+    sessions: pd.DatetimeIndex | None = None,
+) -> dict:
+    """Compare provider closes on recent exchange sessions without replacing Yahoo."""
+    expected = (
+        completed_market_sessions(
+            market, pd.Timestamp(fetched_at), CROSS_CHECK_LOOKBACK_SESSIONS
+        )
+        if sessions is None
+        else pd.DatetimeIndex(sessions).normalize()
+    )
+    expected_dates = set(expected)
+    yahoo = yahoo_frame.copy()
+    reference = reference_frame.copy()
+    yahoo_dates = pd.to_datetime(yahoo.date).dt.normalize()
+    reference_dates = pd.to_datetime(reference.date).dt.normalize()
+    yahoo = yahoo.loc[yahoo_dates.isin(expected_dates)].copy()
+    reference = reference.loc[reference_dates.isin(expected_dates)].copy()
+    if reference.empty:
+        return {
+            "provider": provider,
+            "overlap": 0,
+            "max_rel_diff": None,
+            "missing_in_yahoo": 0,
+            "status": "unavailable",
+            "reason": "Second source returned no rows in the recent exchange-session window",
+        }
+    yahoo_column = "raw_close" if "raw_close" in yahoo else "close"
+    reference_column = "raw_close" if "raw_close" in reference else "close"
+    yahoo["date"] = pd.to_datetime(yahoo.date).dt.normalize()
+    reference["date"] = pd.to_datetime(reference.date).dt.normalize()
+    yahoo = yahoo.drop_duplicates("date", keep="last")
+    reference = reference.drop_duplicates("date", keep="last")
+    yahoo_closes = yahoo.set_index("date")[yahoo_column]
+    reference_closes = reference.set_index("date")[reference_column]
+    reference_dates_set = set(reference_closes.index)
+    yahoo_dates_set = set(yahoo_closes.index)
+    missing_in_yahoo = len(reference_dates_set - yahoo_dates_set)
+    overlap_dates = sorted(reference_dates_set & yahoo_dates_set)
+    if not overlap_dates:
+        return {
+            "provider": provider,
+            "overlap": 0,
+            "max_rel_diff": None,
+            "missing_in_yahoo": missing_in_yahoo,
+            "status": "mismatch" if missing_in_yahoo else "unavailable",
+            **(
+                {}
+                if missing_in_yahoo
+                else {"reason": "Second source has no overlapping Yahoo sessions"}
+            ),
+        }
+    relative_differences = [
+        abs(float(yahoo_closes.loc[date]) - float(reference_closes.loc[date]))
+        / abs(float(reference_closes.loc[date]))
+        for date in overlap_dates
+        if np.isfinite(reference_closes.loc[date])
+        and float(reference_closes.loc[date]) != 0
+        and np.isfinite(yahoo_closes.loc[date])
+    ]
+    if not relative_differences:
+        return {
+            "provider": provider,
+            "overlap": 0,
+            "max_rel_diff": None,
+            "missing_in_yahoo": missing_in_yahoo,
+            "status": "unavailable",
+            "reason": "No finite overlapping closes were returned",
+        }
+    max_rel_diff = max(relative_differences)
+    mismatch = missing_in_yahoo > 0 or max_rel_diff > CROSS_CHECK_MAX_REL_DIFF
+    return {
+        "provider": provider,
+        "overlap": len(relative_differences),
+        "max_rel_diff": max_rel_diff,
+        "missing_in_yahoo": missing_in_yahoo,
+        "status": "mismatch" if mismatch else "ok",
+    }
+
+
+def _fetch_naver_cross_check(asset_id: str, fetched_at: datetime) -> pd.DataFrame:
+    asset = ASSETS[asset_id]
+    end_date = fetched_at.astimezone(ZoneInfo(asset["timezone"])).date()
+    start_date = end_date - timedelta(days=500)
+    symbol = "KOSDAQ" if asset_id == "KR_KOSDAQ" else "KOSPI"
+    response = requests.get(
+        "https://api.finance.naver.com/siseJson.naver",
+        params={
+            "symbol": symbol,
+            "requestType": 1,
+            "startTime": start_date.strftime("%Y%m%d"),
+            "endTime": end_date.strftime("%Y%m%d"),
+            "timeframe": "day",
+        },
+        timeout=(12, 45),
+    )
+    response.raise_for_status()
+    data = ast.literal_eval(response.content.decode("utf-8-sig").strip())
+    expected_header = ["날짜", "시가", "고가", "저가", "종가", "거래량", "외국인소진율"]
+    if not isinstance(data, list) or not data or data[0] != expected_header:
+        raise ValueError("Naver daily schema changed")
+    rows = []
+    for values in data[1:]:
+        if not isinstance(values, list) or len(values) != len(expected_header):
+            raise ValueError("Naver daily row schema changed")
+        close = float(values[4])
+        if np.isfinite(close) and close > 0:
+            rows.append(
+                {
+                    "date": pd.to_datetime(str(values[0]), format="%Y%m%d"),
+                    "close": close,
+                }
+            )
+    if not rows:
+        raise ValueError("Naver returned no positive daily closes")
+    return pd.DataFrame(rows)
+
+
+def _fetch_sina_cross_check(asset_id: str) -> pd.DataFrame:
+    response = requests.get(
+        "https://stock.finance.sina.com.cn/usstock/api/jsonp.php/var/US_MinKService.getDailyK",
+        params={"symbol": SINA_US_SYMBOLS[asset_id], "num": CROSS_CHECK_LOOKBACK_SESSIONS + 10},
+        headers={"Referer": "https://finance.sina.com.cn/"},
+        timeout=(12, 45),
+    )
+    response.raise_for_status()
+    match = re.search(r"\((\[[\s\S]*\])\)", response.text)
+    if not match:
+        raise ValueError("Sina daily response did not contain a JSONP array")
+    data = json.loads(match.group(1))
+    if not isinstance(data, list) or not data:
+        raise ValueError("Sina returned no daily bars")
+    rows = []
+    for item in data:
+        date = pd.Timestamp(item["d"]).normalize()
+        close = float(item["c"])
+        if np.isfinite(close) and close > 0:
+            rows.append({"date": date, "close": close})
+    if not rows:
+        raise ValueError("Sina returned no positive daily closes")
+    return pd.DataFrame(rows)
+
+
+def _fetch_stooq_cross_check() -> pd.DataFrame:
+    response = requests.get(
+        "https://stooq.com/q/d/l/?s=^nkx&i=d",
+        timeout=(12, 45),
+    )
+    response.raise_for_status()
+    data = pd.read_csv(BytesIO(response.content))
+    if not {"Date", "Close"}.issubset(data.columns):
+        raise ValueError("Stooq daily CSV schema changed")
+    frame = data.loc[:, ["Date", "Close"]].rename(
+        columns={"Date": "date", "Close": "close"}
+    )
+    frame["date"] = pd.to_datetime(frame.date).dt.normalize()
+    frame["close"] = pd.to_numeric(frame.close, errors="coerce")
+    frame = frame.loc[np.isfinite(frame.close) & (frame.close > 0)].dropna()
+    if frame.empty:
+        raise ValueError("Stooq returned no positive daily closes")
+    return frame
+
+
+def fetch_cross_check(
+    asset_id: str, yahoo_frame: pd.DataFrame, fetched_at: datetime | None = None
+) -> dict:
+    fetched_at = fetched_at or datetime.now(UTC)
+    market = ASSETS[asset_id]["market"]
+    provider = {
+        "us": "sina_us_daily_k",
+        "jp": "stooq_daily_csv",
+        "kr": "naver_siseJson",
+    }[market]
+    try:
+        if market == "us":
+            reference = _fetch_sina_cross_check(asset_id)
+        elif market == "kr":
+            reference = _fetch_naver_cross_check(asset_id, fetched_at)
+        else:
+            reference = _fetch_stooq_cross_check()
+        return compare_cross_check(
+            yahoo_frame, reference, market, provider, fetched_at
+        )
+    except Exception as error:
+        return {
+            "provider": provider,
+            "overlap": 0,
+            "max_rel_diff": None,
+            "missing_in_yahoo": 0,
+            "status": "unavailable",
+            "reason": f"{type(error).__name__}: {error}",
+        }
 
 
 def _atomic_pointer(path: Path, value: dict) -> None:

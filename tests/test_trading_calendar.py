@@ -37,11 +37,19 @@ def test_cn_dates_after_coverage_use_plain_weekdays():
     assert future_trading_days(last, 20).equals(expected)
 
 
-def test_non_cn_market_keeps_plain_weekday_behavior():
-    last = pd.Timestamp("2027-02-04")
-    expected = pd.bdate_range(last + pd.Timedelta(days=1), periods=10)
-
-    assert future_trading_days(last, 10, market="us").equals(expected)
+def test_us_future_days_skip_presidents_day():
+    assert _dates(future_trading_days(pd.Timestamp("2027-02-04"), 10, "us")) == [
+        "2027-02-05",
+        "2027-02-08",
+        "2027-02-09",
+        "2027-02-10",
+        "2027-02-11",
+        "2027-02-12",
+        "2027-02-16",
+        "2027-02-17",
+        "2027-02-18",
+        "2027-02-19",
+    ]
 
 
 def test_replay_calendar_metadata_includes_missing_weekdays_until_calendar_end():
@@ -56,3 +64,30 @@ def test_replay_calendar_metadata_includes_missing_weekdays_until_calendar_end()
     expected = {date.strftime("%Y-%m-%d") for date in absent}
     expected.update(date.date().isoformat() for date in load_cn_closures()[0])
     assert metadata["closures"] == sorted(expected)
+
+
+def test_xnys_skips_thanksgiving_2026_and_reports_calendar_coverage():
+    assert _dates(future_trading_days(pd.Timestamp("2026-11-25"), 2, "us")) == [
+        "2026-11-27",
+        "2026-11-30",
+    ]
+    metadata = future_calendar_metadata(
+        pd.DatetimeIndex([pd.Timestamp("2026-11-25")]),
+        market="us",
+        asof=pd.Timestamp("2026-11-25"),
+    )
+    assert "2026-11-26" in metadata["closures"]
+    assert metadata["source"] == "exchange_calendars==4.13.3:XNYS"
+    assert metadata["holidays_through"] > "2026-11-25"
+
+
+def test_xtks_skips_new_years_day_2027():
+    assert _dates(future_trading_days(pd.Timestamp("2026-12-31"), 1, "jp")) == [
+        "2027-01-04"
+    ]
+
+
+def test_xkrx_skips_labor_day_2026():
+    assert _dates(future_trading_days(pd.Timestamp("2026-04-30"), 1, "kr")) == [
+        "2026-05-04"
+    ]

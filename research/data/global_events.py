@@ -21,7 +21,8 @@ from .global_terminal import ASSETS
 ENDPOINT = "https://query2.finance.yahoo.com/v1/finance/search"
 QUERIES = {
     "US_SPX": "S&P 500", "US_IXIC": "Nasdaq Composite", "US_NDX": "Nasdaq 100",
-    "US_DJI": "Dow Jones", "JP_N225": "Nikkei 225", "KR_KOSPI": "KOSPI",
+    "US_DJI": "Dow Jones", "US_SOX": "PHLX Semiconductor Index",
+    "JP_N225": "Nikkei 225", "KR_KOSPI": "KOSPI",
     "KR_KOSDAQ": "KOSDAQ", "US_MRVL": "MRVL",
 }
 TTL = timedelta(hours=6)

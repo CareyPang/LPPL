@@ -133,8 +133,8 @@ def test_history_snapshot_has_only_asof_prices_and_independent_research():
     assert record["top"]["drawdown_price"]["value"] is None
     assert record["validation"] == []
     assert record["first_visible_at"] is None
-    assert record["future_calendar"]["status"] == "weekday_estimate"
-    assert record["future_calendar"]["verified"] is False
+    assert record["future_calendar"]["status"] == "exchange_calendar"
+    assert record["future_calendar"]["verified"] is True
     historical = pipeline.history_frame(record)
     assert historical["research"]["cycles_1_5"] == record["research"]["cycles_1_5"]
     assert historical["params"] == record["params"]
@@ -230,9 +230,29 @@ def test_raw_output_under_git_repository_rejected():
 
 def mock_runner(monkeypatch, data=None):
     data = frame(40) if data is None else data
-    meta = {"asof": str(data.date.iloc[-1].date()), "source": "fixture"}
+    meta = {
+        "asof": str(data.date.iloc[-1].date()),
+        "source": "fixture",
+        "fetched_at": datetime.now(UTC).isoformat(),
+        "timezone": "America/New_York",
+        "exchange": "XNYS",
+        "adjustment": "none",
+        "volume_unit": "vendor_native",
+        "public_redistribution": "NOT_ESTABLISHED",
+    }
     monkeypatch.setattr(pipeline, "WINDOWS", (10,))
     monkeypatch.setattr(pipeline, "fetch_snapshot", lambda *a, **k: (data, meta))
+    monkeypatch.setattr(
+        pipeline,
+        "fetch_cross_check",
+        lambda *_a, **_k: {
+            "provider": "fixture",
+            "overlap": 10,
+            "max_rel_diff": 0.0,
+            "missing_in_yahoo": 0,
+            "status": "ok",
+        },
+    )
     monkeypatch.setattr(pipeline, "method_identity", lambda: {"hash": "mock"})
     monkeypatch.setattr(pipeline, "ProcessPoolExecutor", ThreadPoolExecutor)
     monkeypatch.setattr(pipeline.time, "sleep", lambda _: None)
@@ -258,8 +278,9 @@ def test_completed_fits_with_export_failure_never_reports_complete(monkeypatch, 
 
 def test_corrupt_fit_cache_does_not_abort_other_dates(monkeypatch, tmp_path):
     data = mock_runner(monkeypatch)
-    asof = data.date.iloc[-1]
-    key = pipeline.fit_key(data, asof, 10, "g3", {"hash": "mock"})
+    validated, _ = pipeline.validate_market_sessions(data, "us", datetime.now(UTC))
+    asof = validated.date.iloc[-1]
+    key = pipeline.fit_key(validated, asof, 10, "g3", {"hash": "mock"})
     path = tmp_path / "fits/US_SPX" / str(asof.date()) / f"10-{key}.json"
     path.parent.mkdir(parents=True)
     path.write_text("not json", encoding="utf-8")
@@ -337,4 +358,8 @@ def test_missing_ohlc_is_labeled_not_synthesized(invalid):
     assert price["last_bar_kind"] == "close_only"
     assert price["open"][-1] is None
     assert price["ohlc_invalid_fields"][str(asof.date())] == ["open"]
+    assert record["source_meta"]["public_redistribution"] == "NOT_ESTABLISHED"
+    assert record["source_meta"]["publication_decision"] == "owner_approved_2026-11-24"
+    assert record["future_calendar"]["exchange"] == "XKRX"
+    assert record["future_calendar"]["closures"]
     assert price["high"][-1] == 102.

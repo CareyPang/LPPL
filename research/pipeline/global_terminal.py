@@ -1,8 +1,8 @@
-"""Bounded global LPPLS research samples; no publication and no A-share overlays.
+"""Bounded global LPPLS research samples; no forecasts or A-share overlays.
 
-Reuses the repository's fit_asof and cluster aggregation. Outputs are local,
-versioned research reconstructions, never forward-published forecasts. No
-bootstrap, 104-week replay, price targets or fabricated fallback data.
+Reuses the repository's fit_asof and cluster aggregation. Outputs are versioned
+research reconstructions, not forecasts. No bootstrap, 104-week replay, price
+targets or fabricated fallback data.
 """
 from __future__ import annotations
 
@@ -24,7 +24,13 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 import numpy as np
 import pandas as pd
 
-from ..data.global_terminal import ASSETS, fetch_snapshot
+from ..data.global_terminal import (
+    ASSETS,
+    fetch_cross_check,
+    fetch_snapshot,
+    validate_market_sessions,
+)
+from ..data.trading_calendar import future_calendar_metadata
 from .stock_jobs import atomic_json as _atomic_json
 
 WINDOWS = (10, 14, 18, 21, 30, 42, 52, 63, 64, 84, 105, 126,
@@ -234,10 +240,28 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
         price["note"] += f"其中{int(missing_ohlc.sum())}日存在缺失或无效的开/高/低字段，保留收盘价，不补造K线。"
     fields = ["id", "ticker", "market", "kind", "currency", "timezone", "exchange", "fetched_at",
               "source", "url", "raw_sha256", "normalized_sha256", "adjustment", "volume_unit", "history_vintage",
-              "normalizer_version", "metadata_file", "dropped_unclosed_bars", "provider_currency"]
+              "normalizer_version", "metadata_file", "dropped_unclosed_bars", "provider_currency",
+              "dropped_non_session_rows", "missing_sessions_last_250", "cross_check",
+              "publication_decision"]
     source_meta = {key: metadata.get(key) for key in fields}
     source_meta.update(asset_type=asset["kind"], source_asof=metadata["asof"], model_asof=str(asof.date()),
-                       public_redistribution=metadata.get("public_redistribution", "NOT_ESTABLISHED"))
+                       public_redistribution=metadata.get("public_redistribution", "NOT_ESTABLISHED"),
+                       publication_decision=metadata.get("publication_decision", "owner_approved_2026-11-24"))
+    calendar_meta = future_calendar_metadata(
+        calendar, asset["market"], pd.Timestamp(asof)
+    )
+    calendar_verified = bool(calendar_meta.get("source"))
+    future_calendar = {
+        **calendar_meta,
+        "status": "exchange_calendar" if calendar_verified else "weekday_estimate",
+        "verified": calendar_verified,
+        "official_verification": "NOT_ESTABLISHED",
+        "note": (
+            "Exchange sessions use the pinned exchange_calendars schedule."
+            if calendar_verified
+            else "Future dates use weekdays because no exchange calendar is configured."
+        ),
+    }
     return clean({"schema_version": "global_terminal_v1", "symbol": asset_id, "code": asset_id,
         "name": asset["name"], "asset_type": asset["kind"], "market": asset["market"],
         "currency": asset["currency"], "timezone": metadata["timezone"], "exchange": metadata["exchange"],
@@ -246,10 +270,7 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
         "data_version": metadata["normalized_sha256"], "source": metadata["source"], "source_meta": source_meta,
         "evidence": "research_candidate", "evidence_levels": {"research_candidate": "国际市场稀疏窗口研究样本"},
         "params": {**method, "optimizer": "de_lbfgsb" if asset_id == "US_MRVL" else "g3", "window_count": len(expected)},
-        "future_calendar": {"market": asset["market"], "exchange": metadata["exchange"],
-            "status": "weekday_estimate", "verified": False, "official_verification": "NOT_ESTABLISHED",
-            "closures": [], "source": None, "holidays_through": None,
-            "note": "未来日期按工作日外推，未核验本市场节假日；保留交易日提前量原值。"},
+        "future_calendar": future_calendar,
         "price_history": price, "top": top, "bottom": {}, "validation": [], "stock_meta": stock_meta,
         "replay_kind": "historical_reconstruction", "research": {
             "sample_scope": "current plus two registered earlier trading-day endpoints; no outcome scoring",
@@ -258,7 +279,7 @@ def make_record(asset_id: str, frame: pd.DataFrame, metadata: dict, asof: pd.Tim
             "oscillation_formula": "omega/(2*pi)*log(abs(tc)/max(abs(tc-t2),1e-3))",
             "filter_diagnostics": filter_diagnostics(derived, filters),
             "fit_input_hashes": {str(cell["n"]): cell["fit_input_hash"] for cell in cells},
-            "future_calendar_verified": False, "stage_top_score": None,
+            "future_calendar_verified": calendar_verified, "stage_top_score": None,
             "export_code_hash": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},
         "status": "complete_sample", "fit_counts": {"expected": len(expected), "completed": len(cells), "failed": 0, "pending": 0}})
 
@@ -421,7 +442,46 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
             continue
         try:
             frame, metadata = fetch_snapshot(asset_id, root, refresh=refresh)
+            fetched_at = datetime.fromisoformat(
+                metadata.get("fetched_at", datetime.now(UTC).isoformat())
+            )
+            frame, session_meta = validate_market_sessions(
+                frame, ASSETS[asset_id]["market"], fetched_at
+            )
+            if metadata.get("provider", "yahoo") != "yahoo":
+                session_meta["missing_sessions_last_250"] = None
+            metadata.update(session_meta)
+            metadata["publication_decision"] = "owner_approved_2026-11-24"
+            metadata["public_redistribution"] = metadata.get(
+                "public_redistribution", "NOT_ESTABLISHED"
+            )
             selected_asofs(frame)  # Reject too-short sources here, not outside the source error boundary.
+            time.sleep(0.5)
+            metadata["cross_check"] = fetch_cross_check(asset_id, frame, fetched_at)
+            if metadata["cross_check"]["status"] == "mismatch":
+                entry = {
+                    "id": asset_id,
+                    "symbol": asset_id,
+                    **ASSETS[asset_id],
+                    "status": "source_mismatch",
+                    "asof": metadata["asof"],
+                    "source": metadata["source"],
+                    "source_meta": metadata,
+                }
+                latest_path = output / f"{asset_id}_latest.json"
+                if latest_path.is_file():
+                    try:
+                        previous = json.loads(latest_path.read_text(encoding="utf-8"))
+                        entry["asof"] = previous.get("asof", entry["asof"])
+                        entry["latest_path"] = f"global/{asset_id}_latest.json"
+                        entry["history_path"] = f"global/{asset_id}_history.json"
+                    except (OSError, json.JSONDecodeError):
+                        pass
+                entries[asset_id] = entry
+                print(json.dumps({"event": "source_mismatch", "id": asset_id,
+                                  "cross_check": metadata["cross_check"]}), flush=True)
+                time.sleep(.35)
+                continue
             sources[asset_id] = (frame, metadata)
             entries[asset_id] = {"id": asset_id, "symbol": asset_id, **ASSETS[asset_id], "status": "queued",
                 "asof": metadata["asof"], "source": metadata["source"], "source_meta": metadata,
@@ -433,12 +493,14 @@ def run(root: Path, asset_ids: list[str], workers: int, budget_seconds: float, r
         time.sleep(.35)
     counters = {"expected": sum(sum(n <= len(f[f.date <= date]) for n in WINDOWS) for f, _ in sources.values() for date in selected_asofs(f)),
                 "completed": 0, "failed": 0, "pending": 0, "source_failed": len(failures),
+                "source_mismatch": sum(entry["status"] == "source_mismatch" for entry in entries.values()),
                 "exports_expected": len(sources) * 3, "exports_completed": 0, "exports_failed": 0}
     def save_progress():
         counters["pending"] = counters["expected"] - counters["completed"] - counters["failed"]
+        terminal_statuses = {"complete_sample", "source_mismatch"}
         status = "complete" if (not counters["pending"] and not counters["failed"] and not failures
             and counters["exports_completed"] == counters["exports_expected"] and not counters["exports_failed"]
-            and all(entry["status"] == "complete_sample" for entry in entries.values())) else "partial"
+            and all(entry["status"] in terminal_statuses for entry in entries.values())) else "partial"
         snapshot = {"schema_version": "global_terminal_catalog_v1", "generated_at": datetime.now(UTC).isoformat(),
                     "status": status, "counts": counters.copy(), "elapsed_seconds": time.perf_counter() - start,
                     "method": method, "asof_offsets_trading_days": [0, 5, 10], "assets": list(entries.values()),
