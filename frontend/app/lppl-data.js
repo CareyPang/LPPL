@@ -41,7 +41,7 @@
     },
     capabilities: async () => {
       if (!globalAnalysisConnected()) return { available: false, reason: '本页面未连接可运行的本机后端；已有结果仍可浏览。' };
-      try { return await fetchJSONBounded(GLOBAL_ANALYSIS_API, { cache: 'no-store' }, true) || { available: false, reason: '本机服务尚未提供回测接口。' }; }
+      try { return await fetchJSONBounded(GLOBAL_ANALYSIS_API, { cache: 'no-store' }, true) || { available: false, reason: '回测暂不可用。' }; }
       catch { return { available: false, reason: '本机回测服务暂不可用；已有行情与结果仍可浏览。' }; }
     },
     startAnalysis: ({ symbol, asof = null, refresh = true }) => {
@@ -85,7 +85,7 @@
     const controller = new AbortController();
     let timeout;
     const timeoutError = () => {
-      const error = Error('连接暂时超时，任务状态尚未确认；已有结果仍可查看。');
+      const error = Error('任务状态确认中，已有结果仍可查看。');
       error.code = 'REQUEST_TIMEOUT';
       return error;
     };
@@ -253,7 +253,7 @@
     return code;
   };
   const queryApi = () => {
-    if (!QUERY_API) throw new Error('个股公开查询 API 尚未配置');
+    if (!QUERY_API) throw new Error('个股查询暂不可用');
     return QUERY_API;
   };
   const queryJSON = async (path, options, deadlineMs = 12000) => {
