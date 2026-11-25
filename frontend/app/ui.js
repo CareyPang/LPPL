@@ -31,8 +31,8 @@
     const P = CP.PHASES.find((p) => p.k === ph);
     let head = '', sub = '';
     if (ph === 'crit') { head = '临界区：准备逃顶'; sub = '多个时间尺度同时指向 ' + U.range(rm.topW.loDate, rm.topW.hiDate, R.asof, last) + ' 见顶。'; }
-    else if (ph === 'accel') { head = rm.topW ? '加速期：顶部结构正在形成' : '加速期：上涨在加速'; sub = rm.topW ? '已有少数尺度指向 ' + U.range(rm.topW.loDate, rm.topW.hiDate, R.asof, last) + '，一致度还不够高，先不动。' : '暂未出现合格的见顶窗口，持有并每周复查。'; }
-    else if (ph === 'crash') { head = '破裂期：不要抄底'; sub = '自近期高点已回撤 ' + pct(1 - R.rm.close / R.rm.hi60) + '，底部条件尚未共振。'; }
+    else if (ph === 'accel') { head = rm.topW ? '加速期：顶部结构正在形成' : '加速期：上涨在加速'; sub = rm.topW ? '已有少数尺度指向 ' + U.range(rm.topW.loDate, rm.topW.hiDate, R.asof, last) + '，一致度还不够高，先不动。' : '当前没有合格的见顶窗口，持有并每周复查。'; }
+    else if (ph === 'crash') { head = '破裂期：不要抄底'; sub = '自近期高点已回撤 ' + pct(1 - R.rm.close / R.rm.hi60) + '，底部条件还没有形成共振。'; }
     else if (ph === 'base') { head = '筑底期：分批进场'; sub = '底部多条件共振通过，按三批计划建仓。'; }
     else if (ph === 'wave2') { head = '二波：持有'; sub = '已收复一半以上跌幅，持有并重新监测下一个顶部。'; }
     else { head = '平稳期：无临界结构'; sub = '各尺度都没有合格的泡沫结构，没有逃顶信号。'; }

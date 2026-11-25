@@ -190,12 +190,14 @@ def test_current_and_history_representative_uses_adjusted_sse_and_keeps_index(
     us = export_contract.build_record(
         "US_SPY", str(date.date()), d, r, cal, ohlc, market="us"
     )
-    assert us["future_calendar"] == {
-        "market": "us",
-        "holidays_through": None,
-        "closures": [],
-        "source": None,
-    }
+    # International exports now use the pinned exchange calendar rather than
+    # the former weekday-only/unknown-calendar fallback.
+    us_calendar = us["future_calendar"]
+    assert us_calendar["market"] == "us"
+    assert us_calendar["exchange"] == "XNYS"
+    assert us_calendar["source"] == "exchange_calendars==4.13.3:XNYS"
+    assert us_calendar["holidays_through"] == "2029-12-31"
+    assert "2024-07-04" in us_calendar["closures"]
     historical = export_contract._history_frame(
         d, r, date, cal, 100.0, "dev", include_scenarios=True
     )

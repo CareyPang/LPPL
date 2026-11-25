@@ -17,6 +17,10 @@ if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
     mkdir -p "$SITE/lab/mock/data/nt_etf"
     git -C "$ROOT" archive stock-results nt_etf | tar -x -C "$SITE/lab/mock/data/"
   fi
+  if git -C "$ROOT" cat-file -e stock-results:global/catalog.json 2>/dev/null; then
+    mkdir -p "$SITE/lab/mock/data/global"
+    git -C "$ROOT" archive stock-results global | tar -x -C "$SITE/lab/mock/data/"
+  fi
   if git -C "$ROOT" cat-file -e stock-results:market 2>/dev/null; then
     git -C "$ROOT" archive stock-results market | tar -x -C "$SITE/lab/mock/data/"
   fi
@@ -72,3 +76,6 @@ PY
   fi
 fi
 mkdir -p "$SITE/lab/mock/data"
+cp "$ROOT/reports/bottom_calibration.json" "$SITE/lab/mock/data/"
+cp "$ROOT/reports/bottom_location.json" "$SITE/lab/mock/data/"
+cp "$ROOT/reports/long_window_pit.json" "$SITE/lab/mock/data/"

@@ -22,6 +22,8 @@ on:
     paths:
       - .github/workflows/index_replay.yml
       - research/pipeline/daily.py
+      - research/pipeline/index_daily.py
+      - research/features/aftershock.py
 
 permissions:
   contents: write
@@ -66,7 +68,7 @@ jobs:
         run: |
           set +e
           mkdir -p out/index
-          LPPLS_BOX=v2 python -m research.pipeline.daily "$SYM" --asof "$ASOF" --out out/index 2>&1 | tee out/index/run.log
+          LPPLS_BOX=v2 python -m research.pipeline.index_daily "$SYM" --asof "$ASOF" --out out/index 2>&1 | tee out/index/run.log
           result=${PIPESTATUS[0]}
           set -e
           if (( result == 0 )) && [[ -f "out/index/${SYM}_${ASOF}.json" ]]; then

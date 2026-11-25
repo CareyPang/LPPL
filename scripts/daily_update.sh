@@ -8,7 +8,7 @@ export LPPLS_BOX=v2
 default_syms="sh000001 sh000016 sh000300 sh000905 sz399001 sz399006"
 read -r -a syms <<< "${SYMS:-$default_syms}"
 for s in "${syms[@]}"; do
-  python -m research.pipeline.daily "$s" "$@"
+  python -m research.pipeline.index_daily "$s" "$@"
   missing=()
   for split_dir in data/features/lppls_v2_g3 data/features/lppls_v2_g3_cal data/features/lppls_v2_g3_test; do
     [[ -f "$split_dir/$s.parquet" ]] || missing+=("$split_dir/$s.parquet")

@@ -24,7 +24,7 @@ for (const evidence of [undefined, 'none', 'dev_only', 'dev_failed', 'fail_i_iii
     assert.match(result, /尚无可显示结果/);
     assert.match(result, /不能解释为没有风险/);
     assert.doesNotMatch(result, /不在风险窗口|0 \/ 6|2026-12-01|2026-12-10|研究候选/);
-    assert.match(result, /6–12 月主簇<\/small><b class="">未计算<\/b><span class="sub">这个尺度尚未计算/);
+    assert.match(result, /6–12 月主簇<\/small><b class="">未计算<\/b><span class="sub">这个尺度未计算/);
     assert.doesNotMatch(result, /合格拟合的尺度/);
   });
 }
@@ -109,7 +109,7 @@ test('visible per-scale clusters drive the escape pill, summary, tiles, and watc
   assert.equal(labels.topState[0], 'hot');
   assert.equal(labels.topState[1], '有顶部聚类区间');
   assert.match(result, /6–12 月主簇 2026-12-28 – 2027-01-11（占该尺度合格拟合 100%）/);
-  assert.match(result, /12–24 月 这个尺度尚未计算/);
+  assert.match(result, /12–24 月 这个尺度未计算/);
   assert.match(result, /区间不是顶部日期，未校准，仅供参考/);
   assert.match(result, /<b class="range-value">2026-12-28 – 2027-01-11<\/b><span class="sub">占 100%<\/span>/);
   assert.match(html, /\.tile\.range-tile b[^}]*white-space:\s*nowrap/);

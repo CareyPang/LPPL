@@ -98,8 +98,8 @@ test('unknown, rule and failure evidence is fail-closed; descriptive needs posit
 test('metadata reports unknown units and model adjustment instead of inferring from note', () => {
   const data = Core.assembleStockData('600519', { symbol: 'sh600519', price_history: { note: 'daily' } },
     { price: [{ date: '2026-06-26', close: 10 }] });
-  assert.equal(data.modelAdjustment, '未记录'); assert.equal(data.volumeUnit, '未记录');
-  assert.equal(data.quoteUnit, 'CNY · 元'); assert.equal(data.tradingStatus, '未记录');
+  assert.equal(data.modelAdjustment, ''); assert.equal(data.volumeUnit, '');
+  assert.equal(data.quoteUnit, 'CNY · 元'); assert.equal(data.tradingStatus, '');
 });
 test('a mismatched model cannot relabel market bars and a mismatched quote is rejected', () => {
   const market = { symbol: 'sh600519', price: [{ date: '2026-06-26', close: 10 }] };
@@ -140,6 +140,16 @@ test('raw close-only history cannot become synthetic OHLC via a legacy adapter',
   const data = Core.assembleIndexData('sh000001', result);
   assert.equal(data.bars[0].open, null); assert.equal(Chart.priceMode(data.bars), 'close');
   assert.equal(Chart.toCloses(data.bars).length, 2);
+});
+test('stock charts keep valid candles when isolated OHLC rows are inconsistent', () => {
+  const bars = [
+    { date: '2026-06-25', open: 10, high: 12, low: 9, close: 11, volume: 100 },
+    { date: '2026-06-26', open: 11, high: 12, low: 12, close: 11, volume: 110 },
+    { date: '2026-06-29', open: 11, high: 13, low: 10, close: 12, volume: 120 },
+  ];
+  assert.equal(Chart.toCandles(bars).length, 2);
+  assert.equal(Chart.priceMode(bars), 'close');
+  assert.equal(Chart.priceMode(bars, true), 'candles');
 });
 test('independent module timeout rejects without cancelling other completed work', async () => {
   const market = Reader.timed(async () => 'market-ready', '行情', 100);

@@ -1,7 +1,15 @@
 import numpy as np
 import pandas as pd
 
-from research.features.bottom_feats import bear_state, liquidity, omori
+from research.features.bottom_feats import (
+    AFTER_W,
+    BASE_W,
+    SHOCK_LOOK,
+    _freeze_sigma_ref,
+    bear_state,
+    liquidity,
+    omori,
+)
 
 
 def _series(n=900, seed=0):
@@ -20,6 +28,78 @@ def test_omori_marks_shock_and_decays():
     assert o.after_ratio_20.iloc[625] > 1.5  # 主震后 20 日余震率远高于基准
     assert o.omori_p_20.iloc[700] > 0  # 余震已衰减
     assert o.days_since_shock_20.iloc[300] == 250  # 无主震时取上限
+
+
+def test_early_shock_without_finite_sigma_keeps_omori_metrics_nan():
+    returns = np.zeros(320)
+    returns[100] = -0.12
+    logp = pd.Series(np.cumsum(returns), pd.bdate_range("2010-01-01", periods=len(returns)))
+
+    result = omori(logp, 2.0)
+
+    assert result.days_since_shock_20.iloc[100] == 0
+    assert result.days_since_shock_20.iloc[115] == 15
+    assert result.after_ratio_20.iloc[100:130].isna().all()
+    assert result.omori_p_20.iloc[100:130].isna().all()
+
+
+def test_omori_freezes_pre_shock_sigma_through_high_volatility_episode():
+    logp, _ = _series()
+    returns = logp.diff()
+    sigma = returns.rolling(BASE_W).std().shift(1)
+    drawdown = logp - logp.rolling(SHOCK_LOOK).max()
+    shocks = (drawdown <= -0.10) & (drawdown.shift(1) > -0.10)
+    frozen = _freeze_sigma_ref(sigma, shocks)
+    reference = sigma.iloc[600]
+
+    assert np.isfinite(reference)
+    assert frozen.iloc[600:640].eq(reference).all()
+    old_count = (returns.abs().iloc[601:640] > 2.0 * sigma.iloc[601:640]).sum()
+    frozen_count = (returns.abs().iloc[601:640] > 2.0 * frozen.iloc[601:640]).sum()
+    assert frozen_count > old_count
+
+
+def test_second_shock_baseline_uses_unfrozen_rolling_sigma():
+    returns = np.zeros(520)
+    returns[300] = -0.12
+    returns[301:311] = -0.04
+    returns[311:364] = 0.01
+    returns[450] = -0.12
+    returns[460] = -0.12
+    logp = pd.Series(np.cumsum(returns), pd.bdate_range("2010-01-01", periods=len(returns)))
+    r = logp.diff()
+    sig_ref = r.rolling(BASE_W).std().shift(1)
+    drawdown = logp - logp.rolling(SHOCK_LOOK).max()
+    shocks = (drawdown <= -0.10) & (drawdown.shift(1) > -0.10)
+    shock_indices = np.flatnonzero(shocks.to_numpy())
+    assert shock_indices.tolist() == [300, 450]
+
+    frozen = _freeze_sigma_ref(sig_ref, shocks)
+    frozen_exceed = (r.abs() > 2.0 * frozen).astype(float)
+    rolling_exceed = (r.abs() > 2.0 * sig_ref).astype(float)
+    second_shock = shock_indices[1]
+    expected_base_at = rolling_exceed.rolling(BASE_W).mean().iloc[second_shock - 1]
+    frozen_base_at = frozen_exceed.rolling(BASE_W).mean().iloc[second_shock - 1]
+    recent = frozen_exceed.iloc[second_shock + 1 : second_shock + AFTER_W + 1].mean()
+    result = omori(logp, 2.0)
+
+    assert abs(expected_base_at - frozen_base_at) > 1e-3
+    assert np.isclose(
+        result["after_ratio_20"].iloc[second_shock + AFTER_W],
+        recent / max(expected_base_at, 1 / BASE_W),
+    )
+
+
+def test_omori_sigma_updates_only_at_the_next_accepted_shock():
+    sigma = pd.Series(np.arange(1.0, 101.0))
+    shocks = pd.Series(False, index=sigma.index)
+    shocks.iloc[10] = True
+    shocks.iloc[10 + SHOCK_LOOK] = True
+
+    frozen = _freeze_sigma_ref(sigma, shocks)
+
+    assert frozen.iloc[10 : 10 + SHOCK_LOOK].eq(sigma.iloc[10]).all()
+    assert frozen.iloc[10 + SHOCK_LOOK :].eq(sigma.iloc[10 + SHOCK_LOOK]).all()
 
 
 def test_liquidity_and_state_are_as_of():

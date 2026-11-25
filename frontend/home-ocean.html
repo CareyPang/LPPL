@@ -113,7 +113,7 @@ a{color:inherit;text-decoration:none}
 .hero h1 .ln{display:block}
 .hero h1 .ln:nth-child(2){padding-left:.5em}
 .hero p{font-size:clamp(16px,1.3vw,18px);line-height:1.7;color:var(--ink2);max-width:460px}
-/* 引语：恢复无底板的原版样式；只靠贴字的柔光描边保证可读，不遮挡背后的天空 */
+/* 引语：无底板样式，只靠贴字的柔光描边保证可读，不遮挡背后的天空 */
 /* 藏头两句：首字略加重，两句各占一行 */
 .hero p.poem{max-width:none;font-family:var(--serif);font-weight:500;font-size:clamp(24px,2.5vw,40px);line-height:1.5;letter-spacing:.14em;
   position:relative;padding-top:var(--s5)}
@@ -384,7 +384,7 @@ footer{margin-top:80px;padding:var(--s5) 0 calc(env(safe-area-inset-bottom) + 24
     <div class="cols">
       <div class="col glass reveal"><div class="k">21<small>个窗口</small></div><h4>三个尺度</h4><p>短期 30–105 日、中期 120–250 日、长期 300–700 日，每个尺度 7 个回看窗口，顶部和底部各拟合一次。</p></div>
       <div class="col glass reveal"><div class="k">3<small>个参数</small></div><h4>稳定标定</h4><p>按 Filimonov–Sornette 方法消去线性参数，只对 t<sub>c</sub>、m、ω 做非线性搜索。</p></div>
-      <div class="col glass reveal"><div class="k">0<small>次校准</small></div><h4>研究输出</h4><p>置信度是“通过筛选的窗口占比”，不是事件发生概率，尚未做样本外校准。</p></div>
+      <div class="col glass reveal"><div class="k">0<small>次校准</small></div><h4>研究输出</h4><p>置信度是“通过筛选的窗口占比”，不是事件发生概率；没有样本外校准结果。</p></div>
     </div>
     <div class="warn reveal">A 股有涨跌停、T+1 和停牌等限制，模型里的“价格触及”不等于实际能成交。</div>
     <div class="creed reveal">浪成于微澜之间，<br>也终归于平静。<small lang="en">Small causes, large waves — and no wave is fate.</small></div>
@@ -1296,7 +1296,7 @@ async function sndToggle(){
   }catch(e){
     SND.on=false; stopEvents();
     if(SND.master) SND.master.gain.value=0;
-    $('#sndstatus').textContent='声音暂未启用，请再点一次声音开关，或检查浏览器声音权限。';
+    $('#sndstatus').textContent='声音功能当前未启用，请再点一次声音开关，或检查浏览器声音权限。';
   }finally{
     SND.busy=false; sndBtn.disabled=false; soundLabel();
   }

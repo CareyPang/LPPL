@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   const labels = {
-    idle: '尚未生成', loading: '读取中', submitting: '提交中', queued: '排队中',
+    idle: '未生成', loading: '读取中', submitting: '提交中', queued: '排队中',
     running: '计算中', current_running: '计算中', history_running: '计算中', current_ready: '可查看', history_ready: '可查看', publishing: '结果发布中', reconnecting: '连接恢复中',
     reconciliation_required: '待核对', paused: '任务已保留', unconfirmed: '提交待确认', ready: '可查看',
     stale: '缓存可查看 · 刷新未完成', failed: '本次更新未完成',
@@ -125,20 +125,39 @@
       },
     });
 
+    function renderAsofConvergence() {
+      const host = $('stock-asof-convergence-card');
+      const copy = $('stock-asof-convergence-copy');
+      if (!host || !copy) return;
+      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
+      const convergence = frames.length && root.CPAlertLedger
+        ? root.CPAlertLedger.latestConvergence(frames, lastHistory?.tops || [], '6-12m')
+        : null;
+      const latest = convergence?.latest;
+      const result = latest?.convergence;
+      if (!latest || !result) {
+        host.hidden = true;
+        copy.textContent = '';
+        return;
+      }
+      const drift = result.drift_ratio == null ? '—' : String(result.drift_ratio);
+      copy.textContent = `顶部聚类中心 ${latest.median_date || '—'} · ${result.label} · 漂移比 ${drift} · 锁定 ${result.stable_weeks || 0} 轮`;
+      host.hidden = false;
+    }
+
     function rebuildFcoOverlay() {
       fcoByDate = new Map();
+      renderAsofConvergence();
       if (!allPrices.length) return;
-      // 1) 个股严格 PIT 底部出清绿柱（无前瞻）
-      if (root.BottomAction && typeof root.BottomAction.evaluateStockSeries === 'function') {
-        const evalRes = root.BottomAction.evaluateStockSeries(allPrices, { code: lastCode || shownMarketCode });
-        for (const item of evalRes.series || []) {
-          if (item.bottomIntensity > 0) {
-            fcoByDate.set(item.date, { top: 0, bottom: item.bottomIntensity, locked: false });
-          }
+      // 1) Only published bottom observations; no competing client-side score.
+      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
+      for (const frame of frames) {
+        const intensity = frame?.fco_neg_intensity;
+        if (frame?.asof && typeof intensity === 'number' && Number.isFinite(intensity) && intensity > 0 && intensity <= 1) {
+          fcoByDate.set(frame.asof, { top: 0, bottom: intensity, locked: false });
         }
       }
       // 2) 若有历史回放帧，叠加顶部 FCO 红柱并做连续 as-of 不漂移锁定标记
-      const frames = Array.isArray(lastHistory?.frames) ? lastHistory.frames : [];
       if (frames.length) {
         const eps = root.CPAlertLedger ? root.CPAlertLedger.episodes(frames, lastHistory?.tops || [], '6-12m') : [];
         const lockedRanges = eps
@@ -479,7 +498,7 @@
       );
       const summary = band
         ? '情景区间：' + SCALE_NAMES[band.scale] + ' ' + band.q20_date + ' 至 ' + band.q80_date + '（未校准）'
-        : root.RuleLabels?.reasonText(reason) || '这个尺度尚未计算';
+        : root.RuleLabels?.reasonText(reason) || '这个尺度未计算';
       canvas.setAttribute('aria-label',
         '未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量；' + summary);
     }
@@ -533,6 +552,7 @@
       const end = cutoffIndex + 1;
       setWindow(Math.max(0, end - span), end, end - 1);
       writeQueryParam('asof', frame.asof);
+      options.onHistoryChange?.(frame);
       if (eventDate && eventDate <= frame.asof) focusDate(eventDate, eventId);
       return { ok: true };
     }
@@ -549,6 +569,7 @@
       historyCutoffIndex = -1;
       renderHistoryBanner();
       writeQueryParam('asof', null);
+      options.onHistoryChange?.(null);
       updateScenario(state || {});
       updateMarketDate(state?.market, state?.current, state?.code, state?.marketStatus);
       const end = allPrices.length;
@@ -851,7 +872,7 @@
           renderHistoryBanner();
         }
         lastCode = next.code; lastCurrent = null; lastHistory = null; lastMarket = null;
-        $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; visibility?.observe(null, null); showMarket(null, next.code, false);
+        $('results').hidden = true; $('asof').textContent = '—'; $('first-visible-note').textContent = ''; $('first-visible-note').hidden = true; visibility?.observe(null, null); showMarket(null, next.code, false);
         options.onCodeChange?.(next.code);
       }
       $('market-panel').hidden = false; $('task-stages').hidden = false;
@@ -868,17 +889,16 @@
         lastCurrent = next.current; lastHistory = history;
         rebuildFcoOverlay();
         options.renderResult(next.current, history, next.market);
-        $('first-visible-note').textContent = '尚未记录此结果在本浏览器的可见时间。';
         visibility?.observe($('summary').querySelector('.top') || $('risk'), next.current);
         if (next.history && !history) $('history-note').textContent =
-          '已有历史回放与当前模型版本尚未匹配，可重新生成；当前分析仍可查看。';
+          '历史回放与当前模型版本不匹配，可重新生成；当前分析仍可查看。';
       }
       updateScenario(next);
       updateMarketDate(next.market, next.current, next.code, next.marketStatus);
       applyInitialUrl(next, history);
       $('analysis-pending').hidden = !!next.current;
       $('analysis-pending').textContent = next.currentStatus === 'failed'
-        ? '本次分析暂未完成。行情仍可查看，也可以稍后重试。'
+        ? '本次分析未完成。行情仍可查看，也可以稍后重试。'
         : '当前分析在后台更新。你可以先看行情、切换股票，或稍后回来查看。';
       $('market-stage').textContent = '日线行情 · ' + (labels[next.marketStatus] || '读取中');
       $('current-stage').textContent = '当前分析 · ' + (labels[next.currentStatus] || '等待中');
@@ -891,7 +911,7 @@
       const staleReasons = {
         analysis_asof_behind_market: '分析截至日早于行情截至日。',
         source_revision_changed: '已有结果与当前计算代码版本不同。',
-        analysis_asof_or_source_behind_market: '结果截至日或计算代码版本尚未与当前行情核对一致。',
+        analysis_asof_or_source_behind_market: '结果截至日或计算代码版本与当前行情不一致。',
         refresh_failed_previous_result_retained: '本次刷新失败，保留上次成功结果及原始截止日。',
       };
       if (outdated && staleReasons[next.stale_reason]) messages.push(staleReasons[next.stale_reason]);

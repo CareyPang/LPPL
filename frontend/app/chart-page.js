@@ -11,7 +11,7 @@
   if (!LPPL || !Core || !page) return;
 
   var el = function (id) { return document.getElementById(id); };
-  var context = Core.parseContext(root.location.search, LPPL.SYMS || []);
+  var context = Core.parseContext(root.location.search, LPPL.SYMS || [], LPPL.GLOBAL_SYMS || []);
   var chart = null;
   var drawing = null;
   var current = null;
@@ -26,6 +26,13 @@
   var intradayRequest = 0;
   var activeIntradayMetadata = null;
   var selectedPeriod = 'd';
+  var terminal = null;
+  var longHorizon = null;
+  var analysisJob = null;
+  var aftershock = null;
+  var decisionController = null;
+  var decisionPanel = null;
+  var futureBars = null;
   var scales = Core.SCALES;
   var scaleLabels = {
     '2-4w': '2–4 周', '1-3m': '1–3 个月', '3-6m': '3–6 个月',
@@ -84,11 +91,33 @@
       ? [Object.assign({ rank: 'main', source: 'scale_window' }, window)] : [];
   }
 
+  function dailyPriceMode(data) {
+    return LPPLChart.priceMode(
+      data.bars || [], data.assetType === 'stock' && data.market !== 'cn',
+    );
+  }
+
+  function dailyPriceNote(data) {
+    if (dailyPriceMode(data) === 'close') {
+      return 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。';
+    }
+    var closeCount = LPPLChart.toCloses(data.bars || []).length;
+    var candleCount = LPPLChart.toCandles(data.bars || []).length;
+    if (data.assetType === 'stock' && data.market !== 'cn' && candleCount < closeCount) {
+      return '日线 K 线与成交量；' + (closeCount - candleCount) + ' 个 OHLC 不完整交易日未绘制 K 线。';
+    }
+    return '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+  }
+
   function dateRange(band) {
     return String(band.q20_date || '—') + '–' + String(band.q80_date || '—');
   }
 
   function renderEvidence(data, selectedScale) {
+    if (terminal) terminal.render(data, intervalRows(data, selectedScale).filter(function (band) {
+      return Core.bandEvidencePolicy(evidenceCode(data, selectedScale), band).showDates;
+    }));
+    if (decisionController) decisionController.render(data);
     var state = el('evidence-state');
     var ruleSource = el('evidence-rule-source');
     var list = el('interval-list');
@@ -100,7 +129,7 @@
     if (data.modelStatus && data.modelStatus !== 'ok') {
       state.textContent = data.modelStatus === 'loading' ? '行情可先浏览，模型结果独立读取中…' : data.modelStatus === 'error'
         ? '模型结果读取失败：' + (data.modelMessage || '未知错误')
-        : '没有读到已发布的模型结果（可能尚未发布，或读取失败）';
+        : '当前没有可用的已发布模型结果。';
       var retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'retry-button evidence-retry-button';
@@ -114,10 +143,11 @@
       return;
     }
     ruleSource.hidden = false;
-    ruleSource.textContent = RuleLabels.RULES.box.source;
+    ruleSource.textContent = (Reader.globalAsset(LPPL, context) && data.ruleLabel ? data.ruleLabel + '。' + data.ruleSource : RuleLabels.RULES.box.source) +
+      (Core.researchNote(data) ? ' ' + Core.researchNote(data) : '');
     var evidence = evidenceFor(data, selectedScale);
     var bands = intervalRows(data, selectedScale);
-    state.textContent = '证据：' + (evidence && evidence.label || '证据状态未记录');
+    state.textContent = '证据：' + (evidence && evidence.label || '证据状态不可用');
     if (!evidence || !evidence.show) {
       // Keep main's four explicit reason labels, but missing fields alone do not
       // prove that an archived scale was never computed.
@@ -132,8 +162,20 @@
       var signal = indicator && (indicator.empty_reason || indicator.signal_status) || data.top && data.top.signal_status;
       var emptyReason = signal === 'no_qualified_fit' ? 'no_fit' :
         signal === 'not_computed' ? 'not_computed' : indicator && RuleLabels.emptyReason(data.top, selectedScale, false, true);
-      state.textContent = RuleLabels.reasonText(emptyReason) || '当前尺度未提供可核对区间';
+      state.textContent = RuleLabels.reasonText(emptyReason) || '当前尺度没有可核对区间';
       note.textContent = '没有区间不等于没有风险；可切换尺度，或在标的页检查拟合及过滤明细。';
+      var diagnostics = data.raw && data.raw.research && data.raw.research.filter_diagnostics;
+      if (diagnostics) {
+        var details = document.createElement('details'), heading = document.createElement('summary');
+        heading.textContent = '已经算完，为什么没有区间？'; details.appendChild(heading);
+        var explain = document.createElement('p'), steps = diagnostics.sequential_pass || {};
+        explain.textContent = '全尺度完成 ' + diagnostics.completed + ' 个窗口。按顺序筛选后剩余：方向 ' +
+          steps.B_negative + ' → 形状参数 ' + steps.m_0_1_to_0_9 + ' → 振荡参数 ' + steps.omega_6_to_13 +
+          ' → 临界点在之后0–90个交易日 ' + steps.ahead_0_to_90 + '；完整周期1.5口径最终 ' +
+          diagnostics.cycles_1_5_qualified + ' 个。另有 ' + diagnostics.tc_inside_sample +
+          ' 个最优拟合的临界点落在历史样本内。这里是拟合筛选数量，不是涨跌概率。';
+        details.appendChild(explain); note.appendChild(details);
+      }
       return;
     }
     bands.forEach(function (band, index) {
@@ -150,6 +192,7 @@
       var title = document.createElement('strong');
       title.textContent = band.source === 'scale_window'
         ? '已发布区间' : Clusters.label(band) || (index ? '次级簇' : '主簇');
+      if (band.q80_date < (context.asof || data.marketAsOf || data.modelAsOf || '')) title.textContent += ' · 历史区间已过';
       row.disabled = !policy.draw;
       row.appendChild(title);
       if (policy.showDates) {
@@ -206,7 +249,7 @@
   }
 
   async function selectPeriod(period) {
-    if (!['d', '30', '60'].includes(period) || context.assetType !== 'stock' || context.asof) return;
+    if (!['d', '30', '60'].includes(period) || context.assetType !== 'stock' || context.market !== 'cn' || context.asof) return;
     selectedPeriod = period;
     page.dataset.period = period;
     Array.from(el('period-selector').querySelectorAll('[data-period]')).forEach(function (button) {
@@ -227,9 +270,7 @@
         if (chart) chart.setData({ bars: [] });
         void load();
       }
-      el('price-mode-note').textContent = current && LPPLChart.priceMode(current.bars) === 'close'
-        ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
-        : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+      el('price-mode-note').textContent = dailyPriceNote(current || {});
       return;
     }
 
@@ -267,43 +308,58 @@
   }
 
   function setText(id, value) {
-    el(id).textContent = String(value == null || value === '' ? '未记录' : value);
+    el(id).textContent = String(value == null ? '' : value);
+  }
+
+  function setOptionalText(id, value) {
+    var node = el(id), text = value == null ? '' : String(value);
+    node.textContent = text;
+    node.hidden = !text;
+  }
+
+  function setMetaField(id, value) {
+    var node = el(id), text = value == null ? '' : String(value);
+    node.textContent = text;
+    node.hidden = !text;
+    var label = node.previousElementSibling;
+    if (label && label.tagName === 'DT') label.hidden = !text;
   }
 
   function renderMarketMetadata(data) {
     var metadata = Core.marketMetadata(data, selectedPeriod, activeIntradayMetadata);
-    setText('market-date', metadata.marketDate);
-    setText('data-source', metadata.dataSource);
+    setMetaField('market-date', metadata.marketDate);
+    setMetaField('data-source', metadata.dataSource);
   }
 
   function drawHeader(data) {
     setText('asset-name', data.name);
-    setText('asset-code', data.symbol);
-    setText('asset-exchange', data.exchange);
-    setText('asset-type', data.assetType === 'index' ? '指数 · 指数点位' : 'A 股 · CNY · 元');
-    setText('trading-status', '交易状态：' + (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    setText('asset-code', data.displayCode || data.symbol);
+    setOptionalText('asset-exchange', data.exchange);
+    setOptionalText('asset-type', Core.assetTypeLine(data));
+    setOptionalText('trading-status', data.tradingStatus ? '交易状态：' + data.tradingStatus : '');
     setText('identity-strip-name', data.name);
-    setText('identity-strip-code', data.symbol);
-    setText('identity-strip-meta', data.exchange + ' · ' + data.quoteUnit + ' · 交易状态：' +
-      (data.tradingStatus === '未记录' ? '未知（源未提供）' : data.tradingStatus));
+    setText('identity-strip-code', data.displayCode || data.symbol);
+    setOptionalText('identity-strip-meta', [data.exchange, data.quoteUnit,
+      data.tradingStatus ? '交易状态：' + data.tradingStatus : ''].filter(Boolean).join(' · '));
     updateIdentityStrip();
-    setText('model-date', '模型日期 ' +
-      (data.modelStatus === 'loading' ? '读取中' : data.modelStatus !== 'ok' ? '未读到' : data.modelAsOf || '未记录'));
+    setOptionalText('model-date', data.modelStatus === 'loading' ? '模型日期 读取中' :
+      data.modelStatus !== 'ok' ? '模型日期 未读到' : data.modelAsOf ? '模型日期 ' + data.modelAsOf : '');
     var asofTag = el('asof-tag');
     asofTag.hidden = !context.asof;
     asofTag.textContent = context.asof
       ? '历史截止日 ' + context.asof + ' · 封存回放' : '';
     renderMarketMetadata(data);
-    setText('model-version', data.modelVersion || '未记录');
-    setText('prediction-id', data.predictionId || '未记录');
-    setText('volume-unit', data.volumeUnit === 'vendor_native' ? '供应商原始单位，股/手换算未核验' : data.volumeUnit);
-    setText('model-adjustment', data.modelAdjustment + '；显示设置不改变模型输入');
-    setText('first-visible', data.firstVisibleAt || '未记录；本次读取不作为提前发布证明');
-    setText('stale-state', data.stale ? '已过期：' + (data.staleReason || '来源未说明原因') :
-      data.freshness === 'not_established' ? '行情新鲜度未核验' : '按已发布截止日查看；不代表实时行情');
-    el('index-replay').hidden = data.assetType !== 'index';
+    setMetaField('model-version', Core.modelVersionLabel(data.modelVersion));
+    setMetaField('prediction-id', data.predictionId);
+    setMetaField('volume-unit', Core.volumeUnitLabel(data.volumeUnit));
+    setMetaField('model-adjustment', Core.modelAdjustmentLabel(data.modelAdjustment, data.assetType));
+    setMetaField('first-visible', data.firstVisibleAt);
+    setMetaField('stale-state', data.stale ? '已过期' + (data.staleReason ? '：' + data.staleReason : '') :
+      data.freshness === 'not_established' ? '' : '按已发布截止日查看；不代表实时行情');
+    el('index-replay').hidden = data.assetType !== 'index' || context.market !== 'cn';
     el('index-replay').href = 'index.html?code=' + encodeURIComponent(data.symbol) +
-      (data.assetType === 'index' && context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
+      (context.asof ? '&asof=' + encodeURIComponent(context.asof) : '');
+    el('index-replay').textContent = '完整诊断';
   }
 
   function renderAsofNotice(data) {
@@ -311,8 +367,8 @@
     var visible = !!context.asof;
     notice.hidden = !visible;
     notice.textContent = visible
-      ? (data.historyFallback ? '使用精确日期的历史封存帧；价格截自当前已发布历史行情，其修订时点未记录。' : '只读查看此日期的封存结果。') +
-        '历史重放与真实提前发布分开；未记录首次可见时间时，不声称当时已发布。'
+      ? (data.historyFallback ? '价格来自已发布历史行情。' : '只读查看此日期的封存结果。') +
+        '历史重放不等同于当时发布。'
       : '';
   }
 
@@ -336,8 +392,16 @@
   function moduleState(id, text) { el(id).textContent = text; }
 
   function present(data, preserveView) {
+    data = Core.withRule(data, context.rule);
     var view = preserveView && chart.getVisibleRange ? chart.getVisibleRange() : null;
     current = data;
+    if (longHorizon) longHorizon.render(data);
+    if (aftershock) aftershock.render(data);
+    if (root.LPPLGlobalEvents && Reader.globalAsset(LPPL,context)) {
+      var eventView=root.LPPLGlobalEvents.model(data,context);
+      root.LPPLGlobalEvents.render(document,eventView,function(event){chart.focusDate(event.date,event.id);context.focus=event.id;updateAddress(context.scale,event.id);});
+      data.eventRows=eventView.markers;data.events=eventView.markers;activeEvents=eventView.markers;
+    }
     var lastBar = data.bars[data.bars.length - 1] || {};
     page.dataset.code = data.symbol;
     page.dataset.barCount = String(data.bars.length);
@@ -346,17 +410,16 @@
     page.dataset.modelAsOf = String(data.modelAsOf || '');
     page.dataset.marketAsOf = String(data.marketAsOf || '');
     page.dataset.modelStatus = String(data.modelStatus || '');
-    var displayMode = LPPLChart.priceMode(data.bars);
+    page.dataset.researchRule = data.researchRule;
+    var displayMode = dailyPriceMode(data);
     page.dataset.priceMode = displayMode;
     el('price-mode-note').textContent = selectedPeriod !== 'd'
       ? '分钟 K 线与成交量；OBV 背离为历史形态描述。'
-      : displayMode === 'close'
-      ? 'OHLC 未完整提供：当前显示真实收盘线，不补造 K 线。成交量保留来源原值。'
-      : '日线 K 线与成交量；模型时间区间使用蓝色，截止日使用灰色。';
+      : dailyPriceNote(data);
     drawHeader(data);
     if (drawing) drawing.setContext({ symbol: data.symbol || context.code, asof: context.asof || '' });
     if (selectedPeriod === 'd') {
-      chart.setData(chartPayload(data));
+      chart.setData(chartPayload(futureBars ? Object.assign({}, data, { bars: futureBars }) : data));
       if (data.asof) chart.setAsof(data.asof);
     }
     renderEvidence(data, context.scale);
@@ -394,12 +457,25 @@
       presentStock();
     } catch (error) {
       if (request !== sequence) return;
+      // Existing adapter archive remains usable when the quote API is down.
+      try {
+        var saved = activeModel || await Reader.timed(function () { return LPPL.stock.latest(context.stockCode); }, '已发布行情原档');
+        if (request !== sequence) return;
+        activeMarket = Reader.stockMarketFromArchive(saved, context);
+        moduleState('market-status', '行情更新失败；显示原档 ' + activeMarket.asof);
+        presentStock();
+        el('error-message').textContent = '更新行情未成功：' + error.message + '。已保留 ' + activeMarket.asof + ' 的真实行情原档。';
+        el('error-panel').hidden = false; el('retry-button').hidden = false;
+        return;
+      } catch (_) { /* Preserve the original quote failure if no archive exists. */ }
+      if (request !== sequence) return;
       moduleState('market-status', '行情读取失败');
       showError(error);
     }
   }
 
   async function loadModel(request) {
+    if (context.market !== 'cn') return load();
     if (context.asof || context.assetType === 'index') return load();
     var run = ++modelRequest;
     modelStatus = 'loading'; modelError = null;
@@ -410,7 +486,7 @@
       if (request !== sequence || run !== modelRequest) return;
       activeModel = model;
       modelStatus = model ? 'ok' : 'missing';
-      moduleState('model-status', model ? '模型已读取' : '模型尚未读到');
+      moduleState('model-status', model ? '模型已读取' : '模型当前不可用');
     } catch (error) {
       if (request !== sequence || run !== modelRequest) return;
       modelStatus = 'error'; modelError = error;
@@ -424,8 +500,8 @@
     result.rows.slice(0, 20).forEach(function (event) {
       var button = document.createElement('button');
       button.type = 'button'; button.className = 'event-row';
-      button.textContent = event.date + ' · ' + event.label + ' · 来源 ' + event.source +
-        ' · 发布时间 ' + (event.knownAt || '未记录');
+      button.textContent = [event.date, event.label, event.source && '来源 ' + event.source,
+        event.knownAt && '发布时间 ' + event.knownAt].filter(Boolean).join(' · ');
       button.addEventListener('click', function () {
         if (chart) chart.focusDate(event.date, event.id);
         context.focus = event.id; updateAddress(context.scale, event.id);
@@ -438,10 +514,17 @@
 
   async function loadEvents(request) {
     var run = ++eventRequest;
-    if (context.assetType !== 'stock') {
-      el('events-note').textContent = '当前数据入口未提供指数事件；没有将个股事件套用到指数。';
-      el('events-retry').disabled = true;
-      moduleState('events-status', '指数事件接口未提供'); return;
+    var eventsCard = el('events-card'), eventsStatus = el('events-status');
+    if (context.assetType !== 'stock' || context.market !== 'cn') {
+      eventsCard.hidden = true;
+      eventsStatus.hidden = true;
+      return;
+    }
+    eventsCard.hidden = false;
+    eventsStatus.hidden = false;
+    if (Reader.globalAsset(LPPL,context)) {
+      moduleState('events-status','资讯随对应截止日结果读取');
+      el('events-retry').disabled=false;return;
     }
     moduleState('events-status', '事件独立读取中');
     try {
@@ -510,14 +593,17 @@
     button.addEventListener('click', function () { selectScale(scale, false); });
     el('scale-selector').appendChild(button);
   });
-  el('period-selector').hidden = context.assetType !== 'stock' || !!context.asof;
+  el('period-selector').hidden = context.assetType !== 'stock' || context.market !== 'cn' || !!context.asof;
   page.dataset.period = selectedPeriod;
   el('period-selector').querySelectorAll('[data-period]').forEach(function (button) {
     button.addEventListener('click', function () { void selectPeriod(button.dataset.period); });
   });
 
   el('retry-button').addEventListener('click', function () { void load(); });
-  el('events-retry').addEventListener('click', function () { void loadEvents(sequence); });
+  el('events-retry').addEventListener('click', function () {
+    if (Reader.globalAsset(LPPL,context)) { LPPL.global.clearCache(context.code,context.asof);void load(); }
+    else void loadEvents(sequence);
+  });
 
   var drawer = el('evidence-panel');
   var identityStrip = el('identity-strip');
@@ -598,7 +684,10 @@
   });
 
   function researchCard() {
-    return Share.record(current, context, evidenceFor(current, context.scale), intervalRows(current, context.scale), Core.bandEvidencePolicy, Core.bandEvidenceCode);
+    var record = Share.record(current, context, evidenceFor(current, context.scale), intervalRows(current, context.scale), Core.bandEvidencePolicy, Core.bandEvidenceCode);
+    record.rule = current.researchRule; record.ruleLabel = current.ruleLabel;
+    record.note += '；' + current.ruleLabel;
+    return record;
   }
   function download(blob, suffix) {
     var url = URL.createObjectURL(blob), link = document.createElement('a');
@@ -623,6 +712,7 @@
       var shot = chart.takeScreenshot(includeDrawings);
       if (includeDrawings && drawing) drawing.composeScreenshot(shot);
       var lines = Share.lines(researchCard());
+      if (futureBars) lines.push('后来走势：当前行情版本至 ' + futureBars[futureBars.length - 1].date + '；模型仍固定于 ' + context.asof);
       var width = Math.max(1280, shot.width), header = 100 + lines.length * 38;
       var canvas = document.createElement('canvas'); canvas.width = width; canvas.height = header + shot.height;
       var ctx = canvas.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -657,6 +747,16 @@
 
   function showError(error) {
     el('loading').hidden = true;
+    if (!current && decisionController) decisionController.render({
+      symbol: context.code, raw: null, top: {}, modelStatus: 'error',
+      modelAsOf: context.asof || '', marketAsOf: '', modelMessage: error && error.message
+    });
+    if (!current && el('terminal-alert-status')) {
+      setText('asset-name', context.name || context.stockCode || context.code || '未选择标的');
+      setText('terminal-alert-status', error && error.pending ? '当前没有可用记录' : '本次未读到结果');
+      setText('terminal-alert-window', '—');
+      setText('terminal-alert-detail', '可重试、切换已有记录，或返回原列表。');
+    }
     el('error-message').textContent = error && error.pending ? error.message : '读取失败：' + (error && error.message || '未知错误');
     el('error-panel').hidden = false;
     el('retry-button').hidden = false;
@@ -671,23 +771,25 @@
     el('error-panel').hidden = true;
     el('loading').hidden = !!current;
     if (!context.valid) { showError(new Error(context.invalidReason || '缺少有效的指数或 A 股代码。')); return; }
-    if (!context.asof && context.assetType === 'stock') {
+    if (!context.asof && context.assetType === 'stock' && context.market === 'cn') {
       void loadMarket(request); void loadModel(request); void loadEvents(request);
       return;
     }
-    moduleState('market-status', context.asof ? '读取封存行情' : '指数行情读取中');
-    moduleState('model-status', context.asof ? '只读核对历史截止日' : '指数模型读取中');
+    moduleState('market-status', context.asof ? '读取封存行情' : '行情读取中');
+    moduleState('model-status', context.asof ? '只读核对历史截止日' : '模型读取中');
     void loadEvents(request);
     try {
-      var result = context.asof ? await Reader.historical(LPPL, context) :
-        await Reader.timed(function () { return LPPL.load(context.code); }, '指数数据');
+      var result = context.asof ? await Reader.historical(LPPL, context) : await Reader.currentResult(LPPL, context);
       if (request !== sequence) return;
       var data;
-      if (context.assetType === 'stock') {
+      if (context.assetType === 'stock' && !context.asof) {
+        data = Core.assembleStockData(context.code, result, Reader.marketFromPublished(result, context.stockCode), null);
+      } else if (context.assetType === 'stock') {
         var market = Object.assign({}, result.market, { price: result.bars, asof: context.asof, cutoff: context.asof });
         data = Core.assembleStockData(context.code, result.raw, market, null);
       } else data = Core.assembleIndexData(context.code, result);
       data.historyFallback = !!result.historyFallback;
+      data.historyNote = result.historyNote || '';
       data.eventRows = activeEvents; data.events = activeEvents;
       data.marketAsOf = data.bars.length ? data.bars[data.bars.length - 1].date : '';
       moduleState('market-status', '行情已就绪');
@@ -695,15 +797,87 @@
       present(data, !!current);
     } catch (error) {
       if (request !== sequence) return;
-      moduleState('model-status', context.asof ? '该日封存未就绪；未触发计算' : '指数数据读取失败');
+      moduleState('model-status', context.asof ? '该日封存未就绪；未触发计算' : '数据读取失败');
       showError(error);
     }
+  }
+
+  function presentAnalysisResult(raw, requested, job) {
+    if (requested.symbol !== context.code || !Reader.sameSymbol(raw.symbol, context)) throw new Error('回测结果与当前标的不匹配。');
+    var nextContext = Object.assign({}, context, { asof:raw.asof });
+    var result = Reader.exactResult(raw, nextContext);
+    var data = context.assetType === 'stock'
+      ? Core.assembleStockData(context.code, raw, Reader.marketFromPublished(raw, context.stockCode), null)
+      : Core.assembleIndexData(context.code, result);
+    // Invalidate earlier in-flight page reads before presenting the requested snapshot.
+    sequence++;
+    context.asof = requested.asof || '';
+    futureBars = null; page.dataset.showFuture = 'false';
+    el('terminal-show-future').checked = false;
+    var params = new URLSearchParams(root.location.search);
+    if (context.asof) params.set('asof',context.asof); else params.delete('asof');
+    params.set('mode',context.asof ? 'replay' : 'diagnosis');
+    root.history.replaceState(null,'',root.location.pathname+'?'+params.toString()+root.location.hash);
+    if (terminal && terminal.syncContext) terminal.syncContext();
+    data.eventRows=[];data.events=[];activeEvents=[];
+    data.marketAsOf=data.bars.length ? data.bars[data.bars.length-1].date : '';
+    el('error-panel').hidden=true;
+    moduleState('market-status','所选截止日行情已就绪');
+    moduleState('model-status',job.status==='complete' ? '本次回测结果已读取' : '当前结果已读取，其他分析继续');
+    present(data,!!current);
   }
 
   try {
     chart = LPPLChart.mount(el('chart-host'), { height: 520 });
     chart.setScale(context.scale);
     drawing = root.ChartDrawing.attach(chart, { symbol: context.code, asof: context.asof });
+    if (root.LPPLLongHorizon) longHorizon = root.LPPLLongHorizon.attach({ document: document, context: context, badge: root.CPEvidenceBadge });
+    if (longHorizon && LPPL.longWindowEvidence) LPPL.longWindowEvidence().then(r => longHorizon.setEvidence(r && r.data)).catch(() => {});
+    if (root.LPPLAftershock) aftershock = root.LPPLAftershock.attach({ document:document, badge:root.CPEvidenceBadge });
+    if (root.LPPLGlobalAnalysis) analysisJob = root.LPPLGlobalAnalysis.attach({ document:document, adapter:LPPL, context:context, onResult:presentAnalysisResult });
+    if (root.LPPLUnifiedTerminal && context.valid) terminal = root.LPPLUnifiedTerminal.attach({
+      document: document, adapter: LPPL, reader: Reader, core: Core, context: context, search: root.location.search,
+      navigate: function (url) { root.location.assign(url); },
+      replaceAddress: function (values) {
+        var params = new URLSearchParams(root.location.search);
+        Object.keys(values).forEach(function (key) { params.set(key, values[key]); });
+        root.history.replaceState(null, '', root.location.pathname + '?' + params);
+      },
+      showFuture: function (bars) {
+        if (!current) return;
+        futureBars = bars;
+        page.dataset.showFuture = String(!!bars);
+        chart.setData(chartPayload(bars ? Object.assign({}, current, { bars: bars }) : current));
+        chart.setAsof(current.asof);
+        el('price-mode-note').textContent = dailyPriceNote(Object.assign({}, current, {
+          bars: bars || current.bars,
+        }));
+      },
+    });
+    if (root.LPPLDecisionState && root.LPPLDecisionPanel && root.LPPLDecisionController && context.valid) {
+      decisionPanel = root.LPPLDecisionPanel.mount(el('decision-panel-host'), {
+        document: document, badge: root.CPEvidenceBadge, showSummary: false,
+        onRetry: function () { if (decisionController) decisionController.retry(); }
+      });
+      decisionController = root.LPPLDecisionController.attach({
+        adapter: LPPL, reader: Reader, context: context, state: root.LPPLDecisionState,
+        onChange: function (view) {
+          decisionPanel.render(view);
+          page.dataset.decisionStatus = view.conclusion.status;
+          page.dataset.decisionAsOf = view.asof || '';
+          page.dataset.bottomScore = view.bottom.score == null ? '' : String(view.bottom.score);
+          page.dataset.bottomAsOf = view.bottom.asof || '';
+          page.dataset.decisionHistoryStatus = view.provenance.historyStatus || '';
+          el('terminal-alert-status').textContent = view.conclusion.title;
+          el('terminal-alert-window').textContent = view.top.windows.length
+            ? view.top.windows.map(function (band) { return band.q20_date + ' — ' + band.q80_date; }).join(' / ')
+            : view.top.label;
+          el('terminal-alert-detail').textContent = view.conclusion.detail + ' ' + view.conclusion.next;
+          var summary = el('terminal-alert-status').closest('.terminal-summary');
+          if (summary) summary.dataset.tone = view.conclusion.tone;
+        }
+      });
+    }
     chart.on('scale', function (scale) {
       if (scale !== context.scale) context.scale = scale;
     });
@@ -716,5 +890,7 @@
   }
   root.addEventListener('pagehide', function (event) {
     if (!event.persisted && drawing) { drawing.detach(); drawing = null; }
+    if (!event.persisted && analysisJob) analysisJob.dispose();
+    if (!event.persisted && decisionController) decisionController.close();
   });
 })(window);

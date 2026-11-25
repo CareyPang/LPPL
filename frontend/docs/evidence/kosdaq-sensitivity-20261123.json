@@ -1,0 +1,814 @@
+{
+  "schema_version": "kosdaq_one_point_source_sensitivity_v1",
+  "status": "complete",
+  "experiment_status": "NON_CANONICAL",
+  "experiment": "source_discrepancy_sensitivity",
+  "symbol": "KR_KOSDAQ",
+  "asof": "2026-11-23",
+  "protocol_hash": "c6c72a6b838f758c9258d0e25887d17bccfaced03652170047b0c5f889ea982c",
+  "primary_protocol_hash": "ac078502b0dcd38c1a5fc979f275c325781422acafb3a928b6cf2269fe0343be",
+  "method_hash": "63808afdf6242bd89bd10e38b9cd3cf66c6d9a8493c8f7387464c13934e21a69",
+  "substitution": {
+    "date": "2001-11-01",
+    "original_close": 625.5,
+    "alternate_close": 636.4000244140625,
+    "changed_close_count": 1
+  },
+  "original_input_hash": "4d636ba4d51f9760f4091111a6cb5695116e8a84617c57f96e698fdb8f0ba686",
+  "alternate_input_hash": "962d2c8b89f3cce72c78cf5adafd4027649f5918f3dbf34ed09d7a9ad649a78c",
+  "canonical_source_sha256": "c9fee8d105f996c6eb60a1af246155c2246938757f43537925c57a303788dd15",
+  "probe_sha256": "9582e619197f2e6aa694f9ca1f760101dd2f78e916736c023abbb9f924885455",
+  "source_unchanged": true,
+  "protected_files": 25,
+  "counts": {
+    "baseline_reused": 12,
+    "unchanged_short_reused": 6,
+    "alternate_long_expected": 6,
+    "alternate_long_new": 6,
+    "alternate_long_cache_reused": 0,
+    "complete_alternate_total": 12,
+    "failed": 0
+  },
+  "seconds": 14.735122699989006,
+  "completed_at": "2026-11-23T13:27:12.963836+00:00",
+  "first_visible_at": null,
+  "independent_vendor_adjudication": "NOT_ESTABLISHED",
+  "limits": [
+    "One latest endpoint and one substituted source point only.",
+    "No canonical source or fit was overwritten; no vendor correctness is inferred.",
+    "Cluster/seed agreement is numerical structure, not probability or forecast accuracy.",
+    "All full-cycle 1.5/2.5 gates and optimizer settings are identical to the frozen primary study.",
+    "Future calendar dates are weekday estimates; tc shifts use trading-session units."
+  ],
+  "windows": [
+    {
+      "n": 900,
+      "family": "long_900",
+      "seeds": [
+        {
+          "seed": 11,
+          "baseline": {
+            "tc_ahead": 89.99999996662996,
+            "m": 0.899999978068424,
+            "omega": 6.000000008663369,
+            "sse": 9.395478919223482,
+            "r2": 0.40261789884849697,
+            "damping": 0.20905474935686624,
+            "full_cycles": 2.2888562548217317
+          },
+          "alternate": {
+            "tc_ahead": 89.99999996662996,
+            "m": 0.899999978068424,
+            "omega": 6.000000008663369,
+            "sse": 9.395478919223482,
+            "r2": 0.40261789884849697,
+            "damping": 0.20905474935686624,
+            "full_cycles": 2.2888562548217317
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0,
+            "r2": 0.0,
+            "damping": 0.0,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        },
+        {
+          "seed": 29,
+          "baseline": {
+            "tc_ahead": 89.9999999924629,
+            "m": 0.8999999572723125,
+            "omega": 6.000000005387,
+            "sse": 9.395478912994944,
+            "r2": 0.4026178992445191,
+            "damping": 0.20905474704240545,
+            "full_cycles": 2.2888562533227224
+          },
+          "alternate": {
+            "tc_ahead": 89.9999999924629,
+            "m": 0.8999999572723125,
+            "omega": 6.000000005387,
+            "sse": 9.395478912994944,
+            "r2": 0.4026178992445191,
+            "damping": 0.20905474704240545,
+            "full_cycles": 2.2888562533227224
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0,
+            "r2": 0.0,
+            "damping": 0.0,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        }
+      ],
+      "input_changed": false,
+      "baseline_seed_gap_sessions": 2.583294644864509e-08,
+      "alternate_seed_gap_sessions": 2.583294644864509e-08,
+      "baseline_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "alternate_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "eligibility_changed": false,
+      "baseline_point_ahead": null,
+      "alternate_point_ahead": null
+    },
+    {
+      "n": 925,
+      "family": "long_900",
+      "seeds": [
+        {
+          "seed": 11,
+          "baseline": {
+            "tc_ahead": 89.99999955615715,
+            "m": 0.8999999847141007,
+            "omega": 6.000000000909882,
+            "sse": 9.416078165779378,
+            "r2": 0.4057170414168221,
+            "damping": 0.20726792948663655,
+            "full_cycles": 2.31269497900815
+          },
+          "alternate": {
+            "tc_ahead": 89.99999955615715,
+            "m": 0.8999999847141007,
+            "omega": 6.000000000909882,
+            "sse": 9.416078165779378,
+            "r2": 0.4057170414168221,
+            "damping": 0.20726792948663655,
+            "full_cycles": 2.31269497900815
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0,
+            "r2": 0.0,
+            "damping": 0.0,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        },
+        {
+          "seed": 29,
+          "baseline": {
+            "tc_ahead": 89.9999999110521,
+            "m": 0.8999999336871768,
+            "omega": 6.000000003127902,
+            "sse": 9.416078163713163,
+            "r2": 0.40571704154722843,
+            "damping": 0.2072679235110302,
+            "full_cycles": 2.3126949764317524
+          },
+          "alternate": {
+            "tc_ahead": 89.9999999110521,
+            "m": 0.8999999336871768,
+            "omega": 6.000000003127902,
+            "sse": 9.416078163713163,
+            "r2": 0.40571704154722843,
+            "damping": 0.2072679235110302,
+            "full_cycles": 2.3126949764317524
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0,
+            "r2": 0.0,
+            "damping": 0.0,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        }
+      ],
+      "input_changed": false,
+      "baseline_seed_gap_sessions": 3.548949507603538e-07,
+      "alternate_seed_gap_sessions": 3.548949507603538e-07,
+      "baseline_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "alternate_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "eligibility_changed": false,
+      "baseline_point_ahead": null,
+      "alternate_point_ahead": null
+    },
+    {
+      "n": 950,
+      "family": "long_900",
+      "seeds": [
+        {
+          "seed": 11,
+          "baseline": {
+            "tc_ahead": 89.99999988248305,
+            "m": 0.899999955636356,
+            "omega": 6.000000000430602,
+            "sse": 9.45973289526342,
+            "r2": 0.42649751123874624,
+            "damping": 0.20889387317867475,
+            "full_cycles": 2.335953058085326
+          },
+          "alternate": {
+            "tc_ahead": 89.99999988248305,
+            "m": 0.899999955636356,
+            "omega": 6.000000000430602,
+            "sse": 9.45973289526342,
+            "r2": 0.42649751123874624,
+            "damping": 0.20889387317867475,
+            "full_cycles": 2.335953058085326
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0,
+            "r2": 0.0,
+            "damping": 0.0,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        },
+        {
+          "seed": 29,
+          "baseline": {
+            "tc_ahead": 89.99999991134473,
+            "m": 0.8999999948394241,
+            "omega": 6.000000001582137,
+            "sse": 9.459732888494633,
+            "r2": 0.42649751164910843,
+            "damping": 0.20889387761071682,
+            "full_cycles": 2.3359530582539425
+          },
+          "alternate": {
+            "tc_ahead": 89.99999991134473,
+            "m": 0.8999999948394241,
+            "omega": 6.000000001582137,
+            "sse": 9.459732888494633,
+            "r2": 0.42649751164910843,
+            "damping": 0.20889387761071682,
+            "full_cycles": 2.3359530582539425
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0,
+            "r2": 0.0,
+            "damping": 0.0,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        }
+      ],
+      "input_changed": false,
+      "baseline_seed_gap_sessions": 2.886167749238666e-08,
+      "alternate_seed_gap_sessions": 2.886167749238666e-08,
+      "baseline_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "alternate_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "eligibility_changed": false,
+      "baseline_point_ahead": null,
+      "alternate_point_ahead": null
+    },
+    {
+      "n": 6500,
+      "family": "ultra_6600",
+      "seeds": [
+        {
+          "seed": 11,
+          "baseline": {
+            "tc_ahead": 89.99999477101301,
+            "m": 0.8999999785301648,
+            "omega": 6.000000007134171,
+            "sse": 248.83896916233073,
+            "r2": 0.46083592766896586,
+            "damping": 0.43216490697385745,
+            "full_cycles": 4.0998446358940255
+          },
+          "alternate": {
+            "tc_ahead": 89.99999477101301,
+            "m": 0.8999999785301648,
+            "omega": 6.000000007134171,
+            "sse": 248.8414094735792,
+            "r2": 0.46083018625232175,
+            "damping": 0.432139107806018,
+            "full_cycles": 4.0998446358940255
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0024403112484776557,
+            "r2": -5.741416644111652e-06,
+            "damping": -2.579916783945757e-05,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "m_HIGH|omega_LOW",
+          "alternate_boundary_status": "m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        },
+        {
+          "seed": 29,
+          "baseline": {
+            "tc_ahead": 89.99999955099975,
+            "m": 0.8999999839768944,
+            "omega": 6.000000017579497,
+            "sse": 248.8389692071604,
+            "r2": 0.46083592757183256,
+            "damping": 0.43216490732953805,
+            "full_cycles": 4.099844593006912
+          },
+          "alternate": {
+            "tc_ahead": 89.99999955099975,
+            "m": 0.8999999839768944,
+            "omega": 6.000000017579497,
+            "sse": 248.84140951840791,
+            "r2": 0.46083018615519045,
+            "damping": 0.4321391081617252,
+            "full_cycles": 4.099844593006912
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": 0.0024403112475113176,
+            "r2": -5.741416642113251e-06,
+            "damping": -2.579916781286773e-05,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        }
+      ],
+      "input_changed": true,
+      "baseline_seed_gap_sessions": 4.779986738867592e-06,
+      "alternate_seed_gap_sessions": 4.779986738867592e-06,
+      "baseline_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "alternate_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "eligibility_changed": false,
+      "baseline_point_ahead": null,
+      "alternate_point_ahead": null
+    },
+    {
+      "n": 6600,
+      "family": "ultra_6600",
+      "seeds": [
+        {
+          "seed": 11,
+          "baseline": {
+            "tc_ahead": 90.0,
+            "m": 0.9,
+            "omega": 6.0,
+            "sse": 376.0322782703275,
+            "r2": 0.35375591873144807,
+            "damping": 0.27190566086248014,
+            "full_cycles": 4.11422848522236
+          },
+          "alternate": {
+            "tc_ahead": 90.0,
+            "m": 0.9,
+            "omega": 6.0,
+            "sse": 376.03067398720975,
+            "r2": 0.35375761948211615,
+            "damping": 0.27189186995238485,
+            "full_cycles": 4.11422848522236
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": -0.0016042831177287553,
+            "r2": 1.7007506680766227e-06,
+            "damping": -1.3790910095290432e-05,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        },
+        {
+          "seed": 29,
+          "baseline": {
+            "tc_ahead": 89.9999976982781,
+            "m": 0.8999999803155789,
+            "omega": 6.000000001868345,
+            "sse": 376.03227862357784,
+            "r2": 0.3537559181243567,
+            "damping": 0.2719056596330994,
+            "full_cycles": 4.1142285105969245
+          },
+          "alternate": {
+            "tc_ahead": 89.9999976982781,
+            "m": 0.8999999803155789,
+            "omega": 6.000000001868345,
+            "sse": 376.03067434051087,
+            "r2": 0.3537576188749365,
+            "damping": 0.2718918687230239,
+            "full_cycles": 4.1142285105969245
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": -0.0016042830669675823,
+            "r2": 1.7007505798138922e-06,
+            "damping": -1.379091007547295e-05,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "m_HIGH|omega_LOW",
+          "alternate_boundary_status": "m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        }
+      ],
+      "input_changed": true,
+      "baseline_seed_gap_sessions": 2.3017219064058736e-06,
+      "alternate_seed_gap_sessions": 2.3017219064058736e-06,
+      "baseline_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "alternate_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "eligibility_changed": false,
+      "baseline_point_ahead": null,
+      "alternate_point_ahead": null
+    },
+    {
+      "n": 6700,
+      "family": "ultra_6600",
+      "seeds": [
+        {
+          "seed": 11,
+          "baseline": {
+            "tc_ahead": 90.0,
+            "m": 0.9,
+            "omega": 6.0,
+            "sse": 487.19564360940535,
+            "r2": 0.31900284263763423,
+            "damping": 0.17429942884200778,
+            "full_cycles": 4.128398943476663
+          },
+          "alternate": {
+            "tc_ahead": 90.0,
+            "m": 0.9,
+            "omega": 6.0,
+            "sse": 487.1906126256593,
+            "r2": 0.31900840333140557,
+            "damping": 0.17429202735817298,
+            "full_cycles": 4.128398943476663
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": -0.005030983746053153,
+            "r2": 5.5606937713337246e-06,
+            "damping": -7.4014838347957745e-06,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        },
+        {
+          "seed": 29,
+          "baseline": {
+            "tc_ahead": 90.0,
+            "m": 0.9,
+            "omega": 6.0,
+            "sse": 487.19564360940535,
+            "r2": 0.31900284263763423,
+            "damping": 0.17429942884200778,
+            "full_cycles": 4.128398943476663
+          },
+          "alternate": {
+            "tc_ahead": 90.0,
+            "m": 0.9,
+            "omega": 6.0,
+            "sse": 487.1906126256593,
+            "r2": 0.31900840333140557,
+            "damping": 0.17429202735817298,
+            "full_cycles": 4.128398943476663
+          },
+          "delta_alternate_minus_baseline": {
+            "tc_ahead": 0.0,
+            "m": 0.0,
+            "omega": 0.0,
+            "sse": -0.005030983746053153,
+            "r2": 5.5606937713337246e-06,
+            "damping": -7.4014838347957745e-06,
+            "full_cycles": 0.0
+          },
+          "baseline_optimizer_success": true,
+          "alternate_optimizer_success": true,
+          "baseline_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "alternate_boundary_status": "tc_HIGH|m_HIGH|omega_LOW",
+          "baseline_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          },
+          "alternate_passes": {
+            "cycles_2_5": false,
+            "cycles_1_5": false
+          }
+        }
+      ],
+      "input_changed": true,
+      "baseline_seed_gap_sessions": 0.0,
+      "alternate_seed_gap_sessions": 0.0,
+      "baseline_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "alternate_eligible": {
+        "cycles_2_5": false,
+        "cycles_1_5": false
+      },
+      "eligibility_changed": false,
+      "baseline_point_ahead": null,
+      "alternate_point_ahead": null
+    }
+  ],
+  "cluster_comparison": {
+    "cycles_1_5": {
+      "baseline": {
+        "definition": "Both seeds converge; B<0, .1<m<.9, 6<omega<13, damping>=1, R2>=.9, rank=4, conditioned; all parameters interior; seed tc gap<=2 sessions; full cycles>=1.5",
+        "families": [
+          {
+            "family": "long_900",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              900,
+              925,
+              950
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          },
+          {
+            "family": "ultra_6600",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              6500,
+              6600,
+              6700
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          }
+        ],
+        "cross_family_clusters": []
+      },
+      "alternate": {
+        "definition": "Both seeds converge; B<0, .1<m<.9, 6<omega<13, damping>=1, R2>=.9, rank=4, conditioned; all parameters interior; seed tc gap<=2 sessions; full cycles>=1.5",
+        "families": [
+          {
+            "family": "long_900",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              900,
+              925,
+              950
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          },
+          {
+            "family": "ultra_6600",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              6500,
+              6600,
+              6700
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          }
+        ],
+        "cross_family_clusters": []
+      },
+      "changed": false
+    },
+    "cycles_2_5": {
+      "baseline": {
+        "definition": "Both seeds converge; B<0, .1<m<.9, 6<omega<13, damping>=1, R2>=.9, rank=4, conditioned; all parameters interior; seed tc gap<=2 sessions; full cycles>=2.5",
+        "families": [
+          {
+            "family": "long_900",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              900,
+              925,
+              950
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          },
+          {
+            "family": "ultra_6600",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              6500,
+              6600,
+              6700
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          }
+        ],
+        "cross_family_clusters": []
+      },
+      "alternate": {
+        "definition": "Both seeds converge; B<0, .1<m<.9, 6<omega<13, damping>=1, R2>=.9, rank=4, conditioned; all parameters interior; seed tc gap<=2 sessions; full cycles>=2.5",
+        "families": [
+          {
+            "family": "long_900",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              900,
+              925,
+              950
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          },
+          {
+            "family": "ultra_6600",
+            "qualified_windows": [],
+            "dates": [],
+            "member_date_range": null,
+            "tested_windows": [
+              6500,
+              6600,
+              6700
+            ],
+            "member_span_trading_days": null,
+            "neighbour_agreement_within_5_days": false,
+            "note": "Adjacent lengths count as one window family; member dates are not probabilities or confidence bounds."
+          }
+        ],
+        "cross_family_clusters": []
+      },
+      "changed": false
+    }
+  },
+  "maximum_absolute_tc_shift_sessions": 0.0
+}

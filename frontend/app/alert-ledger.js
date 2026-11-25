@@ -16,7 +16,11 @@
 
   function frameWindow(frame, scale) {
     var value = frame && frame.w && frame.w[scale];
-    return Array.isArray(value) && value.length >= 2 ? [value[0], value[1]] : null;
+    if (Array.isArray(value) && value.length >= 2) return [value[0], value[1]];
+    var clusters = frameClusters(frame, scale);
+    return clusters && clusters.length
+      ? [clusters[0].q20_date, clusters[0].q80_date]
+      : null;
   }
 
   function frameClusters(frame, scale) {
@@ -224,7 +228,7 @@
 
     ordered.forEach(function (item) {
       var frame = item.frame, window = frameWindow(frame, scale);
-      if (frame.close != null && window) run.push({ frame: frame, window: window });
+      if (window) run.push({ frame: frame, window: window });
       else flush();
     });
     flush();
@@ -246,10 +250,33 @@
     return { active: active, latest: latest, lockedCount: lockedCount, total: eps.length };
   }
 
+  function lockedAsOf(frames, tops, scale) {
+    scale = scale || '6-12m';
+    var ordered = (Array.isArray(frames) ? frames : [])
+      .filter(function (frame) { return frame && dateValue(frame.asof) !== null; })
+      .slice()
+      .sort(function (a, b) { return a.asof < b.asof ? -1 : a.asof > b.asof ? 1 : 0; });
+    var result = new Map();
+    ordered.forEach(function (frame) { result.set(frame.asof, null); });
+
+    episodes(ordered, tops, scale).forEach(function (episode) {
+      var run = [];
+      ordered.forEach(function (frame) {
+        if (frame.asof < episode.first_asof || frame.asof > episode.last_asof) return;
+        var window = frameWindow(frame, scale);
+        if (!window) return;
+        run.push({ frame: frame, window: window });
+        result.set(frame.asof, analyzeRunConvergence(run, scale));
+      });
+    });
+    return result;
+  }
+
   return {
     episodes: episodes,
     clusterMedianDate: clusterMedianDate,
     analyzeRunConvergence: analyzeRunConvergence,
     latestConvergence: latestConvergence,
+    lockedAsOf: lockedAsOf,
   };
 });

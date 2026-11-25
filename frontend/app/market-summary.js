@@ -5,7 +5,7 @@
   'use strict';
 
   var REASONS = {
-    unpublished: '尚未发布',
+    unpublished: '未发布',
     unavailable: '暂时无法读取',
     empty: '数据源返回空结果',
     not_applicable: '不适用',
@@ -49,8 +49,8 @@
     var comparable = models.filter(function (item) { return !item.reason; });
     var modelPeriods = new Map();
     comparable.forEach(function (item) {
-      var period = item.previousAsOf && item.currentAsOf
-        ? item.previousAsOf + '→' + item.currentAsOf : '对比日期未提供';
+      if (!item.previousAsOf || !item.currentAsOf) return;
+      var period = item.previousAsOf + '→' + item.currentAsOf;
       var counts = modelPeriods.get(period) || { changed: 0, unchanged: 0 };
       if (item.change === '不变') counts.unchanged += 1;
       else counts.changed += 1;
@@ -65,11 +65,12 @@
     var watchText = watchlist.length
       ? '今日 ' + relatedCount + ' 条自选相关快讯'
       : '自选为空 · 先加自选';
-    var modelText = comparable.length
-      ? Array.from(modelPeriods.entries()).map(function (entry) {
+    var periodLines = Array.from(modelPeriods.entries()).map(function (entry) {
         var counts = entry[1];
         return entry[0] + '：' + counts.changed + ' 项变化，' + counts.unchanged + ' 项不变';
-      }).join('；')
+      });
+    var modelText = periodLines.length
+      ? periodLines.join('；')
       : REASONS[input.modelsReason] || '暂无可比较的模型区间';
 
     return {

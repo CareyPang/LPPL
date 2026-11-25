@@ -28,22 +28,22 @@ INDEX_LIST: tuple[tuple[str, str, str], ...] = (
 )
 
 
-def _classify_tier(has_top: bool, score: int, stabilize: float, right_side: float) -> tuple[str, int | None]:
-    """与前端 frontend/app/bottom-action.js 完全一致的 5 档决策状态机。"""
+def _classify_tier(has_top: bool, score: float | None) -> str:
+    """与前端 frontend/app/bottom-action.js 使用相同的底分档位。"""
     if has_top:
-        return "top_risk", 0
-    if score < 20:
-        return "neutral", None
-    if score < 50 or stabilize < 0.5:
-        return "left_wait", 0
-    if right_side < 0.7:
-        return "bottom_probe", 30
-    return "right_confirm", 60
+        return "top_risk"
+    if score is None:
+        return "unavailable"
+    if score < 30:
+        return "neutral"
+    if score < 50:
+        return "bottom_watch"
+    return "bottom_probe"
 
 
 def build_overview(data_dir: Path = DEFAULT_DATA_DIR) -> dict[str, Any]:
     indices: list[dict[str, Any]] = []
-    counts = {"top_risk": 0, "bottom_probe": 0, "right_confirm": 0, "left_wait": 0, "neutral": 0}
+    counts = {"top_risk": 0, "unavailable": 0, "neutral": 0, "bottom_watch": 0, "bottom_probe": 0}
     latest_asof = ""
 
     for sym, name, code in INDEX_LIST:
@@ -61,12 +61,11 @@ def build_overview(data_dir: Path = DEFAULT_DATA_DIR) -> dict[str, Any]:
 
         w6 = (last.get("w") or {}).get("6-12m")
         has_top = bool(isinstance(w6, list) and len(w6) == 2 and w6[0])
-        raw_neg = float(last.get("fco_neg_intensity") or 0.0)
-        score = int(round(raw_neg * 100)) if 0.0 < raw_neg <= 1.0 else int(round(raw_neg))
+        raw_value = last.get("fco_neg_intensity")
+        raw_neg = float(raw_value) if raw_value is not None else None
+        score = round(raw_neg * 100, 1) if raw_neg is not None else None
         factors = last.get("bottom_factors") or None
-        stab = float((factors or {}).get("stabilize") or 0.0)
-        right = float((factors or {}).get("right_side") or 0.0)
-        tier, target_pct = _classify_tier(has_top, score, stab, right)
+        tier = _classify_tier(has_top, score)
         counts[tier] = counts.get(tier, 0) + 1
 
         bs = hist.get("bottom_summary") or {}
@@ -94,7 +93,6 @@ def build_overview(data_dir: Path = DEFAULT_DATA_DIR) -> dict[str, Any]:
                 "bottom_factors": factors,
                 "bottom_summary": summary,
                 "tier": tier,
-                "target_pct": target_pct,
             }
         )
 

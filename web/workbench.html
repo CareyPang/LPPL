@@ -17,9 +17,9 @@
   a{color:var(--blu);text-decoration:none}
 </style>
 <script src="theme.js"></script></head><body><div class="wrap">
-<div class="card"><h1 style="margin:0 0 6px;font-size:18px">临界点 2.0 · 工作台 <span class="badge">描述性 · 无预测证据</span> <a href="guide.html" style="font-size:12px;font-weight:400">使用指南（原站 F12）</a></h1>
+<div class="card"><h1 style="margin:0 0 6px;font-size:18px">临界点 2.0 · 工作台 <span class="badge">描述性 · 无预测证据</span> <a href="guide.html" style="font-size:12px;font-weight:400">使用指南</a></h1>
   <div class="sub" id="meta">加载中…</div>
-  <div class="sub" style="margin-top:6px">原站 F01 泡沫排行 / F02 汇总 / F03 资产目录 / F04 高级列表的 A 股版。排行键只用原版量（Combo p=0.1、最长合格尺度、代表 t_c）；个股 LPPLS 横截面排名在开发段**无预测信息**（§17.11），本页只回答"哪些标的现在有泡沫形态的合格拟合"，不回答"哪只会跌"。成分为中证最近公布名单（非 PIT）。<a href="dashboard.html">← 单资产仪表盘</a></div>
+  <div class="sub" style="margin-top:6px">A 股泡沫排行、汇总、资产目录与高级列表。排行键只用组合指标（Combo p=0.1、最长合格尺度、代表 t_c）；个股 LPPLS 横截面排名在开发段**无预测信息**（§17.11），本页只回答"哪些标的现在有泡沫形态的合格拟合"，不回答"哪只会跌"。成分为中证最近公布名单（非 PIT）。<a href="dashboard.html">← 单资产仪表盘</a></div>
   <div class="tabs" style="margin-top:10px"><button data-t="rank" class="on">泡沫排行</button><button data-t="summary">汇总</button><button data-t="adv">高级列表</button><button data-t="cat">资产目录</button>
     <select id="typ" style="margin-left:12px"><option value="">全部类型</option><option value="index">宽基指数</option><option value="industry">行业指数</option><option value="stock">沪深300 成分股</option></select>
     <input id="q" placeholder="搜索代码/名称" style="margin-left:8px;width:160px"></div></div>
@@ -35,7 +35,7 @@ function renderCat(el){if(!CAT){el.textContent='目录加载中…';return;}
   const t=document.getElementById('typ').value,q=document.getElementById('q').value.trim().toLowerCase(), IN=CAT.index_names||{};
   const R=CAT.rows.filter(r=>(!t||r.type===t)&&(!q||r.code.includes(q)||r.symbol.includes(q)||r.name.toLowerCase().includes(q)||r.member_of.some(m=>(IN[m]||'').toLowerCase().includes(q))));
   const link=r=>r.dashboard?`<a href="dashboard.html?sym=${r.symbol}_latest">仪表盘</a>`:r.type==='stock'?`<a href="stock.html?code=${r.code}">个股页</a>`:'<span class="muted">工作台行</span>';
-  el.innerHTML=`<div class="sub">资产目录（原站 F03）：${R.length} / ${CAT.n} 个标的；搜索支持代码 / 名称 / 所属指数名。所属指数为中证最近公布成分（${CAT.generated}，非 PIT）。目录只是主数据表，不含任何模型量。</div>
+  el.innerHTML=`<div class="sub">资产目录：${R.length} / ${CAT.n} 个标的；搜索支持代码 / 名称 / 所属指数名。所属指数为中证最近公布成分（${CAT.generated}，非 PIT）。目录只是主数据表，不含任何模型量。</div>
     <table style="margin-top:8px"><tr><th>代码</th><th>名称</th><th>类型</th><th>交易所 / 板块</th><th>所属指数</th><th>页面</th></tr>
     ${R.map(r=>`<tr><td>${r.code}</td><td><b>${r.name}</b></td><td>${TN[r.type]}</td><td>${r.exchange}${r.board?' · '+r.board:''}</td><td>${r.member_of.map(m=>IN[m]||m).join('、')||'—'}</td><td>${link(r)}</td></tr>`).join('')}</table>`;}
 function render(){const el=document.getElementById('panel'); if(!DATA){el.textContent='…';return;}
@@ -57,7 +57,7 @@ function render(){const el=document.getElementById('panel'); if(!DATA){el.textCo
       ['combo_p01','Combo 0.1',r=>pct(r.combo_p01)],['c612','6–12 月 STD',r=>pct(r.conf?.['6-12m']?.standard)],['c1224','12–24 月 STD',r=>pct(r.conf?.['12-24m']?.standard)],['longest_qualified_scale','尺度',r=>r.longest_qualified_scale??'—'],['tc_representative','代表 t_c',r=>r.tc_representative??'—'],['signal_status','状态',r=>r.signal_status]];
     const val=(r,k)=>k==='c612'?r.conf?.['6-12m']?.standard:k==='c1224'?r.conf?.['12-24m']?.standard:r[k];
     const S=R.slice().sort((a,b)=>{const x=val(a,SORT.k),y=val(b,SORT.k); if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1; return (typeof x==='number'?x-y:String(x).localeCompare(String(y)))*SORT.d;});
-    el.innerHTML=`<div class="sub">高级列表（F04）：点列头排序（按数值）。收益期为交易日数；有行情但无合格拟合的行保留（原站 S04）。</div>
+    el.innerHTML=`<div class="sub">高级列表（F04）：点列头排序（按数值）。收益期为交易日数；保留有行情但无合格拟合的行。</div>
       <table style="margin-top:8px"><tr>${cols.map(c=>`<th data-k="${c[0]}" class="${SORT.k===c[0]?'sorted':''}">${c[1]}${SORT.k===c[0]?(SORT.d>0?' ▲':' ▼'):''}</th>`).join('')}</tr>
       ${S.map(r=>`<tr>${cols.map(c=>`<td>${c[2](r)}</td>`).join('')}</tr>`).join('')}</table>
       ${E.length?`<div class="sub" style="margin-top:12px">未完成 ${E.length}：${E.map(r=>`${r.name}（${r.error}）`).join('；')}</div>`:''}`;

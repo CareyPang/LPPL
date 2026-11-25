@@ -133,7 +133,7 @@ const server = http.createServer((req, res) => {
     modelMissing = true; modelDelay = 0;
     await page.reload(); await page.waitForFunction(() => document.querySelector('#chart-page').dataset.modelStatus === 'missing');
     assert.equal(await page.locator('#chart-page').getAttribute('data-last-close'), marketClose);
-    assert.match(await page.locator('#evidence-state').innerText(), /尚未发布，或读取失败/);
+    assert.match(await page.locator('#evidence-state').innerText(), /当前没有可用的已发布模型结果/);
     assert.equal(await page.locator('#interval-list button').count(), 0);
     pass('missing model and failed events keep market candles without invented intervals');
 
@@ -203,7 +203,7 @@ const server = http.createServer((req, res) => {
     await page.waitForFunction(() => document.querySelector('#chart-page').dataset.loaded === 'true');
     assert.equal(await page.locator('#chart-page').getAttribute('data-model-as-of'), '2025-08-11');
     assert.ok((await page.locator('#chart-page').getAttribute('data-last-bar-date')) <= '2025-08-11');
-    assert.match(await page.locator('#asof-notice').innerText(), /修订时点未记录/);
+    assert.match(await page.locator('#asof-notice').innerText(), /历史重放不等同于当时发布/);
     pass('exact published history frame fallback clips market bars and labels revision limits');
     await page.goto(origin + '/chart.html?code=sh000001&asof=2026-06-26');
     await page.locator('#error-panel').waitFor({ state:'visible' });

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>临界点 2.0 · 指数顶部风险（原版 FCO 输出形式）</title>
+<title>临界点 2.0 · 指数顶部风险（FCO 输出形式）</title>
 <style>
   :root{--bg:#0e1116;--panel:#161b22;--line:#2a313b;--fg:#e6edf3;--mute:#8b949e;--red:#f85149;--amb:#d29922;--grn:#3fb950;--blu:#58a6ff;--none:#484f58}
   body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
@@ -41,7 +41,7 @@
   </div>
   <div id="root">
   <div class="card">
-    <h1 id="hd"></h1><div class="sub" style="margin-bottom:6px"><a href="workbench.html">工作台</a> · <a href="guide.html">使用指南（原站 F12）</a></div>
+    <h1 id="hd"></h1><div class="sub" style="margin-bottom:6px"><a href="workbench.html">工作台</a> · <a href="guide.html">使用指南</a></div>
     <div class="row" style="margin-top:10px">
       <div class="kv" id="p20"></div>
       <div class="kv" id="conf"></div>
@@ -82,7 +82,7 @@ function toggleScen(i){ if (HID.has(i)) HID.delete(i); else HID.add(i); if (LAST
 { const u = new URLSearchParams(location.search); if (SCALES.includes(u.get('scale'))) SEL.scale = u.get('scale'); if (u.get('dir') === 'neg') SEL.dir = 'neg'; }
 function syncUrl(){ const u = new URLSearchParams(location.search); u.set('sym', document.getElementById('sym').value); if (SEL.scale === 'all') u.delete('scale'); else u.set('scale', SEL.scale); if (SEL.dir === 'pos') u.delete('dir'); else u.set('dir', SEL.dir); history.replaceState(null, '', '?' + u.toString()); }
 function setSel(k, v){ SEL[k] = v; syncUrl(); if (LAST) render(LAST); }
-const selBar = () => `<div class="sub" style="margin:6px 0 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="muted">尺度（原站 F06）</span>` +
+const selBar = () => `<div class="sub" style="margin:6px 0 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="muted">尺度</span>` +
   ['all', ...SCALES].map(k => `<button class="selbtn ${SEL.scale === k ? 'on' : ''}" onclick="setSel('scale','${k}')">${k === 'all' ? '全部' : SHORT[k]}</button>`).join('') +
   `<span class="muted" style="margin-left:10px">方向</span><button class="selbtn ${SEL.dir === 'pos' ? 'on' : ''}" onclick="setSel('dir','pos')">正泡沫</button><button class="selbtn ${SEL.dir === 'neg' ? 'on' : ''}" onclick="setSel('dir','neg')">负泡沫</button></div>`;
 function render(D){
@@ -95,7 +95,7 @@ function render(D){
   $('hd').innerHTML = `${D.name} ${D.symbol.replace(/^s[hz]/,'')} · 顶部风险 <span class="sub">as-of ${D.asof}（收盘）· 数据 ${D.data_version} · 模型 ${D.model_version}</span>`;
   const T = D.top;
   const B = T.bubble || {}, sp = x => x == null ? '—' : (x >= 0 ? '+' : '') + Math.round(x * 100) + '%';
-  $('p20').innerHTML = `<div class="sub">泡沫状态 · FCO 口径（Lagrange 起点 → 模型 t_c 价格）${badge(B.evidence || 'descriptive')} <span class="muted">${B.signal_status || ''}</span></div><div class="big" style="color:${B.t1_qualified_standard ? 'var(--red)' : 'var(--mute)'}">${B.t1_qualified_standard ? sp(B.size_model) : '无合格拟合'}</div>${B.t1_qualified_standard ? '' : `<div class="sub muted">最长窗口起点未通过 STANDARD 过滤；模型泡沫大小 ${sp(B.size_model)} 仅为未合格拟合的参考值</div>`}<div class="sub">模型泡沫大小 P̂(t_c)/P(t1)−1；实际涨幅 P(as-of)/P(t1)−1 = <b>${sp(B.size_realized)}</b></div><div class="sub">起点 ${B.start ?? '—'} · 持续 ${B.duration_days ?? '—'} 个交易日 · 所属尺度 ${B.scale ?? '—'}${B.t1_qualified_standard ? '（起点窗口合格）' : '（起点窗口不合格）'} · 最长合格尺度 ${B.longest_qualified_scale ?? '—'} · 代表 t_c ${B.tc ?? '—'}</div><div class="sub muted">bubbleProgress / bubbleScore：原站公式未公开，不显示 · 见顶概率模型 p20 ${badge(T.p20.evidence)}：不显示数字</div>`;
+  $('p20').innerHTML = `<div class="sub">泡沫状态 · FCO 口径（Lagrange 起点 → 模型 t_c 价格）${badge(B.evidence || 'descriptive')} <span class="muted">${B.signal_status || ''}</span></div><div class="big" style="color:${B.t1_qualified_standard ? 'var(--red)' : 'var(--mute)'}">${B.t1_qualified_standard ? sp(B.size_model) : '无合格拟合'}</div>${B.t1_qualified_standard ? '' : `<div class="sub muted">最长窗口起点未通过 STANDARD 过滤；模型泡沫大小 ${sp(B.size_model)} 仅为未合格拟合的参考值</div>`}<div class="sub">模型泡沫大小 P̂(t_c)/P(t1)−1；实际涨幅 P(as-of)/P(t1)−1 = <b>${sp(B.size_realized)}</b></div><div class="sub">起点 ${B.start ?? '—'} · 持续 ${B.duration_days ?? '—'} 个交易日 · 所属尺度 ${B.scale ?? '—'}${B.t1_qualified_standard ? '（起点窗口合格）' : '（起点窗口不合格）'} · 最长合格尺度 ${B.longest_qualified_scale ?? '—'} · 代表 t_c ${B.tc ?? '—'}</div><div class="sub muted">bubbleProgress / bubbleScore：相关公式未公开，不显示 · 见顶概率模型 p20 ${badge(T.p20.evidence)}：不显示数字</div>`;
   const L = T.lppls_confidence, names = {'2-4w':'2–4 周（10–20 日）','1-3m':'1–3 月（21–63 日）','3-6m':'3–6 月（64–126 日）','6-12m':'6–12 月（127–252 日）','12-24m':'12–24 月（253–504 日）','2-6y':'2–6 年（505–1500 日）'}, SE = L.scale_evidence || {};
   const SCALES6 = ['2-4w','1-3m','3-6m','6-12m','12-24m','2-6y'].filter(k => (T.indicators || {})[k]);
   const I = T.indicators || {}, SETS = ['standard','end','pure','early','box'], SN = {standard:'STANDARD',end:'END',pure:'PURE',early:'EARLY',box:'box(本项目)'};
@@ -105,17 +105,17 @@ function render(D){
     (NBC ? `<table><tr><th>尺度</th><th>STANDARD</th></tr>${SCALES.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]}</td><td>${NBC[k] == null ? '<span class="muted">未计算</span>' : bar(NBC[k])}</td></tr>`).join('')}</table>` : `<div class="muted">${NB.signal_status === 'not_computed' ? '本契约未计算负方向（日更只计算正方向；回放契约含负方向）' : '无负方向数据'}</div>`);
   $('conf').innerHTML = selBar() + (SEL.dir === 'neg' ? negHtml : `<div class="sub">DS LPPLS 置信度 = 该尺度窗口中通过过滤集的比例 ${badge(L.evidence)}</div>` +
     `<table><tr><th>尺度</th>${SETS.map(k => `<th>${SN[k]}</th>`).join('')}<th>最佳起点 t1（Lagrange）</th><th>状态</th></tr>` +
-    SCALES6.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => { const v = I[k] || {}, c = v.confidence || {}; if (v.signal_status === 'not_computed') return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${badge('none')}</td><td colspan="${SETS.length + 2}" class="muted">历史不足或未计算（原站 F06：长尺度数据不足时显示"不足以计算"）</td></tr>`; return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${SE[k] ? badge(SE[k]) : ''}</td>${SETS.map(st => `<td>${c[st] == null ? '—' : bar(c[st])}</td>`).join('')}<td>${v.best_t1 ?? '—'}${v.t1_qualified == null ? '' : v.t1_qualified ? ' ✓' : ' ✗'}</td><td class="muted">${v.signal_status ?? '—'}</td></tr>`; }).join('') + `</table>` +
+    SCALES6.filter(k => SEL.scale === 'all' || SEL.scale === k).map(k => { const v = I[k] || {}, c = v.confidence || {}; if (v.signal_status === 'not_computed') return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${badge('none')}</td><td colspan="${SETS.length + 2}" class="muted">历史不足或未计算</td></tr>`; return `<tr class="${SEL.scale === k ? 'selrow' : ''}"><td>${names[k]} ${SE[k] ? badge(SE[k]) : ''}</td>${SETS.map(st => `<td>${c[st] == null ? '—' : bar(c[st])}</td>`).join('')}<td>${v.best_t1 ?? '—'}${v.t1_qualified == null ? '' : v.t1_qualified ? ' ✓' : ' ✗'}</td><td class="muted">${v.signal_status ?? '—'}</td></tr>`; }).join('') + `</table>` +
     `<div class="sub muted">${I.rule_note || ''}</div>` +
     (T.trust && T.trust.trust != null ? `<div class="sub">DS LPPLS Trust（Zhang–Zhang–Sornette 2016：残差 bootstrap ${T.trust.n_boot} 次重拟合通过条件 2 的比例，${T.trust.n_windows} 窗中位数）${badge('descriptive')}：<b>${pct(T.trust.trust)}</b> <span class="muted">${T.trust.note}</span></div>` : '') +
-    (T.combo && T.combo.p1 != null ? `<div class="sub" id="combo">Combo（跨尺度幂平均，原站 F07）${badge(T.combo.evidence)}：过滤集 <select id="comboSet" onchange="renderCombo()" style="background:#0e1116;color:var(--fg);border:1px solid var(--line);border-radius:4px">${SETS.map(st => `<option value="${st}" ${st === COMBO.set ? 'selected' : ''}>${SN[st]}</option>`).join('')}</select> · p = <b id="comboPv"></b> <input id="comboP" type="range" min="-1" max="1" step="0.05" value="${Math.log10(COMBO.p)}" oninput="renderCombo()" style="width:160px;vertical-align:middle"> → <b id="comboV"></b> <span class="muted">参考 p=0.1 ${pct(T.combo['p0.1'])} · p=1 ${pct(T.combo.p1)} · p=10 ${pct(T.combo.p10)}；${T.combo.note}</span></div>` : '') +
+    (T.combo && T.combo.p1 != null ? `<div class="sub" id="combo">Combo（跨尺度幂平均）${badge(T.combo.evidence)}：过滤集 <select id="comboSet" onchange="renderCombo()" style="background:#0e1116;color:var(--fg);border:1px solid var(--line);border-radius:4px">${SETS.map(st => `<option value="${st}" ${st === COMBO.set ? 'selected' : ''}>${SN[st]}</option>`).join('')}</select> · p = <b id="comboPv"></b> <input id="comboP" type="range" min="-1" max="1" step="0.05" value="${Math.log10(COMBO.p)}" oninput="renderCombo()" style="width:160px;vertical-align:middle"> → <b id="comboV"></b> <span class="muted">参考 p=0.1 ${pct(T.combo['p0.1'])} · p=1 ${pct(T.combo.p1)} · p=10 ${pct(T.combo.p10)}；${T.combo.note}</span></div>` : '') +
     (T.negative_bubble && T.negative_bubble.confidence_standard ? `<div class="sub">负泡沫置信度（STANDARD，对 −ln P）${badge('none')}：${Object.keys(T.negative_bubble.confidence_standard).map(k => `${k} ${pct(T.negative_bubble.confidence_standard[k])}`).join(' · ')} <span class="muted">${T.negative_bubble.note}</span></div>` : ''));
   renderScen(D);
   renderCombo();
   renderChart(D);
   const TD = T.tc_distribution || {};
   const tdHtml = ['6-12m','12-24m','3-6m','1-3m','2-6y','2-4w'].filter(k => TD[k] && (SEL.scale === 'all' || SEL.scale === k)).map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2])); return `<div class="sub">${names[k]} · 合格拟合 ${v.n} 个（STANDARD），5 交易日分箱</div>` + v.bins.map(b => `<div class="sub"><span style="display:inline-block;width:150px">${b[0]} – ${b[1]}</span><span style="display:inline-block;width:${Math.round(b[2]/mx*200)}px;height:8px;background:var(--red);vertical-align:middle"></span> ${b[2]}</div>`).join(''); }).join('');
-  const td = document.createElement('div'); td.className = 'card dyn'; td.innerHTML = `<div class="sub">t_c 数量分布（原站 F09 "Distribution of critical time tc"；密度曲线=同一集合的平滑，不另作预测）${badge('dev')}${SEL.scale === 'all' ? '' : ` <span class="muted">· 仅 ${SHORT[SEL.scale]} 档</span>`}</div>` + (tdHtml || '<div class="sub muted">该档无 t_c 分布</div>');
+  const td = document.createElement('div'); td.className = 'card dyn'; td.innerHTML = `<div class="sub">t_c 数量分布（密度曲线为同一集合的平滑，不另作预测）${badge('dev')}${SEL.scale === 'all' ? '' : ` <span class="muted">· 仅 ${SHORT[SEL.scale]} 档</span>`}</div>` + (tdHtml || '<div class="sub muted">该档无 t_c 分布</div>');
   $('scen').closest('.card').parentNode.insertBefore(td, $('scen').closest('.card').nextSibling);
   const P1 = p1Match(D);
   renderP1(D, P1);
@@ -235,9 +235,9 @@ function renderChart(D, range){
     if (c.extrapolation.dates.length) svg += `<path d="${path(c.extrapolation.dates, c.extrapolation.price)}" fill="none" stroke="${col}" stroke-width="1.6" stroke-dasharray="5,4" opacity="0.9"/>`;
     const tc = s.representative.tc; if (xi.has(tc)) svg += `<line x1="${X(tc)}" x2="${X(tc)}" y1="${mt}" y2="${H-mb}" stroke="${col}" stroke-dasharray="2,3" opacity="0.7"/>`; });
   svg += '</svg>';
-  const legend = `<span class="muted" style="margin-right:8px">情景多选（原站 F11）</span>` + scenAll.map((s) => { const i = s._i; return `<label style="margin-right:12px;cursor:pointer;opacity:${HID.has(i) ? .45 : 1}"><input type="checkbox" ${HID.has(i) ? '' : 'checked'} onchange="toggleScen(${i})" style="vertical-align:middle"> <span style="display:inline-block;width:14px;height:3px;background:${COLORS[i % COLORS.length]};vertical-align:middle"></span> 情景 ${'ABCDEFGHI'[i]} 占比 ${Math.round(s.share*100)}% · t_c ${s.representative.tc}</label>`; }).join('');
-  card.innerHTML = `<div class="sub">价格（对数轴，仅到 as-of）叠加情景代表拟合曲线：实线=拟合段 [t1,t2]，虚线=外推至 t_c 前（原站 F05/F11；外推不是价格目标）<span class="badge b-dev">开发段</span></div>${svg}<div class="sub" style="margin-top:6px">${legend || '<span class="muted">无合格拟合，无情景曲线</span>'}</div>`;
-  card.innerHTML += `<div class="sub" style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">缩放（原站 F05 范围导航）：从 <input id="zf" type="range" min="0" max="${n0-1}" value="${r0}" style="width:220px"> 到 <input id="zt" type="range" min="0" max="${n0-1}" value="${r1}" style="width:220px"> <span id="zl">${P.dates[0]} – ${P.dates[P.dates.length-1]}</span> <button id="zr">全部</button> <span class="muted">鼠标悬停看十字线数值；滚轮缩放</span></div><div id="xh" class="sub" style="min-height:18px"></div>`;
+  const legend = `<span class="muted" style="margin-right:8px">情景多选</span>` + scenAll.map((s) => { const i = s._i; return `<label style="margin-right:12px;cursor:pointer;opacity:${HID.has(i) ? .45 : 1}"><input type="checkbox" ${HID.has(i) ? '' : 'checked'} onchange="toggleScen(${i})" style="vertical-align:middle"> <span style="display:inline-block;width:14px;height:3px;background:${COLORS[i % COLORS.length]};vertical-align:middle"></span> 情景 ${'ABCDEFGHI'[i]} 占比 ${Math.round(s.share*100)}% · t_c ${s.representative.tc}</label>`; }).join('');
+  card.innerHTML = `<div class="sub">价格（对数轴，仅到 as-of）叠加情景代表拟合曲线：实线=拟合段 [t1,t2]，虚线=外推至 t_c 前（外推不是价格目标）<span class="badge b-dev">开发段</span></div>${svg}<div class="sub" style="margin-top:6px">${legend || '<span class="muted">无合格拟合，无情景曲线</span>'}</div>`;
+  card.innerHTML += `<div class="sub" style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">缩放（范围导航）：从 <input id="zf" type="range" min="0" max="${n0-1}" value="${r0}" style="width:220px"> 到 <input id="zt" type="range" min="0" max="${n0-1}" value="${r1}" style="width:220px"> <span id="zl">${P.dates[0]} – ${P.dates[P.dates.length-1]}</span> <button id="zr">全部</button> <span class="muted">鼠标悬停看十字线数值；滚轮缩放</span></div><div id="xh" class="sub" style="min-height:18px"></div>`;
   if (fresh) { const anchor = $('scen').closest('.card'); anchor.parentNode.insertBefore(card, anchor); }
   const svgEl = card.querySelector('svg'), ns = 'http://www.w3.org/2000/svg';
   const vl = document.createElementNS(ns, 'line'); vl.setAttribute('stroke', 'var(--blu)'); vl.setAttribute('y1', mt); vl.setAttribute('y2', H - mb); vl.style.display = 'none'; svgEl.appendChild(vl);
@@ -258,7 +258,7 @@ function renderMovie(D){
   const card = document.createElement('div'); card.className = 'card dyn';
   const opts = M.map((f,i) => `<option value="${i}">${f.asof}</option>`).join('');
   const panel = (id, title) => `<div style="flex:1;min-width:280px;border:1px solid var(--line);border-radius:8px;padding:8px 10px"><div class="sub" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b>${title}</b> 日期 <select id="mvSel${id}">${opts}</select> <span id="mvInfo${id}" class="muted"></span></div><div id="mvFrame${id}"></div></div>`;
-  card.innerHTML = `<div class="sub">t_c 数量分布 Movie（原站 F10：双面板独立日期，左面板 From / To / Delay / Play 播放，右面板固定对照；分布随 as-of 推进而变化，连续稳定才作确认条件）<span class="badge b-dev">开发段</span></div>
+  card.innerHTML = `<div class="sub">t_c 数量分布 Movie（双面板独立日期；左面板播放，右面板固定对照；分布随 as-of 推进而变化，连续稳定才作确认条件）<span class="badge b-dev">开发段</span></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0" class="sub">
       From <select id="mvFrom">${opts}</select> To <select id="mvTo">${opts}</select> Delay(ms) <input id="mvDelay" type="number" value="600" min="100" step="100" style="width:70px">
       <button id="mvPlay">Play</button></div>

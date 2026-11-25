@@ -144,7 +144,7 @@
     "12-24m"
    ],
    "evidence": "none",
-   "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"
+   "note": "默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"
   },
   "tc_distribution": {
    "1-3m": {
@@ -461,7 +461,7 @@
   "rule": "执行规则",
   "dev_failed": "开发段模型，校准段未通过",
   "cal_fragile": "校准段部分通过（4/7 指数），留出/多重比较后不满足，不升级",
-  "descriptive_bubble": "原版口径描述量",
+  "descriptive_bubble": "口径描述量",
   "dev_pending": "开发段评估进行中",
   "descriptive": "描述已完成月份，非预测"
  },
@@ -669,7 +669,7 @@
   $('hd').innerHTML = `${D.name} ${D.symbol.replace(/^s[hz]/,'')} · 顶部风险 <span class="sub">as-of ${D.asof}（收盘）· 数据 ${D.data_version} · 模型 ${D.model_version}</span>`;
   const T = D.top;
   const B = T.bubble || {}, sp = x => x == null ? '—' : (x >= 0 ? '+' : '') + Math.round(x * 100) + '%';
-  $('p20').innerHTML = `<div class="sub">泡沫状态 · FCO 口径（Lagrange 起点 → 模型 t_c 价格）${badge(B.evidence || 'descriptive')} <span class="muted">${B.signal_status || ''}</span></div><div class="big" style="color:var(--red)">${sp(B.size_model)}</div><div class="sub">模型泡沫大小 P̂(t_c)/P(t1)−1；实际涨幅 P(as-of)/P(t1)−1 = <b>${sp(B.size_realized)}</b></div><div class="sub">起点 ${B.start ?? '—'} · 持续 ${B.duration_days ?? '—'} 个交易日 · 所属尺度 ${B.scale ?? '—'}${B.t1_qualified_standard ? '（起点窗口合格）' : '（起点窗口不合格）'} · 最长合格尺度 ${B.longest_qualified_scale ?? '—'} · 代表 t_c ${B.tc ?? '—'}</div><div class="sub muted">bubbleProgress / bubbleScore：原站公式未公开，不显示 · 见顶概率模型 p20 ${badge(T.p20.evidence)}：不显示数字</div>`;
+  $('p20').innerHTML = `<div class="sub">泡沫状态 · FCO 口径（Lagrange 起点 → 模型 t_c 价格）${badge(B.evidence || 'descriptive')} <span class="muted">${B.signal_status || ''}</span></div><div class="big" style="color:var(--red)">${sp(B.size_model)}</div><div class="sub">模型泡沫大小 P̂(t_c)/P(t1)−1；实际涨幅 P(as-of)/P(t1)−1 = <b>${sp(B.size_realized)}</b></div><div class="sub">起点 ${B.start ?? '—'} · 持续 ${B.duration_days ?? '—'} 个交易日 · 所属尺度 ${B.scale ?? '—'}${B.t1_qualified_standard ? '（起点窗口合格）' : '（起点窗口不合格）'} · 最长合格尺度 ${B.longest_qualified_scale ?? '—'} · 代表 t_c ${B.tc ?? '—'}</div><div class="sub muted">bubbleProgress / bubbleScore：相关公式未公开，不显示 · 见顶概率模型 p20 ${badge(T.p20.evidence)}：不显示数字</div>`;
   const L = T.lppls_confidence, names = {'1-3m':'1–3 月（21–63 日）','6-12m':'6–12 月（127–252 日）','12-24m':'12–24 月（253–504 日）'}, SE = L.scale_evidence || {};
   const I = T.indicators || {}, SETS = ['standard','end','pure','early','box'], SN = {standard:'STANDARD',end:'END',pure:'PURE',early:'EARLY',box:'box(本项目)'};
   const bar = v => `<span style="display:inline-block;width:${Math.round((v||0)*60)}px;height:8px;background:var(--red);vertical-align:middle;margin-right:4px"></span>${pct(v)}`;
@@ -682,7 +682,7 @@
   $('scen').innerHTML = T.scenarios.map((s,i) => { const R = s.representative || {}; return `<div><div class="sub">情景 ${'ABCD'[i]} · 占比 ${pct(s.share)} · 窗口 ${s.dt_range[0]}–${s.dt_range[1]} 日</div><b>约 ${s.ahead_mean} ± ${s.ahead_sd} 个交易日后</b><div class="sub">20/80 分位 ${s.q20}–${s.q80} 日：${s.q20_date} – ${s.q80_date}</div><div class="sub">2.5/97.5 分位：${s.q025_date} – ${s.q975_date} · 众数 ${s.tc_mode_date}</div><div class="sub muted">代表拟合（最小 loss）：t1 ${R.t1} · t_c ${R.tc} · m ${R.m} · ω ${R.omega} · D ${R.damping} · 振荡 ${R.oscillations_cycles} 周期 · loss ${R.loss} · 过滤集 ${(R.sets||[]).join('/') || '无'}</div></div>`; }).join('');
   const TD = T.tc_distribution || {};
   const tdHtml = ['6-12m','12-24m','1-3m'].map(k => { const v = TD[k]; if (!v || !v.n) return `<div class="sub muted">${names[k]}：无合格拟合</div>`; const mx = Math.max(...v.bins.map(b => b[2])); return `<div class="sub">${names[k]} · 合格拟合 ${v.n} 个（STANDARD），5 交易日分箱</div>` + v.bins.map(b => `<div class="sub"><span style="display:inline-block;width:150px">${b[0]} – ${b[1]}</span><span style="display:inline-block;width:${Math.round(b[2]/mx*200)}px;height:8px;background:var(--red);vertical-align:middle"></span> ${b[2]}</div>`).join(''); }).join('');
-  const td = document.createElement('div'); td.className = 'card'; td.innerHTML = `<div class="sub">t_c 数量分布（原站 F09 "Distribution of critical time tc"；密度曲线=同一集合的平滑，不另作预测）${badge('dev')}</div>` + tdHtml;
+  const td = document.createElement('div'); td.className = 'card'; td.innerHTML = `<div class="sub">t_c 分布（密度曲线为同一集合的平滑，不另作预测）${badge('dev')}</div>` + tdHtml;
   $('scen').closest('.card').parentNode.insertBefore(td, $('scen').closest('.card').nextSibling);
   const rows = [
     ['顶部区间（情景）', T.window.start ? `${T.window.start} – ${T.window.end}<div class="sub muted">${T.window.rule}</div>` : `<span class="muted">${T.window.rule}</span>`, badge(T.window.evidence)],

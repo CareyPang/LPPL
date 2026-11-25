@@ -47,7 +47,7 @@
     const catalog = catalogResult.data;
     if (!catalog || catalogResult.reason === 'empty') {
       const reason = catalogResult.reason || 'unpublished';
-      const labels = { unpublished: '尚未发布', unavailable: '暂时无法读取', empty: '目录数据为空', not_applicable: '不适用' };
+      const labels = { unpublished: '未发布', unavailable: '暂时无法读取', empty: '目录数据为空', not_applicable: '不适用' };
       cat.innerHTML = `<p class="${reason === 'unavailable' ? 'fail' : 'muted'}" data-reason="${reason}">标的目录：${labels[reason] || '状态未知'}</p>` +
         (reason === 'unavailable' ? '<button type="button" class="chip" data-retry-catalog>重试</button>' : '');
       mounted = false;

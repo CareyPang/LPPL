@@ -5,7 +5,7 @@
   if (root) root.LPPLChartResearchCard = api;
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
-  function str(value) { return value == null || value === '' ? '未记录' : String(value); }
+  function str(value) { return value == null || value === '' ? '' : String(value); }
   function wrapLines(text, limit) {
     return text.flatMap(function (line) {
       return String(line).split(/\r?\n/).flatMap(function (part) {
@@ -37,17 +37,29 @@
       stale: data.stale === true, staleReason: str(data.staleReason), exportedAt: new Date().toISOString() };
   }
   function lines(item) {
-    var text = [item.name + ' · ' + item.symbol + ' · ' + item.exchange + ' · ' + item.unit,
-      '行情截止 ' + item.marketAsOf + ' ｜ 模型截止 ' + item.modelAsOf + ' ｜ 尺度 ' + item.scale,
-      '来源 ' + item.source + ' ｜ 行情复权 ' + item.adjustment + ' ｜ 成交量 ' + item.volumeUnit,
-      '证据 ' + item.evidenceLabel + ' (' + item.evidence + ') ｜ ' + item.mode,
-      '模型 ' + item.modelVersion + ' ｜ Prediction ID ' + item.predictionId,
-      '首次可见时间 ' + item.firstVisibleAt + ' ｜ 导出 ' + item.exportedAt]
-      .concat(item.intervals.length ? item.intervals.map(function (interval, i) {
+    var text = [
+      [item.name, item.symbol, item.exchange, item.unit].filter(Boolean).join(' · '),
+      [
+        item.marketAsOf && '行情截止 ' + item.marketAsOf,
+        item.modelAsOf && '模型截止 ' + item.modelAsOf,
+        item.scale && '尺度 ' + item.scale,
+      ].filter(Boolean).join(' ｜ '),
+      [
+        item.source && '来源 ' + item.source,
+        item.adjustment && '行情复权 ' + item.adjustment,
+        item.volumeUnit && '成交量 ' + item.volumeUnit,
+      ].filter(Boolean).join(' ｜ '),
+      [item.evidenceLabel && '证据 ' + item.evidenceLabel, item.mode].filter(Boolean).join(' ｜ '),
+      item.modelVersion && '模型 ' + item.modelVersion,
+      item.predictionId && 'Prediction ID ' + item.predictionId,
+      item.firstVisibleAt && '首次可见时间 ' + item.firstVisibleAt,
+      item.exportedAt && '导出 ' + item.exportedAt,
+    ].filter(Boolean).concat(item.intervals.length ? item.intervals.map(function (interval, i) {
         return '区间 ' + (i + 1) + '：' + interval.start + ' — ' + interval.end +
           (interval.n != null ? ' ｜ n=' + interval.n : '') + ' ｜ ' + interval.note;
       }) : ['当前尺度没有可展示区间；请查看证据状态'])
-      .concat(item.stale ? ['缓存已过期：' + item.staleReason] : [], [item.note]);
+      .concat(item.stale ? ['缓存已过期' + (item.staleReason ? '：' + item.staleReason : '')] : [],
+        item.note ? [item.note] : []);
     // 66 full-width glyphs at 17px fit the 1184px content width. Both exports
     // use these same lines; long IDs and sources remain complete, never ellipsized.
     return wrapLines(text, 66);

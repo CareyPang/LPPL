@@ -176,7 +176,7 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     expect(page.locator("#summary")).to_contain_text(
         "当前只算了 6–12 月、12–24 月两个尺度"
     )
-    expect(page.locator("#risk")).to_contain_text("这个尺度尚未计算")
+    expect(page.locator("#risk")).to_contain_text("这个尺度未计算")
     empty_tiles = page.locator("#summary .sum-card.top .tiles .tile")
     expect(empty_tiles).to_have_count(3)
     for tile_index, label, reason in (
@@ -240,7 +240,7 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
     assert notice and chart and chart["y"] >= notice["y"] + notice["height"] + 12
     page.locator('#period-selector [data-period="d"]').click()
     expect(page.locator("#data-source")).to_have_text(
-        "tencent_fqkline · 未复权"
+        "腾讯行情"
     )
     expect(page.locator("#market-date")).to_have_text(
         "行情日期 2026-11-17"
@@ -268,12 +268,18 @@ def test_chart_30m_obv_renders_worker_fixture(page: Page) -> None:
 def test_flow_4_index_chip_updates_header(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001")
     expect(page.locator("#sym-n")).to_contain_text("上证指数")
+    # The header renders before its quote refresh starts. Wait for this exact
+    # intercepted request to finish so teardown cannot race route.fulfill().
     with page.expect_response(
-        lambda response: urlsplit(response.url).path == "/quote"
+        lambda response: urlsplit(response.url).hostname == "lppl-stock-query.careypang.workers.dev"
+        and urlsplit(response.url).path == "/quote"
         and parse_qs(urlsplit(response.url).query).get("codes") == ["sh000300"]
-    ):
+    ) as quote_response:
         page.locator('#ticker button[data-c="沪深300"]').click()
     expect(page.locator("#sym-n")).to_contain_text("沪深300")
+    response = quote_response.value
+    response.finished()
+    assert response.status == 503  # The offline route, never the live Worker.
 
 
 @pytest.mark.e2e
@@ -514,6 +520,41 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     )
     assert len(chip_tops) > 1, chip_tops
     assert page.locator("#s-breadth .table-scroll").count() == 2
+
+
+@pytest.mark.e2e
+def test_market_stale_banner_summary_expands_on_mobile(page: Page) -> None:
+    stale_fixture = (
+        Path(__file__).resolve().parents[2]
+        / "web"
+        / "mock"
+        / "data"
+        / "market"
+        / "market_latest.json"
+    )
+    page.route(
+        "**/lab/mock/data/market/market_latest.json",
+        lambda route: route.fulfill(path=str(stale_fixture)),
+    )
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(f"{BASE_URL}/market.html")
+
+    banner = page.locator("#stale-banner")
+    expect(banner).to_be_visible()
+    summary = banner.locator("summary")
+    dimensions = summary.evaluate(
+        """el => {
+          const style = getComputedStyle(el);
+          const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4;
+          return { height: el.getBoundingClientRect().height, lineHeight };
+        }"""
+    )
+    assert dimensions["height"] <= dimensions["lineHeight"] * 2 + 1, dimensions
+    assert banner.locator("details").evaluate("(el) => !el.open")
+    expect(banner.locator("details > div")).to_be_hidden()
+    summary.click()
+    assert banner.locator("details").evaluate("(el) => el.open")
+    expect(banner.locator("details > div")).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -1366,6 +1407,67 @@ def test_chart_undo_keeps_history_drawings_hidden(page: Page) -> None:
 
 
 @pytest.mark.e2e
+def test_chart_current_score_reads_history_once_and_replay_reuses_it(page: Page) -> None:
+    history_requests = []
+
+    def serve_history(route) -> None:
+        history_requests.append(route.request.url)
+        route.fulfill(json={"symbol": "sh601838", "frames": []})
+
+    page.route("**/lab/mock/data/stock/601838_history.json", serve_history)
+    page.goto(f"{BASE_URL}/chart.html?code=sh601838&scale=6-12m")
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.loaded === 'true'"
+    )
+    page.wait_for_function(
+        "() => document.querySelector('#chart-page')?.dataset.decisionHistoryStatus === 'ready'"
+    )
+    expect(page.locator("#terminal-history")).to_be_hidden()
+    assert len(history_requests) == 1
+    expect(page.locator("#chart-page")).to_have_attribute("data-bottom-score", "")
+    page.locator("#terminal-mode-replay").click()
+    expect(page.locator("#terminal-history")).to_be_visible()
+    expect(page.locator("#terminal-history-note")).to_have_text("该标的暂无历史记录。")
+    assert len(history_requests) == 1
+    page.locator("#terminal-mode-diagnosis").click()
+    page.locator("#terminal-mode-replay").click()
+    expect(page.locator("#terminal-history")).to_be_visible()
+    assert len(history_requests) == 1
+    assert not any(method == "POST" for method, _, _ in page._e2e_requests)
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    ("query", "symbol"),
+    [("SPX", "US_SPX"), ("日经", "JP_N225"), ("KOPSI", "KR_KOSPI")],
+)
+def test_legacy_index_global_alias_uses_shared_chart(page: Page, query: str, symbol: str) -> None:
+    # This tests the old entry's routing boundary, independently of global data coverage.
+    page.route("**/chart.html?*", lambda route: route.fulfill(body="<h1>Shared chart</h1>", content_type="text/html"))
+    page.goto(f"{BASE_URL}/index.html?code={query}&asof=2026-06-26")
+    page.wait_for_url(re.compile(r"/chart\.html\?"))
+    assert page.url == (
+        f"{BASE_URL}/chart.html?code={symbol}&kind=index&from=index.html&asof=2026-06-26"
+    )
+    assert not any("/global/" in url for _, url, _ in page._e2e_requests)
+
+
+@pytest.mark.e2e
+def test_legacy_index_search_rejects_unknown_and_routes_known_global(page: Page) -> None:
+    page.goto(f"{BASE_URL}/index.html?code=sh000001")
+    page.locator("#code").fill("ZZ_UNKNOWN")
+    page.locator("#go").click()
+    expect(page.locator("#err")).to_contain_text("无法识别")
+    assert page.evaluate("new URL(location.href).searchParams.get('code')") in {"sh000001", "上证指数"}
+    page.route("**/chart.html?*", lambda route: route.fulfill(body="<h1>Shared chart</h1>", content_type="text/html"))
+    page.locator("#code").fill("NDX")
+    page.locator("#asof").fill("2026-06-26")
+    page.locator("#go").click()
+    page.wait_for_url(re.compile(r"/chart\.html\?code=US_NDX&kind=index"))
+    assert "asof=2026-06-26" in page.url
+
+
+@pytest.mark.e2e
 def test_chart_stock_archive_20250523_keeps_cutoff_and_drawings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     page.goto(f"{BASE_URL}/chart.html?code=sh600519&asof=2025-05-23")
@@ -1540,9 +1642,7 @@ def test_chart_renders_market_bars_when_latest_model_is_missing(page: Page) -> N
     chart_page = page.locator("#chart-page")
     assert int(chart_page.get_attribute("data-bar-count") or "0") > 0
     expect(chart_page).to_have_attribute("data-model-status", "missing")
-    expect(page.locator("#evidence-state")).to_have_text(
-        "没有读到已发布的模型结果（可能尚未发布，或读取失败）"
-    )
+    expect(page.locator("#evidence-state")).to_have_text("当前没有可用的已发布模型结果。")
     expect(page.locator("#interval-list .interval-row")).to_have_count(0)
     expect(page.locator("#model-date")).to_have_text("模型日期 未读到")
     retry = page.locator("#evidence-note .evidence-retry-button")
@@ -1797,7 +1897,7 @@ def test_rule_labels_index_and_chart_evidence(page: Page) -> None:
     source = page.locator("#evidence-rule-source")
     expect(source).to_be_visible()
     expect(source).to_have_text("区间来源：形态框规则（不含振荡/阻尼条件）")
-    expect(page).to_have_title("完整图表 · 临界点")
+    expect(page).to_have_title("标的诊断与回测 · 临界点")
 
 
 @pytest.mark.e2e

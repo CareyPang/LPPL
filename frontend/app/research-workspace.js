@@ -20,10 +20,10 @@
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const prettyTime = value => {
     const d = new Date(value || '');
-    if (!Number.isFinite(d.getTime())) return '时间未提供';
+    if (!Number.isFinite(d.getTime())) return '';
     return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
   };
-  const dateLabel = value => value || '未提供';
+  const dateLabel = value => value || '';
   const windowEvidence = w => (w.evidence === 'descriptive' ? ' · n=' + w.n + '，历史分位' : '') +
     ' · ' + window.RuleLabels.RULES.box.source;
   const displayRuleNote = note => /占比|比例|lppls_confidence/i.test(note || '') && !String(note).includes('占比不是概率')
@@ -87,8 +87,8 @@
   function notify(text) { $('global-message').textContent = text; $('global-message').hidden = !text; }
   function storageWarning() {
     $('storage-warning').hidden = false;
-    $('storage-warning').textContent = externalConflict ? '另一个标签页更新了研究记录，本页尚未覆盖它。草稿仍保留在编辑器中；载入已保存记录后可以继续保存草稿。' : state.storageIssue
-      ? '本机研究记录无法读取，暂未覆盖。仍可浏览已发布结果；重要笔记请自行复制保存。'
+    $('storage-warning').textContent = externalConflict ? '另一个标签页更新了研究记录。本页保留草稿，没有覆盖已保存内容；载入已保存记录后可以继续保存草稿。' : state.storageIssue
+      ? '本机研究记录无法读取；仍可浏览已发布结果，重要笔记请自行复制保存。'
       : '本次修改未保存：存储不可用、空间不足，或其他标签页已更新。请先复制重要笔记，再载入已保存记录。';
     $('restore-saved').hidden = false;
   }
@@ -116,8 +116,8 @@
   window.ResearchWorkspaceActions = { hasUnsaved };
   function identity(asset) {
     const code = asset.code;
-    const exchange = /^(sh|60|68)/.test(code) ? '上交所 SSE' : /^(sz|00|30)/.test(code) ? '深交所 SZSE' : /^(43|83|87|92)/.test(code) ? '北交所 BSE' : '交易所未提供';
-    return code + ' · ' + exchange + ' · ' + (asset.kind === 'index' ? '指数 / 点' : 'A 股 / CNY') + ' · 交易状态未提供';
+    const exchange = /^(sh|60|68)/.test(code) ? '上交所 SSE' : /^(sz|00|30)/.test(code) ? '深交所 SZSE' : /^(43|83|87|92)/.test(code) ? '北交所 BSE' : '';
+    return [code, exchange, asset.kind === 'index' ? '指数 / 点' : 'A 股 / CNY'].filter(Boolean).join(' · ');
   }
   function announceWatch() {
     window.dispatchEvent(new CustomEvent('lppl-watch', { detail: { origin: 'research-workspace' } }));
@@ -157,7 +157,7 @@
     const s = summaryOf(asset), loading = busy && !summaries.has(asset.id), changed = hasChange(asset.id);
     const text = loading ? '正在读取结果' : errors.has(asset.id) ? '本次读取未成功' : s.statusText;
     const tone = errors.has(asset.id) || s.stale ? ' warning' : s.windows.length ? ' window' : '';
-    return '<div class="watch-row' + (state.selectedId === asset.id ? ' is-selected' : '') + '" data-row="' + esc(asset.id) + '"><button type="button" class="asset-select" data-select="' + esc(asset.id) + '" aria-pressed="' + (state.selectedId === asset.id) + '"><strong>' + esc(asset.name) + '</strong><small>' + esc(asset.code) + ' · ' + (asset.kind === 'index' ? '指数' : 'A 股') + '</small></button><div class="row-date">' + esc(s.asof || '—') + '<small>' + esc(groupOf(asset.id) || '未分组') + '</small></div><div class="row-state"><span class="state-pill' + tone + '">' + esc(text || '未取得已发布结果') + '</span>' + (s.windows.length ? '<small>' + esc(s.windows[0].start + ' — ' + s.windows[0].end + windowEvidence(s.windows[0])) + (s.windows.length > 1 ? ' 等 ' + s.windows.length + ' 个区间' : '') + '</small>' : '') + (changed ? '<span class="change-dot">本机记录有变化</span>' : '') + '</div><label class="compare-check"><span class="sr-only">比较 ' + esc(asset.name) + '</span><input type="checkbox" data-compare="' + esc(asset.id) + '"' + (state.compareIds.includes(asset.id) ? ' checked' : '') + '></label></div>';
+    return '<div class="watch-row' + (state.selectedId === asset.id ? ' is-selected' : '') + '" data-row="' + esc(asset.id) + '"><button type="button" class="asset-select" data-select="' + esc(asset.id) + '" aria-pressed="' + (state.selectedId === asset.id) + '"><strong>' + esc(asset.name) + '</strong><small>' + esc(asset.code) + ' · ' + (asset.kind === 'index' ? '指数' : 'A 股') + '</small></button><div class="row-date">' + (s.asof ? esc(s.asof) : '') + '<small>' + esc(groupOf(asset.id) || '未分组') + '</small></div><div class="row-state"><span class="state-pill' + tone + '">' + esc(text || '未取得已发布结果') + '</span>' + (s.windows.length ? '<small>' + esc(s.windows[0].start + ' — ' + s.windows[0].end + windowEvidence(s.windows[0])) + (s.windows.length > 1 ? ' 等 ' + s.windows.length + ' 个区间' : '') + '</small>' : '') + (changed ? '<span class="change-dot">本机记录有变化</span>' : '') + '</div><label class="compare-check"><span class="sr-only">比较 ' + esc(asset.name) + '</span><input type="checkbox" data-compare="' + esc(asset.id) + '"' + (state.compareIds.includes(asset.id) ? ' checked' : '') + '></label></div>';
   }
   function renderList() {
     const focused = focusToken();
@@ -178,7 +178,7 @@
     $('resume-section').hidden = recent.length === 0;
     $('resume-items').innerHTML = recent.map(({ context: r, index }) => {
       const a = assets.find(x => x.id === r.assetId);
-      return '<button type="button" class="resume-item" data-resume="' + index + '"><span><strong>' + esc(a.name) + '</strong><small>上次研究截至 ' + esc(r.asof || '未提供') + '</small></span><span aria-hidden="true">↗</span></button>';
+      return '<button type="button" class="resume-item" data-resume="' + index + '"><span><strong>' + esc(a.name) + '</strong>' + (r.asof ? '<small>上次研究截至 ' + esc(r.asof) + '</small>' : '') + '</span><span aria-hidden="true">↗</span></button>';
     }).join('');
     restoreFocus(focused);
   }
@@ -205,18 +205,21 @@
     if (!s.windows.length) {
       const next = {
         unavailable: '先打开行情查看价格；也可以重试读取已发布分析。',
-        not_computed: '已有结果尚未覆盖计算尺度。打开分析页查看当前计算入口。',
+        not_computed: '已有结果未覆盖此计算尺度。打开分析页查看当前计算入口。',
         no_qualified_fit: '本次已计算尺度没有合格拟合。打开完整图表核对行情，展开计算覆盖查看哪些尺度已计算。',
         no_cluster: '当前没有可展示的聚类区间。先查看各尺度覆盖与证据，不把单次拟合当作聚类。',
-        evidence_hidden: '结果的证据状态尚不支持显示区间。可以展开结果口径说明，或查看完整图表的证据面板。'
+        evidence_hidden: '结果的证据状态不支持显示区间。可以展开结果口径说明，或查看完整图表的证据面板。'
       };
       html += '<p class="record-caption">' + esc(next[s.status] || '可打开完整图表查看行情与证据。') + '</p>';
     }
-    html += '<dl class="summary-facts"><div><dt>分析截止日</dt><dd>' + esc(dateLabel(s.asof)) + '</dd></div><div><dt>模型版本</dt><dd>' + esc(s.modelVersion || '未提供') + '</dd></div><div><dt>生成时间</dt><dd>' + esc(s.generatedAt ? prettyTime(s.generatedAt) + ' 北京时间' : '未提供') + '</dd></div>';
-    if (s.price && asset.kind === 'index') html += '<div><dt>分析序列收盘</dt><dd>' + esc(s.price.close.toLocaleString('zh-CN', { maximumFractionDigits: 3 })) + ' 点 <small>(' + esc(s.price.date) + ')</small></dd></div>';
+    const fact = (label, value) => value ? '<div><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>' : '';
+    html += '<dl class="summary-facts">' + fact('分析截止日', s.asof) + fact('模型版本', s.modelVersion) + fact('生成时间', s.generatedAt ? prettyTime(s.generatedAt) + ' 北京时间' : '');
+    if (s.price && asset.kind === 'index') html += '<div><dt>分析序列收盘</dt><dd>' + esc(s.price.close.toLocaleString('zh-CN', { maximumFractionDigits: 3 })) + ' 点' + (s.price.date ? ' <small>(' + esc(s.price.date) + ')</small>' : '') + '</dd></div>';
     if (s.price && asset.kind === 'stock') html += '<div><dt>股票行情</dt><dd><a href="' + esc(Core.route(asset)) + '">前往分析页查看</a></dd></div>';
-    html += '<div><dt>预测记录 ID</dt><dd>' + esc(s.predictionId || '未提供') + '</dd></div></dl>';
-    html += '<p class="source-note">来源：' + esc(s.source || '未提供') + (s.price && asset.kind === 'stock' ? '<br>现有价格为拟合序列，复权口径未单独提供；此处不将其作为股票现价展示。' : s.price?.note ? '<br>' + esc(s.price.note) : '') + '</p>';
+    html += fact('预测记录 ID', s.predictionId) + '</dl>';
+    const sourceNote = [s.source ? '来源：' + esc(s.source) : '',
+      s.price && asset.kind === 'stock' ? '现有价格为拟合序列；此处不将其作为股票现价展示。' : s.price?.note ? esc(s.price.note) : ''].filter(Boolean);
+    if (sourceNote.length) html += '<p class="source-note">' + sourceNote.join('<br>') + '</p>';
     if (s.ruleNote) html += '<details class="record-details"><summary>结果口径说明</summary><p class="record-caption">' + esc(displayRuleNote(s.ruleNote)) + '</p></details>';
     if (s.coverage.length) html += '<div class="coverage-list" aria-label="计算覆盖">' + s.coverage.map(c => '<span class="' + (c.computed ? 'completed' : '') + '">' + esc(c.scale) + ' · ' + (c.computed ? '已计算' : c.status === 'not_computed' ? '未计算' : '状态待核对') + '</span>').join('') + '</div><p class="source-note">' + (incomplete ? '仍有尺度未计算或状态待核对；不等于这些尺度没有信号。' : '尺度表示拟合数据跨度，不是必然见顶的等待时间。') + '</p>';
     $('detail-summary').innerHTML = html;
@@ -235,17 +238,21 @@
       saveDraft(); activeNoteKey = key;
       $('research-note').value = drafts.has(key) ? drafts.get(key) : note?.text || '';
     }
-    $('note-state').textContent = drafts.has(key) && drafts.get(key) !== (note?.text || '') ? '未保存草稿' : note ? '已保存 · v' + note.version : '尚未保存';
+    $('note-state').textContent = drafts.has(key) && drafts.get(key) !== (note?.text || '') ? '未保存草稿' : note ? '已保存 · v' + note.version : '未保存';
     $('note-context').textContent = s.asof ? '绑定分析截至 ' + s.asof : '未关联分析的关注理由；以后不会自动改绑';
     $('save-note').disabled = replaying && !savedReplay;
     const notes = Core.notesFor(state, asset.id);
     $('note-version-count').textContent = notes.length;
-    $('note-history').innerHTML = notes.length ? notes.map(n => '<article class="record-item"><strong>版本 ' + n.version + (n.imported ? ' · 导入记录' : '') + ' · ' + (n.asof ? '分析截至 ' + esc(n.asof) : '未关联分析') + '</strong><time>' + esc(prettyTime(n.createdAt)) + ' 北京时间</time><p>' + esc(n.text) + '</p><small>模型 ' + esc(n.modelVersion || '未提供') + ' · 记录 ID ' + esc(n.predictionId || '未提供') + '</small></article>').join('') : '<p class="record-caption">还没有保存笔记。</p>';
+    $('note-history').innerHTML = notes.length ? notes.map(n => {
+      const created = prettyTime(n.createdAt), meta = [n.modelVersion ? '模型 ' + esc(n.modelVersion) : '', n.predictionId ? '记录 ID ' + esc(n.predictionId) : ''].filter(Boolean).join(' · ');
+      return '<article class="record-item"><strong>版本 ' + n.version + (n.imported ? ' · 导入记录' : '') + ' · ' + (n.asof ? '分析截至 ' + esc(n.asof) : '未关联分析') + '</strong>' + (created ? '<time>' + esc(created) + ' 北京时间</time>' : '') + '<p>' + esc(n.text) + '</p>' + (meta ? '<small>' + meta + '</small>' : '') + '</article>';
+    }).join('') : '<p class="record-caption">还没有保存笔记。</p>';
     const records = recordList(asset.id);
     $('observation-count').textContent = records.length;
     $('observation-history').innerHTML = records.length ? records.slice().reverse().map((r, reverseIndex) => {
       const index = records.length - 1 - reverseIndex, prior = records[index - 1];
-      return '<article class="record-item"><strong>' + (index ? '结果摘要发生变化' : '开始本机记录') + '</strong><time>本机取得：' + esc(prettyTime(r.observedAt)) + ' 北京时间</time><p>分析截至 ' + esc(r.asof) + '<br>' + esc(windowLabel(r)) + '</p>' + (prior ? '<small>上次：' + esc(prior.asof) + ' · ' + esc(windowLabel(prior)) + '</small>' : '') + '<button type="button" class="text-button" data-inspect="' + index + '">查看这次摘要</button></article>';
+      const observedAt = prettyTime(r.observedAt);
+      return '<article class="record-item"><strong>' + (index ? '结果摘要发生变化' : '开始本机记录') + '</strong>' + (observedAt ? '<time>本机取得：' + esc(observedAt) + ' 北京时间</time>' : '') + (r.asof ? '<p>分析截至 ' + esc(r.asof) + '<br>' + esc(windowLabel(r)) + '</p>' : '') + (prior && prior.asof ? '<small>上次：' + esc(prior.asof) + ' · ' + esc(windowLabel(prior)) + '</small>' : '') + '<button type="button" class="text-button" data-inspect="' + index + '">查看这次摘要</button></article>';
     }).join('') + (inspectRecord ? '<button type="button" class="text-button" id="show-current">回到当前结果</button>' : '') : '<p class="record-caption">取得有效结果后，从本次开始记录，不补造历史。</p>';
     restoreFocus(focused);
   }
@@ -259,12 +266,13 @@
     const values = selected.map(summaryOf);
     const mismatch = new Set(values.map(s => s.asof || 'missing')).size > 1 || new Set(values.map(s => s.modelVersion || 'missing')).size > 1;
     const fields = [
-      ['分析截止', s => dateLabel(s.asof)], ['模型版本', s => s.modelVersion || '未提供'],
+      ['分析截止', s => dateLabel(s.asof)], ['模型版本', s => s.modelVersion || ''],
       ['研究状态', s => s.statusText], ['顶部观察区间', windowLabel],
-      ['计算覆盖', s => s.coverage.length ? s.coverage.map(c => c.scale + '：' + (c.computed ? '已计算' : '未计算 / 待核对')).join('；') : '未提供'],
-      ['数据来源', s => s.source || '未提供']
+      ['计算覆盖', s => s.coverage.length ? s.coverage.map(c => c.scale + '：' + (c.computed ? '已计算' : '未计算 / 待核对')).join('；') : ''],
+      ['数据来源', s => s.source || '']
     ];
-    $('compare-content').innerHTML = (mismatch ? '<p class="compare-warning">这些结果的截止日或模型版本不同，请分别理解，不能直接当作同一时点、同一口径的比较。</p>' : '') + '<table class="compare-table"><caption class="sr-only">自选标的研究结果比较</caption><thead><tr><th scope="col">比较项目</th>' + selected.map(a => '<th scope="col">' + esc(a.name) + '<small>' + esc(a.code) + '</small></th>').join('') + '</tr></thead><tbody>' + fields.map(([label, value]) => '<tr><th scope="row">' + esc(label) + '</th>' + values.map(s => '<td>' + esc(value(s)) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+    const shownFields = fields.filter(([, value]) => values.some(s => value(s)));
+    $('compare-content').innerHTML = (mismatch ? '<p class="compare-warning">这些结果的截止日或模型版本不同，请分别理解，不能直接当作同一时点、同一口径的比较。</p>' : '') + '<table class="compare-table"><caption class="sr-only">自选标的研究结果比较</caption><thead><tr><th scope="col">比较项目</th>' + selected.map(a => '<th scope="col">' + esc(a.name) + '<small>' + esc(a.code) + '</small></th>').join('') + '</tr></thead><tbody>' + shownFields.map(([label, value]) => '<tr><th scope="row">' + esc(label) + '</th>' + values.map(s => '<td>' + esc(value(s) || '') + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
   }
   function render() { renderList(); renderDetail(); renderResume(); renderCompare(); }
   function selectAsset(id, scroll) {
@@ -279,7 +287,7 @@
     queuedRefresh = false;
     const thisGeneration = ++generation;
     syncAssets(); busy = true; $('refresh-results').disabled = true;
-    $('refresh-state').textContent = assets.length ? '正在读取已发布结果…' : '尚未添加关注标的';
+    $('refresh-state').textContent = assets.length ? '正在读取已发布结果…' : '未添加关注标的';
     render();
     const work = assets.slice(); let cursor = 0;
     async function worker() {
@@ -311,7 +319,7 @@
     await Promise.all(Array.from({ length: Math.min(4, work.length) }, worker));
     if (thisGeneration !== generation) return;
     busy = false; $('refresh-results').disabled = false;
-    $('refresh-state').textContent = assets.length ? '本机读取于 ' + prettyTime(new Date().toISOString()) + (errors.size ? ' · 部分结果待检查' : '') : '尚未添加关注标的';
+    $('refresh-state').textContent = assets.length ? '本机读取于 ' + prettyTime(new Date().toISOString()) + (errors.size ? ' · 部分结果待检查' : '') : '未添加关注标的';
     render();
     restoreReplayScroll();
     if (queuedRefresh) return refresh();
@@ -341,7 +349,7 @@
   document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
   document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('close', () => focusedBeforeDialog?.focus()));
   $('open-add').addEventListener('click', () => { $('add-error').textContent = ''; openDialog('add-dialog'); });
-  $('add-index').innerHTML = API.SYMS.map(s => '<option value="' + esc(s.sym) + '">' + esc(s.name + ' · ' + s.sym) + '</option>').join('');
+  $('add-index').innerHTML = API.SYMS.filter(s => !s.market || s.market === 'cn').map(s => '<option value="' + esc(s.sym) + '">' + esc(s.name + ' · ' + s.sym) + '</option>').join('');
   $('add-kind').addEventListener('change', () => {
     const index = $('add-kind').value === 'index';
     $('stock-code-label').hidden = index; $('index-code-label').hidden = !index;
@@ -468,7 +476,7 @@
     const asset = selectedAsset(); if (!asset) return;
     const s = inspectRecord?.asset?.id === asset.id ? inspectRecord : summaryOf(asset);
     const card = { format: 'lppl-public-research-card', version: 1, exportedAt: new Date().toISOString(),
-      asset: s.asset, asof: s.asof, source: s.source || '未提供', modelVersion: s.modelVersion || '未提供',
+      asset: s.asset, asof: s.asof || null, source: s.source || null, modelVersion: s.modelVersion || null,
       predictionId: s.predictionId || null, evidence: s.evidence, status: s.status, statusText: s.statusText,
       stale: s.stale, staleReason: s.staleReason, coverage: s.coverage, windows: s.windows,
       generatedAt: s.generatedAt, firstPublicAt: null,

@@ -12,7 +12,7 @@
   function render() {
     const q = $('discovery-query').value.trim().toLowerCase(), exchange = $('discovery-exchange').value;
     const matches = (rows || []).filter(row => (exchange === 'all' || row.exchange === exchange) && (!q || (row.name + row.code).toLowerCase().includes(q)));
-    $('discovery-results').innerHTML = matches.slice(0, 40).map(row => '<div class="discovery-row"><div><strong>' + escape(row.name) + '</strong><small>' + escape(row.code + ' · ' + row.exchange.toUpperCase() + ' · 截至 ' + (row.asof || '未提供')) + '</small></div><button type="button" class="button button-quiet" data-discover="' + row.code + '">加入研究</button></div>').join('');
+    $('discovery-results').innerHTML = matches.slice(0, 40).map(row => '<div class="discovery-row"><div><strong>' + escape(row.name) + '</strong><small>' + escape(row.code + ' · ' + row.exchange.toUpperCase() + (row.asof ? ' · 截至 ' + row.asof : '')) + '</small></div><button type="button" class="button button-quiet" data-discover="' + row.code + '">加入研究</button></div>').join('');
     if (rows) $('discovery-status').textContent = matches.length ? '匹配 ' + matches.length + ' 个，按截止日排序显示前 40 个。目录来源：站点已发布结果索引。' : '没有匹配项。可以清除条件，或用“添加标的”输入代码查看覆盖状态。';
   }
   async function load() {

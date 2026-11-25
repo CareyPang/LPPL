@@ -89,7 +89,7 @@
     if (!asof || !EVENT_TYPES.some(([type]) => Array.isArray(payload[type]))) return null;
     const sourceStates = EVENT_TYPES.map(([type, , label]) => {
       const s = plain(sources[type]) ? sources[type] : {};
-      return { type, label, source: text(s.provider) || '来源未提供', status: s.ok === true ? 'ok' : s.ok === false ? 'failed' : 'unknown', stale: s.stale === true, staleReason: text(s.stale_reason || s.error, 400) || null, fetchedAt: instant(s.fetched_at) };
+      return { type, label, source: text(s.provider), status: s.ok === true ? 'ok' : s.ok === false ? 'failed' : 'unknown', stale: s.stale === true, staleReason: text(s.stale_reason || s.error, 400) || null, fetchedAt: instant(s.fetched_at) };
     });
     for (const [type, field, label] of EVENT_TYPES) {
       const source = sourceStates.find(s => s.type === type);

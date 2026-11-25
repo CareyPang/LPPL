@@ -7,47 +7,27 @@ const BottomAction = require('../app/bottom-action.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
-test('bottom-action 5-tier state machine covers top, neutral, left_wait, bottom_probe, right_confirm', () => {
+test('bottom-action applies the five requested score tiers', () => {
   const top = BottomAction.evaluate({ sym: 'sh000001', hasTop: true, score: 0 });
   assert.equal(top.tier, 'top_risk');
   assert.equal(top.canBuy, false);
 
-  const neutral = BottomAction.evaluate({ sym: 'sh000001', hasTop: false, score: 0 });
-  assert.equal(neutral.tier, 'neutral');
-  assert.equal(neutral.canBuy, false);
-
-  const left = BottomAction.evaluate({
-    sym: 'sh000905',
-    hasTop: false,
-    score: 28,
-    factors: { dd_52w: -0.313, stabilize: 0, right_side: 0 },
-  });
-  assert.equal(left.tier, 'left_wait');
-  assert.equal(left.canBuy, false);
-  assert.equal(left.targetPct, 0);
-
-  const probe = BottomAction.evaluate({
-    sym: 'sh000688',
-    hasTop: false,
-    score: 51,
-    factors: { dd_52w: -0.404, stabilize: 0.65, right_side: 0 },
-    summary: { win_rate_50w: 0.75, median_post_min_50w: -0.141 },
-  });
-  assert.equal(probe.tier, 'bottom_probe');
-  assert.equal(probe.canBuy, true);
-  assert.equal(probe.targetPct, 30);
-  assert.equal(probe.stepIndex, 1);
-
-  const confirm = BottomAction.evaluate({
-    sym: 'sz399006',
-    hasTop: false,
-    score: 68,
-    factors: { dd_52w: -0.38, stabilize: 0.65, right_side: 1.0 },
-  });
-  assert.equal(confirm.tier, 'right_confirm');
-  assert.equal(confirm.canBuy, true);
-  assert.equal(confirm.targetPct, 60);
-  assert.equal(confirm.stepIndex, 2);
+  for (const [score, tier, canBuy] of [
+    [29.9, 'neutral', false],
+    [30, 'bottom_watch', false],
+    [49.9, 'bottom_watch', false],
+    [50, 'bottom_probe', true],
+  ]) {
+    const action = BottomAction.evaluate({
+      sym: 'sh000688',
+      hasTop: false,
+      score,
+      factors: { dd_52w: -0.404, stabilize: 0, right_side: 0 },
+    });
+    assert.equal(action.tier, tier);
+    assert.equal(action.canBuy, canBuy);
+    assert.equal(action.targetPct, null);
+  }
 });
 
 test('bottom-action evaluates all 7 published *_history.json files cleanly', () => {
@@ -57,11 +37,10 @@ test('bottom-action evaluates all 7 published *_history.json files cleanly', () 
     const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'web/mock/data', `${sym}_history.json`), 'utf8'));
     out[sym] = BottomAction.fromHistory(sym, raw);
     assert.ok(out[sym].positionLabel);
-    assert.ok(out[sym].positionText);
+    assert.equal(out[sym].targetPct, null);
   }
   assert.equal(out.sh000688.tier, 'bottom_probe');
-  assert.equal(out.sh000688.targetPct, 30);
-  assert.equal(out.sh000905.tier, 'left_wait');
+  assert.equal(out.sh000905.tier, 'neutral');
   assert.equal(out.sh000001.tier, 'neutral');
 });
 
@@ -74,7 +53,7 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.equal(ov.indices.length, 7);
   const kc = BottomAction.fromOverviewItem(ov.indices.find((x) => x.sym === 'sh000688'));
   assert.equal(kc.tier, 'bottom_probe');
-  assert.equal(kc.targetPct, 30);
+  assert.equal(kc.targetPct, null);
 
   assert.match(home, /app\/bottom-action\.js/);
   assert.match(home, /class="act-strip"/);
@@ -82,7 +61,9 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.match(home, /id="radar-sort"/);
   assert.match(idx, /app\/bottom-action\.js/);
   assert.match(idx, /id="action-verdict"/);
-  assert.match(idx, /class="act-steps"/);
+  assert.match(idx, /LPPLDecisionPanel\.mount/);
+  assert.match(idx, /LPPLDecisionState\.build/);
+  assert.doesNotMatch(idx, /class="act-steps"/);
   assert.match(idx, /class="tk-tag"/);
   assert.match(bt, /id="ov-strip"/);
   assert.match(bt, /data-ledger-mode="bottom"/);
@@ -96,6 +77,62 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.match(stock, /app\/alert-ledger\.js/);
   assert.match(stock, /id="stock-fco-toggle"/);
   assert.match(stock, /id="stock-action-card"/);
+});
+
+test('missing bottom score stays missing, while zero and shock risk remain distinct', () => {
+  for (const score of [null, undefined, '']) {
+    const missing = BottomAction.evaluate({ sym: 'sh000001', score });
+    assert.equal(missing.score, null);
+    assert.equal(missing.tier, 'unavailable');
+    assert.equal(missing.canBuy, false);
+  }
+  assert.equal(BottomAction.evaluate({ score: 0 }).tier, 'neutral');
+  const risk = BottomAction.evaluate({ score: 0, omoriRed: true });
+  assert.equal(risk.score, 0);
+  assert.equal(risk.tier, 'neutral');
+  assert.equal(risk.canBuy, false);
+});
+
+test('red cooling and weak confirmation factors do not gate a score of 55', () => {
+  const action = BottomAction.evaluate({
+    score: 55,
+    omoriRed: true,
+    factors: { stabilize: 0, right_side: 0 },
+  });
+  assert.equal(action.tier, 'bottom_probe');
+  assert.equal(action.canBuy, true);
+  assert.equal(action.targetPct, null);
+});
+
+test('bottom-action strings contain no position sizing or add/reduce instructions', () => {
+  const tiers = [
+    BottomAction.evaluate({ hasTop: true, score: 55 }),
+    BottomAction.evaluate({ score: null }),
+    BottomAction.evaluate({ score: 29.9 }),
+    BottomAction.evaluate({ score: 30 }),
+    BottomAction.evaluate({ score: 50 }),
+  ];
+  assert.deepEqual(tiers.map((action) => action.tier),
+    ['top_risk', 'unavailable', 'neutral', 'bottom_watch', 'bottom_probe']);
+  for (const action of tiers) {
+    const text = Object.values(action).filter((value) => typeof value === 'string').join(' ');
+    assert.doesNotMatch(text, /30%|60%|100%|加仓|减仓|仓位|试探仓|打满|%仓/);
+    assert.equal(action.targetPct, null);
+  }
+  assert.equal('STEPS' in BottomAction, false);
+});
+
+test('published decision compatibility preserves stale date and never invents a position', () => {
+  const view = { top: { status: 'none' }, bottom: { score: 51, asof: '2026-11-20', stale: true },
+    conclusion: { status: 'stale_watch', tone: 'amber', title: '评分待更新', detail: '旧档', next: '核对更新' } };
+  const action = BottomAction.fromDecision(view);
+  assert.equal(action.score, 51);
+  assert.equal(action.scoreAsOf, '2026-11-20');
+  assert.equal(action.scoreStale, true);
+  assert.equal(action.canBuy, false);
+  assert.equal(action.targetPct, null);
+  assert.equal(action.positionLabel, view.conclusion.title);
+  assert.equal(action.canBuyLabel, view.conclusion.next);
 });
 
 test('alert-ledger detects locked non-drifting top cluster vs drifting cluster with median_date', () => {
@@ -124,23 +161,6 @@ test('alert-ledger detects locked non-drifting top cluster vs drifting cluster w
   const driftEps = AlertLedger.episodes(driftFrames, [], '6-12m');
   assert.equal(driftEps[0].convergence.status, 'drifting');
   assert.equal(driftEps[0].convergence.high_confidence, false);
-});
-
-test('bottom-action evaluateStockSeries maps board index and blocks heavy entry under Omori aftershocks', () => {
-  const bars = [];
-  let px = 160;
-  for (let i = 0; i < 80; i += 1) {
-    const dt = new Date(Date.UTC(2026, 7, 1 + i)).toISOString().slice(0, 10);
-    if (i > 40 && i < 65) px *= 0.985;
-    if (i === 72 || i === 75) px *= 0.93; // 近 15 日连续大阴线
-    bars.push({ date: dt, close: Number(px.toFixed(2)) });
-  }
-  const res = BottomAction.evaluateStockSeries(bars, { code: '300843', hasTop: false });
-  assert.equal(res.board.sym, 'sz399006');
-  assert.equal(res.latest.omoriRed, true);
-  assert.ok(res.latest.score <= 46);
-  assert.equal(res.action.canBuy, false);
-  assert.equal(res.action.tier, 'left_wait');
 });
 
 test('bottom-action evaluatePricePhysics identifies cleared vacuum below dense cost well', () => {

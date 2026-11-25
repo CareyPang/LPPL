@@ -59,7 +59,7 @@ test('historical chart routes through the read-only reader and keeps explicit la
 test('missing published model copy is uncertain and offers retry plus stock-page action', () => {
   assert.match(
     chartPageSource,
-    /没有读到已发布的模型结果（可能尚未发布，或读取失败）/,
+    /当前没有可用的已发布模型结果/,
   );
   assert.match(chartPageSource, /模型结果读取失败：/);
   assert.match(chartPageSource, /retry\.textContent = '重试读取'/);
@@ -120,7 +120,7 @@ test('descriptive bands without finite n are hidden from charts and values', () 
     draw: false,
     showDates: false,
     showShare: false,
-    message: '描述性样本数未记录，不显示数值',
+    message: '当前数据不支持显示描述性数值',
   });
   assert.equal(Core.bandEvidencePolicy('descriptive', { n: 5 }).draw, true);
   assert.equal(Core.bandEvidencePolicy('test', {}).draw, true);
@@ -131,6 +131,7 @@ test('descriptive bands without finite n are hidden from charts and values', () 
 
 test('index assembly uses the adapted published bars and metadata without mixing sources', () => {
   const raw = JSON.parse(fs.readFileSync(path.join(fixtures, 'sh000001_latest.json'), 'utf8'));
+  raw.display_code = 'N225';
   const bars = raw.price_history.dates.map((date, index) => ({
     date,
     open: raw.price_history.open[index] ?? raw.price_history.close[index],
@@ -145,6 +146,7 @@ test('index assembly uses the adapted published bars and metadata without mixing
   });
   assert.equal(data.assetType, 'index');
   assert.equal(data.symbol, 'sh000001');
+  assert.equal(data.displayCode, 'N225');
   assert.equal(data.name, '上证指数');
   assert.equal(data.asof, raw.asof);
   assert.deepEqual(data.bars, bars);
@@ -185,7 +187,7 @@ test('market metadata follows the selected intraday source and restores daily me
   };
   assert.deepEqual(Core.marketMetadata(daily, '30', intraday), {
     marketDate: '行情时间 2026-11-18 15:00:00',
-    dataSource: 'sina · 30 分钟 · 不复权',
+    dataSource: '新浪行情 · 30 分钟 · 不复权',
   });
   assert.deepEqual(Core.marketMetadata(daily, '60', {
     period: '60',
@@ -194,12 +196,37 @@ test('market metadata follows the selected intraday source and restores daily me
     limits: { last: '2026-11-18 14:30:00' },
   }), {
     marketDate: '行情时间 2026-11-18 14:30:00',
-    dataSource: 'tencent · 60 分钟 · 不复权',
+    dataSource: '腾讯行情 · 60 分钟 · 不复权',
   });
   assert.deepEqual(Core.marketMetadata(daily, 'd', intraday), {
     marketDate: '行情日期 2026-11-17',
-    dataSource: 'tencent_fqkline · 未复权',
+    dataSource: '腾讯行情',
   });
+});
+
+test('international terminal metadata uses Chinese labels instead of provider codes', () => {
+  assert.deepEqual(Core.marketMetadata({
+    assetType: 'index',
+    marketAsOf: '2026-11-23',
+    dataSource: 'Yahoo Finance v8 chart',
+    adjustment: 'none',
+  }, 'd'), {
+    marketDate: '行情日期 2026-11-23',
+    dataSource: 'Yahoo Finance',
+  });
+  assert.equal(Core.modelAdjustmentLabel('none', 'index'), '不复权');
+  assert.equal(Core.modelAdjustmentLabel('provider_adjclose_ratio_OHLC', 'stock'), '按调整收盘价比例复权');
+  assert.equal(Core.modelVersionLabel('global_sparse27_v1_production_v2_box'), '国际市场稀疏窗口研究样本');
+  assert.equal(Core.volumeUnitLabel('vendor_native'), '');
+  assert.equal(Core.currencyLabel('JPY'), '日元');
+  assert.equal(Core.assetTypeLine({
+    assetType: 'stock', market: 'kr', quoteUnit: 'KRW · 韩元', currency: 'KRW',
+  }), '韩国个股 · 韩元');
+  assert.equal(Core.assetTypeLine({
+    assetType: 'index', market: 'jp', quoteUnit: '指数点位', currency: 'JPY',
+  }), '日本指数 · 指数点位 · 日元');
+  assert.match(chartPageSource, /setText\('asset-code', data\.displayCode \|\| data\.symbol\)/);
+  assert.match(chartPageSource, /setText\('identity-strip-code', data\.displayCode \|\| data\.symbol\)/);
 });
 
 test('stock assembly keeps market bars when the latest model is missing and requires market data', () => {

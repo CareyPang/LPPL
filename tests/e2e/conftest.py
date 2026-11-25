@@ -24,6 +24,16 @@ MARKET_FIXTURES = {
 KLINE_FIXTURES = {
     ("600519", "30"): FIXTURES / "stock_600519_kline_30.json",
 }
+# This asset has no published bottom-score archive in the smoke dataset.
+# A symbol-correct empty response tests that boundary without masking real 404s.
+EMPTY_HISTORY_FIXTURES = {
+    "/lab/mock/data/stock/601838_history.json": {
+        "symbol": "sh601838",
+        "frames": [],
+        "status": "not_covered",
+        "source": "e2e_empty_history_fixture",
+    },
+}
 WORKER_HOST = "lppl-stock-query.careypang.workers.dev"
 CONSOLE_ERROR_ALLOWLIST = {
     404: re.compile(r"server responded with a status of 404"),
@@ -146,7 +156,9 @@ def browser() -> Browser:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        instance = playwright.chromium.launch(headless=True)
+        instance = playwright.chromium.launch(
+            headless=True, executable_path=os.environ.get("E2E_BROWSER_EXECUTABLE") or None
+        )
         yield instance
         instance.close()
 
@@ -197,11 +209,15 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Page:
             ):
                 allowed_console_errors[status] += 1
                 return
-        console_errors.append(message.text)
+        console_errors.append(message.text + " @ " + str(message.location.get("url", "")))
 
     def route_request(route: Route) -> None:
         if is_local_url(route.request.url):
-            if urlsplit(route.request.url).path == "/lab/mock/data/stock/600519.json":
+            local_path = urlsplit(route.request.url).path
+            if local_path in EMPTY_HISTORY_FIXTURES:
+                route.fulfill(json=EMPTY_HISTORY_FIXTURES[local_path])
+                return
+            if local_path == "/lab/mock/data/stock/600519.json":
                 route.fulfill(
                     path=str(STOCK_600519_LATEST_FIXTURE),
                     content_type="application/json",

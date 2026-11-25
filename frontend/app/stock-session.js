@@ -132,7 +132,7 @@
             if (!result || result.job_id !== job.job_id ||
                 result.symbol !== symbol(job.code) ||
                 (job.source_sha && result.source_sha !== job.source_sha)) {
-              throw Error('结果身份或版本尚未核对完成，稍后自动重试。');
+              throw Error('结果身份或版本核对未完成，稍后自动重试。');
             }
             if (job.mode === 'history') applyHistory(e, result); else applyCurrent(e, result);
             if (job.mode === 'current') {
@@ -153,7 +153,7 @@
           e[job.mode + 'Status'] = state.reconciliation_required === true ? 'reconciliation_required' : ['queued', 'current_running', 'history_running', 'publishing', 'reconciliation_required'].includes(state.phase)
             ? state.phase : ['queued', 'pending', 'waiting', 'requested', 'dispatch_unknown'].includes(state.status)
               ? 'queued' : state.status === 'completed' ? 'publishing' : job.mode + '_running';
-          if (state.reconciliation_required === true || state.phase === 'reconciliation_required') e.issues[job.mode] = '任务回执尚未核对完成，已保留原任务，请勿重复提交。';
+          if (state.reconciliation_required === true || state.phase === 'reconciliation_required') e.issues[job.mode] = '任务回执核对未完成，已保留原任务，请勿重复提交。';
           else delete e.issues[job.mode];
           emit();
         } catch (error) {
@@ -213,7 +213,7 @@
           return result;
         }
         if (!JOB.test(String(result?.job_id)) || !Number.isFinite(Date.parse(result.requested_at))) {
-          throw Error('查询服务尚未支持可恢复任务，请稍后重试。');
+          throw Error('查询服务当前不支持可恢复任务，请稍后重试。');
         }
         const job = {
           code, mode, job_id: result.job_id, requested_at: result.requested_at,
@@ -226,7 +226,7 @@
         e[mode + 'Status'] = error.code === 'REQUEST_TIMEOUT' ? 'unconfirmed' : e[mode] ? 'stale' : 'failed';
         if (e[mode] && mode === 'current') { e.refreshFailed = true; e.stale = true; }
         e.issues[mode] = error.code === 'REQUEST_TIMEOUT' ?
-          '提交结果暂未确认，后台任务可能仍在继续。可再次查询，服务端会复用已有任务。' :
+          '提交结果未确认，后台任务可能仍在继续。可再次查询，服务端会复用已有任务。' :
           error.message || '暂时不能创建任务，已有结果不受影响。';
         emit();
         return null;

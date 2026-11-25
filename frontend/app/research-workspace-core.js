@@ -14,7 +14,7 @@
   const INDEX_CODES = ['sh000001', 'sh000016', 'sh000300', 'sh000905', 'sh000688', 'sz399001', 'sz399006'];
   const WINDOW_EVIDENCE = new Set(['dev', 'cal', 'test', 'cal_fragile', 'research_candidate', 'descriptive']);
   const STATUS = {
-    unavailable: '尚未取得可用分析', not_computed: RuleLabels.EMPTY_REASONS.not_computed,
+    unavailable: '当前没有可用分析', not_computed: RuleLabels.EMPTY_REASONS.not_computed,
     no_qualified_fit: RuleLabels.EMPTY_REASONS.no_fit, no_cluster: RuleLabels.EMPTY_REASONS.no_cluster,
     evidence_hidden: RuleLabels.EMPTY_REASONS.not_formal, has_window: '有研究观察区间',
     expired: '已公布区间早于分析截止日',
@@ -54,7 +54,7 @@
   }
   function sourceName(raw) {
     const values = [raw.source, raw.data_source, raw.stock_meta && raw.stock_meta.source];
-    return text(values.find(value => typeof value === 'string'), 160) || '来源未提供';
+    return text(values.find(value => typeof value === 'string'), 160);
   }
   function evidenceFor(a, raw, scale, own) {
     const confidence = raw.top && raw.top.lppls_confidence || {};
@@ -87,7 +87,7 @@
     const raw = plain(payload) && plain(payload.raw) ? payload.raw : payload;
     const result = {
       asset: a, asof: null, modelVersion: null, predictionId: null, generatedAt: null,
-      source: '来源未提供', dataVersion: null, status: 'unavailable', statusText: STATUS.unavailable,
+      source: '', dataVersion: null, status: 'unavailable', statusText: STATUS.unavailable,
       stale: false, staleReason: null, evidence: 'none', coverage: [], windows: [], price: null,
       loadedAt: nowStamp(now), ruleNote: null,
     };
@@ -185,7 +185,7 @@
     const status = !windows.length && ['has_window', 'expired'].includes(value.status) ? 'evidence_hidden' : value.status;
     return { asset: a, asof: value.asof, modelVersion: text(value.modelVersion, 120) || null,
       predictionId: text(value.predictionId, 200) || null, generatedAt: timestamp(value.generatedAt),
-      source: text(value.source, 160) || '来源未提供', dataVersion: text(value.dataVersion, 160) || null,
+      source: text(value.source, 160), dataVersion: text(value.dataVersion, 160) || null,
       status, statusText: STATUS[status], stale: value.stale === true,
       staleReason: value.stale === true ? text(value.staleReason, 240) || '请核对截止日' : null,
       evidence: text(value.evidence, 40) || 'none', coverage, windows,

@@ -203,7 +203,7 @@ for (const [name, invoke, deadline] of [
     assert.deepEqual([...h.timers.values()].map(timer => timer.delay), [deadline]);
     const rejected = assert.rejects(pending, error => {
       assert.equal(error.code, 'REQUEST_TIMEOUT');
-      assert.match(error.message, /尚未确认/);
+      assert.equal(error.message, '任务状态确认中，已有结果仍可查看。');
       assert.doesNotMatch(error.message, /已取消|已失败|任务失败/);
       return true;
     });
@@ -223,7 +223,11 @@ test('a request stalled before headers times out and aborts the network request'
   });
   const result = h.api.stock.market('000001');
   h.expire();
-  await assert.rejects(result, /超时/);
+  await assert.rejects(result, error => {
+    assert.equal(error.code, 'REQUEST_TIMEOUT');
+    assert.equal(error.message, '任务状态确认中，已有结果仍可查看。');
+    return true;
+  });
   assert.equal(signal.aborted, true);
   assert.equal(h.timers.size, 0);
 });
@@ -244,7 +248,8 @@ test('a JSON body stalled after headers is bounded by the same timeout', async (
   await settle();
   try {
     assert.ok(outcome?.error, 'Headers alone must not disable the JSON-read deadline');
-    assert.match(outcome.error.message, /超时/);
+    assert.equal(outcome.error.code, 'REQUEST_TIMEOUT');
+    assert.equal(outcome.error.message, '任务状态确认中，已有结果仍可查看。');
     assert.equal(signal.aborted, true);
   } finally {
     body.resolve({ late: true });

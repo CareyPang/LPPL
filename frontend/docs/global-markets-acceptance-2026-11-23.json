@@ -1,0 +1,485 @@
+{
+  "date": "2026-11-23",
+  "status": "VERIFIED_LOCAL_RESEARCH_ONLY",
+  "sample_scope": "8 assets x 3 fixed endpoints x 27 windows; not outcome scoring",
+  "counts": {
+    "expected": 648,
+    "completed": 648,
+    "failed": 0,
+    "pending": 0,
+    "source_failed": 0,
+    "exports_expected": 24,
+    "exports_completed": 24,
+    "exports_failed": 0
+  },
+  "browser": {
+    "checks": [
+      "1440: four market tabs and no mixed index identities",
+      "1440: index click and return restore US market tab",
+      "1440: MRVL search opens its own US stock result",
+      "1440: legacy entries retain global identity and unknown queries do not default to A-share",
+      "1440: US_SPX real current and exact archive; later prices do not change model",
+      "1440: US_IXIC real current and exact archive; later prices do not change model",
+      "1440: US_NDX real current and exact archive; later prices do not change model",
+      "1440: US_DJI real current and exact archive; later prices do not change model",
+      "1440: JP_N225 real current and exact archive; later prices do not change model",
+      "1440: KR_KOSPI real current and exact archive; later prices do not change model",
+      "1440: KR_KOSDAQ real current and exact archive; later prices do not change model",
+      "1440: US_MRVL real current and exact archive; later prices do not change model",
+      "1440: absent global archive does not use latest or dispatch A-share job",
+      "390: four market tabs and no mixed index identities",
+      "390: index click and return restore US market tab",
+      "390: MRVL search opens its own US stock result",
+      "390: legacy entries retain global identity and unknown queries do not default to A-share",
+      "390: US_SPX real current and exact archive; later prices do not change model",
+      "390: US_IXIC real current and exact archive; later prices do not change model",
+      "390: US_NDX real current and exact archive; later prices do not change model",
+      "390: US_DJI real current and exact archive; later prices do not change model",
+      "390: JP_N225 real current and exact archive; later prices do not change model",
+      "390: KR_KOSPI real current and exact archive; later prices do not change model",
+      "390: KR_KOSDAQ real current and exact archive; later prices do not change model",
+      "390: US_MRVL real current and exact archive; later prices do not change model",
+      "390: absent global archive does not use latest or dispatch A-share job"
+    ],
+    "pageErrors": [],
+    "writes": [],
+    "badRequests": [],
+    "sourceGeneratedAt": "2026-11-23T09:41:40.022499+00:00",
+    "counts": {
+      "expected": 648,
+      "completed": 648,
+      "failed": 0,
+      "pending": 0,
+      "source_failed": 0,
+      "exports_expected": 24,
+      "exports_completed": 24,
+      "exports_failed": 0
+    }
+  },
+  "frontend_unit_tests": {
+    "passed": 435,
+    "failed": 0
+  },
+  "assets": [
+    {
+      "id": "US_SPX",
+      "market": "us",
+      "kind": "index",
+      "asof": "2026-11-20",
+      "source_raw_hash": "6d2da0ebc9a2f0e4475bb47a3f644cc6ea919eb7b22d55a078358df3c87b53a0",
+      "latest_export_hash": "ddfb0b86ddeffd21c07d7bf693af1f4897fafa21fe2a714a6bc46e7ceec3ab80",
+      "dates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 13,
+          "omega_6_to_13": 11,
+          "ahead_0_to_90": 8
+        },
+        "sequential_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 6,
+          "omega_6_to_13": 4,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 19,
+        "ahead_over_90": 0,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "f44564b6d03eb6918278a81c9d199e81f87fcbdabd78ede6e7adb07398bafb02",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [],
+        "ohlc_missing_count": 0,
+        "ohlc_invalid_fields": {},
+        "last_bar_kind": "ohlc"
+      }
+    },
+    {
+      "id": "US_IXIC",
+      "market": "us",
+      "kind": "index",
+      "asof": "2026-11-20",
+      "source_raw_hash": "c018c0ca9f8b44354b5fc56becf93f61d196e07768f70d508745415496a2e720",
+      "latest_export_hash": "6310f6c58713b72af0dd895c49564100e7f75b8e6a55a91de4bef60ff09f99d7",
+      "dates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 16,
+          "omega_6_to_13": 9,
+          "ahead_0_to_90": 5
+        },
+        "sequential_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 6,
+          "omega_6_to_13": 4,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 22,
+        "ahead_over_90": 0,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "f49d40944c72e3168fbbceb647320770ce4a3041eaa07e0b774ed0b8d7662186",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [],
+        "ohlc_missing_count": 0,
+        "ohlc_invalid_fields": {},
+        "last_bar_kind": "ohlc"
+      }
+    },
+    {
+      "id": "US_NDX",
+      "market": "us",
+      "kind": "index",
+      "asof": "2026-11-20",
+      "source_raw_hash": "d4be221ef48bb66e774e08ed7bf62a19bfe64e42126319e95ab4f32e93f9785e",
+      "latest_export_hash": "99743e501cb91aa2d730ff0b1aa705be27864963ecd80b7e0b1471b3212827c3",
+      "dates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 18,
+          "omega_6_to_13": 10,
+          "ahead_0_to_90": 4
+        },
+        "sequential_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 6,
+          "omega_6_to_13": 5,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 23,
+        "ahead_over_90": 0,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "ed182e6bcf5fdcf5e56b4ab43cb92016a9bac9fb7944e99e77657e2021ef4d74",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [],
+        "ohlc_missing_count": 0,
+        "ohlc_invalid_fields": {},
+        "last_bar_kind": "ohlc"
+      }
+    },
+    {
+      "id": "US_DJI",
+      "market": "us",
+      "kind": "index",
+      "asof": "2026-11-20",
+      "source_raw_hash": "2c24c26f05c51809609578fc09112c90cf82f47ea802b42827c72db4fbcbba88",
+      "latest_export_hash": "2836d7ff2af7e4a21a1aa7adcd21eb9ae7c321658d1092e51eb154f0dab62fb9",
+      "dates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 15,
+          "m_0_1_to_0_9": 16,
+          "omega_6_to_13": 6,
+          "ahead_0_to_90": 7
+        },
+        "sequential_pass": {
+          "B_negative": 15,
+          "m_0_1_to_0_9": 12,
+          "omega_6_to_13": 3,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 19,
+        "ahead_over_90": 1,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "54b719acffd36e00e5d5018010359f188fcf8d1b75941b4e0087333a9d2a3ff6",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [],
+        "ohlc_missing_count": 0,
+        "ohlc_invalid_fields": {},
+        "last_bar_kind": "ohlc"
+      }
+    },
+    {
+      "id": "JP_N225",
+      "market": "jp",
+      "kind": "index",
+      "asof": "2026-11-20",
+      "source_raw_hash": "4ef0ee89b645ecc42e263a9ab207bc41ea0a52133bcea5218aa44405bb2c1173",
+      "latest_export_hash": "acdb685fa27a028d08d3e92ec9deb55339ea74156b25315ac634f72e7e3873ae",
+      "dates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 13,
+          "m_0_1_to_0_9": 19,
+          "omega_6_to_13": 8,
+          "ahead_0_to_90": 10
+        },
+        "sequential_pass": {
+          "B_negative": 13,
+          "m_0_1_to_0_9": 9,
+          "omega_6_to_13": 2,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 14,
+        "ahead_over_90": 3,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "84f22a6852bcaba40cb2e9c796a0e6a21bf29d80dfd131507fdcdf3c8b805f72",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [],
+        "ohlc_missing_count": 0,
+        "ohlc_invalid_fields": {},
+        "last_bar_kind": "ohlc"
+      }
+    },
+    {
+      "id": "KR_KOSPI",
+      "market": "kr",
+      "kind": "index",
+      "asof": "2026-11-23",
+      "source_raw_hash": "c1f5f2eb5e6c708c484bcc4841b9c3ed2db2f7dbd89e7139eff6a1286b5ea765",
+      "latest_export_hash": "3ed38881d091a432fb90ffc8f435f40696779db8962b2e7ce8639435d21a6a3e",
+      "dates": [
+        "2026-11-09",
+        "2026-11-16",
+        "2026-11-23"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 9,
+          "m_0_1_to_0_9": 20,
+          "omega_6_to_13": 11,
+          "ahead_0_to_90": 14
+        },
+        "sequential_pass": {
+          "B_negative": 9,
+          "m_0_1_to_0_9": 6,
+          "omega_6_to_13": 0,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 13,
+        "ahead_over_90": 0,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "f688c9c1730480aa630fc61f76e47d1f2b520795503edaadb24ca80c8456a4a4",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [
+          "2026-11-23"
+        ],
+        "ohlc_missing_count": 1,
+        "ohlc_invalid_fields": {
+          "2026-11-23": [
+            "open"
+          ]
+        },
+        "last_bar_kind": "close_only"
+      }
+    },
+    {
+      "id": "KR_KOSDAQ",
+      "market": "kr",
+      "kind": "index",
+      "asof": "2026-11-23",
+      "source_raw_hash": "3bee60324687ffa6795ae12f46ebb0a2e2c07ecef3c5784f1787abf7884e4ba4",
+      "latest_export_hash": "1f6098f64259f786d7cc82b646d93971c3ab2d26e1536a9fe437d91e49dbfdca",
+      "dates": [
+        "2026-11-09",
+        "2026-11-16",
+        "2026-11-23"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 3,
+          "m_0_1_to_0_9": 18,
+          "omega_6_to_13": 9,
+          "ahead_0_to_90": 13
+        },
+        "sequential_pass": {
+          "B_negative": 3,
+          "m_0_1_to_0_9": 1,
+          "omega_6_to_13": 0,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 14,
+        "ahead_over_90": 0,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "da508c2a1edff3604ebb2bdcbee966bafaac3b1c8c3ec7980034caf6beec8357",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [
+          "2026-11-23"
+        ],
+        "ohlc_missing_count": 1,
+        "ohlc_invalid_fields": {
+          "2026-11-23": [
+            "open"
+          ]
+        },
+        "last_bar_kind": "close_only"
+      }
+    },
+    {
+      "id": "US_MRVL",
+      "market": "us",
+      "kind": "stock",
+      "asof": "2026-11-20",
+      "source_raw_hash": "4ed4985ccf438a47caabfb1ac9e2272b1680f3a431efaa643be7527028b2791b",
+      "latest_export_hash": "810ae6f8db9e89534ac57be6b58228e636cd0542db80f9ac3f6fc167fa0173c7",
+      "dates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "current_filter_counts": {
+        "completed": 27,
+        "standalone_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 20,
+          "omega_6_to_13": 5,
+          "ahead_0_to_90": 4
+        },
+        "sequential_pass": {
+          "B_negative": 14,
+          "m_0_1_to_0_9": 10,
+          "omega_6_to_13": 2,
+          "ahead_0_to_90": 0
+        },
+        "box_qualified": 0,
+        "cycles_1_5_qualified": 0,
+        "tc_inside_sample": 23,
+        "ahead_over_90": 0,
+        "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+      },
+      "box_cluster_count": 0,
+      "cycles_1_5_cluster_count": 0,
+      "record_version": "1e9b784a55a2136bcfffd1149d03cd688d6381bfced9e920df7261915bdcbce9",
+      "ohlc_quality": {
+        "ohlc_missing_dates": [],
+        "ohlc_missing_count": 0,
+        "ohlc_invalid_fields": {},
+        "last_bar_kind": "ohlc"
+      }
+    }
+  ],
+  "not_established": [
+    "out-of-sample alert performance",
+    "international official future calendars",
+    "Yahoo public redistribution authorization",
+    "historical first-visible publication times"
+  ],
+  "not_run": [
+    "merge",
+    "deployment",
+    "publication",
+    "full 181-window or 104-week backtest"
+  ],
+  "backend_related_tests": {
+    "passed": 56,
+    "failed": 0,
+    "test_command": "python -m pytest tests/test_global_terminal.py tests/test_stock_jobs.py tests/test_us_stock.py -o addopts= -q"
+  },
+  "existing_chart_browser": {
+    "passed_groups": 13,
+    "page_errors": 0,
+    "writes": 0
+  },
+  "prior_unified_terminal_browser": {
+    "passed_groups": 8,
+    "page_errors": 0,
+    "writes": 0
+  },
+  "independent_recalculation": {
+    "assets": [
+      "US_SPX",
+      "KR_KOSPI",
+      "US_MRVL"
+    ],
+    "window": 252,
+    "numeric_fields": 17,
+    "max_absolute_delta": 0,
+    "audit_hash": "268da9f91fc8b4a45d1c93a34870953cab465601ec69efd55ee35f1900c6c136"
+  },
+  "catalog_sha256": "755c121c465d0264346645e3d604316281a09dbe8b7b0cebaa555856eed8e255",
+  "final_export_audit_sha256": "2c6d96ec8b656a1ed6a5688db6d0bf22ab343dba9db9cdeade14696bdd749769",
+  "frontend_and_worker_contract_tests": {
+    "passed": 532,
+    "failed": 0
+  },
+  "local_ci_browser": {
+    "passed": 60,
+    "failed": 0,
+    "transport": "read-only local CI-equivalent mapping",
+    "browser": "Chrome",
+    "new_cases": 5
+  },
+  "local_offline_suite": {
+    "initial_passed": 618,
+    "initial_failed": 2,
+    "skipped": 4,
+    "environment_failures_rechecked_passed": 2,
+    "environment_causes": [
+      "Windows checkout CRLF changed raw ledger file hashes; restored Git HEAD bytes without modifying ledger",
+      "WindowsApps WSL bash could not resolve Windows script path; test-only PATH prioritizes Git Bash"
+    ],
+    "full_suite_repeated": false
+  },
+  "ruff_research_tests": "passed",
+  "github_linux_unit_run": {
+    "commit": "3c6f948ce9685494a7a108b97df2a609b8a927d6",
+    "run_id": 45153781283,
+    "job_id": 137621473110,
+    "ruff": "passed",
+    "node_passed": 532,
+    "python_passed": 620,
+    "python_skipped": 4
+  }
+}
