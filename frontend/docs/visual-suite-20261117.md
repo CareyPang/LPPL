@@ -34,7 +34,7 @@
 
 ### H01 · 多尺度汇聚主视觉
 
-<a href="../assets/visual-suite/masters/hero.png"><img src="../assets/visual-suite/hero-640.webp" width="360" alt="多尺度汇聚主视觉素材参考"></a>
+<img src="../assets/visual-suite/hero-640.webp" width="360" alt="多尺度汇聚主视觉素材参考">
 
 用层叠玻璃折面表达多尺度观察，不绘制行情、时间区间或胜率。
 
@@ -42,67 +42,67 @@
 
 > 蓝金色光线沿层叠玻璃片交汇的原创装置
 
-[原稿](../assets/visual-suite/masters/hero.png) · [WebP 640 × 427](../assets/visual-suite/hero-640.webp) · [WebP 1536 × 1024](../assets/visual-suite/hero-1536.webp)
+[WebP 640 × 427](../assets/visual-suite/hero-640.webp) · [WebP 1536 × 1024](../assets/visual-suite/hero-1536.webp)
 
 ### T01 · 汇率换算
 
-<a href="../assets/visual-suite/masters/fx.png"><img src="../assets/visual-suite/fx-480.webp" width="360" alt="汇率换算素材参考"></a>
+<img src="../assets/visual-suite/fx-480.webp" width="360" alt="汇率换算素材参考">
 
 金银色金属片与环形连接，辅助识别汇率换算入口。
 
 **Alt 策略：** `alt=""`，外层 `.visual-media` 使用 `aria-hidden="true"`。卡片标题、说明、数值与操作由独立 HTML 表达，避免屏幕阅读器重复朗读装饰图。
 
-[原稿](../assets/visual-suite/masters/fx.png) · [WebP 480 × 320](../assets/visual-suite/fx-480.webp) · [WebP 960 × 640](../assets/visual-suite/fx-960.webp)
+[WebP 480 × 320](../assets/visual-suite/fx-480.webp) · [WebP 960 × 640](../assets/visual-suite/fx-960.webp)
 
 ### T02 · 时差与交易时钟
 
-<a href="../assets/visual-suite/masters/clock.png"><img src="../assets/visual-suite/clock-480.webp" width="360" alt="时差与交易时钟素材参考"></a>
+<img src="../assets/visual-suite/clock-480.webp" width="360" alt="时差与交易时钟素材参考">
 
 双表盘表达时区差异；图内指针只作装饰，不承担实时时钟。
 
 **Alt 策略：** `alt=""`，外层 `.visual-media` 使用 `aria-hidden="true"`。卡片标题、说明、数值与操作由独立 HTML 表达，避免屏幕阅读器重复朗读装饰图。
 
-[原稿](../assets/visual-suite/masters/clock.png) · [WebP 480 × 320](../assets/visual-suite/clock-480.webp) · [WebP 960 × 640](../assets/visual-suite/clock-960.webp)
+[WebP 480 × 320](../assets/visual-suite/clock-480.webp) · [WebP 960 × 640](../assets/visual-suite/clock-960.webp)
 
 ### T03 · 单位换算
 
-<a href="../assets/visual-suite/masters/units.png"><img src="../assets/visual-suite/units-480.webp" width="360" alt="单位换算素材参考"></a>
+<img src="../assets/visual-suite/units-480.webp" width="360" alt="单位换算素材参考">
 
 等臂秤表达单位与量纲换算；不提供实际测量读数。
 
 **Alt 策略：** `alt=""`，外层 `.visual-media` 使用 `aria-hidden="true"`。卡片标题、说明、数值与操作由独立 HTML 表达，避免屏幕阅读器重复朗读装饰图。
 
-[原稿](../assets/visual-suite/masters/units.png) · [WebP 480 × 320](../assets/visual-suite/units-480.webp) · [WebP 960 × 640](../assets/visual-suite/units-960.webp)
+[WebP 480 × 320](../assets/visual-suite/units-480.webp) · [WebP 960 × 640](../assets/visual-suite/units-960.webp)
 
 ### T04 · 金银价格换算
 
-<a href="../assets/visual-suite/masters/metals.png"><img src="../assets/visual-suite/metals-480.webp" width="360" alt="金银价格换算素材参考"></a>
+<img src="../assets/visual-suite/metals-480.webp" width="360" alt="金银价格换算素材参考">
 
 无文字金银锭，辅助识别贵金属换算入口。
 
 **Alt 策略：** `alt=""`，外层 `.visual-media` 使用 `aria-hidden="true"`。卡片标题、说明、数值与操作由独立 HTML 表达，避免屏幕阅读器重复朗读装饰图。
 
-[原稿](../assets/visual-suite/masters/metals.png) · [WebP 480 × 320](../assets/visual-suite/metals-480.webp) · [WebP 960 × 640](../assets/visual-suite/metals-960.webp)
+[WebP 480 × 320](../assets/visual-suite/metals-480.webp) · [WebP 960 × 640](../assets/visual-suite/metals-960.webp)
 
 ### T05 · 金价汇率情景
 
-<a href="../assets/visual-suite/masters/scenario.png"><img src="../assets/visual-suite/scenario-480.webp" width="360" alt="金价汇率情景素材参考"></a>
+<img src="../assets/visual-suite/scenario-480.webp" width="360" alt="金价汇率情景素材参考">
 
 同一金锭经两块棱镜观察，表达情景对照；不表示涨跌预测。
 
 **Alt 策略：** `alt=""`，外层 `.visual-media` 使用 `aria-hidden="true"`。卡片标题、说明、数值与操作由独立 HTML 表达，避免屏幕阅读器重复朗读装饰图。
 
-[原稿](../assets/visual-suite/masters/scenario.png) · [WebP 480 × 320](../assets/visual-suite/scenario-480.webp) · [WebP 960 × 640](../assets/visual-suite/scenario-960.webp)
+[WebP 480 × 320](../assets/visual-suite/scenario-480.webp) · [WebP 960 × 640](../assets/visual-suite/scenario-960.webp)
 
 ### T06 · 房贷计算器
 
-<a href="../assets/visual-suite/masters/mortgage.png"><img src="../assets/visual-suite/mortgage-480.webp" width="360" alt="房贷计算器素材参考"></a>
+<img src="../assets/visual-suite/mortgage-480.webp" width="360" alt="房贷计算器素材参考">
 
 建筑模型与钥匙表达贷款计算入口；不表示房价或收益。
 
 **Alt 策略：** `alt=""`，外层 `.visual-media` 使用 `aria-hidden="true"`。卡片标题、说明、数值与操作由独立 HTML 表达，避免屏幕阅读器重复朗读装饰图。
 
-[原稿](../assets/visual-suite/masters/mortgage.png) · [WebP 480 × 320](../assets/visual-suite/mortgage-480.webp) · [WebP 960 × 640](../assets/visual-suite/mortgage-960.webp)
+[WebP 480 × 320](../assets/visual-suite/mortgage-480.webp) · [WebP 960 × 640](../assets/visual-suite/mortgage-960.webp)
 
 ### G01 · 先看日期，再看区间
 
@@ -177,13 +177,13 @@
 | [guide-window.svg](../assets/visual-suite/guide-window.svg) | 1200 × 675 | 5,622 | `9fd785f77729a385a7629cffa4cef33d27fdf99f4c19927a897620e05ae6f03e` |
 | [hero-1536.webp](../assets/visual-suite/hero-1536.webp) | 1536 × 1024 | 90,978 | `0d1f223ae92650258ea2185cc208da988d8cee08940bca7db717a2079758c3ad` |
 | [hero-640.webp](../assets/visual-suite/hero-640.webp) | 640 × 427 | 25,390 | `1a07c67f33e40cc7949c57f7068407301ad741cc607dce766fce720875b9a441` |
-| [masters/clock.png](../assets/visual-suite/masters/clock.png) | 1536 × 1024 | 1,771,520 | `9794c0e65e1a028e51487d647ad5cf55acff949b9cd3ddc3e70f2a4b365bfed9` |
-| [masters/fx.png](../assets/visual-suite/masters/fx.png) | 1536 × 1024 | 1,874,367 | `75ee676055a83659b3f40388820f92573a6fdb699be75aedcbf90dbd909acd85` |
-| [masters/hero.png](../assets/visual-suite/masters/hero.png) | 1536 × 1024 | 1,850,625 | `65ea85527148cfd7b7a40afdbd1c7e82493df8957fab32bee17b0b40078f5863` |
-| [masters/metals.png](../assets/visual-suite/masters/metals.png) | 1536 × 1024 | 2,072,314 | `331ace6b41337d059e573bda2ee335f19f77e8e6b06733fb8f91d66cbb2eb365` |
-| [masters/mortgage.png](../assets/visual-suite/masters/mortgage.png) | 1536 × 1024 | 1,830,552 | `771f221dd12296b09e0619d350da88cb5d9310c6ed289d5691ee3634a96255aa` |
-| [masters/scenario.png](../assets/visual-suite/masters/scenario.png) | 1536 × 1024 | 1,677,651 | `ebef39a450484afa43da91a0116d02163b26415a20c435bb45359b152c4b83c6` |
-| [masters/units.png](../assets/visual-suite/masters/units.png) | 1536 × 1024 | 1,672,745 | `b6f2c7860a90b2557248b5d15b5c88c231c80df6ffd1f6c6210b2ccef730654e` |
+| masters/clock.png（已删除） | 1536 × 1024 | 1,771,520 | `9794c0e65e1a028e51487d647ad5cf55acff949b9cd3ddc3e70f2a4b365bfed9` |
+| masters/fx.png（已删除） | 1536 × 1024 | 1,874,367 | `75ee676055a83659b3f40388820f92573a6fdb699be75aedcbf90dbd909acd85` |
+| masters/hero.png（已删除） | 1536 × 1024 | 1,850,625 | `65ea85527148cfd7b7a40afdbd1c7e82493df8957fab32bee17b0b40078f5863` |
+| masters/metals.png（已删除） | 1536 × 1024 | 2,072,314 | `331ace6b41337d059e573bda2ee335f19f77e8e6b06733fb8f91d66cbb2eb365` |
+| masters/mortgage.png（已删除） | 1536 × 1024 | 1,830,552 | `771f221dd12296b09e0619d350da88cb5d9310c6ed289d5691ee3634a96255aa` |
+| masters/scenario.png（已删除） | 1536 × 1024 | 1,677,651 | `ebef39a450484afa43da91a0116d02163b26415a20c435bb45359b152c4b83c6` |
+| masters/units.png（已删除） | 1536 × 1024 | 1,672,745 | `b6f2c7860a90b2557248b5d15b5c88c231c80df6ffd1f6c6210b2ccef730654e` |
 | [metals-480.webp](../assets/visual-suite/metals-480.webp) | 480 × 320 | 7,782 | `72841e2482cc1d42427e2646c02ed13e87386b5c84b6b9ef66480fed478155bb` |
 | [metals-960.webp](../assets/visual-suite/metals-960.webp) | 960 × 640 | 27,120 | `d0e942a7576316699793a9a9b34604b9c34a14b720436b26aff59db9c2322c0e` |
 | [mortgage-480.webp](../assets/visual-suite/mortgage-480.webp) | 480 × 320 | 9,040 | `1150e199edf3df74dde76508d06103bf2ba267e52db984dcb25a908c7577a319` |

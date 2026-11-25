@@ -8,7 +8,7 @@
 
 七张静物概念图使用内置 `image_gen` 原创生成。它们具有摄影质感，但不是实物拍摄、行情截图或预测证据；没有搬用第三方图片。三张教程图采用原创 SVG 代码绘制，不经过生成式图片模型。
 
-PNG 原稿统一为 1536 × 1024（3:2）。WebP 由 sharp 0.35.5 进行技术编码，quality 84；未通过裁切或重绘改变概念内容。完整尺寸、字节数、SHA-256、Git blob SHA 见 [manifest.json](manifest.json)。
+PNG 原稿统一为 1536 × 1024（3:2），已从仓库删除，只保留 WebP。WebP 由 sharp 0.35.5 进行技术编码，quality 84；未通过裁切或重绘改变概念内容。完整尺寸、字节数、SHA-256、Git blob SHA 见 [manifest.json](manifest.json)。
 
 以下为提交给图像工具的完整提示词，保留原文。
 
@@ -18,7 +18,7 @@ PNG 原稿统一为 1536 × 1024（3:2）。WebP 由 sharp 0.35.5 进行技术�
 
 位置：`frontend/home.html` → `.hero-art .visual-media img`。
 
-[PNG 原稿](masters/hero.png) · [WebP 640px](hero-640.webp) · [WebP 1536px](hero-1536.webp)
+[WebP 640px](hero-640.webp) · [WebP 1536px](hero-1536.webp)
 
 ```text
 Use case: stylized-concept. Asset type: original editorial hero photograph for a refined light financial research website. Create an exquisite physical sculpture called 'Convergence': a flowing fan of very thin optically clear glass sheets, each sheet gently curved like a ribbon, gathering into a quiet central fold and then opening out. It should suggest many observation windows meeting, without depicting any data. Precise cold-worked glass edges catch deep cobalt blue light, a few extremely fine champagne-metal filaments trace two edges, with clear refracted light and subtle soft shadows on a warm-white porcelain gallery plinth. A compelling sculptural silhouette, airy negative space, tactile and optically convincing; like an acclaimed museum design editorial photograph, not a simple computer icon. No ocean, no water surface, no fish, no flower, no clouds, no sun, no cartoon, no rainbow neon, no floating widgets, no graphs, numbers, labels, logos, typography or arrows. Landscape 3:2, sculptural subject centrally composed with generous clean margin, broad gentle studio illumination, sophisticated platinum/clear/cobalt/very restrained champagne palette, seamless near-white #f6f7f9 backdrop. This is decorative art only, never a financial forecast. The site renders all Chinese headings and real data separately in HTML. Full opaque background. Crisp fine material detail, fluid yet architecturally intentional; no cheap plastic, no busy shards.
@@ -30,7 +30,7 @@ Use case: stylized-concept. Asset type: original editorial hero photograph for a
 
 位置：`frontend/tools.html` → `#tools .card:has([data-tool="fx"]) .visual-media img`。
 
-[PNG 原稿](masters/fx.png) · [WebP 480px](fx-480.webp) · [WebP 960px](fx-960.webp)
+[WebP 480px](fx-480.webp) · [WebP 960px](fx-960.webp)
 
 ```text
 Use case: stylized-concept. Asset type: premium financial utility card illustration, landscape 3:2 image, no UI. Create an original refined still-life for a currency conversion tool: two substantial machined metal tokens, one cool platinum with a subtle cobalt enamel rim, one pale champagne gold, facing at gently different angles and connected visually by a graceful narrow brushed-aluminium loop. They should feel like beautifully photographed tangible precision objects, not flat icons or cartoon coins. No currency symbols, no lettering, numbers, logos or banknotes. Soft warm-white seamless studio background (#f6f7f9 family), restrained cool-blue optical reflections, soft contact shadows grounded on a porcelain surface. Asymmetric balanced composition with objects centrally framed, large clean margins on every side for cropping. One clear visual idea, exquisite micro-texture, believable metal edge machining, soft large-box lighting, luxury editorial product photography, not shiny plastic, no neon, no gradients as background, no charts, no upward arrows, no scattered particles, no decorative sparkles. The image will sit above a real HTML title on a light finance website; all labels and computed numbers are rendered separately in code. Full opaque background.
@@ -42,7 +42,7 @@ Use case: stylized-concept. Asset type: premium financial utility card illustrat
 
 位置：`frontend/tools.html` → `#tools .card:has([data-tool="tz"]) .visual-media img`。
 
-[PNG 原稿](masters/clock.png) · [WebP 480px](clock-480.webp) · [WebP 960px](clock-960.webp)
+[WebP 480px](clock-480.webp) · [WebP 960px](clock-960.webp)
 
 ```text
 Use case: product-mockup. Asset type: an original premium financial utility card illustration for a time-zone conversion tool. Landscape 3:2 composition, ideally 1536 x 1024. Create a beautifully photographed tangible precision instrument: two small round desktop mechanical clock faces at gently different angles, each on its own elegant light brushed-aluminium curved support, arranged as one coherent sculptural still-life. White enamel dials, very fine etched hour tick marks with absolutely no numbers or letters, slim platinum hands at clearly different decorative positions, delicate cobalt-blue enamel bezels. The clocks are decorative objects, not an actual time display. White porcelain base details. Cool soft-white seamless studio backdrop in the #f6f7f9 family, soft large-area lighting, believable grounded contact shadows and restrained cool optical reflections. Central balanced composition, generous margins, material microtexture and precise metal edges, high-end editorial product photography. Match a luxury financial tools suite of brushed platinum, pale champagne metal, porcelain white and very restrained cobalt accents. No text, logos, currency symbols, maps, UI, charts, arrows, sparkles or particles. No neon, cartoon styling, toy-like plastic or busy background. Full opaque background.
@@ -54,7 +54,7 @@ Use case: product-mockup. Asset type: an original premium financial utility card
 
 位置：`frontend/tools.html` → `#tools .card:has([data-tool="unit"]) .visual-media img`。
 
-[PNG 原稿](masters/units.png) · [WebP 480px](units-480.webp) · [WebP 960px](units-960.webp)
+[WebP 480px](units-480.webp) · [WebP 960px](units-960.webp)
 
 ```text
 Use case: product-mockup. Asset type: an original premium financial utility card illustration for precise unit conversion. Landscape 3:2 composition, ideally 1536 x 1024. Photograph an exquisitely crafted miniature jewellery-laboratory equal-arm balance as a single tangible precision object. Physically coherent instrument: a central vertical brushed-platinum column, a visible central pivot, a fine horizontal equal-length beam, and two shallow circular metal pans each suspended with three fine wires from its beam endpoint; pans hang level. One tiny pale champagne-gold cylindrical calibration weight on one pan, the other visually empty. A modest porcelain-white elliptical base with a delicate cobalt-blue accent ring and a clean mechanical pointer, no lettering. Camera slightly above table level at three-quarter angle so construction reads clearly. Cool soft-white seamless studio background in the #f6f7f9 family, soft large-area lighting, gentle grounded contact shadow. Balanced central composition with generous margins; real machining detail, fine metal surface grain, restrained optical reflections, high-end editorial product photography. Same palette as a luxury finance tools suite: brushed platinum, pale champagne gold, porcelain white, minimal cobalt. No numbers, letters, symbols, logos, screen, UI, chart, arrows, sparkles, particles, neon or cartoon plastic. Keep engineering plausible, do not put random objects around it. Full opaque background.
@@ -66,7 +66,7 @@ Use case: product-mockup. Asset type: an original premium financial utility card
 
 位置：`frontend/tools.html` → `#tools .card:has([data-tool="metal"]) .visual-media img`。
 
-[PNG 原稿](masters/metals.png) · [WebP 480px](metals-480.webp) · [WebP 960px](metals-960.webp)
+[WebP 480px](metals-480.webp) · [WebP 960px](metals-960.webp)
 
 ```text
 Use case: product-mockup. Asset type: an original premium financial utility card illustration for gold and silver price conversion. Landscape 3:2 composition, ideally 1536 x 1024. Create one sophisticated tangible still-life: a substantial pale champagne-gold bullion bar with gently sloping sides and softly bevelled precise edges, resting diagonally across a fine brushed-silver bullion bar on a porcelain-white studio surface. Both bars are completely blank with no stamps, marks, digits, logos or lettering. Gold has subtle realistic microscopic brushing and a warm restrained satin sheen, not orange plastic; silver has cool fine linear metal grain, a very subtle cobalt optical reflection along one edge. Keep the two objects identifiable, elegant and not duplicated into a pile. Slightly elevated three-quarter product photography, central asymmetric balanced composition with generous clean margins. Cool soft-white seamless studio background in the #f6f7f9 family, soft large-area studio lights, refined believable contact shadows. Palette consistent with a luxury financial tools suite of brushed platinum, pale champagne gold, porcelain white and tiny cobalt accents. High material realism and calm editorial quality. No UI, charts, arrows, coins, sparkles, particles, neon or cartoon styling. Full opaque background.
@@ -78,7 +78,7 @@ Use case: product-mockup. Asset type: an original premium financial utility card
 
 位置：`frontend/tools.html` → `#tools .card:has([data-tool="scen"]) .visual-media img`。
 
-[PNG 原稿](masters/scenario.png) · [WebP 480px](scenario-480.webp) · [WebP 960px](scenario-960.webp)
+[WebP 480px](scenario-480.webp) · [WebP 960px](scenario-960.webp)
 
 ```text
 Use case: stylized-concept. Asset type: a premium financial utility card illustration, landscape 3:2, 1536 by 1024 composition, no UI. Create an original editorial still-life visual for comparing two exchange-rate scenarios: one small unmarked pale champagne-gold ingot is behind two precisely cut optical glass prisms positioned at gently different angles. The prisms are clear to extremely pale cobalt blue, and show subtle believable refraction of the SAME underlying gold object, suggesting two ways of looking at the same value. Keep the ingot and glass clearly distinguishable and the scene uncluttered: only these three principal objects, no coins or extra props. Refined realistic product photography with exquisite machined bevels, faint brushed metal grain, optically convincing glass edges, grounded soft contact shadows on a warm-white porcelain studio surface. Opaque seamless background in the #f6f7f9 family, soft large-box lighting, understated cool reflections, luxury materials with restraint. Centered asymmetrical composition, generous clean margin around every object for cropping, object group occupies about 65 percent of the frame. No text, numbers, logos, currency marks, axes, charts, graph lines, arrows, neon, sparkles or particles. Not a flat icon, not cartoon, not cheap translucent plastic. This image is decorative conceptual art for a light finance website; all labels and calculated results will be real HTML outside the image.
@@ -90,7 +90,7 @@ Use case: stylized-concept. Asset type: a premium financial utility card illustr
 
 位置：`frontend/tools.html` → `#tools .card:has([data-tool="loan"]) .visual-media img`。
 
-[PNG 原稿](masters/mortgage.png) · [WebP 480px](mortgage-480.webp) · [WebP 960px](mortgage-960.webp)
+[WebP 480px](mortgage-480.webp) · [WebP 960px](mortgage-960.webp)
 
 ```text
 Use case: stylized-concept. Asset type: premium financial utility card illustration for a mortgage calculator, landscape 3:2, 1536 by 1024 composition, no UI. Create an original exquisitely photographed architectural model of a modest modern home: a compact two-storey porcelain-white house with an elegant roofline, recessed doorway and carefully scaled pale-blue glazing. It is an architect's real physical scale model with fine construction detail, not a cartoon icon or toy. Place a single beautifully machined brushed-platinum house key on the studio surface in the foreground, with a slender pale champagne-gold ring, proportionate to the architectural model composition. Keep the image simple, three-quarter view, one clear house plus key, centrally balanced, with generous white space and clean safe margins on all sides. Entire scene opaque on a seamless cool warm-white background in #f6f7f9 family. Soft large-box studio light, believable contact shadows, restrained cobalt-blue glass reflections, tactile matte porcelain and fine brushed metallic detail, premium mature financial editorial aesthetic. No text, numbers, lettering, logos, percent marks, banknotes, coins, people, grass, trees, fences, arrows or charts. No neon, particles, decorative sparkles, glossy plastic, flat vector or cartoon styling. All loan numbers, labels and assumptions will be rendered separately in HTML outside this decorative artwork.
