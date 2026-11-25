@@ -9,13 +9,13 @@
  "currency": "JPY",
  "timezone": "Asia/Tokyo",
  "exchange": "东京证券交易所",
- "asof": "2026-11-20",
- "generated_at": "2026-11-25T01:30:36.636740+00:00",
+ "asof": "2026-11-24",
+ "generated_at": "2026-11-25T18:09:27.808121+00:00",
  "first_visible_at": null,
  "model_version": "global_sparse27_v1_production_v2_box",
  "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
- "source_sha": "e268769c6b08dbd4458318869719e39aa25aeffa",
- "data_version": "31e654f4c00eff07053bdca43bc1a9bd2b083806bb4e942071081b3d460c275b",
+ "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+ "data_version": "1547740a3ae1a9cc0fc3ca1606d9c24153d65ac55b902141d060623628285f29",
  "source": "Yahoo Finance",
  "source_meta": {
   "id": "JP_N225",
@@ -25,17 +25,17 @@
   "currency": "JPY",
   "timezone": "Asia/Tokyo",
   "exchange": "Osaka",
-  "fetched_at": "2026-11-25T01:27:54.424219+00:00",
+  "fetched_at": "2026-11-25T18:08:45.436935+00:00",
   "source": "Yahoo Finance v8 chart",
-  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EN225?period1=946684800&period2=1795570074&interval=1d&events=div%2Csplit",
-  "raw_sha256": "db4fc90066d7a6f5add50373da89766641cca8d0e6a4a80af25f98cea1e1b94e",
-  "normalized_sha256": "31e654f4c00eff07053bdca43bc1a9bd2b083806bb4e942071081b3d460c275b",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EN225?period1=946684800&period2=1795630125&interval=1d&events=div%2Csplit",
+  "raw_sha256": "b1966b6020ec9ca55b13a36272aea3462df0cf5fa41cd37ead725ae370b910a7",
+  "normalized_sha256": "1547740a3ae1a9cc0fc3ca1606d9c24153d65ac55b902141d060623628285f29",
   "adjustment": "none",
   "volume_unit": "vendor_native",
   "history_vintage": "current_download_reconstruction",
   "normalizer_version": "global_yahoo_v3_raw_ohlcv",
-  "metadata_file": "db4fc90066d7a6f5add50373da89766641cca8d0e6a4a80af25f98cea1e1b94e-eae6a8e695bad95e27aac9e8c623089d20269a542b5adf87db6a6f64206d808b.metadata.json",
-  "dropped_unclosed_bars": 1,
+  "metadata_file": "b1966b6020ec9ca55b13a36272aea3462df0cf5fa41cd37ead725ae370b910a7-a3fd14eb7be3d986c34387813641015ffb0bf99360268c7fec3d9343348633bc.metadata.json",
+  "dropped_unclosed_bars": 0,
   "provider_currency": "JPY",
   "dropped_non_session_rows": 1,
   "dropped_non_session_dates": [
@@ -43,7 +43,7 @@
   ],
   "missing_sessions_last_250": 1,
   "missing_sessions_last_250_dates": [
-   "2026-11-24"
+   "2026-11-25"
   ],
   "cross_check": {
    "provider": "fredgraph_csv",
@@ -51,15 +51,17 @@
    "max_rel_diff": 5.663340252413504e-08,
    "missing_in_yahoo": 0,
    "missing_in_yahoo_dates": [],
-   "yahoo_lag_sessions": 0,
-   "yahoo_lag_session_dates": [],
+   "yahoo_lag_sessions": 1,
+   "yahoo_lag_session_dates": [
+    "2026-11-25"
+   ],
    "mismatches": [],
    "status": "ok"
   },
   "publication_decision": "owner_approved_2026-11-24",
   "asset_type": "index",
-  "source_asof": "2026-11-20",
-  "model_asof": "2026-11-20",
+  "source_asof": "2026-11-24",
+  "model_asof": "2026-11-24",
   "public_redistribution": "NOT_ESTABLISHED"
  },
  "evidence": "research_candidate",
@@ -67,7 +69,7 @@
   "research_candidate": "国际市场稀疏窗口研究样本"
  },
  "params": {
-  "source_sha": "e268769c6b08dbd4458318869719e39aa25aeffa",
+  "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
   "math_hashes": {
    "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
    "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
@@ -145,7 +147,6 @@
   "exchange": "XTKS",
   "holidays_through": "2030-12-30",
   "closures": [
-   "2026-11-23",
    "2026-12-31",
    "2027-01-01",
    "2027-01-11",
@@ -6801,7 +6802,8 @@
    "2026-11-17",
    "2026-11-18",
    "2026-11-19",
-   "2026-11-20"
+   "2026-11-20",
+   "2026-11-24"
   ],
   "source": "Yahoo Finance",
   "adjustment": "none",
@@ -13390,7 +13392,8 @@
    59295.80078125,
    59007.3984375,
    59025.19140625,
-   58551.55859375
+   58551.55859375,
+   57009.98828125
   ],
   "high": [
    19187.609375,
@@ -19975,7 +19978,8 @@
    59369.140625,
    59630.94921875,
    59660.609375,
-   58707.48046875
+   58707.48046875,
+   59262.5703125
   ],
   "low": [
    18937.44921875,
@@ -26560,7 +26564,8 @@
    58691.109375,
    58279.26171875,
    58750.53125,
-   56436.6484375
+   56436.6484375,
+   57009.98828125
   ],
   "close": [
    19002.859375,
@@ -33145,7 +33150,8 @@
    58860.4296875,
    59024.28125,
    59444.2109375,
-   56436.6484375
+   56436.6484375,
+   58644.62890625
   ],
   "volume": [
    0.0,
@@ -39730,7 +39736,8 @@
    138500000.0,
    142400000.0,
    138300000.0,
-   174600000.0
+   174600000.0,
+   204700000.0
   ],
   "ohlc_missing_dates": [],
   "ohlc_missing_count": 0,
@@ -39967,48 +39974,48 @@
     "B_negative": 13,
     "m_0_1_to_0_9": 19,
     "omega_6_to_13": 8,
-    "ahead_0_to_90": 10
+    "ahead_0_to_90": 7
    },
    "sequential_pass": {
     "B_negative": 13,
     "m_0_1_to_0_9": 9,
-    "omega_6_to_13": 2,
+    "omega_6_to_13": 1,
     "ahead_0_to_90": 0
    },
    "box_qualified": 0,
    "cycles_1_5_qualified": 0,
-   "tc_inside_sample": 14,
-   "ahead_over_90": 3,
+   "tc_inside_sample": 18,
+   "ahead_over_90": 2,
    "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
   },
   "fit_input_hashes": {
-   "18": "22f64ce3367fc9073c2684aca74a3fb50c501491dd3d6c56440a201be5676ac8",
-   "21": "be0699a1805a5f2686cead4bd2f00f07c1e05cc9ac6480c653783b68ef890206",
-   "14": "31f7c0fb5f01e6770522058928067e77e6c9d63e94a34d7b017e3306aab2eab3",
-   "10": "6fb9d7d3e9e2a5f3a0702ffecf578ae60e8af731c096ee2bd0152962405b58cd",
-   "30": "c2de38fba7da5f41cd5f90dc3391da3f27f6b10a8a4ddab7b1f1b02d3e5be628",
-   "42": "0bc712d4ae33cbcd1d6780dec8bbeb2193a4b03b103b2c0ca78c3790d15b7059",
-   "52": "b3664d5f000defa7453739e5b92c311d974cb0c5eaa6bd3904bd8b1e40dce4ea",
-   "84": "eb07f9f07773aa6291bfdf1ac36ef18384620cd5dc4623101bed4e0c939a3918",
-   "63": "8ddf5b5adbdc5faffe18db0cb3659e5a0b2840c25dd39a65b9f92aa12f0328a8",
-   "64": "31a86f9c4c2723eaafd00cc71725cb40d3d1a282fe70b8b2e0e15cd5b47b55f0",
-   "105": "654bd5f9550a9e32900db6c36a72936ca95eda0adf1051a88c7e24a1aa0ab40f",
-   "168": "574ffc0900fa18eccca651f6e3fce3d1b71abe525ac5739b92da871f95a563ee",
-   "210": "962bacfcf101d264bdc8fabb8fb4672a374a1d004c362a41a9edc95cf3c6fb2f",
-   "126": "67e9b3e2ed1d21083d8285f38350c8fd1fc95ef19bc157671bcce83d3090cd06",
-   "127": "a26338a454d06bd795172876d6610f9c1cedaff2bb5c59e2229cd7d341386092",
-   "252": "fde28bdfe0cb28294b447787d2572a4dec0faea0315bf494214f167e92a96ed2",
-   "253": "4b0e425961a313b2b2b023ee922a3c2a8b459fc14632447154a5ae3188317c0b",
-   "315": "8da6fe78f457cdb0080b5b63e58fe3b00ab9956adf9ccb9da225eff0611420ca",
-   "378": "2e089dc5059b807826ab0743da692408054ca68264bd7251ce820ea2954c3661",
-   "441": "bf3582144bd3db18ea72db10c00cfb7d082c9f546389063798885fd99c4936f9",
-   "504": "7e2879a35f9a37b5e31047197328912dd7cc08324f5fba46ee1dafbe767106ec",
-   "525": "a836e657bf6511769514a30dddab1f2d15df313d293e6df574a048d3d167c77c",
-   "630": "418f594f8aa782ebe82b9fe20d5f1c8be0682dfec9a178081ca1707172e6957f",
-   "756": "5f5a300a24f1ebd3dee3040cfd8b635610b563bd7f0544e86727ba3ee0a90896",
-   "1008": "da185198b84c95f83f3d9db3fcb4cb2f130331f9811099a947ad2c9fe354f126",
-   "1260": "dbc8e60bdc6fcc92f622e831dfb38a9d9957d2395e272d7b73d370e157ed9d70",
-   "1500": "7cb8656a16224b5b6ccd5c7a47d8ffe136032fa76040fd1347021ff16a09e58a"
+   "14": "c394ab16d09bf5689786548406a0408c88ecc4bec72dda18f9f986a43f717670",
+   "21": "359a7afaee526b9312129c5bbb9fe6d9be8d4f0c051bf65cd510a4bddc56c16e",
+   "18": "3830113c9d0577b709c6835b483f15571b0959fad15d1cd26bd1c42f17014b73",
+   "10": "efeeb1ec3a1ad03729e413941ae82aad74daebe1486d4983fcd164a2683312ce",
+   "30": "9115bca956524c343995a91c0590c527d62efb78b3bc31ec357613bda509ce1f",
+   "42": "f75ece43e232775e692f7db4af66ebfe9cfcd1afd06cfa4372209918ed81fb34",
+   "52": "add3dc6db27b844bc4d27d5a1e347e91a2f3a7b0ed157a48759fe37bfadf4de3",
+   "64": "a10325e97c4ee3806b5e116db05e924f30920f6126ea76f191dc987a00c7db63",
+   "84": "1309cd122e0d4c273be4cd901f67c16429c6c9ae6f1bfde5acf3da57afb849c5",
+   "105": "0f13a54bbe6957fb758cfa1f3214f2799dc21d5f0a9bae0c46691b9110cd074b",
+   "63": "2d2b3f77a6999cd77631819c51682967dab5e495acb377b02c9a794eb6eaf3dc",
+   "127": "49a6eeac26033778e24cb2da19fe1ab93704e9834f43d4b78e8925435b64452f",
+   "168": "92033501daec46415aa3e52c768fefacd3a5b938f606b23fef17217afcc48db3",
+   "126": "8c2d3fe60348ae3c4ff5ac05e139e9045b025ef23b4e31fa9e2b37c98d081bf3",
+   "210": "bf75a5ba3a390b986ac2fcbba5b9e0485894c8bdddc4fc01ebc60cf7e346c05e",
+   "252": "08be6e60b0d1f95595c7fbdc2403ae7cd7426390970bb7b5941ecfbe263edf93",
+   "253": "3c876fee976570ecb4dde19e20a848bccee7600347d373611b45cbc4bc36d273",
+   "315": "2553fcfcf8c8091cf9eb92951778ae36bd2b89e5af32337d9e7a83fc86a5481d",
+   "378": "bc2fb9627f7159c7e355608b50e9832bc6e79fc07273c5b1026c70eb0bb611b5",
+   "441": "363a1cc9bc6f13179fdf34584ee174ff6f8c9e5148fd2053c47456f1c0155eba",
+   "504": "d220a782f76ac028668c1832f1c81bce5c2ccdf5f8f3fab447d4bf51db819e19",
+   "525": "b409f0782df4c978571b2c2bbd75982a494f7bd8ef5460dd4f4dd8f9791e837c",
+   "630": "1293965d22849d5649d2f23d0fe0ffe2a4a7b5a6a192b7f796311152684f9aac",
+   "756": "aaa2981870ede5080459dbb86b5c273d355fed822242a041313f754f656e5862",
+   "1260": "d4f932affd6e4419ad69634a6cfbb876f67d98224567b311e78c9710a4d521b7",
+   "1008": "5e3d518ad907eed18620a328d908eface03e25de5d1fb4456a60b990cc7f6f4f",
+   "1500": "4f33866889bd211f023c2eb936bdce5af6bef6afb8d5e0323e017a89fa63f5e3"
   },
   "future_calendar_verified": true,
   "stage_top_score": null,
@@ -40021,6 +40028,6 @@
   "failed": 0,
   "pending": 0
  },
- "record_version": "048260f4edc259ad400348d41f250c769e9d1c3e37a607bb6a12f16c554ed210",
- "archive_path": "global/archive/JP_N225/2026-11-20/048260f4edc259ad400348d41f250c769e9d1c3e37a607bb6a12f16c554ed210.json"
+ "record_version": "49ce8e032f465d78eb209aa0411ee14d887b1c28484c0f51f97490caa44ca22e",
+ "archive_path": "global/archive/JP_N225/2026-11-24/49ce8e032f465d78eb209aa0411ee14d887b1c28484c0f51f97490caa44ca22e.json"
 }
