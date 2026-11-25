@@ -1,0 +1,648 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-11-17",
+  "scope": "static source, license, release and selected CI review; no third-party installation or execution",
+  "production_change": false,
+  "repositories": {
+    "lppl": {
+      "repository": "CareyPang/LPPL",
+      "ref": "bf8bbf782dd9031dfe18b574b275edb88f9b5d01"
+    },
+    "experiment": {
+      "repository": "CareyPang/LPPL",
+      "ref": "2e529af11d201ef61567a89ce86f9b08cd9e5309",
+      "pr": 118
+    },
+    "lwc": {
+      "repository": "tradingview/lightweight-charts",
+      "ref": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "tag": "v5.3.0",
+      "license": "Apache-2.0"
+    },
+    "lwc521": {
+      "repository": "tradingview/lightweight-charts",
+      "ref": "b2ce010e4ad59f6556c9ed60e2b2b30feccdd2d1",
+      "tag": "v5.2.1",
+      "license": "Apache-2.0"
+    },
+    "plugins": {
+      "repository": "tradingview/lightweight-charts",
+      "ref": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "tag": "plugins-2026-11-13",
+      "license": "Apache-2.0"
+    },
+    "examples": {
+      "repository": "tradingview/lightweight-charts",
+      "ref": "c29c51e1e5bc61981da5832c97797cb8283d120f",
+      "license": "Apache-2.0"
+    },
+    "opencharts": {
+      "repository": "dylanpersonguy/OpenCharts",
+      "ref": "399e27538d8150796571dbdecbe920a54b771de4",
+      "license": "MIT; Apache-2.0 for NOTICE-listed derivative components"
+    },
+    "openTradingview": {
+      "repository": "Timelk/open-tradingview",
+      "ref": "50d7b7db90c4fffeac7ec83626aaec2778d9bdf2",
+      "license": "MIT; retain applicable third-party notices"
+    }
+  },
+  "adoption_baseline": "LPPL PR118 / Lightweight Charts 5.2.1; evaluate 5.3 separately",
+  "candidates": [
+    {
+      "id": "official-user-price-lines",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-plugin-user-price-lines/README.md",
+        "packages/lwc-plugin-user-price-lines/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-user-price-lines/README.md",
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-user-price-lines/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PINNED_PACKAGE_CANDIDATE",
+      "note": "Add/list/remove horizontal lines; no drag, undo or persistence",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-plugin-user-price-lines",
+      "npm_version": "1.0.0",
+      "declared_lwc_peer": "^5.0.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-vertical-line",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-plugin-vertical-line/README.md",
+        "packages/lwc-plugin-vertical-line/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-vertical-line/README.md",
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-vertical-line/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PINNED_PACKAGE_CANDIDATE",
+      "note": "Draggable date line; model objects must remain read-only",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-plugin-vertical-line",
+      "npm_version": "1.0.1",
+      "declared_lwc_peer": "^5.0.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-accessibility",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-plugin-accessibility/README.md",
+        "packages/lwc-plugin-accessibility/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-accessibility/README.md",
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-accessibility/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PINNED_PACKAGE_CANDIDATE",
+      "note": "Keyboard/read-screen/table; Chinese and assistive-tech verification required",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-plugin-accessibility",
+      "npm_version": "1.0.1",
+      "declared_lwc_peer": "^5.0.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-anchored-text",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-plugin-anchored-text/README.md",
+        "packages/lwc-plugin-anchored-text/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-anchored-text/README.md",
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-anchored-text/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PINNED_PACKAGE_CANDIDATE",
+      "note": "Fixed corner/edge text, not freely draggable time-price annotation",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-plugin-anchored-text",
+      "npm_version": "1.0.0",
+      "declared_lwc_peer": "^5.0.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-background-shade-series",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-plugin-background-shade-series/README.md",
+        "packages/lwc-plugin-background-shade-series/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-background-shade-series/README.md",
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-background-shade-series/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PINNED_PACKAGE_CANDIDATE",
+      "note": "Shade existing bars; not a future tc interval substitute",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-plugin-background-shade-series",
+      "npm_version": "1.0.0",
+      "declared_lwc_peer": "^5.0.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-session-highlighting",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-plugin-session-highlighting/README.md",
+        "packages/lwc-plugin-session-highlighting/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-session-highlighting/README.md",
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-plugin-session-highlighting/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PINNED_PACKAGE_CANDIDATE",
+      "note": "Highlight existing bar sessions; no trading calendar generation",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-plugin-session-highlighting",
+      "npm_version": "1.0.0",
+      "declared_lwc_peer": "^5.0.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-toolkit",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "aebdfc8f0d85b95e43467ae79516753158d60e61",
+      "paths": [
+        "packages/lwc-toolkit/package.json"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/aebdfc8f0d85b95e43467ae79516753158d60e61/packages/lwc-toolkit/package.json"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "DEPENDENCY_REVIEW",
+      "note": "Plugin infrastructure, not terminal UI",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN",
+      "npm_package": "@tradingview/lwc-toolkit",
+      "npm_version": "1.1.0",
+      "registry_version_verified": true,
+      "lockfile_integrity": "TO_CAPTURE_AT_ADOPTION"
+    },
+    {
+      "id": "official-example-screenshot",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/data/screenshot.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/data/screenshot.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Compose evidence footer and external DOM separately",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-candlestick",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/series-types/candlestick.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/series-types/candlestick.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Already present in PR118; do not recreate",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-price-volume",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/price-scales/price-and-volume.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/price-scales/price-and-volume.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Replace Area with Candlestick; retain original volume units",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-panes",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/panes/multiple-panes.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/panes/multiple-panes.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Shared chart time scale; not independent multi-asset terminals",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-compare",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/series-types/compare-multiple-series.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/series-types/compare-multiple-series.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Normalize baselines/currency/calendar explicitly",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-crosshair-sync",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/crosshair/sync-crosshairs.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/crosshair/sync-crosshairs.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Map dates across unlike calendars",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-markers",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/markers-and-lines/series-markers.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/markers-and-lines/series-markers.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Keep event availability as of selected date",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-tooltip",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/tooltips-and-legends/floating-tooltip.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/tooltips-and-legends/floating-tooltip.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "DOM tooltip not automatically captured in screenshot",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-infinite-history",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/data/infinite-history.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/data/infinite-history.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Replace synthetic data and timers; not a backtest backend",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "official-example-whitespace",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "0bad38a070220e6315aa779bb80483fe97cf6d1b",
+      "paths": [
+        "website/examples/data/whitespace.js"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/0bad38a070220e6315aa779bb80483fe97cf6d1b/website/examples/data/whitespace.js"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "ADAPT_EXAMPLE",
+      "note": "Future trading date slots only, no OHLC",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "screenshot-521-api",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "b2ce010e4ad59f6556c9ed60e2b2b30feccdd2d1",
+      "paths": [
+        "src/api/ichart-api.ts"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/b2ce010e4ad59f6556c9ed60e2b2b30feccdd2d1/src/api/ichart-api.ts"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "EXISTING_API",
+      "note": "5.2.1 already supports addTopLayer/includeCrosshair",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "trendline-poc",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "c29c51e1e5bc61981da5832c97797cb8283d120f",
+      "paths": [
+        "plugin-examples/src/plugins/trend-line/trend-line.ts"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/c29c51e1e5bc61981da5832c97797cb8283d120f/plugin-examples/src/plugins/trend-line/trend-line.ts"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "RENDERER_ONLY",
+      "note": "Needs complete user editing and object lifecycle",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "rectangle-poc",
+      "repository": "tradingview/lightweight-charts",
+      "commit": "c29c51e1e5bc61981da5832c97797cb8283d120f",
+      "paths": [
+        "plugin-examples/src/plugins/rectangle-drawing-tool/rectangle-drawing-tool.ts"
+      ],
+      "source_urls": [
+        "https://github.com/tradingview/lightweight-charts/blob/c29c51e1e5bc61981da5832c97797cb8283d120f/plugin-examples/src/plugins/rectangle-drawing-tool/rectangle-drawing-tool.ts"
+      ],
+      "license_context": "Apache-2.0",
+      "decision": "PARTIAL_INTERACTION",
+      "note": "Needs selection, drag, delete, persistence, undo and accessible sizing",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "oc-geometry",
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+      "paths": [
+        "src/lib/chart-plugins/drawing-tools/geometry.ts"
+      ],
+      "source_urls": [
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/chart-plugins/drawing-tools/geometry.ts"
+      ],
+      "license_context": "MIT; Apache-2.0 for NOTICE-listed derivative components",
+      "decision": "SMALL_SOURCE_EXTRACTION_CANDIDATE",
+      "note": "Pure geometry helpers; boundary tests and notices",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "oc-drawing-lifecycle",
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+      "paths": [
+        "src/lib/chart-plugins/drawing-tools/manager.ts",
+        "src/lib/chart-plugins/drawing-tools/hit-test.ts",
+        "src/lib/chart-plugins/drawing-tools/renderers.ts",
+        "src/lib/chart-plugins/drawing-tools/drawings-primitive.ts",
+        "src/lib/chart-plugins/drawing-tools/resolve.ts"
+      ],
+      "source_urls": [
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/chart-plugins/drawing-tools/manager.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/chart-plugins/drawing-tools/hit-test.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/chart-plugins/drawing-tools/renderers.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/chart-plugins/drawing-tools/drawings-primitive.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/chart-plugins/drawing-tools/resolve.ts"
+      ],
+      "license_context": "MIT; Apache-2.0 for NOTICE-listed derivative components",
+      "decision": "PORT_WITH_FIXES",
+      "note": "LWC4.2.3 to 5.2.1; replace fixed interval future coordinate extrapolation",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "oc-objects-undo",
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+      "paths": [
+        "src/hooks/useChartDrawings.ts",
+        "src/pages/trading/ObjectTreePanel.tsx"
+      ],
+      "source_urls": [
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/hooks/useChartDrawings.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/pages/trading/ObjectTreePanel.tsx"
+      ],
+      "license_context": "MIT; Apache-2.0 for NOTICE-listed derivative components",
+      "decision": "INTERACTION_AND_STATE_REFERENCE",
+      "note": "React dependencies; persistence failure must propagate",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "oc-adapter",
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+      "paths": [
+        "src/adapter/types.ts",
+        "src/adapter/registry.ts"
+      ],
+      "source_urls": [
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/adapter/types.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/adapter/registry.ts"
+      ],
+      "license_context": "MIT; Apache-2.0 for NOTICE-listed derivative components",
+      "decision": "CONTRACT_REFERENCE",
+      "note": "Single global adapter must not leak between assets/asof scopes",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "oc-storage",
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+      "paths": [
+        "src/lib/safe-storage.ts",
+        "src/services/api.ts"
+      ],
+      "source_urls": [
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/lib/safe-storage.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/services/api.ts"
+      ],
+      "license_context": "MIT; Apache-2.0 for NOTICE-listed derivative components",
+      "decision": "EXTRACT_HELPER_REWRITE_SERVICE",
+      "note": "writeJSON swallows failures and save returns saved:true",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "oc-demo-excluded",
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+      "paths": [
+        "src/Root.tsx",
+        "src/services/demo/candles.ts",
+        "src/adapterChoice.ts"
+      ],
+      "source_urls": [
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/Root.tsx",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/services/demo/candles.ts",
+        "https://github.com/dylanpersonguy/OpenCharts/blob/399e27538d8150796571dbdecbe920a54b771de4/src/adapterChoice.ts"
+      ],
+      "license_context": "MIT; Apache-2.0 for NOTICE-listed derivative components",
+      "decision": "DO_NOT_IMPORT",
+      "note": "Demo date shifting/fallback and broker/wallet functionality excluded",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "otv-drawing-primitives",
+      "repository": "Timelk/open-tradingview",
+      "commit": "50d7b7db90c4fffeac7ec83626aaec2778d9bdf2",
+      "paths": [
+        "src/lib/drawing/types.ts",
+        "src/lib/drawing/registry.ts",
+        "src/lib/drawing/gestures.ts",
+        "src/lib/drawing/primitives.ts",
+        "src/lib/drawing/builtins.ts"
+      ],
+      "source_urls": [
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/types.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/registry.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/gestures.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/primitives.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/builtins.ts"
+      ],
+      "license_context": "MIT; retain applicable third-party notices",
+      "decision": "SELECTIVE_REFERENCE_OR_PORT",
+      "note": "Own chart engine; adapt coordinate/theme/DPR host; not LWC plug-in",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "otv-scene-undo",
+      "repository": "Timelk/open-tradingview",
+      "commit": "50d7b7db90c4fffeac7ec83626aaec2778d9bdf2",
+      "paths": [
+        "src/lib/drawing/engine.ts",
+        "src/lib/scene/store.ts",
+        "src/lib/scene/serialization.ts"
+      ],
+      "source_urls": [
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/engine.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/scene/store.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/scene/serialization.ts"
+      ],
+      "license_context": "MIT; retain applicable third-party notices",
+      "decision": "DEPENDENCY_CLOSURE_REVIEW",
+      "note": "Undo/redo and object validation reference; immutable model objects separate",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "otv-capture",
+      "repository": "Timelk/open-tradingview",
+      "commit": "50d7b7db90c4fffeac7ec83626aaec2778d9bdf2",
+      "paths": [
+        "src/lib/chart/controller.ts",
+        "src/lib/agent/chart-adapter.ts"
+      ],
+      "source_urls": [
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/chart/controller.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/agent/chart-adapter.ts"
+      ],
+      "license_context": "MIT; retain applicable third-party notices",
+      "decision": "COMPOSITING_REFERENCE",
+      "note": "Captures canvases, not DOM legends or evidence footer",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "otv-layout",
+      "repository": "Timelk/open-tradingview",
+      "commit": "50d7b7db90c4fffeac7ec83626aaec2778d9bdf2",
+      "paths": [
+        "src/lib/workspace/layout.ts"
+      ],
+      "source_urls": [
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/workspace/layout.ts"
+      ],
+      "license_context": "MIT; retain applicable third-party notices",
+      "decision": "LOCAL_LAYOUT_REFERENCE",
+      "note": "No account cloud synchronization established",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    },
+    {
+      "id": "otv-feed-server-excluded",
+      "repository": "Timelk/open-tradingview",
+      "commit": "50d7b7db90c4fffeac7ec83626aaec2778d9bdf2",
+      "paths": [
+        "src/lib/market/connector-config.ts",
+        "src/lib/market/connectors.ts",
+        "src/lib/drawing/coordinates.ts",
+        "server/agent-bridge.ts"
+      ],
+      "source_urls": [
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/market/connector-config.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/market/connectors.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/src/lib/drawing/coordinates.ts",
+        "https://github.com/Timelk/open-tradingview/blob/50d7b7db90c4fffeac7ec83626aaec2778d9bdf2/server/agent-bridge.ts"
+      ],
+      "license_context": "MIT; retain applicable third-party notices",
+      "decision": "DO_NOT_IMPORT",
+      "note": "Synthetic fallback, fixed intervals, local-only unauthenticated bridge",
+      "evidence": "VERIFIED_STATIC_OR_RELEASE",
+      "runtime_validation": "NOT_RUN"
+    }
+  ],
+  "excluded": [
+    "synthetic market data fallback",
+    "real trading/wallet/order services",
+    "LPPL model or evaluation changes",
+    "public deployment",
+    "full third-party terminal replacement"
+  ],
+  "validation": {
+    "source_and_manifest": "PREPARED",
+    "runtime": "NOT_RUN",
+    "mainland_network": "NOT_INSPECTED",
+    "device_390px": "NOT_RUN",
+    "performance": "NOT_RUN",
+    "prediction_improvement": "NOT_ESTABLISHED"
+  }
+}
