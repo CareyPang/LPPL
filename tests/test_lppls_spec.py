@@ -342,7 +342,7 @@ def test_legacy_variants_are_documented_as_unbacktested():
 
 def test_production_workflows_set_v2_for_every_pipeline_invocation():
     targets = (
-        "research.pipeline.daily",
+        "research.pipeline.index_daily",
         "research.features.lppls_scan",
         "research.pipeline.history_extend",
     )
