@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "repository": "CareyPang/LPPL",
+  "previous_audited_sha": "60818b428396336fc99aae3076d4a918089a81d3",
+  "final_main_sha": "b69384656210cc3610e58733426ce22bc8a69d6e",
+  "compare_url": "https://github.com/CareyPang/LPPL/compare/60818b428396336fc99aae3076d4a918089a81d3...b69384656210cc3610e58733426ce22bc8a69d6e",
+  "compare_status": "ahead",
+  "ahead_by": 2,
+  "behind_by": 0,
+  "pr121": {
+    "state": "closed",
+    "merged": true,
+    "merged_at": "2026-11-17T03:25:24Z",
+    "merge_commit_sha": "b69384656210cc3610e58733426ce22bc8a69d6e",
+    "head_sha": "dcaef2252c93248a5cc66e92505a715bfd02267a"
+  },
+  "commits": [
+    {
+      "sha": "dcaef2252c93248a5cc66e92505a715bfd02267a",
+      "parents": [
+        "60818b428396336fc99aae3076d4a918089a81d3"
+      ]
+    },
+    {
+      "sha": "b69384656210cc3610e58733426ce22bc8a69d6e",
+      "parents": [
+        "60818b428396336fc99aae3076d4a918089a81d3",
+        "dcaef2252c93248a5cc66e92505a715bfd02267a"
+      ]
+    }
+  ],
+  "changed_files": [
+    {
+      "path": "frontend/app/stock-view.js",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 1,
+      "git_blob_sha": "8f2e84a028de4295906eacd0f6007ef1b82ef6ed"
+    },
+    {
+      "path": "frontend/stock.html",
+      "status": "modified",
+      "additions": 18,
+      "deletions": 22,
+      "git_blob_sha": "0599417de2cf2a2d8ce05af17246d47d4eb4e532"
+    },
+    {
+      "path": "frontend/tests/stock-chart.test.cjs",
+      "status": "modified",
+      "additions": 28,
+      "deletions": 1,
+      "git_blob_sha": "dfdb0d355dfd2f546217a84ee4ca965a14930ccf"
+    }
+  ],
+  "freshly_read_files": [
+    {
+      "path": "frontend/app/stock-view.js",
+      "bytes_utf8": 53452,
+      "sha256_utf8": "4c1e45fb4cae050827e40d0c49266e9e77e07bd58a8389146d3653fb7dc088c7",
+      "git_blob_sha_reported": "8f2e84a028de4295906eacd0f6007ef1b82ef6ed",
+      "git_blob_sha_computed": "8f2e84a028de4295906eacd0f6007ef1b82ef6ed",
+      "git_blob_matches": true
+    },
+    {
+      "path": "frontend/stock.html",
+      "bytes_utf8": 92217,
+      "sha256_utf8": "3b899da0d05580b01a41713cf899459e31484e9f67af4f4ca36b3716d33552eb",
+      "git_blob_sha_reported": "0599417de2cf2a2d8ce05af17246d47d4eb4e532",
+      "git_blob_sha_computed": "0599417de2cf2a2d8ce05af17246d47d4eb4e532",
+      "git_blob_matches": true
+    },
+    {
+      "path": "frontend/tests/stock-chart.test.cjs",
+      "bytes_utf8": 40420,
+      "sha256_utf8": "666ea1eb73231fd5aabcb08d6a09e0cc0dc1f1dfd5b3f5628e6bf451f80b7d2b",
+      "git_blob_sha_reported": "dfdb0d355dfd2f546217a84ee4ca965a14930ccf",
+      "git_blob_sha_computed": "dfdb0d355dfd2f546217a84ee4ca965a14930ccf",
+      "git_blob_matches": true
+    }
+  ],
+  "stale_failure_risk": {
+    "path": "frontend/stock.html",
+    "start_line": 1281,
+    "end_line": 1284,
+    "status": "NOT_ESTABLISHED_RUNTIME",
+    "code_observation": "catch gates eventsCode reset by request===eventsSerial but setEvents([]) and panel.hidden=true remain unconditional; the #121 merge did not change this block."
+  },
+  "test_boundary": {
+    "previous_sha_test_count": 85,
+    "previous_sha_pass": 85,
+    "previous_sha_fail": 0,
+    "tests_on_final_main": "NOT_RUN",
+    "original_test_evidence_unchanged": true,
+    "original_source_snapshot_manifest_unchanged": true
+  },
+  "authorization_boundary": "The PR was merged by an external actor. This audit only read the comparison and three files; it did not merge, deploy, publish, run models, or rerun tests."
+}
