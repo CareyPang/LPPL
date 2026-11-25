@@ -1,30 +1,29 @@
 {
   "asof": "2026-11-25",
-  "generated_at": "2026-11-25T08:35:49.140342+00:00",
+  "generated_at": "2026-11-25T08:55:50.810243+00:00",
   "sources": {
     "board_flow_industry": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-25T08:32:44.357206+00:00",
+      "fetched_at": "2026-11-25T08:52:31.681469+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=4"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f164&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf109%2Cf164%2Cf165%2Cf257&pn=3"
     },
     "board_flow_concept": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-25T08:32:48.685582+00:00",
+      "fetched_at": "2026-11-25T08:52:36.529511+00:00",
       "ok": true,
       "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_region": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-25T08:33:36.480007+00:00",
+      "fetched_at": "2026-11-25T08:53:20.703732+00:00",
       "ok": true,
       "fallback_from": "RuntimeError: Eastmoney board hosts failed: push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_history": {
       "url_host": "push2his.eastmoney.com",
-      "fetched_at": "2026-11-25T08:33:41.265609+00:00",
-      "ok": false,
-      "error": "RuntimeError: Eastmoney request failed after one retry: ConnectionError; ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+      "fetched_at": "2026-11-25T08:53:21.924411+00:00",
+      "ok": true,
       "provider": "eastmoney",
       "code": "BK0475",
       "reference_board": true,
@@ -33,79 +32,79 @@
     },
     "limit_pools": {
       "url_host": "push2ex.eastmoney.com",
-      "fetched_at": "2026-11-25T08:33:46.267909+00:00",
+      "fetched_at": "2026-11-25T08:53:26.851119+00:00",
       "ok": true
     },
     "themes": {
       "url_host": "zx.10jqka.com.cn",
-      "fetched_at": "2026-11-25T08:33:47.255111+00:00",
+      "fetched_at": "2026-11-25T08:53:27.869657+00:00",
       "ok": true
     },
     "breadth": {
       "url_host": "push2delay.eastmoney.com",
-      "fetched_at": "2026-11-25T08:34:34.207663+00:00",
+      "fetched_at": "2026-11-25T08:54:10.942398+00:00",
       "ok": true
     },
     "board_strength": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-25T08:34:43.814798+00:00",
+      "fetched_at": "2026-11-25T08:54:21.130761+00:00",
       "ok": true,
       "provider": "sina",
       "fallback_from": "push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140"
     },
     "hot_ths": {
       "url_host": "dq.10jqka.com.cn",
-      "fetched_at": "2026-11-25T08:34:45.146226+00:00",
+      "fetched_at": "2026-11-25T08:54:22.499536+00:00",
       "ok": true
     },
     "hot_eastmoney": {
       "url_host": "emappdata.eastmoney.com",
-      "fetched_at": "2026-11-25T08:34:47.006195+00:00",
+      "fetched_at": "2026-11-25T08:54:25.880195+00:00",
       "ok": true
     },
     "dragon_tiger": {
       "url_host": "datacenter-web.eastmoney.com",
-      "fetched_at": "2026-11-25T08:34:48.868474+00:00",
+      "fetched_at": "2026-11-25T08:54:28.190778+00:00",
       "ok": true
     },
     "news_cls": {
       "url_host": "www.cls.cn",
-      "fetched_at": "2026-11-25T08:34:50.016665+00:00",
+      "fetched_at": "2026-11-25T08:54:29.626845+00:00",
       "ok": true
     },
     "news_eastmoney": {
       "url_host": "np-weblist.eastmoney.com",
-      "fetched_at": "2026-11-25T08:34:51.029138+00:00",
+      "fetched_at": "2026-11-25T08:54:30.760152+00:00",
       "ok": true
     },
     "northbound": {
       "url_host": "www.hkex.com.hk",
-      "fetched_at": "2026-11-25T08:34:51.791858+00:00",
+      "fetched_at": "2026-11-25T08:54:31.220736+00:00",
       "ok": true
     },
     "index_valuation_000300": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-25T08:34:54.860590+00:00",
+      "fetched_at": "2026-11-25T08:54:35.152335+00:00",
       "ok": true
     },
     "index_valuation_000905": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-25T08:34:57.103241+00:00",
+      "fetched_at": "2026-11-25T08:54:38.006912+00:00",
       "ok": true
     },
     "index_valuation_000016": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-25T08:34:59.160902+00:00",
+      "fetched_at": "2026-11-25T08:54:44.650225+00:00",
       "ok": true
     },
     "index_valuation_000852": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-25T08:35:00.956408+00:00",
+      "fetched_at": "2026-11-25T08:54:50.628043+00:00",
       "ok": true
     },
     "margin": {
       "url_host": "sse.szse.official",
-      "fetched_at": "2026-11-25T08:35:49.140329+00:00",
+      "fetched_at": "2026-11-25T08:55:50.810227+00:00",
       "ok": true,
       "provider": "sse.szse.official",
       "asof": "2026-11-23",
@@ -4548,7 +4547,985 @@
         "main_pct_10d": null
       }
     ],
-    "history_sample": null
+    "history_sample": {
+      "code": "BK0475",
+      "reference_board": true,
+      "rows": [
+        {
+          "date": "2026-06-01",
+          "main_net": 2785233920.0,
+          "small_net": -1885826560.0,
+          "medium_net": -899407360.0,
+          "large_net": 1240090112.0,
+          "super_net": 1545143808.0
+        },
+        {
+          "date": "2026-06-02",
+          "main_net": 455715328.0,
+          "small_net": -423656192.0,
+          "medium_net": -32059392.0,
+          "large_net": 613290240.0,
+          "super_net": -157574912.0
+        },
+        {
+          "date": "2026-06-03",
+          "main_net": -250969088.0,
+          "small_net": 489517568.0,
+          "medium_net": -238548224.0,
+          "large_net": 259183360.0,
+          "super_net": -510152448.0
+        },
+        {
+          "date": "2026-06-04",
+          "main_net": -1061364080.0,
+          "small_net": 812380160.0,
+          "medium_net": 248983808.0,
+          "large_net": -171990784.0,
+          "super_net": -889373296.0
+        },
+        {
+          "date": "2026-06-05",
+          "main_net": 1061623808.0,
+          "small_net": -499048960.0,
+          "medium_net": -562574848.0,
+          "large_net": 1320253184.0,
+          "super_net": -258629376.0
+        },
+        {
+          "date": "2026-06-08",
+          "main_net": 1601113344.0,
+          "small_net": -925381888.0,
+          "medium_net": -675731712.0,
+          "large_net": 511378176.0,
+          "super_net": 1089735168.0
+        },
+        {
+          "date": "2026-06-09",
+          "main_net": 556624896.0,
+          "small_net": 208265984.0,
+          "medium_net": -764891392.0,
+          "large_net": -43971328.0,
+          "super_net": 600596224.0
+        },
+        {
+          "date": "2026-06-10",
+          "main_net": 587610368.0,
+          "small_net": -394361856.0,
+          "medium_net": -193248256.0,
+          "large_net": 60803328.0,
+          "super_net": 526807040.0
+        },
+        {
+          "date": "2026-06-11",
+          "main_net": -833655808.0,
+          "small_net": 521924096.0,
+          "medium_net": 311731968.0,
+          "large_net": -173967616.0,
+          "super_net": -659688192.0
+        },
+        {
+          "date": "2026-06-12",
+          "main_net": 1877177344.0,
+          "small_net": -1065879808.0,
+          "medium_net": -811297792.0,
+          "large_net": 676446464.0,
+          "super_net": 1200730880.0
+        },
+        {
+          "date": "2026-06-15",
+          "main_net": 1444840448.0,
+          "small_net": -1004578304.0,
+          "medium_net": -440262400.0,
+          "large_net": 1108011264.0,
+          "super_net": 336829184.0
+        },
+        {
+          "date": "2026-06-16",
+          "main_net": -1034419152.0,
+          "small_net": 355690752.0,
+          "medium_net": 678728448.0,
+          "large_net": -71598080.0,
+          "super_net": -962821072.0
+        },
+        {
+          "date": "2026-06-17",
+          "main_net": -1833538464.0,
+          "small_net": 1148588288.0,
+          "medium_net": 684950272.0,
+          "large_net": -119296768.0,
+          "super_net": -1714241696.0
+        },
+        {
+          "date": "2026-06-18",
+          "main_net": -3650028544.0,
+          "small_net": 1986213376.0,
+          "medium_net": 1663815168.0,
+          "large_net": -587602944.0,
+          "super_net": -3062425600.0
+        },
+        {
+          "date": "2026-06-22",
+          "main_net": 434859520.0,
+          "small_net": -110583296.0,
+          "medium_net": -324276224.0,
+          "large_net": 318875904.0,
+          "super_net": 115983616.0
+        },
+        {
+          "date": "2026-06-23",
+          "main_net": 2868747264.0,
+          "small_net": -2222025984.0,
+          "medium_net": -646721280.0,
+          "large_net": 1145469696.0,
+          "super_net": 1723277568.0
+        },
+        {
+          "date": "2026-06-24",
+          "main_net": -1649420800.0,
+          "small_net": 1016850176.0,
+          "medium_net": 632570368.0,
+          "large_net": -297584640.0,
+          "super_net": -1351836160.0
+        },
+        {
+          "date": "2026-06-25",
+          "main_net": -1146782720.0,
+          "small_net": 967252736.0,
+          "medium_net": 179529984.0,
+          "large_net": -25220608.0,
+          "super_net": -1121562112.0
+        },
+        {
+          "date": "2026-06-26",
+          "main_net": -1559570176.0,
+          "small_net": 794529792.0,
+          "medium_net": 765040640.0,
+          "large_net": -747980032.0,
+          "super_net": -811590144.0
+        },
+        {
+          "date": "2026-06-29",
+          "main_net": 633725952.0,
+          "small_net": -450908928.0,
+          "medium_net": -182817024.0,
+          "large_net": 378695168.0,
+          "super_net": 255030784.0
+        },
+        {
+          "date": "2026-06-30",
+          "main_net": -1635596288.0,
+          "small_net": 880231936.0,
+          "medium_net": 755364352.0,
+          "large_net": 36741888.0,
+          "super_net": -1672338176.0
+        },
+        {
+          "date": "2026-07-01",
+          "main_net": 687093856.0,
+          "small_net": -633528320.0,
+          "medium_net": -53565184.0,
+          "large_net": 227883520.0,
+          "super_net": 459210336.0
+        },
+        {
+          "date": "2026-07-02",
+          "main_net": 652415232.0,
+          "small_net": -509328384.0,
+          "medium_net": -143086848.0,
+          "large_net": 320768768.0,
+          "super_net": 331646464.0
+        },
+        {
+          "date": "2026-07-03",
+          "main_net": 18114992.0,
+          "small_net": 406757632.0,
+          "medium_net": -424872704.0,
+          "large_net": 124526848.0,
+          "super_net": -106411856.0
+        },
+        {
+          "date": "2026-07-06",
+          "main_net": 1474843392.0,
+          "small_net": -116800256.0,
+          "medium_net": -1358042624.0,
+          "large_net": 497780480.0,
+          "super_net": 977062912.0
+        },
+        {
+          "date": "2026-07-07",
+          "main_net": 646961568.0,
+          "small_net": -170646016.0,
+          "medium_net": -476315648.0,
+          "large_net": -188810752.0,
+          "super_net": 835772320.0
+        },
+        {
+          "date": "2026-07-08",
+          "main_net": 222861056.0,
+          "small_net": 324648704.0,
+          "medium_net": -547510016.0,
+          "large_net": -361988352.0,
+          "super_net": 584849408.0
+        },
+        {
+          "date": "2026-07-09",
+          "main_net": -663899968.0,
+          "small_net": 628934144.0,
+          "medium_net": 34965760.0,
+          "large_net": -850437888.0,
+          "super_net": 186537920.0
+        },
+        {
+          "date": "2026-07-10",
+          "main_net": 923771392.0,
+          "small_net": -386968576.0,
+          "medium_net": -536802560.0,
+          "large_net": -356394240.0,
+          "super_net": 1280165632.0
+        },
+        {
+          "date": "2026-07-13",
+          "main_net": -575423232.0,
+          "small_net": 824968448.0,
+          "medium_net": -249544960.0,
+          "large_net": -238578432.0,
+          "super_net": -336844800.0
+        },
+        {
+          "date": "2026-07-14",
+          "main_net": -1420643328.0,
+          "small_net": 1559793664.0,
+          "medium_net": -139150336.0,
+          "large_net": -181630720.0,
+          "super_net": -1239012608.0
+        },
+        {
+          "date": "2026-07-15",
+          "main_net": -2132490752.0,
+          "small_net": 1299408640.0,
+          "medium_net": 833082112.0,
+          "large_net": -931893760.0,
+          "super_net": -1200596992.0
+        },
+        {
+          "date": "2026-07-16",
+          "main_net": -1394000240.0,
+          "small_net": 1189441536.0,
+          "medium_net": 204558592.0,
+          "large_net": -808055808.0,
+          "super_net": -585944432.0
+        },
+        {
+          "date": "2026-07-17",
+          "main_net": -1117158656.0,
+          "small_net": 1539080192.0,
+          "medium_net": -421921792.0,
+          "large_net": -731347456.0,
+          "super_net": -385811200.0
+        },
+        {
+          "date": "2026-07-20",
+          "main_net": 367011584.0,
+          "small_net": 200677120.0,
+          "medium_net": -567688960.0,
+          "large_net": -309733376.0,
+          "super_net": 676744960.0
+        },
+        {
+          "date": "2026-07-21",
+          "main_net": -2870245376.0,
+          "small_net": 2745730816.0,
+          "medium_net": 124514560.0,
+          "large_net": -842768384.0,
+          "super_net": -2027476992.0
+        },
+        {
+          "date": "2026-07-22",
+          "main_net": -734588928.0,
+          "small_net": 127832320.0,
+          "medium_net": 606756352.0,
+          "large_net": -145239552.0,
+          "super_net": -589349376.0
+        },
+        {
+          "date": "2026-07-23",
+          "main_net": -1246832896.0,
+          "small_net": 969271808.0,
+          "medium_net": 277560832.0,
+          "large_net": -176881920.0,
+          "super_net": -1069950976.0
+        },
+        {
+          "date": "2026-07-24",
+          "main_net": -1868831344.0,
+          "small_net": 1244096512.0,
+          "medium_net": 624734720.0,
+          "large_net": -424404736.0,
+          "super_net": -1444426608.0
+        },
+        {
+          "date": "2026-07-27",
+          "main_net": -336579040.0,
+          "small_net": -9960960.0,
+          "medium_net": 346540288.0,
+          "large_net": -148649728.0,
+          "super_net": -187929312.0
+        },
+        {
+          "date": "2026-07-28",
+          "main_net": 1527127040.0,
+          "small_net": -640977920.0,
+          "medium_net": -886149120.0,
+          "large_net": 419064576.0,
+          "super_net": 1108062464.0
+        },
+        {
+          "date": "2026-07-29",
+          "main_net": -1873975040.0,
+          "small_net": 1013725440.0,
+          "medium_net": 860249600.0,
+          "large_net": -555909632.0,
+          "super_net": -1318065408.0
+        },
+        {
+          "date": "2026-07-30",
+          "main_net": 2457556736.0,
+          "small_net": -1482446080.0,
+          "medium_net": -975110656.0,
+          "large_net": 601014272.0,
+          "super_net": 1856542464.0
+        },
+        {
+          "date": "2026-07-31",
+          "main_net": -583167744.0,
+          "small_net": 554406912.0,
+          "medium_net": 28761088.0,
+          "large_net": -1206195456.0,
+          "super_net": 623027712.0
+        },
+        {
+          "date": "2026-08-03",
+          "main_net": -531045632.0,
+          "small_net": 78370048.0,
+          "medium_net": 452675584.0,
+          "large_net": -584262400.0,
+          "super_net": 53216768.0
+        },
+        {
+          "date": "2026-08-04",
+          "main_net": -1904451584.0,
+          "small_net": 1450008064.0,
+          "medium_net": 454443776.0,
+          "large_net": -299712512.0,
+          "super_net": -1604739072.0
+        },
+        {
+          "date": "2026-08-05",
+          "main_net": -888339456.0,
+          "small_net": 539880704.0,
+          "medium_net": 348458752.0,
+          "large_net": -158636544.0,
+          "super_net": -729702912.0
+        },
+        {
+          "date": "2026-08-06",
+          "main_net": -79432448.0,
+          "small_net": -93998592.0,
+          "medium_net": 173431040.0,
+          "large_net": 179037952.0,
+          "super_net": -258470400.0
+        },
+        {
+          "date": "2026-08-07",
+          "main_net": -1150113024.0,
+          "small_net": 453979392.0,
+          "medium_net": 696133888.0,
+          "large_net": -293655296.0,
+          "super_net": -856457728.0
+        },
+        {
+          "date": "2026-08-10",
+          "main_net": 185113264.0,
+          "small_net": -174598656.0,
+          "medium_net": -10514688.0,
+          "large_net": 134636032.0,
+          "super_net": 50477232.0
+        },
+        {
+          "date": "2026-08-11",
+          "main_net": 26195600.0,
+          "small_net": -521020672.0,
+          "medium_net": 494825216.0,
+          "large_net": -253987072.0,
+          "super_net": 280182672.0
+        },
+        {
+          "date": "2026-08-12",
+          "main_net": 622181872.0,
+          "small_net": -478419968.0,
+          "medium_net": -143762176.0,
+          "large_net": 102123008.0,
+          "super_net": 520058864.0
+        },
+        {
+          "date": "2026-08-13",
+          "main_net": 1885086128.0,
+          "small_net": -882291456.0,
+          "medium_net": -1002794752.0,
+          "large_net": 338667520.0,
+          "super_net": 1546418608.0
+        },
+        {
+          "date": "2026-08-14",
+          "main_net": 213499088.0,
+          "small_net": -145074688.0,
+          "medium_net": -68424448.0,
+          "large_net": 474421504.0,
+          "super_net": -260922416.0
+        },
+        {
+          "date": "2026-08-17",
+          "main_net": 164387728.0,
+          "small_net": 254774528.0,
+          "medium_net": -419161856.0,
+          "large_net": 24876544.0,
+          "super_net": 139511184.0
+        },
+        {
+          "date": "2026-08-18",
+          "main_net": 597585152.0,
+          "small_net": -403668480.0,
+          "medium_net": -193916928.0,
+          "large_net": 249543680.0,
+          "super_net": 348041472.0
+        },
+        {
+          "date": "2026-08-19",
+          "main_net": -389923072.0,
+          "small_net": -92696832.0,
+          "medium_net": 482619648.0,
+          "large_net": 4449792.0,
+          "super_net": -394372864.0
+        },
+        {
+          "date": "2026-08-20",
+          "main_net": 94190848.0,
+          "small_net": 474290176.0,
+          "medium_net": -568481280.0,
+          "large_net": -309323520.0,
+          "super_net": 403514368.0
+        },
+        {
+          "date": "2026-08-21",
+          "main_net": -849395152.0,
+          "small_net": 1035278336.0,
+          "medium_net": -185883392.0,
+          "large_net": -544127744.0,
+          "super_net": -305267408.0
+        },
+        {
+          "date": "2026-08-24",
+          "main_net": 287024384.0,
+          "small_net": 144332800.0,
+          "medium_net": -431356928.0,
+          "large_net": 77878016.0,
+          "super_net": 209146368.0
+        },
+        {
+          "date": "2026-08-25",
+          "main_net": -1195614208.0,
+          "small_net": 474555648.0,
+          "medium_net": 721058816.0,
+          "large_net": -299073024.0,
+          "super_net": -896541184.0
+        },
+        {
+          "date": "2026-08-26",
+          "main_net": -547244800.0,
+          "small_net": 590242048.0,
+          "medium_net": -42997504.0,
+          "large_net": -377907712.0,
+          "super_net": -169337088.0
+        },
+        {
+          "date": "2026-08-27",
+          "main_net": -1211495168.0,
+          "small_net": 919403008.0,
+          "medium_net": 292092160.0,
+          "large_net": -560247296.0,
+          "super_net": -651247872.0
+        },
+        {
+          "date": "2026-08-28",
+          "main_net": -591374848.0,
+          "small_net": 225968384.0,
+          "medium_net": 365406464.0,
+          "large_net": -500178944.0,
+          "super_net": -91195904.0
+        },
+        {
+          "date": "2026-08-31",
+          "main_net": 1880653056.0,
+          "small_net": -1157505024.0,
+          "medium_net": -723147776.0,
+          "large_net": 140305920.0,
+          "super_net": 1740347136.0
+        },
+        {
+          "date": "2026-09-01",
+          "main_net": 540546560.0,
+          "small_net": -613789440.0,
+          "medium_net": 73242624.0,
+          "large_net": -401865472.0,
+          "super_net": 942412032.0
+        },
+        {
+          "date": "2026-09-02",
+          "main_net": -511031552.0,
+          "small_net": 1041495552.0,
+          "medium_net": -530464000.0,
+          "large_net": -268660480.0,
+          "super_net": -242371072.0
+        },
+        {
+          "date": "2026-09-03",
+          "main_net": -1748387328.0,
+          "small_net": 1549057792.0,
+          "medium_net": 199329536.0,
+          "large_net": -435448320.0,
+          "super_net": -1312939008.0
+        },
+        {
+          "date": "2026-09-04",
+          "main_net": -37918464.0,
+          "small_net": -289988096.0,
+          "medium_net": 327906560.0,
+          "large_net": 525696512.0,
+          "super_net": -563614976.0
+        },
+        {
+          "date": "2026-09-07",
+          "main_net": -1695075328.0,
+          "small_net": 871762944.0,
+          "medium_net": 823312640.0,
+          "large_net": -1472619520.0,
+          "super_net": -222455808.0
+        },
+        {
+          "date": "2026-09-08",
+          "main_net": -162483712.0,
+          "small_net": 120780032.0,
+          "medium_net": 41703424.0,
+          "large_net": -216144640.0,
+          "super_net": 53660928.0
+        },
+        {
+          "date": "2026-09-09",
+          "main_net": -265560816.0,
+          "small_net": 659595520.0,
+          "medium_net": -394034688.0,
+          "large_net": -14840320.0,
+          "super_net": -250720496.0
+        },
+        {
+          "date": "2026-09-10",
+          "main_net": 337296896.0,
+          "small_net": -384659200.0,
+          "medium_net": 47361792.0,
+          "large_net": 283554816.0,
+          "super_net": 53742080.0
+        },
+        {
+          "date": "2026-09-11",
+          "main_net": -395451136.0,
+          "small_net": 233872896.0,
+          "medium_net": 161577984.0,
+          "large_net": 361428992.0,
+          "super_net": -756880128.0
+        },
+        {
+          "date": "2026-09-14",
+          "main_net": -846595584.0,
+          "small_net": 323399936.0,
+          "medium_net": 523195648.0,
+          "large_net": -437290752.0,
+          "super_net": -409304832.0
+        },
+        {
+          "date": "2026-09-15",
+          "main_net": -1707262208.0,
+          "small_net": 1225617152.0,
+          "medium_net": 481645312.0,
+          "large_net": -1363859712.0,
+          "super_net": -343402496.0
+        },
+        {
+          "date": "2026-09-16",
+          "main_net": -515766384.0,
+          "small_net": 246903296.0,
+          "medium_net": 268863232.0,
+          "large_net": -118361856.0,
+          "super_net": -397404528.0
+        },
+        {
+          "date": "2026-09-17",
+          "main_net": -974575392.0,
+          "small_net": 955912960.0,
+          "medium_net": 18662144.0,
+          "large_net": -60356608.0,
+          "super_net": -914218784.0
+        },
+        {
+          "date": "2026-09-18",
+          "main_net": -238173728.0,
+          "small_net": -116058624.0,
+          "medium_net": 354232320.0,
+          "large_net": -149260288.0,
+          "super_net": -88913440.0
+        },
+        {
+          "date": "2026-09-21",
+          "main_net": 811808560.0,
+          "small_net": -674525952.0,
+          "medium_net": -137282560.0,
+          "large_net": 409498112.0,
+          "super_net": 402310448.0
+        },
+        {
+          "date": "2026-09-22",
+          "main_net": -47487888.0,
+          "small_net": -640265216.0,
+          "medium_net": 687752960.0,
+          "large_net": 397088000.0,
+          "super_net": -444575888.0
+        },
+        {
+          "date": "2026-09-23",
+          "main_net": -1035212112.0,
+          "small_net": 432707584.0,
+          "medium_net": 602504704.0,
+          "large_net": -479936768.0,
+          "super_net": -555275344.0
+        },
+        {
+          "date": "2026-09-24",
+          "main_net": 150986528.0,
+          "small_net": -181584896.0,
+          "medium_net": 30598144.0,
+          "large_net": 65774592.0,
+          "super_net": 85211936.0
+        },
+        {
+          "date": "2026-09-28",
+          "main_net": -896960544.0,
+          "small_net": 467605504.0,
+          "medium_net": 429355264.0,
+          "large_net": 14447872.0,
+          "super_net": -911408416.0
+        },
+        {
+          "date": "2026-09-29",
+          "main_net": -134974144.0,
+          "small_net": 350119680.0,
+          "medium_net": -215145472.0,
+          "large_net": 200832000.0,
+          "super_net": -335806144.0
+        },
+        {
+          "date": "2026-09-30",
+          "main_net": -86997760.0,
+          "small_net": 763414784.0,
+          "medium_net": -676417024.0,
+          "large_net": -480263424.0,
+          "super_net": 393265664.0
+        },
+        {
+          "date": "2026-10-08",
+          "main_net": -1094552832.0,
+          "small_net": 248886784.0,
+          "medium_net": 845665792.0,
+          "large_net": -366516992.0,
+          "super_net": -728035840.0
+        },
+        {
+          "date": "2026-10-09",
+          "main_net": -1464721920.0,
+          "small_net": 1068846080.0,
+          "medium_net": 395876096.0,
+          "large_net": -674104576.0,
+          "super_net": -790617344.0
+        },
+        {
+          "date": "2026-10-12",
+          "main_net": 867660032.0,
+          "small_net": -1107266048.0,
+          "medium_net": 239606016.0,
+          "large_net": 785893888.0,
+          "super_net": 81766144.0
+        },
+        {
+          "date": "2026-10-13",
+          "main_net": -185250816.0,
+          "small_net": -507014912.0,
+          "medium_net": 692265728.0,
+          "large_net": -242702848.0,
+          "super_net": 57452032.0
+        },
+        {
+          "date": "2026-10-14",
+          "main_net": -675228928.0,
+          "small_net": 346990080.0,
+          "medium_net": 328238848.0,
+          "large_net": 291014144.0,
+          "super_net": -966243072.0
+        },
+        {
+          "date": "2026-10-15",
+          "main_net": -679960576.0,
+          "small_net": -227800064.0,
+          "medium_net": 907760384.0,
+          "large_net": 29279744.0,
+          "super_net": -709240320.0
+        },
+        {
+          "date": "2026-10-16",
+          "main_net": -228243200.0,
+          "small_net": 67286784.0,
+          "medium_net": 160956416.0,
+          "large_net": -306760960.0,
+          "super_net": 78517760.0
+        },
+        {
+          "date": "2026-10-19",
+          "main_net": 329946368.0,
+          "small_net": -168072448.0,
+          "medium_net": -161873664.0,
+          "large_net": 157430528.0,
+          "super_net": 172515840.0
+        },
+        {
+          "date": "2026-10-20",
+          "main_net": -120851712.0,
+          "small_net": -1621793536.0,
+          "medium_net": 1742645248.0,
+          "large_net": 46475008.0,
+          "super_net": -167326720.0
+        },
+        {
+          "date": "2026-10-21",
+          "main_net": -285363456.0,
+          "small_net": -260294144.0,
+          "medium_net": 545657600.0,
+          "large_net": -401412096.0,
+          "super_net": 116048640.0
+        },
+        {
+          "date": "2026-10-22",
+          "main_net": -250843392.0,
+          "small_net": -1062877696.0,
+          "medium_net": 1313721088.0,
+          "large_net": 83061248.0,
+          "super_net": -333904640.0
+        },
+        {
+          "date": "2026-10-23",
+          "main_net": -2990732544.0,
+          "small_net": 222788864.0,
+          "medium_net": 2767943680.0,
+          "large_net": -976008448.0,
+          "super_net": -2014724096.0
+        },
+        {
+          "date": "2026-10-26",
+          "main_net": 76684288.0,
+          "small_net": 180716032.0,
+          "medium_net": -257400064.0,
+          "large_net": 218077952.0,
+          "super_net": -141393664.0
+        },
+        {
+          "date": "2026-10-27",
+          "main_net": 769581056.0,
+          "small_net": -1083543552.0,
+          "medium_net": 313962496.0,
+          "large_net": 247047168.0,
+          "super_net": 522533888.0
+        },
+        {
+          "date": "2026-10-28",
+          "main_net": 781145088.0,
+          "small_net": -686778112.0,
+          "medium_net": -94366976.0,
+          "large_net": 267683840.0,
+          "super_net": 513461248.0
+        },
+        {
+          "date": "2026-10-29",
+          "main_net": 111467264.0,
+          "small_net": 538778624.0,
+          "medium_net": -650245632.0,
+          "large_net": 33657344.0,
+          "super_net": 77809920.0
+        },
+        {
+          "date": "2026-10-30",
+          "main_net": -103999232.0,
+          "small_net": -141435904.0,
+          "medium_net": 245435136.0,
+          "large_net": -3421952.0,
+          "super_net": -100577280.0
+        },
+        {
+          "date": "2026-11-02",
+          "main_net": -1949459456.0,
+          "small_net": 1428441856.0,
+          "medium_net": 521017600.0,
+          "large_net": -651324416.0,
+          "super_net": -1298135040.0
+        },
+        {
+          "date": "2026-11-03",
+          "main_net": -2626982656.0,
+          "small_net": 624986368.0,
+          "medium_net": 2001996544.0,
+          "large_net": -269960704.0,
+          "super_net": -2357021952.0
+        },
+        {
+          "date": "2026-11-04",
+          "main_net": -1533481984.0,
+          "small_net": 1311800320.0,
+          "medium_net": 221681408.0,
+          "large_net": -842822144.0,
+          "super_net": -690659840.0
+        },
+        {
+          "date": "2026-11-05",
+          "main_net": 850560768.0,
+          "small_net": -293484800.0,
+          "medium_net": -557076224.0,
+          "large_net": 877322752.0,
+          "super_net": -26761984.0
+        },
+        {
+          "date": "2026-11-06",
+          "main_net": 852760576.0,
+          "small_net": -632973056.0,
+          "medium_net": -219787264.0,
+          "large_net": 1031089152.0,
+          "super_net": -178328576.0
+        },
+        {
+          "date": "2026-11-09",
+          "main_net": 978803712.0,
+          "small_net": -199609088.0,
+          "medium_net": -779194624.0,
+          "large_net": 772943616.0,
+          "super_net": 205860096.0
+        },
+        {
+          "date": "2026-11-10",
+          "main_net": -125745120.0,
+          "small_net": 288832000.0,
+          "medium_net": -163086848.0,
+          "large_net": 205702912.0,
+          "super_net": -331448032.0
+        },
+        {
+          "date": "2026-11-11",
+          "main_net": -321137152.0,
+          "small_net": 499056128.0,
+          "medium_net": -177918720.0,
+          "large_net": -273106688.0,
+          "super_net": -48030464.0
+        },
+        {
+          "date": "2026-11-12",
+          "main_net": 745964288.0,
+          "small_net": -110717184.0,
+          "medium_net": -635247104.0,
+          "large_net": 736970496.0,
+          "super_net": 8993792.0
+        },
+        {
+          "date": "2026-11-13",
+          "main_net": 1225672704.0,
+          "small_net": -943927808.0,
+          "medium_net": -281744896.0,
+          "large_net": 927293696.0,
+          "super_net": 298379008.0
+        },
+        {
+          "date": "2026-11-16",
+          "main_net": 388940288.0,
+          "small_net": -457909760.0,
+          "medium_net": 68969216.0,
+          "large_net": 1118542080.0,
+          "super_net": -729601792.0
+        },
+        {
+          "date": "2026-11-17",
+          "main_net": -1354427392.0,
+          "small_net": 934429184.0,
+          "medium_net": 419997952.0,
+          "large_net": 23712512.0,
+          "super_net": -1378139904.0
+        },
+        {
+          "date": "2026-11-18",
+          "main_net": -2633210112.0,
+          "small_net": 2123592448.0,
+          "medium_net": 509617664.0,
+          "large_net": -997784576.0,
+          "super_net": -1635425536.0
+        },
+        {
+          "date": "2026-11-19",
+          "main_net": -1929012992.0,
+          "small_net": 1373260288.0,
+          "medium_net": 555752704.0,
+          "large_net": -270711808.0,
+          "super_net": -1658301184.0
+        },
+        {
+          "date": "2026-11-20",
+          "main_net": -624495360.0,
+          "small_net": -719043840.0,
+          "medium_net": 1343539200.0,
+          "large_net": -32735232.0,
+          "super_net": -591760128.0
+        },
+        {
+          "date": "2026-11-23",
+          "main_net": 1810674432.0,
+          "small_net": -2452760320.0,
+          "medium_net": 642086400.0,
+          "large_net": 670414336.0,
+          "super_net": 1140260096.0
+        },
+        {
+          "date": "2026-11-24",
+          "main_net": 541007872.0,
+          "small_net": 213698560.0,
+          "medium_net": -754706432.0,
+          "large_net": 355721472.0,
+          "super_net": 185286400.0
+        },
+        {
+          "date": "2026-11-25",
+          "main_net": -1019087616.0,
+          "small_net": -311181056.0,
+          "medium_net": 1330268672.0,
+          "large_net": 493379328.0,
+          "super_net": -1512466944.0
+        }
+      ],
+      "column_order_verified": false,
+      "verified": false,
+      "verified_asof": "2026-11-25",
+      "matched_fields": [],
+      "verify_reason": "snapshot 来自新浪，无法交叉核对列顺序"
+    }
   },
   "limit_pools": {
     "evidence": "descriptive",
@@ -7316,7 +8293,7 @@
         "amount_yuan": 730388152608.1766
       }
     ],
-    "snapshot_at": "2026-11-25T08:33:47.817042+00:00",
+    "snapshot_at": "2026-11-25T08:53:28.243860+00:00",
     "dist": {
       "zt": 51,
       "gt10": 11,
@@ -8444,7 +9421,7 @@
         "code": "002242",
         "name": "九阳股份",
         "heat": 12200437.0,
-        "pct": null,
+        "pct": 10.0143,
         "rank_chg": 0.0,
         "concepts": [
           "净水概念",
@@ -8470,7 +9447,7 @@
         "code": "000530",
         "name": "冰山冷热",
         "heat": 5145735.0,
-        "pct": null,
+        "pct": 9.538,
         "rank_chg": 0.0,
         "concepts": [
           "无人零售",
@@ -8483,7 +9460,7 @@
         "code": "002579",
         "name": "中京电子",
         "heat": 4680406.0,
-        "pct": null,
+        "pct": 10.0,
         "rank_chg": 1.0,
         "concepts": [
           "共封装光学(CPO)",
@@ -8496,7 +9473,7 @@
         "code": "300308",
         "name": "中际旭创",
         "heat": 4321851.0,
-        "pct": null,
+        "pct": -1.9185,
         "rank_chg": -1.0,
         "concepts": [
           "共封装光学(CPO)",
@@ -8509,7 +9486,7 @@
         "code": "300394",
         "name": "天孚通信",
         "heat": 3967261.0,
-        "pct": null,
+        "pct": 7.6499,
         "rank_chg": 2.0,
         "concepts": [
           "共封装光学(CPO)",
@@ -8522,7 +9499,7 @@
         "code": "002685",
         "name": "华东重机",
         "heat": 3893417.0,
-        "pct": null,
+        "pct": 0.4469,
         "rank_chg": -1.0,
         "concepts": [
           "信创",
@@ -8535,7 +9512,7 @@
         "code": "300502",
         "name": "新易盛",
         "heat": 3805853.0,
-        "pct": null,
+        "pct": 0.7166,
         "rank_chg": -1.0,
         "concepts": [
           "共封装光学(CPO)",
@@ -8548,7 +9525,7 @@
         "code": "002086",
         "name": "东方海洋",
         "heat": 3711721.0,
-        "pct": null,
+        "pct": -4.4053,
         "rank_chg": 0.0,
         "concepts": [
           "预制菜",
@@ -8561,7 +9538,7 @@
         "code": "002148",
         "name": "北纬科技",
         "heat": 3396731.0,
-        "pct": null,
+        "pct": -9.9912,
         "rank_chg": 0.0,
         "concepts": [
           "手机游戏",
@@ -8587,7 +9564,7 @@
         "code": "002771",
         "name": "真视通",
         "heat": 3328281.0,
-        "pct": null,
+        "pct": 8.0785,
         "rank_chg": 1.0,
         "concepts": [
           "算力租赁",
@@ -8600,7 +9577,7 @@
         "code": "002384",
         "name": "东山精密",
         "heat": 3039323.0,
-        "pct": null,
+        "pct": -3.989,
         "rank_chg": -1.0,
         "concepts": [
           "共封装光学(CPO)",
@@ -8613,7 +9590,7 @@
         "code": "000678",
         "name": "襄阳轴承",
         "heat": 2902638.0,
-        "pct": null,
+        "pct": 1.9408,
         "rank_chg": 0.0,
         "concepts": [
           "减速器",
@@ -8691,7 +9668,7 @@
         "code": "300750",
         "name": "宁德时代",
         "heat": 2240420.0,
-        "pct": null,
+        "pct": -8.3344,
         "rank_chg": 3.0,
         "concepts": [
           "同花顺漂亮100",
@@ -8769,7 +9746,7 @@
         "code": "002548",
         "name": "金新农",
         "heat": 1620289.0,
-        "pct": null,
+        "pct": 10.1099,
         "rank_chg": 0.0,
         "concepts": [
           "猪肉",
@@ -8795,7 +9772,7 @@
         "code": "002642",
         "name": "荣联科技",
         "heat": 1514791.0,
-        "pct": null,
+        "pct": 10.0515,
         "rank_chg": 3.0,
         "concepts": [
           "国资云",
@@ -8821,7 +9798,7 @@
         "code": "301313",
         "name": "凡拓数创",
         "heat": 1424796.0,
-        "pct": null,
+        "pct": -3.0193,
         "rank_chg": -3.0,
         "concepts": [
           "空间计算",
@@ -8834,7 +9811,7 @@
         "code": "000158",
         "name": "常山北明",
         "heat": 1413551.0,
-        "pct": null,
+        "pct": -8.9466,
         "rank_chg": -2.0,
         "concepts": [
           "算力租赁",
@@ -8847,7 +9824,7 @@
         "code": "002724",
         "name": "海洋王",
         "heat": 1406133.0,
-        "pct": null,
+        "pct": -9.6591,
         "rank_chg": -2.0,
         "concepts": [
           "军工",
@@ -8873,7 +9850,7 @@
         "code": "000823",
         "name": "超声电子",
         "heat": 1384132.0,
-        "pct": null,
+        "pct": 1.1518,
         "rank_chg": -1.0,
         "concepts": [
           "PCB概念",
@@ -8899,7 +9876,7 @@
         "code": "002584",
         "name": "西陇科学",
         "heat": 1327573.0,
-        "pct": null,
+        "pct": 1.9722,
         "rank_chg": 1.0,
         "concepts": [
           "光刻胶",
@@ -8912,7 +9889,7 @@
         "code": "300413",
         "name": "芒果超媒",
         "heat": 1310017.0,
-        "pct": null,
+        "pct": -8.5915,
         "rank_chg": -2.0,
         "concepts": [
           "AI视频",
@@ -8977,7 +9954,7 @@
         "code": "300476",
         "name": "胜宏科技",
         "heat": 1254131.0,
-        "pct": null,
+        "pct": -0.6785,
         "rank_chg": -4.0,
         "concepts": [
           "共封装光学(CPO)",
@@ -8990,7 +9967,7 @@
         "code": "002708",
         "name": "光洋股份",
         "heat": 1245247.0,
-        "pct": null,
+        "pct": -1.256,
         "rank_chg": -2.0,
         "concepts": [
           "减速器",
@@ -9003,7 +9980,7 @@
         "code": "000711",
         "name": "京蓝科技",
         "heat": 1200990.0,
-        "pct": null,
+        "pct": 6.6038,
         "rank_chg": 1.0,
         "concepts": [
           "金属锌",
@@ -9016,7 +9993,7 @@
         "code": "002164",
         "name": "宁波东力",
         "heat": 1200670.0,
-        "pct": null,
+        "pct": 9.9848,
         "rank_chg": 1.0,
         "concepts": [
           "减速器",
@@ -9068,7 +10045,7 @@
         "code": "300274",
         "name": "阳光电源",
         "heat": 1100529.0,
-        "pct": null,
+        "pct": -4.2516,
         "rank_chg": -2.0,
         "concepts": [
           "虚拟电厂",
@@ -9205,19 +10182,19 @@
       },
       {
         "rank": 15,
-        "code": "300502",
-        "name": "新易盛",
-        "price": 181.3,
-        "pct": 0.72,
-        "rank_chg": 3.0
-      },
-      {
-        "rank": 16,
         "code": "300750",
         "name": "宁德时代",
         "price": 208.42,
         "pct": -8.33,
-        "rank_chg": 119.0
+        "rank_chg": 120.0
+      },
+      {
+        "rank": 16,
+        "code": "300502",
+        "name": "新易盛",
+        "price": 181.3,
+        "pct": 0.72,
+        "rank_chg": 2.0
       },
       {
         "rank": 17,
@@ -9237,19 +10214,19 @@
       },
       {
         "rank": 19,
-        "code": "002148",
-        "name": "北纬科技",
-        "price": 10.27,
-        "pct": -9.99,
-        "rank_chg": -9.0
-      },
-      {
-        "rank": 20,
         "code": "002548",
         "name": "金新农",
         "price": 5.01,
         "pct": 10.11,
-        "rank_chg": 0.0
+        "rank_chg": 1.0
+      },
+      {
+        "rank": 20,
+        "code": "002148",
+        "name": "北纬科技",
+        "price": 10.27,
+        "pct": -9.99,
+        "rank_chg": -10.0
       },
       {
         "rank": 21,
@@ -9277,19 +10254,19 @@
       },
       {
         "rank": 24,
-        "code": "300086",
-        "name": "康芝药业",
-        "price": 4.85,
-        "pct": 20.05,
-        "rank_chg": 4568.0
-      },
-      {
-        "rank": 25,
         "code": "605577",
         "name": "龙版传媒",
         "price": 20.03,
         "pct": 9.99,
-        "rank_chg": 77.0
+        "rank_chg": 78.0
+      },
+      {
+        "rank": 25,
+        "code": "300086",
+        "name": "康芝药业",
+        "price": 4.85,
+        "pct": 20.05,
+        "rank_chg": 4567.0
       },
       {
         "rank": 26,
@@ -9333,19 +10310,19 @@
       },
       {
         "rank": 31,
-        "code": "600261",
-        "name": "阳光照明",
-        "price": 4.37,
-        "pct": -9.9,
-        "rank_chg": -15.0
-      },
-      {
-        "rank": 32,
         "code": "002872",
         "name": "天圣制药",
         "price": 7.1,
         "pct": 10.08,
-        "rank_chg": 19.0
+        "rank_chg": 20.0
+      },
+      {
+        "rank": 32,
+        "code": "600261",
+        "name": "阳光照明",
+        "price": 4.37,
+        "pct": -9.9,
+        "rank_chg": -16.0
       },
       {
         "rank": 33,
@@ -9365,51 +10342,51 @@
       },
       {
         "rank": 35,
-        "code": "688836",
-        "name": "宇树科技-W",
-        "price": 688.01,
-        "pct": -4.18,
-        "rank_chg": -12.0
-      },
-      {
-        "rank": 36,
-        "code": "600156",
-        "name": "华升股份",
-        "price": 9.32,
-        "pct": 8.88,
-        "rank_chg": 76.0
-      },
-      {
-        "rank": 37,
         "code": "002122",
         "name": "汇洲智能",
         "price": 3.59,
         "pct": 10.12,
-        "rank_chg": -10.0
+        "rank_chg": -8.0
       },
       {
-        "rank": 38,
-        "code": "300059",
-        "name": "东方财富",
-        "price": 17.72,
-        "pct": -1.61,
+        "rank": 36,
+        "code": "688836",
+        "name": "宇树科技-W",
+        "price": 688.01,
+        "pct": -4.18,
         "rank_chg": -13.0
       },
       {
-        "rank": 39,
+        "rank": 37,
+        "code": "600156",
+        "name": "华升股份",
+        "price": 9.32,
+        "pct": 8.88,
+        "rank_chg": 75.0
+      },
+      {
+        "rank": 38,
         "code": "000756",
         "name": "新华制药",
         "price": 12.16,
         "pct": 10.05,
-        "rank_chg": 2212.0
+        "rank_chg": 2213.0
       },
       {
-        "rank": 40,
+        "rank": 39,
         "code": "301089",
         "name": "拓新药业",
         "price": 21.34,
         "pct": 20.02,
-        "rank_chg": 4290.0
+        "rank_chg": 4291.0
+      },
+      {
+        "rank": 40,
+        "code": "300059",
+        "name": "东方财富",
+        "price": 17.72,
+        "pct": -1.61,
+        "rank_chg": -15.0
       },
       {
         "rank": 41,
@@ -9421,75 +10398,75 @@
       },
       {
         "rank": 42,
-        "code": "300703",
-        "name": "创源股份",
-        "price": 17.8,
-        "pct": 20.03,
-        "rank_chg": 28.0
-      },
-      {
-        "rank": 43,
         "code": "600227",
         "name": "赤天化",
         "price": 3.23,
         "pct": 9.86,
-        "rank_chg": 870.0
+        "rank_chg": 871.0
+      },
+      {
+        "rank": 43,
+        "code": "300703",
+        "name": "创源股份",
+        "price": 17.8,
+        "pct": 20.03,
+        "rank_chg": 27.0
       },
       {
         "rank": 44,
-        "code": "002728",
-        "name": "特一药业",
-        "price": 8.35,
-        "pct": 10.01,
-        "rank_chg": 2283.0
-      },
-      {
-        "rank": 45,
         "code": "002275",
         "name": "桂林三金",
         "price": 13.82,
         "pct": 10.03,
-        "rank_chg": 971.0
+        "rank_chg": 972.0
+      },
+      {
+        "rank": 45,
+        "code": "002728",
+        "name": "特一药业",
+        "price": 8.35,
+        "pct": 10.01,
+        "rank_chg": 2282.0
       },
       {
         "rank": 46,
-        "code": "000823",
-        "name": "超声电子",
-        "price": 19.32,
-        "pct": 1.15,
-        "rank_chg": 29.0
-      },
-      {
-        "rank": 47,
         "code": "002651",
         "name": "利君股份",
         "price": 7.9,
         "pct": 10.03,
-        "rank_chg": 6.0
+        "rank_chg": 7.0
       },
       {
-        "rank": 48,
-        "code": "605018",
-        "name": "长华集团",
-        "price": 13.03,
-        "pct": 4.91,
-        "rank_chg": -29.0
-      },
-      {
-        "rank": 49,
+        "rank": 47,
         "code": "600519",
         "name": "贵州茅台",
         "price": 1474.84,
         "pct": 1.02,
-        "rank_chg": -4.0
+        "rank_chg": -2.0
       },
       {
-        "rank": 50,
+        "rank": 48,
         "code": "002038",
         "name": "双鹭药业",
         "price": 4.9,
         "pct": 10.11,
-        "rank_chg": 2530.0
+        "rank_chg": 2532.0
+      },
+      {
+        "rank": 49,
+        "code": "000823",
+        "name": "超声电子",
+        "price": 19.32,
+        "pct": 1.15,
+        "rank_chg": 26.0
+      },
+      {
+        "rank": 50,
+        "code": "605018",
+        "name": "长华集团",
+        "price": 13.03,
+        "pct": 4.91,
+        "rank_chg": -31.0
       }
     ]
   },
@@ -9839,6 +10816,84 @@
     "cls": [
       {
         "source": "财联社",
+        "time": "2026-11-25 16:54",
+        "title": "德科立：64×64的OCS样品开发完毕 已处于送样测试阶段",
+        "url": "https://api3.cls.cn/share/article/2544187?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:53",
+        "title": "恒瑞医药：子公司获HRS-9308片临床试验批准",
+        "url": "https://api3.cls.cn/share/article/2544184?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:52",
+        "title": "英国家庭电费明年料激增26%",
+        "url": "https://api3.cls.cn/share/article/2544182?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:51",
+        "title": "台湾屏东县海域附近发生5.1级左右地震",
+        "url": "https://api3.cls.cn/share/article/2544181?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:50",
+        "title": "澳元势将创13年来最大单月跌幅 股市下跌令风险情绪受挫",
+        "url": "https://api3.cls.cn/share/article/2544180?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:49",
+        "title": "380吨级高速动平衡试验系统在哈电汽轮机完工交付",
+        "url": "https://api3.cls.cn/share/article/2544178?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:46",
+        "title": "中国广核：台山3号机组开始全面建设",
+        "url": "https://api3.cls.cn/share/article/2544173?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:43",
+        "title": "财联社11月25日电，赛诺菲股价上涨3.7%，此前加拿大皇家银行和巴克莱分别将其评级上调至“跑赢大盘”和“增持”。",
+        "url": "https://api3.cls.cn/share/article/2544170?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:42",
+        "title": "ST人福：终止重组质粒-肝细胞生长因子注射液研发项目 计提约4亿元资产减值准备",
+        "url": "https://api3.cls.cn/share/article/2544169?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:41",
+        "title": "理想汽车26年三季度财报公布 营收同比环比双增长",
+        "url": "https://api3.cls.cn/share/article/2544168?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:39",
+        "title": "上期能源所就上海国际能源交易中心业务规则体系优化草案公开征求意见",
+        "url": "https://api3.cls.cn/share/article/2544165?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:37",
+        "title": "瑞银中国汽车：2027年国内需求有望企稳 竞争较2026年有所缓和",
+        "url": "https://api3.cls.cn/share/article/2544162?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-25 16:36",
+        "title": "何小鹏：全球首张有人驾驶eVTOL TC认证进入最后阶段",
+        "url": "https://api3.cls.cn/share/article/2544161?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
         "time": "2026-11-25 16:34",
         "title": "广东台山核电项目3号机组主体工程开工",
         "url": "https://api3.cls.cn/share/article/2544158?os=web&sv=7.7.5&app="
@@ -9938,87 +10993,79 @@
         "time": "2026-11-25 16:12",
         "title": "华为将在ISSCC 2027展示自研HBM、逻辑堆叠等技术",
         "url": "https://api3.cls.cn/share/article/2544111?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:12",
-        "title": "财联社11月25日电，澳元/美元跌幅扩大至1.2%，触及日内低点0.6559。",
-        "url": "https://api3.cls.cn/share/article/2544126?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:12",
-        "title": "【风口专家会议】2026年液冷订单增量几何？特邀行业专家全面解读AI服务器液冷配套2026年增量情况",
-        "url": "https://api3.cls.cn/share/article/2543952?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:10",
-        "title": "财联社11月25日电，英国10年期国债收益率跌至5.152%，创两周新低。",
-        "url": "https://api3.cls.cn/share/article/2544124?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:10",
-        "title": "香港恒生科技指数收跌2.56% 华虹宏力大跌17%",
-        "url": "https://api3.cls.cn/share/article/2544123?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:09",
-        "title": "现货白银日内跌幅扩大至2%",
-        "url": "https://api3.cls.cn/share/article/2544122?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:07",
-        "title": "财联社11月25日电，特斯拉公司副总裁陶琳在社交平台发文透露，特斯拉上海超级工厂第500万辆整车即将下线。",
-        "url": "https://api3.cls.cn/share/article/2544119?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:05",
-        "title": "欧洲半导体板块下挫",
-        "url": "https://api3.cls.cn/share/article/2544114?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:04",
-        "title": "欧洲主要股指开盘多数上涨",
-        "url": "https://api3.cls.cn/share/article/2544109?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 16:02",
-        "title": "财联社11月25日电，广期所品种仓单及变化如下：碳酸锂期货仓单13476手，环比上个交易日减少5777手；多晶硅期货仓单14970手，环比上个交易日增加70手；",
-        "url": "https://api3.cls.cn/share/article/2544105?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 15:59",
-        "title": "财联社11月25日电，日本10年期国债收益率日内下跌10个基点，至2.620%。",
-        "url": "https://api3.cls.cn/share/article/2544104?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 15:57",
-        "title": "通光线缆：子公司被国家电网暂停中标资格2年",
-        "url": "https://api3.cls.cn/share/article/2544103?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 15:57",
-        "title": "财联社11月25日电，布伦特原油期货跌幅扩大至2%，报87.007美元/桶。",
-        "url": "https://api3.cls.cn/share/article/2544102?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-25 15:55",
-        "title": "财联社11月25日电，截至目前，南向资金净买入额达60亿港元。",
-        "url": "https://api3.cls.cn/share/article/2544101?os=web&sv=7.7.5&app="
       }
     ],
     "eastmoney": [
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:49",
+        "title": "万马科技与京东工业签署全面合作框架协议"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:44",
+        "title": "冠中生态：中标4983万元废弃矿山生态修复项目"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:43",
+        "title": "天兵科技等成立科技新公司 含火箭发动机研发业务"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:43",
+        "title": "赛诺菲股价上涨3.7%"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:43",
+        "title": "杭可科技：拟5000万元—1亿元回购公司股份"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:42",
+        "title": "ST人福：终止重组质粒-肝细胞生长因子注射液研发项目 计提约4亿元资产减值准备"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:41",
+        "title": "伯特利：拟1.4亿元收购浙江万达汽车方向机有限公司20%股权"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:39",
+        "title": "秘鲁对原产于中国的涤棉混纺织物采取反规避临时措施"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:37",
+        "title": "瑞银中国汽车：2027年国内需求有望企稳 竞争较2026年有所缓和"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:36",
+        "title": "广东台山核电项目3号机组主体工程开工"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:35",
+        "title": "理想汽车：第三季度收入总额为288亿元 同比增加5.4%"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:35",
+        "title": "国投电力在辽宁鞍山新设子公司 含储能技术业务"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:33",
+        "title": "何小鹏：全球首张有人驾驶eVTOL TC认证进入最后阶段"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-25 16:32",
+        "title": "奥特维：拟1亿元至1.2亿元回购公司股份"
+      },
       {
         "source": "东方财富",
         "time": "2026-11-25 16:31",
@@ -10098,76 +11145,6 @@
         "source": "东方财富",
         "time": "2026-11-25 16:14",
         "title": "上纬新材、启元机器人田华：个人机器人将成为AI时代新入口"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:12",
-        "title": "小鹏人形机器人IRON将于明年1月进入硬件量产"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:12",
-        "title": "华为将在ISSCC 2027展示自研HBM、逻辑堆叠等技术"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:12",
-        "title": "徐工、易控智驾研发L4无人矿卡 目标千台级落地"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:12",
-        "title": "小鹏打造超5万平机器人数据工厂 覆盖250多个场景、15类岗位"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:11",
-        "title": "震裕科技：取得1.8亿元股票回购专项贷款承诺函"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:10",
-        "title": "11月25日港股收盘：恒指跌1.14% 华虹宏力领跌成分股"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:09",
-        "title": "现货白银日内跌幅扩大至2%"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:07",
-        "title": "九芝堂：全资子公司新药YB001凝胶获临床试验批准"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:07",
-        "title": "特斯拉公司副总裁陶琳：特斯拉上海超级工厂第500万辆整车即将下线"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:06",
-        "title": "11月25日涨停复盘：57只股涨停 九阳股份7天5板"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:05",
-        "title": "欧洲半导体板块下挫"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:05",
-        "title": "网宿科技：董事、高级管理人员自愿承诺未来6个月不减持公司股份"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:05",
-        "title": "欧洲主要股指开盘多数上涨"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-25 16:00",
-        "title": "小鹏发布图灵具身智能架构 面向汽车与人形机器人"
       }
     ]
   },
@@ -10257,7 +11234,7 @@
   "version": {
     "kind": "market",
     "asof": "2026-11-25",
-    "file": "versions/market/2026-11-25/20261125T083549Z_ae0c99dd.json.gz",
-    "sha256": "ae0c99dddb9475a74b69daad8ece1cc75a049b27e8557c344d2e2ec5c1ce272d"
+    "file": "versions/market/2026-11-25/20261125T085550Z_8903f7d2.json.gz",
+    "sha256": "8903f7d286f0c4dbd44e455bcd1b94d0d24e73a4d2590a129ff95eb3f737b2e0"
   }
 }
