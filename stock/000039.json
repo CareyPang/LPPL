@@ -1,8 +1,8 @@
 {
  "symbol": "sz000039",
  "name": "中集集团",
- "asof": "2026-11-24",
- "data_version": "vintage_20261124_tencent_sina_hfq_1f80a7e2",
+ "asof": "2026-11-25",
+ "data_version": "vintage_20261125_tencent_sina_hfq_1f80a7e2",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "cn",
@@ -39,13 +39,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-05-21",
+   "start": "2026-05-22",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
-   "size_model": -0.117,
-   "size_realized": -0.107,
-   "tc": "2026-12-29",
+   "size_model": -0.13,
+   "size_realized": -0.141,
+   "tc": "2026-12-30",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -79,16 +79,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-11-11",
+    "best_t1": "2025-11-12",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.167,
+     "tc_lo": 0.0,
      "tc_hi": 0.333,
-     "any": 0.5,
+     "any": 0.333,
      "tol": 0.01
     },
     "null_fpr": {
@@ -123,7 +123,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-07-21",
+    "best_t1": "2025-07-22",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -253,7 +253,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-24",
+   "table_asof": "2026-11-25",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -735,7 +735,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.107,
+    "size_realized": -0.141,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -782,8 +782,8 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": false,
   "dead_cat_risk": false,
-  "drawdown_from_peak": -0.3351,
-  "elapsed_days_since_peak": 180,
+  "drawdown_from_peak": -0.3515,
+  "elapsed_days_since_peak": 181,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": true,
@@ -801,16 +801,16 @@
    "dimensions": [
     {
      "id": "omori",
-     "name": "Omori 余震衰减",
-     "value_text": "大阴线 0 次 · 波动比 0.55×",
+     "name": "冲击与止跌检查",
+     "value_text": "大阴线 0 次 · 波动比 0.61×",
      "pct": null,
      "light": "green",
      "active": false,
-     "drawdown_from_peak": -0.3351,
-     "elapsed_days_since_peak": 180,
+     "drawdown_from_peak": -0.3515,
+     "elapsed_days_since_peak": 181,
      "dead_cat_risk": false,
      "drop_threshold": -0.0445,
-     "plain_text": "距高点已过 180 交易日，大阴线与波动比（0.55×）均已衰减，未再破底。",
+     "plain_text": "距高点已过 181 交易日，大阴线与波动比（0.61×）均已衰减，未再破底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -845,9 +845,9 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 0.77× · 年内分位 10%",
-     "pct": 0.0992,
-     "ratio20": 0.77,
+     "value_text": "5/20日量比 0.83× · 年内分位 12%",
+     "pct": 0.119,
+     "ratio20": 0.83,
      "light": "yellow",
      "passed_bottom": false,
      "passed_top": false,
@@ -872,7 +872,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -2.6%",
+     "value_text": "距 20 日线 -5.0%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -888,7 +888,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-10-13",
    "2023-10-16",
    "2023-10-17",
    "2023-10-18",
@@ -1643,10 +1642,10 @@
    "2026-11-19",
    "2026-11-20",
    "2026-11-23",
-   "2026-11-24"
+   "2026-11-24",
+   "2026-11-25"
   ],
   "open": [
-   346.451,
    346.959,
    346.959,
    354.567,
@@ -2401,10 +2400,10 @@
    484.965,
    477.537,
    474.884,
-   482.843
+   482.843,
+   470.109
   ],
   "high": [
-   347.973,
    348.988,
    354.567,
    354.567,
@@ -3159,10 +3158,10 @@
    491.863,
    482.312,
    485.496,
-   487.088
+   487.088,
+   473.292
   ],
   "low": [
-   344.93,
    345.437,
    345.437,
    349.495,
@@ -3917,10 +3916,10 @@
    481.251,
    470.639,
    464.803,
-   471.7
+   471.7,
+   458.966
   ],
   "close": [
-   345.944,
    348.48,
    354.06,
    354.567,
@@ -4675,10 +4674,10 @@
    483.373,
    476.476,
    481.782,
-   473.292
+   473.292,
+   461.619
   ],
   "volume": [
-   54493,
    80931,
    134746,
    261354,
@@ -5433,7 +5432,8 @@
    184424,
    191807,
    337952,
-   225623
+   225623,
+   250864
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5487,7 +5487,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": true,
-  "n_bars": 7746,
+  "n_bars": 7747,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5517,23 +5517,23 @@
    "cutoff": "2026-11-03",
    "smoke": false,
    "n_events": 21122,
-   "reference_asof": "2026-11-24"
+   "reference_asof": "2026-11-25"
   },
   "state": {
-   "asof": "2026-11-24",
-   "close": 473.292162,
+   "asof": "2026-11-25",
+   "close": 461.619037,
    "peak_date": "2026-03-02",
    "runup": 1.039522,
-   "dd": -0.33507,
-   "td_since_peak": 180,
+   "dd": -0.35147,
+   "td_since_peak": 181,
    "low_date": "2026-07-17",
-   "bounce_from_low": 0.221865,
-   "ret20": 0.049412,
-   "ret60": -0.035676,
-   "rv20": 0.293955,
-   "rv20_pct5y": 0.548413,
-   "vol_d": 0.019681,
-   "well_dist_below": 0.116074
+   "bounce_from_low": 0.191729,
+   "ret20": 0.00346,
+   "ret60": -0.043956,
+   "rv20": 0.301686,
+   "rv20_pct5y": 0.561905,
+   "vol_d": 0.01999,
+   "well_dist_below": 0.09099
   },
   "in_structure": false,
   "depth_bucket": null,
@@ -5542,26 +5542,26 @@
    "fh60": {
     "hist": null,
     "rw": {
-     "U": 0.2953,
-     "L": 0.2785,
-     "none": 0.4262
+     "U": 0.3012,
+     "L": 0.2854,
+     "none": 0.4134
     }
    },
    "fh120": {
     "hist": null,
     "rw": {
-     "U": 0.1769,
-     "L": 0.3072,
-     "none": 0.5159
+     "U": 0.18295,
+     "L": 0.31405,
+     "none": 0.503
     }
    }
   },
   "regime": {
-   "p_hi_filtered": 0.51874,
-   "hi_vol_ann": 0.443878,
-   "lo_vol_ann": 0.178016,
-   "hi_mean_wk": 0.003287,
-   "lo_mean_wk": -0.00184,
+   "p_hi_filtered": 0.665185,
+   "hi_vol_ann": 0.442747,
+   "lo_vol_ann": 0.178716,
+   "hi_mean_wk": 0.003073,
+   "lo_mean_wk": -0.001862,
    "weeks": 260,
    "status": "ok",
    "seed": 20261110,
@@ -5570,10 +5570,9 @@
    "note": "波动体制，不是涨跌信号"
   }
  },
- "fit_code_version": "c067e13e7d852e347aee718e0dac6422f722d3f6b184e43b3ae82cbb509d4228",
- "fit_input_hash": "74e87ff24756b94cac56414895b528c9c9b5656b06330386b43d13c84020e3cc",
+ "fit_code_version": "b2a57e5666ba0f5e56a2e141ffea53007a0871dab473069dd3ab95df407eb32c",
+ "fit_input_hash": "80d4daa414a9faff8c8dfeab06582695e7cc84a830b7f62d932207b51815a5b8",
  "history_input_hashes": {
-  "2023-11-21": "d8a5c51067cdfe7d9ce9e8b1fd94413bd2cc764224c7cfae696770769e33f0c9",
   "2023-11-22": "5825ba7051990653197ee204baa73f22f2a6efcc19271d4a6376a967f9d61816",
   "2023-11-23": "3716c986079227d3d07422a665b39e0f4a7e46c653c66c4b2915033bc31120c0",
   "2023-11-24": "a3781c66d8d44e25508ce7fd29fbee54b2cf5ae11b4665363605da40fd5bb79f",
@@ -6301,14 +6300,15 @@
   "2026-11-19": "84850ad2d136e255ade7263936c7b97844a7dd433c560608a428594c5b042a0c",
   "2026-11-20": "3e2677ea2fee164bb5c36b3e1c5091d432fa29d7a3448331801fdfa74d007b8a",
   "2026-11-23": "0a7133c295d7d7fb3b8108687ca5430c1d941bfd6b2533417356256a5599869c",
-  "2026-11-24": "74e87ff24756b94cac56414895b528c9c9b5656b06330386b43d13c84020e3cc"
+  "2026-11-24": "74e87ff24756b94cac56414895b528c9c9b5656b06330386b43d13c84020e3cc",
+  "2026-11-25": "80d4daa414a9faff8c8dfeab06582695e7cc84a830b7f62d932207b51815a5b8"
  },
  "code": "000039",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-24T20:54:50.715838+00:00",
- "job_id": "b625029a-203b-44a5-9b59-8643464506fa",
- "requested_at": "2026-11-24T20:53:05.220933+00:00",
- "source_sha": "776ca6123f997532188ed5a7fddae6c568620a13",
- "batch_id": "b54f0a89-590b-43b6-b72e-6c56fd4dc703"
+ "generated_at": "2026-11-25T20:12:30.210814+00:00",
+ "job_id": "7c4633ea-aaf9-468f-af40-ee0313178030",
+ "requested_at": "2026-11-25T20:10:46.982071+00:00",
+ "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+ "batch_id": "0a8b2531-dc01-4f1c-ab0e-57d78b1de2a1"
 }
