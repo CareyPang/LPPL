@@ -1,14 +1,57 @@
 {
  "symbol": "US_NVDA",
  "name": "英伟达",
- "asof": "2026-11-23",
- "data_version": "us_NVDA_20261123_289678d33b1e04be",
+ "asof": "2026-11-24",
+ "data_version": "us_NVDA_20261124_61c7077e499e137a",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
-  "holidays_through": null,
-  "closures": [],
-  "source": null
+  "exchange": "XNYS",
+  "holidays_through": "2030-12-31",
+  "closures": [
+   "2026-11-26",
+   "2026-12-25",
+   "2027-01-01",
+   "2027-01-18",
+   "2027-02-15",
+   "2027-03-26",
+   "2027-05-31",
+   "2027-06-18",
+   "2027-07-05",
+   "2027-09-06",
+   "2027-11-25",
+   "2027-12-24",
+   "2028-01-17",
+   "2028-02-21",
+   "2028-04-14",
+   "2028-05-29",
+   "2028-06-19",
+   "2028-07-04",
+   "2028-09-04",
+   "2028-11-23",
+   "2028-12-25",
+   "2029-01-01",
+   "2029-01-15",
+   "2029-02-19",
+   "2029-03-30",
+   "2029-05-28",
+   "2029-06-19",
+   "2029-07-04",
+   "2029-09-03",
+   "2029-11-22",
+   "2029-12-25",
+   "2030-01-01",
+   "2030-01-21",
+   "2030-02-18",
+   "2030-04-19",
+   "2030-05-27",
+   "2030-06-19",
+   "2030-07-04",
+   "2030-09-02",
+   "2030-11-28",
+   "2030-12-25"
+  ],
+  "source": "exchange_calendars==4.13.3:XNYS"
  },
  "top": {
   "p20": {
@@ -20,13 +63,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-07-02",
+   "start": "2025-07-03",
    "duration_days": 352,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.987,
-   "size_realized": 0.052,
-   "tc": "2026-11-23",
+   "size_model": -0.939,
+   "size_realized": -0.022,
+   "tc": "2026-11-20",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -60,7 +103,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-11-21",
+    "best_t1": "2025-11-24",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.667,
@@ -99,21 +142,21 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.1,
+     "early": 0.0,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-07-02",
+    "best_t1": "2025-07-03",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.2,
      "m_hi": 0.0,
      "w_lo": 0.4,
      "w_hi": 0.0,
-     "tc_lo": 0.2,
+     "tc_lo": 0.3,
      "tc_hi": 0.0,
-     "any": 0.6,
+     "any": 0.7,
      "tol": 0.01
     },
     "null_fpr": {
@@ -234,7 +277,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-23",
+   "table_asof": "2026-11-24",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -716,7 +759,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.052,
+    "size_realized": -0.022,
     "duration_days": 352,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -763,12 +806,12 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": true,
-  "drawdown_from_peak": -0.3101,
-  "elapsed_days_since_peak": 34,
+  "drawdown_from_peak": -0.3505,
+  "elapsed_days_since_peak": 35,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": false,
-  "note": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.2%）；短期波动放大至 60 日均值的 2.33 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+  "note": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.3%）；短期波动放大至 60 日均值的 2.31 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
   "dashboard": {
    "verdict": "aftershock_block",
    "verdict_light": "red",
@@ -782,16 +825,16 @@
    "dimensions": [
     {
      "id": "omori",
-     "name": "Omori 余震衰减",
-     "value_text": "大阴线 5 次 · 波动比 2.33×",
+     "name": "冲击与止跌检查",
+     "value_text": "大阴线 5 次 · 波动比 2.31×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.3101,
-     "elapsed_days_since_peak": 34,
+     "drawdown_from_peak": -0.3505,
+     "elapsed_days_since_peak": 35,
      "dead_cat_risk": true,
-     "drop_threshold": -0.0425,
-     "plain_text": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.2%）；短期波动放大至 60 日均值的 2.33 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+     "drop_threshold": -0.0431,
+     "plain_text": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.3%）；短期波动放大至 60 日均值的 2.31 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -826,13 +869,13 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 1.40× · 年内分位 100%",
-     "pct": 1.0,
-     "ratio20": 1.4,
-     "light": "red",
+     "value_text": "5/20日量比 1.34× · 年内分位 96%",
+     "pct": 0.9603,
+     "ratio20": 1.34,
+     "light": "gray",
      "passed_bottom": false,
-     "passed_top": true,
-     "plain_text": "成交放巨量至年内 95% 分位以上，情绪极度亢奋，需防高位天量派发与量价背离。",
+     "passed_top": false,
+     "plain_text": "成交量能处于常态区间（以成交额/量比作换手率代理），无极端地量或天量。",
      "bottom_rule": "先缩至年内 20% 分位以下地量，再温和放量站上 20 日线",
      "top_rule": "成交冲上年内 95% 分位天量且量比 ≥1.35×",
      "is_proxy": true
@@ -853,7 +896,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -7.7%",
+     "value_text": "距 20 日线 -11.6%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -869,7 +912,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-17",
    "2023-11-20",
    "2023-11-21",
    "2023-11-22",
@@ -1624,10 +1666,10 @@
    "2026-11-18",
    "2026-11-19",
    "2026-11-20",
-   "2026-11-23"
+   "2026-11-23",
+   "2026-11-24"
   ],
   "open": [
-   49.377,
    49.165,
    49.977,
    49.704,
@@ -2382,10 +2424,10 @@
    159.19,
    152.91,
    143.52,
-   167.03
+   167.03,
+   159.1
   ],
   "high": [
-   49.569,
    50.397,
    50.367,
    50.185,
@@ -3140,10 +3182,10 @@
    159.7,
    158.13,
    143.72,
-   171.5
+   171.5,
+   159.92
   ],
   "low": [
-   48.861,
    49.035,
    49.075,
    47.548,
@@ -3898,10 +3940,10 @@
    150.4,
    145.71,
    124.5,
-   156.93
+   156.93,
+   150.5
   ],
   "close": [
-   49.151,
    50.259,
    49.795,
    48.571,
@@ -4656,10 +4698,10 @@
    150.96,
    145.98,
    125.53,
-   165.05
+   165.05,
+   155.38
   ],
   "volume": [
-   32589614,
    41614260,
    56574497,
    90063957,
@@ -5414,7 +5456,8 @@
    349791168,
    322940092,
    633418343,
-   782593128
+   782593128,
+   382926488
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5468,7 +5511,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4318,
+  "n_bars": 4319,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5497,10 +5540,9 @@
  "adjust": "multiplicative back-adjusted (splits + cash dividends)",
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
- "fit_code_version": "c067e13e7d852e347aee718e0dac6422f722d3f6b184e43b3ae82cbb509d4228",
- "fit_input_hash": "c04180e19bab970c99a7a0e54c772d30c4889008a3f62a482da2d9cd7669a2d8",
+ "fit_code_version": "b2a57e5666ba0f5e56a2e141ffea53007a0871dab473069dd3ab95df407eb32c",
+ "fit_input_hash": "c738c48082a41585afe9d6cce818065e6c1fc71de3750adda798ff50987471a0",
  "history_input_hashes": {
-  "2023-11-20": "4594eddf6c592467f367650ee5ad2433a7019d4ab421e0b4ca72f483d4c885af",
   "2023-11-21": "2a6a6dba236cceb060ee7df02bdaa68d9eadf96dcf13f613eacab52a11dd9263",
   "2023-11-22": "70762ef36e26e6ee5409164385c1fc651fd7d604c255be80c3f83652ef475271",
   "2023-11-24": "b332224e411bdf01400e4ce91581ca3765658aea5d3e214327d7cb021f89f667",
@@ -6254,10 +6296,11 @@
   "2026-11-18": "12a770d47a8beced394bf63122da41044e29b3a0ca27ca7beb28e8e0fe4b7722",
   "2026-11-19": "91660b176f3e4848674e158c1afcdde31cef91f7e4ea90829b7f486e5b38eb48",
   "2026-11-20": "2ea4a21636b0d09ced379290cb2424a6650976b09236aa56ce7f66e26638248e",
-  "2026-11-23": "c04180e19bab970c99a7a0e54c772d30c4889008a3f62a482da2d9cd7669a2d8"
+  "2026-11-23": "c04180e19bab970c99a7a0e54c772d30c4889008a3f62a482da2d9cd7669a2d8",
+  "2026-11-24": "c738c48082a41585afe9d6cce818065e6c1fc71de3750adda798ff50987471a0"
  },
  "code": "US_NVDA",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-24T22:43:49.579060+00:00"
+ "generated_at": "2026-11-25T05:13:02.445342+00:00"
 }
