@@ -4,15 +4,21 @@ import numpy as np
 
 import research.lppls.profile_fit as profile_fit_module
 from research.lppls.profile_fit import (
+    D_GRID,
     M_GRID,
+    RHO_GRID,
     W_GRID,
+    _coarse_ar1_nll,
     _coarse_grid_sse,
     _coarse_profile,
     _linear_fit,
     _tc_grid,
     fit_window,
+    fit_window_ar1,
     profile_fit,
+    profile_fit_ar1,
     profile_range,
+    profile_range_nll,
 )
 
 
@@ -181,4 +187,160 @@ def test_profile_fit_json_round_trip():
     assert np.array_equal(restored.inside, fit.inside)
     assert np.array_equal(restored.refined, fit.refined)
     assert np.array_equal(restored.profile, fit.profile)
+    assert np.array_equal(restored.beta, fit.beta)
+
+
+def test_ar1_rho_zero_coarse_nll_matches_f2_on_random_grid_points():
+    clean, true_tc, _, _ = _lppls_series()
+    rng = np.random.default_rng(202608)
+    y = clean + rng.normal(0.0, 0.002, size=len(clean))
+    t = np.arange(len(y), dtype=float)
+    tcs, _ = _tc_grid(len(y))
+    tc = float(tcs[np.argmin(np.abs(tcs - true_tc))])
+    f2_sse = _coarse_grid_sse(t, y, np.asarray([tc]))[0]
+    ar1_nll = _coarse_ar1_nll(t, y, np.asarray([tc]), rhos=(0.0,))[0, :, :, 0]
+    candidates = np.flatnonzero(
+        np.isfinite(f2_sse.ravel())
+        & (np.abs(0.5 * len(y) * np.log(f2_sse.ravel() / len(y))) > 1e-8)
+    )
+    compared = 0
+    for flat_index in rng.permutation(candidates):
+        m_index, w_index = np.unravel_index(
+            flat_index, (len(M_GRID), len(W_GRID))
+        )
+        expected = 0.5 * len(y) * np.log(f2_sse[m_index, w_index] / len(y))
+        actual = ar1_nll[m_index, w_index]
+        assert abs(actual - expected) / abs(expected) <= 1e-8
+        compared += 1
+        if compared == 20:
+            break
+    assert compared == 20
+
+
+def test_ar1_lagged_coarse_nll_matches_prais_winsten_lstsq():
+    clean, _, _, _ = _lppls_series()
+    rng = np.random.default_rng(202609)
+    y = clean + rng.normal(0.0, 0.002, size=len(clean))
+    t = np.arange(len(y), dtype=float)
+    all_tcs, _ = _tc_grid(len(y))
+    sampled_tc_indices = rng.choice(len(all_tcs), size=4, replace=False)
+    sampled_tcs = all_tcs[sampled_tc_indices]
+    coarse = _coarse_ar1_nll(t, y, sampled_tcs)
+    compared = 0
+    for tc_position, tc in enumerate(sampled_tcs):
+        for _ in range(10):
+            m_index = int(rng.integers(len(M_GRID)))
+            w_index = int(rng.integers(len(W_GRID)))
+            rho_index = int(rng.integers(len(RHO_GRID)))
+            actual = coarse[tc_position, m_index, w_index, rho_index]
+            if not np.isfinite(actual):
+                continue
+            m = float(M_GRID[m_index])
+            w = float(W_GRID[w_index])
+            rho = float(RHO_GRID[rho_index])
+            distance = np.abs(tc - t)
+            log_distance = np.log(distance)
+            f = np.exp(m * log_distance)
+            phase = w * log_distance
+            design = np.column_stack(
+                (
+                    np.ones_like(t),
+                    f,
+                    f * np.cos(phase),
+                    f * np.sin(phase),
+                )
+            )
+            scale = np.sqrt(1.0 - rho * rho)
+            transformed_design = np.empty_like(design)
+            transformed_y = np.empty_like(y)
+            transformed_design[0] = scale * design[0]
+            transformed_y[0] = scale * y[0]
+            transformed_design[1:] = design[1:] - rho * design[:-1]
+            transformed_y[1:] = y[1:] - rho * y[:-1]
+            beta, _, rank, singular = np.linalg.lstsq(
+                transformed_design, transformed_y, rcond=None
+            )
+            if (
+                rank < 4
+                or singular[-1]
+                <= singular[0] * max(len(y), 4) * np.finfo(float).eps
+            ):
+                continue
+            residual = transformed_y - transformed_design @ beta
+            sse = float(residual @ residual)
+            expected = (
+                0.5 * len(y) * np.log(max(sse, 1e-300) / len(y))
+                - 0.5 * np.log1p(-rho * rho)
+            )
+            if abs(expected) <= 1e-8:
+                continue
+            assert abs(actual - expected) / abs(expected) <= 1e-8
+            compared += 1
+            if compared == 20:
+                break
+        if compared == 20:
+            break
+    assert compared == 20
+
+
+def test_ar1_recovery_with_correlated_noise():
+    y, true_tc, _, _ = _lppls_series()
+    rho = 0.9
+    rng = np.random.default_rng(1)
+    burn_in = 500
+    innovations = rng.normal(0.0, 0.002, size=len(y) + burn_in)
+    noise = np.zeros(len(innovations), dtype=float)
+    for index in range(1, len(noise)):
+        noise[index] = rho * noise[index - 1] + innovations[index]
+
+    fit = profile_fit_ar1(y + noise[burn_in:])
+
+    assert abs(fit.tc - true_tc) <= 3
+    assert 0.8 <= fit.rho <= 0.97
+
+
+def test_ar1_positive_b_only_series_is_not_selected():
+    y, _, _, _ = _lppls_series(b_scale=1.0, c_ratio=0.0)
+
+    fit = profile_fit_ar1(y)
+
+    assert fit.beta[1] < 0 or np.isinf(fit.nll)
+
+
+def test_ar1_nll_ranges_expand_and_json_round_trip():
+    y, _, _, _ = _lppls_series(n=63)
+    fit = fit_window_ar1(np.exp(y))
+    widths = [
+        profile_range_nll(fit.tcs, fit.profile, delta)["width"]
+        for delta in D_GRID
+    ]
+
+    assert all(
+        left <= right for left, right in zip(widths, widths[1:], strict=False)
+    )
+    assert set(profile_range_nll(fit.tcs, fit.profile, D_GRID[0])) == {
+        "lo",
+        "hi",
+        "width",
+        "n_components",
+        "ahead_lo",
+        "ahead_hi",
+    }
+    encoded = json.dumps(fit.to_dict(), allow_nan=False)
+    restored = type(fit).from_dict(json.loads(encoded))
+
+    assert restored.tc == fit.tc
+    assert restored.grid_tc == fit.grid_tc
+    assert restored.polished_tc == fit.polished_tc
+    assert restored.m == fit.m
+    assert restored.w == fit.w
+    assert restored.rho == fit.rho
+    assert restored.sse == fit.sse
+    assert restored.nll == fit.nll
+    assert restored.n == fit.n
+    assert np.array_equal(restored.tcs, fit.tcs)
+    assert np.array_equal(restored.inside, fit.inside)
+    assert np.array_equal(restored.refined, fit.refined)
+    assert np.array_equal(restored.profile, fit.profile)
+    assert np.array_equal(restored.prho, fit.prho)
     assert np.array_equal(restored.beta, fit.beta)

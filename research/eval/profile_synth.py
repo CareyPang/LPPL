@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -16,7 +17,15 @@ import numpy as np
 import pandas as pd
 
 from ..data.global_terminal import load_cached_snapshot
-from ..lppls.profile_fit import C_GRID, fit_window, profile_fit, profile_range
+from ..lppls.profile_fit import (
+    C_GRID,
+    D_GRID,
+    fit_window,
+    profile_fit,
+    profile_fit_ar1,
+    profile_range,
+    profile_range_nll,
+)
 from ..pipeline.global_terminal import WINDOWS as FIT_WINDOWS
 
 N_SET = (63, 126, 252, 504, 1008)
@@ -520,6 +529,384 @@ def _profile_synthetic(source_root: Path, workers: int) -> pd.DataFrame:
     return pd.DataFrame(results).sort_values("task_id").reset_index(drop=True)
 
 
+def _profile_worker_ar1(task: dict) -> dict:
+    y = np.asarray(task["y"], dtype=float)
+    fit = profile_fit_ar1(y)
+    result = {
+        "task_id": task["task_id"],
+        "kind": task["kind"],
+        "n": int(task["n"]),
+        "noise": task.get("noise"),
+        "null_class": task.get("null_class"),
+        "rep": int(task["rep"]),
+        "tc_true": task.get("tc_true"),
+        "m_true": task.get("m_true"),
+        "w_true": task.get("w_true"),
+        "rho_true": task.get("rho"),
+        "tc_hat": fit.tc,
+        "tc_grid_hat": fit.grid_tc,
+        "tc_polished": fit.polished_tc,
+        "m_hat": fit.m,
+        "w_hat": fit.w,
+        "rho_hat": fit.rho,
+        "b_hat": float(fit.beta[1]),
+        "sse_profile": fit.sse,
+        "nll": fit.nll,
+        "profile_seconds": fit.seconds,
+        "box_pass": _box_pass(fit),
+        "tc_grid": fit.tcs.tolist(),
+        "inside_grid": fit.inside.tolist(),
+        "profile": fit.profile.tolist(),
+        "refined": fit.refined.tolist(),
+        "pm": fit.pm.tolist(),
+        "pw": fit.pw.tolist(),
+        "prho": fit.prho.tolist(),
+        "sse_g3": None,
+        "g3_tc": None,
+        "g3_inside": None,
+        "f1_ratio": None,
+    }
+    for delta in D_GRID:
+        interval = profile_range_nll(fit.tcs, fit.profile, delta)
+        key = f"d_{delta:g}"
+        result[f"{key}_lo"] = interval["lo"]
+        result[f"{key}_hi"] = interval["hi"]
+        result[f"{key}_width"] = interval["width"]
+        result[f"{key}_components"] = interval["n_components"]
+        result[f"{key}_ahead_lo"] = interval["ahead_lo"]
+        result[f"{key}_ahead_hi"] = interval["ahead_hi"]
+        if task["kind"] == "bubble":
+            true_tc = float(task["tc_true"])
+            result[f"{key}_covered"] = bool(
+                np.isfinite(interval["lo"])
+                and interval["lo"] <= true_tc <= interval["hi"]
+            )
+    return result
+
+
+def _series_digest(y: np.ndarray) -> str:
+    values = np.asarray(y, dtype="<f8")
+    return hashlib.sha256(values.tobytes(order="C")).hexdigest()
+
+
+def _assert_f2_synthetic_hashes(tasks: list[dict], source_root: Path) -> None:
+    regenerated = _synthetic_tasks(source_root)
+    task_ids = [task["task_id"] for task in tasks]
+    regenerated_ids = [task["task_id"] for task in regenerated]
+    if task_ids != regenerated_ids or len(tasks) != 5000:
+        raise AssertionError("AR(1) task IDs differ from the 5,000 F2 synthetic tasks")
+    indices = sorted({0, len(tasks) // 4, len(tasks) // 2, 3 * len(tasks) // 4, len(tasks) - 1})
+    for index in indices:
+        original = tasks[index]
+        repeated = regenerated[index]
+        if _series_digest(original["y"]) != _series_digest(repeated["y"]):
+            raise AssertionError(
+                f"synthetic y differs from F2 regeneration for {original['task_id']}"
+            )
+    print(
+        "F2 synthetic regeneration hashes match for "
+        + ", ".join(tasks[index]["task_id"] for index in indices),
+        flush=True,
+    )
+
+
+def _profile_synthetic_ar1(source_root: Path, workers: int) -> pd.DataFrame:
+    tasks = _synthetic_tasks(source_root)
+    _assert_f2_synthetic_hashes(tasks, source_root)
+    results = []
+    started = time.perf_counter()
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        futures = [pool.submit(_profile_worker_ar1, task) for task in tasks]
+        for done, future in enumerate(as_completed(futures), start=1):
+            results.append(future.result())
+            if done % 100 == 0:
+                print(
+                    f"synthetic AR1 {done}/{len(futures)} "
+                    f"elapsed={time.perf_counter()-started:.1f}s",
+                    flush=True,
+                )
+    return pd.DataFrame(results).sort_values("task_id").reset_index(drop=True)
+
+
+def _read_f2_synthetic(path: Path) -> pd.DataFrame:
+    columns = [
+        "task_id",
+        "kind",
+        "n",
+        "noise",
+        "null_class",
+        "tc_true",
+        "m_true",
+        "w_true",
+        "tc_hat",
+        "m_hat",
+        "w_hat",
+        "box_pass",
+        "profile_seconds",
+    ]
+    for c in C_GRID:
+        columns.extend((f"c_{c:g}_width", f"c_{c:g}_covered"))
+    rows = pd.read_parquet(
+        path,
+        columns=columns,
+        filters=[("kind", "in", ["bubble", "null"])],
+    )
+    if len(rows) != 5000 or not set(rows["kind"].unique()) <= {"bubble", "null"}:
+        raise AssertionError("F2 baseline must contain exactly 5,000 synthetic rows")
+    return rows
+
+
+def _threshold_coverage(group: pd.DataFrame, column: str) -> float:
+    return float(pd.to_numeric(group[column], errors="coerce").mean())
+
+
+def _best_threshold_for_coverage(
+    bubbles: pd.DataFrame, thresholds: tuple[float, ...], prefix: str
+):
+    candidates = []
+    for threshold in thresholds:
+        column = f"{prefix}_{threshold:g}_covered"
+        coverage = _threshold_coverage(bubbles, column)
+        if 0.80 <= coverage <= 0.95:
+            candidates.append((abs(coverage - 0.875), threshold, coverage))
+    return min(candidates, default=None, key=lambda item: (item[0], item[1]))
+
+
+def _width_auc(
+    bubble_widths: np.ndarray, null_widths: np.ndarray
+) -> float | None:
+    bubble_widths = bubble_widths[np.isfinite(bubble_widths)]
+    null_widths = null_widths[np.isfinite(null_widths)]
+    if not len(bubble_widths) or not len(null_widths):
+        return None
+    difference = bubble_widths[:, None] - null_widths[None, :]
+    return float((np.count_nonzero(difference < 0) + 0.5 * np.count_nonzero(difference == 0)) / difference.size)
+
+
+def _t8_row(
+    rows: pd.DataFrame, n: int, thresholds: tuple[float, ...], prefix: str, method: str
+) -> list:
+    selected = rows[rows["n"] == n]
+    bubbles = selected[selected["kind"] == "bubble"]
+    nulls = selected[selected["kind"] == "null"]
+    choice = _best_threshold_for_coverage(bubbles, thresholds, prefix)
+    if choice is None:
+        return [method, n, "none", None, None, None, None, "0/0", None]
+    _, threshold, coverage = choice
+    key = f"{prefix}_{threshold:g}"
+    scale = 0.4 * (n - 1)
+    bubble_widths = pd.to_numeric(bubbles[f"{key}_width"], errors="coerce").to_numpy() / scale
+    null_widths = pd.to_numeric(nulls[f"{key}_width"], errors="coerce").to_numpy() / scale
+    bubble_box = bubbles.loc[bubbles["box_pass"].fillna(False).astype(bool)]
+    null_box = nulls.loc[nulls["box_pass"].fillna(False).astype(bool)]
+    bubble_box_widths = (
+        pd.to_numeric(bubble_box[f"{key}_width"], errors="coerce").to_numpy() / scale
+    )
+    null_box_widths = (
+        pd.to_numeric(null_box[f"{key}_width"], errors="coerce").to_numpy() / scale
+    )
+    bubble_box_widths = bubble_box_widths[np.isfinite(bubble_box_widths)]
+    null_box_widths = null_box_widths[np.isfinite(null_box_widths)]
+    return [
+        method,
+        n,
+        threshold,
+        coverage * 100.0,
+        float(np.nanmedian(null_widths)) if np.isfinite(null_widths).any() else None,
+        float(np.nanmedian(bubble_widths)) if np.isfinite(bubble_widths).any() else None,
+        _width_auc(bubble_widths, null_widths),
+        f"{len(bubble_box_widths)}/{len(null_box_widths)}",
+        _width_auc(bubble_box_widths, null_box_widths),
+    ]
+
+
+def _summary_ar1(ar1: pd.DataFrame, f2: pd.DataFrame, out: Path) -> None:
+    lines = ["# AR(1) profile calibration versus F2 baseline", ""]
+    datasets = (("F3", ar1, "d", D_GRID), ("F2", f2, "c", C_GRID))
+
+    for method, rows, prefix, thresholds in datasets:
+        bubbles = rows[rows["kind"] == "bubble"]
+        coverage = []
+        for (n, noise), group in bubbles.groupby(["n", "noise"], sort=True):
+            coverage.append(
+                [n, noise]
+                + [
+                    100.0
+                    * _threshold_coverage(
+                        group, f"{prefix}_{threshold:g}_covered"
+                    )
+                    for threshold in thresholds
+                ]
+            )
+        lines.extend(
+            [
+                f"## T1 {method} coverage (%)",
+                "",
+                _markdown_table(
+                    ["n", "noise", *[f"{prefix}={value:g}" for value in thresholds]],
+                    coverage,
+                ),
+                "",
+            ]
+        )
+
+        null_width = []
+        nulls = rows[rows["kind"] == "null"]
+        for (n, null_class), group in nulls.groupby(
+            ["n", "null_class"], sort=True
+        ):
+            scale = 0.4 * (int(n) - 1)
+            null_width.append(
+                [n, null_class]
+                + [
+                    pd.to_numeric(
+                        group[f"{prefix}_{threshold:g}_width"], errors="coerce"
+                    ).median()
+                    / scale
+                    for threshold in thresholds
+                ]
+            )
+        lines.extend(
+            [
+                f"## T2b {method} null width median / (0.4dt)",
+                "",
+                _markdown_table(
+                    ["n", "class", *[f"{prefix}={value:g}" for value in thresholds]],
+                    null_width,
+                ),
+                "",
+            ]
+        )
+
+        bubble_width = []
+        for (n, noise), group in bubbles.groupby(["n", "noise"], sort=True):
+            scale = 0.4 * (int(n) - 1)
+            bubble_width.append(
+                [n, noise]
+                + [
+                    pd.to_numeric(
+                        group[f"{prefix}_{threshold:g}_width"], errors="coerce"
+                    ).median()
+                    / scale
+                    for threshold in thresholds
+                ]
+            )
+        lines.extend(
+            [
+                f"## T3 {method} bubble width median / (0.4dt)",
+                "",
+                _markdown_table(
+                    ["n", "noise", *[f"{prefix}={value:g}" for value in thresholds]],
+                    bubble_width,
+                ),
+                "",
+            ]
+        )
+
+    t8_rows = []
+    for n in sorted(ar1["n"].unique()):
+        t8_rows.append(_t8_row(ar1, int(n), D_GRID, "d", "F3"))
+        t8_rows.append(_t8_row(f2, int(n), C_GRID, "c", "F2"))
+    lines.extend(
+        [
+            "## T8 Selected threshold and width discrimination",
+            "",
+            _markdown_table(
+                [
+                    "method",
+                    "n",
+                    "d or c",
+                    "bubble coverage (%)",
+                    "null median width/(0.4dt)",
+                    "bubble median width/(0.4dt)",
+                    "AUC",
+                    "box-pass bubble/null counts",
+                    "box-pass AUC",
+                ],
+                t8_rows,
+            ),
+            "",
+        ]
+    )
+
+    pass_rows = []
+    error_rows = []
+    timing_rows = []
+    edge_rows = []
+    for method, rows, _, _ in datasets:
+        bubbles = rows[rows["kind"] == "bubble"]
+        nulls = rows[rows["kind"] == "null"]
+        for (n, noise), group in bubbles.groupby(["n", "noise"], sort=True):
+            pass_rows.append(
+                [method, n, f"bubble_{noise}", group["box_pass"].mean() * 100.0]
+            )
+            rho_error = None
+            if method == "F3" and noise == "AR1":
+                rho_values = (
+                    pd.to_numeric(group["rho_hat"], errors="coerce")
+                    - pd.to_numeric(group["rho_true"], errors="coerce")
+                ).abs()
+                rho_error = rho_values.median()
+            error_rows.append(
+                [
+                    method,
+                    n,
+                    noise,
+                    (group["tc_hat"] - group["tc_true"]).abs().median(),
+                    (group["m_hat"] - group["m_true"]).abs().median(),
+                    (group["w_hat"] - group["w_true"]).abs().median(),
+                    rho_error,
+                ]
+            )
+        for (n, null_class), group in nulls.groupby(
+            ["n", "null_class"], sort=True
+        ):
+            pass_rows.append(
+                [method, n, null_class, group["box_pass"].mean() * 100.0]
+            )
+        for n, group in rows.groupby("n", sort=True):
+            timings = pd.to_numeric(group["profile_seconds"], errors="coerce")
+            timing_rows.append([method, n, timings.median(), timings.quantile(0.95)])
+            edge = (int(n) - 1) + 0.2 * (int(n) - 1)
+            for kind, kind_group in group.groupby("kind", sort=True):
+                kind_tc = pd.to_numeric(kind_group["tc_hat"], errors="coerce")
+                kind_near = np.isfinite(kind_tc) & ((kind_tc - edge).abs() <= 1.0)
+                edge_rows.append([method, kind, n, kind_near.mean() * 100.0])
+
+    lines.extend(
+        [
+            "## T4 Box pass rate (%)",
+            "",
+            _markdown_table(["method", "n", "class", "pass rate"], pass_rows),
+            "",
+            "## T5 Bubble parameter absolute error median",
+            "",
+            _markdown_table(
+                [
+                    "method",
+                    "n",
+                    "noise",
+                    "|tc error|",
+                    "|m error|",
+                    "|omega error|",
+                    "|rho_hat-rho_true| (AR1 bubbles)",
+                ],
+                error_rows,
+            ),
+            "",
+            "## T7 profile_fit_ar1/profile_fit timing (seconds)",
+            "",
+            _markdown_table(["method", "n", "median", "p95"], timing_rows),
+            "",
+            "## T9 tc_hat within one day of future search edge (%)",
+            "",
+            _markdown_table(["method", "kind", "n", "fraction"], edge_rows),
+            "",
+        ]
+    )
+    (out / "summary.md").write_text("\n".join(lines), encoding="utf-8")
+
+
 def _real_candidates(source_root: Path, fits_dir: Path):
     cutoff = pd.Timestamp(CUTOFF)
     dev_frames, candidates = {}, {asset: [] for asset in ASSETS}
@@ -722,6 +1109,26 @@ def benchmark(out: Path, repeats: int = 3) -> dict:
     return result
 
 
+def benchmark_ar1(out: Path, repeats: int = 3) -> dict:
+    out.mkdir(parents=True, exist_ok=True)
+    result = {}
+    for n in (63, 252, 1008):
+        y = _benchmark_y(n)
+        timings = [profile_fit_ar1(y).seconds for _ in range(repeats)]
+        result[str(n)] = {
+            "seconds": timings,
+            "median": float(np.median(timings)),
+            "max": float(np.max(timings)),
+        }
+        print(f"AR1 benchmark n={n}: {result[str(n)]}", flush=True)
+    result["repeats"] = repeats
+    result["n1008_median_over_15s"] = result["1008"]["median"] > 15.0
+    (out / "benchmark.json").write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return result
+
+
 def run_all(source_root: Path, fits_dir: Path, out: Path, workers: int) -> None:
     out.mkdir(parents=True, exist_ok=True)
     print(f"synthetic seed={SYNTH_SEED}; workers={workers}", flush=True)
@@ -738,24 +1145,64 @@ def run_all(source_root: Path, fits_dir: Path, out: Path, workers: int) -> None:
     )
 
 
+def run_ar1(
+    source_root: Path,
+    out: Path,
+    workers: int,
+    f2_rows: Path,
+) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    print(f"synthetic AR1 seed={SYNTH_SEED}; workers={workers}", flush=True)
+    synthetic = _profile_synthetic_ar1(source_root, workers)
+    synthetic.to_parquet(out / "rows.parquet", index=False)
+    print(f"synthetic AR1 complete: {len(synthetic)} rows", flush=True)
+    f2 = _read_f2_synthetic(f2_rows)
+    _summary_ar1(synthetic, f2, out)
+    print(
+        f"wrote {out / 'rows.parquet'} and {out / 'summary.md'}",
+        flush=True,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     benchmark_parser = subparsers.add_parser("benchmark")
-    benchmark_parser.add_argument("--out", type=Path, default=Path("reports/profile_synth"))
+    benchmark_parser.add_argument("--out", type=Path)
     benchmark_parser.add_argument("--repeats", type=int, default=3)
+    benchmark_parser.add_argument("--method", choices=("f2", "ar1"), default="f2")
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("--source-root", type=Path, default=Path("/home/ubuntu/work/global-full"))
     run_parser.add_argument("--fits-dir", type=Path, default=Path("/home/ubuntu/work/intl27/fits"))
-    run_parser.add_argument("--out", type=Path, default=Path("reports/profile_synth"))
+    run_parser.add_argument("--out", type=Path)
     run_parser.add_argument("--workers", type=int, default=8)
+    run_parser.add_argument("--method", choices=("f2", "ar1"), default="f2")
+    run_parser.add_argument(
+        "--f2-rows", type=Path, default=Path("reports/profile_synth/rows.parquet")
+    )
     args = parser.parse_args()
     if args.command == "benchmark":
-        result = benchmark(args.out, args.repeats)
-        if result["n1008_median_over_20s"]:
-            raise SystemExit(2)
+        out = args.out or Path(
+            "reports/profile_synth_ar1"
+            if args.method == "ar1"
+            else "reports/profile_synth"
+        )
+        if args.method == "ar1":
+            benchmark_ar1(out, args.repeats)
+        else:
+            result = benchmark(out, args.repeats)
+            if result["n1008_median_over_20s"]:
+                raise SystemExit(2)
         return
-    run_all(args.source_root, args.fits_dir, args.out, args.workers)
+    out = args.out or Path(
+        "reports/profile_synth_ar1"
+        if args.method == "ar1"
+        else "reports/profile_synth"
+    )
+    if args.method == "ar1":
+        run_ar1(args.source_root, out, args.workers, args.f2_rows)
+    else:
+        run_all(args.source_root, args.fits_dir, out, args.workers)
 
 
 if __name__ == "__main__":
