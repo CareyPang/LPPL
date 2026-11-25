@@ -1,4 +1,4 @@
-"""底部候选特征库：python -m research.features.run_bottom_feats → data/features/bottom_v1/{symbol}.parquet（不入 git）。
+"""底部候选特征库：python -m research.features.run_bottom_feats → data/features/bottom_v2/{symbol}.parquet（不入 git）。
 成交额：指数用 amount；个股用 volume × 未复权 close 近似（prereg §14.2）。"""
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from ..eval.dataset import SPLITS, _snapshot
 from ..labels.run_top import FROZEN, INDEXES
 from .bottom_feats import build
 
-OUT = Path("data/features/bottom_v1")
+OUT = Path("data/features/bottom_v2")
 
 
 def inputs(sym: str) -> tuple[pd.Series, pd.Series]:

@@ -10,6 +10,11 @@ test('aftershock only displays exact asset and model cutoff; no latest study in 
  assert.equal(Study.model(data({...source(),asof:'2026-11-23'})).study,null);
  assert.equal(Study.model(data(null)).study,null);
 });
+test('aftershock renders a published A-share index block with matching record identity',()=>{
+ const study={...source(),symbol:'sh000300'};
+ const indexData={symbol:'sh000300',modelAsOf:'2026-11-20',raw:{research:{aftershock:study}}};
+ assert.equal(Study.model(indexData).study,study);
+});
 test('zero p is retained with no-decay and zero new-shock observations',()=>{
  const html=Study.moduleHTML({status:'available',frequency:'15m_counts_per_daily_session',anchor_date:'2026-10-06',anchor_type:'retrospective_price_peak_not_negative_mainshock',mainshock_date:'2026-11-20',parameters:{p:0,decay_identified:false},samples:{latest_mainshock_after_days:0},summary:'大波动尚未稳定衰减',current_mainshock:{date:'2026-11-20',status:'insufficient_data',observed_after_days:0}},'2026-11-20');
  assert.match(html,/15 分钟大波动/);assert.match(html,/并非负向主震/);assert.match(html,/<dt>衰减参数 p<\/dt><dd>0<\/dd>/);assert.match(html,/<dt>是否识别出衰减<\/dt><dd>否<\/dd>/);assert.match(html,/之后 0 个完整交易日/);

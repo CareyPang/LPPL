@@ -22,6 +22,8 @@ on:
     paths:
       - .github/workflows/index_daily.yml
       - research/pipeline/daily.py
+      - research/pipeline/index_daily.py
+      - research/features/aftershock.py
       - scripts/build_site.sh
       - research/data/freshness.py
 
@@ -129,7 +131,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p out/index
-          LPPLS_BOX=v2 python -m research.pipeline.daily "$SYM" \
+          LPPLS_BOX=v2 python -m research.pipeline.index_daily "$SYM" \
             --asof "$ASOF" --opt "$LPPLS_DAILY_OPT" --out out/index
       - name: Upload index fit artifact
         if: always()

@@ -17,16 +17,30 @@ def liquidity(logp: pd.Series, amount: pd.Series) -> pd.DataFrame:
     return pd.DataFrame(dict(amihud_rel=np.log(amihud20 / base), amt_ratio20=amt_ratio20, damt5=amt_ratio20 - amt_ratio20.shift(5)))
 
 
+def _freeze_sigma_ref(sig_ref: pd.Series, shock: pd.Series) -> pd.Series:
+    values = sig_ref.to_numpy(float).copy()
+    shocks = shock.to_numpy(bool)
+    last, frozen = -1, np.nan
+    for t, is_shock in enumerate(shocks):
+        if is_shock and (last < 0 or t - last >= SHOCK_LOOK):
+            last, frozen = t, values[t]
+        if last >= 0:
+            values[t] = frozen
+    return pd.Series(values, index=sig_ref.index, name=sig_ref.name)
+
+
 def omori(logp: pd.Series, k_sigma: float = 2.0) -> pd.DataFrame:
-    """主震 = 距 60 日高点回撤首次 ≥ 10%；余震 = |r| > k·σ_ref（σ_ref 为主震前 250 日 std）。
-    after_ratio = 最近 20 日余震率 / 主震前基准率；omori_p ≈ log2(前半段余震数 / 后半段余震数)（p>0 衰减中，≈0 未衰减）。"""
+    """主震 = 距 60 日高点回撤首次 ≥ 10%；余震 = |r| > k·σ_ref（主震日之前 250 日 std，持有至下一主震）。
+    after_ratio = 最近 20 日余震率 / 主震前基准率；omori_p = log2(first-half count / second-half count)，是衰减比率代理，不是 Omori 指数。"""
     r = logp.diff()
     sig_ref = r.rolling(BASE_W).std().shift(1)
     dd60 = logp - logp.rolling(SHOCK_LOOK).max()
     shock = (dd60 <= -SHOCK_DD) & (dd60.shift(1) > -SHOCK_DD)
     n = len(logp)
+    base_exceed = (r.abs() > k_sigma * sig_ref).to_numpy(float)
+    sig_ref = _freeze_sigma_ref(sig_ref, shock)
     exceed = (r.abs() > k_sigma * sig_ref).to_numpy(float)
-    base_rate = pd.Series(exceed, index=logp.index).rolling(BASE_W).mean().to_numpy()
+    base_rate = pd.Series(base_exceed, index=logp.index).rolling(BASE_W).mean().to_numpy()
     days = np.full(n, np.nan)
     ratio = np.full(n, np.nan)
     p_hat = np.full(n, np.nan)
@@ -39,6 +53,8 @@ def omori(logp: pd.Series, k_sigma: float = 2.0) -> pd.DataFrame:
             continue
         d = t - last
         days[t] = d
+        if not np.isfinite(sig_ref.iloc[t]):
+            continue
         if d >= AFTER_W:
             recent = exceed[t - AFTER_W + 1 : t + 1].mean()
             ratio[t] = recent / max(base_at, 1 / BASE_W) if np.isfinite(base_at) else np.nan

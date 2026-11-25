@@ -377,7 +377,7 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     assert fit["timeout-minutes"] == 75
     assert fit["strategy"]["fail-fast"] is False
     assert fit["strategy"]["max-parallel"] == 7
-    assert 'LPPLS_BOX=v2 python -m research.pipeline.daily "$SYM"' in run_index["run"]
+    assert 'LPPLS_BOX=v2 python -m research.pipeline.index_daily "$SYM"' in run_index["run"]
     assert '--asof "$ASOF" --opt "$LPPLS_DAILY_OPT" --out out/index' in run_index["run"]
     assert upload["with"]["name"] == (
         "index-fit-${{ matrix.sym }}-${{ github.run_id }}-${{ github.run_attempt }}"
@@ -424,7 +424,7 @@ def test_index_replay_workflow_accepts_dispatch_and_publishes_under_index_replay
 
     run = steps["Run as-of index fit"]
     assert run["if"] == "github.event_name != 'pull_request'"
-    assert 'python -m research.pipeline.daily "$SYM" --asof "$ASOF" --out out/index' in run["run"]
+    assert 'python -m research.pipeline.index_daily "$SYM" --asof "$ASOF" --out out/index' in run["run"]
     assert '"status": "failed"' in run["run"]
     assert 'permanent = "不是交易日" in msg' in run["run"]
 

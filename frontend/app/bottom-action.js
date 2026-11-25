@@ -161,120 +161,6 @@
     });
   }
 
-  /** 根据 A 股 6 位代码推断所属核心宽基指数 */
-  function boardIndexForStock(code) {
-    const clean = String(code || '').replace(/^(sh|sz|bj)(?=\d{6}$)/i, '');
-    if (!/^\d{6}$/.test(clean)) return { sym: null, board: '市场参考未覆盖', supported: false };
-    if (/^(300|301)/.test(clean)) return { sym: 'sz399006', board: '创业板指' };
-    if (/^688/.test(clean)) return { sym: 'sh000688', board: '科创50' };
-    if (/^(600|601|603|605)/.test(clean)) return { sym: 'sh000001', board: '上证综指' };
-    if (/^(000|001|002|003)/.test(clean)) return { sym: 'sz399001', board: '深证成指' };
-    return { sym: null, board: '市场参考未覆盖', supported: false };
-  }
-
-  /**
-   * 严格 PIT 计算个股日线序列的「多维底部出清强度 + Omori 余震红灯 + 右侧均线状态」
-   * 输入：prices = [{ date, close, volume? }, ...]（按日期升序）
-   * 输出：{ series: [{ date, score, bottomIntensity, omoriRed, clearing, stabilize, rightSide }], latest, board, action }
-   */
-  function evaluateStockSeries(prices, opts) {
-    const bars = Array.isArray(prices) ? prices.filter((b) => b && b.date && Number.isFinite(Number(b.close)) && Number(b.close) > 0) : [];
-    const cfg = opts || {};
-    const board = boardIndexForStock(cfg.code);
-    if (board.supported === false || bars.length < 30) {
-      return { series: [], latest: null, board, action: null };
-    }
-    const closes = bars.map((b) => Number(b.close));
-    const rets = [0];
-    for (let i = 1; i < closes.length; i += 1) {
-      rets.push((closes[i] - closes[i - 1]) / closes[i - 1]);
-    }
-    const series = [];
-    for (let i = 0; i < bars.length; i += 1) {
-      const look252 = Math.max(0, i - 251);
-      let hi252 = closes[i];
-      for (let j = look252; j <= i; j += 1) if (closes[j] > hi252) hi252 = closes[j];
-      const dd252 = (closes[i] - hi252) / hi252; // <= 0
-
-      // 1) 超跌出清分（回撤 -15% 起步，-42% 满分）
-      const clearing = dd252 >= -0.15 ? 0 : Math.min(1, Math.max(0, (-dd252 - 0.15) / 0.27));
-
-      // 2) 防死猫跳 / Omori 余震检验：近 60 日低点、近 10 日是否刷新低点、近 15 日大阴线次数（<= -5.5% 或该股过去 250 日 5% 分位）
-      const look60 = Math.max(0, i - 59);
-      let lo60 = closes[i];
-      for (let j = look60; j <= i; j += 1) if (closes[j] < lo60) lo60 = closes[j];
-      const look10 = Math.max(0, i - 9);
-      let lo10 = closes[i];
-      for (let j = look10; j <= i; j += 1) if (closes[j] < lo10) lo10 = closes[j];
-      const hitNewLow10d = lo10 <= lo60 * 1.005;
-
-      const look15 = Math.max(1, i - 14);
-      let bigDrops15d = 0;
-      for (let j = look15; j <= i; j += 1) {
-        if (rets[j] <= -0.055) bigDrops15d += 1;
-      }
-      const omoriRed = bigDrops15d >= 2 || (hitNewLow10d && bigDrops15d >= 1);
-      const stabilize = omoriRed ? 0.2 : (hitNewLow10d ? 0.45 : (bigDrops15d === 0 ? 1.0 : 0.7));
-
-      // 3) 右侧均线分（MA20 / MA60）
-      let ma20 = null, ma60 = null;
-      if (i >= 19) {
-        let s20 = 0;
-        for (let j = i - 19; j <= i; j += 1) s20 += closes[j];
-        ma20 = s20 / 20;
-      }
-      if (i >= 59) {
-        let s60 = 0;
-        for (let j = i - 59; j <= i; j += 1) s60 += closes[j];
-        ma60 = s60 / 60;
-      }
-      const aboveMa20 = ma20 != null && closes[i] >= ma20;
-      const aboveMa60 = ma60 != null && closes[i] >= ma60;
-      const rightSide = (aboveMa20 && aboveMa60) ? 1.0 : (aboveMa20 ? 0.55 : 0.0);
-
-      // 个股综合底部出清分（0..1，严格乘数结构：无超跌清零，余震期上限封顶在 0.46 防误判底部共振）
-      let rawIntensity = 0;
-      if (clearing > 0) {
-        rawIntensity = clearing * (0.48 + 0.34 * stabilize + 0.18 * rightSide);
-        if (omoriRed) rawIntensity = Math.min(rawIntensity, 0.46);
-      }
-      const bottomIntensity = Math.max(0, Math.min(1, Number(rawIntensity.toFixed(3))));
-      series.push({
-        date: bars[i].date,
-        close: closes[i],
-        dd252,
-        lo60,
-        hitNewLow10d,
-        bigDrops15d,
-        omoriRed,
-        ma20,
-        ma60,
-        aboveMa20,
-        aboveMa60,
-        clearing: Number(clearing.toFixed(2)),
-        stabilize: Number(stabilize.toFixed(2)),
-        rightSide: Number(rightSide.toFixed(2)),
-        bottomIntensity,
-        score: Math.round(bottomIntensity * 100),
-      });
-    }
-    const latest = series[series.length - 1];
-    const hasTop = Boolean(cfg.hasTop);
-    const action = evaluate({
-      sym: board.sym,
-      hasTop,
-      score: latest.score,
-      factors: {
-        dd_52w: latest.dd252,
-        clearing: latest.clearing,
-        stabilize: latest.stabilize,
-        right_side: latest.rightSide,
-      },
-      omoriRed: latest.omoriRed,
-    });
-    return { series, latest, board, action };
-  }
-
   /**
    * 价格层物理微观结构评估（严格 PIT，与 research/price_layer/physics_price.py 同源）：
    * 基于 ≤asof 的日线 OHLCV 计算：
@@ -435,8 +321,6 @@
     fromDecision,
     fromHistory,
     fromOverviewItem,
-    boardIndexForStock,
-    evaluateStockSeries,
     evaluatePricePhysics,
   };
 });

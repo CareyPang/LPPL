@@ -1,7 +1,7 @@
 """模块二：金融物理“说人话”底部与冷却期多维仪表盘（严格 Point-in-Time）。
 
 将单一价格冷却期升级为三层验证（赔率层 / 出清层 / 右侧层）：
-1. Omori 余震衰减（自适应波动分位大阴线 + 波动比 + 死猫跳破底检测）
+1. 冲击与止跌检查（自适应波动分位大阴线 + 波动比 + 死猫跳破底检测）
 2. 估值赔率（ERP 股债性价比 + 破净率 PBN）
 3. 杠杆出清（融资余额 + 维持担保比例，滞后 1 交易日 PIT）
 4. 成交地量 / 换手代理（成交量/额相对 20 日均与 252 日分位）
@@ -46,12 +46,12 @@ def _load_json_pit(path: Path, date: pd.Timestamp) -> dict[str, Any] | None:
 
 
 def _eval_omori(close_pit: pd.Series) -> dict[str, Any]:
-    """维度 1：Omori 余震衰减（自适应分位大阴线 + 波动率比 + 死猫跳破底检测）。"""
+    """维度 1：冲击与止跌检查（自适应分位大阴线 + 波动率比 + 死猫跳破底检测）。"""
     tail = close_pit.tail(252)
     if len(tail) < 25:
         return {
             "id": "omori",
-            "name": "Omori 余震衰减",
+            "name": "冲击与止跌检查",
             "value_text": "样本不足",
             "pct": None,
             "light": "gray",
@@ -116,7 +116,7 @@ def _eval_omori(close_pit: pd.Series) -> dict[str, Any]:
 
     return {
         "id": "omori",
-        "name": "Omori 余震衰减",
+        "name": "冲击与止跌检查",
         "value_text": f"大阴线 {big_drops} 次 · 波动比 {vol_ratio:.2f}×",
         "pct": None,
         "light": light,

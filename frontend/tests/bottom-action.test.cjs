@@ -163,23 +163,6 @@ test('alert-ledger detects locked non-drifting top cluster vs drifting cluster w
   assert.equal(driftEps[0].convergence.high_confidence, false);
 });
 
-test('bottom-action evaluateStockSeries retains descriptive aftershock data', () => {
-  const bars = [];
-  let px = 160;
-  for (let i = 0; i < 80; i += 1) {
-    const dt = new Date(Date.UTC(2026, 7, 1 + i)).toISOString().slice(0, 10);
-    if (i > 40 && i < 65) px *= 0.985;
-    if (i === 72 || i === 75) px *= 0.93; // 近 15 日连续大阴线
-    bars.push({ date: dt, close: Number(px.toFixed(2)) });
-  }
-  const res = BottomAction.evaluateStockSeries(bars, { code: '300843', hasTop: false });
-  assert.equal(res.board.sym, 'sz399006');
-  assert.equal(res.latest.omoriRed, true);
-  assert.ok(res.latest.score <= 46);
-  assert.equal(res.action.canBuy, false);
-  assert.equal(res.action.tier, 'bottom_watch');
-});
-
 test('bottom-action evaluatePricePhysics identifies cleared vacuum below dense cost well', () => {
   const bars = [];
   for (let i = 0; i < 200; i += 1) {
