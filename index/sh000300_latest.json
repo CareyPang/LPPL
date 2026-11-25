@@ -1,8 +1,8 @@
 {
  "symbol": "sh000300",
  "name": "沪深300",
- "asof": "2026-11-24",
- "data_version": "vintage_20261124_tencent_sina",
+ "asof": "2026-11-25",
+ "data_version": "vintage_20261125_ak_em_index",
  "model_version": "prereg_v1.7_v2.2",
  "future_calendar": {
   "market": "cn",
@@ -39,13 +39,13 @@
    ]
   },
   "bubble": {
-   "start": "2025-08-27",
+   "start": "2025-08-28",
    "duration_days": 300,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": -0.994,
-   "size_realized": -0.096,
-   "tc": "2026-12-23",
+   "size_model": -0.997,
+   "size_realized": -0.127,
+   "tc": "2026-12-30",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -64,16 +64,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-11-05",
+    "best_t1": "2026-11-06",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
-     "m_hi": 0.5,
+     "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.0,
-     "any": 0.5,
+     "tc_hi": 0.333,
+     "any": 0.333,
      "tol": 0.01
     },
     "null_fpr": {
@@ -108,7 +108,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-09-30",
+    "best_t1": "2026-10-08",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -152,7 +152,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-06-23",
+    "best_t1": "2026-06-24",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
@@ -160,8 +160,8 @@
      "w_lo": 0.0,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.231,
-     "any": 0.231,
+     "tc_hi": 0.385,
+     "any": 0.385,
      "tol": 0.01
     },
     "null_fpr": {
@@ -196,16 +196,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-11-13",
+    "best_t1": "2025-11-14",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.08,
-     "m_hi": 0.36,
-     "w_lo": 0.32,
+     "m_lo": 0.12,
+     "m_hi": 0.4,
+     "w_lo": 0.24,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.64,
-     "any": 0.88,
+     "any": 0.84,
      "tol": 0.01
     },
     "null_fpr": {
@@ -240,15 +240,15 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-11-04",
+    "best_t1": "2024-11-05",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.12,
-     "m_hi": 0.24,
-     "w_lo": 0.8,
+     "m_lo": 0.14,
+     "m_hi": 0.22,
+     "w_lo": 0.78,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.64,
+     "tc_hi": 0.66,
      "any": 1.0,
      "tol": 0.01
     },
@@ -278,22 +278,22 @@
     "n_windows": 80,
     "confidence": {
      "box": 0.0,
-     "standard": 0.013,
-     "early": 0.188,
+     "standard": 0.025,
+     "early": 0.163,
      "end": 0.0,
-     "pure": 0.0
+     "pure": 0.013
     },
-    "n_qualified_standard": 1,
-    "best_t1": "2024-10-21",
+    "n_qualified_standard": 2,
+    "best_t1": "2024-10-22",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.138,
-     "m_hi": 0.062,
-     "w_lo": 0.438,
+     "m_lo": 0.2,
+     "m_hi": 0.075,
+     "w_lo": 0.412,
      "w_hi": 0.0,
-     "tc_lo": 0.212,
+     "tc_lo": 0.2,
      "tc_hi": 0.212,
-     "any": 0.887,
+     "any": 0.9,
      "tol": 0.01
     },
     "null_fpr": {
@@ -321,8 +321,8 @@
   },
   "combo": {
    "p0.1": 0.0,
-   "p1": 0.002,
-   "p10": 0.011,
+   "p1": 0.004,
+   "p10": 0.021,
    "set": "standard",
    "scales": [
     "2-4w",
@@ -357,13 +357,13 @@
     "bins": []
    },
    "2-6y": {
-    "n": 1,
+    "n": 2,
     "bin_days": 5,
     "bins": [
      [
-      "2026-05-29",
-      "2026-06-05",
-      1
+      "2026-06-01",
+      "2026-06-08",
+      2
      ]
     ]
    }
@@ -420,7 +420,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-24",
+   "table_asof": "2026-11-25",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -902,7 +902,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.096,
+    "size_realized": -0.127,
     "duration_days": 300,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -974,16 +974,16 @@
     },
     "pe_latest": 12.48,
     "pe_date": "2026-09-30",
-    "close_ref": 3963.82,
-    "close_date": "2026-11-24",
+    "close_ref": 3898.24,
+    "close_date": "2026-11-25",
     "band_points": {
-     "q20": 3328.0,
-     "q50": 3429.0,
-     "q80": 4077.0
+     "q20": 3273.0,
+     "q50": 3372.0,
+     "q80": 4009.0
     },
     "floor_band_points": [
-     3328.0,
-     3429.0
+     3273.0,
+     3372.0
     ],
     "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理",
     "evidence": "descriptive"
@@ -1036,39 +1036,39 @@
   }
  },
  "cooling_state": {
-  "phase": "reentry_watch",
+  "phase": "cooling_after_top",
   "top_conf_cleared": true,
-  "omori_aftershock_active": false,
-  "dead_cat_risk": false,
-  "drawdown_from_peak": -0.2166,
-  "elapsed_days_since_peak": 105,
+  "omori_aftershock_active": true,
+  "dead_cat_risk": true,
+  "drawdown_from_peak": -0.2295,
+  "elapsed_days_since_peak": 106,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
-  "reentry_ready": true,
-  "note": "三层已过 2 层 → 进入观察区，等待剩余条件补齐",
+  "reentry_ready": false,
+  "note": "余震未消（近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
   "dashboard": {
-   "verdict": "watch_yellow",
-   "verdict_light": "yellow",
-   "headline": "三层已过 2 层 → 进入观察区，等待剩余条件补齐",
+   "verdict": "aftershock_block",
+   "verdict_light": "red",
+   "headline": "大跌余震未消 / 防死猫跳 → 严禁左侧抄底",
    "layers": {
     "odds": true,
-    "clearing": true,
+    "clearing": false,
     "right_side": false,
-    "passed_count": 2
+    "passed_count": 1
    },
    "dimensions": [
     {
      "id": "omori",
-     "name": "Omori 余震衰减",
-     "value_text": "大阴线 0 次 · 波动比 0.58×",
+     "name": "冲击与止跌检查",
+     "value_text": "大阴线 0 次 · 波动比 0.70×",
      "pct": null,
-     "light": "green",
-     "active": false,
-     "drawdown_from_peak": -0.2166,
-     "elapsed_days_since_peak": 105,
-     "dead_cat_risk": false,
+     "light": "red",
+     "active": true,
+     "drawdown_from_peak": -0.2295,
+     "elapsed_days_since_peak": 106,
+     "dead_cat_risk": true,
      "drop_threshold": -0.02,
-     "plain_text": "距高点已过 105 交易日，大阴线与波动比（0.58×）均已衰减，未再破底。",
+     "plain_text": "余震未消（近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -1103,13 +1103,13 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 0.98× · 年内分位 37%",
-     "pct": 0.373,
-     "ratio20": 0.98,
-     "light": "gray",
+     "value_text": "5/20日量比 0.95× · 年内分位 13%",
+     "pct": 0.127,
+     "ratio20": 0.95,
+     "light": "yellow",
      "passed_bottom": false,
      "passed_top": false,
-     "plain_text": "成交量能处于常态区间（以成交额/量比作换手率代理），无极端地量或天量。",
+     "plain_text": "成交跌至年内 20% 分位以下（地量冰点：该卖的快卖完了），但还没看到放量资金接盘，先别急。",
      "bottom_rule": "先缩至年内 20% 分位以下地量，再温和放量站上 20 日线",
      "top_rule": "成交冲上年内 95% 分位天量且量比 ≥1.35×",
      "is_proxy": true
@@ -1130,7 +1130,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -1.5%",
+     "value_text": "距 20 日线 -2.9%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -1146,7 +1146,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-10-13",
    "2023-10-16",
    "2023-10-17",
    "2023-10-18",
@@ -1901,10 +1900,10 @@
    "2026-11-19",
    "2026-11-20",
    "2026-11-23",
-   "2026-11-24"
+   "2026-11-24",
+   "2026-11-25"
   ],
   "open": [
-   3677.96,
    3664.04,
    3635.3,
    3631.07,
@@ -2659,10 +2658,10 @@
    3972.43,
    3925.74,
    3931.47,
-   4004.04
+   4004.04,
+   3929.84
   ],
   "high": [
-   3678.19,
    3664.04,
    3645.57,
    3632.06,
@@ -3417,10 +3416,10 @@
    3995.55,
    3961.07,
    3968.45,
-   4011.69
+   4011.69,
+   3937.33
   ],
   "low": [
-   3652.31,
    3615.77,
    3619.13,
    3608.98,
@@ -3864,7 +3863,7 @@
    4098.35,
    4094.82,
    4097.42,
-   4103.6,
+   4103.61,
    4121.22,
    4147.2,
    4165.94,
@@ -4175,10 +4174,10 @@
    3937.75,
    3894.47,
    3901.49,
-   3957.92
+   3957.92,
+   3886.92
   ],
   "close": [
-   3663.41,
    3626.6,
    3639.4,
    3610.58,
@@ -4933,10 +4932,10 @@
    3984.84,
    3954.57,
    3958.29,
-   3963.82
+   3963.82,
+   3898.24
   ],
   "volume": [
-   98287987,
    91853118,
    90745188,
    94545879,
@@ -5691,7 +5690,8 @@
    163357787,
    210744943,
    203943256,
-   197381230
+   197381230,
+   181773487
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5720,7 +5720,7 @@
   },
   "cheap": {
    "evidence": "descriptive",
-   "dd_now": -0.2166,
+   "dd_now": -0.2295,
    "peak_date": "2026-06-22",
    "peak_close": 5059.66,
    "dd_rank": {
@@ -5746,13 +5746,13 @@
    "evidence": "rule",
    "rule": "Lunde–Timmermann 2004：自牛市高点跌 20% 确认熊市；自熊市低点涨 15% 确认熊市结束（滞后确认）",
    "state": "bear",
-   "ref_date": "2026-11-20",
-   "ref_close": 3954.57,
+   "ref_date": "2026-11-25",
+   "ref_close": 3898.24,
    "threshold": 0.15,
    "confirmed": false,
    "peak_date": "2026-06-22",
    "peak_close": 5059.66,
-   "rebound_from_low": 0.0023
+   "rebound_from_low": 0.0
   },
   "rebound": {
    "evidence": "descriptive",
@@ -5850,5 +5850,765 @@
  },
  "params": {
   "optimizer": "de_trf"
+ },
+ "research": {
+  "aftershock": {
+   "schema_version": "aftershock_v1",
+   "symbol": "sh000300",
+   "asof": "2026-11-25",
+   "data_asof": "2026-11-25",
+   "data_version": "vintage_20261125_ak_em_index",
+   "first_visible_at": null,
+   "evidence_state": "historical_reconstruction",
+   "method_version": "daily_aftershock_v1",
+   "frequency": "daily",
+   "source": {
+    "label": "vintage_20261125_ak_em_index",
+    "mode": "daily_recalculation",
+    "input_hash": "57a6253e05e23b237f9bada1cb35a3c8eec5c84a0f216159fe41ab5577d0de7b",
+    "first_date": "2005-01-04",
+    "rows": 5317
+   },
+   "method": {
+    "return": "close-to-close log return",
+    "sigma": "previous 63 returns, shift(1), sample std ddof=1",
+    "mainshock_z": -3.0,
+    "aftershock_absolute_z": 2.0,
+    "horizon_sessions": 20,
+    "historical_cooldown_sessions": 20,
+    "current_anchor": "latest negative threshold breach; not suppressed by historical cooldown",
+    "mature_training_only": true,
+    "omori_min_observed_days": 10,
+    "omori_min_events": 4,
+    "omori_c": 1.0,
+    "omori_p_bounds": [
+     0.0,
+     3.0
+    ],
+    "productivity_min_mature_events": 12,
+    "productivity_ci": "approximate 95% year-cluster sandwich interval; at least two years",
+    "paper": "https://arxiv.org/abs/1006.1882",
+    "paper_scope_difference": "Original study uses 1-minute observations across a stock basket; this daily-index adaptation is a separate descriptive experiment."
+   },
+   "limits": [
+    "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
+    "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
+    "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+   ],
+   "archive_reuse": {
+    "status": "not_requested",
+    "reason": "未提供独立研究归档。"
+   },
+   "modules": {
+    "omori": {
+     "status": "insufficient_data",
+     "frequency": "daily",
+     "mainshock_date": "2026-03-23",
+     "anchor_date": "2026-03-23",
+     "anchor_type": "latest_causal_negative_3sigma_breach",
+     "samples": {
+      "observed_after_days": 20,
+      "aftershock_events": 2,
+      "horizon_days": 20,
+      "mature": true,
+      "min_fit_days": 10,
+      "min_fit_events": 4,
+      "elapsed_since_mainshock": 166
+     },
+     "parameters": null,
+     "summary": "冲击后的样本还不够",
+     "reason": "至少观察10个交易日且出现4个超阈值波动日后才拟合衰减；零后续样本不等于风险消失。",
+     "limits": [
+      "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
+      "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
+      "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+     ],
+     "observations": {
+      "dates": [
+       "2026-03-24",
+       "2026-03-25",
+       "2026-03-26",
+       "2026-03-27",
+       "2026-03-30",
+       "2026-03-31",
+       "2026-04-01",
+       "2026-04-02",
+       "2026-04-03",
+       "2026-04-07",
+       "2026-04-08",
+       "2026-04-09",
+       "2026-04-10",
+       "2026-04-13",
+       "2026-04-14",
+       "2026-04-15",
+       "2026-04-16",
+       "2026-04-17",
+       "2026-04-20",
+       "2026-04-21"
+      ],
+      "counts": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "bath": {
+     "status": "available",
+     "frequency": "daily",
+     "mainshock_date": "2026-03-23",
+     "anchor_date": "2026-03-23",
+     "anchor_type": "latest_causal_negative_3sigma_breach",
+     "samples": {
+      "observed_after_days": 20,
+      "horizon_days": 20,
+      "mature": true,
+      "elapsed_since_mainshock": 166
+     },
+     "parameters": {
+      "gap_log10": -0.014455908618497597,
+      "mainshock_abs_log_return": 0.03317380843773954,
+      "largest_aftershock_abs_log_return": 0.03429661364640779,
+      "later_larger": true,
+      "formula": "log10(initial absolute log return / largest subsequent absolute log return)"
+     },
+     "summary": "后续已出现更大的波动",
+     "reason": "这是因果选择初始冲击后的金融类比，不是固定Båth常数或底价。",
+     "limits": [
+      "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
+      "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
+      "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+     ]
+    },
+    "productivity": {
+     "status": "available",
+     "frequency": "daily",
+     "mainshock_date": "2026-03-23",
+     "anchor_date": "2026-03-23",
+     "anchor_type": "mature_deduplicated_causal_episodes",
+     "samples": {
+      "mature_events": 36,
+      "pending_events": 0,
+      "min_mature_events": 12,
+      "training_start": "2006-05-23",
+      "training_last_event": "2026-03-23",
+      "horizon_days": 20,
+      "training_years": 19
+     },
+     "parameters": {
+      "alpha": 0.039242939520791616,
+      "intercept": 1.0462922190405304,
+      "alpha_ci95": [
+       -1.539992136810319,
+       1.6184780158519023
+      ],
+      "alpha_cluster_year_se": 0.8057321818015871,
+      "alpha_interval_includes_zero": true,
+      "expected_20d_events": 3.0065753018424295,
+      "count_unit": "large_move_trading_days_either_direction",
+      "raw_poisson_mean": 3.0065753018424295,
+      "training_magnitude_range": [
+       3.0024721905284655,
+       7.968005894289016
+      ],
+      "current_magnitude_extrapolated": false,
+      "current_prediction_status": "descriptive",
+      "optimizer_success": true,
+      "optimizer_message": "Optimization terminated successfully.",
+      "mean_observed_count": 3.0,
+      "calibrated_probability": false
+     },
+     "summary": "产出率关系仍不确定",
+     "reason": "仅使用截至日已成熟的事件；正负大波动都计入。α区间包含0或尚无法估计区间，不能称为稳定预测关系。",
+     "limits": [
+      "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
+      "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
+      "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+     ]
+    }
+   },
+   "episode_ledger": [
+    {
+     "date": "2006-05-23",
+     "year": 2006,
+     "magnitude_sigma": 3.305351408550549,
+     "sigma_at_shock": 0.012596586017529512,
+     "mainshock_abs_log_return": 0.04163614333596932,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4987,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.05805179831208207,
+     "bath_gap_log10": -0.14434518277131503,
+     "later_larger": true
+    },
+    {
+     "date": "2006-07-13",
+     "year": 2006,
+     "magnitude_sigma": 3.1324383182959576,
+     "sigma_at_shock": 0.01688436720127229,
+     "mainshock_abs_log_return": 0.052889238801444804,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4950,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.03571320300809422,
+     "bath_gap_log10": 0.17053851407609882,
+     "later_larger": false
+    },
+    {
+     "date": "2006-12-08",
+     "year": 2006,
+     "magnitude_sigma": 3.2990802770822376,
+     "sigma_at_shock": 0.011149599082234953,
+     "mainshock_abs_log_return": 0.03678342242957555,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4849,
+     "mature": true,
+     "aftershock_count": 8,
+     "largest_aftershock_abs_log_return": 0.044754005597352986,
+     "bath_gap_log10": -0.08517977713176632,
+     "later_larger": true
+    },
+    {
+     "date": "2007-01-31",
+     "year": 2007,
+     "magnitude_sigma": 3.7800641702671807,
+     "sigma_at_shock": 0.01785495162109317,
+     "mainshock_abs_log_return": 0.0674928628847482,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4814,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.09695167582272557,
+     "bath_gap_log10": -0.15729747005957606,
+     "later_larger": true
+    },
+    {
+     "date": "2007-05-30",
+     "year": 2007,
+     "magnitude_sigma": 3.319826313901057,
+     "sigma_at_shock": 0.02108759782823436,
+     "mainshock_abs_log_return": 0.0700071621671352,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4739,
+     "mature": true,
+     "aftershock_count": 2,
+     "largest_aftershock_abs_log_return": 0.08001663862055608,
+     "bath_gap_log10": -0.05803783005601079,
+     "later_larger": true
+    },
+    {
+     "date": "2008-01-22",
+     "year": 2008,
+     "magnitude_sigma": 3.8174472295416586,
+     "sigma_at_shock": 0.020749002307899417,
+     "mainshock_abs_log_return": 0.07920822137604411,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4577,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.07947419622412788,
+     "bath_gap_log10": -0.0014558829991377067,
+     "later_larger": true
+    },
+    {
+     "date": "2009-07-29",
+     "year": 2009,
+     "magnitude_sigma": 4.185124055198392,
+     "sigma_at_shock": 0.012894413221007841,
+     "mainshock_abs_log_return": 0.053964718948908086,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4207,
+     "mature": true,
+     "aftershock_count": 8,
+     "largest_aftershock_abs_log_return": 0.06299646208596776,
+     "bath_gap_log10": -0.0672062403607042,
+     "later_larger": true
+    },
+    {
+     "date": "2009-08-31",
+     "year": 2009,
+     "magnitude_sigma": 3.506790599895048,
+     "sigma_at_shock": 0.021020126427947965,
+     "mainshock_abs_log_return": 0.0737131817661334,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4184,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.054205757510422004,
+     "bath_gap_log10": 0.13349973960793834,
+     "later_larger": false
+    },
+    {
+     "date": "2010-04-19",
+     "year": 2010,
+     "magnitude_sigma": 4.309515669781363,
+     "sigma_at_shock": 0.012784113780719385,
+     "mainshock_abs_log_return": 0.05509333866227806,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 4032,
+     "mature": true,
+     "aftershock_count": 2,
+     "largest_aftershock_abs_log_return": 0.05493307890126431,
+     "bath_gap_log10": 0.0012651503273635792,
+     "later_larger": false
+    },
+    {
+     "date": "2010-11-12",
+     "year": 2010,
+     "magnitude_sigma": 4.541442651324267,
+     "sigma_at_shock": 0.014129144248014758,
+     "mainshock_abs_log_return": 0.06416669831464716,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 3895,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.044837973633942596,
+     "bath_gap_log10": 0.15566371606361823,
+     "later_larger": false
+    },
+    {
+     "date": "2011-05-23",
+     "year": 2011,
+     "magnitude_sigma": 3.042112080958898,
+     "sigma_at_shock": 0.010552731195091754,
+     "mainshock_abs_log_return": 0.03210259105570046,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 3768,
+     "mature": true,
+     "aftershock_count": 0,
+     "largest_aftershock_abs_log_return": 0.019045829997632602,
+     "bath_gap_log10": 0.22674018296394322,
+     "later_larger": false
+    },
+    {
+     "date": "2011-07-25",
+     "year": 2011,
+     "magnitude_sigma": 3.002472190528466,
+     "sigma_at_shock": 0.011003130928137489,
+     "mainshock_abs_log_return": 0.03303659462047648,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 3724,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.03638221662839314,
+     "bath_gap_log10": -0.04189388111490739,
+     "later_larger": true
+    },
+    {
+     "date": "2013-03-04",
+     "year": 2013,
+     "magnitude_sigma": 3.2611409449815474,
+     "sigma_at_shock": 0.0144827850812467,
+     "mainshock_abs_log_return": 0.04723040342582152,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 3336,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.03314598816489944,
+     "bath_gap_log10": 0.15379068423380776,
+     "later_larger": false
+    },
+    {
+     "date": "2013-06-24",
+     "year": 2013,
+     "magnitude_sigma": 4.99145177344153,
+     "sigma_at_shock": 0.013053704515700235,
+     "mainshock_abs_log_return": 0.06515693655487365,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 3264,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.04511230226748886,
+     "bath_gap_log10": 0.15966566564173665,
+     "later_larger": false
+    },
+    {
+     "date": "2014-03-10",
+     "year": 2014,
+     "magnitude_sigma": 3.0426835989064864,
+     "sigma_at_shock": 0.010874187453933084,
+     "mainshock_abs_log_return": 0.03308671181751688,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 3092,
+     "mature": true,
+     "aftershock_count": 2,
+     "largest_aftershock_abs_log_return": 0.03383925847113112,
+     "bath_gap_log10": -0.009767228868437072,
+     "later_larger": true
+    },
+    {
+     "date": "2014-12-09",
+     "year": 2014,
+     "magnitude_sigma": 3.6727051393476167,
+     "sigma_at_shock": 0.012500893183906856,
+     "mainshock_abs_log_return": 0.0459120946429703,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2906,
+     "mature": true,
+     "aftershock_count": 6,
+     "largest_aftershock_abs_log_return": 0.03623394705396343,
+     "bath_gap_log10": 0.10281146160294971,
+     "later_larger": false
+    },
+    {
+     "date": "2015-01-19",
+     "year": 2015,
+     "magnitude_sigma": 4.719980534975246,
+     "sigma_at_shock": 0.016981196365812072,
+     "mainshock_abs_log_return": 0.08015091630722537,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2879,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.04397183009022143,
+     "bath_gap_log10": 0.26073395053113285,
+     "later_larger": false
+    },
+    {
+     "date": "2015-05-28",
+     "year": 2015,
+     "magnitude_sigma": 4.438065940485335,
+     "sigma_at_shock": 0.01563850783670184,
+     "mainshock_abs_log_return": 0.06940472899007943,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2793,
+     "mature": true,
+     "aftershock_count": 6,
+     "largest_aftershock_abs_log_return": 0.08195269907286473,
+     "bath_gap_log10": -0.07217419868645066,
+     "later_larger": true
+    },
+    {
+     "date": "2016-01-04",
+     "year": 2016,
+     "magnitude_sigma": 4.354563817094531,
+     "sigma_at_shock": 0.01671573796746107,
+     "mainshock_abs_log_return": 0.07278974772913926,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2645,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.07185506702413669,
+     "bath_gap_log10": 0.0056128154105093584,
+     "later_larger": false
+    },
+    {
+     "date": "2016-12-12",
+     "year": 2016,
+     "magnitude_sigma": 3.6086408314004847,
+     "sigma_at_shock": 0.006786364873385631,
+     "mainshock_abs_log_return": 0.024489553378881368,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2416,
+     "mature": true,
+     "aftershock_count": 0,
+     "largest_aftershock_abs_log_return": 0.011465469128397743,
+     "bath_gap_log10": 0.3295890355797916,
+     "later_larger": false
+    },
+    {
+     "date": "2017-11-23",
+     "year": 2017,
+     "magnitude_sigma": 5.991380927102479,
+     "sigma_at_shock": 0.005016404726154405,
+     "mainshock_abs_log_return": 0.030055191598908237,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2184,
+     "mature": true,
+     "aftershock_count": 7,
+     "largest_aftershock_abs_log_return": 0.016381137476578544,
+     "bath_gap_log10": 0.2635754458030022,
+     "later_larger": false
+    },
+    {
+     "date": "2018-02-06",
+     "year": 2018,
+     "magnitude_sigma": 3.4165953844996433,
+     "sigma_at_shock": 0.008705866594060923,
+     "mainshock_abs_log_return": 0.02974442362333818,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2132,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.043660709525916275,
+     "bath_gap_log10": -0.16668523136614255,
+     "later_larger": true
+    },
+    {
+     "date": "2018-06-19",
+     "year": 2018,
+     "magnitude_sigma": 3.4490238020426096,
+     "sigma_at_shock": 0.010404891472224925,
+     "mainshock_abs_log_return": 0.035886718345373936,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 2047,
+     "mature": true,
+     "aftershock_count": 4,
+     "largest_aftershock_abs_log_return": 0.029781328978286226,
+     "bath_gap_log10": 0.08098967212400127,
+     "later_larger": false
+    },
+    {
+     "date": "2018-10-08",
+     "year": 2018,
+     "magnitude_sigma": 3.313314106527066,
+     "sigma_at_shock": 0.013273398205035902,
+     "mainshock_abs_log_return": 0.04397893751429649,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1974,
+     "mature": true,
+     "aftershock_count": 6,
+     "largest_aftershock_abs_log_return": 0.0491816657108366,
+     "bath_gap_log10": -0.048558500523083845,
+     "later_larger": true
+    },
+    {
+     "date": "2019-05-06",
+     "year": 2019,
+     "magnitude_sigma": 3.7811737606228206,
+     "sigma_at_shock": 0.015918498671995022,
+     "mainshock_abs_log_return": 0.06019060948705679,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1835,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.035678361154209526,
+     "bath_gap_log10": 0.22712384366212554,
+     "later_larger": false
+    },
+    {
+     "date": "2020-01-23",
+     "year": 2020,
+     "magnitude_sigma": 4.056629158265554,
+     "sigma_at_shock": 0.00775908342150262,
+     "mainshock_abs_log_return": 0.03147572404908239,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1655,
+     "mature": true,
+     "aftershock_count": 6,
+     "largest_aftershock_abs_log_return": 0.08208697130283227,
+     "bath_gap_log10": -0.41629850299606946,
+     "later_larger": true
+    },
+    {
+     "date": "2020-07-16",
+     "year": 2020,
+     "magnitude_sigma": 4.111309307143722,
+     "sigma_at_shock": 0.011990760640495259,
+     "mainshock_abs_log_return": 0.04929772582100078,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1542,
+     "mature": true,
+     "aftershock_count": 2,
+     "largest_aftershock_abs_log_return": 0.04488697251874285,
+     "bath_gap_log10": 0.04070657044505887,
+     "later_larger": false
+    },
+    {
+     "date": "2021-07-26",
+     "year": 2021,
+     "magnitude_sigma": 3.3444710862162577,
+     "sigma_at_shock": 0.00978969612433611,
+     "mainshock_abs_log_return": 0.032741355630685476,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1292,
+     "mature": true,
+     "aftershock_count": 3,
+     "largest_aftershock_abs_log_return": 0.035964816977164915,
+     "bath_gap_log10": -0.04078119746570401,
+     "later_larger": true
+    },
+    {
+     "date": "2022-03-07",
+     "year": 2022,
+     "magnitude_sigma": 3.3439073848970273,
+     "sigma_at_shock": 0.00970990623088293,
+     "mainshock_abs_log_return": 0.03246902715210709,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1145,
+     "mature": true,
+     "aftershock_count": 6,
+     "largest_aftershock_abs_log_return": 0.04681822379849088,
+     "bath_gap_log10": -0.15894565695637294,
+     "later_larger": true
+    },
+    {
+     "date": "2022-04-25",
+     "year": 2022,
+     "magnitude_sigma": 3.3637719868795797,
+     "sigma_at_shock": 0.015067701884891843,
+     "mainshock_abs_log_return": 0.050684313507051826,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 1112,
+     "mature": true,
+     "aftershock_count": 0,
+     "largest_aftershock_abs_log_return": 0.029018945833929166,
+     "bath_gap_log10": 0.24219193672504852,
+     "later_larger": false
+    },
+    {
+     "date": "2022-10-24",
+     "year": 2022,
+     "magnitude_sigma": 3.0769671803159957,
+     "sigma_at_shock": 0.00965153227176242,
+     "mainshock_abs_log_return": 0.02969744803997365,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 992,
+     "mature": true,
+     "aftershock_count": 4,
+     "largest_aftershock_abs_log_return": 0.03513515078371654,
+     "bath_gap_log10": -0.07302269052409212,
+     "later_larger": true
+    },
+    {
+     "date": "2024-07-23",
+     "year": 2024,
+     "magnitude_sigma": 3.315815293360519,
+     "sigma_at_shock": 0.006508257076081349,
+     "mainshock_abs_log_return": 0.02158017834599235,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 567,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.02134718864280316,
+     "bath_gap_log10": 0.004714341602346864,
+     "later_larger": false
+    },
+    {
+     "date": "2024-10-09",
+     "year": 2024,
+     "magnitude_sigma": 4.2861305508943905,
+     "sigma_at_shock": 0.017060817210221527,
+     "mainshock_abs_log_return": 0.07312488986795529,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 518,
+     "mature": true,
+     "aftershock_count": 1,
+     "largest_aftershock_abs_log_return": 0.0355286964647874,
+     "bath_gap_log10": 0.3134859513359899,
+     "later_larger": false
+    },
+    {
+     "date": "2025-04-07",
+     "year": 2025,
+     "magnitude_sigma": 7.968005894289017,
+     "sigma_at_shock": 0.00916910812086946,
+     "mainshock_abs_log_return": 0.07305950755246116,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 398,
+     "mature": true,
+     "aftershock_count": 0,
+     "largest_aftershock_abs_log_return": 0.016939163623156617,
+     "bath_gap_log10": 0.6347847774942518,
+     "later_larger": false
+    },
+    {
+     "date": "2025-07-31",
+     "year": 2025,
+     "magnitude_sigma": 3.4082083060495614,
+     "sigma_at_shock": 0.005396255643110442,
+     "mainshock_abs_log_return": 0.018391563304415826,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 319,
+     "mature": true,
+     "aftershock_count": 5,
+     "largest_aftershock_abs_log_return": 0.020755250838549344,
+     "bath_gap_log10": -0.0525093400858334,
+     "later_larger": true
+    },
+    {
+     "date": "2026-03-23",
+     "year": 2026,
+     "magnitude_sigma": 4.0109389559733994,
+     "sigma_at_shock": 0.00827083353844978,
+     "mainshock_abs_log_return": 0.03317380843773954,
+     "observed_after_days": 20,
+     "elapsed_since_mainshock": 166,
+     "mature": true,
+     "aftershock_count": 2,
+     "largest_aftershock_abs_log_return": 0.03429661364640779,
+     "bath_gap_log10": -0.014455908618497597,
+     "later_larger": true
+    }
+   ],
+   "current_episode": {
+    "date": "2026-03-23",
+    "index": 5150,
+    "year": 2026,
+    "magnitude_sigma": 4.0109389559733994,
+    "sigma_at_shock": 0.00827083353844978,
+    "mainshock_abs_log_return": 0.03317380843773954,
+    "observed_after_days": 20,
+    "elapsed_since_mainshock": 166,
+    "mature": true,
+    "aftershock_count": 2,
+    "counts": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dates": [
+     "2026-03-24",
+     "2026-03-25",
+     "2026-03-26",
+     "2026-03-27",
+     "2026-03-30",
+     "2026-03-31",
+     "2026-04-01",
+     "2026-04-02",
+     "2026-04-03",
+     "2026-04-07",
+     "2026-04-08",
+     "2026-04-09",
+     "2026-04-10",
+     "2026-04-13",
+     "2026-04-14",
+     "2026-04-15",
+     "2026-04-16",
+     "2026-04-17",
+     "2026-04-20",
+     "2026-04-21"
+    ],
+    "largest_aftershock_abs_log_return": 0.03429661364640779,
+    "bath_gap_log10": -0.014455908618497597,
+    "later_larger": true
+   }
+  }
  }
 }
