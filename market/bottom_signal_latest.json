@@ -156,14 +156,14 @@
     "pbn_ratio": "ak.stock_a_below_net_asset_statistics(symbol=\"全部A股\")"
   },
   "a500": {
-    "asof": "2026-11-24",
+    "asof": "2026-11-25",
     "rule": "以中证A500成分股合成滚动市盈率（1/PE_TTM − 10年国债收益率）可用日期为准，破净股占比按日期去重并向前填充；股债利差和破净股占比分别使用含当日的过去 750 个交易日滚动秩分位（至少 500 日）；两项分位均不低于 90% 时记为信号日，前 20 个交易日无信号才计为独立事件，仅统计 2007-01-01 起的事件；事件后最低取之后 1–250 个交易日中证A500收盘价的最低值，并计算第 120/250 个交易日收益；下跌日基准为中证A500较 20 个交易日前下跌且之后 250 日可用的交易日。",
     "current": {
-      "date": "2026-11-24",
-      "erp": 0.0488,
-      "erp_pct": 0.4987,
+      "date": "2026-11-25",
+      "erp": 0.0497,
+      "erp_pct": 0.56,
       "pbn_ratio": 0.1233,
-      "pbn_pct": 0.896,
+      "pbn_pct": 0.8953,
       "signal": false,
       "last_event_date": "2024-06-25"
     },
@@ -343,7 +343,7 @@
   "version": {
     "kind": "bottom_signal",
     "asof": "2026-11-24",
-    "file": "versions/bottom_signal/2026-11-24/20261124T192601Z_e6c294a1.json.gz",
-    "sha256": "e6c294a149b7d99c98dc529ea9b874bbd39145c8ecec7ff9c9363bebe23025f4"
+    "file": "versions/bottom_signal/2026-11-24/20261125T095043Z_03695dba.json.gz",
+    "sha256": "03695dbac9b869d7001ada4af0146be7c98fd272b0b319c2c9fea96a19fea1a5"
   }
 }
