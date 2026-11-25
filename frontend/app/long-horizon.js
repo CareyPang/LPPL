@@ -146,7 +146,102 @@
         return '<p><strong>未来 ' + number(p.ahead,0) + ' 个交易日</strong><span>SSE ' + number(p.sse,4) + '</span><span>比最低误差高 ' + number(p.delta_sse_pct,3) + '%</span><span>收敛 seed ' + count(p.converged_seeds) + '/' + count(p.completed_seeds) + '</span></p>';
       }).join('') + '</div></details>';
   }
-  function html(payload, rule, badge) {
+  function verdict(payload, evidence, rule) {
+    rule = RULES.indexOf(rule) >= 0 ? rule : 'cycles_1_5';
+    if (!payload || !evidence || evidence.schema_version !== 'long_window_pit_v1') return null;
+    var sourceRows = evidence.generated_from && evidence.generated_from.source_root_rows;
+    var sourceRow = sourceRows && sourceRows[payload.symbol];
+    var lastDate = sourceRow && sourceRow.last_date;
+    function validDate(value) {
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      var parsed = new Date(value + 'T00:00:00Z');
+      return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10) === value;
+    }
+    if (!validDate(lastDate) || !validDate(payload.asof) || payload.asof < lastDate) return null;
+    var payloadRule = payload.rules && payload.rules[rule];
+    var evidenceRule = evidence.rules && evidence.rules[rule];
+    var verdictRule = evidence.verdicts && evidence.verdicts[rule];
+    var symbol = payload.symbol;
+    var symbolStats = evidenceRule && evidenceRule[symbol];
+    var symbolVerdicts = verdictRule && verdictRule[symbol];
+    function isObject(value) {
+      return !!value && typeof value === 'object' && !Array.isArray(value);
+    }
+    if (!payloadRule || !Array.isArray(payloadRule.families) || !isObject(symbolStats) || !isObject(symbolVerdicts)) return null;
+    var families = payloadRule.families;
+    function familyEntry(key) {
+      return families.find(function (item) { return item && item.family === key; });
+    }
+    function qualifies(key) {
+      var item = familyEntry(key);
+      return !!(item && Array.isArray(item.qualified_windows) && item.qualified_windows.length);
+    }
+    function validSignalCount(stat) {
+      return !!(stat && Number.isInteger(stat.signal_asofs) && stat.signal_asofs >= 0);
+    }
+    if (!validSignalCount(symbolStats.long_900) || !validSignalCount(symbolStats.ultra_6600) ||
+        ['pass','fail','insufficient'].indexOf(symbolVerdicts.long_900) < 0 ||
+        ['pass','fail','insufficient'].indexOf(symbolVerdicts.ultra_6600) < 0) return null;
+    var longQualified = qualifies('long_900');
+    var ultraQualified = qualifies('ultra_6600');
+    if (!longQualified && !ultraQualified) {
+      return { title:'', range:'', text:'本截止日没有合格的长窗顶部聚类。', additionalText:'', badges:[] };
+    }
+    var longStat = symbolStats.long_900, longVerdict = symbolVerdicts.long_900;
+    var ultraStat = symbolStats.ultra_6600;
+    if (longQualified && (!validSignalCount(longStat) || ['pass','fail','insufficient'].indexOf(longVerdict) < 0)) return null;
+    if (ultraQualified && !validSignalCount(ultraStat)) return null;
+    var result = { title:'', range:'', text:'', additionalText:'', badges:[] };
+    var unverified = { level:'none', options:{ label:'未经验证' } };
+    if (longQualified && longVerdict === 'pass') {
+      var longFamily = familyEntry('long_900');
+      var range = dateRange(longFamily.member_date_range);
+      var metrics = longStat.metrics || {};
+      var drawdown = metrics['DD120_le_-20'] || {};
+      var topHit = metrics.top_hit || {};
+      var percentages = [drawdown.obs, drawdown.rand_p95, topHit.obs, topHit.rand_p95];
+      if (!range || !Array.isArray(longStat.episodes) ||
+          percentages.some(function (value) { return typeof value !== 'number' || !Number.isFinite(value); })) return null;
+      var scoredEpisodes = longStat.episodes.filter(function (item) { return item && typeof item.top_hit === 'boolean'; }).length;
+      result.title = '大跌风险窗口';
+      result.range = range;
+      result.text = '历史同类信号后 120 个交易日内跌幅 ≥20% 的比例 ' + number(drawdown.obs, 1) +
+        '%（随机 95% 分位 ' + number(drawdown.rand_p95, 1) + '%，' + count(longStat.signal_asofs) +
+        ' 个截止日 / ' + count(scoredEpisodes) + ' 轮）；顶部落在窗口 ±20 个交易日内的比例 ' +
+        number(topHit.obs, 1) + '%，不高于随机（95% 分位 ' + number(topHit.rand_p95, 1) + '%）。';
+      result.badges.push({
+        level:'descriptive',
+        options:{
+          label:'历史回测',
+          detail:'1971 年起逐 10 个交易日严格截止日重拟合；只统计之后已满 230 个交易日的信号。'
+        }
+      });
+    } else if (longQualified) {
+      result.title = '约 900 日窗口候选';
+      result.text = '历史同类信号未显著优于随机日期（' + count(longStat.signal_asofs) + ' 个截止日）。';
+      result.badges.push(unverified);
+    }
+    if (ultraQualified) {
+      result.additionalText = '约 6600 日窗口：研究展示。需 26 年以上数据，历史可检验信号 ' +
+        count(ultraStat.signal_asofs) + ' 个截止日，无法验证。';
+      if (!result.badges.some(function (item) { return item.level === 'none'; })) result.badges.push(unverified);
+    }
+    return result;
+  }
+  function verdictHtml(payload, evidence, rule, badge) {
+    var result = verdict(payload, evidence, rule);
+    if (!result) return '';
+    var badges = badge && typeof badge.html === 'function'
+      ? result.badges.map(function (item) { return badge.html(item.level, item.options); }).join('')
+      : '';
+    return '<section class="lh-verdict" aria-label="长窗口证据">' +
+      (result.title ? '<h3>' + esc(result.title) + '</h3>' : '') +
+      (result.range ? '<p class="lh-verdict-range">风险窗口 ' + esc(result.range) + '</p>' : '') +
+      (result.text ? '<p>' + esc(result.text) + '</p>' : '') +
+      (result.additionalText ? '<p class="lh-verdict-additional">' + esc(result.additionalText) + '</p>' : '') +
+      (badges ? '<div class="lh-verdict-badges">' + badges + '</div>' : '') + '</section>';
+  }
+  function html(payload, rule, badge, evidence) {
     rule = RULES.indexOf(rule) >= 0 ? rule : 'cycles_1_5';
     var ruleData = payload.rules && payload.rules[rule] || {};
     var source = typeof payload.source === 'object' && payload.source ? payload.source.label : payload.source;
@@ -156,7 +251,8 @@
     var qualityText = quality && quality.status === 'unresolved_cross_source_discrepancy' ? '来源核验待完成：' + (date(quality.affected_date) || '某历史交易日') + ' 在不同来源的收盘值存在差异。本研究保留当前来源原值，当前没有交易所裁定。' : '';
     var calendarText = calendar.status === 'us_cash_exchange_reference' ? '2026年采用纳斯达克已核对假日；2027年参考NYSE，纳斯达克全年核验未完成。交易日提前量为原始值。' : calendar.status === 'weekday_estimate' ? '按周一至周五外推，不扣除交易所休市日。' : calendar.status === 'observed_historical_sessions_else_weekday_estimate' ? '历史评分使用该标的实际交易日；未来日期按平日估算，交易所休市日未核对，韩股不套用美股日历。' : calendar.note || calendar.status;
     return '<div class="lh-heading"><p>截至 ' + esc(payload.asof) + ' · ' + esc(state(payload.status)) + '</p>' +
-      (badge ? badge.html('research_candidate', { label:'长窗研究', detail:'独立长窗历史重建，未进行盲测预警效果验证。多 seed 差异只反映数值稳定性。' }) : '') + '</div>' + budget(payload.counts) +
+      (badge ? badge.html('research_candidate', { label:'长窗研究', detail:'独立长窗历史重建，未进行盲测预警效果验证。多 seed 差异只反映数值稳定性。' }) : '') + '</div>' +
+      verdictHtml(payload, evidence, rule, badge) + budget(payload.counts) +
       (qualityText ? '<p class="lh-note">' + esc(qualityText) + '</p>' : '') +
       (calendar.status === 'observed_historical_sessions_else_weekday_estimate' ? '<p class="lh-note">未来日期为平日估算，交易所休市日未核验；请同时查看交易日提前量。</p>' : '') +
       '<div class="lh-rule-switch" role="group" aria-label="长窗口过滤规则"><button type="button" data-lh-rule="cycles_1_5" aria-pressed="' + (rule === 'cycles_1_5') + '">完整周期 1.5 · 研究</button>' +
@@ -175,8 +271,8 @@
   }
   function attach(options) {
     var doc = options.document, host = doc.getElementById('long-horizon-card'), body = doc.getElementById('long-horizon-content'), summary = doc.getElementById('long-horizon-summary');
-    var current = null, rule = 'cycles_1_5';
-    if (!host || !body || !summary) return { render:function () {} };
+    var current = null, evidence = null, rule = 'cycles_1_5';
+    if (!host || !body || !summary) return { render:function () {}, setEvidence:function () {} };
     var view = doc.defaultView, direct = !!(view && view.location.hash === '#long-horizon-card'), scrolled = false;
     if (direct) host.open = true;
     function reveal() {
@@ -184,14 +280,14 @@
       scrolled = true;
       view.requestAnimationFrame(function () { host.scrollIntoView({ block:'start' }); });
     }
-    function paint() { if (current) body.innerHTML = html(current, rule, options.badge); }
+    function paint() { if (current) body.innerHTML = html(current, rule, options.badge, evidence); }
     body.addEventListener('click', function (event) {
       var button = event.target.closest('[data-lh-rule]');
       if (!button || RULES.indexOf(button.dataset.lhRule) < 0) return;
       rule = button.dataset.lhRule; paint();
       var active = body.querySelector('[data-lh-rule="' + rule + '"]'); if (active) active.focus({ preventScroll:true });
     });
-    return { render:function (data) {
+    return { setEvidence:function (value) { evidence = value; paint(); }, render:function (data) {
       var value = study(data, options.context); host.hidden = value.hidden;
       if (value.hidden) { current = null; body.replaceChildren(); return; }
       if (value.error) { current = null; summary.textContent = '当前截止日未就绪'; body.innerHTML = '<p class="lh-empty">' + esc(value.error) + '</p>'; reveal(); return; }
@@ -201,5 +297,5 @@
       reveal();
     } };
   }
-  return { study:study, html:html, dateRange:dateRange, aheadRange:aheadRange, attach:attach };
+  return { study:study, verdict:verdict, html:html, dateRange:dateRange, aheadRange:aheadRange, attach:attach };
 });

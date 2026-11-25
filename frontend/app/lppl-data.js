@@ -426,8 +426,9 @@
       reason: calibration.reason || location.reason,
     };
   };
+  const longWindowEvidence = () => fetchResult('long_window_pit.json');
   const rangeStats = () => opt('market/range_latest.json');
   const macro = () => opt('macro/macro_latest.json');
   const growthMonitor = () => opt('growth/growth_latest.json');
-  G.LPPL = { BASE, SYMS, GLOBAL_SYMS, global: globalData, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, bottomEvidence, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
+  G.LPPL = { BASE, SYMS, GLOBAL_SYMS, global: globalData, REPLAYS, resolve, load, replay, strategy, ev, catalog, overview, history, stock, stockList, breadth, liveNews, askAI, quote, quoteTimeLabel, ntEtf, events, abnormal, bottomSignal, bottomEvidence, longWindowEvidence, rangeStats, macro, market, growthMonitor, resultOf, fetchResult };
 })(window);

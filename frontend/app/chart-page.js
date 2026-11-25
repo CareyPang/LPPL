@@ -832,6 +832,7 @@
     chart.setScale(context.scale);
     drawing = root.ChartDrawing.attach(chart, { symbol: context.code, asof: context.asof });
     if (root.LPPLLongHorizon) longHorizon = root.LPPLLongHorizon.attach({ document: document, context: context, badge: root.CPEvidenceBadge });
+    if (longHorizon && LPPL.longWindowEvidence) LPPL.longWindowEvidence().then(r => longHorizon.setEvidence(r && r.data)).catch(() => {});
     if (root.LPPLAftershock) aftershock = root.LPPLAftershock.attach({ document:document, badge:root.CPEvidenceBadge });
     if (root.LPPLGlobalAnalysis) analysisJob = root.LPPLGlobalAnalysis.attach({ document:document, adapter:LPPL, context:context, onResult:presentAnalysisResult });
     if (root.LPPLUnifiedTerminal && context.valid) terminal = root.LPPLUnifiedTerminal.attach({
