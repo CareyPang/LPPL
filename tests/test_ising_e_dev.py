@@ -85,3 +85,35 @@ def test_ft_panel_outcomes_on_synthetic_path(tmp_path, monkeypatch):
             exp = 0 if up else 1
             break
     assert f.outcome.iloc[10] == exp
+
+
+def test_prepare_ppe_features_keeps_rows_without_a_well_below():
+    d = pd.DataFrame(dict(well_F=[1.0, 2.0, np.nan], well_depth=[0.1, 0.2, 0.3], well_dist_below=[0.05, np.nan, 0.1]))
+    out = e_dev.prepare_ppe_features(d)
+    assert len(out) == 2  # 只有 well_F 缺失的那行被丢掉
+    assert out.no_well_below.tolist() == [0.0, 1.0]
+    assert out.well_dist_below.tolist() == [0.05, 0.0]
+    assert d.well_dist_below.isna().sum() == 1  # 不改输入
+
+
+def test_fit_proba_scales_with_training_fold_only():
+    rng = np.random.default_rng(0)
+    tr = pd.DataFrame(dict(x=rng.normal(5, 2, 300), outcome=rng.integers(0, 3, 300)))
+    te = pd.DataFrame(dict(x=[5.0, 7.0]))
+    base = e_dev._fit_proba(tr, te, ["x"])
+    shifted = e_dev._fit_proba(tr, pd.concat([te, pd.DataFrame(dict(x=[1e6]))], ignore_index=True), ["x"])
+    assert base.shape == (2, 3) and np.allclose(base.sum(axis=1), 1)
+    assert np.allclose(base, shifted[:2])  # 测试折里的极端值不影响其他行的预测
+
+
+def test_bgk_shift_raises_no_touch_probability():
+    for k in (1, 2):
+        for H in (20, 60):
+            assert e_dev.q_none_bm(k + e_dev.BGK / np.sqrt(H)) > e_dev.q_none_bm(k)
+
+
+def test_prepare_ppe_features_ignores_a_distance_carried_over_from_an_older_snapshot():
+    d = pd.DataFrame(dict(well_F=[1.0, 2.0], well_depth=[0.1, 0.2], well_dist_below=[0.05, 0.07], no_well_below=[0.0, 1.0]))
+    out = e_dev.prepare_ppe_features(d)
+    assert out.no_well_below.tolist() == [0.0, 1.0]
+    assert out.well_dist_below.tolist() == [0.05, 0.0]
