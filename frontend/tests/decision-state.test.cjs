@@ -424,3 +424,13 @@ test('a history that declares its own score version stays usable when only the L
   input.data.raw.score_version = 'bottom_v1';
   assert.equal(Decision.build(input).bottom.score, null);
 });
+
+test('replaying a past cutoff does not cite test-segment results published later', () => {
+  const live = Decision.build(setup());
+  assert.equal(live.conclusion.status, 'bottom_probe');
+  assert.match(live.conclusion.detail, /2022–2025/);
+  const input = setup(); input.context.asof = input.data.raw.asof;
+  const replay = Decision.build(input);
+  assert.equal(replay.conclusion.status, 'bottom_probe');
+  assert.doesNotMatch(replay.conclusion.detail, /2022|测试段/);
+});

@@ -202,7 +202,7 @@
     return { status: red ? 'blocked' : light === 'green' ? 'clear' : light === 'yellow' ? 'watch' : 'unavailable', light: light,
       detail: red ? '冲击与止跌检查尚未通过。' : light === 'green' ? '已发布冷却检查通过。' : light === 'yellow' ? '部分条件已满足，仍需继续观察。' : '当前未提供独立的冷却检查结果。' };
   }
-  function conclusionFor(top, bottom, cooling, data, invalid, modelStale) {
+  function conclusionFor(top, bottom, cooling, data, invalid, modelStale, historical) {
     var f = bottom.factors, blockers = [];
     function result(status, tone, title, detail, next) {
       return { status: status, tone: tone, title: title, detail: detail, next: next, blockers: blockers };
@@ -235,7 +235,8 @@
       '底分低于 60 分：估值或回撤深度未达到门槛。',
       '等待底分达到 60 分。');
     return result('bottom_probe', 'green', '底部条件满足',
-      '底分 ≥60：2022–2025 测试段同档 50 周后上涨的比例比同指数全部回落周高 33 个百分点；只有一个周期，各指数同涨同跌。',
+      // 回放某个历史截止日时不引用之后才有的检验结果。
+      historical ? '底分 ≥60：估值与回撤深度两个分项加权后达到门槛。' : '底分 ≥60：2022–2025 测试段同档 50 周后上涨的比例比同指数全部回落周高 33 个百分点；只有一个周期，各指数同涨同跌。',
       '查看估值与回撤深度两个分项。');
   }
   function build(options) {
@@ -270,7 +271,7 @@
       bottom.label = options.historyStatus === 'loading' ? '评分记录读取中' : '评分记录读取失败';
     }
     var cooling = coolingState(raw, cutoff, invalid);
-    var conclusion = conclusionFor(top, bottom, cooling, data, invalid, modelStale);
+    var conclusion = conclusionFor(top, bottom, cooling, data, invalid, modelStale, historical);
     if (historyMismatch && bottom.score == null) bottom.label = '底分来源身份不匹配';
     var evidenceCode = bottom.score != null ? 'descriptive' : top.evidence || 'none';
     return { symbol: symbol, asof: cutoff, rule: rule, historical: historical, top: top, bottom: bottom, cooling: cooling, conclusion: conclusion,
