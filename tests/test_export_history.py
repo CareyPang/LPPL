@@ -327,3 +327,21 @@ def test_null_fpr_reads_calibration_table(tmp_path, monkeypatch):
     monkeypatch.setattr(export_contract, "NULL_FPR_PATH", tmp_path / "missing.csv")
     monkeypatch.setattr(export_contract, "_NULL_FPR_CACHE", {})
     assert export_contract._null_fpr("6-12m") is None
+
+
+def test_scale_evidence_detail_matches_dev_band_report():
+    """徽章引用的分档数字必须等于 §17.14 报告（box、阈值 0.05、H=120 的跨指数中位数），且两档都不稳健。"""
+    import pandas as pd
+
+    from research.eval.export_contract import HISTORY_SCALES, SCALE_EVIDENCE_DETAIL
+
+    bands = pd.read_csv("reports/scale_sens_dev/bands.csv")
+    names = {"6-12m": "B4_6-12m", "12-24m": "B5_12-24m"}
+    assert set(SCALE_EVIDENCE_DETAIL) == set(HISTORY_SCALES)
+    for scale, detail in SCALE_EVIDENCE_DETAIL.items():
+        rows = bands[(bands.rule == "box") & (bands.band == names[scale]) & (bands.thr == 0.05) & (bands.H == 120)]
+        assert len(rows) == detail["n_indexes"] == 6
+        assert round(float(rows.A1.median()), 3) == detail["a1"]
+        assert round(float(rows.A1_rand.median()), 3) == detail["a1_null"]
+        assert int((rows.p_A1 <= 0.05).sum()) == detail["n_significant"]
+        assert detail["robust"] is False and detail["verdict"] == "not_significant"

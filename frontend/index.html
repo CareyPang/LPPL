@@ -1531,7 +1531,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         const x = I[k] || {}, confidence = t.lppls_confidence || {};
         const evidence = confidence.scale_evidence?.[k] || x.evidence || confidence.evidence || t.evidence || R.evidence;
         const show = EV(evidence).show;
-        return `<tr><td>${E(SCN[k])}</td><td>${show ? x.n_windows ?? '—' : '—'}</td><td>${show ? x.n_qualified_standard ?? '—' : '—'}</td><td>${E(show ? x.best_t1 || '—' : '—')}</td><td>${show ? x.t1_qualified ? '是' : '否' : '—'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(evidence).label)}</td></tr>`;
+        return `<tr><td>${E(SCN[k])}</td><td>${show ? x.n_windows ?? '—' : '—'}</td><td>${show ? x.n_qualified_standard ?? '—' : '—'}</td><td>${E(show ? x.best_t1 || '—' : '—')}</td><td>${show ? x.t1_qualified ? '是' : '否' : '—'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(evidence).label)}${evidence === 'dev' && window.CPEvidenceBadge ? ' ' + window.CPEvidenceBadge.html('dev', { detail: window.CPEvidenceBadge.detailText(confidence.scale_evidence_detail?.[k]) }) : ''}</td></tr>`;
       }).join('') +
       `</tbody></table></div><p class="tp-d">${E(RuleLabels.renderCaption(['box', 'standard']))}</p></details>`;
   }

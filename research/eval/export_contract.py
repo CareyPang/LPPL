@@ -98,6 +98,16 @@ HISTORY_SCANS = {
     "test": Path("data/features/lppls_v2_g3_test"),
 }
 HISTORY_SCALES = ("6-12m", "12-24m")
+# 分档开发段评测（§17.14，reports/scale_sens_dev/bands.csv）：box、阈值 0.05、H=120，6 指数跨指数中位数。
+# 证据代码保持 "dev"（= 开发段已评测），结论由本表给出：两档均未显著优于循环平移零对照。
+SCALE_EVIDENCE_DETAIL = {
+    "6-12m": {"rule": "box", "threshold": 0.05, "horizon_days": 120, "a1": 0.231, "a1_null": 0.221,
+              "n_significant": 1, "n_indexes": 6, "robust": False, "verdict": "not_significant"},
+    "12-24m": {"rule": "box", "threshold": 0.05, "horizon_days": 120, "a1": 0.303, "a1_null": 0.202,
+               "n_significant": 1, "n_indexes": 6, "robust": False, "verdict": "not_significant"},
+}
+SCALE_EVIDENCE_SOURCE = ("reports/scale_sens_dev/summary.md（§17.14，tcgrid v2 扫描，开发段 2000–2018）；"
+                         "长尺度合并口径 box__L：0.318 对零对照 0.224，p=0.371（reports/original_standard_dev_v2/alarm_grid_agg.csv）")
 
 
 def _scale_cluster_records(
@@ -637,7 +647,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "signal_status": "signal" if any(v.get("signal_status") == "signal" for k, v in ind.items() if k in SCALES_FCO) else "no_qualified_fit",
             "window": window,
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
-                                 "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
+                                 "scale_evidence_detail": SCALE_EVIDENCE_DETAIL, "scale_evidence_source": SCALE_EVIDENCE_SOURCE,
+                                 "scale_note": "§17.14：FCO 六档重聚合后只有 6–12 月、12–24 月做过开发段分档评测，box 阈值 0.05 在两档均未显著优于零对照（见 scale_evidence_detail）；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
             "scenarios": _scenario_records(q, scen, gg, cal, date, market),
             "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
@@ -774,6 +785,8 @@ def history(sym: str, market: str = "cn") -> dict:
         "recompute": HISTORY_RECOMPUTE,
         "evidence": "dev_only",
         "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
+        "scale_evidence_detail": SCALE_EVIDENCE_DETAIL,
+        "scale_evidence_source": SCALE_EVIDENCE_SOURCE,
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "episode_summary": summarize_history_episodes(frames, tops, scales=HISTORY_SCALES),
         "bottom_summary": summarize_bottom_backtest(frames),
