@@ -526,7 +526,16 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
         "(chips) => [...new Set(chips.map(chip => Math.round(chip.getBoundingClientRect().top)))]"
     )
     assert len(chip_tops) > 1, chip_tops
-    assert page.locator("#s-breadth .table-scroll").count() == 2
+    assert page.locator("#s-breadth .breadth-tables .table-scroll").count() == 2
+    expect(page.locator("#breadth-state .bs-now .bs-tag")).to_be_visible()
+    assert page.locator("#breadth-state .bs-recent tbody tr").count() == 20
+    page.locator('#breadth-state [data-bs-mark="oversold"]').click()
+    expect(page.locator('#breadth-state [data-bs-mark="oversold"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    assert page.locator("#s-breadth").evaluate(
+        "(section) => section.scrollWidth <= section.clientWidth + 1"
+    )
 
 
 @pytest.mark.e2e
