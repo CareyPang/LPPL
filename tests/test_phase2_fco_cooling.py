@@ -360,6 +360,10 @@ def test_phase_and_bottom_detail_published_without_changing_green_bar():
     last = out[-1]
     assert last["dd_52w"] <= -0.12 and last["phase"] == "pullback"
     assert last["fco_neg_intensity"] == 0.0 and "bottom_factors" not in last
+    assert "bottom_bar" not in last
+    for f in out:
+        want = "green" if f["fco_neg_intensity"] >= 0.5 else "weak" if f["fco_neg_intensity"] > 0 else None
+        assert f.get("bottom_bar") == want
     detail = last["bottom_detail"]
     assert 0 < detail["score"] < 20
     assert detail["clearing"] > 0 and detail["valuation"] is None
@@ -369,3 +373,21 @@ def test_phase_and_bottom_detail_published_without_changing_green_bar():
     out_top = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
     assert out_top[-1]["phase"] == "top" and "bottom_detail" not in out_top[-1]
     assert out_top[-1]["dd_52w"] == last["dd_52w"]
+
+
+def test_phase_rule_summary_counts_only_requested_split():
+    from research.eval.bottom_dashboard import summarize_phase_rule
+
+    def frame(close, dd, split="dev"):
+        return {"close": close, "dd_52w": dd, "split": split}
+
+    frames = [
+        frame(100, 0.0), frame(88, -0.12), frame(70, -0.30), frame(101, 0.0),  # 一轮：最终 -30%，触发后再跌 20.5%
+        frame(87, -0.13), frame(85, -0.15), frame(100, -0.01),  # 一轮：最终 -15%
+        frame(50, -0.50, "test"),
+    ]
+    out = summarize_phase_rule(frames)
+    assert out["n_episodes"] == 2 and out["threshold"] == -0.12
+    assert out["share_reaching_20pct"] == 0.5
+    assert out["median_further_decline"] == round(float(np.median([70 / 88 - 1, 85 / 87 - 1])), 3)
+    assert summarize_phase_rule([])["n_episodes"] == 0

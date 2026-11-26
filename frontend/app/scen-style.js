@@ -2,10 +2,10 @@
    只负责画法，不含任何数据或模型计算。输入全部来自 window.LPPL 取回的静态 JSON。 */
 (function (G) {
   'use strict';
-  const WARN = '#9A5B00', REAL = '#1F5FD6', FCO = '#D6303A', FCO_BOT = '#11845A';
+  const WARN = '#9A5B00', REAL = '#1F5FD6', FCO = '#D6303A', FCO_BOT = '#11845A', BOT_WEAK = '#5B6270';
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; };
   const CPSCN = {
-    WARN, REAL, FCO, FCO_BOT, rgba,
+    WARN, REAL, FCO, FCO_BOT, BOT_WEAK, rgba,
     /* 同屏截止日多于该数量时进入"密集模式"：不画连接线，区间线更细，重叠处自然叠亮 */
     DENSE_PER_PX: 0.5,
     isDense(n, w) { return w > 0 && n / w > CPSCN.DENSE_PER_PX; },
@@ -55,13 +55,14 @@
       const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
       if (v <= 0) return;
       const thr = o.highThreshold != null ? Number(o.highThreshold) : CPSCN.BOT_HIGH_THRESHOLD;
-      const highConf = v >= thr;
+      const weak = o.weak != null ? Boolean(o.weak) : v < thr;
+      const highConf = !weak;
       const h = Math.max(highConf ? 4 : 2, Math.round(v * o.maxH * (highConf ? 1 : 0.65)));
       const bw = Math.max(2, Math.round((o.w || 4) * (highConf ? 1 : 0.75)));
       const x = Math.round(o.x - bw / 2);
       const y = Math.round(o.bottom - h);
       const alpha = o.hot ? 0.85 : (highConf ? (0.36 + v * 0.44) : (0.06 + v * 0.12));
-      ctx.fillStyle = rgba(FCO_BOT, alpha);
+      ctx.fillStyle = weak ? rgba(BOT_WEAK, o.hot ? 0.7 : 0.28) : rgba(FCO_BOT, alpha);
       ctx.fillRect(x, y, bw, h);
     },
     /* 严格 as-of 首次预警旗标（每轮泡沫第一次出现顶部聚类的截止日）：

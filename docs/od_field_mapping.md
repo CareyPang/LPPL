@@ -45,6 +45,15 @@
 - `frames[].clusters[scale][]` 是 `*_history.json` 的逐周对应字段，尺度仅含 `6-12m`、`12-24m`，字段和语义与 `top.scale_clusters` 相同。它独立于可选的历史 `scenarios` 字段导出。
 - `*_history.json` 顶层 `scale_evidence` 使用与当前结果 `lppls_confidence.scale_evidence` 相同的 `SCALE_EVIDENCE`；目前 `6-12m`、`12-24m` 均为 `dev`。全局 `evidence` 仍为 `dev_only`。历史区间显示按尺度证据判定；旧文件缺少 `scale_evidence` 时回退到全局 `evidence`。
 
+## 1.2 阶段与底分明细（`*_history.json`）
+
+- `frames[].dd_52w`：当周收盘相对过去 52 周最高周收盘的回撤（负数）；不足 20 帧时为 `null`。
+- `frames[].phase`：页面该显示哪一侧。`top` = 当周有 6–12 月顶部区间，或 `dd_52w > -0.12`；`pullback` = 回撤已达 12% 且没有顶部区间。这是事后确认，不是顶部预测；文案用“回落中”，不写“顶部已确认”。
+- `frames[].bottom_detail`：进入底分计分区时的未截断结果，含 `score`（0–100）、`dd_52w`、`erp_pct`、`pbn_pct`、`valuation`、`clearing`、`stabilize`、`right_side`。`score` 低于 20 时也输出；有顶部区间或不在计分区时无此字段。
+- `frames[].fco_neg_intensity`、`bottom_factors`、`bottom_first_alert_flag` 语义不变：绿柱仍在 20 分以下归零，事件回测数字不受影响。
+- `frames[].bottom_bar`：`green` = 底分 ≥ 50，画绿柱；`weak` = 20–49 分，画灰柱并标“回落中 · 条件不足”；无此字段 = 不画。开发段 20–49 分的周 24 周后上涨比例低于全部周，所以不作绿色。前端按此字段上色，不自行比较分数。
+- 顶层 `phase_rule`：该指数开发段内“回撤首次达到 12%”之后的统计：`n_episodes`、`share_reaching_20pct`（最终回撤达到 20% 的比例）、`median_further_decline`（触发后再跌的中位数）。只作描述，样本数随 `n_episodes` 一并显示。
+
 ## 2. home.html
 
 | OD 字段 | 我们的字段 | 处理 |

@@ -573,6 +573,8 @@ def load_valuation_history(path: Path = DEFAULT_VALUATION_HISTORY_PATH) -> pd.Da
 
 
 PHASE_DRAWDOWN = -0.12
+GREEN_BAR_MIN = 0.50  # 绿柱显示门槛；20–49 分只作“回落中 · 条件不足”
+PHASE_EPISODE_WEEKS = 104
 
 
 def phase_of(has_top: bool, dd_52w: float | None) -> str | None:
@@ -727,6 +729,12 @@ def compute_fco_neg_intensity_series(
         new_frame["bottom_first_alert_flag"] = first_bottom_flag
         new_frame["dd_52w"] = round(dd_frame, 3) if dd_frame is not None else None
         new_frame["phase"] = phase_of(has_top, dd_frame)
+        if intensity >= GREEN_BAR_MIN:
+            new_frame["bottom_bar"] = "green"
+        elif intensity > 0:
+            new_frame["bottom_bar"] = "weak"
+        else:
+            new_frame.pop("bottom_bar", None)
         if detail:
             new_frame["bottom_detail"] = detail
         else:
@@ -738,6 +746,46 @@ def compute_fco_neg_intensity_series(
         enriched.append(new_frame)
 
     return enriched
+
+
+def summarize_phase_rule(frames: list[dict[str, Any]], split: str = "dev") -> dict[str, Any]:
+    """回撤首次达到 12% 之后的历史走势（只统计指定数据段的周度帧）。
+
+    一轮从回撤首次 <= -12% 的那一周开始，到收盘收复前高、满 104 周或数据段结束为止；
+    未走完的一轮也计入，其最低点只是到目前为止的最低点。
+    """
+    rows = [
+        (float(f["close"]), float(f["dd_52w"]))
+        for f in frames
+        if f.get("split") == split and f.get("dd_52w") is not None and f.get("close")
+    ]
+    episodes: list[tuple[float, float]] = []
+    i = 0
+    while i < len(rows):
+        close, dd = rows[i]
+        if dd > PHASE_DRAWDOWN:
+            i += 1
+            continue
+        peak = close / (1.0 + dd)
+        low = close
+        j = i
+        while j + 1 < len(rows) and rows[j][0] < peak and j - i < PHASE_EPISODE_WEEKS:
+            j += 1
+            low = min(low, rows[j][0])
+        episodes.append((low / peak - 1.0, low / close - 1.0))
+        i = j + 1
+    out: dict[str, Any] = {
+        "threshold": PHASE_DRAWDOWN,
+        "split": split,
+        "n_episodes": len(episodes),
+        "share_reaching_20pct": None,
+        "median_further_decline": None,
+        "note": "事后确认，不是顶部预测；回撤按周度收盘相对 52 周高点计算",
+    }
+    if episodes:
+        out["share_reaching_20pct"] = round(float(np.mean([t <= -0.20 for t, _ in episodes])), 3)
+        out["median_further_decline"] = round(float(np.median([m for _, m in episodes])), 3)
+    return out
 
 
 def summarize_bottom_backtest(frames: list[dict[str, Any]]) -> dict[str, Any]:

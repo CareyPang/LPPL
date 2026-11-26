@@ -30,7 +30,11 @@ import pandas as pd
 
 from ..data import cache
 from ..data.trading_calendar import future_calendar_metadata
-from ..eval.bottom_dashboard import compute_fco_neg_intensity_series, summarize_bottom_backtest
+from ..eval.bottom_dashboard import (
+    compute_fco_neg_intensity_series,
+    summarize_bottom_backtest,
+    summarize_phase_rule,
+)
 from ..eval.episode_backtest import summarize_history_episodes
 from ..eval.export_contract import (
     HISTORY_SCALES,
@@ -229,6 +233,7 @@ def extend_history(
     payload["tops"] = tops
     payload["episode_summary"] = summarize_history_episodes(frames, tops, scales=HISTORY_SCALES)
     payload["bottom_summary"] = summarize_bottom_backtest(frames)
+    payload["phase_rule"] = summarize_phase_rule(frames)
     payload["extended_through"] = str(frames[-1]["asof"])
 
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")

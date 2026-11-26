@@ -582,7 +582,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (intensity > 0) {
         fcoFrames.push({ i, asof: f.asof, intensity, firstAlert, has6, has12 });
       } else if (negIntensity > 0) {
-        fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag), factors: f.bottom_factors || null });
+        fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag), factors: f.bottom_factors || null, weak: f.bottom_bar ? f.bottom_bar === 'weak' : null });
       }
       if (has6) {
         frames.push({ i, lo: idxOf(b, w6[0]), hi: idxOf(b, w6[1]), asof: f.asof, split: f.split, w: w6, intensity, firstAlert });
@@ -849,7 +849,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
           CPSCN.drawFcoBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3, locked: Boolean(f.locked) });
         }
         for (const f of fcoBotVis) {
-          CPSCN.drawFcoBottomBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3 });
+          CPSCN.drawFcoBottomBar(ctx, { x: X(f.i), w: barW, bottom: pb, maxH: maxBarH, intensity: f.intensity, weak: f.weak, hot: st.hover >= 0 && Math.abs(st.hover - f.i) <= 3 });
         }
         let lastFlagX = -999;
         for (const f of fcoVis) {
@@ -1491,7 +1491,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         } else if (nearBot) {
           const bf = nearBot.factors;
           const det = bf && bf.erp_pct != null ? ` · ERP分位 ${Math.round(bf.erp_pct * 100)}% / 破净分位 ${bf.pbn_pct != null ? Math.round(bf.pbn_pct * 100) + '%' : '—'}` : '';
-          lines.push((nearBot.firstBottom ? '🟢 四维底部企稳关注 · ' : 'FCO 底部共振周 · ') + '强度 ' + Math.round(nearBot.intensity * 100) + '%' + det + '（' + nearBot.asof + '）');
+          lines.push((nearBot.weak ? '回落中 · 条件不足 · ' : nearBot.firstBottom ? '🟢 四维底部企稳关注 · ' : 'FCO 底部共振周 · ') + '底分 ' + Math.round(nearBot.intensity * 100) + '%' + det + '（' + nearBot.asof + '）');
         }
       }
     } else lines.push('截止日之后的推算区域，只有预测叠加层。');

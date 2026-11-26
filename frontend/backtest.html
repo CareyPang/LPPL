@@ -285,7 +285,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       </div>
       <div class="lgd od-cluster" aria-label="图例">
         <span><i class="sw fco"></i>FCO 顶部红柱</span>
-        <span><i class="sw fcobot"></i>FCO 底部绿柱</span>
+        <span><i class="sw fcobot"></i>底部绿柱（底分 ≥50）</span>
+        <span><i class="sw fcobot" style="background:rgba(91,98,112,.4)"></i>回落中 · 条件不足（20–49）</span>
         <span><i class="sw first"></i>首次预警（顶部聚类）</span>
         <span><i class="sw"></i>聚类区间<button type="button" class="ai-ask-inline" data-ai-ask="现在的顶部聚类区间是什么意思？">问研究助手</button></span>
         <span><i class="sw t"></i>事后确认顶</span>
@@ -868,7 +869,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         asof: f.asof, split: f.split, close: f.close, w: f.w || {}, clusters: f.clusters,
         fco_intensity: f.fco_intensity, bubble_intensity: f.bubble_intensity,
         fco_neg_intensity: f.fco_neg_intensity, bottom_first_alert_flag: Boolean(f.bottom_first_alert_flag),
-        bottom_factors: f.bottom_factors || null,
+        bottom_factors: f.bottom_factors || null, bottomWeak: f.bottom_bar ? f.bottom_bar === 'weak' : null,
         t: T(f.asof), w0: null, w1: null, ranges: [], fcoIntensity: 0, fcoNegIntensity: null, firstAlertEp: null,
       })).sort((a, b) => a.t - b.t);
       if (!fr.length) throw new Error('数据未加载：历史文件缺少收盘价');
@@ -992,7 +993,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       } else if (f.fcoNegIntensity != null && f.fcoNegIntensity > 0) {
         CPSCN.drawFcoBottomBar(ctx, {
           x: X(f.t), w: weekPx, bottom: fcoBottom, maxH: fcoMaxH,
-          intensity: f.fcoNegIntensity, hot: f === hot,
+          intensity: f.fcoNegIntensity, weak: f.bottomWeak, hot: f === hot,
         });
       }
     }
@@ -1081,7 +1082,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         const h = Math.max(2, Math.round(f.fcoIntensity * 16));
         ctx.fillRect(Math.round(px(f.t)), Hh - h, 2, h);
       } else if (f.fcoNegIntensity != null && f.fcoNegIntensity > 0) {
-        ctx.fillStyle = rgba(CPSCN.FCO_BOT, 0.25 + f.fcoNegIntensity * 0.45);
+        ctx.fillStyle = f.bottomWeak ? rgba(CPSCN.BOT_WEAK, 0.3) : rgba(CPSCN.FCO_BOT, 0.25 + f.fcoNegIntensity * 0.45);
         const h = Math.max(2, Math.round(f.fcoNegIntensity * 16));
         ctx.fillRect(Math.round(px(f.t)), Hh - h, 2, h);
       }
@@ -1180,7 +1181,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const fcoLine = best.fcoIntensity > 0
         ? `<br><span style="color:#D6303A">FCO 顶部泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
         : (best.fcoNegIntensity != null && best.fcoNegIntensity > 0
-          ? `<br><span style="color:#11845A">FCO 底部共振强度 ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}${E(bfDetail)}</span>`
+          ? `<br><span style="color:${best.bottomWeak ? '#5B6270' : '#11845A'}">${best.bottomWeak ? '回落中 · 条件不足 · 底分' : 'FCO 底部共振强度'} ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}${E(bfDetail)}</span>`
           : '');
       const topText = top
         ? top.max_dd != null && Number.isFinite(Number(top.max_dd))
