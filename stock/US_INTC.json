@@ -1,8 +1,8 @@
 {
  "symbol": "US_INTC",
  "name": "英特尔",
- "asof": "2026-11-24",
- "data_version": "us_INTC_20261124_caff53854ce4a0cf",
+ "asof": "2026-11-25",
+ "data_version": "us_INTC_20261125_4ddc786fa8fda9a1",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -63,13 +63,13 @@
    ]
   },
   "bubble": {
-   "start": "2026-05-27",
+   "start": "2026-05-28",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
    "size_model": -1.0,
-   "size_realized": -0.55,
-   "tc": "2026-12-02",
+   "size_realized": -0.549,
+   "tc": "2026-12-04",
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -103,16 +103,16 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-05-27",
+    "best_t1": "2026-05-28",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.333,
+     "m_lo": 0.167,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.333,
+     "tc_lo": 0.167,
      "tc_hi": 0.0,
-     "any": 0.667,
+     "any": 0.333,
      "tol": 0.01
     },
     "null_fpr": {
@@ -142,19 +142,19 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.3,
+     "early": 0.4,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-10-20",
+    "best_t1": "2025-10-21",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.1,
+     "m_lo": 0.2,
      "m_hi": 0.0,
      "w_lo": 0.5,
      "w_hi": 0.0,
-     "tc_lo": 0.3,
+     "tc_lo": 0.2,
      "tc_hi": 0.1,
      "any": 0.8,
      "tol": 0.01
@@ -277,7 +277,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-24",
+   "table_asof": "2026-11-25",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -759,7 +759,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.55,
+    "size_realized": -0.549,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -806,8 +806,8 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": true,
-  "drawdown_from_peak": -0.6112,
-  "elapsed_days_since_peak": 109,
+  "drawdown_from_peak": -0.6135,
+  "elapsed_days_since_peak": 110,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": false,
@@ -826,12 +826,12 @@
     {
      "id": "omori",
      "name": "冲击与止跌检查",
-     "value_text": "大阴线 4 次 · 波动比 1.21×",
+     "value_text": "大阴线 4 次 · 波动比 1.12×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.6112,
-     "elapsed_days_since_peak": 109,
+     "drawdown_from_peak": -0.6135,
+     "elapsed_days_since_peak": 110,
      "dead_cat_risk": true,
      "drop_threshold": -0.045,
      "plain_text": "余震未消（近 15 日出现 4 次大阴线（阈值 -4.5%）；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
@@ -869,9 +869,9 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 0.83× · 年内分位 42%",
-     "pct": 0.4246,
-     "ratio20": 0.83,
+     "value_text": "5/20日量比 0.88× · 年内分位 38%",
+     "pct": 0.377,
+     "ratio20": 0.88,
      "light": "gray",
      "passed_bottom": false,
      "passed_top": false,
@@ -896,7 +896,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -10.8%",
+     "value_text": "距 20 日线 -8.2%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -912,7 +912,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-20",
    "2023-11-21",
    "2023-11-22",
    "2023-11-24",
@@ -1667,10 +1666,10 @@
    "2026-11-19",
    "2026-11-20",
    "2026-11-23",
-   "2026-11-24"
+   "2026-11-24",
+   "2026-11-25"
   ],
   "open": [
-   43.201,
    43.912,
    43.448,
    43.103,
@@ -2425,10 +2424,10 @@
    57.5,
    54.3,
    59.06,
-   57.3
+   57.3,
+   52.01
   ],
   "high": [
-   44.336,
    44.07,
    44.04,
    43.419,
@@ -3183,10 +3182,10 @@
    59.44,
    56.48,
    59.77,
-   57.54
+   57.54,
+   55.0
   ],
   "low": [
-   43.201,
    42.728,
    42.965,
    43.034,
@@ -3941,10 +3940,10 @@
    54.85,
    51.1,
    56.66,
-   53.54
+   53.54,
+   49.16
   ],
   "close": [
-   44.149,
    43.063,
    43.093,
    43.379,
@@ -4699,10 +4698,10 @@
    55.72,
    51.28,
    59.66,
-   54.8
+   54.8,
+   54.47
   ],
   "volume": [
-   44596396,
    37252045,
    31490535,
    13014527,
@@ -5457,7 +5456,8 @@
    133949043,
    208735591,
    165246223,
-   132667870
+   132667870,
+   129277853
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5511,7 +5511,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4953,
+  "n_bars": 4954,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5541,9 +5541,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "b2a57e5666ba0f5e56a2e141ffea53007a0871dab473069dd3ab95df407eb32c",
- "fit_input_hash": "5c473fd84ac7855bd349de405b618d4aca181eccf1f6f567dd3d88b6b126cf16",
+ "fit_input_hash": "b8b64d8204afa2c318961cdf50a3c6d0322d91261a17edbcf2e4afd502e1059b",
  "history_input_hashes": {
-  "2023-11-21": "d205879cc3d9031fa5ad09ab6f757c4197eea407c551fd2a46696fbc0c41f3ef",
   "2023-11-22": "05e62ecd55c1f4d1331a734e79f3ac304366578fd84e367897cde50eb54798e6",
   "2023-11-24": "0097675966e931b15637dc41bef3a483841981dd25f98449afca333cefb344a2",
   "2023-11-27": "e40eca172742d17e9c557b9926bcaed5710d3700d824392ec9d1f91577b66202",
@@ -6297,10 +6296,11 @@
   "2026-11-19": "6cd1cfbf66b9f3651d40e23d9123a30b092597c7247c2acda09f90f8605a9955",
   "2026-11-20": "f7100b178e4ea1f51e3482fc9cebfb0d424d2e110bb349f6f173183b6757ddea",
   "2026-11-23": "3a08fb8af63430cb5cca67df0ddc02d15bc77149b7fe222497f1c9cc683f0a86",
-  "2026-11-24": "5c473fd84ac7855bd349de405b618d4aca181eccf1f6f567dd3d88b6b126cf16"
+  "2026-11-24": "5c473fd84ac7855bd349de405b618d4aca181eccf1f6f567dd3d88b6b126cf16",
+  "2026-11-25": "b8b64d8204afa2c318961cdf50a3c6d0322d91261a17edbcf2e4afd502e1059b"
  },
  "code": "US_INTC",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-25T22:39:32.105781+00:00"
+ "generated_at": "2026-11-26T04:28:57.307283+00:00"
 }
