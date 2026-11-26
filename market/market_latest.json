@@ -1,29 +1,30 @@
 {
   "asof": "2026-11-26",
-  "generated_at": "2026-11-26T17:59:14.328143+00:00",
+  "generated_at": "2026-11-26T18:40:19.447166+00:00",
   "sources": {
     "board_flow_industry": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-26T17:56:10.768409+00:00",
+      "fetched_at": "2026-11-26T18:37:44.871767+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f164&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf109%2Cf164%2Cf165%2Cf257&pn=2"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A2&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_concept": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-26T17:56:15.884266+00:00",
+      "fetched_at": "2026-11-26T18:37:49.372750+00:00",
       "ok": true,
-      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
+      "fallback_from": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A3&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_region": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-26T17:56:59.235888+00:00",
+      "fetched_at": "2026-11-26T18:38:32.603020+00:00",
       "ok": true,
       "fallback_from": "RuntimeError: Eastmoney board hosts failed: push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?pz=200&po=1&np=1&fltt=2&invt=2&fid=f62&fs=m%3A90%2Bt%3A1&fields=f12%2Cf14%2Cf3%2Cf62%2Cf184%2Cf204%2Cf66%2Cf72%2Cf78%2Cf84&pn=1"
     },
     "board_flow_history": {
       "url_host": "push2his.eastmoney.com",
-      "fetched_at": "2026-11-26T17:57:00.169719+00:00",
-      "ok": true,
+      "fetched_at": "2026-11-26T18:38:37.809296+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: ConnectionError; ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
       "provider": "eastmoney",
       "code": "BK0475",
       "reference_board": true,
@@ -32,79 +33,81 @@
     },
     "limit_pools": {
       "url_host": "push2ex.eastmoney.com",
-      "fetched_at": "2026-11-26T17:57:04.959184+00:00",
+      "fetched_at": "2026-11-26T18:38:42.410384+00:00",
       "ok": true
     },
     "themes": {
       "url_host": "zx.10jqka.com.cn",
-      "fetched_at": "2026-11-26T17:57:06.479383+00:00",
+      "fetched_at": "2026-11-26T18:38:44.272230+00:00",
       "ok": true
     },
     "breadth": {
       "url_host": "push2delay.eastmoney.com",
-      "fetched_at": "2026-11-26T17:57:50.030764+00:00",
-      "ok": true
+      "fetched_at": "2026-11-26T18:38:48.109568+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/ulist.np/get?secids=1.000001%2C0.399001&fields=f12%2Cf14%2Cf104%2Cf105%2Cf106%2Cf6&fltt=2&invt=2"
     },
     "board_strength": {
       "url_host": "vip.stock.finance.sina.com.cn",
-      "fetched_at": "2026-11-26T17:58:00.475843+00:00",
+      "fetched_at": "2026-11-26T18:38:58.363151+00:00",
       "ok": true,
       "provider": "sina",
       "fallback_from": "push2.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140; push2delay.eastmoney.com: RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/clist/get?fs=m%3A90%2Bt%3A3&fid=f3&po=1&pz=500&pn=1&fields=f12%2Cf14%2Cf3%2Cf6%2Cf104%2Cf105%2Cf128%2Cf136%2Cf140"
     },
     "hot_ths": {
       "url_host": "dq.10jqka.com.cn",
-      "fetched_at": "2026-11-26T17:58:01.972345+00:00",
+      "fetched_at": "2026-11-26T18:39:00.252770+00:00",
       "ok": true
     },
     "hot_eastmoney": {
       "url_host": "emappdata.eastmoney.com",
-      "fetched_at": "2026-11-26T17:58:04.042828+00:00",
-      "ok": true
+      "fetched_at": "2026-11-26T18:39:05.756777+00:00",
+      "ok": false,
+      "error": "RuntimeError: Eastmoney request failed after one retry: HTTPError; HTTPError: 502 Server Error: Bad Gateway for url: https://push2delay.eastmoney.com/api/qt/ulist.np/get?ut=f057cbcbce2a86e2866ab8877db1d059&fltt=2&invt=2&fields=f14%2Cf3%2Cf12%2Cf2&secids=0.002148%2C0.002242%2C0.000158%2C1.600722%2C1.600103%2C0.000530%2C0.002261%2C0.002579%2C1.600410%2C0.002086%2C0.000678%2C1.600467%2C0.002685%2C0.002081%2C1.603960%2C0.000889%2C0.002197%2C1.600127%2C1.600814%2C1.603324%2C0.300324%2C1.603030%2C0.002815%2C0.002470%2C1.600227%2C1.603118%2C1.600280%2C0.002077%2C0.002226%2C0.002651%2C0.002639%2C0.002565%2C0.002144%2C0.002298%2C1.603386%2C0.002141%2C0.000823%2C0.300308%2C1.600185%2C0.000798%2C0.002771%2C0.002453%2C0.000912%2C0.002548%2C1.600567%2C0.002199%2C0.003040%2C0.301059%2C1.603278%2C1.605058"
     },
     "dragon_tiger": {
       "url_host": "datacenter-web.eastmoney.com",
-      "fetched_at": "2026-11-26T17:58:06.461908+00:00",
+      "fetched_at": "2026-11-26T18:39:08.227210+00:00",
       "ok": true
     },
     "news_cls": {
       "url_host": "www.cls.cn",
-      "fetched_at": "2026-11-26T17:58:07.804808+00:00",
+      "fetched_at": "2026-11-26T18:39:09.338198+00:00",
       "ok": true
     },
     "news_eastmoney": {
       "url_host": "np-weblist.eastmoney.com",
-      "fetched_at": "2026-11-26T17:58:09.511025+00:00",
+      "fetched_at": "2026-11-26T18:39:10.425868+00:00",
       "ok": true
     },
     "northbound": {
       "url_host": "www.hkex.com.hk",
-      "fetched_at": "2026-11-26T17:58:10.052922+00:00",
+      "fetched_at": "2026-11-26T18:39:10.918153+00:00",
       "ok": true
     },
     "index_valuation_000300": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-26T17:58:13.508143+00:00",
+      "fetched_at": "2026-11-26T18:39:14.227433+00:00",
       "ok": true
     },
     "index_valuation_000905": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-26T17:58:15.864379+00:00",
+      "fetched_at": "2026-11-26T18:39:16.387587+00:00",
       "ok": true
     },
     "index_valuation_000016": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-26T17:58:18.189698+00:00",
+      "fetched_at": "2026-11-26T18:39:18.641672+00:00",
       "ok": true
     },
     "index_valuation_000852": {
       "url_host": "oss-ch.csindex.com.cn",
-      "fetched_at": "2026-11-26T17:58:20.412132+00:00",
+      "fetched_at": "2026-11-26T18:39:20.715160+00:00",
       "ok": true
     },
     "margin": {
       "url_host": "sse.szse.official",
-      "fetched_at": "2026-11-26T17:59:14.328131+00:00",
+      "fetched_at": "2026-11-26T18:40:19.447152+00:00",
       "ok": true,
       "provider": "sse.szse.official",
       "asof": "2026-11-24",
@@ -4547,977 +4550,7 @@
         "main_pct_10d": null
       }
     ],
-    "history_sample": {
-      "code": "BK0475",
-      "reference_board": true,
-      "rows": [
-        {
-          "date": "2026-06-03",
-          "main_net": -250969088.0,
-          "small_net": 489517568.0,
-          "medium_net": -238548224.0,
-          "large_net": 259183360.0,
-          "super_net": -510152448.0
-        },
-        {
-          "date": "2026-06-04",
-          "main_net": -1061364080.0,
-          "small_net": 812380160.0,
-          "medium_net": 248983808.0,
-          "large_net": -171990784.0,
-          "super_net": -889373296.0
-        },
-        {
-          "date": "2026-06-05",
-          "main_net": 1061623808.0,
-          "small_net": -499048960.0,
-          "medium_net": -562574848.0,
-          "large_net": 1320253184.0,
-          "super_net": -258629376.0
-        },
-        {
-          "date": "2026-06-08",
-          "main_net": 1601113344.0,
-          "small_net": -925381888.0,
-          "medium_net": -675731712.0,
-          "large_net": 511378176.0,
-          "super_net": 1089735168.0
-        },
-        {
-          "date": "2026-06-09",
-          "main_net": 556624896.0,
-          "small_net": 208265984.0,
-          "medium_net": -764891392.0,
-          "large_net": -43971328.0,
-          "super_net": 600596224.0
-        },
-        {
-          "date": "2026-06-10",
-          "main_net": 587610368.0,
-          "small_net": -394361856.0,
-          "medium_net": -193248256.0,
-          "large_net": 60803328.0,
-          "super_net": 526807040.0
-        },
-        {
-          "date": "2026-06-11",
-          "main_net": -833655808.0,
-          "small_net": 521924096.0,
-          "medium_net": 311731968.0,
-          "large_net": -173967616.0,
-          "super_net": -659688192.0
-        },
-        {
-          "date": "2026-06-12",
-          "main_net": 1877177344.0,
-          "small_net": -1065879808.0,
-          "medium_net": -811297792.0,
-          "large_net": 676446464.0,
-          "super_net": 1200730880.0
-        },
-        {
-          "date": "2026-06-15",
-          "main_net": 1444840448.0,
-          "small_net": -1004578304.0,
-          "medium_net": -440262400.0,
-          "large_net": 1108011264.0,
-          "super_net": 336829184.0
-        },
-        {
-          "date": "2026-06-16",
-          "main_net": -1034419152.0,
-          "small_net": 355690752.0,
-          "medium_net": 678728448.0,
-          "large_net": -71598080.0,
-          "super_net": -962821072.0
-        },
-        {
-          "date": "2026-06-17",
-          "main_net": -1833538464.0,
-          "small_net": 1148588288.0,
-          "medium_net": 684950272.0,
-          "large_net": -119296768.0,
-          "super_net": -1714241696.0
-        },
-        {
-          "date": "2026-06-18",
-          "main_net": -3650028544.0,
-          "small_net": 1986213376.0,
-          "medium_net": 1663815168.0,
-          "large_net": -587602944.0,
-          "super_net": -3062425600.0
-        },
-        {
-          "date": "2026-06-22",
-          "main_net": 434859520.0,
-          "small_net": -110583296.0,
-          "medium_net": -324276224.0,
-          "large_net": 318875904.0,
-          "super_net": 115983616.0
-        },
-        {
-          "date": "2026-06-23",
-          "main_net": 2868747264.0,
-          "small_net": -2222025984.0,
-          "medium_net": -646721280.0,
-          "large_net": 1145469696.0,
-          "super_net": 1723277568.0
-        },
-        {
-          "date": "2026-06-24",
-          "main_net": -1649420800.0,
-          "small_net": 1016850176.0,
-          "medium_net": 632570368.0,
-          "large_net": -297584640.0,
-          "super_net": -1351836160.0
-        },
-        {
-          "date": "2026-06-25",
-          "main_net": -1146782720.0,
-          "small_net": 967252736.0,
-          "medium_net": 179529984.0,
-          "large_net": -25220608.0,
-          "super_net": -1121562112.0
-        },
-        {
-          "date": "2026-06-26",
-          "main_net": -1559570176.0,
-          "small_net": 794529792.0,
-          "medium_net": 765040640.0,
-          "large_net": -747980032.0,
-          "super_net": -811590144.0
-        },
-        {
-          "date": "2026-06-29",
-          "main_net": 633725952.0,
-          "small_net": -450908928.0,
-          "medium_net": -182817024.0,
-          "large_net": 378695168.0,
-          "super_net": 255030784.0
-        },
-        {
-          "date": "2026-06-30",
-          "main_net": -1635596288.0,
-          "small_net": 880231936.0,
-          "medium_net": 755364352.0,
-          "large_net": 36741888.0,
-          "super_net": -1672338176.0
-        },
-        {
-          "date": "2026-07-01",
-          "main_net": 687093856.0,
-          "small_net": -633528320.0,
-          "medium_net": -53565184.0,
-          "large_net": 227883520.0,
-          "super_net": 459210336.0
-        },
-        {
-          "date": "2026-07-02",
-          "main_net": 652415232.0,
-          "small_net": -509328384.0,
-          "medium_net": -143086848.0,
-          "large_net": 320768768.0,
-          "super_net": 331646464.0
-        },
-        {
-          "date": "2026-07-03",
-          "main_net": 18114992.0,
-          "small_net": 406757632.0,
-          "medium_net": -424872704.0,
-          "large_net": 124526848.0,
-          "super_net": -106411856.0
-        },
-        {
-          "date": "2026-07-06",
-          "main_net": 1474843392.0,
-          "small_net": -116800256.0,
-          "medium_net": -1358042624.0,
-          "large_net": 497780480.0,
-          "super_net": 977062912.0
-        },
-        {
-          "date": "2026-07-07",
-          "main_net": 646961568.0,
-          "small_net": -170646016.0,
-          "medium_net": -476315648.0,
-          "large_net": -188810752.0,
-          "super_net": 835772320.0
-        },
-        {
-          "date": "2026-07-08",
-          "main_net": 222861056.0,
-          "small_net": 324648704.0,
-          "medium_net": -547510016.0,
-          "large_net": -361988352.0,
-          "super_net": 584849408.0
-        },
-        {
-          "date": "2026-07-09",
-          "main_net": -663899968.0,
-          "small_net": 628934144.0,
-          "medium_net": 34965760.0,
-          "large_net": -850437888.0,
-          "super_net": 186537920.0
-        },
-        {
-          "date": "2026-07-10",
-          "main_net": 923771392.0,
-          "small_net": -386968576.0,
-          "medium_net": -536802560.0,
-          "large_net": -356394240.0,
-          "super_net": 1280165632.0
-        },
-        {
-          "date": "2026-07-13",
-          "main_net": -575423232.0,
-          "small_net": 824968448.0,
-          "medium_net": -249544960.0,
-          "large_net": -238578432.0,
-          "super_net": -336844800.0
-        },
-        {
-          "date": "2026-07-14",
-          "main_net": -1420643328.0,
-          "small_net": 1559793664.0,
-          "medium_net": -139150336.0,
-          "large_net": -181630720.0,
-          "super_net": -1239012608.0
-        },
-        {
-          "date": "2026-07-15",
-          "main_net": -2132490752.0,
-          "small_net": 1299408640.0,
-          "medium_net": 833082112.0,
-          "large_net": -931893760.0,
-          "super_net": -1200596992.0
-        },
-        {
-          "date": "2026-07-16",
-          "main_net": -1394000240.0,
-          "small_net": 1189441536.0,
-          "medium_net": 204558592.0,
-          "large_net": -808055808.0,
-          "super_net": -585944432.0
-        },
-        {
-          "date": "2026-07-17",
-          "main_net": -1117158656.0,
-          "small_net": 1539080192.0,
-          "medium_net": -421921792.0,
-          "large_net": -731347456.0,
-          "super_net": -385811200.0
-        },
-        {
-          "date": "2026-07-20",
-          "main_net": 367011584.0,
-          "small_net": 200677120.0,
-          "medium_net": -567688960.0,
-          "large_net": -309733376.0,
-          "super_net": 676744960.0
-        },
-        {
-          "date": "2026-07-21",
-          "main_net": -2870245376.0,
-          "small_net": 2745730816.0,
-          "medium_net": 124514560.0,
-          "large_net": -842768384.0,
-          "super_net": -2027476992.0
-        },
-        {
-          "date": "2026-07-22",
-          "main_net": -734588928.0,
-          "small_net": 127832320.0,
-          "medium_net": 606756352.0,
-          "large_net": -145239552.0,
-          "super_net": -589349376.0
-        },
-        {
-          "date": "2026-07-23",
-          "main_net": -1246832896.0,
-          "small_net": 969271808.0,
-          "medium_net": 277560832.0,
-          "large_net": -176881920.0,
-          "super_net": -1069950976.0
-        },
-        {
-          "date": "2026-07-24",
-          "main_net": -1868831344.0,
-          "small_net": 1244096512.0,
-          "medium_net": 624734720.0,
-          "large_net": -424404736.0,
-          "super_net": -1444426608.0
-        },
-        {
-          "date": "2026-07-27",
-          "main_net": -336579040.0,
-          "small_net": -9960960.0,
-          "medium_net": 346540288.0,
-          "large_net": -148649728.0,
-          "super_net": -187929312.0
-        },
-        {
-          "date": "2026-07-28",
-          "main_net": 1527127040.0,
-          "small_net": -640977920.0,
-          "medium_net": -886149120.0,
-          "large_net": 419064576.0,
-          "super_net": 1108062464.0
-        },
-        {
-          "date": "2026-07-29",
-          "main_net": -1873975040.0,
-          "small_net": 1013725440.0,
-          "medium_net": 860249600.0,
-          "large_net": -555909632.0,
-          "super_net": -1318065408.0
-        },
-        {
-          "date": "2026-07-30",
-          "main_net": 2457556736.0,
-          "small_net": -1482446080.0,
-          "medium_net": -975110656.0,
-          "large_net": 601014272.0,
-          "super_net": 1856542464.0
-        },
-        {
-          "date": "2026-07-31",
-          "main_net": -583167744.0,
-          "small_net": 554406912.0,
-          "medium_net": 28761088.0,
-          "large_net": -1206195456.0,
-          "super_net": 623027712.0
-        },
-        {
-          "date": "2026-08-03",
-          "main_net": -531045632.0,
-          "small_net": 78370048.0,
-          "medium_net": 452675584.0,
-          "large_net": -584262400.0,
-          "super_net": 53216768.0
-        },
-        {
-          "date": "2026-08-04",
-          "main_net": -1904451584.0,
-          "small_net": 1450008064.0,
-          "medium_net": 454443776.0,
-          "large_net": -299712512.0,
-          "super_net": -1604739072.0
-        },
-        {
-          "date": "2026-08-05",
-          "main_net": -888339456.0,
-          "small_net": 539880704.0,
-          "medium_net": 348458752.0,
-          "large_net": -158636544.0,
-          "super_net": -729702912.0
-        },
-        {
-          "date": "2026-08-06",
-          "main_net": -79432448.0,
-          "small_net": -93998592.0,
-          "medium_net": 173431040.0,
-          "large_net": 179037952.0,
-          "super_net": -258470400.0
-        },
-        {
-          "date": "2026-08-07",
-          "main_net": -1150113024.0,
-          "small_net": 453979392.0,
-          "medium_net": 696133888.0,
-          "large_net": -293655296.0,
-          "super_net": -856457728.0
-        },
-        {
-          "date": "2026-08-10",
-          "main_net": 185113264.0,
-          "small_net": -174598656.0,
-          "medium_net": -10514688.0,
-          "large_net": 134636032.0,
-          "super_net": 50477232.0
-        },
-        {
-          "date": "2026-08-11",
-          "main_net": 26195600.0,
-          "small_net": -521020672.0,
-          "medium_net": 494825216.0,
-          "large_net": -253987072.0,
-          "super_net": 280182672.0
-        },
-        {
-          "date": "2026-08-12",
-          "main_net": 622181872.0,
-          "small_net": -478419968.0,
-          "medium_net": -143762176.0,
-          "large_net": 102123008.0,
-          "super_net": 520058864.0
-        },
-        {
-          "date": "2026-08-13",
-          "main_net": 1885086128.0,
-          "small_net": -882291456.0,
-          "medium_net": -1002794752.0,
-          "large_net": 338667520.0,
-          "super_net": 1546418608.0
-        },
-        {
-          "date": "2026-08-14",
-          "main_net": 213499088.0,
-          "small_net": -145074688.0,
-          "medium_net": -68424448.0,
-          "large_net": 474421504.0,
-          "super_net": -260922416.0
-        },
-        {
-          "date": "2026-08-17",
-          "main_net": 164387728.0,
-          "small_net": 254774528.0,
-          "medium_net": -419161856.0,
-          "large_net": 24876544.0,
-          "super_net": 139511184.0
-        },
-        {
-          "date": "2026-08-18",
-          "main_net": 597585152.0,
-          "small_net": -403668480.0,
-          "medium_net": -193916928.0,
-          "large_net": 249543680.0,
-          "super_net": 348041472.0
-        },
-        {
-          "date": "2026-08-19",
-          "main_net": -389923072.0,
-          "small_net": -92696832.0,
-          "medium_net": 482619648.0,
-          "large_net": 4449792.0,
-          "super_net": -394372864.0
-        },
-        {
-          "date": "2026-08-20",
-          "main_net": 94190848.0,
-          "small_net": 474290176.0,
-          "medium_net": -568481280.0,
-          "large_net": -309323520.0,
-          "super_net": 403514368.0
-        },
-        {
-          "date": "2026-08-21",
-          "main_net": -849395152.0,
-          "small_net": 1035278336.0,
-          "medium_net": -185883392.0,
-          "large_net": -544127744.0,
-          "super_net": -305267408.0
-        },
-        {
-          "date": "2026-08-24",
-          "main_net": 287024384.0,
-          "small_net": 144332800.0,
-          "medium_net": -431356928.0,
-          "large_net": 77878016.0,
-          "super_net": 209146368.0
-        },
-        {
-          "date": "2026-08-25",
-          "main_net": -1195614208.0,
-          "small_net": 474555648.0,
-          "medium_net": 721058816.0,
-          "large_net": -299073024.0,
-          "super_net": -896541184.0
-        },
-        {
-          "date": "2026-08-26",
-          "main_net": -547244800.0,
-          "small_net": 590242048.0,
-          "medium_net": -42997504.0,
-          "large_net": -377907712.0,
-          "super_net": -169337088.0
-        },
-        {
-          "date": "2026-08-27",
-          "main_net": -1211495168.0,
-          "small_net": 919403008.0,
-          "medium_net": 292092160.0,
-          "large_net": -560247296.0,
-          "super_net": -651247872.0
-        },
-        {
-          "date": "2026-08-28",
-          "main_net": -591374848.0,
-          "small_net": 225968384.0,
-          "medium_net": 365406464.0,
-          "large_net": -500178944.0,
-          "super_net": -91195904.0
-        },
-        {
-          "date": "2026-08-31",
-          "main_net": 1880653056.0,
-          "small_net": -1157505024.0,
-          "medium_net": -723147776.0,
-          "large_net": 140305920.0,
-          "super_net": 1740347136.0
-        },
-        {
-          "date": "2026-09-01",
-          "main_net": 540546560.0,
-          "small_net": -613789440.0,
-          "medium_net": 73242624.0,
-          "large_net": -401865472.0,
-          "super_net": 942412032.0
-        },
-        {
-          "date": "2026-09-02",
-          "main_net": -511031552.0,
-          "small_net": 1041495552.0,
-          "medium_net": -530464000.0,
-          "large_net": -268660480.0,
-          "super_net": -242371072.0
-        },
-        {
-          "date": "2026-09-03",
-          "main_net": -1748387328.0,
-          "small_net": 1549057792.0,
-          "medium_net": 199329536.0,
-          "large_net": -435448320.0,
-          "super_net": -1312939008.0
-        },
-        {
-          "date": "2026-09-04",
-          "main_net": -37918464.0,
-          "small_net": -289988096.0,
-          "medium_net": 327906560.0,
-          "large_net": 525696512.0,
-          "super_net": -563614976.0
-        },
-        {
-          "date": "2026-09-07",
-          "main_net": -1695075328.0,
-          "small_net": 871762944.0,
-          "medium_net": 823312640.0,
-          "large_net": -1472619520.0,
-          "super_net": -222455808.0
-        },
-        {
-          "date": "2026-09-08",
-          "main_net": -162483712.0,
-          "small_net": 120780032.0,
-          "medium_net": 41703424.0,
-          "large_net": -216144640.0,
-          "super_net": 53660928.0
-        },
-        {
-          "date": "2026-09-09",
-          "main_net": -265560816.0,
-          "small_net": 659595520.0,
-          "medium_net": -394034688.0,
-          "large_net": -14840320.0,
-          "super_net": -250720496.0
-        },
-        {
-          "date": "2026-09-10",
-          "main_net": 337296896.0,
-          "small_net": -384659200.0,
-          "medium_net": 47361792.0,
-          "large_net": 283554816.0,
-          "super_net": 53742080.0
-        },
-        {
-          "date": "2026-09-11",
-          "main_net": -395451136.0,
-          "small_net": 233872896.0,
-          "medium_net": 161577984.0,
-          "large_net": 361428992.0,
-          "super_net": -756880128.0
-        },
-        {
-          "date": "2026-09-14",
-          "main_net": -846595584.0,
-          "small_net": 323399936.0,
-          "medium_net": 523195648.0,
-          "large_net": -437290752.0,
-          "super_net": -409304832.0
-        },
-        {
-          "date": "2026-09-15",
-          "main_net": -1707262208.0,
-          "small_net": 1225617152.0,
-          "medium_net": 481645312.0,
-          "large_net": -1363859712.0,
-          "super_net": -343402496.0
-        },
-        {
-          "date": "2026-09-16",
-          "main_net": -515766384.0,
-          "small_net": 246903296.0,
-          "medium_net": 268863232.0,
-          "large_net": -118361856.0,
-          "super_net": -397404528.0
-        },
-        {
-          "date": "2026-09-17",
-          "main_net": -974575392.0,
-          "small_net": 955912960.0,
-          "medium_net": 18662144.0,
-          "large_net": -60356608.0,
-          "super_net": -914218784.0
-        },
-        {
-          "date": "2026-09-18",
-          "main_net": -238173728.0,
-          "small_net": -116058624.0,
-          "medium_net": 354232320.0,
-          "large_net": -149260288.0,
-          "super_net": -88913440.0
-        },
-        {
-          "date": "2026-09-21",
-          "main_net": 811808560.0,
-          "small_net": -674525952.0,
-          "medium_net": -137282560.0,
-          "large_net": 409498112.0,
-          "super_net": 402310448.0
-        },
-        {
-          "date": "2026-09-22",
-          "main_net": -47487888.0,
-          "small_net": -640265216.0,
-          "medium_net": 687752960.0,
-          "large_net": 397088000.0,
-          "super_net": -444575888.0
-        },
-        {
-          "date": "2026-09-23",
-          "main_net": -1035212112.0,
-          "small_net": 432707584.0,
-          "medium_net": 602504704.0,
-          "large_net": -479936768.0,
-          "super_net": -555275344.0
-        },
-        {
-          "date": "2026-09-24",
-          "main_net": 150986528.0,
-          "small_net": -181584896.0,
-          "medium_net": 30598144.0,
-          "large_net": 65774592.0,
-          "super_net": 85211936.0
-        },
-        {
-          "date": "2026-09-28",
-          "main_net": -896960544.0,
-          "small_net": 467605504.0,
-          "medium_net": 429355264.0,
-          "large_net": 14447872.0,
-          "super_net": -911408416.0
-        },
-        {
-          "date": "2026-09-29",
-          "main_net": -134974144.0,
-          "small_net": 350119680.0,
-          "medium_net": -215145472.0,
-          "large_net": 200832000.0,
-          "super_net": -335806144.0
-        },
-        {
-          "date": "2026-09-30",
-          "main_net": -86997760.0,
-          "small_net": 763414784.0,
-          "medium_net": -676417024.0,
-          "large_net": -480263424.0,
-          "super_net": 393265664.0
-        },
-        {
-          "date": "2026-10-08",
-          "main_net": -1094552832.0,
-          "small_net": 248886784.0,
-          "medium_net": 845665792.0,
-          "large_net": -366516992.0,
-          "super_net": -728035840.0
-        },
-        {
-          "date": "2026-10-09",
-          "main_net": -1464721920.0,
-          "small_net": 1068846080.0,
-          "medium_net": 395876096.0,
-          "large_net": -674104576.0,
-          "super_net": -790617344.0
-        },
-        {
-          "date": "2026-10-12",
-          "main_net": 867660032.0,
-          "small_net": -1107266048.0,
-          "medium_net": 239606016.0,
-          "large_net": 785893888.0,
-          "super_net": 81766144.0
-        },
-        {
-          "date": "2026-10-13",
-          "main_net": -185250816.0,
-          "small_net": -507014912.0,
-          "medium_net": 692265728.0,
-          "large_net": -242702848.0,
-          "super_net": 57452032.0
-        },
-        {
-          "date": "2026-10-14",
-          "main_net": -675228928.0,
-          "small_net": 346990080.0,
-          "medium_net": 328238848.0,
-          "large_net": 291014144.0,
-          "super_net": -966243072.0
-        },
-        {
-          "date": "2026-10-15",
-          "main_net": -679960576.0,
-          "small_net": -227800064.0,
-          "medium_net": 907760384.0,
-          "large_net": 29279744.0,
-          "super_net": -709240320.0
-        },
-        {
-          "date": "2026-10-16",
-          "main_net": -228243200.0,
-          "small_net": 67286784.0,
-          "medium_net": 160956416.0,
-          "large_net": -306760960.0,
-          "super_net": 78517760.0
-        },
-        {
-          "date": "2026-10-19",
-          "main_net": 329946368.0,
-          "small_net": -168072448.0,
-          "medium_net": -161873664.0,
-          "large_net": 157430528.0,
-          "super_net": 172515840.0
-        },
-        {
-          "date": "2026-10-20",
-          "main_net": -120851712.0,
-          "small_net": -1621793536.0,
-          "medium_net": 1742645248.0,
-          "large_net": 46475008.0,
-          "super_net": -167326720.0
-        },
-        {
-          "date": "2026-10-21",
-          "main_net": -285363456.0,
-          "small_net": -260294144.0,
-          "medium_net": 545657600.0,
-          "large_net": -401412096.0,
-          "super_net": 116048640.0
-        },
-        {
-          "date": "2026-10-22",
-          "main_net": -250843392.0,
-          "small_net": -1062877696.0,
-          "medium_net": 1313721088.0,
-          "large_net": 83061248.0,
-          "super_net": -333904640.0
-        },
-        {
-          "date": "2026-10-23",
-          "main_net": -2990732544.0,
-          "small_net": 222788864.0,
-          "medium_net": 2767943680.0,
-          "large_net": -976008448.0,
-          "super_net": -2014724096.0
-        },
-        {
-          "date": "2026-10-26",
-          "main_net": 76684288.0,
-          "small_net": 180716032.0,
-          "medium_net": -257400064.0,
-          "large_net": 218077952.0,
-          "super_net": -141393664.0
-        },
-        {
-          "date": "2026-10-27",
-          "main_net": 769581056.0,
-          "small_net": -1083543552.0,
-          "medium_net": 313962496.0,
-          "large_net": 247047168.0,
-          "super_net": 522533888.0
-        },
-        {
-          "date": "2026-10-28",
-          "main_net": 781145088.0,
-          "small_net": -686778112.0,
-          "medium_net": -94366976.0,
-          "large_net": 267683840.0,
-          "super_net": 513461248.0
-        },
-        {
-          "date": "2026-10-29",
-          "main_net": 111467264.0,
-          "small_net": 538778624.0,
-          "medium_net": -650245632.0,
-          "large_net": 33657344.0,
-          "super_net": 77809920.0
-        },
-        {
-          "date": "2026-10-30",
-          "main_net": -103999232.0,
-          "small_net": -141435904.0,
-          "medium_net": 245435136.0,
-          "large_net": -3421952.0,
-          "super_net": -100577280.0
-        },
-        {
-          "date": "2026-11-02",
-          "main_net": -1949459456.0,
-          "small_net": 1428441856.0,
-          "medium_net": 521017600.0,
-          "large_net": -651324416.0,
-          "super_net": -1298135040.0
-        },
-        {
-          "date": "2026-11-03",
-          "main_net": -2626982656.0,
-          "small_net": 624986368.0,
-          "medium_net": 2001996544.0,
-          "large_net": -269960704.0,
-          "super_net": -2357021952.0
-        },
-        {
-          "date": "2026-11-04",
-          "main_net": -1533481984.0,
-          "small_net": 1311800320.0,
-          "medium_net": 221681408.0,
-          "large_net": -842822144.0,
-          "super_net": -690659840.0
-        },
-        {
-          "date": "2026-11-05",
-          "main_net": 850560768.0,
-          "small_net": -293484800.0,
-          "medium_net": -557076224.0,
-          "large_net": 877322752.0,
-          "super_net": -26761984.0
-        },
-        {
-          "date": "2026-11-06",
-          "main_net": 852760576.0,
-          "small_net": -632973056.0,
-          "medium_net": -219787264.0,
-          "large_net": 1031089152.0,
-          "super_net": -178328576.0
-        },
-        {
-          "date": "2026-11-09",
-          "main_net": 978803712.0,
-          "small_net": -199609088.0,
-          "medium_net": -779194624.0,
-          "large_net": 772943616.0,
-          "super_net": 205860096.0
-        },
-        {
-          "date": "2026-11-10",
-          "main_net": -125745120.0,
-          "small_net": 288832000.0,
-          "medium_net": -163086848.0,
-          "large_net": 205702912.0,
-          "super_net": -331448032.0
-        },
-        {
-          "date": "2026-11-11",
-          "main_net": -321137152.0,
-          "small_net": 499056128.0,
-          "medium_net": -177918720.0,
-          "large_net": -273106688.0,
-          "super_net": -48030464.0
-        },
-        {
-          "date": "2026-11-12",
-          "main_net": 745964288.0,
-          "small_net": -110717184.0,
-          "medium_net": -635247104.0,
-          "large_net": 736970496.0,
-          "super_net": 8993792.0
-        },
-        {
-          "date": "2026-11-13",
-          "main_net": 1225672704.0,
-          "small_net": -943927808.0,
-          "medium_net": -281744896.0,
-          "large_net": 927293696.0,
-          "super_net": 298379008.0
-        },
-        {
-          "date": "2026-11-16",
-          "main_net": 388940288.0,
-          "small_net": -457909760.0,
-          "medium_net": 68969216.0,
-          "large_net": 1118542080.0,
-          "super_net": -729601792.0
-        },
-        {
-          "date": "2026-11-17",
-          "main_net": -1354427392.0,
-          "small_net": 934429184.0,
-          "medium_net": 419997952.0,
-          "large_net": 23712512.0,
-          "super_net": -1378139904.0
-        },
-        {
-          "date": "2026-11-18",
-          "main_net": -2633210112.0,
-          "small_net": 2123592448.0,
-          "medium_net": 509617664.0,
-          "large_net": -997784576.0,
-          "super_net": -1635425536.0
-        },
-        {
-          "date": "2026-11-19",
-          "main_net": -1929012992.0,
-          "small_net": 1373260288.0,
-          "medium_net": 555752704.0,
-          "large_net": -270711808.0,
-          "super_net": -1658301184.0
-        },
-        {
-          "date": "2026-11-20",
-          "main_net": -624495360.0,
-          "small_net": -719043840.0,
-          "medium_net": 1343539200.0,
-          "large_net": -32735232.0,
-          "super_net": -591760128.0
-        },
-        {
-          "date": "2026-11-23",
-          "main_net": 1810674432.0,
-          "small_net": -2452760320.0,
-          "medium_net": 642086400.0,
-          "large_net": 670414336.0,
-          "super_net": 1140260096.0
-        },
-        {
-          "date": "2026-11-24",
-          "main_net": 541007872.0,
-          "small_net": 213698560.0,
-          "medium_net": -754706432.0,
-          "large_net": 355721472.0,
-          "super_net": 185286400.0
-        },
-        {
-          "date": "2026-11-25",
-          "main_net": -1019087616.0,
-          "small_net": -311181056.0,
-          "medium_net": 1330268672.0,
-          "large_net": 493379328.0,
-          "super_net": -1512466944.0
-        },
-        {
-          "date": "2026-11-26",
-          "main_net": 178493184.0,
-          "small_net": -285595136.0,
-          "medium_net": 107101696.0,
-          "large_net": 461383680.0,
-          "super_net": -282890496.0
-        }
-      ],
-      "column_order_verified": false,
-      "verified": false,
-      "verified_asof": "2026-11-26",
-      "matched_fields": [],
-      "verify_reason": "snapshot 来自新浪，无法交叉核对列顺序"
-    }
+    "history_sample": null
   },
   "limit_pools": {
     "evidence": "descriptive",
@@ -7854,48 +6887,8 @@
   },
   "breadth": {
     "evidence": "descriptive",
-    "note": "这是实时快照，仅在收盘后同日运行时有效。只作市场背景，不进入 LPPLS 报警或任何模型。",
-    "up": 1730,
-    "down": 3395,
-    "flat": 173,
-    "amount_yuan": 1317377170694.641,
-    "indices": [
-      {
-        "code": "000001",
-        "name": "上证指数",
-        "up": 784,
-        "down": 1488,
-        "flat": 86,
-        "amount_yuan": 613332810452.5
-      },
-      {
-        "code": "399001",
-        "name": "深证成指",
-        "up": 946,
-        "down": 1907,
-        "flat": 87,
-        "amount_yuan": 704044360242.141
-      }
-    ],
-    "snapshot_at": "2026-11-26T17:57:06.830027+00:00",
-    "dist": {
-      "zt": 65,
-      "gt10": 14,
-      "7_10": 43,
-      "3_7": 280,
-      "0_3": 1364,
-      "flat": 173,
-      "m0_3": 3049,
-      "m3_7": 529,
-      "m7_10": 46,
-      "lt10": 12,
-      "dt": 5
-    },
-    "dist_n": 5580,
-    "dist_source": "sina hs_a",
-    "dist_limit_sets": true,
-    "amount_prev_yuan": 1383097534204.2766,
-    "amount_prev_date": "2026-11-25"
+    "note": "实时市场宽度快照；仅在收盘后同日运行时有效。只作市场背景，不进入 LPPLS 报警或任何模型。",
+    "data": null
   },
   "themes": {
     "evidence": "descriptive",
@@ -9097,7 +8090,7 @@
         "rank": 1,
         "code": "002242",
         "name": "九阳股份",
-        "heat": 14306367.0,
+        "heat": 14277263.0,
         "pct": 8.6618,
         "rank_chg": 0.0,
         "concepts": [
@@ -9110,7 +8103,7 @@
         "rank": 2,
         "code": "002148",
         "name": "北纬科技",
-        "heat": 7478815.0,
+        "heat": 7621386.0,
         "pct": 10.0292,
         "rank_chg": 0.0,
         "concepts": [
@@ -9123,7 +8116,7 @@
         "rank": 3,
         "code": "600410",
         "name": "华胜天成",
-        "heat": 6090016.0,
+        "heat": 6115661.0,
         "pct": 6.0268,
         "rank_chg": 0.0,
         "concepts": [
@@ -9136,7 +8129,7 @@
         "rank": 4,
         "code": "000530",
         "name": "冰山冷热",
-        "heat": 5961407.0,
+        "heat": 5963656.0,
         "pct": 10.0,
         "rank_chg": 0.0,
         "concepts": [
@@ -9149,7 +8142,7 @@
         "rank": 5,
         "code": "002579",
         "name": "中京电子",
-        "heat": 5929330.0,
+        "heat": 5899288.0,
         "pct": 7.9125,
         "rank_chg": 0.0,
         "concepts": [
@@ -9162,7 +8155,7 @@
         "rank": 6,
         "code": "002685",
         "name": "华东重机",
-        "heat": 4594036.0,
+        "heat": 4580657.0,
         "pct": -10.0111,
         "rank_chg": 0.0,
         "concepts": [
@@ -9175,7 +8168,7 @@
         "rank": 7,
         "code": "002086",
         "name": "东方海洋",
-        "heat": 4250882.0,
+        "heat": 4282328.0,
         "pct": 9.9078,
         "rank_chg": 0.0,
         "concepts": [
@@ -9188,7 +8181,7 @@
         "rank": 8,
         "code": "300308",
         "name": "中际旭创",
-        "heat": 4173180.0,
+        "heat": 4163432.0,
         "pct": 5.1785,
         "rank_chg": 0.0,
         "concepts": [
@@ -9201,7 +8194,7 @@
         "rank": 9,
         "code": "600103",
         "name": "青山纸业",
-        "heat": 3813627.0,
+        "heat": 3814760.0,
         "pct": 10.0529,
         "rank_chg": 0.0,
         "concepts": [
@@ -9214,7 +8207,7 @@
         "rank": 10,
         "code": "000678",
         "name": "襄阳轴承",
-        "heat": 3477118.0,
+        "heat": 3564890.0,
         "pct": 10.02,
         "rank_chg": 0.0,
         "concepts": [
@@ -9227,7 +8220,7 @@
         "rank": 11,
         "code": "600722",
         "name": "金牛化工",
-        "heat": 3342466.0,
+        "heat": 3407546.0,
         "pct": 10.038,
         "rank_chg": 0.0,
         "concepts": [
@@ -9240,7 +8233,7 @@
         "rank": 12,
         "code": "300502",
         "name": "新易盛",
-        "heat": 3155910.0,
+        "heat": 3152114.0,
         "pct": 4.2637,
         "rank_chg": 0.0,
         "concepts": [
@@ -9253,7 +8246,7 @@
         "rank": 13,
         "code": "600467",
         "name": "好当家",
-        "heat": 3014463.0,
+        "heat": 3024786.0,
         "pct": 10.0,
         "rank_chg": 0.0,
         "concepts": [
@@ -9264,24 +8257,11 @@
       },
       {
         "rank": 14,
-        "code": "002771",
-        "name": "真视通",
-        "heat": 2587912.0,
-        "pct": 4.645,
-        "rank_chg": 0.0,
-        "concepts": [
-          "在线教育",
-          "语音技术"
-        ],
-        "popularity_tag": "8天5板"
-      },
-      {
-        "rank": 15,
         "code": "000158",
         "name": "常山北明",
-        "heat": 2525066.0,
+        "heat": 2634209.0,
         "pct": 9.9842,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "算力租赁",
           "ERP概念"
@@ -9289,10 +8269,23 @@
         "popularity_tag": "首板涨停"
       },
       {
+        "rank": 15,
+        "code": "002771",
+        "name": "真视通",
+        "heat": 2566459.0,
+        "pct": 4.645,
+        "rank_chg": -1.0,
+        "concepts": [
+          "在线教育",
+          "语音技术"
+        ],
+        "popularity_tag": "8天5板"
+      },
+      {
         "rank": 16,
         "code": "002384",
         "name": "东山精密",
-        "heat": 2415349.0,
+        "heat": 2404478.0,
         "pct": 3.8968,
         "rank_chg": 0.0,
         "concepts": [
@@ -9305,7 +8298,7 @@
         "rank": 17,
         "code": "600814",
         "name": "杭州解百",
-        "heat": 2276866.0,
+        "heat": 2276341.0,
         "pct": 10.0599,
         "rank_chg": 0.0,
         "concepts": [
@@ -9316,37 +8309,11 @@
       },
       {
         "rank": 18,
-        "code": "002548",
-        "name": "金新农",
-        "heat": 2225035.0,
-        "pct": 6.3872,
-        "rank_chg": 0.0,
-        "concepts": [
-          "猪肉",
-          "生态农业"
-        ],
-        "popularity_tag": "5天4板"
-      },
-      {
-        "rank": 19,
-        "code": "300394",
-        "name": "天孚通信",
-        "heat": 2221987.0,
-        "pct": 2.384,
-        "rank_chg": 0.0,
-        "concepts": [
-          "共封装光学(CPO)",
-          "光纤概念"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 20,
         "code": "603960",
         "name": "克来机电",
-        "heat": 2194363.0,
+        "heat": 2239948.0,
         "pct": 10.0,
-        "rank_chg": 0.0,
+        "rank_chg": 2.0,
         "concepts": [
           "汽车热管理",
           "机器视觉"
@@ -9354,10 +8321,36 @@
         "popularity_tag": "5天5板"
       },
       {
+        "rank": 19,
+        "code": "002548",
+        "name": "金新农",
+        "heat": 2233385.0,
+        "pct": 6.3872,
+        "rank_chg": -1.0,
+        "concepts": [
+          "猪肉",
+          "生态农业"
+        ],
+        "popularity_tag": "5天4板"
+      },
+      {
+        "rank": 20,
+        "code": "300394",
+        "name": "天孚通信",
+        "heat": 2182322.0,
+        "pct": 2.384,
+        "rank_chg": -1.0,
+        "concepts": [
+          "共封装光学(CPO)",
+          "光纤概念"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 21,
         "code": "688836",
         "name": "宇树科技",
-        "heat": 2171164.0,
+        "heat": 2134314.0,
         "pct": -3.1991,
         "rank_chg": 0.0,
         "concepts": [
@@ -9368,24 +8361,11 @@
       },
       {
         "rank": 22,
-        "code": "300750",
-        "name": "宁德时代",
-        "heat": 2144405.0,
-        "pct": -2.0152,
-        "rank_chg": 0.0,
-        "concepts": [
-          "钠离子电池",
-          "动力电池回收"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 23,
         "code": "000823",
         "name": "超声电子",
-        "heat": 2099129.0,
+        "heat": 2124917.0,
         "pct": 7.5052,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "PCB概念",
           "共封装光学(CPO)"
@@ -9393,10 +8373,23 @@
         "popularity_tag": null
       },
       {
+        "rank": 23,
+        "code": "300750",
+        "name": "宁德时代",
+        "heat": 2068523.0,
+        "pct": -2.0152,
+        "rank_chg": -1.0,
+        "concepts": [
+          "钠离子电池",
+          "动力电池回收"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 24,
         "code": "688825",
         "name": "长鑫科技",
-        "heat": 2087751.0,
+        "heat": 2052601.0,
         "pct": -2.7083,
         "rank_chg": 0.0,
         "concepts": [
@@ -9407,24 +8400,11 @@
       },
       {
         "rank": 25,
-        "code": "605577",
-        "name": "龙版传媒",
-        "heat": 2047218.0,
-        "pct": 2.7958,
-        "rank_chg": 0.0,
-        "concepts": [
-          "AI视频",
-          "文化传媒概念"
-        ],
-        "popularity_tag": "5天3板"
-      },
-      {
-        "rank": 26,
         "code": "603324",
         "name": "盛剑科技",
-        "heat": 2029068.0,
+        "heat": 2052487.0,
         "pct": 10.0093,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "先进封装",
           "中芯国际概念"
@@ -9432,25 +8412,25 @@
         "popularity_tag": "8天7板"
       },
       {
-        "rank": 27,
-        "code": "600715",
-        "name": "文投控股",
-        "heat": 1874831.0,
-        "pct": -6.3604,
-        "rank_chg": 0.0,
+        "rank": 26,
+        "code": "605577",
+        "name": "龙版传媒",
+        "heat": 2026130.0,
+        "pct": 2.7958,
+        "rank_chg": -1.0,
         "concepts": [
-          "短剧游戏",
-          "手机游戏"
+          "AI视频",
+          "文化传媒概念"
         ],
-        "popularity_tag": null
+        "popularity_tag": "5天3板"
       },
       {
-        "rank": 28,
+        "rank": 27,
         "code": "300324",
         "name": "旋极信息",
-        "heat": 1864232.0,
+        "heat": 1930386.0,
         "pct": 20.0,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "云游戏",
           "算力租赁"
@@ -9458,25 +8438,12 @@
         "popularity_tag": "首板涨停"
       },
       {
-        "rank": 29,
-        "code": "601398",
-        "name": "工商银行",
-        "heat": 1818135.0,
-        "pct": 0.3261,
-        "rank_chg": 0.0,
-        "concepts": [
-          "证金持股",
-          "同花顺中特估100"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 30,
+        "rank": 28,
         "code": "600127",
         "name": "金健米业",
-        "heat": 1798718.0,
+        "heat": 1867020.0,
         "pct": 10.0585,
-        "rank_chg": 0.0,
+        "rank_chg": 2.0,
         "concepts": [
           "玉米",
           "粮食概念"
@@ -9484,10 +8451,36 @@
         "popularity_tag": "首板涨停"
       },
       {
+        "rank": 29,
+        "code": "600715",
+        "name": "文投控股",
+        "heat": 1847741.0,
+        "pct": -6.3604,
+        "rank_chg": -2.0,
+        "concepts": [
+          "短剧游戏",
+          "手机游戏"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 30,
+        "code": "601398",
+        "name": "工商银行",
+        "heat": 1792430.0,
+        "pct": 0.3261,
+        "rank_chg": -1.0,
+        "concepts": [
+          "证金持股",
+          "同花顺中特估100"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 31,
         "code": "002261",
         "name": "拓维信息",
-        "heat": 1647949.0,
+        "heat": 1744940.0,
         "pct": 10.0262,
         "rank_chg": 0.0,
         "concepts": [
@@ -9500,7 +8493,7 @@
         "rank": 32,
         "code": "603030",
         "name": "全筑股份",
-        "heat": 1646573.0,
+        "heat": 1667081.0,
         "pct": 9.9617,
         "rank_chg": 0.0,
         "concepts": [
@@ -9513,7 +8506,7 @@
         "rank": 33,
         "code": "600839",
         "name": "四川长虹",
-        "heat": 1587968.0,
+        "heat": 1603775.0,
         "pct": 4.8696,
         "rank_chg": 0.0,
         "concepts": [
@@ -9524,24 +8517,11 @@
       },
       {
         "rank": 34,
-        "code": "002122",
-        "name": "汇洲智能",
-        "heat": 1470672.0,
-        "pct": 5.8496,
-        "rank_chg": 0.0,
-        "concepts": [
-          "拼多多概念",
-          "文化传媒概念"
-        ],
-        "popularity_tag": "4天3板"
-      },
-      {
-        "rank": 35,
         "code": "002081",
         "name": "金螳螂",
-        "heat": 1394279.0,
+        "heat": 1480714.0,
         "pct": 10.0503,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "芯片概念",
           "新型城镇化"
@@ -9549,25 +8529,25 @@
         "popularity_tag": "首板涨停"
       },
       {
-        "rank": 36,
-        "code": "601138",
-        "name": "工业富联",
-        "heat": 1384643.0,
-        "pct": 3.5092,
-        "rank_chg": 0.0,
+        "rank": 35,
+        "code": "002122",
+        "name": "汇洲智能",
+        "heat": 1444219.0,
+        "pct": 5.8496,
+        "rank_chg": -1.0,
         "concepts": [
-          "共封装光学(CPO)",
-          "同花顺果指数"
+          "拼多多概念",
+          "文化传媒概念"
         ],
-        "popularity_tag": null
+        "popularity_tag": "4天3板"
       },
       {
-        "rank": 37,
+        "rank": 36,
         "code": "002565",
         "name": "顺灏股份",
-        "heat": 1347506.0,
+        "heat": 1398810.0,
         "pct": 10.0522,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "卫星导航",
           "商业航天"
@@ -9575,51 +8555,25 @@
         "popularity_tag": "首板涨停"
       },
       {
-        "rank": 38,
-        "code": "002642",
-        "name": "荣联科技",
-        "heat": 1245473.0,
-        "pct": -2.459,
-        "rank_chg": 0.0,
-        "concepts": [
-          "ChatGPT概念",
-          "国资云"
-        ],
-        "popularity_tag": "5天3板"
-      },
-      {
-        "rank": 39,
-        "code": "605488",
-        "name": "福莱新材",
-        "heat": 1239811.0,
-        "pct": 4.5958,
-        "rank_chg": 0.0,
-        "concepts": [
-          "人形机器人",
-          "苹果概念"
-        ],
-        "popularity_tag": "4天2板"
-      },
-      {
-        "rank": 40,
-        "code": "600183",
-        "name": "生益科技",
-        "heat": 1237391.0,
-        "pct": 5.8532,
-        "rank_chg": 0.0,
+        "rank": 37,
+        "code": "601138",
+        "name": "工业富联",
+        "heat": 1374685.0,
+        "pct": 3.5092,
+        "rank_chg": -1.0,
         "concepts": [
           "共封装光学(CPO)",
-          "PCB概念"
+          "同花顺果指数"
         ],
         "popularity_tag": null
       },
       {
-        "rank": 41,
+        "rank": 38,
         "code": "002639",
         "name": "雪人集团",
-        "heat": 1216261.0,
+        "heat": 1254958.0,
         "pct": 10.0262,
-        "rank_chg": 0.0,
+        "rank_chg": 3.0,
         "concepts": [
           "冰雪产业",
           "体育产业"
@@ -9627,12 +8581,38 @@
         "popularity_tag": "首板涨停"
       },
       {
-        "rank": 42,
+        "rank": 39,
+        "code": "600183",
+        "name": "生益科技",
+        "heat": 1249233.0,
+        "pct": 5.8532,
+        "rank_chg": 1.0,
+        "concepts": [
+          "共封装光学(CPO)",
+          "PCB概念"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 40,
+        "code": "605488",
+        "name": "福莱新材",
+        "heat": 1249049.0,
+        "pct": 4.5958,
+        "rank_chg": -1.0,
+        "concepts": [
+          "人形机器人",
+          "苹果概念"
+        ],
+        "popularity_tag": "4天2板"
+      },
+      {
+        "rank": 41,
         "code": "603466",
         "name": "风语筑",
-        "heat": 1212522.0,
+        "heat": 1228345.0,
         "pct": 5.7895,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "AI视频",
           "文化传媒概念"
@@ -9640,12 +8620,12 @@
         "popularity_tag": null
       },
       {
-        "rank": 43,
+        "rank": 42,
         "code": "002149",
         "name": "西部材料",
-        "heat": 1198954.0,
+        "heat": 1218764.0,
         "pct": 7.3036,
-        "rank_chg": 0.0,
+        "rank_chg": 1.0,
         "concepts": [
           "航空发动机",
           "卫星导航"
@@ -9653,10 +8633,23 @@
         "popularity_tag": null
       },
       {
+        "rank": 43,
+        "code": "002642",
+        "name": "荣联科技",
+        "heat": 1208306.0,
+        "pct": -2.459,
+        "rank_chg": -5.0,
+        "concepts": [
+          "ChatGPT概念",
+          "国资云"
+        ],
+        "popularity_tag": "5天3板"
+      },
+      {
         "rank": 44,
         "code": "300136",
         "name": "信维通信",
-        "heat": 1173037.0,
+        "heat": 1186354.0,
         "pct": 4.5986,
         "rank_chg": 0.0,
         "concepts": [
@@ -9667,37 +8660,11 @@
       },
       {
         "rank": 45,
-        "code": "301313",
-        "name": "凡拓数创",
-        "heat": 1169148.0,
-        "pct": -2.9888,
-        "rank_chg": 0.0,
-        "concepts": [
-          "空间计算",
-          "智谱AI"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 46,
-        "code": "601188",
-        "name": "龙江交通",
-        "heat": 1152046.0,
-        "pct": 4.5131,
-        "rank_chg": 0.0,
-        "concepts": [
-          "冰雪产业",
-          "黑龙江自贸区"
-        ],
-        "popularity_tag": null
-      },
-      {
-        "rank": 47,
         "code": "688820",
         "name": "盛合晶微",
-        "heat": 1147987.0,
+        "heat": 1177651.0,
         "pct": 18.9412,
-        "rank_chg": 0.0,
+        "rank_chg": 2.0,
         "concepts": [
           "存储芯片",
           "先进封装"
@@ -9705,12 +8672,51 @@
         "popularity_tag": null
       },
       {
+        "rank": 46,
+        "code": "002197",
+        "name": "证通电子",
+        "heat": 1167734.0,
+        "pct": 9.9844,
+        "rank_chg": 5.0,
+        "concepts": [
+          "数字水印",
+          "算力租赁"
+        ],
+        "popularity_tag": "2天2板"
+      },
+      {
+        "rank": 47,
+        "code": "301313",
+        "name": "凡拓数创",
+        "heat": 1165460.0,
+        "pct": -2.9888,
+        "rank_chg": -2.0,
+        "concepts": [
+          "空间计算",
+          "智谱AI"
+        ],
+        "popularity_tag": null
+      },
+      {
         "rank": 48,
+        "code": "601188",
+        "name": "龙江交通",
+        "heat": 1154787.0,
+        "pct": 4.5131,
+        "rank_chg": -2.0,
+        "concepts": [
+          "冰雪产业",
+          "黑龙江自贸区"
+        ],
+        "popularity_tag": null
+      },
+      {
+        "rank": 49,
         "code": "600261",
         "name": "阳光照明",
-        "heat": 1136298.0,
+        "heat": 1127640.0,
         "pct": -7.7803,
-        "rank_chg": 0.0,
+        "rank_chg": -1.0,
         "concepts": [
           "智能家居",
           "跨境电商"
@@ -9718,434 +8724,20 @@
         "popularity_tag": null
       },
       {
-        "rank": 49,
+        "rank": 50,
         "code": "600206",
         "name": "有研新材",
-        "heat": 1127704.0,
+        "heat": 1122469.0,
         "pct": -2.8955,
-        "rank_chg": 0.0,
+        "rank_chg": -1.0,
         "concepts": [
           "国家大基金持股",
           "中芯国际概念"
         ],
         "popularity_tag": null
-      },
-      {
-        "rank": 50,
-        "code": "601086",
-        "name": "国芳集团",
-        "heat": 1124485.0,
-        "pct": 9.6744,
-        "rank_chg": 0.0,
-        "concepts": [
-          "IP经济(谷子经济)",
-          "西部大开发"
-        ],
-        "popularity_tag": "2天1板"
       }
     ],
-    "eastmoney": [
-      {
-        "rank": 1,
-        "code": "002242",
-        "name": "九阳股份",
-        "price": 41.9,
-        "pct": 8.66,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 2,
-        "code": "002148",
-        "name": "北纬科技",
-        "price": 11.3,
-        "pct": 10.03,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 3,
-        "code": "000158",
-        "name": "常山北明",
-        "price": 13.88,
-        "pct": 9.98,
-        "rank_chg": 3.0
-      },
-      {
-        "rank": 4,
-        "code": "600722",
-        "name": "金牛化工",
-        "price": 14.47,
-        "pct": 10.04,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 5,
-        "code": "600103",
-        "name": "青山纸业",
-        "price": 4.16,
-        "pct": 10.05,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 6,
-        "code": "000530",
-        "name": "冰山冷热",
-        "price": 16.17,
-        "pct": 10.0,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 7,
-        "code": "002261",
-        "name": "拓维信息",
-        "price": 20.96,
-        "pct": 10.03,
-        "rank_chg": 2.0
-      },
-      {
-        "rank": 8,
-        "code": "002579",
-        "name": "中京电子",
-        "price": 19.23,
-        "pct": 7.91,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 9,
-        "code": "600410",
-        "name": "华胜天成",
-        "price": 19.0,
-        "pct": 6.03,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 10,
-        "code": "002086",
-        "name": "东方海洋",
-        "price": 4.77,
-        "pct": 9.91,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 11,
-        "code": "002685",
-        "name": "华东重机",
-        "price": 8.09,
-        "pct": -10.01,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 12,
-        "code": "000678",
-        "name": "襄阳轴承",
-        "price": 21.96,
-        "pct": 10.02,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 13,
-        "code": "600467",
-        "name": "好当家",
-        "price": 3.96,
-        "pct": 10.0,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 14,
-        "code": "002081",
-        "name": "金 螳 螂",
-        "price": 4.38,
-        "pct": 10.05,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 15,
-        "code": "603960",
-        "name": "克来机电",
-        "price": 20.46,
-        "pct": 10.0,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 16,
-        "code": "000889",
-        "name": "中嘉博创",
-        "price": 3.91,
-        "pct": 10.14,
-        "rank_chg": 2.0
-      },
-      {
-        "rank": 17,
-        "code": "600127",
-        "name": "金健米业",
-        "price": 9.41,
-        "pct": 10.06,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 18,
-        "code": "002197",
-        "name": "证通电子",
-        "price": 7.05,
-        "pct": 9.98,
-        "rank_chg": 2.0
-      },
-      {
-        "rank": 19,
-        "code": "300324",
-        "name": "旋极信息",
-        "price": 5.04,
-        "pct": 20.0,
-        "rank_chg": -2.0
-      },
-      {
-        "rank": 20,
-        "code": "600814",
-        "name": "杭州解百",
-        "price": 9.19,
-        "pct": 10.06,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 21,
-        "code": "603324",
-        "name": "盛剑科技",
-        "price": 35.5,
-        "pct": 10.01,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 22,
-        "code": "603030",
-        "name": "全筑股份",
-        "price": 2.87,
-        "pct": 9.96,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 23,
-        "code": "002815",
-        "name": "崇达技术",
-        "price": 15.26,
-        "pct": 10.02,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 24,
-        "code": "002470",
-        "name": "金正大",
-        "price": 1.75,
-        "pct": 10.06,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 25,
-        "code": "600227",
-        "name": "赤天化",
-        "price": 3.55,
-        "pct": 9.91,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 26,
-        "code": "603118",
-        "name": "共进股份",
-        "price": 13.26,
-        "pct": 10.04,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 27,
-        "code": "600280",
-        "name": "中央商场",
-        "price": 3.1,
-        "pct": 9.93,
-        "rank_chg": 4.0
-      },
-      {
-        "rank": 28,
-        "code": "002077",
-        "name": "大港股份",
-        "price": 12.79,
-        "pct": 9.97,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 29,
-        "code": "002639",
-        "name": "雪人集团",
-        "price": 12.62,
-        "pct": 10.03,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 30,
-        "code": "002226",
-        "name": "江南化工",
-        "price": 5.7,
-        "pct": 10.04,
-        "rank_chg": 3.0
-      },
-      {
-        "rank": 31,
-        "code": "002565",
-        "name": "顺灏股份",
-        "price": 8.43,
-        "pct": 10.05,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 32,
-        "code": "002651",
-        "name": "利君股份",
-        "price": 8.69,
-        "pct": 10.0,
-        "rank_chg": 2.0
-      },
-      {
-        "rank": 33,
-        "code": "000823",
-        "name": "超声电子",
-        "price": 20.77,
-        "pct": 7.51,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 34,
-        "code": "300308",
-        "name": "中际旭创",
-        "price": 430.18,
-        "pct": 5.18,
-        "rank_chg": -7.0
-      },
-      {
-        "rank": 35,
-        "code": "002298",
-        "name": "中电鑫龙",
-        "price": 7.05,
-        "pct": 9.98,
-        "rank_chg": 4.0
-      },
-      {
-        "rank": 36,
-        "code": "002144",
-        "name": "宏达高科",
-        "price": 9.99,
-        "pct": 10.02,
-        "rank_chg": 4.0
-      },
-      {
-        "rank": 37,
-        "code": "603386",
-        "name": "骏亚科技",
-        "price": 14.52,
-        "pct": 10.0,
-        "rank_chg": -1.0
-      },
-      {
-        "rank": 38,
-        "code": "002141",
-        "name": "贤丰控股",
-        "price": 4.64,
-        "pct": 9.95,
-        "rank_chg": 0.0
-      },
-      {
-        "rank": 39,
-        "code": "002771",
-        "name": "真视通",
-        "price": 19.6,
-        "pct": 4.64,
-        "rank_chg": -4.0
-      },
-      {
-        "rank": 40,
-        "code": "002548",
-        "name": "金新农",
-        "price": 5.33,
-        "pct": 6.39,
-        "rank_chg": -3.0
-      },
-      {
-        "rank": 41,
-        "code": "000798",
-        "name": "中水渔业",
-        "price": 8.65,
-        "pct": 10.05,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 42,
-        "code": "600185",
-        "name": "珠免集团",
-        "price": 4.71,
-        "pct": 10.05,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 43,
-        "code": "002453",
-        "name": "华软科技",
-        "price": 4.46,
-        "pct": 10.12,
-        "rank_chg": 5.0
-      },
-      {
-        "rank": 44,
-        "code": "000912",
-        "name": "泸天化",
-        "price": 3.27,
-        "pct": 10.1,
-        "rank_chg": 6.0
-      },
-      {
-        "rank": 45,
-        "code": "600567",
-        "name": "山鹰国际",
-        "price": 1.01,
-        "pct": 9.78,
-        "rank_chg": 1.0
-      },
-      {
-        "rank": 46,
-        "code": "002199",
-        "name": "东晶电子",
-        "price": 11.29,
-        "pct": 10.04,
-        "rank_chg": 5.0
-      },
-      {
-        "rank": 47,
-        "code": "301059",
-        "name": "金三江",
-        "price": 11.26,
-        "pct": 20.04,
-        "rank_chg": -3.0
-      },
-      {
-        "rank": 48,
-        "code": "003040",
-        "name": "楚天龙",
-        "price": 11.07,
-        "pct": 10.04,
-        "rank_chg": 4.0
-      },
-      {
-        "rank": 49,
-        "code": "603278",
-        "name": "大业股份",
-        "price": 11.98,
-        "pct": 10.01,
-        "rank_chg": -4.0
-      },
-      {
-        "rank": 50,
-        "code": "605058",
-        "name": "澳弘电子",
-        "price": 42.48,
-        "pct": 9.99,
-        "rank_chg": -3.0
-      }
-    ]
+    "eastmoney": null
   },
   "dragon_tiger": {
     "evidence": "descriptive",
@@ -10493,6 +9085,24 @@
     "cls": [
       {
         "source": "财联社",
+        "time": "2026-11-27 02:10",
+        "title": "财联社11月27日电，沙特吉赞炼油厂据悉因遇袭而暂时中断了一些活动。",
+        "url": "https://api3.cls.cn/share/article/2545958?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-27 02:07",
+        "title": "财联社11月27日电，德国总理默茨表示，德国无法接受现有的欧盟2028-2034年预算提案。",
+        "url": "https://api3.cls.cn/share/article/2545957?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
+        "time": "2026-11-27 02:02",
+        "title": "财联社11月27日电，Altria和日本烟草探索收购英国烟草公司帝国品牌。",
+        "url": "https://api3.cls.cn/share/article/2545956?os=web&sv=7.7.5&app="
+      },
+      {
+        "source": "财联社",
         "time": "2026-11-27 01:20",
         "title": "欧洲股市反弹 投资者谨慎重返AI交易",
         "url": "https://api3.cls.cn/share/article/2545954?os=web&sv=7.7.5&app="
@@ -10652,27 +9262,34 @@
         "time": "2026-11-26 22:41",
         "title": "两名意大利公民在伊朗无人机袭击科威特事件中身亡",
         "url": "https://api3.cls.cn/share/article/2545906?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-26 22:38",
-        "title": "财联社11月26日电，俄罗斯表示，其在敖德萨附近的黑海击中了一艘货船。",
-        "url": "https://api3.cls.cn/share/article/2545905?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-26 22:32",
-        "title": "厄尔尼诺相关降雨灾害已致厄瓜多尔28人死亡",
-        "url": "https://api3.cls.cn/share/article/2545903?os=web&sv=7.7.5&app="
-      },
-      {
-        "source": "财联社",
-        "time": "2026-11-26 22:31",
-        "title": "以防长：若哈马斯不解除武装 将驱离100万加沙居民",
-        "url": "https://api3.cls.cn/share/article/2545902?os=web&sv=7.7.5&app="
       }
     ],
     "eastmoney": [
+      {
+        "source": "东方财富",
+        "time": "2026-11-27 02:24",
+        "title": "光伏行业并购升温 中小厂商整合提速"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-27 02:15",
+        "title": "特朗普指责美国政府在中期选举前“蓄意”低报GDP增速 要求立即调查"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-27 02:10",
+        "title": "沙特吉赞炼油厂据悉因遇袭而暂时中断了一些活动"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-27 02:07",
+        "title": "德国总理默茨表示：德国无法接受现有的欧盟2028-2034年预算提案"
+      },
+      {
+        "source": "东方财富",
+        "time": "2026-11-27 02:02",
+        "title": "Altria和日本烟草探索收购英国烟草公司帝国品牌"
+      },
       {
         "source": "东方财富",
         "time": "2026-11-27 01:55",
@@ -10797,31 +9414,6 @@
         "source": "东方财富",
         "time": "2026-11-26 22:58",
         "title": "伊拉克石油部长表示：伊拉克10月的石油收入达到88亿美元"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-26 22:55",
-        "title": "特朗普表示：希望看到俄罗斯总统普京撤回其在欧洲各地的一切军事行动"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-26 22:52",
-        "title": "哈马斯谴责以方持续违反停火协议 正与巴各派别磋商应对措施"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-26 22:48",
-        "title": "沙特牵头的联军表示：胡塞武装袭击了吉赞炼油厂"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-26 22:44",
-        "title": "汇丰银行将惠普评级从买入下调至持有；目标价从33.4美元下调至29.4美元"
-      },
-      {
-        "source": "东方财富",
-        "time": "2026-11-26 22:41",
-        "title": "保加利亚对银行和保险公司征收税率为33%的一次性暴利税"
       }
     ]
   },
@@ -10918,7 +9510,7 @@
   "version": {
     "kind": "market",
     "asof": "2026-11-26",
-    "file": "versions/market/2026-11-26/20261126T175914Z_d0724554.json.gz",
-    "sha256": "d0724554cf2d0ed7605b9a8c76eeec970bad1eea20d03ede3dd7a2e891db94e0"
+    "file": "versions/market/2026-11-26/20261126T184019Z_0d8936f1.json.gz",
+    "sha256": "0d8936f1f17b7a7d6ffc3280cede6d77c9dd85f82878a9e5063d6dd0970cbaf3"
   }
 }
