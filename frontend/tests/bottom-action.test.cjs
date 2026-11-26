@@ -7,22 +7,21 @@ const BottomAction = require('../app/bottom-action.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
-test('bottom-action applies the five requested score tiers', () => {
+test('bottom-action applies the V2 score tiers', () => {
   const top = BottomAction.evaluate({ sym: 'sh000001', hasTop: true, score: 0 });
   assert.equal(top.tier, 'top_risk');
   assert.equal(top.canBuy, false);
 
   for (const [score, tier, canBuy] of [
-    [29.9, 'neutral', false],
-    [30, 'bottom_watch', false],
-    [49.9, 'bottom_watch', false],
-    [50, 'bottom_probe', true],
+    [0, 'neutral', false],
+    [59.9, 'neutral', false],
+    [60, 'bottom_probe', true],
   ]) {
     const action = BottomAction.evaluate({
       sym: 'sh000688',
       hasTop: false,
       score,
-      factors: { dd_52w: -0.404, stabilize: 0, right_side: 0 },
+      factors: { dd_52w: -0.404, valuation: 0.5, clearing: 1 },
     });
     assert.equal(action.tier, tier);
     assert.equal(action.canBuy, canBuy);
@@ -42,7 +41,7 @@ test('bottom-action evaluates all 7 published *_history.json files cleanly', () 
     const last = raw.frames[raw.frames.length - 1];
     const hasTop = Array.isArray(last.w && last.w['6-12m']) && !!last.w['6-12m'][0];
     const score = Number(last.fco_neg_intensity || 0) * 100;
-    const expected = hasTop ? 'top_risk' : score >= 50 ? 'bottom_probe' : score >= 30 ? 'bottom_watch' : 'neutral';
+    const expected = hasTop ? 'top_risk' : score >= 60 ? 'bottom_probe' : 'neutral';
     assert.equal(out[sym].tier, expected, sym);
   }
 });
@@ -56,7 +55,7 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.equal(ov.indices.length, 7);
   const kcItem = ov.indices.find((x) => x.sym === 'sh000688');
   const kc = BottomAction.fromOverviewItem(kcItem);
-  const kcTier = kcItem.bottom_score >= 50 ? 'bottom_probe' : kcItem.bottom_score >= 30 ? 'bottom_watch' : 'neutral';
+  const kcTier = kcItem.bottom_score >= 60 ? 'bottom_probe' : 'neutral';
   assert.ok([kcTier, 'top_risk'].includes(kc.tier));
   assert.equal(kc.targetPct, null);
 
@@ -98,11 +97,10 @@ test('missing bottom score stays missing, while zero and shock risk remain disti
   assert.equal(risk.canBuy, false);
 });
 
-test('red cooling and weak confirmation factors do not gate a score of 55', () => {
+test('red cooling does not gate a score of 65', () => {
   const action = BottomAction.evaluate({
-    score: 55,
+    score: 65,
     omoriRed: true,
-    factors: { stabilize: 0, right_side: 0 },
   });
   assert.equal(action.tier, 'bottom_probe');
   assert.equal(action.canBuy, true);
@@ -113,12 +111,11 @@ test('bottom-action strings contain no position sizing or add/reduce instruction
   const tiers = [
     BottomAction.evaluate({ hasTop: true, score: 55 }),
     BottomAction.evaluate({ score: null }),
-    BottomAction.evaluate({ score: 29.9 }),
-    BottomAction.evaluate({ score: 30 }),
-    BottomAction.evaluate({ score: 50 }),
+    BottomAction.evaluate({ score: 59.9 }),
+    BottomAction.evaluate({ score: 60 }),
   ];
   assert.deepEqual(tiers.map((action) => action.tier),
-    ['top_risk', 'unavailable', 'neutral', 'bottom_watch', 'bottom_probe']);
+    ['top_risk', 'unavailable', 'neutral', 'bottom_probe']);
   for (const action of tiers) {
     const text = Object.values(action).filter((value) => typeof value === 'string').join(' ');
     assert.doesNotMatch(text, /30%|60%|100%|加仓|减仓|仓位|试探仓|打满|%仓/);

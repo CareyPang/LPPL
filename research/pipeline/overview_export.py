@@ -1,6 +1,6 @@
 """生成全市场轻量摘要 web/mock/data/overview_latest.json（< 15 KB）。
 
-将 7 大宽基指数的最新周度帧（顶部红柱、A 股多维底部综合分、四维因子、50 周历史实证）
+将 7 大宽基指数的最新周度帧（顶部红柱、A 股多维底部综合分、分项、50 周历史实证）
 汇总为单份紧凑 JSON，供首页、指数终端顶部切换条与历史回测页横向对比条秒级加载，
 避免浏览器为渲染总览一次性拉取多份数百 KB 的完整 *_history.json。
 
@@ -34,16 +34,12 @@ def _classify_tier(has_top: bool, score: float | None) -> str:
         return "top_risk"
     if score is None:
         return "unavailable"
-    if score < 30:
-        return "neutral"
-    if score < 50:
-        return "bottom_watch"
-    return "bottom_probe"
+    return "neutral" if score < 60 else "bottom_probe"
 
 
 def build_overview(data_dir: Path = DEFAULT_DATA_DIR) -> dict[str, Any]:
     indices: list[dict[str, Any]] = []
-    counts = {"top_risk": 0, "unavailable": 0, "neutral": 0, "bottom_watch": 0, "bottom_probe": 0}
+    counts = {"top_risk": 0, "unavailable": 0, "neutral": 0, "bottom_probe": 0}
     latest_asof = ""
 
     for sym, name, code in INDEX_LIST:

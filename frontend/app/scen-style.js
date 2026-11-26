@@ -30,7 +30,7 @@
        o = { x, w, bottom, maxH, intensity, hot, locked, highThreshold }，intensity ∈ [0, 1]
        低于高置信门槛（默认 0.40）且未锁定的弱红柱自动淡化为背景参考，避免视觉噪音。 */
     TOP_HIGH_THRESHOLD: 0.40,
-    BOT_HIGH_THRESHOLD: 0.50,
+    BOT_HIGH_THRESHOLD: 0.60,
     drawFcoBar(ctx, o) {
       const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
       if (v <= 0) return;
@@ -50,7 +50,7 @@
     },
     /* FCO 风格绿色底部/负泡沫强度柱状图（底部向上，红顶绿底，自动降噪分级）：
        o = { x, w, bottom, maxH, intensity, hot, highThreshold }，intensity ∈ [0, 1]
-       低于 0.50 共振门槛的弱绿柱降级为极淡背景参考，≥ 0.50 共振区高亮突出。 */
+       低于 0.60 门槛的弱柱降级为极淡背景参考，≥ 0.60 高亮。 */
     drawFcoBottomBar(ctx, o) {
       const v = Math.max(0, Math.min(1, Number(o.intensity) || 0));
       if (v <= 0) return;

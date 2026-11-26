@@ -16,6 +16,9 @@
     sh000688: { kind: 'growth', etf: '科创50 ETF → 右侧切硬科技龙头', elastic: true },
   };
 
+  const LOW_REASON = '底分低于 60 分：估值或回撤深度未达到门槛。';
+  const HIGH_REASON = '底分 ≥60：2022–2025 测试段同档 50 周后上涨的比例比同指数全部回落周高 33 个百分点；只有一个周期，各指数同涨同跌。';
+
   function toNum(v, fallback) {
     if (v == null || v === '' || typeof v === 'boolean') return fallback;
     const n = Number(v);
@@ -63,36 +66,19 @@
       };
     }
 
-    if (score < 30) {
+    if (score < 60) {
       return {
         tier: 'neutral',
         tone: 'gray',
         glyph: '⚪',
-        positionLabel: '暂不进场',
+        positionLabel: '条件不足',
         canBuy: false,
-        canBuyLabel: '等待底分回到 30 分以上。',
+        canBuyLabel: '等待底分达到 60 分。',
         targetPct: null,
         positionText: '',
-        shortBadge: '暂不进场',
-        vehicle: '等待底分回到 30 分以上。',
-        reason: '底分低于 30 分：历史同档价格多在区间中上部，最终低点通常还要再过约 3 个月。',
-        score: score,
-      };
-    }
-
-    if (score < 50) {
-      return {
-        tier: 'bottom_watch',
-        tone: 'amber',
-        glyph: '🟡',
-        positionLabel: '底部观察',
-        canBuy: false,
-        canBuyLabel: '跟踪底分能否达到 50 分。',
-        targetPct: null,
-        positionText: '',
-        shortBadge: '底部观察',
-        vehicle: '跟踪底分变化。',
-        reason: '底分 30–49 分：历史同档表现与随机回撤周接近。',
+        shortBadge: '条件不足',
+        vehicle: '跟踪估值与回撤深度两个分项。',
+        reason: LOW_REASON,
         score: score,
       };
     }
@@ -101,14 +87,14 @@
       tier: 'bottom_probe',
       tone: 'green',
       glyph: '🟢',
-      positionLabel: '底部附近',
+      positionLabel: '底部条件满足',
       canBuy: true,
-      canBuyLabel: '冷却、止跌与企稳分项作参考，不作为进场条件。',
+      canBuyLabel: '查看估值与回撤深度两个分项。',
       targetPct: null,
       positionText: '',
-      shortBadge: '底部附近',
+      shortBadge: '底部条件满足',
       vehicle: '查看历史同档表现与分项信息。',
-      reason: '底分 ≥50：历史同档比随机回撤周更靠近底部，价格距前后半年最低点中位约 10–14%。',
+      reason: HIGH_REASON,
       score: score,
     };
   }
@@ -118,7 +104,7 @@
     if (!view || !view.conclusion) return null;
     const c = view.conclusion, b = view.bottom || {}, top = view.top || {};
     const tier = c.status === 'top_watch' ? 'top_risk'
-      : ['bottom_probe', 'bottom_watch', 'neutral'].includes(c.status) ? c.status : 'unavailable';
+      : ['bottom_probe', 'neutral'].includes(c.status) ? c.status : 'unavailable';
     const toneMap = { risk: 'red', danger: 'red', warning: 'amber', warn: 'amber', success: 'green',
       teal: 'green', positive: 'green', muted: 'gray', neutral: 'gray' };
     const tone = toneMap[c.tone] || c.tone || 'gray';

@@ -25,10 +25,8 @@ def test_build_overview_covers_all_7_indices_and_compact_size(tmp_path: Path):
 
 
 def test_tiers_use_unrounded_score_and_missing_is_unavailable():
-    assert _classify_tier(False, 29.9) == "neutral"
-    assert _classify_tier(False, 30.0) == "bottom_watch"
-    assert _classify_tier(False, 49.9) == "bottom_watch"
-    assert _classify_tier(False, 50.0) == "bottom_probe"
+    assert _classify_tier(False, 59.9) == "neutral"
+    assert _classify_tier(False, 60.0) == "bottom_probe"
     assert _classify_tier(False, None) == "unavailable"
     assert _classify_tier(True, None) == "top_risk"
 

@@ -294,8 +294,9 @@ def test_fco_neg_intensity_strict_pit_and_red_green_mutex():
     # 第 40 帧若存在活跃 6-12m 顶部红柱，则绿柱必须归零
     frames[40]["w"] = {"6-12m": ["2020-03-01", "2020-04-01"]}
 
-    out_a = compute_fco_neg_intensity_series(frames)
-    # 深跌并企稳区间应出现正的绿色强度
+    cheap = pd.DataFrame({"erp_pct": [0.95], "pbn_pct": [0.95]}, index=pd.to_datetime(["2019-01-01"]))
+    out_a = compute_fco_neg_intensity_series(frames, valuation_df=cheap)
+    # 深跌且估值便宜的区间应出现正的底分
     assert any((f.get("fco_neg_intensity") or 0) > 0 for f in out_a[30:40])
     # 红绿互斥：有活跃顶部红柱时绿柱强制为 0
     assert out_a[40]["fco_neg_intensity"] == 0.0
@@ -305,7 +306,7 @@ def test_fco_neg_intensity_strict_pit_and_red_green_mutex():
     frames_b = [dict(f) for f in frames]
     for i in range(42, len(frames_b)):
         frames_b[i]["close"] = 9999.0
-    out_b = compute_fco_neg_intensity_series(frames_b)
+    out_b = compute_fco_neg_intensity_series(frames_b, valuation_df=cheap)
     for i in range(42):
         assert out_a[i]["fco_neg_intensity"] == out_b[i]["fco_neg_intensity"]
         assert out_a[i]["bottom_first_alert_flag"] == out_b[i]["bottom_first_alert_flag"]
@@ -338,8 +339,8 @@ def test_summarize_bottom_backtest_computes_win_rate_and_baseline():
 
 
 
-def test_phase_and_bottom_detail_published_without_changing_green_bar():
-    """阶段判定与未截断底分：绿柱和事件标记不变，低于 20 分时分项仍照实输出。"""
+def test_phase_and_bottom_score_v2():
+    """阶段判定与底分 V2：估值 60% + 回撤深度 40%，估值分项 <0.3 记 0，绿柱门槛 60。"""
     from research.eval.bottom_dashboard import compute_fco_neg_intensity_series, phase_of
 
     assert phase_of(False, -0.05) == "top"
@@ -348,32 +349,58 @@ def test_phase_and_bottom_detail_published_without_changing_green_bar():
     assert phase_of(False, None) is None
     assert phase_of(True, None) == "top"
 
-    # 涨到高点后连续下跌、未止跌：回撤过 12% 但底分不到 20
-    closes = [3000 + i * 50 for i in range(25)] + [4200 * (0.985**i) for i in range(1, 11)]
+    def val(pct):
+        return pd.DataFrame({"erp_pct": [pct], "pbn_pct": [pct]}, index=pd.to_datetime(["2019-01-01"]))
+
+    # 涨到 4200 后逐周下跌：-13.5%、-24%、-30%、-40%
+    closes = [3000 + i * 50 for i in range(25)] + [4200 * k for k in (0.865, 0.76, 0.70, 0.60)]
     dates = pd.date_range("2020-01-03", periods=len(closes), freq="W-FRI")
     frames = [
         {"asof": str(d.date()), "close": float(c), "w": {"6-12m": None}}
         for d, c in zip(dates, closes, strict=True)
     ]
-    out = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
-    assert out[24]["phase"] == "top" and out[24]["dd_52w"] == 0.0
-    assert "bottom_detail" not in out[24]
-    last = out[-1]
-    assert last["dd_52w"] <= -0.12 and last["phase"] == "pullback"
-    assert last["fco_neg_intensity"] == 0.0 and "bottom_factors" not in last
-    assert "bottom_bar" not in last
-    for f in out:
-        want = "green" if f["fco_neg_intensity"] >= 0.5 else "weak" if f["fco_neg_intensity"] > 0 else None
-        assert f.get("bottom_bar") == want
-    detail = last["bottom_detail"]
-    assert 0 < detail["score"] < 20
-    assert detail["clearing"] > 0 and detail["valuation"] is None
+    out = compute_fco_neg_intensity_series(frames, valuation_df=val(0.90))
+    assert out[24]["phase"] == "top" and out[24]["dd_52w"] == 0.0 and "bottom_detail" not in out[24]
+    # 估值满分、回撤未到 20%：60 分，刚好够绿柱，且是独立事件
+    d = out[25]["bottom_detail"]
+    assert out[25]["phase"] == "pullback" and d["version"] == "v2"
+    assert (d["valuation"], d["clearing"], d["score"]) == (1.0, 0.0, 60.0)
+    assert set(d) == {"score", "version", "dd_52w", "erp_pct", "pbn_pct", "valuation", "clearing"}
+    assert out[25]["bottom_bar"] == "green" and out[25]["bottom_first_alert_flag"] is True
+    assert out[27]["bottom_detail"]["score"] == 80.0 and out[28]["bottom_detail"]["score"] == 100.0
+    assert out[28]["bottom_first_alert_flag"] is False  # 距上次事件不足 12 周
+
+    # 估值中等（分项 0.5）、回撤 30%：0.6*0.5 + 0.4*0.5 = 50 分，灰柱
+    mid = compute_fco_neg_intensity_series(frames, valuation_df=val(0.75))
+    assert mid[27]["bottom_detail"]["score"] == 50.0 and mid[27]["bottom_bar"] == "weak"
+    assert mid[27]["bottom_first_alert_flag"] is False
+
+    # 估值分项低于 0.3：再深的回撤也记 0，不画柱，但分项照实输出
+    rich = compute_fco_neg_intensity_series(frames, valuation_df=val(0.66))
+    assert rich[28]["fco_neg_intensity"] == 0.0 and "bottom_bar" not in rich[28]
+    assert rich[28]["bottom_detail"]["clearing"] == 1.0 and rich[28]["bottom_detail"]["score"] == 0.0
+
+    # 估值未覆盖：不评分
+    none = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
+    assert none[28]["phase"] == "pullback" and "bottom_detail" not in none[28]
+    assert none[28]["fco_neg_intensity"] is None
 
     # 有顶部区间时仍归顶部侧，不给底分
     frames[-1]["w"] = {"6-12m": ["2020-09-01", "2020-10-01"]}
-    out_top = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
+    out_top = compute_fco_neg_intensity_series(frames, valuation_df=val(0.90))
     assert out_top[-1]["phase"] == "top" and "bottom_detail" not in out_top[-1]
-    assert out_top[-1]["dd_52w"] == last["dd_52w"]
+    assert out_top[-1]["dd_52w"] == out[-1]["dd_52w"]
+
+
+def test_bottom_score_meta_reads_registered_results():
+    from research.eval.bottom_dashboard import bottom_score_meta
+
+    meta = bottom_score_meta()
+    assert meta["version"] == "v2" and meta["green_min"] == 60
+    assert meta["weights"] == {"valuation": 0.6, "clearing": 0.4}
+    assert set(meta["segments"]) == {"dev", "cal", "test"}
+    assert meta["segments"]["test"]["lift_50w"] == 0.327 and meta["segments"]["test"]["old_lift_50w"] == 0.257
+    assert meta["segments"]["cal"]["shift_p"] is None
 
 
 def test_phase_rule_summary_counts_only_requested_split():
@@ -398,3 +425,33 @@ def test_phase_rule_summary_counts_only_requested_split():
     long_dd = warm + [frame(100)] + [frame(80 - 0.01 * k) for k in range(130)]
     assert summarize_phase_rule(long_dd)["n_episodes"] == 1
     assert summarize_phase_rule([])["n_episodes"] == 0
+
+
+def test_bottom_score_v2_threshold_edges_and_missing_valuation():
+    """门槛按未四舍五入的分数判定；估值 0.69 含端点；回落中缺估值是未评分而不是 0 分。"""
+    from research.eval.bottom_dashboard import compute_fco_neg_intensity_series
+
+    def run(last_ratio, val):
+        closes = [3000 + i * 50 for i in range(25)] + [4200 * last_ratio]
+        dates = pd.date_range("2020-01-03", periods=len(closes), freq="W-FRI")
+        frames = [
+            {"asof": str(d.date()), "close": float(c), "w": {"6-12m": None}}
+            for d, c in zip(dates, closes, strict=True)
+        ]
+        return compute_fco_neg_intensity_series(frames, valuation_df=val)[-1]
+
+    def val(pct):
+        return pd.DataFrame({"erp_pct": [pct], "pbn_pct": [pct]}, index=pd.to_datetime(["2019-01-01"]))
+
+    # 估值满分 + 回撤 19.98%：原始分 0.6，仍是 60；估值 0.8998 时原始分 59.96，不能进位成 60
+    near = run(0.85, val(0.8998))
+    assert near["fco_neg_intensity"] == 0.599 and near["bottom_bar"] == "weak"
+    assert near["bottom_first_alert_flag"] is False and near["bottom_detail"]["score"] == 59.9
+
+    # (0.69 − 0.60) / 0.30 的浮点值略小于 0.3，按登记应计分：0.6 × 0.3 = 18 分
+    edge = run(0.85, val(0.69))
+    assert edge["fco_neg_intensity"] == 0.18 and edge["bottom_bar"] == "weak"
+
+    missing = run(0.85, pd.DataFrame({"erp_pct": [], "pbn_pct": []}, index=pd.to_datetime([])))
+    assert missing["phase"] == "pullback" and missing["fco_neg_intensity"] is None
+    assert "bottom_detail" not in missing and "bottom_bar" not in missing

@@ -1491,7 +1491,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         } else if (nearBot) {
           const bf = nearBot.factors;
           const det = bf && bf.erp_pct != null ? ` · ERP分位 ${Math.round(bf.erp_pct * 100)}% / 破净分位 ${bf.pbn_pct != null ? Math.round(bf.pbn_pct * 100) + '%' : '—'}` : '';
-          lines.push((nearBot.weak ? '回落中 · 条件不足 · ' : nearBot.firstBottom ? '🟢 四维底部企稳关注 · ' : 'FCO 底部共振周 · ') + '底分 ' + Math.round(nearBot.intensity * 100) + '%' + det + '（' + nearBot.asof + '）');
+          lines.push((nearBot.weak ? '回落中 · 条件不足 · ' : nearBot.firstBottom ? '底分 ≥60 独立事件 · ' : '底分 ≥60 · ') + '底分 ' + Math.round(nearBot.intensity * 100) + '%' + det + '（' + nearBot.asof + '）');
         }
       }
     } else lines.push('截止日之后的推算区域，只有预测叠加层。');

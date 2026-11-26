@@ -9,7 +9,7 @@
 3. 合并后统一重算：
    - 严格 PIT 事后确认顶 tops（仅当 i + 126 <= len - 1 时确认）；
    - first_alert_flag（每轮 6–12m 顶部聚类首次预警日）；
-   - A 股四维实证底部绿色柱 fco_neg_intensity、bottom_first_alert_flag、bottom_factors；
+   - 底分 fco_neg_intensity、bottom_first_alert_flag、bottom_factors；
    - 顶部事件级回测 episode_summary 与底部事件级回测 bottom_summary。
 
 用法：
@@ -31,6 +31,8 @@ import pandas as pd
 from ..data import cache
 from ..data.trading_calendar import future_calendar_metadata
 from ..eval.bottom_dashboard import (
+    BOTTOM_SCORE_ID,
+    bottom_score_meta,
     compute_fco_neg_intensity_series,
     summarize_bottom_backtest,
     summarize_phase_rule,
@@ -208,7 +210,7 @@ def extend_history(
         frame["first_alert_flag"] = bool(cur_active and not prev_active)
         prev_active = cur_active
 
-    # 升级 A 股四维实证底部绿色柱
+    # 底分、绿柱档位、阶段
     frames = compute_fco_neg_intensity_series(frames)
 
     # 保留原冻结段已确认历史顶，并合并新日线窗口中确认期已走完（i + LOOK <= len - 1）的新顶
@@ -234,6 +236,8 @@ def extend_history(
     payload["episode_summary"] = summarize_history_episodes(frames, tops, scales=HISTORY_SCALES)
     payload["bottom_summary"] = summarize_bottom_backtest(frames)
     payload["phase_rule"] = summarize_phase_rule(frames)
+    payload["bottom_score"] = bottom_score_meta()
+    payload["score_version"] = BOTTOM_SCORE_ID
     payload["extended_through"] = str(frames[-1]["asof"])
 
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
