@@ -374,7 +374,7 @@ def test_index_daily_workflow_parses_and_guards_publish_from_pull_requests():
     assert "$GITHUB_STEP_SUMMARY" in plan_step["run"]
     assert fit["needs"] == "plan"
     assert fit["if"] == "needs.plan.outputs.skip != 'true'"
-    assert fit["timeout-minutes"] == 75
+    assert fit["timeout-minutes"] == 120
     assert fit["strategy"]["fail-fast"] is False
     assert fit["strategy"]["max-parallel"] == 7
     assert 'LPPLS_BOX=v2 python -m research.pipeline.index_daily "$SYM"' in run_index["run"]
