@@ -346,6 +346,7 @@ def test_phase_and_bottom_detail_published_without_changing_green_bar():
     assert phase_of(False, -0.12) == "pullback"
     assert phase_of(True, -0.30) == "top"
     assert phase_of(False, None) is None
+    assert phase_of(True, None) == "top"
 
     # 涨到高点后连续下跌、未止跌：回撤过 12% 但底分不到 20
     closes = [3000 + i * 50 for i in range(25)] + [4200 * (0.985**i) for i in range(1, 11)]
@@ -378,16 +379,22 @@ def test_phase_and_bottom_detail_published_without_changing_green_bar():
 def test_phase_rule_summary_counts_only_requested_split():
     from research.eval.bottom_dashboard import summarize_phase_rule
 
-    def frame(close, dd, split="dev"):
-        return {"close": close, "dd_52w": dd, "split": split}
+    def frame(close, split="dev"):
+        return {"close": close, "split": split}
 
-    frames = [
-        frame(100, 0.0), frame(88, -0.12), frame(70, -0.30), frame(101, 0.0),  # 一轮：最终 -30%，触发后再跌 20.5%
-        frame(87, -0.13), frame(85, -0.15), frame(100, -0.01),  # 一轮：最终 -15%
-        frame(50, -0.50, "test"),
+    warm = [frame(100, "warm") for _ in range(20)]
+    frames = warm + [
+        frame(100), frame(87.9), frame(70), frame(101),  # 一轮：最终 -30%，触发后再跌 20.4%
+        frame(87), frame(85), frame(101),  # 一轮：最终 -15.8%
+        frame(50, "test"),
     ]
     out = summarize_phase_rule(frames)
     assert out["n_episodes"] == 2 and out["threshold"] == -0.12
     assert out["share_reaching_20pct"] == 0.5
-    assert out["median_further_decline"] == round(float(np.median([70 / 88 - 1, 85 / 87 - 1])), 3)
+    assert out["median_further_decline"] == round(float(np.median([70 / 87.9 - 1, 85 / 87 - 1])), 3)
+    # -11.96% 不算触发（帧上四舍五入后的 -0.12 不能当门槛用）
+    assert summarize_phase_rule(warm + [frame(100), frame(88.04), frame(100)])["n_episodes"] == 0
+    # 一轮满 104 周仍在门槛以下：不重复计成新的一轮
+    long_dd = warm + [frame(100)] + [frame(80 - 0.01 * k) for k in range(130)]
+    assert summarize_phase_rule(long_dd)["n_episodes"] == 1
     assert summarize_phase_rule([])["n_episodes"] == 0

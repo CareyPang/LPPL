@@ -582,9 +582,11 @@ def phase_of(has_top: bool, dd_52w: float | None) -> str | None:
 
     12% 与底分起算门槛一致。这是事后确认，不是顶部预测。
     """
+    if has_top:
+        return "top"
     if dd_52w is None:
         return None
-    return "top" if has_top or dd_52w > PHASE_DRAWDOWN else "pullback"
+    return "top" if dd_52w > PHASE_DRAWDOWN else "pullback"
 
 
 def compute_fco_neg_intensity_series(
@@ -754,11 +756,16 @@ def summarize_phase_rule(frames: list[dict[str, Any]], split: str = "dev") -> di
     一轮从回撤首次 <= -12% 的那一周开始，到收盘收复前高、满 104 周或数据段结束为止；
     未走完的一轮也计入，其最低点只是到目前为止的最低点。
     """
-    rows = [
-        (float(f["close"]), float(f["dd_52w"]))
-        for f in frames
-        if f.get("split") == split and f.get("dd_52w") is not None and f.get("close")
-    ]
+    # 回撤用收盘价现算（帧上的 dd_52w 四舍五入到 3 位，-11.96% 会被当成触发）
+    rows: list[tuple[float, float]] = []
+    hist: list[float] = []
+    for f in frames:
+        if not f.get("close"):
+            continue
+        close = float(f["close"])
+        hist.append(close)
+        if f.get("split") == split and len(hist) >= 20:
+            rows.append((close, close / max(hist[-52:]) - 1.0))
     episodes: list[tuple[float, float]] = []
     i = 0
     while i < len(rows):
@@ -774,6 +781,10 @@ def summarize_phase_rule(frames: list[dict[str, Any]], split: str = "dev") -> di
             low = min(low, rows[j][0])
         episodes.append((low / peak - 1.0, low / close - 1.0))
         i = j + 1
+        # 超时结束时回撤仍在 12% 以下的，要先回到门槛以上才算下一次触发
+        if rows[j][1] <= PHASE_DRAWDOWN:
+            while i < len(rows) and rows[i][1] <= PHASE_DRAWDOWN:
+                i += 1
     out: dict[str, Any] = {
         "threshold": PHASE_DRAWDOWN,
         "split": split,
