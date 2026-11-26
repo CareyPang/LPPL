@@ -38,10 +38,13 @@ test('bottom-action evaluates all 7 published *_history.json files cleanly', () 
     out[sym] = BottomAction.fromHistory(sym, raw);
     assert.ok(out[sym].positionLabel);
     assert.equal(out[sym].targetPct, null);
+    // 分档只由最后一帧的已发布分数决定；数据每周更新，不写死某个指数的档位
+    const last = raw.frames[raw.frames.length - 1];
+    const hasTop = Array.isArray(last.w && last.w['6-12m']) && !!last.w['6-12m'][0];
+    const score = Number(last.fco_neg_intensity || 0) * 100;
+    const expected = hasTop ? 'top_risk' : score >= 50 ? 'bottom_probe' : score >= 30 ? 'bottom_watch' : 'neutral';
+    assert.equal(out[sym].tier, expected, sym);
   }
-  assert.equal(out.sh000688.tier, 'bottom_probe');
-  assert.equal(out.sh000905.tier, 'neutral');
-  assert.equal(out.sh000001.tier, 'neutral');
 });
 
 test('home.html, index.html, backtest.html wire overview_latest.json, radar bar and bottom ledger', () => {
