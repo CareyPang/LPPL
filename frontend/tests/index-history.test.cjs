@@ -41,4 +41,7 @@ test('top record tab carries the recompute caveat', () => {
   const html = H.renderTop({ frames: [], recompute: { label: '事后重算，不是样本外', note: '测试段未通过' } }, {});
   assert.match(html, /事后重算，不是样本外/);
   assert.match(html, /测试段未通过/);
+  const replay = H.renderTop({ frames: [], recompute: { label: '事后重算，不是样本外', note: '测试段未通过' } }, { historical: true });
+  assert.match(replay, /事后重算，不是样本外/);
+  assert.doesNotMatch(replay, /测试段未通过/);
 });

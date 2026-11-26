@@ -142,9 +142,11 @@
   }
 
   /* 历史帧是事后重算的：不是样本外证据，原登记的一次性检验结果不变 */
-  function recomputeNote(history) {
+  function recomputeNote(history, historical) {
     var data = history && history.recompute;
     if (!data || typeof data !== 'object') return '';
+    /* 回放到历史截止日时不带出之后才有的检验结论 */
+    if (historical) return '<p class="hl-note">' + esc(typeof data.label === 'string' ? data.label : '事后重算，不是样本外') + '</p>';
     return '<details class="hl-more"><summary>' + esc(typeof data.label === 'string' ? data.label : '事后重算，不是样本外') +
       '</summary><p class="hl-note">' + esc(typeof data.note === 'string' ? data.note : '') + '</p></details>';
   }
@@ -179,7 +181,7 @@
     }).join('');
     return '<div class="hl-head"><p class="tp-d">每轮第一次出现顶部聚类记为一次预警，点一行定位到当时的图。</p>' +
       '<div class="hl-chips" role="group" aria-label="尺度">' + chips + '</div></div>' +
-      topSummary(history, scale, o.historical) + recomputeNote(history) + topTable(episodes, o.selected);
+      topSummary(history, scale, o.historical) + recomputeNote(history, o.historical) + topTable(episodes, o.selected);
   }
 
   function bottomSegments(history) {
