@@ -118,3 +118,15 @@ def test_superseded_interim_close_is_dropped(tmp_path, monkeypatch):
     out = json.loads(he.extend_history("sh000001", data_dir=tmp_path).read_text(encoding="utf-8"))
     live = [f["asof"] for f in out["frames"] if f.get("split") == "live"]
     assert live == [str(d.date()) for d in picked]
+
+
+def test_published_weeks_beyond_a_lagging_feed_are_kept(tmp_path, monkeypatch):
+    """行情比已发布帧旧时，行情之后的已发布周不删。"""
+    method = {"optimizer": "g3", "windows": "130-500/5"}
+    picked = _setup(tmp_path, monkeypatch, method)
+    full = he._load_live_ohlc("sh000001")
+    lagging = full[full["date"] <= picked[-3]].reset_index(drop=True)
+    monkeypatch.setattr(he, "_load_live_ohlc", lambda sym, prefer_git_results=True: lagging)
+    out = json.loads(he.extend_history("sh000001", data_dir=tmp_path).read_text(encoding="utf-8"))
+    live = [f["asof"] for f in out["frames"] if f.get("split") == "live"]
+    assert live == [str(d.date()) for d in picked]
