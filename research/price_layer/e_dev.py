@@ -7,6 +7,8 @@
    以日 high/low 判触及，同 bar 双触 INTERVAL_ORDER_AMBIGUOUS 剔除，期限未满 DATASET_END_RIGHT_CENSORED 剔除。
    基线 B0：零漂移 BM 对称双边界解析首达概率（反射级数）；挑战者 PPE：wells_v1 支撑井特征的多项逻辑回归（逐年扩展窗）。
    评分：三类 Brier、log loss、Activity（是否触及）与 Direction（触及时方向）分解；通过：ΔBrier < 0 且 90% 上界 < 0。
+4. PPE 事后补充（ppe_ext，不改第 3 项判定）：保留 well_dist_below 缺失的样本（记为 no_well_below），折内标准化，
+   对比解析 BM、BGK 离散监控校正、训练折经验频率、只用波动率的逻辑回归四个基线。
 块 bootstrap：按日历切 250 交易日块、各指数共用同一块划分（事件跨指数相关），B=1000，重抽块后重算比值 / ΔBrier。
 as-of 只取标签视野完整落在 2018-12-31 之前的日期（不读 2019 年价格）。
 用法：PYTHONPATH=. python -m research.price_layer.e_dev"""
@@ -219,6 +221,71 @@ def ppe(k: float, H: int) -> dict:
                 passed=bool(pt < 0 and hi < 0))
 
 
+# ---------- PPE 事后补充：保留“下方无势阱”样本 + 更强的基线 ----------
+BGK = 0.5826  # Broadie–Glasserman–Kou 离散监控校正系数 −ζ(1/2)/√(2π)
+PPE_COLS = ["well_F", "well_depth", "well_dist_below", "no_well_below"]
+
+
+def prepare_ppe_features(d: pd.DataFrame) -> pd.DataFrame:
+    """well_dist_below 缺失表示下方没有势阱，本身是一种状态：记为指示变量，距离填 0，不丢样本。"""
+    d = d.dropna(subset=["well_F", "well_depth"]).copy()
+    d["no_well_below"] = d.well_dist_below.isna().astype(float)
+    d["well_dist_below"] = d.well_dist_below.fillna(0.0)
+    return d
+
+
+def _fit_proba(tr: pd.DataFrame, te: pd.DataFrame, cols: list[str]) -> np.ndarray:
+    """折内标准化的多项逻辑回归；均值和标准差只用训练折。"""
+    x = tr[cols].to_numpy(float)
+    mu, sd = x.mean(axis=0), x.std(axis=0)
+    sd[sd == 0] = 1.0
+    m = LogisticRegression(C=1.0, max_iter=2000).fit((x - mu) / sd, tr.outcome.to_numpy())
+    return m.predict_proba((te[cols].to_numpy(float) - mu) / sd)[:, np.argsort(m.classes_)]
+
+
+def ppe_ext(k: float, H: int) -> dict:
+    """事后补充分析（不改 ppe() 的预登记判定）：全样本 PPE 对四个基线的 ΔBrier。
+
+    B0_BM 连续监控解析解；B0_BGK 边界外移 0.5826/√H（日频监控校正）；
+    B0_EMP 训练折经验频率；B1_VOL 只用 log σ 的多项逻辑回归。"""
+    panel = pd.concat([ft_panel(s, k, H) for s in SYMS])
+    raw = panel[panel.outcome >= 0]
+    d = prepare_ppe_features(raw)
+    d = d.assign(yr=d.index.year, log_sig=np.log(d.sig))
+    n_registered = int(len(raw.dropna(subset=["well_F", "well_depth", "well_dist_below"])))
+
+    def const(q_none: float) -> np.ndarray:
+        return np.array([(1 - q_none) / 2, (1 - q_none) / 2, q_none])
+
+    p_bm, p_bgk = const(q_none_bm(k)), const(q_none_bm(k + BGK / np.sqrt(H)))
+    rows = []
+    for Y in sorted(d.yr.unique()):
+        te = d[d.yr == Y]
+        tr = d[(d.yr <= Y - 2) & (d.yend < te.index.min())]
+        if len(tr) < 300 or tr.yr.nunique() < 3 or not len(te) or tr.outcome.nunique() < 3:
+            continue
+        y = te.outcome.to_numpy()
+        p_emp = np.bincount(tr.outcome, minlength=3) / len(tr)
+        rows.append(pd.DataFrame(dict(
+            loss_ppe=brier3(_fit_proba(tr, te, PPE_COLS), y),
+            loss_bm=brier3(np.tile(p_bm, (len(te), 1)), y),
+            loss_bgk=brier3(np.tile(p_bgk, (len(te), 1)), y),
+            loss_emp=brier3(np.tile(p_emp, (len(te), 1)), y),
+            loss_vol=brier3(_fit_proba(tr, te, ["log_sig"]), y),
+            no_well=te.no_well_below.to_numpy(), sym=te.sym.to_numpy()), index=te.index))
+    oos = pd.concat(rows)
+    out = dict(test="PPE_ext", k=k, H=H, n=len(d), n_registered=n_registered,
+               share_no_well_below=float(d.no_well_below.mean()), n_oos=len(oos),
+               years=f"{oos.index.year.min()}–{oos.index.year.max()}", brier_ppe=float(oos.loss_ppe.mean()))
+    for name in ("bm", "bgk", "emp", "vol"):
+        pt, lo, hi = block_ci(oos, lambda x, c=f"loss_{name}": (x.loss_ppe - x[c]).mean())
+        out |= {f"brier_{name}": float(oos[f"loss_{name}"].mean()), f"dbrier_vs_{name}": pt,
+                f"ci_lo_vs_{name}": lo, f"ci_hi_vs_{name}": hi}
+    # 判定看最强的两个基线：经验频率与波动率
+    out["passed"] = bool(max(out["ci_hi_vs_emp"], out["ci_hi_vs_vol"]) < 0)
+    return out
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     panel = pd.concat([dd_panel(s) for s in SYMS])
@@ -236,7 +303,11 @@ def main() -> None:
     pd.DataFrame(r_q).to_csv(OUT / "qdd2.csv", index=False)
     pd.DataFrame(r_t).to_csv(OUT / "tail.csv", index=False)
     pd.DataFrame(r_p).to_csv(OUT / "ppe.csv", index=False)
-    json.dump(dict(qdd2=r_q, tail=r_t, ppe=r_p, n_panel=len(panel), syms=SYMS), open(OUT / "summary.json", "w"), ensure_ascii=False, indent=1, default=float)
+    r_x = [ppe_ext(k, H) for k in KS for H in HS]
+    for r in r_x:
+        print(r, flush=True)
+    pd.DataFrame(r_x).to_csv(OUT / "ppe_ext.csv", index=False)
+    json.dump(dict(qdd2=r_q, tail=r_t, ppe=r_p, ppe_ext=r_x, n_panel=len(panel), syms=SYMS), open(OUT / "summary.json", "w"), ensure_ascii=False, indent=1, default=float)
 
 
 if __name__ == "__main__":
