@@ -23,3 +23,22 @@ test('bottomEvents lists only frames flagged by the backend up to the as-of date
   assert.deepEqual(H.bottomEvents(history, '2015-01-01').map((e) => e.asof || e.date), ['2010-01-08']);
   assert.equal(H.bottomEvents(history).length, 2);
 });
+
+test('older bottom events fall back to published frame closes once mature', () => {
+  const frames = Array.from({ length: 60 }, (_, i) => ({
+    asof: `d${String(i).padStart(2, '0')}`, close: 100 + i, bottom_first_alert_flag: i === 0 || i === 20,
+  }));
+  const history = { frames, bottom_summary: { events: [{ asof: 'd20', ret_24w: 0.5, ret_50w: null }] } };
+  const [later, first] = H.bottomEvents(history);
+  assert.equal(first.ret24.toFixed(4), '0.2400');
+  assert.equal(first.ret50.toFixed(4), '0.5000');
+  assert.equal(later.ret24, 0.5);
+  assert.equal(later.ret50, null);
+  assert.equal(H.bottomEvents(history, 'd30')[1].ret50, null);
+});
+
+test('top record tab carries the recompute caveat', () => {
+  const html = H.renderTop({ frames: [], recompute: { label: '事后重算，不是样本外', note: '测试段未通过' } }, {});
+  assert.match(html, /事后重算，不是样本外/);
+  assert.match(html, /测试段未通过/);
+});
