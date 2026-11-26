@@ -620,7 +620,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         : 0;
       const firstAlert = Boolean(f.first_alert_flag) || (has6 && !prevActive6);
       prevActive6 = has6;
-      if (intensity > 0) {
+      /* 只有 12–24 月档聚类且后端没有发布泡沫强度的帧：按已发布的底分画绿柱，不用兜底红柱盖掉 */
+      const fallbackOnly = !(Number(f.fco_intensity) > 0) && !has6;
+      if (intensity > 0 && !(fallbackOnly && negIntensity > 0)) {
         fcoFrames.push({ i, asof: f.asof, intensity, firstAlert, has6, has12 });
       } else if (negIntensity > 0) {
         fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag), factors: f.bottom_factors || null, weak: f.bottom_bar ? f.bottom_bar === 'weak' : null });
@@ -1063,7 +1065,9 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
             path(m.dif, CPChartTools.MA_COLORS[1], yf); path(m.dea, CPChartTools.MA_COLORS[0], yf);
             label([['MACD(12,26,9)'], ['DIF ' + f1(m.dif[cur]), CPChartTools.MA_COLORS[1]], ['DEA ' + f1(m.dea[cur]), CPChartTools.MA_COLORS[0]], ['柱 ' + f1(m.hist[cur])]]);
           } else {
-            const yf = (v) => vb - Math.max(0, Math.min(100, v)) / 100 * h0;
+            let lo = 0, hi = 100;
+            if (st.sub === 'kdj') for (let i = i0; i <= lastShown; i++) { const j = tl.kdj.j[i]; if (Number.isFinite(j)) { lo = Math.min(lo, j); hi = Math.max(hi, j); } }
+            const yf = (v) => vb - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * h0;
             const guides = st.sub === 'rsi' ? [30, 70] : [20, 80];
             ctx.strokeStyle = col.grid; guides.forEach((v) => { const y = Math.round(yf(v)) + 0.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(g.W, y); ctx.stroke(); });
             if (st.sub === 'rsi') {
