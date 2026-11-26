@@ -124,10 +124,9 @@
     { t: '标的目录', h: 'stock.html', page: 'stock' }
     ] },
     { k: 'market', t: '市场', h: 'market.html', sections: ['market', 'nt'], sub: MARKET_SUB },
-    { k: 'backtest', t: '历史检验', h: 'backtest.html', sections: ['backtest'], sub: [
-      { t: 'FCO 历史回测', h: 'backtest.html#view=scenario', key: 'scenario' },
-      { t: '策略回测', h: 'backtest.html#view=strategy', key: 'strategy' },
-      { t: '三段验证', h: 'backtest.html#view=bench', key: 'bench' }
+    { k: 'backtest', t: '方法与证据', h: 'backtest.html#view=bench', sections: ['backtest'], sub: [
+      { t: '三段验证', h: 'backtest.html#view=bench', key: 'bench' },
+      { t: '策略与冷却期', h: 'backtest.html#view=strategy', key: 'strategy' }
     ] },
     { k: 'tools', t: '工具', h: 'tools.html', sections: ['tools'], sub: [] }
   ];
@@ -917,7 +916,7 @@
     } else if (section === 'stock' || section === 'terminal') {
       selected = sidebarLinks.filter(function (item) { return item.page === section || item.page === file; })[0];
     } else if (section === 'backtest') {
-      var view = new URLSearchParams(location.hash.slice(1)).get('view') || 'scenario';
+      var view = new URLSearchParams(location.hash.slice(1)).get('view') || 'bench';
       selected = sidebarLinks.filter(function (item) { return item.key === view; })[0];
     } else {
       selected = sidebarLinks.filter(function (item) { return item.page === file; })[0];

@@ -61,8 +61,11 @@ test('CPSCN exposes FCO red bar and first-alert flag renderers', () => {
 
 test('index terminal exposes independent FCO toggle, backtest CTA, and puts cooling dashboard right under verdict', () => {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  assert.match(html, /data-k="fco"[^>]*>.*FCO 红\/绿柱/);
-  assert.match(html, /id="bt-cta"[^>]*href="backtest\.html"/);
+  assert.match(html, /data-k="fcoTop"/);
+  assert.match(html, /data-k="fcoBot"/);
+  assert.doesNotMatch(html, /id="bt-cta"/);
+  assert.match(html, /id="bt-top"[^>]*>顶部预警记录/);
+  assert.match(html, /id="bt-bot"[^>]*>底分事件记录/);
   assert.match(html, /id="legacy-decision-panel"[^>]*aria-label="统一诊断与底部条件"/);
   assert.match(html, /LPPLDecisionPanel\.mount\(\$\('legacy-decision-panel'\)/);
   assert.match(html, /decisionPanel\.render\(R\.decision\)/);

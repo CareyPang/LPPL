@@ -108,6 +108,11 @@ a { color: var(--ink-2); text-decoration: none; }
 .mode { font: 600 11px/1 var(--f-u); padding: var(--s1) var(--s2); border: 1px solid var(--real); color: var(--real); letter-spacing: 0.06em; white-space: nowrap; }
 .mode.live { border-color: var(--ink-3); color: var(--ink-2); }
 .tg { --od-gap: 6px; }
+.ctools { --od-gap: 8px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; flex: 1 1 100%; }
+.ctools-k { font-size: 11px; color: var(--ink-3); border: 1px dashed var(--line); padding: 2px 6px; white-space: nowrap; }
+.ctools label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ctools input, .ctools select { height: 28px; border: 1px solid var(--line); background: var(--surface); padding: 0 6px; font-size: 12px; }
+.ctools input { width: 108px; }
 .tgb { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink-3); padding: 0 10px; min-height: 30px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color var(--t-fast) ease-out, border-color var(--t-fast) ease-out, background var(--t-fast) ease-out; }
 .tgb:hover { border-color: var(--ink-3); color: var(--ink-2); }
 .tgb[aria-pressed="true"] { color: var(--ink); border-color: #9AA6BC; background: #EEF2F9; font-weight: 600; }
@@ -121,8 +126,6 @@ a { color: var(--ink-2); text-decoration: none; }
 .sw-act { width: 0 !important; height: 0 !important; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid var(--up); }
 .sw-vol { background: #A7B0C0; }
 .sw-conf { background: var(--warn); }
-.bt-cta { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 7px; background: var(--real); color: #fff; font: 600 12px/1 var(--f-u); text-decoration: none; white-space: nowrap; margin-left: auto; transition: background var(--t-fast) ease-out, transform var(--t-fast) ease-out; }
-.bt-cta:hover { background: #184CB0; color: #fff; }
 
 .chart { grid-area: chart; position: relative; height: clamp(440px, 68vh, 800px); background: var(--bg); }
 .chart canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: pan-y; }
@@ -237,6 +240,22 @@ a { color: var(--ink-2); text-decoration: none; }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-selected="true"] { color: var(--ink); background: var(--bg); box-shadow: inset 0 2px 0 var(--warn); }
 .tp { padding: var(--s4); }
+.hl-head { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; justify-content: space-between; }
+.hl-head .tp-d { margin: 0; }
+.hl-chips { display: flex; gap: 6px; }
+.hl-sum { margin: var(--s3) 0 6px; font-size: 13px; color: var(--ink); }
+.hl-more { margin: 0 0 var(--s3); font-size: 12px; color: var(--ink-2); }
+.hl-more summary { cursor: pointer; color: var(--ink-3); }
+.hl-note, .hl-empty { margin: 6px 0 0; font-size: 12px; color: var(--ink-3); }
+.hl-scroll { overflow-x: auto; margin-top: var(--s3); }
+.hl-table, .hl-mini { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.hl-table th, .hl-table td, .hl-mini th, .hl-mini td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.hl-table thead th, .hl-mini thead th { color: var(--ink-3); font-weight: 500; background: var(--surface); }
+.hl-table tbody tr { cursor: pointer; }
+.hl-table tbody tr:hover, .hl-table tbody tr[aria-selected="true"] { background: var(--surface); }
+.hl-table tbody tr:focus-visible { outline: 2px solid var(--warn); outline-offset: -2px; }
+.hl-mini { width: auto; margin-top: 6px; }
+.hl-up { color: var(--up); } .hl-dn { color: var(--dn); } .hl-mute { color: var(--ink-3); }
 .tp-d { margin: 0 0 var(--s3); font-size: 13px; color: var(--ink-2); max-width: 75ch; }
 .evidence-help { margin-left: 6px; color: var(--real); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s4); }
@@ -359,12 +378,19 @@ footer p { margin: 0; max-width: 110ch; }
     <span class="mode od-fixed" id="mode" hidden></span>
     <button class="wbtn od-fixed" id="wbtn" type="button" aria-pressed="false" disabled>☆ 加自选</button>
     <div class="tg od-cluster od-fill" id="toggles" role="group" aria-label="图层开关">
-      <button class="tgb" type="button" data-k="fco" aria-pressed="true"><i class="sw-fco"></i>FCO 红/绿柱</button>
+      <button class="tgb" type="button" data-k="fcoTop" aria-pressed="true"><i style="background:#D6303A"></i>红柱 · 顶部</button>
+      <button class="tgb" type="button" data-k="fcoBot" aria-pressed="true"><i style="background:#11845A"></i>绿柱 · 底分</button>
       <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>顶部情景区间</button>
       <button class="tgb" type="button" data-k="hist" aria-pressed="true"><i class="sw-top" style="opacity:.45"></i>历史情景线</button>
-      <button class="tgb" type="button" data-k="vol" aria-pressed="true"><i class="sw-vol"></i>成交量</button>
     </div>
-    <a class="bt-cta od-fixed" id="bt-cta" href="backtest.html">FCO 历史回测 →</a>
+    <div class="ctools od-row" role="group" aria-label="行情工具、不作信号" title="均线和副图指标只是行情工具，不参与任何结论或信号">
+      <span class="ctools-k">行情工具、不作信号</span>
+      <label>均线 <input id="ma-in" class="m" type="text" inputmode="numeric" placeholder="如 20,60,250" aria-label="均线周期，逗号分隔，最多 5 条，留空不画"></label>
+      <label>副图 <select id="sub-sel" aria-label="副图指标">
+        <option value="vol">成交量</option><option value="macd">MACD</option><option value="rsi">RSI</option><option value="kdj">KDJ</option><option value="off">不显示</option>
+      </select></label>
+    </div>
+    <button class="tl-b od-fixed" id="view-all" type="button" title="显示全部历史">全部历史</button>
   </div>
 
   <div class="chart" id="chartwrap" data-ai-anchor>
@@ -440,10 +466,14 @@ footer p { margin: 0; max-width: 110ch; }
   <section class="bottom" aria-label="回放与参数" data-ai-context="回放与参数">
     <div id="legacy-decision-panel" class="legacy-decision-panel" aria-label="统一诊断与底部条件"></div>
     <div class="tabs" role="tablist" aria-label="底部面板" id="btabs">
-      <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="true" aria-controls="p-replay">回放</button>
+      <button type="button" role="tab" id="bt-top" data-p="p-top" aria-selected="true" aria-controls="p-top">顶部预警记录</button>
+      <button type="button" role="tab" id="bt-bot" data-p="p-bot" aria-selected="false" aria-controls="p-bot" tabindex="-1">底分事件记录</button>
+      <button type="button" role="tab" id="bt-0" data-p="p-replay" aria-selected="false" aria-controls="p-replay" tabindex="-1">回放</button>
       <button type="button" role="tab" id="bt-1" data-p="p-expert" aria-selected="false" aria-controls="p-expert" tabindex="-1">六尺度参数</button>
     </div>
-    <div class="tp" id="p-replay" role="tabpanel" aria-labelledby="bt-0"></div>
+    <div class="tp" id="p-top" role="tabpanel" aria-labelledby="bt-top"></div>
+    <div class="tp" id="p-bot" role="tabpanel" aria-labelledby="bt-bot" hidden></div>
+    <div class="tp" id="p-replay" role="tabpanel" aria-labelledby="bt-0" hidden></div>
     <div class="tp" id="p-expert" role="tabpanel" aria-labelledby="bt-1" hidden></div>
   </section>
 </main>
@@ -469,6 +499,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 <script src="app/decision-panel.js"></script>
 <script src="app/bottom-action.js"></script>
 <script src="app/alert-ledger.js"></script>
+<script src="app/index-history.js"></script>
+<script src="app/chart-tools.js"></script>
 <script src="app/watchlist.js"></script>
 <script>
 (function () {
@@ -549,8 +581,15 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   };
   async function getAnalysis(code, asof, onProg) {
     onProg && onProg('读取后端数据', 0.5);
-    const D = await LPPL.load(code, asof), R = toView(D);
-    const H = await LPPL.history(D.sym.sym).catch(() => null);
+    const D = await LPPL.load(code, asof);
+    const [H, early] = await Promise.all([
+      LPPL.history(D.sym.sym).catch(() => null),
+      LPPL.fetchResult(D.sym.sym + '_bars.json').catch(() => ({ data: null })),
+    ]);
+    /* 早期冻结日线只接在现有行情之前，截止日之后不增加任何数据 */
+    D.bars = CPIndexHistory.mergeBars(D.bars, early && early.data);
+    D.T = D.bars.length - 1;
+    const R = toView(D);
     R.historyData = H;
     R.hist = H ? histView(H, R) : null;
     return R;
@@ -685,7 +724,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('chartwrap');
     const st = { R: null, a: 0, b: 100, maxI: 100, hover: -1, my: -1, ghost: -1, cross: true, W: 0, H: 0, dpr: 1, drag: null,
       scaleBands: [], scaleSelected: ScaleBar.DEFAULT_SCALE, scaleHover: null,
-      show: { fco: true, top: true, hist: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
+      ma: [], sub: 'vol', tools: null,
+      show: { fcoTop: true, fcoBot: true, top: true, hist: true, bot: false, wave: false, real: false, acts: false, vol: true, conf: false } };
     let col = {}, fm = 'monospace', fu = 'sans-serif', onHover = () => {}, onScaleHover = () => {}, onScaleSelect = () => {};
     function readCol() {
       const s = getComputedStyle(document.documentElement), g = (n) => s.getPropertyValue(n).trim();
@@ -713,6 +753,13 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       if (fc) { g.conf = [y + gap, y + gap + inner * fc]; y = g.conf[1]; }
       g.bottom = top + inner;
       return g;
+    }
+    function tools(R) {
+      if (st.tools && st.tools.bars === R.bars) return st.tools;
+      const close = R.bars.map((q) => q.close), ma = {};
+      st.tools = { bars: R.bars, ma, close, macd: CPChartTools.macd(close), rsi: CPChartTools.rsi(close), kdj: CPChartTools.kdj(R.bars) };
+      st.ma.forEach((n) => { ma[n] = CPChartTools.sma(close, n); });
+      return st.tools;
     }
     function defView(R) {
       const T = R.T, rm = R.rm, N = R.bars.length;
@@ -839,10 +886,32 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         });
         ctx.lineWidth = 1;
       }
-      if (st.show.fco && R.hist) {
+      if (st.ma.length) {
+        // 自设均线（行情工具，不作信号）：只画到已显示的最后一根
+        const tl = tools(R);
+        st.ma.forEach((n, k) => {
+          const line = tl.ma[n];
+          ctx.strokeStyle = CPChartTools.MA_COLORS[k % 5]; ctx.lineWidth = 1.2; ctx.beginPath();
+          let pen = false;
+          for (let i = i0; i <= lastShown; i++) {
+            if (line[i] == null) { pen = false; continue; }
+            if (pen) ctx.lineTo(X(i), Y(line[i])); else { ctx.moveTo(X(i), Y(line[i])); pen = true; }
+          }
+          ctx.stroke();
+        });
+        ctx.font = '11px ' + fm; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        let lx = 8;
+        st.ma.forEach((n, k) => {
+          const v = tl.ma[n][Math.min(st.hover >= 0 ? st.hover : lastShown, lastShown)];
+          const text = 'MA' + n + ' ' + (v == null ? '—' : v.toFixed(0));
+          ctx.fillStyle = CPChartTools.MA_COLORS[k % 5]; ctx.fillText(text, lx, pt + (g.W < 480 ? 40 : 24)); lx += ctx.measureText(text).width + 12;
+        });
+        ctx.lineWidth = 1;
+      }
+      if ((st.show.fcoTop || st.show.fcoBot) && R.hist) {
         // FCO 红色顶部泡沫强度柱 + 绿色底部出清强度柱（主图价格区底部）与严格 as-of 首次预警旗标
-        const fcoVis = (R.hist.fcoFrames || []).filter((f) => vis(f.i, f.i));
-        const fcoBotVis = (R.hist.fcoBotFrames || []).filter((f) => vis(f.i, f.i));
+        const fcoVis = st.show.fcoTop ? (R.hist.fcoFrames || []).filter((f) => vis(f.i, f.i)) : [];
+        const fcoBotVis = st.show.fcoBot ? (R.hist.fcoBotFrames || []).filter((f) => vis(f.i, f.i)) : [];
         const barW = Math.max(2, Math.min(8, Math.round(pp * 3.5)));
         const maxBarH = Math.max(26, Math.round((pb - pt) * 0.22));
         for (const f of fcoVis) {
@@ -950,20 +1019,61 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       }
       ctx.restore();
 
-      // ---- 成交量 ----
+      // ---- 副图：成交量 / MACD / RSI / KDJ（行情工具，不作信号） ----
       if (g.vol) {
-        const [vt, vb] = g.vol;
-        let mv = 0;
-        for (let i = i0; i <= lastShown; i++) mv = Math.max(mv, bars[i].volume || 0);
-        if (mv > 0) {
+        const [vt, vb] = g.vol, h0 = vb - vt - 2;
+        ctx.font = '11px ' + fu; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const cur = Math.min(st.hover >= 0 ? st.hover : lastShown, lastShown);
+        const path = (arr, c, yf) => {
+          ctx.strokeStyle = c; ctx.lineWidth = 1.1; ctx.beginPath(); let pen = false;
           for (let i = i0; i <= lastShown; i++) {
-            const q = bars[i], h = (q.volume || 0) / mv * (vb - vt - 2);
-            ctx.fillStyle = i > T ? rgba(col.real, 0.35) : rgba(q.close >= q.open ? col.up : col.dn, 0.55);
-            ctx.fillRect(Math.round(X(i) - bw / 2), vb - h, Math.max(1, Math.round(bw)), h);
+            if (arr[i] == null) { pen = false; continue; }
+            if (pen) ctx.lineTo(X(i), yf(arr[i])); else { ctx.moveTo(X(i), yf(arr[i])); pen = true; }
+          }
+          ctx.stroke(); ctx.lineWidth = 1;
+        };
+        const label = (parts) => { let x = 8; parts.forEach(([t, c]) => { ctx.fillStyle = c || col.ink3; ctx.fillText(t, x, vt + 2); x += ctx.measureText(t).width + 10; }); };
+        const f1 = (v) => v == null ? '—' : v.toFixed(1);
+        if (st.sub === 'vol') {
+          let mv = 0;
+          for (let i = i0; i <= lastShown; i++) mv = Math.max(mv, bars[i].volume || 0);
+          if (mv > 0) {
+            for (let i = i0; i <= lastShown; i++) {
+              const q = bars[i];
+              if (q.volume == null) continue;
+              const h = q.volume / mv * h0;
+              ctx.fillStyle = i > T ? rgba(col.real, 0.35) : rgba(q.close >= q.open ? col.up : col.dn, 0.55);
+              ctx.fillRect(Math.round(X(i) - bw / 2), vb - h, Math.max(1, Math.round(bw)), h);
+            }
+          }
+          label([[mv > 0 ? '成交量' : '成交量 · 这段行情没有成交量数据']]);
+        } else {
+          const tl = tools(R);
+          if (st.sub === 'macd') {
+            const m = tl.macd; let mx = 1e-9;
+            for (let i = i0; i <= lastShown; i++) mx = Math.max(mx, Math.abs(m.dif[i]), Math.abs(m.dea[i]), Math.abs(m.hist[i]));
+            const mid = (vt + vb) / 2, yf = (v) => mid - v / mx * (h0 / 2);
+            for (let i = i0; i <= lastShown; i++) {
+              const y = yf(m.hist[i]);
+              ctx.fillStyle = rgba(m.hist[i] >= 0 ? col.up : col.dn, 0.55);
+              ctx.fillRect(Math.round(X(i) - bw / 2), Math.min(y, mid), Math.max(1, Math.round(bw)), Math.abs(y - mid));
+            }
+            path(m.dif, CPChartTools.MA_COLORS[1], yf); path(m.dea, CPChartTools.MA_COLORS[0], yf);
+            label([['MACD(12,26,9)'], ['DIF ' + f1(m.dif[cur]), CPChartTools.MA_COLORS[1]], ['DEA ' + f1(m.dea[cur]), CPChartTools.MA_COLORS[0]], ['柱 ' + f1(m.hist[cur])]]);
+          } else {
+            const yf = (v) => vb - Math.max(0, Math.min(100, v)) / 100 * h0;
+            const guides = st.sub === 'rsi' ? [30, 70] : [20, 80];
+            ctx.strokeStyle = col.grid; guides.forEach((v) => { const y = Math.round(yf(v)) + 0.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(g.W, y); ctx.stroke(); });
+            if (st.sub === 'rsi') {
+              path(tl.rsi, CPChartTools.MA_COLORS[2], yf);
+              label([['RSI(14)'], [f1(tl.rsi[cur]), CPChartTools.MA_COLORS[2]]]);
+            } else {
+              const k = tl.kdj;
+              path(k.k, CPChartTools.MA_COLORS[1], yf); path(k.d, CPChartTools.MA_COLORS[0], yf); path(k.j, CPChartTools.MA_COLORS[2], yf);
+              label([['KDJ(9,3,3)'], ['K ' + f1(k.k[cur]), CPChartTools.MA_COLORS[1]], ['D ' + f1(k.d[cur]), CPChartTools.MA_COLORS[0]], ['J ' + f1(k.j[cur]), CPChartTools.MA_COLORS[2]]]);
+            }
           }
         }
-        ctx.font = '11px ' + fu; ctx.fillStyle = col.ink3; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-        ctx.fillText('成交量', 8, vt + 2);
       }
       // ---- 顶部一致度 ----
       if (g.conf) {
@@ -1117,9 +1227,12 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       reset() { if (!st.R) return; const v = defView(st.R); st.a = v[0]; st.b = v[1]; clampView(); draw(); },
       all() { if (!st.R) return; st.a = 0; st.b = st.maxI; clampView(); draw(); },
       zoom(f) { if (st.R) zoom(f); },
+      view(a, b, i) { if (!st.R) return; st.a = a; st.b = b; clampView(); st.my = -1; setHover(i); draw(); },
       focus(i) { if (!st.R) return; const sp = st.b - st.a; st.a = i - sp / 2; st.b = i + sp / 2; clampView(); st.my = -1; setHover(i); },
       ghost(i) { st.ghost = i; draw(); },
       toggle(k, on) { st.show[k] = on; draw(); },
+      ma(periods) { st.ma = periods; st.tools = null; draw(); },
+      sub(kind) { st.sub = kind; st.show.vol = kind !== 'off'; draw(); },
       cross(on) { st.cross = on; draw(); },
       redraw() { readCol(); draw(); },
     };
@@ -1350,8 +1463,6 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
 
     $('sym-n').textContent = name;
-    const btCta = $('bt-cta');
-    if (btCta) btCta.href = 'backtest.html?sym=' + encodeURIComponent(R.sym.code);
     $('sym-c').textContent = R.sym.code + ' · 日线 · 对数坐标';
     $('mode').hidden = false;
     $('mode').textContent = R.latest ? (latestClosed ? '最新交易日' : '当前可用') : '回放 · 截止 ' + R.asof;
@@ -1391,6 +1502,29 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
     renderReplay(R);
     renderExpert(R);
+    ledgerSelected = { top: null, bottom: null };
+    renderLedgers(R);
+  }
+
+  /* 顶部预警记录 / 底分事件记录：只列截止日及之前的帧；回放历史截止日时不引用之后才有的检验结果 */
+  let ledgerScale = '6-12m', ledgerSelected = { top: null, bottom: null };
+  function renderLedgers(R) {
+    const H = R.historyData, base = { asof: R.asof, historical: !R.latest };
+    if (!H) {
+      $('p-top').innerHTML = $('p-bot').innerHTML = '<p class="hl-empty">该指数暂无历史帧。</p>';
+      return;
+    }
+    $('p-top').innerHTML = CPIndexHistory.renderTop(H, { ...base, scale: ledgerScale, selected: ledgerSelected.top });
+    $('p-bot').innerHTML = CPIndexHistory.renderBottom(H, { ...base, selected: ledgerSelected.bottom });
+  }
+  function locateLedgerRow(row) {
+    if (!cur || !row) return;
+    const i = idxOf(cur.bars, row.dataset.date);
+    const end = row.dataset.end ? idxOf(cur.bars, row.dataset.end) : i;
+    if (row.dataset.hlTop) ledgerSelected.top = row.dataset.hlTop; else ledgerSelected.bottom = row.dataset.hlBottom;
+    row.parentNode.querySelectorAll('tr').forEach((item) => item.setAttribute('aria-selected', String(item === row)));
+    CH.view(i - 120, Math.max(end, i + 250) + 60, i);
+    $('chartwrap').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   function tryUrl(R) {
@@ -1443,7 +1577,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
       },
     ][planTab];
     const badgeHtml = window.CPEvidenceBadge ? window.CPEvidenceBadge.html(P.badge) : '';
-    const backtestLink = `<a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}">打开 FCO 历史回测 ›</a> · <a href="backtest.html?sym=${encodeURIComponent(R.sym.code)}#view=bench">看三段验证 ›</a>`;
+    const backtestLink = `<a href="backtest.html#view=bench">方法与证据 ›</a>`;
     const rowsHtml = `<ol class="pl-rows">` + P.rows.map((r) => `<li><b>${E(r[0])}</b><span>${E(r[1])}</span></li>`).join('') + '</ol>';
     $('plan').innerHTML = `<p class="pl-lead">${E(P.lead)} ${badgeHtml}</p>` +
       (planTab === 1 ? `<p><a class="decision-jump" href="#legacy-decision-panel">查看彩色底部条件面板</a></p><details class="legacy-raw-observations"><summary>展开冲击与环境原始观测</summary>${rowsHtml}</details>` : rowsHtml) +
@@ -1738,6 +1872,30 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     location.replace(target.href);
   }
   window.addEventListener('hashchange', redirectLegacyBench);
+  ['p-top', 'p-bot'].forEach((id) => {
+    $(id).addEventListener('click', (e) => {
+      const chip = e.target.closest('[data-hl-scale]');
+      if (chip) { ledgerScale = chip.dataset.hlScale; ledgerSelected.top = null; if (cur) renderLedgers(cur); return; }
+      locateLedgerRow(e.target.closest('tr[data-date]'));
+    });
+    $(id).addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const row = e.target.closest('tr[data-date]');
+      if (row) { e.preventDefault(); locateLedgerRow(row); }
+    });
+  });
+  $('view-all').addEventListener('click', () => CH.all());
+  /* 行情工具设置只存在本机浏览器 */
+  const toolPref = (() => { try { return JSON.parse(localStorage.getItem('cp.chartTools') || '{}'); } catch (e) { return {}; } })();
+  const saveTools = () => { try { localStorage.setItem('cp.chartTools', JSON.stringify(toolPref)); } catch (e) { /* 隐私模式下不保存 */ } };
+  $('ma-in').value = typeof toolPref.ma === 'string' ? toolPref.ma : CPChartTools.DEFAULT_MA.join(',');
+  $('sub-sel').value = ['vol', 'macd', 'rsi', 'kdj', 'off'].includes(toolPref.sub) ? toolPref.sub : 'vol';
+  const applyMa = () => { const p = CPChartTools.parsePeriods($('ma-in').value); $('ma-in').value = toolPref.ma = p.join(','); saveTools(); CH.ma(p); };
+  $('ma-in').addEventListener('change', applyMa);
+  $('ma-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') applyMa(); });
+  $('sub-sel').addEventListener('change', () => { toolPref.sub = $('sub-sel').value; saveTools(); CH.sub(toolPref.sub); });
+  CH.ma(CPChartTools.parsePeriods($('ma-in').value));
+  CH.sub($('sub-sel').value);
   // 回放表格 / 操作记录 → 图上定位
   $('p-replay').addEventListener('click', (e) => { const r = e.target.closest('[data-i]'); if (r) CH.focus(+r.dataset.i); });
   $('p-replay').addEventListener('keydown', (e) => { if (e.key !== 'Enter' && e.key !== ' ') return; const r = e.target.closest('tr[data-i]'); if (r) { e.preventDefault(); CH.focus(+r.dataset.i); } });

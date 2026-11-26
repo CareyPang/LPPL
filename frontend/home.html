@@ -188,10 +188,10 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
    <a href="chart.html?kind=index&from=home.html&code=sh000300"><b>000300</b> 沪深300</a>
    <a href="stock.html?code=600519"><b>600519</b> 贵州茅台</a>
    <a href="stock.html?code=300750"><b>300750</b> 宁德时代</a>
-   <a href="backtest.html?sym=sh000001&range=2015"><b>2015</b> 股灾回放</a>
-   <a href="backtest.html?sym=sh000001&range=2007"><b>2007</b> 顶部回放</a>
+   <a href="index.html?code=sh000001&asof=2015-06-12"><b>2015</b> 股灾回放</a>
+   <a href="index.html?code=sh000001&asof=2007-10-12"><b>2007</b> 顶部回放</a>
   </div>
-  <div class="acts"><a class="btn pri" href="stock.html">查看标的 →</a><a class="btn sec" href="backtest.html">历史检验 · FCO 回测</a><a class="btn sec" href="market.html">市场复盘</a></div>
+  <div class="acts"><a class="btn pri" href="stock.html">查看标的 →</a><a class="btn sec" href="index.html?code=sh000001">指数历史回测</a><a class="btn sec" href="market.html">市场复盘</a></div>
  </div>
  <figure class="hero-art">
   <div class="visual-media"><img src="assets/visual-suite/hero-1536.webp" srcset="assets/visual-suite/hero-640.webp 640w, assets/visual-suite/hero-1536.webp 1536w" sizes="(max-width:760px) calc(100vw - 32px), (max-width:1280px) 50vw, 630px" width="1536" height="1024" alt="蓝金色光线沿层叠玻璃片交汇的原创装置" fetchpriority="high" decoding="async"><span class="art-fallback">多尺度观察</span></div>
@@ -241,7 +241,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
  <div class="hd"><h2>核心工作流</h2><p>从单标的诊断、FCO 历史回测到每日市场复盘。</p><a class="more" href="stock.html">查看全部标的 ›</a></div>
  <div class="ent">
   <a class="en" href="chart.html?code=sh000001&kind=index&from=home.html"><svg id="t1" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>指数终端</h3><p>按 A 股、美股、日股和韩股查看指数；对照顶部区间、证据与历史快照。</p><div class="go">进入终端 →</div></div></a>
-  <a class="en" href="backtest.html"><svg id="t2" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>FCO 历史回测</h3><p>叠加红色泡沫强度柱与首次预警旗标，按 as-of 视角检验每轮顶部聚类。</p><div class="go">打开回测 →</div></div></a>
+  <a class="en" href="index.html?code=sh000001"><svg id="t2" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>FCO 历史回测</h3><p>叠加红色泡沫强度柱与首次预警旗标，按 as-of 视角检验每轮顶部聚类。</p><div class="go">打开回测 →</div></div></a>
   <a class="en" href="market.html"><svg id="t3" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>市场复盘</h3><p>快讯资讯、涨停情绪、资金流热力图、事件日历、两融与估值全览。</p><div class="go">进入复盘 →</div></div></a>
   <a class="en" href="stock.html"><svg id="t4" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>个股诊断</h3><p>输入六位代码，查看日线、逃顶/抄底结构与历史回放；支持本地自选。</p><div class="go">查询个股 →</div></div></a>
  </div>
@@ -254,7 +254,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 </div></section>
 
 <section id="cases"><div class="wrap">
- <div class="hd"><h2>历史回放</h2><p>只用截止日之前的数据，再与之后的真实走势对照。</p><a class="more" href="backtest.html">查看全部 ›</a></div>
+ <div class="hd"><h2>历史回放</h2><p>只用截止日之前的数据，再与之后的真实走势对照。</p><a class="more" href="index.html?code=sh000001">查看全部 ›</a></div>
  <div class="cases">
   <a class="cs" href="chart.html?kind=index&from=home.html&code=sh000001&asof=2007-10-12"><b>2007-10-12</b><span>上证指数 · 回放</span><i>打开 →</i></a>
   <a class="cs" href="chart.html?kind=index&from=home.html&code=sh000001&asof=2015-06-12"><b>2015-06-12</b><span>上证指数 · 回放</span><i>打开 →</i></a>
@@ -265,7 +265,7 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 <footer><div class="wrap">
  <div class="fg">
   <div><div class="brand">临界点</div><p>A 股非线性动力学研究工作台。只读后端已发布的数据，页面不做任何模型计算。</p></div>
-  <div><h4>产品</h4><a href="index.html">终端</a><a href="backtest.html">回测</a><a href="market.html">市场</a><a href="nt.html">宽基ETF</a><a href="stock.html">个股</a></div>
+  <div><h4>产品</h4><a href="index.html">终端</a><a href="backtest.html#view=bench">方法与证据</a><a href="market.html">市场</a><a href="nt.html">宽基ETF</a><a href="stock.html">个股</a></div>
   <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a></div>
   <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
  </div>
