@@ -46,7 +46,16 @@
     LPPL.load(S.sym).then(function (data) {
       if (request !== benchRequest || benchLoadedFor !== S.sym) return;
       var result = data.raw || {};
-      benchPanel.innerHTML = BacktestBenchView.render(result.validation, result.evidence_levels);
+      benchPanel.innerHTML = '<h3 class="bench-h">顶部聚类（LPPLS）</h3>' + BacktestBenchView.render(result.validation, result.evidence_levels) +
+        '<h3 class="bench-h">底分 ≥60（估值 60% + 回撤深度 40%）</h3><div id="bench-bottom"><p class="sp-empty">加载中…</p></div>';
+      LPPL.history(S.sym).then(function (history) {
+        var box = document.getElementById('bench-bottom');
+        if (!box || request !== benchRequest) return;
+        box.innerHTML = (window.CPIndexHistory && CPIndexHistory.bottomSegments(history)) || '<p class="sp-empty">底分三段检验未发布。</p>';
+      }).catch(function () {
+        var box = document.getElementById('bench-bottom');
+        if (box && request === benchRequest) box.innerHTML = '<p class="sp-gate">底分三段检验读取失败，请稍后重试。</p>';
+      });
     }).catch(function () {
       if (request !== benchRequest || benchLoadedFor !== S.sym) return;
       benchLoadedFor = '';
@@ -54,9 +63,12 @@
     });
   }
   function show(view, push) {
-    var selected = view === 'strategy' || view === 'bench' ? view : 'scenario';
+    var selected = view === 'strategy' ? 'strategy' : 'bench';
     var strat = selected === 'strategy', bench = selected === 'bench';
-    sv.hidden = !strat; benchView.hidden = !bench; app.hidden = strat || bench;
+    sv.hidden = !strat; benchView.hidden = !bench; app.hidden = true;
+    /* 三段验证是合并口径，不按资产分；只有策略回放需要选指数 */
+    var syms = document.getElementById('syms');
+    if (syms) syms.hidden = bench;
     views.querySelectorAll('a[data-view]').forEach(function (a) { if (a.dataset.view === selected) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
     if (strat) loadStrategy();
     if (bench) loadBench();
@@ -68,7 +80,7 @@
   }
   function showLocationView() {
     var v = (location.hash.match(/view=(\w+)/) || [])[1];
-    show(v === 'strategy' || v === 'bench' ? v : 'scenario', false);
+    show(v === 'strategy' ? 'strategy' : 'bench', false);
   }
   views.addEventListener('click', function (e) { var a = e.target.closest('a[data-view]'); if (!a) return; e.preventDefault(); show(a.dataset.view, true); });
   var sidebar = document.querySelector('.odn-sidebar');
@@ -78,7 +90,7 @@
     var target = new URL(a.href);
     if (target.pathname !== location.pathname) return;
     var view = (target.hash.match(/view=(\w+)/) || [])[1];
-    if (view !== 'scenario' && view !== 'strategy' && view !== 'bench') return;
+    if (view !== 'strategy' && view !== 'bench') return;
     e.preventDefault();
     show(view, true);
   });

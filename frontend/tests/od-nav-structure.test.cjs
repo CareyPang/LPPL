@@ -27,14 +27,14 @@ test('main navigation has the five user-task entries and their intended sections
       ['home', '首页'],
       ['stock', '标的'],
       ['market', '市场'],
-      ['backtest', '历史检验'],
+      ['backtest', '方法与证据'],
       ['tools', '工具'],
     ],
   );
   assert.match(main[1], /sections: \['stock', 'terminal', 'chart'\]/);
   assert.match(main[1], /sections: \['market', 'nt'\]/);
   assert.match(main[1], /index\.html\?code=sh000001/);
-  assert.match(main[1], /backtest\.html#view=scenario/);
+  assert.doesNotMatch(main[1], /view=scenario|FCO 历史回测/);
   assert.match(main[1], /backtest\.html#view=strategy/);
   assert.match(main[1], /backtest\.html#view=bench/);
   assert.doesNotMatch(main[1], /chart\.html/);
@@ -102,18 +102,17 @@ test('home navigation anchors and assistant context remain on the published page
   assert.match(home, /id="today" data-ai-context="今日摘要"/);
   assert.match(home, /<section id="mine"/);
   assert.match(home, /class="btn pri" href="stock\.html">查看标的/);
-  assert.match(home, /class="btn sec" href="backtest\.html">历史检验/);
+  assert.match(home, /class="btn sec" href="index\.html\?code=sh000001">指数历史回测/);
   assert.doesNotMatch(index, /id="p-bench"|data-p="p-bench"|function renderBench/);
   assert.match(index, /location\.hash !== '#p-bench'/);
   assert.match(index, /target\.searchParams\.set\('sym', symbol\)/);
   assert.match(index, /location\.replace\(target\.href\)/);
-  assert.match(index, /看三段验证/);
+  assert.match(index, /方法与证据 ›/);
   assert.match(index, /link\.href = 'backtest\.html#view=bench'/);
   assert.match(index, /appendEvidenceHelp\(\$\('vs'\)\)/);
   assert.match(index, /appendEvidenceHelp\(\$\('ph-tip'\)\)/);
-  assert.match(backtest, /开发段：.*最早的一段历史，用来设计规则、调参数。/);
-  assert.match(backtest, /校准段：.*中间一段，规则定下后只用来确定门槛。/);
-  assert.match(backtest, /测试段：.*只有这段的成绩才算“没看过答案”/);
+  assert.doesNotMatch(backtest, /class="bench-explainer"/);
+  assert.match(backtest, /location\.replace\(target\.href\)/);
   assert.match(backtestViews, /LPPL\.load\(S\.sym\)/);
   assert.match(stock, /class="evidence-help" href="backtest\.html#view=bench">证据等级是什么？/);
   assert.match(chart, /class="evidence-help" href="backtest\.html#view=bench">证据等级是什么？/);

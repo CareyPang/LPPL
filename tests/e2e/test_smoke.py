@@ -46,7 +46,7 @@ NAV_PAGES = (
     "index.html?code=sh000001",
     "stock.html",
     "market.html",
-    "backtest.html",
+    "backtest.html#view=bench",
     "tools.html",
     "chart.html?code=sh601838&scale=6-12m",
 )
@@ -284,14 +284,21 @@ def test_flow_4_index_chip_updates_header(page: Page) -> None:
 
 @pytest.mark.e2e
 def test_flow_5_backtest_alert_ledger_has_evidence_and_rows(page: Page) -> None:
-    page.goto(f"{BASE_URL}/backtest.html")
-    rows = page.locator("#alert-rows [role=row]")
+    """旧的资产回测链接跳到指数页；预警记录在指数页图下，点一行定位到当时的图。"""
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    page.wait_for_url(re.compile(r"/index\.html\?code="))
+    rows = page.locator("#p-top tr[data-date]")
     page.wait_for_function(
-        "() => document.querySelectorAll('#alert-rows [role=row]').length > 0"
+        "() => document.querySelectorAll('#p-top tr[data-date]').length > 0"
     )
-    expect(rows.first).to_be_visible()
-    evidence = page.locator("#alert-caveat").inner_text()
-    assert "不代表通过检验" in evidence or "不是" in evidence
+    expect(page.locator("#p-top .cp-evb").first).to_be_visible()
+    last = rows.last
+    last.click()
+    expect(last).to_have_attribute("aria-selected", "true")
+    assert last.get_attribute("data-date") < "2005-01-01"
+    page.locator("#bt-bot").click()
+    expect(page.locator("#p-bot tr[data-date]").first).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -313,8 +320,8 @@ def test_backtest_recompute_notice_uses_history_metadata_in_scenario_and_strateg
 
     page.route("**/lab/mock/data/sh000001_history.json", add_recompute_metadata)
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=scenario")
-    expect(page.locator("main.app")).to_be_visible()
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=bench")
+    expect(page.locator("#bench-view")).to_be_visible()
     expect(page.locator("#recompute-notice")).to_be_visible()
     expect(page.locator("#recompute-label")).to_have_text("事后重算，不是样本外")
     page.locator("#recompute-notice summary").click()
@@ -734,7 +741,7 @@ def test_overflow_4_index_page(page: Page) -> None:
 
 @pytest.mark.e2e
 def test_overflow_5_backtest_page(page: Page) -> None:
-    assert_page_has_no_overflow(page, "backtest.html")
+    assert_page_has_no_overflow(page, "backtest.html#view=bench")
 
 
 @pytest.mark.e2e
@@ -1684,7 +1691,7 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
             """() => {
               const el = document.body.classList.contains('vs-home')
                 ? document.querySelector('.hero-copy')
-                : document.querySelector('main') || document.querySelector('h1');
+                : [...document.querySelectorAll('main, #bench-view')].find(e => e.getClientRects().length) || document.querySelector('h1');
               return el && el.getBoundingClientRect().left;
             }"""
         )
@@ -1700,7 +1707,7 @@ def test_assistant_top_and_content_clearance_across_pages(page: Page) -> None:
                 """() => {
                   const el = document.body.classList.contains('vs-home')
                     ? document.querySelector('.hero-copy')
-                    : document.querySelector('main') || document.querySelector('h1');
+                    : [...document.querySelectorAll('main, #bench-view')].find(e => e.getClientRects().length) || document.querySelector('h1');
                   return el && el.getBoundingClientRect().left;
                 }"""
             )
@@ -1752,16 +1759,14 @@ def test_tablet_sidebar_and_assistant_drawer(page: Page) -> None:
 @pytest.mark.e2e
 def test_backtest_sidebar_links_switch_views(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=strategy")
     bench = page.locator(
         '.odn-sidebar .odn-side-link[href="backtest.html#view=bench"]'
     )
     strategy = page.locator(
         '.odn-sidebar .odn-side-link[href="backtest.html#view=strategy"]'
     )
-    replay = page.locator(
-        '.odn-sidebar .odn-side-link[href="backtest.html#view=scenario"]'
-    )
+    assert page.locator('.odn-sidebar a[href*="view=scenario"]').count() == 0
     bench.click()
     expect(page.locator("#bench-view")).to_be_visible()
     expect(page).to_have_url(re.compile(r"/backtest\.html\?sym=sh000001#view=bench$"))
@@ -1779,13 +1784,7 @@ def test_backtest_sidebar_links_switch_views(page: Page) -> None:
     expect(page.locator('.bt-views a[data-view="strategy"]')).to_have_attribute(
         "aria-current", "location"
     )
-    replay.click()
-    expect(page.locator("#strategy-view")).to_be_hidden()
-    expect(page.locator("main.app")).to_be_visible()
-    expect(replay).to_have_attribute("aria-current", "location")
-    expect(page.locator('.bt-views a[data-view="scenario"]')).to_have_attribute(
-        "aria-current", "location"
-    )
+    expect(page.locator("#syms")).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -1906,7 +1905,7 @@ def test_legacy_three_segment_hash_redirects_to_bench_view(page: Page) -> None:
     page.goto(f"{BASE_URL}/index.html?code=sh000001&asof=2007-10-12#p-bench")
     page.wait_for_url(re.compile(r"/backtest\.html\?sym=sh000001#view=bench$"))
     expect(page.locator("#bench-view")).to_be_visible()
-    expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
+    expect(page.locator('.odn-sidebar .odn-side-link[href="backtest.html#view=bench"]')).to_have_attribute(
         "aria-current", "location"
     )
     assert not any(
@@ -1931,7 +1930,7 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
         re.search(r"/(?:replay|request)(?:/|$)", urlsplit(url).path, re.I)
         for _, url, _ in page._e2e_requests
     )
-    expect(page.locator('.odn-sidebar a[href="backtest.html#view=bench"]')).to_have_attribute(
+    expect(page.locator('.odn-sidebar .odn-side-link[href="backtest.html#view=bench"]')).to_have_attribute(
         "aria-current", "location"
     )
     for width, height in ((1440, 900), (1024, 768), (390, 844)):
@@ -1960,8 +1959,7 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
                 overflowX: getComputedStyle(wrapper).overflowX,
                 scrollWidth: wrapper.scrollWidth,
                 clientWidth: wrapper.clientWidth,
-                symbolsFit: isContained(document.querySelector('.odn-sub'), document.querySelector('#syms')),
-                rangesFit: isContained(document.querySelector('.odn-tools'), document.querySelector('#ranges')),
+                symbolsHidden: document.querySelector('#syms').getClientRects().length === 0,
               };
             }"""
         )
@@ -1971,18 +1969,18 @@ def test_backtest_bench_loads_latest_fixture_without_replay_or_overflow(page: Pa
             and layout["scrollWidth"] > layout["clientWidth"]
         )
         assert fits or scrollable, layout
-        assert layout["symbolsFit"] and layout["rangesFit"], layout
+        assert layout["symbolsHidden"], layout
 
 
 @pytest.mark.e2e
 def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
-    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001")
+    page.goto(f"{BASE_URL}/backtest.html?sym=sh000001#view=strategy")
     panel = page.locator(".ai-panel.ai-dock")
     expect(panel).to_be_hidden()
     page.locator(".ai-switch").click()
     expect(panel).to_be_visible()
-    expect(page.locator(".app")).to_be_visible()
+    expect(page.locator("#strategy-view")).to_be_visible()
 
     def ask_context() -> str:
         with page.expect_request(
@@ -1996,7 +1994,6 @@ def test_bench_ai_context_contains_visible_table_and_respects_limit(page: Page) 
         return context
 
     scenario_context = ask_context()
-    assert "开发段：" in scenario_context
     assert "开发段 2000" not in scenario_context
     assert len(scenario_context) <= 8000
 

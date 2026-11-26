@@ -69,7 +69,8 @@ test('home.html, index.html, backtest.html wire overview_latest.json, radar bar 
   assert.match(idx, /LPPLDecisionState\.build/);
   assert.doesNotMatch(idx, /class="act-steps"/);
   assert.match(idx, /class="tk-tag"/);
-  assert.match(bt, /id="ov-strip"/);
+  assert.doesNotMatch(bt, /id="ov-strip"/);
+  assert.match(idx, /id="p-bot"/);
   assert.match(bt, /data-ledger-mode="bottom"/);
   assert.match(bt, /id="bottom-rows"/);
   assert.match(bt, /主簇区间与时间中位数/);
