@@ -22,4 +22,4 @@
 
 ## 展示与遗留项
 
-风险只展示为日期范围，不展示精确顶部日期。v1/proto 是遗留研究变体（v1 = early registration；proto = old browser prototype domain；never backtested）；所有生产工作流显式设置 `LPPLS_BOX=v2`。优化器并不统一：dev/cal/test 扫描（`lppls_scan.py`）默认 `tcgrid`；线上指数日更（`index_daily.yml`）与周度历史延续（`history_extend_weekly.yml`）用 `de_trf`（发布记录 `params.optimizer`）；`daily.py`/`index_daily.py` 命令行默认 `g3`。线上 `de_trf` 与评测用 `tcgrid` 的置信度一致性尚未检验。
+风险只展示为日期范围，不展示精确顶部日期。v1/proto 是遗留研究变体（v1 = early registration；proto = old browser prototype domain；never backtested）；所有生产工作流显式设置 `LPPLS_BOX=v2`。优化器并不统一：dev/cal/test 扫描（`lppls_scan.py`）默认 `tcgrid`；线上指数日更（`index_daily.yml`）与周度历史延续（`history_extend_weekly.yml`）用 `de_trf`（发布记录 `params.optimizer`）；指数历史 `history.json` 的 dev/cal/test 冻结帧来自 `lppls_v2_g3*` 重扫（`export_contract.HISTORY_SCANS`，`g3` = `tcgrid_lm` 与 `de_lbfgsb` 取较小 SSE，窗口 130–500 步长 5），其后的 live 帧由 `history_extend.py` 用 `de_trf`、窗口 130–500 步长 10 计算；`daily.py`/`index_daily.py` 命令行默认 `g3`。三套口径（评测 `tcgrid`、冻结帧 `g3`、线上 `de_trf`）之间的置信度一致性尚未检验。
