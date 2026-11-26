@@ -336,3 +336,65 @@ def test_summarize_bottom_backtest_computes_win_rate_and_baseline():
 
 
 
+
+
+def test_phase_and_bottom_detail_published_without_changing_green_bar():
+    """阶段判定与未截断底分：绿柱和事件标记不变，低于 20 分时分项仍照实输出。"""
+    from research.eval.bottom_dashboard import compute_fco_neg_intensity_series, phase_of
+
+    assert phase_of(False, -0.05) == "top"
+    assert phase_of(False, -0.12) == "pullback"
+    assert phase_of(True, -0.30) == "top"
+    assert phase_of(False, None) is None
+    assert phase_of(True, None) == "top"
+
+    # 涨到高点后连续下跌、未止跌：回撤过 12% 但底分不到 20
+    closes = [3000 + i * 50 for i in range(25)] + [4200 * (0.985**i) for i in range(1, 11)]
+    dates = pd.date_range("2020-01-03", periods=len(closes), freq="W-FRI")
+    frames = [
+        {"asof": str(d.date()), "close": float(c), "w": {"6-12m": None}}
+        for d, c in zip(dates, closes, strict=True)
+    ]
+    out = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
+    assert out[24]["phase"] == "top" and out[24]["dd_52w"] == 0.0
+    assert "bottom_detail" not in out[24]
+    last = out[-1]
+    assert last["dd_52w"] <= -0.12 and last["phase"] == "pullback"
+    assert last["fco_neg_intensity"] == 0.0 and "bottom_factors" not in last
+    assert "bottom_bar" not in last
+    for f in out:
+        want = "green" if f["fco_neg_intensity"] >= 0.5 else "weak" if f["fco_neg_intensity"] > 0 else None
+        assert f.get("bottom_bar") == want
+    detail = last["bottom_detail"]
+    assert 0 < detail["score"] < 20
+    assert detail["clearing"] > 0 and detail["valuation"] is None
+
+    # 有顶部区间时仍归顶部侧，不给底分
+    frames[-1]["w"] = {"6-12m": ["2020-09-01", "2020-10-01"]}
+    out_top = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
+    assert out_top[-1]["phase"] == "top" and "bottom_detail" not in out_top[-1]
+    assert out_top[-1]["dd_52w"] == last["dd_52w"]
+
+
+def test_phase_rule_summary_counts_only_requested_split():
+    from research.eval.bottom_dashboard import summarize_phase_rule
+
+    def frame(close, split="dev"):
+        return {"close": close, "split": split}
+
+    warm = [frame(100, "warm") for _ in range(20)]
+    frames = warm + [
+        frame(100), frame(87.9), frame(70), frame(101),  # 一轮：最终 -30%，触发后再跌 20.4%
+        frame(87), frame(85), frame(101),  # 一轮：最终 -15.8%
+        frame(50, "test"),
+    ]
+    out = summarize_phase_rule(frames)
+    assert out["n_episodes"] == 2 and out["threshold"] == -0.12
+    assert out["share_reaching_20pct"] == 0.5
+    assert out["median_further_decline"] == round(float(np.median([70 / 87.9 - 1, 85 / 87 - 1])), 3)
+    # -11.96% 不算触发（帧上四舍五入后的 -0.12 不能当门槛用）
+    assert summarize_phase_rule(warm + [frame(100), frame(88.04), frame(100)])["n_episodes"] == 0
+    # 一轮满 104 周仍在门槛以下：不重复计成新的一轮
+    long_dd = warm + [frame(100)] + [frame(80 - 0.01 * k) for k in range(130)]
+    assert summarize_phase_rule(long_dd)["n_episodes"] == 1
+    assert summarize_phase_rule([])["n_episodes"] == 0
