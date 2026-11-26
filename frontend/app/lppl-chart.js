@@ -259,7 +259,7 @@
     obvLine.applyOptions({ visible: false });
     var pane = chart.panes()[1];
     if (pane) { chart.panes()[0].setHeight(host.clientHeight * 0.78); pane.setHeight(host.clientHeight * 0.22); }
-    var emitters = new Map(), candles = [], current = null, scale = '6-12m', closures = new Set();
+    var emitters = new Map(), candles = [], candleByTime = new Map(), current = null, scale = '6-12m', closures = new Set();
     var currentBands = [], currentWhitespace = [], focusedBandId = '';
     var bandPrimitive = null, cutoffPrimitive = null, markerPlugin = null, a11y = null;
     var divergenceLines = [];
@@ -341,7 +341,7 @@
         return closeOnly ? { time: bar.time, value: bar.close } : { time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close };
       }).concat(currentWhitespace));
       if (price !== previousPrice) emit('priceSeries', price);
-      var candleByTime = new Map(candles.map(function (bar) { return [bar.time, bar]; }));
+      candleByTime = new Map(candles.map(function (bar) { return [bar.time, bar]; }));
       var volumeBars = toVolumeBars(candles);
       volume.setData(volumeBars.map(function (bar) {
         var candle = candleByTime.get(bar.time);
@@ -380,7 +380,15 @@
         else chart.timeScale().fitContent();
       }
     }
-    function setScale(next) { scale = next; if (current) setData(current); emit('scale', next); }
+    function setScale(next) {
+      scale = next;
+      // 各尺度的区间在 setData 时已全部算好；切尺度只重挂区间层，不重置数据和视口。
+      if (current && current.schema !== 'kline_obv.v1') {
+        if (bandPrimitive) { price.detachPrimitive(bandPrimitive); bandPrimitive = null; }
+        attachBands();
+      }
+      emit('scale', next);
+    }
     function attachBands() {
       if (!currentBands.length) return;
       bandPrimitive = createBands(chart, candles, currentBands, closures, scale, focusedBandId);
@@ -432,9 +440,7 @@
     }
     function crosshair(param) {
       var date = dateFromTime(param && param.time);
-      var bar = candles.find(function (item) {
-        return item.time === (param && param.time) || item.time === date;
-      });
+      var bar = candleByTime.get(param && param.time) || candleByTime.get(date);
       var label = bar && bar.label || date;
       var value = bar ? { date: label, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
         volume: bar.volume, obv: bar.obv }
@@ -569,7 +575,6 @@
         };
       },
     }];
-    var renderer = views[0].renderer();
     return { paneViews: function () { return views; }, updateAllViews: function () {},
       attached: function (params) { params.requestUpdate && params.requestUpdate(); }, detached: function () {} };
   }
