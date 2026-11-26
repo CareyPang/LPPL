@@ -92,7 +92,7 @@ def _fake_history_frame(
     }
 
 
-def _fake_record(sym, asof, d, r, cal, ohlc, data_version, market="cn"):
+def _fake_record(sym, asof, d, r, cal, ohlc, data_version, market="cn", signal_rule="standard"):
     frame = _fake_history_frame(
         d, r, pd.Timestamp(asof), cal, float(ohlc.close.iloc[-1]), "stock", True
     )

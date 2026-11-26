@@ -75,6 +75,7 @@ def one(args) -> dict:
             None,
             data_version=f"vintage_{date:%Y%m%d}_{src}",
             market="cn",
+            signal_rule="standard",
         )
         T = rec["top"]
         ind = {k: v for k, v in T["indicators"].items() if k in ("6-12m", "12-24m")}

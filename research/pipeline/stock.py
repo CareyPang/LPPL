@@ -25,7 +25,9 @@ from ..data.trading_calendar import future_calendar_metadata  # noqa: E402
 from ..data.us_watchlist import US_NAMES  # noqa: E402
 from ..dip.panel import build_panel  # noqa: E402
 from ..eval.export_contract import (
-    MODEL_VERSION,
+    STOCK_MODEL_VERSION as MODEL_VERSION,
+)  # noqa: E402
+from ..eval.export_contract import (
     _derived,
     _history_frame,
     build_record,
@@ -742,6 +744,7 @@ def _record(
         ohlc,
         data_version=data_version,
         market=market,
+        signal_rule="standard",
     )
     record["params"] = {"optimizer": "de_lbfgsb"}
     name, st = _name_and_st(code6)

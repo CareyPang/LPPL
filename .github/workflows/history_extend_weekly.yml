@@ -8,11 +8,11 @@ on:
       opt:
         description: "LPPLS optimizer"
         required: false
-        default: "de_trf"
+        default: "g3"
         type: choice
         options:
-          - de_trf
           - g3
+          - de_trf
           - de
           - tcgrid
 
@@ -43,7 +43,7 @@ jobs:
           PYTHONUTF8: "1"
         run: |
           set -euo pipefail
-          OPT="${{ github.event.inputs.opt || 'de_trf' }}"
+          OPT="${{ github.event.inputs.opt || 'g3' }}"
           for sym in sh000001 sh000016 sh000300 sh000905 sh000688 sz399001 sz399006; do
             echo "=== Extending ${sym} (opt=${OPT}) ==="
             python -m research.pipeline.history_extend "${sym}" --opt "${OPT}" --step 5
