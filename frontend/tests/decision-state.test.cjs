@@ -5,7 +5,7 @@ const Decision = require('../app/decision-state.js');
 
 const ASOF = '2026-11-23';
 function setup() {
-  const factors = { valuation: 0.22, clearing: 1, stabilize: 0.65, right_side: 0,
+  const factors = { valuation: 0.76, clearing: 0.5,
     erp_pct: 0.442, pbn_pct: 0.888, dd_52w: -0.404 };
   const top = { signal_status: 'no_qualified_fit',
     indicators: { '6-12m': { signal_status: 'no_qualified_fit', evidence: 'dev' } },
@@ -16,8 +16,8 @@ function setup() {
       raw: { symbol: 'sh000688', asof: ASOF, top, model_version: 'published-v1' }, top },
     context: { code: 'sh000688', assetType: 'index', market: 'cn', scale: '6-12m', rule: 'box', asof: '' },
     history: { symbol: 'sh000688', frames: [
-      { asof: '2026-11-16', fco_neg_intensity: 0.46, bottom_factors: { ...factors, clearing: 0.85 } },
-      { asof: ASOF, fco_neg_intensity: 0.506, bottom_factors: factors },
+      { asof: '2026-11-16', fco_neg_intensity: 0.46, bottom_factors: { ...factors, clearing: 0.01 } },
+      { asof: ASOF, fco_neg_intensity: 0.625, bottom_factors: factors },
     ], bottom_summary: { n_events: 9, n_with_50w: 8, win_rate_50w: 0.75, baseline_win_rate_50w: 0.383,
       median_ret_50w: 0.205, median_post_min_50w: -0.141 } },
   };
@@ -34,12 +34,12 @@ function active(input, start = ASOF, end = '2026-12-01', scale = '6-12m') {
 
 test('same-day published score, actual weights and prior change are shown without inventing a position', () => {
   const state = Decision.build(setup());
-  assert.equal(state.bottom.score, 50.6);
+  assert.equal(state.bottom.score, 62.5);
   assert.equal(state.bottom.asof, ASOF);
   assert.equal(state.bottom.stale, false);
-  assert.ok(Math.abs(state.bottom.delta - 4.6) < 1e-10);
+  assert.ok(Math.abs(state.bottom.delta - 16.5) < 1e-10);
   assert.equal(state.bottom.previousAsOf, '2026-11-16');
-  assert.deepEqual(state.bottom.components.map(x => x.weight), [0.35, 0.3, 0.2, 0.15]);
+  assert.deepEqual(state.bottom.components.map(x => x.weight), [0.6, 0.4]);
   assert.equal(state.conclusion.status, 'bottom_probe');
   assert.equal(state.conclusion.tone, 'green');
   assert.equal(state.bottom.summary.n, 8);
@@ -50,7 +50,7 @@ test('same-day published score, actual weights and prior change are shown withou
 });
 
 test('an active top interval takes precedence over a high bottom score, including zero-day lead', () => {
-  const input = setup(); score(input, 80, { stabilize: 1, right_side: 1 }); active(input);
+  const input = setup(); score(input, 80); active(input);
   const state = Decision.build(input);
   assert.equal(state.bottom.score, 80);
   assert.equal(state.bottom.status, 'candidate');
@@ -92,7 +92,7 @@ test('positive structure without a current interval is not described as an activ
   assert.match(state.top.label, /尚无当前区间/);
 });
 
-test('cooling stays descriptive when the score is below 30', () => {
+test('cooling stays descriptive when the score is below 60', () => {
   const input = setup(); score(input, 0);
   input.data.raw.cooling_state = { dashboard: { verdict_light: 'red', dimensions: [{ id: 'omori', light: 'red' }] } };
   const state = Decision.build(input);
@@ -102,12 +102,11 @@ test('cooling stays descriptive when the score is below 30', () => {
   assert.equal(state.conclusion.status, 'neutral');
 });
 
-test('scores 29.9, 30, 49.9, and 50 use the unrounded bottom tiers', () => {
+test('scores 59.9 and 60 use the unrounded bottom tiers', () => {
   for (const [n, bottomStatus, conclusionStatus] of [
-    [29.9, 'neutral', 'neutral'],
-    [30, 'watch', 'bottom_watch'],
-    [49.9, 'watch', 'bottom_watch'],
-    [50, 'candidate', 'bottom_probe'],
+    [0, 'neutral', 'neutral'],
+    [59.9, 'neutral', 'neutral'],
+    [60, 'candidate', 'bottom_probe'],
   ]) {
     const input = setup(); score(input, n);
     const state = Decision.build(input);
@@ -117,18 +116,17 @@ test('scores 29.9, 30, 49.9, and 50 use the unrounded bottom tiers', () => {
   }
 });
 
-test('red cooling does not gate a score of 55', () => {
-  const input = setup(); score(input, 55, { stabilize: 0, right_side: 0 });
+test('red cooling does not gate a score of 65', () => {
+  const input = setup(); score(input, 65);
   input.data.raw.cooling_state = { dashboard: { verdict_light: 'red', dimensions: [{ id: 'omori', light: 'red' }] } };
   const state = Decision.build(input);
   assert.equal(state.cooling.status, 'blocked');
   assert.equal(state.conclusion.status, 'bottom_probe');
 });
 
-test('display values stay precise at the 30 and 50 point boundaries', () => {
+test('display values stay precise at the 60 point boundary', () => {
   for (const [intensity, expectedStatus, expectedConclusion] of [
-    [0.299, 'neutral', 'neutral'], [0.3, 'watch', 'bottom_watch'],
-    [0.499, 'watch', 'bottom_watch'], [0.5, 'candidate', 'bottom_probe'],
+    [0.599, 'neutral', 'neutral'], [0.6, 'candidate', 'bottom_probe'],
   ]) {
     const input = setup(); input.history.frames.at(-1).fco_neg_intensity = intensity;
     const state = Decision.build(input);
@@ -160,11 +158,11 @@ test('score loading does not conceal a top interval or erase a valid score in th
   const pending = Decision.build(input);
   assert.equal(pending.bottom.status, 'loading');
   assert.equal(pending.conclusion.status, 'top_watch');
-  input.data.raw.bottom_score = 51.7;
+  input.data.raw.bottom_score = 61.7;
   input.data.raw.bottom_factors = setup().history.frames.at(-1).bottom_factors;
   input.historyStatus = 'error';
   const retained = Decision.build(input);
-  assert.equal(retained.bottom.score, 51.7);
+  assert.equal(retained.bottom.score, 61.7);
   assert.equal(retained.bottom.status, 'candidate');
   assert.equal(retained.conclusion.status, 'top_watch');
   assert.equal(retained.provenance.historyStatus, 'error');
@@ -183,12 +181,12 @@ test('missing score and missing factors stay null while a genuine zero remains z
   assert.equal(state.bottom.components[0].value, null);
 });
 
-test('an explicit absent valuation selects the existing three-component weights without changing score', () => {
+test('an absent valuation leaves the weights unspecified without changing score', () => {
   const input = setup(); score(input, 63, { valuation: null, erp_pct: null, pbn_pct: null });
   const state = Decision.build(input);
   assert.equal(state.bottom.score, 63);
-  assert.equal(state.bottom.schemeId, 'price_three');
-  assert.deepEqual(state.bottom.components.map(x => x.weight), [0, 0.5, 0.3, 0.2]);
+  assert.equal(state.bottom.schemeId, 'unspecified');
+  assert.deepEqual(state.bottom.components.map(x => x.weight), [null, null]);
   assert.equal(state.bottom.components[0].value, null);
   assert.equal(state.bottom.delta, null, 'different weighting schemes cannot produce an apparent improvement');
 });
@@ -203,7 +201,7 @@ test('historical replay reads the exact score, excludes later frames and hides f
   assert.equal(state.bottom.asof, '2026-11-16');
   assert.equal(state.bottom.stale, false);
   assert.equal(state.bottom.summary, null);
-  assert.equal(state.conclusion.status, 'bottom_watch');
+  assert.equal(state.conclusion.status, 'neutral');
   input.context.asof = input.data.modelAsOf = input.data.raw.asof = '2026-11-17';
   const missing = Decision.build(input);
   assert.equal(missing.bottom.score, null);
@@ -213,7 +211,7 @@ test('historical replay reads the exact score, excludes later frames and hides f
 test('current view can show the latest eligible weekly score but cannot promote stale data into a current buy state', () => {
   const input = setup(); input.history.frames[1].asof = '2026-11-20';
   const state = Decision.build(input);
-  assert.equal(state.bottom.score, 50.6);
+  assert.equal(state.bottom.score, 62.5);
   assert.equal(state.bottom.asof, '2026-11-20');
   assert.equal(state.bottom.stale, true);
   assert.equal(state.conclusion.status, 'stale_watch');
@@ -307,7 +305,7 @@ test('a frame-specific version is checked after selection and does not fall back
   input.history.frames[1].model_version = 'published-v1';
   input.history.model_version = 'catalog-v2';
   const matchingFrame = Decision.build(input);
-  assert.equal(matchingFrame.bottom.score, 50.6, 'the selected frame can explicitly override a newer catalog version');
+  assert.equal(matchingFrame.bottom.score, 62.5, 'the selected frame can explicitly override a newer catalog version');
   assert.equal(matchingFrame.bottom.versionMismatch, false);
   assert.equal(matchingFrame.bottom.summary, null, 'catalog-wide outcomes still have a different version');
 });
@@ -328,7 +326,7 @@ test('an independent raw score survives incompatible history while comparison an
 test('version compatibility accepts absent metadata and differing data hashes, but rejects nested variant conflicts', () => {
   const input = setup(); input.data.raw.data_version = 'current-download'; input.history.data_version = 'older-snapshot';
   input.data.raw.fit_code_version = 'fit-v1'; // History does not provide this optional field.
-  assert.equal(Decision.build(input).bottom.score, 50.6);
+  assert.equal(Decision.build(input).bottom.score, 62.5);
   input.data.raw.stock_meta = { variant: 'variant-a' }; input.history.stock_meta = { variant: 'variant-b' };
   assert.equal(Decision.build(input).bottom.score, null);
 });
@@ -337,7 +335,7 @@ test('same selected-frame version does not legitimize a summary or delta mixing 
   const input = setup(); input.history.model_version = 'published-v1';
   input.history.frames[0].model_version = 'old-v0';
   const state = Decision.build(input);
-  assert.equal(state.bottom.score, 50.6);
+  assert.equal(state.bottom.score, 62.5);
   assert.equal(state.bottom.delta, null);
   assert.equal(state.bottom.summary, null);
   assert.match(state.bottom.summarySuppressedReason, /版本/);
@@ -377,7 +375,7 @@ test('future history scores and later-generated statistics are excluded', () => 
   const input = setup();
   input.history.frames.push({ ...input.history.frames[1], asof: '2026-11-24', fco_neg_intensity: 0.99 });
   const state = Decision.build(input);
-  assert.equal(state.bottom.score, 50.6);
+  assert.equal(state.bottom.score, 62.5);
   assert.equal(state.bottom.summary, null);
 });
 
@@ -414,4 +412,15 @@ test('building the display state does not mutate published inputs or recalculate
   const state = Decision.build(input);
   assert.equal(state.bottom.score, 1, 'an explicit 0–100 score of one is not normalized to 100');
   assert.equal(JSON.stringify(input), before);
+});
+
+test('a history that declares its own score version stays usable when only the LPPLS model version differs', () => {
+  const input = setup(); input.history.model_version = 'published-v0';
+  assert.equal(Decision.build(input).bottom.score, null);
+  input.history.score_version = 'bottom_v2';
+  const state = Decision.build(input);
+  assert.equal(state.bottom.score, 62.5);
+  assert.equal(state.bottom.versionMismatch, false);
+  input.data.raw.score_version = 'bottom_v1';
+  assert.equal(Decision.build(input).bottom.score, null);
 });

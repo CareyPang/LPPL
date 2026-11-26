@@ -49,9 +49,11 @@
 
 - `frames[].dd_52w`：当周收盘相对过去 52 周最高周收盘的回撤（负数）；不足 20 帧时为 `null`。
 - `frames[].phase`：页面该显示哪一侧。`top` = 当周有 6–12 月顶部区间，或 `dd_52w > -0.12`；`pullback` = 回撤已达 12% 且没有顶部区间。这是事后确认，不是顶部预测；文案用“回落中”，不写“顶部已确认”。
-- `frames[].bottom_detail`：进入底分计分区时的未截断结果，含 `score`（0–100）、`dd_52w`、`erp_pct`、`pbn_pct`、`valuation`、`clearing`、`stabilize`、`right_side`。`score` 低于 20 时也输出；有顶部区间或不在计分区时无此字段。
-- `frames[].fco_neg_intensity`、`bottom_factors`、`bottom_first_alert_flag` 语义不变：绿柱仍在 20 分以下归零，事件回测数字不受影响。
-- `frames[].bottom_bar`：`green` = 底分 ≥ 50，画绿柱；`weak` = 20–49 分，画灰柱并标“回落中 · 条件不足”；无此字段 = 不画。开发段 20–49 分的周 24 周后上涨比例低于全部周，所以不作绿色。前端按此字段上色，不自行比较分数。
+- `frames[].bottom_detail`：回落中且估值已覆盖时的底分 V2 明细，含 `score`（0–100）、`version`（`v2`）、`dd_52w`、`erp_pct`、`pbn_pct`、`valuation`、`clearing`。底分 = 60%·`valuation` + 40%·`clearing`；`valuation` 低于 0.3 时 `score` 为 0，分项仍照实输出；`clearing` 从回撤 20% 起算、40% 满分。有顶部区间、回撤不足 12% 或估值未覆盖时无此字段。
+- `frames[].fco_neg_intensity` = `score`/100；`bottom_factors` 为同一组分项（不含 `score`）；`bottom_first_alert_flag` = 底分 ≥ 60 且距上次事件 ≥ 12 周。
+- `frames[].bottom_bar`：`green` = 底分 ≥ 60，画绿柱；`weak` = 0 < 底分 < 60，画灰柱并标“回落中 · 条件不足”；无此字段 = 不画。前端按此字段上色，不自行比较分数。
+- 顶层 `score_version`（`bottom_v2`）：底分自己的版本号。底分不用 LPPLS 拟合，页面核对评分记录时按它比较，不因指数结果的 `model_version` 不同而拒用。
+- 顶层 `bottom_score`：底分 V2 的规则（`version`、`green_min`、`weights`、`valuation_min`、`depth_range`）和事前登记的三段检验结果 `segments.dev|cal|test`（`lift_50w`、`old_lift_50w`、`relapse_24w`、`coverage`、`n_events`、`shift_p`）。登记与结果见 `docs/preregistration_bottom_score_v2.md`。校准段新旧底分结果相同；测试段只有一个下跌—反弹周期，各指数同涨同跌。
 - 顶层 `phase_rule`：该指数开发段内“回撤首次达到 12%”之后的统计：`n_episodes`、`share_reaching_20pct`（最终回撤达到 20% 的比例）、`median_further_decline`（触发后再跌的中位数）。只作描述，样本数随 `n_episodes` 一并显示。
 
 ## 2. home.html

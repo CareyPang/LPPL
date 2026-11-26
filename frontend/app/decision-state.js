@@ -67,23 +67,24 @@
     var other = effectiveVersions(record, fallback);
     // Price download hashes/data_version describe observations, not scientific
     // compatibility. Compare only explicitly provided model/score identifiers.
+    // 底分不用 LPPLS 拟合：历史记录声明了自己的 score_version 时，模型版本不同不算不兼容。
+    var ownScore = other.score_version != null;
     return VERSION_FIELDS.filter(function (key) {
+      if (ownScore && key === 'model_version') return false;
       var a = versionValue(current, key), b = versionValue(other, key);
       return a != null && b != null && a !== b;
     });
   }
   function factorScheme(factors, context, symbol) {
     var cnIndex = context.assetType === 'index' && (!context.market || context.market === 'cn') && INDICES.has(String(symbol).toLowerCase());
-    if (!cnIndex || !own(factors, 'valuation') || ['clearing', 'stabilize', 'right_side'].some(function (key) { return unit(factors[key]) == null; })) {
-      return { id: 'unspecified', label: '分项权重未提供', weights: [null, null, null, null] };
+    if (!cnIndex || unit(factors.valuation) == null || unit(factors.clearing) == null) {
+      return { id: 'unspecified', label: '分项权重未提供', weights: [null, null] };
     }
-    if (unit(factors.valuation) != null) return { id: 'valuation_four', label: '四项方案 · 35 / 30 / 20 / 15', weights: [0.35, 0.30, 0.20, 0.15] };
-    if (factors.valuation === null) return { id: 'price_three', label: '估值未覆盖 · 三项方案 50 / 30 / 20', weights: [0, 0.50, 0.30, 0.20] };
-    return { id: 'unspecified', label: '分项权重未提供', weights: [null, null, null, null] };
+    return { id: 'valuation_depth', label: '两项方案 · 估值 60 / 回撤深度 40', weights: [0.60, 0.40] };
   }
   function components(factors, scheme) {
-    var ids = ['valuation', 'clearing', 'stabilize', 'right_side'];
-    var labels = ['估值条件', '回撤释放', '止跌与波动', '价格企稳'];
+    var ids = ['valuation', 'clearing'];
+    var labels = ['估值条件', '回撤深度'];
     return ids.map(function (id, i) {
       var value = unit(factors[id]), detail = value == null ? '未覆盖' : '已发布分项 ' + Math.round(value * 100) + '%';
       if (id === 'valuation' && value != null) {
@@ -92,7 +93,6 @@
         if (unit(factors.pbn_pct) != null) parts.push('破净分位 ' + Math.round(factors.pbn_pct * 100) + '%');
         if (parts.length) detail = parts.join(' · ');
       }
-      if (id === 'valuation' && scheme.id === 'price_three') detail = '估值未覆盖，本次使用三项方案';
       if (id === 'clearing' && number(factors.dd_52w) != null) detail = '距52周高点 ' + (Number(factors.dd_52w) * 100).toFixed(1) + '%';
       return { id: id, label: labels[i], value: value, weight: scheme.weights[i], detail: detail };
     });
@@ -127,17 +127,17 @@
       entries.some(function (frame) { return versionDifferences(raw, frame, history).length > 0; }));
     var factors = record && record.bottom_factors && typeof record.bottom_factors === 'object' ? record.bottom_factors : {};
     var score = record ? scoreOf(record) : null, scheme = factorScheme(factors, context, symbol);
-    var status = score == null ? 'missing' : score < 30 ? 'neutral' : score < 50 ? 'watch' : 'candidate';
+    var status = score == null ? 'missing' : score < 60 ? 'neutral' : 'candidate';
     var scoreDate = record ? date(record.asof) : '';
     var prior = entries.filter(function (f) { return f.asof < scoreDate && scoreOf(f) != null; }).pop();
     var comparable = prior && !versionMismatch && versionDifferences(raw, prior, history).length === 0 &&
       versionDifferences(effectiveVersions(record, history), prior, history).length === 0 &&
       scheme.id !== 'unspecified' && factorScheme(prior.bottom_factors || {}, context, symbol).id === scheme.id;
-    var label = ({ missing: '底分未覆盖', neutral: '底部条件较少', watch: '底部条件观察中', candidate: '底部条件分达标' })[status];
+    var label = ({ missing: '底分未覆盖', neutral: '底部条件不足', candidate: '底部条件分达标' })[status];
     if (versionMismatch) label = record ? '已发布底分 · 历史评分版本不符' : '评分记录版本不符';
     return { score: score, asof: scoreDate, stale: !!record && (!historical && (scoreDate < cutoff || modelStale)), status: status,
       label: label,
-      tone: status === 'candidate' ? 'blue' : status === 'watch' ? 'amber' : 'gray',
+      tone: status === 'candidate' ? 'blue' : 'gray',
       components: components(factors, scheme), scheme: scheme.label, schemeId: scheme.id,
       delta: comparable ? score - scoreOf(prior) : null, previousAsOf: prior ? prior.asof : '',
       summary: allowed && !summaryMismatch ? publishedSummary(history, cutoff, historical) : null,
@@ -231,15 +231,12 @@
       if (bottom.status === 'error') return result('incomplete', 'gray', '评分记录读取失败', '行情与已读取的顶部结果仍保留，暂未取得底部评分。', '重试读取评分记录。');
       return result('incomplete', 'gray', '底部条件尚未覆盖', '当前结果没有可核对的已发布底分。', '继续查看行情和顶部区间，等待本标的底部分项。');
     }
-    if (bottom.score < 30) return result('neutral', 'gray', '暂不进场',
-      '底分低于 30 分：历史同档价格多在区间中上部，最终低点通常还要再过约 3 个月。',
-      '等待底分回到 30 分以上。');
-    if (bottom.score < 50) return result('bottom_watch', 'amber', '底部观察',
-      '底分 30–49 分：历史同档表现与随机回撤周接近。',
-      '跟踪底分能否达到 50 分。');
-    return result('bottom_probe', 'green', '底部附近',
-      '底分 ≥50：历史同档比随机回撤周更靠近底部，价格距前后半年最低点中位约 10–14%。',
-      '冷却、止跌与企稳分项作参考，不作为进场条件。');
+    if (bottom.score < 60) return result('neutral', 'gray', '条件不足',
+      '底分低于 60 分：估值或回撤深度未达到门槛。',
+      '等待底分达到 60 分。');
+    return result('bottom_probe', 'green', '底部条件满足',
+      '底分 ≥60：2022–2025 测试段同档 50 周后上涨的比例比同指数全部回落周高 33 个百分点；只有一个周期，各指数同涨同跌。',
+      '查看估值与回撤深度两个分项。');
   }
   function build(options) {
     options = options || {};

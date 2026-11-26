@@ -9,19 +9,24 @@ const backtest = fs.readFileSync(path.join(__dirname, '..', 'backtest.html'), 'u
 const dataLayer = fs.readFileSync(path.join(__dirname, '..', 'app/lppl-data.js'), 'utf8');
 const buildScript = fs.readFileSync(path.join(__dirname, '..', '..', 'scripts/build_site.sh'), 'utf8');
 
-test('backtest evidence table reads published calibration and location reports through LPPLData', () => {
-  assert.match(dataLayer, /fetchResult\('bottom_calibration\.json'\)/);
-  assert.match(dataLayer, /fetchResult\('bottom_location\.json'\)/);
-  assert.match(buildScript, /bottom_calibration\.json/);
-  assert.match(buildScript, /bottom_location\.json/);
-  assert.match(backtest, /LPPL\.bottomEvidence\(\)/);
-  assert.match(backtest, /calibration\.tables\[segment\]\[bucket\]\['50w'\]/);
-  assert.match(backtest, /location\.segments\[segment\]\.W26\.groups\[bucket\]/);
-  assert.match(backtest, /底分分档历史检验（7 个 A 股指数）/);
-  assert.match(backtest, /['"]B1['"].*['"]<30['"]/);
-  assert.match(backtest, /['"]B2['"].*['"]30–49['"]/);
-  assert.match(backtest, /['"]B3['"].*['"]≥50['"]/);
-  assert.match(backtest, /if \(!evidence \|\| evidence\.reason \|\| !evidence\.calibration \|\| !evidence\.location\) return;/);
+test('backtest evidence table shows the published V2 three-segment results without refetching or recomputing', () => {
+  assert.match(backtest, /bottom_score: H\.bottom_score \|\| null/);
+  assert.match(backtest, /const meta = st\.H && st\.H\.bottom_score, segs = meta && meta\.segments;/);
+  assert.match(backtest, /底分 ≥60 三段检验（7 个 A 股指数，事前登记）/);
+  assert.match(backtest, /测试段只有一个下跌—反弹周期/);
+  assert.doesNotMatch(backtest, /≥50|30–49|20–49|止跌|四维/);
+  for (const sym of ['sh000001', 'sh000688']) {
+    const hist = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'web/mock/data', `${sym}_history.json`), 'utf8'));
+    assert.equal(hist.bottom_score.version, 'v2');
+    assert.equal(hist.bottom_score.green_min, 60);
+    assert.deepEqual(Object.keys(hist.bottom_score.segments), ['dev', 'cal', 'test']);
+    for (const frame of hist.frames) {
+      const s = frame.fco_neg_intensity;
+      assert.equal(frame.bottom_bar, s >= 0.6 ? 'green' : s > 0 ? 'weak' : undefined);
+      if (frame.bottom_detail) assert.deepEqual(Object.keys(frame.bottom_factors).sort(),
+        ['clearing', 'dd_52w', 'erp_pct', 'pbn_pct', 'valuation', 'version']);
+    }
+  }
 });
 
 test('backtest locks each frame from its as-of convergence and distinguishes missing intensity', () => {

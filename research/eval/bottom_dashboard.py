@@ -573,7 +573,15 @@ def load_valuation_history(path: Path = DEFAULT_VALUATION_HISTORY_PATH) -> pd.Da
 
 
 PHASE_DRAWDOWN = -0.12
-GREEN_BAR_MIN = 0.50  # 绿柱显示门槛；20–49 分只作“回落中 · 条件不足”
+# 底分 V2（docs/preregistration_bottom_score_v2.md 的 C1_v0.3_t60，三段检验通过后替换四项底分）
+BOTTOM_SCORE_VERSION = "v2"
+BOTTOM_SCORE_ID = "bottom_v2"  # history.json 顶层 score_version：底分有自己的版本，不随 LPPLS 模型版本变
+BOTTOM_W_VALUATION = 0.6
+BOTTOM_W_DEPTH = 0.4
+BOTTOM_VALUATION_MIN = 0.3  # 估值分项低于它，底分记 0
+BOTTOM_DEPTH_START = 0.20  # 回撤深度从 -20% 起算
+BOTTOM_DEPTH_SPAN = 0.20  # 到 -40% 满分
+GREEN_BAR_MIN = 0.60  # 绿柱门槛；低于它只作“回落中 · 条件不足”
 PHASE_EPISODE_WEEKS = 104
 
 
@@ -594,14 +602,13 @@ def compute_fco_neg_intensity_series(
     valuation_df: pd.DataFrame | None = None,
     valuation_path: Path = DEFAULT_VALUATION_HISTORY_PATH,
 ) -> list[dict[str, Any]]:
-    """为历史周度帧逐帧计算严格 PIT 的 A 股四维实证底部绿色强度（0–1）与底部首次共振标记。
+    """为历史周度帧逐帧计算严格 PIT 的底分（0–1）、绿柱档位与独立底部事件标记。
 
-    补齐纯负泡沫 LPPLS 在 A 股胜率低的短板，综合经 A 股 2005–2026 历次大底验证的 4 个 PIT 维度：
-    1. valuation（估值安全边际，权 0.35）：全 A 股债利差 ERP 3 年滚动分位 + 破净股占比 3 年滚动分位；
-    2. clearing（超跌出清深度，权 0.30）：相对过去 52 周高点的回撤深度（<= -12% 起步，-40% 满分）；
-    3. stabilize（防死猫跳/大森余震过滤，权 0.20）：近 4 周不再创 12 周新低 + 近 4 周波动收敛；
-    4. right_side（右侧企稳触发，权 0.15）：站上 10 周均线或 10 周均线走平拐头。
-    红绿互斥：若当前帧存在活跃 6–12m 顶部红柱，绿色强度强制归零。
+    底分 V2：只在回落中（距 52 周高点回撤 <= -12%、当周没有 6–12 月顶部区间）且估值已覆盖时评分。
+    - valuation：全 A 股债利差 ERP 与破净率 3 年滚动分位的均值，0.60 起算、0.90 满分；
+    - clearing：回撤深度，-20% 起算、-40% 满分；
+    - 底分 = 0.6·valuation + 0.4·clearing；valuation < 0.3 时记 0；
+    - 绿柱与独立事件门槛 0.60，事件间隔 >= 12 周。
     """
     val_df = valuation_df if valuation_df is not None else load_valuation_history(valuation_path)
     val_dates = val_df.index.to_numpy() if val_df is not None and len(val_df) else None
@@ -633,7 +640,6 @@ def compute_fco_neg_intensity_series(
 
         intensity = 0.0
         factors: dict[str, Any] = {}
-        stabilize_ok = False
         detail: dict[str, Any] | None = None
         dd_frame: float | None = None
 
@@ -646,83 +652,38 @@ def compute_fco_neg_intensity_series(
                 dd = cur_c / peak52 - 1.0 if peak52 > 0 else 0.0
                 dd_frame = dd
 
-                # 1) 估值安全边际（ERP 分位 + 破净率分位）
+                # 估值（ERP 分位 + 破净率分位的均值）：>= 0.60 起算，>= 0.90 满分
                 val_scores = [x for x in (erp_pct, pbn_pct) if x is not None]
                 val_raw = float(np.mean(val_scores)) if val_scores else None
-                # 仅在进入偏低估区间（>= 0.60）才计分，>= 0.90 满分 1.0
                 val_score = float(np.clip((val_raw - 0.60) / 0.30, 0.0, 1.0)) if val_raw is not None else None
 
-                # 2) 超跌出清深度（-12% 起步，-40% 满分 1.0）
-                clearing_score = float(np.clip((-dd - 0.12) / 0.28, 0.0, 1.0)) if dd <= -0.12 else 0.0
-
-                # 3) 防死猫跳（大森余震过滤：止跌不再创 12 周新低 + 波动收敛）
-                recent4 = closes[-4:]
-                low12 = min(closes[-12:])
-                stopped_falling = (min(recent4) > low12 * 1.005) or (cur_c >= recent4[0] * 0.995)
-                rets12 = np.diff(np.log(closes[-13:])) if len(closes) >= 13 else np.array([])
-                vol_calm = (
-                    len(rets12) >= 8
-                    and float(np.std(rets12[-4:])) <= float(np.std(rets12)) * 1.05
-                )
-                stabilize_score = (0.65 if stopped_falling else 0.0) + (0.35 if vol_calm else 0.0)
-                stabilize_ok = bool(stopped_falling)
-
-                # 4) 右侧企稳（站上 10 周均线或 10 周均线走平）
-                ma10 = float(np.mean(closes[-10:]))
-                prev_ma10 = float(np.mean(closes[-12:-2])) if len(closes) >= 12 else ma10
-                above_ma10 = cur_c >= ma10
-                ma10_flat = ma10 >= prev_ma10 * 0.995
-                right_score = (0.70 if above_ma10 else 0.0) + (0.30 if ma10_flat else 0.0)
-
-                # 必须满足“显著回撤 <= -12%”或“极端便宜（ERP/破净均值 >= 0.85 且回撤 <= -8%）”才启动底部评分
-                in_drawdown_zone = (dd <= -0.12) or (val_raw is not None and val_raw >= 0.85 and dd <= -0.08)
-                if in_drawdown_zone:
-                    if val_score is not None:
-                        raw_int = (
-                            0.35 * val_score
-                            + 0.30 * clearing_score
-                            + 0.20 * stabilize_score
-                            + 0.15 * right_score
-                        )
-                    else:
-                        # 2005 年前缺少 ERP/破净数据时，将权重按比例分配给量价维度
-                        raw_int = (
-                            0.50 * clearing_score
-                            + 0.30 * stabilize_score
-                            + 0.20 * right_score
-                        )
+                # 只在回落中（回撤 <= -12%）且估值已覆盖时评分；缺估值的早期帧不评分
+                if dd <= PHASE_DRAWDOWN and val_score is not None:
+                    depth_score = float(np.clip((-dd - BOTTOM_DEPTH_START) / BOTTOM_DEPTH_SPAN, 0.0, 1.0))
+                    raw_int = (
+                        BOTTOM_W_VALUATION * val_score + BOTTOM_W_DEPTH * depth_score
+                        if val_score >= BOTTOM_VALUATION_MIN
+                        else 0.0
+                    )
                     intensity = round(float(np.clip(raw_int, 0.0, 1.0)), 3)
-                    # 未截断的分数与分项：低于 0.20 时绿柱仍归零，但页面要能照实显示
                     detail = {
                         "score": round(intensity * 100, 1),
+                        "version": BOTTOM_SCORE_VERSION,
                         "dd_52w": round(dd, 3),
                         "erp_pct": round(erp_pct, 3) if erp_pct is not None else None,
                         "pbn_pct": round(pbn_pct, 3) if pbn_pct is not None else None,
-                        "valuation": round(val_score, 2) if val_score is not None else None,
-                        "clearing": round(clearing_score, 2),
-                        "stabilize": round(stabilize_score, 2),
-                        "right_side": round(right_score, 2),
+                        "valuation": round(val_score, 2),
+                        "clearing": round(depth_score, 2),
                     }
-                    if intensity < 0.20:
-                        intensity = 0.0
-                    else:
-                        factors = {
-                            "dd_52w": round(dd, 3),
-                            "erp_pct": round(erp_pct, 3) if erp_pct is not None else None,
-                            "pbn_pct": round(pbn_pct, 3) if pbn_pct is not None else None,
-                            "valuation": round(val_score, 2) if val_score is not None else None,
-                            "clearing": round(clearing_score, 2),
-                            "stabilize": round(stabilize_score, 2),
-                            "right_side": round(right_score, 2),
-                        }
+                    factors = {k: v for k, v in detail.items() if k != "score"}
             elif len(closes) >= 20:
                 peak52 = max(closes[-52:])
                 dd_frame = cur_c / peak52 - 1.0 if peak52 > 0 else 0.0
         else:
             closes.append(closes[-1] if closes else 0.0)
 
-        # 独立底部共振事件：综合强度 >= 0.50 + 已止跌（防死猫跳），且距上次独立事件 >= 12 周
-        first_bottom_flag = bool(intensity >= 0.50 and stabilize_ok and (idx - last_bottom_idx) >= 12)
+        # 独立底部事件：底分达到绿柱门槛，且距上次独立事件 >= 12 周
+        first_bottom_flag = bool(intensity >= GREEN_BAR_MIN and (idx - last_bottom_idx) >= 12)
         if first_bottom_flag:
             last_bottom_idx = idx
 
@@ -748,6 +709,46 @@ def compute_fco_neg_intensity_series(
         enriched.append(new_frame)
 
     return enriched
+
+
+BOTTOM_SCORE_CONFIG = "C1_v0.3_t60"
+DEFAULT_BOTTOM_SCORE_REPORTS = ROOT / "reports" / "bottom_score_v2"
+
+
+def bottom_score_meta(report_dir: Path = DEFAULT_BOTTOM_SCORE_REPORTS) -> dict[str, Any]:
+    """底分 V2 的规则与三段检验结果（来自预登记评估的结果文件，不在这里重算）。"""
+    segments: dict[str, Any] = {}
+    for seg in ("dev", "cal", "test"):
+        path = report_dir / f"{seg}.json"
+        if not path.exists():
+            continue
+        results = json.loads(path.read_text(encoding="utf-8")).get("results") or {}
+        new, old = results.get(BOTTOM_SCORE_CONFIG), results.get("C0")
+        if not new:
+            continue
+
+        def r3(value: Any) -> float | None:
+            return round(float(value), 3) if value is not None else None
+
+        segments[seg] = {
+            "lift_50w": r3(new.get("L50")),
+            "relapse_24w": r3(new.get("R24")),
+            "coverage": r3(new.get("coverage")),
+            "n_events": new.get("events"),
+            "shift_p": r3(new.get("null_p")),
+            "old_lift_50w": r3((old or {}).get("L50")),
+        }
+    return {
+        "version": BOTTOM_SCORE_VERSION,
+        "green_min": round(GREEN_BAR_MIN * 100),
+        "weights": {"valuation": BOTTOM_W_VALUATION, "clearing": BOTTOM_W_DEPTH},
+        "valuation_min": BOTTOM_VALUATION_MIN,
+        "depth_range": [-BOTTOM_DEPTH_START, -(BOTTOM_DEPTH_START + BOTTOM_DEPTH_SPAN)],
+        "preregistration": "docs/preregistration_bottom_score_v2.md",
+        "segments": segments,
+        "note": "lift_50w = 绿柱独立事件 50 周后上涨率 − 同指数全部回落周的上涨率，指数等权；"
+        "校准段新旧评分结果相同，测试段只有一个下跌—反弹周期，各指数同涨同跌",
+    }
 
 
 def summarize_phase_rule(frames: list[dict[str, Any]], split: str = "dev") -> dict[str, Any]:
@@ -800,7 +801,7 @@ def summarize_phase_rule(frames: list[dict[str, Any]], split: str = "dev") -> di
 
 
 def summarize_bottom_backtest(frames: list[dict[str, Any]]) -> dict[str, Any]:
-    """对四维底部共振事件（bottom_first_alert_flag）做严格 PIT 事件级历史回测，并与非信号下跌周基线对照。"""
+    """对独立底部事件（bottom_first_alert_flag）做严格 PIT 事件级历史回测，并与非信号下跌周基线对照。"""
     closes = [
         float(f["close"]) if f.get("close") is not None and np.isfinite(float(f["close"])) else np.nan
         for f in frames
@@ -835,7 +836,7 @@ def summarize_bottom_backtest(frames: list[dict[str, Any]]) -> dict[str, Any]:
         }
 
     event_indices = [i for i, f in enumerate(frames) if f.get("bottom_first_alert_flag")]
-    # 对照基线：任意回撤 <= -12% 的非信号周（检验四维共振相对普通下跌抄底的真实超额胜率）
+    # 对照基线：任意回撤 <= -12% 的非信号周
     base_indices = []
     for i in range(20, n):
         if frames[i].get("bottom_first_alert_flag"):
@@ -853,7 +854,7 @@ def summarize_bottom_backtest(frames: list[dict[str, Any]]) -> dict[str, Any]:
         else None
     )
     return {
-        "rule": "A股四维底部共振（ERP/破净滚动3年分位 + 52周超跌出清 + 防死猫跳止跌 + 10周均线右侧企稳），综合强度≥50%且间隔≥12周计独立事件",
+        "rule": "底分 V2（估值 60% + 回撤深度 40%，估值分项 <0.3 记 0）≥60 且间隔≥12周计独立事件",
         "events": [
             {
                 "asof": str(frames[i].get("asof")),

@@ -229,7 +229,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
 .bottom-evidence{padding:14px 16px;border-top:1px solid var(--line)}
 .bottom-evidence h3{margin:0 0 10px;font-size:14px;color:var(--ink)}
 .bottom-evidence-scroll{overflow-x:auto}
-.bottom-evidence-table{width:100%;min-width:1040px;border-collapse:collapse;font-size:12px}
+.bottom-evidence-note{margin:8px 0 0;font-size:12px;color:var(--ink-3)}
+.bottom-evidence-table{width:100%;min-width:760px;border-collapse:collapse;font-size:12px}
 .bottom-evidence-table th,.bottom-evidence-table td{padding:8px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
 .bottom-evidence-table thead{background:var(--surface-2);color:var(--ink-3)}
 .bottom-evidence-table th:first-child,.bottom-evidence-table td:first-child{text-align:left}
@@ -285,8 +286,8 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       </div>
       <div class="lgd od-cluster" aria-label="图例">
         <span><i class="sw fco"></i>FCO 顶部红柱</span>
-        <span><i class="sw fcobot"></i>底部绿柱（底分 ≥50）</span>
-        <span><i class="sw fcobot" style="background:rgba(91,98,112,.4)"></i>回落中 · 条件不足（20–49）</span>
+        <span><i class="sw fcobot"></i>底部绿柱（底分 ≥60）</span>
+        <span><i class="sw fcobot" style="background:rgba(91,98,112,.4)"></i>回落中 · 条件不足（<60）</span>
         <span><i class="sw first"></i>首次预警（顶部聚类）</span>
         <span><i class="sw"></i>聚类区间<button type="button" class="ai-ask-inline" data-ai-ask="现在的顶部聚类区间是什么意思？">问研究助手</button></span>
         <span><i class="sw t"></i>事后确认顶</span>
@@ -316,7 +317,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
   <aside class="side" aria-label="说明" data-ai-context="说明">
     <section class="blk">
       <p class="blk-k">FCO 图读法</p>
-      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示严格 PIT 的<b>「A 股多维底部综合指数」</b>（融合全 A 股债利差 ERP + 破净率回答“够不够便宜”，叠加 52 周超跌 + 防死猫跳 + 10 周均线回答“跌完没、企稳没”，既补齐纯负泡沫 LPPLS 胜率短板，又避免纯估值提前一年套牢）；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
+      <p><b>红色柱子</b>表示顶部正向泡沫聚类强度（FCO 顶部预警）；<b>绿色柱子</b>表示底分 ≥60（估值 60% + 回撤深度 40%；估值为全 A 股债利差与破净率的 3 年分位，回撤从 20% 起算；估值分项不到 0.3 时底分记 0），灰色柱子表示回落中但底分不到 60；<b>红色旗标</b>标出每轮泡沫首次发出预警的严格 as-of 日期。</p>
       <p><b>琥珀横线</b>从截止日收盘价向右延伸到主簇/次级簇时间区间；<b>蓝色三角</b>为事后确认顶（顶后 126 交易日回撤 ≥15%）用于回测对照。</p>
       <p id="cluster-footnote"></p>
     </section>
@@ -339,7 +340,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       <div class="al-controls" id="alert-scales" role="group" aria-label="账本类型与提醒区间尺度">
         <div class="al-mode" id="ledger-mode" role="group" aria-label="账本切换">
           <button class="al-chip" type="button" data-ledger-mode="top" aria-pressed="true">🔴 顶部预警账本</button>
-          <button class="al-chip bot-on" type="button" data-ledger-mode="bottom" aria-pressed="false">🟢 底部共振账本</button>
+          <button class="al-chip bot-on" type="button" data-ledger-mode="bottom" aria-pressed="false">🟢 底分 ≥60 事件账本</button>
         </div>
         <button class="al-chip" type="button" data-alert-scale="6-12m" aria-pressed="true">6–12 月</button>
         <button class="al-chip" type="button" data-alert-scale="12-24m" aria-pressed="false">12–24 月</button>
@@ -362,9 +363,9 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       </div>
     </div>
     <div class="al-scroll" id="bottom-ledger-wrap" hidden>
-      <div class="al-table" role="table" aria-label="底部共振事件明细">
+      <div class="al-table" role="table" aria-label="底分 ≥60 事件明细">
         <div class="bot-row bot-row-head" role="row">
-          <span role="columnheader">底部共振触发日（as-of）</span>
+          <span role="columnheader">事件日（as-of）</span>
           <span role="columnheader">所属段</span>
           <span role="columnheader">底部综合分</span>
           <span role="columnheader">24 周后收益</span>
@@ -374,23 +375,19 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         <div id="bottom-rows" role="rowgroup"></div>
       </div>
       <section class="bottom-evidence" id="bottom-evidence" hidden aria-labelledby="bottom-evidence-title">
-        <h3 id="bottom-evidence-title">底分分档历史检验（7 个 A 股指数）</h3>
+        <h3 id="bottom-evidence-title">底分 ≥60 三段检验（7 个 A 股指数，事前登记）</h3>
         <div class="bottom-evidence-scroll">
           <table class="bottom-evidence-table">
             <thead>
               <tr>
-                <th rowspan="2">底分档位</th>
-                <th colspan="4">开发段</th>
-                <th colspan="4">测试段</th>
-              </tr>
-              <tr>
-                <th>50 周胜率（n）</th><th>随机 95% 分位</th><th>底部区比例（W=26）</th><th>距最低点中位数</th>
-                <th>50 周胜率（n）</th><th>随机 95% 分位</th><th>底部区比例（W=26）</th><th>距最低点中位数</th>
+                <th>数据段</th><th>50 周后上涨率 − 回落周基准</th><th>旧底分同口径</th>
+                <th>24 周内再跌 10% 的比例 − 基准</th><th>绿柱占回落周</th><th>独立事件</th><th>随机平移 p</th>
               </tr>
             </thead>
             <tbody id="bottom-evidence-rows"></tbody>
           </table>
         </div>
+        <p class="bottom-evidence-note">校准段新旧底分结果相同；测试段只有一个下跌—反弹周期，各指数同涨同跌，事件不是独立样本。</p>
       </section>
     </div>
     <p class="al-empty" id="alert-empty" role="status" hidden></p>
@@ -618,12 +615,12 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
           `</div>`;
         const botHtml = (bs && bs.n_events > 0)
           ? `<div class="ep-verdict" style="margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">` +
-            `<b style="color:#11845A">🟢 A 股多维底部综合指数回测（补齐纯负泡沫 LPPLS 短板、避免纯估值提前套牢）：</b>` +
-            `共 <b>${bs.n_events}</b> 次独立共振，50 周上涨胜率 <b>${fmtP(bs.win_rate_50w)}</b>` +
+            `<b style="color:#11845A">底分 ≥60 独立事件回测：</b>` +
+            `共 <b>${bs.n_events}</b> 次独立事件，50 周上涨胜率 <b>${fmtP(bs.win_rate_50w)}</b>` +
             `（普通下跌基线 ${fmtP(bs.baseline_win_rate_50w)}${bs.win_rate_lift_50w != null ? '，<b>' + (bs.win_rate_lift_50w >= 0 ? '+' : '') + (bs.win_rate_lift_50w * 100).toFixed(1) + 'pp</b>' : ''}），` +
             `50 周收益中位数 <b>${bs.median_ret_50w != null ? (bs.median_ret_50w >= 0 ? '+' : '') + (bs.median_ret_50w * 100).toFixed(1) + '%' : '—'}</b>，` +
             `后续最大再回撤中位数 <b>${bs.median_post_min_50w != null ? (bs.median_post_min_50w * 100).toFixed(1) + '%' : '—'}</b>。` +
-            `<span style="color:var(--ink-3)">（因子：全 A ERP/破净 3 年分位 + 52 周超跌出清 + 防死猫跳止跌 + 10 周均线右侧）</span></div>`
+            `<span style="color:var(--ink-3)">（底分 = 估值 60% + 回撤深度 40%；估值为全 A ERP/破净 3 年分位，回撤 20% 起算）</span></div>`
           : '';
         epBox.hidden = false;
         epBox.innerHTML =
@@ -728,7 +725,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       bs.events.forEach((ev) => { if (ev && ev.asof) evMap[ev.asof] = ev; });
     }
     const items = frames.filter((f) => f.bottom_first_alert_flag).slice().reverse();
-    $('alert-count').textContent = `A 股多维底部综合指数 · 独立底部共振共 ${items.length} 次（点击任意行在主图定位）`;
+    $('alert-count').textContent = `底分 ≥60 独立事件共 ${items.length} 次（点击任意行在主图定位）`;
     const fmtRet = (v) => v == null ? '未满期' : ((v >= 0 ? '+' : '') + (Number(v) * 100).toFixed(1) + '%');
     botRows.innerHTML = items.map((f) => {
       const ev = evMap[f.asof] || {};
@@ -737,56 +734,35 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       if (bf.dd_52w != null) parts.push(`回撤 ${(Number(bf.dd_52w) * 100).toFixed(0)}%`);
       if (bf.erp_pct != null) parts.push(`ERP ${Math.round(Number(bf.erp_pct) * 100)}%`);
       if (bf.pbn_pct != null) parts.push(`破净 ${Math.round(Number(bf.pbn_pct) * 100)}%`);
-      if (bf.stabilize != null) parts.push(`止跌 ${Math.round(Number(bf.stabilize) * 100)}%`);
       const r24 = ev.ret_24w;
       const r50 = ev.ret_50w;
       const score = f.fcoNegIntensity == null ? '未覆盖' : Math.round(f.fcoNegIntensity * 100) + ' / 100';
       return `<div class="bot-row" role="row" tabindex="0" data-bot-asof="${E(f.asof)}">` +
-        `<span role="cell"><span class="al-badge" style="color:#0E6545;border-color:#BFE4D2;background:#EFFAF4">底部共振</span>${E(f.asof)}</span>` +
+        `<span role="cell"><span class="al-badge" style="color:#0E6545;border-color:#BFE4D2;background:#EFFAF4">底分 ≥60</span>${E(f.asof)}</span>` +
         `<span role="cell">${E(SPLIT[f.split] || f.split || '—')}</span>` +
         `<span role="cell"><b style="color:#0E6545">${E(score)}</b></span>` +
         `<span role="cell" style="color:${r24 == null ? 'var(--ink-3)' : r24 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r24))}</span>` +
         `<span role="cell" style="color:${r50 == null ? 'var(--ink-3)' : r50 >= 0 ? 'var(--up)' : 'var(--dn)'}">${E(fmtRet(r50))}</span>` +
         `<span role="cell">${E(parts.join(' · ') || '—')}</span></div>`;
     }).join('');
-    empty.textContent = '该指数暂无独立底部共振记录';
+    empty.textContent = '该指数暂无底分 ≥60 的独立事件';
     empty.hidden = items.length > 0;
   }
-  function renderBottomEvidence(evidence) {
+  function renderBottomEvidence() {
     const panel = $('bottom-evidence'), body = $('bottom-evidence-rows');
-    const calibration = evidence && evidence.calibration, location = evidence && evidence.location;
-    if (!panel || !body || !calibration || !calibration.tables || !location || !location.segments) return;
-    const fmtPct = (value) => value == null || !Number.isFinite(Number(value))
-      ? '—' : (Number(value) * 100).toFixed(1) + '%';
-    const buckets = [['B1', '<30'], ['B2', '30–49'], ['B3', '≥50']];
-    const cells = (segment, bucket) => {
-      const scoreRow = calibration.tables[segment] && calibration.tables[segment][bucket]
-        ? calibration.tables[segment][bucket]['50w'] : null;
-      const locationRow = location.segments[segment] && location.segments[segment].W26 &&
-        location.segments[segment].W26.groups ? location.segments[segment].W26.groups[bucket] : null;
-      return [
-        scoreRow ? fmtPct(scoreRow.win_rate) + ' (' + (scoreRow.n_events ?? '—') + ')' : '—',
-        scoreRow && scoreRow.random_win_rate ? fmtPct(scoreRow.random_win_rate.p95) : '—',
-        locationRow ? fmtPct(locationRow.in_bottom_zone_share) : '—',
-        locationRow ? fmtPct(locationRow.median_dist_to_trough) : '—',
-      ].map((value) => `<td>${E(value)}</td>`).join('');
-    };
-    body.innerHTML = buckets.map(([bucket, label]) =>
-      `<tr><th scope="row">${E(bucket)} · ${E(label)}</th>${cells('dev', bucket)}${cells('test', bucket)}</tr>`
-    ).join('');
+    if (!panel || !body) return;
+    const meta = st.H && st.H.bottom_score, segs = meta && meta.segments;
+    if (!segs || !Object.keys(segs).length) { panel.hidden = true; return; }
+    const pp = (v) => v == null || !Number.isFinite(Number(v)) ? '—' : (v >= 0 ? '+' : '') + (Number(v) * 100).toFixed(1) + ' pp';
+    const pct = (v) => v == null || !Number.isFinite(Number(v)) ? '—' : (Number(v) * 100).toFixed(0) + '%';
+    const pv = (v) => v == null ? '未计算' : v < 0.0005 ? '<0.0005' : Number(v).toFixed(3);
+    const names = [['dev', '开发段 2000–2018'], ['cal', '校准段 2019–2021'], ['test', '测试段 2022–2025-08']];
+    body.innerHTML = names.filter(([k]) => segs[k]).map(([k, label]) => {
+      const r = segs[k];
+      return `<tr><th scope="row">${E(label)}</th><td>${E(pp(r.lift_50w))}</td><td>${E(pp(r.old_lift_50w))}</td>` +
+        `<td>${E(pp(r.relapse_24w))}</td><td>${E(pct(r.coverage))}</td><td>${E(r.n_events ?? '—')}</td><td>${E(pv(r.shift_p))}</td></tr>`;
+    }).join('');
     panel.hidden = false;
-  }
-  async function loadBottomEvidence() {
-    const panel = $('bottom-evidence');
-    if (!panel) return;
-    panel.hidden = true;
-    try {
-      const evidence = await LPPL.bottomEvidence();
-      if (!evidence || evidence.reason || !evidence.calibration || !evidence.location) return;
-      renderBottomEvidence(evidence);
-    } catch {
-      panel.hidden = true;
-    }
   }
   function applyLedgerMode() {
     const isBot = st.ledgerMode === 'bottom';
@@ -888,6 +864,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
         recompute: H.recompute,
         episode_summary: H.episode_summary || null,
         bottom_summary: H.bottom_summary || null,
+        bottom_score: H.bottom_score || null,
         fr,
         tops,
         alertEpisodes,
@@ -911,7 +888,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       }
       applyLedgerMode();
       renderOverviewStrip();
-      loadBottomEvidence();
+      renderBottomEvidence();
       setPreset(st.preset >= 0 ? st.preset : 0);
       if (initialAlert) selectAlert(initialAlert, false);
     } catch (e) {
@@ -1181,7 +1158,7 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       const fcoLine = best.fcoIntensity > 0
         ? `<br><span style="color:#D6303A">FCO 顶部泡沫强度 ${(best.fcoIntensity * 100).toFixed(0)}%</span>`
         : (best.fcoNegIntensity != null && best.fcoNegIntensity > 0
-          ? `<br><span style="color:${best.bottomWeak ? '#5B6270' : '#11845A'}">${best.bottomWeak ? '回落中 · 条件不足 · 底分' : 'FCO 底部共振强度'} ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 底部企稳关注' : ''}${E(bfDetail)}</span>`
+          ? `<br><span style="color:${best.bottomWeak ? '#5B6270' : '#11845A'}">${best.bottomWeak ? '回落中 · 条件不足 · 底分' : '底分'} ${(best.fcoNegIntensity * 100).toFixed(0)}%${best.bottom_first_alert_flag ? ' · 独立事件' : ''}${E(bfDetail)}</span>`
           : '');
       const topText = top
         ? top.max_dd != null && Number.isFinite(Number(top.max_dd))

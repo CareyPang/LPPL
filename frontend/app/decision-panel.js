@@ -11,7 +11,7 @@
   var TONES = new Set(['blue', 'green', 'amber', 'red', 'gray']);
   var SCALES = { '2-4w': '2–4 周', '1-3m': '1–3 个月', '3-6m': '3–6 个月', '6-12m': '6–12 个月', '12-24m': '12–24 个月', '2-6y': '2–6 年' };
   var RULES = { box: '形态框', cycles_1_5: '完整周期 1.5' };
-  var FACTORS = ['valuation', 'clearing', 'stabilize', 'right_side'];
+  var FACTORS = ['valuation', 'clearing'];
   function finite(value) { return typeof value === 'number' && Number.isFinite(value); }
   function number(value, digits) { return finite(value) ? value.toLocaleString('zh-CN', { maximumFractionDigits: digits == null ? 1 : digits }) : '—'; }
   function pct(value, signed) { return finite(value) ? (signed && value > 0 ? '+' : '') + number(value * 100, 1) + '%' : '—'; }

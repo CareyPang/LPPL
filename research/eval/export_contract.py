@@ -803,6 +803,8 @@ def history(sym: str, market: str = "cn") -> dict:
         for i in peaks
     ]
     from .bottom_dashboard import (
+        BOTTOM_SCORE_ID,
+        bottom_score_meta,
         compute_fco_neg_intensity_series,
         summarize_bottom_backtest,
         summarize_phase_rule,
@@ -824,6 +826,8 @@ def history(sym: str, market: str = "cn") -> dict:
         "episode_summary": summarize_history_episodes(frames, tops, scales=HISTORY_SCALES),
         "bottom_summary": summarize_bottom_backtest(frames),
         "phase_rule": summarize_phase_rule(frames),
+        "bottom_score": bottom_score_meta(),
+        "score_version": BOTTOM_SCORE_ID,
         "frames": frames,
         "tops": tops,
     }
