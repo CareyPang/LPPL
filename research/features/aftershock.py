@@ -19,7 +19,7 @@ from scipy.optimize import minimize
 from scipy.special import gammaln
 
 SCHEMA = "aftershock_v1"
-DAILY_VERSION = "daily_aftershock_v1"
+DAILY_VERSION = "daily_aftershock_v2"  # v2：日频 0/1 用 Bernoulli、20 日计数用 Binomial(20, p)，替换无界 Poisson
 ARCHIVE_VERSION = "ixic_ndx_quake_20261123_v1"
 RULES = {
     "return": "close-to-close log return",
@@ -36,13 +36,15 @@ RULES = {
     "omori_p_bounds": [0.0, 3.0],
     "productivity_min_mature_events": 12,
     "productivity_ci": "approximate 95% year-cluster sandwich interval; at least two years",
+    "omori_likelihood": "Bernoulli on the daily large-move indicator, p_t = 1-exp(-rate_t)",
+    "productivity_likelihood": "Binomial(20, p) with complementary log-log link",
     "paper": "https://arxiv.org/abs/1006.1882",
     "paper_scope_difference": "Original study uses 1-minute observations across a stock basket; this daily-index adaptation is a separate descriptive experiment.",
 }
 COMMON_LIMITS = [
     "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
     "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
-    "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。",
+    "逐日独立的 Bernoulli / Binomial 近似没有完整描述波动聚集，参数和区间仅供研究。",
 ]
 
 
@@ -136,10 +138,18 @@ def _episodes(data):
     return accepted, current
 
 
-def _poisson_loss(y, rate):
+def _hazard_probability(rate):
+    """强度 λ 下一个交易日出现大波动的概率 1−exp(−λ)，夹在 (0, 1) 内防止 log(0)。"""
+    return np.clip(-np.expm1(-np.asarray(rate, dtype=float)), 1e-15, 1-1e-15)
+
+
+def _binomial_loss(y, rate, trials=1):
+    """Binomial(trials, 1−exp(−λ)) 的负对数似然；trials=1 即逐日 0/1 的 Bernoulli。"""
     if not np.isfinite(rate).all() or np.any(rate <= 0):
         return float("inf")
-    return float(np.sum(rate-y*np.log(rate)+gammaln(y+1)))
+    prob = _hazard_probability(rate)
+    log_choose = gammaln(trials+1)-gammaln(y+1)-gammaln(trials-y+1)
+    return float(-np.sum(log_choose+y*np.log(prob)+(trials-y)*np.log1p(-prob)))
 
 
 def _daily_omori(current):
@@ -160,7 +170,7 @@ def _daily_omori(current):
     def rate(theta):
         return np.exp(theta[0])+np.exp(theta[1])/(t+1.)**theta[2]
 
-    fits = [minimize(lambda theta: _poisson_loss(y, rate(theta)),
+    fits = [minimize(lambda theta: _binomial_loss(y, rate(theta)),
                      [math.log(max(y.mean()/2, 1e-4)), math.log(max(y[0], 1e-4)), p],
                      bounds=bounds, method="L-BFGS-B") for p in (.1, .5, 1., 2.)]
     usable = [fit for fit in fits if fit.success and np.isfinite(fit.fun)]
@@ -170,7 +180,7 @@ def _daily_omori(current):
     predicted = rate(best.x)
     const = float(y.mean())
     aic = 6+2*float(best.fun)
-    const_aic = 2+2*_poisson_loss(y, np.full(len(y), const))
+    const_aic = 2+2*_binomial_loss(y, np.full(len(y), -math.log1p(-min(const, 1-1e-12))))
     p = float(best.x[2])
     boundary = p <= 1e-5 or p >= 3-1e-5
     identified = bool(not boundary and predicted[0]-predicted[-1] > .02*const and aic+2 < const_aic)
@@ -178,9 +188,10 @@ def _daily_omori(current):
               "p_at_boundary": boundary, "decay_identified": identified, "constant_rate": const,
               "aic_omori": aic, "aic_constant": const_aic, "rate_unit": "large_move_days_per_trading_day",
               "optimizer_success": True, "optimizer_message": str(best.message), "predicted_rates": predicted.tolist(),
-              "confidence_interval": None}
+              "predicted_probabilities": _hazard_probability(predicted).tolist(),
+              "likelihood": "bernoulli_daily_indicator, p_t = 1-exp(-rate_t)", "confidence_interval": None}
     summary = "观察段存在衰减形态，尚非见底信号" if identified else "尚未辨认出稳定的衰减"
-    return _module("available", summary, "p贴边界、衰减项接近零或未优于恒定率时，不解释为风险消失。日线计数是描述性Poisson近似。", parameters=params, **common)
+    return _module("available", summary, "p贴边界、衰减项接近零或未优于恒定率时，不解释为风险消失。逐日是否出现大波动按Bernoulli似然拟合，属描述性近似。", parameters=params, **common)
 
 
 def _daily_bath(current):
@@ -219,15 +230,28 @@ def _daily_productivity(episodes, current):
     if y.sum() == 0 or np.ptp(x[:, 1]) < 1e-6 or np.linalg.matrix_rank(x) < 2:
         return _module("insufficient_data", "样本尚不能识别产出率斜率", "事件次数全为零或冲击强度没有足够差异，不能给出有效α。", **common)
 
+    horizon = 20.
+    if np.any(y > horizon):
+        return _module("failed", "事件计数超出观察期", "20日内的大波动日数不可能超过20，数据需要复核。", **common)
+
+    # Binomial(20, p)，p = 1−exp(−exp(a+α·ln m))：α 仍是强度对冲击幅度的幂指数，次数均值不会超过 20。
     def rate(theta):
         return np.exp(np.clip(x @ theta, -30, 30))
 
-    fit = minimize(lambda theta: _poisson_loss(y, rate(theta)), [math.log(y.mean()), 0.],
-                   jac=lambda theta: x.T @ (rate(theta)-y), method="BFGS")
+    def score_weight(theta):
+        lam = rate(theta)
+        return lam/_hazard_probability(lam)
+
+    start = -math.log1p(-min(y.mean()/horizon, 1-1e-6))
+    fit = minimize(lambda theta: _binomial_loss(y, rate(theta), horizon), [math.log(start), 0.],
+                   jac=lambda theta: -x.T @ ((y-horizon*_hazard_probability(rate(theta)))*score_weight(theta)),
+                   method="BFGS")
     if not fit.success or not np.isfinite(fit.fun):
         return _module("failed", "产出率拟合未收敛", "没有可用的产出率参数。", optimizer_message=str(fit.message), **common)
-    mu = rate(fit.x)
-    info = x.T @ (mu[:, None]*x)
+    lam = rate(fit.x)
+    prob = _hazard_probability(lam)
+    mu = horizon*prob
+    info = x.T @ ((horizon*lam**2*(1-prob)/prob)[:, None]*x)
     if np.linalg.matrix_rank(info) < 2 or np.linalg.cond(info) > 1e12:
         return _module("insufficient_data", "产出率参数不可稳定识别", "信息矩阵退化，保留事件样本，不展示不可靠的参数。", **common)
     years = np.asarray([e["year"] for e in mature])
@@ -235,35 +259,32 @@ def _daily_productivity(episodes, current):
     samples["training_years"] = len(unique_years)
     interval, standard_error = None, None
     if len(unique_years) >= 2:
-        scores = x*(y-mu)[:, None]
+        scores = x*((y-mu)*lam/prob)[:, None]
         clustered = np.stack([scores[years == year].sum(axis=0) for year in unique_years])
         bread = np.linalg.inv(info)
         covariance = bread @ (clustered.T @ clustered) @ bread * len(unique_years)/(len(unique_years)-1)
         standard_error = float(np.sqrt(max(0., covariance[1, 1])))
         interval = [float(fit.x[1]-1.96*standard_error), float(fit.x[1]+1.96*standard_error)]
-    expected, raw_expected, extrapolation = None, None, False
+    expected, extrapolation = None, False
     magnitude_range = [float(np.exp(x[:, 1].min())), float(np.exp(x[:, 1].max()))]
     if current:
         # This is an expected count under the fitted model, not a probability.
-        raw_expected = float(np.exp(np.clip(fit.x[0]+fit.x[1]*math.log(current["magnitude_sigma"]), -30, 30)))
+        current_rate = np.exp(np.clip(fit.x[0]+fit.x[1]*math.log(current["magnitude_sigma"]), -30, 30))
+        expected = float(horizon*_hazard_probability(current_rate))
         extrapolation = not magnitude_range[0] <= current["magnitude_sigma"] <= magnitude_range[1]
-        # A 20-session count of large-move DAYS cannot exceed 20. Do not silently clip an invalid model mean.
-        expected = raw_expected if raw_expected <= 20 else None
     crosses_zero = interval is None or interval[0] <= 0 <= interval[1]
     params = {"alpha": float(fit.x[1]), "intercept": float(fit.x[0]), "alpha_ci95": interval,
               "alpha_cluster_year_se": standard_error, "alpha_interval_includes_zero": None if interval is None else crosses_zero,
               "expected_20d_events": expected, "count_unit": "large_move_trading_days_either_direction",
-              "raw_poisson_mean": raw_expected, "training_magnitude_range": magnitude_range,
+              "likelihood": "binomial(20, p), p = 1-exp(-exp(intercept + alpha*ln(magnitude_sigma)))", "training_magnitude_range": magnitude_range,
               "current_magnitude_extrapolated": extrapolation,
-              "current_prediction_status": "no_current_shock" if current is None else "outside_count_support" if expected is None else "extrapolation" if extrapolation else "descriptive",
+              "current_prediction_status": "no_current_shock" if current is None else "extrapolation" if extrapolation else "descriptive",
               "optimizer_success": True, "optimizer_message": str(fit.message),
               "mean_observed_count": float(y.mean()), "calibrated_probability": False}
     summary = "产出率关系仍不确定" if crosses_zero else "已拟合冲击强度与后续波动次数的关系"
     reason = "仅使用截至日已成熟的事件；正负大波动都计入。"
     reason += "α区间包含0或尚无法估计区间，不能称为稳定预测关系。" if crosses_zero else "区间不含0仍不等于已验证的交易预测能力。"
-    if raw_expected is not None and expected is None:
-        reason += "模型均值超出20日计数的可能范围，当前次数估计不展示。"
-    elif extrapolation:
+    if extrapolation:
         reason += "当前冲击强度超出训练范围，条件次数属于外推。"
     return _module("available", summary, reason, parameters=params, **common)
 

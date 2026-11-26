@@ -119,7 +119,7 @@ def current_episode(counts):
             "observed_after_days": len(counts), "aftershock_count": sum(counts), "mature": len(counts) == 20}
 
 
-def test_omori_runs_real_poisson_fit_when_sample_is_sufficient():
+def test_omori_runs_real_bernoulli_fit_when_sample_is_sufficient():
     result = _daily_omori(current_episode([1]*7+[0]*13))
     assert result["status"] == "available"
     assert 0 <= result["parameters"]["p"] <= 3
@@ -163,12 +163,43 @@ def test_productivity_does_not_train_on_immature_zero_counts():
     assert result["parameters"] is None
 
 
-def test_impossible_poisson_day_count_is_not_presented_as_prediction():
+def test_extreme_shock_count_stays_within_the_20_day_horizon():
     result = _daily_productivity(productivity_events(), {"date": "2026-11-20", "magnitude_sigma": 1e15})
     params = result["parameters"]
-    assert params["raw_poisson_mean"] > 20
-    assert params["expected_20d_events"] is None
-    assert params["current_prediction_status"] == "outside_count_support"
+    assert 0 < params["expected_20d_events"] <= 20
+    assert params["current_prediction_status"] == "extrapolation"
+
+
+def test_productivity_recovers_alpha_from_binomial_counts():
+    rng = np.random.default_rng(7)
+    events = []
+    for i in range(400):
+        magnitude = 3.+(i % 20)/4
+        prob = 1-np.exp(-0.03*magnitude**1.2)
+        events.append({"date": f"{1990+i//12}-01-01", "year": 1990+i//12, "mature": True,
+                       "magnitude_sigma": magnitude, "aftershock_count": int(rng.binomial(20, prob))})
+    params = _daily_productivity(events, {"date": "2026-11-20", "magnitude_sigma": 4.})["parameters"]
+    assert abs(params["alpha"]-1.2) < 0.2
+    assert params["alpha_ci95"][0] < 1.2 < params["alpha_ci95"][1]
+    assert abs(params["expected_20d_events"]-20*(1-np.exp(-0.03*4**1.2))) < 0.5
+
+
+def test_binomial_loss_matches_scipy_and_is_finite_at_extreme_rates():
+    from scipy.stats import binom
+
+    from research.features.aftershock import _binomial_loss
+    y, rate = np.array([0., 3., 20.]), np.array([0.05, 0.2, 1.5])
+    expected = -binom.logpmf(y, 20, 1-np.exp(-rate)).sum()
+    assert abs(_binomial_loss(y, rate, 20)-expected) < 1e-9
+    assert np.isfinite(_binomial_loss(np.array([0., 1.]), np.array([1e-300, 1e3])))
+    assert _binomial_loss(np.array([1.]), np.array([0.])) == float("inf")
+
+
+def test_omori_probabilities_stay_between_zero_and_one():
+    params = _daily_omori(current_episode([1]*10+[0]*10))["parameters"]
+    probabilities = np.asarray(params["predicted_probabilities"])
+    assert ((probabilities > 0) & (probabilities < 1)).all()
+    assert np.allclose(probabilities, 1-np.exp(-np.asarray(params["predicted_rates"])))
 
 
 def archive_fixture(tmp_path, frame):
