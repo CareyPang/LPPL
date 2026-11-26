@@ -27,12 +27,29 @@ MAIN_SCALES = ("6-12m", "12-24m")
 
 def conf_table(sym: str) -> pd.DataFrame:
     sc = pd.read_parquet(SCAN / f"{sym}.parquet")
+    if sc.empty:
+        return pd.DataFrame()
     sc = sc[(sc.date >= CAL[0]) & (sc.date <= CAL[1])].reset_index(drop=True)
+    if sc.empty:
+        return pd.DataFrame()
     logp = price_series(sym)
     pos = pd.Series(np.arange(len(logp)), index=logp.index)
     lp = logp.to_numpy()
-    end = pos.reindex(sc.date).to_numpy()
-    sc["y_std"] = [lp[e + 1 - n : e + 1].std() for e, n in zip(end, sc.n, strict=True)]
+    end = pos.reindex(sc.date)
+    if end.isna().any():
+        missing_dates = sc.loc[end.isna().to_numpy(), "date"].unique()[:5]
+        missing = [pd.Timestamp(d).date().isoformat() for d in missing_dates]
+        raise ValueError(f"{sym}: scan dates missing from price series: {missing}")
+    end_i = end.to_numpy(dtype=int)
+    start_i = end_i + 1 - sc.n.to_numpy(dtype=int)
+    if (start_i < 0).any():
+        raise ValueError(
+            f"{sym}: {int((start_i < 0).sum())} scan rows exceed available price history"
+        )
+    sc["y_std"] = [
+        lp[start : end + 1].std()
+        for start, end in zip(start_i, end_i, strict=True)
+    ]
     d = _derived(sc)
     flags = {"box": rules(d).box.to_numpy()}
     g = grid_rules(d)
@@ -49,11 +66,31 @@ def conf_table(sym: str) -> pd.DataFrame:
     return pd.DataFrame(out).sort_index()
 
 
+def _nanmean(vals: np.ndarray) -> float:
+    values = np.asarray(vals, dtype=float)
+    valid = values[np.isfinite(values)]
+    return float(valid.mean()) if len(valid) else float("nan")
+
+
+def _perm_pvalue(null_vals: np.ndarray, obs: float) -> float:
+    if not np.isfinite(obs):
+        return float("nan")
+    values = np.asarray(null_vals, dtype=float)
+    valid = values[np.isfinite(values)]
+    if len(valid) == 0:
+        return float("nan")
+    return float(np.mean(valid >= obs))
+
+
 def _null(alarm: np.ndarray, top_pos: np.ndarray, grid_pos: np.ndarray, H: int, rng: np.random.Generator) -> np.ndarray:
     """循环平移零分布；校准段网格短（≈146 点，科创50 更短），最小平移取 min(250 日, 1/4 网格)。"""
     n = len(alarm)
+    if n < 4 or len(grid_pos) < 2:
+        return np.empty((0, 2))
     step = max(1, int(np.median(np.diff(grid_pos))))
     k0 = max(1, min(250 // step, n // 4))
+    if n - k0 <= k0:
+        return np.empty((0, 2))
     out = np.empty((N_PERM, 2))
     for b in range(N_PERM):
         out[b] = _alarm_metrics(np.roll(alarm, int(rng.integers(k0, n - k0))), top_pos, grid_pos, H)
@@ -78,10 +115,11 @@ def main() -> pd.DataFrame:
             alarm = x >= Q
             for H in HS:
                 a1, a2 = _alarm_metrics(alarm, tpos, gpos, H)
-                nul = _null(alarm, tpos, gpos, H, rng) if alarm.sum() >= 3 else np.full((1, 2), np.nan)
+                can_perm = int(alarm.sum()) >= 3
+                nul = _null(alarm, tpos, gpos, H, rng) if can_perm else np.empty((0, 2))
                 rows.append(dict(symbol=sym, indicator=c, q=Q, H=H, n_grid=len(x), n_alarm=int(alarm.sum()), n_tops=len(tpos),
-                                 A1=a1, A1_null=np.nanmean(nul[:, 0]), A1_p=float(np.nanmean(nul[:, 0] >= a1)) if alarm.sum() >= 3 else np.nan,
-                                 A2=a2, A2_null=np.nanmean(nul[:, 1]), A2_p=float(np.nanmean(nul[:, 1] >= a2)) if alarm.sum() >= 3 else np.nan))
+                                 A1=a1, A1_null=_nanmean(nul[:, 0]), A1_p=_perm_pvalue(nul[:, 0], a1) if can_perm else float("nan"),
+                                 A2=a2, A2_null=_nanmean(nul[:, 1]), A2_p=_perm_pvalue(nul[:, 1], a2) if can_perm else float("nan")))
             for yr, idx in pd.Series(np.arange(len(x)), index=ms.index).groupby(ms.index.year):
                 al = alarm[idx.to_numpy()]
                 a1, _ = _alarm_metrics(al, tpos, gpos[idx.to_numpy()], 120)

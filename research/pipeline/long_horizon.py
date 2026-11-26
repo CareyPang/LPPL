@@ -17,6 +17,7 @@ import shutil
 import sqlite3
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -306,7 +307,7 @@ def reuse_history(legacy_root, frames, funcs, manifest):
             old = pd.read_csv(original_input)
             audit["input_file"] = str(original_input)
             audit["input_file_sha256"] = digest(original_input)
-            with sqlite3.connect(source.as_uri()+"?mode=ro", uri=True) as db:
+            with closing(sqlite3.connect(source.as_uri()+"?mode=ro", uri=True)) as db:
                 db.row_factory = sqlite3.Row
                 for n, seed in itertools.product(WINDOWS, SEEDS):
                     try:

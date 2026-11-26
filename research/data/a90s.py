@@ -65,8 +65,16 @@ def main(version: str | None = None) -> None:
     }
     for sym, (mk, six, start) in SYMBOLS.items():
         df = fetch(mk, six, start)
+        if df.empty:
+            raise RuntimeError(f"{sym} 拉取并过滤后为空表（start={start}, end={END}）")
         if df.date.iloc[0] != pd.Timestamp(start):
             raise RuntimeError(f"{sym} 首日 {df.date.iloc[0].date()} ≠ 登记首日 {start}")
+        weekend_rows = int((df.date.dt.day_of_week >= 5).sum())
+        nonpositive = int((df.close <= 0).sum())
+        if weekend_rows > 0 or nonpositive > 0:
+            raise RuntimeError(
+                f"{sym} 数据质量异常: weekend_rows={weekend_rows}, nonpositive={nonpositive}"
+            )
         f = out / f"{sym}.parquet"
         df.to_parquet(f, index=False)
         manifest["symbols"][sym] = dict(
@@ -74,8 +82,8 @@ def main(version: str | None = None) -> None:
             rows=int(len(df)),
             start=str(df.date.iloc[0].date()),
             end=str(df.date.iloc[-1].date()),
-            weekend_rows=int((df.date.dt.weekday >= 5).sum()),
-            nonpositive=int((df.close <= 0).sum()),
+            weekend_rows=weekend_rows,
+            nonpositive=nonpositive,
             sha256=hashlib.sha256(f.read_bytes()).hexdigest(),
         )
         print(sym, len(df), df.date.iloc[0].date(), df.date.iloc[-1].date(), flush=True)

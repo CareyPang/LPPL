@@ -2,6 +2,7 @@ import pandas as pd
 
 from research.data.trading_calendar import (
     cn_holiday_source,
+    cn_sessions,
     future_calendar_metadata,
     future_trading_days,
     load_cn_closures,
@@ -19,6 +20,21 @@ def test_cn_future_days_exclude_2027_exchange_closures():
     ]
     assert _dates(future_trading_days(pd.Timestamp("2027-02-04"), 1)) == ["2027-02-15"]
     assert _dates(future_trading_days(pd.Timestamp("2027-09-30"), 1)) == ["2027-10-08"]
+
+
+def test_cn_sessions_use_xshg_for_2025_and_holiday_file_for_2027():
+    sessions = cn_sessions("2025-09-29", "2025-10-13")
+    assert isinstance(sessions, pd.DatetimeIndex)
+    assert sessions.tz is None and sessions.equals(sessions.normalize())
+    assert _dates(sessions) == [
+        "2025-09-29",
+        "2025-09-30",
+        "2025-10-09",
+        "2025-10-10",
+        "2025-10-13",
+    ]
+    assert pd.Timestamp("2027-02-05") in load_cn_closures()[0]
+    assert "2027-02-05" not in _dates(cn_sessions("2027-02-04", "2027-02-08"))
 
 
 def test_cn_calendar_is_cached_and_reports_source_and_coverage():

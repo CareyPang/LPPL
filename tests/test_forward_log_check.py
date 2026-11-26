@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import date, datetime
 from pathlib import Path
 
 import pytest
@@ -58,6 +59,45 @@ def test_check_schema_drift_and_gap(tmp_path, monkeypatch):
     assert c["schema_drift"] == [dict(path=str(p), missing=["bottom"])]
     assert c["schema_added"] == [dict(path=str(p), extra=["extra_field"])]
     assert c["missing_bdays"] == ["2026-10-28"]
+
+
+def test_trading_days_after_skips_chinese_holidays():
+    assert fl._trading_days_after(date(2025, 9, 30), date(2025, 10, 8)) == []
+
+
+def test_check_missing_days_skip_chinese_holidays(tmp_path, monkeypatch):
+    _mk(tmp_path, monkeypatch, ["2025-09-29", "2025-10-13"])
+
+    c = fl.check(max_stale_bdays=10**6)
+
+    assert c["missing_bdays"] == ["2025-09-30", "2025-10-09", "2025-10-10"]
+
+
+def test_check_stale_days_skip_chinese_holidays(tmp_path, monkeypatch):
+    _mk(tmp_path, monkeypatch, ["2025-09-30"])
+
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2025, 10, 8, 12, tzinfo=tz)
+
+    monkeypatch.setattr(fl, "datetime", FrozenDatetime)
+
+    c = fl.check(max_stale_bdays=0)
+
+    assert c["stale_bdays"] == 0 and not c["stale"]
+
+
+def test_check_counts_null_model_version(tmp_path, monkeypatch):
+    _, ledger = _mk(tmp_path, monkeypatch, ["2026-10-27"])
+    rows = [json.loads(line) for line in ledger.read_text().splitlines()]
+    rows[0]["model_version"] = None
+    ledger.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    c = fl.check(max_stale_bdays=10**6)
+
+    versions = {row["model_version"]: row["count"] for row in c["model_versions"]}
+    assert versions == {"<null>": 1, "v": 1}
 
 
 def test_check_duplicate_and_stale(tmp_path, monkeypatch):

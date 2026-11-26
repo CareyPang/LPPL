@@ -50,6 +50,62 @@ def _calendar_for(market: str, start: pd.Timestamp, end: pd.Timestamp):
     return _exchange_calendar(market, start_year, end_year)
 
 
+@lru_cache(maxsize=1)
+def _cn_xshg_calendar():
+    start_year = 1991
+    last_error = None
+    for last_year in range(pd.Timestamp.now().year + 1, start_year - 1, -1):
+        try:
+            return xc.get_calendar(
+                "XSHG",
+                start=f"{start_year}-01-01",
+                end=f"{last_year}-12-31",
+            )
+        except ValueError as exc:
+            last_error = exc
+    raise RuntimeError(
+        "Could not determine the last recorded XSHG calendar year"
+    ) from last_error
+
+
+def cn_sessions(
+    start: pd.Timestamp | str, end: pd.Timestamp | str
+) -> pd.DatetimeIndex:
+    """Return normalized A-share sessions in the inclusive date range."""
+    start = pd.Timestamp(start).normalize()
+    end = pd.Timestamp(end).normalize()
+    if end < start:
+        return pd.DatetimeIndex([])
+
+    calendar = _cn_xshg_calendar()
+    first_session = pd.Timestamp(calendar.first_session).tz_localize(None).normalize()
+    last_session = pd.Timestamp(calendar.last_session).tz_localize(None).normalize()
+    if start < first_session:
+        raise ValueError(
+            f"XSHG sessions are unavailable before {first_session.date()}"
+        )
+
+    sessions = []
+    xshg_end = min(end, last_session)
+    if start <= xshg_end:
+        sessions.extend(
+            calendar.sessions_in_range(start, xshg_end).tz_localize(None)
+        )
+
+    after_xshg = max(start, last_session + pd.Timedelta(days=1))
+    if after_xshg <= end:
+        closures, covered_through = load_cn_closures()
+        covered_end = min(end, covered_through)
+        if after_xshg <= covered_end:
+            weekdays = pd.date_range(after_xshg, covered_end, freq="B")
+            sessions.extend(day for day in weekdays if day not in closures)
+        plain_start = max(after_xshg, covered_through + pd.Timedelta(days=1))
+        if plain_start <= end:
+            sessions.extend(pd.date_range(plain_start, end, freq="B"))
+
+    return pd.DatetimeIndex(sessions).normalize()
+
+
 def exchange_for_market(market: str) -> str | None:
     return EXCHANGE_BY_MARKET.get(market)
 
