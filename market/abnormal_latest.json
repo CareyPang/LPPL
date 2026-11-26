@@ -1,31 +1,26 @@
 {
   "asof": "2026-11-26",
-  "generated": "2026-11-26T08:36:48.494809+00:00",
+  "generated": "2026-11-26T08:58:40.980688+00:00",
   "source": {
     "ok": true,
     "provider": "Tencent qfq daily",
-    "candidate_count": 139,
-    "available_count": 139,
-    "missing": 2,
+    "candidate_count": 134,
+    "available_count": 134,
+    "missing": 1,
     "missing_codes": [
       {
         "code": "920593",
         "name": "鼎智科技",
-        "error": "部分区间缺少足够个股日线或对应基准日期"
-      },
-      {
-        "code": "920309",
-        "name": "菊乐股份",
         "error": "部分区间缺少足够个股日线或对应基准日期"
       }
     ],
     "rule_source": "交易所异常波动规则摘要"
   },
   "counts": {
-    "candidate_count": 139,
-    "available_count": 139,
-    "near": 39,
-    "triggered": 25,
+    "candidate_count": 134,
+    "available_count": 134,
+    "near": 37,
+    "triggered": 23,
     "stale_bar": 0
   },
   "rules": {
@@ -159,43 +154,6 @@
       "triggered": true
     },
     {
-      "code": "000892",
-      "name": "ST欢瑞",
-      "board": "深主板",
-      "benchmark": "sz399001",
-      "last_bar_date": "2026-11-26",
-      "stale_bar": false,
-      "candidate_sources": [
-        "dragon_tiger"
-      ],
-      "dev_3d": -18.989975242631296,
-      "dev_10d": -33.70991895822139,
-      "dev_30d": -27.90567455721542,
-      "thresholds": {
-        "3d": {
-          "up": 12.0,
-          "down": -12.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "down",
-        "threshold_pct": -12.0,
-        "remaining_pp": 0.0
-      },
-      "remaining_pp": 0.0,
-      "near": true,
-      "triggered": true
-    },
-    {
       "code": "002122",
       "name": "汇洲智能",
       "board": "深主板",
@@ -241,8 +199,7 @@
       "last_bar_date": "2026-11-26",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt",
-        "dragon_tiger"
+        "limit_pools_zt"
       ],
       "dev_3d": 23.470317594810744,
       "dev_10d": 15.105581730389162,
@@ -398,8 +355,7 @@
       "candidate_sources": [
         "limit_pools_zb",
         "hot_ths",
-        "hot_eastmoney",
-        "dragon_tiger"
+        "hot_eastmoney"
       ],
       "dev_3d": 34.092244573341446,
       "dev_10d": 65.15349813156158,
@@ -541,80 +497,6 @@
       "triggered": true
     },
     {
-      "code": "003038",
-      "name": "鑫铂股份",
-      "board": "深主板",
-      "benchmark": "sz399001",
-      "last_bar_date": "2026-11-26",
-      "stale_bar": false,
-      "candidate_sources": [
-        "dragon_tiger"
-      ],
-      "dev_3d": -22.68572376910326,
-      "dev_10d": -8.24297448505217,
-      "dev_30d": -0.8139292613119746,
-      "thresholds": {
-        "3d": {
-          "up": 20.0,
-          "down": -20.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "down",
-        "threshold_pct": -20.0,
-        "remaining_pp": 0.0
-      },
-      "remaining_pp": 0.0,
-      "near": true,
-      "triggered": true
-    },
-    {
-      "code": "300086",
-      "name": "康芝药业",
-      "board": "创业板",
-      "benchmark": "sz399006",
-      "last_bar_date": "2026-11-26",
-      "stale_bar": false,
-      "candidate_sources": [
-        "dragon_tiger"
-      ],
-      "dev_3d": 38.1100288592571,
-      "dev_10d": 25.905082735739693,
-      "dev_30d": 28.951309073034835,
-      "thresholds": {
-        "3d": {
-          "up": 30.0,
-          "down": -30.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "up",
-        "threshold_pct": 30.0,
-        "remaining_pp": 0.0
-      },
-      "remaining_pp": 0.0,
-      "near": true,
-      "triggered": true
-    },
-    {
       "code": "600227",
       "name": "赤天化",
       "board": "沪主板",
@@ -660,7 +542,8 @@
       "last_bar_date": "2026-11-26",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt"
+        "limit_pools_zt",
+        "dragon_tiger"
       ],
       "dev_3d": 20.753910058068058,
       "dev_10d": 0.5540852498884474,
@@ -697,7 +580,8 @@
       "last_bar_date": "2026-11-26",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zt"
+        "limit_pools_zt",
+        "dragon_tiger"
       ],
       "dev_3d": 23.801154152556258,
       "dev_10d": 3.936454809076062,
@@ -814,7 +698,8 @@
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
-        "hot_eastmoney"
+        "hot_eastmoney",
+        "dragon_tiger"
       ],
       "dev_3d": 34.94231585516949,
       "dev_10d": 32.53381015163905,
@@ -921,6 +806,43 @@
       "triggered": true
     },
     {
+      "code": "603358",
+      "name": "华达科技",
+      "board": "沪主板",
+      "benchmark": "sh000001",
+      "last_bar_date": "2026-11-26",
+      "stale_bar": false,
+      "candidate_sources": [
+        "dragon_tiger"
+      ],
+      "dev_3d": -20.926502313065953,
+      "dev_10d": -40.85979571838191,
+      "dev_30d": -47.07014989093074,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "down",
+        "threshold_pct": -20.0,
+        "remaining_pp": 0.0
+      },
+      "remaining_pp": 0.0,
+      "near": true,
+      "triggered": true
+    },
+    {
       "code": "603391",
       "name": "力聚热能",
       "board": "沪主板",
@@ -965,7 +887,8 @@
       "last_bar_date": "2026-11-26",
       "stale_bar": false,
       "candidate_sources": [
-        "limit_pools_zb"
+        "limit_pools_zb",
+        "dragon_tiger"
       ],
       "dev_3d": 20.218871125921247,
       "dev_10d": 15.71698161654831,
@@ -1080,7 +1003,8 @@
       "candidate_sources": [
         "limit_pools_zt",
         "hot_ths",
-        "hot_eastmoney"
+        "hot_eastmoney",
+        "dragon_tiger"
       ],
       "dev_3d": 19.60093555381879,
       "dev_10d": 29.819846187675104,
@@ -1338,18 +1262,18 @@
       "triggered": false
     },
     {
-      "code": "000593",
-      "name": "德龙汇能",
-      "board": "深主板",
-      "benchmark": "sz399001",
+      "code": "603990",
+      "name": "麦迪科技",
+      "board": "沪主板",
+      "benchmark": "sh000001",
       "last_bar_date": "2026-11-26",
       "stale_bar": false,
       "candidate_sources": [
         "dragon_tiger"
       ],
-      "dev_3d": 16.57453747590957,
-      "dev_10d": 20.962475366825984,
-      "dev_30d": 35.27287595590985,
+      "dev_3d": -16.72950226420683,
+      "dev_10d": -25.91762901882666,
+      "dev_30d": -0.9075715730694549,
       "thresholds": {
         "3d": {
           "up": 20.0,
@@ -1366,11 +1290,11 @@
       },
       "threshold": {
         "window": "3d",
-        "direction": "up",
-        "threshold_pct": 20.0,
-        "remaining_pp": 3.425462524090431
+        "direction": "down",
+        "threshold_pct": -20.0,
+        "remaining_pp": 3.270497735793171
       },
-      "remaining_pp": 3.425462524090431,
+      "remaining_pp": 3.270497735793171,
       "near": true,
       "triggered": false
     },
@@ -1422,7 +1346,8 @@
       "stale_bar": false,
       "candidate_sources": [
         "hot_ths",
-        "hot_eastmoney"
+        "hot_eastmoney",
+        "dragon_tiger"
       ],
       "dev_3d": 15.868024172182182,
       "dev_10d": 51.04876741659632,
@@ -1635,43 +1560,6 @@
         "remaining_pp": 5.698159922778595
       },
       "remaining_pp": 5.698159922778595,
-      "near": false,
-      "triggered": false
-    },
-    {
-      "code": "300670",
-      "name": "ST大烨",
-      "board": "创业板",
-      "benchmark": "sz399006",
-      "last_bar_date": "2026-11-26",
-      "stale_bar": false,
-      "candidate_sources": [
-        "dragon_tiger"
-      ],
-      "dev_3d": -23.5197716467071,
-      "dev_10d": -27.073913229422207,
-      "dev_30d": -23.755003815053268,
-      "thresholds": {
-        "3d": {
-          "up": 30.0,
-          "down": -30.0
-        },
-        "10d": {
-          "up": 100.0,
-          "down": -50.0
-        },
-        "30d": {
-          "up": 200.0,
-          "down": -70.0
-        }
-      },
-      "threshold": {
-        "window": "3d",
-        "direction": "down",
-        "threshold_pct": -30.0,
-        "remaining_pp": 6.480228353292901
-      },
-      "remaining_pp": 6.480228353292901,
       "near": false,
       "triggered": false
     },
@@ -1937,6 +1825,43 @@
       "triggered": false
     },
     {
+      "code": "600156",
+      "name": "华升股份",
+      "board": "沪主板",
+      "benchmark": "sh000001",
+      "last_bar_date": "2026-11-26",
+      "stale_bar": false,
+      "candidate_sources": [
+        "dragon_tiger"
+      ],
+      "dev_3d": 11.277719581877577,
+      "dev_10d": 41.916197858494854,
+      "dev_30d": 48.90818910403798,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "up",
+        "threshold_pct": 20.0,
+        "remaining_pp": 8.722280418122423
+      },
+      "remaining_pp": 8.722280418122423,
+      "near": false,
+      "triggered": false
+    },
+    {
       "code": "002843",
       "name": "泰嘉股份",
       "board": "深主板",
@@ -1972,6 +1897,81 @@
       "remaining_pp": 8.853090856022076,
       "near": false,
       "triggered": false
+    },
+    {
+      "code": "600567",
+      "name": "山鹰国际",
+      "board": "沪主板",
+      "benchmark": "sh000001",
+      "last_bar_date": "2026-11-26",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_zt"
+      ],
+      "dev_3d": 10.935706713865445,
+      "dev_10d": -1.5661379971004141,
+      "dev_30d": -14.111970368406379,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "up",
+        "threshold_pct": 20.0,
+        "remaining_pp": 9.064293286134555
+      },
+      "remaining_pp": 9.064293286134555,
+      "near": false,
+      "triggered": false
+    },
+    {
+      "code": "002077",
+      "name": "大港股份",
+      "board": "深主板",
+      "benchmark": "sz399001",
+      "last_bar_date": "2026-11-26",
+      "stale_bar": false,
+      "candidate_sources": [
+        "limit_pools_zt",
+        "hot_eastmoney"
+      ],
+      "dev_3d": 10.57163510926421,
+      "dev_10d": 20.779576075002847,
+      "dev_30d": 22.323390333294036,
+      "thresholds": {
+        "3d": {
+          "up": 20.0,
+          "down": -20.0
+        },
+        "10d": {
+          "up": 100.0,
+          "down": -50.0
+        },
+        "30d": {
+          "up": 200.0,
+          "down": -70.0
+        }
+      },
+      "threshold": {
+        "window": "3d",
+        "direction": "up",
+        "threshold_pct": 20.0,
+        "remaining_pp": 9.42836489073579
+      },
+      "remaining_pp": 9.42836489073579,
+      "near": false,
+      "triggered": false
     }
   ],
   "evidence": "descriptive",
@@ -1979,7 +1979,7 @@
   "version": {
     "kind": "abnormal",
     "asof": "2026-11-26",
-    "file": "versions/abnormal/2026-11-26/20261126T083648Z_251759dc.json.gz",
-    "sha256": "251759dcf89e439a1ca8dc6825a6c5c30c77525e06ac5809d0b2c30cf9240ef2"
+    "file": "versions/abnormal/2026-11-26/20261126T085840Z_014b0a45.json.gz",
+    "sha256": "014b0a45e4dbb436e77bd43b1644b66f793b1b49cb523d8d77f06b09e425d85e"
   }
 }
