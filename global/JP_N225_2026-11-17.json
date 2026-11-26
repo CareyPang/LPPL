@@ -10,11 +10,11 @@
  "timezone": "Asia/Tokyo",
  "exchange": "东京证券交易所",
  "asof": "2026-11-17",
- "generated_at": "2026-11-26T04:21:18.128809+00:00",
+ "generated_at": "2026-11-26T17:53:44.053428+00:00",
  "first_visible_at": null,
  "model_version": "global_sparse27_v1_production_v2_box",
  "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
- "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+ "source_sha": "e4becd5e63bc8ef06afe0a89a9e5f4f4a566ff03",
  "data_version": "3afa06619e1223dc950e993a1d576b27d1c2ea096bdc90d4aca0c3f9f69595f0",
  "source": "Yahoo Finance",
  "source_meta": {
@@ -25,32 +25,36 @@
   "currency": "JPY",
   "timezone": "Asia/Tokyo",
   "exchange": "Osaka",
-  "fetched_at": "2026-11-26T04:18:38.215217+00:00",
+  "fetched_at": "2026-11-26T17:51:57.303098+00:00",
   "source": "Yahoo Finance v8 chart",
-  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EN225?period1=946684800&period2=1795666718&interval=1d&events=div%2Csplit",
-  "raw_sha256": "45d1ab9e0d239ecfa1a92174aafe0ec348e1461b330737e2e5354eeeb5cb1e50",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EN225?period1=946684800&period2=1795715516&interval=1d&events=div%2Csplit",
+  "raw_sha256": "b7aaf13f9d40b9ac126c9b2686a895d005dccae516b16da8f0b273273b9ec536",
   "normalized_sha256": "3afa06619e1223dc950e993a1d576b27d1c2ea096bdc90d4aca0c3f9f69595f0",
   "adjustment": "none",
   "volume_unit": "vendor_native",
   "history_vintage": "current_download_reconstruction",
   "normalizer_version": "global_yahoo_v3_raw_ohlcv",
-  "metadata_file": "45d1ab9e0d239ecfa1a92174aafe0ec348e1461b330737e2e5354eeeb5cb1e50-9ad124f81f7af506d65772d541564c317a40534aaa0f509308565b5ae5602e46.metadata.json",
-  "dropped_unclosed_bars": 1,
+  "metadata_file": "b7aaf13f9d40b9ac126c9b2686a895d005dccae516b16da8f0b273273b9ec536-313f4d2574029eee95332ead9cc6fd39cd0e37d8c62c074576644e9558143cfc.metadata.json",
+  "dropped_unclosed_bars": 0,
   "provider_currency": "JPY",
   "dropped_non_session_rows": 1,
   "dropped_non_session_dates": [
    "2018-07-16"
   ],
-  "missing_sessions_last_250": 0,
-  "missing_sessions_last_250_dates": [],
+  "missing_sessions_last_250": 1,
+  "missing_sessions_last_250_dates": [
+   "2026-11-26"
+  ],
   "cross_check": {
    "provider": "fredgraph_csv",
-   "overlap": 250,
+   "overlap": 249,
    "max_rel_diff": 5.663340252413504e-08,
    "missing_in_yahoo": 0,
    "missing_in_yahoo_dates": [],
-   "yahoo_lag_sessions": 0,
-   "yahoo_lag_session_dates": [],
+   "yahoo_lag_sessions": 1,
+   "yahoo_lag_session_dates": [
+    "2026-11-26"
+   ],
    "mismatches": [],
    "status": "ok"
   },
@@ -65,7 +69,7 @@
   "research_candidate": "国际市场稀疏窗口研究样本"
  },
  "params": {
-  "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+  "source_sha": "e4becd5e63bc8ef06afe0a89a9e5f4f4a566ff03",
   "math_hashes": {
    "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
    "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
@@ -39963,8 +39967,8 @@
   },
   "fit_input_hashes": {
    "14": "e5f8b66573a9e994b4b4d82c70ff833b3078aa6cde5cdf61cce02dfdd9e01e26",
-   "18": "7a83a67df1d3abc48a5e14b3622ed6a2f150465b0b225733d1de18a2134bcd4b",
    "21": "363cf8053340e2f1abaeb7368d92f70048c2501f743de6ebe4cf37188113107c",
+   "18": "7a83a67df1d3abc48a5e14b3622ed6a2f150465b0b225733d1de18a2134bcd4b",
    "10": "3a80dd5f28d3460efc10471bb47f88a38696392d26527214f485fcc6af9fb497",
    "30": "077bfbba232173febd4d8d0ef38821c835f01d509bbaf5fc6b41dddf7aaacaa0",
    "42": "901a69af2b0c5b6007be74ef05096c41cbd96d2eb1ad25ce33365fefb80e2125",
@@ -39974,8 +39978,8 @@
    "64": "5a03c60c957c5725bf79c495c5821efe217ee01430bd88ffd41b8a644b4c6f62",
    "105": "f05f354ad26a04e9813e788b01cc43078f39ac1258d011ae8c258e3cecb41371",
    "127": "ed976d71cff7bde9a2977ebba5e17275e1d00e02e9741654dfea768e1d59a4e4",
-   "168": "7db8a46b6d883088f35f4d5b1a664c99ae08dd8ce2dd8c2c31efbc7996c47f3e",
    "126": "e573c86b3d6b2503a48889ea359b3d7e41744b3f30f59e73767b3258b02d02af",
+   "168": "7db8a46b6d883088f35f4d5b1a664c99ae08dd8ce2dd8c2c31efbc7996c47f3e",
    "210": "b4ca62cdec23926b05658486cb53f01ff452a3edfb5b3e97d1c5ad0641d0cd1a",
    "252": "7ec09e67f94a1f3b1c1b35457023dd8004241a3c0bbb1b6c6de1582d103fd3a9",
    "253": "568d04f450053574348a49f835d5e9861dc060a7a9caca7e92833cdece71b14f",
@@ -39986,8 +39990,8 @@
    "525": "97d4ff010aef07909b5a95fbebd76e81cdd35f173212fbe693ccc63d8f4dfbd8",
    "630": "0db505dddfa185877b29a15262d091197583fd220c886b223dd6f92a2173f87d",
    "756": "7aade39f8406bff40b3727eb3d0df5cb4cfd3aa102d28e5ceb592fe75abbaac8",
-   "1008": "ecb0d15b79abb0466b6d14e4c64e656250d50f5a3033956d4e250d23aca14a7f",
    "1260": "0ca27d3ad234a4d22af5871ef1869ab69f8cebce3e32d5f06fc7a85fec3fc5d3",
+   "1008": "ecb0d15b79abb0466b6d14e4c64e656250d50f5a3033956d4e250d23aca14a7f",
    "1500": "f80d10bea4ff3a0de06c68b0d2fc1b0e076c004d0b8be917cf21779c94791c51"
   },
   "future_calendar_verified": true,
@@ -40001,6 +40005,6 @@
   "failed": 0,
   "pending": 0
  },
- "record_version": "419a01022d78410a31fa78a92d2592d3f6f2d23092cc45109d7dd6cf0b4a5a47",
- "archive_path": "global/archive/JP_N225/2026-11-17/419a01022d78410a31fa78a92d2592d3f6f2d23092cc45109d7dd6cf0b4a5a47.json"
+ "record_version": "979dc9bf0219dba59f281fae2bf2590fca269c8855a4ef0cd59a0330107a04ca",
+ "archive_path": "global/archive/JP_N225/2026-11-17/979dc9bf0219dba59f281fae2bf2590fca269c8855a4ef0cd59a0330107a04ca.json"
 }

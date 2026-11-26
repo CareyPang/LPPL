@@ -10,11 +10,11 @@
  "timezone": "Asia/Seoul",
  "exchange": "韩国交易所",
  "asof": "2026-11-25",
- "generated_at": "2026-11-26T04:20:02.275792+00:00",
+ "generated_at": "2026-11-26T17:52:52.574648+00:00",
  "first_visible_at": null,
  "model_version": "global_sparse27_v1_production_v2_box",
  "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
- "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+ "source_sha": "e4becd5e63bc8ef06afe0a89a9e5f4f4a566ff03",
  "data_version": "3ebdfe2f0390b90fb9d9118928be684f7ae0e463a0209fcad1f810934715cbe0",
  "source": "Yahoo Finance",
  "source_meta": {
@@ -25,32 +25,35 @@
   "currency": "KRW",
   "timezone": "Asia/Seoul",
   "exchange": "KSE",
-  "fetched_at": "2026-11-26T04:18:39.963349+00:00",
+  "fetched_at": "2026-11-26T17:51:59.498860+00:00",
   "source": "Yahoo Finance v8 chart",
-  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?period1=946684800&period2=1795666719&interval=1d&events=div%2Csplit",
-  "raw_sha256": "175f8aa211b4aea64f926c2e66e8ac3c17264976ccd8d2920a995fb495d1e674",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?period1=946684800&period2=1795715519&interval=1d&events=div%2Csplit",
+  "raw_sha256": "a493790146d9c128f213fc2963c7be8d8b8e90348ac5df4a01aad59eee2ffb9f",
   "normalized_sha256": "3ebdfe2f0390b90fb9d9118928be684f7ae0e463a0209fcad1f810934715cbe0",
   "adjustment": "none",
   "volume_unit": "vendor_native",
   "history_vintage": "current_download_reconstruction",
   "normalizer_version": "global_yahoo_v3_raw_ohlcv",
-  "metadata_file": "175f8aa211b4aea64f926c2e66e8ac3c17264976ccd8d2920a995fb495d1e674-2dbfe239df553b4a3eeaee6768d2e46d352b497af4c7c411cb5af6bba591567c.metadata.json",
-  "dropped_unclosed_bars": 1,
+  "metadata_file": "a493790146d9c128f213fc2963c7be8d8b8e90348ac5df4a01aad59eee2ffb9f-108e8c2bd4adb4a512477dddc71b43a718bcf4e7850754bf08ffaa5d9cdb509d.metadata.json",
+  "dropped_unclosed_bars": 0,
   "provider_currency": "KRW",
   "dropped_non_session_rows": 0,
   "dropped_non_session_dates": [],
-  "missing_sessions_last_250": 1,
+  "missing_sessions_last_250": 2,
   "missing_sessions_last_250_dates": [
-   "2026-07-17"
+   "2026-07-17",
+   "2026-11-26"
   ],
   "cross_check": {
    "provider": "naver_siseJson",
-   "overlap": 249,
+   "overlap": 248,
    "max_rel_diff": 5.533572113353025e-08,
    "missing_in_yahoo": 0,
    "missing_in_yahoo_dates": [],
-   "yahoo_lag_sessions": 0,
-   "yahoo_lag_session_dates": [],
+   "yahoo_lag_sessions": 1,
+   "yahoo_lag_session_dates": [
+    "2026-11-26"
+   ],
    "mismatches": [],
    "status": "ok"
   },
@@ -65,7 +68,7 @@
   "research_candidate": "国际市场稀疏窗口研究样本"
  },
  "params": {
-  "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+  "source_sha": "e4becd5e63bc8ef06afe0a89a9e5f4f4a566ff03",
   "math_hashes": {
    "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
    "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
@@ -40220,8 +40223,8 @@
   },
   "fit_input_hashes": {
    "14": "cfe44c334a29d30e2d0816a51fce67fabe0c5cf823b323f6968fad646b1f4cc0",
-   "18": "5f6a6924d28608a986966e49e6ab2c3636fd17e552ce3eee7955b76ff0d979d2",
    "21": "566999a7d3a6b377ef842c9f6ce7a73558aa030dc45df3095a3bb73b86c666fd",
+   "18": "5f6a6924d28608a986966e49e6ab2c3636fd17e552ce3eee7955b76ff0d979d2",
    "10": "8d3bbefe07bf6f639530534184f2d7eaa8199cbb5b7ef318c89240c676506a1b",
    "52": "cc0627a4553bb6ba2019ec3c825be2e009e69793145b465cbf1b77d0eaf57a95",
    "30": "ab1ab6cd0b243a1e89db66f53966c283ccc95631edad9b1caff4e7fb82d53b72",
@@ -40258,6 +40261,6 @@
   "failed": 0,
   "pending": 0
  },
- "record_version": "9f225513035474a8ef058fac59b73a7ed953e47183fd04f4bc7f0caba5d9a44e",
- "archive_path": "global/archive/KR_KOSPI/2026-11-25/9f225513035474a8ef058fac59b73a7ed953e47183fd04f4bc7f0caba5d9a44e.json"
+ "record_version": "ea0bf5ea55ff19b6ba832d95215ba13df4e89e4e02db9ca6e0248b6a28f306d5",
+ "archive_path": "global/archive/KR_KOSPI/2026-11-25/ea0bf5ea55ff19b6ba832d95215ba13df4e89e4e02db9ca6e0248b6a28f306d5.json"
 }
