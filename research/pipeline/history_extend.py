@@ -140,7 +140,7 @@ def extend_history(
         for dt in todo:
             sub_logp = logp[logp.index <= dt]
             ws = tuple(n for n in EXTEND_WINDOWS if n <= len(sub_logp))
-            if ws:
+            if ws == EXTEND_WINDOWS:  # 历史不足 500 日的截止日不出帧，避免小窗口集被标成完整口径
                 tasks.append((sub_logp, dt, ws, opt))
         scan_parts: list[pd.DataFrame] = []
         if tasks:
