@@ -243,6 +243,8 @@ a { color: var(--ink-2); text-decoration: none; }
 .hl-head { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; justify-content: space-between; }
 .hl-head .tp-d { margin: 0; }
 .hl-chips { display: flex; gap: 6px; }
+.hl-chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s3); min-height: 32px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.hl-chip[aria-pressed="true"] { border-color: var(--warn); color: var(--ink); font-weight: 600; }
 .hl-sum { margin: var(--s3) 0 6px; font-size: 13px; color: var(--ink); }
 .hl-more { margin: 0 0 var(--s3); font-size: 12px; color: var(--ink-2); }
 .hl-more summary { cursor: pointer; color: var(--ink-3); }
@@ -1509,7 +1511,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   /* 顶部预警记录 / 底分事件记录：只列截止日及之前的帧；回放历史截止日时不引用之后才有的检验结果 */
   let ledgerScale = '6-12m', ledgerSelected = { top: null, bottom: null };
   function renderLedgers(R) {
-    const H = R.historyData, base = { asof: R.asof, historical: !R.latest };
+    const H = R.historyData, base = { asof: R.asof, historical: !R.latest, bars: R.bars.slice(0, R.T + 1) };
     if (!H) {
       $('p-top').innerHTML = $('p-bot').innerHTML = '<p class="hl-empty">该指数暂无历史帧。</p>';
       return;

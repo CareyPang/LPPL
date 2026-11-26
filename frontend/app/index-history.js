@@ -11,7 +11,6 @@
   var SPLIT = { dev: '开发段', cal: '校准段', test: '测试段', live: '样本外延续' };
   var SEGMENTS = [['dev', '开发段 2000–2018'], ['cal', '校准段 2019–2021'], ['test', '测试段 2022–2025-08']];
   var SPLIT_HELP = '开发段用来设计规则，校准段只用来定门槛，测试段在前两段定完后才看。';
-  var DAY = 86400000;
 
   function esc(value) {
     return String(value == null ? '' : value)
@@ -42,31 +41,47 @@
       var column = payload[name], value = Array.isArray(column) ? num(column[index]) : null;
       return value == null ? fallback : value;
     };
+    /* 两个来源的成交量单位可能不同：用重叠日期的中位数比值把早期成交量换算到现有行情的单位 */
+    var known = {}, ratios = [], scale = 1;
+    bars.forEach(function (bar) { if (bar.volume > 0) known[bar.date] = bar.volume; });
+    if (Array.isArray(payload.volume)) {
+      payload.dates.forEach(function (date, index) {
+        var v = num(payload.volume[index]);
+        if (v > 0 && known[date]) ratios.push(known[date] / v);
+      });
+    }
+    if (ratios.length >= 20) { ratios.sort(function (a, b) { return a - b; }); scale = ratios[ratios.length >> 1]; }
     for (var i = 0; i < payload.dates.length; i++) {
-      var date = payload.dates[i], c = num(close[i]);
+      var date = payload.dates[i], c = num(close[i]), volume = pick('volume', i, null);
       if (!date || date >= first) break;
       if (c == null || (early.length && date <= early[early.length - 1].date)) continue;
       early.push({
         date: date, open: pick('open', i, c), high: pick('high', i, c), low: pick('low', i, c), close: c,
-        volume: pick('volume', i, null),
+        volume: volume == null ? null : volume * scale,
       });
     }
     return early.length ? early.concat(bars) : bars;
   }
 
-  function confirmedTops(history, asof, confirmDays) {
+  /* 事后顶要等 126 个交易日确认期结束才进入记录，与主图口径一致；bars 的最后一根就是截止日。 */
+  var CONFIRM_SESSIONS = 126;
+  function confirmedTops(history, bars) {
     var tops = history && Array.isArray(history.tops) ? history.tops : [];
-    if (!asof) return tops;
-    var limit = Date.parse(asof + 'T00:00:00Z') - (confirmDays == null ? 183 : confirmDays) * DAY;
-    return tops.filter(function (top) { return Date.parse(top.date + 'T00:00:00Z') <= limit; });
+    if (!Array.isArray(bars) || !bars.length) return [];
+    var last = bars.length - 1;
+    return tops.filter(function (top) {
+      var lo = 0, hi = last + 1;
+      while (lo < hi) { var mid = (lo + hi) >> 1; if (bars[mid].date < top.date) lo = mid + 1; else hi = mid; }
+      return lo + CONFIRM_SESSIONS <= last;
+    });
   }
 
   /* 截止日之后的帧、以及确认期未结束的事后顶都不进入记录。 */
-  function topEpisodes(history, scale, asof, ledger) {
+  function topEpisodes(history, scale, asof, ledger, bars) {
     var api = ledger || (root && root.CPAlertLedger);
     if (!history || !Array.isArray(history.frames) || !api) return [];
     var frames = history.frames.filter(function (frame) { return frame.asof && (!asof || frame.asof <= asof); });
-    return api.episodes(frames, confirmedTops(history, asof), scale).slice().reverse();
+    return api.episodes(frames, confirmedTops(history, bars), scale).slice().reverse();
   }
 
   function bottomEvents(history, asof) {
@@ -75,9 +90,12 @@
     if (summary && Array.isArray(summary.events)) {
       summary.events.forEach(function (event) { if (event && event.asof) byDate[event.asof] = event; });
     }
-    var cutoff = asof ? Date.parse(asof + 'T00:00:00Z') : Infinity;
+    /* 后端的 24/50 周收益取的是往后第 24/50 帧；那一帧不晚于截止日才显示 */
+    var position = {};
+    history.frames.forEach(function (frame, index) { if (frame.asof) position[frame.asof] = index; });
     var matured = function (date, weeks, value) {
-      return Date.parse(date + 'T00:00:00Z') + weeks * 7 * DAY <= cutoff ? num(value) : null;
+      var later = history.frames[position[date] + weeks];
+      return later && later.asof && (!asof || later.asof <= asof) ? num(value) : null;
     };
     return history.frames.filter(function (frame) {
       return frame.bottom_first_alert_flag && frame.asof && (!asof || frame.asof <= asof);
@@ -142,9 +160,9 @@
 
   function renderTop(history, options) {
     var o = options || {}, scale = o.scale === '12-24m' ? '12-24m' : '6-12m';
-    var episodes = topEpisodes(history, scale, o.asof, o.ledger);
+    var episodes = topEpisodes(history, scale, o.asof, o.ledger, o.bars);
     var chips = [['6-12m', '6–12 月'], ['12-24m', '12–24 月']].map(function (item) {
-      return '<button class="chip" type="button" data-hl-scale="' + item[0] + '" aria-pressed="' + (item[0] === scale) + '">' +
+      return '<button class="hl-chip" type="button" data-hl-scale="' + item[0] + '" aria-pressed="' + (item[0] === scale) + '">' +
         item[1] + '</button>';
     }).join('');
     return '<div class="hl-head"><p class="tp-d">每轮第一次出现顶部聚类记为一次预警，点一行定位到当时的图。</p>' +
