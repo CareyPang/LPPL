@@ -171,8 +171,10 @@ def _daily_omori(current):
         return np.exp(theta[0])+np.exp(theta[1])/(t+1.)**theta[2]
 
     fits = [minimize(lambda theta: _binomial_loss(y, rate(theta)),
-                     [math.log(max(y.mean()/2, 1e-4)), math.log(max(y[0], 1e-4)), p],
-                     bounds=bounds, method="L-BFGS-B") for p in (.1, .5, 1., 2.)]
+                     [math.log(max(y.mean()/2, 1e-4)), math.log(amp), p],
+                     bounds=bounds, method="L-BFGS-B")
+            # 首日没有大波动时 y[0]=0，只从近零振幅出发会停在平坦解；再加一组按均值定的振幅起点。
+            for amp in sorted({max(y[0], 1e-4), max(2*y.mean(), 1e-4)}) for p in (.1, .5, 1., 2.)]
     usable = [fit for fit in fits if fit.success and np.isfinite(fit.fun)]
     if not usable:
         return _module("failed", "衰减拟合未收敛", "保留观察次数，本次没有可用的衰减参数。", optimizer_messages=[str(f.message) for f in fits], **common)

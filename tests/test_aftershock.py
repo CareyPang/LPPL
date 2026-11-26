@@ -195,6 +195,13 @@ def test_binomial_loss_matches_scipy_and_is_finite_at_extreme_rates():
     assert _binomial_loss(np.array([1.]), np.array([0.])) == float("inf")
 
 
+def test_omori_finds_decay_when_the_first_day_after_the_shock_is_quiet():
+    # 上证 2015-06-26 冲击后截至 2015-07-24 的逐日序列
+    params = _daily_omori(current_episode([0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))["parameters"]
+    assert params["amplitude"] > 0.01
+    assert params["aic_omori"] < params["aic_constant"]+2
+
+
 def test_omori_probabilities_stay_between_zero_and_one():
     params = _daily_omori(current_episode([1]*10+[0]*10))["parameters"]
     probabilities = np.asarray(params["predicted_probabilities"])
