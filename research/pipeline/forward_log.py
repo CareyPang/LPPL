@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 
-from ..data.trading_calendar import future_trading_days
+from ..data.trading_calendar import cn_sessions, future_trading_days
 
 UTC = timezone.utc  # noqa: UP017 — 运行环境 Python 3.10
 SHANGHAI = ZoneInfo("Asia/Shanghai")
@@ -39,6 +39,14 @@ def seal_deadline(asof: date | str) -> datetime:
     asof_date = date.fromisoformat(asof) if isinstance(asof, str) else asof
     next_trading_day = future_trading_days(pd.Timestamp(asof_date), 1)[0].date()
     return datetime.combine(next_trading_day, time(9, 15), tzinfo=SHANGHAI)
+
+
+def _trading_days_after(start: date, end: date) -> list[str]:
+    start_day = pd.Timestamp(start).normalize() + pd.Timedelta(days=1)
+    end_day = pd.Timestamp(end).normalize()
+    if end_day < start_day:
+        return []
+    return [day.date().isoformat() for day in cn_sessions(start_day, end_day)]
 
 
 def guard(asofs: Sequence[date | str], now: datetime | str | None = None) -> tuple[bool, str]:
@@ -116,10 +124,13 @@ def check(max_stale_bdays: int = 5) -> dict:
     dup = led.duplicated(["asof", "symbol"], keep=False)
     out["duplicates"] = led.loc[dup, ["asof", "symbol"]].to_dict("records")
     asofs = sorted(set(led["asof"]))
-    bdays = pd.bdate_range(asofs[0], asofs[-1])
-    out["missing_bdays"] = [str(d.date()) for d in bdays if str(d.date()) not in set(asofs)]
+    asof_set = set(asofs)
+    expected_tdays = _trading_days_after(
+        date.fromisoformat(asofs[0]), date.fromisoformat(asofs[-1])
+    )
+    out["missing_bdays"] = [day for day in expected_tdays if day not in asof_set]
     today = datetime.now(SHANGHAI).date()
-    out["stale_bdays"] = int(len(pd.bdate_range(asofs[-1], today)) - 1)
+    out["stale_bdays"] = len(_trading_days_after(date.fromisoformat(asofs[-1]), today))
     out["stale"] = out["stale_bdays"] > max_stale_bdays
     keys0, drift, added = None, [], []
     for _, r in led[led.ok].iterrows():
@@ -133,14 +144,20 @@ def check(max_stale_bdays: int = 5) -> dict:
             added.append(dict(path=r.path, extra=sorted(k - keys0)))
     out["schema_drift"] = drift  # 首条记录有、后续缺失的顶层键：硬失败（复盘函数会读不到）
     out["schema_added"] = added  # 后续新增的顶层键：只记录（契约加字段是允许的）
-    out["model_versions"] = led.groupby("model_version")["asof"].agg(["min", "max", "count"]).reset_index().to_dict("records")
+    out["model_versions"] = (
+        led.assign(model_version=led["model_version"].fillna("<null>"))
+        .groupby("model_version")["asof"]
+        .agg(["min", "max", "count"])
+        .reset_index()
+        .to_dict("records")
+    )
     out["ok"] = not out["bad_hash"] and not out["duplicates"] and not drift
     return out
 
 
 def review(since: str = "2026-01-01") -> pd.DataFrame:
     from ..data import cache
-    from ..eval.calibration_lppls import _null
+    from ..eval.calibration_lppls import _nanmean, _null, _perm_pvalue
     from ..eval.original_standard import _alarm_metrics
     from ..labels.run_top import build
 
@@ -171,10 +188,11 @@ def review(since: str = "2026-01-01") -> pd.DataFrame:
             x = np.array([(d.get(key) or 0.0) for _, d in recs], float)
             alarm = x >= Q
             a1, a2 = _alarm_metrics(alarm, tops, gpos, H)
-            nul = _null(alarm, tops, gpos, H, rng) if alarm.sum() >= 3 and len(gpos) >= 8 else np.full((1, 2), np.nan)
+            can_perm = int(alarm.sum()) >= 3 and len(gpos) >= 8
+            nul = _null(alarm, tops, gpos, H, rng) if can_perm else np.full((0, 2), np.nan)
             rows.append(dict(symbol=s, indicator=key, n_asof=len(gpos), n_alarm=int(alarm.sum()), n_tops=int(((tops >= gpos.min()) & (tops <= gpos.max() + H)).sum()),
-                             A1=a1, A1_null=float(np.nanmean(nul[:, 0])), A1_p=float(np.nanmean(nul[:, 0] >= a1)) if alarm.sum() >= 3 else np.nan,
-                             A2=a2, A2_null=float(np.nanmean(nul[:, 1]))))
+                             A1=a1, A1_null=_nanmean(nul[:, 0]), A1_p=_perm_pvalue(nul[:, 0], a1) if can_perm else float("nan"),
+                             A2=a2, A2_null=_nanmean(nul[:, 1])))
     tab = pd.DataFrame(rows)
     out = ROOT / f"review_{datetime.now(UTC).date()}.csv"
     tab.to_csv(out, index=False)
