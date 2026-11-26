@@ -1,8 +1,8 @@
 {
  "symbol": "US_LRCX",
  "name": "泛林集团",
- "asof": "2026-11-24",
- "data_version": "us_LRCX_20261124_6833212b6dd58208",
+ "asof": "2026-11-25",
+ "data_version": "us_LRCX_20261125_fe306ddc96eb5872",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "us",
@@ -63,12 +63,12 @@
    ]
   },
   "bubble": {
-   "start": "2026-05-27",
+   "start": "2026-05-28",
    "duration_days": 127,
    "scale": "6-12m",
    "t1_qualified_standard": false,
    "size_model": -1.0,
-   "size_realized": -0.384,
+   "size_realized": -0.417,
    "tc": "2026-12-10",
    "progress": null,
    "longest_qualified_scale": null,
@@ -103,7 +103,7 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-05-27",
+    "best_t1": "2026-05-28",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.167,
@@ -111,7 +111,7 @@
      "w_lo": 0.5,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.667,
+     "tc_hi": 0.833,
      "any": 1.0,
      "tol": 0.01
     },
@@ -147,12 +147,12 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-04-22",
+    "best_t1": "2025-04-23",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
-     "w_lo": 0.8,
+     "w_lo": 0.9,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.6,
@@ -277,7 +277,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-24",
+   "table_asof": "2026-11-25",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -759,7 +759,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": -0.384,
+    "size_realized": -0.417,
     "duration_days": 127,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -806,12 +806,12 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": true,
-  "drawdown_from_peak": -0.5468,
-  "elapsed_days_since_peak": 103,
+  "drawdown_from_peak": -0.5726,
+  "elapsed_days_since_peak": 104,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": false,
-  "note": "余震未消（近 15 日出现 4 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.38 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+  "note": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.5%）；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
   "dashboard": {
    "verdict": "aftershock_block",
    "verdict_light": "red",
@@ -826,15 +826,15 @@
     {
      "id": "omori",
      "name": "冲击与止跌检查",
-     "value_text": "大阴线 4 次 · 波动比 1.38×",
+     "value_text": "大阴线 5 次 · 波动比 1.31×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.5468,
-     "elapsed_days_since_peak": 103,
+     "drawdown_from_peak": -0.5726,
+     "elapsed_days_since_peak": 104,
      "dead_cat_risk": true,
      "drop_threshold": -0.045,
-     "plain_text": "余震未消（近 15 日出现 4 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.38 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+     "plain_text": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.5%）；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -869,9 +869,9 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 0.99× · 年内分位 57%",
-     "pct": 0.5675,
-     "ratio20": 0.99,
+     "value_text": "5/20日量比 1.12× · 年内分位 85%",
+     "pct": 0.8452,
+     "ratio20": 1.12,
      "light": "gray",
      "passed_bottom": false,
      "passed_top": false,
@@ -896,7 +896,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -10.4%",
+     "value_text": "距 20 日线 -14.1%",
      "pct": null,
      "light": "red",
      "passed_bottom": false,
@@ -912,7 +912,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-11-20",
    "2023-11-21",
    "2023-11-22",
    "2023-11-24",
@@ -1667,10 +1666,10 @@
    "2026-11-19",
    "2026-11-20",
    "2026-11-23",
-   "2026-11-24"
+   "2026-11-24",
+   "2026-11-25"
   ],
   "open": [
-   68.016,
    69.84,
    69.74,
    69.884,
@@ -2425,10 +2424,10 @@
    220.96,
    199.05,
    217.17,
-   202.06
+   202.06,
+   182.82
   ],
   "high": [
-   70.325,
    69.84,
    71.03,
    70.435,
@@ -3183,10 +3182,10 @@
    221.96,
    199.78,
    217.19,
-   203.17
+   203.17,
+   185.18
   ],
   "low": [
-   68.016,
    68.616,
    69.584,
    69.74,
@@ -3941,10 +3940,10 @@
    203.45,
    181.77,
    204.65,
-   190.44
+   190.44,
+   171.53
   ],
   "close": [
-   70.145,
    68.996,
    69.98,
    69.984,
@@ -4699,10 +4698,10 @@
    203.68,
    183.27,
    209.76,
-   196.16
+   196.16,
+   185.01
   ],
   "volume": [
-   1026642,
    869808,
    781846,
    299824,
@@ -5457,7 +5456,8 @@
    12973056,
    23875753,
    17265010,
-   13983803
+   13983803,
+   21505522
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5511,7 +5511,7 @@
   "st": false,
   "in_stats": true,
   "ipo_in_range": false,
-  "n_bars": 4319,
+  "n_bars": 4320,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
@@ -5541,9 +5541,8 @@
  "dip": null,
  "dip_note": "美股暂无抄底事件库",
  "fit_code_version": "b2a57e5666ba0f5e56a2e141ffea53007a0871dab473069dd3ab95df407eb32c",
- "fit_input_hash": "5b7318a0cf8c37aa5a40be224f298491c30101dc1382207aa5783f4acae0b4e3",
+ "fit_input_hash": "1962f36bf64c5d988170dc4cd67543a30f0f045dd8325228f5c9302bbdfdcf7e",
  "history_input_hashes": {
-  "2023-11-21": "aa7d3779320ee8e598288abbf73e4507f5e37cc584ee7259a9d30e4331d38245",
   "2023-11-22": "318e62ce6f5a78fa50829f5d5c293813dab6165172ba3f6d2a9f1ada3c2791bd",
   "2023-11-24": "38c0dbe6ad406a785f16418b2c1e9a19bf1afdea8dced69d3818c08e27d46e48",
   "2023-11-27": "3e53900ba21c15be7789741ad8b38a509ae0655380440b7567b5c519db6852f8",
@@ -6297,10 +6296,11 @@
   "2026-11-19": "22aff14c26af00cf7c1251bf5e31c3f4e00073113f815b51cd7a77474e66407f",
   "2026-11-20": "8a84fcdc570baf4ac27e69d3c01164bf81bfa10632a632ffa61054f7c69c823c",
   "2026-11-23": "202136441a7ceab1db4e28f2f5a3e186aa3b5a4f36d26b4c006e0cbe505e6cba",
-  "2026-11-24": "5b7318a0cf8c37aa5a40be224f298491c30101dc1382207aa5783f4acae0b4e3"
+  "2026-11-24": "5b7318a0cf8c37aa5a40be224f298491c30101dc1382207aa5783f4acae0b4e3",
+  "2026-11-25": "1962f36bf64c5d988170dc4cd67543a30f0f045dd8325228f5c9302bbdfdcf7e"
  },
  "code": "US_LRCX",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-25T22:57:49.944286+00:00"
+ "generated_at": "2026-11-26T04:28:45.357520+00:00"
 }
