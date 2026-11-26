@@ -159,17 +159,16 @@
       }
       // 2) 若有历史回放帧，叠加顶部 FCO 红柱并做连续 as-of 不漂移锁定标记
       if (frames.length) {
-        const eps = root.CPAlertLedger ? root.CPAlertLedger.episodes(frames, lastHistory?.tops || [], '6-12m') : [];
-        const lockedRanges = eps
-          .filter(ep => ep.convergence && ep.convergence.high_confidence)
-          .map(ep => [ep.first_asof, ep.last_asof]);
+        // 锁定只看当日及之前的帧，不把整轮结束后的结论回填到更早的日期。
+        const lockedByAsOf = root.CPAlertLedger ? root.CPAlertLedger.lockedAsOf(frames, lastHistory?.tops || [], '6-12m') : new Map();
         for (const f of frames) {
           if (!f || !f.asof) continue;
           const rawTop = f.fco_intensity != null && Number.isFinite(Number(f.fco_intensity))
             ? Math.max(0, Math.min(1, Number(f.fco_intensity)))
             : (Array.isArray(f.scenarios) && f.scenarios.length ? 0.45 : (f.w && f.w['6-12m'] && f.w['6-12m'][0] ? 0.55 : 0));
           if (rawTop > 0) {
-            const locked = lockedRanges.some(([a, b]) => f.asof >= a && f.asof <= b);
+            const conv = lockedByAsOf.get(f.asof);
+            const locked = !!(conv && conv.high_confidence);
             const cur = fcoByDate.get(f.asof) || { top: 0, bottom: 0, locked: false };
             cur.top = Math.max(cur.top, rawTop);
             cur.locked = cur.locked || locked;

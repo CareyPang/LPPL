@@ -914,3 +914,8 @@ test('changing stock clears old event markers and notifies the new code without 
   assert.deepEqual(view.onCodeChangeCalls, ['601838', '000001']);
   assert.equal(view.elements.get('results').hidden, true);
 });
+
+test('replay bars take the locked state as of each frame, not from the finished episode', () => {
+  assert.match(source, /CPAlertLedger\.lockedAsOf\(frames/);
+  assert.doesNotMatch(source, /lockedRanges/);
+});

@@ -276,3 +276,18 @@ test('calendar coverage notice is limited to bands that extend past coverage', (
   }), true);
   assert.equal(Chart.needsCalendarCoverage([band], '2026-12-31', null), true);
 });
+
+test('switching scale only re-attaches bands and keeps the viewport', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'lppl-chart.js'), 'utf8');
+  const body = src.slice(src.indexOf('function setScale(next)'), src.indexOf('function attachBands()'));
+  assert.match(body, /attachBands\(\)/);
+  assert.doesNotMatch(body, /setData\(/);
+  assert.doesNotMatch(body, /setVisibleLogicalRange|fitContent/);
+});
+
+test('crosshair looks bars up by time instead of scanning every candle', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'lppl-chart.js'), 'utf8');
+  const body = src.slice(src.indexOf('function crosshair(param)'), src.indexOf('function crosshair(param)') + 400);
+  assert.match(body, /candleByTime\.get\(/);
+  assert.doesNotMatch(body, /candles\.find\(/);
+});
