@@ -10,7 +10,9 @@
 | 合格框（box） | `B<0`、`m∈[0.1,0.9]`、`ω∈[6,13]`、`ahead∈[0,90]` 个交易日，边界包含。 |
 | 国际附加变体 | `box_cycles_1_5 = box ∧ ahead>0 ∧ n_osc≥1.5`，使用同一拟合池。 |
 
-常规窗口是唯一经过 dev/cal/test 评价的规则。开发段中，长尺度警报后 120 个交易日内到顶比例为 87%，随机基线为 17%。
+常规窗口是唯一经过 dev/cal/test 评价的规则。开发段（2000–2018，6 指数）中，合格框在长尺度、阈值 0.05 下，报警后 120 个交易日内到顶比例为 32%（各指数平均；按报警日合并为 30%，n=403），循环平移零对照为 22%，中位 p=0.37，未达到稳健标准（`reports/original_standard_dev_v2/alarm_grid_agg.csv` 的 `box__L` 行、`reports/by_year_lppls_v2_top.md`）。命中集中在 2001、2007、2008、2015 四个报警年；剔除 2007 与 2015 后为 8%。
+
+更正（2026-11-26）：本节此前写“到顶比例 87%，随机基线 17%”。87% 是 `reports/original_standard_dev_v2/summary.md` 中长尺度全部规则 × 阈值组合的 A1 中位数，其中靠前的组合另加了阻尼与相对误差条件，不是合格框的结果；17% 是剔除 2007 与 2015 后的随机基线。
 
 ## 长窗口
 
@@ -20,4 +22,4 @@
 
 ## 展示与遗留项
 
-风险只展示为日期范围，不展示精确顶部日期。v1/proto 是遗留研究变体（v1 = early registration；proto = old browser prototype domain；never backtested）；所有生产工作流显式设置 `LPPLS_BOX=v2`。目前指数优化器为 `tcgrid`、个股为 DE，这是已知差异，等待完整重扫后再处理。
+风险只展示为日期范围，不展示精确顶部日期。v1/proto 是遗留研究变体（v1 = early registration；proto = old browser prototype domain；never backtested）；所有生产工作流显式设置 `LPPLS_BOX=v2`。优化器并不统一：dev/cal/test 扫描（`lppls_scan.py`）默认 `tcgrid`；线上指数日更（`index_daily.yml`）与周度历史延续（`history_extend_weekly.yml`）用 `de_trf`（发布记录 `params.optimizer`）；指数历史 `history.json` 的 dev/cal/test 冻结帧来自 `lppls_v2_g3*` 重扫（`export_contract.HISTORY_SCANS`，`g3` = `tcgrid_lm` 与 `de_lbfgsb` 取较小 SSE，窗口 130–500 步长 5），其后的 live 帧由 `history_extend.py` 用 `de_trf`、窗口 130–500 步长 10 计算；`daily.py`/`index_daily.py` 命令行默认 `g3`。三套口径（评测 `tcgrid`、冻结帧 `g3`、线上 `de_trf`）之间的置信度一致性尚未检验。
