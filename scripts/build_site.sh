@@ -9,7 +9,7 @@ mkdir -p "$SITE/lab"
 cp -a "$ROOT/frontend/." "$SITE/"
 rm -rf "$SITE/vendor-src/lwc/node_modules"
 cp -a "$ROOT/web/." "$SITE/lab/"
-rm -rf "$SITE/assets/visual-suite/masters" "$SITE/docs/visual-evidence"
+rm -rf "$SITE/docs/visual-evidence"
 if git -C "$ROOT" show-ref --quiet --verify refs/heads/stock-results; then
   mkdir -p "$SITE/lab/mock/data"
   git -C "$ROOT" archive stock-results stock | tar -x -C "$SITE/lab/mock/data/"
