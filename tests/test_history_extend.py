@@ -45,6 +45,7 @@ def _setup(tmp_path, monkeypatch, live_method):
         f = copy.deepcopy(template)
         f["asof"] = str(dt.date())
         f["close"] = round(float(close[cal.get_loc(dt)]), 2)
+        f.pop("method", None)
         if live_method is not None:
             f["method"] = live_method
         live.append(f)
