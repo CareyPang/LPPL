@@ -22,4 +22,4 @@
 
 ## 展示与遗留项
 
-风险只展示为日期范围，不展示精确顶部日期。v1/proto 是遗留研究变体（v1 = early registration；proto = old browser prototype domain；never backtested）；所有生产工作流显式设置 `LPPLS_BOX=v2`。目前指数优化器为 `tcgrid`、个股为 DE，这是已知差异，等待完整重扫后再处理。
+风险只展示为日期范围，不展示精确顶部日期。v1/proto 是遗留研究变体（v1 = early registration；proto = old browser prototype domain；never backtested）；所有生产工作流显式设置 `LPPLS_BOX=v2`。优化器并不统一：dev/cal/test 扫描（`lppls_scan.py`）默认 `tcgrid`；线上指数日更（`index_daily.yml`）与周度历史延续（`history_extend_weekly.yml`）用 `de_trf`（发布记录 `params.optimizer`）；`daily.py`/`index_daily.py` 命令行默认 `g3`。线上 `de_trf` 与评测用 `tcgrid` 的置信度一致性尚未检验。
