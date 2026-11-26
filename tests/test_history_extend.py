@@ -130,3 +130,17 @@ def test_published_weeks_beyond_a_lagging_feed_are_kept(tmp_path, monkeypatch):
     out = json.loads(he.extend_history("sh000001", data_dir=tmp_path).read_text(encoding="utf-8"))
     live = [f["asof"] for f in out["frames"] if f.get("split") == "live"]
     assert live == [str(d.date()) for d in picked]
+
+
+def test_midweek_lagging_feed_does_not_add_a_week(tmp_path, monkeypatch):
+    """行情停在周中、其后已有发布帧时，不把行情末日当成多出来的一周。"""
+    method = {"optimizer": "g3", "windows": "130-500/5"}
+    picked = _setup(tmp_path, monkeypatch, method)
+    full = he._load_live_ohlc("sh000001")
+    midweek = picked[-3] + pd.tseries.offsets.BDay(2)
+    lagging = full[full["date"] <= midweek].reset_index(drop=True)
+    monkeypatch.setattr(he, "_load_live_ohlc", lambda sym, prefer_git_results=True: lagging)
+    monkeypatch.setattr(he, "_fit_one_date_worker", lambda task: (_ for _ in ()).throw(AssertionError("不应拟合")))
+    out = json.loads(he.extend_history("sh000001", data_dir=tmp_path).read_text(encoding="utf-8"))
+    live = [f["asof"] for f in out["frames"] if f.get("split") == "live"]
+    assert live == [str(d.date()) for d in picked]

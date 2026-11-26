@@ -140,6 +140,14 @@ def extend_history(
     logp = pd.Series(np.log(close.to_numpy(float)), index=cal)
 
     extend_dates = _pick_extend_dates(cal, last_base_asof, step=step)
+    # 行情停在周中、而其后已有发布帧时，行情末日只是临时收盘，不能和后面的周并存
+    last_feed = str(cal[-1].date())
+    n_future = int((cal > pd.Timestamp(last_base_asof)).sum())
+    published_later = any(
+        f.get("split") == "live" and str(f["asof"]) > last_feed for f in (payload.get("frames") or [])
+    )
+    if extend_dates and n_future % step != 0 and published_later:
+        extend_dates = extend_dates[:-1]
     method = {"optimizer": opt, "windows": EXTEND_WINDOWS_LABEL}
     # 口径相同的已发布 live 帧直接复用；口径不同（旧 de_trf / 步长 10）的丢弃重算
     reusable = {
