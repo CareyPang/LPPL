@@ -31,6 +31,7 @@ def test_default_optimizer_is_g3():
 
 
 def _setup(tmp_path, monkeypatch, live_method):
+    monkeypatch.setattr(he._core, "ALLOW_INSIDE", he._core.ALLOW_INSIDE)  # extend_history 会改这个全局开关，测试结束后还原
     src = json.loads(open("web/mock/data/sh000001_history.json", encoding="utf-8").read())
     base = [f for f in src["frames"] if f.get("split") != "live"][-40:]
     template = next(f for f in src["frames"] if f.get("split") == "live")
@@ -84,3 +85,21 @@ def test_live_frames_with_other_method_are_recomputed(tmp_path, monkeypatch, old
     with pytest.raises(Stop):
         he.extend_history("sh000001", data_dir=tmp_path)
     assert seen[0] == (picked[0], he.EXTEND_WINDOWS, "g3")
+
+
+def test_published_live_weeks_survive_when_they_cannot_be_refit(tmp_path, monkeypatch):
+    """切换优化器后，行情凑不满 500 日窗口的旧 live 周保留原帧，不从回测里消失。"""
+    old = {"optimizer": "de_trf", "windows": "130-500/10"}
+    picked = _setup(tmp_path, monkeypatch, old)
+    full = he._load_live_ohlc("sh000001")
+    short = full.iloc[-(he.EXTEND_WINDOWS[-1] - 50):].reset_index(drop=True)
+    monkeypatch.setattr(he, "_load_live_ohlc", lambda sym, prefer_git_results=True: short)
+
+    def boom(_):
+        raise AssertionError("窗口不满的截止日不应拟合")
+
+    monkeypatch.setattr(he, "_fit_one_date_worker", boom)
+    out = json.loads(he.extend_history("sh000001", data_dir=tmp_path).read_text(encoding="utf-8"))
+    live = [f for f in out["frames"] if f.get("split") == "live"]
+    assert [f["asof"] for f in live] == [str(d.date()) for d in picked]
+    assert all(f["method"] == old for f in live)

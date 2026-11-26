@@ -48,6 +48,19 @@ log = logging.getLogger(__name__)
 # 与冻结帧（lppls_v2_g3*，130–500 步长 5）相同的窗口：6–12m 25 个、12–24m 50 个，置信度粒度 1/25、1/50
 EXTEND_WINDOWS: tuple[int, ...] = tuple(range(130, 501, 5))
 EXTEND_WINDOWS_LABEL = "130-500/5"
+# stock-results 的行情只有最近 756 日，早期 live 截止日凑不满 500 日窗口，用仓库内冻结行情补齐前段
+FROZEN_PRICE_VERSION = "v20261104"
+
+
+def _with_frozen_prefix(sym: str, df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        frozen = cache.load(sym, frozen=FROZEN_PRICE_VERSION)
+    except (FileNotFoundError, ValueError) as exc:
+        log.warning("%s: 无冻结行情可补前段：%r", sym, exc)
+        return df
+    cols = ["date", "open", "high", "low", "close", "volume"]
+    older = frozen.loc[frozen["date"] < df["date"].min(), cols]
+    return pd.concat([older, df[cols]], ignore_index=True)
 DEFAULT_OPT = "g3"
 DEFAULT_DATA_DIR = Path("web/mock/data")
 
@@ -74,7 +87,8 @@ def _load_live_ohlc(sym: str, prefer_git_results: bool = True) -> pd.DataFrame:
                         "volume": pd.to_numeric(ph.get("volume", [0.0] * len(dates)), errors="coerce"),
                     }
                 ).dropna(subset=["date", "close"])
-                return df.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+                df = df.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+                return _with_frozen_prefix(sym, df)
         except (subprocess.CalledProcessError, OSError, ValueError, TypeError) as exc:
             log.warning("%s: 读取 stock-results 最新行情失败，改用本地缓存：%r", sym, exc)
     cache.refresh(sym)
@@ -159,11 +173,13 @@ def extend_history(
                 frame = _history_frame(d, r, dt, cal, float(close.loc[dt]), "live", market=market)
                 frame["method"] = dict(method)
                 new_frames[str(dt.date())] = frame
-    live_frames = [
-        reusable.get(str(dt.date())) or new_frames[str(dt.date())]
-        for dt in extend_dates
-        if str(dt.date()) in reusable or str(dt.date()) in new_frames
-    ]
+    # 已发布但本次无法按新口径重算的 live 周保留原帧（method 仍是旧口径），不从回测里删掉
+    old_live = {str(f["asof"]): f for f in (payload.get("frames") or []) if f.get("split") == "live"}
+    by_date = {**old_live, **new_frames, **reusable}
+    kept_old = sorted(k for k in by_date if k not in new_frames and k not in reusable)
+    if kept_old:
+        log.warning("%s: %d 个 live 周无法按 %s 重算，保留原帧：%s…", sym, len(kept_old), method, kept_old[:3])
+    live_frames = [by_date[k] for k in sorted(by_date)]
 
     frames = base_frames + live_frames
 
