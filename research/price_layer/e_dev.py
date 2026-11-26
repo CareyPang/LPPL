@@ -172,8 +172,11 @@ def ft_panel(sym: str, k: float, H: int) -> pd.DataFrame:
         out[i] = res
     f = pd.DataFrame(dict(outcome=out, sig=sig.to_numpy()), index=b.index)
     f["yend"] = pd.Series(list(b.index[H:]) + [pd.NaT] * H, index=b.index)
-    w = pd.read_parquet(WELLS / f"{sym}.parquet").reindex(b.index).ffill(limit=4)
-    f = f.join(w)
+    raw_w = pd.read_parquet(WELLS / f"{sym}.parquet").reindex(b.index)
+    f = f.join(raw_w.ffill(limit=4))
+    # 前向填充会把上一次快照的距离填进“本次快照下方已无势阱”的日期；ppe_ext 用填充前的状态
+    snap = raw_w.well_F.notna()
+    f["no_well_below"] = (snap & raw_w.well_dist_below.isna()).astype(float).where(snap).ffill(limit=4)
     f["sym"] = sym
     f = f[(f.index >= START) & (f.yend <= END) & (f.outcome >= -1)]
     return f.iloc[::STEP]
@@ -229,8 +232,10 @@ PPE_COLS = ["well_F", "well_depth", "well_dist_below", "no_well_below"]
 def prepare_ppe_features(d: pd.DataFrame) -> pd.DataFrame:
     """well_dist_below 缺失表示下方没有势阱，本身是一种状态：记为指示变量，距离填 0，不丢样本。"""
     d = d.dropna(subset=["well_F", "well_depth"]).copy()
-    d["no_well_below"] = d.well_dist_below.isna().astype(float)
-    d["well_dist_below"] = d.well_dist_below.fillna(0.0)
+    if "no_well_below" not in d:
+        d["no_well_below"] = d.well_dist_below.isna().astype(float)
+    d["no_well_below"] = d.no_well_below.fillna(d.well_dist_below.isna().astype(float))
+    d["well_dist_below"] = d.well_dist_below.where(d.no_well_below == 0, 0.0).fillna(0.0)
     return d
 
 

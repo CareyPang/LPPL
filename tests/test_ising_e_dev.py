@@ -110,3 +110,10 @@ def test_bgk_shift_raises_no_touch_probability():
     for k in (1, 2):
         for H in (20, 60):
             assert e_dev.q_none_bm(k + e_dev.BGK / np.sqrt(H)) > e_dev.q_none_bm(k)
+
+
+def test_prepare_ppe_features_ignores_a_distance_carried_over_from_an_older_snapshot():
+    d = pd.DataFrame(dict(well_F=[1.0, 2.0], well_depth=[0.1, 0.2], well_dist_below=[0.05, 0.07], no_well_below=[0.0, 1.0]))
+    out = e_dev.prepare_ppe_features(d)
+    assert out.no_well_below.tolist() == [0.0, 1.0]
+    assert out.well_dist_below.tolist() == [0.05, 0.0]
