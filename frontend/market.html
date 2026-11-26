@@ -2054,6 +2054,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (markChip) {
       breadthMark = markChip.dataset.bsMark;
       $('breadth-state').innerHTML = CPBreadthState.render(breadthStateData, { mark: breadthMark });
+      const current = $('breadth-state').querySelector('[data-bs-mark][aria-pressed="true"]');
+      if (current) current.focus();
       return;
     }
     if (event.target.closest('[data-retry-breadth]')) loadBreadth();

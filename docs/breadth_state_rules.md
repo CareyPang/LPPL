@@ -5,7 +5,7 @@
 
 ## 数据
 
-- 通达信盘后包（沪深京 A 股），2021-08-13 至 2026-11-26 共 1278 个交易日，冻结在 `data/market/breadth_state_seed.csv`；
+- 通达信盘后包（沪深京 A 股），2021-08-13 至 2026-11-26 共 1280 个交易日，冻结在 `data/market/breadth_state_seed.csv`；
   之后由 `research/data/breadth.py` 每日续接。
 - 阈值只看各指标自身的分布确定，没有参考之后的涨跌。
 

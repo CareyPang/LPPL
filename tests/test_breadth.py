@@ -1,4 +1,6 @@
 import datetime as dt
+import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -275,3 +277,14 @@ def test_build_state_splices_seed_before_first_live_row(tmp_path):
     assert state["latest"]["date"] == frame["date"].iloc[-1]
     assert state["latest"]["streak"] == len(expected)
     assert sum(state["counts"].values()) == state["n_days"]
+
+
+def test_state_seed_has_every_shanghai_session():
+    seed = pd.read_csv(breadth.STATE_SEED)
+    dates = list(seed["date"])
+    assert dates == sorted(set(dates))
+    root = Path(breadth.__file__).resolve().parents[2]
+    bars = json.loads((root / "web/mock/data/sh000001_bars.json").read_text(encoding="utf-8"))
+    expected = [day for day in bars["dates"] if dates[0] <= day <= dates[-1]]
+    assert len(expected) > 1000
+    assert [day for day in expected if day not in set(dates)] == []
