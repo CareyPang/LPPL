@@ -638,7 +638,7 @@ def compute_fco_neg_intensity_series(
                 if p_val is not None and np.isfinite(float(p_val)):
                     pbn_pct = float(p_val)
 
-        intensity = 0.0
+        intensity: float | None = 0.0
         factors: dict[str, Any] = {}
         detail: dict[str, Any] | None = None
         dd_frame: float | None = None
@@ -658,14 +658,20 @@ def compute_fco_neg_intensity_series(
                 val_score = float(np.clip((val_raw - 0.60) / 0.30, 0.0, 1.0)) if val_raw is not None else None
 
                 # 只在回落中（回撤 <= -12%）且估值已覆盖时评分；缺估值的早期帧不评分
-                if dd <= PHASE_DRAWDOWN and val_score is not None:
+                if dd <= PHASE_DRAWDOWN and val_score is None:
+                    intensity = None  # 回落中但估值未覆盖：未评分，不是 0 分
+                elif dd <= PHASE_DRAWDOWN:
                     depth_score = float(np.clip((-dd - BOTTOM_DEPTH_START) / BOTTOM_DEPTH_SPAN, 0.0, 1.0))
                     raw_int = (
                         BOTTOM_W_VALUATION * val_score + BOTTOM_W_DEPTH * depth_score
-                        if val_score >= BOTTOM_VALUATION_MIN
+                        if round(val_score, 6) >= BOTTOM_VALUATION_MIN  # 0.69 → 0.2999…，按登记含端点
                         else 0.0
                     )
-                    intensity = round(float(np.clip(raw_int, 0.0, 1.0)), 3)
+                    raw_int = round(float(np.clip(raw_int, 0.0, 1.0)), 6)
+                    intensity = round(raw_int, 3)
+                    if raw_int < GREEN_BAR_MIN <= intensity:
+                        # 59.96 分不能因四舍五入变成 60 分而过门槛
+                        intensity = float(np.floor(raw_int * 1000) / 1000)
                     detail = {
                         "score": round(intensity * 100, 1),
                         "version": BOTTOM_SCORE_VERSION,
@@ -683,7 +689,8 @@ def compute_fco_neg_intensity_series(
             closes.append(closes[-1] if closes else 0.0)
 
         # 独立底部事件：底分达到绿柱门槛，且距上次独立事件 >= 12 周
-        first_bottom_flag = bool(intensity >= GREEN_BAR_MIN and (idx - last_bottom_idx) >= 12)
+        scored = intensity if intensity is not None else 0.0
+        first_bottom_flag = bool(scored >= GREEN_BAR_MIN and (idx - last_bottom_idx) >= 12)
         if first_bottom_flag:
             last_bottom_idx = idx
 
@@ -692,9 +699,9 @@ def compute_fco_neg_intensity_series(
         new_frame["bottom_first_alert_flag"] = first_bottom_flag
         new_frame["dd_52w"] = round(dd_frame, 3) if dd_frame is not None else None
         new_frame["phase"] = phase_of(has_top, dd_frame)
-        if intensity >= GREEN_BAR_MIN:
+        if scored >= GREEN_BAR_MIN:
             new_frame["bottom_bar"] = "green"
-        elif intensity > 0:
+        elif scored > 0:
             new_frame["bottom_bar"] = "weak"
         else:
             new_frame.pop("bottom_bar", None)

@@ -383,7 +383,7 @@ def test_phase_and_bottom_score_v2():
     # 估值未覆盖：不评分
     none = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
     assert none[28]["phase"] == "pullback" and "bottom_detail" not in none[28]
-    assert none[28]["fco_neg_intensity"] == 0.0
+    assert none[28]["fco_neg_intensity"] is None
 
     # 有顶部区间时仍归顶部侧，不给底分
     frames[-1]["w"] = {"6-12m": ["2020-09-01", "2020-10-01"]}
@@ -425,3 +425,33 @@ def test_phase_rule_summary_counts_only_requested_split():
     long_dd = warm + [frame(100)] + [frame(80 - 0.01 * k) for k in range(130)]
     assert summarize_phase_rule(long_dd)["n_episodes"] == 1
     assert summarize_phase_rule([])["n_episodes"] == 0
+
+
+def test_bottom_score_v2_threshold_edges_and_missing_valuation():
+    """门槛按未四舍五入的分数判定；估值 0.69 含端点；回落中缺估值是未评分而不是 0 分。"""
+    from research.eval.bottom_dashboard import compute_fco_neg_intensity_series
+
+    def run(last_ratio, val):
+        closes = [3000 + i * 50 for i in range(25)] + [4200 * last_ratio]
+        dates = pd.date_range("2020-01-03", periods=len(closes), freq="W-FRI")
+        frames = [
+            {"asof": str(d.date()), "close": float(c), "w": {"6-12m": None}}
+            for d, c in zip(dates, closes, strict=True)
+        ]
+        return compute_fco_neg_intensity_series(frames, valuation_df=val)[-1]
+
+    def val(pct):
+        return pd.DataFrame({"erp_pct": [pct], "pbn_pct": [pct]}, index=pd.to_datetime(["2019-01-01"]))
+
+    # 估值满分 + 回撤 19.98%：原始分 0.6，仍是 60；估值 0.8998 时原始分 59.96，不能进位成 60
+    near = run(0.85, val(0.8998))
+    assert near["fco_neg_intensity"] == 0.599 and near["bottom_bar"] == "weak"
+    assert near["bottom_first_alert_flag"] is False and near["bottom_detail"]["score"] == 59.9
+
+    # (0.69 − 0.60) / 0.30 的浮点值略小于 0.3，按登记应计分：0.6 × 0.3 = 18 分
+    edge = run(0.85, val(0.69))
+    assert edge["fco_neg_intensity"] == 0.18 and edge["bottom_bar"] == "weak"
+
+    missing = run(0.85, pd.DataFrame({"erp_pct": [], "pbn_pct": []}, index=pd.to_datetime([])))
+    assert missing["phase"] == "pullback" and missing["fco_neg_intensity"] is None
+    assert "bottom_detail" not in missing and "bottom_bar" not in missing
