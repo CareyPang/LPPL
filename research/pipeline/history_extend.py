@@ -175,7 +175,9 @@ def extend_history(
                 new_frames[str(dt.date())] = frame
     # 已发布但本次无法按新口径重算的 live 周保留原帧（method 仍是旧口径），不从回测里删掉
     old_live = {str(f["asof"]): f for f in (payload.get("frames") or []) if f.get("split") == "live"}
-    by_date = {**old_live, **new_frames, **reusable}
+    # 只留本次周度采样日：被后续周度日取代的临时收盘帧不保留，否则回测会多数出一周
+    wanted = {str(dt.date()) for dt in extend_dates}
+    by_date = {k: v for k, v in {**old_live, **new_frames, **reusable}.items() if k in wanted}
     kept_old = sorted(k for k in by_date if k not in new_frames and k not in reusable)
     if kept_old:
         log.warning("%s: %d 个 live 周无法按 %s 重算，保留原帧：%s…", sym, len(kept_old), method, kept_old[:3])

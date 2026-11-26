@@ -103,3 +103,18 @@ def test_published_live_weeks_survive_when_they_cannot_be_refit(tmp_path, monkey
     live = [f for f in out["frames"] if f.get("split") == "live"]
     assert [f["asof"] for f in live] == [str(d.date()) for d in picked]
     assert all(f["method"] == old for f in live)
+
+
+def test_superseded_interim_close_is_dropped(tmp_path, monkeypatch):
+    """上一轮的临时收盘帧（不在周度采样日上）不留在序列里。"""
+    method = {"optimizer": "g3", "windows": "130-500/5"}
+    picked = _setup(tmp_path, monkeypatch, method)
+    path = tmp_path / "sh000001_history.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    interim = copy.deepcopy(payload["frames"][-1])
+    interim["asof"] = str((picked[0] - pd.tseries.offsets.BDay(1)).date())
+    payload["frames"].insert(len(payload["frames"]) - len(picked), interim)
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    out = json.loads(he.extend_history("sh000001", data_dir=tmp_path).read_text(encoding="utf-8"))
+    live = [f["asof"] for f in out["frames"] if f.get("split") == "live"]
+    assert live == [str(d.date()) for d in picked]
