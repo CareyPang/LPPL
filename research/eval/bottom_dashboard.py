@@ -572,6 +572,19 @@ def load_valuation_history(path: Path = DEFAULT_VALUATION_HISTORY_PATH) -> pd.Da
         return None
 
 
+PHASE_DRAWDOWN = -0.12
+
+
+def phase_of(has_top: bool, dd_52w: float | None) -> str | None:
+    """页面显示哪一侧：有 6–12 月顶部区间或距 52 周高点不足 12% 看顶部侧，否则为回落中、看底部侧。
+
+    12% 与底分起算门槛一致。这是事后确认，不是顶部预测。
+    """
+    if dd_52w is None:
+        return None
+    return "top" if has_top or dd_52w > PHASE_DRAWDOWN else "pullback"
+
+
 def compute_fco_neg_intensity_series(
     frames: list[dict[str, Any]],
     valuation_df: pd.DataFrame | None = None,
@@ -617,6 +630,8 @@ def compute_fco_neg_intensity_series(
         intensity = 0.0
         factors: dict[str, Any] = {}
         stabilize_ok = False
+        detail: dict[str, Any] | None = None
+        dd_frame: float | None = None
 
         if c is not None and np.isfinite(float(c)) and float(c) > 0:
             cur_c = float(c)
@@ -625,6 +640,7 @@ def compute_fco_neg_intensity_series(
                 win52 = closes[-52:]
                 peak52 = max(win52)
                 dd = cur_c / peak52 - 1.0 if peak52 > 0 else 0.0
+                dd_frame = dd
 
                 # 1) 估值安全边际（ERP 分位 + 破净率分位）
                 val_scores = [x for x in (erp_pct, pbn_pct) if x is not None]
@@ -672,6 +688,17 @@ def compute_fco_neg_intensity_series(
                             + 0.20 * right_score
                         )
                     intensity = round(float(np.clip(raw_int, 0.0, 1.0)), 3)
+                    # 未截断的分数与分项：低于 0.20 时绿柱仍归零，但页面要能照实显示
+                    detail = {
+                        "score": round(intensity * 100, 1),
+                        "dd_52w": round(dd, 3),
+                        "erp_pct": round(erp_pct, 3) if erp_pct is not None else None,
+                        "pbn_pct": round(pbn_pct, 3) if pbn_pct is not None else None,
+                        "valuation": round(val_score, 2) if val_score is not None else None,
+                        "clearing": round(clearing_score, 2),
+                        "stabilize": round(stabilize_score, 2),
+                        "right_side": round(right_score, 2),
+                    }
                     if intensity < 0.20:
                         intensity = 0.0
                     else:
@@ -684,6 +711,9 @@ def compute_fco_neg_intensity_series(
                             "stabilize": round(stabilize_score, 2),
                             "right_side": round(right_score, 2),
                         }
+            elif len(closes) >= 20:
+                peak52 = max(closes[-52:])
+                dd_frame = cur_c / peak52 - 1.0 if peak52 > 0 else 0.0
         else:
             closes.append(closes[-1] if closes else 0.0)
 
@@ -695,6 +725,12 @@ def compute_fco_neg_intensity_series(
         new_frame = dict(frame)
         new_frame["fco_neg_intensity"] = intensity
         new_frame["bottom_first_alert_flag"] = first_bottom_flag
+        new_frame["dd_52w"] = round(dd_frame, 3) if dd_frame is not None else None
+        new_frame["phase"] = phase_of(has_top, dd_frame)
+        if detail:
+            new_frame["bottom_detail"] = detail
+        else:
+            new_frame.pop("bottom_detail", None)
         if factors:
             new_frame["bottom_factors"] = factors
         elif "bottom_factors" in new_frame:

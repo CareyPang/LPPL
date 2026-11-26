@@ -336,3 +336,36 @@ def test_summarize_bottom_backtest_computes_win_rate_and_baseline():
 
 
 
+
+
+def test_phase_and_bottom_detail_published_without_changing_green_bar():
+    """阶段判定与未截断底分：绿柱和事件标记不变，低于 20 分时分项仍照实输出。"""
+    from research.eval.bottom_dashboard import compute_fco_neg_intensity_series, phase_of
+
+    assert phase_of(False, -0.05) == "top"
+    assert phase_of(False, -0.12) == "pullback"
+    assert phase_of(True, -0.30) == "top"
+    assert phase_of(False, None) is None
+
+    # 涨到高点后连续下跌、未止跌：回撤过 12% 但底分不到 20
+    closes = [3000 + i * 50 for i in range(25)] + [4200 * (0.985**i) for i in range(1, 11)]
+    dates = pd.date_range("2020-01-03", periods=len(closes), freq="W-FRI")
+    frames = [
+        {"asof": str(d.date()), "close": float(c), "w": {"6-12m": None}}
+        for d, c in zip(dates, closes, strict=True)
+    ]
+    out = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
+    assert out[24]["phase"] == "top" and out[24]["dd_52w"] == 0.0
+    assert "bottom_detail" not in out[24]
+    last = out[-1]
+    assert last["dd_52w"] <= -0.12 and last["phase"] == "pullback"
+    assert last["fco_neg_intensity"] == 0.0 and "bottom_factors" not in last
+    detail = last["bottom_detail"]
+    assert 0 < detail["score"] < 20
+    assert detail["clearing"] > 0 and detail["valuation"] is None
+
+    # 有顶部区间时仍归顶部侧，不给底分
+    frames[-1]["w"] = {"6-12m": ["2020-09-01", "2020-10-01"]}
+    out_top = compute_fco_neg_intensity_series(frames, valuation_df=pd.DataFrame())
+    assert out_top[-1]["phase"] == "top" and "bottom_detail" not in out_top[-1]
+    assert out_top[-1]["dd_52w"] == last["dd_52w"]
