@@ -175,7 +175,7 @@ def test_current_and_history_representative_uses_adjusted_sse_and_keeps_index(
     monkeypatch.setattr(export_contract, "_bubble", lambda *_args: {})
     monkeypatch.setattr(export_contract, "_bottom_objects", lambda *_args: {})
     monkeypatch.setattr(export_contract, "_combo", lambda *_args: {})
-    monkeypatch.setattr(export_contract, "_tc_distribution", lambda *_args: {})
+    monkeypatch.setattr(export_contract, "_tc_distribution", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(export_contract, "_negative", lambda *_args: {})
     monkeypatch.setattr(export_contract, "_price_band", lambda *_args: {})
     monkeypatch.setattr(export_contract, "_price_history", lambda *_args: {})
@@ -327,3 +327,100 @@ def test_null_fpr_reads_calibration_table(tmp_path, monkeypatch):
     monkeypatch.setattr(export_contract, "NULL_FPR_PATH", tmp_path / "missing.csv")
     monkeypatch.setattr(export_contract, "_NULL_FPR_CACHE", {})
     assert export_contract._null_fpr("6-12m") is None
+
+
+def test_scale_evidence_detail_matches_dev_band_report():
+    """徽章引用的分档数字必须等于 §17.14 报告（box、阈值 0.05、H=120 的跨指数中位数），且两档都不稳健。"""
+    import pandas as pd
+
+    from research.eval.export_contract import HISTORY_SCALES, SCALE_EVIDENCE_DETAIL
+
+    bands = pd.read_csv("reports/scale_sens_dev/bands.csv")
+    names = {"6-12m": "B4_6-12m", "12-24m": "B5_12-24m"}
+    assert set(SCALE_EVIDENCE_DETAIL) == set(HISTORY_SCALES)
+    for scale, detail in SCALE_EVIDENCE_DETAIL.items():
+        rows = bands[(bands.rule == "box") & (bands.band == names[scale]) & (bands.thr == 0.05) & (bands.H == 120)]
+        assert len(rows) == detail["n_indexes"] == 6
+        assert round(float(rows.A1.median()), 3) == detail["a1"]
+        assert round(float(rows.A1_rand.median()), 3) == detail["a1_null"]
+        assert int((rows.p_A1 <= 0.05).sum()) == detail["n_significant"]
+        assert detail["robust"] is False and detail["verdict"] == "not_significant"
+
+
+def _contract_inputs():
+    import numpy as np
+    import pandas as pd
+
+    from research.features.lppls_rules import _derived, rules
+
+    cal = pd.bdate_range("2018-01-01", periods=900)
+    date = cal[-1]
+    rng = np.random.default_rng(1)
+    close = 3000 * np.exp(np.cumsum(rng.normal(0.0005, 0.01, len(cal))))
+    ohlc = pd.DataFrame({"date": cal, "open": close, "high": close, "low": close, "close": close, "volume": 1.0})
+    # 6–12 月档 25 个窗口；k 个落在形态框内（B<0、m 0.5、ω 8、t_c 在 20 日后），其余 ω=30 出框
+    def frame(k612: int, k13: int):
+        rows = []
+        for j, n in enumerate(range(130, 251, 5)):
+            rows.append((n, 0.5, 8.0 if j < k612 else 30.0, 20.0))
+        for n in range(255, 501, 5):
+            rows.append((n, 0.5, 30.0, 20.0))
+        for j, n in enumerate((30, 40, 50, 60)):
+            rows.append((n, 0.5, 8.0 if j < k13 else 30.0, 20.0))
+        d = _fits_frame(rows).assign(date=date)
+        d = _derived(d)
+        return d, rules(d)
+    return cal, date, ohlc, frame
+
+
+def test_index_signal_status_uses_box_threshold_on_main_scales(monkeypatch):
+    """指数：每档状态 = box 置信度 ≥ 0.05；顶层只看 6–12 月、12–24 月；1 个 box 窗口（1/25=0.04）不算信号。"""
+    from research.eval import export_contract as ec
+
+    for name in ("_bottom_objects", "_negative", "_price_band"):
+        monkeypatch.setattr(ec, name, lambda *_a, **_k: {})
+    monkeypatch.setattr(ec, "_cooling_state", lambda *_a, **_k: {})
+    cal, date, ohlc, frame = _contract_inputs()
+
+    def top(k612, k13, **kw):
+        d, r = frame(k612, k13)
+        assert int(r.box[d.n.between(130, 250)].sum()) == k612
+        return ec.build_record("sh000001", str(date.date()), d, r, cal, ohlc, **kw)
+
+    one = top(1, 4)
+    assert one["model_version"] == ec.MODEL_VERSION == "prereg_v1.7_v2.3"
+    t = one["top"]
+    assert t["indicators"]["6-12m"]["confidence"]["box"] == 0.04
+    assert t["indicators"]["6-12m"]["signal_status"] == "no_qualified_fit"
+    assert t["indicators"]["6-12m"]["rule"] == "box" and t["indicators"]["6-12m"]["threshold"] == 0.05
+    assert t["indicators"]["1-3m"]["signal_status"] == "signal"  # 1–3 月档自己有信号……
+    assert t["signal_status"] == "no_qualified_fit"  # ……但不驱动顶层
+    assert t["signal_rule"] == {"rule": "box", "threshold": 0.05, "scales": ["6-12m", "12-24m"]}
+    assert "tc" not in t["bubble"]
+    assert t["tc_distribution"]["6-12m"] == {**t["tc_distribution"]["6-12m"], "n": 1, "rule": "box"}
+    assert "tc_distribution_standard" in t
+    assert t["combo"]["set"] == "box" and t["combo"]["headline"] == "p1" and t["combo"]["evidence"] == "none"
+    assert {"p0.1", "p1", "p10"} <= set(t["combo"]) and len(t["combo"]["scales"]) >= 3
+    assert t["combo"]["dev_eval"]["a1"] == 0.246 and t["combo"]["dev_eval"]["robust"] is False
+
+    two = top(2, 0)["top"]
+    assert two["indicators"]["6-12m"]["confidence"]["box"] == 0.08
+    assert two["indicators"]["6-12m"]["signal_status"] == "signal" and two["signal_status"] == "signal"
+
+    stock = top(2, 0, signal_rule="standard")
+    assert stock["model_version"] == ec.STOCK_MODEL_VERSION == "prereg_v1.7_v2.2"
+    assert stock["top"]["indicators"]["6-12m"]["rule"] == "standard"
+    assert stock["top"]["combo"]["set"] == "standard" and "tc_distribution_standard" not in stock["top"]
+
+
+def test_combo_dev_eval_matches_report():
+    import pandas as pd
+
+    from research.eval.export_contract import COMBO_DEV_EVAL
+
+    b = pd.read_csv("reports/scale_sens_dev/bands.csv")
+    rows = b[(b.rule == "box") & (b.band == "combo_p1.0") & (b.thr == 0.05) & (b.H == 120)]
+    assert len(rows) == COMBO_DEV_EVAL["n_indexes"]
+    assert round(float(rows.A1.median()), 3) == COMBO_DEV_EVAL["a1"]
+    assert round(float(rows.A1_rand.median()), 3) == COMBO_DEV_EVAL["a1_null"]
+    assert int((rows.p_A1 <= 0.05).sum()) == COMBO_DEV_EVAL["n_significant"]

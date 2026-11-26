@@ -7,7 +7,7 @@
   const META = {
     passed:      { label: '样本外通过', tone: 'ok',   tip: '该指标在样本外测试段通过了预设检验标准。' },
     oos_passed:  { label: '样本外通过', tone: 'ok',   tip: '该指标在样本外测试段通过了预设检验标准。' },
-    dev:         { label: '开发段验证', tone: 'info', tip: '开发段通过，仍处于样本外持续观察阶段。' },
+    dev:         { label: '开发段未显著', tone: 'warn', tip: '开发段已评测：报警后见顶的比例未显著高于零对照，数值保留供观察。' },
     dev_only:    { label: '开发段观测', tone: 'info', tip: '仅在开发段完成回测，独立测试段暂无结论。' },
     candidate:   { label: '研究候选',   tone: 'info', tip: '按统一 LPPLS 拟合口径生成的个股研究观测值。' },
     descriptive: { label: '描述统计',   tone: 'mute', tip: '基于历史同类样本的经验分位统计，供结构参照。' },
@@ -95,9 +95,20 @@
     });
   }
 
+  /* 契约 scale_evidence_detail[scale] → 一句话检验细节；字段缺失时返回空串（不编造数字）。 */
+  function detailText(d) {
+    if (!d || !Number.isFinite(Number(d.a1)) || !Number.isFinite(Number(d.a1_null))) return '';
+    const pct = function (v) { return Math.round(Number(d[v]) * 1000) / 10 + '%'; };
+    const sig = Number.isFinite(Number(d.n_significant)) && Number.isFinite(Number(d.n_indexes))
+      ? '，' + d.n_indexes + ' 个指数中 ' + d.n_significant + ' 个显著' : '';
+    return '开发段报警后 ' + (d.horizon_days || 120) + ' 日内见顶 ' + pct('a1') + '，零对照 ' + pct('a1_null') + sig +
+      (d.robust ? '。' : '，未达稳健标准。');
+  }
+
   G.CPEvidenceBadge = {
     norm: norm,
     meta: function (lvl) { return META[norm(lvl)] || META.none; },
+    detailText: detailText,
     html: renderHtml,
     bind: bindAuto,
   };

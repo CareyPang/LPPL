@@ -626,7 +626,7 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
   const evb = (c) => '<small class="evb" style="color:var(--ink-3)">［' + E(EV(c).label) + '］</small>';
   const SCALES = ['2-4w', '1-3m', '3-6m', '6-12m', '12-24m', '2-6y'];
   const SCN = { '2-4w': '2–4 周', '1-3m': '1–3 月', '3-6m': '3–6 月', '6-12m': '6–12 月', '12-24m': '12–24 月', '2-6y': '2–6 年' };
-  const SIG = { signal: '有合格 LPPLS 拟合：顶部结构', no_qualified_fit: '主尺度没有合格拟合', t1_not_qualified: '泡沫起点未达标准', not_computed: '未计算' };
+  const SIG = { signal: '有合格 LPPLS 拟合：顶部结构', no_qualified_fit: '主尺度合格拟合占比不足 5%', t1_not_qualified: '泡沫起点未达标准', not_computed: '未计算' };
   const REG = { HIGH_RISK: '高风险', LOW_RISK: '低风险', NEUTRAL: '中性', BULLISH: '上行', BEARISH: '下行' };
   let selectedScale = ScaleBar.DEFAULT_SCALE, currentScaleStates = [];
   function scaleStates(R) {
@@ -1524,16 +1524,18 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
 
   function renderExpert(R) {
     const t = R.top, I = t.indicators || {}, cb = t.combo || {};
-    const cbTxt = EV(cb.evidence).show ? ['p0.1', 'p1', 'p10'].map((k) => k + ' ' + U.pct(cb[k], 1)).join(' · ') : '无证据';
-    $('p-expert').innerHTML = `<p class="tp-d">六尺度为 FCO 公开口径（标准过滤集）。Combo（幂平均）：${E(cbTxt)} ${evb(cb.evidence)}。${E(cb.note || '')}</p>` +
-      `<details class="pn"><summary class="blk-k">拟合明细</summary><div class="scroll-x"><table><thead><tr><th>尺度</th><th>窗口数</th><th title="${E(RuleLabels.RULES.standard.short)}" aria-label="合格拟合数。${E(RuleLabels.RULES.standard.short)}">合格拟合数</th><th>最佳起点 t1</th><th>t1 合格</th><th>状态</th><th>证据</th></tr></thead><tbody>` +
+    const boxRule = (t.signal_rule || {}).rule === 'box';
+    const cbKeys = cb.headline ? [cb.headline] : ['p0.1', 'p1', 'p10'];
+    const cbTxt = EV(cb.evidence).show ? cbKeys.map((k) => k + ' ' + U.pct(cb[k], 1)).join(' · ') : '无证据';
+    $('p-expert').innerHTML = `<p class="tp-d">${boxRule ? '各档状态按形态框置信度 ≥ ' + U.pct(t.signal_rule.threshold, 0) + ' 判定；总状态只看 6–12 月与 12–24 月两档。' : '六尺度为 FCO 公开口径（标准过滤集）。'}Combo（幂平均${boxRule ? '，形态框，p=1' : ''}）：${E(cbTxt)} ${evb(cb.evidence)}。${E(cb.note || '')}</p>` +
+      `<details class="pn"><summary class="blk-k">拟合明细</summary><div class="scroll-x"><table><thead><tr><th>尺度</th><th>窗口数</th><th title="${E(RuleLabels.RULES[boxRule ? 'box' : 'standard'].short)}" aria-label="合格拟合数。${E(RuleLabels.RULES[boxRule ? 'box' : 'standard'].short)}">合格拟合数</th><th>最佳起点 t1</th><th>t1 合格</th><th>状态</th><th>证据</th></tr></thead><tbody>` +
       SCALES.map((k) => {
         const x = I[k] || {}, confidence = t.lppls_confidence || {};
         const evidence = confidence.scale_evidence?.[k] || x.evidence || confidence.evidence || t.evidence || R.evidence;
         const show = EV(evidence).show;
-        return `<tr><td>${E(SCN[k])}</td><td>${show ? x.n_windows ?? '—' : '—'}</td><td>${show ? x.n_qualified_standard ?? '—' : '—'}</td><td>${E(show ? x.best_t1 || '—' : '—')}</td><td>${show ? x.t1_qualified ? '是' : '否' : '—'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(evidence).label)}</td></tr>`;
+        return `<tr><td>${E(SCN[k])}</td><td>${show ? x.n_windows ?? '—' : '—'}</td><td>${show ? (boxRule ? x.n_qualified_box : x.n_qualified_standard) ?? '—' : '—'}</td><td>${E(show ? x.best_t1 || '—' : '—')}</td><td>${show ? x.t1_qualified ? '是' : '否' : '—'}</td><td>${E(SIG[x.signal_status] || x.signal_status || '—')}</td><td>${E(EV(evidence).label)}${evidence === 'dev' && window.CPEvidenceBadge ? ' ' + window.CPEvidenceBadge.html('dev', { detail: window.CPEvidenceBadge.detailText(confidence.scale_evidence_detail?.[k]) }) : ''}</td></tr>`;
       }).join('') +
-      `</tbody></table></div><p class="tp-d">${E(RuleLabels.renderCaption(['box', 'standard']))}</p></details>`;
+      `</tbody></table></div><p class="tp-d">${E(RuleLabels.renderCaption(boxRule ? ['box'] : ['box', 'standard']))}</p></details>`;
   }
 
   /* ================= 行情带（内置快照最后两日） ================= */

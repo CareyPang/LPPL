@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       opt:
-        description: "LPPLS optimizer (default: de_trf, fallback: g3/de/tcgrid)"
+        description: "LPPLS optimizer (default: g3，与冻结帧同口径；de_trf 未通过对 tcgrid 的一致性审计)"
         required: false
-        default: "de_trf"
+        default: "g3"
         type: choice
         options:
           - de_trf
@@ -105,7 +105,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
     permissions:
       contents: read
     strategy:
@@ -126,7 +126,7 @@ jobs:
         env:
           ASOF: ${{ needs.plan.outputs.asof }}
           SYM: ${{ matrix.sym }}
-          LPPLS_DAILY_OPT: ${{ inputs.opt || 'de_trf' }}
+          LPPLS_DAILY_OPT: ${{ inputs.opt || 'g3' }}
         shell: bash
         run: |
           set -euo pipefail

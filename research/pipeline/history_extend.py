@@ -3,8 +3,9 @@
 设计原则：
 1. 原 dev / cal / test 冻结帧完整保留，不改写原预登记三段验证历史；
 2. 仅对最后冻结日之后的每 5 个交易日（周度截止日，含最新交易日）运行 LPPLS 扫描
-   （窗长 130–500，与 HISTORY_SCALES 6–12m / 12–24m 同口径，默认使用 de_trf 热启动），
-   并标记 split="live"；
+   （窗长 130–500 步长 5、优化器 g3，与冻结帧 HISTORY_SCANS 同口径；优化器一致性审计见
+   reports/optimizer_parity/v1：g3 对预登记评测的 tcgrid 过门，de_trf 未过），
+   并标记 split="live"、写入 method；已有且 method 相同的 live 帧直接复用，只补算新截止日；
 3. 合并后统一重算：
    - 严格 PIT 事后确认顶 tops（仅当 i + 126 <= len - 1 时确认）；
    - first_alert_flag（每轮 6–12m 顶部聚类首次预警日）；
@@ -12,12 +13,13 @@
    - 顶部事件级回测 episode_summary 与底部事件级回测 bottom_summary。
 
 用法：
-  LPPLS_BOX=v2 python -m research.pipeline.history_extend sh000001 [--opt de_trf] [--step 5]
+  LPPLS_BOX=v2 python -m research.pipeline.history_extend sh000001 [--opt g3] [--step 5]
 """
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
@@ -41,8 +43,25 @@ from ..lppls import core as _core
 from ..price_layer.drawdown_table import qualified_turns
 from .daily import fit_asof
 
-# 与 6–12m (125–250) 和 12–24m (250–500) 完全对应的周度补扫窗口（步长 10 日，共 38 窗）
-EXTEND_WINDOWS: tuple[int, ...] = tuple(range(130, 501, 10))
+log = logging.getLogger(__name__)
+
+# 与冻结帧（lppls_v2_g3*，130–500 步长 5）相同的窗口：6–12m 25 个、12–24m 50 个，置信度粒度 1/25、1/50
+EXTEND_WINDOWS: tuple[int, ...] = tuple(range(130, 501, 5))
+EXTEND_WINDOWS_LABEL = "130-500/5"
+# stock-results 的行情只有最近 756 日，早期 live 截止日凑不满 500 日窗口，用仓库内冻结行情补齐前段
+FROZEN_PRICE_VERSION = "v20261104"
+
+
+def _with_frozen_prefix(sym: str, df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        frozen = cache.load(sym, frozen=FROZEN_PRICE_VERSION)
+    except (FileNotFoundError, ValueError) as exc:
+        log.warning("%s: 无冻结行情可补前段：%r", sym, exc)
+        return df
+    cols = ["date", "open", "high", "low", "close", "volume"]
+    older = frozen.loc[frozen["date"] < df["date"].min(), cols]
+    return pd.concat([older, df[cols]], ignore_index=True)
+DEFAULT_OPT = "g3"
 DEFAULT_DATA_DIR = Path("web/mock/data")
 
 
@@ -68,9 +87,10 @@ def _load_live_ohlc(sym: str, prefer_git_results: bool = True) -> pd.DataFrame:
                         "volume": pd.to_numeric(ph.get("volume", [0.0] * len(dates)), errors="coerce"),
                     }
                 ).dropna(subset=["date", "close"])
-                return df.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
-        except Exception:
-            pass
+                df = df.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+                return _with_frozen_prefix(sym, df)
+        except (subprocess.CalledProcessError, OSError, ValueError, TypeError) as exc:
+            log.warning("%s: 读取 stock-results 最新行情失败，改用本地缓存：%r", sym, exc)
     cache.refresh(sym)
     df = cache.load(sym, auto_refresh=False)
     df = df.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
@@ -98,7 +118,7 @@ def extend_history(
     sym: str,
     *,
     data_dir: Path = DEFAULT_DATA_DIR,
-    opt: str = "de_trf",
+    opt: str = DEFAULT_OPT,
     step: int = 5,
     workers: int = 1,
     market: str = "cn",
@@ -120,13 +140,29 @@ def extend_history(
     logp = pd.Series(np.log(close.to_numpy(float)), index=cal)
 
     extend_dates = _pick_extend_dates(cal, last_base_asof, step=step)
-    live_frames: list[dict] = []
-    if extend_dates:
+    # 行情停在周中、而其后已有发布帧时，行情末日只是临时收盘，不能和后面的周并存
+    last_feed = str(cal[-1].date())
+    n_future = int((cal > pd.Timestamp(last_base_asof)).sum())
+    published_later = any(
+        f.get("split") == "live" and str(f["asof"]) > last_feed for f in (payload.get("frames") or [])
+    )
+    if extend_dates and n_future % step != 0 and published_later:
+        extend_dates = extend_dates[:-1]
+    method = {"optimizer": opt, "windows": EXTEND_WINDOWS_LABEL}
+    # 口径相同的已发布 live 帧直接复用；口径不同（旧 de_trf / 步长 10）的丢弃重算
+    reusable = {
+        str(f["asof"]): f
+        for f in (payload.get("frames") or [])
+        if f.get("split") == "live" and f.get("method") == method
+    }
+    new_frames: dict[str, dict] = {}
+    todo = [dt for dt in extend_dates if str(dt.date()) not in reusable]
+    if todo:
         tasks = []
-        for dt in extend_dates:
+        for dt in todo:
             sub_logp = logp[logp.index <= dt]
             ws = tuple(n for n in EXTEND_WINDOWS if n <= len(sub_logp))
-            if ws:
+            if ws == EXTEND_WINDOWS:  # 历史不足 500 日的截止日不出帧，避免小窗口集被标成完整口径
                 tasks.append((sub_logp, dt, ws, opt))
         scan_parts: list[pd.DataFrame] = []
         if tasks:
@@ -139,11 +175,23 @@ def extend_history(
         if scan_parts:
             d = _derived(pd.concat(scan_parts, ignore_index=True))
             r = rules(d)
-            for dt in extend_dates:
+            for dt in todo:
                 if not (d["date"] == dt).any():
                     continue
                 frame = _history_frame(d, r, dt, cal, float(close.loc[dt]), "live", market=market)
-                live_frames.append(frame)
+                frame["method"] = dict(method)
+                new_frames[str(dt.date())] = frame
+    # 已发布但本次无法按新口径重算的 live 周保留原帧（method 仍是旧口径），不从回测里删掉
+    old_live = {str(f["asof"]): f for f in (payload.get("frames") or []) if f.get("split") == "live"}
+    # 行情里有、但不在本次周度采样日上的旧帧是被取代的临时收盘帧，丢弃（否则回测多数出一周）；
+    # 行情里没有的日期（行情滞后或缺段）无从判断，原帧保留
+    wanted = {str(dt.date()) for dt in extend_dates}
+    known = {str(dt.date()) for dt in cal}
+    by_date = {k: v for k, v in {**old_live, **new_frames, **reusable}.items() if k in wanted or k not in known}
+    kept_old = sorted(k for k in by_date if k not in new_frames and k not in reusable)
+    if kept_old:
+        log.warning("%s: %d 个 live 周无法按 %s 重算，保留原帧：%s…", sym, len(kept_old), method, kept_old[:3])
+    live_frames = [by_date[k] for k in sorted(by_date)]
 
     frames = base_frames + live_frames
 
@@ -190,7 +238,7 @@ def extend_history(
 def main() -> None:
     ap = argparse.ArgumentParser(description="补扫延续指数 history.json 至最新交易日")
     ap.add_argument("sym", help="指数代码，如 sh000001")
-    ap.add_argument("--opt", default="de_trf", choices=sorted(OPTIMIZER_NAMES))
+    ap.add_argument("--opt", default=DEFAULT_OPT, choices=sorted(OPTIMIZER_NAMES))
     ap.add_argument("--step", type=int, default=5, help="补扫步长（交易日），默认 5（每周）")
     ap.add_argument("--workers", type=int, default=max(1, min(os.cpu_count() or 2, 8)), help="并行进程数")
     ap.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)

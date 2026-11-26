@@ -85,7 +85,10 @@ def record(sym: str, asof: str, market: str = "cn") -> dict:
 
 FCO_SETS = {"standard": "g_fco_standard", "early": "g_fco_early", "end": "g_fco_end", "pure": "g_fco_pure"}
 NEG_SCAN = Path("data/features/lppls_v2_neg_lite")
-MODEL_VERSION = "prereg_v1.7_v2.2"  # v2.2：指数 tcgrid_lm+de_lbfgsb 取小 SSE；个股 de_lbfgsb
+MODEL_VERSION = "prereg_v1.7_v2.3"  # v2.3：指数状态、t_c 分布、Combo 统一用 box（阈值 0.05），顶层只看 6–12 月 / 12–24 月；拟合同 v2.2
+STOCK_MODEL_VERSION = "prereg_v1.7_v2.2"  # 个股与全市场扫描仍用 standard 口径（signal_rule="standard"），版本号不变
+HISTORY_MODEL_VERSION = "prereg_v1.7_v2.2"  # history.json 冻结帧：指数 tcgrid_lm+de_lbfgsb 取小 SSE（g3），未重扫
+SIGNAL_THRESHOLD = 0.05  # 开发段评测用的 box 置信度阈值（reports/scale_sens_dev）
 # v2.2 rescan inputs: lppls_rescan_g3q3.yml artifacts, n 130–500 (not checked in).
 HISTORY_RECOMPUTE = {
     "label": "事后重算，不是样本外",
@@ -98,6 +101,19 @@ HISTORY_SCANS = {
     "test": Path("data/features/lppls_v2_g3_test"),
 }
 HISTORY_SCALES = ("6-12m", "12-24m")
+# 分档开发段评测（§17.14，reports/scale_sens_dev/bands.csv）：box、阈值 0.05、H=120，6 指数跨指数中位数。
+# 证据代码保持 "dev"（= 开发段已评测），结论由本表给出：两档均未显著优于循环平移零对照。
+SCALE_EVIDENCE_DETAIL = {
+    "6-12m": {"rule": "box", "threshold": 0.05, "horizon_days": 120, "a1": 0.231, "a1_null": 0.221,
+              "n_significant": 1, "n_indexes": 6, "robust": False, "verdict": "not_significant"},
+    "12-24m": {"rule": "box", "threshold": 0.05, "horizon_days": 120, "a1": 0.303, "a1_null": 0.202,
+               "n_significant": 1, "n_indexes": 6, "robust": False, "verdict": "not_significant"},
+}
+# Combo 开发段评测（同一报告）：box、六档全算、p=1、阈值 0.05、H=120；2–4 周档评测时窗口为 15、20，日更为 10–20 步长 2
+COMBO_DEV_EVAL = {"rule": "box", "p": 1.0, "threshold": 0.05, "horizon_days": 120, "a1": 0.246, "a1_null": 0.228,
+                  "n_significant": 0, "n_indexes": 6, "robust": False, "verdict": "not_significant"}
+SCALE_EVIDENCE_SOURCE = ("reports/scale_sens_dev/summary.md（§17.14，tcgrid v2 扫描，开发段 2000–2018）；"
+                         "长尺度合并口径 box__L：0.318 对零对照 0.224，p=0.371（reports/original_standard_dev_v2/alarm_grid_agg.csv）")
 
 
 def _scale_cluster_records(
@@ -402,7 +418,8 @@ def _null_fpr(scale: str) -> dict | None:
     return out
 
 
-def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp) -> dict:
+def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.DatetimeIndex, date: pd.Timestamp,
+                signal_rule: str = "box") -> dict:
     """每尺度：各过滤集置信度（合格窗口比例，E1/E4 定义）、最佳起点 t1（Lagrange 正则选窗）及其是否合格、signal_status、
     撞边界比例（描述性）；2–4 周档 `display_only=True`（只展示，不进入合格统计）。"""
     out = {}
@@ -417,13 +434,17 @@ def _indicators(dd: pd.DataFrame, rr: pd.DataFrame, gg: pd.DataFrame, cal: pd.Da
         conf = {"box": round(float(rr.box[m].mean()), 3), **{k: round(float(gg[c][m].mean()), 3) for k, c in FCO_SETS.items()}}
         nq = int(gg["g_fco_standard"][m].sum())
         display_only = sc in DISPLAY_ONLY_SCALES
+        # box：置信度（未四舍五入）≥ 阈值才算信号，与开发段评测同一条规则；standard：个股沿用“有合格拟合”
+        fired = float(rr.box[m].mean()) >= SIGNAL_THRESHOLD if signal_rule == "box" else nq > 0
+        rule_meta = {"rule": "box", "threshold": SIGNAL_THRESHOLD} if signal_rule == "box" else {"rule": "standard"}
         out[sc] = {"direction": "positive", "n_windows": int(m.sum()), "confidence": conf, "n_qualified_standard": nq,
+                   "n_qualified_box": int(rr.box[m].sum()), **rule_meta,
                    "best_t1": str(cal[max(cal.get_indexer([date])[0] - int(sub.loc[i].n) + 1, 0)].date()) if i is not None else None,
                    "t1_qualified": bool(gg.loc[i, "g_fco_standard"]) if i is not None else None,
                    "boundary_share": _boundary(sub),
                    "null_fpr": _null_fpr(sc),
                    "display_only": display_only,
-                   "signal_status": "display_only" if display_only else ("signal" if nq > 0 else "no_qualified_fit")}
+                   "signal_status": "display_only" if display_only else ("signal" if fired else "no_qualified_fit")}
     return out
 
 
@@ -433,18 +454,22 @@ def _tc_distribution(
     cal: pd.DatetimeIndex,
     date: pd.Timestamp,
     market: str = "cn",
+    mask: pd.Series | None = None,
+    rule: str = "standard",
 ) -> dict:
-    """F09：合格（STANDARD）拟合的 t_c 数量分布，按尺度，5 交易日分箱；n 与直方图合计一致。"""
+    """F09：合格拟合的 t_c 数量分布，按尺度，5 交易日分箱；n 与直方图合计一致。
+    默认 STANDARD 过滤集；传 mask（与 dd 同索引）和 rule 可换成 box。区间是合格拟合 t_c 的分布，不是顶部日期。"""
     out = {}
+    ok = gg["g_fco_standard"] if mask is None else mask
     for sc, (lo, hi) in SCALES_FCO6.items():
-        f = dd[dd.n.between(lo, hi) & gg["g_fco_standard"]]
+        f = dd[dd.n.between(lo, hi) & ok]
         if not len(f):
-            out[sc] = {"n": 0, "bins": []}
+            out[sc] = {"n": 0, "bins": [], "rule": rule}
             continue
         a = f.ahead.to_numpy(float)
         edges = np.arange(np.floor(a.min() / 5) * 5, np.ceil(a.max() / 5) * 5 + 5.1, 5.0)
         h, e = np.histogram(a, bins=edges)
-        out[sc] = {"n": int(len(a)), "bin_days": 5,
+        out[sc] = {"n": int(len(a)), "bin_days": 5, "rule": rule,
                    "bins": [[_to_cal(cal, date, float(e[k]), market), _to_cal(cal, date, float(e[k + 1]), market), int(h[k])] for k in range(len(h)) if h[k] > 0]}
     return out
 
@@ -457,8 +482,12 @@ def _combo(ind: dict, set_name: str = "standard") -> dict:
     out = {}
     for p_ in (0.1, 1.0, 10.0):
         out[f"p{p_:g}"] = round(float(np.mean(np.maximum(c, 1e-9) ** p_) ** (1 / p_)), 3)
-    return {**out, "set": set_name, "scales": [k for k, v in ind.items() if "confidence" in v], "evidence": "none",
-            "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"}
+    res = {**out, "set": set_name, "scales": [k for k, v in ind.items() if "confidence" in v], "evidence": "none",
+           "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"}
+    if set_name == "box":
+        res["headline"] = "p1"
+        res["dev_eval"] = dict(COMBO_DEV_EVAL)
+    return res
 
 
 def _negative(sym: str, date: pd.Timestamp, cal: pd.DatetimeIndex, logp: pd.Series) -> dict:
@@ -546,7 +575,7 @@ def _bubble(
     longest = [k for k, (lo, hi) in SCALES_FCO.items() if (dd.n.between(lo, hi) & gg["g_fco_standard"]).any()]
     return {"start": str(cal[max(i0 - n + 1, 0)].date()), "duration_days": n, "scale": scale, "t1_qualified_standard": qualified,
             "size_model": round(float(np.exp(row.A) / p1 - 1), 3), "size_realized": round(float(close.iloc[i0]) / p1 - 1, 3),
-            "tc": _to_cal(cal, date, float(row.ahead), market), "progress": None, "longest_qualified_scale": longest[-1] if longest else None,
+            "progress": None, "longest_qualified_scale": longest[-1] if longest else None,
             "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
             "evidence": "descriptive", "signal_status": "signal" if qualified else "t1_not_qualified"}
 
@@ -599,8 +628,9 @@ def _bottom_objects(sym: str, asof: str, cal: pd.DatetimeIndex, ohlc: pd.DataFra
 
 def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.DatetimeIndex, ohlc: pd.DataFrame,
                  p20: float | None = None, data_version: str = "frozen_v20261024",
-                 market: str = "cn") -> dict:
-    """由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
+                 market: str = "cn", signal_rule: str = "box") -> dict:
+    """signal_rule="box"（指数，默认）：每档状态、顶层状态、t_c 分布、Combo 都用 box；"standard"：个股沿用旧口径。
+    由 as-of 日的（已 _derived 的）拟合表 d、规则表 r、交易日历 cal、OHLC 日线构造契约记录；日更流水线与回放共用。"""
     date = pd.Timestamp(asof)
     q = d[(d.date == date) & r.box]
     scen = scenarios(q[["n", "ahead", "sse"]]) if len(q) else pd.DataFrame()
@@ -612,7 +642,11 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     dd = d[d.date == date]
     rr = r.loc[dd.index]
     gg = grid_rules(dd)
-    ind = _indicators(dd, rr, gg, cal, date)
+    if signal_rule not in ("box", "standard"):
+        raise ValueError(f"unknown signal_rule: {signal_rule}")
+    use_box = signal_rule == "box"
+    ind = _indicators(dd, rr, gg, cal, date, signal_rule)
+    top_scales = HISTORY_SCALES if use_box else tuple(SCALES_FCO)
     nmax = max(hi for _, hi in SCALES_FCO.values())
     m_eval = dd.n <= nmax  # 泡沫状态与总信号只用评价过的三档（≤504 日）；六档补充窗口仅作显示
     bubble = _bubble(dd[m_eval], gg[m_eval], date, cal, ohlc, market)
@@ -621,7 +655,8 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
     price_band = _price_band(sym, bubble, asof, float(ohlc[ohlc.date <= pd.Timestamp(asof)].close.iloc[-1]))
     cooling_state = _cooling_state(ohlc, cal, date, ind, window, band, price_band)
     rec = {
-        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version, "model_version": MODEL_VERSION,
+        "symbol": sym, "name": names.get(sym, sym), "asof": asof, "data_version": data_version,
+        "model_version": MODEL_VERSION if use_box else STOCK_MODEL_VERSION,
         "future_calendar": future_calendar_metadata(cal, market, date),
         "top": {
             "p20": {"value": None, "evidence": "fail_i_iii",
@@ -631,13 +666,18 @@ def build_record(sym: str, asof: str, d: pd.DataFrame, r: pd.DataFrame, cal: pd.
             "indicators": {**ind, "rule_note": "置信度=该尺度窗口中通过过滤集的比例（E1/E4 定义）；box=本项目纯形态框（无阻尼/振荡条件），"
                            "standard/early/end/pure=FCO 公开四套；振荡数按 (ω/2)·ln[(t_c−t₁)/(t_c−t₂)]≥2.5（E7 写法，≈0.8 周期），"
                            "FCO 'oscillations≥2.5' 的口径未公开核验"},
-            "combo": _combo(ind),
-            "tc_distribution": _tc_distribution(dd, gg, cal, date, market),
+            "combo": _combo(ind, "box" if use_box else "standard"),
+            "tc_distribution": (_tc_distribution(dd, gg, cal, date, market, mask=rr.box, rule="box") if use_box
+                                else _tc_distribution(dd, gg, cal, date, market)),
+            **({"tc_distribution_standard": _tc_distribution(dd, gg, cal, date, market)} if use_box else {}),
             "negative_bubble": _negative(sym, date, cal, np.log(_close(ohlc, cal))),
-            "signal_status": "signal" if any(v.get("signal_status") == "signal" for k, v in ind.items() if k in SCALES_FCO) else "no_qualified_fit",
+            "signal_status": "signal" if any(v.get("signal_status") == "signal" for k, v in ind.items() if k in top_scales) else "no_qualified_fit",
+            "signal_rule": ({"rule": "box", "threshold": SIGNAL_THRESHOLD, "scales": list(HISTORY_SCALES)} if use_box
+                            else {"rule": "standard", "scales": list(SCALES_FCO)}),
             "window": window,
             "lppls_confidence": {**_conf(d, r, date), "evidence": "dev_only", "scale_evidence": SCALE_EVIDENCE,
-                                 "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
+                                 "scale_evidence_detail": SCALE_EVIDENCE_DETAIL, "scale_evidence_source": SCALE_EVIDENCE_SOURCE,
+                                 "scale_note": "§17.14：FCO 六档重聚合后只有 6–12 月、12–24 月做过开发段分档评测，box 阈值 0.05 在两档均未显著优于零对照（见 scale_evidence_detail）；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
                                  "notes": ["6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"]},
             "scenarios": _scenario_records(q, scen, gg, cal, date, market),
             "scenarios_note": "share=簇内拟合数/合格拟合数（Gerlach–Demos–Sornette 2018 把它作为情景概率的代理；不是崩盘概率）；"
@@ -770,10 +810,12 @@ def history(sym: str, market: str = "cn") -> dict:
     return {
         "symbol": sym,
         "future_calendar": future_calendar_metadata(cal, market),
-        "model_version": MODEL_VERSION,
+        "model_version": HISTORY_MODEL_VERSION,
         "recompute": HISTORY_RECOMPUTE,
         "evidence": "dev_only",
         "scale_evidence": {scale: SCALE_EVIDENCE[scale] for scale in HISTORY_SCALES},
+        "scale_evidence_detail": SCALE_EVIDENCE_DETAIL,
+        "scale_evidence_source": SCALE_EVIDENCE_SOURCE,
         "rule": "每个截止日合格拟合 t_c 的 20–80% 分位窗；只用当时数据；情景，非时点",
         "episode_summary": summarize_history_episodes(frames, tops, scales=HISTORY_SCALES),
         "bottom_summary": summarize_bottom_backtest(frames),
