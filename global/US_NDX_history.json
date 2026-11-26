@@ -2,7 +2,7 @@
  "schema_version": "global_terminal_history_v1",
  "symbol": "US_NDX",
  "name": "纳斯达克100",
- "asof": "2026-11-24",
+ "asof": "2026-11-25",
  "frames": [
   {
    "asof": "2026-11-10",
@@ -481,6 +481,482 @@
    "snapshot_path": "global/US_NDX_2026-11-10.json"
   },
   {
+   "asof": "2026-11-11",
+   "close": 28374.25,
+   "conf": {
+    "2-4w": 0.0,
+    "1-3m": 0.0,
+    "3-6m": 0.0,
+    "6-12m": 0.0,
+    "12-24m": 0.2,
+    "2-6y": 0.0
+   },
+   "w": {
+    "2-4w": null,
+    "1-3m": null,
+    "3-6m": null,
+    "6-12m": null,
+    "12-24m": null,
+    "2-6y": null
+   },
+   "clusters": {
+    "2-4w": [],
+    "1-3m": [],
+    "3-6m": [],
+    "6-12m": [],
+    "12-24m": [],
+    "2-6y": []
+   },
+   "top": {
+    "indicators": {
+     "2-4w": {
+      "direction": "positive",
+      "n_windows": 3,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": true,
+      "evidence": "research_candidate"
+     },
+     "1-3m": {
+      "direction": "positive",
+      "n_windows": 5,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "3-6m": {
+      "direction": "positive",
+      "n_windows": 4,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "6-12m": {
+      "direction": "positive",
+      "n_windows": 4,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "12-24m": {
+      "direction": "positive",
+      "n_windows": 5,
+      "n_qualified_box": 1,
+      "confidence": {
+       "box": 0.2
+      },
+      "signal_status": "no_cluster",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "2-6y": {
+      "direction": "positive",
+      "n_windows": 6,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "rule_note": "v2 搜索后使用原生产 box；27个预登记稀疏窗口，非181窗完整扫描。box 不含振荡周期门槛。"
+    },
+    "scale_clusters": {
+     "2-4w": [],
+     "1-3m": [],
+     "3-6m": [],
+     "6-12m": [],
+     "12-24m": [],
+     "2-6y": []
+    },
+    "scale_windows": [],
+    "lppls_confidence": {
+     "2-4w": 0.0,
+     "1-3m": 0.0,
+     "3-6m": 0.0,
+     "6-12m": 0.0,
+     "12-24m": 0.2,
+     "2-6y": 0.0,
+     "evidence": "research_candidate",
+     "scale_evidence": {
+      "2-4w": "research_candidate",
+      "1-3m": "research_candidate",
+      "3-6m": "research_candidate",
+      "6-12m": "research_candidate",
+      "12-24m": "research_candidate",
+      "2-6y": "research_candidate"
+     }
+    },
+    "signal_status": "no_cluster",
+    "drawdown_price": {
+     "value": null,
+     "evidence": "none"
+    },
+    "scale_clusters_note": "复用现有分尺度聚类；share 是合格拟合数量占比，不是顶部概率；区间为20–80%分位。",
+    "window": {
+     "start": null,
+     "end": null,
+     "evidence": "research_candidate",
+     "rule": "按尺度查看独立聚类"
+    }
+   },
+   "evidence": "research_candidate",
+   "stock_meta": {
+    "evidence": "research_candidate",
+    "variant": "global_sparse27",
+    "source": "Yahoo Finance via yfinance"
+   },
+   "model_version": "global_sparse27_v1_production_v2_box",
+   "data_version": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
+   "first_visible_at": null,
+   "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
+   "record_version": "a8e7dd5c2557151f28723db98466d9e1e0839c8fe9bace8edab31347194dd216",
+   "archive_path": "global/archive/US_NDX/2026-11-11/a8e7dd5c2557151f28723db98466d9e1e0839c8fe9bace8edab31347194dd216.json",
+   "research": {
+    "sample_scope": "current plus two registered earlier trading-day endpoints; no outcome scoring",
+    "cycles_1_5": {
+     "indicators": {
+      "2-4w": {
+       "direction": "positive",
+       "n_windows": 3,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": true,
+       "evidence": "research_candidate"
+      },
+      "1-3m": {
+       "direction": "positive",
+       "n_windows": 5,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "3-6m": {
+       "direction": "positive",
+       "n_windows": 4,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "6-12m": {
+       "direction": "positive",
+       "n_windows": 4,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "12-24m": {
+       "direction": "positive",
+       "n_windows": 5,
+       "n_qualified_box": 1,
+       "confidence": {
+        "box_cycles_1_5": 0.2
+       },
+       "signal_status": "no_cluster",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "2-6y": {
+       "direction": "positive",
+       "n_windows": 6,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      }
+     },
+     "scale_clusters": {
+      "2-4w": [],
+      "1-3m": [],
+      "3-6m": [],
+      "6-12m": [],
+      "12-24m": [],
+      "2-6y": []
+     },
+     "scale_windows": [],
+     "lppls_confidence": {
+      "2-4w": 0.0,
+      "1-3m": 0.0,
+      "3-6m": 0.0,
+      "6-12m": 0.0,
+      "12-24m": 0.2,
+      "2-6y": 0.0,
+      "evidence": "research_candidate",
+      "scale_evidence": {
+       "2-4w": "research_candidate",
+       "1-3m": "research_candidate",
+       "3-6m": "research_candidate",
+       "6-12m": "research_candidate",
+       "12-24m": "research_candidate",
+       "2-6y": "research_candidate"
+      }
+     },
+     "signal_status": "no_cluster",
+     "drawdown_price": {
+      "value": null,
+      "evidence": "none"
+     }
+    },
+    "cycles_1_5_rule": "production box AND ahead>0 AND full_cycles>=1.5; same fit pool, not future-only refit",
+    "oscillation_formula": "omega/(2*pi)*log(abs(tc)/max(abs(tc-t2),1e-3))",
+    "filter_diagnostics": {
+     "completed": 27,
+     "standalone_pass": {
+      "B_negative": 15,
+      "m_0_1_to_0_9": 10,
+      "omega_6_to_13": 7,
+      "ahead_0_to_90": 6
+     },
+     "sequential_pass": {
+      "B_negative": 15,
+      "m_0_1_to_0_9": 6,
+      "omega_6_to_13": 4,
+      "ahead_0_to_90": 1
+     },
+     "box_qualified": 1,
+     "cycles_1_5_qualified": 1,
+     "tc_inside_sample": 21,
+     "ahead_over_90": 0,
+     "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+    },
+    "fit_input_hashes": {
+     "18": "e04df171af5cc55c7ce5ddcd176d1ae1574c9a194478ba62613a1c228352b688",
+     "14": "132e37df61fa1e1080ab0614bdcb4631cb4e4feef364f741f5a45e56c76edf60",
+     "21": "4126fcd7687b5e9e3bc0da882d6a8883efa1cd446bde254359576f5637956e83",
+     "10": "cce2cad2d0286f022541a70ac3b0f86941cbd457a5adb4f6fdd8a5ee83f5a1c4",
+     "30": "906f7abe2e02660e6340eda978b77d4e70a4fa96b878dbb5749842c89b8c8490",
+     "52": "4dc433a34ad016fe1bd6df9c54d699c4035c78ccb28f9c9e917881b31025e5e1",
+     "63": "2605e6ec0c97b6f94f8a35ba54fc449abe9a44f9a7ae825089b40355fbc1a547",
+     "42": "b80da3c833f3fda7bb6072340f61a37d782191ef3c786e647be0f6ce9c0e1712",
+     "64": "bbddf21526e07398ac7b9eae6accdc250c30b1450e123183ad986f6f6ac2d75a",
+     "84": "a7be3a38dca098ef944008870c8e073674f077607a6a3aa6871cd6af941aaacf",
+     "105": "77e9ba81725dffc09323398ea2b9163f6809961e00fea48008a9779350bb7845",
+     "126": "f3bdc4132b692a14f12912307eb56a083fdf346a73ff6e1ed6b2a864bd93ef97",
+     "168": "faeffac6361c44ee08120d699e7d6e0681ae93045c916de57094ecf5cd72afac",
+     "127": "b74112b9f5357c5159b2f5434ab3d03ad07a3077b9e74125d93200e4d7a33490",
+     "210": "7159b1512f55aa20341212e7691998c6098ef466339d067e2bd6df9030fe39cc",
+     "253": "5d73efe20abab4cce852e83373f90196fee75aa1990c36a03556dddfa12fa2c5",
+     "252": "a435026c8ce4491a2f090aa09a57b345aed28db20cc38c53cb82902f6573ad86",
+     "315": "d42a78f1d74cc214efceab4501b10af8e48aaa8a0272f10344a06e8d54b2bc53",
+     "441": "857ee4cf0b8f5c5132c6690cadd2d1b345c9629091188af4ba0f07f9437e00e5",
+     "504": "4ca883164645f1fc831dccf6b398ab8a7a903537140d843f4ffe4ee01b3732b3",
+     "378": "9fc26cb284f8d23be558feca80de71ffff66692cde06e8a51f6dcf9b85d7130f",
+     "525": "4b3ef96cb6a2cd78b130d0e25a441fccff6cad7b3c1c084f3e34af27c70266ea",
+     "756": "36d3372c3c50f76ef8069af73d31cc421942f073c819774020bdffc8bd02f7e4",
+     "630": "5766b3d74bb82836263b9b7fa7212b5d95cc1b69c98bf03779512c21f1d4bdc7",
+     "1008": "13e6a212c09cf3078bb7ca7c0c142ef8ba426c292cd24f69ed4e6192b59c704a",
+     "1260": "d33da2064a17c50d54d859687146811da21d3186174b3b454ed63d3ee8af4189",
+     "1500": "012a045c828dd896f9252a3fe680d8a6891aa1dc0b699adf5a3cbacc8c6c36d1"
+    },
+    "future_calendar_verified": true,
+    "stage_top_score": null,
+    "export_code_hash": "455d631d7ab8e8737359c9af2bfee8cdbc693bf19ad2c6a7356a426bfb1b1cdc"
+   },
+   "params": {
+    "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+    "math_hashes": {
+     "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
+     "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
+     "research/features/lppls_rules.py": "39af041f6e4d36e74e2ace01154f4a292769af69e1901190f870cc0ec32a8fa0",
+     "research/lppls/core.py": "b1962fb4d19aad477c0ae4c542b06a3cb5eb7e1be2351ab7aebc247850a1a231",
+     "research/optim/optimizers.py": "0f66c7870f8078e4a4d668fbfb2745982259d60371eda1d05bd22dc4388d9727",
+     "research/lppls/scenarios.py": "7a6b2b601524fc9b310e81b9d266d6c813423a3bb60c7a73584b5e882fc608e3"
+    },
+    "numpy": "2.5.5",
+    "scipy": "1.18.1",
+    "windows": [
+     10,
+     14,
+     18,
+     21,
+     30,
+     42,
+     52,
+     63,
+     64,
+     84,
+     105,
+     126,
+     127,
+     168,
+     210,
+     252,
+     253,
+     315,
+     378,
+     441,
+     504,
+     525,
+     630,
+     756,
+     1008,
+     1260,
+     1500
+    ],
+    "box": "v2",
+    "seed": 0,
+    "bootstrap": 0,
+    "q3": 0,
+    "search_bounds": {
+     "m": [
+      0.01,
+      2.0
+     ],
+     "omega": [
+      1,
+      50
+     ],
+     "ahead_fraction": [
+      -0.2,
+      0.2
+     ]
+    },
+    "allow_inside": true,
+    "fit_wrapper_hash": "09070b603e9960dccb72d4bd6220e86e26f2c7d6da13f63dd45448410a85f34f",
+    "fit_environment": {
+     "LPPLS_BOX": "v2",
+     "LPPLS_Q3": "0",
+     "LPPLS_G3": "0",
+     "LPPLS_SIGN": "pos",
+     "LPPLS_ANCHOR": "end",
+     "LPPLS_WINDOWS": "full",
+     "ALLOW_INSIDE": true
+    },
+    "hash": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
+    "optimizer": "g3",
+    "window_count": 27
+   },
+   "future_calendar": {
+    "market": "us",
+    "exchange": "XNYS",
+    "holidays_through": "2030-12-31",
+    "closures": [
+     "2026-11-26",
+     "2026-12-25",
+     "2027-01-01",
+     "2027-01-18",
+     "2027-02-15",
+     "2027-03-26",
+     "2027-05-31",
+     "2027-06-18",
+     "2027-07-05",
+     "2027-09-06",
+     "2027-11-25",
+     "2027-12-24",
+     "2028-01-17",
+     "2028-02-21",
+     "2028-04-14",
+     "2028-05-29",
+     "2028-06-19",
+     "2028-07-04",
+     "2028-09-04",
+     "2028-11-23",
+     "2028-12-25",
+     "2029-01-01",
+     "2029-01-15",
+     "2029-02-19",
+     "2029-03-30",
+     "2029-05-28",
+     "2029-06-19",
+     "2029-07-04",
+     "2029-09-03",
+     "2029-11-22",
+     "2029-12-25",
+     "2030-01-01",
+     "2030-01-21",
+     "2030-02-18",
+     "2030-04-19",
+     "2030-05-27",
+     "2030-06-19",
+     "2030-07-04",
+     "2030-09-02",
+     "2030-11-28",
+     "2030-12-25"
+    ],
+    "source": "exchange_calendars==4.13.3:XNYS",
+    "status": "exchange_calendar",
+    "verified": true,
+    "official_verification": "NOT_ESTABLISHED",
+    "note": "交易日按交易所日历计算，节假日已跳过。"
+   },
+   "source_meta": {
+    "id": "US_NDX",
+    "ticker": "^NDX",
+    "market": "us",
+    "kind": "index",
+    "currency": "USD",
+    "timezone": "America/New_York",
+    "exchange": "NASDAQ",
+    "fetched_at": "2026-11-26T04:18:29.877596+00:00",
+    "source": "Yahoo Finance via yfinance",
+    "url": null,
+    "raw_sha256": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6",
+    "normalized_sha256": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
+    "adjustment": "none",
+    "volume_unit": "vendor_native",
+    "history_vintage": "current_download_reconstruction",
+    "normalizer_version": "yfinance_nasdaq_v1_raw_daily",
+    "metadata_file": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6-4ad623e02b23b0f96b150232b52918675951b23664d9bdbbe27edd4a296dd05d.metadata.json",
+    "dropped_unclosed_bars": 0,
+    "provider_currency": "USD",
+    "dropped_non_session_rows": 0,
+    "dropped_non_session_dates": [],
+    "missing_sessions_last_250": 0,
+    "missing_sessions_last_250_dates": [],
+    "cross_check": {
+     "provider": "fredgraph_csv",
+     "overlap": 249,
+     "max_rel_diff": 7.023188220561688e-06,
+     "missing_in_yahoo": 0,
+     "missing_in_yahoo_dates": [],
+     "yahoo_lag_sessions": 0,
+     "yahoo_lag_session_dates": [],
+     "mismatches": [],
+     "status": "ok"
+    },
+    "publication_decision": "owner_approved_2026-11-24",
+    "asset_type": "index",
+    "source_asof": "2026-11-25",
+    "model_asof": "2026-11-11",
+    "public_redistribution": "NOT_ESTABLISHED"
+   },
+   "snapshot_path": "global/US_NDX_2026-11-11.json"
+  },
+  {
    "asof": "2026-11-17",
    "close": 27001.779296875,
    "conf": {
@@ -957,6 +1433,482 @@
    "snapshot_path": "global/US_NDX_2026-11-17.json"
   },
   {
+   "asof": "2026-11-18",
+   "close": 27116.259765625,
+   "conf": {
+    "2-4w": 0.0,
+    "1-3m": 0.0,
+    "3-6m": 0.0,
+    "6-12m": 0.0,
+    "12-24m": 0.0,
+    "2-6y": 0.0
+   },
+   "w": {
+    "2-4w": null,
+    "1-3m": null,
+    "3-6m": null,
+    "6-12m": null,
+    "12-24m": null,
+    "2-6y": null
+   },
+   "clusters": {
+    "2-4w": [],
+    "1-3m": [],
+    "3-6m": [],
+    "6-12m": [],
+    "12-24m": [],
+    "2-6y": []
+   },
+   "top": {
+    "indicators": {
+     "2-4w": {
+      "direction": "positive",
+      "n_windows": 3,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": true,
+      "evidence": "research_candidate"
+     },
+     "1-3m": {
+      "direction": "positive",
+      "n_windows": 5,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "3-6m": {
+      "direction": "positive",
+      "n_windows": 4,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "6-12m": {
+      "direction": "positive",
+      "n_windows": 4,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "12-24m": {
+      "direction": "positive",
+      "n_windows": 5,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "2-6y": {
+      "direction": "positive",
+      "n_windows": 6,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "rule_note": "v2 搜索后使用原生产 box；27个预登记稀疏窗口，非181窗完整扫描。box 不含振荡周期门槛。"
+    },
+    "scale_clusters": {
+     "2-4w": [],
+     "1-3m": [],
+     "3-6m": [],
+     "6-12m": [],
+     "12-24m": [],
+     "2-6y": []
+    },
+    "scale_windows": [],
+    "lppls_confidence": {
+     "2-4w": 0.0,
+     "1-3m": 0.0,
+     "3-6m": 0.0,
+     "6-12m": 0.0,
+     "12-24m": 0.0,
+     "2-6y": 0.0,
+     "evidence": "research_candidate",
+     "scale_evidence": {
+      "2-4w": "research_candidate",
+      "1-3m": "research_candidate",
+      "3-6m": "research_candidate",
+      "6-12m": "research_candidate",
+      "12-24m": "research_candidate",
+      "2-6y": "research_candidate"
+     }
+    },
+    "signal_status": "no_qualified_fit",
+    "drawdown_price": {
+     "value": null,
+     "evidence": "none"
+    },
+    "scale_clusters_note": "复用现有分尺度聚类；share 是合格拟合数量占比，不是顶部概率；区间为20–80%分位。",
+    "window": {
+     "start": null,
+     "end": null,
+     "evidence": "research_candidate",
+     "rule": "按尺度查看独立聚类"
+    }
+   },
+   "evidence": "research_candidate",
+   "stock_meta": {
+    "evidence": "research_candidate",
+    "variant": "global_sparse27",
+    "source": "Yahoo Finance via yfinance"
+   },
+   "model_version": "global_sparse27_v1_production_v2_box",
+   "data_version": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
+   "first_visible_at": null,
+   "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
+   "record_version": "3358972e0fa970153a6c23fde094034132f6f0fdaf45abd1a8b06b519ca0e7cc",
+   "archive_path": "global/archive/US_NDX/2026-11-18/3358972e0fa970153a6c23fde094034132f6f0fdaf45abd1a8b06b519ca0e7cc.json",
+   "research": {
+    "sample_scope": "current plus two registered earlier trading-day endpoints; no outcome scoring",
+    "cycles_1_5": {
+     "indicators": {
+      "2-4w": {
+       "direction": "positive",
+       "n_windows": 3,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": true,
+       "evidence": "research_candidate"
+      },
+      "1-3m": {
+       "direction": "positive",
+       "n_windows": 5,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "3-6m": {
+       "direction": "positive",
+       "n_windows": 4,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "6-12m": {
+       "direction": "positive",
+       "n_windows": 4,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "12-24m": {
+       "direction": "positive",
+       "n_windows": 5,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "2-6y": {
+       "direction": "positive",
+       "n_windows": 6,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      }
+     },
+     "scale_clusters": {
+      "2-4w": [],
+      "1-3m": [],
+      "3-6m": [],
+      "6-12m": [],
+      "12-24m": [],
+      "2-6y": []
+     },
+     "scale_windows": [],
+     "lppls_confidence": {
+      "2-4w": 0.0,
+      "1-3m": 0.0,
+      "3-6m": 0.0,
+      "6-12m": 0.0,
+      "12-24m": 0.0,
+      "2-6y": 0.0,
+      "evidence": "research_candidate",
+      "scale_evidence": {
+       "2-4w": "research_candidate",
+       "1-3m": "research_candidate",
+       "3-6m": "research_candidate",
+       "6-12m": "research_candidate",
+       "12-24m": "research_candidate",
+       "2-6y": "research_candidate"
+      }
+     },
+     "signal_status": "no_qualified_fit",
+     "drawdown_price": {
+      "value": null,
+      "evidence": "none"
+     }
+    },
+    "cycles_1_5_rule": "production box AND ahead>0 AND full_cycles>=1.5; same fit pool, not future-only refit",
+    "oscillation_formula": "omega/(2*pi)*log(abs(tc)/max(abs(tc-t2),1e-3))",
+    "filter_diagnostics": {
+     "completed": 27,
+     "standalone_pass": {
+      "B_negative": 15,
+      "m_0_1_to_0_9": 17,
+      "omega_6_to_13": 11,
+      "ahead_0_to_90": 6
+     },
+     "sequential_pass": {
+      "B_negative": 15,
+      "m_0_1_to_0_9": 6,
+      "omega_6_to_13": 4,
+      "ahead_0_to_90": 0
+     },
+     "box_qualified": 0,
+     "cycles_1_5_qualified": 0,
+     "tc_inside_sample": 21,
+     "ahead_over_90": 0,
+     "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+    },
+    "fit_input_hashes": {
+     "14": "9c8cf315bd8e0adaad06c4fe411c76b9806c150c273b1b61c768fca0c2088caf",
+     "21": "2c54c1f5a6edf31415e47eb8b9b0f31090b4d7db3843a790fd2f94a4356b66ee",
+     "18": "4f982174b7e0bc8ed9ce2a3c5209e859a50733b68d090a12e747d3a35fc0f8be",
+     "10": "a9aa0634eb38a3dbeb43d93a5a1d0bdae00f386666a13ac4736587fb43c215a1",
+     "30": "187b398e56fdfd7869c02c9876b3dcb7fdbf45c4e9f30bc18bbe1832b616f2fb",
+     "42": "90dbfb07aa9f41bea8d5545668b7ed1d9fe38e9b074f903f8aa30197b2d63880",
+     "63": "1259feffd56587782d2ee40415f5446dd56f2b4c87c8d3ca0b8c7304c004b0d7",
+     "52": "10579919f93e34651985d0a299c6087347e8f05b275cb0077c5d8247560cb6cd",
+     "64": "ae0ef71f045dcfdeaf5803a34d0b4a40d0b44cdc5f372897ca511457e37265d4",
+     "126": "fdd846ac96cae64962b1303c1862375dad2bca029c6295c91f68cad2e14fb401",
+     "84": "52e4fa6c7eec0ef9edddc4c282e01a42e9b01e75657dbf357991cf72dca9dfc1",
+     "105": "3909674df4cfb2bbcecc560380948485a666fae96a0429add201998c19f0bca5",
+     "127": "bdf1c1ec30e0bc133fe6ff97eca55ee1f6472bdc42cfade7ecba5ca1cf1d250c",
+     "168": "79aaa5472d30f6888ffd065aaacceeddf1fb0a7e64ca48e182819c8891fb63b0",
+     "210": "8fb0a36d6cb09e352bdbc7595f4991f0e8fac8335c947522a3ba7f48bc6416ae",
+     "252": "963dd68bb009650def8458b3fa7ccdc304f3b39f07dac74643d35c4a61c97e7e",
+     "253": "b81a07ea1f9664845f97e1402c6c3f1dbec23490da8cbac6610bea4f52e478ac",
+     "315": "fc1b5f29fe527a10f7e99514d9cc17863b753a33565c20ba3fd389d04cd6ab89",
+     "378": "19c13fceb55bb3e686a7d27a0406a671fea4525e326af8a0af1b2894e3f0d50b",
+     "441": "fb6032f8cb123c35aa4468c7ae11446a7bbedaafdac60edf52c4fe2f8bb4fa4f",
+     "525": "84d82d1705713c9390f891cbf5345689a72662a65ce0f190f8acc8f2af0bbe8d",
+     "504": "3447c020739a4730e4a0435217a9649cf0d303b8626431037fd6b0d4cf007495",
+     "630": "09c1cbc9d69133163da778415855ce45d3350e2cfa791a9f788db8002849f864",
+     "756": "57d8b2b6a28ace1980c5dc728d6fd1b1580e2d2bf3bb7fcfb6b55c1f2f7e4a7c",
+     "1008": "554ae078b9cb8eeb74d18a2f541188d5f814f8d532d7d46197759f8c32366973",
+     "1260": "f94113d68e341fe89cee4f487c7759a0da69f2deca91c250c239043e73f64234",
+     "1500": "60ccc1c318ee213a7f2ad1b7701127af79d5f1302f082ee4008c33b9c687d357"
+    },
+    "future_calendar_verified": true,
+    "stage_top_score": null,
+    "export_code_hash": "455d631d7ab8e8737359c9af2bfee8cdbc693bf19ad2c6a7356a426bfb1b1cdc"
+   },
+   "params": {
+    "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+    "math_hashes": {
+     "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
+     "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
+     "research/features/lppls_rules.py": "39af041f6e4d36e74e2ace01154f4a292769af69e1901190f870cc0ec32a8fa0",
+     "research/lppls/core.py": "b1962fb4d19aad477c0ae4c542b06a3cb5eb7e1be2351ab7aebc247850a1a231",
+     "research/optim/optimizers.py": "0f66c7870f8078e4a4d668fbfb2745982259d60371eda1d05bd22dc4388d9727",
+     "research/lppls/scenarios.py": "7a6b2b601524fc9b310e81b9d266d6c813423a3bb60c7a73584b5e882fc608e3"
+    },
+    "numpy": "2.5.5",
+    "scipy": "1.18.1",
+    "windows": [
+     10,
+     14,
+     18,
+     21,
+     30,
+     42,
+     52,
+     63,
+     64,
+     84,
+     105,
+     126,
+     127,
+     168,
+     210,
+     252,
+     253,
+     315,
+     378,
+     441,
+     504,
+     525,
+     630,
+     756,
+     1008,
+     1260,
+     1500
+    ],
+    "box": "v2",
+    "seed": 0,
+    "bootstrap": 0,
+    "q3": 0,
+    "search_bounds": {
+     "m": [
+      0.01,
+      2.0
+     ],
+     "omega": [
+      1,
+      50
+     ],
+     "ahead_fraction": [
+      -0.2,
+      0.2
+     ]
+    },
+    "allow_inside": true,
+    "fit_wrapper_hash": "09070b603e9960dccb72d4bd6220e86e26f2c7d6da13f63dd45448410a85f34f",
+    "fit_environment": {
+     "LPPLS_BOX": "v2",
+     "LPPLS_Q3": "0",
+     "LPPLS_G3": "0",
+     "LPPLS_SIGN": "pos",
+     "LPPLS_ANCHOR": "end",
+     "LPPLS_WINDOWS": "full",
+     "ALLOW_INSIDE": true
+    },
+    "hash": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
+    "optimizer": "g3",
+    "window_count": 27
+   },
+   "future_calendar": {
+    "market": "us",
+    "exchange": "XNYS",
+    "holidays_through": "2030-12-31",
+    "closures": [
+     "2026-11-26",
+     "2026-12-25",
+     "2027-01-01",
+     "2027-01-18",
+     "2027-02-15",
+     "2027-03-26",
+     "2027-05-31",
+     "2027-06-18",
+     "2027-07-05",
+     "2027-09-06",
+     "2027-11-25",
+     "2027-12-24",
+     "2028-01-17",
+     "2028-02-21",
+     "2028-04-14",
+     "2028-05-29",
+     "2028-06-19",
+     "2028-07-04",
+     "2028-09-04",
+     "2028-11-23",
+     "2028-12-25",
+     "2029-01-01",
+     "2029-01-15",
+     "2029-02-19",
+     "2029-03-30",
+     "2029-05-28",
+     "2029-06-19",
+     "2029-07-04",
+     "2029-09-03",
+     "2029-11-22",
+     "2029-12-25",
+     "2030-01-01",
+     "2030-01-21",
+     "2030-02-18",
+     "2030-04-19",
+     "2030-05-27",
+     "2030-06-19",
+     "2030-07-04",
+     "2030-09-02",
+     "2030-11-28",
+     "2030-12-25"
+    ],
+    "source": "exchange_calendars==4.13.3:XNYS",
+    "status": "exchange_calendar",
+    "verified": true,
+    "official_verification": "NOT_ESTABLISHED",
+    "note": "交易日按交易所日历计算，节假日已跳过。"
+   },
+   "source_meta": {
+    "id": "US_NDX",
+    "ticker": "^NDX",
+    "market": "us",
+    "kind": "index",
+    "currency": "USD",
+    "timezone": "America/New_York",
+    "exchange": "NASDAQ",
+    "fetched_at": "2026-11-26T04:18:29.877596+00:00",
+    "source": "Yahoo Finance via yfinance",
+    "url": null,
+    "raw_sha256": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6",
+    "normalized_sha256": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
+    "adjustment": "none",
+    "volume_unit": "vendor_native",
+    "history_vintage": "current_download_reconstruction",
+    "normalizer_version": "yfinance_nasdaq_v1_raw_daily",
+    "metadata_file": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6-4ad623e02b23b0f96b150232b52918675951b23664d9bdbbe27edd4a296dd05d.metadata.json",
+    "dropped_unclosed_bars": 0,
+    "provider_currency": "USD",
+    "dropped_non_session_rows": 0,
+    "dropped_non_session_dates": [],
+    "missing_sessions_last_250": 0,
+    "missing_sessions_last_250_dates": [],
+    "cross_check": {
+     "provider": "fredgraph_csv",
+     "overlap": 249,
+     "max_rel_diff": 7.023188220561688e-06,
+     "missing_in_yahoo": 0,
+     "missing_in_yahoo_dates": [],
+     "yahoo_lag_sessions": 0,
+     "yahoo_lag_session_dates": [],
+     "mismatches": [],
+     "status": "ok"
+    },
+    "publication_decision": "owner_approved_2026-11-24",
+    "asset_type": "index",
+    "source_asof": "2026-11-25",
+    "model_asof": "2026-11-18",
+    "public_redistribution": "NOT_ESTABLISHED"
+   },
+   "snapshot_path": "global/US_NDX_2026-11-18.json"
+  },
+  {
    "asof": "2026-11-24",
    "close": 26214.16796875,
    "conf": {
@@ -1431,11 +2383,487 @@
     "public_redistribution": "NOT_ESTABLISHED"
    },
    "snapshot_path": "global/US_NDX_2026-11-24.json"
+  },
+  {
+   "asof": "2026-11-25",
+   "close": 26046.896484375,
+   "conf": {
+    "2-4w": 0.0,
+    "1-3m": 0.0,
+    "3-6m": 0.0,
+    "6-12m": 0.0,
+    "12-24m": 0.0,
+    "2-6y": 0.0
+   },
+   "w": {
+    "2-4w": null,
+    "1-3m": null,
+    "3-6m": null,
+    "6-12m": null,
+    "12-24m": null,
+    "2-6y": null
+   },
+   "clusters": {
+    "2-4w": [],
+    "1-3m": [],
+    "3-6m": [],
+    "6-12m": [],
+    "12-24m": [],
+    "2-6y": []
+   },
+   "top": {
+    "indicators": {
+     "2-4w": {
+      "direction": "positive",
+      "n_windows": 3,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": true,
+      "evidence": "research_candidate"
+     },
+     "1-3m": {
+      "direction": "positive",
+      "n_windows": 5,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "3-6m": {
+      "direction": "positive",
+      "n_windows": 4,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "6-12m": {
+      "direction": "positive",
+      "n_windows": 4,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "12-24m": {
+      "direction": "positive",
+      "n_windows": 5,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "2-6y": {
+      "direction": "positive",
+      "n_windows": 6,
+      "n_qualified_box": 0,
+      "confidence": {
+       "box": 0.0
+      },
+      "signal_status": "no_qualified_fit",
+      "display_only": false,
+      "evidence": "research_candidate"
+     },
+     "rule_note": "v2 搜索后使用原生产 box；27个预登记稀疏窗口，非181窗完整扫描。box 不含振荡周期门槛。"
+    },
+    "scale_clusters": {
+     "2-4w": [],
+     "1-3m": [],
+     "3-6m": [],
+     "6-12m": [],
+     "12-24m": [],
+     "2-6y": []
+    },
+    "scale_windows": [],
+    "lppls_confidence": {
+     "2-4w": 0.0,
+     "1-3m": 0.0,
+     "3-6m": 0.0,
+     "6-12m": 0.0,
+     "12-24m": 0.0,
+     "2-6y": 0.0,
+     "evidence": "research_candidate",
+     "scale_evidence": {
+      "2-4w": "research_candidate",
+      "1-3m": "research_candidate",
+      "3-6m": "research_candidate",
+      "6-12m": "research_candidate",
+      "12-24m": "research_candidate",
+      "2-6y": "research_candidate"
+     }
+    },
+    "signal_status": "no_qualified_fit",
+    "drawdown_price": {
+     "value": null,
+     "evidence": "none"
+    },
+    "scale_clusters_note": "复用现有分尺度聚类；share 是合格拟合数量占比，不是顶部概率；区间为20–80%分位。",
+    "window": {
+     "start": null,
+     "end": null,
+     "evidence": "research_candidate",
+     "rule": "按尺度查看独立聚类"
+    }
+   },
+   "evidence": "research_candidate",
+   "stock_meta": {
+    "evidence": "research_candidate",
+    "variant": "global_sparse27",
+    "source": "Yahoo Finance via yfinance"
+   },
+   "model_version": "global_sparse27_v1_production_v2_box",
+   "data_version": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
+   "first_visible_at": null,
+   "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
+   "record_version": "0882497c4fbfa280433024c612b6dc5e4052e73fbe34625ced8c47ae258530c0",
+   "archive_path": "global/archive/US_NDX/2026-11-25/0882497c4fbfa280433024c612b6dc5e4052e73fbe34625ced8c47ae258530c0.json",
+   "research": {
+    "sample_scope": "current plus two registered earlier trading-day endpoints; no outcome scoring",
+    "cycles_1_5": {
+     "indicators": {
+      "2-4w": {
+       "direction": "positive",
+       "n_windows": 3,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": true,
+       "evidence": "research_candidate"
+      },
+      "1-3m": {
+       "direction": "positive",
+       "n_windows": 5,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "3-6m": {
+       "direction": "positive",
+       "n_windows": 4,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "6-12m": {
+       "direction": "positive",
+       "n_windows": 4,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "12-24m": {
+       "direction": "positive",
+       "n_windows": 5,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      },
+      "2-6y": {
+       "direction": "positive",
+       "n_windows": 6,
+       "n_qualified_box": 0,
+       "confidence": {
+        "box_cycles_1_5": 0.0
+       },
+       "signal_status": "no_qualified_fit",
+       "display_only": false,
+       "evidence": "research_candidate"
+      }
+     },
+     "scale_clusters": {
+      "2-4w": [],
+      "1-3m": [],
+      "3-6m": [],
+      "6-12m": [],
+      "12-24m": [],
+      "2-6y": []
+     },
+     "scale_windows": [],
+     "lppls_confidence": {
+      "2-4w": 0.0,
+      "1-3m": 0.0,
+      "3-6m": 0.0,
+      "6-12m": 0.0,
+      "12-24m": 0.0,
+      "2-6y": 0.0,
+      "evidence": "research_candidate",
+      "scale_evidence": {
+       "2-4w": "research_candidate",
+       "1-3m": "research_candidate",
+       "3-6m": "research_candidate",
+       "6-12m": "research_candidate",
+       "12-24m": "research_candidate",
+       "2-6y": "research_candidate"
+      }
+     },
+     "signal_status": "no_qualified_fit",
+     "drawdown_price": {
+      "value": null,
+      "evidence": "none"
+     }
+    },
+    "cycles_1_5_rule": "production box AND ahead>0 AND full_cycles>=1.5; same fit pool, not future-only refit",
+    "oscillation_formula": "omega/(2*pi)*log(abs(tc)/max(abs(tc-t2),1e-3))",
+    "filter_diagnostics": {
+     "completed": 27,
+     "standalone_pass": {
+      "B_negative": 15,
+      "m_0_1_to_0_9": 20,
+      "omega_6_to_13": 7,
+      "ahead_0_to_90": 4
+     },
+     "sequential_pass": {
+      "B_negative": 15,
+      "m_0_1_to_0_9": 9,
+      "omega_6_to_13": 6,
+      "ahead_0_to_90": 0
+     },
+     "box_qualified": 0,
+     "cycles_1_5_qualified": 0,
+     "tc_inside_sample": 23,
+     "ahead_over_90": 0,
+     "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
+    },
+    "fit_input_hashes": {
+     "14": "a7ffbafa546075eb24cb4f8eb614036ae2cdbf1af388a512b15598d94c7807e5",
+     "10": "10839515066ab438696fd0912d33bdbf469717e48b3d39e15012648bfb61fa38",
+     "18": "68740b146d473f18ab37126aa4236016e48fbbdec223fba82d00b0359d2499ed",
+     "21": "c758c8a1dc3c6b5ef30b725f1aadea43611b4c84da808f3f825c86c7e1f2bbdc",
+     "52": "147ebd18e0190937e50444aab4059497ff3029c0b8e58e3b51476438d8a938e4",
+     "30": "19d6f1191ebcada220b913336f9342df8c1eee09adfccf61eebf474bd187b82d",
+     "42": "9be591b8fcf63388fde527e4824b183f9edc86b62bc878b3f9c63e9e191fa039",
+     "63": "f236ed6850dd6cab0e415175d516e9fc55596fbcf8577dd5f8fe167ac4c80b50",
+     "64": "b23bff1451e2d40b8f81974308eb6b1b68c676ef30b17865189ad10532c39420",
+     "84": "34b00ee3d1c294e51e8383ea739c02e3f3283e9740813d3cf1244fe81a18f22d",
+     "105": "6e31d4f63aea5b18d8044f33be24e47852d1a7e87f9040f0e5df0e17e8f89acc",
+     "168": "d39d094262321a29542702727565ec47ffa0f732b9d9d54ed9f73dd1c43f9317",
+     "127": "24d17cb6191b7e3b5461f75634145e60bb515ecc470f4a074680423edaffa992",
+     "210": "1b9f75f2aead61324c2cec61c6b9ad344d2f8d92397a66050a0677f4f95db474",
+     "126": "624511d52d3f4ae5e421a5c5d68620dcdd4db9ee6127f2faf7bc7e0eb15e880f",
+     "252": "f83a69ad0e6a1dcefba75099b16c067127d859e8d07ef99029bc8ada4acf5c73",
+     "253": "f7d105f45e133206d04b793ad083ea3c45248743d632cb1e81e5f87598785b4a",
+     "315": "7c8bc23966330e2a9e59b661142375a98721bf773b2660dbcf663e7c710e5aa1",
+     "441": "c5513e1bfa3b6d73cc7232e7f81832acfb128d4127d00b53f5cf5b79766f9157",
+     "378": "b776257a7b98fdcbec7253f7451405d6b9fd82ecb2a593d68abde56ce36744e4",
+     "504": "634765163decd9a4538fbe1223b8b4cf48f117fea395ea74d0330ba55f2c996d",
+     "525": "a98a58774feadc09ad012ac2b2b04ffcfbd47cf8762c2a1bb29afca5ddbcb431",
+     "756": "09be10ec62b89f718889aa65d432fc171f1e2aeaa7c4454f4b7526678af1d603",
+     "630": "a1a85a53c5e4ba4594b36840df0da02ad0eaa7ce552fccd2e3acd6fec7cdc0fc",
+     "1008": "7c085580626f3ee8a02f7388cdcdaa68c947205a922798c8007647b21d823ad9",
+     "1260": "343723e7fca83f62ff2808a59793b6e744ba1f065eae0a82e60b0ea13ec33aba",
+     "1500": "5aa8ef79a7bd0adddb9f6032f8f68f7a2d9773cbb4442b12ab84d5d372326594"
+    },
+    "future_calendar_verified": true,
+    "stage_top_score": null,
+    "export_code_hash": "455d631d7ab8e8737359c9af2bfee8cdbc693bf19ad2c6a7356a426bfb1b1cdc"
+   },
+   "params": {
+    "source_sha": "bdac71660d9d7d3241715256b173b15cead0f71b",
+    "math_hashes": {
+     "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
+     "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
+     "research/features/lppls_rules.py": "39af041f6e4d36e74e2ace01154f4a292769af69e1901190f870cc0ec32a8fa0",
+     "research/lppls/core.py": "b1962fb4d19aad477c0ae4c542b06a3cb5eb7e1be2351ab7aebc247850a1a231",
+     "research/optim/optimizers.py": "0f66c7870f8078e4a4d668fbfb2745982259d60371eda1d05bd22dc4388d9727",
+     "research/lppls/scenarios.py": "7a6b2b601524fc9b310e81b9d266d6c813423a3bb60c7a73584b5e882fc608e3"
+    },
+    "numpy": "2.5.5",
+    "scipy": "1.18.1",
+    "windows": [
+     10,
+     14,
+     18,
+     21,
+     30,
+     42,
+     52,
+     63,
+     64,
+     84,
+     105,
+     126,
+     127,
+     168,
+     210,
+     252,
+     253,
+     315,
+     378,
+     441,
+     504,
+     525,
+     630,
+     756,
+     1008,
+     1260,
+     1500
+    ],
+    "box": "v2",
+    "seed": 0,
+    "bootstrap": 0,
+    "q3": 0,
+    "search_bounds": {
+     "m": [
+      0.01,
+      2.0
+     ],
+     "omega": [
+      1,
+      50
+     ],
+     "ahead_fraction": [
+      -0.2,
+      0.2
+     ]
+    },
+    "allow_inside": true,
+    "fit_wrapper_hash": "09070b603e9960dccb72d4bd6220e86e26f2c7d6da13f63dd45448410a85f34f",
+    "fit_environment": {
+     "LPPLS_BOX": "v2",
+     "LPPLS_Q3": "0",
+     "LPPLS_G3": "0",
+     "LPPLS_SIGN": "pos",
+     "LPPLS_ANCHOR": "end",
+     "LPPLS_WINDOWS": "full",
+     "ALLOW_INSIDE": true
+    },
+    "hash": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
+    "optimizer": "g3",
+    "window_count": 27
+   },
+   "future_calendar": {
+    "market": "us",
+    "exchange": "XNYS",
+    "holidays_through": "2030-12-31",
+    "closures": [
+     "2026-11-26",
+     "2026-12-25",
+     "2027-01-01",
+     "2027-01-18",
+     "2027-02-15",
+     "2027-03-26",
+     "2027-05-31",
+     "2027-06-18",
+     "2027-07-05",
+     "2027-09-06",
+     "2027-11-25",
+     "2027-12-24",
+     "2028-01-17",
+     "2028-02-21",
+     "2028-04-14",
+     "2028-05-29",
+     "2028-06-19",
+     "2028-07-04",
+     "2028-09-04",
+     "2028-11-23",
+     "2028-12-25",
+     "2029-01-01",
+     "2029-01-15",
+     "2029-02-19",
+     "2029-03-30",
+     "2029-05-28",
+     "2029-06-19",
+     "2029-07-04",
+     "2029-09-03",
+     "2029-11-22",
+     "2029-12-25",
+     "2030-01-01",
+     "2030-01-21",
+     "2030-02-18",
+     "2030-04-19",
+     "2030-05-27",
+     "2030-06-19",
+     "2030-07-04",
+     "2030-09-02",
+     "2030-11-28",
+     "2030-12-25"
+    ],
+    "source": "exchange_calendars==4.13.3:XNYS",
+    "status": "exchange_calendar",
+    "verified": true,
+    "official_verification": "NOT_ESTABLISHED",
+    "note": "交易日按交易所日历计算，节假日已跳过。"
+   },
+   "source_meta": {
+    "id": "US_NDX",
+    "ticker": "^NDX",
+    "market": "us",
+    "kind": "index",
+    "currency": "USD",
+    "timezone": "America/New_York",
+    "exchange": "NASDAQ",
+    "fetched_at": "2026-11-26T04:18:29.877596+00:00",
+    "source": "Yahoo Finance via yfinance",
+    "url": null,
+    "raw_sha256": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6",
+    "normalized_sha256": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
+    "adjustment": "none",
+    "volume_unit": "vendor_native",
+    "history_vintage": "current_download_reconstruction",
+    "normalizer_version": "yfinance_nasdaq_v1_raw_daily",
+    "metadata_file": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6-4ad623e02b23b0f96b150232b52918675951b23664d9bdbbe27edd4a296dd05d.metadata.json",
+    "dropped_unclosed_bars": 0,
+    "provider_currency": "USD",
+    "dropped_non_session_rows": 0,
+    "dropped_non_session_dates": [],
+    "missing_sessions_last_250": 0,
+    "missing_sessions_last_250_dates": [],
+    "cross_check": {
+     "provider": "fredgraph_csv",
+     "overlap": 249,
+     "max_rel_diff": 7.023188220561688e-06,
+     "missing_in_yahoo": 0,
+     "missing_in_yahoo_dates": [],
+     "yahoo_lag_sessions": 0,
+     "yahoo_lag_session_dates": [],
+     "mismatches": [],
+     "status": "ok"
+    },
+    "publication_decision": "owner_approved_2026-11-24",
+    "asset_type": "index",
+    "source_asof": "2026-11-25",
+    "model_asof": "2026-11-25",
+    "public_redistribution": "NOT_ESTABLISHED"
+   },
+   "snapshot_path": "global/US_NDX_2026-11-25.json"
   }
  ],
  "revisions": [],
  "model_version": "global_sparse27_v1_production_v2_box",
- "data_version": "8569d0e93fde4abd2eaa9799c4f040993ab38779239b5e33fc210691452e8d40",
+ "data_version": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
  "evidence": "research_candidate",
  "scale_evidence": {
   "2-4w": "research_candidate",
@@ -1459,16 +2887,16 @@
   "currency": "USD",
   "timezone": "America/New_York",
   "exchange": "NASDAQ",
-  "fetched_at": "2026-11-25T01:27:45.636352+00:00",
+  "fetched_at": "2026-11-26T04:18:29.877596+00:00",
   "source": "Yahoo Finance via yfinance",
   "url": null,
-  "raw_sha256": "c5f7bbad460af03ff060179d96fe4bf2c1cf7b112f8d6fd5324f9517e9887d0c",
-  "normalized_sha256": "8569d0e93fde4abd2eaa9799c4f040993ab38779239b5e33fc210691452e8d40",
+  "raw_sha256": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6",
+  "normalized_sha256": "5b8d557a873615a07818974b95916c39975c2dddd55410a8cb1a768f243c8717",
   "adjustment": "none",
   "volume_unit": "vendor_native",
   "history_vintage": "current_download_reconstruction",
   "normalizer_version": "yfinance_nasdaq_v1_raw_daily",
-  "metadata_file": "c5f7bbad460af03ff060179d96fe4bf2c1cf7b112f8d6fd5324f9517e9887d0c-1579cc1d1570b6607146b7f448b9ddbf67c7e61d99360e62475eed868ac27d0c.metadata.json",
+  "metadata_file": "08b86ae3303d06b7284c84266ddc8f6821615fb2c90cb2299e03dfeec4d86af6-4ad623e02b23b0f96b150232b52918675951b23664d9bdbbe27edd4a296dd05d.metadata.json",
   "dropped_unclosed_bars": 0,
   "provider_currency": "USD",
   "dropped_non_session_rows": 0,
@@ -1477,7 +2905,7 @@
   "missing_sessions_last_250_dates": [],
   "cross_check": {
    "provider": "fredgraph_csv",
-   "overlap": 247,
+   "overlap": 249,
    "max_rel_diff": 7.023188220561688e-06,
    "missing_in_yahoo": 0,
    "missing_in_yahoo_dates": [],
@@ -1488,8 +2916,8 @@
   },
   "publication_decision": "owner_approved_2026-11-24",
   "asset_type": "index",
-  "source_asof": "2026-11-24",
-  "model_asof": "2026-11-10",
+  "source_asof": "2026-11-25",
+  "model_asof": "2026-11-11",
   "public_redistribution": "NOT_ESTABLISHED"
  },
  "future_calendar": {
