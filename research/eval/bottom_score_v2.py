@@ -42,7 +42,7 @@ def is_green(frame: dict, cfg: dict) -> bool:
         score = 100 * (0.5 * v + 0.5 * d20)
     else:
         score = 100 * v
-    return score >= cfg["tau"]
+    return round(score, 6) >= cfg["tau"]  # 0.5*v+0.5*d 这类和会落在 49.999999
 
 
 def load_index(sym: str, segment: str) -> dict | None:
@@ -110,7 +110,12 @@ def evaluate(indices: list[dict], cfg: dict, rng: np.random.Generator | None = N
                     vals.append(v)
             if vals:
                 null.append(float(np.mean(vals)))
-        res["null_p"] = float((np.array(null) >= res["L50"]).mean()) if null else None
+        # 观测值与零分布用同一批指数（回落周不足 52 个的指数两边都不算）
+        obs_vals = [per[ix["sym"]]["L50"] for ix, _g in usable if per[ix["sym"]]["L50"] is not None]
+        obs = float(np.mean(obs_vals)) if obs_vals else None
+        res["null_indices"] = [ix["sym"] for ix, _g in usable]
+        res["null_obs_L50"] = obs
+        res["null_p"] = float((np.array(null) >= obs).mean()) if null and obs is not None else None
         res["null_q"] = [float(x) for x in np.quantile(null, [0.05, 0.5, 0.95])] if null else None
     return res
 
@@ -140,11 +145,15 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--segment", choices=("dev", "cal", "test"), default="dev")
     ap.add_argument("--config", help="cal/test 只评估开发段选出的这一个配置（另加 C0 作对照）")
+    ap.add_argument("--erratum", action="store_true", help="只重算零对照字段；其余数字与已有结果不一致则中止")
     args = ap.parse_args()
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     out = REPORT_DIR / f"{args.segment}.json"
+    previous = None
     if args.segment != "dev":
-        if out.exists():
+        if args.erratum:
+            previous = json.loads(out.read_text(encoding="utf-8"))["results"]
+        elif out.exists():
             raise SystemExit(f"{out} 已存在：{args.segment} 段只跑一次")
         if args.config not in CONFIGS or args.config == "C0":
             raise SystemExit("cal/test 必须用 --config 指定开发段选出的配置")
@@ -152,6 +161,11 @@ def main() -> None:
     names = list(CONFIGS) if args.segment == "dev" else ["C0", args.config]
     rng = np.random.default_rng(SEED)
     results = {n: evaluate(indices, CONFIGS[n], rng) for n in names}
+    if previous is not None:
+        for name, res in results.items():
+            for key, value in res.items():
+                if not key.startswith("null_") and previous[name].get(key) != value:
+                    raise SystemExit(f"{name}.{key} 与已有结果不一致，勘误中止")
     report = {"segment": args.segment, "seed": SEED, "indices": [ix["sym"] for ix in indices],
               "pullback_weeks": int(sum(len(ix["pos"]) for ix in indices)), "results": results}
     if args.segment == "dev":
