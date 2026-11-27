@@ -87,8 +87,7 @@ def evaluate(rebuilt: pd.DataFrame) -> dict:
     states, buy, sell = C.candidates(frame)
     close = states["sh"].to_numpy(float)
     dates = states["date"]
-    valid = (dates.ge(TEST_START) & dates.le(TEST_END)).to_numpy().copy()
-    valid[: C.HORIZON] = False
+    valid = (dates.ge(TEST_START) & dates.le(TEST_END) & states["state"].notna()).to_numpy().copy()
     valid[len(valid) - C.HORIZON :] = False
     result: dict = {
         "test": [str(dates[valid].iloc[0]), str(dates[valid].iloc[-1])],

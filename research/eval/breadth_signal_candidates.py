@@ -24,11 +24,6 @@ def _ended(mask) -> np.ndarray:
     return ~mask & np.r_[False, mask[:-1]]
 
 
-def _recent(mask, days: int) -> np.ndarray:
-    series = pd.Series(np.asarray(mask, float)).shift(1).rolling(days, min_periods=1).max()
-    return series.fillna(0).to_numpy() > 0
-
-
 def _first_after(trigger, match, days: int) -> np.ndarray:
     """每次触发后 days 个交易日内第一个满足 match 的日子；取到后要等新的触发才再取。"""
     trigger, match = np.asarray(trigger, bool), np.asarray(match, bool)
@@ -44,15 +39,14 @@ def _first_after(trigger, match, days: int) -> np.ndarray:
 
 
 def candidates(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray], dict[str, np.ndarray]]:
-    """frame: date, sh, red, lu, ld, amount_yi, P20。返回 (有状态的日序列, 买入候选, 卖出候选)。"""
+    """frame: date, sh, red, lu, ld, amount_yi, P20。返回 (逐日状态，暖机期 state 为空, 买入候选, 卖出候选)。"""
     states = breadth.classify_states(frame)
-    states = states.loc[states["state"].notna()].reset_index(drop=True)
-    state = states["state"]
+    state = states["state"].fillna("")
     close = states["sh"]
     panic = state.str.startswith("panic").to_numpy()
     panic_low = state.eq("panic_low").to_numpy()
     high60 = (close >= close.rolling(60, min_periods=60).max()).to_numpy()
-    overheat = states["overheat"].to_numpy()
+    overheat = states["overheat"].fillna(False).to_numpy(bool)
     up = (states["red"] >= breadth.STATE_RED_HIGH).to_numpy()
     heavy_down = state.eq("down_heavy").to_numpy() | panic
     p20 = states["P20"].to_numpy()
@@ -73,7 +67,7 @@ def candidates(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray]
     sell = {
         "S1": _first(overheat),
         "S3": overheat & high60,
-        "S4": states["top_div"].to_numpy(),
+        "S4": states["top_div"].fillna(False).to_numpy(bool),
         "S5": _first_after(overheat, heavy_down, 20),
         "S6": below_half,
     }
