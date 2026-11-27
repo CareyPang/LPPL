@@ -1,12 +1,12 @@
 {
-  "asof": "2026-11-26",
+  "asof": "2026-11-27",
   "rule": "以 ak.stock_ebs_lg 的交易日为准，破净股占比按日期去重并向前填充；股债利差和破净股占比分别使用含当日的过去 750 个交易日滚动秩分位（至少 500 日）；两项分位均不低于 90% 时记为信号日，前 20 个交易日无信号才计为独立事件，仅统计 2007-01-01 起的事件；事件后最低取之后 1–250 个交易日沪深300收盘价的最低值，并计算第 120/250 个交易日收益；下跌日基准为沪深300较 20 个交易日前下跌且之后 250 日可用的交易日。",
   "current": {
-    "date": "2026-11-26",
-    "erp": 0.0635,
-    "erp_pct": 0.5107,
+    "date": "2026-11-27",
+    "erp": 0.0618,
+    "erp_pct": 0.3973,
     "pbn_ratio": 0.1325,
-    "pbn_pct": 0.9107,
+    "pbn_pct": 0.91,
     "signal": false,
     "last_event_date": "2024-08-05"
   },
@@ -155,195 +155,12 @@
     "erp_and_close": "ak.stock_ebs_lg",
     "pbn_ratio": "ak.stock_a_below_net_asset_statistics(symbol=\"全部A股\")"
   },
-  "a500": {
-    "asof": "2026-11-27",
-    "rule": "以中证A500成分股合成滚动市盈率（1/PE_TTM − 10年国债收益率）可用日期为准，破净股占比按日期去重并向前填充；股债利差和破净股占比分别使用含当日的过去 750 个交易日滚动秩分位（至少 500 日）；两项分位均不低于 90% 时记为信号日，前 20 个交易日无信号才计为独立事件，仅统计 2007-01-01 起的事件；事件后最低取之后 1–250 个交易日中证A500收盘价的最低值，并计算第 120/250 个交易日收益；下跌日基准为中证A500较 20 个交易日前下跌且之后 250 日可用的交易日。",
-    "current": {
-      "date": "2026-11-27",
-      "erp": 0.0477,
-      "erp_pct": 0.436,
-      "pbn_ratio": 0.1325,
-      "pbn_pct": 0.91,
-      "signal": false,
-      "last_event_date": "2024-06-25"
-    },
-    "events": [
-      {
-        "date": "2008-10-28",
-        "erp": 0.041,
-        "erp_pct": 0.9987,
-        "pbn_ratio": 0.1161,
-        "pbn_pct": 0.9347,
-        "post_min": -0.0455,
-        "post_min_date": "2008-11-04",
-        "post_min_complete": true,
-        "ret_120": 0.5279,
-        "ret_250": 1.0382
-      },
-      {
-        "date": "2011-12-01",
-        "erp": 0.054,
-        "erp_pct": 0.9987,
-        "pbn_ratio": 0.0113,
-        "pbn_pct": 0.9227,
-        "post_min": -0.197,
-        "post_min_date": "2012-12-03",
-        "post_min_complete": true,
-        "ret_120": -0.0278,
-        "ret_250": -0.1418
-      },
-      {
-        "date": "2013-05-02",
-        "erp": 0.0625,
-        "erp_pct": 0.9187,
-        "pbn_ratio": 0.0348,
-        "pbn_pct": 0.9687,
-        "post_min": -0.0948,
-        "post_min_date": "2013-06-27",
-        "post_min_complete": true,
-        "ret_120": 0.01,
-        "ret_250": -0.0491
-      },
-      {
-        "date": "2013-06-13",
-        "erp": 0.0636,
-        "erp_pct": 0.94,
-        "pbn_ratio": 0.0336,
-        "pbn_pct": 0.9567,
-        "post_min": -0.0896,
-        "post_min_date": "2013-06-27",
-        "post_min_complete": true,
-        "ret_120": 0.0548,
-        "ret_250": -0.0504
-      },
-      {
-        "date": "2013-10-31",
-        "erp": 0.0652,
-        "erp_pct": 0.9413,
-        "pbn_ratio": 0.0466,
-        "pbn_pct": 0.9293,
-        "post_min": -0.0835,
-        "post_min_date": "2014-05-19",
-        "post_min_complete": true,
-        "ret_120": -0.0773,
-        "ret_250": 0.1048
-      },
-      {
-        "date": "2013-12-26",
-        "erp": 0.0645,
-        "erp_pct": 0.908,
-        "pbn_ratio": 0.047,
-        "pbn_pct": 0.9213,
-        "post_min": -0.0539,
-        "post_min_date": "2014-05-19",
-        "post_min_complete": true,
-        "ret_120": -0.0271,
-        "ret_250": 0.5374
-      },
-      {
-        "date": "2018-09-12",
-        "erp": 0.0461,
-        "erp_pct": 0.9027,
-        "pbn_ratio": 0.0748,
-        "pbn_pct": 1.0,
-        "post_min": -0.0916,
-        "post_min_date": "2019-01-03",
-        "post_min_complete": true,
-        "ret_120": 0.1886,
-        "ret_250": 0.2031
-      },
-      {
-        "date": "2020-02-03",
-        "erp": 0.0479,
-        "erp_pct": 0.904,
-        "pbn_ratio": 0.1234,
-        "pbn_pct": 0.9933,
-        "post_min": -0.0315,
-        "post_min_date": "2020-03-23",
-        "post_min_complete": true,
-        "ret_120": 0.2618,
-        "ret_250": 0.5035
-      },
-      {
-        "date": "2020-03-17",
-        "erp": 0.0486,
-        "erp_pct": 0.9133,
-        "pbn_ratio": 0.1002,
-        "pbn_pct": 0.9173,
-        "post_min": -0.0474,
-        "post_min_date": "2020-03-23",
-        "post_min_complete": true,
-        "ret_120": 0.2375,
-        "ret_250": 0.3628
-      },
-      {
-        "date": "2022-04-26",
-        "erp": 0.0505,
-        "erp_pct": 0.984,
-        "pbn_ratio": 0.1081,
-        "pbn_pct": 0.9687,
-        "post_min": -0.0412,
-        "post_min_date": "2022-10-31",
-        "post_min_complete": true,
-        "ret_120": -0.0115,
-        "ret_250": 0.0764
-      },
-      {
-        "date": "2024-01-19",
-        "erp": 0.0578,
-        "erp_pct": 0.9973,
-        "pbn_ratio": 0.0851,
-        "pbn_pct": 0.914,
-        "post_min": -0.0476,
-        "post_min_date": "2024-02-05",
-        "post_min_complete": true,
-        "ret_120": 0.0336,
-        "ret_250": 0.2029
-      },
-      {
-        "date": "2024-06-25",
-        "erp": 0.0527,
-        "erp_pct": 0.908,
-        "pbn_ratio": 0.1427,
-        "pbn_pct": 0.9947,
-        "post_min": -0.0857,
-        "post_min_date": "2024-09-13",
-        "post_min_complete": true,
-        "ret_120": 0.1589,
-        "ret_250": 0.1556
-      }
-    ],
-    "summary": {
-      "n_events": 12,
-      "n_with_250d": 12,
-      "n_up_250": 9,
-      "share_up_250": 0.75,
-      "median_ret_250": 0.1792,
-      "median_post_min": -0.0687
-    },
-    "baseline": {
-      "n_days": 2117,
-      "share_up_250": 0.5456,
-      "median_ret_250": 0.0358,
-      "median_post_min": -0.1304
-    },
-    "notes": [
-      "历史回测",
-      "样本只有 12 次",
-      "2011–2013 熊市中提前约一年触发，之后再跌 12–18%",
-      "成分股按当前名单回溯，2005 年只有 179 只有数据"
-    ],
-    "sources": {
-      "erp": "中证A500 成分股合成滚动市盈率（东财 RPT_VALUEANALYSIS_DET 日更；2026-11-13 前为研究重建）与 10 年国债收益率 ak.bond_zh_us_yield_em",
-      "close": "ak.stock_zh_index_daily(sh000510)",
-      "pbn_ratio": "ak.stock_a_below_net_asset_statistics(symbol=\"全部A股\")"
-    },
-    "fetch_failed": 0
-  },
+  "a500": null,
+  "a500_error": "ReadTimeout: HTTPSConnectionPool(host='oss-ch.csindex.com.cn', port=443): Read timed out. (read timeout=30)",
   "version": {
     "kind": "bottom_signal",
-    "asof": "2026-11-26",
-    "file": "versions/bottom_signal/2026-11-26/20261127T093917Z_452cfcd8.json.gz",
-    "sha256": "452cfcd82634ce926c993f96bbc75bcb369bf6672ceb5e21318ada793e1760c7"
+    "asof": "2026-11-27",
+    "file": "versions/bottom_signal/2026-11-27/20261127T111048Z_f5ffe0a1.json.gz",
+    "sha256": "f5ffe0a10dc8e3c7dc5f6aa03327647ffe4c759d6840b52a858b9156aa36e8f7"
   }
 }
