@@ -101,8 +101,8 @@ test('home navigation anchors and assistant context remain on the published page
   assert.match(home, /id="index-overview"[^>]*data-ai-context="指数风险概览"/);
   assert.match(home, /id="today" data-ai-context="今日摘要"/);
   assert.match(home, /<section id="mine"/);
-  assert.match(home, /class="btn pri" href="chart\.html\?kind=index&from=home\.html&code=sh000001">打开上证指数/);
-  assert.match(home, /class="btn sec" href="backtest\.html#view=bench">方法与证据/);
+  assert.match(home, /class="btn pri" href="chart\.html\?kind=index&from=home\.html&code=sh000001">上证指数图表/);
+  assert.match(home, /class="btn sec" href="backtest\.html#view=bench">回测结果/);
   assert.match(nav, /var SIDE_REPLAYS = \[/);
   assert.match(nav, /sideFooter\.appendChild\(replayList\)/);
   assert.doesNotMatch(index, /id="p-bench"|data-p="p-bench"|function renderBench/);

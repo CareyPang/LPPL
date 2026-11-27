@@ -17,12 +17,17 @@
 
   var DAY = 86400000;
   var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  /* 按编制方分三种颜色：上交所红、深交所蓝、中证深色 */
+  /* 圆标：名称带数字的指数写数字，其余用自绘图形（mark），都没有时取首字 */
   var BADGES = {
-    sh000001: ['上证', '#e03c31'], sh000016: ['上50', '#e03c31'], sh000688: ['科创', '#e03c31'],
-    sh000300: ['300', '#131722'], sh000905: ['500', '#131722'],
-    sz399001: ['深成', '#2962ff'], sz399006: ['创业', '#2962ff'],
+    sh000001: ['', '#2a3f6f', 'bars'], sz399001: ['', '#0d2a6b', 'leaf'], sz399006: ['', '#1565c0', 'rise'],
+    sh000016: ['50', '#c2172d'], sh000300: ['300', '#0b8fb3'], sh000905: ['500', '#1f4e8c'], sh000688: ['50', '#5b3fa6'],
   };
+  var MARKS = {
+    bars: '<path d="M7 8.5h11M5 12h14M6 15.5h11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
+    leaf: '<path d="M12 5c4 1.6 5.6 4.6 4.6 8.2-.6 2.4-2.3 4.3-4.6 5.8-2.3-1.500-4-3.400-4.600-5.800C6.400 9.600 8 6.600 12 5Z" fill="#fff"/><path d="M12 8v9" stroke="currentColor" stroke-width="1.400" stroke-linecap="round"/>',
+    rise: '<path d="M6 15.500 10 11l3 2.500L18 8" stroke="#fff" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14.500 8H18v3.500" stroke="#fff" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  };
+  var FALLBACK = ['#1f4e8c', '#0b8fb3', '#3d6f8e', '#5b3fa6', '#c2172d', '#2a3f6f'];
   var RANGES = { '52': '近 1 年', '260': '近 5 年', all: '' };
   var RANGE_KEY = 'lppl.home.mainRange';
   var MAIN_SYM = 'sh000001';
@@ -41,9 +46,18 @@
 
   function badgeFor(sym, name) {
     var key = String(sym || '').toLowerCase(), b = BADGES[key];
-    if (b) return { text: b[0], color: b[1] };
-    var text = String(name || sym || '?').replace(/\s+/g, '').charAt(0) || '?';
-    return { text: text, color: '#787b86' };
+    if (b) return b[2] ? { text: '', color: b[1], mark: b[2] } : { text: b[0], color: b[1] };
+    var label = String(name || sym || '?').replace(/\s+/g, '');
+    var num = /(\d{2,4})$/.exec(label);
+    var h = 0, id = String(sym || name || '');
+    for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
+    return { text: num ? num[1] : (label.charAt(0) || '?').toUpperCase(), color: FALLBACK[h % FALLBACK.length] };
+  }
+  /* 圆标内部的 HTML：图形标或转义后的文字 */
+  function badgeInner(b) {
+    return b.mark && MARKS[b.mark]
+      ? '<svg viewBox="0 0 24 24" width="62%" height="62%" style="color:' + b.color + '" aria-hidden="true">' + MARKS[b.mark] + '</svg>'
+      : esc(b.text);
   }
 
   /* 已发布的周度帧 → [{d, c, a, dd}]，按日期升序；缺日期或收盘的帧跳过 */
@@ -230,6 +244,8 @@
     var reduce = win.matchMedia ? win.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
     pressFeel(doc, reduce);
     rowBadges(win);
+    var mainBd = doc.getElementById('hm-main-bd');
+    if (mainBd) mainBd.innerHTML = badgeInner(badgeFor(MAIN_SYM));
     var L = win.LPPL;
     if (!L) return;
 
@@ -401,7 +417,7 @@
     box.innerHTML = list.map(function (a) {
       var b = badgeFor(a.sym, a.name);
       return '<a class="hm-ar" href="' + esc(chartHref(a.sym)) + '"><i class="hm-bd hm-bd-sm" style="background:' + b.color + '" aria-hidden="true">' +
-        esc(b.text) + '</i><span class="an">' + esc(a.name) + '</span><span class="ad num">' + esc(a.date) +
+        badgeInner(b) + '</i><span class="an">' + esc(a.name) + '</span><span class="ad num">' + esc(a.date) +
         (a.weeks != null ? '<em>' + (a.weeks === 0 ? '本周' : a.weeks + ' 周前') + '</em>' : '') + '</span></a>';
     }).join('');
   }
@@ -439,7 +455,7 @@
         i.className = 'hm-bd';
         i.setAttribute('aria-hidden', 'true');
         i.style.background = b.color;
-        i.textContent = b.text;
+        i.innerHTML = badgeInner(b);
         a.insertBefore(i, a.firstChild);
       });
     }
@@ -448,7 +464,7 @@
   }
 
   return {
-    badgeFor: badgeFor, weeklySeries: weeklySeries, sliceRange: sliceRange, normRange: normRange, change: change,
+    badgeFor: badgeFor, badgeInner: badgeInner, weeklySeries: weeklySeries, sliceRange: sliceRange, normRange: normRange, change: change,
     rangeLabel: rangeLabel, niceTicks: niceTicks, lastAlert: lastAlert, alertCount: alertCount, weeksBetween: weeksBetween,
     recentAlerts: recentAlerts, drawdowns: drawdowns, answer: answer, longDate: longDate, pct: pct, chartHref: chartHref,
     xLabels: xLabels, renderChart: renderChart, mount: mount,
