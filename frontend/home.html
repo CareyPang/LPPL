@@ -1,167 +1,15 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>临界点 · LPPLS 金融物理诊断与历史回测平台</title>
-<meta name="description" content="按市场查询指数与已覆盖个股，查看多尺度 LPPLS 顶部区间、历史回放和证据。">
-<meta name="theme-color" content="#1f5fd6">
+<title>临界点 · A 股在加速吗？</title>
+<meta name="description" content="每个交易日收盘后，用多窗口 LPPLS 检查 A 股主要指数有没有出现超指数上涨；样本区间和检验结果全部公开。">
+<meta name="theme-color" content="#ffffff">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="临界点">
-<meta property="og:title" content="临界点 · 浪成于微澜之间">
+<meta property="og:title" content="临界点 · A 股在加速吗？">
 <meta property="og:description" content="LPPLS 金融物理诊断与历史回测工作台：多尺度临界区间、FCO 历史泡沫强度与市场复盘。">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5fd6'/%3E%3Cpath d='M5 22c4 0 5-4 8-4s4 3 7 0 4-10 8-11' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
-<style>
-:root{--bg:#f6f8fb;--card:#fff;--ink:#131722;--ink2:#434a59;--mute:#6a7180;--line:#e3e7ee;--line2:#eef1f6;--pri:#1f5fd6;--pri2:#e9f0fd;--up:#d6303a;--dn:#11845a;--warn:#9a5b00;--warnbg:#fff5e0;
---sans:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;--mono:"JetBrains Mono","Cascadia Mono",Consolas,monospace}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans)}
-a{color:inherit;text-decoration:none}
-:focus-visible{outline:2px solid var(--pri);outline-offset:2px;border-radius:6px}
-.m{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.up{color:var(--up)}.dn{color:var(--dn)}
-.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
-/* ---------- 首屏 ---------- */
-.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,560px);gap:56px;align-items:center;padding:64px 0 72px}
-@media(min-width:1200px){body.vs-home .hero h1{font-size:clamp(36px,3.3vw,48px)}}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--pri);background:var(--pri2);padding:3px 12px;border-radius:999px;margin-bottom:20px}
-h1{margin:0;font:700 clamp(40px,5.2vw,64px)/1.18 var(--sans);letter-spacing:.02em}
-.poem{margin:14px 0 0;font-size:20px;color:var(--ink2)}
-.pos{margin:22px 0 0;color:var(--ink2);max-width:34em}
-.q{margin:14px 0 0;color:var(--mute);font:italic 14px/1.6 Georgia,serif}
-.acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
-.hsrch{margin-top:20px;display:flex;align-items:center;gap:10px;border:1.5px solid #c7d5ec;border-radius:14px;background:#fff;padding:12px 16px;max-width:560px;box-shadow:0 8px 24px -14px rgba(31,95,214,.28);transition:border-color .15s,box-shadow .15s}
-.hsrch:focus-within{border-color:var(--pri);box-shadow:0 10px 28px -12px rgba(31,95,214,.36)}.hsrch svg{flex:none;color:var(--pri)}.hsrch input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:15px;background:transparent}.hsrch kbd{font:11px/1 ui-monospace,monospace;color:var(--mute);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
-.qchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--mute)}
-.qchips a{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink2);font-weight:500;transition:border-color .15s,color .15s,background .15s}
-.qchips a:hover{border-color:var(--pri);color:var(--pri);background:var(--pri2)}
-.qchips a b{font-family:var(--mono);font-weight:600;color:var(--ink)}
-.pseg{display:flex;gap:2px;background:var(--bg2,#eef2f7);border-radius:8px;padding:2px;margin-left:auto}.pseg button{border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer}.pseg button[aria-pressed=true]{background:#fff;color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.spark-range{display:flex;gap:2px;background:var(--bg2,#eef2f7);border-radius:8px;padding:2px}.spark-range button{border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:var(--muted);padding:4px 8px;border-radius:6px;cursor:pointer}.spark-range button[aria-pressed=true]{background:#fff;color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.panel .pwl{padding:6px 12px}.panel .pwl .wl{display:block}.panel .pwl .wi{padding:8px 6px}
-.recent{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 0;padding:9px 14px;border:1px solid var(--line2);border-radius:10px;background:#fff;font-size:13px;color:var(--muted)}.recent b{color:var(--ink,#111);font-weight:600}.recent .tg{font-size:11px;font-weight:700;color:var(--pri);border:1px solid currentColor;border-radius:4px;padding:1px 6px}.recent a{margin-left:auto;color:var(--pri);font-weight:600}
-.ph .d{margin-left:0}.ph{flex-wrap:wrap}#ph-t,.pseg button{white-space:nowrap}
-@media(max-width:520px){.spark-range{order:3;margin-left:auto}.pseg{order:4;flex-basis:100%;margin-left:0}.pseg button{flex:1}}
-.btn{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 22px;border-radius:999px;font-weight:600;font-size:15px;transition:background .15s,border-color .15s,transform .15s ease-out}
-.btn.pri{background:var(--pri);color:#fff}.btn.pri:hover{background:#174bb0;transform:translateY(-1px)}
-.btn.sec{border:1px solid #cfd6e2;background:#fff}.btn.sec:hover{border-color:var(--pri);color:var(--pri)}
-/* 六指数面板 */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 48px -24px rgba(19,23,34,.22);overflow:hidden}
-.ph{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line2)}
-.ph h2{margin:0;font-size:15px}
-.ph .d{margin-left:auto;font-size:12px;color:var(--mute)}
-.stale{display:none;font-size:12px;color:var(--warn);background:var(--warnbg);border:1px solid #f1dfb8;padding:1px 8px;border-radius:999px}
-.stale.on{display:inline-block}
-.rows{list-style:none;margin:0;padding:0}
-.row{display:grid;grid-template-columns:minmax(0,1.1fr) 80px minmax(0,.9fr);grid-template-rows:auto auto;column-gap:16px;align-items:center;padding:12px 20px;border-top:1px solid var(--line2);transition:background .15s}
-.row:first-child{border-top:0}
-a.row:hover{background:#f7f9fd}
-.row .n{font-weight:600;font-size:15px}.row .c{font:12px var(--mono);color:var(--mute)}
-.row svg{grid-row:1;grid-column:2;width:80px;height:30px}
-.row svg path{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-.row svg .spark-zero{stroke:var(--line);stroke-width:1;stroke-dasharray:2 2}
-.row .spark-meta{grid-column:2;grid-row:2;text-align:center;font-size:10px;line-height:1.2;white-space:nowrap}
-.row .spark-meta small{display:block;color:var(--warn);font-size:9px;line-height:1.1;white-space:normal}
-.row .p{grid-column:3;grid-row:1;text-align:right;font:600 15px var(--mono)}
-.row .times{grid-column:3;grid-row:2;display:grid;gap:2px;text-align:right;font-size:11px;line-height:1.4;color:var(--mute);white-space:nowrap}
-.row .lag{margin-left:4px;font-size:10px;color:var(--warn)}
-.row .s{grid-column:1;grid-row:2;align-self:start;text-align:left;font-size:12px;color:var(--mute);overflow-wrap:anywhere}
-.row .s.on{color:var(--warn)}
-.row .w{grid-column:1/-1;font-size:12px;color:var(--warn);margin-top:4px}
-.row .act-strip{grid-column:1/-1;margin-top:6px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;line-height:1.4}
-.row .act-strip[data-tone="green"],.row .act-strip[data-tone="emerald"]{background:#effaf4;border-color:#bfe4d2;color:#0e6545}
-.row .act-strip[data-tone="amber"]{background:#fff8eb;border-color:#f0dcb4;color:#8c5400}
-.row .act-strip[data-tone="red"]{background:#fdeef0;border-color:#f4c4c9;color:#9f1f2a}
-.row .act-strip[data-tone="gray"]{background:#f6f8fb;border-color:#e3e7ee;color:#4c525e}
-.row .act-pos{font-weight:700;white-space:nowrap}
-.row .act-meta{font-size:11px;opacity:.9;overflow-wrap:anywhere}
-.radar-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid var(--line2);background:#fafcff;font-size:12px;color:var(--ink2)}
-.radar-pills{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.radar-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-weight:600;border:1px solid var(--line);background:#fff}
-.radar-pill.g{background:#effaf4;border-color:#bfe4d2;color:#0e6545}
-.radar-pill.a{background:#fff8eb;border-color:#f0dcb4;color:#8c5400}
-.radar-pill.r{background:#fdeef0;border-color:#f4c4c9;color:#9f1f2a}
-.radar-sort{margin-left:auto;display:flex;gap:2px;background:#eef2f7;border-radius:8px;padding:2px}
-.radar-sort button{border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:var(--mute);padding:3px 9px;border-radius:6px;cursor:pointer}
-.radar-sort button[aria-pressed=true]{background:#fff;color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.pf{padding:10px 20px;border-top:1px solid var(--line2);font-size:12px;color:var(--mute);display:flex;gap:12px;align-items:center}
-.pf a{margin-left:auto;color:var(--pri);font-weight:600;white-space:nowrap}
-.sk{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#eef1f6 25%,#f6f8fb 50%,#eef1f6 75%);background-size:200% 100%;animation:sk 1.2s linear infinite}
-@keyframes sk{to{background-position:-200% 0}}
-.errbox{padding:28px 20px;text-align:center;color:var(--ink2)}
-.errbox button{margin-top:12px;height:36px;padding:0 18px;border-radius:999px;border:1px solid var(--pri);background:#fff;color:var(--pri);font:600 14px var(--sans);cursor:pointer}
-.errbox button:hover{background:var(--pri2)}
-/* ---------- 区块 ---------- */
-section{padding:72px 0;border-top:1px solid var(--line)}
-section.w{background:#fff}
-.hd{display:flex;align-items:flex-end;gap:16px;margin-bottom:28px;flex-wrap:wrap}
-.hd h2{margin:0;font-size:28px;line-height:1.3}
-.hd p{margin:0;color:var(--mute);font-size:14px}
-.hd .more{margin-left:auto;color:var(--pri);font-weight:600;font-size:14px}
-.hd .more:hover{text-decoration:underline}
-.tag{display:inline-block;font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:0 10px;line-height:22px;vertical-align:3px}
-/* 我的自选 */
-#mine{padding:40px 0}
-.wl{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.wi{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s}
-.wi:hover{border-color:var(--pri)}
-.wi .t{display:flex;align-items:baseline;gap:8px}.wi .t b{font-size:15px}.wi .t small{font:12px var(--mono);color:var(--mute)}
-.wi .t em{margin-left:auto;font-style:normal;font-size:12px;color:var(--mute)}
-.wi .p{font:600 16px var(--mono)}.wi .s{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wi .s.on{color:var(--warn)}
-.wempty{margin:0;padding:18px 20px;border:1px dashed #cfd6e2;border-radius:12px;color:var(--ink2);font-size:14px;background:#fff}
-.wempty a{color:var(--pri);font-weight:600}
-/* 今日市场 */
-.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.kpi{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;transition:border-color .15s}
-.kpi:hover{border-color:var(--pri)}
-.kpi .k{font-size:13px;color:var(--mute)}
-.kpi .v{margin-top:6px;font:600 22px/1.2 var(--mono)}
-.kpi .x{margin-top:4px;font-size:12px;color:var(--mute)}
-.kpi .bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:10px;background:var(--line2)}
-.kpi .bar i{display:block}
-/* 四个入口 */
-.ent{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-.en{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .15s,box-shadow .15s,transform .15s ease-out}
-.en:hover{border-color:#bfcde6;box-shadow:0 14px 32px -18px rgba(19,23,34,.3);transform:translateY(-2px)}
-.en svg{display:block;width:100%;height:120px;background:#fff;border-bottom:1px solid var(--line)}
-.en .b{padding:18px 20px 20px}
-.en h3{margin:0 0 4px;font-size:18px}
-.en p{margin:0;color:var(--ink2);font-size:14px}
-.en .go{margin-top:12px;color:var(--pri);font-weight:600;font-size:14px}
-/* 证据现状 */
-.evi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.ev{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px}
-.ev .st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:2px 10px;border-radius:999px}
-.ev .st.ok{color:#1f5fd6;background:var(--pri2)}
-.ev .st.no{color:#8a2d35;background:#fdecee}
-.ev h3{margin:12px 0 4px;font-size:16px;line-height:1.5}
-.ev .n{font-size:13px;color:var(--mute)}
-.ev p{margin:10px 0 0;font-size:13px;color:var(--ink2)}
-.evnote{margin:20px 0 0;padding:14px 18px;border-radius:10px;background:#f3f6fb;color:var(--ink2);font-size:14px}
-/* 回放 */
-.cases{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.cs{display:flex;align-items:center;gap:20px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 24px;transition:border-color .15s}
-.cs:hover{border-color:var(--pri)}
-.cs b{font:700 24px var(--mono)}.cs span{color:var(--mute);font-size:14px}.cs i{margin-left:auto;font-style:normal;color:var(--pri);font-weight:600}
-/* 页脚 */
-footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
-.fg{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px}
-.fg h4{margin:0 0 12px;color:#fff;font-size:14px}
-.fg a{display:block;padding:3px 0;color:#c3cad8}.fg a:hover{color:#fff}
-.fg .brand{font-weight:700;color:#fff;font-size:18px}
-.fg .brand+p{margin:8px 0 0;color:#98a2b5;max-width:30em}
-.fmeta{margin-top:40px;padding-top:20px;border-top:1px solid #243150;display:flex;flex-wrap:wrap;gap:8px 24px;color:#98a2b5;font-size:12px}
-.fmeta .risk{flex-basis:100%;color:#c3cad8}
-@media(max-width:1080px){.hero{grid-template-columns:1fr;gap:40px;padding:48px 0 56px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.ent{grid-template-columns:1fr 1fr}.fg{grid-template-columns:1fr 1fr}}
-@media(max-width:720px){.wrap{padding:0 16px}.kpis{grid-template-columns:1fr 1fr}.ent,.evi,.cases{grid-template-columns:1fr}section{padding:56px 0}.hd h2{font-size:24px}.row{grid-template-columns:minmax(0,1fr) 64px minmax(0,.9fr);padding:12px 16px}.row svg{width:64px}.row .spark-meta{font-size:9px}.row .times{white-space:normal}.row .lag{display:block;margin-left:0}.fg{grid-template-columns:1fr}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
-#radar-bar[hidden]{display:none!important}
-#index-overview{scroll-margin-top:88px}
-.fmeta span{min-width:0;overflow-wrap:anywhere}
-#market-tabs{display:flex;gap:8px;padding:0 22px 16px;border-bottom:1px solid var(--line,#e5e8ed)}
-#market-tabs button{min-height:44px;padding:9px 22px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted,#606b7a);font:inherit;cursor:pointer}
-#market-tabs button[aria-selected="true"]{background:#edf3ff;color:#245de0;border-color:#d7e4ff;font-weight:650}
-#market-tabs button:focus-visible{outline:2px solid #245de0;outline-offset:2px}
-@media(max-width:520px){#market-tabs{padding:0 12px 12px;gap:4px}#market-tabs button{flex:1;padding:9px 8px}}
-</style>
+<link rel="stylesheet" href="app/home-tv.css">
 <script src="app/chart-page-core.js"></script>
 <script src="app/decision-state.js"></script>
 <script src="app/bottom-action.js"></script>
@@ -171,106 +19,88 @@ footer{background:#0f1729;color:#c3cad8;padding:56px 0 32px;font-size:14px}
 <script src="app/stock-watchlist.js"></script>
 <script src="app/watchlist.js"></script>
 <script src="app/evidence-badge.js"></script>
-<link rel="stylesheet" href="app/visual-suite.css">
-</head><body class="vs-home">
+</head>
+<body class="vs-home home-tv">
 <script src="app/od-nav.js" data-section="home" data-theme="light"></script>
-<main>
-<div class="wrap hero">
+<main class="hm">
+<section class="hm-hero" aria-labelledby="hm-title">
  <div class="hero-copy">
-  <span class="eyebrow">LPPLS 金融物理诊断与回测终端</span>
-  <h1>浪成于微澜之间</h1>
-  <p class="poem">输入代码，直达多尺度 LPPLS 临界结构与历史回测。</p>
-  <p class="pos">基于多窗口对数周期幂律（LPPLS）与历史泡沫强度扫描，识别超指数加速、顶部聚类区间与破裂后冷却期状态。</p>
-  <form class="hsrch" id="hsrch" role="search" aria-label="搜索标的"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="hs-i" type="text" autocomplete="off" spellcheck="false" placeholder="输入代码 / 名称 / 拼音（如 600519、300750、上证指数）" aria-label="搜索标的"><kbd aria-hidden="true">Ctrl K</kbd></form>
-  <div class="qchips" aria-label="快捷分析入口">
-   <span>快捷直达</span>
-   <a href="chart.html?kind=index&from=home.html&code=sh000001"><b>000001</b> 上证指数</a>
-   <a href="chart.html?kind=index&from=home.html&code=sh000300"><b>000300</b> 沪深300</a>
-   <a href="stock.html?code=600519"><b>600519</b> 贵州茅台</a>
-   <a href="stock.html?code=300750"><b>300750</b> 宁德时代</a>
-   <a href="index.html?code=sh000001&asof=2015-06-12"><b>2015</b> 股灾回放</a>
-   <a href="index.html?code=sh000001&asof=2007-10-12"><b>2007</b> 顶部回放</a>
-  </div>
-  <div class="acts"><a class="btn pri" href="stock.html">查看标的 →</a><a class="btn sec" href="index.html?code=sh000001">指数历史回测</a><a class="btn sec" href="market.html">市场复盘</a></div>
+  <p class="hm-eyebrow" id="hm-date">收盘数据读取中…</p>
+  <h1 id="hm-title">A 股在加速吗？</h1>
+  <p class="hm-answer" id="hm-answer" aria-live="polite"><i aria-hidden="true"></i><span>最新结论读取中…</span></p>
+  <p class="hm-sub">每个交易日收盘后，用多窗口 LPPLS（对数周期幂律）模型检查 A 股主要指数：有没有出现超指数上涨、出现在哪个时间尺度。样本区间和检验结果全部公开。</p>
+  <form class="hsrch" id="hsrch" role="search" aria-label="搜索标的"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="hs-i" type="text" autocomplete="off" spellcheck="false" placeholder="搜索指数、股票代码或拼音" aria-label="搜索标的"><kbd aria-hidden="true">Ctrl K</kbd></form>
  </div>
- <figure class="hero-art">
-  <div class="visual-media"><img src="assets/visual-suite/hero-1536.webp" srcset="assets/visual-suite/hero-640.webp 640w, assets/visual-suite/hero-1536.webp 1536w" sizes="(max-width:760px) calc(100vw - 32px), (max-width:1280px) 50vw, 630px" width="1536" height="1024" alt="蓝金色光线沿层叠玻璃片交汇的原创装置" fetchpriority="high" decoding="async"><span class="art-fallback">多尺度观察</span></div>
-  <figcaption><b>CONVERGENCE / 交汇</b><span>多尺度观察的视觉隐喻 · 非行情图</span></figcaption>
- </figure>
-</div>
-<div class="wrap hero-live">
- <div class="panel" id="index-overview" aria-labelledby="ph-t" data-ai-context="指数风险概览">
-  <div class="ph"><h2 id="ph-t">主要指数</h2><span class="d" id="asof">读取中…</span>
-   <div class="spark-range" id="spark-range" role="group" aria-label="迷你走势区间"><button type="button" data-spark-range="20" aria-pressed="false">1月</button><button type="button" data-spark-range="60" aria-pressed="true">3月</button><button type="button" data-spark-range="250" aria-pressed="false">1年</button></div>
-   <div class="pseg" role="group" aria-label="面板内容"><button type="button" data-v="idx" aria-pressed="true">指数</button><button type="button" data-v="mine" aria-pressed="false">我的自选</button></div></div>
-  <div class="radar-bar" id="radar-bar" hidden aria-label="全市场顶底温度计">
-   <div class="radar-pills" id="radar-pills"></div>
-   <div class="radar-sort" id="radar-sort" role="group" aria-label="指数排序">
-    <button type="button" data-sort="default" aria-pressed="true">默认顺序</button>
-    <button type="button" data-sort="bottom" aria-pressed="false">按底部综合分</button>
+ <div class="hm-acts"><a class="btn pri" href="chart.html?kind=index&from=home.html&code=sh000001">打开上证指数<span aria-hidden="true">→</span></a><a class="btn sec" href="backtest.html#view=bench">方法与证据</a></div>
+</section>
+
+<div class="hm-g1">
+ <article class="hm-card hm-chart" aria-labelledby="hm-chart-t">
+  <header class="hm-ch">
+   <i class="hm-bd hm-bd-lg" style="background:#e03c31" aria-hidden="true">上</i>
+   <div>
+    <h2 id="hm-chart-t">上证指数 <span class="hm-tk">000001</span></h2>
+    <p class="hm-px"><b id="hm-px">—</b><u>点</u><span class="chg num" id="hm-day"></span></p>
+    <p class="hm-px2"><span id="hm-px-note"></span><span id="hm-range-note"><span id="hm-chg-l"></span> <span class="num" id="hm-chg"></span><small>（按周收盘）</small></span></p>
    </div>
+   <div class="hm-seg" id="hm-range" role="group" aria-label="主图区间"><button type="button" data-range="52" aria-pressed="false">1 年</button><button type="button" data-range="260" aria-pressed="false">5 年</button><button type="button" data-range="all" aria-pressed="true">全部</button></div>
+  </header>
+  <div class="hm-plot" id="hm-plot" role="img" aria-label="上证指数周收盘走势"><p class="hm-empty">走势读取中…</p></div>
+  <footer class="hm-lg"><span><i class="ln"></i>周收盘</span><span><i class="dot"></i>首次预警（6–12 月、12–24 月尺度）</span><span id="hm-alert-sum"></span><a href="chart.html?kind=index&from=home.html&code=sh000001">打开图表 ›</a></footer>
+ </article>
+
+ <div class="hm-card hm-list panel" id="index-overview" aria-labelledby="ph-t" data-ai-context="指数风险概览">
+  <div class="ph"><h2 id="ph-t" class="hm-vh">主要指数</h2>
+   <div class="pseg hm-seg" role="group" aria-label="面板内容"><button type="button" data-v="idx" aria-pressed="true">主要指数</button><button type="button" data-v="mine" aria-pressed="false">我的自选</button></div>
+   <span class="d" id="asof">读取中…</span></div>
+  <div class="hm-tools">
+   <div id="market-tabs" class="hm-seg" role="tablist" aria-label="指数市场">
+    <button type="button" id="market-cn" role="tab" aria-selected="true" aria-controls="rows" data-market="cn">A 股</button>
+    <button type="button" id="market-us" role="tab" aria-selected="false" aria-controls="rows" data-market="us" tabindex="-1">美股</button>
+    <button type="button" id="market-jp" role="tab" aria-selected="false" aria-controls="rows" data-market="jp" tabindex="-1">日股</button>
+    <button type="button" id="market-kr" role="tab" aria-selected="false" aria-controls="rows" data-market="kr" tabindex="-1">韩股</button>
+   </div>
+   <div class="spark-range hm-seg" id="spark-range" role="group" aria-label="迷你走势区间"><button type="button" data-spark-range="20" aria-pressed="false">1月</button><button type="button" data-spark-range="60" aria-pressed="true">3月</button><button type="button" data-spark-range="250" aria-pressed="false">1年</button></div>
   </div>
-  <div id="market-tabs" role="tablist" aria-label="指数市场">
-   <button type="button" id="market-cn" role="tab" aria-selected="true" aria-controls="rows" data-market="cn">A 股</button>
-   <button type="button" id="market-us" role="tab" aria-selected="false" aria-controls="rows" data-market="us" tabindex="-1">美股</button>
-   <button type="button" id="market-jp" role="tab" aria-selected="false" aria-controls="rows" data-market="jp" tabindex="-1">日股</button>
-   <button type="button" id="market-kr" role="tab" aria-selected="false" aria-controls="rows" data-market="kr" tabindex="-1">韩股</button>
-  </div>
+  <!-- 底部条件汇总已移到指数页；保留节点供共用脚本与契约测试使用，首页样式中隐藏 -->
+  <div class="radar-bar" id="radar-bar" hidden aria-label="全市场顶底温度计"><div class="radar-pills" id="radar-pills"></div><div class="radar-sort" id="radar-sort" role="group" aria-label="指数排序"><button type="button" data-sort="default" aria-pressed="true">默认顺序</button><button type="button" data-sort="bottom" aria-pressed="false">按底部综合分</button></div></div>
   <ul class="rows" id="rows" role="tabpanel" aria-labelledby="market-cn" aria-live="polite"></ul>
   <div id="korean-stocks" hidden>
-   <h3 style="margin:16px 22px 8px;font-size:14px">韩股个股</h3>
+   <h3>韩股个股</h3>
    <ul class="rows" id="korean-stock-rows" aria-label="韩股个股"></ul>
   </div>
   <div class="pwl" id="pwl" hidden></div>
- <div class="pf"><span id="pfn">实时报价仅供参考；取不到时显示未复权收盘价</span><a href="index.html">查看全部 ›</a></div>
+  <div class="pf"><span id="pfn">实时报价仅供参考；取不到时显示未复权收盘价</span><a href="index.html">查看全部指数 ›</a></div>
  </div>
 </div>
-<div class="wrap"><div class="recent" id="recent" hidden></div></div>
 
-<section id="mine" aria-labelledby="h-mine"><div class="wrap">
- <div class="hd"><h2 id="h-mine">我的自选</h2><p>只保存在这台设备的浏览器里，不上传。</p><a class="more" href="research-workspace.html">打开我的研究 →</a></div>
+<section class="hm-g2" id="today" data-ai-context="今日摘要" aria-label="今日摘要">
+ <article class="hm-card hm-c3">
+  <header><h2>最近的首次预警</h2><span data-evidence-badge="descriptive" data-evidence-label="历史记录" data-evidence-detail="按已发布的周度帧标记：一轮预警里第一次出现顶部聚类的截止日（6–12 月、12–24 月尺度）。各段检验结果见方法与证据。"></span></header>
+  <p class="hm-d">一轮预警里第一次出现顶部聚类的那一周。</p>
+  <div id="hm-alerts"><p class="hm-empty">读取中…</p></div>
+ </article>
+ <article class="hm-card hm-c3">
+  <header><h2>距 52 周高点</h2></header>
+  <p class="hm-d">按周收盘相对各自 52 周最高收盘计算，回撤从大到小。</p>
+  <div id="hm-dd"><p class="hm-empty">读取中…</p></div>
+ </article>
+ <article class="hm-card hm-c3">
+  <header><h2>怎么读这一页</h2></header>
+  <div class="hm-q"><i>1</i><div><b>顶部区间</b><p>足够多的拟合窗口把临界时间聚到同一段，显示为 q20–q80 的日期区间。</p></div></div>
+  <div class="hm-q"><i>2</i><div><b>首次预警</b><p>一轮预警里第一次出现顶部聚类的那一周，图中用橙点标出。</p></div></div>
+  <div class="hm-q"><i>3</i><div><b>只看结构</b><p>模型描述价格的加速结构，不给精确顶部日期，也不给目标价。</p></div></div>
+  <a class="hm-more" href="backtest.html#view=bench">查看各尺度的检验结果 ›</a>
+ </article>
+</section>
+
+<section id="mine" class="hm-mine" aria-labelledby="h-mine"><div class="hm-card">
+ <header><h2 id="h-mine">我的自选</h2><p>只保存在这台设备的浏览器里，不上传。</p><a class="more" href="research-workspace.html">打开我的研究 →</a></header>
  <div id="wl"><p class="wempty">读取中…</p></div>
-</div></section>
-
-<section class="w" id="today" data-ai-context="今日摘要"><div class="wrap">
- <div class="hd"><h2>A 股今日市场</h2><span data-evidence-badge="descriptive" data-evidence-label="盘面复盘" data-evidence-detail="汇总今日涨跌停、市场宽度、成交额与两融数据，用于盘后复盘观察。"></span><p id="mk-d"></p><a class="more" href="market.html">进入市场复盘 →</a></div>
- <div class="kpis" id="kpis"></div>
-</div></section>
-
-<section id="tools"><div class="wrap">
- <div class="hd"><h2>核心工作流</h2><p>从单标的诊断、FCO 历史回测到每日市场复盘。</p><a class="more" href="stock.html">查看全部标的 ›</a></div>
- <div class="ent">
-  <a class="en" href="chart.html?code=sh000001&kind=index&from=home.html"><svg id="t1" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>指数终端</h3><p>按 A 股、美股、日股和韩股查看指数；对照顶部区间、证据与历史快照。</p><div class="go">进入终端 →</div></div></a>
-  <a class="en" href="index.html?code=sh000001"><svg id="t2" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>FCO 历史回测</h3><p>叠加红色泡沫强度柱与首次预警旗标，按 as-of 视角检验每轮顶部聚类。</p><div class="go">打开回测 →</div></div></a>
-  <a class="en" href="market.html"><svg id="t3" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>市场复盘</h3><p>快讯资讯、涨停情绪、资金流热力图、事件日历、两融与估值全览。</p><div class="go">进入复盘 →</div></div></a>
-  <a class="en" href="stock.html"><svg id="t4" viewBox="0 0 300 120" aria-hidden="true"></svg><div class="b"><h3>个股诊断</h3><p>输入六位代码，查看日线、逃顶/抄底结构与历史回放；支持本地自选。</p><div class="go">查询个股 →</div></div></a>
- </div>
-</div></section>
-
-<section class="w" id="evidence"><div class="wrap">
- <div class="guide-teaser"><div><h2>快速上手</h2><p>三张图读懂多尺度顶部聚类、FCO 泡沫柱与冷却期规则。</p></div><a class="btn sec" href="guide.html">阅读图解指南 →</a></div>
- <div class="hd"><h2>三段检验摘要</h2><span data-evidence-badge="dev_only" data-evidence-label="样本外公开" data-evidence-detail="开发、校准、测试三段严格分离，通过与未通过的检验结果均原样公开。"></span><p>模型在开发、校准、测试三段时间上的客观表现。</p><a class="more" href="backtest.html#view=bench">回测详情 →</a></div>
- <div class="evi" id="evi"></div>
-</div></section>
-
-<section id="cases"><div class="wrap">
- <div class="hd"><h2>历史回放</h2><p>只用截止日之前的数据，再与之后的真实走势对照。</p><a class="more" href="index.html?code=sh000001">查看全部 ›</a></div>
- <div class="cases">
-  <a class="cs" href="chart.html?kind=index&from=home.html&code=sh000001&asof=2007-10-12"><b>2007-10-12</b><span>上证指数 · 回放</span><i>打开 →</i></a>
-  <a class="cs" href="chart.html?kind=index&from=home.html&code=sh000001&asof=2015-06-12"><b>2015-06-12</b><span>上证指数 · 回放</span><i>打开 →</i></a>
- </div>
 </div></section>
 </main>
 
-<footer><div class="wrap">
- <div class="fg">
-  <div><div class="brand">临界点</div><p>A 股非线性动力学研究工作台。只读后端已发布的数据，页面不做任何模型计算。</p></div>
-  <div><h4>产品</h4><a href="index.html">终端</a><a href="backtest.html#view=bench">方法与证据</a><a href="market.html">市场</a><a href="nt.html">宽基ETF</a><a href="stock.html">个股</a></div>
-  <div><h4>帮助</h4><a href="guide.html">图解使用指南</a><a href="lab/guide.html">历史研究说明</a><a href="lab/dashboard.html">研究仪表盘</a><a href="#evidence">证据现状</a></div>
-  <div><h4>项目</h4><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a><a href="https://github.com/CareyPang/LPPL/issues" rel="noopener">问题反馈</a></div>
- </div>
- <div class="fmeta"><span id="ver">数据版本 —</span><span>行情来源：A 股腾讯／新浪；国际日线 Yahoo Finance／Naver Finance；市场背景见市场页</span></div>
-</div></footer>
+<footer class="hm-foot"><span id="hm-ver">模型 — · 数据截至 —</span><span>研究用途，不构成投资建议</span><a href="https://github.com/CareyPang/LPPL" rel="noopener">GitHub 仓库</a></footer>
 
 <script>
 (function(){
@@ -293,6 +123,8 @@ const quoteSessionDate=q=>{const raw=String(q?.time||''),m=/^(\d{4})(\d{2})(\d{2
 /* ---------- 六指数面板 ---------- */
 const rows=$('rows');
 let IDXROWS=null,idxSort='default',indexRequest=0;
+/* 新首页（home-tv.js）复用这里已取到的行与报价，不重复请求 */
+const emitRows=()=>{const detail={market:selectedMarket,rows:IDXROWS||[]};window.__homeRows=detail;try{document.dispatchEvent(new CustomEvent('home:rows',{detail}))}catch(e){}};
 let selectedMarket=new URLSearchParams(location.search).get('market')||'cn';
 if(!['cn','us','jp','kr'].includes(selectedMarket))selectedMarket='cn';
 const indexHref=sym=>'chart.html?kind=index&code='+encodeURIComponent(sym)+'&from='+encodeURIComponent(selectedMarket==='cn'?'home.html':'home.html?market='+selectedMarket);
@@ -324,6 +156,7 @@ function updateDecisionRow(row){
  const index=IDXROWS.findIndex(item=>item.sym===row.sym);
  if(index<0)return;
  IDXROWS[index]=row;
+ emitRows();
  const item=Array.from(rows.querySelectorAll('a[data-sym]')).find(el=>el.dataset.sym===row.sym);
  if(!item)return;
  // Keep the existing quote, chart, DOM focus and reading anchor when evidence arrives.
@@ -374,13 +207,13 @@ function loadIdx(){
  }).then(L=>{
   if(request!==indexRequest)return;
   IDXROWS=L.map(row=>buffered.get(row.sym)||row);
+  emitRows();
   initialReady=true;
   if(!renderIdxRows()){if(qTimer)refreshQuotes();else startQuotes();mine();return}
   const ok=L.filter(r=>!r.error),S=ok.find(r=>r.sym==='sh000001')||ok[0];
   if(!S){mine();return;}
   $('asof').textContent='报价与模型时间见各行';
   if(qTimer)paintQuotes();else startQuotes();mine();recent(S.asof);
-  thumbs(S);evidence(S.sym);
  });
 }
 function loadKoreanStocks() {
@@ -418,6 +251,8 @@ function paintQuotes(){
   a.setAttribute('aria-label',`${a.dataset.name}，${period?period+'，':''}${time.textContent}，${model.textContent}，${a.dataset.status}`)
  });
  updateSparkRangeUI();
+ window.__homeQuotes=QT;
+ try{document.dispatchEvent(new CustomEvent('home:quotes',{detail:QT}))}catch(e){}
 }
 function refreshQuotes(){
  if(!LPPL.quote||document.visibilityState==='hidden')return;
@@ -482,50 +317,9 @@ function recent(asof){
  const open=()=>{if(window.OdNav&&OdNav.openSearch){const v=i.value;i.value='';i.blur();OdNav.openSearch(v||'');}else location.href='stock.html'};
  i.addEventListener('focus',open);i.addEventListener('click',open);f.addEventListener('submit',e=>{e.preventDefault();open()});
 })();
-/* ---------- 入口缩略图：用真实数据 ---------- */
-function thumbs(S){
- const c=S.bars.map(b=>b.close);
- const t1=$('t1');t1.innerHTML='';
- for(let k=1;k<4;k++)t1.append(el('line',{x1:0,x2:300,y1:k*30,y2:k*30,stroke:'#eef1f6'}));
- const w250=c.slice(-250),p1=path(w250,12,288,16,104);
- t1.append(el('path',{d:p1+' L288 120 L12 120 Z',fill:'#1f5fd6','fill-opacity':.08}),el('path',{d:p1,fill:'none',stroke:'#1f5fd6','stroke-width':1.6}));
- const t2=$('t2');t2.innerHTML='';
- [['开发',0,.5,'#c9d6ea'],['校准',.5,.75,'#8fb0e6'],['测试',.75,1,'#1f5fd6']].forEach(([t,a,b,col])=>{const x=12+a*276,w=(b-a)*276;t2.append(el('rect',{x,y:96,width:w-3,height:14,rx:3,fill:col}));const s=el('text',{x:x+(w-3)/2,y:107,'text-anchor':'middle','font-size':10,fill:col==='#1f5fd6'?'#fff':'#131722','font-family':'sans-serif'});s.textContent=t;t2.append(s)});
- t2.append(el('path',{d:path(c,12,288,14,84),fill:'none',stroke:'#131722','stroke-width':1.3}));
- const t4=$('t4');t4.innerHTML='';const B=S.bars.slice(-34),lo=Math.min(...B.map(b=>b.low)),hi=Math.max(...B.map(b=>b.high)),Y=v=>12+(1-(v-lo)/((hi-lo)||1))*96;
- B.forEach((b,i)=>{const x=16+i*8,col=b.close>=b.open?'#d6303a':'#11845a';t4.append(el('line',{x1:x+2.5,x2:x+2.5,y1:Y(b.high),y2:Y(b.low),stroke:col}));t4.append(el('rect',{x,y:Math.min(Y(b.open),Y(b.close)),width:5,height:Math.max(1,Math.abs(Y(b.open)-Y(b.close))),fill:col}))});
-}
-/* ---------- 证据现状 ---------- */
-function evidence(sym){
- LPPL.load(sym).then(D=>{
-  const V=D.raw.validation||[];
-  $('ver').textContent='数据版本 '+(D.raw.data_version||'—')+' · 模型 '+(D.raw.model_version||'—');
-  if(!V.length){$('evi').innerHTML='<p class="evnote" style="margin:0">验证结果未发布。</p>';return}
-  $('evi').innerHTML=V.map(v=>{const pass=v.status==='dev',lab=pass?'开发段 · 有信号':'未通过';
-   const statusLabel=window.CPEvidenceBadge?window.CPEvidenceBadge.meta(v.status).label:'观测态';
-   return `<div class="ev"><span class="st ${pass?'ok':'no'}">${pass?'●':'○'} ${lab}</span><h3>${E(v.split)}</h3><div class="n">事件样本 n=${E(v.events??'—')}</div><p>${E(statusLabel)}</p></div>`}).join('');
- }).catch(()=>{$('evi').innerHTML='<p class="evnote" style="margin:0">验证结果未加载。</p>'});
-}
-/* ---------- 今日市场 ---------- */
-function market(){
- const K=$('kpis');K.innerHTML=Array(5).fill('<div class="kpi"><span class="sk" style="width:50%"></span><span class="sk" style="width:70%;height:20px;margin-top:10px"></span></div>').join('');
- LPPL.market().then(M=>{
-  if(!M){K.innerHTML='<p class="evnote" style="margin:0;grid-column:1/-1">市场数据未加载。</p>';return}
-  const g=bizGap(M.asof);$('mk-d').innerHTML='截至 '+E(M.asof)+(g>5?' <span class="stale on">数据未更新</span>':'');
-  const lp=M.limit_pools||{},br=M.breadth||{},mg=(M.margin||{}).data||{},out=[];
-  if(lp.zt!=null)out.push(`<a class="kpi" href="market.html#s-limit"><div class="k">涨停 / 跌停</div><div class="v m"><span class="up">${lp.zt}</span> / <span class="dn">${lp.dt}</span></div><div class="x">炸板 ${lp.zb} 家 · 最高 ${lp.max_streak} 连板</div></a>`);
-  if(lp.break_rate!=null)out.push(`<a class="kpi" href="market.html#s-limit"><div class="k">炸板率</div><div class="v m">${(lp.break_rate*100).toFixed(1)}%</div><div class="x">涨停后打开的比例</div></a>`);
-  if(br.up!=null){const t=br.up+br.down+(br.flat||0)||1;out.push(`<a class="kpi" href="market.html#s-sentiment"><div class="k">上涨 / 下跌家数</div><div class="v m"><span class="up">${br.up}</span> / <span class="dn">${br.down}</span></div><div class="bar"><i style="width:${br.up/t*100}%;background:var(--up)"></i><i style="width:${(br.flat||0)/t*100}%;background:#c5ccd8"></i><i style="flex:1;background:var(--dn)"></i></div></a>`)}
-  if(br.amount_yuan)out.push(`<a class="kpi" href="market.html#s-sentiment"><div class="k">两市成交额</div><div class="v m">${yuan(br.amount_yuan)}</div><div class="x">沪深合计</div></a>`);
-  if(mg.fin_balance_all)out.push(`<a class="kpi" href="market.html#s-mg"><div class="k">融资余额</div><div class="v m">${yuan(mg.fin_balance_all)}</div><div class="x">${E(mg.date||'')}${mg.stale?' · 已过期':''}</div></a>`);
-  K.innerHTML=out.join('')||'<p class="evnote" style="margin:0;grid-column:1/-1">暂无可显示的市场指标。</p>';
-  const t3=$('t3');t3.innerHTML='';const fl=((M.board_flow||{}).industry||[]).filter(x=>x.pct_chg!=null).slice(0,24);
-  if(fl.length){const mx=Math.max(...fl.map(x=>Math.abs(x.pct_chg)))||1,bw=276/fl.length;fl.sort((a,b)=>b.pct_chg-a.pct_chg).forEach((x,i)=>{const h=Math.abs(x.pct_chg)/mx*44;t3.append(el('rect',{x:12+i*bw,y:x.pct_chg>=0?60-h:60,width:Math.max(2,bw-3),height:Math.max(1,h),rx:1.5,fill:x.pct_chg>=0?'#d6303a':'#11845a','fill-opacity':.85}))});t3.append(el('line',{x1:12,x2:288,y1:60,y2:60,stroke:'#c5ccd8'}))}
- }).catch(()=>{K.innerHTML='<p class="evnote" style="margin:0;grid-column:1/-1">市场数据未加载。</p>'});
-}
-mine();loadIdx();market();
+mine();loadIdx();
 })();
 </script>
-<script src="app/visual-suite.js" defer></script>
+<script src="app/home-tv.js"></script>
 <script src="app/ai-assistant.js" data-page="home"></script>
 </body></html>
