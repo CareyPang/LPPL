@@ -17,10 +17,18 @@
 
   var DAY = 86400000;
   var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  /* 圆标：名称带数字的指数写数字，交易所综合类指数用交易所标志，都没有时取首字 */
   var BADGES = {
-    sh000001: ['上', '#e03c31'], sh000016: ['50', '#2962ff'], sh000300: ['300', '#00897b'],
-    sh000905: ['500', '#f57c00'], sh000688: ['科', '#6a1b9a'], sz399001: ['深', '#0277bd'], sz399006: ['创', '#c2185b'],
+    sh000001: ['', '#c2172d', 'img:sse'],
+    sz399001: ['', '#fff', 'img:szse'],
+    sz399006: ['', '#fff', 'img:szse'],
+    us_ixic: ['', '#0996c7', 'img:nasdaq'],
+    us_spx: ['500', '#c2172d'], us_ndx: ['100', '#0b8fb3'], us_dji: ['30', '#1f8fd6'],
+    sh000016: ['50', '#c2172d'], sh000300: ['300', '#0b8fb3'], sh000905: ['500', '#1f4e8c'], sh000688: ['50', '#5b3fa6'],
   };
+  /* 交易所标志：官方网站图标缩成 96px，放在 assets/exch/ */
+  var IMG_BASE = 'assets/exch/';
+  var FALLBACK = ['#1f4e8c', '#0b8fb3', '#3d6f8e', '#5b3fa6', '#c2172d', '#2a3f6f'];
   var RANGES = { '52': '近 1 年', '260': '近 5 年', all: '' };
   var RANGE_KEY = 'lppl.home.mainRange';
   var MAIN_SYM = 'sh000001';
@@ -39,11 +47,17 @@
 
   function badgeFor(sym, name) {
     var key = String(sym || '').toLowerCase(), b = BADGES[key];
-    if (b) return { text: b[0], color: b[1] };
-    var text = String(name || sym || '?').replace(/\s+/g, '').charAt(0) || '?';
-    var h = 0, s = String(sym || name || '');
-    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-    return { text: text, color: 'hsl(' + h + ',52%,40%)' };
+    if (b) return b[2] ? { text: '', color: b[1], mark: b[2] } : { text: b[0], color: b[1] };
+    var label = String(name || sym || '?').replace(/\s+/g, '');
+    var num = /(\d{2,4})$/.exec(label);
+    var h = 0, id = String(sym || name || '');
+    for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
+    return { text: num ? num[1] : (label.charAt(0) || '?').toUpperCase(), color: FALLBACK[h % FALLBACK.length] };
+  }
+  /* 圆标内部的 HTML：交易所标志图片或转义后的文字 */
+  function badgeInner(b) {
+    var m = /^img:([a-z0-9]+)$/.exec(b.mark || '');
+    return m ? '<img src="' + IMG_BASE + m[1] + '.png" alt="" width="100%" height="100%" loading="lazy" decoding="async">' : esc(b.text);
   }
 
   /* 已发布的周度帧 → [{d, c, a, dd}]，按日期升序；缺日期或收盘的帧跳过 */
@@ -230,6 +244,8 @@
     var reduce = win.matchMedia ? win.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
     pressFeel(doc, reduce);
     rowBadges(win);
+    var mainBd = doc.getElementById('hm-main-bd');
+    if (mainBd) mainBd.innerHTML = badgeInner(badgeFor(MAIN_SYM));
     var L = win.LPPL;
     if (!L) return;
 
@@ -401,7 +417,7 @@
     box.innerHTML = list.map(function (a) {
       var b = badgeFor(a.sym, a.name);
       return '<a class="hm-ar" href="' + esc(chartHref(a.sym)) + '"><i class="hm-bd hm-bd-sm" style="background:' + b.color + '" aria-hidden="true">' +
-        esc(b.text) + '</i><span class="an">' + esc(a.name) + '</span><span class="ad num">' + esc(a.date) +
+        badgeInner(b) + '</i><span class="an">' + esc(a.name) + '</span><span class="ad num">' + esc(a.date) +
         (a.weeks != null ? '<em>' + (a.weeks === 0 ? '本周' : a.weeks + ' 周前') + '</em>' : '') + '</span></a>';
     }).join('');
   }
@@ -439,7 +455,7 @@
         i.className = 'hm-bd';
         i.setAttribute('aria-hidden', 'true');
         i.style.background = b.color;
-        i.textContent = b.text;
+        i.innerHTML = badgeInner(b);
         a.insertBefore(i, a.firstChild);
       });
     }
@@ -448,7 +464,7 @@
   }
 
   return {
-    badgeFor: badgeFor, weeklySeries: weeklySeries, sliceRange: sliceRange, normRange: normRange, change: change,
+    badgeFor: badgeFor, badgeInner: badgeInner, weeklySeries: weeklySeries, sliceRange: sliceRange, normRange: normRange, change: change,
     rangeLabel: rangeLabel, niceTicks: niceTicks, lastAlert: lastAlert, alertCount: alertCount, weeksBetween: weeksBetween,
     recentAlerts: recentAlerts, drawdowns: drawdowns, answer: answer, longDate: longDate, pct: pct, chartHref: chartHref,
     xLabels: xLabels, renderChart: renderChart, mount: mount,

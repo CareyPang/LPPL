@@ -79,9 +79,16 @@ test('index links keep identity and badges fall back without guessing a market',
   assert.equal(href.searchParams.get('kind'), 'index');
   assert.equal(href.searchParams.get('from'), 'home.html');
   assert.equal(href.searchParams.get('code'), 'sh000300');
-  assert.deepEqual(H.badgeFor('sh000001'), { text: '上', color: '#e03c31' });
-  assert.equal(H.badgeFor('US_SPX', '标普500').text, '标');
-  assert.match(H.badgeFor('US_SPX', '标普500').color, /^hsl\(/);
+  assert.deepEqual(H.badgeFor('sh000001'), { text: '', color: '#c2172d', mark: 'img:sse' });
+  assert.equal(H.badgeFor('US_IXIC', '纳斯达克综合').mark, 'img:nasdaq');
+  assert.equal(H.badgeFor('US_NDX', '纳斯达克100').text, '100');
+  assert.match(H.badgeInner(H.badgeFor('sh000001')), /^<img src="assets\/exch\/sse\.png"/);
+  assert.equal(H.badgeFor('sh000300').text, '300');
+  assert.equal(H.badgeFor('US_SPX', '标普500').text, '500');
+  assert.equal(H.badgeFor('US_DJI', '道琼斯').text, '30');
+  assert.equal(H.badgeFor('XX_ABC', '道琼斯').text, '道');
+  assert.match(H.badgeFor('US_SPX', '标普500').color, /^#[0-9a-f]{6}$/);
+  assert.equal(H.badgeInner({ text: '<b>', color: '#000' }), '&lt;b&gt;');
 });
 
 test('home page keeps the shared hooks and stays within the data contract', () => {
