@@ -34,7 +34,7 @@ test('panic episodes keep the two published kinds apart', () => {
     [['panic_first', 'd0', 1], ['panic_low', 'd1', 2]]);
   const html = BS.render(fixture.state, { mark: 'panic' });
   assert.match(html, /<th>类型<\/th>/);
-  assert.match(html, /<td>高位首跌<\/td>/);
+  assert.match(html, /<td>指数未破位<\/td>/);
   assert.match(html, /data-bs-mark="panic" aria-pressed="true">恐慌出清 <span class="m">1 天/);
   assert.match(html, /超卖新低/);
 });

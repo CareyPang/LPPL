@@ -808,7 +808,7 @@ STATE_P20_OVERSOLD = 0.13
 STATE_P20_OVERHEAT = 0.86
 STATE_LABELS = {
     "panic_low": "恐慌出清 · 超卖新低",
-    "panic_first": "恐慌出清 · 高位首跌",
+    "panic_first": "恐慌出清 · 指数未破位",
     "panic": "恐慌出清",
     "down_heavy": "放量普跌",
     "down_light": "缩量普跌",
