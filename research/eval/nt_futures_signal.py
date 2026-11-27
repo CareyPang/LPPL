@@ -31,9 +31,9 @@ def states(panel: dict) -> tuple[list[str], list[float], dict[str, list[bool]]]:
     events = {
         "E1": r1,
         "E2": r2,
-        "E3": [a and b for a, b in zip(r1, r2)],
-        "E4": [a and b and c and d for a, b, c, d in zip(r1, r2, r3, r4)],
-        "E5": [a and not c for a, c in zip(r1, r3)],
+        "E3": [a and b for a, b in zip(r1, r2, strict=True)],
+        "E4": [a and b and c and d for a, b, c, d in zip(r1, r2, r3, r4, strict=True)],
+        "E5": [a and not c for a, c in zip(r1, r3, strict=True)],
         "E6": x1,
     }
     return days, close, events
@@ -66,12 +66,13 @@ def summarize(close: list[float], idx: list[int]) -> dict:
 
 def run(panel: dict) -> dict:
     days, close, events = states(panel)
-    lo, hi = days.index(FIRST), days.index(LAST)
+    # the registered last day left fewer than 60 sessions; the registered intent is a complete 60-day window
+    lo, hi = days.index(FIRST), min(days.index(LAST), len(days) - 1 - max(HORIZONS))
     span = hi - lo + 1
     base = summarize(close, list(range(lo, hi + 1)))
     rng = random.Random(SEED)
     shifts = [rng.randrange(1, span) for _ in range(SHIFTS)]
-    result = {"first": FIRST, "last": LAST, "days": span, "baseline": base, "events": {}}
+    result = {"first": FIRST, "last": days[hi], "days": span, "baseline": base, "events": {}}
     for name, flags in events.items():
         idx = dedup(flags, lo, hi)
         stats = summarize(close, idx)
