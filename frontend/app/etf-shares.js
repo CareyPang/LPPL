@@ -25,14 +25,15 @@
     list.forEach(function (rows) { rows.forEach(function (r) { days[r.d] = 1; }); });
     var maps = list.map(function (rows) { var m = {}; rows.forEach(function (r) { m[r.d] = r; }); return m; });
     return Object.keys(days).sort().map(function (d) {
-      var shares = 0, value = 0, n = 0, vn = 0, flow = 0, fn = 0;
+      var shares = 0, value = 0, n = 0, vn = 0, flow = 0, fn = 0, seen = 0;
       maps.forEach(function (m, i) {
         var r = m[d];
+        if (r && r.shares != null) seen++;
         if (r && r.shares != null) last[i] = { shares: r.shares, close: r.close != null ? r.close : (last[i] && last[i].close) };
         else if (r && r.close != null && last[i]) last[i] = { shares: last[i].shares, close: r.close };
         if (last[i]) { shares += last[i].shares; n++; if (r && r.flow != null) { flow += r.flow; fn++; } if (last[i].close != null) { value += last[i].shares * last[i].close; vn++; } }
       });
-      return { d: d, shares: n ? shares : null, close: null, value: n && vn === n ? value : null, flow: n && fn === n ? flow : null, n: n };
+      return { d: d, shares: n ? shares : null, close: null, value: n && vn === n ? value : null, flow: n && fn === n ? flow : null, n: n, seen: seen };
     });
   }
 
@@ -46,13 +47,16 @@
     return known.filter(function (r) { return r.d >= from; });
   }
 
+  /* 合计行只有在前后两天成分相同且每只当天都有份额时才可相减 */
+  function comparable(p, r) { return r.n == null || (p.n === r.n && p.seen === p.n && r.seen === r.n); }
+
   /* 明细表：新的在前。变动只与紧邻的上一交易日比，上一日缺份额时记为缺失；申赎估算用已发布值，不在前端重算 */
   function tableRows(rows, from) {
     var out = [];
     rows.forEach(function (r, i) {
       if (r.shares == null || (from && r.d < from)) return;
       var p = i ? rows[i - 1] : null;
-      out.push({ d: r.d, shares: r.shares, chg: p && p.shares != null ? r.shares - p.shares : null, value: r.value, flow: r.flow });
+      out.push({ d: r.d, shares: r.shares, chg: p && p.shares != null && comparable(p, r) ? r.shares - p.shares : null, value: r.value, flow: r.flow });
     });
     return out.reverse();
   }

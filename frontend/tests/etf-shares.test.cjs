@@ -41,6 +41,14 @@ test('sum adds published flows and leaves the total missing when a member has no
   assert.deepEqual(E.sum([a, b]).map(r => r.flow), [null, 5, null]);
 });
 
+test('category change is blank when a member is carried forward or newly joins', () => {
+  const a = E.merge([['2026-01-02', 10, 2], ['2026-01-05', null, 2], ['2026-01-06', 12, 2], ['2026-01-07', 13, 2], ['2026-01-08', 13, 2]]);
+  const b = E.merge([['2026-01-02', 5, 1], ['2026-01-05', 5, 1], ['2026-01-06', 6, 1], ['2026-01-07', 6, 1], ['2026-01-08', 6, 1]]);
+  const c = E.merge([['2026-01-08', 4, 1]]);
+  const t = E.tableRows(E.sum([a, b, c]), '2026-01-05');
+  assert.deepEqual(t.map(r => [r.d, r.chg]), [['2026-01-08', null], ['2026-01-07', 1], ['2026-01-06', null], ['2026-01-05', null]]);
+});
+
 test('ticks are round and indexAt clamps to the series', () => {
   assert.deepEqual(E.ticks(0, 100, 4), [0, 50, 100]);
   assert.equal(E.indexAt({ left: 40, width: 100 }, 11, 90), 5);
