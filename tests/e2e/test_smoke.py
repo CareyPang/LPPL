@@ -1892,11 +1892,16 @@ def test_rule_labels_index_and_chart_evidence(page: Page) -> None:
     expert = page.locator("#p-expert")
     expect(expert).to_be_visible()
     fit_count = expert.locator("th[title]")
-    expect(fit_count).to_have_attribute("title", re.compile("FCO 标准过滤"))
+    # 已发布的最新帧可能是形态框口径（g3 之后），也可能是旧的标准过滤口径
+    if "形态框置信度" in expert.inner_text():
+        expect(fit_count).to_have_attribute("title", re.compile("形态框"))
+        expect(expert).to_contain_text("只看拟合形状，不含振荡次数和阻尼条件")
+    else:
+        expect(fit_count).to_have_attribute("title", re.compile("FCO 标准过滤"))
+        expect(expert).to_contain_text(
+            "两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。"
+        )
     expect(fit_count).to_have_attribute("aria-label", re.compile("合格拟合数"))
-    expect(expert).to_contain_text(
-        "两者来自同一批拟合窗口、不同过滤规则；不是两套互相印证的结论。占比不是概率。"
-    )
 
     page.goto(f"{BASE_URL}/chart.html?code=sh000001")
     page.wait_for_function(
