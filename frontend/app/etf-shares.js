@@ -7,10 +7,10 @@
   'use strict';
   var num = function (v) { return typeof v === 'number' && isFinite(v); };
 
-  /* 历史归档行 [日期, 份额亿份, 收盘] 与日更行合并；同一天以日更为准，缺份额的日子不画 */
+  /* 历史归档行 [日期, 份额亿份, 收盘, 申赎估算] 与日更行合并；同一天以日更为准，缺份额的日子不画 */
   function merge(liveRows, histRows) {
     var by = {};
-    (histRows || []).forEach(function (r) { if (r && r[0]) by[r[0]] = [r[0], r[1], r[2], null]; });
+    (histRows || []).forEach(function (r) { if (r && r[0]) by[r[0]] = [r[0], r[1], r[2], r[3]]; });
     (liveRows || []).forEach(function (r) { if (r && r[0] && (num(r[1]) || !by[r[0]])) by[r[0]] = [r[0], r[1], r[2], r[3]]; });
     return Object.keys(by).sort().map(function (d) {
       var r = by[d], s = num(r[1]) ? r[1] : null, c = num(r[2]) ? r[2] : null;
@@ -35,6 +35,14 @@
       });
       return { d: d, shares: n ? shares : null, close: null, value: n && vn === n ? value : null, flow: n && fn === n ? flow : null, n: n, seen: seen };
     });
+  }
+
+  /* 归档文件按列存放（公共日期表 + 每只 ETF 的起始下标），展开成某只 ETF 的行 */
+  function historyRows(hist, code) {
+    var e = hist && hist.etfs && hist.etfs[code], dates = hist && hist.dates;
+    if (!e || !dates || !e.shares) return [];
+    return e.shares.map(function (s, i) { return [dates[e.from + i], s, e.close[i], e.flow[i]]; })
+      .filter(function (r) { return r[0] && (num(r[1]) || num(r[2])); });
   }
 
   function sliceRange(rows, range) {
@@ -125,5 +133,5 @@
     return Math.max(0, Math.min(n - 1, Math.round(t * (n - 1))));
   }
 
-  return { merge: merge, sum: sum, sliceRange: sliceRange, tableRows: tableRows, ticks: ticks, fmt: fmt, draw: draw, indexAt: indexAt };
+  return { merge: merge, historyRows: historyRows, sum: sum, sliceRange: sliceRange, tableRows: tableRows, ticks: ticks, fmt: fmt, draw: draw, indexAt: indexAt };
 });
