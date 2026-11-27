@@ -1,9 +1,9 @@
 {
  "symbol": "sh000016",
  "name": "上证50",
- "asof": "2026-11-26",
- "data_version": "vintage_20261126_ak_em_index",
- "model_version": "prereg_v1.7_v2.2",
+ "asof": "2026-11-27",
+ "data_version": "vintage_20261127_ak_em_index",
+ "model_version": "prereg_v1.7_v2.3",
  "future_calendar": {
   "market": "cn",
   "holidays_through": "2027-12-31",
@@ -39,13 +39,12 @@
    ]
   },
   "bubble": {
-   "start": "2024-11-06",
+   "start": "2024-11-07",
    "duration_days": 500,
    "scale": "12-24m",
    "t1_qualified_standard": false,
-   "size_model": 0.074,
-   "size_realized": 0.017,
-   "tc": "2026-08-03",
+   "size_model": 0.039,
+   "size_realized": 0.013,
    "progress": null,
    "longest_qualified_scale": null,
    "rule": "FCO：Lagrange 起点 t1；大小=模型 t_c 价格/P(t1)−1；持续=t1→as-of；progress 公式未公开",
@@ -64,16 +63,19 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-11-05",
+    "n_qualified_box": 0,
+    "rule": "box",
+    "threshold": 0.05,
+    "best_t1": "2026-11-10",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.5,
-     "m_hi": 0.167,
-     "w_lo": 0.167,
+     "m_lo": 1.0,
+     "m_hi": 0.0,
+     "w_lo": 0.833,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.0,
-     "any": 0.833,
+     "any": 1.0,
      "tol": 0.01
     },
     "null_fpr": {
@@ -103,21 +105,24 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.0,
+     "early": 0.143,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-09-24",
+    "n_qualified_box": 0,
+    "rule": "box",
+    "threshold": 0.05,
+    "best_t1": "2026-09-28",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.0,
+     "m_lo": 0.143,
      "m_hi": 0.0,
      "w_lo": 0.0,
      "w_hi": 0.0,
-     "tc_lo": 0.0,
+     "tc_lo": 0.143,
      "tc_hi": 0.0,
-     "any": 0.0,
+     "any": 0.286,
      "tol": 0.01
     },
     "null_fpr": {
@@ -152,16 +157,19 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2026-06-17",
+    "n_qualified_box": 0,
+    "rule": "box",
+    "threshold": 0.05,
+    "best_t1": "2026-07-24",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.0,
-     "w_lo": 0.538,
+     "w_lo": 0.692,
      "w_hi": 0.0,
-     "tc_lo": 0.0,
+     "tc_lo": 0.154,
      "tc_hi": 0.0,
-     "any": 0.538,
+     "any": 0.769,
      "tol": 0.01
     },
     "null_fpr": {
@@ -196,16 +204,19 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-11-17",
+    "n_qualified_box": 0,
+    "rule": "box",
+    "threshold": 0.05,
+    "best_t1": "2025-11-18",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.08,
-     "m_hi": 0.08,
-     "w_lo": 0.2,
+     "m_lo": 0.04,
+     "m_hi": 0.04,
+     "w_lo": 0.28,
      "w_hi": 0.0,
      "tc_lo": 0.0,
-     "tc_hi": 0.04,
-     "any": 0.36,
+     "tc_hi": 0.0,
+     "any": 0.32,
      "tol": 0.01
     },
     "null_fpr": {
@@ -235,17 +246,20 @@
     "confidence": {
      "box": 0.0,
      "standard": 0.0,
-     "early": 0.02,
+     "early": 0.04,
      "end": 0.0,
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2025-10-27",
+    "n_qualified_box": 0,
+    "rule": "box",
+    "threshold": 0.05,
+    "best_t1": "2025-10-21",
     "t1_qualified": false,
     "boundary_share": {
      "m_lo": 0.0,
      "m_hi": 0.34,
-     "w_lo": 0.3,
+     "w_lo": 0.32,
      "w_hi": 0.0,
      "tc_lo": 0.0,
      "tc_hi": 0.34,
@@ -284,16 +298,19 @@
      "pure": 0.0
     },
     "n_qualified_standard": 0,
-    "best_t1": "2024-10-09",
+    "n_qualified_box": 0,
+    "rule": "box",
+    "threshold": 0.05,
+    "best_t1": "2024-10-10",
     "t1_qualified": false,
     "boundary_share": {
-     "m_lo": 0.025,
-     "m_hi": 0.075,
-     "w_lo": 0.113,
+     "m_lo": 0.037,
+     "m_hi": 0.087,
+     "w_lo": 0.125,
      "w_hi": 0.0,
-     "tc_lo": 0.375,
-     "tc_hi": 0.287,
-     "any": 0.8,
+     "tc_lo": 0.388,
+     "tc_hi": 0.237,
+     "any": 0.787,
      "tol": 0.01
     },
     "null_fpr": {
@@ -323,7 +340,7 @@
    "p0.1": 0.0,
    "p1": 0.0,
    "p10": 0.0,
-   "set": "standard",
+   "set": "box",
    "scales": [
     "2-4w",
     "1-3m",
@@ -333,32 +350,83 @@
     "2-6y"
    ],
    "evidence": "none",
-   "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示"
+   "note": "原版默认 p=0.1；开发段 Combo 作为报警器无稳健证据，仅展示",
+   "headline": "p1",
+   "dev_eval": {
+    "rule": "box",
+    "p": 1.0,
+    "threshold": 0.05,
+    "horizon_days": 120,
+    "a1": 0.246,
+    "a1_null": 0.228,
+    "n_significant": 0,
+    "n_indexes": 6,
+    "robust": false,
+    "verdict": "not_significant"
+   }
   },
   "tc_distribution": {
    "2-4w": {
     "n": 0,
-    "bins": []
+    "bins": [],
+    "rule": "box"
    },
    "1-3m": {
     "n": 0,
-    "bins": []
+    "bins": [],
+    "rule": "box"
    },
    "3-6m": {
     "n": 0,
-    "bins": []
+    "bins": [],
+    "rule": "box"
    },
    "6-12m": {
     "n": 0,
-    "bins": []
+    "bins": [],
+    "rule": "box"
    },
    "12-24m": {
     "n": 0,
-    "bins": []
+    "bins": [],
+    "rule": "box"
    },
    "2-6y": {
     "n": 0,
-    "bins": []
+    "bins": [],
+    "rule": "box"
+   }
+  },
+  "tc_distribution_standard": {
+   "2-4w": {
+    "n": 0,
+    "bins": [],
+    "rule": "standard"
+   },
+   "1-3m": {
+    "n": 0,
+    "bins": [],
+    "rule": "standard"
+   },
+   "3-6m": {
+    "n": 0,
+    "bins": [],
+    "rule": "standard"
+   },
+   "6-12m": {
+    "n": 0,
+    "bins": [],
+    "rule": "standard"
+   },
+   "12-24m": {
+    "n": 0,
+    "bins": [],
+    "rule": "standard"
+   },
+   "2-6y": {
+    "n": 0,
+    "bins": [],
+    "rule": "standard"
    }
   },
   "negative_bubble": {
@@ -366,6 +434,14 @@
    "signal_status": "not_computed"
   },
   "signal_status": "no_qualified_fit",
+  "signal_rule": {
+   "rule": "box",
+   "threshold": 0.05,
+   "scales": [
+    "6-12m",
+    "12-24m"
+   ]
+  },
   "window": {
    "start": null,
    "end": null,
@@ -388,7 +464,32 @@
     "12-24m": "dev",
     "2-6y": "none"
    },
-   "scale_note": "§17.14：FCO 六档重聚合后仅 6–12 月、12–24 月有开发段稳健信号；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
+   "scale_evidence_detail": {
+    "6-12m": {
+     "rule": "box",
+     "threshold": 0.05,
+     "horizon_days": 120,
+     "a1": 0.231,
+     "a1_null": 0.221,
+     "n_significant": 1,
+     "n_indexes": 6,
+     "robust": false,
+     "verdict": "not_significant"
+    },
+    "12-24m": {
+     "rule": "box",
+     "threshold": 0.05,
+     "horizon_days": 120,
+     "a1": 0.303,
+     "a1_null": 0.202,
+     "n_significant": 1,
+     "n_indexes": 6,
+     "robust": false,
+     "verdict": "not_significant"
+    }
+   },
+   "scale_evidence_source": "reports/scale_sens_dev/summary.md（§17.14，tcgrid v2 扫描，开发段 2000–2018）；长尺度合并口径 box__L：0.318 对零对照 0.224，p=0.371（reports/original_standard_dev_v2/alarm_grid_agg.csv）",
+   "scale_note": "§17.14：FCO 六档重聚合后只有 6–12 月、12–24 月做过开发段分档评测，box 阈值 0.05 在两档均未显著优于零对照（见 scale_evidence_detail）；1–3 月 0 稳健组合，仅描述性显示；2–4 周、3–6 月、2–6 年档仅日更计算（FCO F06 六档补齐），未进入任何评价，无证据",
    "notes": [
     "6–12 月、12–24 月档报警精度集中于 2001/2007/2015 泡沫年；非高估年份≈随机（by_year.md、scale_sens_dev/summary.md）"
    ]
@@ -413,7 +514,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-26",
+   "table_asof": "2026-11-27",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -895,7 +996,7 @@
    },
    "bucket": "全部",
    "bucket_basis": {
-    "size_realized": 0.017,
+    "size_realized": 0.013,
     "duration_days": 500,
     "t1_qualified_standard": false,
     "note": "按 FCO 口径起点 t1 的实际涨幅与时长匹配；情景表的桶按前一谷→顶定义，口径近似"
@@ -967,16 +1068,16 @@
     },
     "pe_latest": 10.65,
     "pe_date": "2026-09-30",
-    "close_ref": 2753.71,
-    "close_date": "2026-11-26",
+    "close_ref": 2834.68,
+    "close_date": "2026-11-27",
     "band_points": {
-     "q20": 2199.0,
-     "q50": 2384.0,
-     "q80": 3129.0
+     "q20": 2263.0,
+     "q50": 2454.0,
+     "q80": 3221.0
     },
     "floor_band_points": [
-     2199.0,
-     2384.0
+     2263.0,
+     2454.0
     ],
     "rule": "地板带 = 历次 PS 底部所在月 PE 的 20–50% 分位 × as-of 收盘 / as-of 可用的最新 PE（q80 仅作上参考）；PE 月频、按 1 个月发布滞后取用、事后整理",
     "evidence": "descriptive"
@@ -1029,39 +1130,39 @@
   }
  },
  "cooling_state": {
-  "phase": "reentry_watch",
+  "phase": "cooling_after_top",
   "top_conf_cleared": true,
-  "omori_aftershock_active": false,
+  "omori_aftershock_active": true,
   "dead_cat_risk": false,
-  "drawdown_from_peak": -0.1282,
-  "elapsed_days_since_peak": 215,
+  "drawdown_from_peak": -0.1026,
+  "elapsed_days_since_peak": 216,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
-  "reentry_ready": true,
-  "note": "三层已过 2 层 → 进入观察区，等待剩余条件补齐",
+  "reentry_ready": false,
+  "note": "余震未消（短期波动放大至 60 日均值的 1.48 倍），严禁左侧重仓抄底。",
   "dashboard": {
-   "verdict": "watch_yellow",
-   "verdict_light": "yellow",
-   "headline": "三层已过 2 层 → 进入观察区，等待剩余条件补齐",
+   "verdict": "aftershock_block",
+   "verdict_light": "red",
+   "headline": "大跌余震未消 / 防死猫跳 → 严禁左侧抄底",
    "layers": {
     "odds": true,
-    "clearing": true,
-    "right_side": false,
+    "clearing": false,
+    "right_side": true,
     "passed_count": 2
    },
    "dimensions": [
     {
      "id": "omori",
      "name": "冲击与止跌检查",
-     "value_text": "大阴线 0 次 · 波动比 0.76×",
+     "value_text": "大阴线 0 次 · 波动比 1.48×",
      "pct": null,
-     "light": "green",
-     "active": false,
-     "drawdown_from_peak": -0.1282,
-     "elapsed_days_since_peak": 215,
+     "light": "red",
+     "active": true,
+     "drawdown_from_peak": -0.1026,
+     "elapsed_days_since_peak": 216,
      "dead_cat_risk": false,
      "drop_threshold": -0.02,
-     "plain_text": "距高点已过 215 交易日，大阴线与波动比（0.76×）均已衰减，未再破底。",
+     "plain_text": "余震未消（短期波动放大至 60 日均值的 1.48 倍），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -1096,13 +1197,13 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 1.00× · 年内分位 13%",
-     "pct": 0.131,
-     "ratio20": 1.0,
-     "light": "yellow",
+     "value_text": "5/20日量比 1.02× · 年内分位 70%",
+     "pct": 0.7024,
+     "ratio20": 1.02,
+     "light": "gray",
      "passed_bottom": false,
      "passed_top": false,
-     "plain_text": "成交跌至年内 20% 分位以下（地量冰点：该卖的快卖完了），但还没看到放量资金接盘，先别急。",
+     "plain_text": "成交量能处于常态区间（以成交额/量比作换手率代理），无极端地量或天量。",
      "bottom_rule": "先缩至年内 20% 分位以下地量，再温和放量站上 20 日线",
      "top_rule": "成交冲上年内 95% 分位天量且量比 ≥1.35×",
      "is_proxy": true
@@ -1123,11 +1224,11 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -0.7%",
+     "value_text": "距 20 日线 +2.1%",
      "pct": null,
-     "light": "red",
-     "passed_bottom": false,
-     "plain_text": "价格仍在 20 日线下方运行，右侧趋势尚未扭转，不急于抢跑。",
+     "light": "green",
+     "passed_bottom": true,
+     "plain_text": "价格站上 20 日线且均线走平/向上，右侧承接结构初步成立。",
      "bottom_rule": "收盘站上 20 日线且 20 日线走平/拐头向上",
      "top_rule": "跌破 20 日线且反弹无力",
      "is_proxy": false
@@ -1139,7 +1240,6 @@
  },
  "price_history": {
   "dates": [
-   "2023-10-17",
    "2023-10-18",
    "2023-10-19",
    "2023-10-20",
@@ -1894,10 +1994,10 @@
    "2026-11-23",
    "2026-11-24",
    "2026-11-25",
-   "2026-11-26"
+   "2026-11-26",
+   "2026-11-27"
   ],
   "open": [
-   2474.12,
    2471.59,
    2450.17,
    2394.62,
@@ -2652,10 +2752,10 @@
    2767.91,
    2768.91,
    2758.52,
-   2758.07
+   2758.07,
+   2755.75
   ],
   "high": [
-   2480.94,
    2478.68,
    2450.18,
    2402.79,
@@ -3410,10 +3510,10 @@
    2767.91,
    2780.52,
    2771.52,
-   2762.05
+   2762.05,
+   2841.04
   ],
   "low": [
-   2462.37,
    2463.66,
    2400.19,
    2379.74,
@@ -4168,10 +4268,10 @@
    2734.17,
    2756.79,
    2739.95,
-   2741.76
+   2741.76,
+   2736.62
   ],
   "close": [
-   2478.9,
    2467.19,
    2401.93,
    2389.22,
@@ -4926,10 +5026,10 @@
    2762.1,
    2774.49,
    2751.85,
-   2753.71
+   2753.71,
+   2834.68
   ],
   "volume": [
-   23488548,
    24591894,
    31149685,
    27929409,
@@ -5684,7 +5784,8 @@
    55682555,
    53345963,
    49153699,
-   41864947
+   41864947,
+   63580880
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -5713,7 +5814,7 @@
   },
   "cheap": {
    "evidence": "descriptive",
-   "dd_now": -0.1282,
+   "dd_now": -0.1026,
    "peak_date": "2026-01-06",
    "peak_close": 3158.76,
    "dd_rank": {
@@ -5842,25 +5943,25 @@
   "descriptive": "描述已完成月份，非预测"
  },
  "params": {
-  "optimizer": "de_trf"
+  "optimizer": "g3"
  },
  "research": {
   "aftershock": {
    "schema_version": "aftershock_v1",
    "symbol": "sh000016",
-   "asof": "2026-11-26",
-   "data_asof": "2026-11-26",
-   "data_version": "vintage_20261126_ak_em_index",
+   "asof": "2026-11-27",
+   "data_asof": "2026-11-27",
+   "data_version": "vintage_20261127_ak_em_index",
    "first_visible_at": null,
    "evidence_state": "historical_reconstruction",
-   "method_version": "daily_aftershock_v1",
+   "method_version": "daily_aftershock_v2",
    "frequency": "daily",
    "source": {
-    "label": "vintage_20261126_ak_em_index",
+    "label": "vintage_20261127_ak_em_index",
     "mode": "daily_recalculation",
-    "input_hash": "bb2b586e9989c7987e26c994d71a7e4dfcdc8e5a793f1c74b3e376725ef99149",
+    "input_hash": "759f5f60f40e2e527008fa66ada86dfbbf005daa2cb36e7ccc49622b7e530abd",
     "first_date": "2004-01-02",
-    "rows": 5561
+    "rows": 5562
    },
    "method": {
     "return": "close-to-close log return",
@@ -5880,13 +5981,15 @@
     ],
     "productivity_min_mature_events": 12,
     "productivity_ci": "approximate 95% year-cluster sandwich interval; at least two years",
+    "omori_likelihood": "Bernoulli on the daily large-move indicator, p_t = 1-exp(-rate_t)",
+    "productivity_likelihood": "Binomial(20, p) with complementary log-log link",
     "paper": "https://arxiv.org/abs/1006.1882",
     "paper_scope_difference": "Original study uses 1-minute observations across a stock basket; this daily-index adaptation is a separate descriptive experiment."
    },
    "limits": [
     "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
     "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
-    "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+    "逐日独立的 Bernoulli / Binomial 近似没有完整描述波动聚集，参数和区间仅供研究。"
    ],
    "archive_reuse": {
     "status": "not_requested",
@@ -5906,7 +6009,7 @@
       "mature": true,
       "min_fit_days": 10,
       "min_fit_events": 4,
-      "elapsed_since_mainshock": 167
+      "elapsed_since_mainshock": 168
      },
      "parameters": null,
      "summary": "冲击后的样本还不够",
@@ -5914,7 +6017,7 @@
      "limits": [
       "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
       "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
-      "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+      "逐日独立的 Bernoulli / Binomial 近似没有完整描述波动聚集，参数和区间仅供研究。"
      ],
      "observations": {
       "dates": [
@@ -5973,7 +6076,7 @@
       "observed_after_days": 20,
       "horizon_days": 20,
       "mature": true,
-      "elapsed_since_mainshock": 167
+      "elapsed_since_mainshock": 168
      },
      "parameters": {
       "gap_log10": 0.08230272978485664,
@@ -5987,7 +6090,7 @@
      "limits": [
       "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
       "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
-      "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+      "逐日独立的 Bernoulli / Binomial 近似没有完整描述波动聚集，参数和区间仅供研究。"
      ]
     },
     "productivity": {
@@ -6006,17 +6109,17 @@
       "training_years": 18
      },
      "parameters": {
-      "alpha": -1.2485091806101878,
-      "intercept": 2.5279322379798876,
+      "alpha": -1.3152645388060165,
+      "intercept": -0.31381355333922084,
       "alpha_ci95": [
-       -2.7373492261230243,
-       0.24033086490264854
+       -2.9167025641146136,
+       0.28617348650258045
       ],
-      "alpha_cluster_year_se": 0.759612268118794,
+      "alpha_cluster_year_se": 0.8170602169941821,
       "alpha_interval_includes_zero": true,
-      "expected_20d_events": 2.2682422891736773,
+      "expected_20d_events": 2.274717580792241,
       "count_unit": "large_move_trading_days_either_direction",
-      "raw_poisson_mean": 2.2682422891736773,
+      "likelihood": "binomial(20, p), p = 1-exp(-exp(intercept + alpha*ln(magnitude_sigma)))",
       "training_magnitude_range": [
        3.0079475640367255,
        6.473541015726777
@@ -6033,7 +6136,7 @@
      "limits": [
       "这是波动次数和幅度的研究统计，不能直接给出涨跌方向、底部概率或买卖价格。",
       "历史重建没有真实提前发布时间；观察、估计与实际交易效果需要分别验证。",
-      "独立 Poisson 近似没有完整描述波动聚集，参数和区间仅供研究。"
+      "逐日独立的 Bernoulli / Binomial 近似没有完整描述波动聚集，参数和区间仅供研究。"
      ]
     }
    },
@@ -6045,7 +6148,7 @@
      "sigma_at_shock": 0.013330012854221062,
      "mainshock_abs_log_return": 0.05044432648261221,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4977,
+     "elapsed_since_mainshock": 4978,
      "mature": true,
      "aftershock_count": 0,
      "largest_aftershock_abs_log_return": 0.02453511562824673,
@@ -6059,7 +6162,7 @@
      "sigma_at_shock": 0.018547667632209025,
      "mainshock_abs_log_return": 0.06792097243849504,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4815,
+     "elapsed_since_mainshock": 4816,
      "mature": true,
      "aftershock_count": 3,
      "largest_aftershock_abs_log_return": 0.09949413302673005,
@@ -6073,7 +6176,7 @@
      "sigma_at_shock": 0.021235340516573265,
      "mainshock_abs_log_return": 0.06551371926096206,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4740,
+     "elapsed_since_mainshock": 4741,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.07529669492001201,
@@ -6087,7 +6190,7 @@
      "sigma_at_shock": 0.021344562172191175,
      "mainshock_abs_log_return": 0.07755965425962508,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4578,
+     "elapsed_since_mainshock": 4579,
      "mature": true,
      "aftershock_count": 3,
      "largest_aftershock_abs_log_return": 0.08120487262900866,
@@ -6101,7 +6204,7 @@
      "sigma_at_shock": 0.014665122267571393,
      "mainshock_abs_log_return": 0.046699157454192175,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4208,
+     "elapsed_since_mainshock": 4209,
      "mature": true,
      "aftershock_count": 6,
      "largest_aftershock_abs_log_return": 0.054985028830673244,
@@ -6115,7 +6218,7 @@
      "sigma_at_shock": 0.021585070004927445,
      "mainshock_abs_log_return": 0.06933256592481474,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4185,
+     "elapsed_since_mainshock": 4186,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.04916436217880005,
@@ -6129,7 +6232,7 @@
      "sigma_at_shock": 0.013453593841564278,
      "mainshock_abs_log_return": 0.05212702639915712,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 4033,
+     "elapsed_since_mainshock": 4034,
      "mature": true,
      "aftershock_count": 2,
      "largest_aftershock_abs_log_return": 0.050065591526853304,
@@ -6143,7 +6246,7 @@
      "sigma_at_shock": 0.015127473652648427,
      "mainshock_abs_log_return": 0.05554879335024854,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 3896,
+     "elapsed_since_mainshock": 3897,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.04530492010711651,
@@ -6157,7 +6260,7 @@
      "sigma_at_shock": 0.01619912574108574,
      "mainshock_abs_log_return": 0.054318113037512994,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 3337,
+     "elapsed_since_mainshock": 3338,
      "mature": true,
      "aftershock_count": 3,
      "largest_aftershock_abs_log_return": 0.04197245659465931,
@@ -6171,7 +6274,7 @@
      "sigma_at_shock": 0.014310130642752545,
      "mainshock_abs_log_return": 0.06841090911181702,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 3265,
+     "elapsed_since_mainshock": 3266,
      "mature": true,
      "aftershock_count": 2,
      "largest_aftershock_abs_log_return": 0.055896902382123415,
@@ -6185,7 +6288,7 @@
      "sigma_at_shock": 0.010698010780947162,
      "mainshock_abs_log_return": 0.032623352070109135,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 3093,
+     "elapsed_since_mainshock": 3094,
      "mature": true,
      "aftershock_count": 2,
      "largest_aftershock_abs_log_return": 0.039824140903467864,
@@ -6199,7 +6302,7 @@
      "sigma_at_shock": 0.01536121873609788,
      "mainshock_abs_log_return": 0.05185093682267361,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2907,
+     "elapsed_since_mainshock": 2908,
      "mature": true,
      "aftershock_count": 6,
      "largest_aftershock_abs_log_return": 0.04480896306460558,
@@ -6213,7 +6316,7 @@
      "sigma_at_shock": 0.021561006085614325,
      "mainshock_abs_log_return": 0.09599265143377433,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2880,
+     "elapsed_since_mainshock": 2881,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.056059512630463715,
@@ -6227,7 +6330,7 @@
      "sigma_at_shock": 0.017919623763207826,
      "mainshock_abs_log_return": 0.06807628681256439,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2794,
+     "elapsed_since_mainshock": 2795,
      "mature": true,
      "aftershock_count": 5,
      "largest_aftershock_abs_log_return": 0.0730129891317155,
@@ -6241,7 +6344,7 @@
      "sigma_at_shock": 0.03112310474601821,
      "mainshock_abs_log_return": 0.09473428694022079,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2753,
+     "elapsed_since_mainshock": 2754,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.09852266383954156,
@@ -6255,7 +6358,7 @@
      "sigma_at_shock": 0.016080415125585893,
      "mainshock_abs_log_return": 0.06411560991619147,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2646,
+     "elapsed_since_mainshock": 2647,
      "mature": true,
      "aftershock_count": 3,
      "largest_aftershock_abs_log_return": 0.06095825889656137,
@@ -6269,7 +6372,7 @@
      "sigma_at_shock": 0.007195834570127656,
      "mainshock_abs_log_return": 0.0216530236051371,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2414,
+     "elapsed_since_mainshock": 2415,
      "mature": true,
      "aftershock_count": 0,
      "largest_aftershock_abs_log_return": 0.00913649851790499,
@@ -6283,7 +6386,7 @@
      "sigma_at_shock": 0.006555199328844258,
      "mainshock_abs_log_return": 0.02406597485867934,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2185,
+     "elapsed_since_mainshock": 2186,
      "mature": true,
      "aftershock_count": 3,
      "largest_aftershock_abs_log_return": 0.017020979753157306,
@@ -6297,7 +6400,7 @@
      "sigma_at_shock": 0.011053209997067258,
      "mainshock_abs_log_return": 0.04719884619022441,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2130,
+     "elapsed_since_mainshock": 2131,
      "mature": true,
      "aftershock_count": 0,
      "largest_aftershock_abs_log_return": 0.020708326757000073,
@@ -6311,7 +6414,7 @@
      "sigma_at_shock": 0.011720755230209035,
      "mainshock_abs_log_return": 0.03844469583719157,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 2039,
+     "elapsed_since_mainshock": 2040,
      "mature": true,
      "aftershock_count": 2,
      "largest_aftershock_abs_log_return": 0.02818047292649606,
@@ -6325,7 +6428,7 @@
      "sigma_at_shock": 0.013586315344971104,
      "mainshock_abs_log_return": 0.04706875881575456,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1975,
+     "elapsed_since_mainshock": 1976,
      "mature": true,
      "aftershock_count": 6,
      "largest_aftershock_abs_log_return": 0.042409355623012956,
@@ -6339,7 +6442,7 @@
      "sigma_at_shock": 0.01573584335545171,
      "mainshock_abs_log_return": 0.048772508718276875,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1836,
+     "elapsed_since_mainshock": 1837,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.034588539749059066,
@@ -6353,7 +6456,7 @@
      "sigma_at_shock": 0.007533555299122266,
      "mainshock_abs_log_return": 0.02870270664373553,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1656,
+     "elapsed_since_mainshock": 1657,
      "mature": true,
      "aftershock_count": 5,
      "largest_aftershock_abs_log_return": 0.07261678486081902,
@@ -6367,7 +6470,7 @@
      "sigma_at_shock": 0.013024727407727766,
      "mainshock_abs_log_return": 0.04686926993739782,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1543,
+     "elapsed_since_mainshock": 1544,
      "mature": true,
      "aftershock_count": 2,
      "largest_aftershock_abs_log_return": 0.039064944876484375,
@@ -6381,7 +6484,7 @@
      "sigma_at_shock": 0.010849081890433755,
      "mainshock_abs_log_return": 0.033585846418782594,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1398,
+     "elapsed_since_mainshock": 1399,
      "mature": true,
      "aftershock_count": 7,
      "largest_aftershock_abs_log_return": 0.03174275162941065,
@@ -6395,7 +6498,7 @@
      "sigma_at_shock": 0.010419031819144898,
      "mainshock_abs_log_return": 0.036587989183018976,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1309,
+     "elapsed_since_mainshock": 1310,
      "mature": true,
      "aftershock_count": 3,
      "largest_aftershock_abs_log_return": 0.0392043913755078,
@@ -6409,7 +6512,7 @@
      "sigma_at_shock": 0.009659132985599186,
      "mainshock_abs_log_return": 0.029055921242609806,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1146,
+     "elapsed_since_mainshock": 1147,
      "mature": true,
      "aftershock_count": 4,
      "largest_aftershock_abs_log_return": 0.05367165407171903,
@@ -6423,7 +6526,7 @@
      "sigma_at_shock": 0.014938119992969963,
      "mainshock_abs_log_return": 0.047564781425855074,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 1113,
+     "elapsed_since_mainshock": 1114,
      "mature": true,
      "aftershock_count": 0,
      "largest_aftershock_abs_log_return": 0.02940786377024729,
@@ -6437,7 +6540,7 @@
      "sigma_at_shock": 0.009790264470293507,
      "mainshock_abs_log_return": 0.038784980146204795,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 993,
+     "elapsed_since_mainshock": 994,
      "mature": true,
      "aftershock_count": 4,
      "largest_aftershock_abs_log_return": 0.042929949276682144,
@@ -6451,7 +6554,7 @@
      "sigma_at_shock": 0.01470729634954033,
      "mainshock_abs_log_return": 0.062338457371216016,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 519,
+     "elapsed_since_mainshock": 520,
      "mature": true,
      "aftershock_count": 0,
      "largest_aftershock_abs_log_return": 0.026998945498351468,
@@ -6465,7 +6568,7 @@
      "sigma_at_shock": 0.008668491115760846,
      "mainshock_abs_log_return": 0.056115832782341,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 399,
+     "elapsed_since_mainshock": 400,
      "mature": true,
      "aftershock_count": 1,
      "largest_aftershock_abs_log_return": 0.0225412779351144,
@@ -6479,7 +6582,7 @@
      "sigma_at_shock": 0.005152656841642959,
      "mainshock_abs_log_return": 0.015498921595137105,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 320,
+     "elapsed_since_mainshock": 321,
      "mature": true,
      "aftershock_count": 5,
      "largest_aftershock_abs_log_return": 0.022944335495690638,
@@ -6493,7 +6596,7 @@
      "sigma_at_shock": 0.008205841844070924,
      "mainshock_abs_log_return": 0.032253301797026346,
      "observed_after_days": 20,
-     "elapsed_since_mainshock": 167,
+     "elapsed_since_mainshock": 168,
      "mature": true,
      "aftershock_count": 2,
      "largest_aftershock_abs_log_return": 0.02668526073515398,
@@ -6509,7 +6612,7 @@
     "sigma_at_shock": 0.008205841844070924,
     "mainshock_abs_log_return": 0.032253301797026346,
     "observed_after_days": 20,
-    "elapsed_since_mainshock": 167,
+    "elapsed_since_mainshock": 168,
     "mature": true,
     "aftershock_count": 2,
     "counts": [
