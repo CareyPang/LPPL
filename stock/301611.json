@@ -1,8 +1,8 @@
 {
  "symbol": "sz301611",
  "name": "珂玛科技",
- "asof": "2026-11-26",
- "data_version": "vintage_20261126_tencent_sina_hfq_bf5596bd",
+ "asof": "2026-11-27",
+ "data_version": "vintage_20261127_tencent_sina_hfq_bf5596bd",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "cn",
@@ -199,7 +199,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-26",
+   "table_asof": "2026-11-27",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -728,12 +728,12 @@
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": true,
-  "drawdown_from_peak": -0.7076,
-  "elapsed_days_since_peak": 100,
+  "drawdown_from_peak": -0.6491,
+  "elapsed_days_since_peak": 101,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
   "reentry_ready": false,
-  "note": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.5%）；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+  "note": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.76 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
   "dashboard": {
    "verdict": "aftershock_block",
    "verdict_light": "red",
@@ -748,15 +748,15 @@
     {
      "id": "omori",
      "name": "冲击与止跌检查",
-     "value_text": "大阴线 3 次 · 波动比 1.25×",
+     "value_text": "大阴线 3 次 · 波动比 1.76×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.7076,
-     "elapsed_days_since_peak": 100,
+     "drawdown_from_peak": -0.6491,
+     "elapsed_days_since_peak": 101,
      "dead_cat_risk": true,
      "drop_threshold": -0.045,
-     "plain_text": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.5%）；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
+     "plain_text": "余震未消（近 15 日出现 3 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.76 倍；近 10 日再创 60 日新低（防死猫跳二次杀跌）），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -791,9 +791,9 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 0.90× · 年内分位 30%",
-     "pct": 0.3016,
-     "ratio20": 0.9,
+     "value_text": "5/20日量比 1.00× · 年内分位 60%",
+     "pct": 0.5952,
+     "ratio20": 1.0,
      "light": "gray",
      "passed_bottom": false,
      "passed_top": false,
@@ -818,11 +818,11 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 -14.8%",
+     "value_text": "距 20 日线 +1.7%",
      "pct": null,
-     "light": "red",
+     "light": "yellow",
      "passed_bottom": false,
-     "plain_text": "价格仍在 20 日线下方运行，右侧趋势尚未扭转，不急于抢跑。",
+     "plain_text": "价格刚反抽至 20 日线上方，但 20 日线仍在下行，防反抽回落。",
      "bottom_rule": "收盘站上 20 日线且 20 日线走平/拐头向上",
      "top_rule": "跌破 20 日线且反弹无力",
      "is_proxy": false
@@ -1324,7 +1324,8 @@
    "2026-11-23",
    "2026-11-24",
    "2026-11-25",
-   "2026-11-26"
+   "2026-11-26",
+   "2026-11-27"
   ],
   "open": [
    59.63,
@@ -1817,7 +1818,8 @@
    58.359,
    63.944,
    61.152,
-   55.597
+   55.597,
+   54.201
   ],
   "high": [
    62.28,
@@ -2310,7 +2312,8 @@
    61.674,
    65.601,
    61.162,
-   55.798
+   55.798,
+   65.029
   ],
   "low": [
    59.55,
@@ -2803,7 +2806,8 @@
    56.551,
    61.875,
    54.552,
-   53.036
+   53.036,
+   54.201
   ],
   "close": [
    62.27,
@@ -3296,7 +3300,8 @@
    60.418,
    61.975,
    54.552,
-   54.191
+   54.191,
+   65.029
   ],
   "volume": [
    58215,
@@ -3789,7 +3794,8 @@
    78427,
    71483,
    82506,
-   75234
+   75234,
+   129436
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -3841,11 +3847,11 @@
   "st": false,
   "in_stats": false,
   "ipo_in_range": true,
-  "n_bars": 491,
+  "n_bars": 492,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
-  "eligibility_note": "有效交易日 491 少于 500，未进行拟合",
+  "eligibility_note": "有效交易日 492 少于 500，未进行拟合",
   "source": "tencent_fqkline",
   "evidence": "research_candidate",
   "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
@@ -3871,22 +3877,22 @@
    "cutoff": "2026-11-03",
    "smoke": false,
    "n_events": 21122,
-   "reference_asof": "2026-11-26"
+   "reference_asof": "2026-11-27"
   },
   "state": {
-   "asof": "2026-11-26",
-   "close": 54.190721,
+   "asof": "2026-11-27",
+   "close": 65.028865,
    "peak_date": "2026-07-01",
    "runup": 2.877329,
-   "dd": -0.707556,
-   "td_since_peak": 100,
+   "dd": -0.649068,
+   "td_since_peak": 101,
    "low_date": "2026-11-26",
-   "bounce_from_low": 0.0,
-   "ret20": -0.1311,
-   "ret60": -0.454995,
-   "rv20": 0.934215,
-   "rv20_pct5y": 0.842887,
-   "vol_d": 0.052147,
+   "bounce_from_low": 0.2,
+   "ret20": 0.118521,
+   "ret60": -0.3717,
+   "rv20": 1.119389,
+   "rv20_pct5y": 0.936441,
+   "vol_d": 0.069148,
    "well_dist_below": null
   },
   "in_structure": true,
@@ -4119,9 +4125,9 @@
      "n": 3651
     },
     "rw": {
-     "U": 0.4809,
-     "L": 0.5158,
-     "none": 0.0033
+     "U": 0.48035,
+     "L": 0.51965,
+     "none": 0.0
     }
    },
    "fh120": {
@@ -4132,18 +4138,18 @@
      "n": 3345
     },
     "rw": {
-     "U": 0.3929,
-     "L": 0.6019,
-     "none": 0.0052
+     "U": 0.39305,
+     "L": 0.6067,
+     "none": 0.00025
     }
    }
   },
   "regime": {
-   "p_hi_filtered": 0.840207,
-   "hi_vol_ann": 1.115672,
-   "lo_vol_ann": 0.365627,
-   "hi_mean_wk": 0.021969,
-   "lo_mean_wk": -0.006904,
+   "p_hi_filtered": 0.950134,
+   "hi_vol_ann": 1.107853,
+   "lo_vol_ann": 0.363874,
+   "hi_mean_wk": 0.025328,
+   "lo_mean_wk": -0.006429,
    "weeks": 104,
    "status": "ok",
    "seed": 20261110,
@@ -4153,7 +4159,7 @@
   }
  },
  "fit_code_version": "02d87ccc755b1cd8c627a967b6a63e9782965fe919c9cec042fbfa034d52906a",
- "fit_input_hash": "a523a0816d2c4afe8cc6d211c2b394d61f2bf772af293bfc19010bd5ed9d1aba",
+ "fit_input_hash": "c8ae94bdff3fcf31218c3cdbe16bbac833ffebb63ad27188f120a66234265595",
  "history_input_hashes": {
   "2024-11-19": "72189b92c1d6ff02628beb04b72793161ae50cbcab40088d32e2f52cdb577020",
   "2024-11-20": "9cee9ad29df401bc1fe755cadc9c5e281256a861c1868730151a06d32d557ee6",
@@ -4645,14 +4651,15 @@
   "2026-11-23": "e7f1ea5bbbdb8f8b62fda3054ee24609ec72bc002efc4f8e7301273f83b9bc58",
   "2026-11-24": "44c31422b8782f91518dc15f3de2ba5f5589f9915bd0864abdceb8cd3693af20",
   "2026-11-25": "d1d98afb8931aea275d2592c8f203f5c9f75d02eac8464d66b736ae7836a88fb",
-  "2026-11-26": "a523a0816d2c4afe8cc6d211c2b394d61f2bf772af293bfc19010bd5ed9d1aba"
+  "2026-11-26": "a523a0816d2c4afe8cc6d211c2b394d61f2bf772af293bfc19010bd5ed9d1aba",
+  "2026-11-27": "c8ae94bdff3fcf31218c3cdbe16bbac833ffebb63ad27188f120a66234265595"
  },
  "code": "301611",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-26T19:57:38.479647+00:00",
- "job_id": "b51d424a-c793-474b-ab7d-751ad774d61b",
- "requested_at": "2026-11-26T19:49:42.638586+00:00",
- "source_sha": "e4becd5e63bc8ef06afe0a89a9e5f4f4a566ff03",
- "batch_id": "d077e110-f865-4e2e-a286-49a82d738819"
+ "generated_at": "2026-11-27T19:47:38.004371+00:00",
+ "job_id": "74c45fa5-034d-46f5-ae4f-9b16bb4115f5",
+ "requested_at": "2026-11-27T19:39:14.354319+00:00",
+ "source_sha": "c682e786138b4cd90ae59715986027b19d89186e",
+ "batch_id": "db9a7c90-aa56-44e3-9a44-da96f4274941"
 }

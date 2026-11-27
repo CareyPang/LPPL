@@ -1,8 +1,8 @@
 {
  "symbol": "sh603175",
  "name": "超颖电子",
- "asof": "2026-11-26",
- "data_version": "vintage_20261126_tencent_sina_hfq_309d7462",
+ "asof": "2026-11-27",
+ "data_version": "vintage_20261127_tencent_sina_hfq_309d7462",
  "model_version": "prereg_v1.7_v2.2+stk_lite",
  "future_calendar": {
   "market": "cn",
@@ -199,7 +199,7 @@
    "value": null,
    "evidence": "descriptive",
    "table_version": "p1_v20261031",
-   "table_asof": "2026-11-26",
+   "table_asof": "2026-11-27",
    "n_events": 58,
    "n_events_a": 28,
    "table": {
@@ -724,16 +724,16 @@
   "evidence_override": "research_candidate"
  },
  "cooling_state": {
-  "phase": "cooling_after_top",
+  "phase": "normal",
   "top_conf_cleared": true,
   "omori_aftershock_active": true,
   "dead_cat_risk": false,
-  "drawdown_from_peak": -0.1622,
-  "elapsed_days_since_peak": 40,
+  "drawdown_from_peak": -0.0784,
+  "elapsed_days_since_peak": 41,
   "min_cooling_days": 20,
   "drawdown_bucket": "全部",
-  "reentry_ready": false,
-  "note": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.55 倍），严禁左侧重仓抄底。",
+  "reentry_ready": true,
+  "note": "大跌余震未消 / 防死猫跳 → 严禁左侧抄底",
   "dashboard": {
    "verdict": "aftershock_block",
    "verdict_light": "red",
@@ -748,15 +748,15 @@
     {
      "id": "omori",
      "name": "冲击与止跌检查",
-     "value_text": "大阴线 5 次 · 波动比 1.55×",
+     "value_text": "大阴线 5 次 · 波动比 1.57×",
      "pct": null,
      "light": "red",
      "active": true,
-     "drawdown_from_peak": -0.1622,
-     "elapsed_days_since_peak": 40,
+     "drawdown_from_peak": -0.0784,
+     "elapsed_days_since_peak": 41,
      "dead_cat_risk": false,
      "drop_threshold": -0.045,
-     "plain_text": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.55 倍），严禁左侧重仓抄底。",
+     "plain_text": "余震未消（近 15 日出现 5 次大阴线（阈值 -4.5%）；短期波动放大至 60 日均值的 1.57 倍），严禁左侧重仓抄底。",
      "bottom_rule": "大阴线衰减 + 波动比 ≤1.35× + 近 10 日不再创 60 日新低 + 冷却 ≥20 日",
      "top_rule": "高位剧烈波动放大提示筹码松动",
      "is_proxy": false
@@ -791,9 +791,9 @@
     {
      "id": "turnover",
      "name": "成交地量（换手代理）",
-     "value_text": "5/20日量比 1.50× · 年内分位 90%",
-     "pct": 0.8981,
-     "ratio20": 1.5,
+     "value_text": "5/20日量比 1.63× · 年内分位 80%",
+     "pct": 0.8019,
+     "ratio20": 1.63,
      "light": "green",
      "passed_bottom": true,
      "passed_top": false,
@@ -807,10 +807,10 @@
      "name": "头部300ETF（国家队代理）",
      "value_text": "5日 -45.0 亿 · 21日 +2032.6 亿",
      "pct": null,
-     "light": "green",
-     "passed_bottom": true,
+     "light": "yellow",
+     "passed_bottom": false,
      "passed_top": false,
-     "plain_text": "指数回撤期间头部 300ETF 出现明显逆势净申购，说明大资金/国家队在低位托底接货。",
+     "plain_text": "近 5 日头部 300ETF 呈净赎回，暂未看到大资金逆势托底。",
      "bottom_rule": "回撤期 4 只头部 300ETF 逆势净申购（5 日 ≥50 亿或 21 日 ≥150 亿）",
      "top_rule": "高位期持续净赎回（5 日 ≤-50 亿且 21 日 ≤-100 亿）",
      "is_proxy": true
@@ -818,7 +818,7 @@
     {
      "id": "right_side",
      "name": "右侧结构与宽度",
-     "value_text": "距 20 日线 +9.4%",
+     "value_text": "距 20 日线 +18.9%",
      "pct": null,
      "light": "green",
      "passed_bottom": true,
@@ -1039,7 +1039,8 @@
    "2026-11-23",
    "2026-11-24",
    "2026-11-25",
-   "2026-11-26"
+   "2026-11-26",
+   "2026-11-27"
   ],
   "open": [
    71.19,
@@ -1247,7 +1248,8 @@
    80.636,
    93.361,
    95.244,
-   92.178
+   92.178,
+   96.076
   ],
   "high": [
    71.19,
@@ -1455,7 +1457,8 @@
    89.493,
    98.44,
    96.787,
-   97.99
+   97.99,
+   105.805
   ],
   "low": [
    67.5,
@@ -1663,7 +1666,8 @@
    79.043,
    93.361,
    89.864,
-   91.677
+   91.677,
+   94.202
   ],
   "close": [
    68.08,
@@ -1871,7 +1875,8 @@
    89.493,
    95.635,
    90.665,
-   96.186
+   96.186,
+   105.805
   ],
   "volume": [
    50598,
@@ -2079,7 +2084,8 @@
    30810,
    47491,
    32550,
-   63072
+   63072,
+   54724
   ],
   "note": "对数轴显示；仅到 as-of 日"
  },
@@ -2131,11 +2137,11 @@
   "st": false,
   "in_stats": false,
   "ipo_in_range": true,
-  "n_bars": 206,
+  "n_bars": 207,
   "degenerate_share": 0.0,
   "trading_days_stale": 0,
   "dropped_unclosed_bar": false,
-  "eligibility_note": "有效交易日 206 少于 500，未进行拟合",
+  "eligibility_note": "有效交易日 207 少于 500，未进行拟合",
   "source": "tencent_fqkline",
   "evidence": "research_candidate",
   "note": "个股未经过样本外检验；证据等级 research_candidate，不继承指数证据"
@@ -2161,23 +2167,23 @@
    "cutoff": "2026-11-03",
    "smoke": false,
    "n_events": 21122,
-   "reference_asof": "2026-11-26"
+   "reference_asof": "2026-11-27"
   },
   "state": {
-   "asof": "2026-11-26",
-   "close": 96.186114,
+   "asof": "2026-11-27",
+   "close": 105.804726,
    "peak_date": "2026-09-23",
    "runup": 0.706587,
-   "dd": -0.162157,
-   "td_since_peak": 40,
+   "dd": -0.078373,
+   "td_since_peak": 41,
    "low_date": "2026-11-03",
-   "bounce_from_low": 0.192547,
-   "ret20": 0.054945,
-   "ret60": 0.088929,
-   "rv20": 0.913019,
-   "rv20_pct5y": 0.978495,
-   "vol_d": 0.052006,
-   "well_dist_below": 0.033783
+   "bounce_from_low": 0.311801,
+   "ret20": 0.239437,
+   "ret60": 0.164278,
+   "rv20": 0.931612,
+   "rv20_pct5y": 0.994652,
+   "vol_d": 0.055039,
+   "well_dist_below": 0.129041
   },
   "in_structure": false,
   "depth_bucket": null,
@@ -2186,17 +2192,17 @@
    "fh60": {
     "hist": null,
     "rw": {
-     "U": 0.48085,
-     "L": 0.51585,
-     "none": 0.0033
+     "U": 0.479,
+     "L": 0.51925,
+     "none": 0.00175
     }
    },
    "fh120": {
     "hist": null,
     "rw": {
-     "U": 0.3925,
-     "L": 0.60225,
-     "none": 0.00525
+     "U": 0.39425,
+     "L": 0.6022,
+     "none": 0.00355
     }
    }
   },
@@ -2215,7 +2221,7 @@
   }
  },
  "fit_code_version": "02d87ccc755b1cd8c627a967b6a63e9782965fe919c9cec042fbfa034d52906a",
- "fit_input_hash": "03f788bdd74f489576f17152ba4e6666e881f286a7c823aba4280f9f06c0e0fc",
+ "fit_input_hash": "10943dec1e076b5ce7b35b59c93043eca69478ec70f66c01c1b372e145d73468",
  "history_input_hashes": {
   "2026-01-20": "98c583622584c56130dcbfd1923fee61abed9b02496c780d9f9e66e3eecc093f",
   "2026-01-21": "befd2bf79e5f365a654352d0d07f630c3f6711f8083563d41bb17832850f4260",
@@ -2422,14 +2428,15 @@
   "2026-11-23": "beddb431b920d76e9fa1d43797ffaaf65fe9d4bedde141dc6135bb38bc86a2bc",
   "2026-11-24": "57c99dcaee820c594dea5b266fe2e5d6bfa63778e61d1cb17ff358b83ca4ec1c",
   "2026-11-25": "a33f965946fb9e33744031858a739401d34b44b9380d03f0fb26411c4a4336bf",
-  "2026-11-26": "03f788bdd74f489576f17152ba4e6666e881f286a7c823aba4280f9f06c0e0fc"
+  "2026-11-26": "03f788bdd74f489576f17152ba4e6666e881f286a7c823aba4280f9f06c0e0fc",
+  "2026-11-27": "10943dec1e076b5ce7b35b59c93043eca69478ec70f66c01c1b372e145d73468"
  },
  "code": "603175",
  "mode": "current",
  "schema_version": "stock_result_v1",
- "generated_at": "2026-11-26T20:05:32.536735+00:00",
- "job_id": "93e75d2e-721a-4148-977c-fcd1a749b487",
- "requested_at": "2026-11-26T19:49:42.638586+00:00",
- "source_sha": "e4becd5e63bc8ef06afe0a89a9e5f4f4a566ff03",
- "batch_id": "d077e110-f865-4e2e-a286-49a82d738819"
+ "generated_at": "2026-11-27T19:53:19.587487+00:00",
+ "job_id": "b8672e2c-2a57-4b61-a928-ea14f833fe5d",
+ "requested_at": "2026-11-27T19:39:14.354319+00:00",
+ "source_sha": "c682e786138b4cd90ae59715986027b19d89186e",
+ "batch_id": "db9a7c90-aa56-44e3-9a44-da96f4274941"
 }
