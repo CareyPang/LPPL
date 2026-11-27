@@ -288,3 +288,16 @@ def test_state_seed_has_every_shanghai_session():
     expected = [day for day in bars["dates"] if dates[0] <= day <= dates[-1]]
     assert len(expected) > 1000
     assert [day for day in expected if day not in set(dates)] == []
+
+
+def test_panic_days_split_by_index_position():
+    frame = _state_frame(70)
+    frame.loc[65:, ["red", "ld", "amount_yi"]] = [0.05, 300, 13000.0]
+    frame.loc[65, ["sh", "P20"]] = [2000.0, 0.05]  # 60 日新低 + 极端超卖
+    frame.loc[66, ["sh", "P20"]] = [2100.0, 0.05]  # 没有收新低
+    frame.loc[67, ["sh", "P20"]] = [1900.0, 0.30]  # 新低但不超卖
+    states = breadth.classify_states(frame)["state"]
+    assert list(states[65:68]) == ["panic_low", "panic_first", "panic"]
+    early = _state_frame(30)
+    early.loc[25, ["red", "ld", "amount_yi", "sh"]] = [0.05, 300, 13000.0, 2000.0]
+    assert breadth.classify_states(early)["state"][25] == "panic"  # 不足 60 日不拆分

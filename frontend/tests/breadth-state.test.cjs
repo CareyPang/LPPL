@@ -27,6 +27,18 @@ test('consecutive flagged days collapse into one episode', () => {
   assert.deepEqual(BS.episodes(rows, 'panic').map((e) => [e.start, e.days]), [['d', 1]]);
 });
 
+test('panic episodes keep the two published kinds apart', () => {
+  const kinds = ['panic_first', 'panic_low', 'panic_low', 'mixed'];
+  const rows = kinds.map((state, i) => ({ date: 'd' + i, sh: 100 - i, state, flags: [] }));
+  assert.deepEqual(BS.episodes(rows, 'panic').map((e) => [e.state, e.start, e.days]),
+    [['panic_first', 'd0', 1], ['panic_low', 'd1', 2]]);
+  const html = BS.render(fixture.state, { mark: 'panic' });
+  assert.match(html, /<th>类型<\/th>/);
+  assert.match(html, /<td>高位首跌<\/td>/);
+  assert.match(html, /data-bs-mark="panic" aria-pressed="true">恐慌出清 <span class="m">1 天/);
+  assert.match(html, /超卖新低/);
+});
+
 test('missing state renders nothing and the page only reads the backend field', () => {
   assert.equal(BS.render(null), '');
   assert.equal(BS.render({ latest: {} }), '');

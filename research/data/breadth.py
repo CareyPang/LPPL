@@ -807,6 +807,8 @@ STATE_RATIO_LOW = 0.88
 STATE_P20_OVERSOLD = 0.13
 STATE_P20_OVERHEAT = 0.86
 STATE_LABELS = {
+    "panic_low": "恐慌出清 · 超卖新低",
+    "panic_first": "恐慌出清 · 高位首跌",
     "panic": "恐慌出清",
     "down_heavy": "放量普跌",
     "down_light": "缩量普跌",
@@ -869,6 +871,11 @@ def classify_states(frame: pd.DataFrame) -> pd.DataFrame:
     data["bottom_div"] = low60 & (data["P20"] > p20_trough + 0.05)
     data["oversold"] = data["P20"] <= STATE_P20_OVERSOLD
     data["overheat"] = data["P20"] >= STATE_P20_OVERHEAT
+    # 恐慌出清按当日位置拆两种：已收 60 日新低且极端超卖 / 未收 60 日新低；其余（含不足 60 日）保持原名
+    panic = data["state"] == "panic"
+    has60 = data["sh"].rolling(60, min_periods=60).count() == 60
+    data.loc[panic & has60 & low60 & data["oversold"], "state"] = "panic_low"
+    data.loc[panic & has60 & ~low60, "state"] = "panic_first"
     return data
 
 

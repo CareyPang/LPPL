@@ -7,6 +7,8 @@
   'use strict';
 
   var MEANING = {
+    panic_low: '绝大多数股票下跌、跌停超过 100 家且成交放大，同时上证收在 60 日新低、站上 20 日线的股票不到 13%：卖盘在已经下跌一段之后集中释放。',
+    panic_first: '绝大多数股票下跌、跌停超过 100 家且成交放大，但上证没有收在 60 日新低：卖盘集中释放发生在下跌的前段或反弹途中。',
     panic: '绝大多数股票下跌、跌停超过 100 家且成交放大：卖盘集中释放。',
     down_heavy: '多数股票下跌且成交放大：卖出意愿强。',
     down_light: '多数股票下跌但成交萎缩：卖盘没有集中释放，买盘也没有进场。',
@@ -23,7 +25,7 @@
     overheat: '站上 20 日线的股票超过 86%，处于有记录以来最高的 5%。',
   };
   var TONE = {
-    panic: 'dn2', down_heavy: 'dn2', down_light: 'dn1', down: 'dn1',
+    panic_low: 'dn2', panic_first: 'dn2', panic: 'dn2', down_heavy: 'dn2', down_light: 'dn1', down: 'dn1',
     up_heavy: 'up2', up_light: 'up1', up: 'up1', mixed: 'mid',
   };
   var MARKS = ['panic', 'top_div', 'bottom_div', 'oversold', 'overheat'];
@@ -64,13 +66,17 @@
     return parts.join('，') + '。';
   }
 
-  /* 连续出现同一标记的交易日合并成一段。 */
+  function isPanic(key) { return typeof key === 'string' && key.indexOf('panic') === 0; }
+
+  /* 连续出现同一标记的交易日合并成一段；恐慌出清的两种类型分开成段。 */
   function episodes(list, mark) {
     var out = [], open = null;
     list.forEach(function (row, i) {
-      var on = mark === 'panic' ? row.state === 'panic' : row.flags.indexOf(mark) >= 0;
+      var on = mark === 'panic' ? isPanic(row.state) : row.flags.indexOf(mark) >= 0;
       if (on) {
-        if (!open) { open = { mark: mark, start: row.date, startSh: row.sh, days: 0 }; out.push(open); }
+        if (!open || (mark === 'panic' && open.state !== row.state)) {
+          open = { mark: mark, state: row.state, start: row.date, startSh: row.sh, days: 0 }; out.push(open);
+        }
         open.end = row.date; open.endSh = row.sh; open.days += 1; open.last = i;
       } else {
         open = null;
@@ -103,15 +109,20 @@
     }).join('');
 
     var chips = MARKS.map(function (key) {
-      var count = key === 'panic' ? (state.counts || {}).panic : (state.flag_counts || {})[key];
+      var count = key === 'panic'
+        ? Object.keys(state.counts || {}).filter(isPanic).reduce(function (sum, k) { return sum + (num(state.counts[k]) || 0); }, 0)
+        : (state.flag_counts || {})[key];
       return '<button class="bs-chip" type="button" data-bs-mark="' + key + '" aria-pressed="' + (key === mark) + '">' +
         esc(label(state, key)) + ' <span class="m">' + (num(count) == null ? '—' : count) + ' 天</span></button>';
     }).join('');
     var eps = episodes(list, mark).reverse().slice(0, 40).map(function (ep) {
-      return '<tr><td>' + esc(ep.start) + (ep.end !== ep.start ? ' 至 ' + esc(ep.end) : '') + '</td><td class="r">' + ep.days +
+      return '<tr><td>' + esc(ep.start) + (ep.end !== ep.start ? ' 至 ' + esc(ep.end) : '') + '</td>' +
+        (mark === 'panic' ? '<td>' + esc(ep.state === 'panic' ? '其他' : label(state, ep.state).replace('恐慌出清 · ', '')) + '</td>' : '') + '<td class="r">' + ep.days +
         '</td><td class="r">' + (ep.startSh == null ? '—' : ep.startSh.toFixed(2)) + '</td><td class="r">' + (ep.endSh == null ? '—' : ep.endSh.toFixed(2)) + '</td></tr>';
     }).join('');
-    var markMeaning = mark === 'panic' ? MEANING.panic : FLAG_MEANING[mark];
+    var markMeaning = mark === 'panic'
+      ? MEANING.panic + '按上证当日位置分两种：“超卖新低”指同时收在 60 日新低且站上 20 日线的股票不到 13%；“高位首跌”指没有收在 60 日新低；“其他”指收在 60 日新低但不到极端超卖。'
+      : FLAG_MEANING[mark];
 
     var total = num(state.n_days) || list.length;
     var freq = Object.keys(state.labels || {}).map(function (key) {
@@ -127,7 +138,7 @@
       '</tr></thead><tbody>' + recent + '</tbody></table></div></div>' +
       '<div><h3>标记记录（' + esc(state.since) + ' 起）</h3><div class="bs-chips" role="group" aria-label="标记">' + chips + '</div>' +
       '<p class="note">' + esc(markMeaning) + '</p>' +
-      (eps ? '<div class="table-scroll"><table class="bs-eps"><thead><tr><th>日期</th><th class="r">天数</th><th class="r">起始日上证</th><th class="r">结束日上证</th></tr></thead><tbody>' +
+      (eps ? '<div class="table-scroll"><table class="bs-eps"><thead><tr><th>日期</th>' + (mark === 'panic' ? '<th>类型</th>' : '') + '<th class="r">天数</th><th class="r">起始日上证</th><th class="r">结束日上证</th></tr></thead><tbody>' +
         eps + '</tbody></table></div>' : '<p class="note">有记录以来没有出现。</p>') + '</div></div>' +
       '<details class="breadth-method"><summary>状态怎么分的</summary>' +
       '<p class="note">每个交易日按当日及之前的数据归入一类；阈值取自 ' + esc(state.since) + ' 以来 ' + total +

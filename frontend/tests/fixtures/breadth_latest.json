@@ -83,6 +83,8 @@
     "since": "2021-09-10",
     "n_days": 1260,
     "labels": {
+      "panic_low": "恐慌出清 · 超卖新低",
+      "panic_first": "恐慌出清 · 高位首跌",
       "panic": "恐慌出清",
       "down_heavy": "放量普跌",
       "down_light": "缩量普跌",
@@ -118,14 +120,16 @@
       }
     },
     "counts": {
-      "panic": 19,
-      "down_heavy": 64,
-      "down_light": 122,
-      "down": 197,
-      "up_heavy": 74,
-      "up_light": 59,
-      "up": 173,
-      "mixed": 552
+      "panic_low": 0,
+      "panic_first": 1,
+      "panic": 0,
+      "down_heavy": 1,
+      "down_light": 14,
+      "down": 15,
+      "up_heavy": 5,
+      "up_light": 3,
+      "up": 11,
+      "mixed": 30
     },
     "flag_counts": {
       "top_div": 9,
@@ -641,7 +645,7 @@
         "mixed",
         "up",
         "mixed",
-        "panic",
+        "panic_first",
         "up",
         "mixed",
         "down_light",
