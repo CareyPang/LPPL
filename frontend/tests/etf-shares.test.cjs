@@ -25,10 +25,20 @@ test('sliceRange cuts by calendar months from the last known day and drops days 
   assert.equal(E.sliceRange(rows, 'all').length, 4);
 });
 
-test('tableRows lists newest first with change against the previous known day', () => {
-  const t = E.tableRows(E.merge([['2026-01-02', 10, 2], ['2026-01-05', null, 2], ['2026-01-06', 12, 3]]));
-  assert.deepEqual(t[0], { d: '2026-01-06', shares: 12, chg: 2, value: 36, flow: 6 });
-  assert.equal(t[1].chg, null);
+test('tableRows uses the published flow, only compares adjacent trading days, and keeps the row before the range', () => {
+  const rows = E.merge([['2026-01-02', 10, 2, null], ['2026-01-05', null, 2, null], ['2026-01-06', 12, 3, null], ['2026-01-07', 13, 3, 3]]);
+  const t = E.tableRows(rows);
+  assert.deepEqual(t[0], { d: '2026-01-07', shares: 13, chg: 1, value: 39, flow: 3 });
+  assert.deepEqual([t[1].chg, t[1].flow], [null, null], 'no single-day change across a gap');
+  assert.equal(t.length, 3);
+  const cut = E.tableRows(rows, '2026-01-07');
+  assert.deepEqual(cut.map(r => [r.d, r.chg, r.flow]), [['2026-01-07', 1, 3]]);
+});
+
+test('sum adds published flows and leaves the total missing when a member has none', () => {
+  const a = E.merge([['2026-01-05', 10, 2, null], ['2026-01-06', 12, 2, 4], ['2026-01-07', 12, 2, 0]]);
+  const b = E.merge([['2026-01-05', 5, 1, null], ['2026-01-06', 6, 1, 1], ['2026-01-07', null, 1, null]]);
+  assert.deepEqual(E.sum([a, b]).map(r => r.flow), [null, 5, null]);
 });
 
 test('ticks are round and indexAt clamps to the series', () => {

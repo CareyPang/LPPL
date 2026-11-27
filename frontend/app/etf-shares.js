@@ -10,28 +10,29 @@
   /* 历史归档行 [日期, 份额亿份, 收盘] 与日更行合并；同一天以日更为准，缺份额的日子不画 */
   function merge(liveRows, histRows) {
     var by = {};
-    (histRows || []).forEach(function (r) { if (r && r[0]) by[r[0]] = [r[0], r[1], r[2]]; });
-    (liveRows || []).forEach(function (r) { if (r && r[0] && (num(r[1]) || !by[r[0]])) by[r[0]] = [r[0], r[1], r[2]]; });
+    (histRows || []).forEach(function (r) { if (r && r[0]) by[r[0]] = [r[0], r[1], r[2], null]; });
+    (liveRows || []).forEach(function (r) { if (r && r[0] && (num(r[1]) || !by[r[0]])) by[r[0]] = [r[0], r[1], r[2], r[3]]; });
     return Object.keys(by).sort().map(function (d) {
       var r = by[d], s = num(r[1]) ? r[1] : null, c = num(r[2]) ? r[2] : null;
-      return { d: d, shares: s, close: c, value: s != null && c != null ? s * c : null };
+      return { d: d, shares: s, close: c, value: s != null && c != null ? s * c : null, flow: num(r[3]) ? r[3] : null };
     });
   }
 
-  /* 多只 ETF 按日相加；某只当天缺份额时沿用它上一次已知份额，首次出现前不计入 */
+  /* 多只 ETF 按日相加；某只当天缺份额时沿用它上一次已知份额，首次出现前不计入。
+     申赎估算取各只已发布值之和，任一只当天没有估算时合计记为缺失 */
   function sum(list) {
     var days = {}, last = list.map(function () { return null; });
     list.forEach(function (rows) { rows.forEach(function (r) { days[r.d] = 1; }); });
     var maps = list.map(function (rows) { var m = {}; rows.forEach(function (r) { m[r.d] = r; }); return m; });
     return Object.keys(days).sort().map(function (d) {
-      var shares = 0, value = 0, n = 0, vn = 0;
+      var shares = 0, value = 0, n = 0, vn = 0, flow = 0, fn = 0;
       maps.forEach(function (m, i) {
         var r = m[d];
         if (r && r.shares != null) last[i] = { shares: r.shares, close: r.close != null ? r.close : (last[i] && last[i].close) };
         else if (r && r.close != null && last[i]) last[i] = { shares: last[i].shares, close: r.close };
-        if (last[i]) { shares += last[i].shares; n++; if (last[i].close != null) { value += last[i].shares * last[i].close; vn++; } }
+        if (last[i]) { shares += last[i].shares; n++; if (r && r.flow != null) { flow += r.flow; fn++; } if (last[i].close != null) { value += last[i].shares * last[i].close; vn++; } }
       });
-      return { d: d, shares: n ? shares : null, close: null, value: n && vn === n ? value : null, n: n };
+      return { d: d, shares: n ? shares : null, close: null, value: n && vn === n ? value : null, flow: n && fn === n ? flow : null, n: n };
     });
   }
 
@@ -45,14 +46,15 @@
     return known.filter(function (r) { return r.d >= from; });
   }
 
-  /* 明细表：新的在前，变动 = 与上一条已知份额之差 */
-  function tableRows(rows) {
-    var known = rows.filter(function (r) { return r.shares != null; });
-    return known.map(function (r, i) {
-      var p = i ? known[i - 1] : null;
-      return { d: r.d, shares: r.shares, chg: p ? r.shares - p.shares : null, value: r.value,
-        flow: p && r.close != null ? (r.shares - p.shares) * r.close : null };
-    }).reverse();
+  /* 明细表：新的在前。变动只与紧邻的上一交易日比，上一日缺份额时记为缺失；申赎估算用已发布值，不在前端重算 */
+  function tableRows(rows, from) {
+    var out = [];
+    rows.forEach(function (r, i) {
+      if (r.shares == null || (from && r.d < from)) return;
+      var p = i ? rows[i - 1] : null;
+      out.push({ d: r.d, shares: r.shares, chg: p && p.shares != null ? r.shares - p.shares : null, value: r.value, flow: r.flow });
+    });
+    return out.reverse();
   }
 
   function ticks(min, max, n) {
