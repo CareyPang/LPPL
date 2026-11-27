@@ -113,7 +113,7 @@
       return last && last.dd != null ? { sym: it.sym, name: it.name, dd: last.dd, asof: last.d } : null;
     }).filter(Boolean).sort(function (a, b) { return a.dd - b.dd; });
   }
-  /* 今日结论：只看已发布的 has_top，不另设阈值 */
+  /* 最新结论：只看已发布的 has_top，不另设阈值 */
   function answer(overview) {
     var list = overview && Array.isArray(overview.indices) ? overview.indices.filter(function (x) { return x && x.sym; }) : [];
     if (!list.length) return null;
@@ -122,8 +122,15 @@
     return {
       total: list.length, count: tops.length, names: names, tone: tops.length ? 'on' : 'off',
       asof: isDate(overview.asof) ? overview.asof : null,
-      text: tops.length ? '今天：' + names.join('、') + ' 出现顶部区间' : '今天：' + list.length + ' 个主要指数都未出现顶部区间',
+      text: asofLead(overview.asof) + (tops.length ? names.join('、') + ' 出现顶部区间' : list.length + ' 个主要指数都未出现顶部区间'),
     };
+  }
+  /* 总览每周更新一次，结论前写它的截止日，不写“今天” */
+  function asofLead(v) {
+    var t = dayValue(v);
+    if (t == null) return '最新：';
+    var d = new Date(t);
+    return '截至 ' + (d.getUTCMonth() + 1) + ' 月 ' + d.getUTCDate() + ' 日收盘：';
   }
   function longDate(v) {
     var t = dayValue(v);
@@ -229,14 +236,14 @@
     var state = { range: readRange(win), full: [], view: [], model: null, row: null, quote: null };
     var plot = $('hm-plot');
 
-    /* 今日结论 */
+    /* 最新结论 */
     var overviewP = (L.overview ? Promise.resolve(L.overview()) : Promise.resolve(null)).catch(function () { return null; });
     overviewP.then(function (ov) {
       var a = answer(ov), box = $('hm-answer'), date = $('hm-date');
       if (!box) return;
-      if (!a) { box.className = 'hm-answer'; box.querySelector('span').textContent = '今日结论暂未发布'; return; }
+      if (!a) { box.className = 'hm-answer'; box.querySelector('span').textContent = '最新结论暂未发布'; return; }
       box.className = 'hm-answer ' + a.tone;
-      box.querySelector('span').innerHTML = esc(a.text) + (a.asof ? ' <small>' + esc(a.asof) + ' 收盘</small>' : '');
+      box.querySelector('span').textContent = a.text;
       if (date && a.asof) date.textContent = longDate(a.asof) + ' · 收盘数据';
     });
 

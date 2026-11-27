@@ -40,11 +40,12 @@ test('ranges slice the published weeks and label the change honestly', () => {
 test('today answer reads only the published has_top flags', () => {
   assert.equal(H.answer(null), null);
   const none = H.answer({ asof: '2026-11-26', indices: [{ sym: 'sh000001', name: '上证指数', has_top: false }, { sym: 'sh000300', name: '沪深300', has_top: false }] });
-  assert.equal(none.text, '今天：2 个主要指数都未出现顶部区间');
+  assert.equal(none.text, '截至 11 月 26 日收盘：2 个主要指数都未出现顶部区间');
   assert.equal(none.tone, 'off');
   const some = H.answer({ asof: '2026-11-26', indices: [{ sym: 'sh000001', name: '上证指数', has_top: true }, { sym: 'sh000300', name: '沪深300', has_top: 'yes' }] });
-  assert.equal(some.text, '今天：上证指数 出现顶部区间');
+  assert.equal(some.text, '截至 11 月 26 日收盘：上证指数 出现顶部区间');
   assert.equal(some.count, 1);
+  assert.equal(H.answer({ indices: [{ sym: 'sh000001', has_top: false }] }).text, '最新：1 个主要指数都未出现顶部区间');
   assert.equal(H.longDate('2026-11-26'), '11 月 26 日 周四');
 });
 
