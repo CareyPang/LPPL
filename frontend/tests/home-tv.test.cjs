@@ -28,6 +28,8 @@ test('ranges slice the published weeks and label the change honestly', () => {
   assert.equal(H.sliceRange(s, 'all').length, 300);
   const gappy = s.filter((_, i) => i % 2 === 0 || i === 299);
   assert.equal(H.sliceRange(gappy, '52')[0].d, day(248));
+  const five = [{ d: '2021-11-24', c: 1 }, { d: '2021-12-01', c: 2 }, { d: '2021-12-08', c: 3 }, { d: '2026-11-26', c: 4 }];
+  assert.equal(H.sliceRange(five, '260')[0].d, '2021-12-01');
   assert.equal(H.normRange('7'), 'all');
   assert.equal(H.rangeLabel(s, '52'), '近 1 年');
   assert.equal(H.rangeLabel(s, 'all'), '2010 年以来');
