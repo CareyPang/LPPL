@@ -373,7 +373,7 @@
   var sideFooter = el('div', 'odn-side-footer');
   /* 历史回放：只列已发布的回放截止日（与 lppl-data.js 的 REPLAYS 一致），不触发后台现算 */
   var SIDE_REPLAYS = [
-    { sym: 'sh000001', name: '上证指数', asof: '2007-10-12', t: '2007 · 上证指数', d: '高点 5,903 · 2007.10' },
+    { sym: 'sh000001', name: '上证指数', asof: '2007-10-12', t: '2007 · 上证指数', d: '截止日收盘 5,903 · 2007.10' },
     { sym: 'sh000001', name: '上证指数', asof: '2015-06-12', t: '2015 · 上证指数', d: '高点 5,166 · 2015.06' }
   ];
   var replayTitle = el('div', 'odn-side-watch-title', '历史回放');
