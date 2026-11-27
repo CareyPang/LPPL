@@ -17,16 +17,17 @@
 
   var DAY = 86400000;
   var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  /* 圆标：名称带数字的指数写数字，其余用自绘图形（mark），都没有时取首字 */
+  /* 圆标：名称带数字的指数写数字，交易所综合类指数用交易所标志，都没有时取首字 */
   var BADGES = {
-    sh000001: ['', '#2a3f6f', 'bars'], sz399001: ['', '#0d2a6b', 'leaf'], sz399006: ['', '#1565c0', 'rise'],
+    sh000001: ['', '#c2172d', 'img:sse'],
+    sz399001: ['', '#fff', 'img:szse'],
+    sz399006: ['', '#fff', 'img:szse'],
+    us_ixic: ['', '#0996c7', 'img:nasdaq'],
+    us_spx: ['500', '#c2172d'], us_ndx: ['100', '#0b8fb3'], us_dji: ['30', '#1f8fd6'],
     sh000016: ['50', '#c2172d'], sh000300: ['300', '#0b8fb3'], sh000905: ['500', '#1f4e8c'], sh000688: ['50', '#5b3fa6'],
   };
-  var MARKS = {
-    bars: '<path d="M7 8.5h11M5 12h14M6 15.5h11" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
-    leaf: '<path d="M12 5c4 1.6 5.6 4.6 4.6 8.2-.6 2.4-2.3 4.3-4.6 5.8-2.3-1.500-4-3.400-4.600-5.800C6.400 9.600 8 6.600 12 5Z" fill="#fff"/><path d="M12 8v9" stroke="currentColor" stroke-width="1.400" stroke-linecap="round"/>',
-    rise: '<path d="M6 15.500 10 11l3 2.500L18 8" stroke="#fff" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14.500 8H18v3.500" stroke="#fff" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
-  };
+  /* 交易所标志：官方网站图标缩成 96px，放在 assets/exch/ */
+  var IMG_BASE = 'assets/exch/';
   var FALLBACK = ['#1f4e8c', '#0b8fb3', '#3d6f8e', '#5b3fa6', '#c2172d', '#2a3f6f'];
   var RANGES = { '52': '近 1 年', '260': '近 5 年', all: '' };
   var RANGE_KEY = 'lppl.home.mainRange';
@@ -53,11 +54,10 @@
     for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
     return { text: num ? num[1] : (label.charAt(0) || '?').toUpperCase(), color: FALLBACK[h % FALLBACK.length] };
   }
-  /* 圆标内部的 HTML：图形标或转义后的文字 */
+  /* 圆标内部的 HTML：交易所标志图片或转义后的文字 */
   function badgeInner(b) {
-    return b.mark && MARKS[b.mark]
-      ? '<svg viewBox="0 0 24 24" width="62%" height="62%" style="color:' + b.color + '" aria-hidden="true">' + MARKS[b.mark] + '</svg>'
-      : esc(b.text);
+    var m = /^img:([a-z0-9]+)$/.exec(b.mark || '');
+    return m ? '<img src="' + IMG_BASE + m[1] + '.png" alt="" width="100%" height="100%" loading="lazy" decoding="async">' : esc(b.text);
   }
 
   /* 已发布的周度帧 → [{d, c, a, dd}]，按日期升序；缺日期或收盘的帧跳过 */
