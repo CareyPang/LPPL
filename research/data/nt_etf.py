@@ -211,6 +211,21 @@ def _szse_history(session, code, start, end):
     return result
 
 
+def _holders_superseded(holder, structure, latest_shares_yi):
+    """A disclosed holding is out of date once a later report exists or it exceeds the fund's current shares.
+
+    Returns (superseded, cap_yi): cap_yi is all institutional shares in the later report, an upper bound on the holding.
+    """
+    held = (holder or {}).get("nt_shares_yi")
+    if held is None:
+        return False, None
+    held_date, later_date = (holder or {}).get("report_date"), (structure or {}).get("report_date")
+    later = bool(held_date and later_date and later_date > held_date)
+    total, inst = (structure or {}).get("total_shares_yi"), (structure or {}).get("inst_ratio")
+    cap = total * inst / 100 if later and total is not None and inst is not None else None
+    return later or (latest_shares_yi is not None and held > latest_shares_yi), cap
+
+
 def _holders(session, code):
     page = _request(session, HOLDER_PAGE, params={"symbol":code}, headers={"Referer":"https://stock.finance.sina.com.cn/"}).content.decode("gbk", errors="replace")
     dates = re.findall(r'<option\s+value="(\d{4}-\d{2}-\d{2})"', page)
@@ -515,7 +530,9 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
         report_total = prev_shares / nt_ratio * 100 if prev_shares is not None and nt_ratio else None
         windows = {f"flow_{n}d": _window(series, n) for n in (5, 21, 120)}
         ytd = [r[3] for r in series if r[0][:4] == asof[:4] and r[3] is not None]
-        holder = {**(holder or {}), "nt_value_yi": prev_shares * latest[2] if prev_shares is not None and latest[2] is not None else None}
+        superseded, cap = _holders_superseded(holder, holder_structure, latest_shares_yi)
+        holder = {**(holder or {}), "superseded": superseded, "cap_yi": cap,
+                  "nt_value_yi": prev_shares * latest[2] if prev_shares is not None and latest[2] is not None and not superseded else None}
         etfs.append({**item, "series": series, "latest": {"shares_yi": latest_shares_yi,
             "shares_date": latest_shares[0] if latest_shares else None,
             "shares_asof": shares_asof,
@@ -584,7 +601,8 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
         categories.append({"category":category,"n":len(group),"today":_sum_latest(group, "flow_yi"),"d5":_sum_latest(group, "flow_5d"),
             "d21":_sum_latest(group, "flow_21d"),"report_shares_yi":sum(e["holders"].get("nt_shares_yi") or 0 for e in group),
             "latest_shares_yi":sum(e["latest"]["shares_yi"] or 0 for e in group),
-            "nt_value_yi":sum(e["holders"].get("nt_value_yi") or 0 for e in group)})
+            "nt_value_yi":None if any(e["holders"].get("superseded") for e in group) else sum(e["holders"].get("nt_value_yi") or 0 for e in group),
+            "report_superseded":any(e["holders"].get("superseded") for e in group)})
     flags_latest = _flags_latest(etfs)
     return {"asof":asof,"generated_at":datetime.now().astimezone().isoformat(),"sources":sources,"universe":universe,
         "etfs":etfs,"categories":categories,"totals":totals,"daily":totals_daily,"cffex":cffex,
