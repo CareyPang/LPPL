@@ -10,11 +10,11 @@
  "timezone": "Asia/Seoul",
  "exchange": "韩国交易所",
  "asof": "2026-11-19",
- "generated_at": "2026-11-27T04:30:53.412851+00:00",
+ "generated_at": "2026-11-27T17:39:51.293007+00:00",
  "first_visible_at": null,
  "model_version": "global_sparse27_v1_production_v2_box",
  "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
- "source_sha": "aba93e8de1568f8c7fe4145aab270f7995dab762",
+ "source_sha": "c682e786138b4cd90ae59715986027b19d89186e",
  "data_version": "c790e171fdc1f44c510d956120f087bb8a29ac36304ca9728827b4d22eeb0215",
  "source": "Yahoo Finance",
  "source_meta": {
@@ -25,32 +25,35 @@
   "currency": "KRW",
   "timezone": "Asia/Seoul",
   "exchange": "KSE",
-  "fetched_at": "2026-11-27T04:27:29.922439+00:00",
+  "fetched_at": "2026-11-27T17:38:01.368140+00:00",
   "source": "Yahoo Finance v8 chart",
-  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?period1=946684800&period2=1795753649&interval=1d&events=div%2Csplit",
-  "raw_sha256": "9e8c2b2be4e3e9aba145997c3f92861f2b3b3063cd62032805f5d7d156096c06",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?period1=946684800&period2=1795801081&interval=1d&events=div%2Csplit",
+  "raw_sha256": "ca5fbcb1ee5bc0cc14e30c3740f4f2af48634ae0343203c7652f05d76675aaf6",
   "normalized_sha256": "c790e171fdc1f44c510d956120f087bb8a29ac36304ca9728827b4d22eeb0215",
   "adjustment": "none",
   "volume_unit": "vendor_native",
   "history_vintage": "current_download_reconstruction",
   "normalizer_version": "global_yahoo_v3_raw_ohlcv",
-  "metadata_file": "9e8c2b2be4e3e9aba145997c3f92861f2b3b3063cd62032805f5d7d156096c06-9c8c2619dc8e355f7c2be607d5556e67732d8d4bae838555d1a3d7bd058871aa.metadata.json",
-  "dropped_unclosed_bars": 1,
+  "metadata_file": "ca5fbcb1ee5bc0cc14e30c3740f4f2af48634ae0343203c7652f05d76675aaf6-55f211fb8de97c4b4bdafb22ca99857e03097ca5b9ee436a9495e7832ed5e250.metadata.json",
+  "dropped_unclosed_bars": 0,
   "provider_currency": "KRW",
   "dropped_non_session_rows": 0,
   "dropped_non_session_dates": [],
-  "missing_sessions_last_250": 1,
+  "missing_sessions_last_250": 2,
   "missing_sessions_last_250_dates": [
-   "2026-07-17"
+   "2026-07-17",
+   "2026-11-27"
   ],
   "cross_check": {
    "provider": "naver_siseJson",
-   "overlap": 249,
+   "overlap": 248,
    "max_rel_diff": 5.533572113353025e-08,
    "missing_in_yahoo": 0,
    "missing_in_yahoo_dates": [],
-   "yahoo_lag_sessions": 0,
-   "yahoo_lag_session_dates": [],
+   "yahoo_lag_sessions": 1,
+   "yahoo_lag_session_dates": [
+    "2026-11-27"
+   ],
    "mismatches": [],
    "status": "ok"
   },
@@ -65,7 +68,7 @@
   "research_candidate": "国际市场稀疏窗口研究样本"
  },
  "params": {
-  "source_sha": "aba93e8de1568f8c7fe4145aab270f7995dab762",
+  "source_sha": "c682e786138b4cd90ae59715986027b19d89186e",
   "math_hashes": {
    "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
    "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
@@ -40212,8 +40215,8 @@
    "210": "7ad20ae5db4125ad1878fa67f8a76de9ad79fbfe978fd68c7ade5e13b9fd1fbd",
    "168": "bf2053db35f3d9df5468fe4e0d9a3af24e6b636a43877a2e364a453db719a2c1",
    "253": "6a341c456f8a1069c81e8fbc0eb3a9bc2d9bea47939f10e4447067bad3ea6c2c",
-   "378": "57843829ddce150cf2c734d5b1877a13f4339785e081ab35d34dc6a83892dad9",
    "315": "18ea361b1cf0cc29d246b25417f7afb2173bcac104c3b40e0ba8a454dff10e3c",
+   "378": "57843829ddce150cf2c734d5b1877a13f4339785e081ab35d34dc6a83892dad9",
    "441": "3f881718889944030f30c6c7b69900b016825c7d909cab43bada66310d4627d7",
    "504": "7b73fdf8345e8ba6f1c382fdb9dde1b512b53784935a5f640f11991336696edb",
    "525": "d6c36411cac1fdb79a82bcc0b47c50b7ad34b5d998e06acc8c04e11da2d0ca53",
@@ -40234,6 +40237,6 @@
   "failed": 0,
   "pending": 0
  },
- "record_version": "a72dbc7a31cc3a82ad056c0df01294b10d05af21fc70c2527424c1e5a9339486",
- "archive_path": "global/archive/KR_KOSPI/2026-11-19/a72dbc7a31cc3a82ad056c0df01294b10d05af21fc70c2527424c1e5a9339486.json"
+ "record_version": "a765bd389b86e894df734a7ec7c05fb2f002cb8023211be43b76644aa9972791",
+ "archive_path": "global/archive/KR_KOSPI/2026-11-19/a765bd389b86e894df734a7ec7c05fb2f002cb8023211be43b76644aa9972791.json"
 }

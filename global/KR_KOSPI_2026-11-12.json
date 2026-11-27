@@ -10,11 +10,11 @@
  "timezone": "Asia/Seoul",
  "exchange": "韩国交易所",
  "asof": "2026-11-12",
- "generated_at": "2026-11-27T04:32:38.634090+00:00",
+ "generated_at": "2026-11-27T17:40:52.467417+00:00",
  "first_visible_at": null,
  "model_version": "global_sparse27_v1_production_v2_box",
  "fit_code_version": "398847379488afcd896d40a86ff50fcf9cd84d18bc6bf2a344bf4067dc01e1bd",
- "source_sha": "aba93e8de1568f8c7fe4145aab270f7995dab762",
+ "source_sha": "c682e786138b4cd90ae59715986027b19d89186e",
  "data_version": "c790e171fdc1f44c510d956120f087bb8a29ac36304ca9728827b4d22eeb0215",
  "source": "Yahoo Finance",
  "source_meta": {
@@ -25,32 +25,35 @@
   "currency": "KRW",
   "timezone": "Asia/Seoul",
   "exchange": "KSE",
-  "fetched_at": "2026-11-27T04:27:29.922439+00:00",
+  "fetched_at": "2026-11-27T17:38:01.368140+00:00",
   "source": "Yahoo Finance v8 chart",
-  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?period1=946684800&period2=1795753649&interval=1d&events=div%2Csplit",
-  "raw_sha256": "9e8c2b2be4e3e9aba145997c3f92861f2b3b3063cd62032805f5d7d156096c06",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?period1=946684800&period2=1795801081&interval=1d&events=div%2Csplit",
+  "raw_sha256": "ca5fbcb1ee5bc0cc14e30c3740f4f2af48634ae0343203c7652f05d76675aaf6",
   "normalized_sha256": "c790e171fdc1f44c510d956120f087bb8a29ac36304ca9728827b4d22eeb0215",
   "adjustment": "none",
   "volume_unit": "vendor_native",
   "history_vintage": "current_download_reconstruction",
   "normalizer_version": "global_yahoo_v3_raw_ohlcv",
-  "metadata_file": "9e8c2b2be4e3e9aba145997c3f92861f2b3b3063cd62032805f5d7d156096c06-9c8c2619dc8e355f7c2be607d5556e67732d8d4bae838555d1a3d7bd058871aa.metadata.json",
-  "dropped_unclosed_bars": 1,
+  "metadata_file": "ca5fbcb1ee5bc0cc14e30c3740f4f2af48634ae0343203c7652f05d76675aaf6-55f211fb8de97c4b4bdafb22ca99857e03097ca5b9ee436a9495e7832ed5e250.metadata.json",
+  "dropped_unclosed_bars": 0,
   "provider_currency": "KRW",
   "dropped_non_session_rows": 0,
   "dropped_non_session_dates": [],
-  "missing_sessions_last_250": 1,
+  "missing_sessions_last_250": 2,
   "missing_sessions_last_250_dates": [
-   "2026-07-17"
+   "2026-07-17",
+   "2026-11-27"
   ],
   "cross_check": {
    "provider": "naver_siseJson",
-   "overlap": 249,
+   "overlap": 248,
    "max_rel_diff": 5.533572113353025e-08,
    "missing_in_yahoo": 0,
    "missing_in_yahoo_dates": [],
-   "yahoo_lag_sessions": 0,
-   "yahoo_lag_session_dates": [],
+   "yahoo_lag_sessions": 1,
+   "yahoo_lag_session_dates": [
+    "2026-11-27"
+   ],
    "mismatches": [],
    "status": "ok"
   },
@@ -65,7 +68,7 @@
   "research_candidate": "国际市场稀疏窗口研究样本"
  },
  "params": {
-  "source_sha": "aba93e8de1568f8c7fe4145aab270f7995dab762",
+  "source_sha": "c682e786138b4cd90ae59715986027b19d89186e",
   "math_hashes": {
    "research/pipeline/daily.py": "2f4a78720220302f9aeab1163683142166774549f6a234281d322b7c1f2c4aa8",
    "research/features/lppls_scan.py": "1d4084ffd19230c267e7b9970c29fed5633f025d73f0c9fedf188ec9883cdaa4",
@@ -40165,8 +40168,8 @@
    "note": "单项失败可重叠；累计数按B、m、omega、ahead顺序，不表示各指标独立。"
   },
   "fit_input_hashes": {
-   "18": "99f16f5ea92f34db40667546c99c8622b432cab99c00b9a5054e235a0fec92f7",
    "21": "7cab7e51266940f27ddd7c1fc67938eacdec883a3d333d4a510feebe0733889e",
+   "18": "99f16f5ea92f34db40667546c99c8622b432cab99c00b9a5054e235a0fec92f7",
    "10": "f959dbc4a60ee16a28c89d2af73b1630b08e602bd51b7758059ec58050ac57f2",
    "14": "ae2fbeb4bca3c2e54921546f5022e567debaa0d695e1337fc7a52c2d69c1611f",
    "30": "e1fe3be30ef620a44c51ef35daab180db744c614c35e0a3d01721149258e3bf1",
@@ -40204,6 +40207,6 @@
   "failed": 0,
   "pending": 0
  },
- "record_version": "a402230e2b2751a8fc479a7e27b2cd407b8342c1254f65b8324565f1053163ec",
- "archive_path": "global/archive/KR_KOSPI/2026-11-12/a402230e2b2751a8fc479a7e27b2cd407b8342c1254f65b8324565f1053163ec.json"
+ "record_version": "9ba950e0edef42c7c92bafb7f7d74dbfd50dfdd0096ae87979376b55bcbc3f73",
+ "archive_path": "global/archive/KR_KOSPI/2026-11-12/9ba950e0edef42c7c92bafb7f7d74dbfd50dfdd0096ae87979376b55bcbc3f73.json"
 }
