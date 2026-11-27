@@ -93,9 +93,13 @@
     /* 后端的 24/50 周收益取的是往后第 24/50 帧；那一帧不晚于截止日才显示 */
     var position = {};
     history.frames.forEach(function (frame, index) { if (frame.asof) position[frame.asof] = index; });
+    /* 后端摘要只保留最近 12 个事件的收益；更早的事件按同一口径用已发布的帧收盘价相除 */
     var matured = function (date, weeks, value) {
-      var later = history.frames[position[date] + weeks];
-      return later && later.asof && (!asof || later.asof <= asof) ? num(value) : null;
+      var frame = history.frames[position[date]], later = history.frames[position[date] + weeks];
+      if (!later || !later.asof || (asof && later.asof > asof)) return null;
+      if (num(value) != null) return num(value);
+      var from = num(frame.close), to = num(later.close);
+      return from > 0 && to != null ? to / from - 1 : null;
     };
     return history.frames.filter(function (frame) {
       return frame.bottom_first_alert_flag && frame.asof && (!asof || frame.asof <= asof);
@@ -137,6 +141,16 @@
       (lead == null ? '' : '；首次预警到事后顶中位 ' + Math.round(lead) + ' 天') + '。占比不是概率。</p></details>';
   }
 
+  /* 历史帧是事后重算的：不是样本外证据，原登记的一次性检验结果不变 */
+  function recomputeNote(history, historical) {
+    var data = history && history.recompute;
+    if (!data || typeof data !== 'object') return '';
+    /* 回放到历史截止日时不带出之后才有的检验结论 */
+    if (historical) return '<p class="hl-note">' + esc(typeof data.label === 'string' ? data.label : '事后重算，不是样本外') + '</p>';
+    return '<details class="hl-more"><summary>' + esc(typeof data.label === 'string' ? data.label : '事后重算，不是样本外') +
+      '</summary><p class="hl-note">' + esc(typeof data.note === 'string' ? data.note : '') + '</p></details>';
+  }
+
   function topTable(episodes, selected) {
     if (!episodes.length) return '<p class="hl-empty">该尺度没有出现过顶部聚类。</p>';
     var relation = { before: '早于区间', inside: '落在区间内', after: '晚于区间' };
@@ -167,7 +181,7 @@
     }).join('');
     return '<div class="hl-head"><p class="tp-d">每轮第一次出现顶部聚类记为一次预警，点一行定位到当时的图。</p>' +
       '<div class="hl-chips" role="group" aria-label="尺度">' + chips + '</div></div>' +
-      topSummary(history, scale, o.historical) + topTable(episodes, o.selected);
+      topSummary(history, scale, o.historical) + recomputeNote(history, o.historical) + topTable(episodes, o.selected);
   }
 
   function bottomSegments(history) {
