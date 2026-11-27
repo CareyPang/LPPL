@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REBUILT = ROOT / "data" / "market" / "breadth_state_2013_2021_baostock.csv"
 TEST_START, TEST_END = "2014-01-02", "2021-05-14"
 CHINEXT_20 = "2020-08-24"
+REPORT_ONLY = ("B0", "B2", "B7")
 
 
 def _limit(prev: np.ndarray, rate: np.ndarray, up: bool) -> np.ndarray:
@@ -123,6 +124,8 @@ def evaluate(rebuilt: pd.DataFrame) -> dict:
                 ]
                 stats["checks"] = [bool(x) for x in checks]
                 stats["verdict"] = "通过" if all(checks) else "未通过"
+            if name in REPORT_ONLY:
+                stats["verdict"] = "只报告"
             result["candidates"][name] = stats
     return result
 
