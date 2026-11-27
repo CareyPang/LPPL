@@ -67,3 +67,45 @@ test('nt.html draws the shares chart from LPPL.ntEtf only and labels disclosure 
   assert.match(html, /n\.superseded\?'，该披露已过期/);
   assert.match(html, /x\.report_superseded\?/);
 });
+
+test('historyRows expands the columnar archive and merge keeps its published flow', () => {
+  const hist = { dates: ['2025-12-26', '2025-12-29', '2025-12-30'], etfs: { A: { from: 1, shares: [10, null], close: [2, 2.1], flow: [0.5, null] } } };
+  assert.deepEqual(E.historyRows(hist, 'A'), [['2025-12-29', 10, 2, 0.5], ['2025-12-30', null, 2.1, null]]);
+  assert.deepEqual(E.historyRows(hist, 'B'), []);
+  assert.deepEqual(E.historyRows(null, 'A'), []);
+  const rows = E.merge([['2025-12-31', 11, 2.2, null]], E.historyRows(hist, 'A'));
+  assert.deepEqual(rows.map(r => [r.d, r.shares, r.flow]), [['2025-12-29', 10, 0.5], ['2025-12-30', null, null], ['2025-12-31', 11, null]]);
+});
+
+test('the committed archive is aligned, ends before the daily series and has no flow on conversion days', () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const hist = JSON.parse(fs.readFileSync(path.join(__dirname, '../../web/mock/data/nt_etf/nt_etf_history.json'), 'utf8'));
+  assert.equal(hist.schema, 'nt_etf_history_v1');
+  assert.equal(hist.start, '2020-01-02');
+  assert.ok(hist.end < '2025-12-31');
+  assert.deepEqual([...hist.dates].sort(), hist.dates);
+  assert.equal(new Set(hist.dates).size, hist.dates.length);
+  assert.equal(Object.keys(hist.etfs).length, 29);
+  for (const [code, e] of Object.entries(hist.etfs)) {
+    assert.equal(e.from + e.shares.length, hist.dates.length, code);
+    assert.equal(e.close.length, e.shares.length, code);
+    assert.equal(e.flow.length, e.shares.length, code);
+    e.shares.forEach((s, i) => {
+      if (e.close[i] == null) assert.equal(s, null, code);
+      if (s != null) assert.ok(s > 0, code);
+      if (e.flow[i] != null) assert.ok(s != null && e.shares[i - 1] != null, code + ' ' + hist.dates[e.from + i]);
+    });
+  }
+  for (const s of hist.splits) {
+    const e = hist.etfs[s.code];
+    assert.equal(e.flow[hist.dates.indexOf(s.date) - e.from], null, s.code + ' ' + s.date);
+  }
+});
+
+test('nt.html loads the archive through LPPL.fetchResult and offers 1y / 3y ranges', () => {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '../nt.html'), 'utf8');
+  assert.match(html, /LPPL\.fetchResult\('nt_etf\/nt_etf_history\.json'\)/);
+  assert.match(html, /data-range="1y"/);
+  assert.match(html, /data-range="3y"/);
+  assert.doesNotMatch(html, /fetch\(/);
+});

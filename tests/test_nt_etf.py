@@ -472,6 +472,22 @@ def test_fetch_starts_from_the_gap_so_a_failed_szse_day_is_refilled(monkeypatch,
     assert payload["etfs"][0]["latest"]["shares_stale"] is False
 
 
+def test_history_blanks_shares_converted_a_day_before_the_price_and_books_no_flow():
+    from research.data import nt_etf_history as history
+
+    days = ["d1", "d2", "d3", "d4"]
+    shares, events = history.adjust_splits(days, [100.0, 50.0, 50.5, 51.0], [1.0, 1.01, 2.0, 2.0])
+    assert shares == [100.0, None, 50.5, 51.0]
+    assert events == [{"date": "d3", "ratio": 0.5, "no_flow": ["d2", "d3"]}]
+    same_day, events = history.adjust_splits(days, [10.0, 50.0, 50.0, 50.0], [5.0, 1.0, 1.0, 1.0])
+    assert same_day == [10.0, 50.0, 50.0, 50.0]
+    assert [e["no_flow"] for e in events] == [["d2"]]
+    # a large creation with an ordinary price move is not a conversion
+    assert history.adjust_splits(days, [10.0, 25.0, 26.0, 26.0], [1.0, 1.05, 0.95, 0.95])[1] == []
+    # a 20%-limit ETF: +24% shares then -16% price is a real inflow followed by a fall
+    assert history.adjust_splits(days, [100.0, 124.0, 130.0, 130.0], [1.0, 1.2, 1.0, 1.0], history.WIDE_LIMIT_PRICE_LOG)[1] == []
+
+
 def test_disclosed_holding_is_superseded_by_a_later_report_or_by_shrunken_shares():
     holder = {"nt_shares_yi": 735.131, "report_date": "2025-12-31"}
     later = {"report_date": "2026-06-30", "total_shares_yi": 189.15, "inst_ratio": 61.65}
