@@ -329,6 +329,26 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 #s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
 #s-breadth .breadth-method p { line-height: 1.6; }
 @media (max-width: 760px) { #s-breadth .breadth-tables { grid-template-columns: minmax(0, 1fr); } }
+.bs { margin-bottom: var(--s4); }
+.bs h3 { margin: 0 0 var(--s2); font-size: 13px; }
+.bs-now { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.bs-tag { display: inline-block; border: 1px solid var(--line); padding: 1px var(--s2); font-size: 12px; white-space: nowrap; }
+.bs-now .bs-tag { font-size: 16px; font-weight: 600; padding: var(--s1) var(--s3); }
+.bs-up2 { border-color: var(--up); background: var(--up); color: #fff; }
+.bs-up1 { border-color: var(--up); color: var(--up); }
+.bs-dn2 { border-color: var(--dn); background: var(--dn); color: #fff; }
+.bs-dn1 { border-color: var(--dn); color: var(--dn); }
+.bs-mid { color: var(--ink-2); }
+.bs-flag { display: inline-block; border: 1px solid var(--warn); color: var(--warn); padding: 1px var(--s2); font-size: 12px; margin-left: var(--s1); white-space: nowrap; }
+.bs-streak { color: var(--ink-2); font-size: 12px; }
+.bs-mean { margin: var(--s2) 0 0; font-size: 13px; line-height: 1.6; }
+.bs-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--s3); margin-top: var(--s4); }
+.bs-cols > div { min-width: 0; }
+.bs-recent { min-width: 560px; } .bs-eps { min-width: 360px; } .bs-freq { min-width: 560px; }
+.bs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bs-chip { border: 1px solid var(--line); background: transparent; padding: var(--s1) var(--s2); min-height: 32px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.bs-chip[aria-pressed="true"] { border-color: var(--warn); color: var(--ink); font-weight: 600; }
+@media (max-width: 900px) { .bs-cols { grid-template-columns: minmax(0, 1fr); } }
 #s-top-risk .top-risk-common { margin-bottom: var(--s4); }
 #s-top-risk .top-risk-common > h3 { margin: 0 0 var(--s2); font-size: 13px; }
 #s-top-risk .top-risk-common-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
@@ -522,6 +542,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 <script src="app/trading-days.js"></script>
 <script src="app/top-clusters.js"></script>
 <script src="app/market-summary.js"></script>
+<script src="app/breadth-state.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1821,7 +1842,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const sampleN = num(latest.n) ? latest.n : '—';
     $('src-breadth').textContent =
       `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位`;
-    body.innerHTML = `<div class="breadth-grid">
+    breadthStateData = data.state || null;
+    body.innerHTML = `<div id="breadth-state">${CPBreadthState.render(breadthStateData, { mark: breadthMark })}</div><div class="breadth-grid">
         ${card('红盘率', percent(latest.red))}
         ${card('上涨成交额占比', percent(latest.amt_up))}
         ${card('P20', percent(latest.P20))}
@@ -1859,6 +1881,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <p class="note">IF/IH/IC/IM 分别对应沪深300/上证50/中证500/中证1000现货指数；主力为未到期合约中成交量最大者，到期日按合约月第三个周五，节假日顺延暂不处理。基差率 = (期货 ÷ 现货 − 1) × 100%；年化基差 = 基差率 × 365 ÷ max(剩余自然日, 5)；年化均值为可用品种的算术平均。</p>
       </details>`;
   }
+  let breadthStateData = null, breadthMark = 'bottom_div';
   async function loadBreadth() {
     $('breadth-body').innerHTML = '<p class="note">宽度与资金数据加载中…</p>';
     const [data, result] = await Promise.all([
@@ -2027,6 +2050,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     if (event.target.closest('[data-retry-lhb-seats]')) loadLhbSeats();
   });
   $('breadth-body').addEventListener('click', (event) => {
+    const markChip = event.target.closest('[data-bs-mark]');
+    if (markChip) {
+      breadthMark = markChip.dataset.bsMark;
+      $('breadth-state').innerHTML = CPBreadthState.render(breadthStateData, { mark: breadthMark });
+      const current = $('breadth-state').querySelector('[data-bs-mark][aria-pressed="true"]');
+      if (current) current.focus();
+      return;
+    }
     if (event.target.closest('[data-retry-breadth]')) loadBreadth();
   });
   $('top-risk-body').addEventListener('click', (event) => {

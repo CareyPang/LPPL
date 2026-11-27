@@ -1,4 +1,6 @@
 import datetime as dt
+import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -217,3 +219,85 @@ def test_pipeline_failure_copies_previous_json_then_raises(tmp_path, monkeypatch
         )
 
     assert output.read_bytes() == previous_content
+
+
+def _state_frame(n: int = 90) -> pd.DataFrame:
+    dates = pd.bdate_range("2026-01-05", periods=n).strftime("%Y-%m-%d")
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "sh": [3000.0 + i for i in range(n)],
+            "red": [0.5] * n,
+            "lu": [50] * n,
+            "ld": [10] * n,
+            "amount_yi": [10000.0] * n,
+            "P20": [0.5] * n,
+        }
+    )
+
+
+def test_state_keys_follow_registered_thresholds():
+    key = breadth._state_key
+    assert key(0.10, 1.2, 20, 150) == "panic"
+    assert key(0.10, 0.95, 20, 150) == "down"  # 缩量不算恐慌出清
+    assert key(0.10, 1.2, 20, 99) == "down_heavy"
+    assert key(0.30, 0.85, 20, 10) == "down_light"
+    assert key(0.80, 1.10, 20, 10) == "up_heavy"
+    assert key(0.70, 1.10, 20, 10) == "up"
+    assert key(0.70, 0.80, 20, 10) == "up_light"
+    assert key(0.50, 1.50, 20, 10) == "mixed"
+    assert key(0.50, float("nan"), 20, 10) is None
+
+
+def test_classify_states_uses_only_past_data_and_marks_divergence():
+    frame = _state_frame()
+    frame.loc[frame.index[-1], ["red", "P20"]] = [0.4, 0.3]
+    frame.loc[frame.index[-10], "P20"] = 0.7
+    states = breadth.classify_states(frame)
+    assert states["state"].iloc[:20].isna().all()
+    assert bool(states["top_div"].iloc[-1])
+    assert not states["bottom_div"].any()
+    truncated = breadth.classify_states(frame.iloc[:-5])
+    pd.testing.assert_frame_equal(
+        states.iloc[:-5].reset_index(drop=True), truncated.reset_index(drop=True)
+    )
+
+
+def test_build_state_splices_seed_before_first_live_row(tmp_path):
+    frame = _state_frame()
+    seed = tmp_path / "seed.csv"
+    frame.iloc[:60].to_csv(seed, index=False)
+    live = frame.iloc[40:].copy()
+    live.loc[live.index[:5], "P20"] = None
+    state = breadth._build_state(live, seed)
+    expected = breadth.classify_states(frame)
+    expected = expected.loc[expected["state"].notna()]
+    assert state["history"]["date"] == expected["date"].tolist()
+    assert state["history"]["state"] == expected["state"].tolist()
+    assert state["latest"]["date"] == frame["date"].iloc[-1]
+    assert state["latest"]["streak"] == len(expected)
+    assert sum(state["counts"].values()) == state["n_days"]
+
+
+def test_state_seed_has_every_shanghai_session():
+    seed = pd.read_csv(breadth.STATE_SEED)
+    dates = list(seed["date"])
+    assert dates == sorted(set(dates))
+    root = Path(breadth.__file__).resolve().parents[2]
+    bars = json.loads((root / "web/mock/data/sh000001_bars.json").read_text(encoding="utf-8"))
+    expected = [day for day in bars["dates"] if dates[0] <= day <= dates[-1]]
+    assert len(expected) > 1000
+    assert [day for day in expected if day not in set(dates)] == []
+
+
+def test_panic_days_split_by_index_position():
+    frame = _state_frame(70)
+    frame.loc[65:, ["red", "ld", "amount_yi"]] = [0.05, 300, 13000.0]
+    frame.loc[65, ["sh", "P20"]] = [2000.0, 0.05]  # 60 日新低 + 极端超卖
+    frame.loc[66, ["sh", "P20"]] = [2100.0, 0.05]  # 没有收新低
+    frame.loc[67, ["sh", "P20"]] = [1900.0, 0.30]  # 新低但不超卖
+    states = breadth.classify_states(frame)["state"]
+    assert list(states[65:68]) == ["panic_low", "panic_first", "panic"]
+    early = _state_frame(30)
+    early.loc[25, ["red", "ld", "amount_yi", "sh"]] = [0.05, 300, 13000.0, 2000.0]
+    assert breadth.classify_states(early)["state"][25] == "panic"  # 不足 60 日不拆分

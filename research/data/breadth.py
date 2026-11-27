@@ -789,7 +789,161 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
         "latest": latest_data,
         "history": history,
         "risk_history": risk_history,
+        "state": _build_state(frame),
         "warnings": [],
+    }
+
+
+STATE_SEED = Path(__file__).resolve().parents[2] / "data" / "market" / "breadth_state_seed.csv"
+STATE_RULES_VERSION = "breadth_state_v1"
+# 阈值只按 2021-08-13 至 2026-11-26 各指标自身的分布确定（见 docs/breadth_state_rules.md），未参考之后涨跌。
+STATE_RED_LOW = 1 / 3
+STATE_RED_HIGH = 2 / 3
+STATE_RED_BROAD_UP = 0.75
+STATE_RED_PANIC = 0.12
+STATE_LD_PANIC = 100
+STATE_RATIO_HIGH = 1.09
+STATE_RATIO_LOW = 0.88
+STATE_P20_OVERSOLD = 0.13
+STATE_P20_OVERHEAT = 0.86
+STATE_LABELS = {
+    "panic_low": "恐慌出清 · 超卖新低",
+    "panic_first": "恐慌出清 · 高位首跌",
+    "panic": "恐慌出清",
+    "down_heavy": "放量普跌",
+    "down_light": "缩量普跌",
+    "down": "普跌",
+    "up_heavy": "放量普涨",
+    "up_light": "缩量普涨",
+    "up": "普涨",
+    "mixed": "涨跌分化",
+}
+FLAG_LABELS = {
+    "top_div": "顶背离",
+    "bottom_div": "底背离",
+    "oversold": "极端超卖",
+    "overheat": "极端过热",
+}
+
+
+def _state_key(red: float, ratio: float, lu: float, ld: float) -> str | None:
+    if pd.isna(red) or pd.isna(ratio):
+        return None
+    if red <= STATE_RED_LOW:
+        if (
+            red <= STATE_RED_PANIC
+            and not pd.isna(ld)
+            and ld >= STATE_LD_PANIC
+            and ratio >= 1.0
+        ):
+            return "panic"
+        if ratio >= STATE_RATIO_HIGH:
+            return "down_heavy"
+        if ratio <= STATE_RATIO_LOW:
+            return "down_light"
+        return "down"
+    if red >= STATE_RED_BROAD_UP and ratio >= STATE_RATIO_HIGH:
+        return "up_heavy"
+    if red >= STATE_RED_HIGH:
+        return "up_light" if ratio <= STATE_RATIO_LOW else "up"
+    return "mixed"
+
+
+def classify_states(frame: pd.DataFrame) -> pd.DataFrame:
+    """按当日及之前的数据给每个交易日一个状态和若干叠加标记；只作状态描述。"""
+    data = frame.loc[:, ["date", "sh", "red", "lu", "ld", "amount_yi", "P20"]].copy()
+    data["date"] = data["date"].map(_date_text)
+    data = data.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+    for field in ("sh", "red", "lu", "ld", "amount_yi", "P20"):
+        data[field] = pd.to_numeric(data[field], errors="coerce")
+    data["ratio"] = data["amount_yi"].div(
+        data["amount_yi"].shift(1).rolling(20, min_periods=20).mean()
+    )
+    data["state"] = [
+        _state_key(red, ratio, lu, ld)
+        for red, ratio, lu, ld in zip(data["red"], data["ratio"], data["lu"], data["ld"], strict=True)
+    ]
+    high60 = data["sh"] >= data["sh"].rolling(60, min_periods=60).max()
+    low60 = data["sh"] <= data["sh"].rolling(60, min_periods=60).min()
+    p20_peak = data["P20"].shift(1).rolling(20, min_periods=20).max()
+    p20_trough = data["P20"].shift(1).rolling(60, min_periods=60).min()
+    data["top_div"] = high60 & (data["red"] < 0.5) & (data["P20"] < p20_peak - 0.10)
+    data["bottom_div"] = low60 & (data["P20"] > p20_trough + 0.05)
+    data["oversold"] = data["P20"] <= STATE_P20_OVERSOLD
+    data["overheat"] = data["P20"] >= STATE_P20_OVERHEAT
+    # 恐慌出清按当日位置拆两种：已收 60 日新低且极端超卖 / 未收 60 日新低；其余（含不足 60 日）保持原名
+    panic = data["state"] == "panic"
+    has60 = data["sh"].rolling(60, min_periods=60).count() == 60
+    data.loc[panic & has60 & low60 & data["oversold"], "state"] = "panic_low"
+    data.loc[panic & has60 & ~low60, "state"] = "panic_first"
+    return data
+
+
+def _build_state(frame: pd.DataFrame, seed_path: Path = STATE_SEED) -> dict[str, Any] | None:
+    live = frame.loc[:, ["date", "sh", "red", "lu", "ld", "amount_yi", "P20"]].copy()
+    live["date"] = live["date"].map(_date_text)
+    if Path(seed_path).is_file():
+        seed = pd.read_csv(seed_path)
+        seed["date"] = seed["date"].map(_date_text)
+        live_p20 = live.dropna(subset=["P20"])
+        first_live = live_p20["date"].min() if not live_p20.empty else live["date"].min()
+        seed = seed.loc[seed["date"] < first_live]
+        live = pd.concat((seed, live.loc[live["date"] >= first_live]), ignore_index=True)
+    states = classify_states(live)
+    states = states.loc[states["state"].notna()].reset_index(drop=True)
+    if states.empty or states["date"].iloc[-1] != _date_text(frame["date"].iloc[-1]):
+        return None
+    flags = list(FLAG_LABELS)
+    last = states.iloc[-1]
+    streak = 1
+    while streak < len(states) and states["state"].iloc[-streak - 1] == last["state"]:
+        streak += 1
+    flag_streaks = {}
+    for flag in flags:
+        count = 0
+        while count < len(states) and bool(states[flag].iloc[-count - 1]):
+            count += 1
+        if count:
+            flag_streaks[flag] = count
+    counts = states["state"].value_counts()
+    return {
+        "rules": STATE_RULES_VERSION,
+        "since": str(states["date"].iloc[0]),
+        "n_days": int(len(states)),
+        "labels": STATE_LABELS,
+        "flag_labels": FLAG_LABELS,
+        "thresholds": {
+            "red_low": STATE_RED_LOW,
+            "red_high": STATE_RED_HIGH,
+            "red_broad_up": STATE_RED_BROAD_UP,
+            "red_panic": STATE_RED_PANIC,
+            "ld_panic": STATE_LD_PANIC,
+            "ratio_high": STATE_RATIO_HIGH,
+            "ratio_low": STATE_RATIO_LOW,
+            "p20_oversold": STATE_P20_OVERSOLD,
+            "p20_overheat": STATE_P20_OVERHEAT,
+        },
+        "latest": {
+            "date": str(last["date"]),
+            "state": str(last["state"]),
+            "streak": int(streak),
+            "flags": flag_streaks,
+        },
+        "counts": {key: int(counts.get(key, 0)) for key in STATE_LABELS},
+        "flag_counts": {flag: int(states[flag].sum()) for flag in flags},
+        "history": {
+            "date": states["date"].tolist(),
+            "sh": [_json_scalar(value) for value in states["sh"].round(2)],
+            "red": [_json_scalar(value) for value in states["red"].round(4)],
+            "ratio": [_json_scalar(value) for value in states["ratio"].round(3)],
+            "P20": [_json_scalar(value) for value in states["P20"].round(4)],
+            "ld": [_json_scalar(value) for value in states["ld"]],
+            "state": states["state"].tolist(),
+            "flags": [
+                [flag for flag in flags if bool(row[flag])]
+                for _, row in states.loc[:, flags].iterrows()
+            ],
+        },
     }
 
 
