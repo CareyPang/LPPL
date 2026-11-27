@@ -404,3 +404,69 @@ def test_failed_szse_refresh_keeps_previous_shares_and_marks_them_stale(
     assert etf["latest"]["shares_yi"] == 2.5
     assert etf["latest"]["shares_asof"] == "2026-11-12"
     assert etf["latest"]["shares_stale"] is True
+
+
+def test_request_retries_a_dropped_connection_but_not_an_http_error(monkeypatch):
+    monkeypatch.setattr(nt_etf, "rate_limit", lambda: None)
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+    class Session:
+        def __init__(self, failures):
+            self.failures, self.calls = failures, 0
+
+        def get(self, *_args, **_kwargs):
+            self.calls += 1
+            if self.calls <= self.failures:
+                raise nt_etf.requests.ConnectionError("reset")
+            return Response()
+
+    session = Session(failures=1)
+    assert isinstance(nt_etf._request(session, "https://example.invalid"), Response)
+    assert session.calls == 2
+
+    session = Session(failures=nt_etf.REQUEST_ATTEMPTS)
+    with pytest.raises(nt_etf.requests.ConnectionError):
+        nt_etf._request(session, "https://example.invalid")
+    assert session.calls == nt_etf.REQUEST_ATTEMPTS
+
+
+def test_gap_start_reopens_the_earliest_recent_day_without_shares():
+    previous = _previous_etf(
+        "159919",
+        [
+            ["2025-01-02", None, 1.0, None],
+            ["2026-11-10", 2.5, 1.2, None],
+            ["2026-11-11", None, 1.2, None],
+            ["2026-11-12", None, 1.2, None],
+        ],
+    )
+
+    assert nt_etf._gap_start(previous, "2026-11-13") == "2026-11-11"
+    assert nt_etf._gap_start(_previous_etf("159919", [["2026-11-12", 2.5, 1.2, None]]), "2026-11-13") is None
+
+
+def test_fetch_starts_from_the_gap_so_a_failed_szse_day_is_refilled(monkeypatch, tmp_path):
+    universe = [{"code": "159919", "name": "测试ETF", "category": "测试", "exchange": "SZ"}]
+    previous = _previous_etf(
+        "159919",
+        [["2026-11-10", 2.5, 1.2, None], ["2026-11-11", None, 1.2, None], ["2026-11-12", None, 1.2, None]],
+    )
+    starts = []
+    monkeypatch.setattr(nt_etf, "_gap_start", lambda prev, asof: starts.append(asof) or "2026-11-11")
+
+    payload, _ = _fetch_fixture(
+        monkeypatch,
+        tmp_path,
+        universe,
+        previous,
+        {"159919": {"2026-11-13": 1.1}},
+        ({}, {"159919": {"2026-11-11": 26000.0, "2026-11-12": 27000.0, "2026-11-13": 28000.0}}, [], []),
+    )
+
+    series = {row[0]: row[1] for row in payload["etfs"][0]["series"]}
+    assert starts == ["2026-11-13"]
+    assert series["2026-11-11"] == 2.6 and series["2026-11-13"] == 2.8
+    assert payload["etfs"][0]["latest"]["shares_stale"] is False
