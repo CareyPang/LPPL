@@ -121,7 +121,7 @@
         '</td><td class="r">' + (ep.startSh == null ? '—' : ep.startSh.toFixed(2)) + '</td><td class="r">' + (ep.endSh == null ? '—' : ep.endSh.toFixed(2)) + '</td></tr>';
     }).join('');
     var markMeaning = mark === 'panic'
-      ? MEANING.panic + '按上证当日位置分两种：“超卖新低”指同时收在 60 日新低且站上 20 日线的股票不到 13%；“高位首跌”指没有收在 60 日新低；“其他”指收在 60 日新低但不到极端超卖。'
+      ? MEANING.panic + '按上证当日位置分两种：“超卖新低”指同时收在 60 日新低且站上 20 日线的股票不到 13%；“指数未破位”指没有收在 60 日新低；“其他”指收在 60 日新低但不到极端超卖。'
       : FLAG_MEANING[mark];
 
     var total = num(state.n_days) || list.length;
