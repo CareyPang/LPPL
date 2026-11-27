@@ -17,9 +17,11 @@
 
   var DAY = 86400000;
   var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  /* 按编制方分三种颜色：上交所红、深交所蓝、中证深色 */
   var BADGES = {
-    sh000001: ['上', '#e03c31'], sh000016: ['50', '#2962ff'], sh000300: ['300', '#00897b'],
-    sh000905: ['500', '#f57c00'], sh000688: ['科', '#6a1b9a'], sz399001: ['深', '#0277bd'], sz399006: ['创', '#c2185b'],
+    sh000001: ['上证', '#e03c31'], sh000016: ['上50', '#e03c31'], sh000688: ['科创', '#e03c31'],
+    sh000300: ['300', '#131722'], sh000905: ['500', '#131722'],
+    sz399001: ['深成', '#2962ff'], sz399006: ['创业', '#2962ff'],
   };
   var RANGES = { '52': '近 1 年', '260': '近 5 年', all: '' };
   var RANGE_KEY = 'lppl.home.mainRange';
@@ -41,9 +43,7 @@
     var key = String(sym || '').toLowerCase(), b = BADGES[key];
     if (b) return { text: b[0], color: b[1] };
     var text = String(name || sym || '?').replace(/\s+/g, '').charAt(0) || '?';
-    var h = 0, s = String(sym || name || '');
-    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-    return { text: text, color: 'hsl(' + h + ',52%,40%)' };
+    return { text: text, color: '#787b86' };
   }
 
   /* 已发布的周度帧 → [{d, c, a, dd}]，按日期升序；缺日期或收盘的帧跳过 */

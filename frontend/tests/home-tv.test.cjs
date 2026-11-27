@@ -79,9 +79,9 @@ test('index links keep identity and badges fall back without guessing a market',
   assert.equal(href.searchParams.get('kind'), 'index');
   assert.equal(href.searchParams.get('from'), 'home.html');
   assert.equal(href.searchParams.get('code'), 'sh000300');
-  assert.deepEqual(H.badgeFor('sh000001'), { text: '上', color: '#e03c31' });
+  assert.deepEqual(H.badgeFor('sh000001'), { text: '上证', color: '#e03c31' });
   assert.equal(H.badgeFor('US_SPX', '标普500').text, '标');
-  assert.match(H.badgeFor('US_SPX', '标普500').color, /^hsl\(/);
+  assert.equal(H.badgeFor('US_SPX', '标普500').color, '#787b86');
 });
 
 test('home page keeps the shared hooks and stays within the data contract', () => {
