@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parents[2]
 UNIVERSE_PATH = ROOT / "data/nt_etf/universe.json"
 SSE_URL = "https://query.sse.com.cn/commonQuery.do"
 SZSE_URL = "https://fund.szse.cn/api/report/ShowReport/data"
+REQUEST_ATTEMPTS = 3
+GAP_LOOKBACK_DAYS = 370
 HOLDER_PAGE = "https://stock.finance.sina.com.cn/fundInfo/view/FundInfo_JJCYR.php"
 HOLDER_API = "https://stock.finance.sina.com.cn/fundInfo/api/openapi.php/CaihuiFundInfoService.getFundHolder"
 HOLDER_STRUCTURE_URL = "https://fundf10.eastmoney.com/FundArchivesDatas.aspx"
@@ -53,10 +55,17 @@ def _number(value):
 
 
 def _request(session, url, **kwargs):
-    rate_limit()
-    response = session.get(url, timeout=25, **kwargs)
-    response.raise_for_status()
-    return response
+    """GET with rate limiting; a dropped connection is retried, HTTP errors are not."""
+    for attempt in range(REQUEST_ATTEMPTS):
+        rate_limit()
+        try:
+            response = session.get(url, timeout=25, **kwargs)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == REQUEST_ATTEMPTS - 1:
+                raise
+            continue
+        response.raise_for_status()
+        return response
 
 
 def _parse_sse(payload: dict, day: str) -> dict[str, dict]:
@@ -396,6 +405,18 @@ def _fetch_shares(universe, dates, start, end, session):
     return sh, sz, sse_errors, szse_errors
 
 
+def _gap_start(prev: dict, asof: str) -> str | None:
+    """Earliest recent day on which any ETF has a price but no share count, so a failed day is refetched."""
+    floor = (pd.Timestamp(asof) - pd.Timedelta(days=GAP_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
+    days = [
+        row[0]
+        for etf in prev.get("etfs", [])
+        for row in etf.get("series", [])
+        if len(row) > 1 and row[1] is None and floor <= row[0] <= asof
+    ]
+    return min(days) if days else None
+
+
 def _load_previous(path):
     if not path or not Path(path).is_file():
         return None
@@ -407,6 +428,8 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
     prev = _load_previous(previous) if isinstance(previous, (str, Path)) else previous
     start = backfill_start or (prev.get("asof") if prev and not backfill_start else asof)
     start = start or asof
+    if prev and not backfill_start:
+        start = min(start, _gap_start(prev, asof) or start)
     session = session or requests.Session()
     prices, price_errors = _prices(universe, start, asof)
     previous_by_code = {e["code"]: e for e in (prev or {}).get("etfs", [])}
