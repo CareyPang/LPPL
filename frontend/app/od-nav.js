@@ -807,7 +807,9 @@
   })();
   var menu = el('details', 'odn-menu');
   menu.innerHTML = '<summary aria-label="打开导航菜单">☰</summary><div class="odn-pop">' +
-    HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') + '</div>';
+    HELP.map(function (h) { return '<a href="' + h.h + '">' + esc(h.t) + '</a>'; }).join('') +
+    '<div class="odn-menu-sep"></div>' +
+    Array.prototype.map.call(replayList.querySelectorAll('a'), function (a) { return '<a href="' + esc(a.getAttribute('href')) + '">回放 ' + esc(a.querySelector('b').textContent) + '</a>'; }).join('') + '</div>';
   right.appendChild(menu);
   var help = el('details', 'odn-help');
   help.innerHTML = '<summary aria-label="帮助" title="帮助：用户指南、研究仪表盘、数据状态">?</summary><div class="odn-pop">' +
