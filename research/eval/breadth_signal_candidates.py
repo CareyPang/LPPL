@@ -29,6 +29,20 @@ def _recent(mask, days: int) -> np.ndarray:
     return series.fillna(0).to_numpy() > 0
 
 
+def _first_after(trigger, match, days: int) -> np.ndarray:
+    """每次触发后 days 个交易日内第一个满足 match 的日子；取到后要等新的触发才再取。"""
+    trigger, match = np.asarray(trigger, bool), np.asarray(match, bool)
+    out = np.zeros(len(match), bool)
+    last, used = -(10**9), -(10**9)
+    for i in range(len(match)):
+        if last > used and i - last <= days and match[i]:
+            out[i] = True
+            used = last
+        if trigger[i]:
+            last = i
+    return out
+
+
 def candidates(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray], dict[str, np.ndarray]]:
     """frame: date, sh, red, lu, ld, amount_yi, P20。返回 (有状态的日序列, 买入候选, 卖出候选)。"""
     states = breadth.classify_states(frame)
@@ -54,13 +68,13 @@ def candidates(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray]
         "B1": panic_low,
         "B0": panic,
         "B2": state.eq("panic_first").to_numpy(),
-        "B7": _first(up & _recent(panic_low, 5)),
+        "B7": _first_after(panic_low, up, 5),
     }
     sell = {
         "S1": _first(overheat),
         "S3": overheat & high60,
         "S4": states["top_div"].to_numpy(),
-        "S5": _first(heavy_down & _recent(overheat, 20)),
+        "S5": _first_after(overheat, heavy_down, 20),
         "S6": below_half,
     }
     return states, buy, sell
