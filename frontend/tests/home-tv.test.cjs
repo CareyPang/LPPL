@@ -21,10 +21,13 @@ test('weeklySeries keeps dated closes in order and never invents a drawdown', ()
 });
 
 test('ranges slice the published weeks and label the change honestly', () => {
-  const s = Array.from({ length: 300 }, (_, i) => ({ d: `20${String(10 + Math.floor(i / 52)).padStart(2, '0')}-01-01`, c: 100 + i, a: false }));
-  assert.equal(H.sliceRange(s, '52').length, 52);
-  assert.equal(H.sliceRange(s, '260').length, 260);
+  const day = (i) => new Date(Date.UTC(2010, 0, 1) + i * 7 * 86400000).toISOString().slice(0, 10);
+  const s = Array.from({ length: 300 }, (_, i) => ({ d: day(i), c: 100 + i, a: false }));
+  assert.equal(H.sliceRange(s, '52').length, 53);
+  assert.equal(H.sliceRange(s, '260').length, 261);
   assert.equal(H.sliceRange(s, 'all').length, 300);
+  const gappy = s.filter((_, i) => i % 2 === 0 || i === 299);
+  assert.equal(H.sliceRange(gappy, '52')[0].d, day(248));
   assert.equal(H.normRange('7'), 'all');
   assert.equal(H.rangeLabel(s, '52'), '近 1 年');
   assert.equal(H.rangeLabel(s, 'all'), '2010 年以来');

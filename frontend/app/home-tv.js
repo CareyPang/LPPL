@@ -63,7 +63,12 @@
   function sliceRange(series, range) {
     var r = normRange(range);
     if (r === 'all') return series.slice();
-    return series.slice(-Math.max(2, Number(r)));
+    /* 已发布帧会跳周，按日期截取，不按帧数 */
+    var last = series.length ? dayValue(series[series.length - 1].d) : null;
+    if (last == null) return series.slice();
+    var cut = last - Number(r) * 7 * 86400000, i = 0;
+    while (i < series.length - 2 && dayValue(series[i].d) < cut) i += 1;
+    return series.slice(i);
   }
   function change(series) {
     if (!series || series.length < 2) return null;
