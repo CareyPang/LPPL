@@ -64,6 +64,8 @@ test('nt.html draws the shares chart from LPPL.ntEtf only and labels disclosure 
   assert.doesNotMatch(html, /fetch\(/);
   assert.match(html, /份额变化是全市场申赎合计，不能直接算作某一类持有人的买卖/);
   assert.match(html, /n\.report_date\+' 披露/);
+  assert.match(html, /n\.superseded\?'，该披露已过期/);
+  assert.match(html, /x\.report_superseded\?/);
 });
 
 test('historyRows expands the columnar archive and merge keeps its published flow', () => {

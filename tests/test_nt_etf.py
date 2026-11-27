@@ -486,3 +486,15 @@ def test_history_blanks_shares_converted_a_day_before_the_price_and_books_no_flo
     assert history.adjust_splits(days, [10.0, 25.0, 26.0, 26.0], [1.0, 1.05, 0.95, 0.95])[1] == []
     # a 20%-limit ETF: +24% shares then -16% price is a real inflow followed by a fall
     assert history.adjust_splits(days, [100.0, 124.0, 130.0, 130.0], [1.0, 1.2, 1.0, 1.0], history.WIDE_LIMIT_PRICE_LOG)[1] == []
+
+
+def test_disclosed_holding_is_superseded_by_a_later_report_or_by_shrunken_shares():
+    holder = {"nt_shares_yi": 735.131, "report_date": "2025-12-31"}
+    later = {"report_date": "2026-06-30", "total_shares_yi": 189.15, "inst_ratio": 61.65}
+    superseded, cap = nt_etf._holders_superseded(holder, later, 576.37)
+    assert superseded is True
+    assert cap == pytest.approx(116.61, abs=0.01)
+    same = {"report_date": "2025-12-31", "total_shares_yi": 888.3, "inst_ratio": 90.27}
+    assert nt_etf._holders_superseded(holder, same, 880.0) == (False, None)
+    assert nt_etf._holders_superseded(holder, same, 576.37) == (True, None)
+    assert nt_etf._holders_superseded({"nt_shares_yi": None}, later, 576.37) == (False, None)
