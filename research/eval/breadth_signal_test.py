@@ -133,7 +133,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=ROOT / "reports" / "breadth_signal")
     parser.add_argument("--rebuild-only", action="store_true")
     args = parser.parse_args()
-    if REBUILT.is_file():
+    if REBUILT.is_file() and not args.rebuild_only:
         rebuilt = pd.read_csv(REBUILT)
     else:
         rebuilt = rebuild(args.stocks)
