@@ -245,6 +245,12 @@
   '.odn-side-watch-empty{padding:4px 8px;color:#8c8c8c;font-size:12px}' +
   '.odn-side-watch-item{display:block;min-width:0;padding:4px 8px;border-radius:6px;color:inherit;text-decoration:none;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
   '.odn-side-watch-item:hover{background:#1f1f1f}' +
+  '.odn-side-replay{display:grid;gap:1px;margin-bottom:10px}' +
+  '.odn-side-replay a{display:block;min-width:0;padding:5px 8px;border-radius:6px;color:inherit;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+  '.odn-side-replay a b{display:block;font-size:12.5px;font-weight:650}' +
+  '.odn-side-replay a small{display:block;color:#8c8c8c;font-size:11px}' +
+  '.odn-side-replay a:hover{background:#1f1f1f}' +
+  '.odn-side-replay a[aria-current=location]{background:#1f1f1f}' +
   '.odn-side-help{display:grid;grid-template-columns:1fr 1fr;gap:2px 4px;margin-top:10px;padding-top:8px;border-top:1px solid #2a2a2a}' +
   '.odn-side-help a{padding:4px 6px;border-radius:6px;color:#8c8c8c;text-decoration:none;font-size:11px;white-space:nowrap}' +
   '.odn-side-help a:hover{background:#1f1f1f;color:#fff}' +
@@ -257,6 +263,8 @@
   '.odn-sidebar-light .odn-side-footer,.odn-sidebar-light .odn-side-help{border-color:#eef1f6}' +
   '.odn-sidebar-light .odn-side-watch-title,.odn-sidebar-light .odn-side-watch-empty,.odn-sidebar-light .odn-side-help a{color:#8a93a6}' +
   '.odn-sidebar-light .odn-side-watch-item:hover,.odn-sidebar-light .odn-side-help a:hover{background:#f0f3fa;color:#131722}' +
+  '.odn-sidebar-light .odn-side-replay a:hover,.odn-sidebar-light .odn-side-replay a[aria-current=location]{background:#f0f3fa;color:#131722}' +
+  '.odn-sidebar-light .odn-side-replay a small{color:#8a93a6}' +
 '.odn.odn-light{background:#fff;border-bottom-color:#e6e9ef;color:#131722}' +
 '.odn-light .odn-brand{color:#131722}.odn-light .odn-brand i{background:#1f5fd6}' +
 '.odn-light .odn-main a{color:#4c525e}.odn-light .odn-main a:hover{color:#131722;background:#f0f3fa}.odn-light .odn-main a[aria-current]{color:#131722;background:#e9edf5}' +
@@ -363,6 +371,26 @@
   });
   sidebar.appendChild(sideNav);
   var sideFooter = el('div', 'odn-side-footer');
+  /* 历史回放：只列已发布的回放截止日（与 lppl-data.js 的 REPLAYS 一致），不触发后台现算 */
+  var SIDE_REPLAYS = [
+    { sym: 'sh000001', name: '上证指数', asof: '2007-10-12', t: '2007 · 上证指数', d: '高点 5,903 · 2007.10' },
+    { sym: 'sh000001', name: '上证指数', asof: '2015-06-12', t: '2015 · 上证指数', d: '高点 5,166 · 2015.06' }
+  ];
+  var replayTitle = el('div', 'odn-side-watch-title', '历史回放');
+  var replayList = el('nav', 'odn-side-replay');
+  replayList.setAttribute('aria-label', '历史回放');
+  var replayAsof = new URLSearchParams(location.search).get('asof') || '';
+  SIDE_REPLAYS.forEach(function (r) {
+    var a = el('a', '', '<b>' + esc(r.t) + '</b><small>' + esc(r.d) + '</small>');
+    var q = new URLSearchParams({ kind: 'index', from: 'home.html', asof: r.asof });
+    q.set('code', r.sym);
+    a.href = 'chart.html?' + q.toString();
+    a.title = r.name + ' · 截止 ' + r.asof + ' 的回放';
+    if (section === 'chart' && replayAsof === r.asof) a.setAttribute('aria-current', 'location');
+    replayList.appendChild(a);
+  });
+  sideFooter.appendChild(replayTitle);
+  sideFooter.appendChild(replayList);
   var watchTitle = el('div', 'odn-side-watch-title', '自选');
   var watchList = el('div', 'odn-side-watch-list');
   watchList.id = 'odn-side-watch-list';
