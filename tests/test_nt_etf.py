@@ -470,3 +470,15 @@ def test_fetch_starts_from_the_gap_so_a_failed_szse_day_is_refilled(monkeypatch,
     assert starts == ["2026-11-13"]
     assert series["2026-11-11"] == 2.6 and series["2026-11-13"] == 2.8
     assert payload["etfs"][0]["latest"]["shares_stale"] is False
+
+
+def test_disclosed_holding_is_superseded_by_a_later_report_or_by_shrunken_shares():
+    holder = {"nt_shares_yi": 735.131, "report_date": "2025-12-31"}
+    later = {"report_date": "2026-06-30", "total_shares_yi": 189.15, "inst_ratio": 61.65}
+    superseded, cap = nt_etf._holders_superseded(holder, later, 576.37)
+    assert superseded is True
+    assert cap == pytest.approx(116.61, abs=0.01)
+    same = {"report_date": "2025-12-31", "total_shares_yi": 888.3, "inst_ratio": 90.27}
+    assert nt_etf._holders_superseded(holder, same, 880.0) == (False, None)
+    assert nt_etf._holders_superseded(holder, same, 576.37) == (True, None)
+    assert nt_etf._holders_superseded({"nt_shares_yi": None}, later, 576.37) == (False, None)
