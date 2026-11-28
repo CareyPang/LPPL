@@ -141,7 +141,7 @@ def evidence() -> dict:
         "first": report["first"], "last": report["last"],
         "baseline": {k: report["baseline"][k] for k in ("n", "median_20", "up_20")},
         "events": [{"key": key, "label": label, **{k: report["events"][key][k] for k in keys}} for key, label in EVENTS],
-        "note": "条件在查看之后走势前登记，各检验一次；没有一项通过，只作当日读数，不作买卖依据。",
+        "note": "次数按 20 个交易日内重复出现只计一次统计。条件在查看之后走势前登记，各检验一次；没有一项通过，只作当日读数，不作买卖依据。",
     }
 
 

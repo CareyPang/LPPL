@@ -67,7 +67,7 @@
       '<h3>' + esc(today.date) + ' 出现的情况</h3>' +
       (hits.length ? '<ul class="ntf-hits">' + hits.map(function (e) { return '<li>' + esc(eventLine(e, ev.baseline)) + '</li>'; }).join('') + '</ul>'
         : '<p class="sub">当日没有出现登记的 6 种情况。</p>') +
-      '<details class="ntf-all"><summary>6 种情况的历史统计（' + esc(span) + '）</summary><div class="scroll"><table><thead><tr><th>情况</th><th>次数</th><th>之后 20 日中位</th><th>上涨比例</th><th>判定</th></tr></thead><tbody>' +
+      '<details class="ntf-all"><summary>6 种情况的历史统计（' + esc(span) + '）</summary><div class="scroll"><table><thead><tr><th>情况</th><th>次数（20 日内只计一次）</th><th>之后 20 日中位</th><th>上涨比例</th><th>判定</th></tr></thead><tbody>' +
       '<tr><td>任选一天（基准）</td><td>' + ev.baseline.n + '</td><td>' + pct(ev.baseline.median_20) + '</td><td>' + share(ev.baseline.up_20) + '</td><td>—</td></tr>' +
       ev.events.map(function (e) {
         return '<tr><td>' + esc(e.label) + '</td><td>' + e.n + '</td><td>' + pct(e.median_20) + '</td><td>' + share(e.up_20) + '</td><td>' + esc(verdict(e)) + '</td></tr>';
