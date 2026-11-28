@@ -13,6 +13,20 @@ def fixture_json(name):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
+@pytest.fixture(autouse=True)
+def _no_live_turnover(monkeypatch):
+    monkeypatch.setattr(nt_etf, "_turnover", lambda *_: ({}, None))
+
+
+def _qt(code, stamp, amount):
+    return 'v_x="1~n~' + code + "~" + "~".join(["0"] * 27) + "~" + stamp + "~" + "~".join(["0"] * 6) + "~" + amount + '~0";'
+
+
+def test_turnover_keeps_only_rows_quoted_on_asof_and_converts_to_yi():
+    text = _qt("510300", "20261127161500", "1236993") + "\n" + _qt("159919", "20261126150000", "5000") + "\n" + 'v_bad="1~x";'
+    assert nt_etf._parse_turnover(text, "2026-11-27") == {"510300": pytest.approx(123.6993)}
+
+
 def test_sse_fixture_validates_total_and_date():
     payload = fixture_json("sse_shares.json")
     rows = nt_etf._parse_sse(payload, "2026-11-11")
@@ -404,6 +418,21 @@ def test_failed_szse_refresh_keeps_previous_shares_and_marks_them_stale(
     assert etf["latest"]["shares_yi"] == 2.5
     assert etf["latest"]["shares_asof"] == "2026-11-12"
     assert etf["latest"]["shares_stale"] is True
+
+
+def test_same_day_rerun_keeps_published_turnover_but_a_new_day_does_not(monkeypatch, tmp_path):
+    universe = [{"code": "159919", "name": "测试ETF", "category": "测试", "exchange": "SZ"}]
+    for prev_asof, expected in (("2026-11-13", 12.5), ("2026-11-12", None)):
+        previous = _previous_etf("159919", [["2026-11-12", 2.5, 1.2, None]])
+        previous["asof"] = prev_asof
+        previous["etfs"][0]["latest"] = {"amount_yi": 12.5}
+        payload, _ = _fetch_fixture(
+            monkeypatch, tmp_path, universe, previous,
+            {"159919": {"2026-11-13": 1.1}}, ({}, {"159919": {"2026-11-13": 2.6}}, [], []),
+        )
+        latest = payload["etfs"][0]["latest"]
+        assert latest["amount_yi"] == expected
+        assert latest["amount_share"] == (1.0 if expected else None)
 
 
 def test_request_retries_a_dropped_connection_but_not_an_http_error(monkeypatch):
