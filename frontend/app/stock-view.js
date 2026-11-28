@@ -1146,7 +1146,7 @@
       if (!scenario?.bands.length) return null;
       const point = plotMetrics(clientX);
       const y = clientY - point.rect.top;
-      if (!point.inPlot || y < 20 || y > canvas.clientHeight * .69) return null;
+      if (!point.inPlot || y < 20 || y > canvas.clientHeight * (sub === 'vol' ? .69 : .54)) return null;
       const position = windowStart + point.slot;
       return scenario.bands
         .filter(band => position >= band.lo && position <= band.hi + 1)
