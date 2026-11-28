@@ -12,6 +12,7 @@ from statistics import median
 import pandas as pd
 import requests
 
+from . import nt_futures
 from .sources import UA, rate_limit
 from .tencent_sina import tencent_raw
 
@@ -570,6 +571,12 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
         sources["cffex"] = {"ok": True, "error": None}
     except Exception as exc:
         sources["cffex"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    def _closes(symbol, first, last):
+        frame = tencent_raw(symbol, start=first, end=last)
+        return {str(pd.Timestamp(row.date).date()): float(row.close) for row in frame.itertuples()}
+
+    futures = nt_futures.update(asof, (prev or {}).get("futures"), session, _closes)
+    sources["cffex_futures"] = {"ok": futures["asof"] == asof and not futures["error"], "error": futures.pop("error")}
     indices, index_errors = {}, []
     for symbol in sorted(set(INDEX_BY_CATEGORY.values()) | {ALL_SHARE_INDEX}):
         try:
@@ -605,7 +612,7 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "report_superseded":any(e["holders"].get("superseded") for e in group)})
     flags_latest = _flags_latest(etfs)
     return {"asof":asof,"generated_at":datetime.now().astimezone().isoformat(),"sources":sources,"universe":universe,
-        "etfs":etfs,"categories":categories,"totals":totals,"daily":totals_daily,"cffex":cffex,
+        "etfs":etfs,"categories":categories,"totals":totals,"daily":totals_daily,"cffex":cffex,"futures":futures,
         "indices":indices,"index_by_category":INDEX_BY_CATEGORY,"all_share_index":ALL_SHARE_INDEX,
         "flags_latest":flags_latest,"flag_rule":_flag_rule_text(),
         "notes":[NOTE,FLAG_NOTE,"中信期货代客为全部客户合计，常被视作机构套保参考，不等于国家队。"]}
