@@ -2322,8 +2322,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   if (!pop || !root) return;
   const n = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? null : Number(v));
   const f = (v, d) => (v == null ? '—' : v.toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d }));
-  let pinned = null;
+  let pinned = null, shown = null;
   function show(cell) {
+    shown = cell;
     const d = cell.dataset;
     const adv = n(d.adv), dec = n(d.dec), up = n(d.amtUpYi), dn = n(d.amtDnYi), trin = n(d.trin);
     const ratio = (a, b) => (a != null && b ? a / b : null);
@@ -2364,9 +2365,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
   };
   window.addEventListener('scroll', () => {
     if (pop.hidden) return;
-    const active = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.trin-cell') : null;
-    const cell = pinned || active;
-    if (cell && inView(cell)) show(cell); else hide();
+    if (shown && shown.isConnected && inView(shown)) show(shown); else hide();
   }, { passive: true, capture: true });
 })();
 </script>
