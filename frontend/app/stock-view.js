@@ -117,6 +117,20 @@
     let initialFocusHandled = !pendingInitialFocus;
     let storage;
     try { storage = root.localStorage; } catch { /* Storage is optional. */ }
+    const SUB_KINDS = ['vol', 'macd', 'rsi', 'kdj'];
+    const SUB_LABELS = { vol: '成交量', macd: '成交量 + MACD', rsi: '成交量 + RSI', kdj: '成交量 + KDJ' };
+    let sub = 'macd', subTools = null;
+    try { const saved = storage?.getItem('cp.stock.sub'); if (SUB_KINDS.includes(saved)) sub = saved; } catch { /* optional */ }
+    // 行情工具、不作信号：只在图上画线，不进入任何结论或评分。
+    function indicators() {
+      const T = root.CPChartTools;
+      if (!T) return null;
+      if (!subTools || subTools.bars !== allPrices) {
+        const close = allPrices.map(bar => bar.close);
+        subTools = { bars: allPrices, macd: T.macd(close), rsi: T.rsi(close), kdj: T.kdj(allPrices) };
+      }
+      return subTools;
+    }
 
     const visibility = root.StockVisibility?.create({ document: doc, storage,
       onVisible: observation => {
@@ -655,7 +669,10 @@
       const candleWidth = Math.max(.8, Math.min(9, plotWidth / domain * .65));
       const xEdge = index => left + (index - windowStart) / domain * plotWidth;
       const x = index => left + (index - windowStart + .5) / domain * plotWidth;
-      const priceBottom = height * .69, volumeTop = height * .77, volumeBottom = height - bottom;
+      const tools = sub === 'vol' ? null : indicators();
+      const priceBottom = height * (tools ? .54 : .69), volumeTop = height * (tools ? .61 : .77);
+      const volumeBottom = tools ? height * .72 : height - bottom;
+      const subTop = height * .79, subBottom = height - bottom;
       const maxVolume = Math.max(1, ...prices.map(bar => bar.volume));
       const y = p => top + (max - p) / (max - min) * (priceBottom - top);
       ctx.clearRect(0, 0, width, height); ctx.lineWidth = 1; ctx.textAlign = 'left';
@@ -732,6 +749,57 @@
         ctx.globalAlpha = .55;
         ctx.fillRect(x(globalIndex) - candleWidth / 2, volumeBottom - volumeHeight, candleWidth, volumeHeight);
         ctx.globalAlpha = 1;
+      }
+      if (tools && prices.length) {
+        const i0 = windowStart, i1 = windowStart + prices.length - 1;
+        const cur = Math.min(Math.max(selected, i0), i1);
+        const series = sub === 'macd' ? [tools.macd.dif, tools.macd.dea, tools.macd.hist]
+          : sub === 'rsi' ? [tools.rsi] : [tools.kdj.k, tools.kdj.d, tools.kdj.j];
+        let lo = 0, hi = sub === 'macd' ? 0 : 100;
+        for (const line of series) for (let i = i0; i <= i1; i++) {
+          const v = line[i];
+          if (Number.isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+        }
+        if (sub === 'macd') { const m = Math.max(Math.abs(lo), Math.abs(hi), 1e-9); lo = -m; hi = m; }
+        const ys = v => subTop + (hi - v) / (hi - lo) * (subBottom - subTop);
+        const colors = ['#2962FF', '#F7931A', '#8E24AA'];
+        ctx.strokeStyle = '#E3E7EE'; ctx.lineWidth = 1;
+        for (const guide of sub === 'macd' ? [0] : sub === 'rsi' ? [30, 70] : [20, 80]) {
+          ctx.beginPath(); ctx.moveTo(left, ys(guide)); ctx.lineTo(width - right, ys(guide)); ctx.stroke();
+          ctx.fillStyle = '#6A6D78'; ctx.font = '11px Consolas, monospace';
+          ctx.fillText(String(guide), width - right + 8, ys(guide) + 4);
+        }
+        const path = (line, color) => {
+          ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.beginPath();
+          let started = false;
+          for (let i = i0; i <= i1; i++) {
+            if (!Number.isFinite(line[i])) { started = false; continue; }
+            if (started) ctx.lineTo(x(i), ys(line[i])); else { ctx.moveTo(x(i), ys(line[i])); started = true; }
+          }
+          ctx.stroke();
+        };
+        const f2 = v => Number.isFinite(v) ? v.toFixed(2) : '—';
+        let parts;
+        if (sub === 'macd') {
+          for (let i = i0; i <= i1; i++) {
+            const v = tools.macd.hist[i];
+            if (!Number.isFinite(v)) continue;
+            ctx.fillStyle = v >= 0 ? '#D6303A' : '#11845A'; ctx.globalAlpha = .6;
+            ctx.fillRect(x(i) - candleWidth / 2, Math.min(ys(0), ys(v)), candleWidth, Math.max(1, Math.abs(ys(v) - ys(0))));
+            ctx.globalAlpha = 1;
+          }
+          path(tools.macd.dif, colors[0]); path(tools.macd.dea, colors[1]);
+          parts = [['MACD(12,26,9)', '#6A6D78'], ['DIF ' + f2(tools.macd.dif[cur]), colors[0]], ['DEA ' + f2(tools.macd.dea[cur]), colors[1]]];
+        } else if (sub === 'rsi') {
+          path(tools.rsi, colors[2]);
+          parts = [['RSI(14)', '#6A6D78'], [f2(tools.rsi[cur]), colors[2]]];
+        } else {
+          path(tools.kdj.k, colors[0]); path(tools.kdj.d, colors[1]); path(tools.kdj.j, colors[2]);
+          parts = [['KDJ(9,3,3)', '#6A6D78'], ['K ' + f2(tools.kdj.k[cur]), colors[0]], ['D ' + f2(tools.kdj.d[cur]), colors[1]], ['J ' + f2(tools.kdj.j[cur]), colors[2]]];
+        }
+        ctx.font = cjkFont; ctx.textAlign = 'left';
+        let labelX = left;
+        for (const [text, color] of parts) { ctx.fillStyle = color; ctx.fillText(text, labelX, subTop - 6); labelX += ctx.measureText(text).width + 10; }
       }
       const selectedVisible = selected - windowStart;
       if (prices[selectedVisible]) {
@@ -992,6 +1060,19 @@
       if (state) for (const mode of ['current', 'history']) session.resume(state.code, mode);
     });
     $('stock-history-exit')?.addEventListener('click', exitHistory);
+    const applySub = () => {
+      $('market-plot')?.classList?.toggle('has-sub', sub !== 'vol');
+      const current = $('menu-sub-cur');
+      if (current) current.textContent = SUB_LABELS[sub];
+      for (const button of doc.querySelectorAll('[data-sub]')) button.setAttribute('aria-pressed', String(button.dataset.sub === sub));
+    };
+    for (const button of doc.querySelectorAll('[data-sub]')) button.addEventListener('click', () => {
+      if (!SUB_KINDS.includes(button.dataset.sub)) return;
+      sub = button.dataset.sub;
+      try { storage?.setItem('cp.stock.sub', sub); } catch { /* optional */ }
+      applySub(); draw();
+    });
+    applySub();
     const fcoToggle = $('stock-fco-toggle');
     if (fcoToggle) {
       fcoToggle.addEventListener('click', () => {

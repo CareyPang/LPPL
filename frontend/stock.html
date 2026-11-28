@@ -295,6 +295,11 @@
     .market-stats small { display: block; color: var(--ink-3); }
     .market-stats strong { font: 500 20px var(--f-m); }
     .market-canvas { display: block; width: 100%; height: 340px; touch-action: pan-y; }
+    .market-canvas.has-sub { height: 440px; }
+    #stock-notes { margin: 6px 0; }
+    #stock-notes:not(:has(p:not([hidden]))) { display: none; }
+    #stock-notes summary { cursor: pointer; font-size: 12px; color: var(--ink-3); }
+    .cmenu-pop .note { margin: 2px 4px 0; font-size: 11px; color: var(--ink-3); }
     .date-control { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
     .date-control input { flex: 1; min-width: 0; accent-color: var(--cyan); }
     .quote-selected-date { margin: 12px 0 -8px; color: var(--ink-3); font: 12px var(--f-m); }
@@ -303,6 +308,7 @@
     @media (max-width: 560px) {
       .market-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .market-canvas { height: 300px; }
+      .market-canvas.has-sub { height: 400px; }
       .task-tools button { flex: 1 1 130px; }
     }
     @media (max-width: 480px) {
@@ -340,6 +346,7 @@
   <script src="app/rule-labels.js"></script>
   <script src="app/scale-bar.js"></script>
   <script src="app/top-clusters.js"></script>
+  <script src="app/chart-tools.js"></script>
   <script src="app/stock-view.js"></script>
   <script src="app/stock-watchlist.js"></script>
   <script src="app/watchlist.js"></script>
@@ -412,6 +419,16 @@
                 <button type="button" class="stock-scale-button" role="radio" data-scale="2-6y" aria-checked="false" tabindex="-1" disabled>2–6 年<br>无证据</button>
             </div>
           </details>
+          <details class="cmenu" id="menu-sub">
+            <summary>副图 · <span id="menu-sub-cur">成交量 + MACD</span></summary>
+            <div class="cmenu-pop" aria-label="副图指标（行情工具，不作信号）">
+              <button type="button" data-sub="vol" aria-pressed="false">成交量</button>
+              <button type="button" data-sub="macd" aria-pressed="true">成交量 + MACD</button>
+              <button type="button" data-sub="rsi" aria-pressed="false">成交量 + RSI</button>
+              <button type="button" data-sub="kdj" aria-pressed="false">成交量 + KDJ</button>
+              <p class="note">行情工具，不作信号</p>
+            </div>
+          </details>
           <details class="cmenu" id="menu-layers">
             <summary>图层</summary>
             <div class="cmenu-pop">
@@ -424,9 +441,12 @@
         <span id="stock-history-banner-text"></span>
         <button id="stock-history-exit" type="button">返回最新</button>
       </div>
-      <p class="note" id="stock-scale-note" hidden></p>
-      <p class="note" id="stock-rule-caption" hidden></p>
-      <p class="note" id="stock-calendar-note" hidden></p>
+      <details id="stock-notes">
+        <summary>尺度与口径说明</summary>
+        <p class="note" id="stock-scale-note" hidden></p>
+        <p class="note" id="stock-rule-caption" hidden></p>
+        <p class="note" id="stock-calendar-note" hidden></p>
+      </details>
       <p id="quote-selected-date" class="quote-selected-date" hidden></p>
       <div class="market-stats" id="market-stats" hidden>
         <div><small>收盘</small><strong id="quote-close">—</strong></div>
@@ -435,7 +455,7 @@
         <div><small>最低</small><strong id="quote-low">—</strong></div>
       </div>
       <p id="market-empty">正在读取已收盘日线；模型计算不会阻塞行情。</p>
-      <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日K线和成交量；使用下方日期滑块逐日查看开高低收及成交量" hidden></canvas>
+      <canvas id="market-plot" class="market-canvas" role="img" aria-label="未复权日K线、成交量和可切换副图；使用下方日期滑块逐日查看开高低收及成交量" hidden></canvas>
       <p class="note" id="market-zoom-hint" hidden>Ctrl+滚轮缩放，拖动平移</p>
       <div class="date-control" id="date-control" hidden>
         <label for="quote-date">查看日期</label><input type="range" id="quote-date" min="0" max="0" value="0" step="1">

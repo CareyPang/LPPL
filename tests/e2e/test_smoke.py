@@ -171,6 +171,8 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
     )
     scales = page.locator("#stock-scales [role=radio]")
     expect(scales).to_have_count(6)
+    expect(page.locator("#stock-rule-caption")).to_be_hidden()
+    page.locator("#stock-notes summary").click()
     expect(page.locator("#stock-rule-caption")).to_be_visible()
     expect(page.locator("#stock-rule-caption")).to_contain_text("FCO 标准过滤")
     expect(page.locator("#summary")).to_contain_text(
