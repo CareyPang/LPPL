@@ -455,3 +455,20 @@ def test_bottom_score_v2_threshold_edges_and_missing_valuation():
     missing = run(0.85, pd.DataFrame({"erp_pct": [], "pbn_pct": []}, index=pd.to_datetime([])))
     assert missing["phase"] == "pullback" and missing["fco_neg_intensity"] is None
     assert "bottom_detail" not in missing and "bottom_bar" not in missing
+
+
+def test_backfill_fco_intensity_uses_live_formula_and_keeps_published_values():
+    from research.eval.export_contract import _fco_intensity
+    from research.pipeline.history_extend import backfill_fco_intensity
+
+    cluster = [{"rank": "main", "share": 1.0}]
+    frames = [
+        {"asof": "2015-06-05", "conf": {"6-12m": 0.35, "12-24m": 0.0}, "clusters": {"6-12m": cluster, "12-24m": []}},
+        {"asof": "2016-01-08", "conf": {"6-12m": 0.0, "12-24m": 0.0}, "clusters": {"6-12m": [], "12-24m": []}},
+        {"asof": "2026-07-17", "conf": {"6-12m": 0.4}, "clusters": {"6-12m": cluster}, "fco_intensity": 0.123, "fco_scales_active": 1},
+    ]
+    assert backfill_fco_intensity(frames) == 2
+    assert (frames[0]["fco_intensity"], frames[0]["fco_scales_active"]) == _fco_intensity(frames[0]["conf"], frames[0]["clusters"])
+    assert frames[0]["fco_intensity"] == 0.438
+    assert (frames[1]["fco_intensity"], frames[1]["fco_scales_active"]) == (0.0, 0)
+    assert frames[2]["fco_intensity"] == 0.123
