@@ -186,8 +186,9 @@
       unavailable: data.ruleAvailable === false ? '该截止日未封存所选口径，可切换已有口径。' : '行情可以继续查看，等待对应模型结果。',
       active: (LABELS[scale] || scale) + '尺度的已发布候选区间，日期与当前图表一致。',
       other_scale: '当前尺度没有区间；' + Array.from(new Set(other.map(function (b) { return LABELS[b.scale] || b.scale; }))).join('、') + '尺度仍有区间，可切换核对。',
-      structure: (Number.isFinite(selected.n_qualified_standard) && Number.isFinite(selected.n_windows)
-        ? (LABELS[scale] || scale) + '尺度 ' + selected.n_windows + ' 个拟合窗口中 ' + selected.n_qualified_standard + ' 个通过标准过滤，'
+      structure: (Number.isFinite(selected.n_qualified_standard) && Number.isFinite(selected.n_qualified_box) && Number.isFinite(selected.n_windows)
+        ? (LABELS[scale] || scale) + '尺度 ' + selected.n_windows + ' 个拟合窗口中 ' + selected.n_qualified_standard + ' 个通过标准过滤、' +
+          selected.n_qualified_box + ' 个通过形态框规则；时间区间按形态框规则的合格拟合聚类，'
         : '已发布结果有正向结构提示，') + '数量不足以聚成时间区间，所以没有顶部聚类，也没有时间区间。',
       expired: '这些区间保留作历史记录，不继续标为当前有效提醒。',
       none: signal === 'no_qualified_fit' ? '本尺度没有合格拟合，可对照其他尺度与底部条件。' : '按所选尺度与口径，目前没有可展示区间。',
