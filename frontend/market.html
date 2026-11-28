@@ -2340,14 +2340,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     pop.hidden = false;
     const r = cell.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
     const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
-    const top = r.bottom + 8 + h > window.innerHeight && r.top - 8 - h > 0 ? r.top - 8 - h : r.bottom + 8;
+    const top = r.bottom + 8 + h > window.innerHeight && r.top - 8 - h > 120 ? r.top - 8 - h : r.bottom + 8;
     pop.style.left = left + 'px';
     pop.style.top = top + 'px';
   }
   const hide = () => { pop.hidden = true; pinned = null; };
   root.addEventListener('mouseover', (ev) => { const c = ev.target.closest('.trin-cell'); if (c && !pinned) show(c); });
   root.addEventListener('mouseout', (ev) => { if (ev.target.closest('.trin-cell') && !pinned) pop.hidden = true; });
-  root.addEventListener('focusin', (ev) => { const c = ev.target.closest('.trin-cell'); if (c && !pinned) show(c); });
+  root.addEventListener('focusin', (ev) => { const c = ev.target.closest('.trin-cell'); if (c && c !== pinned) { pinned = null; show(c); } });
   root.addEventListener('focusout', (ev) => { if (ev.target.closest('.trin-cell') && !pinned) pop.hidden = true; });
   document.addEventListener('click', (ev) => {
     const c = ev.target.closest('.trin-cell');
@@ -2356,7 +2356,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     pinned = c; show(c);
   });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') hide(); });
-  window.addEventListener('scroll', () => { if (!pop.hidden) hide(); }, { passive: true });
+  window.addEventListener('scroll', () => { if (!pop.hidden) hide(); }, { passive: true, capture: true });
 })();
 </script>
 </body>
