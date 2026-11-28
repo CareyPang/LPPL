@@ -78,8 +78,9 @@ def _lift(ix: dict, green: np.ndarray, key: str) -> tuple[float | None, int]:
     return float(out[sel].mean() - out[ok].mean()), int(sel.sum())
 
 
-def evaluate(indices: list[dict], cfg: dict, rng: np.random.Generator | None = None) -> dict:
-    greens = [np.array([is_green(f, cfg) for f in ix["frames"]]) for ix in indices]
+def evaluate(indices: list[dict], cfg: dict, rng: np.random.Generator | None = None, green_fn=None) -> dict:
+    green_fn = green_fn or is_green
+    greens = [np.array([green_fn(f, cfg) for f in ix["frames"]]) for ix in indices]
     per = {}
     for ix, g in zip(indices, greens, strict=True):
         l50, n50 = _lift(ix, g, "up50")
