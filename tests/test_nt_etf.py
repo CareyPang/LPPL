@@ -13,6 +13,20 @@ def fixture_json(name):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
+@pytest.fixture(autouse=True)
+def _no_live_turnover(monkeypatch):
+    monkeypatch.setattr(nt_etf, "_turnover", lambda *_: ({}, None))
+
+
+def _qt(code, stamp, amount):
+    return 'v_x="1~n~' + code + "~" + "~".join(["0"] * 27) + "~" + stamp + "~" + "~".join(["0"] * 6) + "~" + amount + '~0";'
+
+
+def test_turnover_keeps_only_rows_quoted_on_asof_and_converts_to_yi():
+    text = _qt("510300", "20261127161500", "1236993") + "\n" + _qt("159919", "20261126150000", "5000") + "\n" + 'v_bad="1~x";'
+    assert nt_etf._parse_turnover(text, "2026-11-27") == {"510300": pytest.approx(123.6993)}
+
+
 def test_sse_fixture_validates_total_and_date():
     payload = fixture_json("sse_shares.json")
     rows = nt_etf._parse_sse(payload, "2026-11-11")

@@ -45,5 +45,6 @@ test('nt.html loads the module and states the colour convention', () => {
   const page = fs.readFileSync(path.join(__dirname, '..', 'nt.html'), 'utf8');
   assert.match(page, /<script src="app\/nt-flow\.js"><\/script>/);
   assert.match(page, /红柱 = 净申购，绿柱 = 净赎回/);
+  assert.match(page, /\['成交额','latest\.amount_yi'\],\['成交占比','latest\.amount_share'\]/);
   assert.doesNotMatch(page.match(/id="netflow"[\s\S]*?<\/section>/)[0], /信号|买入|卖出|进场/);
 });

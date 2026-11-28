@@ -25,6 +25,7 @@ GAP_LOOKBACK_DAYS = 370
 HOLDER_PAGE = "https://stock.finance.sina.com.cn/fundInfo/view/FundInfo_JJCYR.php"
 HOLDER_API = "https://stock.finance.sina.com.cn/fundInfo/api/openapi.php/CaihuiFundInfoService.getFundHolder"
 HOLDER_STRUCTURE_URL = "https://fundf10.eastmoney.com/FundArchivesDatas.aspx"
+TURNOVER_URL = "https://qt.gtimg.cn/"
 CFFEX_URL = "http://www.cffex.com.cn/sj/ccpm/{ym}/{dd}/{product}_1.csv"
 NT_MATCH = ("中央汇金", "汇金资管", "汇金资产管理", "汇金投资", "社保基金", "全国社保", "社会保障基金", "证金", "中国证券金融", "国新", "诚通")
 GROUPS = (("中央汇金", ("中央汇金",)), ("汇金资管", ("汇金资管", "汇金资产管理", "汇金投资")), ("社保基金", ("社保基金", "全国社保", "社会保障基金")), ("证金公司", ("证金", "中国证券金融")), ("国新诚通", ("国新", "诚通")))
@@ -399,6 +400,30 @@ def _prices(universe, start, end):
     return out, errors
 
 
+def _parse_turnover(text: str, asof: str) -> dict[str, float]:
+    """腾讯行情快照：第 30 项为行情时间，第 37 项为当日成交额（万元）。只收行情日等于 asof 的行，单位换成亿元。"""
+    out = {}
+    for line in text.split(";"):
+        _, _, body = line.partition('="')
+        parts = body.split("~")
+        if len(parts) < 38 or len(parts[30]) < 8:
+            continue
+        day = f"{parts[30][:4]}-{parts[30][4:6]}-{parts[30][6:8]}"
+        amount = _number(parts[37])
+        if day == asof and amount is not None and amount >= 0:
+            out[parts[2]] = amount / 1e4
+    return out
+
+
+def _turnover(universe, asof, session):
+    symbols = ",".join(item["exchange"].lower() + item["code"] for item in universe)
+    try:
+        text = _request(session, TURNOVER_URL, params={"q": symbols}).content.decode("gbk", errors="replace")
+        return _parse_turnover(text, asof), None
+    except Exception as exc:
+        return {}, f"{type(exc).__name__}: {exc}"
+
+
 def _fetch_shares(universe, dates, start, end, session):
     sh, sz, sse_errors, szse_errors = {}, {}, [], []
     # Warm SSE cookies before querying the daily disclosure endpoint.
@@ -449,6 +474,8 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
     session = session or requests.Session()
     prices, price_errors = _prices(universe, start, asof)
     previous_by_code = {e["code"]: e for e in (prev or {}).get("etfs", [])}
+    turnover, turnover_error = _turnover(universe, asof, session)
+    turnover_total = sum(turnover.values()) if len(turnover) == len(universe) else None
     sse_codes = {item["code"] for item in universe if item["exchange"] == "SH"}
     previous_sse_share_days = {code: set() for code in sse_codes}
     if not backfill_start:
@@ -542,6 +569,8 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "flow_yi": latest[3], **{k: v[0] for k,v in windows.items()}, "flow_ytd": sum(ytd) if ytd else None,
             "flow_ytd_n_days": len(ytd),
             **{f"{k}_n_days": v[1] for k,v in windows.items()},
+            "amount_yi": turnover.get(item["code"]),
+            "amount_share": turnover[item["code"]] / turnover_total if turnover_total and item["code"] in turnover else None,
             "flag": latest[4],
             "flag_basis": latest[5]},
             "holders": holder,
@@ -556,6 +585,7 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "error": "; ".join(sse_errors) if sse_errors else None,
         },
         "szse_shares": {"ok": len(sz) == sum(x["exchange"] == "SZ" for x in universe) and not szse_errors, "error": "; ".join(szse_errors) if szse_errors else None},
+        "turnover": {"ok": turnover_total is not None, "n": len(turnover), "error": turnover_error},
         "holders": {"ok": not holders_errors, "error": "; ".join(holders_errors) if holders_errors else None},
         "holder_structure": {
             "ok": not holder_structure_errors,
