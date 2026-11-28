@@ -301,3 +301,14 @@ def test_panic_days_split_by_index_position():
     early = _state_frame(30)
     early.loc[25, ["red", "ld", "amount_yi", "sh"]] = [0.05, 300, 13000.0, 2000.0]
     assert breadth.classify_states(early)["state"][25] == "panic"  # 不足 60 日不拆分
+
+
+def test_trin_parts_recover_amounts_of_advancers_and_decliners():
+    row = {"adv": 5384, "dec": 181, "amt_up": 18714.62 / 20396.16, "amount_yi": 20396.16,
+           "trin_amt": (5384 / 181) / (18714.62 / 1622.17)}
+    parts = breadth._trin_parts(row)
+    assert parts["adv"] == 5384 and parts["dec"] == 181
+    assert parts["amt_up_yi"] == pytest.approx(18714.62)
+    assert parts["amt_dn_yi"] == pytest.approx(1622.17)
+    empty = breadth._trin_parts({"adv": 10, "dec": 0, "amt_up": 1.0, "amount_yi": 5.0, "trin_amt": None})
+    assert empty["amt_up_yi"] == pytest.approx(5.0) and empty["amt_dn_yi"] is None

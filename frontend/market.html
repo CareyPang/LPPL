@@ -325,6 +325,14 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 #s-breadth .breadth-tables h3 { margin: 0 0 var(--s2); font-size: 13px; }
 #s-breadth .breadth-basis-table { min-width: 680px; }
 #s-breadth .breadth-history-table { min-width: 840px; }
+.trin-cell { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: help; border-bottom: 1px dotted var(--ink-3); font-variant-numeric: tabular-nums; }
+.trin-cell:focus-visible { outline: 2px solid var(--cyan, #2962ff); outline-offset: 2px; }
+#trin-pop { position: fixed; z-index: 40; width: min(320px, calc(100vw - 16px)); background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 18px rgba(19, 23, 34, .14); padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+#trin-pop[hidden] { display: none; }
+#trin-pop table { width: 100%; border-collapse: collapse; margin: 6px 0; font-variant-numeric: tabular-nums; }
+#trin-pop th, #trin-pop td { padding: 3px 4px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+#trin-pop th:first-child, #trin-pop td:first-child { text-align: left; }
+#trin-pop p { margin: 0; color: var(--ink-3); }
 #s-breadth .breadth-method { margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface); padding: var(--s3); }
 #s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
 #s-breadth .breadth-method p { line-height: 1.6; }
@@ -1811,6 +1819,12 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const card = (label, value, detail = '') => `<div>
       <small>${E(label)}</small><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ''}
     </div>`;
+    const trinCell = (row) => {
+      if (!num(row.trin_amt)) return '—';
+      const parts = ['adv', 'dec', 'amt_up_yi', 'amt_dn_yi']
+        .map((key) => `data-${key.replace(/_/g, '-')}="${num(row[key]) ? row[key] : ''}"`).join(' ');
+      return `<button type="button" class="trin-cell" data-trin="${row.trin_amt}" data-date="${E(row.date || '')}" ${parts} aria-describedby="trin-pop">${fixed(row.trin_amt)}</button>`;
+    };
     const basis = latest.basis || {};
     const products = {
       IF: '沪深300',
@@ -1830,7 +1844,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
       <td>${E(row.date || '—')}</td><td class="r">${fixed(row.sh)}</td>
       <td class="r">${percent(row.red)}</td><td class="r">${percent(row.P20)}</td>
       <td class="r">${percent(row.P60)}</td><td class="r">${percent(row.P250)}</td>
-      <td class="r">${fixed(row.MCL, 0)}</td><td class="r">${fixed(row.trin_amt)}</td>
+      <td class="r">${fixed(row.MCL, 0)}</td><td class="r">${trinCell(row)}</td>
       <td class="r">${num(row.amount_ratio20) ? `${fixed(row.amount_ratio20)}×` : '—'}</td>
       <td class="r">${percentPoints(row.basis_ann_mean)}</td></tr>`).join('');
     const warnings = Array.isArray(data.warnings) ? data.warnings : [];
@@ -1850,7 +1864,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         ${card('P60', percent(latest.P60))}
         ${card('P250', percent(latest.P250))}
         ${card('MCL', fixed(latest.MCL, 0), E(trend))}
-        ${card('TRIN（成交额）', fixed(latest.trin_amt), `成交量口径 ${fixed(latest.trin_vol)}`)}
+        ${card('TRIN（成交额）', trinCell(latest), `成交量口径 ${fixed(latest.trin_vol)}`)}
         ${card('成交额 / 量比', `${fixed(latest.amount_yi, 1)} 亿`, `量比 ${num(latest.amount_ratio20) ? `${fixed(latest.amount_ratio20)}×` : '—'}`)}
         ${card('涨停 / 跌停', `${num(latest.lu) ? latest.lu : '—'} / ${num(latest.ld) ? latest.ld : '—'}`, '按价格推断，含 ST 误差')}
       </div>
@@ -2300,5 +2314,60 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 </script>
 <script src="app/evidence-badge.js"></script>
 <script src="app/ai-assistant.js" data-page="market"></script>
+<div id="trin-pop" role="tooltip" hidden></div>
+<script>
+(function () {
+  const pop = document.getElementById('trin-pop');
+  const root = document.getElementById('s-breadth');
+  if (!pop || !root) return;
+  const n = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+  const f = (v, d) => (v == null ? '—' : v.toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d }));
+  let pinned = null, shown = null;
+  function show(cell) {
+    shown = cell;
+    const d = cell.dataset;
+    const adv = n(d.adv), dec = n(d.dec), up = n(d.amtUpYi), dn = n(d.amtDnYi), trin = n(d.trin);
+    const ratio = (a, b) => (a != null && b ? a / b : null);
+    const date = String(d.date || '').replace(/[^0-9-]/g, '');
+    pop.innerHTML = adv == null || dec == null || up == null || dn == null
+      ? `<strong>${date} TRIN ${f(trin, 2)}</strong><p>这一天的分项数据未发布。</p>`
+      : `<strong>${date} TRIN ${f(trin, 2)}</strong>
+        <table><thead><tr><th>项</th><th>上涨</th><th>下跌</th><th>比值</th></tr></thead><tbody>
+        <tr><td>家数</td><td>${f(adv, 0)}</td><td>${f(dec, 0)}</td><td>${f(ratio(adv, dec), 1)}</td></tr>
+        <tr><td>成交额（亿）</td><td>${f(up, 0)}</td><td>${f(dn, 0)}</td><td>${f(ratio(up, dn), 1)}</td></tr>
+        <tr><td>每只成交额（亿）</td><td>${f(ratio(up, adv), 1)}</td><td>${f(ratio(dn, dec), 1)}</td><td>—</td></tr>
+        </tbody></table>
+        <p>TRIN = 家数比 ÷ 成交额比 = 下跌股每只成交额 ÷ 上涨股每只成交额。</p>`;
+    pop.hidden = false;
+    const r = cell.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    const top = r.bottom + 8 + h > window.innerHeight && r.top - 8 - h > 120 ? r.top - 8 - h : r.bottom + 8;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+  const hide = () => { pop.hidden = true; pinned = null; };
+  root.addEventListener('mouseover', (ev) => { const c = ev.target.closest('.trin-cell'); if (c && !pinned) show(c); });
+  root.addEventListener('mouseout', (ev) => { if (ev.target.closest('.trin-cell') && !pinned) pop.hidden = true; });
+  root.addEventListener('focusin', (ev) => { const c = ev.target.closest('.trin-cell'); if (c && c !== pinned) { pinned = null; show(c); } });
+  root.addEventListener('focusout', (ev) => { if (ev.target.closest('.trin-cell') && !pinned) pop.hidden = true; });
+  document.addEventListener('click', (ev) => {
+    const c = ev.target.closest('.trin-cell');
+    if (!c) return hide();
+    if (pinned === c) return hide();
+    pinned = c; show(c);
+  });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') hide(); });
+  const inView = (cell) => {
+    const r = cell.getBoundingClientRect();
+    const box = cell.closest('.table-scroll');
+    const b = box ? box.getBoundingClientRect() : { left: 0, right: window.innerWidth };
+    return r.bottom > 0 && r.top < window.innerHeight && r.right > b.left && r.left < b.right;
+  };
+  window.addEventListener('scroll', () => {
+    if (pop.hidden) return;
+    if (shown && shown.isConnected && inView(shown)) show(shown); else hide();
+  }, { passive: true, capture: true });
+})();
+</script>
 </body>
 </html>
