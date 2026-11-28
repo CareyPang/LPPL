@@ -196,7 +196,9 @@ def test_flow_3_stock_market_chart_and_scale_controls(page: Page) -> None:
             })"""
         )
         assert len(line_counts) == 3 and max(line_counts) <= 2, line_counts
+    page.locator("#menu-scale summary").click()
     page.locator('#stock-scales [data-scale="12-24m"]').click()
+    expect(page.locator("#menu-scale summary")).to_contain_text("12–24 月")
     expect(
         page.locator('#stock-scales [data-scale="12-24m"]')
     ).to_have_attribute("aria-checked", "true")
