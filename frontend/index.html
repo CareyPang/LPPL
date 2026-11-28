@@ -414,6 +414,8 @@ footer p { margin: 0; max-width: 110ch; }
       <div class="cmenu-pop cmenu-right">
         <button class="tl-b" id="view-reset" type="button">回到截止日</button>
         <button class="tl-b" id="view-all" type="button" title="显示全部历史">全部历史</button>
+        <button class="tl-b" id="view-zin" type="button">放大</button>
+        <button class="tl-b" id="view-zout" type="button">缩小</button>
       </div>
     </details>
   </div>
@@ -1917,6 +1919,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
     });
   });
   $('view-all').addEventListener('click', () => { CH.all(); $('menu-range').open = false; });
+  $('view-zin').addEventListener('click', () => $('b-zin').click());
+  $('view-zout').addEventListener('click', () => $('b-zout').click());
   $('view-reset').addEventListener('click', () => { $('b-reset').click(); $('menu-range').open = false; });
   const menus = [$('menu-layers'), $('menu-range')];
   menus.forEach((m) => m.addEventListener('toggle', () => { if (m.open) menus.forEach((o) => { if (o !== m) o.open = false; }); }));
