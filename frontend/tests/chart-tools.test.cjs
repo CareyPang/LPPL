@@ -28,6 +28,6 @@ test('index page labels the chart tools as not a signal and splits red/green tog
   assert.match(html, /data-k="fcoTop"[^>]*>.*红柱/);
   assert.match(html, /data-k="fcoBot"[^>]*>.*绿柱/);
   assert.match(html, /行情工具、不作信号/);
-  assert.match(html, /<option value="macd">成交量 + MACD<\/option>/);
+  assert.match(html, /<option value="macd">成交量 \+ MACD<\/option>/);
   assert.match(html, /app\/chart-tools\.js/);
 });
