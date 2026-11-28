@@ -111,7 +111,24 @@
     return r ? r.d + '　当日 ' + signed(r.flow, 1) + ' 亿元　区间累计 ' + signed(r.cum, 1) + ' 亿元' : '';
   }
 
-  var api = { cumulative: cumulative, rangeStart: rangeStart, shade: shade, heat: heat, draw: draw, indexAt: indexAt, readout: readout, signed: signed };
+  /* ETF 融资余额按分类：已发布的汇总，变化列按本列最大值着色 */
+  function margin(m) {
+    if (!m || !m.total || !m.categories || !m.categories.length) return '<p class="sub">ETF 融资余额暂未发布。</p>';
+    var rows = m.categories.concat([Object.assign({ category: '合计' }, m.total)]);
+    var max = function (k) { return Math.max.apply(null, m.categories.map(function (r) { return num(r[k]) ? Math.abs(r[k]) : 0; })); };
+    var m1 = max('chg_yi'), m5 = max('chg_5d_yi');
+    var plain = function (v) { return num(v) ? v.toFixed(2) : '—'; };
+    return '<table class="nf-heat"><thead><tr><th>分类</th><th>融资余额</th><th>当日变化</th><th>5 日变化</th><th>当日融资买入</th><th>可融资 ETF</th></tr></thead><tbody>' +
+      rows.map(function (r, i) {
+        var total = i === rows.length - 1;
+        return '<tr' + (total ? ' class="nf-total"' : '') + '><td>' + esc(r.category) + '</td><td>' + plain(r.balance_yi) + '</td>' +
+          '<td style="' + (total ? '' : shade(r.chg_yi, m1)) + '">' + signed(r.chg_yi, 2) + '</td>' +
+          '<td style="' + (total ? '' : shade(r.chg_5d_yi, m5)) + '">' + signed(r.chg_5d_yi, 2) + '</td>' +
+          '<td>' + plain(r.buy_yi) + '</td><td>' + r.n_margin + ' / ' + r.n + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  var api = { cumulative: cumulative, rangeStart: rangeStart, shade: shade, heat: heat, draw: draw, indexAt: indexAt, readout: readout, signed: signed, margin: margin };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.NtFlow = api;
 })(typeof self !== 'undefined' ? self : this);

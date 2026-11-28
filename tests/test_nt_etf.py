@@ -13,9 +13,13 @@ def fixture_json(name):
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
+_MARGIN_UPDATE = nt_etf.nt_margin.update
+
+
 @pytest.fixture(autouse=True)
 def _no_live_turnover(monkeypatch):
     monkeypatch.setattr(nt_etf, "_turnover", lambda *_: ({}, None))
+    monkeypatch.setattr(nt_etf.nt_margin, "update", lambda *_: {"schema": "nt_margin_v1", "asof": None, "error": None, "rows": []})
 
 
 def _qt(code, stamp, amount):
@@ -565,3 +569,48 @@ def test_futures_update_appends_new_days_and_keeps_rows_when_the_source_fails():
     assert current["asof"] == last and current["error"] is None
     assert [e["key"] for e in current["evidence"]["events"]] == [key for key, _ in nt_futures.EVENTS]
     assert not any(e["passed"] for e in current["evidence"]["events"])
+
+
+def test_margin_summary_sums_only_days_with_the_same_members_and_resumes_after_an_unpublished_day(monkeypatch, tmp_path):
+    from research.data import nt_margin
+
+    universe = [
+        {"code": "510300", "exchange": "SH", "category": "甲"},
+        {"code": "159919", "exchange": "SZ", "category": "甲"},
+        {"code": "159915", "exchange": "SZ", "category": "乙"},
+    ]
+    previous = {"rows": [
+        {"date": "2026-11-24", "etfs": {"510300": [10.0, 1.0], "159915": [5.0, 0.5]}},
+        {"date": "2026-11-25", "etfs": {"510300": [11.0, 1.0], "159919": [2.0, 0.2], "159915": [4.0, 0.5]}},
+    ]}
+
+    def fetch_day(_request, _session, day, _universe):
+        if day == "2026-11-27":
+            raise RuntimeError("深交所 2026-11-27 融资融券明细未发布")
+        return {"date": day, "etfs": {"510300": [12.0, 1.5], "159919": [2.5, 0.3], "159915": [3.0, 0.1]}}
+
+    monkeypatch.setattr(nt_margin, "fetch_day", fetch_day)
+    monkeypatch.setattr(nt_margin, "SEED_PATH", tmp_path / "none.json")
+    def days(_):
+        return ["2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"]
+
+    out = _MARGIN_UPDATE("2026-11-27", previous, None, None, days, universe)
+
+    assert out["asof"] == "2026-11-26" and "未发布" in out["error"]
+    assert out["total"]["balance_yi"] == pytest.approx(17.5)
+    assert out["total"]["chg_yi"] == pytest.approx(0.5)
+    by = {c["category"]: c for c in out["categories"]}
+    assert by["甲"]["chg_yi"] == pytest.approx(1.5) and by["乙"]["chg_yi"] == pytest.approx(-1.0)
+    assert out["series"][0] == ["2026-11-24", None]  # 159919 当天不在明细里，不与后两天相比
+    assert out["etfs"]["159919"]["buy_yi"] == pytest.approx(0.3)
+
+
+def test_margin_sse_parser_rejects_incomplete_pages_and_wrong_dates():
+    from research.data import nt_margin
+
+    row = {"opDate": "20261126", "stockCode": "510300", "rzye": 3669213515, "rzmre": 1552550968}
+    assert nt_margin.parse_sse([{"pageHelp": {"total": 1, "data": [row]}}], "2026-11-26")["510300"] == [pytest.approx(36.69213515), pytest.approx(15.52550968)]
+    with pytest.raises(RuntimeError):
+        nt_margin.parse_sse([{"pageHelp": {"total": 2, "data": [row]}}], "2026-11-26")
+    with pytest.raises(RuntimeError):
+        nt_margin.parse_sse([{"pageHelp": {"total": 1, "data": [row]}}], "2026-11-27")
