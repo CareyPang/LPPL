@@ -397,7 +397,7 @@ footer p { margin: 0; max-width: 110ch; }
       <summary>图层</summary>
       <div class="cmenu-pop">
     <div class="tg od-cluster" id="toggles" role="group" aria-label="图层开关">
-      <button class="tgb" type="button" data-k="fcoTop" aria-pressed="true"><i style="background:#D6303A"></i>红柱 · 顶部</button>
+      <button class="tgb" type="button" data-k="fcoTop" aria-pressed="true"><i style="background:#D6303A"></i>红柱 · 泡沫结构</button>
       <button class="tgb" type="button" data-k="fcoBot" aria-pressed="true"><i style="background:#11845A"></i>绿柱 · 底分</button>
       <button class="tgb" type="button" data-k="top" aria-pressed="true"><i class="sw-top"></i>顶部情景区间</button>
       <button class="tgb" type="button" data-k="hist" aria-pressed="true"><i class="sw-top" style="opacity:.45"></i>历史情景线</button>
@@ -645,9 +645,8 @@ window.CP = { dateAt: CPTradingDays.dateAt, PHASES: [], RULES: {} };
         : 0;
       const firstAlert = Boolean(f.first_alert_flag) || (has6 && !prevActive6);
       prevActive6 = has6;
-      /* 只有 12–24 月档聚类且后端没有发布泡沫强度的帧：按已发布的底分画绿柱，不用兜底红柱盖掉 */
-      const fallbackOnly = !(Number(f.fco_intensity) > 0) && !has6;
-      if (intensity > 0 && !(fallbackOnly && negIntensity > 0)) {
+      /* 没有 6–12 月档聚类但已发布底分的帧：画绿柱，不让弱的泡沫强度盖掉 */
+      if (intensity > 0 && !(!has6 && negIntensity > 0)) {
         fcoFrames.push({ i, asof: f.asof, intensity, firstAlert, has6, has12 });
       } else if (negIntensity > 0) {
         fcoBotFrames.push({ i, asof: f.asof, intensity: negIntensity, firstBottom: Boolean(f.bottom_first_alert_flag), factors: f.bottom_factors || null, weak: f.bottom_bar ? f.bottom_bar === 'weak' : null });

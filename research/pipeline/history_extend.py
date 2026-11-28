@@ -41,6 +41,7 @@ from ..eval.episode_backtest import summarize_history_episodes
 from ..eval.export_contract import (
     HISTORY_SCALES,
     LOOK,
+    _fco_intensity,
     _history_frame,
 )
 from ..features.lppls_rules import _derived, rules
@@ -56,6 +57,18 @@ EXTEND_WINDOWS: tuple[int, ...] = tuple(range(130, 501, 5))
 EXTEND_WINDOWS_LABEL = "130-500/5"
 # stock-results 的行情只有最近 756 日，早期 live 截止日凑不满 500 日窗口，用仓库内冻结行情补齐前段
 FROZEN_PRICE_VERSION = "v20261104"
+
+
+def backfill_fco_intensity(frames: list[dict]) -> int:
+    """冻结段帧缺泡沫强度时，用该帧自己已发布的一致度与聚类按 live 同一公式补上；已有的不动。"""
+    filled = 0
+    for frame in frames:
+        if frame.get("fco_intensity") is not None:
+            continue
+        intensity, active = _fco_intensity(frame.get("conf") or {}, frame.get("clusters") or {})
+        frame["fco_intensity"], frame["fco_scales_active"] = intensity, active
+        filled += 1
+    return filled
 
 
 def _with_frozen_prefix(sym: str, df: pd.DataFrame) -> pd.DataFrame:
@@ -209,6 +222,8 @@ def extend_history(
         cur_active = bool(w_map.get("6-12m") or cl_map.get("6-12m"))
         frame["first_alert_flag"] = bool(cur_active and not prev_active)
         prev_active = cur_active
+
+    backfill_fco_intensity(frames)
 
     # 底分、绿柱档位、阶段
     frames = compute_fco_neg_intensity_series(frames)

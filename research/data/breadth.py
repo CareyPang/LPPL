@@ -724,6 +724,20 @@ def _normalize_rows(frame: pd.DataFrame, close_matrix: pd.DataFrame) -> pd.DataF
     return result.loc[:, ROW_FIELDS]
 
 
+def _trin_parts(row: Any) -> dict[str, Any]:
+    """成交额 TRIN 的分子分母：涨跌家数与涨跌股票成交额（亿元）。"""
+    adv, dec = _json_scalar(row.get("adv")), _json_scalar(row.get("dec"))
+    share, total = _json_scalar(row.get("amt_up")), _json_scalar(row.get("amount_yi"))
+    trin = _json_scalar(row.get("trin_amt"))
+    parts: dict[str, Any] = {"adv": adv, "dec": dec, "amt_up_yi": None, "amt_dn_yi": None}
+    if share is not None and total is not None:
+        parts["amt_up_yi"] = share * total
+        # trin_amt = (adv/dec) / (amount_up/amount_down)，反解下跌股票成交额
+        if trin is not None and adv and dec:
+            parts["amt_dn_yi"] = parts["amt_up_yi"] * trin * dec / adv
+    return parts
+
+
 def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
     latest = frame.iloc[-1].to_dict()
     basis = json.loads(str(latest.get("basis_json") or "{}"))
@@ -751,6 +765,7 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
             "MCL",
         )
     }
+    latest_data.update(_trin_parts(latest))
     latest_data["mcl_trend_days"] = _trend_days(frame["MCL"])
     latest_data["basis"] = basis
     latest_data["basis_ann_mean"] = _json_scalar(latest.get("basis_ann_mean"))
@@ -771,7 +786,9 @@ def _build_output(frame: pd.DataFrame) -> dict[str, Any]:
     )
     history = []
     for _, row in frame.tail(60).iterrows():
-        history.append({field: _json_scalar(row.get(field)) for field in history_fields})
+        history.append(
+            {field: _json_scalar(row.get(field)) for field in history_fields} | _trin_parts(row)
+        )
     risk_history = []
     for _, row in frame.tail(260).iterrows():
         risk_history.append(
