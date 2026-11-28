@@ -533,6 +533,8 @@ def test_flow_6_market_summary_and_news_leave_loading_state(page: Page) -> None:
     assert page.locator("#s-breadth .breadth-tables .table-scroll").count() == 2
     expect(page.locator("#breadth-state .bs-now .bs-tag")).to_be_visible()
     assert page.locator("#breadth-state .bs-recent tbody tr").count() == 20
+    expect(page.locator("#breadth-state .breadth-grid")).to_be_visible()
+    page.locator("#breadth-state .bs-more > summary").click()
     page.locator('#breadth-state [data-bs-mark="oversold"]').click()
     expect(page.locator('#breadth-state [data-bs-mark="oversold"]')).to_have_attribute(
         "aria-pressed", "true"

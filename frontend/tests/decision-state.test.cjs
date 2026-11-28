@@ -89,7 +89,8 @@ test('positive structure without a current interval is not described as an activ
   assert.equal(state.top.status, 'structure');
   assert.equal(state.top.windows.length, 0);
   assert.equal(state.conclusion.status, 'structure_watch');
-  assert.match(state.top.label, /尚无当前区间/);
+  assert.match(state.top.label, /未形成顶部聚类/);
+  assert.match(state.top.detail, /没有顶部聚类/);
 });
 
 test('cooling stays descriptive when the score is below 60', () => {
@@ -433,4 +434,14 @@ test('replaying a past cutoff does not cite test-segment results published later
   const replay = Decision.build(input);
   assert.equal(replay.conclusion.status, 'bottom_probe');
   assert.doesNotMatch(replay.conclusion.detail, /2022|测试段/);
+});
+
+test('a stock without a published bottom score says stocks are not scored instead of showing an empty score', () => {
+  const input = setup(); input.context = Object.assign({}, input.context, { assetType: 'stock', market: 'cn' });
+  input.history = null; delete input.data.raw.bottom_factors; delete input.data.raw.bottom_score;
+  const state = Decision.build(input);
+  if (state.bottom.score == null && state.bottom.status === 'missing') {
+    assert.equal(state.bottom.notScored, true);
+    assert.equal(state.bottom.label, '个股无底分');
+  } else assert.fail('fixture still carries a bottom score: ' + JSON.stringify([state.bottom.score, state.bottom.status]));
 });

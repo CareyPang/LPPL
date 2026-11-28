@@ -186,7 +186,7 @@
       const pending = jobs.get(key);
       if (pending) { watch(pending); return pending; }
       if (e[mode + 'Status'] === 'submitting') return null;
-      e[mode + 'Status'] = 'submitting'; delete e.issues[mode]; emit();
+      e[mode + 'Status'] = 'submitting'; delete e.issues[mode]; delete e.reused; emit();
       try {
         const result = await api.request(code, { mode, historyWeeks: mode === 'history' ? 104 : 0 });
         if (result?.cached === true) {
@@ -202,7 +202,10 @@
           applyCurrent(e, latest);
           e.currentStatus = 'current_ready';
           e.refreshFailed = false;
-          e.stale = stale(e.current, e.market);
+          /* 后台确认收盘后的结果可复用：只有截至日落后于行情才算旧，代码版本不同不算 */
+          e.stale = !!(e.market && String(e.current.asof || '') < e.market.asof);
+          e.stale_reason = e.stale ? 'analysis_asof_behind_market' : null;
+          e.reused = mode;
           if (mode === 'history') {
             applyHistory(e, history);
             e.historyStatus = 'history_ready';
