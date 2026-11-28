@@ -498,3 +498,41 @@ def test_disclosed_holding_is_superseded_by_a_later_report_or_by_shrunken_shares
     assert nt_etf._holders_superseded(holder, same, 880.0) == (False, None)
     assert nt_etf._holders_superseded(holder, same, 576.37) == (True, None)
     assert nt_etf._holders_superseded({"nt_shares_yi": None}, later, 576.37) == (False, None)
+
+
+def test_futures_reading_matches_the_registered_event_definitions():
+    from research.data import nt_futures
+    from research.eval import nt_futures_signal
+
+    panel = json.loads(nt_futures.SEED_PATH.read_text(encoding="utf-8"))
+    days, _, flags = nt_futures_signal.states(panel)
+    rows = nt_futures.seed_rows()
+    assert len(rows) == nt_futures.KEEP and rows[-1]["date"] == days[-1]
+    for i in range(1, len(rows)):
+        got = nt_futures.reading(rows[i - 1 : i + 1])
+        at = days.index(rows[i]["date"])
+        assert got["events"] == [key for key, _ in nt_futures.EVENTS if flags[key][at]]
+
+
+def test_futures_update_appends_new_days_and_keeps_rows_when_the_source_fails():
+    from research.data import nt_futures
+
+    seed = nt_futures.seed_rows()
+    previous = {"rows": seed[:-1]}
+    last = seed[-1]["date"]
+
+    def closes(symbol, first, end):
+        product = next(p for p, s in nt_futures.SPOT.items() if s == symbol)
+        return {row["date"]: row[product]["spot"] for row in seed if first <= row["date"] <= end}
+
+    class Down:
+        def get(self, *args, **kwargs):
+            raise ConnectionError("down")
+
+    failed = nt_futures.update(last, previous, Down(), closes)
+    assert failed["asof"] == seed[-2]["date"] and "ConnectionError" in failed["error"]
+    assert failed["today"]["date"] == seed[-2]["date"]
+    current = nt_futures.update(last, {"rows": seed}, Down(), closes)
+    assert current["asof"] == last and current["error"] is None
+    assert [e["key"] for e in current["evidence"]["events"]] == [key for key, _ in nt_futures.EVENTS]
+    assert not any(e["passed"] for e in current["evidence"]["events"])
