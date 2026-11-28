@@ -12,7 +12,7 @@ from statistics import median
 import pandas as pd
 import requests
 
-from . import nt_futures
+from . import nt_futures, nt_margin
 from .sources import UA, rate_limit
 from .tencent_sina import tencent_raw
 
@@ -613,6 +613,12 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
 
     futures = nt_futures.update(asof, (prev or {}).get("futures"), session, _closes)
     sources["cffex_futures"] = {"ok": futures["asof"] == asof and not futures["error"], "error": futures.pop("error")}
+    def _trading_days(last):
+        first = str((pd.Timestamp(last) - pd.Timedelta(days=nt_margin.BACKFILL * 2)).date())
+        return list(_closes(ALL_SHARE_INDEX, first, last))
+
+    margin = nt_margin.update(asof, (prev or {}).get("margin"), session, _request, _trading_days, universe)
+    sources["margin"] = {"ok": margin["asof"] == asof and not margin["error"], "latest_day": margin["asof"], "error": margin.pop("error")}
     indices, index_errors = {}, []
     for symbol in sorted(set(INDEX_BY_CATEGORY.values()) | {ALL_SHARE_INDEX}):
         try:
@@ -648,7 +654,7 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
             "report_superseded":any(e["holders"].get("superseded") for e in group)})
     flags_latest = _flags_latest(etfs)
     return {"asof":asof,"generated_at":datetime.now().astimezone().isoformat(),"sources":sources,"universe":universe,
-        "etfs":etfs,"categories":categories,"totals":totals,"daily":totals_daily,"cffex":cffex,"futures":futures,
+        "etfs":etfs,"categories":categories,"totals":totals,"daily":totals_daily,"cffex":cffex,"futures":futures,"margin":margin,
         "indices":indices,"index_by_category":INDEX_BY_CATEGORY,"all_share_index":ALL_SHARE_INDEX,
         "flags_latest":flags_latest,"flag_rule":_flag_rule_text(),
         "notes":[NOTE,FLAG_NOTE,"中信期货代客为全部客户合计，常被视作机构套保参考，不等于国家队。"]}

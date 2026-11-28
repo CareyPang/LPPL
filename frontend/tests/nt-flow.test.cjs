@@ -48,3 +48,18 @@ test('nt.html loads the module and states the colour convention', () => {
   assert.match(page, /\['成交额','latest\.amount_yi'\],\['成交占比','latest\.amount_share'\]/);
   assert.doesNotMatch(page.match(/id="netflow"[\s\S]*?<\/section>/)[0], /信号|买入|卖出|进场/);
 });
+
+test('margin table shades daily and 5-day changes by column and leaves the total row uncoloured', () => {
+  assert.match(F.margin(null), /暂未发布/);
+  const html = F.margin({
+    total: { n: 3, n_margin: 2, balance_yi: 30, buy_yi: 3, chg_yi: 1, chg_5d_yi: -2 },
+    categories: [
+      { category: '甲', n: 2, n_margin: 1, balance_yi: 20, buy_yi: 2, chg_yi: 2, chg_5d_yi: -4 },
+      { category: '乙', n: 1, n_margin: 1, balance_yi: 10, buy_yi: 1, chg_yi: -1, chg_5d_yi: null },
+    ],
+  });
+  assert.match(html, /甲<\/td><td>20\.00<\/td><td style="background:rgba\(214,48,58,0\.70\)">\+2\.00/);
+  assert.match(html, /乙[\s\S]*?rgba\(17,132,90,0\.39\)">-1\.00<\/td><td style="">—/);
+  assert.match(html, /class="nf-total"><td>合计<\/td><td>30\.00<\/td><td style="">\+1\.00/);
+  assert.match(html, /1 \/ 2/);
+});
