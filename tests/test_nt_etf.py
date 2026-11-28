@@ -591,7 +591,9 @@ def test_margin_summary_sums_only_days_with_the_same_members_and_resumes_after_a
 
     monkeypatch.setattr(nt_margin, "fetch_day", fetch_day)
     monkeypatch.setattr(nt_margin, "SEED_PATH", tmp_path / "none.json")
-    days = lambda _: ["2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"]
+    def days(_):
+        return ["2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"]
+
     out = _MARGIN_UPDATE("2026-11-27", previous, None, None, days, universe)
 
     assert out["asof"] == "2026-11-26" and "未发布" in out["error"]
