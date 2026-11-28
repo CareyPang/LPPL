@@ -2356,7 +2356,18 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     pinned = c; show(c);
   });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') hide(); });
-  window.addEventListener('scroll', () => { if (!pop.hidden) hide(); }, { passive: true, capture: true });
+  const inView = (cell) => {
+    const r = cell.getBoundingClientRect();
+    const box = cell.closest('.table-scroll');
+    const b = box ? box.getBoundingClientRect() : { left: 0, right: window.innerWidth };
+    return r.bottom > 0 && r.top < window.innerHeight && r.right > b.left && r.left < b.right;
+  };
+  window.addEventListener('scroll', () => {
+    if (pop.hidden) return;
+    const active = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.trin-cell') : null;
+    const cell = pinned || active;
+    if (cell && inView(cell)) show(cell); else hide();
+  }, { passive: true, capture: true });
 })();
 </script>
 </body>
