@@ -420,6 +420,21 @@ def test_failed_szse_refresh_keeps_previous_shares_and_marks_them_stale(
     assert etf["latest"]["shares_stale"] is True
 
 
+def test_same_day_rerun_keeps_published_turnover_but_a_new_day_does_not(monkeypatch, tmp_path):
+    universe = [{"code": "159919", "name": "测试ETF", "category": "测试", "exchange": "SZ"}]
+    for prev_asof, expected in (("2026-11-13", 12.5), ("2026-11-12", None)):
+        previous = _previous_etf("159919", [["2026-11-12", 2.5, 1.2, None]])
+        previous["asof"] = prev_asof
+        previous["etfs"][0]["latest"] = {"amount_yi": 12.5}
+        payload, _ = _fetch_fixture(
+            monkeypatch, tmp_path, universe, previous,
+            {"159919": {"2026-11-13": 1.1}}, ({}, {"159919": {"2026-11-13": 2.6}}, [], []),
+        )
+        latest = payload["etfs"][0]["latest"]
+        assert latest["amount_yi"] == expected
+        assert latest["amount_share"] == (1.0 if expected else None)
+
+
 def test_request_retries_a_dropped_connection_but_not_an_http_error(monkeypatch):
     monkeypatch.setattr(nt_etf, "rate_limit", lambda: None)
 

@@ -475,6 +475,12 @@ def fetch(asof: str, previous=None, backfill_start=None, session=None) -> dict:
     prices, price_errors = _prices(universe, start, asof)
     previous_by_code = {e["code"]: e for e in (prev or {}).get("etfs", [])}
     turnover, turnover_error = _turnover(universe, asof, session)
+    if prev and prev.get("asof") == asof:
+        # 同一交易日重跑（如次日早盘）：行情快照已换日，沿用已发布的当日成交额
+        for code, old_etf in previous_by_code.items():
+            kept = (old_etf.get("latest") or {}).get("amount_yi")
+            if code not in turnover and kept is not None:
+                turnover[code] = kept
     turnover_total = sum(turnover.values()) if len(turnover) == len(universe) else None
     sse_codes = {item["code"] for item in universe if item["exchange"] == "SH"}
     previous_sse_share_days = {code: set() for code in sse_codes}
