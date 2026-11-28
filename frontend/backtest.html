@@ -550,6 +550,9 @@ body.backtest-page .bench-view .scroll-x::-webkit-scrollbar-track{background:var
       frame.fcoNegIntensity = frame.fco_neg_intensity != null && Number.isFinite(Number(frame.fco_neg_intensity))
         ? Math.max(0, Math.min(1, Number(frame.fco_neg_intensity)))
         : null;
+      /* 没有 6–12 月档聚类但已发布底分的帧：按底分显示，与指数页一致 */
+      const has6 = Boolean(frame.clusters && Array.isArray(frame.clusters['6-12m']) && frame.clusters['6-12m'][0]);
+      if (!has6 && frame.fcoNegIntensity > 0) frame.fcoIntensity = 0;
       frame.ranges.forEach((range) => { mx = Math.max(mx, range.hi); });
     });
     // 标记每一轮预警段（Episode）的首次预警日（strict as-of）与连续 as-of 不漂移锁定状态
