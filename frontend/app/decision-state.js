@@ -133,10 +133,10 @@
     var comparable = prior && !versionMismatch && versionDifferences(raw, prior, history).length === 0 &&
       versionDifferences(effectiveVersions(record, history), prior, history).length === 0 &&
       scheme.id !== 'unspecified' && factorScheme(prior.bottom_factors || {}, context, symbol).id === scheme.id;
-    var label = ({ missing: '底分未覆盖', neutral: '底部条件不足', candidate: '底部条件分达标' })[status];
+    var label = ({ missing: context.assetType === 'stock' ? '个股无底分' : '底分未覆盖', neutral: '底部条件不足', candidate: '底部条件分达标' })[status];
     if (versionMismatch) label = record ? '已发布底分 · 历史评分版本不符' : '评分记录版本不符';
     return { score: score, asof: scoreDate, stale: !!record && (!historical && (scoreDate < cutoff || modelStale)), status: status,
-      label: label,
+      label: label, notScored: status === 'missing' && context.assetType === 'stock' && !versionMismatch,
       tone: status === 'candidate' ? 'blue' : 'gray',
       components: components(factors, scheme), scheme: scheme.label, schemeId: scheme.id,
       delta: comparable ? score - scoreOf(prior) : null, previousAsOf: prior ? prior.asof : '',
@@ -181,12 +181,14 @@
     });
     var structure = signal === 'signal' && Core && Core.NUMERIC_EVIDENCE.has(evidence) && !expired.length;
     var status = unavailable ? 'unavailable' : active.length ? 'active' : other.length ? 'other_scale' : structure ? 'structure' : expired.length ? 'expired' : 'none';
-    var labels = { unavailable: '顶部结果未就绪', active: '当前有顶部区间', other_scale: '其他尺度有顶部区间', structure: '有顶部结构，尚无当前区间', expired: '旧顶部区间已过', none: '本尺度未形成顶部区间' };
+    var labels = { unavailable: '顶部结果未就绪', active: '当前有顶部区间', other_scale: '其他尺度有顶部区间', structure: '有加速迹象，未形成顶部聚类', expired: '旧顶部区间已过', none: '本尺度未形成顶部区间' };
     var details = {
       unavailable: data.ruleAvailable === false ? '该截止日未封存所选口径，可切换已有口径。' : '行情可以继续查看，等待对应模型结果。',
       active: (LABELS[scale] || scale) + '尺度的已发布候选区间，日期与当前图表一致。',
       other_scale: '当前尺度没有区间；' + Array.from(new Set(other.map(function (b) { return LABELS[b.scale] || b.scale; }))).join('、') + '尺度仍有区间，可切换核对。',
-      structure: '已发布结果保留正向结构提示，但没有可用于当前提醒的时间区间。',
+      structure: (Number.isFinite(selected.n_qualified_standard) && Number.isFinite(selected.n_windows)
+        ? (LABELS[scale] || scale) + '尺度 ' + selected.n_windows + ' 个拟合窗口中 ' + selected.n_qualified_standard + ' 个通过标准过滤，'
+        : '已发布结果有正向结构提示，') + '数量不足以聚成时间区间，所以没有顶部聚类，也没有时间区间。',
       expired: '这些区间保留作历史记录，不继续标为当前有效提醒。',
       none: signal === 'no_qualified_fit' ? '本尺度没有合格拟合，可对照其他尺度与底部条件。' : '按所选尺度与口径，目前没有可展示区间。',
     };
@@ -218,8 +220,8 @@
           top.status === 'other_scale' ? '切换到有区间的尺度，核对日期与价格变化。' : '查看图表中的区间，并跟踪下一次修订。');
     }
     if (top.status === 'structure') {
-      blockers.push('正向结构尚在，时间区间未形成');
-      return result('structure_watch', 'amber', '顶部结构仍需观察', top.detail, '等待形成明确区间或结构状态更新。');
+      blockers.push('有加速迹象，时间区间未形成');
+      return result('structure_watch', 'amber', '有加速迹象，未形成顶部聚类', top.detail, '等合格拟合增多并聚成时间区间，或加速迹象消失。');
     }
     if (modelStale || bottom.stale) {
       blockers.push('模型或底分尚未更新到同一时点');
@@ -229,6 +231,7 @@
       if (bottom.versionMismatch) return result('incomplete', 'gray', '评分记录版本不符', '历史评分与当前模型或评分方案的版本不同，未合并使用。', '读取与当前模型同版本的评分记录。');
       if (bottom.status === 'loading') return result('incomplete', 'gray', '评分记录读取中', '行情与顶部结果可以先查看，底部评分独立读取。', '读取完成后自动更新，无需离开图表。');
       if (bottom.status === 'error') return result('incomplete', 'gray', '评分记录读取失败', '行情与已读取的顶部结果仍保留，暂未取得底部评分。', '重试读取评分记录。');
+      if (bottom.notScored) return result('incomplete', 'gray', '个股没有底分', '底分按指数发布（估值用指数口径的股权风险溢价与破净率），个股不单独评分。', '继续查看行情和顶部区间；底部条件可对照所属指数。');
       return result('incomplete', 'gray', '底部条件尚未覆盖', '当前结果没有可核对的已发布底分。', '继续查看行情和顶部区间，等待本标的底部分项。');
     }
     if (bottom.score < 60) return result('neutral', 'gray', '条件不足',

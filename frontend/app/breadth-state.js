@@ -132,14 +132,15 @@
     }).join('');
 
     return '<section class="bs" aria-label="宽度状态">' +
-      '<h3>今日宽度状态</h3>' + head + meaning +
+      '<h3>今日宽度状态</h3>' + head + meaning + (o.after || '') +
+      '<details class="bs-more"' + (o.open ? ' open' : '') + '><summary>最近 20 日状态与标记记录</summary>' +
       '<div class="bs-cols"><div><h3>最近 20 日状态</h3><div class="table-scroll"><table class="bs-recent"><thead><tr>' +
       '<th>日期</th><th>状态</th><th class="r">上证</th><th class="r">上涨占比</th><th class="r">量比</th><th class="r">跌停</th><th class="r">站上 20 日线</th>' +
       '</tr></thead><tbody>' + recent + '</tbody></table></div></div>' +
       '<div><h3>标记记录（' + esc(state.since) + ' 起）</h3><div class="bs-chips" role="group" aria-label="标记">' + chips + '</div>' +
       '<p class="note">' + esc(markMeaning) + '</p>' +
       (eps ? '<div class="table-scroll"><table class="bs-eps"><thead><tr><th>日期</th>' + (mark === 'panic' ? '<th>类型</th>' : '') + '<th class="r">天数</th><th class="r">起始日上证</th><th class="r">结束日上证</th></tr></thead><tbody>' +
-        eps + '</tbody></table></div>' : '<p class="note">有记录以来没有出现。</p>') + '</div></div>' +
+        eps + '</tbody></table></div>' : '<p class="note">有记录以来没有出现。</p>') + '</div></div></details>' +
       '<details class="breadth-method"><summary>状态怎么分的</summary>' +
       '<p class="note">每个交易日按当日及之前的数据归入一类；阈值取自 ' + esc(state.since) + ' 以来 ' + total +
       ' 个交易日各指标自身的分位，没有参考之后的涨跌。状态和标记只描述当日市场，不是买卖信号；它们之后的涨跌尚未检验。</p>' +

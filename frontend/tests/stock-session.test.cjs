@@ -651,3 +651,21 @@ test('canonical Shanghai, Shenzhen and Beijing symbols remain eligible for cache
     assert.equal(h.requests.length, 0);
   }
 });
+
+test('a reused published result is not shown as outdated only because the code revision moved', async t => {
+  const result = current('000001', { source_sha: 'b'.repeat(40) });
+  const h = harness({
+    latest: async () => result,
+    market: async () => market('000001', { asof: result.asof }),
+    request: async () => ({ cached: true, code: '000001', mode: 'current' }),
+    remote: async (_code, kind) => (kind === 'latest' ? result : null),
+  });
+  t.after(() => h.session.destroy());
+  await h.session.select('000001');
+  await h.session.request('000001');
+  const state = h.session.snapshot();
+  assert.equal(state.stale, false);
+  assert.equal(state.stale_reason, null);
+  assert.equal(state.reused, 'current');
+  assert.equal(state.currentStatus, 'current_ready');
+});

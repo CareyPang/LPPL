@@ -335,6 +335,9 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
 #trin-pop p { margin: 0; color: var(--ink-3); }
 #s-breadth .breadth-method { margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface); padding: var(--s3); }
 #s-breadth .breadth-method > summary { cursor: pointer; font-weight: 600; }
+#s-breadth .bs-more { margin-top: var(--s3); }
+#s-breadth .bs-more > summary { cursor: pointer; font-weight: 600; padding: var(--s2) 0; }
+#s-breadth .bs .breadth-grid { margin-top: var(--s3); }
 #s-breadth .breadth-method p { line-height: 1.6; }
 @media (max-width: 760px) { #s-breadth .breadth-tables { grid-template-columns: minmax(0, 1fr); } }
 .bs { margin-bottom: var(--s4); }
@@ -1857,7 +1860,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     $('src-breadth').textContent =
       `${data.source || '—'} · 截至 ${latest.date || data.asof || '—'} · 样本 n=${sampleN} · 历史分位`;
     breadthStateData = data.state || null;
-    body.innerHTML = `<div id="breadth-state">${CPBreadthState.render(breadthStateData, { mark: breadthMark })}</div><div class="breadth-grid">
+    breadthCards = `<div class="breadth-grid">
         ${card('红盘率', percent(latest.red))}
         ${card('上涨成交额占比', percent(latest.amt_up))}
         ${card('P20', percent(latest.P20))}
@@ -1867,7 +1870,8 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         ${card('TRIN（成交额）', trinCell(latest), `成交量口径 ${fixed(latest.trin_vol)}`)}
         ${card('成交额 / 量比', `${fixed(latest.amount_yi, 1)} 亿`, `量比 ${num(latest.amount_ratio20) ? `${fixed(latest.amount_ratio20)}×` : '—'}`)}
         ${card('涨停 / 跌停', `${num(latest.lu) ? latest.lu : '—'} / ${num(latest.ld) ? latest.ld : '—'}`, '按价格推断，含 ST 误差')}
-      </div>
+      </div>`;
+    body.innerHTML = `<div id="breadth-state">${CPBreadthState.render(breadthStateData, { mark: breadthMark, after: breadthCards }) || breadthCards}</div>
       <p class="note">MCL EMA 可用历史 ${num(data.mcl_warmup_days) ? data.mcl_warmup_days : '—'} 个交易日递推。</p>
       <div class="breadth-tables">
         <div><h3>股指期货升贴水</h3>
@@ -1895,7 +1899,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
         <p class="note">IF/IH/IC/IM 分别对应沪深300/上证50/中证500/中证1000现货指数；主力为未到期合约中成交量最大者，到期日按合约月第三个周五，节假日顺延暂不处理。基差率 = (期货 ÷ 现货 − 1) × 100%；年化基差 = 基差率 × 365 ÷ max(剩余自然日, 5)；年化均值为可用品种的算术平均。</p>
       </details>`;
   }
-  let breadthStateData = null, breadthMark = 'bottom_div';
+  let breadthStateData = null, breadthMark = 'bottom_div', breadthCards = '';
   async function loadBreadth() {
     $('breadth-body').innerHTML = '<p class="note">宽度与资金数据加载中…</p>';
     const [data, result] = await Promise.all([
@@ -2067,7 +2071,7 @@ footer { max-width: 1400px; margin: 0 auto; padding: var(--s3) var(--s4) var(--s
     const markChip = event.target.closest('[data-bs-mark]');
     if (markChip) {
       breadthMark = markChip.dataset.bsMark;
-      $('breadth-state').innerHTML = CPBreadthState.render(breadthStateData, { mark: breadthMark });
+      $('breadth-state').innerHTML = CPBreadthState.render(breadthStateData, { mark: breadthMark, after: breadthCards, open: true });
       const current = $('breadth-state').querySelector('[data-bs-mark][aria-pressed="true"]');
       if (current) current.focus();
       return;

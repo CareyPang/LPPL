@@ -970,7 +970,7 @@
       $('market-stage').textContent = '日线行情 · ' + (labels[next.marketStatus] || '读取中');
       $('current-stage').textContent = '当前分析 · ' + (labels[next.currentStatus] || '等待中');
       $('history-stage').textContent = '历史回放 · ' + (next.historyStatus === 'idle' ? '按需生成' : labels[next.historyStatus] || '等待中');
-      const outdated = next.stale || root.StockSession.stale(next.current, next.market);
+      const outdated = next.reused ? next.stale : next.stale || root.StockSession.stale(next.current, next.market);
       const messages = [];
       if (next.current) messages.push('分析截至 ' + next.current.asof + (outdated ?
         active(next.currentStatus) ? '，正在更新；已有结果仍可查看。' : '，已有结果较旧，可重新更新。' : '，已有结果可查看。'));
@@ -982,6 +982,7 @@
         refresh_failed_previous_result_retained: '本次刷新失败，保留上次成功结果及原始截止日。',
       };
       if (outdated && staleReasons[next.stale_reason]) messages.push(staleReasons[next.stale_reason]);
+      if (next.reused) messages.push('后台已有 ' + (next.current?.asof || '') + ' 收盘后的' + (next.reused === 'history' ? '历史回放' : '分析') + '结果，本次无需重新计算。');
       for (const key of ['market', 'current', 'history']) if (next.issues[key]) messages.push(next.issues[key]);
       $('query-status').textContent = [...new Set(messages)].join(' ');
       $('refresh-current').disabled = active(next.currentStatus);

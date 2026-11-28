@@ -103,52 +103,59 @@
       var scoreHeader = node('div', 'decision-card-heading');
       scoreHeader.append(node('h3', 'decision-card-title', '底部条件综合分'), pill(bottom.stale ? '历史条件分' : bottom.label || '暂未覆盖', bottom.stale ? 'amber' : bottom.tone));
       scoreCard.append(scoreHeader);
-      var scoreOverview = node('div', 'decision-score-overview');
-      var scoreFigure = node('div', 'decision-score-figure');
-      scoreFigure.setAttribute('aria-label', finite(bottom.score) ? '底部条件综合分 ' + number(bottom.score) + ' 分，满分 100' : '底部条件分暂无可用数据');
-      scoreFigure.append(node('strong', 'decision-score-number', number(bottom.score, 1)), node('span', 'decision-score-total', '/ 100'));
-      var scoreContext = node('div', 'decision-score-context');
-      scoreContext.append(node('p', 'decision-score-asof', bottom.asof ? '评分截至 ' + bottom.asof : '尚无对应日期的评分记录'));
-      if (bottom.stale) scoreContext.append(pill('旧评分 · 待更新', 'amber'));
-      if (finite(bottom.delta) && bottom.previousAsOf) {
-        scoreContext.append(node('p', 'decision-score-delta', '较 ' + bottom.previousAsOf + ' ' + (bottom.delta > 0 ? '+' : '') + number(bottom.delta) + ' 分'));
-      }
-      scoreOverview.append(scoreFigure, scoreContext);
-      scoreCard.append(scoreOverview);
-      if (bottom.scheme) scoreCard.append(node('p', 'decision-scheme', bottom.scheme));
-      var components = Array.isArray(bottom.components) ? bottom.components : [];
-      if (components.length) {
-        var componentGrid = node('div', 'decision-factors');
-        components.forEach(function (component, index) {
-          var item = node('section', 'decision-factor');
-          item.dataset.factor = FACTORS.indexOf(component.id) >= 0 ? component.id : String(index % 4);
-          item.dataset.coverage = finite(component.value) ? 'available' : 'missing';
-          var line = node('div', 'decision-factor-heading');
-          line.append(node('h4', '', component.label || component.id || '评分条件'));
-          if (finite(component.weight)) line.append(node('span', 'decision-factor-weight', '权重 ' + pct(component.weight)));
-          item.append(line);
-          var bar = node('div', 'decision-factor-track');
-          if (finite(component.value)) {
-            var fraction = Math.max(0, Math.min(1, component.value));
-            bar.setAttribute('role', 'meter');
-            bar.setAttribute('aria-label', text(component.label || component.id || '评分条件'));
-            bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
-            bar.setAttribute('aria-valuenow', number(fraction * 100));
-            bar.setAttribute('aria-valuetext', '本项条件值 ' + pct(component.value));
-            var fill = node('span', 'decision-factor-fill');
-            fill.style.width = String(fraction * 100) + '%';
-            bar.append(fill);
-          } else bar.setAttribute('aria-label', text(component.label || component.id || '评分条件') + '未覆盖');
-          var foot = node('div', 'decision-factor-foot');
-          foot.append(node('strong', 'decision-factor-value', finite(component.value) ? pct(component.value) : '未覆盖'));
-          if (component.detail) foot.append(node('span', '', component.detail));
-          item.append(bar, foot); componentGrid.append(item);
-        });
-        scoreCard.append(componentGrid);
+      if (bottom.notScored) {
+        var none = node('div', 'decision-empty');
+        none.append(node('strong', '', '个股没有底分'),
+          node('p', '', '底分按指数发布：估值用指数口径的股权风险溢价与破净率，再加回撤深度。个股不单独评分，可对照所属指数的底分。'));
+        scoreCard.append(none);
       } else {
-        var empty = node('div', 'decision-empty');
-        empty.append(node('strong', '', '等待可追溯的评分记录'), node('p', '', '行情与顶部区间仍可查看。此处会保留明确的数据状态。'));
-        scoreCard.append(empty);
+        var scoreOverview = node('div', 'decision-score-overview');
+        var scoreFigure = node('div', 'decision-score-figure');
+        scoreFigure.setAttribute('aria-label', finite(bottom.score) ? '底部条件综合分 ' + number(bottom.score) + ' 分，满分 100' : '底部条件分暂无可用数据');
+        scoreFigure.append(node('strong', 'decision-score-number', number(bottom.score, 1)), node('span', 'decision-score-total', '/ 100'));
+        var scoreContext = node('div', 'decision-score-context');
+        scoreContext.append(node('p', 'decision-score-asof', bottom.asof ? '评分截至 ' + bottom.asof : '尚无对应日期的评分记录'));
+        if (bottom.stale) scoreContext.append(pill('旧评分 · 待更新', 'amber'));
+        if (finite(bottom.delta) && bottom.previousAsOf) {
+          scoreContext.append(node('p', 'decision-score-delta', '较 ' + bottom.previousAsOf + ' ' + (bottom.delta > 0 ? '+' : '') + number(bottom.delta) + ' 分'));
+        }
+        scoreOverview.append(scoreFigure, scoreContext);
+        scoreCard.append(scoreOverview);
+        if (bottom.scheme) scoreCard.append(node('p', 'decision-scheme', bottom.scheme));
+        var components = Array.isArray(bottom.components) ? bottom.components : [];
+        if (components.length) {
+          var componentGrid = node('div', 'decision-factors');
+          components.forEach(function (component, index) {
+            var item = node('section', 'decision-factor');
+            item.dataset.factor = FACTORS.indexOf(component.id) >= 0 ? component.id : String(index % 4);
+            item.dataset.coverage = finite(component.value) ? 'available' : 'missing';
+            var line = node('div', 'decision-factor-heading');
+            line.append(node('h4', '', component.label || component.id || '评分条件'));
+            if (finite(component.weight)) line.append(node('span', 'decision-factor-weight', '权重 ' + pct(component.weight)));
+            item.append(line);
+            var bar = node('div', 'decision-factor-track');
+            if (finite(component.value)) {
+              var fraction = Math.max(0, Math.min(1, component.value));
+              bar.setAttribute('role', 'meter');
+              bar.setAttribute('aria-label', text(component.label || component.id || '评分条件'));
+              bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
+              bar.setAttribute('aria-valuenow', number(fraction * 100));
+              bar.setAttribute('aria-valuetext', '本项条件值 ' + pct(component.value));
+              var fill = node('span', 'decision-factor-fill');
+              fill.style.width = String(fraction * 100) + '%';
+              bar.append(fill);
+            } else bar.setAttribute('aria-label', text(component.label || component.id || '评分条件') + '未覆盖');
+            var foot = node('div', 'decision-factor-foot');
+            foot.append(node('strong', 'decision-factor-value', finite(component.value) ? pct(component.value) : '未覆盖'));
+            if (component.detail) foot.append(node('span', '', component.detail));
+            item.append(bar, foot); componentGrid.append(item);
+          });
+          scoreCard.append(componentGrid);
+        } else {
+          var empty = node('div', 'decision-empty');
+          empty.append(node('strong', '', '等待可追溯的评分记录'), node('p', '', '行情与顶部区间仍可查看。此处会保留明确的数据状态。'));
+          scoreCard.append(empty);
+        }
       }
       grid.append(scoreCard);
 
